@@ -20,6 +20,7 @@ struct Fixture {
     pool: SqlitePool,
     admin_id: i64,
     member_id: i64,
+    _media_root: tempfile::TempDir,
 }
 
 async fn fixture() -> Fixture {
@@ -40,15 +41,154 @@ async fn fixture() -> Fixture {
     add_token(&pool, admin_id, ADMIN_TOKEN, "browser").await;
     add_token(&pool, member_id, MEMBER_TOKEN, "browser").await;
     add_token(&pool, admin_id, API_TOKEN, "api").await;
+    let media_root = tempfile::tempdir().unwrap();
     Fixture {
         app: api_v2::router(
-            db::AppState::new(pool.clone()).with_secure_cookies(true),
+            db::AppState::new(pool.clone())
+                .with_secure_cookies(true)
+                .with_media_root(media_root.path().to_path_buf()),
             false,
         ),
         pool,
         admin_id,
         member_id,
+        _media_root: media_root,
     }
+}
+
+#[tokio::test]
+async fn admin_avatar_thumbnail_is_private_and_bounded_to_registered_files() {
+    let fixture = fixture().await;
+    let original = "profile.png";
+    let thumbnail = "thumb_profile.jpg";
+    let user_dir = fixture
+        ._media_root
+        .path()
+        .join("thumbnails/users")
+        .join(fixture.member_id.to_string());
+    tokio::fs::create_dir_all(&user_dir).await.unwrap();
+    tokio::fs::write(user_dir.join(thumbnail), b"synthetic thumbnail")
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO user_avatars(user_id, filename, original_filename, content_type) \
+         VALUES (?, ?, 'profile.png', 'image/png')",
+    )
+    .bind(fixture.member_id)
+    .bind(original)
+    .execute(&fixture.pool)
+    .await
+    .unwrap();
+
+    let users = fixture
+        .app
+        .clone()
+        .oneshot(request("GET", "/admin/users", Some(ADMIN_TOKEN), None, ""))
+        .await
+        .unwrap();
+    let users = json(users).await;
+    let member = users["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|user| user["id"] == fixture.member_id)
+        .unwrap();
+    assert_eq!(
+        member["avatar_url"],
+        format!(
+            "/api/v2/admin/users/{}/avatar/{thumbnail}",
+            fixture.member_id
+        )
+    );
+
+    let path = format!("/admin/users/{}/avatar/{thumbnail}", fixture.member_id);
+    let anonymous = fixture
+        .app
+        .clone()
+        .oneshot(request("GET", &path, None, None, ""))
+        .await
+        .unwrap();
+    assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+
+    let member_request = fixture
+        .app
+        .clone()
+        .oneshot(request("GET", &path, Some(MEMBER_TOKEN), None, ""))
+        .await
+        .unwrap();
+    assert_eq!(member_request.status(), StatusCode::FORBIDDEN);
+
+    let admin = fixture
+        .app
+        .clone()
+        .oneshot(request("GET", &path, Some(ADMIN_TOKEN), None, ""))
+        .await
+        .unwrap();
+    assert_eq!(admin.status(), StatusCode::OK);
+    assert_eq!(admin.headers()["content-type"], "image/jpeg");
+    assert_eq!(admin.headers()["x-content-type-options"], "nosniff");
+    assert_eq!(admin.headers()["cache-control"], "no-store");
+    assert_eq!(
+        admin.into_body().collect().await.unwrap().to_bytes(),
+        "synthetic thumbnail"
+    );
+
+    let wrong_name = fixture
+        .app
+        .clone()
+        .oneshot(request(
+            "GET",
+            &format!("/admin/users/{}/avatar/thumb_other.jpg", fixture.member_id),
+            Some(ADMIN_TOKEN),
+            None,
+            "",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(wrong_name.status(), StatusCode::NOT_FOUND);
+
+    let missing_avatar = fixture
+        .app
+        .clone()
+        .oneshot(request(
+            "GET",
+            "/admin/users/999999/avatar/thumb_missing.jpg",
+            Some(ADMIN_TOKEN),
+            None,
+            "",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(missing_avatar.status(), StatusCode::NOT_FOUND);
+
+    sqlx::query("UPDATE users SET active = 0 WHERE id = ?")
+        .bind(fixture.admin_id)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    let inactive_admin = fixture
+        .app
+        .clone()
+        .oneshot(request("GET", &path, Some(ADMIN_TOKEN), None, ""))
+        .await
+        .unwrap();
+    assert_eq!(inactive_admin.status(), StatusCode::UNAUTHORIZED);
+
+    sqlx::query("UPDATE users SET active = 1 WHERE id = ?")
+        .bind(fixture.admin_id)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    sqlx::query("DROP TABLE user_avatars")
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    let database_failure = fixture
+        .app
+        .oneshot(request("GET", &path, Some(ADMIN_TOKEN), None, ""))
+        .await
+        .unwrap();
+    assert_eq!(database_failure.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 async fn add_token(pool: &SqlitePool, user_id: i64, token: &str, purpose: &str) {

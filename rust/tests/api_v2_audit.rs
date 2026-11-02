@@ -138,6 +138,14 @@ async fn audit_api_returns_only_the_safe_projection_and_preserves_legacy_actor_f
     .await
     .unwrap();
     sqlx::query(
+        "INSERT INTO user_avatars(user_id, filename, original_filename, content_type) \
+         VALUES (?, 'audit-avatar.png', 'audit-avatar.png', 'image/png')",
+    )
+    .bind(fixture.admin_id)
+    .execute(&fixture.pool)
+    .await
+    .unwrap();
+    sqlx::query(
         "INSERT INTO audit_events \
          (actor_user_id, legacy_actor_user_id, entity_type, entity_id, action, details, created_at) \
          VALUES (NULL, 987, 'project', 73, 'custom-historical-action', \
@@ -164,9 +172,17 @@ async fn audit_api_returns_only_the_safe_projection_and_preserves_legacy_actor_f
     assert_eq!(events.len(), 2);
     assert_eq!(events[0]["entity_id"], 73);
     assert_eq!(events[0]["actor_email"], serde_json::Value::Null);
+    assert_eq!(events[0]["actor_avatar_url"], serde_json::Value::Null);
     assert_eq!(events[0]["legacy_actor_user_id"], 987);
     assert_eq!(events[0]["action"], "custom-historical-action");
     assert_eq!(events[1]["actor_email"], "audit-admin@example.test");
+    assert_eq!(
+        events[1]["actor_avatar_url"],
+        format!(
+            "/api/v2/admin/users/{}/avatar/thumb_audit-avatar.jpg",
+            fixture.admin_id
+        )
+    );
     assert_eq!(events[1]["legacy_actor_user_id"], serde_json::Value::Null);
     assert!(events.iter().all(|event| event.get("details").is_none()));
     let serialized = serde_json::to_string(&result).unwrap();

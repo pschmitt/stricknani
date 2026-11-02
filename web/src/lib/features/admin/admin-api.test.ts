@@ -34,6 +34,7 @@ const user: AdminUser = {
   email: "member@example.invalid",
   active: true,
   is_admin: false,
+  avatar_url: null,
 };
 
 afterEach(() => {
@@ -56,6 +57,70 @@ describe("administrator API", () => {
       meta: { page: 2, per_page: 50, has_more: true },
     });
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/v2/admin/users?page=2");
+  });
+
+  it("accepts only same-origin admin avatar URLs and binds users to their own", async () => {
+    const withAvatar = {
+      ...user,
+      avatar_url: "/api/v2/admin/users/7/avatar/thumb_profile.jpg",
+    };
+    const event = {
+      id: 9,
+      actor_email: "member@example.invalid",
+      actor_avatar_url: "/api/v2/admin/users/7/avatar/thumb_profile.jpg",
+      legacy_actor_user_id: null,
+      entity_type: "project",
+      entity_id: 3,
+      action: "created",
+      created_at: "2026-11-01T12:00:00Z",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [withAvatar],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [event],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            { ...withAvatar, avatar_url: "https://evil.invalid/avatar.jpg" },
+          ],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            {
+              ...event,
+              actor_avatar_url: "https://evil.invalid/avatar.jpg",
+            },
+          ],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(listAdminUsers(1)).resolves.toMatchObject({
+      data: [withAvatar],
+    });
+    await expect(
+      listAuditEvents({ page: 1, entity: "all", action: "" }),
+    ).resolves.toMatchObject({ data: [event] });
+    await expect(listAdminUsers(1)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+    await expect(
+      listAuditEvents({ page: 1, entity: "all", action: "" }),
+    ).rejects.toMatchObject({ code: "invalid_response" });
   });
 
   it("sends same-origin CSRF mutations and never stores password data", async () => {
@@ -119,6 +184,7 @@ describe("administrator API", () => {
           {
             id: 2,
             actor_email: null,
+            actor_avatar_url: null,
             legacy_actor_user_id: 71,
             entity_type: "project",
             entity_id: 6,
@@ -145,6 +211,7 @@ describe("administrator API", () => {
     const historicEvent = {
       id: 2,
       actor_email: null,
+      actor_avatar_url: null,
       legacy_actor_user_id: 0,
       entity_type: "project",
       entity_id: 0,
@@ -196,6 +263,7 @@ describe("administrator API", () => {
             {
               id: 1,
               actor_email: "admin@example.invalid",
+              actor_avatar_url: null,
               legacy_actor_user_id: null,
               entity_type: "project",
               entity_id: 3,

@@ -125,6 +125,7 @@ pub(crate) enum AuditError {
 pub(crate) struct AuditEvent {
     pub(crate) id: i64,
     pub(crate) actor_email: Option<String>,
+    pub(crate) actor_avatar_url: Option<String>,
     pub(crate) legacy_actor_user_id: Option<i64>,
     pub(crate) entity_type: String,
     pub(crate) entity_id: i64,
@@ -173,10 +174,12 @@ pub(crate) async fn list_events(
     let page = filter.page.unwrap_or(1).min(page_count);
     let offset = i64::from(page - 1) * PAGE_SIZE;
     let rows = sqlx::query(
-        "SELECT e.id, e.legacy_actor_user_id, u.email AS actor_email, \
+        "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
+                u.email AS actor_email, avatar.filename AS actor_avatar_filename, \
                 e.entity_type, e.entity_id, e.action, e.created_at \
          FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
+         LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
          WHERE (? IS NULL OR e.entity_type = ?) AND (? IS NULL OR e.action = ?) \
          ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?",
     )
@@ -194,6 +197,14 @@ pub(crate) async fn list_events(
         .map(|row| AuditEvent {
             id: row.get("id"),
             actor_email: row.get("actor_email"),
+            actor_avatar_url: row
+                .get::<Option<String>, _>("actor_avatar_filename")
+                .and_then(|filename| {
+                    row.get::<Option<i64>, _>("actor_user_id")
+                        .and_then(|actor_id| {
+                            crate::media::admin_avatar_thumbnail_url(actor_id, &filename)
+                        })
+                }),
             legacy_actor_user_id: row.get("legacy_actor_user_id"),
             entity_type: row.get("entity_type"),
             entity_id: row.get("entity_id"),

@@ -460,7 +460,14 @@ creates a member.
 | `PATCH /admin/users/{id}/active`        | JSON `{active: boolean}`                                         | `200 {data: UserSummary}`                                     |
 | `POST /admin/users/{id}/reset-password` | JSON `{new_password}`                                            | `200 {data: {id, session_revoked: true}}`                     |
 
-`UserSummary` is `{id, email, active, is_admin}`. IDs are JSON numbers.
+`UserSummary` is `{id, email, active, is_admin, avatar_url}`. IDs are JSON numbers.
+`avatar_url` is null when no registered avatar exists; otherwise it points to
+`GET /admin/users/{id}/avatar/{filename}` under `/api/v2`. This browser-only
+endpoint independently requires an active administrator and serves only the
+registered JPEG thumbnail with `nosniff` and `Cache-Control: no-store`.
+Anonymous or inactive sessions receive `401`, members receive `403`, and
+missing or mismatched thumbnails receive `404`. Existing self-only avatar
+and original-image permissions are unchanged.
 User pages contain at most 50 rows, ordered by `email COLLATE NOCASE` then `id`;
 `has_more` indicates whether another row exists. Invalid pages return
 `400 invalid_query`. Invalid JSON, unknown fields, and oversized bodies use
@@ -489,8 +496,11 @@ same query parser and typed safe projection.
 | ------------------ | ----------------------------------- | ------------------------------------------------------------ |
 | `GET /admin/audit` | Optional `page`, `entity`, `action` | `{data: AuditEvent[], meta: {page, per_page: 50, has_more}}` |
 
-`AuditEvent` contains only `{id, actor_email, legacy_actor_user_id,
-entity_type, entity_id, action, created_at}`. The two actor fields are nullable:
+`AuditEvent` contains only `{id, actor_email, actor_avatar_url,
+legacy_actor_user_id, entity_type, entity_id, action, created_at}`.
+`actor_avatar_url` is a nullable administrator-thumbnail URL derived only from
+the current referenced actor account, never from an imported legacy ID.
+The other two actor fields are nullable:
 `actor_email` is present when the referenced account still exists, while
 `legacy_actor_user_id` preserves an imported actor ID. The endpoint never
 returns the arbitrary historical `details` JSON, which may contain user text or

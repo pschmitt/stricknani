@@ -27,6 +27,7 @@ pub(crate) struct AdminUser {
     pub(crate) email: String,
     pub(crate) active: bool,
     pub(crate) is_admin: bool,
+    pub(crate) avatar_url: Option<String>,
 }
 
 pub(crate) struct UserPage {
@@ -42,6 +43,11 @@ fn decode_user(row: sqlx::sqlite::SqliteRow) -> AdminUser {
         email: row.get("email"),
         active: row.get::<i64, _>("active") != 0,
         is_admin: row.get::<i64, _>("is_admin") != 0,
+        avatar_url: row
+            .get::<Option<String>, _>("avatar_filename")
+            .and_then(|filename| {
+                crate::media::admin_avatar_thumbnail_url(row.get("id"), &filename)
+            }),
     }
 }
 
@@ -73,7 +79,10 @@ pub(crate) async fn list_users(
 ) -> Result<Vec<AdminUser>, AdminError> {
     require_admin(pool, actor_id).await?;
     let rows = sqlx::query(
-        "SELECT id, email, active, is_admin FROM users ORDER BY email COLLATE NOCASE, id",
+        "SELECT users.id, users.email, users.active, users.is_admin, \
+         user_avatars.filename AS avatar_filename FROM users \
+         LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
+         ORDER BY users.email COLLATE NOCASE, users.id",
     )
     .fetch_all(pool)
     .await
@@ -91,8 +100,10 @@ pub(crate) async fn list_users_page(
     }
     require_admin(pool, actor_id).await?;
     let rows = sqlx::query(
-        "SELECT id, email, active, is_admin FROM users \
-         ORDER BY email COLLATE NOCASE, id LIMIT ? OFFSET ?",
+        "SELECT users.id, users.email, users.active, users.is_admin, \
+         user_avatars.filename AS avatar_filename FROM users \
+         LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
+         ORDER BY users.email COLLATE NOCASE, users.id LIMIT ? OFFSET ?",
     )
     .bind(PAGE_SIZE + 1)
     .bind((i64::from(page) - 1) * PAGE_SIZE)
@@ -271,13 +282,18 @@ async fn get_user_tx(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     user_id: i64,
 ) -> Result<AdminUser, AdminError> {
-    sqlx::query("SELECT id, email, active, is_admin FROM users WHERE id = ?")
-        .bind(user_id)
-        .fetch_optional(&mut **tx)
-        .await
-        .map_err(|_| AdminError::Database)?
-        .map(decode_user)
-        .ok_or(AdminError::NotFound)
+    sqlx::query(
+        "SELECT users.id, users.email, users.active, users.is_admin, \
+         user_avatars.filename AS avatar_filename FROM users \
+         LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
+         WHERE users.id = ?",
+    )
+    .bind(user_id)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(|_| AdminError::Database)?
+    .map(decode_user)
+    .ok_or(AdminError::NotFound)
 }
 
 async fn revoke_browser_sessions(

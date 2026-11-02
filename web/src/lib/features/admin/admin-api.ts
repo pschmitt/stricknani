@@ -6,11 +6,13 @@ export interface AdminUser {
   email: string;
   active: boolean;
   is_admin: boolean;
+  avatar_url: string | null;
 }
 
 export interface AuditEvent {
   id: number;
   actor_email: string | null;
+  actor_avatar_url: string | null;
   legacy_actor_user_id: number | null;
   entity_type: string;
   entity_id: number;
@@ -51,6 +53,21 @@ const positiveInteger = (value: unknown): value is number =>
 const safeInteger = (value: unknown): value is number =>
   Number.isSafeInteger(value);
 
+const adminAvatarPattern =
+  /^\/api\/v2\/admin\/users\/(\d+)\/avatar\/thumb_[A-Za-z0-9._-]+\.jpg$/;
+
+function validAdminAvatarUrl(
+  value: unknown,
+  userId?: number,
+): value is string | null {
+  if (value === null) return true;
+  if (typeof value !== "string") return false;
+  const match = adminAvatarPattern.exec(value);
+  if (!match) return false;
+  const id = Number(match[1]);
+  return positiveInteger(id) && (userId === undefined || id === userId);
+}
+
 function invalidResponse(): ApiError {
   return new ApiError(
     t("The server returned an unexpected response."),
@@ -82,7 +99,8 @@ function parseUser(value: unknown): AdminUser {
     !positiveInteger(value.id) ||
     typeof value.email !== "string" ||
     typeof value.active !== "boolean" ||
-    typeof value.is_admin !== "boolean"
+    typeof value.is_admin !== "boolean" ||
+    !validAdminAvatarUrl(value.avatar_url, value.id)
   )
     throw invalidResponse();
   return {
@@ -90,6 +108,7 @@ function parseUser(value: unknown): AdminUser {
     email: value.email,
     active: value.active,
     is_admin: value.is_admin,
+    avatar_url: value.avatar_url,
   };
 }
 
@@ -99,6 +118,7 @@ function parseAuditEvent(value: unknown): AuditEvent {
     Object.hasOwn(value, "details") ||
     !positiveInteger(value.id) ||
     (value.actor_email !== null && typeof value.actor_email !== "string") ||
+    !validAdminAvatarUrl(value.actor_avatar_url) ||
     (value.legacy_actor_user_id !== null &&
       !safeInteger(value.legacy_actor_user_id)) ||
     typeof value.entity_type !== "string" ||
@@ -110,6 +130,7 @@ function parseAuditEvent(value: unknown): AuditEvent {
   return {
     id: value.id,
     actor_email: value.actor_email,
+    actor_avatar_url: value.actor_avatar_url,
     legacy_actor_user_id: value.legacy_actor_user_id,
     entity_type: value.entity_type,
     entity_id: value.entity_id,

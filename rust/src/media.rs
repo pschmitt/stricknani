@@ -187,6 +187,14 @@ struct AvatarRow {
     content_type: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum AdminAvatarError {
+    Forbidden,
+    NotFound,
+    Database,
+    Unavailable,
+}
+
 #[derive(Debug, FromRow)]
 struct AvatarGarbageRow {
     user_id: i64,
@@ -1532,6 +1540,57 @@ async fn serve_user_avatar(
     media_response(&disposition_name, &content_type, attachment, bytes)
 }
 
+/// Serve a registered avatar thumbnail only after verifying the requesting admin is active.
+pub(crate) async fn serve_admin_user_avatar_thumbnail(
+    state: &AppState,
+    admin_id: i64,
+    user_id: i64,
+    requested_name: &str,
+) -> Result<Response, AdminAvatarError> {
+    crate::admin_service::require_active_admin(&state.pool, admin_id)
+        .await
+        .map_err(|error| match error {
+            crate::admin_service::AdminError::Forbidden => AdminAvatarError::Forbidden,
+            _ => AdminAvatarError::Database,
+        })?;
+    if user_id <= 0 || !safe_user_avatar_filename(requested_name) {
+        return Err(AdminAvatarError::NotFound);
+    }
+    let avatar = sqlx::query_as::<_, AvatarRow>(
+        "SELECT filename, original_filename, content_type FROM user_avatars WHERE user_id = ?",
+    )
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| AdminAvatarError::Database)?
+    .ok_or(AdminAvatarError::NotFound)?;
+    if requested_name != thumbnail_name(&avatar.filename) {
+        return Err(AdminAvatarError::NotFound);
+    }
+    let root = media_root(state).map_err(|_| AdminAvatarError::Unavailable)?;
+    let path = user_avatar_path(&root, user_id, &avatar.filename, true)
+        .await
+        .map_err(|_| AdminAvatarError::NotFound)?
+        .ok_or(AdminAvatarError::NotFound)?;
+    let file = tokio::fs::File::open(path)
+        .await
+        .map_err(|_| AdminAvatarError::NotFound)?;
+    let mut bytes = Vec::new();
+    file.take((MAX_UPLOAD_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(|_| AdminAvatarError::NotFound)?;
+    if bytes.len() > MAX_UPLOAD_BYTES {
+        return Err(AdminAvatarError::NotFound);
+    }
+    Ok(media_response(
+        "avatar-thumbnail.jpg",
+        "image/jpeg",
+        false,
+        bytes,
+    ))
+}
+
 async fn serve_registered(
     state: &AppState,
     headers: &HeaderMap,
@@ -1937,6 +1996,16 @@ pub(crate) async fn cleanup_avatar(root: &Path, user_id: i64, filename: &str) {
 
 pub(crate) fn avatar_thumbnail_name(filename: &str) -> String {
     thumbnail_name(filename)
+}
+
+pub(crate) fn admin_avatar_thumbnail_url(user_id: i64, filename: &str) -> Option<String> {
+    if user_id <= 0 || !safe_filename(filename) {
+        return None;
+    }
+    Some(format!(
+        "/api/v2/admin/users/{user_id}/avatar/{}",
+        thumbnail_name(filename)
+    ))
 }
 
 fn decode_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {

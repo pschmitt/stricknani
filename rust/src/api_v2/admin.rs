@@ -20,8 +20,36 @@ pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
         .route("/admin/users", get(list_users).post(create_user))
         .route("/admin/users/{id}/active", patch(set_active))
+        .route(
+            "/admin/users/{id}/avatar/{filename}",
+            get(user_avatar_thumbnail),
+        )
         .route("/admin/users/{id}/reset-password", post(reset_password))
         .layer(DefaultBodyLimit::max(8 * 1024))
+}
+
+async fn user_avatar_thumbnail(
+    State(state): State<ApiV2State>,
+    headers: axum::http::HeaderMap,
+    Path((id, filename)): Path<(i64, String)>,
+) -> Response {
+    let actor = match access::browser_user(&state.app, &headers).await {
+        Ok(actor) => actor,
+        Err(response) => return *response,
+    };
+    match crate::media::serve_admin_user_avatar_thumbnail(&state.app, actor, id, &filename).await {
+        Ok(response) => response,
+        Err(crate::media::AdminAvatarError::Forbidden) => forbidden(),
+        Err(crate::media::AdminAvatarError::NotFound) => {
+            api_error(StatusCode::NOT_FOUND, "not_found", "Avatar not found")
+        }
+        Err(crate::media::AdminAvatarError::Database) => internal_error(),
+        Err(crate::media::AdminAvatarError::Unavailable) => api_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "media_unavailable",
+            "Avatar storage is unavailable",
+        ),
+    }
 }
 
 #[derive(Deserialize)]
