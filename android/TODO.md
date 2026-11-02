@@ -41,6 +41,44 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-75: Open canonical website project and yarn links in Android
+
+- [x] Parse canonical `/app/projects/{id}` and `/app/yarns/{id}` paths alongside existing legacy
+      paths.
+- [x] Add HTTP and HTTPS manifest intent patterns for the canonical paths, preserving wildcard-host
+      self-hosted chooser behavior and the separate setup QR scheme.
+- [x] Reject malformed, zero, overflowing, and unrelated-prefix IDs safely; cover query/fragment
+      and existing edit-path behavior in parser tests.
+- [x] Run focused Android unit tests and debug assembly on the designated remote build host.
+
+**Why:** The Rust-backed SPA shares projects and yarns at `/app/...`, which the Android parser and
+intent filters previously did not recognize. This scoped link fix does not change API authentication or
+server URLs and keeps the existing single-server-per-device behavior.
+**How to apply:** no account switching or credential changes; links continue to use the configured
+server already associated with the installed app.
+
+Status: **mostly done**, 2026-11-02 - focused and full unit tests plus debug assembly passed remotely;
+CI formatting/lint verification is pending. No device actions.
+
+## SNA-74: Prepare Android compatibility plan for the Rust API and website
+
+- [x] Inventory Retrofit v1 endpoints, DTOs, PAT authentication, onboarding, Room delta sync,
+      queued offline writes, media, deep links, and web URL handling.
+- [x] Compare Android expectations with the implemented Rust v1/v2 routes, browser-session/CSRF
+      model, and advertised capabilities.
+- [x] Document compatibility gaps, safe boundaries, phased native-client migration, and focused
+      validation gates; identify the smallest implementation slice for review.
+- [x] Keep Android clients, CI/submodule configuration, server/API, Room schema, and device state
+      unchanged until the plan is reviewed.
+
+**Why:** Prepare Android for the Rust-backed API and web application while preserving its native
+offline-first contract and keeping browser credentials separate from mobile authentication.
+**How to apply:** Review the compatibility matrix and phased plan in
+[`docs/rust-api-transition.md`](docs/rust-api-transition.md). The reviewed first implementation is SNA-75.
+
+Status: **done**, 2026-11-02 - compatibility matrix and phased migration plan documented; no application,
+CI, schema, server, or device changes made.
+
 ## SNA-73: Keep Rust Android E2E fixtures valid and independent
 
 - [x] Correct the embedded 1x1 PNG's IDAT checksum without changing the upload assertion.

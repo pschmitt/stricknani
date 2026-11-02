@@ -23,6 +23,18 @@ class DeepLinkParserTest {
     }
 
     @Test
+    fun `parses canonical project and yarn SPA URLs`() {
+        assertEquals(
+            Route.ProjectDetail(42),
+            DeepLinkParser.parse("https://stricknani.example.com/app/projects/42"),
+        )
+        assertEquals(
+            Route.YarnDetail(7),
+            DeepLinkParser.parse("https://stricknani.example.com/app/yarns/7"),
+        )
+    }
+
+    @Test
     fun `parses regardless of host or scheme`() {
         assertEquals(
             Route.ProjectDetail(1),
@@ -31,10 +43,14 @@ class DeepLinkParserTest {
     }
 
     @Test
-    fun `ignores a trailing path segment`() {
+    fun `ignores trailing edit segments for legacy and SPA paths`() {
         assertEquals(
             Route.ProjectDetail(42),
             DeepLinkParser.parse("https://stricknani.example.com/projects/42/edit"),
+        )
+        assertEquals(
+            Route.YarnDetail(7),
+            DeepLinkParser.parse("https://stricknani.example.com/app/yarns/7/edit"),
         )
     }
 
@@ -44,8 +60,26 @@ class DeepLinkParserTest {
     }
 
     @Test
-    fun `returns null for a non-numeric id`() {
+    fun `parses query and fragment without changing the route`() {
+        assertEquals(
+            Route.ProjectDetail(42),
+            DeepLinkParser.parse("https://stricknani.example.com/app/projects/42?tab=notes#step-2"),
+        )
+    }
+
+    @Test
+    fun `returns null for malformed zero and overflowing ids`() {
         assertNull(DeepLinkParser.parse("https://stricknani.example.com/projects/abc"))
+        assertNull(DeepLinkParser.parse("https://stricknani.example.com/projects/0"))
+        assertNull(DeepLinkParser.parse("https://stricknani.example.com/app/yarns/2147483648"))
+    }
+
+    @Test
+    fun `does not accept unrelated or arbitrary deployment prefixes`() {
+        assertNull(DeepLinkParser.parse("https://stricknani.example.com/settings/projects/42"))
+        assertNull(DeepLinkParser.parse("https://stricknani.example.com/tenant/app/yarns/7"))
+        assertNull(DeepLinkParser.parse("https://stricknani.example.com/app/yarn/7"))
+        assertNull(DeepLinkParser.parse("https://stricknani.example.com/app/yarns/7extra"))
     }
 
     @Test

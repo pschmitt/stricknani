@@ -10,11 +10,10 @@ The Stricknani Android app connects to a self-hosted Stricknani instance and syn
 projects and yarn stash for offline-first browsing and editing. No account beyond your own
 Stricknani login, no ads, no tracking - your data stays between your phone and your own server.
 
-This app is early-stage: this is currently a repo scaffold and Compose shell (placeholder screens
-only), not yet a usable app. See [TODO.md](TODO.md) for the full build-out plan and current
-status (`SNA-N` entries).
+The app is under active development. Project/yarn browsing, offline queued edits and Rust-backend
+integration are implemented; see [TODO.md](TODO.md) for verified milestones and remaining work.
 
-## Planned features (see TODO.md for status)
+## Features (see TODO.md for status)
 
 - Home dashboard, project and yarn stash browsing/search, category and tag filters
 - Create, edit, and delete projects and yarn stash entries, fully offline via a local write queue
@@ -22,6 +21,15 @@ status (`SNA-N` entries).
   call is only ever a best-effort background refresh, never a requirement for browsing saved data
 - Full Material You theming (dynamic, wallpaper-derived color on Android 12+)
 - Gauge calculator, ported natively (no network dependency)
+
+## Rust backend and new website
+
+Android uses the Rust backend's token-based API v1 and retains its offline cache and queued edits.
+The website's browser API v2 is a separate interface. New website links at `/app/projects/{id}` and
+`/app/yarns/{id}` can open the corresponding native detail page; legacy resource links remain
+supported. Links use the app's configured server and do not switch accounts.
+
+See [the compatibility plan](docs/rust-api-transition.md) for the API, sync and link transition.
 
 ## Installation
 

@@ -54,9 +54,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Project/yarn web links (SNA-17). No android:autoVerify: every self-hosted
-                 Stricknani instance runs on a different, user-chosen domain, so a single APK
-                 can't declare one verified host the way a single-tenant app would (see
+            <!-- Legacy and SPA project/yarn web links (SNA-17, SNA-75). No android:autoVerify:
+                 every self-hosted Stricknani instance runs on a different, user-chosen domain, so
+                 a single APK can't declare one verified host the way a single-tenant app would (see
                  android/TODO.md's SNA-17 entry) - android:host="*" plus the OS's normal
                  "Open with" chooser is the same tradeoff nyetbox makes for NetBox's self-hosted
                  URLs. -->
@@ -66,6 +66,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="*" android:pathPattern="/projects/.*" />
                 <data android:scheme="https" android:host="*" android:pathPattern="/yarn/.*" />
+                <data android:scheme="https" android:host="*" android:pathPattern="/app/projects/.*" />
+                <data android:scheme="https" android:host="*" android:pathPattern="/app/yarns/.*" />
             </intent-filter>
             <!-- Self-hosted Stricknani instances are frequently plain HTTP (see
                  usesCleartextTraffic above) - keep the same portable chooser behavior for those. -->
@@ -75,6 +77,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="http" android:host="*" android:pathPattern="/projects/.*" />
                 <data android:scheme="http" android:host="*" android:pathPattern="/yarn/.*" />
+                <data android:scheme="http" android:host="*" android:pathPattern="/app/projects/.*" />
+                <data android:scheme="http" android:host="*" android:pathPattern="/app/yarns/.*" />
             </intent-filter>
             <!-- Setup QR payloads (SNA-13) are self-identifying custom-scheme URIs, so a generic
                  camera app's own QR auto-detection can hand them back to this app too, not just

@@ -18,8 +18,9 @@ repo-root `LICENSE`). Single `:app` Gradle module - this app doesn't need a mult
 
 **Unlike the sibling apps (syncwich, nyetbox, jollyfin, augh), this one lives inside the backend's
 own repo** (`stricknani.git/android/`) rather than a dedicated repo of its own - see root
-`AGENTS.md`'s Documentation Layout section. Backend API work the app depends on lands in
-`stricknani/` (Python/FastAPI), tracked in the repo-root `TODO.md` (`T-N` prefix), not here.
+`AGENTS.md`'s Documentation Layout section. The current backend/API is Rust; older Python/FastAPI
+migration references may remain in historical docs. Backend work the app depends on is tracked in
+the repo-root `TODO.md` (`T-N` prefix), not here.
 
 ## Task tracking
 
@@ -36,14 +37,14 @@ own repo** (`stricknani.git/android/`) rather than a dedicated repo of its own -
 ## Dev environment
 
 See the shared doc for the `nix develop`/`git-hooks.nix` basics, run from within `android/`
-(`cd android && nix develop`). The repo-root `flake.nix` covers the Python web app only - Android
-tooling (JDK, Android SDK, `just`, `ktfmt`) is deliberately a separate devShell scoped to this
-directory, not mixed into the root one.
+(`cd android && nix develop`). The repo-root `flake.nix` covers the Rust backend and web
+application; Android tooling (JDK, Android SDK, `just`, `ktfmt`) is deliberately a separate devShell
+scoped to this directory, not mixed into the root one.
 
 ## Builds
 
-- **Never run Gradle builds locally on this machine** - always build on `rofl-13.brkn.lol` or
-  `rofl-14.brkn.lol` instead (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
+- **Never run Gradle builds locally on this machine** - use a designated remote build host from
+  the private `brkn-infra` skill (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
   `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
   directory: `~/build/stricknani-android` (see `android/justfile`).
 - **`just build` does NOT copy the APK back** - it only builds remotely. If you then run
@@ -52,7 +53,7 @@ directory, not mixed into the root one.
   warning that anything is wrong - `adb install -r` reports "Success" either way. Confirmed the
   hard way (2026-08-18): iterating on a real layout bug this way produced two "the fix had zero
   visual effect" false negatives in a row, burning a real debugging detour before the stale-APK
-  explanation was found. Use `just build-fetch` (or `just deploy-zenfone`/`just deploy-all`, which
+  explanation was found. Use `just build-fetch` (or `just deploy-all`, which
   call it) whenever you need the on-device result to reflect the latest source - never bare
   `just build` followed by a manual install step.
 - **ktfmt is nix-only** (SNA-69): the root `flake.nix` pre-commit hook, `just lint`/`just format`
@@ -65,14 +66,13 @@ directory, not mixed into the root one.
   while E2E and screenshot capture retain their fixture-specific emulator/test orchestration. The
   shared screenshot-PR tail, JDK/Gradle setup, keystore decoding, KVM setup, and emulator wait
   helper are reused directly. All callers remain path-filtered to `android/**` (plus their fixture
-  inputs where applicable) so Python-only changes don't trigger an Android CI run and vice versa.
+  inputs where applicable) so backend/web-only changes don't trigger an Android CI run and vice versa.
 
 ## Physical test devices
 
-Same fleet hardware as the sibling apps - Zenfone 10 / Mi Pad 4 / Pixel 5, see the shared doc for
-connection details/gotchas. `android/justfile` has the same device identifiers committed as
-defaults (`zenfone_serial`, `mipad_host`, `px5_host`); `just deploy-all [variant]` builds, fetches,
-and installs on all three. Confirmed working live 2026-08-18. Release-build signing and Play Store
+Use the fleet's approved test devices; see the private `brkn-infra` skill and shared doc for
+connection details and gotchas. `just deploy-all [variant]` builds, fetches,
+and installs on the configured targets. Release-build signing and Play Store
 parity are still deferred (SNA-12) - this only covers debug-build device installs.
 
 ## Architecture

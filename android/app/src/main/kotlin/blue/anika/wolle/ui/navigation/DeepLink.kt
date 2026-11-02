@@ -12,17 +12,22 @@ import java.net.URI
  * host across arbitrary self-hosted domains.
  */
 object DeepLinkParser {
-    private val PROJECT_PATH = Regex("""^/projects/(\d+)(?:/.*)?$""")
-    private val YARN_PATH = Regex("""^/yarn/(\d+)(?:/.*)?$""")
+    // Accept only the server's explicit legacy and SPA route prefixes. Do not accept arbitrary
+    // deployment prefixes: this parser has no configured-base-path context to validate one.
+    private val PROJECT_PATH = Regex("""^/(?:app/)?projects/(\d+)(?:/.*)?$""")
+    private val YARN_PATH = Regex("""^/(?:yarn|app/yarns)/(\d+)(?:/.*)?$""")
 
     fun parse(uriString: String?): Route? {
         val path = uriString?.let { runCatching { URI(it).rawPath }.getOrNull() } ?: return null
-        PROJECT_PATH.matchEntire(path)?.let {
-            return Route.ProjectDetail(it.groupValues[1].toInt())
-        }
-        YARN_PATH.matchEntire(path)?.let {
-            return Route.YarnDetail(it.groupValues[1].toInt())
-        }
+        projectId(path)?.let { return Route.ProjectDetail(it) }
+        yarnId(path)?.let { return Route.YarnDetail(it) }
         return null
     }
+
+    private fun projectId(path: String): Int? = parsePositiveId(PROJECT_PATH, path)
+
+    private fun yarnId(path: String): Int? = parsePositiveId(YARN_PATH, path)
+
+    private fun parsePositiveId(pattern: Regex, path: String): Int? =
+        pattern.matchEntire(path)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 }
 }
