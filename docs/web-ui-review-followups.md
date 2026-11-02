@@ -33,8 +33,8 @@ The first checkpoint is implemented in
 one reading column, compact cover/facts, keyboard-operated Materials disclosure,
 and compact phone filters. Canonical-package core browser, health and print
 checks passed, with EN/DE phone and desktop layout assertions. The administrator
-journey needed its owner-yarn-card check updated to open Materials first;
-that complete rerun and the preview rollout remain pending at this checkpoint.
+journey's owner-yarn-card check now opens Materials first; its complete rerun
+against the canonical package passed. The preview rollout is in progress.
 Avoid interpreting this as completion of the later pattern-presentation work.
 
 Do not deduplicate pattern text or steps automatically. Step IDs are stable
@@ -106,6 +106,16 @@ Header navigation must use one logical-parent map. Top-level sections have no
 chevron; its reserved slot keeps the logo at the same x position on lists and
 details at both widths. Deep links stay in the app, targets do not overlap the
 logo link, and parent navigation retains the existing dirty-form guard.
+
+The shared-header and parent-navigation source checkpoint is
+[`e3ee284`](https://github.com/pschmitt/stricknani/commit/e3ee284), with the
+updated administrator browser journey in
+[`2b1cdaa`](https://github.com/pschmitt/stricknani/commit/2b1cdaa95aea3f1b471a5528cf108bc4a04692e0).
+Prettier, Svelte-check (zero errors/warnings) and 168 unit cases pass. The
+canonical package builds; browser integration and viewport inventory are still
+running. Print preserves the visible title and full-resolution media while
+hiding header actions. Browser unload confirmation remains separate from
+guarded in-app navigation.
 
 ### Additional source and visual checks
 

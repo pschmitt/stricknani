@@ -527,55 +527,62 @@ def _measure_compact_library_heading(
     action_selector: str,
     route_name: str,
     width: int,
-    require_stacked: bool = False,
 ) -> dict[str, float]:
     measured: object = page.evaluate(
         "selectors => { "
-        "const intro = document.querySelector(selectors.intro); "
-        "const action = document.querySelector(selectors.action); "
-        "if (!intro || !action) return null; "
+        "const header = document.querySelector("
+        "'section.page-container > .page-header'); "
+        "const title = header?.querySelector('h1'); "
+        "const intro = header?.querySelector(selectors.intro); "
+        "const action = header?.querySelector(selectors.action); "
+        "if (!header || !title || !intro || !action) return null; "
+        "const titleRect = title.getBoundingClientRect(); "
         "const introRect = intro.getBoundingClientRect(); "
         "const actionRect = action.getBoundingClientRect(); "
-        "return {gap: actionRect.top - introRect.bottom, "
-        "horizontalGap: actionRect.left - introRect.right, "
+        "const rowBottom = Math.max(titleRect.bottom, actionRect.bottom); "
+        "const noOverlap = titleRect.right <= actionRect.left || "
+        "actionRect.right <= titleRect.left || "
+        "titleRect.bottom <= actionRect.top || actionRect.bottom <= titleRect.top; "
+        "return {contextGap: introRect.top - rowBottom, "
+        "titleActionGap: actionRect.left - titleRect.right, "
         "actionHeight: actionRect.height, "
-        "stacked: actionRect.top >= introRect.bottom - 1}; }",
+        "contextWidth: introRect.width, noOverlap}; }",
         {"intro": intro_selector, "action": action_selector},
     )
     if not isinstance(measured, dict):
         raise AcceptanceFailure(
             f"{route_name} compact heading elements were not rendered"
         )
-    gap = measured.get("gap")
-    horizontal_gap = measured.get("horizontalGap")
+    context_gap = measured.get("contextGap")
+    title_action_gap = measured.get("titleActionGap")
     action_height = measured.get("actionHeight")
+    context_width = measured.get("contextWidth")
     if (
-        isinstance(gap, bool)
-        or not isinstance(gap, (int, float))
-        or isinstance(horizontal_gap, bool)
-        or not isinstance(horizontal_gap, (int, float))
+        isinstance(context_gap, bool)
+        or not isinstance(context_gap, (int, float))
+        or isinstance(title_action_gap, bool)
+        or not isinstance(title_action_gap, (int, float))
         or isinstance(action_height, bool)
         or not isinstance(action_height, (int, float))
+        or isinstance(context_width, bool)
+        or not isinstance(context_width, (int, float))
     ):
         raise AcceptanceFailure(
             f"{route_name} compact heading geometry was unavailable"
         )
-    stacked = measured.get("stacked") is True
-    if stacked:
-        _require(
-            0 <= gap <= 32 and action_height >= 44,
-            f"{route_name} stacked heading gap or target size is outside its limit",
-        )
-    else:
-        _require(
-            not require_stacked and horizontal_gap >= 0 and action_height >= 44,
-            f"{route_name} row heading has overlap or a small primary target",
-        )
+    _require(
+        measured.get("noOverlap") is True
+        and title_action_gap >= 0
+        and 0 <= context_gap <= 32
+        and action_height >= 44
+        and context_width > 0,
+        f"{route_name} title/action row, context gap, or action target is invalid",
+    )
     return {
-        "gap": float(gap),
-        "horizontalGap": float(horizontal_gap),
+        "contextGap": float(context_gap),
+        "titleActionGap": float(title_action_gap),
         "actionHeight": float(action_height),
-        "stacked": float(stacked),
+        "contextWidth": float(context_width),
         "width": float(width),
     }
 
@@ -632,12 +639,9 @@ def _assert_mobile_app_header(page: Page) -> None:
         "the redundant welcome greeting remains in the web UI",
     )
     _require(
-        page.locator(
-            ".content-main .page-header, .header-user, "
-            ".header-sign-out, .mobile-sign-out"
-        ).count()
-        == 0,
-        "the authenticated shell still renders a legacy page header or sign-out",
+        page.locator(".header-user, .header-sign-out, .mobile-sign-out").count() == 0
+        and page.get_by_role("heading", level=1).count() == 1,
+        "the authenticated shell has legacy account controls or no single route H1",
     )
     _require(
         page.locator(".secondary-nav .nav-icon svg[aria-hidden='true']").count() > 0,
@@ -1747,7 +1751,7 @@ def _check_mobile_language_and_screenshots(
     page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
     page.locator(".account-language .locale-switcher").wait_for(state="visible")
     _require(
-        page.locator(".page-header .locale-switcher").count() == 0
+        page.locator(".app-header .locale-switcher").count() == 0
         and page.locator(".account-language .locale-switcher").count() == 1,
         "language controls did not move into Account",
     )
@@ -4216,15 +4220,15 @@ def run_acceptance(
                 (
                     "projects",
                     "/app/projects",
-                    ".library-heading .library-intro",
-                    ".library-heading .new-project",
+                    ".page-header__context .library-intro",
+                    ".page-header__actions > .new-project",
                     "Projects",
                 ),
                 (
                     "yarns",
                     "/app/yarns",
-                    ".library-heading .intro",
-                    ".library-heading .primary-action",
+                    ".page-header__context .intro",
+                    ".page-header__actions > .primary-action",
                     "Yarns",
                 ),
             )
@@ -4248,7 +4252,6 @@ def run_acceptance(
                         action_selector=action_selector,
                         route_name=route_name,
                         width=width,
-                        require_stacked=route_name == "yarns",
                     )
                     print(
                         "Compact library heading: "
