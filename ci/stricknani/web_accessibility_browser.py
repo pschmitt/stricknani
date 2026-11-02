@@ -233,7 +233,9 @@ def _exercise_accessibility(
     mark_stage("waiting for the synthetic yarn card")
     yarn_heading = page.get_by_role("heading", name="Riverbend Merino DK", exact=True)
     yarn_heading.wait_for(state="visible", timeout=10_000)
-    yarn_link = page.locator(".yarn-open").filter(has=yarn_heading)
+    yarn_link = page.locator(".yarn-card a.resource-card__link").filter(
+        has=yarn_heading
+    )
     yarn_link.wait_for(state="visible", timeout=10_000)
     _require(yarn_link.count() == 1, "synthetic yarn is missing from the library")
     _require(
