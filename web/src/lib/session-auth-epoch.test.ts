@@ -4,7 +4,12 @@ import { apiRequest } from "./api";
 import { session, signIn } from "./session.svelte";
 
 const oldAccount: SessionData = {
-  user: { id: 61, email: "old@example.test", is_admin: false },
+  user: {
+    id: 61,
+    email: "old@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "old-csrf",
   capabilities: {
     signup: false,
@@ -18,7 +23,12 @@ const oldAccount: SessionData = {
 
 const newAccount: SessionData = {
   ...oldAccount,
-  user: { id: 62, email: "new@example.test", is_admin: false },
+  user: {
+    id: 62,
+    email: "new@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "new-csrf",
 };
 

@@ -13,7 +13,12 @@ vi.mock("./i18n.svelte", () => ({ t: (message: string) => message }));
 
 const sessionFixture = {
   data: {
-    user: { id: 42, email: "knitter@example.test", is_admin: false },
+    user: {
+      id: 42,
+      email: "knitter@example.test",
+      is_admin: false,
+      avatar_url: null,
+    },
     csrf_token: "csrf-fixture",
     capabilities: {
       signup: true,
@@ -40,6 +45,53 @@ describe("same-origin API client", () => {
       vi.fn().mockResolvedValue(Response.json(sessionFixture)),
     );
     await expect(getSession()).resolves.toMatchObject({ user: { id: 42 } });
+  });
+
+  it("accepts a same-user relative avatar thumbnail URL", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...sessionFixture.data,
+            user: {
+              ...sessionFixture.data.user,
+              avatar_url:
+                "/media/thumbnails/users/42/thumb_0123456789abcdef0123456789abcdef.jpg",
+            },
+          },
+        }),
+      ),
+    );
+
+    await expect(getSession()).resolves.toMatchObject({
+      user: {
+        avatar_url:
+          "/media/thumbnails/users/42/thumb_0123456789abcdef0123456789abcdef.jpg",
+      },
+    });
+  });
+
+  it.each([
+    "https://images.example.test/avatar.jpg",
+    "/media/thumbnails/users/43/thumb_0123456789abcdef0123456789abcdef.jpg",
+    "/media/thumbnails/users/42/../other.jpg",
+  ])("rejects an unsafe session avatar URL (%s)", async (avatarUrl) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...sessionFixture.data,
+            user: { ...sessionFixture.data.user, avatar_url: avatarUrl },
+          },
+        }),
+      ),
+    );
+
+    await expect(getSession()).rejects.toMatchObject({
+      code: "invalid_response",
+    });
   });
 
   it.each([

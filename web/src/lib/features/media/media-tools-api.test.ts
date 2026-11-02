@@ -13,7 +13,12 @@ import {
 } from "./media-tools-api";
 
 const session: SessionData = {
-  user: { id: 42, email: "demo@example.invalid", is_admin: false },
+  user: {
+    id: 42,
+    email: "demo@example.invalid",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "fixture-csrf",
   capabilities: {
     signup: false,

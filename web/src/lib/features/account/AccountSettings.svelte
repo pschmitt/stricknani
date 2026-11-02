@@ -1,10 +1,16 @@
 <script lang="ts">
-  import { beforeNavigate } from "$app/navigation";
+  import { beforeNavigate, goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { onDestroy, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { refreshSession, session } from "#lib/session.svelte.ts";
+  import {
+    patchSessionAvatar,
+    refreshSession,
+    session,
+    signOut,
+  } from "#lib/session.svelte.ts";
   import {
     changePassword,
     createApiToken,
@@ -34,6 +40,8 @@
   let passwordError = $state("");
   let pageStatus = $state("");
   let operation = $state<Operation | null>(null);
+  let signOutBusy = $state(false);
+  let signOutError = $state("");
   let revokingId = $state<number | null>(null);
   let avatarFile = $state<File | null>(null);
   let tokenNameInput = $state<HTMLInputElement | null>(null);
@@ -56,6 +64,7 @@
   let profileGeneration = 0;
   let tokenGeneration = 0;
   let operationGeneration = 0;
+  let allowSignOutNavigation = false;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -72,13 +81,14 @@
   }
 
   function beforeUnload(event: BeforeUnloadEvent) {
-    if (!hasSensitiveDraft()) return;
+    if (allowSignOutNavigation || !hasSensitiveDraft()) return;
     event.preventDefault();
     event.returnValue = "";
   }
 
   beforeNavigate(({ cancel }) => {
     if (
+      !allowSignOutNavigation &&
       hasSensitiveDraft() &&
       typeof window !== "undefined" &&
       !window.confirm(
@@ -167,6 +177,43 @@
     revealedToken = null;
     if (avatarInput) avatarInput.value = "";
   });
+
+  async function signOutFromAccount() {
+    const activeSession = session.data;
+    const capturedUserId = activeSession?.user?.id;
+    if (
+      session.status !== "ready" ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      signOutBusy
+    )
+      return;
+    if (
+      hasSensitiveDraft() &&
+      !window.confirm(
+        t("Leave this account page without saving your changes?", locale),
+      )
+    )
+      return;
+
+    signOutError = "";
+    signOutBusy = true;
+    try {
+      await signOut();
+      if (session.data?.user !== null) {
+        if (session.data === activeSession && userId === capturedUserId)
+          signOutError = t("Could not sign out.", locale);
+        return;
+      }
+      allowSignOutNavigation = true;
+      await goto(resolve("/login"));
+    } catch {
+      if (session.data === activeSession && userId === capturedUserId)
+        signOutError = t("Could not sign out.", locale);
+    } finally {
+      signOutBusy = false;
+    }
+  }
 
   function askToRevoke(token: ApiToken, opener: HTMLButtonElement) {
     revokeTarget = token;
@@ -334,6 +381,7 @@
       )
         return;
       profile = { ...profile, avatar_url: avatarUrl };
+      patchSessionAvatar(activeSession, avatarUrl);
       avatarFile = null;
       if (avatarInput) avatarInput.value = "";
       pageStatus = t("Profile picture updated.", locale);
@@ -368,6 +416,7 @@
       )
         return;
       profile = { ...profile, avatar_url: null };
+      patchSessionAvatar(activeSession, null);
       avatarFile = null;
       if (avatarInput) avatarInput.value = "";
       pageStatus = t("Profile picture removed.", locale);
@@ -828,6 +877,22 @@
       </form>
     </section>
   </div>
+
+  <section class="settings-section signout-section">
+    {#if signOutError}
+      <p class="field-error" role="alert">{signOutError}</p>
+    {/if}
+    <button
+      class="quiet-button"
+      type="button"
+      disabled={signOutBusy ||
+        session.status !== "ready" ||
+        !session.data?.user}
+      onclick={() => void signOutFromAccount()}
+    >
+      {signOutBusy ? t("Working…", locale) : t("Sign out", locale)}
+    </button>
+  </section>
 </section>
 
 <dialog

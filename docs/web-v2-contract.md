@@ -23,19 +23,24 @@ must be `same-origin`.
 The initial implementation exposes the following routes, mounted below
 `/api/v2`:
 
-| Method and path | Authentication | Result |
-| --- | --- | --- |
-| `GET /session` | None required | Current session or anonymous bootstrap, capabilities, locale, and CSRF token |
-| `POST /auth/login` | Pre-auth CSRF | Creates a browser-purpose session and sets its cookie |
-| `POST /auth/signup` | Pre-auth CSRF; signup capability enabled | Creates a member account; does not create a session |
-| `POST /auth/logout` | Browser session and CSRF | Revokes that session and clears its cookie; returns 204 |
+| Method and path     | Authentication                           | Result                                                                       |
+| ------------------- | ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `GET /session`      | None required                            | Current session or anonymous bootstrap, capabilities, locale, and CSRF token |
+| `POST /auth/login`  | Pre-auth CSRF                            | Creates a browser-purpose session and sets its cookie                        |
+| `POST /auth/signup` | Pre-auth CSRF; signup capability enabled | Creates a member account; does not create a session                          |
+| `POST /auth/logout` | Browser session and CSRF                 | Revokes that session and clears its cookie; returns 204                      |
 
 `GET /session` returns HTTP 200 for both authenticated and anonymous users:
 
 ```json
 {
   "data": {
-    "user": { "id": 42, "email": "knitter@example.test", "is_admin": false },
+    "user": {
+      "id": 42,
+      "email": "knitter@example.test",
+      "is_admin": false,
+      "avatar_url": "/media/thumbnails/users/42/thumb_0123456789abcdef0123456789abcdef.jpg"
+    },
     "csrf_token": "opaque-token",
     "capabilities": {
       "signup": false,
@@ -60,6 +65,12 @@ server process restarts. `POST /auth/login` sends the token both as the
 ```
 
 A successful login returns the same session envelope with a non-null `user`.
+The session user includes `avatar_url`, which is `null` when no profile image
+is set and otherwise a same-origin thumbnail path under
+`/media/thumbnails/users/{user_id}/`. This is presentation metadata only; it
+does not add a separate authorization capability. After an avatar upload or
+deletion, the client updates the current session's avatar field only if the
+same authenticated session is still active.
 It sets a 14-day browser-purpose cookie and clears the pre-auth CSRF cookie.
 The session token is only in the HttpOnly cookie; it is never included in the
 response body. Logout accepts `{}` and sends the session-derived CSRF token in
@@ -102,15 +113,15 @@ hashes or secret values. The token quota is five API-token creations per hour
 per owner, counting revoked API tokens as issued; browser-session tokens do not
 consume that quota.
 
-| Method and path | Request | Result |
-| --- | --- | --- |
-| `GET /account` | — | `{data: {id, email, is_admin, avatar_url}}` |
-| `GET /account/api-tokens` | — | `{data: [{id, name, created_at, expires_at}]}` |
-| `POST /account/api-tokens` | JSON `{name?: string}` | `201 {data: {id, name, created_at, token}}` |
-| `DELETE /account/api-tokens/{id}` | — | `204`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
-| `PUT /account/password` | JSON `{current_password, new_password}` | `204`; revokes browser sessions and clears the current cookie after commit |
-| `POST /account/avatar` | Multipart `file` | `{data: {avatar_url}}` |
-| `DELETE /account/avatar` | — | `204` |
+| Method and path                   | Request                                 | Result                                                                           |
+| --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
+| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url}}`                                      |
+| `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at}]}`                                   |
+| `POST /account/api-tokens`        | JSON `{name?: string}`                  | `201 {data: {id, name, created_at, token}}`                                      |
+| `DELETE /account/api-tokens/{id}` | —                                       | `204`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
+| `PUT /account/password`           | JSON `{current_password, new_password}` | `204`; revokes browser sessions and clears the current cookie after commit       |
+| `POST /account/avatar`            | Multipart `file`                        | `{data: {avatar_url}}`                                                           |
+| `DELETE /account/avatar`          | —                                       | `204`                                                                            |
 
 `created_at` and non-null `expires_at` values are RFC3339 UTC timestamps.
 Token listing includes active, unexpired API-purpose tokens only. Token names
@@ -181,15 +192,15 @@ bootstrap rather than `401`.
 The first resource slice implements browser projects on the same cookie and
 CSRF model as authentication:
 
-| Method and path | Authentication | Result |
-| --- | --- | --- |
-| `GET /projects?page=1&category=...&tag=...&favorite=true&q=...` | Browser session | `{data: ProjectSummary[], meta: {page, per_page, has_more}}` |
-| `POST /projects` | Browser session and CSRF | `201 {data: Project}` |
-| `GET /projects/{id}` | Browser session | `{data: Project}` |
-| `PUT /projects/{id}` | Browser session and CSRF | `{data: Project}` |
-| `DELETE /projects/{id}` | Browser session and CSRF | `204` |
-| `PUT /projects/{id}/favorite` | Browser session and CSRF | `{data: Project}` |
-| `DELETE /projects/{id}/favorite` | Browser session and CSRF | `{data: Project}` |
+| Method and path                                                 | Authentication           | Result                                                       |
+| --------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------ |
+| `GET /projects?page=1&category=...&tag=...&favorite=true&q=...` | Browser session          | `{data: ProjectSummary[], meta: {page, per_page, has_more}}` |
+| `POST /projects`                                                | Browser session and CSRF | `201 {data: Project}`                                        |
+| `GET /projects/{id}`                                            | Browser session          | `{data: Project}`                                            |
+| `PUT /projects/{id}`                                            | Browser session and CSRF | `{data: Project}`                                            |
+| `DELETE /projects/{id}`                                         | Browser session and CSRF | `204`                                                        |
+| `PUT /projects/{id}/favorite`                                   | Browser session and CSRF | `{data: Project}`                                            |
+| `DELETE /projects/{id}/favorite`                                | Browser session and CSRF | `{data: Project}`                                            |
 
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,
@@ -242,13 +253,15 @@ Example create response:
     "created_at": "2026-11-01T12:00:00.000000Z",
     "updated_at": "2026-11-01T12:00:00.000000Z",
     "yarn_ids": [7],
-    "steps": [{
-      "id": 81,
-      "title": "Cast on",
-      "description": "*64 stitches*",
-      "description_html": "<p><em>64 stitches</em></p>\n",
-      "step_number": 1
-    }],
+    "steps": [
+      {
+        "id": 81,
+        "title": "Cast on",
+        "description": "*64 stitches*",
+        "description_html": "<p><em>64 stitches</em></p>\n",
+        "step_number": 1
+      }
+    ],
     "images": [],
     "attachments": []
   }
@@ -259,15 +272,15 @@ Example create response:
 
 Yarn routes use the browser session and same-origin CSRF checks for mutations:
 
-| Method and path | Result |
-| --- | --- |
+| Method and path                         | Result                                                    |
+| --------------------------------------- | --------------------------------------------------------- |
 | `GET /yarns?page=1&q=...&favorite=true` | `{data: YarnSummary[], meta: {page, per_page, has_more}}` |
-| `POST /yarns` | `201 {data: Yarn}` |
-| `GET /yarns/{id}` | `{data: Yarn}` |
-| `PUT /yarns/{id}` | `{data: Yarn}` |
-| `DELETE /yarns/{id}` | `204` |
-| `PUT /yarns/{id}/favorite` | `{data: Yarn}` |
-| `DELETE /yarns/{id}/favorite` | `{data: Yarn}` |
+| `POST /yarns`                           | `201 {data: Yarn}`                                        |
+| `GET /yarns/{id}`                       | `{data: Yarn}`                                            |
+| `PUT /yarns/{id}`                       | `{data: Yarn}`                                            |
+| `DELETE /yarns/{id}`                    | `204`                                                     |
+| `PUT /yarns/{id}/favorite`              | `{data: Yarn}`                                            |
+| `DELETE /yarns/{id}/favorite`           | `{data: Yarn}`                                            |
 
 Yarn summaries contain `id`, `name`, `brand`, `colorway`, `weight_category`,
 `is_favorite`, `updated_at`, and `preview_url`. Detail and write DTOs retain the
@@ -280,12 +293,12 @@ stale write returns `409` and the latest DTO in `error.current`.
 
 Category routes also use browser-session auth and CSRF for writes:
 
-| Method and path | Result |
-| --- | --- |
-| `GET /categories` | `{data: [{id, name}]}` |
-| `POST /categories` | `201 {data: {id, name}}` |
-| `PUT /categories/{id}` | `{data: {id, name}}` |
-| `DELETE /categories/{id}` | `204` |
+| Method and path           | Result                   |
+| ------------------------- | ------------------------ |
+| `GET /categories`         | `{data: [{id, name}]}`   |
+| `POST /categories`        | `201 {data: {id, name}}` |
+| `PUT /categories/{id}`    | `{data: {id, name}}`     |
+| `DELETE /categories/{id}` | `204`                    |
 
 Repeated creation of the same case-insensitive name returns the existing
 category with `201` and does not duplicate its audit event. A rename collision
@@ -299,15 +312,15 @@ checks as other v2 writes. These routes mirror existing v1 operations and call
 the same typed storage functions, so Android's bearer-token routes and wire
 shapes stay unchanged:
 
-| Method and path | Multipart fields / result |
-| --- | --- |
-| `POST /projects/{project_id}/images/title` | `file` and optional `alt_text`; `201 {data: Image}` |
-| `POST /projects/{project_id}/steps/{step_id}/images` | `file` and optional `alt_text`; `201 {data: Image}` |
-| `POST /projects/{project_id}/attachments` | `file`; `201 {data: Attachment}` |
-| `POST /yarns/{yarn_id}/photos` | `file`; `201 {data: YarnPhoto}` |
-| `DELETE /projects/{project_id}/images/{image_id}` | `204` |
-| `DELETE /projects/{project_id}/attachments/{attachment_id}` | `204` |
-| `DELETE /yarns/{yarn_id}/photos/{photo_id}` | `204` |
+| Method and path                                             | Multipart fields / result                           |
+| ----------------------------------------------------------- | --------------------------------------------------- |
+| `POST /projects/{project_id}/images/title`                  | `file` and optional `alt_text`; `201 {data: Image}` |
+| `POST /projects/{project_id}/steps/{step_id}/images`        | `file` and optional `alt_text`; `201 {data: Image}` |
+| `POST /projects/{project_id}/attachments`                   | `file`; `201 {data: Attachment}`                    |
+| `POST /yarns/{yarn_id}/photos`                              | `file`; `201 {data: YarnPhoto}`                     |
+| `DELETE /projects/{project_id}/images/{image_id}`           | `204`                                               |
+| `DELETE /projects/{project_id}/attachments/{attachment_id}` | `204`                                               |
+| `DELETE /yarns/{yarn_id}/photos/{photo_id}`                 | `204`                                               |
 
 Each upload requires a multipart field named `file`. Project image uploads may
 also set `alt_text`; other fields are rejected. Upload responses use existing
@@ -357,10 +370,10 @@ Import previews use the browser session and same-origin CSRF checks. They run
 synchronously through the existing bounded document worker; no import draft is
 stored server-side and no new background job is created.
 
-| Method and path | Request | Result |
-| --- | --- | --- |
-| `POST /imports/preview` | `{ "type": "text", "text": "...", "use_ai": false }` or `{ "type": "url", "url": "https://...", "use_ai": false }` | `200 {data: Preview}` |
-| `POST /imports/preview-file` | Multipart `file` and optional `use_ai` (`true`/`false`) | `200 {data: Preview}` |
+| Method and path              | Request                                                                                                            | Result                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| `POST /imports/preview`      | `{ "type": "text", "text": "...", "use_ai": false }` or `{ "type": "url", "url": "https://...", "use_ai": false }` | `200 {data: Preview}` |
+| `POST /imports/preview-file` | Multipart `file` and optional `use_ai` (`true`/`false`)                                                            | `200 {data: Preview}` |
 
 The response contains `draft`, `content_sha256`, `ai_requested`,
 `is_ai_enhanced`, and `ai_fallback`. The draft uses the import parser's camelCase
@@ -440,12 +453,12 @@ changes, password reset, and browser-session revocation use shared typed
 operations also called by the legacy HTML handlers. Public signup always
 creates a member.
 
-| Method and path | Request | Result |
-| --- | --- | --- |
-| `GET /admin/users?page=N` | Optional `page`, default 1; values 1 through 10000 | `{data: UserSummary[], meta: {page, per_page: 50, has_more}}` |
-| `POST /admin/users` | JSON `{email, password, is_admin?}`; omitted `is_admin` is false | `201 {data: UserSummary}` |
-| `PATCH /admin/users/{id}/active` | JSON `{active: boolean}` | `200 {data: UserSummary}` |
-| `POST /admin/users/{id}/reset-password` | JSON `{new_password}` | `200 {data: {id, session_revoked: true}}` |
+| Method and path                         | Request                                                          | Result                                                        |
+| --------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| `GET /admin/users?page=N`               | Optional `page`, default 1; values 1 through 10000               | `{data: UserSummary[], meta: {page, per_page: 50, has_more}}` |
+| `POST /admin/users`                     | JSON `{email, password, is_admin?}`; omitted `is_admin` is false | `201 {data: UserSummary}`                                     |
+| `PATCH /admin/users/{id}/active`        | JSON `{active: boolean}`                                         | `200 {data: UserSummary}`                                     |
+| `POST /admin/users/{id}/reset-password` | JSON `{new_password}`                                            | `200 {data: {id, session_revoked: true}}`                     |
 
 `UserSummary` is `{id, email, active, is_admin}`. IDs are JSON numbers.
 User pages contain at most 50 rows, ordered by `email COLLATE NOCASE` then `id`;
@@ -472,8 +485,8 @@ active administrator. API bearer tokens do not authenticate it; no CSRF token
 is needed for this GET request. The v1 HTML audit page and this endpoint use the
 same query parser and typed safe projection.
 
-| Method and path | Query parameters | Result |
-| --- | --- | --- |
+| Method and path    | Query parameters                    | Result                                                       |
+| ------------------ | ----------------------------------- | ------------------------------------------------------------ |
 | `GET /admin/audit` | Optional `page`, `entity`, `action` | `{data: AuditEvent[], meta: {page, per_page: 50, has_more}}` |
 
 `AuditEvent` contains only `{id, actor_email, legacy_actor_user_id,
@@ -499,8 +512,8 @@ V2 responses use `Cache-Control: no-store`.
 These resource routes are a starting contract for frontend/backend slices;
 they are not part of the initial authentication implementation.
 
-| Resource | Proposed operations |
-| --- | --- |
+| Resource      | Proposed operations                                               |
+| ------------- | ----------------------------------------------------------------- |
 | Account/admin | Only the self-service and administrator operations used by the UI |
 
 List endpoints use bounded page-number pagination, stable ordering, and an

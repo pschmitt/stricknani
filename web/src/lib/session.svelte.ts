@@ -109,6 +109,24 @@ export async function signOut(): Promise<void> {
   await refreshSession();
 }
 
+/** Update the current user's avatar without resetting the authenticated app tree. */
+export function patchSessionAvatar(
+  expectedSession: SessionData,
+  avatarUrl: string | null,
+): boolean {
+  if (
+    session.status !== "ready" ||
+    session.data !== expectedSession ||
+    expectedSession.user === null
+  )
+    return false;
+  session.data = {
+    ...expectedSession,
+    user: { ...expectedSession.user, avatar_url: avatarUrl },
+  };
+  return true;
+}
+
 function asError(error: unknown): Error {
   return error instanceof Error
     ? error

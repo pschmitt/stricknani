@@ -10,7 +10,12 @@ import {
 } from "./account-api";
 
 const session = {
-  user: { id: 17, email: "knitter@example.test", is_admin: false },
+  user: {
+    id: 17,
+    email: "knitter@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "account-csrf",
   capabilities: {
     signup: false,

@@ -7,15 +7,16 @@
     shouldRedirectExpiredSession,
     showPublicGauge,
   } from "#lib/app-shell.ts";
+  import BrandMark from "#lib/components/BrandMark.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import PwaUpdate from "#lib/components/PwaUpdate.svelte";
   import SignInForm from "#lib/components/SignInForm.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
-  import { refreshSession, session, signOut } from "#lib/session.svelte.ts";
+  import { refreshSession, session } from "#lib/session.svelte.ts";
   import "../app.css";
 
   let { children }: { children: Snippet } = $props();
-  let logoutError = $state<string | null>(null);
 
   const locale = $derived(session.data?.locale ?? "en");
   const pathname = $derived(page.url.pathname);
@@ -31,18 +32,26 @@
   const routeIsAdminOnly = $derived(adminRoute && !user?.is_admin);
 
   const mainNavigation = [
-    { href: "/projects", label: msg("Projects"), marker: "P" },
-    { href: "/yarns", label: msg("Yarns"), marker: "Y" },
-    { href: "/create", label: msg("Create"), marker: "+" },
-    { href: "/more", label: msg("More"), marker: "•••" },
+    { href: "/projects", label: msg("Projects"), icon: "projects" },
+    { href: "/yarns", label: msg("Yarns"), icon: "yarns" },
+    { href: "/create", label: msg("Create"), icon: "create" },
+    { href: "/more", label: msg("More"), icon: "more" },
   ] as const;
 
   const secondaryNavigation = [
-    { href: "/imports", label: msg("Imports") },
-    { href: "/categories", label: msg("Categories") },
-    { href: "/gauge", label: msg("Gauge calculator") },
-    { href: "/account", label: msg("Account") },
+    { href: "/imports", label: msg("Imports"), icon: "imports" },
+    { href: "/categories", label: msg("Categories"), icon: "categories" },
+    { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
+    { href: "/account", label: msg("Account"), icon: "account" },
   ] as const;
+
+  let avatarFailed = $state(false);
+  const avatarUrl = $derived(user?.avatar_url ?? null);
+
+  $effect(() => {
+    avatarUrl;
+    avatarFailed = false;
+  });
 
   onMount(() => {
     void loadCatalog();
@@ -91,19 +100,6 @@
     const fullPath = linkTo(path);
     return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
   }
-
-  async function handleSignOut() {
-    logoutError = null;
-    try {
-      await signOut();
-      await goto(linkTo("/login"));
-    } catch (error) {
-      logoutError =
-        error instanceof Error
-          ? error.message
-          : t("Could not sign out.", locale);
-    }
-  }
 </script>
 
 <svelte:head>
@@ -130,7 +126,7 @@
   <div class="public-tool-shell">
     <header class="public-tool-header">
       <a class="wordmark" href={linkTo("/login")}>
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <BrandMark />
         <span>Stricknani</span>
       </a>
       <LocaleSwitcher />
@@ -150,7 +146,7 @@
     aria-live="polite"
   >
     <div class="boot-content">
-      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <BrandMark />
       <p>{t("Opening your workspace…", locale)}</p>
       <span class="spinner" aria-hidden="true"></span>
     </div>
@@ -159,7 +155,7 @@
   <main id="main-content" class="error-screen">
     <section class="connection-panel" aria-labelledby="connection-title">
       <a class="wordmark" href={linkTo("/")}>
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <BrandMark />
         <span>Stricknani</span>
       </a>
       <h1 id="connection-title">
@@ -192,7 +188,7 @@
   <div class="app-shell">
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
       <a class="wordmark rail-wordmark" href={linkTo("/")}>
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <BrandMark />
         <span>Stricknani</span>
       </a>
 
@@ -203,7 +199,7 @@
             aria-current={isActive(item.href) ? "page" : undefined}
             href={linkTo(item.href)}
           >
-            <span class="nav-marker" aria-hidden="true">{item.marker}</span>
+            <span class="nav-icon"><NavIcon name={item.icon} /></span>
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
@@ -218,41 +214,55 @@
             aria-current={isActive(item.href) ? "page" : undefined}
             href={linkTo(item.href)}
           >
-            {t(item.label, locale)}
+            <span class="nav-icon"><NavIcon name={item.icon} /></span>
+            <span>{t(item.label, locale)}</span>
           </a>
         {/each}
         {#if user.is_admin}
           <a
             class:active={isActive("/admin/users")}
             aria-current={isActive("/admin/users") ? "page" : undefined}
-            href={linkTo("/admin/users")}>{t("Admin", locale)}</a
+            href={linkTo("/admin/users")}
           >
+            <span class="nav-icon"><NavIcon name="admin" /></span>
+            <span>{t("Admin", locale)}</span>
+          </a>
           <a
             class:active={isActive("/admin/audit")}
             aria-current={isActive("/admin/audit") ? "page" : undefined}
-            href={linkTo("/admin/audit")}>{t("Audit log", locale)}</a
+            href={linkTo("/admin/audit")}
           >
+            <span class="nav-icon"><NavIcon name="audit" /></span>
+            <span>{t("Audit log", locale)}</span>
+          </a>
         {/if}
       </nav>
 
       <div class="rail-footer">
-        <div class="account-summary">
-          <span class="avatar" aria-hidden="true"
-            >{user.email.slice(0, 1).toUpperCase()}</span
-          >
-          <span class="account-email" title={user.email}>{user.email}</span>
-        </div>
-        <button
-          class="text-button sign-out"
-          type="button"
-          onclick={handleSignOut}>{t("Sign out", locale)}</button
+        <a
+          class="account-summary"
+          href={linkTo("/account")}
+          aria-label={t("Account", locale)}
         >
+          <span class="avatar" aria-hidden="true">
+            {#if avatarUrl && !avatarFailed}
+              <img
+                src={avatarUrl}
+                alt=""
+                onerror={() => (avatarFailed = true)}
+              />
+            {:else}
+              {user.email.slice(0, 1).toUpperCase()}
+            {/if}
+          </span>
+          <span class="account-email" title={user.email}>{user.email}</span>
+        </a>
       </div>
     </aside>
 
     <div class="mobile-header">
       <a class="wordmark" href={linkTo("/")}>
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <BrandMark />
         <span>Stricknani</span>
       </a>
       <a
@@ -260,32 +270,17 @@
         href={linkTo("/account")}
         aria-label={t("Account", locale)}
       >
-        <span class="avatar" aria-hidden="true"
-          >{user.email.slice(0, 1).toUpperCase()}</span
-        >
+        <span class="avatar" aria-hidden="true">
+          {#if avatarUrl && !avatarFailed}
+            <img src={avatarUrl} alt="" onerror={() => (avatarFailed = true)} />
+          {:else}
+            {user.email.slice(0, 1).toUpperCase()}
+          {/if}
+        </span>
       </a>
-      <button class="mobile-sign-out" type="button" onclick={handleSignOut}
-        >{t("Sign out", locale)}</button
-      >
     </div>
 
     <div class="content-column">
-      <header class="page-header">
-        <p class="header-user">{user.email}</p>
-        <div class="header-actions">
-          <LocaleSwitcher />
-          <button
-            class="text-button header-sign-out"
-            type="button"
-            onclick={handleSignOut}>{t("Sign out", locale)}</button
-          >
-        </div>
-      </header>
-
-      {#if logoutError}
-        <div class="notice notice-error" role="alert">{logoutError}</div>
-      {/if}
-
       {#if routeIsAdminOnly}
         <main id="main-content" class="content-main">
           <section class="notice-panel" aria-labelledby="forbidden-title">
@@ -312,7 +307,7 @@
             aria-current={isActive(item.href) ? "page" : undefined}
             href={linkTo(item.href)}
           >
-            <span class="nav-marker" aria-hidden="true">{item.marker}</span>
+            <span class="nav-icon"><NavIcon name={item.icon} /></span>
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
@@ -346,12 +341,6 @@
 
   .public-tool-header .wordmark {
     text-decoration: none;
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
   }
 
   .signup-route-main {

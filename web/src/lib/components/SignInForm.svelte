@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
+  import BrandMark from "#lib/components/BrandMark.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
@@ -43,8 +44,8 @@
 
 <main id="main-content" class="auth-page">
   <section class="auth-panel" aria-labelledby="auth-title">
-    <a class="wordmark" href="/app/" aria-label="Stricknani home">
-      <span class="brand-mark" aria-hidden="true"><span></span></span>
+    <a class="wordmark" href="/app/">
+      <BrandMark />
       <span>Stricknani</span>
     </a>
 
@@ -180,35 +181,6 @@
     font-weight: 680;
     letter-spacing: -0.035em;
     text-decoration: none;
-  }
-
-  .brand-mark {
-    display: grid;
-    position: relative;
-    width: 2rem;
-    aspect-ratio: 1;
-    place-items: center;
-    border-radius: 0.65rem;
-    background: var(--accent-strong);
-  }
-
-  .brand-mark::before,
-  .brand-mark span {
-    position: absolute;
-    width: 0.9rem;
-    aspect-ratio: 0.78;
-    border: 1.5px solid var(--on-accent);
-    border-radius: 50%;
-    content: "";
-  }
-
-  .brand-mark span {
-    width: 0.56rem;
-    border-color: color-mix(
-      in srgb,
-      var(--on-accent) 72%,
-      var(--accent-strong)
-    );
   }
 
   .auth-copy {

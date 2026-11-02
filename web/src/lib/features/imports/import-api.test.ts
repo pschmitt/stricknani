@@ -6,7 +6,12 @@ import {
 } from "./import-api";
 
 const session = {
-  user: { id: 5, email: "fixture@example.test", is_admin: false },
+  user: {
+    id: 5,
+    email: "fixture@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "fixture-csrf",
   capabilities: {
     signup: false,

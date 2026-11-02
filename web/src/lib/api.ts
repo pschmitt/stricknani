@@ -8,6 +8,7 @@ export interface SessionUser {
   id: number;
   email: string;
   is_admin: boolean;
+  avatar_url: string | null;
 }
 
 export interface SessionData {
@@ -314,8 +315,23 @@ function isSessionData(value: unknown): value is SessionData {
       (typeof user === "object" &&
         Number.isSafeInteger(user.id) &&
         typeof user.email === "string" &&
-        typeof user.is_admin === "boolean"))
+        typeof user.is_admin === "boolean" &&
+        isAvatarUrl(user.avatar_url, user.id)))
   );
+}
+
+function isAvatarUrl(value: unknown, userId: unknown): value is string | null {
+  if (value === null) return true;
+  if (
+    typeof value !== "string" ||
+    !Number.isSafeInteger(userId) ||
+    typeof userId !== "number"
+  )
+    return false;
+  const prefix = `/media/thumbnails/users/${userId}/`;
+  if (!value.startsWith(prefix)) return false;
+  const filename = value.slice(prefix.length);
+  return /^thumb_[A-Za-z0-9._-]+\.jpg$/.test(filename);
 }
 
 function isCapabilities(value: unknown): value is SessionData["capabilities"] {

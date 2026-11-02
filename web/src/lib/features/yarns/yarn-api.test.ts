@@ -50,7 +50,12 @@ const detail = {
 };
 
 const session = {
-  user: { id: 2, email: "test@example.test", is_admin: false },
+  user: {
+    id: 2,
+    email: "test@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "csrf-fixture",
   capabilities: {
     signup: false,

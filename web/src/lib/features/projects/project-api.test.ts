@@ -65,7 +65,12 @@ const detail = {
 };
 
 const session = {
-  user: { id: 9, email: "synthetic@example.test", is_admin: false },
+  user: {
+    id: 9,
+    email: "synthetic@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "csrf-fixture",
   capabilities: {
     signup: false,
@@ -199,7 +204,12 @@ describe("project URL state and API DTOs", () => {
       .mockResolvedValue(Response.json({ data: detail }));
     vi.stubGlobal("fetch", fetchMock);
     await setProjectFavorite(42, true, {
-      user: { id: 9, email: "synthetic@example.test", is_admin: false },
+      user: {
+        id: 9,
+        email: "synthetic@example.test",
+        is_admin: false,
+        avatar_url: null,
+      },
       csrf_token: "csrf-fixture",
       capabilities: {
         signup: false,

@@ -523,6 +523,13 @@ async fn avatar_routes_share_image_processing_and_owner_registry_lifecycle() {
         .await
         .unwrap();
     let (session, csrf) = signed_in(&app, "avatar@example.test", PASSWORD).await;
+    let session_without_avatar = app
+        .clone()
+        .oneshot(request("GET", "/session", &session, None, None))
+        .await
+        .unwrap();
+    let session_data = json(session_without_avatar).await;
+    assert!(session_data["data"]["user"]["avatar_url"].is_null());
     let boundary = "account-avatar-test-boundary";
     let mut body = format!(
         "--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"profile.png\"\r\nContent-Type: image/png\r\n\r\n"
@@ -554,6 +561,15 @@ async fn avatar_routes_share_image_processing_and_owner_registry_lifecycle() {
         .unwrap()
         .to_owned();
     assert!(avatar_url.starts_with("/media/thumbnails/users/"));
+    let session_with_avatar = app
+        .clone()
+        .oneshot(request("GET", "/session", &session, None, None))
+        .await
+        .unwrap();
+    assert_eq!(
+        json(session_with_avatar).await["data"]["user"]["avatar_url"],
+        avatar_url
+    );
     let filename: String = sqlx::query_scalar("SELECT filename FROM user_avatars")
         .fetch_one(&pool)
         .await
@@ -572,6 +588,13 @@ async fn avatar_routes_share_image_processing_and_owner_registry_lifecycle() {
         .await
         .unwrap();
     assert_eq!(deleted.status(), StatusCode::NO_CONTENT);
+    let session_without_avatar = app
+        .clone()
+        .oneshot(request("GET", "/session", &session, None, None))
+        .await
+        .unwrap();
+    let session_data = json(session_without_avatar).await;
+    assert!(session_data["data"]["user"]["avatar_url"].is_null());
     let remaining: i64 = sqlx::query_scalar("SELECT count(*) FROM user_avatars")
         .fetch_one(&pool)
         .await

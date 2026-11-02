@@ -24,7 +24,13 @@ vi.mock("./api", () => ({
 vi.mock("./i18n.svelte", () => ({ t: (message: string) => message }));
 
 import type { SessionData } from "./api";
-import { refreshSession, session, signIn, signOut } from "./session.svelte";
+import {
+  patchSessionAvatar,
+  refreshSession,
+  session,
+  signIn,
+  signOut,
+} from "./session.svelte";
 
 const anonymous: SessionData = {
   user: null,
@@ -41,7 +47,12 @@ const anonymous: SessionData = {
 
 const authenticated: SessionData = {
   ...anonymous,
-  user: { id: 73, email: "synthetic@example.test", is_admin: false },
+  user: {
+    id: 73,
+    email: "synthetic@example.test",
+    is_admin: false,
+    avatar_url: null,
+  },
   csrf_token: "authenticated-token",
 };
 
@@ -96,5 +107,39 @@ describe("session request ordering", () => {
 
     expect(session.data).toEqual(anonymous);
     expect(session.status).toBe("ready");
+  });
+
+  it("patches the avatar without reloading or changing session status", () => {
+    session.data = authenticated;
+    const expectedSession = session.data;
+
+    expect(
+      patchSessionAvatar(
+        expectedSession,
+        "/media/thumbnails/users/73/thumb_0123456789abcdef0123456789abcdef.jpg",
+      ),
+    ).toBe(true);
+    expect(session.status).toBe("ready");
+    expect(session.data?.user?.avatar_url).toBe(
+      "/media/thumbnails/users/73/thumb_0123456789abcdef0123456789abcdef.jpg",
+    );
+  });
+
+  it("ignores avatar mutations that complete after session replacement", () => {
+    session.data = authenticated;
+    const expectedSession = session.data;
+    session.data = {
+      ...authenticated,
+      user: { ...authenticated.user!, id: 74 },
+    };
+
+    expect(
+      patchSessionAvatar(
+        expectedSession,
+        "/media/thumbnails/users/73/thumb_0123456789abcdef0123456789abcdef.jpg",
+      ),
+    ).toBe(false);
+    expect(session.data.user?.id).toBe(74);
+    expect(session.data.user?.avatar_url).toBeNull();
   });
 });

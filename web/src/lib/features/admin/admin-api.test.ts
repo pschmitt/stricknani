@@ -12,7 +12,12 @@ import {
 } from "./admin-api";
 
 const session = {
-  user: { id: 4, email: "admin@example.invalid", is_admin: true },
+  user: {
+    id: 4,
+    email: "admin@example.invalid",
+    is_admin: true,
+    avatar_url: null,
+  },
   csrf_token: "csrf-test",
   capabilities: {
     signup: false,

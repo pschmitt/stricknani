@@ -140,6 +140,7 @@ struct UserSummary {
     id: i64,
     email: String,
     is_admin: bool,
+    avatar_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -504,17 +505,25 @@ async fn session_user(
 }
 
 async fn load_user(pool: &SqlitePool, id: i64) -> Result<Option<UserSummary>, sqlx::Error> {
-    sqlx::query_as::<_, (String, bool)>(
-        "SELECT email, is_admin FROM users WHERE id = ? AND active = 1",
+    sqlx::query_as::<_, (String, bool, Option<String>)>(
+        "SELECT users.email, users.is_admin, user_avatars.filename \
+         FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
+         WHERE users.id = ? AND users.active = 1",
     )
     .bind(id)
     .fetch_optional(pool)
     .await
     .map(|user| {
-        user.map(|(email, is_admin)| UserSummary {
+        user.map(|(email, is_admin, filename)| UserSummary {
             id,
             email,
             is_admin,
+            avatar_url: filename.map(|filename| {
+                format!(
+                    "/media/thumbnails/users/{id}/{}",
+                    crate::media::avatar_thumbnail_name(&filename)
+                )
+            }),
         })
     })
 }
