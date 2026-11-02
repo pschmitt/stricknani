@@ -7,14 +7,17 @@ import argparse
 import ipaddress
 import json
 import os
+import re
 import secrets
 import shutil
 import sys
 import tempfile
+import zlib
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from playwright.sync_api import Page, Response, Route, expect, sync_playwright
+from playwright.sync_api import Locator, Page, Response, Route, expect, sync_playwright
 
 from ci.stricknani import rust_fixture, seed_rust
 
@@ -23,9 +26,47 @@ class AcceptanceFailure(RuntimeError):
     """A safe-to-display browser assertion failure."""
 
 
+ACCOUNT_HEADING_NAME = re.compile(r"^(?:Account|Konto)$")
+SIGN_OUT_BUTTON_NAME = re.compile(r"^(?:Sign out|Abmelden)$")
+UPLOAD_PICTURE_BUTTON_NAME = re.compile(r"^(?:Upload picture|Bild hochladen)$")
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AcceptanceFailure(message)
+
+
+def _svg_shape_signature(icon: Locator) -> str:
+    signature: object = icon.evaluate(
+        """svg => [
+          ...svg.querySelectorAll(
+            'path, circle, rect, line, polyline, polygon'
+          )
+        ].map((shape) => {
+            const bounds = shape.getBBox();
+            const metrics = [bounds.x, bounds.y, bounds.width, bounds.height]
+              .map((value) => Math.round(value * 10) / 10);
+            return `${shape.tagName.toLowerCase()}:${metrics.join(',')}`;
+          })
+          .join('|')"""
+    )
+    return signature if isinstance(signature, str) else ""
+
+
+def _is_admin_avatar_response(response: Response, origin: str) -> bool:
+    parsed = urlsplit(response.url)
+    expected_origin = urlsplit(origin)
+    parts = parsed.path.split("/")
+    return (
+        response.request.resource_type == "image"
+        and parsed.scheme == expected_origin.scheme
+        and parsed.netloc == expected_origin.netloc
+        and len(parts) == 8
+        and parts[1:5] == ["api", "v2", "admin", "users"]
+        and parts[5].isdigit()
+        and parts[6] == "avatar"
+        and bool(parts[7])
+    )
 
 
 def _loopback_origin(url: str) -> str:
@@ -106,15 +147,268 @@ def _create_user(
     page.locator(".user-row").filter(has_text=email).wait_for(state="visible")
 
 
-def _assert_no_horizontal_overflow(page: Page) -> None:
-    overflow = page.evaluate(
-        "() => document.documentElement.scrollWidth > window.innerWidth"
+def _open_account(page: Page) -> None:
+    profile = page.locator(".account-summary")
+    profile.wait_for(state="visible")
+    profile.click()
+    page.wait_for_url("**/app/account")
+    page.get_by_role("heading", name=ACCOUNT_HEADING_NAME).wait_for(state="visible")
+
+
+def _sign_out(page: Page) -> None:
+    _open_account(page)
+    page.get_by_role("button", name=SIGN_OUT_BUTTON_NAME).click()
+    page.wait_for_url("**/app/login")
+    page.locator("#email").wait_for(state="visible")
+
+
+def _sign_in_account(page: Page, origin: str, email: str, password: str) -> None:
+    page.goto(f"{origin}/app/login", wait_until="networkidle")
+    page.locator("#email").fill(email)
+    page.locator("#password").fill(password)
+    page.get_by_role("button", name="Sign in").click()
+    page.get_by_role("heading", name="Projects").wait_for(state="visible")
+
+
+def _create_admin_audit_project(
+    page: Page, origin: str, mark: Callable[[str], None]
+) -> None:
+    mark("open Projects for admin audit activity")
+    page.goto(f"{origin}/app/projects", wait_until="networkidle")
+    page.get_by_role("heading", name="Projects", exact=True).wait_for(state="visible")
+    page.get_by_role("link", name="New project", exact=True).click()
+    page.get_by_role("heading", name="New project", exact=True).wait_for(
+        state="visible"
     )
-    viewport = page.viewport_size
-    width = viewport["width"] if viewport is not None else 0
+    mark("fill admin audit project")
+    page.get_by_label("Project name", exact=True).fill("Admin audit fixture")
+    page.get_by_label("Category", exact=True).fill("Blankets")
+    page.get_by_label("Needles", exact=True).fill("4 mm circular needles")
+    page.get_by_label("Stitch sample", exact=True).fill("18 stitches over 10 cm")
+    page.get_by_label("Pattern", exact=True).fill("Synthetic audit fixture pattern")
+    page.get_by_label("Notes", exact=True).fill("Synthetic audit fixture notes")
+    page.get_by_label("Other materials", exact=True).fill("Synthetic fixture markers")
+    page.get_by_role("button", name="Add step", exact=True).click()
+    page.get_by_label("Step title", exact=True).first.fill("Fixture step")
+    page.get_by_label("Step instructions", exact=True).first.fill(
+        "Complete the synthetic audit fixture step."
+    )
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == "/api/v2/projects"
+            and response.request.method == "POST"
+        )
+    ) as create_response_info:
+        mark("submit admin audit project")
+        page.get_by_role("button", name="Create project", exact=True).click()
     _require(
-        not overflow,
-        f"admin content overflows the {width}px viewport",
+        create_response_info.value.status == 201,
+        "synthetic administrator audit project creation failed",
+    )
+    page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+        state="visible"
+    )
+    mark("update admin audit project")
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path.startswith("/api/v2/projects/")
+            and response.request.method == "PUT"
+        )
+    ) as update_response_info:
+        page.get_by_label("Needles", exact=True).fill("5 mm circular needles")
+        page.get_by_role("button", name="Save changes", exact=True).click()
+    _require(
+        update_response_info.value.status == 200,
+        "synthetic administrator audit project update failed",
+    )
+
+
+def _tiny_png_fixture() -> bytes:
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        checksum = zlib.crc32(kind + data) & 0xFFFFFFFF
+        return len(data).to_bytes(4, "big") + kind + data + checksum.to_bytes(4, "big")
+
+    header = (1).to_bytes(4, "big") + (1).to_bytes(4, "big") + bytes([8, 6, 0, 0, 0])
+    pixel = zlib.compress(bytes([0, 36, 118, 105, 255]))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", pixel)
+        + chunk(b"IEND", b"")
+    )
+
+
+def _upload_account_avatar(page: Page) -> None:
+    page.locator('input[type="file"]').set_input_files(
+        {
+            "name": "synthetic-admin-avatar.png",
+            "mimeType": "image/png",
+            "buffer": _tiny_png_fixture(),
+        }
+    )
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == "/api/v2/account/avatar"
+            and response.request.method == "POST"
+        )
+    ) as upload_response_info:
+        page.get_by_role("button", name=UPLOAD_PICTURE_BUTTON_NAME).click()
+    _require(
+        upload_response_info.value.status == 200,
+        "synthetic profile avatar upload failed",
+    )
+    portrait = page.locator(".profile-portrait img")
+    portrait.wait_for(state="visible")
+    _require(
+        bool(
+            portrait.evaluate(
+                "node => node.decode().then(() => node.complete "
+                "&& node.naturalWidth > 0).catch(() => false)"
+            )
+        ),
+        "synthetic profile avatar did not render in Account",
+    )
+
+
+def _assert_user_avatar(avatar: Locator, *, initial: str, image_expected: bool) -> None:
+    avatar.wait_for(state="visible")
+    image = avatar.locator("img[alt='']")
+    if image_expected:
+        image.wait_for(state="visible")
+        _require(
+            bool(
+                image.evaluate(
+                    "node => node.decode().then(() => node.complete "
+                    "&& node.naturalWidth > 0).catch(() => false)"
+                )
+            )
+            and avatar.locator("span").count() == 0,
+            "user avatar image failed to render with the initial fallback active",
+        )
+        return
+    fallback = avatar.locator("span")
+    fallback.wait_for(state="visible")
+    _require(
+        image.count() == 0 and fallback.inner_text().strip() == initial,
+        "missing or broken avatar did not show the user's initial",
+    )
+
+
+def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
+    page.goto(f"{urlsplit(page.url).scheme}://{urlsplit(page.url).netloc}/app/more")
+    page.get_by_role("heading", name="More", exact=True).wait_for(state="visible")
+    cards = page.locator(".more-links")
+    expected_cards = [
+        ("Imports", "/imports"),
+        ("Categories", "/categories"),
+        ("Gauge calculator", "/gauge"),
+    ]
+    if is_admin:
+        expected_cards.extend(
+            (("Admin", "/admin/users"), ("Audit log", "/admin/audit"))
+        )
+    _require(
+        cards.locator("a").count() == len(expected_cards)
+        and cards.get_by_role("link", name="Account", exact=False).count() == 0
+        and page.locator(".secondary-nav a[href$='/account']").count() == 0,
+        "More or secondary navigation contains a duplicate Account entry",
+    )
+    _require(
+        page.locator(".rail-footer .account-summary[href$='/account']").count() == 1
+        and page.locator(".mobile-header .mobile-account[href$='/account']").count()
+        == 1,
+        "Account is unavailable from the profile links",
+    )
+    for label, href in expected_cards:
+        card = cards.get_by_role("link", name=label, exact=False)
+        more_icon = card.locator(
+            ".more-link-icon svg[aria-hidden='true'][focusable='false']"
+        )
+        sidebar_icon = page.locator(f".secondary-nav a[href$='{href}'] .nav-icon svg")
+        _require(
+            card.count() == 1
+            and card.get_by_text("Available now", exact=True).count() == 1
+            and (card.get_attribute("href") or "").endswith(href)
+            and more_icon.count() == 1
+            and sidebar_icon.count() == 1
+            and bool(_svg_shape_signature(more_icon))
+            and _svg_shape_signature(more_icon) == _svg_shape_signature(sidebar_icon),
+            "a More card does not reuse its matching decorative navigation icon",
+        )
+
+
+def _assert_no_horizontal_overflow(page: Page, route: str) -> None:
+    if route not in {"users", "audit"}:
+        raise AcceptanceFailure("invalid admin responsive route")
+    measurements = page.evaluate(
+        """(allowedClasses) => {
+          const root = document.documentElement;
+          const viewport = window.innerWidth;
+          const offenders = [...document.querySelectorAll('body *')]
+            .flatMap((element) => {
+              const rect = element.getBoundingClientRect();
+              const left = Math.round(rect.left * 10) / 10;
+              const right = Math.round(rect.right * 10) / 10;
+              const scrollWidth = element.scrollWidth;
+              const clientWidth = element.clientWidth;
+              if (
+                right <= viewport + 1 &&
+                left >= -1 &&
+                scrollWidth <= clientWidth + 1
+              ) return [];
+              const classes = [...element.classList]
+                .filter((name) => allowedClasses.includes(name))
+                .slice(0, 4);
+              return [{
+                tag: element.tagName.toLowerCase(),
+                classes,
+                left,
+                right,
+                scrollWidth,
+                clientWidth,
+                rightOverflow: Math.max(0, Math.round((right - viewport) * 10) / 10),
+              }];
+            })
+            .sort((left, right) =>
+              Math.max(right.rightOverflow, right.scrollWidth - right.clientWidth) -
+              Math.max(left.rightOverflow, left.scrollWidth - left.clientWidth)
+            );
+          return {
+            viewport,
+            documentClientWidth: root.clientWidth,
+            documentScrollWidth: root.scrollWidth,
+            offenders: offenders.slice(0, 8),
+          };
+        }""",
+        [
+            "app-shell",
+            "audit-filters",
+            "event-action",
+            "event-row",
+            "page-button",
+            "page-controls",
+            "page-indicator",
+            "pagination",
+            "user-actions",
+            "user-identity",
+            "user-row",
+        ],
+    )
+    if measurements["documentScrollWidth"] <= measurements["viewport"]:
+        return
+    offender_details = []
+    for item in measurements["offenders"]:
+        classes = ".".join(item["classes"])
+        class_suffix = f".{classes}" if classes else ""
+        offender_details.append(
+            f"{item['tag']}{class_suffix} left={item['left']} right={item['right']} "
+            f"scroll={item['scrollWidth']} client={item['clientWidth']}"
+        )
+    details = "; ".join(offender_details) or "no element geometry matched"
+    raise AcceptanceFailure(
+        f"admin {route} page overflows at {measurements['viewport']}px "
+        f"(document scroll={measurements['documentScrollWidth']}, "
+        f"client={measurements['documentClientWidth']}); {details}"
     )
 
 
@@ -164,6 +458,15 @@ def run_acceptance(
             _sign_in(page, origin, admin_email, admin_password)
             page.get_by_role("heading", name="User accounts").wait_for(state="visible")
 
+            mark("check admin More cards and profile-only Account")
+            _assert_more_navigation(page, is_admin=True)
+
+            mark("upload administrator actor avatar")
+            _open_account(page)
+            _upload_account_avatar(page)
+            page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
+            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+
             mark("create member")
             _create_user(
                 page, email=member_email, password=member_password, admin=False
@@ -173,6 +476,11 @@ def run_acceptance(
                 "Member" in member_row.inner_text()
                 and "Active" in member_row.inner_text(),
                 "new account did not have the member role and active status",
+            )
+            _assert_user_avatar(
+                member_row.locator(".user-identity .user-avatar"),
+                initial=member_email[0].upper(),
+                image_expected=False,
             )
 
             mark("create administrator")
@@ -223,12 +531,32 @@ def run_acceptance(
                 "focus did not return to the create-user control",
             )
 
+            mark("upload member avatar through account lifecycle")
+            _sign_out(page)
+            _sign_in_account(page, origin, member_email, member_password)
+            _open_account(page)
+            _upload_account_avatar(page)
+            _sign_out(page)
+            _sign_in(page, origin, admin_email, admin_password)
+            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+            member_row = page.locator(".user-row").filter(has_text=member_email)
+            _assert_user_avatar(
+                member_row.locator(".user-identity .user-avatar"),
+                initial=member_email[0].upper(),
+                image_expected=True,
+            )
+
             mark("disable and reset member")
             member_row = page.locator(".user-row").filter(has_text=member_email)
             disable_button = member_row.locator(".row-actions button").first
             disable_button.click()
             mark("open member disable confirmation")
             active_dialog = page.get_by_role("dialog", name="Disable this account?")
+            _assert_user_avatar(
+                active_dialog.locator(".target-identity .user-avatar"),
+                initial=member_email[0].upper(),
+                image_expected=True,
+            )
             active_dialog.get_by_role("button", name="Disable account").click()
             mark("wait for member disabled status")
             expect(member_row.locator(".status-pill")).to_contain_text("Disabled")
@@ -241,6 +569,11 @@ def run_acceptance(
             mark("open member password reset")
             member_row.get_by_role("button", name="Reset password").click()
             reset_dialog = page.get_by_role("dialog", name="Reset this password?")
+            _assert_user_avatar(
+                reset_dialog.locator(".target-identity .user-avatar"),
+                initial=member_email[0].upper(),
+                image_expected=True,
+            )
             reset_dialog.get_by_label("New temporary password").fill(reset_password)
             reset_dialog.get_by_role(
                 "button", name="Reset password", exact=True
@@ -273,9 +606,71 @@ def run_acceptance(
             )
 
             mark("audit list and filters")
+            _create_admin_audit_project(page, origin, mark)
+            avatar_response_statuses: list[int] = []
+
+            def record_avatar_response(response: Response) -> None:
+                if _is_admin_avatar_response(response, origin):
+                    avatar_response_statuses.append(response.status)
+
+            page.on("response", record_avatar_response)
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             page.get_by_role("heading", name="Audit log").wait_for(state="visible")
             page.locator(".event-row").first.wait_for(state="visible")
+            mark("check audit actor avatar and known action icons")
+            admin_actor_row = (
+                page.locator(".event-row")
+                .filter(has=page.get_by_text(admin_email, exact=True))
+                .first
+            )
+            actor_row_count = admin_actor_row.count()
+            mark(f"wait for admin actor row (found={actor_row_count > 0})")
+            admin_actor_row.wait_for(state="visible")
+            actor_avatar = admin_actor_row.locator(".actor-identity .user-avatar")
+            actor_image = actor_avatar.locator("img[alt='']")
+            actor_image_count = actor_image.count()
+            actor_image_has_src = bool(actor_image.get_attribute("src"))
+            latest_avatar_status = (
+                avatar_response_statuses[-1] if avatar_response_statuses else "none"
+            )
+            mark(
+                "wait for admin actor image "
+                f"(element={actor_image_count > 0}; src={actor_image_has_src}; "
+                f"http={latest_avatar_status})"
+            )
+            _assert_user_avatar(
+                actor_avatar,
+                initial=admin_email[0].upper(),
+                image_expected=True,
+            )
+            mark("inspect known audit action icons")
+            visible_actions = page.locator(".event-action strong").all_inner_texts()
+            known_action_shapes: dict[str, str] = {}
+            for label in ("Created", "Updated", "Deleted", "Uploaded", "Removed"):
+                if label not in visible_actions:
+                    continue
+                mark(f"inspect {label} audit action icon")
+                event = (
+                    page.locator(".event-row")
+                    .filter(has=page.get_by_text(label, exact=True))
+                    .first
+                )
+                icon = event.locator(
+                    ".event-action svg[aria-hidden='true'][focusable='false']"
+                )
+                _require(
+                    icon.count() == 1,
+                    "a known audit action did not render one decorative SVG",
+                )
+                known_action_shapes[label] = _svg_shape_signature(icon)
+            _require(
+                "Created" in visible_actions
+                and "Updated" in visible_actions
+                and bool(known_action_shapes.get("Created"))
+                and bool(known_action_shapes.get("Updated"))
+                and known_action_shapes["Created"] != known_action_shapes["Updated"],
+                "create and update audit actions did not render distinct shapes",
+            )
             page.get_by_label("Entity").select_option("project")
             page.get_by_label("Action").fill("created")
             page.get_by_role("button", name="Filter").click()
@@ -324,14 +719,107 @@ def run_acceptance(
                 "audit API did not return its safe DTO projection",
             )
 
+            mark("check generic icon for an unknown audit action")
+            injected_unknown_action = False
+
+            def inject_unknown_action(route: Route) -> None:
+                nonlocal injected_unknown_action
+                response = route.fetch()
+                payload = response.json()
+                data = payload.get("data") if isinstance(payload, dict) else None
+                if not injected_unknown_action and isinstance(data, list) and data:
+                    template = next(
+                        (
+                            event
+                            for event in data
+                            if isinstance(event, dict)
+                            and event.get("actor_email") == admin_email
+                            and isinstance(event.get("actor_avatar_url"), str)
+                            and event.get("actor_avatar_url")
+                            and isinstance(event.get("id"), int)
+                        ),
+                        None,
+                    )
+                    if isinstance(template, dict):
+                        unknown = dict(template)
+                        unknown["id"] = (
+                            max(
+                                entry["id"]
+                                for entry in data
+                                if isinstance(entry, dict)
+                                and isinstance(entry.get("id"), int)
+                            )
+                            + 1
+                        )
+                        unknown["action"] = "unrecognized_fixture_action"
+                        data.insert(0, unknown)
+                        injected_unknown_action = True
+                route.fulfill(response=response, json=payload)
+
+            page.route("**/api/v2/admin/audit*", inject_unknown_action)
+            page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
+            unknown_row = page.locator(".event-row").filter(
+                has=page.get_by_text("unrecognized_fixture_action", exact=True)
+            )
+            unknown_row.wait_for(state="visible")
+            unknown_action_label = unknown_row.locator(".event-action strong")
+            unknown_icon = unknown_row.locator(
+                ".event-action svg[aria-hidden='true'][focusable='false']"
+            )
+            _require(
+                injected_unknown_action
+                and unknown_action_label.inner_text().strip()
+                == "unrecognized_fixture_action"
+                and unknown_icon.count() == 1
+                and bool(_svg_shape_signature(unknown_icon)),
+                "an unknown audit action lost its raw label or generic SVG",
+            )
+            _assert_user_avatar(
+                unknown_row.locator(".actor-identity .user-avatar"),
+                initial=admin_email[0].upper(),
+                image_expected=True,
+            )
+            page.unroute("**/api/v2/admin/audit*", inject_unknown_action)
+
+            mark("check broken member avatar initial fallback")
+            page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
+            member_row = page.locator(".user-row").filter(has_text=member_email)
+            member_avatar = member_row.locator(".user-identity .user-avatar")
+            member_image = member_avatar.locator("img[alt='']")
+            member_image.wait_for(state="visible")
+            _assert_user_avatar(
+                member_avatar,
+                initial=member_email[0].upper(),
+                image_expected=True,
+            )
+            avatar_source = member_image.evaluate("image => image.currentSrc")
+            avatar_parts = urlsplit(avatar_source)
+            _require(
+                f"{avatar_parts.scheme}://{avatar_parts.netloc}" == origin,
+                "member avatar did not use the loopback fixture media URL",
+            )
+
+            def block_fixture_avatar(route: Route) -> None:
+                route.abort("failed")
+
+            page.route(avatar_source, block_fixture_avatar)
+            page.reload(wait_until="networkidle")
+            member_avatar = (
+                page.locator(".user-row")
+                .filter(has_text=member_email)
+                .locator(".user-identity .user-avatar")
+            )
+            _assert_user_avatar(
+                member_avatar,
+                initial=member_email[0].upper(),
+                image_expected=False,
+            )
+            page.unroute(avatar_source, block_fixture_avatar)
+
             mark("member is denied admin API access")
             mark("locate administrator sign-out control")
-            sign_out = page.locator("button.header-sign-out")
-            sign_out.wait_for(state="visible")
             mark("click administrator sign-out")
-            sign_out.click()
-            mark("wait for administrator sign-out")
-            page.locator("#email").wait_for(state="visible")
+            _sign_out(page)
             mark("fill member sign-in")
             page.locator("#email").fill(member_email)
             page.locator("#password").fill(reset_password)
@@ -354,9 +842,8 @@ def run_acceptance(
             )
 
             mark("administrator reset requires fresh sign-in")
-            page.locator("button.header-sign-out").click()
+            _sign_out(page)
             mark("wait for member sign-out")
-            page.locator("#email").wait_for(state="visible")
             mark("fill administrator sign-in")
             page.locator("#email").fill(admin_email)
             page.locator("#password").fill(admin_password)
@@ -383,16 +870,16 @@ def run_acceptance(
             page.get_by_role("heading", name="Projects").wait_for(state="visible")
 
             mark("responsive layout and sensitive data check")
-            page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
-            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
-            for width in (320, 390, 768, 1280):
-                page.set_viewport_size({"width": width, "height": 900})
-                _assert_no_horizontal_overflow(page)
-            page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
-            page.get_by_role("heading", name="Audit log").wait_for(state="visible")
-            for width in (320, 390, 768, 1280):
-                page.set_viewport_size({"width": width, "height": 900})
-                _assert_no_horizontal_overflow(page)
+            for route, heading in (
+                ("users", "User accounts"),
+                ("audit", "Audit log"),
+            ):
+                mark(f"measure admin {route} responsive layout")
+                page.goto(f"{origin}/app/admin/{route}", wait_until="networkidle")
+                page.get_by_role("heading", name=heading).wait_for(state="visible")
+                for width in (320, 390, 768, 1280):
+                    page.set_viewport_size({"width": width, "height": 900})
+                    _assert_no_horizontal_overflow(page, route)
             local_keys = page.evaluate("() => Object.keys(window.localStorage)")
             _require(
                 not any(

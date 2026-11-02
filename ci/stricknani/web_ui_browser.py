@@ -346,6 +346,66 @@ def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
         )
 
 
+def _measure_compact_library_heading(
+    page: Page,
+    *,
+    intro_selector: str,
+    action_selector: str,
+    route_name: str,
+    width: int,
+    require_stacked: bool = False,
+) -> dict[str, float]:
+    measured: object = page.evaluate(
+        "selectors => { "
+        "const intro = document.querySelector(selectors.intro); "
+        "const action = document.querySelector(selectors.action); "
+        "if (!intro || !action) return null; "
+        "const introRect = intro.getBoundingClientRect(); "
+        "const actionRect = action.getBoundingClientRect(); "
+        "return {gap: actionRect.top - introRect.bottom, "
+        "horizontalGap: actionRect.left - introRect.right, "
+        "actionHeight: actionRect.height, "
+        "stacked: actionRect.top >= introRect.bottom - 1}; }",
+        {"intro": intro_selector, "action": action_selector},
+    )
+    if not isinstance(measured, dict):
+        raise AcceptanceFailure(
+            f"{route_name} compact heading elements were not rendered"
+        )
+    gap = measured.get("gap")
+    horizontal_gap = measured.get("horizontalGap")
+    action_height = measured.get("actionHeight")
+    if (
+        isinstance(gap, bool)
+        or not isinstance(gap, (int, float))
+        or isinstance(horizontal_gap, bool)
+        or not isinstance(horizontal_gap, (int, float))
+        or isinstance(action_height, bool)
+        or not isinstance(action_height, (int, float))
+    ):
+        raise AcceptanceFailure(
+            f"{route_name} compact heading geometry was unavailable"
+        )
+    stacked = measured.get("stacked") is True
+    if stacked:
+        _require(
+            0 <= gap <= 32 and action_height >= 44,
+            f"{route_name} stacked heading gap or target size is outside its limit",
+        )
+    else:
+        _require(
+            not require_stacked and horizontal_gap >= 0 and action_height >= 44,
+            f"{route_name} row heading has overlap or a small primary target",
+        )
+    return {
+        "gap": float(gap),
+        "horizontalGap": float(horizontal_gap),
+        "actionHeight": float(action_height),
+        "stacked": float(stacked),
+        "width": float(width),
+    }
+
+
 def _visible_heights(page: Page, selector: str) -> list[float]:
     values: object = page.locator(selector).evaluate_all(
         "elements => elements.filter(el => el.getClientRects().length).map("
@@ -460,6 +520,63 @@ def _assert_desktop_account_target(page: Page) -> None:
         isinstance(dimensions, dict) and dimensions.get("height", 0) >= 44,
         "the desktop profile target is smaller than 44px",
     )
+
+
+def _assert_locale_switcher_flags(page: Page, selector: str) -> None:
+    buttons = page.locator(f"{selector} button")
+    _require(buttons.count() == 2, "the locale switcher does not have two buttons")
+    expected = (
+        ("EN", {"English", "Englisch"}),
+        ("DE", {"German", "Deutsch"}),
+    )
+    for index, (visible_label, accessible_labels) in enumerate(expected):
+        button = buttons.nth(index)
+        flag = button.locator("svg.language-flag")
+        _require(
+            button.inner_text().strip() == visible_label
+            and (button.get_attribute("aria-label") or "") in accessible_labels,
+            "a locale control lost its visible or accessible language name",
+        )
+        _require(
+            flag.count() == 1
+            and flag.get_attribute("aria-hidden") == "true"
+            and flag.get_attribute("focusable") == "false",
+            "a locale flag is missing or exposed as separate content",
+        )
+        button_size: object = button.evaluate(
+            "node => ({width: node.getBoundingClientRect().width, "
+            "height: node.getBoundingClientRect().height})"
+        )
+        flag_size: object = flag.evaluate(
+            "node => ({width: node.getBoundingClientRect().width, "
+            "height: node.getBoundingClientRect().height})"
+        )
+        _require(
+            isinstance(button_size, dict)
+            and button_size.get("width", 0) >= 44
+            and button_size.get("height", 0) >= 44
+            and isinstance(flag_size, dict)
+            and 8 <= flag_size.get("width", 0) <= 16
+            and 6 <= flag_size.get("height", 0) <= 12,
+            "a locale flag or language control has an unexpected size",
+        )
+
+
+def _svg_shape_signature(icon: Locator) -> str:
+    signature: object = icon.evaluate(
+        """svg => [
+          ...svg.querySelectorAll(
+            'path, circle, rect, line, polyline, polygon'
+          )
+        ].map((shape) => {
+            const bounds = shape.getBBox();
+            const metrics = [bounds.x, bounds.y, bounds.width, bounds.height]
+              .map((value) => Math.round(value * 10) / 10);
+            return `${shape.tagName.toLowerCase()}:${metrics.join(',')}`;
+          })
+          .join('|')"""
+    )
+    return signature if isinstance(signature, str) else ""
 
 
 def _assert_shell_avatar(page: Page, *, mobile: bool, present: bool) -> None:
@@ -1459,6 +1576,7 @@ def _check_mobile_language_and_screenshots(
         and page.locator(".account-language .locale-switcher").count() == 1,
         "language controls did not move into Account",
     )
+    _assert_locale_switcher_flags(page, ".account-language .locale-switcher")
     language_targets = _visible_heights(
         page, ".account-language .locale-switcher button"
     )
@@ -1520,6 +1638,7 @@ def _check_mobile_language_and_screenshots(
             _assert_no_horizontal_overflow(page, width)
             switcher = ".account-language .locale-switcher"
             page.locator(switcher).wait_for(state="visible")
+            _assert_locale_switcher_flags(page, switcher)
             control_heights = _visible_heights(page, f"{switcher} button")
             _require(
                 len(control_heights) == 2 and min(control_heights) >= 44,
@@ -3493,28 +3612,58 @@ def run_acceptance(
                 page.get_by_role("heading", name=heading).wait_for(state="visible")
                 if route == "/app/more":
                     more_links = page.locator(".more-links")
-                    gauge_link = more_links.get_by_role(
-                        "link", name="Gauge calculator", exact=False
+                    more_cards = (
+                        ("Imports", "/imports"),
+                        ("Categories", "/categories"),
+                        ("Gauge calculator", "/gauge"),
                     )
+                    icon_failures = 0
+                    for label, href in more_cards:
+                        card = more_links.get_by_role("link", name=label, exact=False)
+                        icon = card.locator(
+                            ".more-link-icon svg[aria-hidden='true'][focusable='false']"
+                        )
+                        sidebar_icon = page.locator(
+                            f".secondary-nav a[href$='{href}'] .nav-icon svg"
+                        )
+                        if (
+                            card.count() != 1
+                            or card.get_by_text("Available now", exact=True).count()
+                            != 1
+                            or card.get_attribute("href") is None
+                            or not card.get_attribute("href").endswith(href)
+                            or icon.count() != 1
+                            or sidebar_icon.count() != 1
+                        ):
+                            icon_failures += 1
+                            continue
+                        more_shape = _svg_shape_signature(icon)
+                        sidebar_shape = _svg_shape_signature(sidebar_icon)
+                        icon_failures += int(
+                            not more_shape or more_shape != sidebar_shape
+                        )
                     account_link = more_links.get_by_role(
                         "link", name="Account", exact=False
                     )
-                    gauge_links = gauge_link.count()
-                    account_links = account_link.count()
-                    gauge_available = gauge_link.get_by_text(
-                        "Available now", exact=True
-                    ).count()
-                    account_available = account_link.get_by_text(
-                        "Available now", exact=True
-                    ).count()
+                    profile_links = (
+                        page.locator(".account-summary[href$='/account']").count() == 1
+                        and page.locator(
+                            ".mobile-header .mobile-account[href$='/account']"
+                        ).count()
+                        == 1
+                    )
+                    duplicate_accounts = (
+                        account_link.count()
+                        + page.locator(".secondary-nav a[href$='/account']").count()
+                    )
                     stale_notices = page.get_by_text(
                         "This area is not connected yet."
                     ).count()
                     if (
-                        gauge_links != 1
-                        or account_links != 1
-                        or gauge_available != 1
-                        or account_available != 1
+                        more_links.locator("a").count() != len(more_cards)
+                        or icon_failures != 0
+                        or not profile_links
+                        or duplicate_accounts != 0
                         or stale_notices != 0
                     ):
                         _mask_fixture_identity(page)
@@ -3524,10 +3673,10 @@ def run_acceptance(
                             caret="initial",
                         )
                         raise AcceptanceFailure(
-                            "More-route counts did not match expectations "
-                            f"(gauge={gauge_links}, account={account_links}, "
-                            f"gauge_available={gauge_available}, "
-                            f"account_available={account_available}, "
+                            "More-route cards or profile-only Account links "
+                            "did not match expectations "
+                            f"(icon_failures={icon_failures}, "
+                            f"duplicate_accounts={duplicate_accounts}, "
                             f"stale_notice={stale_notices})"
                         )
                 if route == "/app/create":
@@ -3908,6 +4057,78 @@ def run_acceptance(
 
             page.goto(f"{origin}/app/projects", wait_until="networkidle")
             page.locator(".app-shell").wait_for(state="visible")
+            mark_stage("checking compact project and yarn heading spacing")
+            compact_heading_cases = (
+                (
+                    "projects",
+                    "/app/projects",
+                    ".library-heading .library-intro",
+                    ".library-heading .new-project",
+                    "Projects",
+                ),
+                (
+                    "yarns",
+                    "/app/yarns",
+                    ".library-heading .intro",
+                    ".library-heading .primary-action",
+                    "Yarns",
+                ),
+            )
+            for (
+                route_name,
+                route_path,
+                intro_selector,
+                action_selector,
+                heading,
+            ) in compact_heading_cases:
+                page.goto(f"{origin}{route_path}", wait_until="networkidle")
+                page.get_by_role("heading", name=heading, exact=True).wait_for(
+                    state="visible"
+                )
+                for width in (390, 430, 480, 640):
+                    page.set_viewport_size({"width": width, "height": 844})
+                    _assert_no_horizontal_overflow(page, width)
+                    metrics = _measure_compact_library_heading(
+                        page,
+                        intro_selector=intro_selector,
+                        action_selector=action_selector,
+                        route_name=route_name,
+                        width=width,
+                        require_stacked=route_name == "yarns",
+                    )
+                    print(
+                        "Compact library heading: "
+                        + json.dumps({"route": route_name, **metrics}, sort_keys=True)
+                    )
+
+            mark_stage("checking Create page icons and navigation affordances")
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.goto(f"{origin}/app/create", wait_until="networkidle")
+            page.get_by_role(
+                "heading", name="What would you like to add?", exact=True
+            ).wait_for(state="visible")
+            create_options = page.locator(".create-options > a")
+            _require(
+                create_options.count() == 2
+                and page.locator(
+                    ".create-options .option-mark svg[aria-hidden='true']"
+                ).count()
+                == 2,
+                "Create choices are missing their decorative icons",
+            )
+            _require(
+                create_options.nth(0).get_attribute("href") == "/app/projects/new"
+                and create_options.nth(1).get_attribute("href") == "/app/yarns/new"
+                and all(
+                    height >= 44
+                    for height in _visible_heights(page, ".create-options > a")
+                ),
+                "Create choices do not expose both destinations as touch targets",
+            )
+
+            page.goto(f"{origin}/app/projects", wait_until="networkidle")
+            page.locator(".app-shell").wait_for(state="visible")
+            page.set_viewport_size({"width": 1280, "height": 844})
             mark_stage("checking profile avatar propagation in app shell")
             _open_account_from_profile(page)
             page.locator('input[type="file"]').set_input_files(
