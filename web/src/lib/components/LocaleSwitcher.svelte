@@ -1,6 +1,7 @@
 <script lang="ts">
   import { setLocale, t, type Locale } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import SharedButton from "#lib/components/Button.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
   const enabled = $derived(session.status === "ready" && session.data !== null);
@@ -17,12 +18,13 @@
 </script>
 
 <div class="locale-switcher" role="group" aria-label={t("Language", locale)}>
-  <button
+  <SharedButton
+    variant="ghost"
+    class="locale-option"
     type="button"
     disabled={!enabled}
     aria-label={t("English", locale)}
     aria-pressed={locale === "en"}
-    class:active={locale === "en"}
     onclick={() => chooseLocale("en")}
   >
     <svg
@@ -38,13 +40,14 @@
       <path d="M30 0v40M0 20h60" stroke="#c8102e" stroke-width="8" />
     </svg>
     <span>EN</span>
-  </button>
-  <button
+  </SharedButton>
+  <SharedButton
+    variant="ghost"
+    class="locale-option"
     type="button"
     disabled={!enabled}
     aria-label={t("German", locale)}
     aria-pressed={locale === "de"}
-    class:active={locale === "de"}
     onclick={() => chooseLocale("de")}
   >
     <svg
@@ -58,7 +61,7 @@
       <rect width="60" height="13.33" fill="#000" />
     </svg>
     <span>DE</span>
-  </button>
+  </SharedButton>
 </div>
 
 <style>
@@ -73,22 +76,15 @@
     background: var(--surface);
   }
 
-  button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
+  .locale-switcher :global(.locale-option) {
     min-width: 2.75rem;
-    min-height: 2.75rem;
-    border: 0;
+    gap: 0.35rem;
     border-radius: 0.5rem;
+    padding-inline: 0.35rem;
     color: var(--ink-muted);
     background: transparent;
-    font: inherit;
-    padding: 0 0.35rem;
     font-size: 0.85rem;
     font-weight: 700;
-    cursor: pointer;
   }
 
   .language-flag {
@@ -97,14 +93,5 @@
     flex: 0 0 auto;
     border-radius: 0.1rem;
     box-shadow: 0 0 0 1px rgb(0 0 0 / 12%);
-  }
-
-  button.active {
-    color: var(--accent-strong);
-    background: var(--surface-raised);
-  }
-
-  button:disabled {
-    cursor: wait;
   }
 </style>

@@ -3,6 +3,7 @@
   import { version as appVersion } from "$app/env";
   import { resolve } from "$app/paths";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import SharedButton from "#lib/components/Button.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -361,24 +362,33 @@
     </div>
     <div class="notice-actions">
       {#if noticeState === "blocked" || noticeState === "available" || noticeState === "reload-cancelled"}
-        <button
-          class="primary-action"
+        <SharedButton
+          variant="primary"
           type="button"
           onclick={requestReloadUpdate}
           disabled={requestBusy}
           ><ActionLabel icon="refresh"
             >{requestBusy ? t("Working…", locale) : actionLabel}</ActionLabel
-          ></button
+          ></SharedButton
         >
       {/if}
       {#if (noticeState === "preparing" || noticeState === "committing") && !commitAccepted}
-        <button type="button" onclick={cancelUpdate} disabled={commitAccepted}>
+        <SharedButton
+          variant="secondary"
+          type="button"
+          onclick={cancelUpdate}
+          disabled={commitAccepted}
+        >
           <ActionLabel icon="cancel">{t("Cancel update", locale)}</ActionLabel>
-        </button>
+        </SharedButton>
       {:else if noticeState === "available" || noticeState === "blocked" || noticeState === "cancelled"}
-        <button type="button" onclick={() => (dismissed = true)}>
+        <SharedButton
+          variant="secondary"
+          type="button"
+          onclick={() => (dismissed = true)}
+        >
           <ActionLabel icon="close">{t("Later", locale)}</ActionLabel>
-        </button>
+        </SharedButton>
       {/if}
     </div>
   </aside>
@@ -417,28 +427,6 @@
     gap: 0.5rem;
   }
 
-  button {
-    min-height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.9rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font-weight: 650;
-    cursor: pointer;
-  }
-
-  button.primary-action {
-    border-color: var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-
-  button:disabled {
-    cursor: wait;
-    opacity: 0.7;
-  }
-
   @media (max-width: 38rem) {
     .update-notice {
       align-items: stretch;
@@ -446,7 +434,7 @@
       margin-inline: 0.75rem;
     }
 
-    .notice-actions button {
+    .notice-actions :global(.ui-button) {
       flex: 1 1 auto;
     }
   }

@@ -4,6 +4,7 @@
   import { onDestroy } from "svelte";
   import { onMount } from "svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import SharedButton from "#lib/components/Button.svelte";
   import { ApiError } from "#lib/api.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -150,14 +151,20 @@
   {#if session.data?.user}
     <h1>{t("You are already signed in.", locale)}</h1>
     <p>{t("Open your project library to continue.", locale)}</p>
-    <a class="signup-link" href={resolve("/projects")}
-      >{t("Open projects", locale)}</a
+    <a
+      class="ui-button ui-button--primary ui-button--md signup-link"
+      href={resolve("/projects")}
+      ><ActionLabel icon="projects">{t("Open projects", locale)}</ActionLabel
+      ></a
     >
   {:else if !enabled}
     <h1>{t("Account registration is unavailable.", locale)}</h1>
     <p>{t("Ask your server administrator if you need an account.", locale)}</p>
-    <a class="signup-link" href={resolve("/login")}
-      >{t("Back to sign in", locale)}</a
+    <a
+      class="ui-button ui-button--primary ui-button--md signup-link"
+      href={resolve("/login")}
+      ><ActionLabel icon="sign-in">{t("Back to sign in", locale)}</ActionLabel
+      ></a
     >
   {:else}
     <p class="signup-intro">
@@ -236,7 +243,12 @@
         </p>
       {/if}
 
-      <button type="submit" disabled={submitting || !session.data?.csrf_token}>
+      <SharedButton
+        variant="primary"
+        class="signup-submit"
+        type="submit"
+        disabled={submitting || !session.data?.csrf_token}
+      >
         {#if submitting}
           <span class="signup-spinner" aria-hidden="true"></span>
           <ActionLabel icon="user-add"
@@ -247,7 +259,7 @@
             >{t("Create account", locale)}</ActionLabel
           >
         {/if}
-      </button>
+      </SharedButton>
     </form>
 
     <p class="signin-prompt">
@@ -337,28 +349,12 @@
     background: color-mix(in srgb, var(--danger) 7%, var(--surface));
   }
 
-  button,
-  .signup-link {
-    display: inline-flex;
-    min-height: 2.9rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
+  :global(.signup-submit) {
     margin-top: 0.8rem;
-    border: 0;
-    border-radius: 0.7rem;
-    padding: 0.6rem 1rem;
-    color: var(--on-accent);
-    background: var(--accent-strong);
-    font: inherit;
-    font-weight: 650;
-    text-decoration: none;
-    cursor: pointer;
   }
 
-  button:disabled {
-    cursor: wait;
-    opacity: 0.72;
+  .signup-link {
+    margin-top: 0.8rem;
   }
 
   .signin-prompt {

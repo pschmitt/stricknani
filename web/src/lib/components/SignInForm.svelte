@@ -5,6 +5,7 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import SharedButton from "#lib/components/Button.svelte";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -117,8 +118,9 @@
         disabled={submitting}
       />
 
-      <button
-        class="primary-button"
+      <SharedButton
+        variant="primary"
+        class="auth-submit"
         type="submit"
         disabled={submitting || !session.data?.csrf_token}
       >
@@ -128,7 +130,7 @@
         {:else}
           <ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel>
         {/if}
-      </button>
+      </SharedButton>
     </form>
 
     <p class="auth-footnote">
@@ -228,31 +230,8 @@
     border-color: var(--focus);
   }
 
-  .primary-button {
-    display: inline-flex;
-    min-height: 2.9rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.65rem;
+  :global(.auth-submit) {
     margin-top: 1rem;
-    border: 0;
-    border-radius: 0.7rem;
-    padding: 0.65rem 1.1rem;
-    color: var(--on-accent);
-    background: var(--accent-strong);
-    font-weight: 650;
-    cursor: pointer;
-    transition:
-      background-color 150ms ease,
-      transform 150ms ease;
-  }
-
-  .primary-button:hover:not(:disabled) {
-    background: var(--accent);
-  }
-
-  .primary-button:active:not(:disabled) {
-    transform: translateY(1px);
   }
 
   :global(.spinner-light) {

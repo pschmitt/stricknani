@@ -183,6 +183,12 @@ button {
   box-shadow: 0 0 0 2px var(--accent-wash);
 }
 
+.ui-button[aria-pressed="true"] {
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+}
+
 .ui-button:active:not(:disabled) {
   transform: translateY(1px);
 }
@@ -479,11 +485,6 @@ button:disabled {
   height: 1.15rem;
 }
 
-.primary-nav a.active .nav-icon {
-  border-color: transparent;
-  background: var(--surface);
-}
-
 .rail-divider {
   height: 1px;
   margin: 1.1rem 0 1rem;
@@ -500,11 +501,6 @@ button:disabled {
 .secondary-nav a {
   min-height: 44px;
   padding-left: 0.7rem;
-}
-
-.secondary-nav .nav-icon {
-  border-color: transparent;
-  background: transparent;
 }
 
 .content-column {
@@ -559,20 +555,6 @@ button:disabled {
 
 .connection-panel p {
   color: var(--ink-muted);
-}
-
-.primary-button {
-  display: inline-flex;
-  min-height: 2.9rem;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 0.7rem;
-  padding: 0.65rem 1.1rem;
-  color: var(--on-accent);
-  background: var(--accent-strong);
-  font-weight: 650;
-  cursor: pointer;
 }
 
 .notice {
@@ -631,8 +613,9 @@ textarea::placeholder {
 
 @media (max-width: 760px) {
   .app-shell {
+    --app-header-height: max(3.5rem, calc(45px + env(safe-area-inset-top)));
     display: block;
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(57px + env(safe-area-inset-bottom));
   }
 
   .desktop-rail {
@@ -644,6 +627,8 @@ textarea::placeholder {
     gap: 0.15rem;
     padding-right: max(0.75rem, env(safe-area-inset-right));
     padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: 0;
   }
 
   .content-main {
@@ -659,9 +644,8 @@ textarea::placeholder {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     border-top: 1px solid var(--line);
-    padding: 0.35rem max(0.35rem, env(safe-area-inset-right))
-      calc(0.35rem + env(safe-area-inset-bottom))
-      max(0.35rem, env(safe-area-inset-left));
+    padding: 0 max(0.35rem, env(safe-area-inset-right))
+      env(safe-area-inset-bottom) max(0.35rem, env(safe-area-inset-left));
     background: var(--surface);
   }
 

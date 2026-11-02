@@ -14,6 +14,7 @@
   import PwaUpdate from "#lib/components/PwaUpdate.svelte";
   import { routeParent } from "#lib/route-parent.ts";
   import SignInForm from "#lib/components/SignInForm.svelte";
+  import SharedButton from "#lib/components/Button.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
@@ -46,6 +47,10 @@
     { href: "/create", label: msg("Create"), icon: "create" },
     { href: "/more", label: msg("More"), icon: "more" },
   ] as const;
+
+  const desktopNavigation = mainNavigation.filter(
+    (item) => item.href !== "/more",
+  );
 
   const secondaryNavigation = [
     { href: "/imports", label: msg("Imports"), icon: "imports" },
@@ -161,13 +166,14 @@
         {session.error?.message ??
           t("The session could not be loaded.", locale)}
       </p>
-      <button
-        class="primary-button"
+      <SharedButton
+        variant="primary"
         type="button"
         onclick={() => void refreshSession()}
+        icon="refresh"
       >
-        <ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel>
-      </button>
+        {t("Try again", locale)}
+      </SharedButton>
     </section>
   </main>
 {:else if !user && signupRoute}
@@ -200,7 +206,7 @@
 
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
       <nav class="primary-nav" aria-label={t("Your library", locale)}>
-        {#each mainNavigation as item}
+        {#each desktopNavigation as item}
           <a
             class:active={isActive(item.href)}
             aria-current={isActive(item.href) ? "page" : undefined}
