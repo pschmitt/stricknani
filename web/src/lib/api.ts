@@ -1,7 +1,17 @@
 import { t } from "./i18n.svelte";
 
 export type Capability =
-  "signup" | "external_imports" | "ai" | "ocr" | "archive";
+  | "signup"
+  | "external_imports"
+  | "ai"
+  | "ocr"
+  | "archive"
+  | "media_upload"
+  | "media_delete"
+  | "import_preview"
+  | "archive_state"
+  | "account_actions"
+  | "admin_actions";
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface SessionUser {
@@ -359,9 +369,19 @@ function isCapabilities(value: unknown): value is SessionData["capabilities"] {
   if (typeof value !== "object" || value === null || Array.isArray(value))
     return false;
   const candidate = value as Record<string, unknown>;
-  return ["signup", "external_imports", "ai", "ocr", "archive"].every(
-    (key) => typeof candidate[key] === "boolean",
-  );
+  return [
+    "signup",
+    "external_imports",
+    "ai",
+    "ocr",
+    "archive",
+    "media_upload",
+    "media_delete",
+    "import_preview",
+    "archive_state",
+    "account_actions",
+    "admin_actions",
+  ].every((key) => typeof candidate[key] === "boolean");
 }
 
 function isStringMap(value: unknown): value is Record<string, string> {

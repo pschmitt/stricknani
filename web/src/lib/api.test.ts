@@ -27,10 +27,25 @@ const sessionFixture = {
       ai: false,
       ocr: false,
       archive: true,
+      media_upload: false,
+      media_delete: false,
+      import_preview: false,
+      archive_state: true,
+      account_actions: true,
+      admin_actions: false,
     },
     locale: "en",
   },
 };
+
+const actionCapabilities = [
+  "media_upload",
+  "media_delete",
+  "import_preview",
+  "archive_state",
+  "account_actions",
+  "admin_actions",
+] as const;
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -47,6 +62,52 @@ describe("same-origin API client", () => {
     );
     await expect(getSession()).resolves.toMatchObject({ user: { id: 42 } });
   });
+
+  it.each(actionCapabilities)(
+    "requires the %s capability in a session response",
+    async (capability) => {
+      const capabilities: Record<string, unknown> = {
+        ...sessionFixture.data.capabilities,
+      };
+      delete capabilities[capability];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json({
+            data: { ...sessionFixture.data, capabilities },
+          }),
+        ),
+      );
+
+      await expect(getSession()).rejects.toMatchObject({
+        code: "invalid_response",
+      });
+    },
+  );
+
+  it.each(actionCapabilities)(
+    "requires %s to be a boolean in a session response",
+    async (capability) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json({
+            data: {
+              ...sessionFixture.data,
+              capabilities: {
+                ...sessionFixture.data.capabilities,
+                [capability]: "enabled",
+              },
+            },
+          }),
+        ),
+      );
+
+      await expect(getSession()).rejects.toMatchObject({
+        code: "invalid_response",
+      });
+    },
+  );
 
   it("accepts a same-user relative avatar thumbnail URL", async () => {
     vi.stubGlobal(

@@ -143,6 +143,16 @@ async fn anonymous_bootstrap_sets_signed_csrf_cookie_and_reports_real_capabiliti
     assert_eq!(json["data"]["capabilities"]["ai"], false);
     assert_eq!(json["data"]["capabilities"]["ocr"], false);
     assert_eq!(json["data"]["capabilities"]["archive"], true);
+    for capability in [
+        "media_upload",
+        "media_delete",
+        "import_preview",
+        "archive_state",
+        "account_actions",
+        "admin_actions",
+    ] {
+        assert_eq!(json["data"]["capabilities"][capability], false);
+    }
 }
 
 #[tokio::test]
@@ -183,6 +193,32 @@ async fn login_creates_limited_browser_session_without_reflecting_secret_and_log
     let data: serde_json::Value = serde_json::from_str(&response_body).expect("JSON response");
     assert_eq!(data["data"]["user"]["email"], EMAIL);
     assert_eq!(data["data"]["user"]["is_admin"], false);
+    assert_eq!(data["data"]["capabilities"]["account_actions"], true);
+    assert_eq!(data["data"]["capabilities"]["admin_actions"], false);
+    assert_eq!(data["data"]["capabilities"]["archive_state"], true);
+    assert_eq!(data["data"]["capabilities"]["media_upload"], false);
+    assert_eq!(data["data"]["capabilities"]["media_delete"], false);
+    assert_eq!(data["data"]["capabilities"]["import_preview"], false);
+
+    let session = app
+        .clone()
+        .oneshot(
+            Request::get("/session")
+                .header(
+                    "cookie",
+                    format!("__Host-stricknani_session={session_token}"),
+                )
+                .body(Body::empty())
+                .expect("request is valid"),
+        )
+        .await
+        .expect("router should respond");
+    let session: serde_json::Value =
+        serde_json::from_str(&body(session).await).expect("session should return JSON");
+    assert_eq!(
+        session["data"]["capabilities"],
+        data["data"]["capabilities"]
+    );
 
     let (purpose, expiry): (String, Option<i64>) =
         sqlx::query_as("SELECT purpose, expires_at FROM api_tokens WHERE token_hash = ?")
@@ -216,6 +252,116 @@ async fn login_creates_limited_browser_session_without_reflecting_secret_and_log
             .await
             .expect("session row remains for audit");
     assert!(revoked.is_some());
+}
+
+#[tokio::test]
+async fn action_capabilities_require_an_active_browser_session_and_admin_role() {
+    let (app, pool) = fixture().await;
+    let token = "sna_capability_api_only_fixture";
+    sqlx::query(
+        "INSERT INTO api_tokens (user_id,name,token_hash,created_at,purpose) \
+         VALUES (1,'API fixture',?,unixepoch(),'api')",
+    )
+    .bind(hex::encode(Sha256::digest(token.as_bytes())))
+    .execute(&pool)
+    .await
+    .expect("API-only token should insert");
+
+    let invalid_cookie = app
+        .clone()
+        .oneshot(
+            Request::get("/session")
+                .header("cookie", "__Host-stricknani_session=invalid-session")
+                .body(Body::empty())
+                .expect("request is valid"),
+        )
+        .await
+        .expect("router should respond");
+    let invalid_cookie: serde_json::Value =
+        serde_json::from_str(&body(invalid_cookie).await).expect("JSON response");
+    assert!(invalid_cookie["data"]["user"].is_null());
+    for capability in [
+        "media_upload",
+        "media_delete",
+        "import_preview",
+        "archive_state",
+        "account_actions",
+        "admin_actions",
+    ] {
+        assert_eq!(invalid_cookie["data"]["capabilities"][capability], false);
+    }
+
+    let bearer_only = app
+        .clone()
+        .oneshot(
+            Request::get("/session")
+                .header("authorization", format!("Bearer {token}"))
+                .body(Body::empty())
+                .expect("request is valid"),
+        )
+        .await
+        .expect("router should respond");
+    let bearer_only: serde_json::Value =
+        serde_json::from_str(&body(bearer_only).await).expect("JSON response");
+    assert!(bearer_only["data"]["user"].is_null());
+    for capability in [
+        "media_upload",
+        "media_delete",
+        "import_preview",
+        "archive_state",
+        "account_actions",
+        "admin_actions",
+    ] {
+        assert_eq!(bearer_only["data"]["capabilities"][capability], false);
+    }
+
+    sqlx::query("UPDATE users SET is_admin = 1 WHERE email = ?")
+        .bind(EMAIL)
+        .execute(&pool)
+        .await
+        .expect("fixture user should be promoted");
+    let (csrf_cookie, csrf) = bootstrap(&app).await;
+    let login = app
+        .clone()
+        .oneshot(login_request(&csrf_cookie, &csrf, EMAIL, PASSWORD, ORIGIN))
+        .await
+        .expect("router should respond");
+    let session_token = cookie_value(&login, "__Host-stricknani_session=");
+    let login: serde_json::Value =
+        serde_json::from_str(&body(login).await).expect("login should return JSON");
+    assert_eq!(login["data"]["capabilities"]["account_actions"], true);
+    assert_eq!(login["data"]["capabilities"]["admin_actions"], true);
+
+    sqlx::query("UPDATE users SET active = 0 WHERE email = ?")
+        .bind(EMAIL)
+        .execute(&pool)
+        .await
+        .expect("fixture user should be disabled");
+    let disabled = app
+        .oneshot(
+            Request::get("/session")
+                .header(
+                    "cookie",
+                    format!("__Host-stricknani_session={session_token}"),
+                )
+                .body(Body::empty())
+                .expect("request is valid"),
+        )
+        .await
+        .expect("router should respond");
+    let disabled: serde_json::Value =
+        serde_json::from_str(&body(disabled).await).expect("JSON response");
+    assert!(disabled["data"]["user"].is_null());
+    for capability in [
+        "media_upload",
+        "media_delete",
+        "import_preview",
+        "archive_state",
+        "account_actions",
+        "admin_actions",
+    ] {
+        assert_eq!(disabled["data"]["capabilities"][capability], false);
+    }
 }
 
 #[tokio::test]

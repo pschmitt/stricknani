@@ -63,6 +63,12 @@ const session = {
     ai: false,
     ocr: false,
     archive: false,
+    media_upload: false,
+    media_delete: false,
+    import_preview: false,
+    archive_state: false,
+    account_actions: true,
+    admin_actions: false,
   },
   locale: "en" as const,
 };

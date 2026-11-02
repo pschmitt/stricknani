@@ -152,10 +152,17 @@ struct Capabilities {
     ai: bool,
     ocr: bool,
     archive: bool,
+    media_upload: bool,
+    media_delete: bool,
+    import_preview: bool,
+    archive_state: bool,
+    account_actions: bool,
+    admin_actions: bool,
 }
 
 impl Capabilities {
-    fn from_state(state: &ApiV2State) -> Self {
+    fn from_state(state: &ApiV2State, user: Option<&UserSummary>) -> Self {
+        let authenticated = user.is_some();
         Self {
             signup: state.app.signup_enabled,
             external_imports: state.app.external_imports,
@@ -167,6 +174,12 @@ impl Capabilities {
                     .is_some(),
             ocr: state.app.ocr_enabled && state.ocr_service.is_some(),
             archive: state.app.archive_enabled,
+            media_upload: authenticated && state.app.media_root.is_some(),
+            media_delete: authenticated && state.app.media_root.is_some(),
+            import_preview: authenticated && state.imports.is_some(),
+            archive_state: authenticated && state.app.archive_enabled,
+            account_actions: authenticated,
+            admin_actions: user.is_some_and(|user| user.is_admin),
         }
     }
 }
@@ -238,11 +251,12 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
     let user = match session_user(&state.app.pool, &headers, state.app.secure_cookies).await {
         Ok(Some((user, token))) => {
             let csrf_token = crate::web::csrf(&token);
+            let capabilities = Capabilities::from_state(&state, Some(&user));
             return Json(Envelope {
                 data: SessionData {
                     user: Some(user),
                     csrf_token,
-                    capabilities: Capabilities::from_state(&state),
+                    capabilities,
                     locale: locale(&headers),
                 },
             })
@@ -265,11 +279,12 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
             "Request failed",
         );
     };
+    let capabilities = Capabilities::from_state(&state, user.as_ref());
     let mut response = Json(Envelope {
         data: SessionData {
             user,
             csrf_token: token.clone(),
-            capabilities: Capabilities::from_state(&state),
+            capabilities,
             locale: locale(&headers),
         },
     })
@@ -391,11 +406,12 @@ async fn login(
         }
     };
     let csrf_token = crate::web::csrf(&token.token);
+    let capabilities = Capabilities::from_state(&state, Some(&user));
     let mut response = Json(Envelope {
         data: SessionData {
             user: Some(user),
             csrf_token,
-            capabilities: Capabilities::from_state(&state),
+            capabilities,
             locale: locale(&headers),
         },
     })

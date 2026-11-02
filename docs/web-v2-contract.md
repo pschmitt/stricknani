@@ -47,7 +47,13 @@ The initial implementation exposes the following routes, mounted below
       "external_imports": false,
       "ai": false,
       "ocr": false,
-      "archive": false
+      "archive": false,
+      "media_upload": false,
+      "media_delete": false,
+      "import_preview": false,
+      "archive_state": false,
+      "account_actions": true,
+      "admin_actions": false
     },
     "locale": "en"
   }
@@ -71,7 +77,26 @@ is set and otherwise a same-origin thumbnail path under
 does not add a separate authorization capability. After an avatar upload or
 deletion, the client updates the current session's avatar field only if the
 same authenticated session is still active.
-It sets a 14-day browser-purpose cookie and clears the pre-auth CSRF cookie.
+
+The five established capabilities (`signup`, `external_imports`, `ai`, `ocr`,
+and `archive`) retain their existing configuration semantics. The additive
+action hints are all `false` when no valid active browser session is present;
+API authorization and same-origin CSRF checks remain authoritative:
+
+| Capability | `true` when |
+| --- | --- |
+| `media_upload` | The active browser user is authenticated and a media root is configured. |
+| `media_delete` | The active browser user is authenticated and a media root is configured. |
+| `import_preview` | The active browser user is authenticated and import preview services are configured. |
+| `archive_state` | The active browser user is authenticated and archive support is enabled. |
+| `account_actions` | The session belongs to an active browser user. |
+| `admin_actions` | The session belongs to an active administrator. |
+
+The media flags report configuration presence; they do not preflight storage
+or grant access to another user's resources. Browser routes continue to enforce
+ownership, account status, CSRF, and administrator authorization.
+The login handler sets a 14-day browser-purpose cookie and clears the pre-auth
+CSRF cookie.
 The session token is only in the HttpOnly cookie; it is never included in the
 response body. Logout accepts `{}` and sends the session-derived CSRF token in
 `X-CSRF-Token`.

@@ -120,7 +120,20 @@ async fn signed_in(app: &axum::Router, email: &str, password: &str) -> (String, 
         .await
         .unwrap();
     let preauth = cookie(&bootstrap, "__Host-stricknani_v2_login_csrf=");
-    let pre_csrf = json(bootstrap).await["data"]["csrf_token"]
+    let bootstrap_data = json(bootstrap).await;
+    assert_eq!(
+        bootstrap_data["data"]["capabilities"]["media_upload"],
+        false
+    );
+    assert_eq!(
+        bootstrap_data["data"]["capabilities"]["media_delete"],
+        false
+    );
+    assert_eq!(
+        bootstrap_data["data"]["capabilities"]["account_actions"],
+        false
+    );
+    let pre_csrf = bootstrap_data["data"]["csrf_token"]
         .as_str()
         .unwrap()
         .to_owned();
@@ -146,7 +159,14 @@ async fn signed_in(app: &axum::Router, email: &str, password: &str) -> (String, 
         .unwrap();
     assert_eq!(login.status(), StatusCode::OK);
     let session = cookie(&login, "__Host-stricknani_session=");
-    let csrf = json(login).await["data"]["csrf_token"]
+    let login_data = json(login).await;
+    assert_eq!(login_data["data"]["capabilities"]["media_upload"], true);
+    assert_eq!(login_data["data"]["capabilities"]["media_delete"], true);
+    assert_eq!(login_data["data"]["capabilities"]["import_preview"], false);
+    assert_eq!(login_data["data"]["capabilities"]["archive_state"], false);
+    assert_eq!(login_data["data"]["capabilities"]["account_actions"], true);
+    assert_eq!(login_data["data"]["capabilities"]["admin_actions"], false);
+    let csrf = login_data["data"]["csrf_token"]
         .as_str()
         .unwrap()
         .to_owned();

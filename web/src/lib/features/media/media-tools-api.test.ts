@@ -26,6 +26,12 @@ const session: SessionData = {
     ai: false,
     ocr: true,
     archive: true,
+    media_upload: false,
+    media_delete: false,
+    import_preview: false,
+    archive_state: true,
+    account_actions: true,
+    admin_actions: false,
   },
   locale: "en",
 };
