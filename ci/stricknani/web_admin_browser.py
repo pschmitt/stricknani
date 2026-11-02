@@ -571,6 +571,14 @@ def _assert_owner_resource_cards(
 ) -> None:
     page.goto(f"{origin}/app/projects/{project_id}", wait_until="networkidle")
     page.get_by_role("heading", name=project_name, exact=True).wait_for(state="visible")
+    materials = page.locator("details.materials-card")
+    _require(
+        materials.get_attribute("open") is None,
+        "project materials should start collapsed",
+    )
+    materials.locator("summary").focus()
+    page.keyboard.press("Enter")
+    expect(materials).to_have_attribute("open", "")
     embedded_card = page.locator(".details-card .resource-card").filter(
         has_text=yarn_name
     )

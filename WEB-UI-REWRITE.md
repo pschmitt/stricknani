@@ -341,7 +341,8 @@ The overall rewrite remains open until T120.9 acceptance is complete.
 
 - [x] **T120.14 — Compact header and action icons.** Use the existing cute logo
   beside the title and a small version line. Put the profile avatar on the right,
-  follow native browser history for Back, and preserve dirty-form guards. Add
+  preserve dirty-form guards. Navigation now follows the revised T120.16 parent
+  route specification. Add
   shared bounded icons beside action labels throughout imports, projects, yarns,
   account and administration. Verify narrow phone widths and keyboard names.
 
@@ -351,6 +352,38 @@ The overall rewrite remains open until T120.9 acceptance is complete.
   excessive height. Preserve content, step IDs, progress, media ownership and
   complete printing. Track remaining observations in
   [the design review follow-ups](docs/web-ui-review-followups.md).
+
+### Ordered review work queue
+
+The user's review instructions require verification after each step before the
+next implementation step. The T120.15 reader checkpoint was already underway
+when this order arrived; retain and verify it, then follow this queue:
+
+1. **T120.16:** stable scrollbar gutter, shared `PageHeader`, three consistent
+   left-aligned container widths, and a logical-parent header chevron. Reserve
+   its slot on top-level pages so the logo never moves. Preserve dirty guards.
+2. **T120.17:** shared Button variants (`primary`, `secondary`, `ghost`, `danger`),
+   declared sizes, consistent geometry and hover/active/focus/disabled states;
+   migrate every feature and remove conflicting local button styling. Use shared
+   icon sizes/strokes and one aligned Create/More tile treatment.
+3. **T120.18:** fixed-width, unwrapped row actions with wrapping text columns.
+4. **T120.19:** project/yarn parity for navigation, delete placement, edit-only
+   photo management, favorites and Cancel on forms.
+5. **T120.20:** sticky Save/Cancel, separate danger zone, merged yarn picker and
+   styled file controls. Review existing media-role API support before changing
+   the upload interaction. Add viewport success/error feedback, consistent
+   save-to-detail behavior, field-level errors, Ctrl/Cmd+S and shared confirmation
+   dialogs; retain drafts and prevent duplicate writes under slow/offline requests.
+6. **T120.21:** shared input height/radius and 16px input text.
+7. **T120.15 completion:** finish the selected single-column reading presentation
+   and show one primary pattern view while retaining access to all source content.
+8. **T120.22–23:** responsive existing-mascot sign-in branding, followed by subtle
+   reduced-motion-safe interaction feedback. Page morphs, Knit mode, counters and
+   autosave remain separate proposals rather than prerequisites for this queue.
+
+Use the `ui-audit` inventory and motion scripts after each step on representative
+synthetic fixtures. Compare header positions, role/size button signatures,
+wrapping, hover feedback and layout shifts. Keep import/data repairs separate.
 
 ### Luna implementation waves and ownership
 

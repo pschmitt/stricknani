@@ -155,9 +155,11 @@ Use this file as the operational source of truth for working in Stricknani.
   locators to the card, assert the expected title as part of its accessible
   name, and verify the destination separately. Keep owner-scoped thumbnail URLs
   distinct from upload and mutation endpoints.
-- The header Back button follows native browser history. Do not infer parent
-  routes or maintain a separate route stack. Preserve dirty-form navigation
-  guards, and hide Back when the browser has no previous history entry.
+- The header chevron follows the logical parent route through one shared route
+  map. This supersedes the earlier history-based requirement. Hide the control
+  on top-level sections while reserving its slot so the logo does not shift.
+  Preserve dirty-form guards, keep the logo and chevron targets separate, and
+  remove duplicate in-page back links. A deep link must stay inside the app.
 - Use shared, bounded decorative icons alongside action labels. Preserve
   accessible names, keyboard behavior and compact phone layouts; existing
   icon-only controls do not need a second icon.
