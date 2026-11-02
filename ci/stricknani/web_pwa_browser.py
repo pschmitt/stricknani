@@ -231,6 +231,24 @@ def _safe_update_state(page: Page) -> dict[str, bool]:
           const retryButton = buttons.find(
             button => button.textContent?.trim() === 'Reload to finish',
           );
+          const retryRect = retryButton?.getBoundingClientRect();
+          const retryCenter = retryRect
+            ? {
+                x: retryRect.left + retryRect.width / 2,
+                y: retryRect.top + retryRect.height / 2,
+              }
+            : null;
+          const hit = retryCenter
+            ? document.elementFromPoint(retryCenter.x, retryCenter.y)
+            : null;
+          let inertAncestor = false;
+          for (let element = retryButton; element; element = element.parentElement) {
+            if (element.inert) {
+              inertAncestor = true;
+              break;
+            }
+          }
+          const hitStyle = hit ? getComputedStyle(hit) : null;
           return {
             appShellPresent: Boolean(shell),
             appShellInert: shell?.inert === true,
@@ -238,8 +256,32 @@ def _safe_update_state(page: Page) -> dict[str, bool]:
             retryButtonVisible: visible(retryButton),
             retryButtonEnabled: visible(retryButton)
               && retryButton?.disabled === false,
+            retryButtonInViewport: Boolean(
+              retryRect &&
+              retryRect.width > 0 &&
+              retryRect.height > 0 &&
+              retryRect.right > 0 &&
+              retryRect.left < innerWidth &&
+              retryRect.bottom > 0 &&
+              retryRect.top < innerHeight
+            ),
+            retryButtonOwnsCenterHit: Boolean(
+              retryButton && hit &&
+              (retryButton === hit || retryButton.contains(hit))
+            ),
+            retryButtonInertAncestor: inertAncestor,
+            retryButtonPointerEventsAllowed:
+              getComputedStyle(retryButton ?? document.body).pointerEvents !== 'none',
+            centerHitIsFixedOrSticky:
+              Boolean(
+                hitStyle?.position === 'fixed' ||
+                hitStyle?.position === 'sticky'
+              ),
             activatedCopyVisible: copy.includes(
               'Reloading this tab with the update',
+            ),
+            workingButtonVisible: buttons.some(button =>
+              visible(button) && button.textContent?.trim() === 'Working…'
             ),
             nativeCancelCopyVisible: copy.includes(
               'The browser kept this tab open',
@@ -302,6 +344,9 @@ def _safe_update_history(page: Page) -> dict[str, bool]:
             cancelledAfterPreparing: preparingIndex >= 0
               && history.indexOf('cancelled', preparingIndex + 1) >= 0,
             blockedObserved: history.includes('blocked'),
+            committingObserved: history.includes('committing'),
+            activatedObserved: history.includes('activated'),
+            reloadCancelledObserved: history.includes('reload-cancelled'),
           };
         }"""
     )
@@ -2148,6 +2193,7 @@ def run_acceptance(
                 f"(safe state: {retained_state_diagnostics})",
             )
             mark_stage("retrying the prepared reload before cache diagnostics")
+            mark_stage("reading retry button state")
             retry_button_state = _safe_update_state(page)
             _require(
                 retry_button_state.get("retryButtonVisible") is True
@@ -2155,17 +2201,155 @@ def run_acceptance(
                 "prepared reload retry button is unavailable "
                 f"(safe state: {retry_button_state})",
             )
-            page.get_by_role("button", name="Reload to finish", exact=True).click(
-                no_wait_after=True,
-                timeout=5_000,
+            retry_locator = page.get_by_role(
+                "button",
+                name="Reload to finish",
+                exact=True,
             )
+            retry_dialogs: list[str] = []
+
+            def dismiss_retry_dialog(dialog: Dialog) -> None:
+                retry_dialogs.append(dialog.type)
+                dialog.dismiss()
+
+            page.on("dialog", dismiss_retry_dialog)
+            mark_stage("installing retry click observer")
+            page.evaluate(
+                """() => {
+                  window.__pwaRetryClickObserved = false;
+                  const observe = event => {
+                    const target = event.target;
+                    if (
+                      target instanceof Element &&
+                      target.closest('.update-notice button.primary-action')
+                    ) {
+                      window.__pwaRetryClickObserved = true;
+                    }
+                  };
+                  document.addEventListener('click', observe, true);
+                  window.__removePwaRetryObserver = () => {
+                    document.removeEventListener('click', observe, true);
+                  };
+                }"""
+            )
+            mark_stage("counting semantic retry button")
+            retry_role_count = retry_locator.count()
+            mark_stage("checking semantic retry button visibility")
+            retry_role_visible = retry_locator.is_visible()
+            mark_stage("checking semantic retry button enabled state")
+            retry_role_enabled = retry_locator.is_enabled()
+            try:
+                mark_stage("clicking the retry button")
+                retry_locator.click(no_wait_after=True, timeout=5_000)
+            except PlaywrightError:
+                retry_failure_state = _safe_update_state(page)
+                retry_click_observed = page.evaluate(
+                    "() => window.__pwaRetryClickObserved === true"
+                )
+                page.screenshot(
+                    path=str(screenshots / "prepared-retry-click-failure.png"),
+                    caret="hide",
+                )
+                page.evaluate("() => window.__removePwaRetryObserver?.()")
+                page.remove_listener("dialog", dismiss_retry_dialog)
+                raise AcceptanceFailure(
+                    "prepared reload click did not complete "
+                    f"(role match count one: {retry_role_count == 1}, "
+                    f"role visible: {retry_role_visible}, "
+                    f"role enabled: {retry_role_enabled}, "
+                    f"click event observed: {retry_click_observed}, "
+                    f"dialog seen: {bool(retry_dialogs)}, "
+                    f"safe state: {retry_failure_state})"
+                ) from None
+            finally:
+                page.remove_listener("dialog", dismiss_retry_dialog)
+                if not page.is_closed():
+                    page.evaluate("() => window.__removePwaRetryObserver?.()")
+            mark_stage("waiting for retry navigation")
+            try:
+                _wait_for_async_condition(
+                    page,
+                    "expected => performance.timeOrigin > expected",
+                    page_time_origin,
+                    "prepared project tab retry reload",
+                    timeout_ms=20_000,
+                )
+            except (AcceptanceFailure, PlaywrightError):
+                post_click_state: dict[str, bool] = {}
+                post_click_history: dict[str, bool] = {}
+                post_click_versions: dict[str, object] = {}
+                same_document_after_retry = False
+                click_observed_after_retry = False
+                if not page.is_closed():
+                    try:
+                        post_click_state = _safe_update_state(page)
+                        post_click_history = _safe_update_history(page)
+                        post_click_versions = _version_snapshot(page)
+                        same_document_after_retry = (
+                            page.evaluate("() => performance.timeOrigin")
+                            == page_time_origin
+                        )
+                        click_observed_after_retry = page.evaluate(
+                            "() => window.__pwaRetryClickObserved === true"
+                        )
+                        page.screenshot(
+                            path=str(screenshots / "prepared-retry-no-reload.png"),
+                            caret="hide",
+                        )
+                    except PlaywrightError:
+                        pass
+                raise AcceptanceFailure(
+                    "prepared reload click did not navigate "
+                    f"(click event observed: {click_observed_after_retry}, "
+                    f"same document: {same_document_after_retry}, "
+                    f"prepared token: "
+                    f"{post_click_state.get('preparedTokenPresent')}, "
+                    f"retry visible: "
+                    f"{post_click_state.get('retryButtonVisible')}, "
+                    f"retry enabled: "
+                    f"{post_click_state.get('retryButtonEnabled')}, "
+                    f"working visible: "
+                    f"{post_click_state.get('workingButtonVisible')}, "
+                    f"history: {post_click_history}, "
+                    f"active candidate: "
+                    f"{post_click_versions.get('active') == next_version}, "
+                    f"waiting candidate: "
+                    f"{post_click_versions.get('waiting') == next_version})"
+                ) from None
+            mark_stage("waiting for the reloaded editor")
             _wait_for_async_condition(
                 page,
-                "expected => performance.timeOrigin > expected",
-                page_time_origin,
-                "prepared project tab retry reload",
-                timeout_ms=20_000,
+                "() => Boolean(document.querySelector('#project-name')"
+                " || document.querySelector('#email'))",
+                None,
+                "post-update editor or sign-in form",
+                timeout_ms=15_000,
             )
+            post_reload_state = page.evaluate(
+                """() => ({
+                  path: location.pathname,
+                  editor: Boolean(document.querySelector('#project-name')),
+                  signIn: Boolean(document.querySelector('#email')),
+                  appShell: Boolean(document.querySelector('.app-shell')),
+                })"""
+            )
+            if not post_reload_state.get("editor"):
+                _require(
+                    post_reload_state.get("signIn") is True,
+                    "updated page showed neither the editor nor the sign-in form",
+                )
+                current_fixture = rust_fixture.load_fixture_environment(fixture_file)
+                mark_stage("signing in after the fixture runtime was replaced")
+                page.locator("#email").fill(
+                    current_fixture["STRICKNANI_RUST_TEST_EMAIL"]
+                )
+                page.locator("#password").fill(
+                    current_fixture["STRICKNANI_RUST_TEST_PASSWORD"]
+                )
+                page.get_by_role("button", name="Sign in", exact=True).click()
+                page.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+                mark_stage("reopening the editor after fixture sign-in")
+                page.goto(f"{origin}/app/projects/new", wait_until="networkidle")
             page.locator("#project-name").wait_for(state="visible", timeout=15_000)
             _wait_for_controlled_worker(page, next_version)
 
@@ -2288,22 +2472,36 @@ def run_acceptance(
                     "requesting the retained asset while browser networking fails"
                 )
                 asset_failure_start = len(service_worker_asset_failures)
-                asset_response_start = len(service_worker_asset_responses)
                 fetch_state = network_failure_tab.evaluate(
-                    """async asset => {
+                    """async ({ asset, oldCache }) => {
+                      const retained = await (await caches.open(oldCache)).match(
+                        asset, { ignoreSearch: false },
+                      );
+                      const hash = async bytes => Array.from(new Uint8Array(
+                        await crypto.subtle.digest('SHA-256', bytes),
+                      )).map(value => value.toString(16).padStart(2, '0')).join('');
+                      const retainedHash = retained
+                        ? await hash(await retained.arrayBuffer())
+                        : '';
                       const controller = new AbortController();
                       const request = fetch(asset, {
                         cache: 'no-store',
                         signal: controller.signal,
-                      }).then(async response => ({
-                        fetchSettled: true,
-                        status: response.status,
-                        byteLength: (await response.arrayBuffer()).byteLength,
-                        fetchErrorName: '',
-                      })).catch(error => ({
+                      }).then(async response => {
+                        const bytes = await response.arrayBuffer();
+                        return {
+                          fetchSettled: true,
+                          status: response.status,
+                          byteLength: bytes.byteLength,
+                          matchesRetainedBytes: retainedHash !== '' &&
+                            await hash(bytes) === retainedHash,
+                          fetchErrorName: '',
+                        };
+                      }).catch(error => ({
                         fetchSettled: true,
                         status: 0,
                         byteLength: 0,
+                        matchesRetainedBytes: false,
                         fetchErrorName: error?.name ?? 'unknown',
                       }));
                       const result = await Promise.race([
@@ -2318,12 +2516,16 @@ def run_acceptance(
                           fetchSettled: false,
                           status: 0,
                           byteLength: 0,
+                          matchesRetainedBytes: false,
                           fetchErrorName: 'timeout',
                         };
                       }
                       return result;
                     }""",
-                    cached_immutable_asset,
+                    {
+                        "asset": cached_immutable_asset,
+                        "oldCache": f"{APP_CACHE_PREFIX}{expected_version}",
+                    },
                 )
                 _require(
                     isinstance(fetch_state, dict)
@@ -2413,6 +2615,7 @@ def run_acceptance(
                 and fallback_state.get("status") == 200
                 and isinstance(fallback_state.get("byteLength"), int)
                 and fallback_state["byteLength"] > 0
+                and fallback_state.get("matchesRetainedBytes") is True
                 and fallback_state.get("workerFailureCount", 0) > 0
                 and fallback_state.get("promoted") is True
                 and fallback_state.get("cacheOperationsSettled") is True
@@ -2434,8 +2637,52 @@ def run_acceptance(
                 page.evaluate("() => performance.timeOrigin") > page_time_origin,
                 "prepared project tab did not retry before cache diagnostics",
             )
-            page.locator("#project-name").wait_for(state="visible", timeout=15_000)
-            second_tab.locator(".app-shell").wait_for(state="visible", timeout=15_000)
+            mark_stage("checking the reauthenticated editor after offline fallback")
+            try:
+                page.locator("#project-name").wait_for(state="visible", timeout=15_000)
+            except PlaywrightError:
+                editor_state = page.evaluate(
+                    """() => ({
+                      path: location.pathname,
+                      language: document.documentElement.lang,
+                      appShell: Boolean(document.querySelector('.app-shell')),
+                      editor: Boolean(document.querySelector('#project-name')),
+                      signIn: Boolean(document.querySelector('#email')),
+                      offline: Boolean(document.querySelector('.offline-page')),
+                      controlled: navigator.serviceWorker.controller !== null,
+                    })"""
+                )
+                page.screenshot(
+                    path=str(screenshots / "editor-after-fallback-timeout.png"),
+                    caret="hide",
+                )
+                raise AcceptanceFailure(
+                    f"reopened editor did not appear (safe page state: {editor_state})"
+                ) from None
+            mark_stage("checking the secondary tab after offline fallback")
+            try:
+                second_tab.locator(".app-shell, .signed-out-screen").wait_for(
+                    state="visible", timeout=15_000
+                )
+            except PlaywrightError:
+                second_tab_state = second_tab.evaluate(
+                    """() => ({
+                      path: location.pathname,
+                      language: document.documentElement.lang,
+                      appShell: Boolean(document.querySelector('.app-shell')),
+                      signedOut: Boolean(document.querySelector('.signed-out-screen')),
+                      signIn: Boolean(document.querySelector('#email')),
+                      controlled: navigator.serviceWorker.controller !== null,
+                    })"""
+                )
+                second_tab.screenshot(
+                    path=str(screenshots / "secondary-tab-after-fallback-timeout.png"),
+                    caret="hide",
+                )
+                raise AcceptanceFailure(
+                    "secondary tab app shell did not appear "
+                    f"(safe page state: {second_tab_state})"
+                ) from None
             _wait_for_controlled_worker(page, next_version)
             _wait_for_controlled_worker(second_tab, next_version)
 
@@ -2511,16 +2758,6 @@ def run_acceptance(
                 and set(final_paths).issubset(candidate_assets),
                 "updated app cache omitted core assets or contained an "
                 "unallowlisted path",
-            )
-            _require(
-                any(
-                    response == f"{cached_immutable_asset}:200"
-                    for response in service_worker_asset_responses[
-                        asset_response_start:
-                    ]
-                ),
-                "the updated route did not recover its missing immutable asset "
-                "from the retained old cache",
             )
             _require(
                 cached_immutable_asset in final_paths,
@@ -2614,11 +2851,12 @@ def main(argv: list[str] | None = None) -> int:
             stage_file = private_dir / "browser-stage.txt"
             if stage_file.is_file():
                 stage = stage_file.read_text(encoding="ascii")
-        frames = traceback.extract_tb(error.__traceback__)[-6:]
-        safe_frames = ", ".join(
-            f"{Path(frame.filename).name}:{frame.name}:{frame.lineno}"
-            for frame in frames
-        )
+        frames = [
+            frame
+            for frame in traceback.extract_tb(error.__traceback__)
+            if Path(frame.filename).name == "web_pwa_browser.py"
+        ][-3:]
+        safe_frames = ", ".join(f"{frame.name}:{frame.lineno}" for frame in frames)
         print(
             "PWA browser acceptance failed during "
             f"{stage} ({type(error).__name__}; frames: {safe_frames}); "

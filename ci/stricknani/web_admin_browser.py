@@ -25,6 +25,9 @@ from playwright.sync_api import (
     expect,
     sync_playwright,
 )
+from playwright.sync_api import (
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 from ci.stricknani import rust_fixture, seed_rust
 
@@ -520,7 +523,7 @@ def _assert_owner_resource_cards(
         embedded_card, message="project yarn card preview did not decode"
     )
     _require(
-        urlsplit(embedded_image).path.startswith(f"/api/v2/yarns/{yarn_id}/photos/"),
+        urlsplit(embedded_image).path.startswith(f"/media/thumbnails/yarns/{yarn_id}/"),
         "project yarn card did not use the owner-scoped yarn photo route",
     )
     for width, suffix in ((390, "390"), (1280, "desktop")):
@@ -545,7 +548,9 @@ def _assert_owner_resource_cards(
         project_card, message="project library card preview did not decode"
     )
     _require(
-        urlsplit(project_image).path.startswith("/api/v2/projects/"),
+        urlsplit(project_image).path.startswith(
+            f"/media/thumbnails/projects/{project_id}/"
+        ),
         "project library card did not use the owner-scoped image route",
     )
     for width, suffix in ((390, "390"), (1280, "desktop")):
@@ -568,7 +573,7 @@ def _assert_owner_resource_cards(
         yarn_card, message="yarn library card preview did not decode"
     )
     _require(
-        urlsplit(yarn_image).path.startswith(f"/api/v2/yarns/{yarn_id}/photos/"),
+        urlsplit(yarn_image).path.startswith(f"/media/thumbnails/yarns/{yarn_id}/"),
         "yarn library card did not use the owner-scoped photo route",
     )
     for width, suffix in ((390, "390"), (1280, "desktop")):
@@ -1177,23 +1182,98 @@ def run_acceptance(
             page.on("request", record_audit_detail_request)
             mark("open cross-owner resource route")
             page.set_viewport_size({"width": 390, "height": 900})
-            page.goto(
-                f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
-                wait_until="networkidle",
+            detail_api_statuses: list[int] = []
+            detail_api_error_codes: list[str] = []
+            page_errors: list[None] = []
+
+            def record_resource_detail_response(response: Response) -> None:
+                expected_path = (
+                    f"/api/v2/admin/resources/project/{cross_owner_project_id}"
+                )
+                if urlsplit(response.url).path != expected_path:
+                    return
+                detail_api_statuses.append(response.status)
+                if response.status == 200:
+                    return
+                try:
+                    response_body: object = response.json()
+                except Exception:
+                    response_body = None
+                if isinstance(response_body, dict):
+                    error = response_body.get("error")
+                    if isinstance(error, dict):
+                        code = error.get("code")
+                        if isinstance(code, str) and code in {
+                            "admin_required",
+                            "not_found",
+                            "internal_error",
+                        }:
+                            detail_api_error_codes.append(code)
+
+            page.on("response", record_resource_detail_response)
+            page.on("pageerror", lambda _error: page_errors.append(None))
+            expected_resource_path = (
+                f"/app/admin/resources/project/{cross_owner_project_id}"
             )
-            page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
-                state="visible"
-            )
+            try:
+                detail_page_response = page.goto(
+                    f"{origin}{expected_resource_path}",
+                    wait_until="commit",
+                    timeout=10_000,
+                )
+            except PlaywrightTimeoutError:
+                detail_page_response = None
+            page.wait_for_timeout(1000)
+            resource_heading_visible = page.get_by_role(
+                "heading", name=cross_owner_name, exact=True
+            ).is_visible()
+            if not resource_heading_visible:
+                diagnostic_screenshot = "admin-resource-route-failure.png"
+                _save_screenshot(page, screenshot_dir, diagnostic_screenshot)
+                page_status = (
+                    detail_page_response.status if detail_page_response else "none"
+                )
+                api_status = detail_api_statuses[-1] if detail_api_statuses else "none"
+                api_code = (
+                    detail_api_error_codes[-1] if detail_api_error_codes else "none"
+                )
+                content_visible = page.locator(".resource-content").is_visible()
+                error_visible = page.locator(".resource-page [role=alert]").is_visible()
+                loading_visible = page.locator(
+                    ".resource-page [aria-live=polite]"
+                ).is_visible()
+                shell_visible = page.locator(".app-shell").is_visible()
+                auth_form_visible = page.locator(".auth-form").is_visible()
+                route_matches = urlsplit(page.url).path == expected_resource_path
+                screenshot_state = "saved" if screenshot_dir else "disabled"
+                diagnostic = (
+                    "direct admin resource view did not render the resource "
+                    f"(page_status={page_status}, api_status={api_status}, "
+                    f"api_code={api_code}, content={content_visible}, "
+                    f"error={error_visible}, loading={loading_visible}, "
+                    f"app_shell={shell_visible}, auth_form={auth_form_visible}, "
+                    f"route_match={route_matches}, page_errors={len(page_errors)}, "
+                    f"screenshot={screenshot_state})"
+                )
+                _require(
+                    False,
+                    diagnostic,
+                )
+            mark("return from direct resource to audit")
             page.get_by_role("button", name="Back", exact=True).click()
+            mark("confirm direct resource fallback to audit")
             page.wait_for_url("**/app/admin/audit")
+            mark("return from audit to More")
             page.get_by_role("button", name="Back", exact=True).click()
+            mark("confirm audit fallback to More")
             page.wait_for_url("**/app/more")
             page.get_by_role("heading", name="More", exact=True).wait_for(
                 state="visible"
             )
+            mark("reopen cross-owner resource after history fallbacks")
             page.goto(
                 f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
-                wait_until="networkidle",
+                wait_until="domcontentloaded",
             )
             page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
                 state="visible"

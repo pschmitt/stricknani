@@ -139,7 +139,19 @@
       window.history.back();
       return;
     }
-    if (backFallback !== page.url.pathname) void goto(backFallback);
+    const currentPath = page.url.pathname;
+    const fallbackPath = backFallback;
+    if (fallbackPath === currentPath) return;
+    void goto(fallbackPath, { replaceState: true })
+      .then(() => {
+        if (page.url.pathname !== fallbackPath) return;
+        resetInternalRouteStack();
+        trackInternalRoute(fallbackPath, "enter");
+        navigationRevision += 1;
+      })
+      .catch(() => {
+        // A cancelled or failed navigation must leave the existing route stack intact.
+      });
   }
 
   function isActive(path: AppPath): boolean {
