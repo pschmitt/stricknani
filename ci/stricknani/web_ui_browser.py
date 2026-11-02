@@ -569,11 +569,17 @@ def _svg_shape_signature(icon: Locator) -> str:
             'path, circle, rect, line, polyline, polygon'
           )
         ].map((shape) => {
-            const bounds = shape.getBBox();
-            const metrics = [bounds.x, bounds.y, bounds.width, bounds.height]
-              .map((value) => Math.round(value * 10) / 10);
-            return `${shape.tagName.toLowerCase()}:${metrics.join(',')}`;
+            const attributes = [
+              'd', 'cx', 'cy', 'r', 'x', 'y', 'width', 'height',
+              'x1', 'x2', 'y1', 'y2', 'points'
+            ];
+            const drawing = attributes
+              .filter((name) => shape.hasAttribute(name))
+              .map((name) => `${name}=${shape.getAttribute(name)}`)
+              .join(';');
+            return `${shape.tagName.toLowerCase()}:${drawing}`;
           })
+          .sort()
           .join('|')"""
     )
     return signature if isinstance(signature, str) else ""

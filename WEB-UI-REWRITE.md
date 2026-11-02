@@ -233,7 +233,7 @@ HTML messages. Reuse terminology without preserving the old layout or copy.
 
 ## Backlog
 
-Track the work as T120.1–T120.9 in `TODO.md`. Each slice owns a clear area and
+Track the work as T120.1–T120.11 in `TODO.md`. Each slice owns a clear area and
 lands as a small reviewable checkpoint. Coordinate under the repository’s
 Concord workspace; the Luna implementation waves below own only their named
 frontend area, while the parent integrates and reviews API, authorization,
@@ -288,6 +288,26 @@ the coordinator reviews their contracts and security-sensitive changes.
   coverage. Fix issues, remove replaced Rust templates/styles/scripts only
   after route consumers are gone, update docs/screenshots, and report remaining
   limitations. Keep preview data isolated; do not cut over production.
+
+- [ ] **T120.10 — Requested update activation.** Replace the close-all-tabs
+  notice with a working reload-to-update action. Activation follows an explicit
+  click and a bounded readiness handshake across open app tabs. Protect dirty
+  forms and in-flight mutations before activation; cancel or time out cleanly
+  when another tab cannot prepare. Prepared tabs may reload for that request;
+  finding a new worker alone must not reload a tab. Keep cache contents public
+  and retain the assets needed by older clients until their transition is
+  confirmed. Cover clean, dirty, busy, multiple-tab, timeout and retry cases.
+- [ ] **T120.11 — Audit resource history.** Display project, yarn and category
+  names with useful links. The user explicitly approved a separate read-only
+  administrator view for resources belonging to other users; ordinary resource
+  ownership checks, edit permissions and API v1 remain unchanged. Offer an
+  on-demand diff for relevant recorded changes, including editable resource
+  content. Store new typed changes and event-time names transactionally;
+  project only recognized, bounded resource fields from compatible historical
+  diffs. Never expose raw legacy details, authentication fields or arbitrary
+  JSON. Deleted resources and events without sufficient history need honest
+  fallback states rather than invented values. Test authorization, migration,
+  rollback, historical projection and the read-only browser journey.
 
 ### Luna implementation waves and ownership
 
