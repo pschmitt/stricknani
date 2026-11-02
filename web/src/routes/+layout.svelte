@@ -32,7 +32,11 @@
       pathname.startsWith(resolve("/admin/audit")) ||
       pathname.startsWith("/app/admin/resources"),
   );
-  const routeIsAdminOnly = $derived(adminRoute && !user?.is_admin);
+  const canManageAdmin = $derived(
+    user?.is_admin === true &&
+      session.data?.capabilities.admin_actions === true,
+  );
+  const routeIsAdminOnly = $derived(adminRoute && !canManageAdmin);
   let canGoBack = $state(false);
 
   const mainNavigation = [
@@ -238,7 +242,7 @@
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
-        {#if user.is_admin}
+        {#if canManageAdmin}
           <a
             class:active={isActive("/admin/users")}
             aria-current={isActive("/admin/users") ? "page" : undefined}

@@ -88,6 +88,12 @@
       session.data?.user !== null &&
       session.data?.user !== undefined,
   );
+  const mediaUploadAvailable = $derived(
+    mediaAvailable && session.data?.capabilities.media_upload === true,
+  );
+  const mediaDeleteAvailable = $derived(
+    mediaAvailable && session.data?.capabilities.media_delete === true,
+  );
   const saveDisabled = $derived(
     saving || deleting || !isDirty || conflictProject !== null,
   );
@@ -603,19 +609,25 @@
   async function uploadImage(event: Event): Promise<void> {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) return;
+    if (!mediaUploadAvailable) {
+      input.value = "";
+      return;
+    }
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
     const stepId = mediaStepId ? Number(mediaStepId) : undefined;
-    await performMediaMutation((id, currentSession, signal) =>
-      uploadProjectImage(
-        id,
-        file,
-        mediaAltText,
-        currentSession,
-        stepId,
-        signal,
-      ),
+    await performMediaMutation(
+      (id, currentSession, signal) =>
+        uploadProjectImage(
+          id,
+          file,
+          mediaAltText,
+          currentSession,
+          stepId,
+          signal,
+        ),
+      "media_upload",
     );
     mediaAltText = "";
   }
@@ -623,31 +635,41 @@
   async function uploadAttachment(event: Event): Promise<void> {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) return;
+    if (!mediaUploadAvailable) {
+      input.value = "";
+      return;
+    }
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
-    await performMediaMutation((id, currentSession, signal) =>
-      uploadProjectAttachment(id, file, currentSession, signal),
+    await performMediaMutation(
+      (id, currentSession, signal) =>
+        uploadProjectAttachment(id, file, currentSession, signal),
+      "media_upload",
     );
   }
 
   async function removeImage(imageId: number): Promise<void> {
     const currentSession = session.data;
     const id = projectId;
-    if (!currentSession?.user || id === null || !mediaAvailable) return;
+    if (!currentSession?.user || id === null || !mediaDeleteAvailable) return;
     if (!window.confirm(t("Remove this project photo?", locale))) return;
-    await performMediaMutation((projectKey, userSession, signal) =>
-      deleteProjectImage(projectKey, imageId, userSession, signal),
+    await performMediaMutation(
+      (projectKey, userSession, signal) =>
+        deleteProjectImage(projectKey, imageId, userSession, signal),
+      "media_delete",
     );
   }
 
   async function removeAttachment(attachmentId: number): Promise<void> {
     const currentSession = session.data;
     const id = projectId;
-    if (!currentSession?.user || id === null || !mediaAvailable) return;
+    if (!currentSession?.user || id === null || !mediaDeleteAvailable) return;
     if (!window.confirm(t("Remove this attachment?", locale))) return;
-    await performMediaMutation((projectKey, userSession, signal) =>
-      deleteProjectAttachment(projectKey, attachmentId, userSession, signal),
+    await performMediaMutation(
+      (projectKey, userSession, signal) =>
+        deleteProjectAttachment(projectKey, attachmentId, userSession, signal),
+      "media_delete",
     );
   }
 
@@ -657,10 +679,17 @@
       currentSession: NonNullable<typeof session.data>,
       signal: AbortSignal,
     ) => Promise<unknown>,
+    capability: "media_upload" | "media_delete",
   ): Promise<void> {
     const currentSession = session.data;
     const id = projectId;
-    if (!currentSession?.user || id === null || !mediaAvailable || mediaBusy)
+    if (
+      !currentSession?.user ||
+      id === null ||
+      !mediaAvailable ||
+      currentSession.capabilities[capability] !== true ||
+      mediaBusy
+    )
       return;
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
@@ -1182,6 +1211,11 @@
                 {t("Save your changes before editing project media.", locale)}
               </p>
             {/if}
+            {#if mediaAvailable && (!mediaUploadAvailable || !mediaDeleteAvailable)}
+              <p class="field-hint">
+                {t("Media storage is unavailable. Try again later.", locale)}
+              </p>
+            {/if}
             {#if mediaError}<p class="field-error" role="alert">
                 {mediaError}
               </p>{/if}
@@ -1206,7 +1240,7 @@
                     <button
                       type="button"
                       class="remove-button"
-                      disabled={!mediaAvailable}
+                      disabled={!mediaDeleteAvailable}
                       onclick={() => void removeImage(image.id)}
                       ><ActionLabel icon="action-delete"
                         >{t("Remove photo", locale)}</ActionLabel
@@ -1226,7 +1260,7 @@
                 <select
                   id="project-image-step"
                   bind:value={mediaStepId}
-                  disabled={!mediaAvailable}
+                  disabled={!mediaUploadAvailable}
                 >
                   <option value="">{t("Project cover", locale)}</option>
                   {#each project.steps as step (step.id)}
@@ -1244,7 +1278,7 @@
                 <input
                   id="project-image-alt"
                   bind:value={mediaAltText}
-                  disabled={!mediaAvailable}
+                  disabled={!mediaUploadAvailable}
                 />
               </div>
               <div class="field">
@@ -1255,7 +1289,7 @@
                   id="project-image-file"
                   type="file"
                   accept="image/*"
-                  disabled={!mediaAvailable}
+                  disabled={!mediaUploadAvailable}
                   onchange={uploadImage}
                 />
               </div>
@@ -1276,7 +1310,7 @@
                     <button
                       type="button"
                       class="remove-button"
-                      disabled={!mediaAvailable}
+                      disabled={!mediaDeleteAvailable}
                       onclick={() => void removeAttachment(attachment.id)}
                       ><ActionLabel icon="action-delete"
                         >{t("Remove attachment", locale)}</ActionLabel
@@ -1295,7 +1329,7 @@
               <input
                 id="project-attachment-file"
                 type="file"
-                disabled={!mediaAvailable}
+                disabled={!mediaUploadAvailable}
                 onchange={uploadAttachment}
               />
             </div>

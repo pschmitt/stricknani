@@ -65,6 +65,9 @@
   const userId = $derived(session.data?.user?.id ?? null);
   const canUseOcr = $derived(session.data?.capabilities.ocr === true);
   const canArchive = $derived(session.data?.capabilities.archive === true);
+  const canReadArchiveState = $derived(
+    session.data?.capabilities.archive_state === true,
+  );
   const textSizeClass = $derived(
     ["reading-small", "reading-medium", "reading-large"][textSize] ??
       "reading-medium",
@@ -921,7 +924,7 @@
               {t("Open archived copy", locale)} ↗
             </a>
           {/if}
-          {#if safeExternalUrl(project.link) && canArchive}
+          {#if safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
             <ArchiveControl
               entity="projects"
               id={project.id}
@@ -930,6 +933,7 @@
               ownerId={userId}
               {locale}
               enabled={canArchive}
+              readStateEnabled={canReadArchiveState}
               onArchived={refreshAfterArchive}
             />
           {/if}

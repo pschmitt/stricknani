@@ -70,6 +70,15 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const accountActionsEnabled = $derived(
+    session.data?.capabilities.account_actions === true,
+  );
+  const avatarUploadEnabled = $derived(
+    accountActionsEnabled && session.data?.capabilities.media_upload === true,
+  );
+  const avatarDeleteEnabled = $derived(
+    accountActionsEnabled && session.data?.capabilities.media_delete === true,
+  );
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
@@ -282,7 +291,12 @@
     event.preventDefault();
     const activeSession = session.data;
     const capturedUserId = activeSession?.user?.id;
-    if (!activeSession || capturedUserId === undefined || operation !== null)
+    if (
+      !accountActionsEnabled ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      operation !== null
+    )
       return;
     tokenNameError = "";
     tokenError = "";
@@ -328,6 +342,7 @@
       !target ||
       !activeSession ||
       capturedUserId === undefined ||
+      !accountActionsEnabled ||
       operation !== null
     )
       return;
@@ -373,6 +388,7 @@
     const capturedUserId = activeSession?.user?.id;
     if (
       !file ||
+      !avatarUploadEnabled ||
       !activeSession ||
       capturedUserId === undefined ||
       operation !== null
@@ -415,7 +431,12 @@
   async function removeAvatar() {
     const activeSession = session.data;
     const capturedUserId = activeSession?.user?.id;
-    if (!activeSession || capturedUserId === undefined || operation !== null)
+    if (
+      !avatarDeleteEnabled ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      operation !== null
+    )
       return;
     avatarError = "";
     pageStatus = "";
@@ -451,7 +472,12 @@
     event.preventDefault();
     const activeSession = session.data;
     const capturedUserId = activeSession?.user?.id;
-    if (!activeSession || capturedUserId === undefined || operation !== null)
+    if (
+      !accountActionsEnabled ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      operation !== null
+    )
       return;
     passwordError = "";
     currentPasswordError = "";
@@ -651,8 +677,12 @@
               type="file"
               accept="image/*"
               aria-label={t("Choose a profile picture", locale)}
-              disabled={operation !== null}
+              disabled={operation !== null || !avatarUploadEnabled}
               onchange={(event) => {
+                if (!avatarUploadEnabled) {
+                  event.currentTarget.value = "";
+                  return;
+                }
                 avatarFile = event.currentTarget.files?.[0] ?? null;
                 avatarError = "";
               }}
@@ -664,7 +694,7 @@
             <button
               class="primary-button"
               type="button"
-              disabled={operation !== null}
+              disabled={operation !== null || !avatarUploadEnabled}
               onclick={() => void uploadSelectedAvatar()}
             >
               <ActionLabel icon="upload">
@@ -678,7 +708,7 @@
             <button
               class="quiet-button danger-text"
               type="button"
-              disabled={operation !== null}
+              disabled={operation !== null || !avatarDeleteEnabled}
               onclick={() => void removeAvatar()}
             >
               <ActionLabel icon="action-delete">
@@ -726,12 +756,14 @@
             placeholder={t("For example, my tablet", locale)}
             aria-describedby={tokenNameError ? "token-name-error" : undefined}
             aria-invalid={tokenNameError ? "true" : undefined}
-            disabled={operation !== null}
+            disabled={operation !== null || !accountActionsEnabled}
           />
           <button
             class="primary-button"
             type="submit"
-            disabled={operation !== null || tokenLoad === "loading"}
+            disabled={operation !== null ||
+              !accountActionsEnabled ||
+              tokenLoad === "loading"}
           >
             <ActionLabel icon="key">
               {operation === "token"
@@ -787,7 +819,7 @@
                 class="quiet-button danger-text"
                 type="button"
                 aria-label={t("Revoke token", locale) + ` ${token.name}`}
-                disabled={operation !== null}
+                disabled={operation !== null || !accountActionsEnabled}
                 onclick={(event) => askToRevoke(token, event.currentTarget)}
               >
                 <ActionLabel icon="action-delete">
@@ -835,7 +867,7 @@
             aria-describedby={currentPasswordError
               ? "current-password-error"
               : undefined}
-            disabled={operation !== null}
+            disabled={operation !== null || !accountActionsEnabled}
           />
           {#if currentPasswordError}<small
               id="current-password-error"
@@ -854,7 +886,7 @@
             aria-describedby={newPasswordError
               ? "new-password-error"
               : "password-rule"}
-            disabled={operation !== null}
+            disabled={operation !== null || !accountActionsEnabled}
           />
           <small id="password-rule" class="muted"
             >{t(
@@ -879,7 +911,7 @@
             aria-describedby={confirmPasswordError
               ? "confirm-password-error"
               : undefined}
-            disabled={operation !== null}
+            disabled={operation !== null || !accountActionsEnabled}
           />
           {#if confirmPasswordError}<small
               id="confirm-password-error"
@@ -890,7 +922,7 @@
         <button
           class="primary-button password-submit"
           type="submit"
-          disabled={operation !== null}
+          disabled={operation !== null || !accountActionsEnabled}
         >
           <ActionLabel icon="save">
             {operation === "password"

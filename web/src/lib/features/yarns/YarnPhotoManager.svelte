@@ -42,6 +42,13 @@
   let zoomTitle = $state<HTMLHeadingElement | null>(null);
   let deleteDialog = $state<HTMLDialogElement | null>(null);
 
+  const mediaUploadAvailable = $derived(
+    canEdit && session.data?.capabilities.media_upload === true,
+  );
+  const mediaDeleteAvailable = $derived(
+    canEdit && session.data?.capabilities.media_delete === true,
+  );
+
   function isCurrentOperation(resourceId: number, ownerId: number): boolean {
     return yarnId === resourceId && session.data?.user?.id === ownerId;
   }
@@ -49,6 +56,10 @@
   async function upload(event: Event) {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) return;
+    if (!mediaUploadAvailable) {
+      input.value = "";
+      return;
+    }
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
@@ -88,6 +99,7 @@
   }
 
   function confirmDelete(photo: YarnPhoto) {
+    if (!mediaDeleteAvailable || uploading || deleting) return;
     deleteTarget = photo;
     deleteDialog?.showModal();
   }
@@ -95,7 +107,8 @@
   async function removePhoto() {
     const photo = deleteTarget;
     const currentSession = session.data;
-    if (!photo || !currentSession?.user || !canEdit || deleting) return;
+    if (!photo || !currentSession?.user || !mediaDeleteAvailable || deleting)
+      return;
     const resourceId = yarnId;
     const ownerId = currentSession.user.id;
     const updateResource = onResourceUpdated;
@@ -175,14 +188,18 @@
       <h2 id="photo-manager-title">{t("Photos", locale)}</h2>
       <p>{t("Tap a photo to see it larger.", locale)}</p>
     </div>
-    <label class="upload-action" class:disabled={!canEdit || uploading}>
-      <span>{uploading ? t("Uploading…", locale) : t("Add photo", locale)}</span
-      >
+    <label
+      class="upload-action"
+      class:disabled={!mediaUploadAvailable || uploading}
+    >
+      <ActionLabel icon="upload">
+        {uploading ? t("Uploading…", locale) : t("Add photo", locale)}
+      </ActionLabel>
       <input
         type="file"
         accept="image/*"
         aria-label={t("Choose a yarn photo", locale)}
-        disabled={!canEdit || uploading}
+        disabled={!mediaUploadAvailable || uploading}
         onchange={(event) => void upload(event)}
       />
     </label>
@@ -191,6 +208,10 @@
   {#if !canEdit}
     <p class="upload-hint">
       {t("Save your yarn changes before editing photos.", locale)}
+    </p>
+  {:else if !mediaUploadAvailable || !mediaDeleteAvailable}
+    <p class="upload-hint">
+      {t("Media storage is unavailable. Try again later.", locale)}
     </p>
   {/if}
   {#if uploading}
@@ -229,7 +250,7 @@
               <button
                 class="remove-photo"
                 type="button"
-                disabled={uploading || deleting}
+                disabled={!mediaDeleteAvailable || uploading || deleting}
                 aria-label={t("Remove photo", locale)}
                 onclick={() => confirmDelete(photo)}
               >
@@ -302,7 +323,7 @@
       <button
         type="button"
         class="danger-button"
-        disabled={deleting}
+        disabled={!mediaDeleteAvailable || deleting}
         onclick={() => void removePhoto()}
       >
         <ActionLabel icon="action-delete"

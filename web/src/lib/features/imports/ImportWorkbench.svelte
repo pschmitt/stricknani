@@ -51,7 +51,10 @@
     session.data?.capabilities.external_imports === true,
   );
   const allowAi = $derived(session.data?.capabilities.ai === true);
-  const sourceDisabled = $derived(busy || busyYarn !== null);
+  const allowPreview = $derived(
+    session.data?.capabilities.import_preview === true,
+  );
+  const sourceDisabled = $derived(busy || busyYarn !== null || !allowPreview);
   const hasDirtyDraft = $derived(
     Boolean(draft && preview && !createdProjectId),
   );
@@ -145,6 +148,13 @@
     const currentSession = session.data;
     if (!currentSession?.user || busy || busyYarn !== null) return;
     errorMessage = "";
+    if (!allowPreview) {
+      errorMessage = t(
+        "Import preview is unavailable right now. Try again later.",
+        locale,
+      );
+      return;
+    }
     if (sourceKind === "url" && !allowExternal) {
       errorMessage = t("URL imports are disabled for this account.", locale);
       return;
@@ -358,6 +368,10 @@
 
   function fileChanged(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
+    if (!allowPreview) {
+      input.value = "";
+      return;
+    }
     selectedFile = input.files?.[0] ?? null;
   }
 </script>
@@ -382,7 +396,7 @@
         <p class="eyebrow">{t("Step 1", locale)}</p>
         <h2 id="source-title">{t("Choose a source", locale)}</h2>
       </div>
-      {#if allowAi}
+      {#if allowAi && allowPreview}
         <label class="ai-toggle"
           ><input
             type="checkbox"
@@ -464,7 +478,7 @@
         ><span>{t("Pattern page URL", locale)}</span><input
           type="url"
           bind:value={sourceUrl}
-          disabled={sourceDisabled}
+          disabled={!allowExternal || sourceDisabled}
           placeholder="https://example.com/pattern"
           autocomplete="url"
         /></label
@@ -476,7 +490,12 @@
         )}
       </p>
     {/if}
-    {#if !allowAi}<p class="supporting">
+    {#if !allowPreview}
+      <p class="supporting">
+        {t("Import preview is unavailable right now. Try again later.", locale)}
+      </p>
+    {/if}
+    {#if allowPreview && !allowAi}<p class="supporting">
         {t(
           "AI enhancement is unavailable. You can still preview and review the extracted draft.",
           locale,

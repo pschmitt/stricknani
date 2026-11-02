@@ -38,6 +38,9 @@
   const userId = $derived(session.data?.user?.id ?? null);
   const canUseOcr = $derived(session.data?.capabilities.ocr === true);
   const canArchive = $derived(session.data?.capabilities.archive === true);
+  const canReadArchiveState = $derived(
+    session.data?.capabilities.archive_state === true,
+  );
   const yarnId = $derived(id);
 
   $effect(() => {
@@ -418,7 +421,7 @@
             rel="noopener noreferrer">{t("Archived source", locale)}</a
           >
         {/if}
-        {#if safeExternalHref(yarn.link) && canArchive}
+        {#if safeExternalHref(yarn.link) && (canArchive || canReadArchiveState)}
           <ArchiveControl
             entity="yarns"
             id={yarn.id}
@@ -427,6 +430,7 @@
             ownerId={userId}
             {locale}
             enabled={canArchive}
+            readStateEnabled={canReadArchiveState}
             onArchived={refreshCurrentYarn}
           />
         {/if}

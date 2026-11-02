@@ -21,6 +21,7 @@
     ownerId,
     locale,
     enabled,
+    readStateEnabled,
     onArchived,
   }: {
     entity: ArchiveEntity;
@@ -30,6 +31,7 @@
     ownerId: number | null;
     locale: "en" | "de";
     enabled: boolean;
+    readStateEnabled: boolean;
     onArchived: (marker: string) => void | Promise<void>;
   } = $props();
 
@@ -54,6 +56,7 @@
     const currentSource = sourceLink;
     const currentOwner = ownerId;
     const canArchive = enabled;
+    const canReadState = readStateEnabled;
     const generation = ++requestGeneration;
     controller?.abort();
     controller = null;
@@ -64,14 +67,15 @@
     errorMessage = "";
     refreshedArchiveMarker = null;
     if (
-      !canArchive ||
+      (!canArchive && !canReadState) ||
       !Number.isSafeInteger(currentId) ||
       currentId <= 0 ||
       currentSource.length === 0 ||
       currentOwner === null
     )
       return;
-    void refreshStatus(false);
+    if (canReadState) void refreshStatus(false);
+    else loaded = true;
     return () => {
       if (generation === requestGeneration) requestGeneration += 1;
       controller?.abort();
@@ -82,28 +86,29 @@
   async function enqueue() {
     const currentSession = session.data;
     if (
-      !canRun(currentSession?.user?.id ?? null) ||
-      !loaded ||
+      !canEnqueue(currentSession?.user?.id ?? null) ||
+      (!loaded && readStateEnabled) ||
       busy ||
-      (status?.state !== null &&
-        status?.state !== "failed" &&
-        status?.state !== "superseded")
+      (status !== null &&
+        status.state !== "failed" &&
+        status.state !== "superseded")
     )
       return;
     await refreshStatus(true);
   }
 
   async function checkAgain() {
-    if (!canRun(session.data?.user?.id ?? null) || busy) return;
+    if (!canReadArchiveState(session.data?.user?.id ?? null) || busy) return;
     await refreshStatus(false);
   }
 
   async function retryAfterError() {
     if (
+      canEnqueue(session.data?.user?.id ?? null) &&
       loaded &&
-      (status?.state === null ||
-        status?.state === "failed" ||
-        status?.state === "superseded")
+      (status === null ||
+        status.state === "failed" ||
+        status.state === "superseded")
     ) {
       await enqueue();
     } else {
@@ -113,7 +118,13 @@
 
   async function refreshStatus(enqueueRequest: boolean) {
     const currentSession = session.data;
-    if (!currentSession?.user || !canRun(currentSession.user.id)) return;
+    if (
+      !currentSession?.user ||
+      (enqueueRequest
+        ? !canEnqueue(currentSession.user.id)
+        : !canReadArchiveState(currentSession.user.id))
+    )
+      return;
     const generation = ++requestGeneration;
     controller?.abort();
     const nextController = new AbortController();
@@ -136,7 +147,8 @@
           )
         : await getVisibleStatus(nextController.signal);
       window.clearTimeout(requestTimeout);
-      if (!isCurrent(generation, nextController)) return;
+      const requestKind = enqueueRequest ? "enqueue" : "read";
+      if (!isCurrent(generation, nextController, requestKind)) return;
       const previousState = status?.state ?? null;
       status = nextStatus;
       loaded = true;
@@ -145,21 +157,33 @@
         previousState,
         generation,
         nextController,
+        requestKind,
       );
-      if (!isCurrent(generation, nextController)) return;
-      if (isActive(nextStatus))
+      if (!isCurrent(generation, nextController, requestKind)) return;
+      if (
+        isActive(nextStatus) &&
+        canReadArchiveState(session.data?.user?.id ?? null)
+      )
         await pollUntilSettled(generation, nextController);
     } catch (error) {
       if (
         timedOut &&
         generation === requestGeneration &&
-        canRun(session.data?.user?.id ?? null)
+        (enqueueRequest
+          ? canEnqueue(session.data?.user?.id ?? null)
+          : canReadArchiveState(session.data?.user?.id ?? null))
       ) {
         errorMessage = t(
           "Archive status could not be reached. Check your connection and try again.",
           locale,
         );
-      } else if (isCurrent(generation, nextController)) {
+      } else if (
+        isCurrent(
+          generation,
+          nextController,
+          enqueueRequest ? "enqueue" : "read",
+        )
+      ) {
         errorMessage = errorText(error);
       }
     } finally {
@@ -179,7 +203,7 @@
       controller: requestController,
       readStatus: getVisibleStatus,
       onStatus: async (nextStatus) => {
-        if (!isCurrent(generation, requestController)) return;
+        if (!isCurrent(generation, requestController, "read")) return;
         const previousState = status?.state ?? null;
         status = nextStatus;
         await refreshIfArchived(
@@ -187,10 +211,11 @@
           previousState,
           generation,
           requestController,
+          "read",
         );
       },
       onDeadline: () => {
-        if (isCurrent(generation, requestController)) {
+        if (isCurrent(generation, requestController, "read")) {
           pollingExhausted = true;
         }
       },
@@ -200,7 +225,13 @@
 
   async function getVisibleStatus(signal: AbortSignal): Promise<ArchiveStatus> {
     while (!signal.aborted) {
+      if (!canReadArchiveState(session.data?.user?.id ?? null)) {
+        throw new DOMException("Request aborted", "AbortError");
+      }
       await waitUntilVisible(signal);
+      if (!canReadArchiveState(session.data?.user?.id ?? null)) {
+        throw new DOMException("Request aborted", "AbortError");
+      }
       const visibleRequest = new AbortController();
       const abortWithParent = () => visibleRequest.abort();
       const abortWhenHidden = () => {
@@ -293,12 +324,13 @@
     previousState: ArchiveState,
     generation: number,
     requestController: AbortController,
+    requestKind: "enqueue" | "read" | "either" = "either",
   ) {
     if (
       nextStatus.state !== "archived" ||
       (previousState === "archived" && detailHasArchive) ||
       (previousState === null && detailHasArchive) ||
-      !isCurrent(generation, requestController)
+      !isCurrent(generation, requestController, requestKind)
     )
       return;
     const marker = `${entity}:${id}:${nextStatus.updated_at ?? "unknown"}`;
@@ -307,7 +339,7 @@
     try {
       await onArchived(marker);
     } catch {
-      if (isCurrent(generation, requestController)) {
+      if (isCurrent(generation, requestController, requestKind)) {
         refreshedArchiveMarker = null;
         errorMessage = t(
           "The archive completed, but the updated details could not be loaded.",
@@ -320,17 +352,34 @@
   function isCurrent(
     generation: number,
     requestController: AbortController,
+    requestKind: "enqueue" | "read" | "either" = "either",
   ): boolean {
     return (
       generation === requestGeneration &&
       !requestController.signal.aborted &&
-      canRun(session.data?.user?.id ?? null)
+      (requestKind === "read"
+        ? canReadArchiveState(session.data?.user?.id ?? null)
+        : requestKind === "enqueue"
+          ? canEnqueue(session.data?.user?.id ?? null)
+          : canEnqueue(session.data?.user?.id ?? null) ||
+            canReadArchiveState(session.data?.user?.id ?? null))
     );
   }
 
-  function canRun(currentUserId: number | null): boolean {
+  function canEnqueue(currentUserId: number | null): boolean {
     return (
       enabled &&
+      ownerId !== null &&
+      currentUserId === ownerId &&
+      Number.isSafeInteger(id) &&
+      id > 0 &&
+      sourceLink.length > 0
+    );
+  }
+
+  function canReadArchiveState(currentUserId: number | null): boolean {
+    return (
+      readStateEnabled &&
       ownerId !== null &&
       currentUserId === ownerId &&
       Number.isSafeInteger(id) &&
@@ -379,7 +428,7 @@
   }
 </script>
 
-{#if enabled && ownerId !== null && sourceLink.length > 0}
+{#if (enabled || readStateEnabled) && ownerId !== null && sourceLink.length > 0}
   <section class="archive-control" aria-busy={busy}>
     <p class="archive-status" aria-live="polite">{statusText(status)}</p>
     {#if errorMessage}<p class="archive-error" role="alert">
@@ -396,9 +445,9 @@
     {/if}
     {#if busy}
       <p class="archive-progress">{t("Checking archive status…", locale)}</p>
-    {:else if !loaded}
+    {:else if !loaded && readStateEnabled}
       <p class="archive-progress">{t("Loading archive status…", locale)}</p>
-    {:else if canManuallyCheckArchive(status, pollingExhausted)}
+    {:else if readStateEnabled && canManuallyCheckArchive(status, pollingExhausted)}
       <button type="button" onclick={() => void checkAgain()}>
         <ActionLabel icon="refresh">
           {t("Check archive status again", locale)}
@@ -408,7 +457,7 @@
       <p class="archive-progress">
         {t("Status checks pause in the background.", locale)}
       </p>
-    {:else if status?.state !== "archived"}
+    {:else if enabled && status?.state !== "archived"}
       <button type="button" onclick={() => void enqueue()}>
         <ActionLabel icon="link">
           {status?.state === "failed" || status?.state === "superseded"
