@@ -323,13 +323,13 @@ the coordinator reviews their contracts and security-sensitive changes.
   favorite and other controls outside links, preserve phone spacing, and test
   cross-owner image authorization, deleted resources and related-resource links.
 
-- [ ] **T120.13 — Decouple frontend packaging from Rust compilation.** Split
+- [x] **T120.13 — Decouple frontend packaging from Rust compilation.** Split
   the frontend-independent Rust build from final web/server assembly so
   frontend-only changes do not rebuild Rust. Pass `corePackage` and `webPackage`
   through `nix/module.nix`; verify derivation dependencies and the default
   module package. The current preview's explicit package override is unaffected.
 
-- [ ] **T120.14 — Compact header and action icons.** Use the existing cute logo
+- [x] **T120.14 — Compact header and action icons.** Use the existing cute logo
   beside the title and a small version line. Put the profile avatar on the right,
   follow native browser history for Back, and preserve dirty-form guards. Add
   shared bounded icons beside action labels throughout imports, projects, yarns,

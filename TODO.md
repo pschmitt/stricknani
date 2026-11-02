@@ -67,8 +67,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T120.13 | P2 | wip | web-rewrite/packaging | refactor | Separate Rust compilation from frontend assembly and pass corePackage/webPackage through the NixOS module default; Luna implementation, coordinator review |
-| T120.14 | P2 | wip | web-rewrite/ui | feat | Add shared action icons throughout workflows, compact logo/title/version header and native browser Back; scoped Luna implementation and browser checks |
+| T120.13 | P2 | done | web-rewrite/packaging | refactor | Separate Rust compilation from frontend assembly and pass corePackage/webPackage through the NixOS module default; Luna implementation, coordinator review |
+| T120.14 | P2 | done | web-rewrite/ui | feat | Add shared action icons throughout workflows, compact logo/title/version header and native browser Back; scoped Luna implementation and browser checks |
 | T119 | P1 | done | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
 | T119.1 | P1 | done | rust-port | feat | Rust service foundation and gauge workflow; Askama page, health/static routes, and candidate Nix package/image |
 | T119.2 | P1 | done | rust-port/data | feat | Design fresh Rust schema/migrations and implement authentication, accounts, sessions, and configuration |

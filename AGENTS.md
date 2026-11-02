@@ -138,6 +138,9 @@ Use this file as the operational source of truth for working in Stricknani.
 - Browser Back and its confirmation dialog are asynchronous. Await the dialog
   event and navigation result explicitly. Exercise in-app history through real
   app links; hard document navigation exercises browser unload protection.
+- Before triggering a preview host upgrade, copy the reviewed, realized system
+  closure from the build host to the deployment target and verify its presence.
+  Keep compilation on the designated build hosts.
 - Device checks in an existing browser profile must use a unique per-run
   loopback hostname, not just a new port: cookies are shared across ports.
   Create an owned tab and clear only that test origin during cleanup.

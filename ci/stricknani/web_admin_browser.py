@@ -2086,6 +2086,24 @@ def run_acceptance(
                 ),
                 "administrator passwords or drafts were persisted in local storage",
             )
+            mark("fresh direct entry has no browser Back control")
+            fresh_page = context.new_page()
+            _guard_loopback(fresh_page, origin)
+            fresh_page.goto("about:blank")
+            fresh_page.evaluate(
+                "target => location.replace(target)",
+                f"{origin}/app/admin/audit",
+            )
+            fresh_page.wait_for_url("**/app/admin/audit")
+            fresh_page.get_by_role("heading", name="Audit log", exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                fresh_page.evaluate("() => history.length") == 1
+                and fresh_page.locator(".app-header .shell-back-button").count() == 0,
+                "fresh direct audit entry exposed a Back control without prior history",
+            )
+            fresh_page.close()
             context.close()
         finally:
             browser.close()

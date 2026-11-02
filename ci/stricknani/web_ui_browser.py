@@ -2557,10 +2557,16 @@ def run_acceptance(
             page.locator("#email").fill(browser_email)
             page.locator("#password").fill(browser_password)
             page.get_by_role("button", name="Sign in").click()
+            mark_stage("waiting for project library URL after login")
+            page.wait_for_url("**/app/projects", timeout=10_000)
             mark_stage("waiting for authenticated app shell")
             page.locator(".app-shell").wait_for(state="visible")
             mark_stage("waiting for authenticated mobile navigation")
             page.locator(".mobile-navigation").wait_for(state="visible")
+            mark_stage("waiting for rendered project library heading")
+            page.get_by_role("heading", name="Projects", exact=True).wait_for(
+                state="visible", timeout=10_000
+            )
             _assert_mobile_app_header(page)
             current_route = urlsplit(page.url).path
             mark_stage(f"checking project route after login at {current_route}")

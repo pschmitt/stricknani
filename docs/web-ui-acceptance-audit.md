@@ -2,7 +2,7 @@
 
 This is a requirement-to-evidence audit, not a completion claim. The checklist
 is in [`WEB-UI-REWRITE.md`](../WEB-UI-REWRITE.md). T120 and T120.9 remain
-`wip`; T120.10, T120.11, and T120.12 are complete in [`TODO.md`](../TODO.md).
+`wip`; T120.10–T120.14 are complete in [`TODO.md`](../TODO.md).
 The deployed `/app` preview and the remaining acceptance work are described in
 [`web-ui-checkpoint.md`](web-ui-checkpoint.md).
 
@@ -22,24 +22,26 @@ The deployed `/app` preview and the remaining acceptance work are described in
 | **T120.10 Requested update activation** | Explicit reload-to-update behavior, cross-tab readiness, dirty-form and in-flight mutation guards; frontend and PWA tests plus exact packaged PWA journey. | **Complete.** The packaged PWA browser gate exited 0. |
 | **T120.11 Audit resource history** | Typed audit changes, event resource names, separate read-only cross-owner admin resource views, media authorization, and lazy diffs; Rust tests and exact packaged admin journey. | **Complete.** Ordinary ownership, edit permissions, and API v1 remain unchanged. Migration 14 is applied and database integrity passed. |
 | **T120.12 Reusable resource cards** | Shared project/yarn/category cards across audit and related-resource views, protected previews, fallbacks, and responsive links; exact packaged admin, core, yarn, and accessibility journeys. | **Complete.** All five packaged browser gates listed in the checkpoint exited 0. |
+| **T120.13 Independent Rust core packaging** | Clean frontend-only source changes leave the core derivation unchanged; package, module, flake and image checks passed. | **Complete.** The final deployed frontend reuses the verified core. |
+| **T120.14 Header and action icons** | Shared bounded action icons, compact brand/version/profile header, native history and guarded audit scroll snapshots; exact packaged browser journeys. | **Complete.** Mobile English/German import controls, draft cancellation, filters/scroll and compact audit chevrons passed. |
 
 ## Current source, package, and live provenance
 
 The deployed application source is
-`fe9ff79ce93a87899b15042243e52caa698fdd54`; public configuration pins it at
-`6ba1610af9596d1af129f6bc29eb8b835ea2dc3b`. The normalized source archive
-SHA-256 is `f29d412242b3d7d67b9f41d4ba470f6571fbf87eee4fb389c02fc93a0800fe18`.
+`52221ad266d5c38124f7ca442add952055223e7b`; public configuration pins it at
+`db9a7a20cee270a113356b79a9baa7592458e3bc`. The source NAR hash
+is `sha256-OHp+SibLsGdiv4av8jtuMvZKQjjgiQyNrA8jzrvTh5Q=`.
 The web package is
-`/nix/store/my3zp6kycxxjg3jp70ljbsajvhhd5qrq-stricknani-web-0.1.0`; the
+`/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0`; the
 server package is
-`/nix/store/fdz83ix5jn5d0p53call8rbgz8fc6i11-stricknani-server-0.1.0` and
+`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0` and
 its raw executable (`bin/.stricknani-server-wrapped`) SHA-256 is
-`8e4fd12218576109d28ade9b7e8f1830cc2c58992a77ecdc975f960040a851a5`.
+`9e4b0e376c7aa73019eb43a7bb2df748c616613fd1c816f103075ccd408d0c4f`.
 
 Root independently verified the live HTML SHA-256
-`73ba77b39da950412853b1ba1fe25edf0f035ce596f4657954d4ec4e783ca84a`, the
+`bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`, the
 service worker SHA-256
-`24c326c6602b31d36256d4fe5bfd2c9e62416a94e55812bf50f6280f9dd93c9b` with
+`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31` with
 scope `/app/`, and the catalog SHA-256 prefix `f5b67b45` (738 entries per
 language). Migration 14 completed; SQLite integrity passed. The pre-migration
 backup is
@@ -48,15 +50,19 @@ SHA-256 `e9ef8e0add28ce2b2cf0f94e8d1bba1b15e1df0080fa1b5315149ecf635b58ec`.
 Production, nginx, and nixbot identities remained unchanged. The expected
 nix-daemon restart was limited to the application nix-path pointer.
 
-The packaged frontend passed formatting, Svelte checking with zero errors and
-warnings, 142 tests, and static build. Rust passed 304 tests across 49 suites,
-four health tests, and Clippy. The exact packaged admin, core project,
-yarn/category, accessibility, and PWA browser gates all exited 0.
+The current frontend passed formatting, Svelte checking with zero errors and
+warnings, 138 tests, static build and four health tests. Exact `52221ad`
+packages passed core and administrator browser journeys, including native Back
+draft guards and audit filter/scroll restoration. Header/icon checks passed
+at 320/390/1280px; import controls passed at 320px in English and German.
+The earlier `fe9ff79` milestone passed 304 Rust tests across 49 suites and all
+five packaged browser gates; the PWA protocol and resource APIs are unchanged.
 
-The exact-source CI watch for harness checkpoint `63d2f1ba` passed all four
-registered workflows. The public auto-merge workflow was canceled, not
-reported as a build failure. Therefore this document does not claim that all
-CI is green.
+Final harness follow-up CI remains pending at this checkpoint. The `52221ad`
+CI run found a login URL assertion racing the completed transition; the runner
+now waits for the URL and Projects heading, and the exact packaged core journey
+passes. The earlier `63d2f1ba` checkpoint passed all four registered workflows.
+This document does not claim that every current CI workflow is green.
 
 ## Remaining acceptance
 
@@ -74,8 +80,4 @@ CI is green.
   Preserve Android v1, `/projects/import`, `/api/v1`, `/media`, and shared
   backend services. Production cutover remains separate.
 
-T120.13 is in progress as packaging work: split frontend-independent Rust
-compilation from final web/server assembly, and pass `corePackage` and
-`webPackage` through the default package
-wiring in `nix/module.nix`. The current preview package override is unaffected.
 This audit does not mark T120 or T120.9 complete.

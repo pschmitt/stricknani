@@ -6,20 +6,20 @@ cut over, and its executable and storage remain unchanged.
 
 ## Current state — 2026-11-02
 
-The deployed application source is `fe9ff79ce93a87899b15042243e52caa698fdd54`;
-the public configuration pin is `6ba1610af9596d1af129f6bc29eb8b835ea2dc3b`.
-The normalized source archive SHA-256 is
-`f29d412242b3d7d67b9f41d4ba470f6571fbf87eee4fb389c02fc93a0800fe18`. The
+The deployed application source is `52221ad266d5c38124f7ca442add952055223e7b`;
+the public configuration pin is `db9a7a20cee270a113356b79a9baa7592458e3bc`.
+The source NAR hash is
+`sha256-OHp+SibLsGdiv4av8jtuMvZKQjjgiQyNrA8jzrvTh5Q=`. The
 verified web and server packages are
-`/nix/store/my3zp6kycxxjg3jp70ljbsajvhhd5qrq-stricknani-web-0.1.0` and
-`/nix/store/fdz83ix5jn5d0p53call8rbgz8fc6i11-stricknani-server-0.1.0`; the
+`/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0` and
+`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0`; the
 raw server executable (`bin/.stricknani-server-wrapped`) SHA-256 is
-`8e4fd12218576109d28ade9b7e8f1830cc2c58992a77ecdc975f960040a851a5`.
+`9e4b0e376c7aa73019eb43a7bb2df748c616613fd1c816f103075ccd408d0c4f`.
 
 Root verified the live app HTML SHA-256
-`73ba77b39da950412853b1ba1fe25edf0f035ce596f4657954d4ec4e783ca84a`, the
+`bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`, the
 app-scoped service worker SHA-256
-`24c326c6602b31d36256d4fe5bfd2c9e62416a94e55812bf50f6280f9dd93c9b` with
+`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31` with
 scope `/app/`, and the generated catalog SHA-256 prefix `f5b67b45` (738
 English and 738 German entries). Production, nginx, and nixbot process
 identities remained unchanged. The expected nix-daemon restart was limited to
@@ -42,8 +42,30 @@ file is mode 600 in a root-owned mode-700 parent directory.
   diffs. Ordinary ownership and mutation checks and API v1 remain unchanged.
 - **T120.12, resource cards:** shared linked project/yarn/category cards with
   current authorized thumbnails, domain-icon fallback, and responsive
-  compact/library variants; app-local back navigation supports observed
-  history and guarded parent fallbacks.
+  compact/library variants.
+
+## Completed T120.13–T120.14
+
+- **T120.13, packaging:** frontend assembly reuses the Rust core derivation;
+  clean flakes with different frontend sources retain the same core build.
+  The default module passes the core and web package arguments explicitly.
+- **T120.14, interface:** shared decorative icons accompany action labels
+  throughout imports, projects, yarns, account and administration. The compact
+  header uses the existing logo, title and small version line, with the avatar
+  at the right edge. Back follows native history, preserves canceled drafts,
+  and restores audit filters and scroll after asynchronous list loading.
+
+The exact `52221ad` packages passed core and administrator browser journeys.
+The administrator gate covers fresh direct entry, canceled and accepted Back,
+filter/scroll restoration, and compact detail chevrons at 390 and 1280px.
+Header/icon checks cover 320/390/1280px; import controls passed at 320px in
+English and German. Frontend formatting, Svelte checking (zero errors and
+warnings), 138 tests, production build and four health tests passed.
+The canonical system closure is
+`/nix/store/w30pxhwz1vla15dhin7rim33z9b8wwm3-nixos-system-rofl-10-26.11.20261030.1c89083`.
+
+The five broader packaged browser gates below belong to the earlier `fe9ff79`
+milestone; they are retained as historical evidence for unchanged features.
 
 The exact packaged browser gates for admin resources, core project workflows,
 yarn/category workflows, accessibility, and PWA behavior all exited 0. The
@@ -51,10 +73,11 @@ frontend formatter passed, Svelte checking reported zero errors and warnings,
 142 frontend tests passed, and the static build passed. Rust validation passed
 304 tests across 49 suites, four health tests, and Clippy.
 
-The exact-source CI watch for harness checkpoint `63d2f1ba` (including PWA and
-yarn runner updates) passed all four registered workflows. A public
-auto-merge workflow was canceled; that cancellation is not a build failure and
-does not establish that all CI is green.
+Final harness follow-up CI remains pending at this checkpoint. The `52221ad`
+CI run found a login URL assertion racing the completed transition; the runner
+now waits for the URL and Projects heading, and the exact packaged core journey
+passes. The earlier `63d2f1ba` checkpoint passed all four registered workflows.
+This document does not claim that every current CI workflow is green.
 
 ## Remaining acceptance
 
@@ -70,18 +93,6 @@ in their reports; they are not current packaged reruns. See
 [`web-ui-screenreader.md`](web-ui-screenreader.md),
 [`web-ui-contrast.md`](web-ui-contrast.md), and
 [`web-ui-performance.md`](web-ui-performance.md).
-
-## Packaging and interface work in progress
-
-T120.13 tracks a packaging improvement, not a rollout blocker: frontend
-`webPackage` currently participates in `buildRustPackage`, so frontend-only
-changes can rebuild Rust. Split the frontend-independent Rust core from final
-package assembly, and pass `corePackage` and `webPackage` through the default
-package wiring in `nix/module.nix`.
-The current preview explicitly overrides the package and is unaffected. No
-packaging changes are included in the verified rollout. T120.14 adds action
-icons and a compact branded header with native browser Back; its browser
-acceptance and deployment are pending.
 
 ## Legacy compatibility and cleanup constraints
 
