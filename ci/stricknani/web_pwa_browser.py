@@ -2605,7 +2605,6 @@ def run_acceptance(
                 }
             finally:
                 context.set_offline(False)
-                network_failure_tab.close()
             _require(
                 isinstance(fallback_state, dict)
                 and fallback_state.get("offlineObserved") is True
@@ -2633,6 +2632,71 @@ def run_acceptance(
                 f"'dialog': {bool(network_dialogs)}, "
                 f"'promoted': {fallback_state.get('promoted')}}})",
             )
+            mark_stage("checking HTTP-error fallback from a controlled app page")
+            missing_asset_response = network_failure_tab.request.get(
+                f"{origin}{cached_immutable_asset}", timeout=10_000
+            )
+            _require(
+                missing_asset_response.status >= 400,
+                "HTTP-error fallback fixture unexpectedly serves the immutable asset",
+            )
+            http_fallback_state = network_failure_tab.evaluate(
+                """async ({ asset, oldCache }) => {
+                  const retained = await (await caches.open(oldCache)).match(
+                    asset, { ignoreSearch: false },
+                  );
+                  const hash = async bytes => Array.from(new Uint8Array(
+                    await crypto.subtle.digest('SHA-256', bytes),
+                  )).map(value => value.toString(16).padStart(2, '0')).join('');
+                  const retainedHash = retained
+                    ? await hash(await retained.arrayBuffer())
+                    : '';
+                  try {
+                    const response = await fetch(asset, { cache: 'no-store' });
+                    const bytes = await response.arrayBuffer();
+                    return {
+                      settled: true,
+                      status: response.status,
+                      byteLength: bytes.byteLength,
+                      matchesRetainedBytes: retainedHash !== '' &&
+                        await hash(bytes) === retainedHash,
+                    };
+                  } catch {
+                    return {
+                      settled: true,
+                      status: 0,
+                      byteLength: 0,
+                      matchesRetainedBytes: false,
+                    };
+                  }
+                }""",
+                {
+                    "asset": cached_immutable_asset,
+                    "oldCache": f"{APP_CACHE_PREFIX}{expected_version}",
+                },
+            )
+            _require(
+                isinstance(http_fallback_state, dict)
+                and http_fallback_state.get("settled") is True
+                and http_fallback_state.get("status") == 200
+                and isinstance(http_fallback_state.get("byteLength"), int)
+                and http_fallback_state["byteLength"] > 0
+                and http_fallback_state.get("matchesRetainedBytes") is True,
+                "HTTP-error fallback did not return the retained old-cache bytes",
+            )
+            _wait_for_async_condition(
+                network_failure_tab,
+                """async ({ asset, cacheName }) => Boolean(await (
+                  await caches.open(cacheName)
+                ).match(asset, { ignoreSearch: false }))""",
+                {
+                    "asset": cached_immutable_asset,
+                    "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
+                },
+                "HTTP-error asset promotion into the candidate cache",
+                timeout_ms=10_000,
+            )
+            network_failure_tab.close()
             _require(
                 page.evaluate("() => performance.timeOrigin") > page_time_origin,
                 "prepared project tab did not retry before cache diagnostics",

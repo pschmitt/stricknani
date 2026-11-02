@@ -403,16 +403,40 @@ def run_acceptance(
                 path=str(screenshots / "yarn-library-mobile.png"), caret="initial"
             )
 
-            mark_stage("checking yarn detail, project link, and photo viewer")
+            mark_stage("opening yarn detail from library")
             page.get_by_role("link", name=seed_rust.YARN_NAME).click()
+            mark_stage("waiting for yarn detail heading")
             page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True).wait_for(
                 state="visible"
             )
+            mark_stage("waiting for the used-in-projects section")
             page.get_by_role("heading", name="Used in projects").wait_for(
                 state="visible"
             )
-            page.get_by_role("link", name=seed_rust.PROJECT_NAME, exact=True).wait_for(
-                state="visible"
+            mark_stage("waiting for the linked project card")
+            project_card = page.locator(".project-list .resource-card").filter(
+                has=page.get_by_text(seed_rust.PROJECT_NAME, exact=True)
+            )
+            project_link = project_card.get_by_role("link", name=seed_rust.PROJECT_NAME)
+            project_link.wait_for(state="visible", timeout=10_000)
+            project_href = project_link.get_attribute("href") or ""
+            project_url = urlsplit(project_href)
+            project_route_prefix = "/app/projects/"
+            project_id_text = (
+                project_url.path.removeprefix(project_route_prefix)
+                if project_url.path.startswith(project_route_prefix)
+                else ""
+            )
+            project_id_valid = project_id_text.isdigit() and int(project_id_text) > 0
+            _require(
+                project_card.count() == 1
+                and project_link.count() == 1
+                and project_link.evaluate("element => element.tagName === 'A'")
+                and project_href.startswith("/")
+                and not project_url.scheme
+                and not project_url.netloc
+                and project_id_valid,
+                "the yarn detail project card link did not match its project",
             )
             detail_url = page.url
             detail_path = urlsplit(detail_url).path
