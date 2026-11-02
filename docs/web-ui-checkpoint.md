@@ -6,27 +6,30 @@ cut over, and its executable and storage remain unchanged.
 
 ## Current state — 2026-11-02
 
-The deployed application source is `52221ad266d5c38124f7ca442add952055223e7b`;
-the public configuration pin is `db9a7a20cee270a113356b79a9baa7592458e3bc`.
+The deployed application source is `72b1faaec3c3dc488cea7cc9b27a7daa14ac9b83`;
+the public configuration pin is `bc0645107fc5e42ac0acfc2e85f366c76a065cf2`.
 The source NAR hash is
-`sha256-OHp+SibLsGdiv4av8jtuMvZKQjjgiQyNrA8jzrvTh5Q=`. The
+`sha256-w5Em/zSMHQIHiSQWlpSiYe5RP/+JcCRrU1cMdcQHldk=`. The
 verified web and server packages are
-`/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0` and
-`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0`; the
-raw server executable (`bin/.stricknani-server-wrapped`) SHA-256 is
-`9e4b0e376c7aa73019eb43a7bb2df748c616613fd1c816f103075ccd408d0c4f`.
+`/nix/store/gyqjfr40aiszvyg9l8lxp7i8wq2qlgjc-stricknani-web-0.1.0` and
+`/nix/store/n65q658kcrqh0qbqkfnsds8k7m007pa8-stricknani-server-0.1.0`; the
+raw executable in the reused `g941cq8pr5mr8v7s4gc879c2kkhsp41b` core package
+has SHA-256 `460dd562505f51518d7c65fdabd199e7d27210a55574f7bc83bb428b667fcbcd`.
+The canonical system closure is
+`/nix/store/yh28g1jfxac7mhpj270sw43r972macdn-nixos-system-rofl-10-26.11.20261101.0bb2eed`.
 
 Root verified the live app HTML SHA-256
-`bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`, the
+`6c61a7102ab75366ccc107f4b7a003e77fbfb8c3a3db59cceb555c2d6ebc6a6f`, the
 app-scoped service worker SHA-256
-`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31` with
+`c1903ccf61860e4a6ae659e2958fce305768024a959fc6c3dd8d3f0c72b72f65` with
 scope `/app/`, and the generated catalog SHA-256 prefix `f5b67b45` (738
 English and 738 German entries). Production, nginx, and nixbot process
-identities remained unchanged. The expected nix-daemon restart was limited to
+identities remained unchanged during this rollout, preserving the peer's
+completed nixbot upgrade. The expected nix-daemon restart was limited to
 the updated application nix-path pointer. One rollout notification was sent.
 
-Audit-history migration 14 completed and SQLite integrity returned `ok`. The
-pre-migration database backup is
+Schema 14 and SQLite integrity `ok` were verified; this milestone introduced
+no database migration. The earlier pre-migration backup is
 `/mnt/data/backups/stricknani-rust/2026-11-02-pre-audit-history/database.sqlite3`
 (SHA-256
 `e9ef8e0add28ce2b2cf0f94e8d1bba1b15e1df0080fa1b5315149ecf635b58ec`); the
@@ -61,7 +64,7 @@ filter/scroll restoration, and compact detail chevrons at 390 and 1280px.
 Header/icon checks cover 320/390/1280px; import controls passed at 320px in
 English and German. Frontend formatting, Svelte checking (zero errors and
 warnings), 138 tests, production build and four health tests passed.
-The canonical system closure is
+The earlier `52221ad` milestone used system closure
 `/nix/store/w30pxhwz1vla15dhin7rim33z9b8wwm3-nixos-system-rofl-10-26.11.20261030.1c89083`.
 
 The five broader packaged browser gates below belong to the earlier `fe9ff79`
@@ -81,25 +84,26 @@ unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
-Candidate `72b1faaec3c3dc488cea7cc9b27a7daa14ac9b83` is pushed and prepared,
+Candidate `72b1faaec3c3dc488cea7cc9b27a7daa14ac9b83` is pushed and deployed,
 with action hints, shared icons, named photo-dialog focus and associated
 validation errors. The canonical Nix server is
 `/nix/store/n65q658kcrqh0qbqkfnsds8k7m007pa8-stricknani-server-0.1.0` and web
 root is `/nix/store/gyqjfr40aiszvyg9l8lxp7i8wq2qlgjc-stricknani-web-0.1.0`.
 The full Rust suite, 150 frontend tests, canonical capability probe, core
 Chromium journey, portable accessibility journey and worker/bootstrap byte
-checks passed. The rollout is waiting for a coordinated host-upgrade window;
-the live preview remains `52221ad`. Complete native screen-reader and physical
+checks passed. The committed upgrade completed successfully and the live
+assets match that tested package. Complete native screen-reader and physical
 phone acceptance remain open.
 All five CI workflows for `72b1faa` succeeded.
 
-T120 overall and T120.9 remain in progress. Current-package contrast passed
-84 assessable samples; the five-sample mobile lab measured median LCP 2220ms,
-CLS 0 and a 40ms interaction candidate, within its stated budgets. Current
-Firefox native 200% zoom also passed. The conditional legacy consumer review
-is complete; active consumers require retaining the old assets for now.
+T120 overall and T120.9 remain in progress. The earlier `52221ad` package passed
+84 assessable contrast samples; its five-sample mobile lab measured median
+LCP 2220ms, CLS 0 and a 40ms interaction candidate, within its stated budgets.
+Firefox native 200% zoom also passed for that package. The conditional legacy
+consumer review is complete; active consumers require retaining the old assets
+for now.
 
-The current browser matrix now passes Chromium, Firefox and WebKit, including
+The `52221ad` browser matrix passed Chromium, Firefox and WebKit, including
 a real intercepted print-image failure and retry. Remaining work is the
 approved physical-phone journey and complete native screen-reader acceptance. Their diagnostics
 remain separate from passing acceptance evidence. See

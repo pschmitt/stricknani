@@ -72,20 +72,21 @@ backend session/configuration tests. The full Rust suite and 150 frontend tests
 passed. The UI consumption passed all seven groups of the consolidated browser
 probe against canonical candidate `72b1faa`, including actual administrator
 role checks and retaining sign-out and ordinary resource editing. The preview
-rollout remains pending; the deployed application is still `52221ad`.
+rollout is verified at public pin `bc0645107`; the deployed application is
+`72b1faa`. All five application CI workflows passed.
 
 1. Run the complete approved workflow on a real phone, including touch,
   soft-keyboard, safe-area, upload, and navigation behavior.
 2. Complete native screen-reader acceptance for labels, errors, route changes,
   and dialog changes. Synthetic accessibility and focused Firefox zoom checks
   do not establish this.
-The current browser matrix passes Chromium, Firefox and WebKit. The updated
+The `52221ad` browser matrix passed Chromium, Firefox and WebKit. The updated
 print-failure leg verifies an actual intercepted image failure, no premature
 printing, an accessible error and successful retry. The normal service-worker
 journey remains enabled.
 
-Current rendered contrast and five-sample mobile lab performance passed against
-the deployed package, as did native Firefox 200% zoom. These remain bounded
+Rendered contrast and five-sample mobile lab performance passed against
+`52221ad`, as did native Firefox 200% zoom. These remain bounded
 lab results, not full WCAG coverage or production field p75. The
 [legacy consumer review](web-ui-legacy-cleanup.md) is complete: Android v1,
 `/projects/import`, `/media`, mounted HTML views and the root-scoped worker
