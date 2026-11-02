@@ -734,7 +734,8 @@
           <dt>{t("Yarn", locale)}</dt>
           <dd>
             {#if yarns.length}
-              {yarns[0].name}{#if yarns.length > 1} +{yarns.length - 1}{/if}
+              {yarns[0].name}{#if yarns.length > 1}
+                +{yarns.length - 1}{/if}
             {:else}
               {project.yarn || t("Not recorded", locale)}
             {/if}
