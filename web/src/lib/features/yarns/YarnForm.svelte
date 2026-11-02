@@ -465,7 +465,10 @@
             class="quiet-button"
             type="button"
             disabled={saving}
-            onclick={useLatestValues}>{t("Load latest values", locale)}</button
+            onclick={useLatestValues}
+            ><ActionLabel icon="refresh"
+              >{t("Load latest values", locale)}</ActionLabel
+            ></button
           >
           <button
             class="primary-action"
@@ -476,9 +479,11 @@
               if (value && conflictYarn)
                 void save(value, conflictYarn.updated_at);
             }}
-            >{saving
-              ? t("Saving…", locale)
-              : t("Save my draft over latest", locale)}</button
+            ><ActionLabel icon="save"
+              >{saving
+                ? t("Saving…", locale)
+                : t("Save my draft over latest", locale)}</ActionLabel
+            ></button
           >
         </div>
       </section>

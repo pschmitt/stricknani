@@ -256,10 +256,26 @@ def _exercise_accessibility(
     mark_stage("checking photo dialog focus and restoration")
     photo_dialog = page.get_by_role("dialog", name="Yarn photo", exact=True)
     photo_dialog.wait_for(state="visible", timeout=5_000)
+    photo_title = photo_dialog.get_by_role("heading", name="Yarn photo", exact=True)
+    page.wait_for_function(
+        "() => document.activeElement === document.querySelector("
+        "'.zoom-dialog-header h2')",
+        timeout=5_000,
+    )
+    _require(
+        photo_title.evaluate("element => document.activeElement === element"),
+        "opening the photo dialog did not focus its accessible title",
+    )
     close_button = photo_dialog.get_by_role("button", name="Close photo", exact=True)
+    page.keyboard.press("Tab")
+    page.wait_for_function(
+        "() => document.activeElement === document.querySelector("
+        "'.zoom-dialog-header form button')",
+        timeout=5_000,
+    )
     _require(
         close_button.evaluate("element => document.activeElement === element"),
-        "opening the photo dialog did not move focus to its close button",
+        "Tab from the photo dialog title did not focus its close button",
     )
     dialog_focus_states = []
     for key in ("Tab", "Tab", "Shift+Tab"):

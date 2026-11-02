@@ -81,6 +81,14 @@ unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
+Two later source checkpoints are committed and pushed but not deployed:
+`2c4d6ca` adds explicit authenticated browser action hints and strict contract
+tests; `69f25e3` gives the yarn photo dialog a compact named heading with native
+initial focus. The full Rust suite and 150 frontend tests passed for the
+contract. The dialog's compiled native title, Close and Escape checks passed;
+the complete screen-reader journey still awaits validation-error speech.
+Capability affordances and exact-candidate integration are in progress.
+
 T120 overall and T120.9 remain in progress. Current-package contrast passed
 84 assessable samples; the five-sample mobile lab measured median LCP 2220ms,
 CLS 0 and a 40ms interaction candidate, within its stated budgets. Current

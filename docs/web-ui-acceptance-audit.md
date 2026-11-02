@@ -12,7 +12,7 @@ The deployed `/app` preview and the remaining acceptance work are described in
 | --- | --- | --- |
 | **T120.1 Design and contracts** | [`web-ui-design.md`](web-ui-design.md), [`web-v2-contract.md`](web-v2-contract.md), and the brief define journeys, routes, theme, API shapes, and security boundaries. | **Documented.** The remaining acceptance and cleanup work stays open. |
 | **T120.2 Foundation and auth shell** | [`web/src/routes`](../web/src/routes), [`rust/src/frontend.rs`](../rust/src/frontend.rs), [`rust/src/pwa.rs`](../rust/src/pwa.rs), and Rust frontend/PWA tests cover the static shell, route fallback, CSP manifest, and app-scoped worker. | **Implemented.** Packaged PWA and accessibility browser gates passed. |
-| **T120.3 Browser API v2** | [`rust/src/api_v2`](../rust/src/api_v2), [`web-v2-contract.md`](web-v2-contract.md), and API tests cover sessions, CSRF, ownership, pagination, and capabilities. | **Workflows implemented.** T120.3 remains open for the explicit media/import/archive-state/account/admin capability fields required by the brief. Android v1 remains separate. |
+| **T120.3 Browser API v2** | [`rust/src/api_v2`](../rust/src/api_v2), [`web-v2-contract.md`](web-v2-contract.md), and API tests cover sessions, CSRF, ownership, pagination, and capabilities. | **Contract implemented.** Explicit action hints are committed in `2c4d6ca`; their UI consumption and integration are being verified. Android v1 remains separate. |
 | **T120.4 Projects and reader** | [`ProjectLibrary.svelte`](../web/src/lib/features/projects/ProjectLibrary.svelte), [`ProjectReader.svelte`](../web/src/lib/features/projects/ProjectReader.svelte), and [`web_ui_browser.py`](../ci/stricknani/web_ui_browser.py). | **Implemented.** Exact packaged core project browser journey passed. Synthetic phone viewports passed; real-phone soft-keyboard and safe-area behavior remain open. |
 | **T120.5 Project editor and media** | [`ProjectEditor.svelte`](../web/src/lib/features/projects/ProjectEditor.svelte), project/media API tests, and the core browser journey cover editing, conflicts, uploads, attachments, and reader media. | **Implemented.** Synthetic browser coverage passed; physical-device media and keyboard usability remain unproven. |
 | **T120.6 Yarns and categories** | [`YarnLibrary.svelte`](../web/src/lib/features/yarns/YarnLibrary.svelte), [`CategoryManager.svelte`](../web/src/lib/features/categories/CategoryManager.svelte), API tests, and [`web_yarn_browser.py`](../ci/stricknani/web_yarn_browser.py). | **Implemented.** Exact packaged yarn/category browser journey passed. |
@@ -66,10 +66,11 @@ unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
-T120.3 also has one implementation contract gap: the session currently exposes
-optional-service flags, but not every action-availability field required in the
-brief. The coordinator is completing that additive contract with backend and
-strict client tests; existing workflows remain available.
+Checkpoint `2c4d6ca` adds the six required media/import/archive-state/account/admin
+action hints to session and login responses, with strict client validation and
+backend session/configuration tests. The full Rust suite and 150 frontend tests
+passed. UI consumption and exact-candidate integration remain in progress;
+this checkpoint has not replaced the deployed `52221ad` preview.
 
 1. Run the complete approved workflow on a real phone, including touch,
   soft-keyboard, safe-area, upload, and navigation behavior.

@@ -325,7 +325,7 @@
                 <button
                   type="button"
                   onclick={() => applyFilters({ ...filters, tag })}
-                  >{tag}</button
+                  ><ActionLabel icon="categories">{tag}</ActionLabel></button
                 >
               {/each}
             </div>
