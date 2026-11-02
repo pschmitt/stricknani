@@ -3354,19 +3354,59 @@ def run_acceptance(
                 "raw Markdown was displayed in the pattern reader",
             )
             mark_stage("checking linked yarn API details")
-            page.get_by_text("Riverbend Merino DK", exact=True).wait_for(
-                state="visible", timeout=5_000
+            materials = page.locator("details.materials-card")
+            materials_summary = materials.locator("summary")
+            materials.wait_for(state="visible", timeout=5_000)
+            _require(
+                materials.get_attribute("open") is None,
+                "materials disclosure should start collapsed",
+            )
+            materials_summary.focus()
+            page.keyboard.press("Enter")
+            _require(
+                materials.get_attribute("open") is not None,
+                "the native Materials summary did not open its disclosure",
+            )
+            linked_yarn = materials.locator(
+                f'a.resource-card__link[href="/app/yarns/{yarn_id}"]'
+            )
+            linked_yarn.wait_for(state="visible", timeout=5_000)
+            _require(
+                linked_yarn.get_by_text("Riverbend Merino DK", exact=True).count() == 1,
+                "the linked yarn name or destination was missing from Materials",
             )
             _require(
-                any(
-                    path.startswith("/api/v2/yarns/") and status == 200
-                    for path, status in yarn_responses
-                ),
+                (f"/api/v2/yarns/{yarn_id}", 200) in yarn_responses,
                 "linked yarn details did not load from the Rust API",
             )
+            reader_images = project_data.get("images", [])
             _require(
-                page.locator(".gallery-image").count() == 1,
-                "the single-image project fixture changed unexpectedly",
+                isinstance(reader_images, list),
+                "the project reader API did not return its image collection",
+            )
+            gallery_images = [
+                image
+                for image in reader_images
+                if isinstance(image, dict) and image.get("step_id") is None
+            ]
+            cover_image = next(
+                (image for image in gallery_images if image.get("is_title_image")),
+                gallery_images[0] if gallery_images else None,
+            )
+            expected_gallery_count = len(gallery_images) - int(cover_image is not None)
+            _require(
+                page.locator(".reader-overview .reader-cover-image").count()
+                == int(cover_image is not None)
+                and page.locator(".image-gallery .gallery-image").count()
+                == expected_gallery_count,
+                "the cover or remaining project photos no longer match "
+                "the API image collection",
+            )
+            materials_summary.focus()
+            page.keyboard.press("Enter")
+            _require(
+                materials.get_attribute("open") is None,
+                "the native Materials summary did not close its disclosure",
             )
             page.set_viewport_size({"width": 320, "height": 844})
             mark_stage("opening the single seeded project photo at 320px")
@@ -3377,6 +3417,21 @@ def run_acceptance(
             lightbox_image = dialog.locator("img")
             lightbox_image.wait_for(state="visible")
             lightbox_image.evaluate("image => image.decode()")
+            lightbox_count = dialog.locator("figcaption span")
+            if len(reader_images) > 1:
+                lightbox_count.wait_for(state="visible")
+                _require(
+                    lightbox_count.inner_text().endswith(f"/ {len(reader_images)}")
+                    and dialog.get_by_role("button", name="Previous image").is_visible()
+                    and dialog.get_by_role("button", name="Next image").is_visible(),
+                    "the cover lightbox did not retain the full project "
+                    "image collection",
+                )
+            else:
+                _require(
+                    lightbox_count.count() == 0,
+                    "the single-image lightbox unexpectedly reported extra photos",
+                )
             image_bounds = lightbox_image.bounding_box()
             _require(
                 lightbox_image.evaluate(
@@ -3562,7 +3617,21 @@ def run_acceptance(
                 f"{successful_print_requests}, observed responses="
                 f"{successful_print_responses})",
             )
-            page.evaluate("window.dispatchEvent(new Event('beforeprint'))")
+            materials_print_state = page.evaluate(
+                "() => { const disclosure = document.querySelector("
+                "'details.materials-card'); const wasOpen = disclosure?.open ?? null; "
+                "window.dispatchEvent(new Event('beforeprint')); return {wasOpen, "
+                "openDuringPrint: disclosure?.open ?? null}; }"
+            )
+            _require(
+                materials_print_state
+                == {
+                    "wasOpen": False,
+                    "openDuringPrint": True,
+                },
+                "beforeprint did not synchronously open the closed "
+                "Materials disclosure",
+            )
             page.wait_for_function(
                 "() => { const images = Array.from(document.querySelectorAll("
                 "'.print-reference-image')); return images.length === 2 && "
@@ -3571,6 +3640,7 @@ def run_acceptance(
             )
             page.emulate_media(media="print")
             print_reference_state = page.locator(
+                ".reader-overview .print-reference-image, "
                 ".image-gallery .print-reference-image, "
                 ".steps-list .print-reference-image"
             ).evaluate_all(
@@ -3584,11 +3654,13 @@ def run_acceptance(
                 "window.__printImageExpectedUrls[index]}))"
             )
             print_interactive_image_state = page.locator(
+                ".reader-overview .reader-cover-image, "
                 ".image-gallery .gallery-image, .steps-list .step-image"
             ).evaluate_all(
                 "nodes => nodes.map(node => getComputedStyle(node).display !== 'none')"
             )
             screen_image_state = page.locator(
+                ".reader-overview .screen-reference-image, "
                 ".image-gallery .screen-reference-image, "
                 ".steps-list .screen-reference-image"
             ).evaluate_all(
@@ -3611,10 +3683,23 @@ def run_acceptance(
                 )
                 and len(screen_image_state) == 2
                 and not any(screen_image_state)
-                and page.locator(".image-gallery").is_visible(),
+                and page.locator(".reader-overview .reader-cover-image").is_visible()
+                and (
+                    expected_gallery_count == 0
+                    or page.locator(".image-gallery").is_visible()
+                ),
                 "print layout omitted instructions or full-resolution reference photos",
             )
-            page.evaluate("window.dispatchEvent(new Event('afterprint'))")
+            materials_restored_closed = page.evaluate(
+                "() => { const disclosure = document.querySelector("
+                "'details.materials-card'); "
+                "window.dispatchEvent(new Event('afterprint')); "
+                "return disclosure?.open === false; }"
+            )
+            _require(
+                materials_restored_closed and materials.get_attribute("open") is None,
+                "afterprint did not restore the previously closed Materials disclosure",
+            )
             page.emulate_media(media="screen")
             page.get_by_role("button", name="Remove from favorites").click()
             page.get_by_role("button", name="Add to favorites").wait_for(
