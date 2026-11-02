@@ -158,6 +158,25 @@ state, fixture file, token and runtime were removed. The owned target was closed
 and nonce origin cleared; the owned forward/reverse, tunnel and synthetic phone
 file were cleaned up. The pre-existing reverse mapping was preserved.
 
+An instrumented repeat under `phone-run-2c6812379a84` isolated the failed guard:
+the fresh owned-tab checks and positive device readiness checks passed, while
+Android reported `mInputShown=false` and no `isInputViewShown` field. No native
+Back was sent. The editor had no horizontal overflow at scale 1; its pre-focus
+height was 831.3px and the later sampled height was 750.2px. That 81px change
+does not prove a keyboard was visible. The remote exit was `1`, and all owned
+cleanup was verified again. The sanitized `phone-run.log` SHA-256 is
+`021d1d186e37eb6541c21c7b5293d06a8f8e58e90dcbd0fc4d6a2dbb27a25cea`.
+Keyboard activation remains under investigation; save/media/sign-out acceptance
+remains open.
+
+A single repeat using `Input.synthesizeTapGesture` (`phone-run-4ecacc2f564b`)
+also found `mInputShown=false`; no native Back was sent. A separately scoped
+save/media/sign-out attempt (`phone-run-8eeca225ea49`) timed out in the CDP
+command at email focus, before those checks were reached. Both attempts exited
+`1` and verified owned-resource cleanup. Neither is an acceptance pass.
+Automated attempts are stopped pending availability for a physical tap to open
+the keyboard; no phone settings, permissions or personal tabs were changed.
+
 ## Historical 52221ad device diagnostics
 
 The focused login probe used the exact packaged 52221ad server and web package
