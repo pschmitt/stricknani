@@ -486,32 +486,6 @@ def _save_screenshot(page: Page, directory: Path | None, name: str) -> None:
     destination.chmod(0o600)
 
 
-def _assert_back_link_geometry(
-    page: Page, selector: str, href: str, description: str
-) -> None:
-    link = page.locator(selector)
-    link.wait_for(state="visible")
-    geometry_is_bounded = link.evaluate(
-        """element => {
-          const bounds = element.getBoundingClientRect();
-          const icon = element.querySelector('svg');
-          if (!icon) return false;
-          const iconBounds = icon.getBoundingClientRect();
-          return bounds.height >= 44
-            && bounds.width > 0
-            && bounds.right <= window.innerWidth
-            && iconBounds.width >= 14
-            && iconBounds.width <= 20
-            && iconBounds.height >= 14
-            && iconBounds.height <= 20;
-        }"""
-    )
-    _require(
-        geometry_is_bounded is True and link.get_attribute("href") == href,
-        f"{description} has invalid link or icon geometry",
-    )
-
-
 def _find_existing_no_snapshot_event(page: Page, origin: str) -> int:
     for page_number in range(1, 5):
         response = page.context.request.get(
@@ -752,14 +726,18 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         )
 
 
-def _assert_mobile_header_alignment(page: Page) -> None:
+def _assert_mobile_header_alignment(
+    page: Page, expected_parent_href: str | None = None
+) -> None:
     alignment = page.evaluate(
         """() => {
           const header = document.querySelector('.app-header');
-          const back = document.querySelector('.app-header .shell-back-button');
+          const slot = document.querySelector('.app-header .parent-slot');
+          const back = slot?.querySelector('.shell-back-button');
+          const icon = back?.querySelector('svg');
           const logo = document.querySelector('.app-header .brand-lockup');
           const account = document.querySelector('.app-header .header-account');
-          if (!header || !back || !logo || !account) return null;
+          if (!header || !slot || !logo || !account) return null;
           const rect = (element) => {
             const box = element.getBoundingClientRect();
             return {
@@ -771,20 +749,42 @@ def _assert_mobile_header_alignment(page: Page) -> None:
           };
           return {
             header: rect(header),
-            back: rect(back),
+            slot: rect(slot),
+            back: back ? rect(back) : null,
+            icon: icon ? rect(icon) : null,
+            parentHref: back?.getAttribute('href') ?? null,
             logo: rect(logo),
             account: rect(account),
           };
         }"""
     )
+    expected_back = expected_parent_href is not None
+    back = alignment.get("back") if isinstance(alignment, dict) else None
+    icon = alignment.get("icon") if isinstance(alignment, dict) else None
+    parent_href = alignment.get("parentHref") if isinstance(alignment, dict) else None
     _require(
         isinstance(alignment, dict)
-        and alignment["back"]["width"] >= 44
-        and alignment["back"]["height"] >= 44
-        and alignment["back"]["right"] <= alignment["logo"]["left"] + 1
+        and alignment["slot"]["width"] == 44
+        and alignment["slot"]["height"] == 44
+        and alignment["logo"]["left"] >= alignment["slot"]["right"]
+        and (back is not None) is expected_back
+        and (
+            not expected_back
+            or (
+                isinstance(back, dict)
+                and isinstance(icon, dict)
+                and back["width"] == 44
+                and back["height"] == 44
+                and back["left"] >= alignment["slot"]["left"]
+                and back["right"] <= alignment["slot"]["right"]
+                and 4 <= alignment["logo"]["left"] - icon["right"] <= 6
+                and parent_href == expected_parent_href
+            )
+        )
         and alignment["logo"]["right"] <= alignment["account"]["left"] + 1
         and alignment["account"]["right"] <= alignment["header"]["right"] + 1,
-        "mobile header back, brand, and account controls are misaligned",
+        "mobile header parent slot, optional link, brand, and account controls "
+        "are misaligned",
     )
 
 
@@ -927,7 +927,7 @@ def run_acceptance(
             _sign_in(page, origin, admin_email, admin_password)
             page.get_by_role("heading", name="User accounts").wait_for(state="visible")
 
-            mark("check header back preserves dirty-navigation confirmation")
+            mark("check logical parent link preserves dirty-navigation confirmation")
             page.set_viewport_size({"width": 390, "height": 900})
             page.locator('a[href="/app/projects"]:visible').first.click()
             page.wait_for_url("**/app/projects")
@@ -938,46 +938,53 @@ def run_acceptance(
             )
             project_name_field = page.get_by_label("Project name", exact=True)
             project_name_field.fill("Unsaved header back fixture")
-            back_probe: object = page.evaluate(
+            parent_probe: object = page.evaluate(
                 """() => {
-                  const button = document.querySelector(
-                    '.app-header .shell-back-button');
-                  const rect = button?.getBoundingClientRect();
+                  const slot = document.querySelector(
+                    '.app-header .parent-slot');
+                  const link = slot?.querySelector('.shell-back-button');
+                  const rect = link?.getBoundingClientRect();
+                  const icon = link?.querySelector('svg')?.getBoundingClientRect();
+                  const logo = document.querySelector(
+                    '.app-header .brand-lockup')?.getBoundingClientRect();
                   return {
                     route: location.pathname === '/app/projects/new',
-                    historyLength: history.length,
-                    count: document.querySelectorAll(
-                      '.app-header .shell-back-button').length,
-                    visible: Boolean(button && rect && rect.width > 0
-                      && rect.height > 0 && getComputedStyle(button).visibility
+                    parentHref: link?.getAttribute('href') ?? null,
+                    slotWidth: slot?.getBoundingClientRect().width ?? null,
+                    count: slot?.querySelectorAll('.shell-back-button').length ?? 0,
+                    visible: Boolean(link && rect && rect.width > 0
+                      && rect.height > 0 && getComputedStyle(link).visibility
                       === 'visible'),
+                    visualGap: icon && logo ? logo.left - icon.right : null,
                     viewport: Boolean(rect && rect.left >= 0
                       && rect.right <= innerWidth && rect.top >= 0
                       && rect.bottom <= innerHeight)
                   };
                 }"""
             )
-            if not isinstance(back_probe, dict):
+            if not isinstance(parent_probe, dict):
                 raise AcceptanceFailure(
-                    "header back diagnostics returned an invalid shape"
+                    "header parent diagnostics returned an invalid shape"
                 )
             _require(
-                back_probe.get("route") is True
-                and isinstance(back_probe.get("historyLength"), int)
-                and not isinstance(back_probe.get("historyLength"), bool)
-                and back_probe.get("historyLength", 0) > 1
-                and back_probe.get("count") == 1
-                and back_probe.get("visible") is True
-                and back_probe.get("viewport") is True,
-                "header back was not actionable on the project editor",
+                parent_probe.get("route") is True
+                and parent_probe.get("parentHref") == "/app/projects"
+                and parent_probe.get("slotWidth") == 44
+                and parent_probe.get("count") == 1
+                and parent_probe.get("visible") is True
+                and isinstance(parent_probe.get("visualGap"), (float, int))
+                and 4 <= parent_probe.get("visualGap", 0) <= 6
+                and parent_probe.get("viewport") is True,
+                "header parent link was not an aligned same-app target",
             )
+            _assert_mobile_header_alignment(page, "/app/projects")
 
             def dismiss_dirty_prompt(dialog: Dialog) -> None:
                 dialog.dismiss()
 
             page.once("dialog", dismiss_dirty_prompt)
             with page.expect_event("dialog", timeout=5_000) as cancelled_back:
-                page.locator(".app-header .shell-back-button").click()
+                page.get_by_role("link", name="Back", exact=True).click()
             _require(
                 cancelled_back.value.type == "confirm",
                 "header back did not open the dirty-navigation confirmation",
@@ -997,7 +1004,7 @@ def run_acceptance(
             )
             page.once("dialog", lambda dialog: dialog.accept())
             with page.expect_event("dialog", timeout=5_000) as accepted_back:
-                page.locator(".app-header .shell-back-button").click()
+                page.get_by_role("link", name="Back", exact=True).click()
             _require(
                 accepted_back.value.type == "confirm",
                 "accepting header back did not show the dirty-navigation confirmation",
@@ -1196,9 +1203,14 @@ def run_acceptance(
             page.on("response", record_admin_image_response)
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             page.get_by_role("heading", name="Audit log").wait_for(state="visible")
+            parent_slot = page.locator(".app-header .parent-slot")
+            parent_slot_bounds = parent_slot.bounding_box()
             _require(
-                page.locator(".app-header .shell-back-button").is_visible(),
-                "desktop rail did not show the direct-entry back fallback",
+                parent_slot.is_visible()
+                and parent_slot_bounds is not None
+                and parent_slot_bounds["width"] == 44
+                and page.locator(".app-header .shell-back-button").count() == 0,
+                "top-level Audit did not reserve the parent slot without a chevron",
             )
             page.locator(".event-row").first.wait_for(state="visible")
             mark("check cross-owner audit resource card and protected image")
@@ -1383,17 +1395,31 @@ def run_acceptance(
                     False,
                     diagnostic,
                 )
+            resource_parent = page.locator(".app-header .shell-back-button")
+            _require(
+                resource_parent.count() == 1
+                and resource_parent.get_attribute("href") == "/app/admin/audit",
+                "a direct admin resource entry did not point its header parent "
+                "to Audit",
+            )
             for width in (390, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
-                _assert_back_link_geometry(
-                    page,
-                    ".resource-back-link",
-                    "/app/admin/audit",
-                    "administrator resource back link",
+                parent_bounds = resource_parent.bounding_box()
+                _require(
+                    parent_bounds is not None
+                    and parent_bounds["width"] == 44
+                    and parent_bounds["height"] == 44,
+                    "the admin resource parent link is not a separate 44px target",
+                )
+                if width == 390:
+                    _assert_mobile_header_alignment(page, "/app/admin/audit")
+                _require(
+                    page.locator(".resource-page .resource-back-link").count() == 0,
+                    "admin resource rendered a duplicate body Back link",
                 )
             page.set_viewport_size({"width": 390, "height": 900})
             mark("return from direct resource to audit")
-            page.locator(".resource-back-link").click()
+            resource_parent.click()
             mark("confirm explicit resource link to audit")
             page.wait_for_url("**/app/admin/audit")
             mark("reopen cross-owner resource after history fallbacks")
@@ -1531,11 +1557,9 @@ def run_acceptance(
             )
             for width, suffix in ((390, "390"), (1280, "desktop")):
                 page.set_viewport_size({"width": width, "height": 900})
-                _assert_back_link_geometry(
-                    page,
-                    ".diff-back-link",
-                    "/app/admin/audit",
-                    "recorded-changes back link",
+                _require(
+                    page.locator(".diff-back-link").count() == 0,
+                    "audit diff rendered a duplicate body Back link",
                 )
                 _assert_no_horizontal_overflow(page, "diff")
                 _save_screenshot(
@@ -1620,13 +1644,26 @@ def run_acceptance(
                     f"screenshot={'saved' if screenshot_dir else 'disabled'})",
                 )
             page.remove_listener("response", record_no_snapshot_detail)
+            audit_parent = page.locator(".app-header .shell-back-button")
+            _require(
+                audit_parent.count() == 1
+                and audit_parent.get_attribute("href") == "/app/admin/audit",
+                "an audit detail entry did not point its header parent to Audit",
+            )
             for width, suffix in ((390, "390"), (1280, "desktop")):
                 page.set_viewport_size({"width": width, "height": 900})
-                _assert_back_link_geometry(
-                    page,
-                    ".diff-back-link",
-                    "/app/admin/audit",
-                    "no-snapshot audit back link",
+                audit_parent_bounds = audit_parent.bounding_box()
+                _require(
+                    audit_parent_bounds is not None
+                    and audit_parent_bounds["width"] == 44
+                    and audit_parent_bounds["height"] == 44,
+                    "the audit detail parent link is not a separate 44px target",
+                )
+                if width == 390:
+                    _assert_mobile_header_alignment(page, "/app/admin/audit")
+                _require(
+                    page.locator(".diff-back-link").count() == 0,
+                    "no-snapshot audit diff rendered a duplicate body Back link",
                 )
                 _assert_no_horizontal_overflow(page, "diff")
                 _save_screenshot(
@@ -1635,7 +1672,7 @@ def run_acceptance(
                     f"admin-audit-detail-no-snapshot-{suffix}.png",
                 )
             mark("click no-snapshot return-to-audit link")
-            page.locator(".diff-back-link").click()
+            audit_parent.click()
             mark("confirm no-snapshot return to audit")
             page.wait_for_url("**/app/admin/audit")
             for width in (320, 390, 768, 1280):
@@ -1669,8 +1706,8 @@ def run_acceptance(
             page.wait_for_url(
                 f"**/app/admin/resources/project/{cross_owner_project_id}"
             )
-            mark("return from resource to filtered audit with browser history")
-            page.get_by_role("button", name="Back", exact=True).click()
+            mark("return from resource to filtered audit with native browser history")
+            page.go_back(wait_until="domcontentloaded")
             page.wait_for_url("**/app/admin/audit?entity=project&action=updated")
             history_resource_row.wait_for(state="visible")
             page.wait_for_function(
@@ -1690,8 +1727,8 @@ def run_acceptance(
                 f"(entity={restored_entity}, action={restored_action}, "
                 f"scroll_restored={scroll_restored})",
             )
-            mark("return from audit to More with browser history")
-            page.get_by_role("button", name="Back", exact=True).click()
+            mark("return from audit to More with native browser history")
+            page.go_back(wait_until="domcontentloaded")
             page.wait_for_url("**/app/more")
             page.get_by_role("heading", name="More", exact=True).wait_for(
                 state="visible"
@@ -2094,7 +2131,7 @@ def run_acceptance(
                 ),
                 "administrator passwords or drafts were persisted in local storage",
             )
-            mark("fresh direct entry has no browser Back control")
+            mark("top-level direct audit entry has a reserved slot and no parent link")
             fresh_page = context.new_page()
             _guard_loopback(fresh_page, origin)
             fresh_page.goto("about:blank")
@@ -2106,10 +2143,14 @@ def run_acceptance(
             fresh_page.get_by_role("heading", name="Audit log", exact=True).wait_for(
                 state="visible"
             )
+            fresh_parent_slot = fresh_page.locator(".app-header .parent-slot")
+            fresh_parent_slot_bounds = fresh_parent_slot.bounding_box()
             _require(
                 fresh_page.evaluate("() => history.length") == 1
+                and fresh_parent_slot_bounds is not None
+                and fresh_parent_slot_bounds["width"] == 44
                 and fresh_page.locator(".app-header .shell-back-button").count() == 0,
-                "fresh direct audit entry exposed a Back control without prior history",
+                "top-level direct audit entry did not reserve an empty parent slot",
             )
             fresh_page.close()
             context.close()
