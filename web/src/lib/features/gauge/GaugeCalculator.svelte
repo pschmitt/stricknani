@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -200,19 +200,16 @@
   class="gauge-page page-container page-container--compact"
   aria-labelledby="gauge-title"
 >
-  <PageHeader title={t("Gauge calculator", locale)} titleId="gauge-title">
-    {#snippet context()}
-      <p class="gauge-context">
-        {t(
-          "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.",
-          locale,
-        )}
-      </p>
-    {/snippet}
-  </PageHeader>
+  <PageHeader title={t("Gauge calculator", locale)} titleId="gauge-title" />
 
   <details class="help-panel">
     <summary>{t("How to use this calculator", locale)}</summary>
+    <p class="help-intro">
+      {t(
+        "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.",
+        locale,
+      )}
+    </p>
     <ol>
       <li>
         {t(
@@ -416,19 +413,26 @@
     {/if}
 
     <div class="form-actions">
-      <button class="calculate-button" type="submit" disabled={submitting}>
-        <ActionLabel icon="gauge">
-          {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
-        </ActionLabel>
-      </button>
-      <button
+      <Button
+        class="calculate-button"
+        variant="primary"
+        icon="gauge"
+        type="submit"
+        disabled={submitting}
+      >
+        {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
+      </Button>
+      <Button
         class="clear-button"
+        variant="secondary"
+        icon="reset"
+        size="sm"
         type="button"
         onclick={clearInputs}
         disabled={submitting || !hasInputs}
       >
-        <ActionLabel icon="reset">{t("Clear", locale)}</ActionLabel>
-      </button>
+        {t("Clear", locale)}
+      </Button>
     </div>
   </form>
 
@@ -476,9 +480,9 @@
     background: var(--surface);
   }
 
-  .gauge-context {
+  .help-intro {
     max-width: 42rem;
-    margin: 0;
+    margin: 0.5rem 0 0;
     color: var(--ink-muted);
     line-height: 1.55;
   }
@@ -572,34 +576,10 @@
     background: var(--surface-raised);
   }
 
-  .calculate-button {
-    min-height: 48px;
-    border: 1px solid var(--accent-strong);
-    border-radius: 0.7rem;
-    padding: 0.65rem 1rem;
-    color: var(--surface);
-    background: var(--accent-strong);
-    font: inherit;
-    font-weight: 680;
-    cursor: pointer;
-  }
-
   .form-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.65rem;
-  }
-
-  .clear-button {
-    min-height: 48px;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.65rem 1rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
   }
 
   .results h2 {

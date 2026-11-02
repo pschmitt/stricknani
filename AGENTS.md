@@ -24,6 +24,10 @@ Use this file as the operational source of truth for working in Stricknani.
 - Keep rewrite work in the dedicated `rust` branch/worktree; preserve unrelated changes in the primary checkout.
 - Delegate isolated implementation and inventory tasks to GPT-6 Luna (`gpt-6-luna`) agents with explicit file ownership. The coordinator integrates their work and reviews API contracts, authorization, and data migration safety.
 - When spawning a Codex subagent, select `model="gpt-6-luna"` and `fork_turns="none"` explicitly.
+- The coordinator claims each delegated file scope before handoff. If Concord
+  cannot identify a child session, keep that coordinator-owned claim and route
+  evidence through the coordinator; do not invent an identity or repeat CLI
+  registration attempts instead of doing the assigned work.
 - Commit and push small checkpoints regularly, including work in progress. Do not wait for the entire rewrite to be complete. State which checks passed, failed, or remain pending in the checkpoint notes; a checkpoint is not a release or deployment approval.
 - After each push, use the `ci-watch` skill and continue independent work while CI runs.
 - Run expensive Cargo, Gradle, and Nix work on a designated remote build host. Evaluate Nix dev shells from a clean source snapshot, then run tools in a separate working directory containing build caches. Keep credentials and copied data outside both source trees.
@@ -80,6 +84,9 @@ Use this file as the operational source of truth for working in Stricknani.
 - Fixture runners own their `--private-dir`: pass a fresh, nonexistent leaf
   path, rather than creating it first. Create only its private parent when
   needed, and use the fixture environment loader instead of guessing JSON keys.
+- Reuse validated shared image fixtures. Ad-hoc tiny PNG payloads can contain
+  invalid CRCs and fail uploads before a UI probe begins; avoid extra synthetic
+  media setup when the existing seeded fixture already covers the check.
 - Keep private native IPC runtime paths short enough for Unix-domain sockets;
   a deeply nested build/report directory can exceed the socket path limit.
   Use an owned mode-0700 runtime directory and keep reports separately.

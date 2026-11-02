@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { t } from "#lib/i18n.svelte.ts";
@@ -211,9 +211,6 @@
   aria-labelledby="category-title"
 >
   <PageHeader title={t("Categories", locale)} titleId="category-title">
-    {#snippet context()}
-      <p>{t("Use categories to find projects faster.", locale)}</p>
-    {/snippet}
     {#snippet actions()}
       <span class="count">{categories.length} {t("categories", locale)}</span>
     {/snippet}
@@ -223,10 +220,14 @@
     <div class="notice-error" role="alert">
       <p>{errorMessage}</p>
       {#if loadState === "error"}
-        <button type="button" onclick={() => (reload += 1)}
-          ><ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel
-          ></button
+        <Button
+          variant="secondary"
+          type="button"
+          icon="refresh"
+          onclick={() => (reload += 1)}
         >
+          {t("Try again", locale)}
+        </Button>
       {/if}
     </div>
   {/if}
@@ -250,11 +251,15 @@
         aria-describedby={fieldError ? "category-field-error" : undefined}
       />
     </label>
-    <button class="primary-action" type="submit" disabled={saving}>
-      <ActionLabel icon="create">
-        {saving ? t("Saving…", locale) : t("Add category", locale)}
-      </ActionLabel>
-    </button>
+    <Button
+      class="primary-action"
+      variant="primary"
+      icon="create"
+      type="submit"
+      disabled={saving}
+    >
+      {saving ? t("Saving…", locale) : t("Add category", locale)}
+    </Button>
   </form>
   {#if fieldError}<p id="category-field-error" class="field-error" role="alert">
       {fieldError}
@@ -304,19 +309,25 @@
                   ? `category-${category.id}-error`
                   : undefined}
               />
-              <button class="primary-action" type="submit" disabled={saving}>
-                <ActionLabel icon="save">
-                  {saving ? t("Saving…", locale) : t("Save", locale)}
-                </ActionLabel>
-              </button>
-              <button
+              <Button
+                class="primary-action"
+                variant="primary"
+                icon="save"
+                type="submit"
+                disabled={saving}
+              >
+                {saving ? t("Saving…", locale) : t("Save", locale)}
+              </Button>
+              <Button
                 class="quiet-button"
+                variant="secondary"
+                icon="cancel"
                 type="button"
                 disabled={saving}
                 onclick={cancelEdit}
-                ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel
-                ></button
               >
+                {t("Cancel", locale)}
+              </Button>
               {#if fieldError}<p
                   id={`category-${category.id}-error`}
                   class="field-error"
@@ -328,22 +339,24 @@
           {:else}
             <span class="category-name">{category.name}</span>
             <div class="row-actions">
-              <button
+              <Button
                 class="quiet-button"
+                variant="secondary"
+                icon="action-update"
                 type="button"
                 onclick={() => beginEdit(category)}
-                ><ActionLabel icon="action-update"
-                  >{t("Rename", locale)}</ActionLabel
-                ></button
               >
-              <button
+                {t("Rename", locale)}
+              </Button>
+              <Button
                 class="quiet-button destructive"
+                variant="danger"
+                icon="action-delete"
                 type="button"
                 onclick={() => askDelete(category)}
-                ><ActionLabel icon="action-delete"
-                  >{t("Delete", locale)}</ActionLabel
-                ></button
               >
+                {t("Delete", locale)}
+              </Button>
             </div>
           {/if}
         </li>
@@ -368,24 +381,26 @@
   {/if}
   {#if errorMessage}<p class="field-error" role="alert">{errorMessage}</p>{/if}
   <div class="dialog-actions">
-    <button
+    <Button
       class="quiet-button"
+      variant="secondary"
+      icon="cancel"
       type="button"
       disabled={deleting}
       onclick={() => deleteDialog?.close()}
-      ><ActionLabel icon="cancel">{t("Keep category", locale)}</ActionLabel
-      ></button
     >
-    <button
+      {t("Keep category", locale)}
+    </Button>
+    <Button
       class="danger-button"
+      variant="danger"
+      icon="action-delete"
       type="button"
       disabled={deleting}
       onclick={() => void removeCategory()}
     >
-      <ActionLabel icon="action-delete">
-        {deleting ? t("Deleting…", locale) : t("Delete category", locale)}
-      </ActionLabel>
-    </button>
+      {deleting ? t("Deleting…", locale) : t("Delete category", locale)}
+    </Button>
   </div>
 </dialog>
 
@@ -443,38 +458,6 @@
 
   input[aria-invalid="true"] {
     border-color: var(--danger);
-  }
-
-  .primary-action,
-  .quiet-button,
-  .danger-button,
-  .notice-error button {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.8rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 620;
-    text-decoration: none;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .primary-action {
-    border-color: var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-
-  .danger-button,
-  .destructive {
-    border-color: var(--danger);
-    color: var(--danger);
   }
 
   .notice-error,
@@ -608,7 +591,7 @@
       flex-direction: column;
     }
 
-    .create-form .primary-action {
+    .create-form :global(.ui-button) {
       width: 100%;
     }
 
@@ -616,7 +599,7 @@
       width: 100%;
     }
 
-    .row-actions button {
+    .row-actions :global(.ui-button) {
       flex: 1;
     }
 
@@ -633,7 +616,7 @@
       flex-direction: column-reverse;
     }
 
-    .dialog-actions button {
+    .dialog-actions :global(.ui-button) {
       width: 100%;
     }
   }

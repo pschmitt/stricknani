@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ImageChoices from "./ImageChoices.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
@@ -387,16 +388,7 @@
     <PageHeader
       title={t("Import a project", locale)}
       titleId="import-page-title"
-    >
-      {#snippet context()}
-        <p>
-          {t(
-            "Choose a source, review every extracted detail, then create a normal project.",
-            locale,
-          )}
-        </p>
-      {/snippet}
-    </PageHeader>
+    />
   </div>
 
   <section class="source-card" aria-labelledby="source-title">
@@ -420,26 +412,32 @@
       role="group"
       aria-label={t("Import source", locale)}
     >
-      <button
-        class:active={sourceKind === "text"}
+      <Button
+        variant={sourceKind === "text" ? "primary" : "secondary"}
+        size="sm"
+        icon="clipboard"
         type="button"
         aria-pressed={sourceKind === "text"}
         disabled={sourceDisabled}
         onclick={() => (sourceKind = "text")}
-        ><ActionLabel icon="clipboard">{t("Paste text", locale)}</ActionLabel
-        ></button
       >
-      <button
-        class:active={sourceKind === "file"}
+        {t("Paste text", locale)}
+      </Button>
+      <Button
+        variant={sourceKind === "file" ? "primary" : "secondary"}
+        size="sm"
+        icon="upload"
         type="button"
         aria-pressed={sourceKind === "file"}
         disabled={sourceDisabled}
         onclick={() => (sourceKind = "file")}
-        ><ActionLabel icon="upload">{t("Upload file", locale)}</ActionLabel
-        ></button
       >
-      <button
-        class:active={sourceKind === "url"}
+        {t("Upload file", locale)}
+      </Button>
+      <Button
+        variant={sourceKind === "url" ? "primary" : "secondary"}
+        size="sm"
+        icon="link"
         type="button"
         aria-pressed={sourceKind === "url"}
         disabled={!allowExternal || sourceDisabled}
@@ -447,9 +445,9 @@
           ? t("URL imports are disabled for this account.", locale)
           : undefined}
         onclick={() => (sourceKind = "url")}
-        ><ActionLabel icon="link">{t("From a link", locale)}</ActionLabel
-        ></button
       >
+        {t("From a link", locale)}
+      </Button>
     </div>
     {#if sourceKind === "text"}
       <label class="field"
@@ -516,13 +514,15 @@
           locale,
         )}
       </p>{/if}
-    <button class="primary" disabled={sourceDisabled} onclick={runPreview}
-      ><ActionLabel icon="preview"
-        >{busy
-          ? t("Preparing preview…", locale)
-          : t("Preview and review", locale)}</ActionLabel
-      ></button
+    <Button
+      class="primary"
+      variant="primary"
+      icon="preview"
+      disabled={sourceDisabled}
+      onclick={runPreview}
     >
+      {busy ? t("Preparing preview…", locale) : t("Preview and review", locale)}
+    </Button>
     {#if busy}<p class="status" role="status" aria-live="polite">
         {t("Reading the source and preparing a draft…", locale)}
       </p>{/if}
@@ -713,16 +713,18 @@
                 {#if yarn.createdId !== null}<p class="notice" role="status">
                     {t("Saved and ready to link to this project.", locale)}
                   </p>
-                {:else}<button
+                {:else}<Button
                     class="secondary"
+                    variant="secondary"
+                    icon="save"
+                    type="button"
                     disabled={busyYarn !== null || !yarn.name.trim()}
                     onclick={() => saveYarn(index)}
-                    ><ActionLabel icon="save"
-                      >{busyYarn === index
-                        ? t("Saving yarn…", locale)
-                        : t("Save yarn to library", locale)}</ActionLabel
-                    ></button
-                  >{/if}
+                  >
+                    {busyYarn === index
+                      ? t("Saving yarn…", locale)
+                      : t("Save yarn to library", locale)}
+                  </Button>{/if}
               </fieldset>
             {/each}
           </div>
@@ -751,35 +753,39 @@
       <div class="review-actions">
         {#if createdProjectId}
           <a
-            class="primary link-button"
+            class="ui-button ui-button--primary primary link-button"
             href={`../projects/${createdProjectId}`}
             ><ActionLabel icon="next"
               >{t("Open created project", locale)}</ActionLabel
             ></a
           >
-          <button
+          <Button
             class="secondary"
+            variant="secondary"
+            icon="reset"
+            type="button"
             onclick={() => {
               preview = null;
               draft = null;
               createdProjectId = null;
               successMessage = "";
             }}
-            ><ActionLabel icon="reset"
-              >{t("Start another import", locale)}</ActionLabel
-            ></button
           >
+            {t("Start another import", locale)}
+          </Button>
         {:else}
-          <button
+          <Button
             class="primary"
+            variant="primary"
+            icon="create"
+            type="button"
             disabled={busy || busyYarn !== null}
             onclick={saveProject}
-            ><ActionLabel icon="create"
-              >{busy
-                ? t("Creating project…", locale)
-                : t("Create project", locale)}</ActionLabel
-            ></button
           >
+            {busy
+              ? t("Creating project…", locale)
+              : t("Create project", locale)}
+          </Button>
         {/if}
       </div>
     </section>
@@ -791,7 +797,7 @@
     padding-bottom: 6rem;
   }
   .page-heading {
-    margin-bottom: 1.4rem;
+    margin-bottom: 0.85rem;
   }
   h2,
   h3,
@@ -856,27 +862,8 @@
     margin-bottom: 1rem;
     padding-bottom: 0.15rem;
   }
-  .source-tabs button,
-  .secondary {
-    min-width: 0;
-    min-height: 2.75rem;
-    padding: 0.55rem 0.9rem;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    background: var(--surface-raised);
-    font-weight: 650;
-    cursor: pointer;
-  }
-  .source-tabs button {
+  .source-tabs :global(.ui-button) {
     flex: 1 1 8rem;
-  }
-  .source-tabs button.active {
-    border-color: var(--accent);
-    color: var(--accent-strong);
-    background: var(--accent-wash);
-  }
-  .source-tabs button:disabled {
-    cursor: not-allowed;
   }
   .field {
     display: grid;
@@ -938,27 +925,6 @@
   .file-picker span:last-of-type {
     color: var(--ink-muted);
     font-size: 0.85rem;
-  }
-  .primary {
-    display: inline-flex;
-    min-height: 2.85rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.65rem 1rem;
-    border: 0;
-    border-radius: 0.75rem;
-    color: var(--surface);
-    background: var(--accent-strong);
-    font: inherit;
-    font-weight: 720;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .primary:disabled,
-  .secondary:disabled {
-    opacity: 0.65;
-    cursor: wait;
   }
   .status,
   .notice,
@@ -1051,11 +1017,7 @@
     .wide {
       grid-column: auto;
     }
-    .primary,
-    .secondary {
-      min-height: 2.9rem;
-    }
-    .review-actions > * {
+    .review-actions :global(.ui-button) {
       flex: 1 1 100%;
     }
   }
