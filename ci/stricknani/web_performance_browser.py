@@ -786,7 +786,7 @@ def _one_sample(
     card = page.locator(".project-card").filter(
         has=page.get_by_role("heading", name="Heirloom Baby Blanket", exact=True)
     )
-    link = card.locator("a.project-open")
+    link = card.locator("a.resource-card__link")
     reader_href = link.get_attribute("href")
     if not reader_href:
         raise PerformanceFailure("the synthetic reader link was unavailable")

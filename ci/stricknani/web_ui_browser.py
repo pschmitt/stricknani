@@ -1491,14 +1491,14 @@ def _check_mobile_language_and_screenshots(
     )
     page.emulate_media(color_scheme="dark")
     page.reload(wait_until="networkidle")
-    page.locator(".project-card .project-open").first.wait_for(state="visible")
+    page.locator(".project-card .resource-card__link").first.wait_for(state="visible")
     page.evaluate("document.fonts.ready")
     page.screenshot(path=str(screenshots / "projects-mobile-dark.png"), caret="initial")
     project_contrast: object = page.evaluate(
         """() => {
           const card = document.querySelector('.project-card');
           const title = card?.querySelector('h2');
-          const link = card?.querySelector('.project-open');
+          const link = card?.querySelector('.resource-card__link');
           if (!card || !title || !link) return { ratio: 0 };
           const titleColor = getComputedStyle(title).color;
           const linkColor = getComputedStyle(link).color;
@@ -1568,7 +1568,7 @@ def _check_mobile_language_and_screenshots(
     )
     page.emulate_media(color_scheme="light")
     page.reload(wait_until="networkidle")
-    page.locator(".project-card .project-open").first.wait_for(state="visible")
+    page.locator(".project-card .resource-card__link").first.wait_for(state="visible")
 
     _require(
         page.locator(".mobile-header .locale-switcher").count() == 0,
@@ -2675,7 +2675,7 @@ def run_acceptance(
                 )
             )
             _require(project_card.count() == 1, "the seeded project card is missing")
-            project_photo = project_card.locator(".project-image img")
+            project_photo = project_card.locator(".resource-card__image img")
             _require(
                 project_photo.count() == 1
                 and project_photo.evaluate("image => image.src.includes('/media/')"),
@@ -3090,7 +3090,8 @@ def run_acceptance(
             page.get_by_role("link", name="Back to projects").first.click()
             page.wait_for_url("**/app/projects")
             page.locator(
-                f".project-card a.project-open[href='/app/projects/{project_id}']"
+                f".project-card a.resource-card__link"
+                f"[href='/app/projects/{project_id}']"
             ).click()
             page.wait_for_url(f"**/app/projects/{project_id}**")
             page.wait_for_function(

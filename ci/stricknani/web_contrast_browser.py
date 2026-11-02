@@ -267,7 +267,7 @@ def _check_route(
     page.get_by_role("heading", level=1).first.wait_for(state="visible")
     loaded_selector = {
         "login": ".auth-form",
-        "projects": ".project-card a.project-open",
+        "projects": ".project-card a.resource-card__link",
         "reader": ".reader h1",
         "editor": ".project-editor form.editor-form",
         "yarn-editor": ".yarn-form",
@@ -478,7 +478,9 @@ def _run_fixture(
                     page.get_by_role("button", name="Sign in", exact=True).click()
                     mark_stage("waiting for synthetic Projects route")
                     page.wait_for_url("**/app/projects", timeout=10_000)
-                    card_link = page.locator(".project-card a.project-open").first
+                    card_link = page.locator(
+                        ".project-card a.resource-card__link"
+                    ).first
                     card_link.wait_for(state="visible")
                     project_path = card_link.get_attribute("href")
                     if not project_path:
@@ -490,7 +492,9 @@ def _run_fixture(
                         )
                     )
                     yarn_card.wait_for(state="visible", timeout=10_000)
-                    yarn_path = yarn_card.locator("a.yarn-open").get_attribute("href")
+                    yarn_path = yarn_card.locator(
+                        "a.resource-card__link"
+                    ).get_attribute("href")
                     if not yarn_path:
                         raise ContrastFailure("seed yarn link is missing")
                     routes = [
