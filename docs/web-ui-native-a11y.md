@@ -1,6 +1,27 @@
 # Native browser zoom and accessibility checks
 
-## Current packaged Firefox result
+## Deployed 72b1faa Firefox result
+
+The 2026-11-02 native zoom run passed against runtime `72b1faa`, using the
+current72 package described in
+[web-ui-browser-check.md](web-ui-browser-check.md). Its complete exit-0
+receipt is
+`/home/pschmitt/build/stricknani-current-72-acceptance-20261102/receipts/native-firefox-current-02.exit`;
+the sanitized report is at
+`/home/pschmitt/build/stricknani-current-72-acceptance-20261102/runs/native-firefox-current-02/firefox-zoom-metrics.json`.
+The private helper copy SHA-256 is
+`329f95ca088d879aceb7aa474bf84a2f27fdc2bc06d1f89dffe7de109bb81f17`.
+
+On a fixed 1280×900 display, actual Firefox browser zoom reached 200%; CSS
+viewport width changed from 1237 to 619 pixels and device-pixel ratio from
+1.034 to 2.069. The Projects heading, seeded project, search field, and Search
+button stayed visible and usable with no horizontal overflow. Native keyboard
+search and clear worked. A trusted X11 click was targeted and completed the
+expected request. This controlled desktop-browser check is not a physical
+phone journey or screen-reader speech test. Screen-reader acceptance remains
+separate.
+
+## Historical deployed 522 Firefox result
 
 The 2026-11-02 native zoom check passed against deployed application
 `52221ad266d5c38124f7ca442add952055223e7b`, using web package

@@ -93,8 +93,15 @@ The full Rust suite, 150 frontend tests, canonical capability probe, core
 Chromium journey, portable accessibility journey and worker/bootstrap byte
 checks passed. The committed upgrade completed successfully and the live
 assets match that tested package. Strict native Firefox/Orca acceptance also
-passed for this package. Physical-phone acceptance and the current-package
-cross-engine/lab refresh remain open.
+passed for this package. The corrected Firefox/WebKit core journeys and native
+Firefox 200% zoom also passed against this package. Physical-phone acceptance
+remains open. Current-package contrast passed 88 assessed checks, including the
+photo dialog in both themes,
+with 28 explicit skips and no failing samples.
+The five-sample mobile lab passed with median LCP 2164ms, CLS 0 and a 32ms
+interaction candidate; first-route JavaScript/CSS were 65,183/7,257 gzip bytes.
+The reports retain their measurement profile and limits; these are not field
+p75 results.
 All five CI workflows for `72b1faa` and all four public configuration CI
 workflows for `bc0645107` succeeded.
 
@@ -106,8 +113,10 @@ consumer review is complete; active consumers require retaining the old assets
 for now.
 
 The `52221ad` browser matrix passed Chromium, Firefox and WebKit, including
-a real intercepted print-image failure and retry. Remaining work is the
-approved physical-phone journey and current-package cross-engine/lab refresh.
+a real intercepted print-image failure and retry. The current `72b1faa` matrix
+also passed both Firefox and WebKit with the current runner; earlier attempts
+that imported an older runner are excluded. Remaining work is the approved
+physical-phone journey.
 Diagnostics remain separate from passing acceptance evidence. See
 [device acceptance](web-ui-device-acceptance.md),
 [native zoom](web-ui-native-a11y.md),

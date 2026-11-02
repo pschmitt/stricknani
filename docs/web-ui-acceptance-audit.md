@@ -63,10 +63,26 @@ rollout is verified at public pin `bc0645107`; the deployed application is
 
 1. Run the complete approved workflow on a real phone, including touch,
   soft-keyboard, safe-area, upload, and navigation behavior.
-2. Refresh the representative Firefox/WebKit matrix against the deployed
-  package, including the changed dialog and validation behavior.
-3. Refresh the bounded contrast, performance and native Firefox zoom reports
-  against that same package. Older measurements remain tied to their source.
+
+The deployed `72b1faa` package passed the Firefox and WebKit core journeys and
+native Firefox 200% zoom. The coordinator independently read their zero exit
+receipts. The corrected matrix wrapper changes into the intended source root
+and checks the resolved module path and SHA-256 before running; earlier attempts
+that imported the historical runner are diagnostics, not current acceptance.
+The executed core runner SHA-256 is
+`dcf77a2c501302c7e59214a72465646cef625dde996ef10c701694c98b3c62fa`.
+
+Current-package contrast also passed: 88 assessed checks and 28 explicit skips,
+including photo-dialog title text and the actual focused title outline in both
+themes. The coordinator read the zero exit, report and frozen source/runtime
+provenance for `contrast-photo-07`; see [contrast](web-ui-contrast.md).
+
+The current-package five-sample mobile lab also passed with frozen source and
+runtime provenance: median LCP 2164ms, CLS 0 and an assessable 32ms interaction
+candidate. Initial-route JavaScript and CSS measured 65,183 and 7,257 gzip bytes,
+within their budgets. The coordinator independently read the zero exit and
+report for `performance-current-02`; see [performance](web-ui-performance.md)
+for the profile, method and limits. These are lab measurements, not field p75.
 
 Strict native screen-reader acceptance passed on canonical `72b1faa` with
 Firefox, Orca and native X11 input: all 13 report checks are true, including

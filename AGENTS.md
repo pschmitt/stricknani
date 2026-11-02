@@ -143,6 +143,10 @@ Use this file as the operational source of truth for working in Stricknani.
   comparing copies, or compare their files directly.
 - Before launching a browser acceptance run, verify the checksum of the actual
   runner file at its execution path, not just a synchronized source copy.
+  For Python module runners, change into the intended source root and assert
+  the imported module's resolved `__file__` and checksum in that same process
+  environment. `PYTHONPATH` alone does not prevent an older working directory
+  from shadowing the intended package.
   Freeze the runner and static root together; check that the generated worker
   matches its source template and manifest substitutions. Record these hashes
   with the receipt so stale runners or builds cannot be mistaken for failures

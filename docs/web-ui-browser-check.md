@@ -14,7 +14,46 @@ It generated sanitized signed-out mobile, signed-in mobile, and post-logout
 screenshots in a private temporary output directory; screenshots are not
 checked into the repository.
 
-## Deployed 522 browser matrix
+## Deployed 72b1faa browser matrix
+
+The 2026-11-02 acceptance runs used current runtime `72b1faa` from web root
+`/nix/store/gyqjfr40aiszvyg9l8lxp7i8wq2qlgjc-stricknani-web-0.1.0` and raw
+server
+`/nix/store/n65q658kcrqh0qbqkfnsds8k7m007pa8-stricknani-server-0.1.0/bin/.stricknani-server-wrapped`
+(SHA-256 `460dd562505f51518d7c65fdabd199e7d27210a55574f7bc83bb428b667fcbcd`).
+The packaged `200.html`, `messages.json`, and `app-sw.js` SHA-256 values are
+`6c61a7102ab75366ccc107f4b7a003e77fbfb8c3a3db59cceb555c2d6ebc6a6f`,
+`f5b67b45f4935e871846bca290a2b6d01665cb63cdd740bf137eb69650f4b84a`, and
+`c1903ccf61860e4a6ae659e2958fce305768024a959fc6c3dd8d3f0c72b72f65`.
+The runner SHA-256 is
+`dcf77a2c501302c7e59214a72465646cef625dde996ef10c701694c98b3c62fa`.
+The receipts and run artifacts referenced below are under
+`/home/pschmitt/build/stricknani-current-72-acceptance-20261102`.
+
+| Engine / check | Result | Evidence |
+| --- | --- | --- |
+| Firefox core journey | Pass | `receipts/firefox-core-current-02.exit` = 0. |
+| Firefox native 200% zoom | Pass | `receipts/native-firefox-current-02.exit` = 0; sanitized report in `runs/native-firefox-current-02/firefox-zoom-metrics.json`. |
+| WebKit core journey | Pass | Wrapper and full journey receipts `receipts/webkit-core-patched-02.wrapper.exit` and `receipts/webkit-core-patched-02.exit` = 0; render receipt `receipts/webkit-page-render-patched-02.exit` = 0. |
+
+The WebKit run used a private Xvfb display, Openbox, and Mesa software
+rendering. The private test wrapper supplied Mesa/libxml compatibility fixes;
+it reused the pinned Playwright 1.64.1 WebKit build and did not change the
+application or CSP. Its runner path and SHA-256 are recorded in
+`receipts/webkit-runner-provenance-02.txt`. Some preliminary runs imported
+the old 522 runner because their working directory shadowed `PYTHONPATH`.
+Those attempts remain historical; accepted wrappers change to the current72
+source directory and assert the resolved module path and hash. Patched-02 is
+the accepted WebKit run. Private screenshots and reports remain on the build
+host.
+
+The Firefox native zoom helper used a fresh profile and synthetic fixture on a
+fixed 1280×900 display. At actual browser zoom 200%, the CSS viewport changed
+from 1237 to 619 pixels and device-pixel ratio from 1.034 to 2.069. Search,
+clear, and a trusted X11 click remained usable with no horizontal overflow.
+This is not physical-phone or screen-reader evidence.
+
+## Historical deployed 522 browser matrix
 
 The 2026-11-02 checks used the exact deployed package for checkpoint
 `52221ad266d5c38124f7ca442add952055223e7b`. The web root was

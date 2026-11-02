@@ -1,5 +1,41 @@
 # Web UI performance lab report
 
+## Deployed 72b1faa result
+
+The accepted 2026-11-02 five-sample run measured current runtime `72b1faa`
+from the package described in
+[web-ui-browser-check.md](web-ui-browser-check.md). It used Chromium 156.0.8078.73
+headless mobile emulation at 390×844 CSS pixels, device scale factor 1, 4× CPU
+throttling, 150 ms RTT, 1.6 Mbps down, and 750 kbps up. Every sample used a
+fresh browser context and one document session against a disposable synthetic
+account.
+
+| Sample | LCP (ms) | CLS | JS gzip-6 (B) | CSS gzip-6 (B) | Catalog gzip-6 (B) | Cold route ready (ms) | Search ready (ms) | Reader ready (ms) | Search event (ms) | Reader event (ms) | Lab candidate (ms) | Native interactions | Observed groups | Coverage |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 2164 | 0.0000 | 65183 | 7257 | 22876 | 1885.8 | 330.0 | 606.9 | 32 | 24 | 32 | 37 | 32 | 86.5% |
+| 2 | 2160 | 0.0000 | 65183 | 7257 | 22876 | 1874.9 | 333.4 | 616.0 | 32 | 24 | 32 | 37 | 31 | 83.8% |
+| 3 | 2180 | 0.0000 | 65183 | 7257 | 22876 | 1886.0 | 302.7 | 608.7 | 24 | 24 | 32 | 37 | 25 | 67.6% |
+| 4 | 2180 | 0.0000 | 65183 | 7257 | 22876 | 1889.9 | 307.7 | 613.8 | 24 | 24 | 32 | 37 | 24 | 64.9% |
+| 5 | 2164 | 0.0000 | 65183 | 7257 | 22876 | 1873.5 | 306.7 | 601.0 | 32 | 24 | 32 | 37 | 33 | 89.2% |
+| Median | 2164 | 0.0000 | 65183 | 7257 | 22876 | 1885.8 | 307.7 | 608.7 | 32 | 24 | 32 | 37 | 31 | 83.8% |
+
+JavaScript is below the 153,600 B budget and CSS is below the 51,200 B budget.
+Median LCP is 2,164 ms and CLS is 0. The scripted lab INP candidate is 32 ms
+in every sample, below the 200 ms lab target. Event Timing used a 16 ms
+threshold; observed-group coverage ranged from 64.9% to 89.2%. This is not
+field INP or production p75.
+
+The frozen wrapper checked resolved import paths and hashes for the
+performance runner, fixture loader, and seed helper, and checked the exact
+current72 server and static package hashes listed in
+[web-ui-browser-check.md](web-ui-browser-check.md). Its exit-0 receipt is
+`/home/pschmitt/build/stricknani-current-72-acceptance-20261102/receipts/performance-current-02.exit`;
+the JSON is in the adjacent `performance-current-02.log`, and provenance is
+in `performance-current-02.provenance`. The runner SHA-256 is
+`244cd95649ab8d26c872c00a4ac714bf19e19bf5b552a989456d4810f14040b4`.
+
+## Historical deployed 522 result
+
 ## Method
 
 The measured frontend is the deployed 522 package. Its web root is

@@ -1,6 +1,38 @@
 # Rendered contrast check
 
-This is a bounded synthetic-browser check, not a full WCAG audit. The runner
+This is a bounded synthetic-browser check, not a full WCAG audit.
+
+## Deployed 72b1faa photo-dialog result
+
+A frozen Chromium gate on 2026-11-02 checked current runtime `72b1faa`,
+including the yarn photo dialog. The report has 116 rows: 88 passed, 28
+skipped because a sampled target was not visible, and none failed. Routes
+include Login, Projects, reader, editor, yarn editor, yarn photo dialog,
+Account, and Gauge. Focus-outline ratios were 5.16:1 in light mode and 9.79:1
+in dark mode, with 3 CSS-pixel outlines.
+
+The terminal receipt is
+`/home/pschmitt/build/stricknani-webkit-patched-72-20261102/contrast-photo-07.exit`
+(0). The JSON report is at
+`/home/pschmitt/build/stricknani-webkit-patched-72-20261102/contrast-photo-07/contrast-results.json`
+(SHA-256 `b8f382727c0f4deb26558456fcb206229f10fb5e42cb360d1dbce4e3799c03dc`).
+The frozen wrapper asserted the resolved current-source paths and SHA-256
+values for the photo runner (`e78784d6ac9f46df939fc0dcd4d1147078ad95ce79eb0aa63528de7964d6ce84`),
+shared browser runner (`dcf77a2c501302c7e59214a72465646cef625dde996ef10c701694c98b3c62fa`),
+fixture loader (`59b384b98be8ca0570bea46e62fe9ec256d491ed90d5ed0c44e6685e7d72341e`),
+and seed helper (`1457524c7df5606dac67a9e4cb12510ede50d9e2f8092e9878e45f560768e6c3`).
+It also asserted the current72 server and packaged `200.html`, `messages.json`,
+and `app-sw.js` hashes listed in
+[web-ui-browser-check.md](web-ui-browser-check.md). The wrapper SHA-256 is
+`c409b01898cf3b3aeca80173c6c03522302e0f82fc33519ce78e98f932ba1c87`.
+
+An earlier photo-dialog attempt emitted sampled rows but the complete command
+exited 1 (`contrast-photo-02.exit`); it is not counted as a pass. Photo-07 is
+the accepted current result.
+
+## Historical deployed 522 result
+
+The runner
 [`web_contrast_browser.py`](../ci/stricknani/web_contrast_browser.py) passed
 against the deployed 522 package. Its SHA-256 is
 `c36534c5c33aab95814f59dca9037d3979306bb8b34de742a680515bb1f36f10`. The web
