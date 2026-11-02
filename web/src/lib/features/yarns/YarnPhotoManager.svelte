@@ -456,12 +456,15 @@
 
   .photo-caption {
     min-height: 44px;
+    flex-wrap: wrap;
     color: var(--ink-muted);
     font-size: 0.8rem;
   }
 
   .remove-photo {
-    min-height: 40px;
+    flex: 0 0 auto;
+    max-width: 100%;
+    min-height: 44px;
     padding: 0.4rem 0.55rem;
     font-size: 0.82rem;
   }

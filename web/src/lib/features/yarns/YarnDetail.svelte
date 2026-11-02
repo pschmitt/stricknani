@@ -457,14 +457,19 @@
       class="quiet-button"
       type="button"
       disabled={deleting}
-      onclick={() => deleteDialog?.close()}>{t("Keep yarn", locale)}</button
+      onclick={() => deleteDialog?.close()}
+      ><ActionLabel icon="cancel">{t("Keep yarn", locale)}</ActionLabel></button
     >
     <button
       class="danger-button"
       type="button"
       disabled={deleting}
       onclick={() => void removeYarn()}
-      >{deleting ? t("Deleting…", locale) : t("Delete yarn", locale)}</button
+      ><ActionLabel icon="action-delete"
+        >{deleting
+          ? t("Deleting…", locale)
+          : t("Delete yarn", locale)}</ActionLabel
+      ></button
     >
   </div>
 </dialog>

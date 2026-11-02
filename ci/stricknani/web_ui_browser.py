@@ -3804,6 +3804,27 @@ def run_acceptance(
             page.get_by_text(
                 "Each step needs a title of 256 characters or fewer.", exact=True
             ).wait_for(state="visible")
+            first_step_title_id = first_step_title.get_attribute("id")
+            _require(
+                first_step_title_id is not None,
+                "the first project step title has no stable DOM id",
+            )
+            page.wait_for_function(
+                "id => document.activeElement?.id === id",
+                arg=first_step_title_id,
+                timeout=5_000,
+            )
+            _require(
+                first_step_title.get_attribute("aria-invalid") == "true",
+                "validation did not mark the first invalid step title",
+            )
+            _require(
+                first_step_title.get_attribute("aria-describedby")
+                == "project-steps-error"
+                and page.locator("#project-steps-error").inner_text()
+                == "Each step needs a title of 256 characters or fewer.",
+                "the invalid step title is not associated with its validation error",
+            )
             first_step_title.fill("Cast on")
             mark_stage("searching for a yarn to associate")
             page.get_by_label("Find yarn", exact=True).fill("Riverbend")

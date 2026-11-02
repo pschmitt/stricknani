@@ -178,7 +178,7 @@
         type="button"
         onclick={() => void refreshSession()}
       >
-        {t("Try again", locale)}
+        <ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel>
       </button>
     </section>
   </main>

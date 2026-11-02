@@ -1,7 +1,7 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -401,21 +401,59 @@
     return projectWriteFromDraft(draft, isAiEnhanced);
   }
 
+  async function focusFirstValidationError(
+    id: number | null,
+    ownerId: number,
+    generation: number,
+  ): Promise<void> {
+    await tick();
+    if (!isCurrentRoute(id, ownerId, generation)) return;
+
+    const invalidStep = draft.steps.find((step) => {
+      const title = step.title.trim();
+      return !title || title.length > 256;
+    });
+    const targetId = fieldErrors.name
+      ? "project-name"
+      : fieldErrors.link
+        ? "project-link"
+        : invalidStep
+          ? `step-title-${invalidStep.key}`
+          : null;
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (target instanceof HTMLInputElement && target.isConnected)
+      target.focus();
+  }
+
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     if (conflictProject !== null) return;
+    const id = projectId;
+    const ownerId = session.data?.user?.id;
+    const generation = routeGeneration;
     addTag();
     const isAiEnhanced = project?.is_ai_enhanced ?? false;
     const value = makeWrite(isAiEnhanced);
-    if (!value) return;
+    if (!value) {
+      if (ownerId !== undefined)
+        await focusFirstValidationError(id, ownerId, generation);
+      return;
+    }
     await saveProject(value, project?.updated_at ?? null);
   }
 
   async function saveDraftOverLatest(): Promise<void> {
     if (!conflictProject) return;
+    const id = projectId;
+    const ownerId = session.data?.user?.id;
+    const generation = routeGeneration;
     addTag();
     const value = makeWrite(conflictProject.is_ai_enhanced);
-    if (!value) return;
+    if (!value) {
+      if (ownerId !== undefined)
+        await focusFirstValidationError(id, ownerId, generation);
+      return;
+    }
     await saveProject(value, conflictProject.updated_at);
   }
 
@@ -1131,7 +1169,11 @@
                 ></button
               >
             </div>
-            {#if fieldErrors.steps}<p class="field-error" role="alert">
+            {#if fieldErrors.steps}<p
+                id="project-steps-error"
+                class="field-error"
+                role="alert"
+              >
                 {fieldErrors.steps}
               </p>{/if}
             {#if draft.steps.length}
@@ -1164,7 +1206,10 @@
                           onclick={() =>
                             (draft.steps = draft.steps.filter(
                               (item) => item.key !== step.key,
-                            ))}>{t("Remove", locale)}</button
+                            ))}
+                          ><ActionLabel icon="action-delete"
+                            >{t("Remove", locale)}</ActionLabel
+                          ></button
                         >
                       </div>
                     </div>
@@ -1177,6 +1222,14 @@
                         bind:value={step.title}
                         maxlength="256"
                         required
+                        aria-invalid={fieldErrors.steps &&
+                        (!step.title.trim() || step.title.trim().length > 256)
+                          ? "true"
+                          : undefined}
+                        aria-describedby={fieldErrors.steps &&
+                        (!step.title.trim() || step.title.trim().length > 256)
+                          ? "project-steps-error"
+                          : undefined}
                       />
                     </div>
                     <div class="field">
