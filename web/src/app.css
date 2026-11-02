@@ -34,6 +34,9 @@
   --page-width-compact: 48rem;
   --page-width-standard: 58rem;
   --page-width-wide: 76rem;
+  --ui-action-icon-size-md: 20px;
+  --ui-action-icon-size-sm: 18px;
+  --ui-navigation-icon-size: 24px;
 
   font-optical-sizing: auto;
   font-weight: 400;
@@ -104,6 +107,161 @@ a {
 
 button {
   color: inherit;
+}
+
+.ui-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-size: 0.96rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.ui-button--md {
+  min-height: 44px;
+  padding-inline: 0.9rem;
+}
+
+.ui-button--sm {
+  min-height: 44px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.ui-button--primary {
+  color: var(--on-accent);
+  background: var(--accent-strong);
+}
+
+.ui-button--secondary {
+  border-color: var(--line);
+  color: var(--accent-strong);
+  background: var(--surface);
+}
+
+.ui-button--ghost {
+  border-color: transparent;
+  color: var(--accent-strong);
+  background: transparent;
+}
+
+.ui-button--danger {
+  color: var(--on-danger);
+  background: var(--danger);
+}
+
+.ui-button:hover:not(:disabled) {
+  border-color: var(--control-border);
+}
+
+.ui-button--secondary:hover:not(:disabled),
+.ui-button--ghost:hover:not(:disabled) {
+  background: var(--accent-wash);
+}
+
+.ui-button--primary:hover:not(:disabled),
+.ui-button--danger:hover:not(:disabled) {
+  box-shadow: 0 0 0 2px var(--accent-wash);
+}
+
+.ui-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.ui-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.ui-button[aria-busy="true"] {
+  cursor: progress;
+}
+
+.ui-button .action-label__text {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.ui-button > svg {
+  width: var(--ui-action-icon-size-md);
+  height: var(--ui-action-icon-size-md);
+  stroke-width: 2;
+}
+
+.ui-button--sm > svg {
+  width: var(--ui-action-icon-size-sm);
+  height: var(--ui-action-icon-size-sm);
+}
+
+.ui-navigation-tile {
+  display: grid;
+  min-width: 0;
+  min-height: 44px;
+  grid-template-columns: var(--ui-navigation-icon-size) minmax(0, 1fr);
+  align-items: start;
+  gap: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  color: var(--ink);
+  background: var(--surface);
+  text-decoration: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.ui-navigation-tile:hover {
+  border-color: var(--control-border);
+  background: var(--surface-raised);
+}
+
+.ui-navigation-tile:active {
+  transform: translateY(1px);
+}
+
+.ui-navigation-tile__icon {
+  display: grid;
+  width: var(--ui-navigation-icon-size);
+  height: var(--ui-navigation-icon-size);
+  place-items: center;
+  color: var(--accent-strong);
+}
+
+.ui-navigation-tile__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+  line-height: 1.4;
+}
+
+.ui-navigation-tile__title {
+  font-weight: 650;
+}
+
+.ui-navigation-tile__description {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
 }
 
 button:focus-visible,

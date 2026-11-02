@@ -87,8 +87,6 @@
 
   :global(.page-header__actions :where(a, button)) {
     max-width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
   }
 
   @media (max-width: 760px) {
