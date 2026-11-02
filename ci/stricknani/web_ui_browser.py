@@ -587,6 +587,20 @@ def _measure_compact_library_heading(
     }
 
 
+def _assert_header_parent_link(page: Page, href: str, description: str) -> Locator:
+    link = page.locator(".app-header .shell-back-button")
+    bounds = link.bounding_box() if link.count() == 1 else None
+    _require(
+        link.count() == 1
+        and link.get_attribute("href") == href
+        and bounds is not None
+        and bounds["width"] == 44
+        and bounds["height"] == 44,
+        f"{description} header parent link has the wrong route or target size",
+    )
+    return link
+
+
 def _visible_heights(page: Page, selector: str) -> list[float]:
     values: object = page.locator(selector).evaluate_all(
         "elements => elements.filter(el => el.getClientRects().length).map("
@@ -3281,7 +3295,7 @@ def run_acceptance(
                 arg=step_ids[1],
             )
             mark_stage("restoring step position after returning to the library")
-            page.get_by_role("link", name="Back to projects").first.click()
+            _assert_header_parent_link(page, "/app/projects", "project reader").click()
             page.wait_for_url("**/app/projects")
             page.locator(
                 f".project-card a.resource-card__link"
@@ -4001,7 +4015,9 @@ def run_acceptance(
             )
             page.once("dialog", lambda dialog: dialog.dismiss())
             mark_stage("checking the dirty navigation confirmation")
-            page.get_by_role("link", name="Back to project", exact=True).click()
+            _assert_header_parent_link(
+                page, f"/app/projects/{editor_project_id}", "project editor"
+            ).click()
             mark_stage("checking that a canceled navigation preserves the draft")
             _require(
                 urlsplit(page.url).path.endswith(

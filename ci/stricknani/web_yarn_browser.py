@@ -551,8 +551,20 @@ def run_acceptance(
             page.get_by_label("Brand").wait_for(state="visible")
             brand = page.get_by_label("Brand")
             brand.fill("Draft brand")
+            yarn_parent = page.locator(".app-header .shell-back-button")
+            parent_bounds = (
+                yarn_parent.bounding_box() if yarn_parent.count() == 1 else None
+            )
+            _require(
+                yarn_parent.count() == 1
+                and yarn_parent.get_attribute("href") == f"/app/yarns/{yarn_id}"
+                and parent_bounds is not None
+                and parent_bounds["width"] == 44
+                and parent_bounds["height"] == 44,
+                "the yarn editor header parent link has the wrong route or size",
+            )
             with page.expect_event("dialog") as dirty_dialog_info:
-                page.get_by_role("link", name="Back to yarn").click()
+                yarn_parent.click()
             dirty_dialog_info.value.dismiss()
             page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
                 state="visible"
@@ -562,7 +574,7 @@ def run_acceptance(
                 "dirty navigation discarded the yarn draft",
             )
             with page.expect_event("dialog") as leave_dialog_info:
-                page.get_by_role("link", name="Back to yarn").click()
+                yarn_parent.click()
             leave_dialog_info.value.accept()
             page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True).wait_for(
                 state="visible"

@@ -846,7 +846,21 @@ def _one_sample(
     name_field.press("Control+z")
     if name_field.input_value() != original_name:
         raise PerformanceFailure("project editor draft could not be undone")
-    page.get_by_role("link", name="Back to project", exact=True).click()
+    project_parent = page.locator(".app-header .shell-back-button")
+    parent_bounds = (
+        project_parent.bounding_box() if project_parent.count() == 1 else None
+    )
+    if (
+        project_parent.count() != 1
+        or project_parent.get_attribute("href") != reader_href
+        or parent_bounds is None
+        or parent_bounds["width"] != 44
+        or parent_bounds["height"] != 44
+    ):
+        raise PerformanceFailure(
+            "project editor header parent link has the wrong route or target size"
+        )
+    project_parent.click()
     page.locator("article.reader").get_by_role(
         "heading", name="Heirloom Baby Blanket", exact=True
     ).wait_for(state="visible", timeout=15_000)

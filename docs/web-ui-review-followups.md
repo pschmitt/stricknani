@@ -34,7 +34,11 @@ one reading column, compact cover/facts, keyboard-operated Materials disclosure,
 and compact phone filters. Canonical-package core browser, health and print
 checks passed, with EN/DE phone and desktop layout assertions. The administrator
 journey's owner-yarn-card check now opens Materials first; its complete rerun
-against the canonical package passed. The preview rollout is in progress.
+against the canonical package passed. This checkpoint is now live on
+[the isolated Rust preview](https://rust.anika.blue/app/), deployed through
+[configuration `6b8157f`](https://github.com/pschmitt/nixos-config/commit/6b8157f4b60b17f6b491b3863194570445f263b4).
+The switched closure, HTTPS, CSP and served assets match the reviewed package;
+production service identity and database schemas are unchanged.
 Avoid interpreting this as completion of the later pattern-presentation work.
 
 Do not deduplicate pattern text or steps automatically. Step IDs are stable
