@@ -711,7 +711,7 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
     for label, href in expected_cards:
         card = cards.get_by_role("link", name=label, exact=False)
         more_icon = card.locator(
-            ".more-link-icon svg[aria-hidden='true'][focusable='false']"
+            ".ui-navigation-tile__icon svg[aria-hidden='true'][focusable='false']"
         )
         sidebar_icon = page.locator(f".secondary-nav a[href$='{href}'] .nav-icon svg")
         _require(

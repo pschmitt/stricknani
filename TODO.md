@@ -51,7 +51,7 @@ Execution-oriented backlog for Stricknani.
 | T120.22 | P2 | todo | web-rewrite/login | feat | Use existing mascot branding for a compact responsive sign-in hero |
 | T120.23 | P2 | todo | web-rewrite/motion | feat | Add purposeful reduced-motion-safe interaction feedback after consistency fixes |
 | T120.24 | P1 | done | web-rewrite/android | feat | Prepare the native Android client for new web URLs and API contracts; SNA-74/75 plan and link compatibility verified |
-| T120.25 | P1 | todo | web-rewrite/density | refactor | Put content first: compact chrome, live search/filter disclosure, dense lists and detail overflow actions |
+| T120.25 | P1 | wip | web-rewrite/density | refactor | Put content first: compact chrome, live search/filter disclosure, dense lists and detail overflow actions |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
 | T99 | P3 | done | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |

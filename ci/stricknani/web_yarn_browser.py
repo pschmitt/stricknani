@@ -350,7 +350,6 @@ def run_acceptance(
             )
             yarn_card.wait_for(state="visible")
             page.get_by_role("searchbox", name="Search your yarn").fill("Riverbend")
-            page.get_by_role("button", name="Search", exact=True).click()
             page.wait_for_url(
                 lambda url: (
                     urlsplit(url).path == "/app/yarns"
@@ -362,12 +361,41 @@ def run_acceptance(
                 page.locator(".yarn-card").count() == 1,
                 "yarn search returned the wrong result count",
             )
-            favorite = yarn_card.get_by_role("button", name="Add to favorites")
-            favorite.click()
-            yarn_card.get_by_role("button", name="Remove from favorites").wait_for(
+            yarn_detail_href = yarn_card.locator("a.resource-card__link").get_attribute(
+                "href"
+            )
+            _require(yarn_detail_href is not None, "yarn detail link is missing")
+            yarn_card.locator("a.resource-card__link").click()
+            page.wait_for_url(f"**{yarn_detail_href}")
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path.endswith("/favorite")
+                    and response.request.method == "PUT"
+                )
+            ) as favorite_response:
+                page.get_by_role("button", name="Add to favorites").click()
+            _require(
+                favorite_response.value.status == 200,
+                "saving the yarn favorite failed against API v2",
+            )
+            page.get_by_role("button", name="Remove from favorites").wait_for(
                 state="visible"
             )
-            favorite_filter = page.get_by_role("checkbox", name="Favorites only")
+            page.go_back(wait_until="domcontentloaded")
+            page.wait_for_url("**/app/yarns?q=Riverbend")
+            yarn_card = page.locator(".yarn-card").filter(
+                has=page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True)
+            )
+            yarn_card.get_by_role("img", name="Favorite", exact=True).wait_for(
+                state="visible"
+            )
+            filter_trigger = page.locator(".filter-trigger")
+            filter_trigger.click()
+            filter_dialog = page.get_by_role("dialog")
+            filter_dialog.wait_for(state="visible")
+            favorite_filter = filter_dialog.get_by_role(
+                "checkbox", name="Favorites only"
+            )
             favorite_filter.check()
             page.wait_for_url(
                 lambda url: (
@@ -376,6 +404,7 @@ def run_acceptance(
                     == {"q": ["Riverbend"], "favorite": ["true"]}
                 )
             )
+            filter_dialog.get_by_role("button", name="Close filters").click()
             yarn_card.wait_for(state="visible")
             _require(
                 any(
@@ -389,8 +418,8 @@ def run_acceptance(
                 _assert_no_overflow(page, width)
                 heights = _visible_heights(
                     page,
-                    ".mobile-navigation a, .desktop-navigation a, "
-                    ".primary-action, .search-button, .favorite-button",
+                    ".mobile-navigation a, .secondary-nav a, "
+                    ".desktop-create, .filter-trigger",
                 )
                 _require(
                     not heights or min(heights) >= 44,
@@ -669,7 +698,6 @@ def run_acceptance(
             page.get_by_role("searchbox", name="Search your yarn").fill(
                 "New browser yarn"
             )
-            page.get_by_role("button", name="Search", exact=True).click()
             page.wait_for_url("**/app/yarns?q=New+browser+yarn")
             page.get_by_role("heading", name="No yarn matches those filters.").wait_for(
                 state="visible"

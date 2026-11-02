@@ -144,8 +144,11 @@
     {/if}
     <footer class="auth-footer">
       <LocaleSwitcher />
-      <a class="public-tool-link" href={resolve("/gauge")}
-        >{t("Gauge calculator", locale)}</a
+      <a
+        class="ui-button ui-button--secondary ui-button--md"
+        href={resolve("/gauge")}
+        ><ActionLabel icon="gauge">{t("Gauge calculator", locale)}</ActionLabel
+        ></a
       >
     </footer>
   </section>
@@ -293,20 +296,6 @@
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.85rem;
-  }
-
-  .public-tool-link {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.4rem 0.7rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font-size: 0.88rem;
-    font-weight: 650;
-    text-decoration: none;
   }
 
   .auth-side {

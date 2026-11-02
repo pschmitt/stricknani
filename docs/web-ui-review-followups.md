@@ -123,7 +123,16 @@ titles use the full 343px content width, with consistent logo position and no
 horizontal overflow. The focused print probe covers the visible title/context
 and hidden actions; the earlier core journey retains the full-media evidence.
 Browser unload confirmation remains separate from guarded in-app navigation.
-The corrected header rollout is pending.
+The corrected header is deployed through
+[configuration `48643e523`](https://github.com/pschmitt/nixos-config/commit/48643e523563d463bfad41d1a0f240b7930ee35b).
+The reviewed closure, HTTPS/CSP and assets match; production service identity
+and database schemas are unchanged. Its Signal rollout notification was sent.
+
+Shared Button/NavigationTile primitives and the first feature migrations are
+committed, along with compact library rows and a debounced search/filter shell.
+These newer source checkpoints are awaiting assembled browser validation and
+are not yet the deployed preview. Test draft preservation, real Svelte submit
+and disabled behavior, filter keyboard/focus and density before rollout.
 
 ### Additional source and visual checks
 

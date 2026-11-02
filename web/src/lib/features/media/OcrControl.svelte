@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { recognizeImageText, type OcrLanguage } from "./media-tools-api";
@@ -195,11 +195,16 @@
           locale,
         )}
       </p>
-      <button type="button" disabled={busy} onclick={() => void recognize()}>
-        <ActionLabel icon="search">
-          {busy ? t("Recognizing…", locale) : t("Recognize text", locale)}
-        </ActionLabel>
-      </button>
+      <Button
+        variant="secondary"
+        icon="search"
+        type="button"
+        disabled={busy}
+        aria-busy={busy}
+        onclick={() => void recognize()}
+      >
+        {busy ? t("Recognizing…", locale) : t("Recognize text", locale)}
+      </Button>
       {#if errorMessage}<p class="ocr-error" role="alert">
           {errorMessage}
         </p>{/if}
@@ -211,13 +216,16 @@
           {:else}
             <textarea readonly rows="6" value={text} aria-label={label}
             ></textarea>
-            <button type="button" onclick={() => void copyText()}>
-              <ActionLabel icon={copied ? "check" : "copy"}>
-                {copied
-                  ? t("Text copied", locale)
-                  : t("Copy recognized text", locale)}
-              </ActionLabel>
-            </button>
+            <Button
+              variant="secondary"
+              icon={copied ? "check" : "copy"}
+              type="button"
+              onclick={() => void copyText()}
+            >
+              {copied
+                ? t("Text copied", locale)
+                : t("Copy recognized text", locale)}
+            </Button>
           {/if}
         </section>
       {/if}
@@ -256,7 +264,6 @@
   }
 
   select,
-  button,
   textarea {
     box-sizing: border-box;
     max-width: 100%;
@@ -274,15 +281,6 @@
     border-color: var(--control-border);
   }
 
-  button {
-    width: fit-content;
-    max-width: 100%;
-    color: var(--accent-strong);
-    font-weight: 650;
-    cursor: pointer;
-  }
-
-  button:disabled,
   select:disabled {
     cursor: wait;
     opacity: 0.7;

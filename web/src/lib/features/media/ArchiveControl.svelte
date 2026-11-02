@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -435,36 +435,45 @@
         {errorMessage}
       </p>{/if}
     {#if errorMessage && !busy}
-      <button type="button" onclick={() => void retryAfterError()}>
-        <ActionLabel icon="refresh">
-          {loaded
-            ? t("Try again", locale)
-            : t("Check archive status again", locale)}
-        </ActionLabel>
-      </button>
+      <Button
+        variant="secondary"
+        icon="refresh"
+        type="button"
+        onclick={() => void retryAfterError()}
+      >
+        {loaded
+          ? t("Try again", locale)
+          : t("Check archive status again", locale)}
+      </Button>
     {/if}
     {#if busy}
       <p class="archive-progress">{t("Checking archive status…", locale)}</p>
     {:else if !loaded && readStateEnabled}
       <p class="archive-progress">{t("Loading archive status…", locale)}</p>
     {:else if readStateEnabled && canManuallyCheckArchive(status, pollingExhausted)}
-      <button type="button" onclick={() => void checkAgain()}>
-        <ActionLabel icon="refresh">
-          {t("Check archive status again", locale)}
-        </ActionLabel>
-      </button>
+      <Button
+        variant="secondary"
+        icon="refresh"
+        type="button"
+        onclick={() => void checkAgain()}
+      >
+        {t("Check archive status again", locale)}
+      </Button>
     {:else if archiveActive}
       <p class="archive-progress">
         {t("Status checks pause in the background.", locale)}
       </p>
     {:else if enabled && status?.state !== "archived"}
-      <button type="button" onclick={() => void enqueue()}>
-        <ActionLabel icon="link">
-          {status?.state === "failed" || status?.state === "superseded"
-            ? t("Request a new archive", locale)
-            : t("Archive this source", locale)}
-        </ActionLabel>
-      </button>
+      <Button
+        variant="secondary"
+        icon="link"
+        type="button"
+        onclick={() => void enqueue()}
+      >
+        {status?.state === "failed" || status?.state === "superseded"
+          ? t("Request a new archive", locale)
+          : t("Archive this source", locale)}
+      </Button>
     {/if}
   </section>
 {/if}
@@ -498,18 +507,9 @@
     color: var(--danger-strong);
   }
 
-  button {
+  :global(.ui-button) {
     width: fit-content;
     max-width: 100%;
-    min-height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 0.55rem;
-    padding: 0.55rem 0.7rem;
-    color: var(--accent-strong);
-    background: var(--surface-raised);
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
   }
 
   @media print {

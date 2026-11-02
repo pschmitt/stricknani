@@ -108,6 +108,9 @@ Use this file as the operational source of truth for working in Stricknani.
   and lockfile; matching formatter versions alone do not prove matching settings.
   Before evaluating a source snapshot, exclude Git metadata, generated outputs,
   and dependency/cache symlinks. Use an explicit `path:` flake reference.
+- Run Python helper lint from the frozen project root with its `pyproject.toml`
+  and locked tool version. Default-config diagnostics and baseline comparisons
+  do not establish that the repository lint gate passed.
 - For Python browser runners, run both `ruff check` and `ruff format --check`
   on the changed files. The Rust-first `just check` does not run the Python
   formatter; a passing lint check alone does not satisfy the Nix format gate.
@@ -149,6 +152,9 @@ Use this file as the operational source of truth for working in Stricknani.
   before expensive candidate builds. A standalone application flake may use
   a different dependency revision from its deployment consumer. Build and test
   the canonical package first to avoid repeating compilation and browser gates.
+- If that package is exposed through a service's `restartTriggers` list, require
+  exactly one entry, evaluate its `drvPath`, then build `'<drv>^out'`. Building
+  the list selector or a bare `.drv` does not realize the package output.
 - Label each hash with its exact object and algorithm. Keep application-input
   NAR hashes separate from deployment-snapshot NAR hashes, and manifest-file
   hashes separate from file-set digests. Use one manifest convention when

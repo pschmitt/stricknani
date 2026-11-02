@@ -134,7 +134,9 @@
     <header class="public-tool-header">
       <BrandHeader href={linkTo("/login")} />
       <LocaleSwitcher />
-      <a class="public-sign-in" href={linkTo("/login")}
+      <a
+        class="ui-button ui-button--secondary ui-button--md"
+        href={linkTo("/login")}
         ><ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel></a
       >
     </header>
@@ -321,17 +323,6 @@
     justify-content: center;
   }
 
-  .public-sign-in {
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.4rem 0.8rem;
-    color: var(--accent-strong);
-    background: var(--surface-raised);
-    font-weight: 650;
-    text-decoration: none;
-  }
-
   .public-tool-main {
     width: min(100%, 56rem);
     margin-inline: auto;
@@ -362,11 +353,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-
-    .public-sign-in {
-      padding-inline: 0.5rem;
-      font-size: 0.9rem;
     }
   }
 </style>

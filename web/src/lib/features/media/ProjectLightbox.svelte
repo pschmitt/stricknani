@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "#lib/components/Button.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import type { ProjectImage } from "#lib/features/projects/project-api.ts";
 
@@ -52,21 +53,27 @@
     <div class="lightbox-shell">
       <header class="lightbox-topbar">
         <p>{title}</p>
-        <button
+        <Button
           class="lightbox-close"
+          variant="secondary"
+          size="md"
+          icon="close"
           type="button"
           aria-label={t("Close image viewer", locale)}
-          onclick={close}>×</button
-        >
+          onclick={close}
+        />
       </header>
       <div class="lightbox-stage">
         {#if images.length > 1}
-          <button
+          <Button
             class="lightbox-step previous"
+            variant="secondary"
+            size="md"
+            icon="previous"
             type="button"
             aria-label={t("Previous image", locale)}
-            onclick={() => move(-1)}>‹</button
-          >
+            onclick={() => move(-1)}
+          />
         {/if}
         <figure class:single-image={images.length === 1}>
           <img src={activeImage.url} alt={activeImage.alt_text || title} />
@@ -78,12 +85,15 @@
           </figcaption>
         </figure>
         {#if images.length > 1}
-          <button
+          <Button
             class="lightbox-step next"
+            variant="secondary"
+            size="md"
+            icon="next"
             type="button"
             aria-label={t("Next image", locale)}
-            onclick={() => move(1)}>›</button
-          >
+            onclick={() => move(1)}
+          />
         {/if}
       </div>
     </div>
@@ -132,20 +142,15 @@
     white-space: nowrap;
   }
 
-  .lightbox-close,
-  .lightbox-step {
-    display: grid;
+  :global(.lightbox-close),
+  :global(.lightbox-step) {
     width: 44px;
     height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     flex: 0 0 auto;
-    place-items: center;
-    border: 1px solid var(--line);
     border-radius: 50%;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
-    font-size: 1.55rem;
-    cursor: pointer;
+    padding: 0;
   }
 
   .lightbox-stage {
@@ -195,7 +200,7 @@
       padding: 0.45rem;
     }
 
-    .lightbox-step {
+    :global(.lightbox-step) {
       width: 44px;
       height: 44px;
       border-radius: 0.6rem;

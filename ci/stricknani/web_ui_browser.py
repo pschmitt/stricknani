@@ -520,71 +520,68 @@ def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
         )
 
 
-def _measure_compact_library_heading(
+def _measure_library_density(
     page: Page,
     *,
-    intro_selector: str,
-    action_selector: str,
+    row_selector: str,
     route_name: str,
     width: int,
-) -> dict[str, float]:
+) -> dict[str, object]:
     measured: object = page.evaluate(
-        "selectors => { "
-        "const header = document.querySelector("
-        "'section.page-container > .page-header'); "
-        "const title = header?.querySelector('h1'); "
-        "const intro = header?.querySelector(selectors.intro); "
-        "const action = header?.querySelector(selectors.action); "
-        "if (!header || !title || !intro || !action) return null; "
-        "const titleRect = title.getBoundingClientRect(); "
-        "const introRect = intro.getBoundingClientRect(); "
-        "const actionRect = action.getBoundingClientRect(); "
-        "const rowBottom = Math.max(titleRect.bottom, actionRect.bottom); "
-        "const noOverlap = titleRect.right <= actionRect.left || "
-        "actionRect.right <= titleRect.left || "
-        "titleRect.bottom <= actionRect.top || actionRect.bottom <= titleRect.top; "
-        "return {contextGap: introRect.top - rowBottom, "
-        "titleActionGap: actionRect.left - titleRect.right, "
-        "actionHeight: actionRect.height, "
-        "contextWidth: introRect.width, noOverlap}; }",
-        {"intro": intro_selector, "action": action_selector},
+        "selector => { const rows = [...document.querySelectorAll(selector)]; "
+        "const visible = rows.filter(row => { const r = row.getBoundingClientRect(); "
+        "return r.top < innerHeight && r.bottom > 0; }); "
+        "const row = rows[0]; "
+        "const title = row?.querySelector('.resource-card__name'); "
+        "const image = row?.querySelector('.resource-card__image'); "
+        "const rect = row?.getBoundingClientRect(); "
+        "const titleRect = title?.getBoundingClientRect(); "
+        "const targets = [...document.querySelectorAll("
+        "'.search-field input, .filter-trigger')].filter("
+        "el => el.getClientRects().length); "
+        "return {firstItemY: rect?.top ?? null, rowHeight: rect?.height ?? null, "
+        "visibleRows: visible.length, titleFontSize: title ? parseFloat("
+        "getComputedStyle(title).fontSize) : null, "
+        "titleWidth: titleRect?.width ?? null, "
+        "thumbnailWidth: image?.getBoundingClientRect().width ?? null, "
+        "targetHeights: targets.map(el => el.getBoundingClientRect().height), "
+        "controlsBeforeFirstItem: row ? Math.max(0, [...document.querySelectorAll("
+        "'.page-header, .library-controls')].map("
+        "el => el.getBoundingClientRect().bottom)"
+        ".filter(bottom => bottom < rect.top).length) : 0, viewport: innerWidth}; }",
+        row_selector,
     )
     if not isinstance(measured, dict):
-        raise AcceptanceFailure(
-            f"{route_name} compact heading elements were not rendered"
-        )
-    context_gap = measured.get("contextGap")
-    title_action_gap = measured.get("titleActionGap")
-    action_height = measured.get("actionHeight")
-    context_width = measured.get("contextWidth")
-    if (
-        isinstance(context_gap, bool)
-        or not isinstance(context_gap, (int, float))
-        or isinstance(title_action_gap, bool)
-        or not isinstance(title_action_gap, (int, float))
-        or isinstance(action_height, bool)
-        or not isinstance(action_height, (int, float))
-        or isinstance(context_width, bool)
-        or not isinstance(context_width, (int, float))
-    ):
-        raise AcceptanceFailure(
-            f"{route_name} compact heading geometry was unavailable"
-        )
+        raise AcceptanceFailure(f"{route_name} density measurements were unavailable")
     _require(
-        measured.get("noOverlap") is True
-        and title_action_gap >= 0
-        and 0 <= context_gap <= 32
-        and action_height >= 44
-        and context_width > 0,
-        f"{route_name} title/action row, context gap, or action target is invalid",
+        isinstance(measured.get("firstItemY"), (int, float))
+        and (width > 767 or measured["firstItemY"] <= 200)
+        and isinstance(measured.get("rowHeight"), (int, float))
+        and measured["rowHeight"] >= 72
+        and isinstance(measured.get("visibleRows"), int)
+        and measured["visibleRows"] >= 1
+        and isinstance(measured.get("titleFontSize"), (int, float))
+        and measured["titleFontSize"] >= 14
+        and isinstance(measured.get("titleWidth"), (int, float))
+        and measured["titleWidth"] > 0
+        and isinstance(measured.get("thumbnailWidth"), (int, float))
+        and measured["thumbnailWidth"] >= 56
+        and isinstance(measured.get("targetHeights"), list)
+        and measured["targetHeights"]
+        and min(measured["targetHeights"]) >= 44,
+        f"{route_name} first-row density, readable title, thumbnail, or targets failed",
     )
-    return {
-        "contextGap": float(context_gap),
-        "titleActionGap": float(title_action_gap),
-        "actionHeight": float(action_height),
-        "contextWidth": float(context_width),
-        "width": float(width),
-    }
+    return {**measured, "width": width}
+
+
+def _open_library_filters(page: Page) -> Locator:
+    trigger = page.locator(".filter-trigger")
+    _require(trigger.count() == 1, "library filter trigger is ambiguous")
+    if trigger.get_attribute("aria-expanded") != "true":
+        trigger.click()
+    dialog = page.get_by_role("dialog")
+    dialog.wait_for(state="visible")
+    return dialog
 
 
 def _assert_header_parent_link(page: Page, href: str, description: str) -> Locator:
@@ -2842,21 +2839,6 @@ def run_acceptance(
                 ),
                 "the real project library API did not load",
             )
-            duplicate_tag_buttons = (
-                page.locator(".project-card")
-                .filter(
-                    has=page.get_by_role(
-                        "heading", name="Heirloom Baby Blanket", exact=True
-                    )
-                )
-                .locator(".tag-list button")
-            )
-            _require(
-                duplicate_tag_buttons.all_inner_texts()
-                == ["heirloom", "textured", "textured"],
-                "the project library collapsed or misrendered repeated tag labels",
-            )
-
             mobile_links = page.locator(".mobile-navigation a")
             _require(
                 mobile_links.count() == 4, "signed-in mobile navigation is incomplete"
@@ -2887,7 +2869,6 @@ def run_acceptance(
                 "the project card did not use the seeded same-origin photo",
             )
             search_box = page.get_by_role("searchbox", name="Search your projects")
-            search_box.fill("Heirloom")
             mark_stage("searching project library by name")
             with page.expect_response(
                 lambda response: (
@@ -2895,7 +2876,7 @@ def run_acceptance(
                     and parse_qs(urlsplit(response.url).query).get("q") == ["Heirloom"]
                 )
             ) as search_response_info:
-                page.get_by_role("button", name="Search", exact=True).click()
+                search_box.fill("Heirloom")
             _require(
                 search_response_info.value.status == 200,
                 "project-name search did not succeed against the Rust API",
@@ -2907,7 +2888,8 @@ def run_acceptance(
             )
             mark_stage("filtering project library by category")
             selected_category: list[str] = []
-            category_select = page.get_by_label("Category", exact=True)
+            filter_dialog = _open_library_filters(page)
+            category_select = filter_dialog.get_by_label("Category", exact=True)
             try:
                 category_select.wait_for(state="visible", timeout=5_000)
             except PlaywrightTimeoutError:
@@ -2967,6 +2949,9 @@ def run_acceptance(
                 category_filter_response_info.value.status == 200,
                 "category filtering did not succeed against the Rust API",
             )
+            filter_dialog.get_by_role(
+                "button", name="Close filters", exact=True
+            ).click()
             page.locator(".project-card").wait_for(state="visible")
             _require(
                 any(
@@ -2976,6 +2961,8 @@ def run_acceptance(
                 "project categories did not load from the Rust API",
             )
             mark_stage("filtering project library by tag")
+            filter_dialog = _open_library_filters(page)
+            tag_filter = filter_dialog.get_by_label("Tag", exact=True)
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path == "/api/v2/projects"
@@ -2983,14 +2970,17 @@ def run_acceptance(
                     == ["heirloom"]
                 )
             ) as tag_filter_response_info:
-                page.get_by_role("button", name="heirloom", exact=True).click()
+                tag_filter.fill("heirloom")
+                tag_filter.press("Tab")
             _require(
                 tag_filter_response_info.value.status == 200,
                 "tag filtering did not succeed against the Rust API",
             )
+            filter_dialog.get_by_role(
+                "button", name="Close filters", exact=True
+            ).click()
             page.locator(".project-card").wait_for(state="visible")
             search_box = page.get_by_role("searchbox", name="Search your projects")
-            search_box.fill("no such knitting project")
             mark_stage("checking the project no-match state")
             with page.expect_response(
                 lambda response: (
@@ -2999,7 +2989,7 @@ def run_acceptance(
                     == ["no such knitting project"]
                 )
             ) as no_match_response_info:
-                page.get_by_role("button", name="Search", exact=True).click()
+                search_box.fill("no such knitting project")
             _require(
                 no_match_response_info.value.status == 200,
                 "no-match search did not succeed against the Rust API",
@@ -3018,7 +3008,7 @@ def run_acceptance(
                     and not urlsplit(response.url).query
                 )
             ) as clear_filters_response_info:
-                page.locator(".filters").get_by_role(
+                _open_library_filters(page).get_by_role(
                     "button", name="Clear filters", exact=True
                 ).click()
             _require(
@@ -3035,6 +3025,12 @@ def run_acceptance(
                 )
             )
             mark_stage("saving a project favorite")
+            project_detail_href = project_card.locator(
+                "a.resource-card__link"
+            ).get_attribute("href")
+            _require(project_detail_href is not None, "project detail link is missing")
+            project_card.locator("a.resource-card__link").click()
+            page.wait_for_url(f"**{project_detail_href}")
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path.endswith("/favorite")
@@ -3049,7 +3045,18 @@ def run_acceptance(
             page.get_by_role("button", name="Remove from favorites").wait_for(
                 state="visible"
             )
+            page.go_back(wait_until="domcontentloaded")
+            page.wait_for_url("**/app/projects")
+            project_card = page.locator(".project-card").filter(
+                has=page.get_by_role(
+                    "heading", name="Heirloom Baby Blanket", exact=True
+                )
+            )
+            project_card.get_by_role("img", name="Favorite", exact=True).wait_for(
+                state="visible"
+            )
             mark_stage("filtering project library by favorites")
+            filter_dialog = _open_library_filters(page)
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path == "/api/v2/projects"
@@ -3057,11 +3064,14 @@ def run_acceptance(
                     == ["true"]
                 )
             ) as favorite_filter_response_info:
-                page.get_by_label("Favorites", exact=True).check()
+                filter_dialog.get_by_label("Favorites", exact=True).check()
             _require(
                 favorite_filter_response_info.value.status == 200,
                 "favorite filtering did not succeed against the Rust API",
             )
+            filter_dialog.get_by_role(
+                "button", name="Close filters", exact=True
+            ).click()
             page.locator(".project-card").wait_for(state="visible")
             _require(
                 page.locator(".project-card").count() == 1,
@@ -3773,7 +3783,8 @@ def run_acceptance(
                     for label, href in more_cards:
                         card = more_links.get_by_role("link", name=label, exact=False)
                         icon = card.locator(
-                            ".more-link-icon svg[aria-hidden='true'][focusable='false']"
+                            ".ui-navigation-tile__icon svg[aria-hidden='true']"
+                            "[focusable='false']"
                         )
                         sidebar_icon = page.locator(
                             f".secondary-nav a[href$='{href}'] .nav-icon svg"
@@ -4231,46 +4242,28 @@ def run_acceptance(
 
             page.goto(f"{origin}/app/projects", wait_until="networkidle")
             page.locator(".app-shell").wait_for(state="visible")
-            mark_stage("checking compact project and yarn heading spacing")
-            compact_heading_cases = (
-                (
-                    "projects",
-                    "/app/projects",
-                    ".page-header__context .library-intro",
-                    ".page-header__actions > .new-project",
-                    "Projects",
-                ),
-                (
-                    "yarns",
-                    "/app/yarns",
-                    ".page-header__context .intro",
-                    ".page-header__actions > .primary-action",
-                    "Yarns",
-                ),
+            mark_stage("checking project and yarn library density")
+            library_density_cases = (
+                ("projects", "/app/projects", ".project-row", "Projects"),
+                ("yarns", "/app/yarns", ".yarn-row", "Yarns"),
             )
-            for (
-                route_name,
-                route_path,
-                intro_selector,
-                action_selector,
-                heading,
-            ) in compact_heading_cases:
+            for route_name, route_path, row_selector, heading in library_density_cases:
                 page.goto(f"{origin}{route_path}", wait_until="networkidle")
                 page.get_by_role("heading", name=heading, exact=True).wait_for(
                     state="visible"
                 )
-                for width in (390, 430, 480, 640):
+                page.locator(row_selector).first.wait_for(state="visible")
+                for width in (390, 1280):
                     page.set_viewport_size({"width": width, "height": 844})
                     _assert_no_horizontal_overflow(page, width)
-                    metrics = _measure_compact_library_heading(
+                    metrics = _measure_library_density(
                         page,
-                        intro_selector=intro_selector,
-                        action_selector=action_selector,
+                        row_selector=row_selector,
                         route_name=route_name,
                         width=width,
                     )
                     print(
-                        "Compact library heading: "
+                        "Library density: "
                         + json.dumps({"route": route_name, **metrics}, sort_keys=True)
                     )
 
@@ -4284,7 +4277,7 @@ def run_acceptance(
             _require(
                 create_options.count() == 2
                 and page.locator(
-                    ".create-options .option-mark svg[aria-hidden='true']"
+                    ".create-options .ui-navigation-tile__icon svg[aria-hidden='true']"
                 ).count()
                 == 2,
                 "Create choices are missing their decorative icons",

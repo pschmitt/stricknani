@@ -2,7 +2,7 @@
   import { tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
+  import Button from "#lib/components/Button.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -189,7 +189,7 @@
       <p>{t("Tap a photo to see it larger.", locale)}</p>
     </div>
     <label
-      class="upload-action"
+      class="ui-button ui-button--secondary ui-button--md upload-action"
       class:disabled={!mediaUploadAvailable || uploading}
     >
       <ActionLabel icon="upload">
@@ -230,8 +230,9 @@
     <ul class="photo-list">
       {#each photos as photo (photo.id)}
         <li class="photo-item">
-          <button
+          <Button
             class="photo-open"
+            variant="ghost"
             type="button"
             aria-label={photo.alt_text
               ? `${t("Open photo", locale)}: ${photo.alt_text}`
@@ -243,21 +244,22 @@
               alt={photo.alt_text ?? ""}
               loading="lazy"
             />
-          </button>
+          </Button>
           <div class="photo-caption">
             {#if photo.is_primary}<span>{t("Cover photo", locale)}</span>{/if}
             {#if canEdit}
-              <button
+              <Button
                 class="remove-photo"
+                variant="danger"
+                size="sm"
+                icon="action-delete"
                 type="button"
                 disabled={!mediaDeleteAvailable || uploading || deleting}
                 aria-label={t("Remove photo", locale)}
                 onclick={() => confirmDelete(photo)}
               >
-                <ActionLabel icon="action-delete"
-                  >{t("Remove", locale)}</ActionLabel
-                >
-              </button>
+                {t("Remove", locale)}
+              </Button>
             {/if}
           </div>
           <OcrControl
@@ -291,9 +293,14 @@
         {t("Yarn photo", locale)}
       </h2>
       <form method="dialog">
-        <button aria-label={t("Close photo", locale)}
-          ><NavIcon name="close" /></button
-        >
+        <Button
+          class="zoom-close"
+          variant="secondary"
+          size="sm"
+          icon="close"
+          type="submit"
+          aria-label={t("Close photo", locale)}
+        />
       </form>
     </header>
     {#if selectedPhoto}
@@ -313,25 +320,25 @@
     <h2 id="remove-photo-title">{t("Remove this photo?", locale)}</h2>
     <p>{t("The photo will be removed from this yarn.", locale)}</p>
     <div class="dialog-actions">
-      <button
+      <Button
         type="button"
         class="quiet-button"
+        variant="secondary"
+        icon="cancel"
         onclick={() => deleteDialog?.close()}
       >
-        <ActionLabel icon="cancel">{t("Keep photo", locale)}</ActionLabel>
-      </button>
-      <button
+        {t("Keep photo", locale)}
+      </Button>
+      <Button
         type="button"
         class="danger-button"
+        variant="danger"
+        icon="action-delete"
         disabled={!mediaDeleteAvailable || deleting}
         onclick={() => void removePhoto()}
       >
-        <ActionLabel icon="action-delete"
-          >{deleting
-            ? t("Removing…", locale)
-            : t("Remove photo", locale)}</ActionLabel
-        >
-      </button>
+        {deleting ? t("Removing…", locale) : t("Remove photo", locale)}
+      </Button>
     </div>
   </dialog>
 </section>
@@ -361,25 +368,6 @@
   .upload-hint {
     color: var(--ink-muted);
     font-size: 0.9rem;
-  }
-
-  .upload-action,
-  .remove-photo,
-  .quiet-button,
-  .danger-button {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.75rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 620;
-    text-decoration: none;
-    cursor: pointer;
   }
 
   .upload-action input {
@@ -436,7 +424,7 @@
     gap: 0.35rem;
   }
 
-  .photo-open {
+  :global(.photo-open) {
     display: block;
     width: 100%;
     aspect-ratio: 1;
@@ -448,7 +436,11 @@
     cursor: zoom-in;
   }
 
-  .photo-open img {
+  :global(.photo-open:active) {
+    transform: none;
+  }
+
+  :global(.photo-open) img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -461,12 +453,9 @@
     font-size: 0.8rem;
   }
 
-  .remove-photo {
+  :global(.remove-photo) {
     flex: 0 0 auto;
     max-width: 100%;
-    min-height: 44px;
-    padding: 0.4rem 0.55rem;
-    font-size: 0.82rem;
   }
 
   .zoom-dialog,
@@ -513,15 +502,11 @@
     flex: 0 0 auto;
   }
 
-  .zoom-dialog form button {
+  :global(.zoom-dialog form .zoom-close) {
     width: 44px;
     height: 44px;
-    border: 1px solid var(--line);
     border-radius: 50%;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
-    font-size: 1.4rem;
+    padding: 0;
   }
 
   .zoom-dialog img {
@@ -544,12 +529,6 @@
   .confirm-dialog p {
     max-width: 28rem;
     color: var(--ink-muted);
-  }
-
-  .danger-button {
-    border-color: var(--danger);
-    color: var(--on-danger);
-    background: var(--danger);
   }
 
   @media (max-width: 420px) {
