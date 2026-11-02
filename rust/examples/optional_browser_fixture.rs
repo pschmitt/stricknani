@@ -174,6 +174,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
     let state = AppState::new(pool)
         .with_media_root(config.media_root)
         .with_secure_cookies(config.secure_cookies)
+        .with_signup_enabled(config.signup_enabled)
         .with_external_imports(false)
         .with_ocr_enabled(true)
         .with_archive_enabled(true)
