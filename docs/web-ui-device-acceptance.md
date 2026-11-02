@@ -112,8 +112,9 @@ display on, and keyguard was clear. A new synthetic fixture used the canonical
 The minimal client created and activated one owned target, then used only its
 page WebSocket. A trusted touch/click reached the email control through the
 expected composed path, was not default-prevented, and focused the field after
-269ms. The owned page had focus and the IME was visible. No credentials or
-native key were sent in this probe. The parent reviewed its protocol method
+269ms. The owned page had focus; the saved touch receipt does not establish
+IME visibility. No credentials or native key were sent in this probe. The
+parent reviewed its protocol method
 inventory: no target listing/automatic attachment or global cookie operation.
 
 The touch runner SHA-256 is
@@ -128,8 +129,34 @@ display-on/interactivity. Input stopped. The owned target/origin, fixture,
 tunnel, forward `tcp:19220` and reverse `tcp:18763` were cleaned up; the
 pre-existing reverse `tcp:18762` was preserved because current ownership was
 unverified. Full sign-in/editor/media/navigation/sign-out acceptance remains
-open. The complete driver is being validated on an isolated headless fixture
-before another already-awake phone window is requested.
+open.
+
+### Guarded physical journey
+
+A later run used the canonical `72b1faa` package, positive USB/model,
+internal-display and keyguard checks, a fresh nonce origin, and the minimal
+owned-target client. It completed sign-in, empty search/clear, reader navigation
+and editor draft entry through trusted touch and synthetic input. Library and
+reader CSS viewports were 392 × 750, with zero horizontal overflow and minimum
+44 × 44 shell controls; reported safe-area insets were zero.
+
+The run stopped at `await_native_back` with exit `1`. Its guarded marker was
+written, but the controller refused native Back. No Back key was sent. The
+receipt does not identify whether readiness, the fresh tab check or the IME
+check failed. A viewport-reduction flag alone does not establish IME visibility.
+Save, photo upload/delete and sign-out were not reached, so this is partial
+evidence and does not complete phone acceptance.
+
+The coordinator independently read the terminal receipt and numeric report
+under
+`/home/pschmitt/build/stricknani-final-72b1-browser-luna-20261102/private/phone-run-bb6741251f66/`
+on the device-fixture worker. `phone-run.exit` contains `1`; `phone-run.log`
+has SHA-256
+`e6eb86dfac966a7b8b03b6842d33330aed7c63aac9be048f806cc1dc974be6a5`.
+The remote fixture
+state, fixture file, token and runtime were removed. The owned target was closed
+and nonce origin cleared; the owned forward/reverse, tunnel and synthetic phone
+file were cleaned up. The pre-existing reverse mapping was preserved.
 
 ## Historical 52221ad device diagnostics
 
