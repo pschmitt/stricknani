@@ -5,6 +5,7 @@
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
@@ -594,13 +595,15 @@
         {t("The pattern could not be opened.", locale)}
       </h1>
       <p>{errorMessage}</p>
-      <button
+      <Button
         class="secondary-button"
+        variant="secondary"
+        icon="reset"
         type="button"
         onclick={() => (reload += 1)}
       >
-        <ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel>
-      </button>
+        {t("Try again", locale)}
+      </Button>
     </div>
   </section>
 {:else if project}
@@ -630,7 +633,7 @@
       {#snippet actions()}
         <div class="reader-heading-actions">
           <a
-            class="reader-edit-link"
+            class="reader-edit-link ui-button ui-button--secondary ui-button--md"
             href={resolve("/projects/[id]/edit", {
               id: String(currentProject.id),
             })}
@@ -639,8 +642,9 @@
               >{t("Edit project", locale)}</ActionLabel
             >
           </a>
-          <button
+          <Button
             class="reader-favorite"
+            variant="secondary"
             type="button"
             disabled={favoriteBusy}
             aria-pressed={currentProject.is_favorite}
@@ -655,7 +659,7 @@
             {currentProject.is_favorite
               ? t("Favorite", locale)
               : t("Add to favorites", locale)}
-          </button>
+          </Button>
         </div>
       {/snippet}
     </PageHeader>
@@ -666,32 +670,37 @@
           class="text-size-controls"
           aria-label={t("Pattern text size", locale)}
         >
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             type="button"
             aria-label={t("Decrease text size", locale)}
             disabled={textSize === 0}
-            onclick={() => (textSize = Math.max(0, textSize - 1))}>A−</button
+            onclick={() => (textSize = Math.max(0, textSize - 1))}>A−</Button
           >
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             type="button"
             aria-label={t("Increase text size", locale)}
             disabled={textSize === 2}
-            onclick={() => (textSize = Math.min(2, textSize + 1))}>A+</button
+            onclick={() => (textSize = Math.min(2, textSize + 1))}>A+</Button
           >
         </div>
-        <button
+        <Button
           class="print-button"
+          variant="secondary"
+          size="sm"
+          icon="print"
           type="button"
           disabled={printPreparing}
           aria-busy={printPreparing}
           onclick={() => void printPattern()}
         >
-          <ActionLabel icon="print"
-            >{printPreparing
-              ? t("Preparing full-resolution photos…", locale)
-              : t("Print pattern", locale)}</ActionLabel
-          >
-        </button>
+          {printPreparing
+            ? t("Preparing full-resolution photos…", locale)
+            : t("Print pattern", locale)}
+        </Button>
       </div>
     </nav>
     {#if printError}
@@ -701,8 +710,9 @@
     <div class="reader-overview" class:has-cover={coverImage !== null}>
       {#if coverImage}
         <figure class="reader-cover">
-          <button
+          <Button
             class="gallery-image reader-cover-image"
+            variant="ghost"
             type="button"
             aria-label={t("Open project photo", locale) +
               `: ${coverImage.alt_text || project.name}`}
@@ -728,7 +738,7 @@
                 {t("Stitch sample", locale)}
               </span>
             {/if}
-          </button>
+          </Button>
           <OcrControl
             src={coverImage.url}
             label={t("Recognized text from project photo", locale)}
@@ -897,7 +907,7 @@
               {#if currentStepIndex > 0}
                 {@const previousStep = orderedSteps[currentStepIndex - 1]}
                 <a
-                  class="step-navigation-link"
+                  class="step-navigation-link ui-button ui-button--ghost ui-button--md"
                   href={stepHash(previousStep.id)}
                 >
                   <span
@@ -920,7 +930,7 @@
               {#if currentStepIndex >= 0 && currentStepIndex < orderedSteps.length - 1}
                 {@const nextStep = orderedSteps[currentStepIndex + 1]}
                 <a
-                  class="step-navigation-link next-step-link"
+                  class="step-navigation-link next-step-link ui-button ui-button--ghost ui-button--md"
                   href={stepHash(nextStep.id)}
                 >
                   <span>{t("Next step", locale)}<NavIcon name="next" /></span>
@@ -956,8 +966,9 @@
                       >
                         {#each stepImages(step.id) as image (image.id)}
                           <div class="step-photo-card">
-                            <button
+                            <Button
                               class="step-image"
+                              variant="ghost"
                               type="button"
                               aria-label={t("Open step photo", locale) +
                                 `: ${image.alt_text || step.title}`}
@@ -976,7 +987,7 @@
                                 loading="lazy"
                                 onerror={handlePrintImageError}
                               />
-                            </button>
+                            </Button>
                             <OcrControl
                               src={image.url}
                               label={t(
@@ -1088,8 +1099,9 @@
         <div class="gallery-grid">
           {#each galleryImages as image (image.id)}
             <div class="gallery-photo-card">
-              <button
+              <Button
                 class="gallery-image"
+                variant="ghost"
                 type="button"
                 aria-label={t("Open project photo", locale) +
                   `: ${image.alt_text || project.name}`}
@@ -1117,7 +1129,7 @@
                     >{t("Stitch sample", locale)}</span
                   >
                 {/if}
-              </button>
+              </Button>
               <OcrControl
                 src={image.url}
                 label={t("Recognized text from project photo", locale)}
@@ -1206,10 +1218,6 @@
     color: var(--ink-muted);
   }
 
-  .secondary-button {
-    min-height: 44px;
-  }
-
   .reader {
     display: grid;
     gap: 1.5rem;
@@ -1242,42 +1250,11 @@
     background: var(--surface);
   }
 
-  .text-size-controls button,
-  .print-button,
-  .reader-favorite,
-  .reader-edit-link {
-    min-height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.45rem 0.7rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 640;
-    cursor: pointer;
-  }
-
-  .print-button:disabled {
-    cursor: wait;
-  }
-
   .print-error {
     flex-basis: 100%;
     margin: 0;
     color: var(--danger);
     font-size: 0.9rem;
-  }
-
-  .reader-edit-link {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-  }
-
-  .text-size-controls button {
-    min-width: 44px;
-    border-color: transparent;
-    font-size: 1.04rem;
   }
 
   .reader-heading-actions {
@@ -1362,22 +1339,14 @@
     color: var(--ink-muted);
   }
 
-  .reader-favorite {
-    display: inline-flex;
+  :global(.reader-favorite) {
     flex: 0 0 auto;
     align-items: center;
     gap: 0.35rem;
-    color: var(--ink-muted);
   }
 
-  .reader-favorite[aria-pressed="true"] {
-    color: #9e4f24;
-    border-color: color-mix(in srgb, #9e4f24 30%, var(--line));
-    background: color-mix(in srgb, #fff2e6 65%, var(--surface));
-  }
-
-  .reader-favorite span {
-    font-size: 1.25rem;
+  :global(.reader-favorite) span {
+    font-size: var(--ui-action-icon-size-md);
   }
 
   .inline-error {
@@ -1448,6 +1417,7 @@
     color: var(--accent-strong);
     background: var(--surface-raised);
     text-decoration: none;
+    white-space: normal;
   }
 
   .step-navigation-link strong {
@@ -1487,8 +1457,8 @@
     align-content: start;
   }
 
-  .gallery-image,
-  .step-image {
+  :global(.gallery-image),
+  :global(.step-image) {
     position: relative;
     display: block;
     min-width: 0;
@@ -1500,13 +1470,18 @@
     cursor: zoom-in;
   }
 
-  .gallery-image {
+  :global(.gallery-image:active),
+  :global(.step-image:active) {
+    transform: none;
+  }
+
+  :global(.gallery-image) {
     min-height: 7rem;
     aspect-ratio: 1.3;
   }
 
-  .gallery-image img,
-  .step-image img {
+  :global(.gallery-image) img,
+  :global(.step-image) img {
     display: block;
     width: 100%;
     height: 100%;
@@ -1517,7 +1492,7 @@
     display: none !important;
   }
 
-  .gallery-image img {
+  :global(.gallery-image) img {
     position: absolute;
     inset: 0;
   }
@@ -1666,7 +1641,7 @@
     min-width: 0;
   }
 
-  .step-image {
+  :global(.step-image) {
     width: 100%;
     aspect-ratio: 1.2;
   }
@@ -1842,10 +1817,6 @@
       justify-content: flex-end;
     }
 
-    .print-button {
-      font-size: 0.84rem;
-    }
-
     .step-navigation {
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       gap: 0.35rem;
@@ -1904,7 +1875,7 @@
 
     .reader-topline,
     :global(.page-header__actions),
-    .reader-favorite,
+    :global(.reader-favorite),
     .lightbox {
       display: none !important;
     }
@@ -1923,8 +1894,8 @@
       break-inside: avoid;
     }
 
-    .gallery-image,
-    .step-image {
+    :global(.gallery-image),
+    :global(.step-image) {
       display: block !important;
       width: 100%;
       min-height: 0;
@@ -1939,8 +1910,8 @@
       break-inside: avoid;
     }
 
-    .gallery-image img,
-    .step-image img {
+    :global(.gallery-image) img,
+    :global(.step-image) img {
       position: static;
       display: block;
       width: 100%;
@@ -1953,8 +1924,8 @@
       display: none !important;
     }
 
-    .gallery-image .print-reference-image,
-    .step-image .print-reference-image {
+    :global(.gallery-image) .print-reference-image,
+    :global(.step-image) .print-reference-image {
       display: block !important;
     }
 
@@ -2014,8 +1985,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .gallery-image,
-    .step-image {
+    :global(.gallery-image),
+    :global(.step-image) {
       transition: none;
     }
   }

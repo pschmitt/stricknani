@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -382,12 +383,18 @@
   <section class="form-error" aria-labelledby="form-error-title">
     <h1 id="form-error-title">{loadError}</h1>
     <div class="form-actions">
-      <button class="quiet-button" type="button" onclick={() => (reload += 1)}
-        ><ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel
-        ></button
+      <Button
+        class="quiet-button"
+        variant="secondary"
+        icon="reset"
+        type="button"
+        onclick={() => (reload += 1)}
       >
-      <a class="primary-action" href={resolve("/yarns")}
-        >{t("Back to yarns", locale)}</a
+        {t("Try again", locale)}
+      </Button>
+      <a
+        class="primary-action ui-button ui-button--primary ui-button--md"
+        href={resolve("/yarns")}>{t("Back to yarns", locale)}</a
       >
     </div>
   </section>
@@ -400,14 +407,6 @@
       title={yarnId === null ? t("Add yarn", locale) : t("Edit yarn", locale)}
       titleId="editor-title"
     >
-      {#snippet context()}
-        <p>
-          {t(
-            "Record the details you will want when choosing yarn for a project.",
-            locale,
-          )}
-        </p>
-      {/snippet}
       {#snippet actions()}
         {#if isDirty}<span class="unsaved-pill" role="status"
             >{t("Unsaved changes", locale)}</span
@@ -455,17 +454,20 @@
           >
         </div>
         <div class="conflict-actions">
-          <button
+          <Button
             class="quiet-button"
+            variant="secondary"
+            icon="refresh"
             type="button"
             disabled={saving}
             onclick={useLatestValues}
-            ><ActionLabel icon="refresh"
-              >{t("Load latest values", locale)}</ActionLabel
-            ></button
           >
-          <button
+            {t("Load latest values", locale)}
+          </Button>
+          <Button
             class="primary-action"
+            variant="primary"
+            icon="save"
             type="button"
             disabled={saving}
             onclick={() => {
@@ -473,12 +475,11 @@
               if (value && conflictYarn)
                 void save(value, conflictYarn.updated_at);
             }}
-            ><ActionLabel icon="save"
-              >{saving
-                ? t("Saving…", locale)
-                : t("Save my draft over latest", locale)}</ActionLabel
-            ></button
           >
+            {saving
+              ? t("Saving…", locale)
+              : t("Save my draft over latest", locale)}
+          </Button>
         </div>
       </section>
     {/if}
@@ -681,16 +682,17 @@
       {/if}
 
       <div class="form-actions">
-        <button
+        <Button
           class="primary-action"
+          variant="primary"
+          icon={yarnId === null ? "create" : "save"}
           type="submit"
           disabled={saving || mediaBusy}
-          ><ActionLabel icon={yarnId === null ? "create" : "save"}
-            >{saveLabel}</ActionLabel
-          ></button
         >
+          {saveLabel}
+        </Button>
         <a
-          class="quiet-button"
+          class="quiet-button ui-button ui-button--secondary ui-button--md"
           href={yarnId === null
             ? resolve("/yarns")
             : `${resolve("/yarns")}/${yarnId}`}
@@ -821,29 +823,6 @@
     gap: 0.6rem;
   }
 
-  .primary-action,
-  .quiet-button {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.6rem 0.9rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 630;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .primary-action {
-    border-color: var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-
   .draft-note {
     flex: 1 1 100%;
     font-size: 0.88rem;
@@ -919,9 +898,8 @@
       grid-template-columns: 1fr 1fr;
     }
 
-    .form-actions > button,
-    .form-actions > a,
-    .conflict-actions > button {
+    .form-actions > :global(.ui-button),
+    .conflict-actions > :global(.ui-button) {
       width: 100%;
     }
 

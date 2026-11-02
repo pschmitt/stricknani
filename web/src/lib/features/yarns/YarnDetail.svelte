@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import Button from "#lib/components/Button.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
@@ -246,12 +247,18 @@
   >
     <h1 id="yarn-error-title">{errorMessage}</h1>
     <div class="error-actions">
-      <button class="quiet-button" type="button" onclick={() => (reload += 1)}
-        ><ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel
-        ></button
+      <Button
+        class="quiet-button"
+        variant="secondary"
+        icon="reset"
+        type="button"
+        onclick={() => (reload += 1)}
       >
-      <a class="primary-action" href={resolve("/yarns")}
-        >{t("Back to yarns", locale)}</a
+        {t("Try again", locale)}
+      </Button>
+      <a
+        class="ui-button ui-button--primary ui-button--md primary-action"
+        href={resolve("/yarns")}>{t("Back to yarns", locale)}</a
       >
     </div>
   </section>
@@ -271,8 +278,9 @@
       {/snippet}
       {#snippet actions()}
         <div class="heading-actions">
-          <button
+          <Button
             class="favorite-button"
+            variant="secondary"
             type="button"
             aria-pressed={currentYarn.is_favorite}
             disabled={busyFavorite}
@@ -283,22 +291,23 @@
             {currentYarn.is_favorite
               ? t("Favorited", locale)
               : t("Add to favorites", locale)}
-          </button>
+          </Button>
           <a
-            class="primary-action"
+            class="primary-action ui-button ui-button--primary ui-button--md"
             href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
             ><ActionLabel icon="action-update"
               >{t("Edit yarn", locale)}</ActionLabel
             ></a
           >
-          <button
-            class="quiet-button destructive"
+          <Button
+            class="quiet-button"
+            variant="danger"
+            icon="action-delete"
             type="button"
             onclick={() => deleteDialog?.showModal()}
-            ><ActionLabel icon="action-delete"
-              >{t("Delete", locale)}</ActionLabel
-            ></button
           >
+            {t("Delete", locale)}
+          </Button>
         </div>
       {/snippet}
     </PageHeader>
@@ -464,24 +473,26 @@
     </p>{/if}
   {#if actionError}<p class="error-text" role="alert">{actionError}</p>{/if}
   <div class="dialog-actions">
-    <button
+    <Button
       class="quiet-button"
+      variant="secondary"
+      icon="cancel"
       type="button"
       disabled={deleting}
       onclick={() => deleteDialog?.close()}
-      ><ActionLabel icon="cancel">{t("Keep yarn", locale)}</ActionLabel></button
     >
-    <button
+      {t("Keep yarn", locale)}
+    </Button>
+    <Button
       class="danger-button"
+      variant="danger"
+      icon="action-delete"
       type="button"
       disabled={deleting}
       onclick={() => void removeYarn()}
-      ><ActionLabel icon="action-delete"
-        >{deleting
-          ? t("Deleting…", locale)
-          : t("Delete yarn", locale)}</ActionLabel
-      ></button
     >
+      {deleting ? t("Deleting…", locale) : t("Delete yarn", locale)}
+    </Button>
   </div>
 </dialog>
 
@@ -507,38 +518,8 @@
     gap: 0.5rem;
   }
 
-  .primary-action,
-  .quiet-button,
-  .favorite-button,
-  .danger-button {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.55rem 0.8rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 620;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .primary-action {
-    border-color: var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-
-  .favorite-button span {
-    font-size: 1.2rem;
-  }
-
-  .destructive {
-    color: var(--danger);
+  :global(.favorite-button) span {
+    font-size: var(--ui-action-icon-size-md);
   }
 
   .detail-layout {
@@ -700,12 +681,6 @@
     color: var(--ink-muted);
   }
 
-  .danger-button {
-    border-color: var(--danger);
-    color: var(--on-danger);
-    background: var(--danger);
-  }
-
   .error-text {
     color: var(--danger) !important;
   }
@@ -740,7 +715,7 @@
       grid-template-columns: 1fr 1fr;
     }
 
-    .favorite-button {
+    :global(.favorite-button) {
       grid-column: 1 / -1;
     }
 

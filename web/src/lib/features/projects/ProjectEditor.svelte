@@ -3,8 +3,7 @@
   import { resolve } from "$app/paths";
   import { onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
+  import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -793,16 +792,7 @@
   <PageHeader
     title={isCreating ? t("New project", locale) : t("Edit project", locale)}
     titleId="editor-title"
-  >
-    {#snippet context()}
-      <p>
-        {t(
-          "Keep the pattern and materials together for your next knitting session.",
-          locale,
-        )}
-      </p>
-    {/snippet}
-  </PageHeader>
+  />
 
   {#if loadState === "signed-out"}
     <div class="notice" role="status">
@@ -839,27 +829,27 @@
           {t("Your draft is unchanged. Choose which version to keep.", locale)}
         </p>
         <div class="button-row">
-          <button
+          <Button
             type="button"
             class="secondary-button"
+            variant="secondary"
+            icon="refresh"
             onclick={loadConflictLatest}
           >
-            <ActionLabel icon="refresh"
-              >{t("Load latest values", locale)}</ActionLabel
-            >
-          </button>
-          <button
+            {t("Load latest values", locale)}
+          </Button>
+          <Button
             type="button"
             class="primary-button"
+            variant="primary"
+            icon="save"
             disabled={saving}
             onclick={() => void saveDraftOverLatest()}
           >
-            <ActionLabel icon="save"
-              >{saving
-                ? t("Saving…", locale)
-                : t("Save my draft over latest", locale)}</ActionLabel
-            >
-          </button>
+            {saving
+              ? t("Saving…", locale)
+              : t("Save my draft over latest", locale)}
+          </Button>
         </div>
       </section>
     {:else if isCreating === false && project === null}
@@ -943,14 +933,15 @@
                       }
                     }}
                   />
-                  <button
+                  <Button
                     type="button"
                     class="secondary-button"
+                    variant="secondary"
+                    icon="create"
                     onclick={addTag}
-                    ><ActionLabel icon="create"
-                      >{t("Add tag", locale)}</ActionLabel
-                    ></button
                   >
+                    {t("Add tag", locale)}
+                  </Button>
                 </div>
                 <span class="field-hint">
                   {t(
@@ -963,15 +954,16 @@
                     {#each draft.tags as tag, index (`${index}:${tag}`)}
                       <li>
                         <span>{tag}</span>
-                        <button
+                        <Button
                           type="button"
                           class="remove-button"
+                          variant="ghost"
+                          icon="action-delete"
                           aria-label={`${t("Remove", locale)} ${tag}`}
                           onclick={() => removeTag(index)}
-                          ><ActionLabel icon="action-delete"
-                            >{t("Remove", locale)}</ActionLabel
-                          ></button
                         >
+                          {t("Remove", locale)}
+                        </Button>
                       </li>
                     {/each}
                   </ul>
@@ -1077,13 +1069,15 @@
                     }
                   }}
                 />
-                <button
+                <Button
                   type="button"
                   class="secondary-button"
+                  variant="secondary"
+                  icon="search"
                   onclick={beginSearch}
-                  ><ActionLabel icon="search">{t("Search", locale)}</ActionLabel
-                  ></button
                 >
+                  {t("Search", locale)}
+                </Button>
               </div>
             </div>
             {#if yarnSearchError}<p class="field-error" role="alert">
@@ -1101,21 +1095,20 @@
                       {#if yarn.brand}<small>{yarn.brand}</small>{/if}
                       {#if yarn.colorway}<small>{yarn.colorway}</small>{/if}
                     </span>
-                    <button
+                    <Button
                       type="button"
                       class="secondary-button"
+                      variant="secondary"
+                      icon={draft.yarnIds.includes(yarn.id)
+                        ? "check"
+                        : "create"}
                       disabled={draft.yarnIds.includes(yarn.id)}
                       onclick={() => addYarn(yarn)}
                     >
-                      <ActionLabel
-                        icon={draft.yarnIds.includes(yarn.id)
-                          ? "check"
-                          : "create"}
-                        >{draft.yarnIds.includes(yarn.id)
-                          ? t("Added", locale)
-                          : t("Add yarn", locale)}</ActionLabel
-                      >
-                    </button>
+                      {draft.yarnIds.includes(yarn.id)
+                        ? t("Added", locale)
+                        : t("Add yarn", locale)}
+                    </Button>
                   </li>
                 {/each}
               </ul>
@@ -1131,16 +1124,16 @@
                   {#each selectedYarns as yarn (yarn.id)}
                     <li>
                       <span>{yarn.name}</span>
-                      <button
+                      <Button
                         type="button"
                         class="remove-button"
+                        variant="ghost"
+                        icon="action-delete"
                         aria-label={`${t("Remove", locale)} ${yarn.name}`}
                         onclick={() => removeYarn(yarn.id)}
                       >
-                        <ActionLabel icon="action-delete"
-                          >{t("Remove", locale)}</ActionLabel
-                        >
-                      </button>
+                        {t("Remove", locale)}
+                      </Button>
                     </li>
                   {/each}
                 </ul>
@@ -1160,10 +1153,15 @@
                   {t("Steps stay in the order shown here.", locale)}
                 </p>
               </div>
-              <button type="button" class="secondary-button" onclick={addStep}
-                ><ActionLabel icon="create">{t("Add step", locale)}</ActionLabel
-                ></button
+              <Button
+                type="button"
+                class="secondary-button"
+                variant="secondary"
+                icon="create"
+                onclick={addStep}
               >
+                {t("Add step", locale)}
+              </Button>
             </div>
             {#if fieldErrors.steps}<p
                 id="project-steps-error"
@@ -1179,34 +1177,39 @@
                     <div class="step-editor-heading">
                       <h3>{t("Step", locale)} {index + 1}</h3>
                       <div class="step-actions">
-                        <button
+                        <Button
                           type="button"
                           class="icon-button"
+                          variant="ghost"
+                          size="sm"
+                          icon="move-up"
                           aria-label={`${t("Move up", locale)} ${t("Step", locale)} ${index + 1}`}
                           disabled={index === 0}
                           onclick={() => moveStep(index, -1)}
-                          ><NavIcon name="move-up" /></button
-                        >
-                        <button
+                        />
+                        <Button
                           type="button"
                           class="icon-button"
+                          variant="ghost"
+                          size="sm"
+                          icon="move-down"
                           aria-label={`${t("Move down", locale)} ${t("Step", locale)} ${index + 1}`}
                           disabled={index === draft.steps.length - 1}
                           onclick={() => moveStep(index, 1)}
-                          ><NavIcon name="move-down" /></button
-                        >
-                        <button
+                        />
+                        <Button
                           type="button"
                           class="remove-button"
+                          variant="ghost"
+                          icon="action-delete"
                           aria-label={`${t("Remove", locale)} ${t("Step", locale)} ${index + 1}`}
                           onclick={() =>
                             (draft.steps = draft.steps.filter(
                               (item) => item.key !== step.key,
                             ))}
-                          ><ActionLabel icon="action-delete"
-                            >{t("Remove", locale)}</ActionLabel
-                          ></button
                         >
+                          {t("Remove", locale)}
+                        </Button>
                       </div>
                     </div>
                     <div class="field">
@@ -1286,15 +1289,16 @@
                         {t("Project photo", locale)}
                       {/if}
                     </span>
-                    <button
+                    <Button
                       type="button"
                       class="remove-button"
+                      variant="ghost"
+                      icon="action-delete"
                       disabled={!mediaDeleteAvailable}
                       onclick={() => void removeImage(image.id)}
-                      ><ActionLabel icon="action-delete"
-                        >{t("Remove photo", locale)}</ActionLabel
-                      ></button
                     >
+                      {t("Remove photo", locale)}
+                    </Button>
                   </li>
                 {/each}
               </ul>
@@ -1356,15 +1360,16 @@
                         maximumFractionDigits: 1,
                       })} KB</span
                     >
-                    <button
+                    <Button
                       type="button"
                       class="remove-button"
+                      variant="ghost"
+                      icon="action-delete"
                       disabled={!mediaDeleteAvailable}
                       onclick={() => void removeAttachment(attachment.id)}
-                      ><ActionLabel icon="action-delete"
-                        >{t("Remove attachment", locale)}</ActionLabel
-                      ></button
                     >
+                      {t("Remove attachment", locale)}
+                    </Button>
                   </li>
                 {/each}
               </ul>
@@ -1386,28 +1391,30 @@
         {/if}
 
         <div class="form-actions">
-          <button class="primary-button" type="submit" disabled={saveDisabled}>
-            <ActionLabel icon={isCreating ? "create" : "save"}
-              >{saving
-                ? t("Saving…", locale)
-                : isCreating
-                  ? t("Create project", locale)
-                  : t("Save changes", locale)}</ActionLabel
-            >
-          </button>
+          <Button
+            class="primary-button"
+            variant="primary"
+            icon={isCreating ? "create" : "save"}
+            type="submit"
+            disabled={saveDisabled}
+          >
+            {saving
+              ? t("Saving…", locale)
+              : isCreating
+                ? t("Create project", locale)
+                : t("Save changes", locale)}
+          </Button>
           {#if project}
-            <button
+            <Button
               class="danger-button"
+              variant="danger"
+              icon="action-delete"
               type="button"
               disabled={isDirty || saving || deleting || mediaBusy}
               onclick={() => void confirmDelete()}
             >
-              <ActionLabel icon="action-delete"
-                >{deleting
-                  ? t("Deleting…", locale)
-                  : t("Delete project", locale)}</ActionLabel
-              >
-            </button>
+              {deleting ? t("Deleting…", locale) : t("Delete project", locale)}
+            </Button>
           {/if}
           {#if isDirty}<span class="dirty-note" role="status"
               >{t("Unsaved changes", locale)}</span
@@ -1528,7 +1535,6 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible,
-  button:focus-visible,
   a:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
@@ -1554,35 +1560,6 @@
     margin: -0.35rem 0 0.8rem;
   }
 
-  .primary-button,
-  .secondary-button,
-  .danger-button,
-  .remove-button,
-  .icon-button {
-    min-height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    padding: 0.55rem 0.85rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
-  }
-
-  .primary-button {
-    border-color: var(--accent-strong);
-    color: var(--surface);
-    background: var(--accent-strong);
-  }
-
-  .danger-button {
-    border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
-    color: var(--danger);
-    background: var(--surface);
-  }
-
-  button:disabled,
   input:disabled,
   select:disabled {
     opacity: 0.62;
@@ -1698,13 +1675,13 @@
     gap: 0.35rem;
   }
 
-  .icon-button {
+  :global(.icon-button) {
     width: 44px;
     padding: 0;
     font-size: 1.1rem;
   }
 
-  .remove-button {
+  :global(.remove-button) {
     color: var(--danger);
   }
 
@@ -1777,7 +1754,7 @@
       height: 3.25rem;
     }
 
-    .media-list .remove-button {
+    .media-list :global(.remove-button) {
       grid-column: 1 / -1;
       justify-self: start;
     }
