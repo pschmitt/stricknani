@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import os
+import re
 import sys
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -303,6 +304,7 @@ def run_acceptance(
                 viewport={"width": 390, "height": 844},
                 reduced_motion="reduce",
                 color_scheme="light",
+                locale="en-US",
             )
             page = context.new_page()
             page.on("response", observe_response)
@@ -313,6 +315,8 @@ def run_acceptance(
             response = page.goto(f"{origin}/app/login", wait_until="networkidle")
             if response is None or response.status != 200:
                 raise AcceptanceFailure("login route failed")
+            mark_stage("choosing English for the yarn journey")
+            page.get_by_role("button", name=re.compile(r"^(English|Englisch)$")).click()
             page.get_by_role("heading", name="Sign in").wait_for(state="visible")
             policy = response.headers.get("content-security-policy", "")
             _require(
@@ -327,6 +331,11 @@ def run_acceptance(
             page.locator("#email").fill(email)
             page.locator("#password").fill(password)
             page.get_by_role("button", name="Sign in").click()
+            mark_stage("waiting for signed-in project library")
+            page.wait_for_url("**/app/projects")
+            page.get_by_role("heading", name="Projects", exact=True).wait_for(
+                state="visible"
+            )
             page.locator(".app-shell").wait_for(state="visible")
             page.locator(".mobile-navigation").wait_for(state="visible")
             _require(
