@@ -158,7 +158,10 @@ in
       type = lib.types.package;
       default =
         if cfg.backend == "rust" then
-          pkgs.callPackage ./rust-package.nix { }
+          pkgs.callPackage ./rust-package.nix {
+            corePackage = pkgs.callPackage ./rust-core-package.nix { };
+            webPackage = pkgs.callPackage ./web-package.nix { };
+          }
         else
           pkgs.callPackage ./package.nix {
             python3 = pkgs.python313;

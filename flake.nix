@@ -29,7 +29,9 @@
           };
 
           stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { };
+          stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix { };
           stricknaniRust = pkgs.callPackage ./nix/rust-package.nix {
+            corePackage = stricknaniRustCore;
             webPackage = stricknaniWeb;
           };
 
