@@ -5,6 +5,7 @@
   import { ApiError, type SessionData } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
@@ -625,14 +626,15 @@
   />
 </svelte:head>
 
-<section class="account-page" aria-labelledby="account-title">
-  <header class="page-heading">
-    <div>
-      <p class="section-mark">{t("Your workspace", locale)}</p>
-      <h1 id="account-title">{t("Account", locale)}</h1>
+<section
+  class="account-page page-container page-container--standard"
+  aria-labelledby="account-title"
+>
+  <PageHeader title={t("Account", locale)} titleId="account-title">
+    {#snippet context()}
       <p>{t("Manage your profile, API access, and password.", locale)}</p>
-    </div>
-  </header>
+    {/snippet}
+  </PageHeader>
 
   <section class="account-language" aria-label={t("Language", locale)}>
     <LocaleSwitcher />
@@ -1062,15 +1064,6 @@
   .account-page {
     display: grid;
     gap: clamp(1.5rem, 3vw, 2.4rem);
-    max-width: 70rem;
-    margin-inline: auto;
-  }
-
-  .page-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
   }
 
   .section-mark {
@@ -1080,18 +1073,9 @@
     font-weight: 650;
   }
 
-  h1,
   h2,
   p {
     margin-top: 0;
-  }
-
-  h1 {
-    margin-bottom: 0.35rem;
-    font-size: clamp(2rem, 5vw, 2.8rem);
-    font-weight: 680;
-    letter-spacing: -0.055em;
-    line-height: 1.1;
   }
 
   h2 {
@@ -1101,7 +1085,6 @@
     letter-spacing: -0.025em;
   }
 
-  .page-heading p:last-child,
   .section-heading p {
     margin-bottom: 0;
     color: var(--ink-muted);

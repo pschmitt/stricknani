@@ -1,19 +1,68 @@
 <script lang="ts">
   import BrandMark from "#lib/components/BrandMark.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { appVersion } from "#lib/app-version.ts";
 
-  let { href = "/app/" }: { href?: string } = $props();
+  let {
+    href = "/app/",
+    parentHref = null,
+    parentLabel = "Back",
+    reserveParentSlot = false,
+  }: {
+    href?: string;
+    parentHref?: string | null;
+    parentLabel?: string;
+    reserveParentSlot?: boolean;
+  } = $props();
 </script>
 
-<a class="brand-lockup" {href} aria-label="Stricknani">
-  <BrandMark />
-  <span class="brand-copy">
-    <span class="brand-title">Stricknani</span>
-    <span class="brand-version">{appVersion}</span>
-  </span>
-</a>
+<div class="brand-header">
+  {#if reserveParentSlot}
+    <span class="parent-slot">
+      {#if parentHref}
+        <a
+          class="shell-back-button parent-link"
+          href={parentHref}
+          aria-label={parentLabel}
+        >
+          <NavIcon name="previous" />
+        </a>
+      {/if}
+    </span>
+  {/if}
+  <a class="brand-lockup" {href} aria-label="Stricknani">
+    <BrandMark />
+    <span class="brand-copy">
+      <span class="brand-title">Stricknani</span>
+      <span class="brand-version">{appVersion}</span>
+    </span>
+  </a>
+</div>
 
 <style>
+  .brand-header {
+    display: flex;
+    min-width: 0;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  .parent-slot {
+    display: flex;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .parent-link {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 4px;
+  }
+
   .brand-lockup {
     display: inline-flex;
     min-width: 0;

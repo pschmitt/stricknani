@@ -5,6 +5,7 @@
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -124,21 +125,25 @@
   />
 </svelte:head>
 
-<section class="library" aria-labelledby="yarn-library-title">
-  <header class="library-heading">
-    <div>
-      <h1 id="yarn-library-title">{t("Yarns", locale)}</h1>
+<section
+  class="library page-container page-container--wide"
+  aria-labelledby="yarn-library-title"
+>
+  <PageHeader title={t("Yarns", locale)} titleId="yarn-library-title">
+    {#snippet context()}
       <p class="intro">
         {t(
           "Keep colors, fiber details, and project links close at hand.",
           locale,
         )}
       </p>
-    </div>
-    <a class="primary-action" href={resolve("/yarns/new")}>
-      <ActionLabel icon="create">{t("Add yarn", locale)}</ActionLabel>
-    </a>
-  </header>
+    {/snippet}
+    {#snippet actions()}
+      <a class="primary-action" href={resolve("/yarns/new")}>
+        <ActionLabel icon="create">{t("Add yarn", locale)}</ActionLabel>
+      </a>
+    {/snippet}
+  </PageHeader>
 
   <form
     class="filters"
@@ -305,23 +310,7 @@
     display: grid;
     gap: 1.25rem;
     min-width: 0;
-    max-width: 76rem;
-    margin: 0 auto;
     container-type: inline-size;
-  }
-
-  .library-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1.25rem;
-  }
-
-  h1 {
-    margin: 0 0 0.35rem;
-    font-size: clamp(2rem, 5vw, 2.7rem);
-    letter-spacing: -0.055em;
-    line-height: 1.05;
   }
 
   .intro {
@@ -545,11 +534,6 @@
   }
 
   @media (max-width: 640px) {
-    .library-heading {
-      align-items: start;
-      flex-direction: column;
-    }
-
     .primary-action {
       width: 100%;
     }
@@ -579,18 +563,6 @@
   @media (max-width: 380px) {
     .yarn-grid {
       grid-template-columns: 1fr;
-    }
-  }
-
-  @container (min-width: 381px) and (max-width: 700px) {
-    .library-heading {
-      align-items: start;
-      flex-wrap: wrap;
-    }
-
-    .library-heading > div {
-      min-width: 0;
-      flex: 1 1 16rem;
     }
   }
 
@@ -645,13 +617,6 @@
       min-width: 44px;
       min-height: 44px;
       padding-inline: 0;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .library-heading > div {
-      width: 100%;
-      flex: 0 1 auto;
     }
   }
 </style>

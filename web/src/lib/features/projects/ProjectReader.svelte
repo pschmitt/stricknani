@@ -6,6 +6,7 @@
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
@@ -603,11 +604,63 @@
     </div>
   </section>
 {:else if project}
-  <article class="reader" bind:this={readerElement}>
+  {@const currentProject = project}
+  <article
+    class="reader page-container page-container--standard"
+    bind:this={readerElement}
+  >
+    <PageHeader title={currentProject.name}>
+      {#snippet context()}
+        <div class="reader-subtitle">
+          <span>{currentProject.category ?? t("Knitting project", locale)}</span
+          >
+          <span
+            >{t("Updated", locale)}
+            {formatDate(currentProject.updated_at)}</span
+          >
+          {#if currentProject.tags.length}
+            <ul class="reader-tags" aria-label={t("Project tags", locale)}>
+              {#each currentProject.tags as tag, index (`${index}:${tag}`)}
+                <li>{tag}</li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {/snippet}
+      {#snippet actions()}
+        <div class="reader-heading-actions">
+          <a
+            class="reader-edit-link"
+            href={resolve("/projects/[id]/edit", {
+              id: String(currentProject.id),
+            })}
+          >
+            <ActionLabel icon="action-update"
+              >{t("Edit project", locale)}</ActionLabel
+            >
+          </a>
+          <button
+            class="reader-favorite"
+            type="button"
+            disabled={favoriteBusy}
+            aria-pressed={currentProject.is_favorite}
+            aria-label={currentProject.is_favorite
+              ? t("Remove from favorites", locale)
+              : t("Add to favorites", locale)}
+            onclick={toggleFavorite}
+          >
+            <span aria-hidden="true"
+              >{currentProject.is_favorite ? "★" : "☆"}</span
+            >
+            {currentProject.is_favorite
+              ? t("Favorite", locale)
+              : t("Add to favorites", locale)}
+          </button>
+        </div>
+      {/snippet}
+    </PageHeader>
+
     <nav class="reader-topline" aria-label={t("Project actions", locale)}>
-      <a class="back-link" href={resolve("/projects")}
-        >‹ {t("Back to projects", locale)}</a
-      >
       <div class="reader-actions">
         <div
           class="text-size-controls"
@@ -644,50 +697,6 @@
     {#if printError}
       <p class="print-error" role="alert">{printError}</p>
     {/if}
-
-    <header class="reader-heading">
-      <div>
-        <p class="section-mark">
-          {project.category ?? t("Knitting project", locale)}
-        </p>
-        <h1>{project.name}</h1>
-        <div class="reader-subtitle">
-          <span>{t("Updated", locale)} {formatDate(project.updated_at)}</span>
-          {#if project.tags.length}
-            <ul class="reader-tags" aria-label={t("Project tags", locale)}>
-              {#each project.tags as tag, index (`${index}:${tag}`)}
-                <li>{tag}</li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
-      </div>
-      <div class="reader-heading-actions">
-        <a
-          class="reader-edit-link"
-          href={resolve("/projects/[id]/edit", { id: String(project.id) })}
-        >
-          <ActionLabel icon="action-update"
-            >{t("Edit project", locale)}</ActionLabel
-          >
-        </a>
-        <button
-          class="reader-favorite"
-          type="button"
-          disabled={favoriteBusy}
-          aria-pressed={project.is_favorite}
-          aria-label={project.is_favorite
-            ? t("Remove from favorites", locale)
-            : t("Add to favorites", locale)}
-          onclick={toggleFavorite}
-        >
-          <span aria-hidden="true">{project.is_favorite ? "★" : "☆"}</span>
-          {project.is_favorite
-            ? t("Favorite", locale)
-            : t("Add to favorites", locale)}
-        </button>
-      </div>
-    </header>
 
     <div class="reader-overview" class:has-cover={coverImage !== null}>
       {#if coverImage}
@@ -1124,7 +1133,6 @@
 
     <footer class="reader-footer">
       <span>{t("Last updated", locale)} {formatDate(project.updated_at)}</span>
-      <a href={resolve("/projects")}>{t("Back to project library", locale)}</a>
     </footer>
   </article>
   <ProjectLightbox
@@ -1204,8 +1212,6 @@
 
   .reader {
     display: grid;
-    max-width: 70ch;
-    margin-inline: auto;
     gap: 1.5rem;
   }
 
@@ -1274,13 +1280,6 @@
     font-size: 1.04rem;
   }
 
-  .reader-heading {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
   .reader-heading-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1336,15 +1335,6 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     line-clamp: 3;
-  }
-
-  .reader-heading h1 {
-    max-width: 55rem;
-    margin: 0.3rem 0 0.6rem;
-    font-size: clamp(2rem, 6vw, 3.3rem);
-    letter-spacing: -0.06em;
-    line-height: 1.05;
-    overflow-wrap: anywhere;
   }
 
   .reader-subtitle {
@@ -1566,6 +1556,7 @@
   }
 
   .reading-copy {
+    max-width: 70ch;
     color: var(--ink);
     overflow-wrap: anywhere;
   }
@@ -1729,8 +1720,7 @@
     font-size: 0.88rem;
   }
 
-  .details-card a,
-  .reader-footer a {
+  .details-card a {
     display: inline-flex;
     min-height: 44px;
     align-items: center;
@@ -1856,15 +1846,6 @@
       font-size: 0.84rem;
     }
 
-    .reader-heading {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .reader-heading-actions {
-      align-self: flex-start;
-    }
-
     .step-navigation {
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       gap: 0.35rem;
@@ -1888,7 +1869,6 @@
 
   @media print {
     :global(.desktop-rail),
-    :global(.page-header),
     :global(.app-header),
     :global(.mobile-navigation),
     :global(.skip-link) {
@@ -1923,8 +1903,8 @@
     }
 
     .reader-topline,
+    :global(.page-header__actions),
     .reader-favorite,
-    .reader-footer a,
     .lightbox {
       display: none !important;
     }
@@ -1990,14 +1970,13 @@
       display: none;
     }
 
-    .reader-heading,
+    .reader-heading-actions,
     .reader-columns,
     .pattern-column,
     .details-column {
       display: block;
     }
 
-    .reader-heading,
     .pattern-section,
     .steps-section,
     .details-card {
@@ -2015,7 +1994,9 @@
     }
 
     .rich-text,
+    .reading-copy,
     .step-content {
+      max-width: none;
       color: #111;
       font-size: 11pt;
     }

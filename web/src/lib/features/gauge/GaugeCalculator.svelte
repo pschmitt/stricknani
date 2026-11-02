@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -195,17 +196,20 @@
   />
 </svelte:head>
 
-<section class="gauge-page" aria-labelledby="gauge-title">
-  <header class="gauge-heading">
-    <p class="section-mark">{t("Tools", locale)}</p>
-    <h1 id="gauge-title">{t("Gauge calculator", locale)}</h1>
-    <p>
-      {t(
-        "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.",
-        locale,
-      )}
-    </p>
-  </header>
+<section
+  class="gauge-page page-container page-container--compact"
+  aria-labelledby="gauge-title"
+>
+  <PageHeader title={t("Gauge calculator", locale)} titleId="gauge-title">
+    {#snippet context()}
+      <p class="gauge-context">
+        {t(
+          "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.",
+          locale,
+        )}
+      </p>
+    {/snippet}
+  </PageHeader>
 
   <details class="help-panel">
     <summary>{t("How to use this calculator", locale)}</summary>
@@ -461,11 +465,8 @@
   .gauge-page {
     display: grid;
     gap: 1rem;
-    max-width: 50rem;
-    margin-inline: auto;
   }
 
-  .gauge-heading,
   .help-panel,
   .gauge-form,
   .results {
@@ -475,27 +476,9 @@
     background: var(--surface);
   }
 
-  .gauge-heading {
-    padding-bottom: 1.25rem;
-  }
-
-  .section-mark {
-    margin: 0 0 0.35rem;
-    color: var(--accent-strong);
-    font-size: 0.85rem;
-    font-weight: 650;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: clamp(1.8rem, 6vw, 2.55rem);
-    letter-spacing: -0.05em;
-    line-height: 1.08;
-  }
-
-  .gauge-heading > p:last-child {
+  .gauge-context {
     max-width: 42rem;
-    margin: 0.65rem 0 0;
+    margin: 0;
     color: var(--ink-muted);
     line-height: 1.55;
   }

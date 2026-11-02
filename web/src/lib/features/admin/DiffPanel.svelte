@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -185,19 +185,11 @@
   ><title>Stricknani · {t("Recorded changes", locale)}</title></svelte:head
 >
 
-<section class="diff-page" aria-labelledby="diff-title">
-  <header class="diff-header">
-    <div>
-      <p class="section-mark">{t("Administrator", locale)}</p>
-      <h1 id="diff-title">{t("Recorded changes", locale)}</h1>
-    </div>
-    <a class="secondary-button diff-back-link" href="/app/admin/audit">
-      <span class="diff-back-link__content">
-        <NavIcon name="previous" />
-        <span>{t("Back to audit log", locale)}</span>
-      </span>
-    </a>
-  </header>
+<section
+  class="diff-page page-container page-container--standard"
+  aria-labelledby="diff-title"
+>
+  <PageHeader title={t("Recorded changes", locale)} titleId="diff-title" />
 
   {#if loading}
     <p class="notice-panel" aria-live="polite">
@@ -282,54 +274,7 @@
   .diff-page {
     display: grid;
     gap: 1rem;
-    max-width: 68rem;
-    margin: 0 auto;
-    padding: 1rem 0 3rem;
-  }
-  .diff-header {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .diff-header h1 {
-    margin: 0;
-  }
-  .diff-back-link {
-    box-sizing: border-box;
-    display: inline-flex;
-    min-height: 44px;
-    max-width: 100%;
-    align-items: center;
-    flex: 0 0 auto;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.8rem;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 650;
-    text-decoration: none;
-  }
-  .diff-back-link__content {
-    display: inline-flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.45rem;
-  }
-  .diff-back-link :global(svg) {
-    display: block;
-    width: 1rem;
-    height: 1rem;
-    flex: 0 0 1rem;
-  }
-  .diff-back-link:focus-visible {
-    outline: 3px solid var(--accent-strong);
-    outline-offset: 2px;
-  }
-  .section-mark {
-    margin: 0 0 0.3rem;
-    color: var(--accent-strong);
+    padding-bottom: 3rem;
   }
   .event-card,
   .change-list li {
@@ -388,14 +333,6 @@
     background: var(--surface-raised);
   }
   @media (max-width: 38rem) {
-    .diff-header {
-      align-items: start;
-      flex-direction: column;
-    }
-    .diff-back-link {
-      max-width: 100%;
-      white-space: normal;
-    }
     .change-values {
       grid-template-columns: 1fr;
     }

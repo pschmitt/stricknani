@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -8,12 +9,20 @@
 
 <svelte:head><title>Stricknani · {t("Create", locale)}</title></svelte:head>
 
-<section class="create-page" aria-labelledby="create-title">
-  <p class="section-mark">{t("Your workspace", locale)}</p>
-  <h1 id="create-title">{t("What would you like to add?", locale)}</h1>
-  <p class="create-intro">
-    {t("Choose a project or add yarn to your inventory.", locale)}
-  </p>
+<section
+  class="create-page page-container page-container--compact"
+  aria-labelledby="create-title"
+>
+  <PageHeader
+    title={t("What would you like to add?", locale)}
+    titleId="create-title"
+  >
+    {#snippet context()}
+      <p class="create-intro">
+        {t("Choose a project or add yarn to your inventory.", locale)}
+      </p>
+    {/snippet}
+  </PageHeader>
   <div class="create-options">
     <a href={resolve("/projects/new")}>
       <span class="option-mark" aria-hidden="true"
@@ -39,22 +48,6 @@
 </section>
 
 <style>
-  .create-page {
-    max-width: 46rem;
-    border: 1px solid var(--line);
-    border-radius: 1.1rem;
-    padding: clamp(1.4rem, 4vw, 2.6rem);
-    background: var(--surface);
-  }
-
-  h1 {
-    margin: 0.45rem 0 0.65rem;
-    font-size: clamp(2rem, 6vw, 3rem);
-    font-weight: 680;
-    letter-spacing: -0.06em;
-    line-height: 1.08;
-  }
-
   .create-intro {
     color: var(--ink-muted);
   }
@@ -62,7 +55,7 @@
   .create-options {
     display: grid;
     gap: 0.7rem;
-    margin-top: 1.8rem;
+    margin-top: 1.4rem;
   }
 
   .create-options a {

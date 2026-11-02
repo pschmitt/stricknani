@@ -31,6 +31,9 @@
   --warning-surface: #fff4d6;
   --focus: #286fba;
   --shadow: 0 14px 38px rgb(31 45 61 / 8%);
+  --page-width-compact: 48rem;
+  --page-width-standard: 58rem;
+  --page-width-wide: 76rem;
 
   font-optical-sizing: auto;
   font-weight: 400;
@@ -75,6 +78,7 @@ html {
   min-height: 100%;
   background: var(--canvas);
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -355,6 +359,24 @@ button:disabled {
   width: min(100%, 76rem);
   margin-inline: auto;
   padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+.page-container {
+  width: 100%;
+  max-width: var(--page-width-wide);
+  margin-inline: 0;
+}
+
+.page-container--compact {
+  max-width: var(--page-width-compact);
+}
+
+.page-container--standard {
+  max-width: var(--page-width-standard);
+}
+
+.page-container--wide {
+  max-width: var(--page-width-wide);
 }
 
 .mobile-navigation {

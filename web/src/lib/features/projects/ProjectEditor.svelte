@@ -5,6 +5,7 @@
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -73,11 +74,6 @@
     savedSnapshot !== JSON.stringify(draft) || tagInput.trim().length > 0,
   );
   const isCreating = $derived(projectId === null);
-  const backHref = $derived(
-    projectId === null
-      ? resolve("/projects")
-      : resolve("/projects/[id]", { id: String(projectId) }),
-  );
   const mediaAvailable = $derived(
     project !== null &&
       projectId === project.id &&
@@ -249,7 +245,8 @@
     return () => controller.abort();
   });
 
-  beforeNavigate(({ cancel }) => {
+  beforeNavigate(({ cancel, willUnload }) => {
+    if (willUnload) return;
     if (
       isDirty &&
       typeof window !== "undefined" &&
@@ -789,24 +786,23 @@
   </title>
 </svelte:head>
 
-<section class="project-editor" aria-labelledby="editor-title">
-  <header class="editor-heading">
-    <div>
-      <p class="eyebrow">{t("Project details", locale)}</p>
-      <h1 id="editor-title">
-        {isCreating ? t("New project", locale) : t("Edit project", locale)}
-      </h1>
+<section
+  class="project-editor page-container page-container--standard"
+  aria-labelledby="editor-title"
+>
+  <PageHeader
+    title={isCreating ? t("New project", locale) : t("Edit project", locale)}
+    titleId="editor-title"
+  >
+    {#snippet context()}
       <p>
         {t(
           "Keep the pattern and materials together for your next knitting session.",
           locale,
         )}
       </p>
-    </div>
-    <a class="back-link" href={backHref}>
-      {t("Back to project", locale)}
-    </a>
-  </header>
+    {/snippet}
+  </PageHeader>
 
   {#if loadState === "signed-out"}
     <div class="notice" role="status">
@@ -1424,12 +1420,10 @@
 
 <style>
   .project-editor {
-    width: min(58rem, 100%);
-    margin: 0 auto;
-    padding: clamp(1rem, 3vw, 2rem);
+    display: grid;
+    gap: 1.4rem;
   }
 
-  .editor-heading,
   .section-title-row,
   .step-editor-heading,
   .form-actions,
@@ -1440,42 +1434,18 @@
     gap: 1rem;
   }
 
-  .editor-heading {
-    align-items: flex-start;
-    margin-bottom: 1.4rem;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 1.15rem;
-  }
-
-  h1,
   h2,
   h3,
   p {
     margin-top: 0;
   }
 
-  h1 {
-    margin-bottom: 0.35rem;
-    font-size: clamp(1.75rem, 5vw, 2.4rem);
-    line-height: 1.12;
-    letter-spacing: -0.04em;
-  }
-
-  .editor-heading p:last-child,
   .section-hint,
   .field-hint,
   .dirty-note {
     color: var(--ink-muted);
   }
 
-  .eyebrow {
-    margin-bottom: 0.2rem;
-    color: var(--accent-strong);
-    font-size: 0.82rem;
-    font-weight: 700;
-  }
-
-  .back-link,
   .archive-link {
     display: inline-flex;
     min-height: 44px;
@@ -1783,11 +1753,6 @@
   }
 
   @media (max-width: 560px) {
-    .editor-heading {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
     .field-grid,
     .media-upload-grid {
       grid-template-columns: minmax(0, 1fr);

@@ -5,6 +5,7 @@
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -258,35 +259,32 @@
   </title>
 </svelte:head>
 
-<section class="resource-page" aria-labelledby="resource-title">
-  <header class="resource-heading">
-    <div>
-      <p class="section-mark">{t("Administrator", locale)}</p>
-      {#if resource}
-        <ResourceCard
-          kind={resource.kind}
-          name={resource.name}
-          href={null}
-          imageUrl={previewUrl(resource)}
-          variant="compact"
-          titleTag="h1"
-          titleId="resource-title"
-        />
-      {:else}
-        <h1 id="resource-title">{t("Resource details", locale)}</h1>
-      {/if}
-      <p>{t("Read-only view", locale)}</p>
-    </div>
-    <a
-      class="secondary-button resource-back-link"
-      href={resolve("/admin/audit")}
-    >
-      <span class="button-content">
-        <NavIcon name="previous" />
-        <span>{t("Back to audit log", locale)}</span>
-      </span>
-    </a>
-  </header>
+<section
+  class="resource-page page-container page-container--standard"
+  aria-labelledby="resource-title"
+>
+  <PageHeader
+    title={resource?.name ?? t("Resource details", locale)}
+    titleId="resource-title"
+  >
+    {#snippet context()}
+      <div class="resource-heading-context">
+        {#if resource}
+          <span class="resource-heading-preview" aria-hidden="true">
+            <ResourceCard
+              kind={resource.kind}
+              name=""
+              href={null}
+              imageUrl={previewUrl(resource)}
+              variant="compact"
+              titleTag="span"
+            />
+          </span>
+        {/if}
+        <p>{t("Read-only view", locale)}</p>
+      </div>
+    {/snippet}
+  </PageHeader>
 
   {#if loadState === "loading"}
     <p class="notice-panel" aria-live="polite">
@@ -657,64 +655,30 @@
   .resource-page {
     display: grid;
     gap: 1.25rem;
-    max-width: 62rem;
-    margin: 0 auto;
-    padding: 1rem 0 3rem;
+    padding-bottom: 3rem;
   }
-  .resource-heading {
+
+  .resource-heading-context {
     display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .resource-heading h1 {
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
-  .resource-heading :global(.resource-card__name) {
-    font-size: clamp(1.8rem, 5vw, 2.5rem);
-    letter-spacing: -0.045em;
-  }
-  .resource-heading > div > p:last-child {
-    margin: 0.35rem 0 0;
-    color: var(--muted);
-  }
-  .resource-back-link {
-    box-sizing: border-box;
-    display: inline-flex;
-    min-height: 44px;
-    max-width: 100%;
     align-items: center;
-    flex: 0 0 auto;
-    border: 1px solid var(--line);
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.8rem;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
-    font-weight: 650;
-    text-decoration: none;
+    gap: 0.65rem;
   }
-  .resource-back-link .button-content {
-    display: inline-flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.45rem;
+
+  .resource-heading-preview {
+    width: 3.25rem;
+    flex: 0 0 3.25rem;
   }
-  .resource-back-link :global(svg) {
+
+  .resource-heading-preview :global(.resource-card__link) {
     display: block;
-    width: 1rem;
-    height: 1rem;
-    flex: 0 0 1rem;
   }
-  .resource-back-link:focus-visible {
-    outline: 3px solid var(--accent-strong);
-    outline-offset: 2px;
+
+  .resource-heading-preview :global(.resource-card__copy) {
+    display: none;
   }
-  .section-mark {
-    margin: 0 0 0.25rem;
-    color: var(--accent-strong);
-    font-size: 0.9rem;
+
+  .resource-heading-context p {
+    margin: 0;
   }
   .resource-content {
     display: grid;
@@ -898,11 +862,5 @@
   .resource-page button:focus-visible {
     outline: 3px solid var(--accent-strong);
     outline-offset: 3px;
-  }
-  @media (max-width: 38rem) {
-    .resource-heading {
-      align-items: start;
-      flex-direction: column;
-    }
   }
 </style>

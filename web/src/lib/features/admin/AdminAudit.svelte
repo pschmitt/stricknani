@@ -4,6 +4,7 @@
   import { onDestroy, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
@@ -249,14 +250,17 @@
 
 <svelte:head><title>Stricknani · {t("Audit log", locale)}</title></svelte:head>
 
-<section class="audit-page" aria-labelledby="audit-title">
-  <header class="audit-heading">
-    <div>
-      <p class="section-mark">{t("Administrator", locale)}</p>
-      <h1 id="audit-title">{t("Audit log", locale)}</h1>
-      <p>{t("Review account and library changes in time order.", locale)}</p>
-    </div>
-  </header>
+<section
+  class="audit-page page-container page-container--wide"
+  aria-labelledby="audit-title"
+>
+  <div class="audit-heading">
+    <PageHeader title={t("Audit log", locale)} titleId="audit-title">
+      {#snippet context()}
+        <p>{t("Review account and library changes in time order.", locale)}</p>
+      {/snippet}
+    </PageHeader>
+  </div>
 
   <form class="audit-filters" onsubmit={applyFilters}>
     <label for="audit-entity">{t("Entity", locale)}</label>
@@ -387,26 +391,8 @@
 </section>
 
 <style>
-  .audit-page {
-    max-width: 68rem;
-  }
   .audit-heading {
     margin-bottom: 1.3rem;
-  }
-  .section-mark {
-    margin: 0 0 0.35rem;
-    color: var(--accent-strong);
-    font-size: 0.9rem;
-    font-weight: 650;
-  }
-  h1 {
-    margin: 0;
-    font-size: clamp(1.8rem, 5vw, 2.5rem);
-    letter-spacing: -0.045em;
-  }
-  .audit-heading p:not(.section-mark) {
-    margin: 0.45rem 0 0;
-    color: var(--ink-muted);
   }
   .audit-filters {
     display: grid;

@@ -5,6 +5,7 @@
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
@@ -555,25 +556,30 @@
   ><title>Stricknani · {t("User administration", locale)}</title></svelte:head
 >
 
-<section class="admin-page" aria-labelledby="users-title">
-  <header class="admin-heading">
-    <div>
-      <p class="section-mark">{t("Administrator", locale)}</p>
-      <h1 id="users-title">{t("User accounts", locale)}</h1>
-      <p>{t("Manage account access and sign-in credentials.", locale)}</p>
-    </div>
-    <button
-      class="primary-button"
-      type="button"
-      onclick={(event) => openCreate(event.currentTarget)}
-      disabled={loadState !== "ready" || operation !== null}
-    >
-      <span class="button-content">
-        <NavIcon name="user-add" />
-        <span>{t("Create user", locale)}</span>
-      </span>
-    </button>
-  </header>
+<section
+  class="admin-page page-container page-container--wide"
+  aria-labelledby="users-title"
+>
+  <div class="admin-heading">
+    <PageHeader title={t("User accounts", locale)} titleId="users-title">
+      {#snippet context()}
+        <p>{t("Manage account access and sign-in credentials.", locale)}</p>
+      {/snippet}
+      {#snippet actions()}
+        <button
+          class="primary-button"
+          type="button"
+          onclick={(event) => openCreate(event.currentTarget)}
+          disabled={loadState !== "ready" || operation !== null}
+        >
+          <span class="button-content">
+            <NavIcon name="user-add" />
+            <span>{t("Create user", locale)}</span>
+          </span>
+        </button>
+      {/snippet}
+    </PageHeader>
+  </div>
 
   {#if pageStatus}<p class="notice notice-success" role="status">
       {pageStatus}
@@ -915,30 +921,8 @@
 </dialog>
 
 <style>
-  .admin-page {
-    max-width: 68rem;
-  }
   .admin-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
     margin-bottom: 1.35rem;
-  }
-  .admin-heading h1 {
-    margin: 0;
-    font-size: clamp(1.8rem, 5vw, 2.5rem);
-    letter-spacing: -0.045em;
-  }
-  .admin-heading p:not(.section-mark) {
-    margin: 0.45rem 0 0;
-    color: var(--ink-muted);
-  }
-  .section-mark {
-    margin: 0 0 0.35rem;
-    color: var(--accent-strong);
-    font-size: 0.9rem;
-    font-weight: 650;
   }
   .user-ledger {
     overflow: hidden;

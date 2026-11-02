@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
-  import { afterNavigate, goto } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
@@ -12,6 +12,7 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import PwaUpdate from "#lib/components/PwaUpdate.svelte";
+  import { routeParent } from "#lib/route-parent.ts";
   import SignInForm from "#lib/components/SignInForm.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
@@ -22,6 +23,7 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const pathname = $derived(page.url.pathname);
+  const parentHref = $derived(routeParent(pathname, resolve("/")));
   const signupRoute = $derived(pathname === linkTo("/signup"));
   const user = $derived(session.data?.user ?? null);
   const publicGauge = $derived(
@@ -37,7 +39,6 @@
       session.data?.capabilities.admin_actions === true,
   );
   const routeIsAdminOnly = $derived(adminRoute && !canManageAdmin);
-  let canGoBack = $state(false);
 
   const mainNavigation = [
     { href: "/projects", label: msg("Projects"), icon: "projects" },
@@ -54,14 +55,9 @@
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
 
-  afterNavigate(refreshCanGoBack);
-
   onMount(() => {
-    refreshCanGoBack();
-    window.addEventListener("popstate", refreshCanGoBack);
     void loadCatalog();
     void refreshSession();
-    return () => window.removeEventListener("popstate", refreshCanGoBack);
   });
 
   $effect(() => {
@@ -99,14 +95,6 @@
 
   function linkTo(path: AppPath): string {
     return resolve(path);
-  }
-
-  function refreshCanGoBack() {
-    canGoBack = window.history.length > 1;
-  }
-
-  function goBack() {
-    if (window.history.length > 1) window.history.back();
   }
 
   function isActive(path: AppPath): boolean {
@@ -195,17 +183,12 @@
 {:else}
   <div class="app-shell">
     <header class="app-header page-header">
-      {#if canGoBack}
-        <button
-          class="shell-back-button"
-          type="button"
-          aria-label={t("Back", locale)}
-          onclick={goBack}
-        >
-          <NavIcon name="previous" />
-        </button>
-      {/if}
-      <BrandHeader href={linkTo("/")} />
+      <BrandHeader
+        href={linkTo("/")}
+        {parentHref}
+        parentLabel={t("Back", locale)}
+        reserveParentSlot={true}
+      />
       <a
         class="header-account"
         href={linkTo("/account")}

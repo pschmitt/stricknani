@@ -2,6 +2,7 @@
   import { resolve } from "$app/paths";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -9,12 +10,17 @@
 
 <svelte:head><title>Stricknani · {t("More", locale)}</title></svelte:head>
 
-<section class="more-page" aria-labelledby="more-title">
-  <p class="section-mark">Stricknani</p>
-  <h1 id="more-title">{t("More", locale)}</h1>
-  <p class="more-intro">
-    {t("Tools and settings for your knitting library.", locale)}
-  </p>
+<section
+  class="more-page page-container page-container--compact"
+  aria-labelledby="more-title"
+>
+  <PageHeader title={t("More", locale)} titleId="more-title">
+    {#snippet context()}
+      <p class="more-intro">
+        {t("Tools and settings for your knitting library.", locale)}
+      </p>
+    {/snippet}
+  </PageHeader>
   <nav class="more-links" aria-label={t("More pages", locale)}>
     <a href={resolve("/imports")}>
       <span class="more-link-icon"><NavIcon name="imports" /></span>
@@ -57,31 +63,9 @@
 </section>
 
 <style>
-  .more-page {
-    max-width: 48rem;
-    border: 1px solid var(--line);
-    border-radius: 1.1rem;
-    padding: clamp(1.4rem, 4vw, 2.6rem);
-    background: var(--surface);
-  }
-
-  .section-mark {
-    margin: 0 0 0.4rem;
-    color: var(--accent-strong);
-    font-size: 0.88rem;
-    font-weight: 650;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: clamp(2rem, 6vw, 3rem);
-    font-weight: 680;
-    letter-spacing: -0.06em;
-  }
-
   .more-intro {
     max-width: 40rem;
-    margin: 0.75rem 0 0;
+    margin: 0;
     color: var(--ink-muted);
     line-height: 1.6;
   }

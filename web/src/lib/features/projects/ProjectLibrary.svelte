@@ -4,6 +4,7 @@
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -145,18 +146,22 @@
   />
 </svelte:head>
 
-<section class="library" aria-labelledby="library-title">
-  <header class="library-heading">
-    <div>
-      <h1 id="library-title">{t("Projects", locale)}</h1>
+<section
+  class="library page-container page-container--wide"
+  aria-labelledby="library-title"
+>
+  <PageHeader title={t("Projects", locale)} titleId="library-title">
+    {#snippet context()}
       <p class="library-intro">
         {t("Find a project, pick up a row, and keep your notes close.", locale)}
       </p>
-    </div>
-    <a class="new-project" href={resolve("/projects/new")}>
-      <ActionLabel icon="create">{t("New project", locale)}</ActionLabel>
-    </a>
-  </header>
+    {/snippet}
+    {#snippet actions()}
+      <a class="new-project" href={resolve("/projects/new")}>
+        <ActionLabel icon="create">{t("New project", locale)}</ActionLabel>
+      </a>
+    {/snippet}
+  </PageHeader>
 
   <form
     class="filters"
@@ -376,22 +381,6 @@
     gap: 1.5rem;
     min-width: 0;
     container-type: inline-size;
-  }
-
-  .library-heading {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 1.25rem;
-  }
-
-  .library-heading h1 {
-    margin: 0 0 0.35rem;
-    font-size: clamp(2rem, 5vw, 2.7rem);
-    letter-spacing: -0.055em;
-    line-height: 1.05;
   }
 
   .library-intro {
@@ -689,10 +678,6 @@
       gap: 1.15rem;
     }
 
-    .library-heading {
-      align-items: flex-start;
-    }
-
     .new-project {
       flex: 0 0 auto;
       padding-inline: 0.75rem;
@@ -731,18 +716,7 @@
   }
 
   @media (max-width: 380px) {
-    .library-heading {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-    }
-
-    .library-heading > div {
-      grid-column: 1 / -1;
-    }
-
     .new-project {
-      grid-column: 1 / -1;
       justify-self: start;
     }
 
@@ -769,18 +743,6 @@
 
     .project-card:hover {
       transform: none;
-    }
-  }
-
-  @container (min-width: 381px) and (max-width: 700px) {
-    .library-heading {
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .library-heading > div {
-      min-width: 0;
-      flex: 1 1 16rem;
     }
   }
 

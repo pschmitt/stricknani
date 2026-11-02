@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -139,7 +140,8 @@
     };
   });
 
-  beforeNavigate(({ cancel }) => {
+  beforeNavigate(({ cancel, willUnload }) => {
+    if (willUnload) return;
     if (
       isDirty &&
       typeof window !== "undefined" &&
@@ -390,36 +392,28 @@
     </div>
   </section>
 {:else}
-  <main class="editor" aria-labelledby="editor-title">
-    <a
-      class="back-link"
-      href={yarnId === null
-        ? resolve("/yarns")
-        : `${resolve("/yarns")}/${yarnId}`}
+  <main
+    class="editor page-container page-container--standard"
+    aria-labelledby="editor-title"
+  >
+    <PageHeader
+      title={yarnId === null ? t("Add yarn", locale) : t("Edit yarn", locale)}
+      titleId="editor-title"
     >
-      ← {yarnId === null ? t("Yarn shelf", locale) : t("Back to yarn", locale)}
-    </a>
-    <header class="editor-heading">
-      <div>
-        <p class="section-mark">
-          {yarnId === null
-            ? t("Your materials", locale)
-            : t("Yarn details", locale)}
-        </p>
-        <h1 id="editor-title">
-          {yarnId === null ? t("Add yarn", locale) : t("Edit yarn", locale)}
-        </h1>
+      {#snippet context()}
         <p>
           {t(
             "Record the details you will want when choosing yarn for a project.",
             locale,
           )}
         </p>
-      </div>
-      {#if isDirty}<span class="unsaved-pill" role="status"
-          >{t("Unsaved changes", locale)}</span
-        >{/if}
-    </header>
+      {/snippet}
+      {#snippet actions()}
+        {#if isDirty}<span class="unsaved-pill" role="status"
+            >{t("Unsaved changes", locale)}</span
+          >{/if}
+      {/snippet}
+    </PageHeader>
 
     {#if serverError}<div class="notice-error" role="alert">
         {serverError}
@@ -714,43 +708,9 @@
   .editor,
   .form-error {
     display: grid;
-    max-width: 68rem;
     gap: 1.15rem;
-    margin: 0 auto;
   }
 
-  .back-link {
-    display: inline-flex;
-    min-height: 44px;
-    width: fit-content;
-    align-items: center;
-    color: var(--accent-strong);
-    font-weight: 620;
-    text-decoration: none;
-  }
-
-  .editor-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .section-mark {
-    margin: 0;
-    color: var(--accent-strong);
-    font-size: 0.85rem;
-    font-weight: 650;
-  }
-
-  h1 {
-    margin: 0.3rem 0 0.35rem;
-    font-size: clamp(2rem, 5vw, 2.7rem);
-    letter-spacing: -0.055em;
-    line-height: 1.05;
-  }
-
-  .editor-heading p:last-child,
   .photo-placeholder p,
   .media-hint,
   .draft-note {
@@ -944,16 +904,7 @@
     color: var(--danger);
   }
 
-  .form-error h1 {
-    font-size: clamp(1.5rem, 4vw, 2rem);
-  }
-
   @media (max-width: 640px) {
-    .editor-heading {
-      align-items: start;
-      flex-direction: column;
-    }
-
     .field-grid {
       grid-template-columns: minmax(0, 1fr);
     }

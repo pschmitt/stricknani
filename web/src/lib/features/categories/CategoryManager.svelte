@@ -3,6 +3,7 @@
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -205,15 +206,18 @@
   />
 </svelte:head>
 
-<section class="manager" aria-labelledby="category-title">
-  <header class="manager-heading">
-    <div>
-      <p class="section-mark">{t("Workspace", locale)}</p>
-      <h1 id="category-title">{t("Categories", locale)}</h1>
+<section
+  class="manager page-container page-container--standard"
+  aria-labelledby="category-title"
+>
+  <PageHeader title={t("Categories", locale)} titleId="category-title">
+    {#snippet context()}
       <p>{t("Use categories to find projects faster.", locale)}</p>
-    </div>
-    <span class="count">{categories.length} {t("categories", locale)}</span>
-  </header>
+    {/snippet}
+    {#snippet actions()}
+      <span class="count">{categories.length} {t("categories", locale)}</span>
+    {/snippet}
+  </PageHeader>
 
   {#if errorMessage}
     <div class="notice-error" role="alert">
@@ -388,12 +392,9 @@
 <style>
   .manager {
     display: grid;
-    max-width: 56rem;
     gap: 1.15rem;
-    margin: 0 auto;
   }
 
-  .manager-heading,
   .create-form,
   .category-row,
   .row-actions,
@@ -402,29 +403,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-  }
-
-  .manager-heading {
-    align-items: end;
-  }
-
-  .section-mark {
-    margin: 0;
-    color: var(--accent-strong);
-    font-size: 0.85rem;
-    font-weight: 650;
-  }
-
-  h1 {
-    margin: 0.3rem 0 0.35rem;
-    font-size: clamp(2rem, 5vw, 2.7rem);
-    letter-spacing: -0.055em;
-    line-height: 1.05;
-  }
-
-  .manager-heading p:last-child {
-    margin: 0;
-    color: var(--ink-muted);
   }
 
   .count {
@@ -624,11 +602,6 @@
   }
 
   @media (max-width: 560px) {
-    .manager-heading {
-      align-items: start;
-      flex-direction: column;
-    }
-
     .create-form,
     .category-row {
       align-items: stretch;

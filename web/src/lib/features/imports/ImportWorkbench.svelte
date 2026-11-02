@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ImageChoices from "./ImageChoices.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
   import { createYarn } from "#lib/features/yarns/yarn-api.ts";
@@ -378,17 +379,25 @@
 
 <svelte:head><title>Stricknani · {t("Imports", locale)}</title></svelte:head>
 
-<section class="imports-page" aria-labelledby="import-page-title">
-  <header class="page-heading">
-    <p class="eyebrow">{t("Bring a pattern into your library", locale)}</p>
-    <h1 id="import-page-title">{t("Import a project", locale)}</h1>
-    <p>
-      {t(
-        "Choose a source, review every extracted detail, then create a normal project.",
-        locale,
-      )}
-    </p>
-  </header>
+<section
+  class="imports-page page-container page-container--standard"
+  aria-labelledby="import-page-title"
+>
+  <div class="page-heading">
+    <PageHeader
+      title={t("Import a project", locale)}
+      titleId="import-page-title"
+    >
+      {#snippet context()}
+        <p>
+          {t(
+            "Choose a source, review every extracted detail, then create a normal project.",
+            locale,
+          )}
+        </p>
+      {/snippet}
+    </PageHeader>
+  </div>
 
   <section class="source-card" aria-labelledby="source-title">
     <div class="section-heading">
@@ -779,23 +788,15 @@
 
 <style>
   .imports-page {
-    width: min(100% - 2rem, 58rem);
-    margin: 0 auto;
-    padding: 2rem 0 6rem;
+    padding-bottom: 6rem;
   }
   .page-heading {
     margin-bottom: 1.4rem;
   }
-  h1,
   h2,
   h3,
   p {
     margin-top: 0;
-  }
-  h1 {
-    margin-bottom: 0.4rem;
-    font-size: clamp(1.8rem, 6vw, 2.5rem);
-    letter-spacing: -0.04em;
   }
   h2 {
     margin-bottom: 0;
@@ -806,7 +807,6 @@
     margin-bottom: 0.25rem;
     font-size: 1rem;
   }
-  .page-heading > p:last-child,
   .supporting {
     color: var(--ink-muted);
   }

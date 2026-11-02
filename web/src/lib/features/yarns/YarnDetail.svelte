@@ -4,6 +4,7 @@
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import PageHeader from "#lib/components/PageHeader.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -239,8 +240,10 @@
     <p>{t("Loading yarn details…", locale)}</p>
   </main>
 {:else if loadState === "error"}
-  <section class="detail-error" aria-labelledby="yarn-error-title">
-    <p class="section-mark">{t("Yarn", locale)}</p>
+  <section
+    class="detail-error page-container page-container--standard"
+    aria-labelledby="yarn-error-title"
+  >
     <h1 id="yarn-error-title">{errorMessage}</h1>
     <div class="error-actions">
       <button class="quiet-button" type="button" onclick={() => (reload += 1)}
@@ -253,44 +256,52 @@
     </div>
   </section>
 {:else if yarn}
-  <main class="yarn-detail" aria-labelledby="yarn-title">
-    <a class="back-link" href={resolve("/yarns")}>← {t("Yarn shelf", locale)}</a
-    >
-    <div class="detail-heading">
-      <div>
-        <p class="section-mark">{t("Yarn details", locale)}</p>
-        <h1 id="yarn-title">{yarn.name}</h1>
+  {@const currentYarn = yarn}
+  <main
+    class="yarn-detail page-container page-container--wide"
+    aria-labelledby="yarn-title"
+  >
+    <PageHeader title={currentYarn.name} titleId="yarn-title">
+      {#snippet context()}
         <p class="identity">
-          {[yarn.brand, yarn.colorway].filter(Boolean).join(" · ")}
+          {[currentYarn.brand, currentYarn.colorway]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
-      </div>
-      <div class="heading-actions">
-        <button
-          class="favorite-button"
-          type="button"
-          aria-pressed={yarn.is_favorite}
-          disabled={busyFavorite}
-          onclick={() => void toggleFavorite()}
-        >
-          <span aria-hidden="true">{yarn.is_favorite ? "★" : "☆"}</span>
-          {yarn.is_favorite
-            ? t("Favorited", locale)
-            : t("Add to favorites", locale)}
-        </button>
-        <a class="primary-action" href={`${resolve("/yarns")}/${yarn.id}/edit`}
-          ><ActionLabel icon="action-update"
-            >{t("Edit yarn", locale)}</ActionLabel
-          ></a
-        >
-        <button
-          class="quiet-button destructive"
-          type="button"
-          onclick={() => deleteDialog?.showModal()}
-          ><ActionLabel icon="action-delete">{t("Delete", locale)}</ActionLabel
-          ></button
-        >
-      </div>
-    </div>
+      {/snippet}
+      {#snippet actions()}
+        <div class="heading-actions">
+          <button
+            class="favorite-button"
+            type="button"
+            aria-pressed={currentYarn.is_favorite}
+            disabled={busyFavorite}
+            onclick={() => void toggleFavorite()}
+          >
+            <span aria-hidden="true">{currentYarn.is_favorite ? "★" : "☆"}</span
+            >
+            {currentYarn.is_favorite
+              ? t("Favorited", locale)
+              : t("Add to favorites", locale)}
+          </button>
+          <a
+            class="primary-action"
+            href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
+            ><ActionLabel icon="action-update"
+              >{t("Edit yarn", locale)}</ActionLabel
+            ></a
+          >
+          <button
+            class="quiet-button destructive"
+            type="button"
+            onclick={() => deleteDialog?.showModal()}
+            ><ActionLabel icon="action-delete"
+              >{t("Delete", locale)}</ActionLabel
+            ></button
+          >
+        </div>
+      {/snippet}
+    </PageHeader>
 
     {#if actionError}<div class="notice-error" role="alert">
         {actionError}
@@ -478,41 +489,7 @@
   .yarn-detail,
   .detail-error {
     display: grid;
-    max-width: 76rem;
     gap: 1.2rem;
-    margin: 0 auto;
-  }
-
-  .back-link {
-    display: inline-flex;
-    min-height: 44px;
-    width: fit-content;
-    align-items: center;
-    color: var(--accent-strong);
-    font-weight: 620;
-    text-decoration: none;
-  }
-
-  .detail-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .section-mark {
-    margin: 0;
-    color: var(--accent-strong);
-    font-size: 0.85rem;
-    font-weight: 650;
-  }
-
-  h1 {
-    margin: 0.3rem 0;
-    font-size: clamp(2rem, 5vw, 3.1rem);
-    letter-spacing: -0.055em;
-    line-height: 1.05;
-    overflow-wrap: anywhere;
   }
 
   .identity,
@@ -740,11 +717,6 @@
   }
 
   @media (max-width: 760px) {
-    .detail-heading {
-      align-items: start;
-      flex-direction: column;
-    }
-
     .heading-actions {
       width: 100%;
     }
