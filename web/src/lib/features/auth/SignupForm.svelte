@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { onDestroy } from "svelte";
   import { onMount } from "svelte";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { ApiError } from "#lib/api.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -238,9 +239,13 @@
       <button type="submit" disabled={submitting || !session.data?.csrf_token}>
         {#if submitting}
           <span class="signup-spinner" aria-hidden="true"></span>
-          {t("Creating account…", locale)}
+          <ActionLabel icon="user-add"
+            >{t("Creating account…", locale)}</ActionLabel
+          >
         {:else}
-          {t("Create account", locale)}
+          <ActionLabel icon="user-add"
+            >{t("Create account", locale)}</ActionLabel
+          >
         {/if}
       </button>
     </form>

@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -636,7 +637,7 @@
           type="button"
           onclick={() => void retryProfile()}
         >
-          {t("Try again", locale)}
+          <ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel>
         </button>
       {:else if profile}
         <p class="profile-email">{profile.email}</p>
@@ -656,7 +657,7 @@
                 avatarError = "";
               }}
             />
-            {t("Choose image", locale)}
+            <ActionLabel icon="upload">{t("Choose image", locale)}</ActionLabel>
           </label>
           {#if avatarFile}
             <span class="selected-file">{avatarFile.name}</span>
@@ -666,9 +667,11 @@
               disabled={operation !== null}
               onclick={() => void uploadSelectedAvatar()}
             >
-              {operation === "avatar-upload"
-                ? t("Uploading…", locale)
-                : t("Upload picture", locale)}
+              <ActionLabel icon="upload">
+                {operation === "avatar-upload"
+                  ? t("Uploading…", locale)
+                  : t("Upload picture", locale)}
+              </ActionLabel>
             </button>
           {/if}
           {#if profile.avatar_url}
@@ -678,9 +681,11 @@
               disabled={operation !== null}
               onclick={() => void removeAvatar()}
             >
-              {operation === "avatar-delete"
-                ? t("Removing…", locale)
-                : t("Remove picture", locale)}
+              <ActionLabel icon="action-delete">
+                {operation === "avatar-delete"
+                  ? t("Removing…", locale)
+                  : t("Remove picture", locale)}
+              </ActionLabel>
             </button>
           {/if}
         </div>
@@ -728,9 +733,11 @@
             type="submit"
             disabled={operation !== null || tokenLoad === "loading"}
           >
-            {operation === "token"
-              ? t("Working…", locale)
-              : t("Create token", locale)}
+            <ActionLabel icon="key">
+              {operation === "token"
+                ? t("Working…", locale)
+                : t("Create token", locale)}
+            </ActionLabel>
           </button>
         </div>
         {#if tokenNameError}<p
@@ -754,7 +761,7 @@
             type="button"
             onclick={() => void retryTokens()}
           >
-            {t("Try again", locale)}
+            <ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel>
           </button>
         </div>
       {:else if tokens.length === 0}
@@ -783,9 +790,11 @@
                 disabled={operation !== null}
                 onclick={(event) => askToRevoke(token, event.currentTarget)}
               >
-                {revokingId === token.id
-                  ? t("Revoking…", locale)
-                  : t("Revoke", locale)}
+                <ActionLabel icon="action-delete">
+                  {revokingId === token.id
+                    ? t("Revoking…", locale)
+                    : t("Revoke", locale)}
+                </ActionLabel>
               </button>
             </li>
           {/each}
@@ -883,9 +892,11 @@
           type="submit"
           disabled={operation !== null}
         >
-          {operation === "password"
-            ? t("Changing password…", locale)
-            : t("Save new password", locale)}
+          <ActionLabel icon="save">
+            {operation === "password"
+              ? t("Changing password…", locale)
+              : t("Save new password", locale)}
+          </ActionLabel>
         </button>
       </form>
     </section>
@@ -903,7 +914,9 @@
         !session.data?.user}
       onclick={() => void signOutFromAccount()}
     >
-      {signOutBusy ? t("Working…", locale) : t("Sign out", locale)}
+      <ActionLabel icon="sign-out">
+        {signOutBusy ? t("Working…", locale) : t("Sign out", locale)}
+      </ActionLabel>
     </button>
   </section>
 </section>
@@ -950,7 +963,7 @@
         type="button"
         onclick={() => void copyToken()}
       >
-        {t("Copy token", locale)}
+        <ActionLabel icon="copy">{t("Copy token", locale)}</ActionLabel>
       </button>
       {#if copyStatus}<p class="copy-status" role="status" aria-live="polite">
           {copyStatus}
@@ -965,7 +978,7 @@
         disabled={!tokenAcknowledged}
         onclick={hideRevealedToken}
       >
-        {t("Hide token", locale)}
+        <ActionLabel icon="close">{t("Hide token", locale)}</ActionLabel>
       </button>
     </div>
   {/if}
@@ -994,7 +1007,7 @@
           disabled={operation === "token"}
           onclick={() => revokeDialog?.close()}
         >
-          {t("Keep token", locale)}
+          <ActionLabel icon="cancel">{t("Keep token", locale)}</ActionLabel>
         </button>
         <button
           class="danger-button"
@@ -1002,9 +1015,11 @@
           disabled={operation !== null}
           onclick={() => void confirmRevoke()}
         >
-          {operation === "token"
-            ? t("Revoking…", locale)
-            : t("Revoke token", locale)}
+          <ActionLabel icon="action-delete">
+            {operation === "token"
+              ? t("Revoking…", locale)
+              : t("Revoke token", locale)}
+          </ActionLabel>
         </button>
       </div>
     </div>

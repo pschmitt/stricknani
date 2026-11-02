@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -380,7 +381,8 @@
     <h1 id="form-error-title">{loadError}</h1>
     <div class="form-actions">
       <button class="quiet-button" type="button" onclick={() => (reload += 1)}
-        >{t("Try again", locale)}</button
+        ><ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel
+        ></button
       >
       <a class="primary-action" href={resolve("/yarns")}
         >{t("Back to yarns", locale)}</a
@@ -683,13 +685,17 @@
         <button
           class="primary-action"
           type="submit"
-          disabled={saving || mediaBusy}>{saveLabel}</button
+          disabled={saving || mediaBusy}
+          ><ActionLabel icon={yarnId === null ? "create" : "save"}
+            >{saveLabel}</ActionLabel
+          ></button
         >
         <a
           class="quiet-button"
           href={yarnId === null
             ? resolve("/yarns")
-            : `${resolve("/yarns")}/${yarnId}`}>{t("Cancel", locale)}</a
+            : `${resolve("/yarns")}/${yarnId}`}
+          ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
         >
         {#if isDirty}<span class="draft-note"
             >{t("Your edits stay here if saving fails.", locale)}</span

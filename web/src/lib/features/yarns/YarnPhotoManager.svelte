@@ -1,5 +1,7 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -192,7 +194,9 @@
                 aria-label={t("Remove photo", locale)}
                 onclick={() => confirmDelete(photo)}
               >
-                {t("Remove", locale)}
+                <ActionLabel icon="action-delete"
+                  >{t("Remove", locale)}</ActionLabel
+                >
               </button>
             {/if}
           </div>
@@ -219,7 +223,9 @@
     onclose={() => (selectedPhoto = null)}
   >
     <form method="dialog">
-      <button aria-label={t("Close photo", locale)}>×</button>
+      <button aria-label={t("Close photo", locale)}
+        ><NavIcon name="close" /></button
+      >
     </form>
     {#if selectedPhoto}
       <img
@@ -243,7 +249,7 @@
         class="quiet-button"
         onclick={() => deleteDialog?.close()}
       >
-        {t("Keep photo", locale)}
+        <ActionLabel icon="cancel">{t("Keep photo", locale)}</ActionLabel>
       </button>
       <button
         type="button"
@@ -251,7 +257,11 @@
         disabled={deleting}
         onclick={() => void removePhoto()}
       >
-        {deleting ? t("Removing…", locale) : t("Remove photo", locale)}
+        <ActionLabel icon="action-delete"
+          >{deleting
+            ? t("Removing…", locale)
+            : t("Remove photo", locale)}</ActionLabel
+        >
       </button>
     </div>
   </dialog>

@@ -3,7 +3,9 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -152,8 +154,7 @@
       </p>
     </div>
     <a class="new-project" href={resolve("/projects/new")}>
-      <span aria-hidden="true">+</span>
-      {t("New project", locale)}
+      <ActionLabel icon="create">{t("New project", locale)}</ActionLabel>
     </a>
   </header>
 
@@ -201,7 +202,9 @@
       />
       <span>{t("Favorites", locale)}</span>
     </label>
-    <button class="search-button" type="submit">{t("Search", locale)}</button>
+    <button class="search-button" type="submit">
+      <ActionLabel icon="search">{t("Search", locale)}</ActionLabel>
+    </button>
     {#if hasFilters}
       <button
         class="clear-button"
@@ -215,7 +218,9 @@
             favorite: false,
             page: 1,
           });
-        }}>{t("Clear filters", locale)}</button
+        }}
+        ><ActionLabel icon="reset">{t("Clear filters", locale)}</ActionLabel
+        ></button
       >
     {/if}
   </form>
@@ -226,7 +231,8 @@
       <button
         type="button"
         aria-label={t("Remove tag filter", locale)}
-        onclick={() => applyFilters({ ...filters, tag: "" })}>×</button
+        onclick={() => applyFilters({ ...filters, tag: "" })}
+        ><NavIcon name="close" /></button
       >
     </div>
   {/if}
@@ -235,7 +241,7 @@
     <div class="notice-error" role="alert">
       <p>{errorMessage}</p>
       <button type="button" onclick={() => (reload += 1)}>
-        {t("Try again", locale)}
+        <ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel>
       </button>
     </div>
   {/if}
@@ -266,7 +272,9 @@
               favorite: false,
               page: 1,
             });
-          }}>{t("Clear filters", locale)}</button
+          }}
+          ><ActionLabel icon="reset">{t("Clear filters", locale)}</ActionLabel
+          ></button
         >
       {:else}
         <h2>{t("Your project library is ready.", locale)}</h2>
@@ -277,7 +285,7 @@
           )}
         </p>
         <a class="secondary-button" href={resolve("/projects/new")}>
-          {t("Add a project", locale)}
+          <ActionLabel icon="create">{t("Add a project", locale)}</ActionLabel>
         </a>
       {/if}
     </div>
@@ -345,7 +353,7 @@
           disabled={meta.page <= 1}
           onclick={() => changePage(meta.page - 1)}
         >
-          {t("Previous", locale)}
+          <ActionLabel icon="previous">{t("Previous", locale)}</ActionLabel>
         </button>
         <span>{t("Page", locale)} {meta.page}</span>
         <button
@@ -353,7 +361,7 @@
           disabled={!meta.has_more}
           onclick={() => changePage(meta.page + 1)}
         >
-          {t("Next", locale)}
+          <ActionLabel icon="next">{t("Next", locale)}</ActionLabel>
         </button>
       </nav>
     {/if}
@@ -407,11 +415,6 @@
     font-weight: 650;
     text-decoration: none;
     cursor: pointer;
-  }
-
-  .new-project span {
-    font-size: 1.2rem;
-    line-height: 1;
   }
 
   .filters {

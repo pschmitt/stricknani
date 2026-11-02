@@ -233,7 +233,7 @@ HTML messages. Reuse terminology without preserving the old layout or copy.
 
 ## Backlog
 
-Track the work as T120.1–T120.12 in `TODO.md`. Each slice owns a clear area and
+Track the work as T120.1–T120.14 in `TODO.md`. Each slice owns a clear area and
 lands as a small reviewable checkpoint. Coordinate under the repository’s
 Concord workspace; the Luna implementation waves below own only their named
 frontend area, while the parent integrates and reviews API, authorization,
@@ -292,7 +292,7 @@ the coordinator reviews their contracts and security-sensitive changes.
   after route consumers are gone, update docs/screenshots, and report remaining
   limitations. Keep preview data isolated; do not cut over production.
 
-- [ ] **T120.10 — Requested update activation.** Replace the close-all-tabs
+- [x] **T120.10 — Requested update activation.** Replace the close-all-tabs
   notice with a working reload-to-update action. Activation follows an explicit
   click and a bounded readiness handshake across open app tabs. Protect dirty
   forms and in-flight mutations before activation; cancel or time out cleanly
@@ -300,7 +300,7 @@ the coordinator reviews their contracts and security-sensitive changes.
   finding a new worker alone must not reload a tab. Keep cache contents public
   and retain the assets needed by older clients until their transition is
   confirmed. Cover clean, dirty, busy, multiple-tab, timeout and retry cases.
-- [ ] **T120.11 — Audit resource history.** Display project, yarn and category
+- [x] **T120.11 — Audit resource history.** Display project, yarn and category
   names with useful links. The user explicitly approved a separate read-only
   administrator view for resources belonging to other users; ordinary resource
   ownership checks, edit permissions and API v1 remain unchanged. Offer an
@@ -312,7 +312,7 @@ the coordinator reviews their contracts and security-sensitive changes.
   fallback states rather than invented values. Test authorization, migration,
   rollback, historical projection and the read-only browser journey.
 
-- [ ] **T120.12 — Reusable resource cards.** Share project, yarn and category
+- [x] **T120.12 — Reusable resource cards.** Share project, yarn and category
   presentation across library lists, audit events and related resources inside
   project/yarn readers. Use compact thumbnail rows for dense contexts and the
   existing larger library layout where appropriate. Show names as keyboard
@@ -322,6 +322,18 @@ the coordinator reviews their contracts and security-sensitive changes.
   represent the current resource, not an event-time image snapshot. Keep
   favorite and other controls outside links, preserve phone spacing, and test
   cross-owner image authorization, deleted resources and related-resource links.
+
+- [ ] **T120.13 — Decouple frontend packaging from Rust compilation.** Split
+  the frontend-independent Rust build from final web/server assembly so
+  frontend-only changes do not rebuild Rust. Pass `corePackage` and `webPackage`
+  through `nix/module.nix`; verify derivation dependencies and the default
+  module package. The current preview's explicit package override is unaffected.
+
+- [ ] **T120.14 — Compact header and action icons.** Use the existing cute logo
+  beside the title and a small version line. Put the profile avatar on the right,
+  follow native browser history for Back, and preserve dirty-form guards. Add
+  shared bounded icons beside action labels throughout imports, projects, yarns,
+  account and administration. Verify narrow phone widths and keyboard names.
 
 ### Luna implementation waves and ownership
 

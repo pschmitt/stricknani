@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { version as appVersion } from "$app/env";
   import { resolve } from "$app/paths";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -365,16 +366,18 @@
           type="button"
           onclick={requestReloadUpdate}
           disabled={requestBusy}
-          >{requestBusy ? t("Working…", locale) : actionLabel}</button
+          ><ActionLabel icon="refresh"
+            >{requestBusy ? t("Working…", locale) : actionLabel}</ActionLabel
+          ></button
         >
       {/if}
       {#if (noticeState === "preparing" || noticeState === "committing") && !commitAccepted}
         <button type="button" onclick={cancelUpdate} disabled={commitAccepted}>
-          {t("Cancel update", locale)}
+          <ActionLabel icon="cancel">{t("Cancel update", locale)}</ActionLabel>
         </button>
       {:else if noticeState === "available" || noticeState === "blocked" || noticeState === "cancelled"}
         <button type="button" onclick={() => (dismissed = true)}>
-          {t("Later", locale)}
+          <ActionLabel icon="close">{t("Later", locale)}</ActionLabel>
         </button>
       {/if}
     </div>

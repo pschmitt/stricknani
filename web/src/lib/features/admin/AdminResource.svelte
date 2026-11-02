@@ -3,6 +3,7 @@
   import { page } from "$app/state";
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
@@ -276,7 +277,10 @@
       {/if}
       <p>{t("Read-only view", locale)}</p>
     </div>
-    <a class="secondary-button" href={resolve("/admin/audit")}>
+    <a
+      class="secondary-button resource-back-link"
+      href={resolve("/admin/audit")}
+    >
       <span class="button-content">
         <NavIcon name="previous" />
         <span>{t("Back to audit log", locale)}</span>
@@ -488,8 +492,9 @@
                     href={attachment.url}
                     download={attachment.original_filename}
                   >
-                    <NavIcon name="imports" />
-                    <span>{attachment.original_filename}</span>
+                    <ActionLabel icon="download"
+                      >{attachment.original_filename}</ActionLabel
+                    >
                   </a>
                   <span
                     >{attachment.content_type} · {formatBytes(
@@ -673,6 +678,38 @@
   .resource-heading > div > p:last-child {
     margin: 0.35rem 0 0;
     color: var(--muted);
+  }
+  .resource-back-link {
+    box-sizing: border-box;
+    display: inline-flex;
+    min-height: 44px;
+    max-width: 100%;
+    align-items: center;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    color: var(--ink);
+    background: var(--surface);
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .resource-back-link .button-content {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .resource-back-link :global(svg) {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 1rem;
+  }
+  .resource-back-link:focus-visible {
+    outline: 3px solid var(--accent-strong);
+    outline-offset: 2px;
   }
   .section-mark {
     margin: 0 0 0.25rem;

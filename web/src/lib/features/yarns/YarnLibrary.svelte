@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
@@ -135,7 +136,7 @@
       </p>
     </div>
     <a class="primary-action" href={resolve("/yarns/new")}>
-      <span aria-hidden="true">+</span>{t("Add yarn", locale)}
+      <ActionLabel icon="create">{t("Add yarn", locale)}</ActionLabel>
     </a>
   </header>
 
@@ -166,7 +167,9 @@
       />
       <span>{t("Favorites only", locale)}</span>
     </label>
-    <button class="search-button" type="submit">{t("Search", locale)}</button>
+    <button class="search-button" type="submit"
+      ><ActionLabel icon="search">{t("Search", locale)}</ActionLabel></button
+    >
     {#if hasFilters}
       <button
         class="clear-button"
@@ -174,7 +177,9 @@
         onclick={() => {
           searchText = "";
           applyFilters({ query: "", favorite: false, page: 1 });
-        }}>{t("Clear filters", locale)}</button
+        }}
+        ><ActionLabel icon="reset">{t("Clear filters", locale)}</ActionLabel
+        ></button
       >
     {/if}
   </form>
@@ -183,7 +188,7 @@
     <div class="notice-error" role="alert">
       <p>{errorMessage}</p>
       <button type="button" onclick={() => (reload += 1)}>
-        {t("Try again", locale)}
+        <ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel>
       </button>
     </div>
   {/if}
@@ -208,7 +213,9 @@
           onclick={() => {
             searchText = "";
             applyFilters({ query: "", favorite: false, page: 1 });
-          }}>{t("Clear filters", locale)}</button
+          }}
+          ><ActionLabel icon="reset">{t("Clear filters", locale)}</ActionLabel
+          ></button
         >
       {:else}
         <h2>{t("Your yarn shelf is ready.", locale)}</h2>
@@ -219,7 +226,9 @@
           )}
         </p>
         <a class="secondary-action" href={resolve("/yarns/new")}
-          >{t("Add your first yarn", locale)}</a
+          ><ActionLabel icon="create"
+            >{t("Add your first yarn", locale)}</ActionLabel
+          ></a
         >
       {/if}
     </section>
@@ -273,13 +282,15 @@
         type="button"
         disabled={meta.page <= 1}
         onclick={() => changePage(meta.page - 1)}
-        >{t("Previous", locale)}</button
+        ><ActionLabel icon="previous">{t("Previous", locale)}</ActionLabel
+        ></button
       >
       <span>{t("Page", locale)} {meta.page}</span>
       <button
         type="button"
         disabled={!meta.has_more}
-        onclick={() => changePage(meta.page + 1)}>{t("Next", locale)}</button
+        onclick={() => changePage(meta.page + 1)}
+        ><ActionLabel icon="next">{t("Next", locale)}</ActionLabel></button
       >
     </nav>
   {/if}
@@ -332,11 +343,6 @@
     font-weight: 650;
     text-decoration: none;
     cursor: pointer;
-  }
-
-  .primary-action span {
-    font-size: 1.2rem;
-    line-height: 1;
   }
 
   .filters {

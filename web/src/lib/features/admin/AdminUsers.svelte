@@ -3,6 +3,7 @@
   import { page } from "$app/state";
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -749,7 +750,7 @@
         type="button"
         disabled={operation !== null}
         onclick={() => closeDialog(createDialog, createPassword)}
-        >{t("Cancel", locale)}</button
+        ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></button
       >
       <button
         class="primary-button"
@@ -812,7 +813,8 @@
         onclick={() => {
           activeTarget = null;
           activeDialog?.close();
-        }}>{t("Cancel", locale)}</button
+        }}
+        ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></button
       >
       <button
         class="primary-button"
@@ -892,7 +894,7 @@
         type="button"
         disabled={operation !== null}
         onclick={() => closeDialog(resetDialog, resetPasswordValue)}
-        >{t("Cancel", locale)}</button
+        ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></button
       >
       <button
         class="primary-button"

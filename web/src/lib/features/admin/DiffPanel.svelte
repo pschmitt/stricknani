@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -190,9 +191,11 @@
       <p class="section-mark">{t("Administrator", locale)}</p>
       <h1 id="diff-title">{t("Recorded changes", locale)}</h1>
     </div>
-    <a class="secondary-button" href="/app/admin/audit">
-      <NavIcon name="previous" />
-      {t("Back to audit log", locale)}
+    <a class="secondary-button diff-back-link" href="/app/admin/audit">
+      <span class="diff-back-link__content">
+        <NavIcon name="previous" />
+        <span>{t("Back to audit log", locale)}</span>
+      </span>
     </a>
   </header>
 
@@ -206,7 +209,9 @@
       <button
         class="secondary-button"
         type="button"
-        onclick={() => (retry += 1)}>{t("Try again", locale)}</button
+        onclick={() => (retry += 1)}
+        ><ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel
+        ></button
       >
     </section>
   {:else if detail}
@@ -290,6 +295,38 @@
   .diff-header h1 {
     margin: 0;
   }
+  .diff-back-link {
+    box-sizing: border-box;
+    display: inline-flex;
+    min-height: 44px;
+    max-width: 100%;
+    align-items: center;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    color: var(--ink);
+    background: var(--surface);
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .diff-back-link__content {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .diff-back-link :global(svg) {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 1rem;
+  }
+  .diff-back-link:focus-visible {
+    outline: 3px solid var(--accent-strong);
+    outline-offset: 2px;
+  }
   .section-mark {
     margin: 0 0 0.3rem;
     color: var(--accent-strong);
@@ -354,6 +391,10 @@
     .diff-header {
       align-items: start;
       flex-direction: column;
+    }
+    .diff-back-link {
+      max-width: 100%;
+      white-space: normal;
     }
     .change-values {
       grid-template-columns: 1fr;

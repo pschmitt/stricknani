@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -240,7 +241,8 @@
     <h1 id="yarn-error-title">{errorMessage}</h1>
     <div class="error-actions">
       <button class="quiet-button" type="button" onclick={() => (reload += 1)}
-        >{t("Try again", locale)}</button
+        ><ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel
+        ></button
       >
       <a class="primary-action" href={resolve("/yarns")}
         >{t("Back to yarns", locale)}</a
@@ -273,13 +275,16 @@
             : t("Add to favorites", locale)}
         </button>
         <a class="primary-action" href={`${resolve("/yarns")}/${yarn.id}/edit`}
-          >{t("Edit yarn", locale)}</a
+          ><ActionLabel icon="action-update"
+            >{t("Edit yarn", locale)}</ActionLabel
+          ></a
         >
         <button
           class="quiet-button destructive"
           type="button"
           onclick={() => deleteDialog?.showModal()}
-          >{t("Delete", locale)}</button
+          ><ActionLabel icon="action-delete">{t("Delete", locale)}</ActionLabel
+          ></button
         >
       </div>
     </div>

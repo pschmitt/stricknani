@@ -253,7 +253,9 @@
           <div class="event-meta">
             {#if event.has_changes}
               <a class="show-diff" href={`/app/admin/audit/${event.id}`}>
-                {t("Show diff", locale)}
+                <span class="button-content"
+                  ><NavIcon name="preview" />{t("Show diff", locale)}</span
+                >
               </a>
             {/if}
             <time datetime={event.created_at}

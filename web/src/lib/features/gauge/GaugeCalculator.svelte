@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -412,7 +413,9 @@
 
     <div class="form-actions">
       <button class="calculate-button" type="submit" disabled={submitting}>
-        {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
+        <ActionLabel icon="gauge">
+          {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
+        </ActionLabel>
       </button>
       <button
         class="clear-button"
@@ -420,7 +423,7 @@
         onclick={clearInputs}
         disabled={submitting || !hasInputs}
       >
-        {t("Clear", locale)}
+        <ActionLabel icon="reset">{t("Clear", locale)}</ActionLabel>
       </button>
     </div>
   </form>

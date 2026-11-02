@@ -423,7 +423,7 @@ def _assert_step_in_usable_viewport(page: Page, step_id: int) -> None:
     bounds: object = page.locator(f"#step-{step_id}").evaluate(
         """element => {
           const step = element.getBoundingClientRect();
-          const header = document.querySelector('.mobile-header');
+          const header = document.querySelector('.app-header');
           const bottomNavigation = document.querySelector('.mobile-navigation');
           const headerBottom = header && getComputedStyle(header).display !== 'none'
             ? header.getBoundingClientRect().bottom
@@ -459,7 +459,8 @@ def _assert_mobile_app_header(page: Page) -> None:
     )
     _require(
         page.locator(
-            ".page-header, .header-user, .header-sign-out, .mobile-sign-out"
+            ".content-main .page-header, .header-user, "
+            ".header-sign-out, .mobile-sign-out"
         ).count()
         == 0,
         "the authenticated shell still renders a legacy page header or sign-out",
@@ -469,10 +470,10 @@ def _assert_mobile_app_header(page: Page) -> None:
         "the authenticated secondary navigation has no decorative icons",
     )
     _require(
-        page.locator(".mobile-header .locale-switcher").count() == 0,
+        page.locator(".app-header .locale-switcher").count() == 0,
         "the compact mobile header still reserves space for language controls",
     )
-    account_target = page.locator(".mobile-header .mobile-account")
+    account_target = page.locator(".app-header .header-account")
     _require(
         account_target.is_visible()
         and ACCOUNT_HEADING_NAME.fullmatch(
@@ -484,8 +485,8 @@ def _assert_mobile_app_header(page: Page) -> None:
     )
     dimensions: object = account_target.evaluate(
         "node => { const rect = node.getBoundingClientRect(); "
-        "const wordmark = document.querySelector('.mobile-header .wordmark'); "
-        "const header = document.querySelector('.mobile-header'); "
+        "const wordmark = document.querySelector('.app-header .brand-lockup'); "
+        "const header = document.querySelector('.app-header'); "
         "const wordmarkRight = wordmark?.getBoundingClientRect().right ?? -1; "
         "const headerRight = header?.getBoundingClientRect().right ?? -1; "
         "return {width: rect.width, height: rect.height, left: rect.left, "
@@ -502,7 +503,7 @@ def _assert_mobile_app_header(page: Page) -> None:
 
 
 def _assert_desktop_account_target(page: Page) -> None:
-    account_target = page.locator(".account-summary")
+    account_target = page.locator(".app-header .header-account")
     _require(
         account_target.is_visible()
         and ACCOUNT_HEADING_NAME.fullmatch(
@@ -586,8 +587,8 @@ def _svg_shape_signature(icon: Locator) -> str:
 
 
 def _assert_shell_avatar(page: Page, *, mobile: bool, present: bool) -> None:
-    target = ".mobile-account" if mobile else ".account-summary"
-    image = page.locator(f"{target} .avatar img")
+    target = ".app-header .header-account"
+    image = page.locator(f"{target} .user-avatar img")
     if not present:
         _require(image.count() == 0, "the removed avatar remains in the app shell")
         return
@@ -608,7 +609,7 @@ def _open_account_from_profile(page: Page, *, mobile: bool = False) -> None:
         _assert_mobile_app_header(page)
     else:
         _assert_desktop_account_target(page)
-    selector = ".mobile-header .mobile-account" if mobile else ".account-summary"
+    selector = ".app-header .header-account"
     account_link = page.locator(selector)
     _require(account_link.is_visible(), "the Account profile link is unavailable")
     _require(
@@ -1094,7 +1095,7 @@ def _exercise_gauge_calculator(
         state="visible"
     )
     if signed_in:
-        page.locator(".mobile-header .mobile-account").click()
+        page.locator(".app-header .header-account").click()
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
@@ -1121,7 +1122,7 @@ def _exercise_gauge_calculator(
         state="visible"
     )
     if signed_in:
-        page.locator(".mobile-header .mobile-account").click()
+        page.locator(".app-header .header-account").click()
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
@@ -1156,7 +1157,7 @@ def _exercise_gauge_calculator(
         state="visible"
     )
     if signed_in:
-        page.locator(".mobile-header .mobile-account").click()
+        page.locator(".app-header .header-account").click()
         page.get_by_role("heading", name="Konto", exact=True).wait_for(state="visible")
         page.locator(".account-language .locale-switcher button").nth(0).click()
         page.goto(f"{origin}/app/gauge", wait_until="networkidle")
@@ -1469,7 +1470,7 @@ def _mask_fixture_identity(page: Page) -> None:
     page.locator(".profile-email").evaluate_all(
         "nodes => nodes.forEach(node => node.textContent = 'Demo account')"
     )
-    page.locator(".avatar").evaluate_all(
+    page.locator(".user-avatar").evaluate_all(
         "nodes => nodes.forEach(node => node.textContent = 'D')"
     )
     page.locator("#email, #password").evaluate_all(
@@ -1571,10 +1572,10 @@ def _check_mobile_language_and_screenshots(
     page.locator(".project-card .resource-card__link").first.wait_for(state="visible")
 
     _require(
-        page.locator(".mobile-header .locale-switcher").count() == 0,
+        page.locator(".app-header .locale-switcher").count() == 0,
         "the mobile header still reserves space for language controls",
     )
-    page.locator(".mobile-header .mobile-account").click()
+    page.locator(".app-header .header-account").click()
     page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
     page.locator(".account-language .locale-switcher").wait_for(state="visible")
     _require(
@@ -2887,9 +2888,12 @@ def run_acceptance(
                 if width == 320:
                     _require(
                         page.locator(
-                            ".mobile-header .wordmark > span:last-child"
+                            ".app-header .brand-lockup .brand-title"
+                        ).is_visible()
+                        and page.locator(
+                            ".app-header .brand-lockup .brand-version"
                         ).is_visible(),
-                        "the brand name is not visible in the 320px header",
+                        "the brand title or version is not visible in the 320px header",
                     )
                 if width == 768:
                     metrics = page.evaluate(
@@ -3653,9 +3657,8 @@ def run_acceptance(
                         "link", name="Account", exact=False
                     )
                     profile_links = (
-                        page.locator(".account-summary[href$='/account']").count() == 1
-                        and page.locator(
-                            ".mobile-header .mobile-account[href$='/account']"
+                        page.locator(
+                            ".app-header .header-account[href$='/account']"
                         ).count()
                         == 1
                     )
@@ -3861,7 +3864,7 @@ def run_acceptance(
             )
             page.set_viewport_size({"width": 1280, "height": 844})
             project_name.fill("Account navigation draft")
-            account_link = page.locator(".account-summary")
+            account_link = page.locator(".app-header .header-account")
             _require(
                 account_link.is_visible()
                 and ACCOUNT_HEADING_NAME.fullmatch(

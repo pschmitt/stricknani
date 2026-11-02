@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { recognizeImageText, type OcrLanguage } from "./media-tools-api";
@@ -195,7 +196,9 @@
         )}
       </p>
       <button type="button" disabled={busy} onclick={() => void recognize()}>
-        {busy ? t("Recognizing…", locale) : t("Recognize text", locale)}
+        <ActionLabel icon="search">
+          {busy ? t("Recognizing…", locale) : t("Recognize text", locale)}
+        </ActionLabel>
       </button>
       {#if errorMessage}<p class="ocr-error" role="alert">
           {errorMessage}
@@ -209,9 +212,11 @@
             <textarea readonly rows="6" value={text} aria-label={label}
             ></textarea>
             <button type="button" onclick={() => void copyText()}>
-              {copied
-                ? t("Text copied", locale)
-                : t("Copy recognized text", locale)}
+              <ActionLabel icon={copied ? "check" : "copy"}>
+                {copied
+                  ? t("Text copied", locale)
+                  : t("Copy recognized text", locale)}
+              </ActionLabel>
             </button>
           {/if}
         </section>

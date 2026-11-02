@@ -122,6 +122,16 @@ Use this file as the operational source of truth for working in Stricknani.
   matches its source template and manifest substitutions. Record these hashes
   with the receipt so stale runners or builds cannot be mistaken for failures
   of newer source.
+- When shared cards place subtitle or metadata text inside a link, scope browser
+  locators to the card, assert the expected title as part of its accessible
+  name, and verify the destination separately. Keep owner-scoped thumbnail URLs
+  distinct from upload and mutation endpoints.
+- The header Back button follows native browser history. Do not infer parent
+  routes or maintain a separate route stack. Preserve dirty-form navigation
+  guards, and hide Back when the browser has no previous history entry.
+- Use shared, bounded decorative icons alongside action labels. Preserve
+  accessible names, keyboard behavior and compact phone layouts; existing
+  icon-only controls do not need a second icon.
 - Device checks in an existing browser profile must use a unique per-run
   loopback hostname, not just a new port: cookies are shared across ports.
   Create an owned tab and clear only that test origin during cleanup.

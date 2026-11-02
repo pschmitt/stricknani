@@ -1,22 +1,19 @@
 <script lang="ts">
-  import { onMount, untrack, type Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import { afterNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
-    hasInternalRouteBack,
-    parentRouteFallback,
-    resetInternalRouteStack,
     shouldRedirectExpiredSession,
     showPublicGauge,
-    trackInternalRoute,
-    type AppShellRoutes,
   } from "#lib/app-shell.ts";
-  import BrandMark from "#lib/components/BrandMark.svelte";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import BrandHeader from "#lib/components/BrandHeader.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import PwaUpdate from "#lib/components/PwaUpdate.svelte";
   import SignInForm from "#lib/components/SignInForm.svelte";
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import "../app.css";
@@ -36,22 +33,7 @@
       pathname.startsWith("/app/admin/resources"),
   );
   const routeIsAdminOnly = $derived(adminRoute && !user?.is_admin);
-  const shellRoutes: AppShellRoutes = {
-    projects: linkTo("/projects"),
-    yarns: linkTo("/yarns"),
-    more: linkTo("/more"),
-    imports: linkTo("/imports"),
-    categories: linkTo("/categories"),
-    adminAudit: linkTo("/admin/audit"),
-  };
-  let navigationRevision = $state(0);
-  let trackedUserId: number | null | undefined;
-  const canGoBack = $derived.by(() => {
-    navigationRevision;
-    return hasInternalRouteBack(pathname);
-  });
-  const backFallback = $derived(parentRouteFallback(pathname, shellRoutes));
-  const showBackButton = $derived(canGoBack || backFallback !== pathname);
+  let canGoBack = $state(false);
 
   const mainNavigation = [
     { href: "/projects", label: msg("Projects"), icon: "projects" },
@@ -66,35 +48,16 @@
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
   ] as const;
 
-  let avatarFailed = $state(false);
   const avatarUrl = $derived(user?.avatar_url ?? null);
 
-  afterNavigate(({ to, type }) => {
-    if (to) trackInternalRoute(to.url.pathname, type);
-    navigationRevision += 1;
-  });
-
-  $effect(() => {
-    const userId = user?.id ?? null;
-    if (trackedUserId !== userId) {
-      trackedUserId = userId;
-      resetInternalRouteStack();
-      trackInternalRoute(
-        untrack(() => page.url.pathname),
-        "enter",
-      );
-      navigationRevision += 1;
-    }
-  });
-
-  $effect(() => {
-    avatarUrl;
-    avatarFailed = false;
-  });
+  afterNavigate(refreshCanGoBack);
 
   onMount(() => {
+    refreshCanGoBack();
+    window.addEventListener("popstate", refreshCanGoBack);
     void loadCatalog();
     void refreshSession();
+    return () => window.removeEventListener("popstate", refreshCanGoBack);
   });
 
   $effect(() => {
@@ -134,24 +97,12 @@
     return resolve(path);
   }
 
+  function refreshCanGoBack() {
+    canGoBack = window.history.length > 1;
+  }
+
   function goBack() {
-    if (hasInternalRouteBack(page.url.pathname)) {
-      window.history.back();
-      return;
-    }
-    const currentPath = page.url.pathname;
-    const fallbackPath = backFallback;
-    if (fallbackPath === currentPath) return;
-    void goto(fallbackPath, { replaceState: true })
-      .then(() => {
-        if (page.url.pathname !== fallbackPath) return;
-        resetInternalRouteStack();
-        trackInternalRoute(fallbackPath, "enter");
-        navigationRevision += 1;
-      })
-      .catch(() => {
-        // A cancelled or failed navigation must leave the existing route stack intact.
-      });
+    if (window.history.length > 1) window.history.back();
   }
 
   function isActive(path: AppPath): boolean {
@@ -184,13 +135,10 @@
 {#if publicGauge}
   <div class="public-tool-shell">
     <header class="public-tool-header">
-      <a class="wordmark" href={linkTo("/login")}>
-        <BrandMark />
-        <span>Stricknani</span>
-      </a>
+      <BrandHeader href={linkTo("/login")} />
       <LocaleSwitcher />
       <a class="public-sign-in" href={linkTo("/login")}
-        >{t("Sign in", locale)}</a
+        ><ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel></a
       >
     </header>
     <main id="main-content" class="public-tool-main">
@@ -205,7 +153,7 @@
     aria-live="polite"
   >
     <div class="boot-content">
-      <BrandMark />
+      <BrandHeader href={linkTo("/login")} />
       <p>{t("Opening your workspace…", locale)}</p>
       <span class="spinner" aria-hidden="true"></span>
     </div>
@@ -213,10 +161,7 @@
 {:else if session.status === "error"}
   <main id="main-content" class="error-screen">
     <section class="connection-panel" aria-labelledby="connection-title">
-      <a class="wordmark" href={linkTo("/")}>
-        <BrandMark />
-        <span>Stricknani</span>
-      </a>
+      <BrandHeader href={linkTo("/")} />
       <h1 id="connection-title">
         {t("Your workspace is taking a moment.", locale)}
       </h1>
@@ -245,24 +190,28 @@
   </div>
 {:else}
   <div class="app-shell">
-    <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
-      <div class="rail-brand">
-        {#if showBackButton}
-          <button
-            class="shell-back-button"
-            type="button"
-            aria-label={t("Back", locale)}
-            onclick={goBack}
-          >
-            <NavIcon name="previous" />
-          </button>
-        {/if}
-        <a class="wordmark rail-wordmark" href={linkTo("/")}>
-          <BrandMark />
-          <span>Stricknani</span>
-        </a>
-      </div>
+    <header class="app-header page-header">
+      {#if canGoBack}
+        <button
+          class="shell-back-button"
+          type="button"
+          aria-label={t("Back", locale)}
+          onclick={goBack}
+        >
+          <NavIcon name="previous" />
+        </button>
+      {/if}
+      <BrandHeader href={linkTo("/")} />
+      <a
+        class="header-account"
+        href={linkTo("/account")}
+        aria-label={t("Account", locale)}
+      >
+        <UserAvatar {avatarUrl} name={user.email} />
+      </a>
+    </header>
 
+    <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
       <nav class="primary-nav" aria-label={t("Your library", locale)}>
         {#each mainNavigation as item}
           <a
@@ -308,60 +257,7 @@
           </a>
         {/if}
       </nav>
-
-      <div class="rail-footer">
-        <a
-          class="account-summary"
-          href={linkTo("/account")}
-          aria-label={t("Account", locale)}
-        >
-          <span class="avatar" aria-hidden="true">
-            {#if avatarUrl && !avatarFailed}
-              <img
-                src={avatarUrl}
-                alt=""
-                onerror={() => (avatarFailed = true)}
-              />
-            {:else}
-              {user.email.slice(0, 1).toUpperCase()}
-            {/if}
-          </span>
-          <span class="account-email" title={user.email}>{user.email}</span>
-        </a>
-      </div>
     </aside>
-
-    <div class="mobile-header">
-      <div class="mobile-brand">
-        {#if showBackButton}
-          <button
-            class="shell-back-button"
-            type="button"
-            aria-label={t("Back", locale)}
-            onclick={goBack}
-          >
-            <NavIcon name="previous" />
-          </button>
-        {/if}
-        <a class="wordmark" href={linkTo("/")}>
-          <BrandMark />
-          <span>Stricknani</span>
-        </a>
-      </div>
-      <a
-        class="mobile-account"
-        href={linkTo("/account")}
-        aria-label={t("Account", locale)}
-      >
-        <span class="avatar" aria-hidden="true">
-          {#if avatarUrl && !avatarFailed}
-            <img src={avatarUrl} alt="" onerror={() => (avatarFailed = true)} />
-          {:else}
-            {user.email.slice(0, 1).toUpperCase()}
-          {/if}
-        </span>
-      </a>
-    </div>
 
     <div class="content-column">
       {#if routeIsAdminOnly}
@@ -422,7 +318,7 @@
     align-items: center;
   }
 
-  .public-tool-header .wordmark {
+  .public-tool-header :global(.brand-lockup) {
     text-decoration: none;
   }
 
@@ -458,14 +354,18 @@
       padding-inline: 0.5rem;
     }
 
-    .public-tool-header .wordmark {
+    .public-tool-header :global(.brand-lockup) {
       min-width: 0;
       overflow: hidden;
       gap: 0.4rem;
-      font-size: 0.95rem;
     }
 
-    .public-tool-header .wordmark > span:last-child {
+    .public-tool-header :global(.brand-copy) {
+      overflow: hidden;
+    }
+
+    .public-tool-header :global(.brand-title) {
+      font-size: 0.95rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

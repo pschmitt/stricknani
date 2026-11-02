@@ -4,7 +4,8 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import BrandMark from "#lib/components/BrandMark.svelte";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import BrandHeader from "#lib/components/BrandHeader.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
@@ -53,10 +54,7 @@
 
 <main id="main-content" class="auth-page">
   <section class="auth-panel" aria-labelledby="auth-title">
-    <a class="wordmark" href="/app/">
-      <BrandMark />
-      <span>Stricknani</span>
-    </a>
+    <BrandHeader href="/app/" />
 
     <div class="auth-copy">
       <p class="welcome-line">
@@ -126,9 +124,9 @@
       >
         {#if submitting}
           <span class="spinner spinner-light" aria-hidden="true"></span>
-          {t("Signing in…", locale)}
+          <ActionLabel icon="sign-in">{t("Signing in…", locale)}</ActionLabel>
         {:else}
-          {t("Sign in", locale)}
+          <ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel>
         {/if}
       </button>
     </form>
@@ -178,18 +176,6 @@
     border-radius: 1.35rem;
     background: var(--surface);
     box-shadow: var(--shadow);
-  }
-
-  .wordmark {
-    display: inline-flex;
-    min-height: 2.75rem;
-    align-items: center;
-    gap: 0.65rem;
-    color: var(--ink);
-    font-size: 1.05rem;
-    font-weight: 680;
-    letter-spacing: -0.035em;
-    text-decoration: none;
   }
 
   .auth-copy {

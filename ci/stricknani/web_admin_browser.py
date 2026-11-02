@@ -164,7 +164,7 @@ def _create_user(
 
 
 def _open_account(page: Page) -> None:
-    profile = page.locator(".account-summary")
+    profile = page.locator(".app-header .header-account")
     profile.wait_for(state="visible")
     profile.click()
     page.wait_for_url("**/app/account")
@@ -485,6 +485,67 @@ def _save_screenshot(page: Page, directory: Path | None, name: str) -> None:
     destination.chmod(0o600)
 
 
+def _assert_back_link_geometry(
+    page: Page, selector: str, href: str, description: str
+) -> None:
+    link = page.locator(selector)
+    link.wait_for(state="visible")
+    geometry_is_bounded = link.evaluate(
+        """element => {
+          const bounds = element.getBoundingClientRect();
+          const icon = element.querySelector('svg');
+          if (!icon) return false;
+          const iconBounds = icon.getBoundingClientRect();
+          return bounds.height >= 44
+            && bounds.width > 0
+            && bounds.right <= window.innerWidth
+            && iconBounds.width >= 14
+            && iconBounds.width <= 20
+            && iconBounds.height >= 14
+            && iconBounds.height <= 20;
+        }"""
+    )
+    _require(
+        geometry_is_bounded is True and link.get_attribute("href") == href,
+        f"{description} has invalid link or icon geometry",
+    )
+
+
+def _find_existing_no_snapshot_event(page: Page, origin: str) -> int:
+    for page_number in range(1, 5):
+        response = page.context.request.get(
+            f"{origin}/api/v2/admin/audit?page={page_number}"
+        )
+        if response.status != 200:
+            raise AcceptanceFailure("audit fixture page could not be verified")
+        payload: object = response.json()
+        data = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(data, list):
+            raise AcceptanceFailure("audit fixture page response was invalid")
+        for event in data:
+            if not isinstance(event, dict) or event.get("has_changes") is not False:
+                continue
+            event_id = event.get("id")
+            if not isinstance(event_id, int) or event_id <= 0:
+                continue
+            detail_response = page.context.request.get(
+                f"{origin}/api/v2/admin/audit/{event_id}"
+            )
+            if detail_response.status != 200:
+                continue
+            detail_payload: object = detail_response.json()
+            detail_data = (
+                detail_payload.get("data") if isinstance(detail_payload, dict) else None
+            )
+            if (
+                isinstance(detail_data, dict)
+                and detail_data.get("changes") is None
+                and detail_data.get("unavailable_reason") == "not_recorded"
+            ):
+                return event_id
+    raise AcceptanceFailure("no existing no-snapshot audit event was available")
+
+
 def _assert_decoded_card_image(card: Locator, *, message: str) -> str:
     image = card.locator(".resource-card__image img")
     image.wait_for(state="visible")
@@ -661,9 +722,7 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         "More or secondary navigation contains a duplicate Account entry",
     )
     _require(
-        page.locator(".rail-footer .account-summary[href$='/account']").count() == 1
-        and page.locator(".mobile-header .mobile-account[href$='/account']").count()
-        == 1,
+        page.locator(".app-header .header-account[href$='/account']").count() == 1,
         "Account is unavailable from the profile links",
     )
     for label, href in expected_cards:
@@ -687,10 +746,10 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
 def _assert_mobile_header_alignment(page: Page) -> None:
     alignment = page.evaluate(
         """() => {
-          const header = document.querySelector('.mobile-header');
-          const back = document.querySelector('.mobile-brand .shell-back-button');
-          const logo = document.querySelector('.mobile-brand .wordmark');
-          const account = document.querySelector('.mobile-account');
+          const header = document.querySelector('.app-header');
+          const back = document.querySelector('.app-header .shell-back-button');
+          const logo = document.querySelector('.app-header .brand-lockup');
+          const account = document.querySelector('.app-header .header-account');
           if (!header || !back || !logo || !account) return null;
           const rect = (element) => {
             const box = element.getBoundingClientRect();
@@ -1073,7 +1132,7 @@ def run_acceptance(
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             page.get_by_role("heading", name="Audit log").wait_for(state="visible")
             _require(
-                page.locator(".desktop-rail .shell-back-button").is_visible(),
+                page.locator(".app-header .shell-back-button").is_visible(),
                 "desktop rail did not show the direct-entry back fallback",
             )
             page.locator(".event-row").first.wait_for(state="visible")
@@ -1259,17 +1318,19 @@ def run_acceptance(
                     False,
                     diagnostic,
                 )
+            for width in (390, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                _assert_back_link_geometry(
+                    page,
+                    ".resource-back-link",
+                    "/app/admin/audit",
+                    "administrator resource back link",
+                )
+            page.set_viewport_size({"width": 390, "height": 900})
             mark("return from direct resource to audit")
-            page.get_by_role("button", name="Back", exact=True).click()
-            mark("confirm direct resource fallback to audit")
+            page.locator(".resource-back-link").click()
+            mark("confirm explicit resource link to audit")
             page.wait_for_url("**/app/admin/audit")
-            mark("return from audit to More")
-            page.get_by_role("button", name="Back", exact=True).click()
-            mark("confirm audit fallback to More")
-            page.wait_for_url("**/app/more")
-            page.get_by_role("heading", name="More", exact=True).wait_for(
-                state="visible"
-            )
             mark("reopen cross-owner resource after history fallbacks")
             page.goto(
                 f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
@@ -1403,12 +1464,165 @@ def run_acceptance(
                 len(audit_detail_requests) == 1,
                 "audit diff detail request was not lazy or was fetched more than once",
             )
+            for width, suffix in ((390, "390"), (1280, "desktop")):
+                page.set_viewport_size({"width": width, "height": 900})
+                _assert_back_link_geometry(
+                    page,
+                    ".diff-back-link",
+                    "/app/admin/audit",
+                    "recorded-changes back link",
+                )
+                _assert_no_horizontal_overflow(page, "diff")
+                _save_screenshot(
+                    page,
+                    screenshot_dir,
+                    f"admin-audit-detail-with-diff-{suffix}.png",
+                )
+            no_snapshot_event_id = _find_existing_no_snapshot_event(page, origin)
+            mark("open existing audit event without a change snapshot")
+            no_snapshot_api: dict[str, object] = {}
+
+            def record_no_snapshot_detail(response: Response) -> None:
+                if urlsplit(response.url).path != (
+                    f"/api/v2/admin/audit/{no_snapshot_event_id}"
+                ):
+                    return
+                no_snapshot_api["status"] = response.status
+                if response.status != 200:
+                    return
+                try:
+                    payload: object = response.json()
+                except Exception:
+                    no_snapshot_api["reason"] = "invalid_response"
+                    return
+                data = payload.get("data") if isinstance(payload, dict) else None
+                no_snapshot_api["reason"] = (
+                    data.get("unavailable_reason")
+                    if isinstance(data, dict)
+                    else "invalid_response"
+                )
+                no_snapshot_api["changes_missing"] = (
+                    isinstance(data, dict) and data.get("changes") is None
+                )
+
+            page.on("response", record_no_snapshot_detail)
+            try:
+                no_snapshot_page_response = page.goto(
+                    f"{origin}/app/admin/audit/{no_snapshot_event_id}",
+                    wait_until="domcontentloaded",
+                    timeout=10_000,
+                )
+            except PlaywrightTimeoutError:
+                no_snapshot_page_response = None
+            no_snapshot_notice = page.locator(".diff-page > p.notice-panel")
+            try:
+                no_snapshot_notice.wait_for(state="visible", timeout=10_000)
+            except PlaywrightTimeoutError:
+                pass
+            no_snapshot_visible = no_snapshot_notice.is_visible()
+            no_snapshot_loading = page.locator(
+                ".diff-page [aria-live=polite]"
+            ).is_visible()
+            no_snapshot_error = page.locator(".diff-page [role=alert]").is_visible()
+            no_snapshot_route_matches = (
+                urlsplit(page.url).path == f"/app/admin/audit/{no_snapshot_event_id}"
+            )
+            if not (
+                no_snapshot_visible
+                and not no_snapshot_loading
+                and not no_snapshot_error
+                and no_snapshot_api.get("status") == 200
+                and no_snapshot_api.get("reason") == "not_recorded"
+                and no_snapshot_api.get("changes_missing") is True
+            ):
+                diagnostic_screenshot = "admin-audit-no-snapshot-failure.png"
+                _save_screenshot(page, screenshot_dir, diagnostic_screenshot)
+                no_snapshot_page_status = (
+                    no_snapshot_page_response.status
+                    if no_snapshot_page_response
+                    else "none"
+                )
+                _require(
+                    False,
+                    "no-snapshot detail did not render its unavailable notice "
+                    f"(route={no_snapshot_route_matches}, "
+                    f"page_status={no_snapshot_page_status}, "
+                    f"api_status={no_snapshot_api.get('status', 'none')}, "
+                    f"api_reason={no_snapshot_api.get('reason', 'none')}, "
+                    f"changes_missing={no_snapshot_api.get('changes_missing', False)}, "
+                    f"notice={no_snapshot_visible}, loading={no_snapshot_loading}, "
+                    f"error={no_snapshot_error}, "
+                    f"screenshot={'saved' if screenshot_dir else 'disabled'})",
+                )
+            page.remove_listener("response", record_no_snapshot_detail)
+            for width, suffix in ((390, "390"), (1280, "desktop")):
+                page.set_viewport_size({"width": width, "height": 900})
+                _assert_back_link_geometry(
+                    page,
+                    ".diff-back-link",
+                    "/app/admin/audit",
+                    "no-snapshot audit back link",
+                )
+                _assert_no_horizontal_overflow(page, "diff")
+                _save_screenshot(
+                    page,
+                    screenshot_dir,
+                    f"admin-audit-detail-no-snapshot-{suffix}.png",
+                )
+            mark("click no-snapshot return-to-audit link")
+            page.locator(".diff-back-link").click()
+            mark("confirm no-snapshot return to audit")
+            page.wait_for_url("**/app/admin/audit")
             for width in (320, 390, 768, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
                 _assert_no_horizontal_overflow(page, "diff")
             page.set_viewport_size({"width": 390, "height": 900})
-            page.get_by_role("button", name="Back", exact=True).click()
+            mark("open More before audit resource history journey")
+            page.goto(f"{origin}/app/more", wait_until="networkidle")
+            page.get_by_role("heading", name="More", exact=True).wait_for(
+                state="visible"
+            )
+            mark("open Audit from More")
+            page.locator(".more-links").get_by_role(
+                "link", name="Audit log", exact=False
+            ).click()
             page.wait_for_url("**/app/admin/audit")
+            page.get_by_role("heading", name="Audit log", exact=True).wait_for(
+                state="visible"
+            )
+            page.get_by_label("Entity").select_option("project")
+            page.get_by_label("Action").fill("updated")
+            page.get_by_role("button", name="Filter").click()
+            page.wait_for_url("**/app/admin/audit?entity=project&action=updated")
+            history_resource_row = (
+                page.locator(".event-row").filter(has_text=cross_owner_name).first
+            )
+            history_resource_row.wait_for(state="visible")
+            history_resource_row.scroll_into_view_if_needed()
+            audit_scroll_before_resource = page.evaluate("() => window.scrollY")
+            history_resource_row.locator("a.resource-card__link").click()
+            page.wait_for_url(
+                f"**/app/admin/resources/project/{cross_owner_project_id}"
+            )
+            mark("return from resource to filtered audit with browser history")
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.wait_for_url("**/app/admin/audit?entity=project&action=updated")
+            history_resource_row.wait_for(state="visible")
+            _require(
+                page.get_by_label("Entity").input_value() == "project"
+                and page.get_by_label("Action").input_value() == "updated"
+                and abs(
+                    page.evaluate("() => window.scrollY") - audit_scroll_before_resource
+                )
+                <= 2,
+                "browser Back did not restore filtered audit state and scroll",
+            )
+            mark("return from audit to More with browser history")
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.wait_for_url("**/app/more")
+            page.get_by_role("heading", name="More", exact=True).wait_for(
+                state="visible"
+            )
             page.goto(
                 f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
                 wait_until="networkidle",

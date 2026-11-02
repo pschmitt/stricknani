@@ -38,9 +38,9 @@ Execution-oriented backlog for Stricknani.
 | T120.7 | P1 | wip | web-rewrite/imports | feat | Build import review, optional OCR/archive controls and bounded job progress feedback |
 | T120.8 | P1 | wip | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
 | T120.9 | P1 | wip | web-rewrite/acceptance | test | Verify mobile usability, accessibility, performance, packaging and isolated preview rollout |
-| T120.10 | P1 | wip | web-rewrite/updates | feat | Reload into an available app update on request while protecting drafts in every open tab |
-| T120.11 | P1 | wip | web-rewrite/audit | feat | Link audit resource names to read-only admin views and show recorded field changes |
-| T120.12 | P1 | wip | web-rewrite/resource-cards | feat | Reuse compact linked resource cards with images in audit, libraries and related resources |
+| T120.10 | P1 | done | web-rewrite/updates | feat | Reload into an available app update on request while protecting drafts in every open tab |
+| T120.11 | P1 | done | web-rewrite/audit | feat | Link audit resource names to read-only admin views and show recorded field changes |
+| T120.12 | P1 | done | web-rewrite/resource-cards | feat | Reuse compact linked resource cards with images in audit, libraries and related resources |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
 | T99 | P3 | done | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |
@@ -67,6 +67,8 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T120.13 | P2 | wip | web-rewrite/packaging | refactor | Separate Rust compilation from frontend assembly and pass corePackage/webPackage through the NixOS module default; Luna implementation, coordinator review |
+| T120.14 | P2 | wip | web-rewrite/ui | feat | Add shared action icons throughout workflows, compact logo/title/version header and native browser Back; scoped Luna implementation and browser checks |
 | T119 | P1 | done | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration; follow `REWRITE.md` |
 | T119.1 | P1 | done | rust-port | feat | Rust service foundation and gauge workflow; Askama page, health/static routes, and candidate Nix package/image |
 | T119.2 | P1 | done | rust-port/data | feat | Design fresh Rust schema/migrations and implement authentication, accounts, sessions, and configuration |
@@ -2138,7 +2140,7 @@ Execution-oriented backlog for Stricknani.
 - **Priority**: P1
 - **Status**: wip
 - **Category**: feat
-- **Brief and checklist**: [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) defines the journeys, architecture, visual direction, T120.1–T120.12 scopes, Luna ownership waves and acceptance criteria.
+- **Brief and checklist**: [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) defines the journeys, architecture, visual direction, T120.1–T120.13 scopes, Luna ownership waves and acceptance criteria.
 - **Scope**: A fresh responsive web application using SvelteKit/TypeScript static assets served by Rust, with focused browser API v2 support where useful. Prioritize phone navigation, reading patterns, editing and uploads. Preserve useful product capabilities, with no requirement to retain old web layouts or interaction conventions. Keep Android API v1 independent.
 - **Design**: Modern, fast and restrained. Opaque surfaces, readable content and accessible controls; subtle motion only when it explains a state change. No glass/transparency effects or ornamental animation.
 - **Execution**: Implementation started with scoped Luna foundation, API/auth, and packaging work. Delegate scoped implementation to GPT-6 Luna agents; coordinator integrates and reviews shared contracts, security, accessibility, performance and deployment. Start with T120.1, then follow the waves in the brief.

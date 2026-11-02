@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -386,9 +387,11 @@
       </p>{/if}
     {#if errorMessage && !busy}
       <button type="button" onclick={() => void retryAfterError()}>
-        {loaded
-          ? t("Try again", locale)
-          : t("Check archive status again", locale)}
+        <ActionLabel icon="refresh">
+          {loaded
+            ? t("Try again", locale)
+            : t("Check archive status again", locale)}
+        </ActionLabel>
       </button>
     {/if}
     {#if busy}
@@ -397,7 +400,9 @@
       <p class="archive-progress">{t("Loading archive status…", locale)}</p>
     {:else if canManuallyCheckArchive(status, pollingExhausted)}
       <button type="button" onclick={() => void checkAgain()}>
-        {t("Check archive status again", locale)}
+        <ActionLabel icon="refresh">
+          {t("Check archive status again", locale)}
+        </ActionLabel>
       </button>
     {:else if archiveActive}
       <p class="archive-progress">
@@ -405,9 +410,11 @@
       </p>
     {:else if status?.state !== "archived"}
       <button type="button" onclick={() => void enqueue()}>
-        {status?.state === "failed" || status?.state === "superseded"
-          ? t("Request a new archive", locale)
-          : t("Archive this source", locale)}
+        <ActionLabel icon="link">
+          {status?.state === "failed" || status?.state === "superseded"
+            ? t("Request a new archive", locale)
+            : t("Archive this source", locale)}
+        </ActionLabel>
       </button>
     {/if}
   </section>

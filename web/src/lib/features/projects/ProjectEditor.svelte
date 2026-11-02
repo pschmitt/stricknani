@@ -3,6 +3,8 @@
   import { resolve } from "$app/paths";
   import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -779,7 +781,9 @@
             class="secondary-button"
             onclick={loadConflictLatest}
           >
-            {t("Load latest values", locale)}
+            <ActionLabel icon="refresh"
+              >{t("Load latest values", locale)}</ActionLabel
+            >
           </button>
           <button
             type="button"
@@ -787,9 +791,11 @@
             disabled={saving}
             onclick={() => void saveDraftOverLatest()}
           >
-            {saving
-              ? t("Saving…", locale)
-              : t("Save my draft over latest", locale)}
+            <ActionLabel icon="save"
+              >{saving
+                ? t("Saving…", locale)
+                : t("Save my draft over latest", locale)}</ActionLabel
+            >
           </button>
         </div>
       </section>
@@ -877,7 +883,10 @@
                   <button
                     type="button"
                     class="secondary-button"
-                    onclick={addTag}>{t("Add tag", locale)}</button
+                    onclick={addTag}
+                    ><ActionLabel icon="create"
+                      >{t("Add tag", locale)}</ActionLabel
+                    ></button
                   >
                 </div>
                 <span class="field-hint">
@@ -896,7 +905,9 @@
                           class="remove-button"
                           aria-label={`${t("Remove", locale)} ${tag}`}
                           onclick={() => removeTag(index)}
-                          >{t("Remove", locale)}</button
+                          ><ActionLabel icon="action-delete"
+                            >{t("Remove", locale)}</ActionLabel
+                          ></button
                         >
                       </li>
                     {/each}
@@ -1006,7 +1017,9 @@
                 <button
                   type="button"
                   class="secondary-button"
-                  onclick={beginSearch}>{t("Search", locale)}</button
+                  onclick={beginSearch}
+                  ><ActionLabel icon="search">{t("Search", locale)}</ActionLabel
+                  ></button
                 >
               </div>
             </div>
@@ -1031,9 +1044,14 @@
                       disabled={draft.yarnIds.includes(yarn.id)}
                       onclick={() => addYarn(yarn)}
                     >
-                      {draft.yarnIds.includes(yarn.id)
-                        ? t("Added", locale)
-                        : t("Add yarn", locale)}
+                      <ActionLabel
+                        icon={draft.yarnIds.includes(yarn.id)
+                          ? "check"
+                          : "create"}
+                        >{draft.yarnIds.includes(yarn.id)
+                          ? t("Added", locale)
+                          : t("Add yarn", locale)}</ActionLabel
+                      >
                     </button>
                   </li>
                 {/each}
@@ -1056,7 +1074,9 @@
                         aria-label={`${t("Remove", locale)} ${yarn.name}`}
                         onclick={() => removeYarn(yarn.id)}
                       >
-                        {t("Remove", locale)}
+                        <ActionLabel icon="action-delete"
+                          >{t("Remove", locale)}</ActionLabel
+                        >
                       </button>
                     </li>
                   {/each}
@@ -1078,7 +1098,8 @@
                 </p>
               </div>
               <button type="button" class="secondary-button" onclick={addStep}
-                >{t("Add step", locale)}</button
+                ><ActionLabel icon="create">{t("Add step", locale)}</ActionLabel
+                ></button
               >
             </div>
             {#if fieldErrors.steps}<p class="field-error" role="alert">
@@ -1096,14 +1117,16 @@
                           class="icon-button"
                           aria-label={`${t("Move up", locale)} ${t("Step", locale)} ${index + 1}`}
                           disabled={index === 0}
-                          onclick={() => moveStep(index, -1)}>↑</button
+                          onclick={() => moveStep(index, -1)}
+                          ><NavIcon name="move-up" /></button
                         >
                         <button
                           type="button"
                           class="icon-button"
                           aria-label={`${t("Move down", locale)} ${t("Step", locale)} ${index + 1}`}
                           disabled={index === draft.steps.length - 1}
-                          onclick={() => moveStep(index, 1)}>↓</button
+                          onclick={() => moveStep(index, 1)}
+                          ><NavIcon name="move-down" /></button
                         >
                         <button
                           type="button"
@@ -1185,7 +1208,9 @@
                       class="remove-button"
                       disabled={!mediaAvailable}
                       onclick={() => void removeImage(image.id)}
-                      >{t("Remove photo", locale)}</button
+                      ><ActionLabel icon="action-delete"
+                        >{t("Remove photo", locale)}</ActionLabel
+                      ></button
                     >
                   </li>
                 {/each}
@@ -1253,7 +1278,9 @@
                       class="remove-button"
                       disabled={!mediaAvailable}
                       onclick={() => void removeAttachment(attachment.id)}
-                      >{t("Remove attachment", locale)}</button
+                      ><ActionLabel icon="action-delete"
+                        >{t("Remove attachment", locale)}</ActionLabel
+                      ></button
                     >
                   </li>
                 {/each}
@@ -1277,11 +1304,13 @@
 
         <div class="form-actions">
           <button class="primary-button" type="submit" disabled={saveDisabled}>
-            {saving
-              ? t("Saving…", locale)
-              : isCreating
-                ? t("Create project", locale)
-                : t("Save changes", locale)}
+            <ActionLabel icon={isCreating ? "create" : "save"}
+              >{saving
+                ? t("Saving…", locale)
+                : isCreating
+                  ? t("Create project", locale)
+                  : t("Save changes", locale)}</ActionLabel
+            >
           </button>
           {#if project}
             <button
@@ -1290,7 +1319,11 @@
               disabled={isDirty || saving || deleting || mediaBusy}
               onclick={() => void confirmDelete()}
             >
-              {deleting ? t("Deleting…", locale) : t("Delete project", locale)}
+              <ActionLabel icon="action-delete"
+                >{deleting
+                  ? t("Deleting…", locale)
+                  : t("Delete project", locale)}</ActionLabel
+              >
             </button>
           {/if}
           {#if isDirty}<span class="dirty-note" role="status"

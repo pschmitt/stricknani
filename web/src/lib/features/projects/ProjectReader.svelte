@@ -4,6 +4,8 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
@@ -572,7 +574,7 @@
         type="button"
         onclick={() => (reload += 1)}
       >
-        {t("Try again", locale)}
+        <ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel>
       </button>
     </div>
   </section>
@@ -607,9 +609,11 @@
           aria-busy={printPreparing}
           onclick={() => void printPattern()}
         >
-          {printPreparing
-            ? t("Preparing full-resolution photos…", locale)
-            : t("Print pattern", locale)}
+          <ActionLabel icon="print"
+            >{printPreparing
+              ? t("Preparing full-resolution photos…", locale)
+              : t("Print pattern", locale)}</ActionLabel
+          >
         </button>
       </div>
     </nav>
@@ -639,7 +643,9 @@
           class="reader-edit-link"
           href={resolve("/projects/[id]/edit", { id: String(project.id) })}
         >
-          {t("Edit project", locale)}
+          <ActionLabel icon="action-update"
+            >{t("Edit project", locale)}</ActionLabel
+          >
         </a>
         <button
           class="reader-favorite"
@@ -711,7 +717,12 @@
                   class="step-navigation-link"
                   href={stepHash(previousStep.id)}
                 >
-                  <span>‹ {t("Previous step", locale)}</span>
+                  <span
+                    ><NavIcon name="previous" />{t(
+                      "Previous step",
+                      locale,
+                    )}</span
+                  >
                   <strong>{previousStep.title}</strong>
                 </a>
               {:else}
@@ -729,7 +740,7 @@
                   class="step-navigation-link next-step-link"
                   href={stepHash(nextStep.id)}
                 >
-                  <span>{t("Next step", locale)} ›</span>
+                  <span>{t("Next step", locale)}<NavIcon name="next" /></span>
                   <strong>{nextStep.title}</strong>
                 </a>
               {:else}
@@ -1694,7 +1705,7 @@
   @media print {
     :global(.desktop-rail),
     :global(.page-header),
-    :global(.mobile-header),
+    :global(.app-header),
     :global(.mobile-navigation),
     :global(.skip-link) {
       display: none !important;

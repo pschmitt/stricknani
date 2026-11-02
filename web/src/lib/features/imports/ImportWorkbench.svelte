@@ -2,6 +2,7 @@
   import { beforeNavigate } from "$app/navigation";
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ImageChoices from "./ImageChoices.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
   import { createYarn } from "#lib/features/yarns/yarn-api.ts";
@@ -401,14 +402,18 @@
         type="button"
         aria-pressed={sourceKind === "text"}
         disabled={sourceDisabled}
-        onclick={() => (sourceKind = "text")}>{t("Paste text", locale)}</button
+        onclick={() => (sourceKind = "text")}
+        ><ActionLabel icon="clipboard">{t("Paste text", locale)}</ActionLabel
+        ></button
       >
       <button
         class:active={sourceKind === "file"}
         type="button"
         aria-pressed={sourceKind === "file"}
         disabled={sourceDisabled}
-        onclick={() => (sourceKind = "file")}>{t("Upload file", locale)}</button
+        onclick={() => (sourceKind = "file")}
+        ><ActionLabel icon="upload">{t("Upload file", locale)}</ActionLabel
+        ></button
       >
       <button
         class:active={sourceKind === "url"}
@@ -418,7 +423,9 @@
         title={!allowExternal
           ? t("URL imports are disabled for this account.", locale)
           : undefined}
-        onclick={() => (sourceKind = "url")}>{t("From a link", locale)}</button
+        onclick={() => (sourceKind = "url")}
+        ><ActionLabel icon="link">{t("From a link", locale)}</ActionLabel
+        ></button
       >
     </div>
     {#if sourceKind === "text"}
@@ -482,9 +489,11 @@
         )}
       </p>{/if}
     <button class="primary" disabled={sourceDisabled} onclick={runPreview}
-      >{busy
-        ? t("Preparing preview…", locale)
-        : t("Preview and review", locale)}</button
+      ><ActionLabel icon="preview"
+        >{busy
+          ? t("Preparing preview…", locale)
+          : t("Preview and review", locale)}</ActionLabel
+      ></button
     >
     {#if busy}<p class="status" role="status" aria-live="polite">
         {t("Reading the source and preparing a draft…", locale)}
@@ -680,9 +689,11 @@
                     class="secondary"
                     disabled={busyYarn !== null || !yarn.name.trim()}
                     onclick={() => saveYarn(index)}
-                    >{busyYarn === index
-                      ? t("Saving yarn…", locale)
-                      : t("Save yarn to library", locale)}</button
+                    ><ActionLabel icon="save"
+                      >{busyYarn === index
+                        ? t("Saving yarn…", locale)
+                        : t("Save yarn to library", locale)}</ActionLabel
+                    ></button
                   >{/if}
               </fieldset>
             {/each}
@@ -714,7 +725,9 @@
           <a
             class="primary link-button"
             href={`../projects/${createdProjectId}`}
-            >{t("Open created project", locale)} →</a
+            ><ActionLabel icon="next"
+              >{t("Open created project", locale)}</ActionLabel
+            ></a
           >
           <button
             class="secondary"
@@ -723,16 +736,21 @@
               draft = null;
               createdProjectId = null;
               successMessage = "";
-            }}>{t("Start another import", locale)}</button
+            }}
+            ><ActionLabel icon="reset"
+              >{t("Start another import", locale)}</ActionLabel
+            ></button
           >
         {:else}
           <button
             class="primary"
             disabled={busy || busyYarn !== null}
             onclick={saveProject}
-            >{busy
-              ? t("Creating project…", locale)
-              : t("Create project", locale)}</button
+            ><ActionLabel icon="create"
+              >{busy
+                ? t("Creating project…", locale)
+                : t("Create project", locale)}</ActionLabel
+            ></button
           >
         {/if}
       </div>
@@ -814,13 +832,14 @@
   }
   .source-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
-    overflow-x: auto;
     margin-bottom: 1rem;
     padding-bottom: 0.15rem;
   }
   .source-tabs button,
   .secondary {
+    min-width: 0;
     min-height: 2.75rem;
     padding: 0.55rem 0.9rem;
     border: 1px solid var(--line);
@@ -828,6 +847,9 @@
     background: var(--surface-raised);
     font-weight: 650;
     cursor: pointer;
+  }
+  .source-tabs button {
+    flex: 1 1 8rem;
   }
   .source-tabs button.active {
     border-color: var(--accent);

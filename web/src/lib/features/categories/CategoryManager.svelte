@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -219,7 +220,8 @@
       <p>{errorMessage}</p>
       {#if loadState === "error"}
         <button type="button" onclick={() => (reload += 1)}
-          >{t("Try again", locale)}</button
+          ><ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel
+          ></button
         >
       {/if}
     </div>
@@ -245,7 +247,9 @@
       />
     </label>
     <button class="primary-action" type="submit" disabled={saving}>
-      {saving ? t("Saving…", locale) : t("Add category", locale)}
+      <ActionLabel icon="create">
+        {saving ? t("Saving…", locale) : t("Add category", locale)}
+      </ActionLabel>
     </button>
   </form>
   {#if fieldError}<p id="category-field-error" class="field-error" role="alert">
@@ -297,13 +301,17 @@
                   : undefined}
               />
               <button class="primary-action" type="submit" disabled={saving}>
-                {saving ? t("Saving…", locale) : t("Save", locale)}
+                <ActionLabel icon="save">
+                  {saving ? t("Saving…", locale) : t("Save", locale)}
+                </ActionLabel>
               </button>
               <button
                 class="quiet-button"
                 type="button"
                 disabled={saving}
-                onclick={cancelEdit}>{t("Cancel", locale)}</button
+                onclick={cancelEdit}
+                ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel
+                ></button
               >
               {#if fieldError}<p
                   id={`category-${category.id}-error`}
@@ -320,13 +328,17 @@
                 class="quiet-button"
                 type="button"
                 onclick={() => beginEdit(category)}
-                >{t("Rename", locale)}</button
+                ><ActionLabel icon="action-update"
+                  >{t("Rename", locale)}</ActionLabel
+                ></button
               >
               <button
                 class="quiet-button destructive"
                 type="button"
                 onclick={() => askDelete(category)}
-                >{t("Delete", locale)}</button
+                ><ActionLabel icon="action-delete"
+                  >{t("Delete", locale)}</ActionLabel
+                ></button
               >
             </div>
           {/if}
@@ -356,7 +368,9 @@
       class="quiet-button"
       type="button"
       disabled={deleting}
-      onclick={() => deleteDialog?.close()}>{t("Keep category", locale)}</button
+      onclick={() => deleteDialog?.close()}
+      ><ActionLabel icon="cancel">{t("Keep category", locale)}</ActionLabel
+      ></button
     >
     <button
       class="danger-button"
@@ -364,7 +378,9 @@
       disabled={deleting}
       onclick={() => void removeCategory()}
     >
-      {deleting ? t("Deleting…", locale) : t("Delete category", locale)}
+      <ActionLabel icon="action-delete">
+        {deleting ? t("Deleting…", locale) : t("Delete category", locale)}
+      </ActionLabel>
     </button>
   </div>
 </dialog>
