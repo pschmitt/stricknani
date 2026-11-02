@@ -57,9 +57,11 @@ server URLs and keeps the existing single-server-per-device behavior.
 **How to apply:** no account switching or credential changes; links continue to use the configured
 server already associated with the installed app.
 
-Status: **done**, 2026-11-03 - focused and full unit tests plus debug assembly passed remotely;
-both CI runs passed on [ad9878089](https://github.com/pschmitt/stricknani/commit/ad9878089d7ea60e97f01614ef8cb135051d5b7d).
-No device installation or data migration.
+Status: **mostly done**, 2026-11-03 - focused/full unit tests and debug assembly passed remotely;
+[Rust E2E](https://github.com/pschmitt/stricknani/actions/runs/41538878603) and
+[offline replay](https://github.com/pschmitt/stricknani/actions/runs/41538878987) passed on ad9878089.
+The full Nix formatter caught a Kotlin layout difference, now corrected; explicit Android Build/Lint
+workflow verification is pending. No device installation or data migration.
 
 ## SNA-74: Prepare Android compatibility plan for the Rust API and website
 

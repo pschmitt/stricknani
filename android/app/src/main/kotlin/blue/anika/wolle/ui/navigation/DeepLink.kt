@@ -19,8 +19,12 @@ object DeepLinkParser {
 
     fun parse(uriString: String?): Route? {
         val path = uriString?.let { runCatching { URI(it).rawPath }.getOrNull() } ?: return null
-        projectId(path)?.let { return Route.ProjectDetail(it) }
-        yarnId(path)?.let { return Route.YarnDetail(it) }
+        projectId(path)?.let {
+            return Route.ProjectDetail(it)
+        }
+        yarnId(path)?.let {
+            return Route.YarnDetail(it)
+        }
         return null
     }
 

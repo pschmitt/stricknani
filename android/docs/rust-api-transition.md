@@ -1,8 +1,10 @@
 # Android compatibility with the Rust API and website
 
 **Status:** SNA-74 records the compatibility inventory and plan; SNA-75 adds canonical website
-links to the native parser and intent filters. Remote unit tests, debug assembly and both CI runs
-pass on [ad9878089](https://github.com/pschmitt/stricknani/commit/ad9878089d7ea60e97f01614ef8cb135051d5b7d).
+links to the native parser and intent filters. Remote unit tests/debug assembly and the Rust E2E
+and offline-replay CI suites pass on
+[ad9878089](https://github.com/pschmitt/stricknani/commit/ad9878089d7ea60e97f01614ef8cb135051d5b7d).
+Explicit Android Build/Lint workflow verification is pending after a full-Nix formatting correction.
 Rust APIs, authentication, Room storage and installed devices are unchanged.
 
 ## Decision for the current release
