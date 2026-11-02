@@ -8,15 +8,22 @@
     titleId = generatedId,
     context,
     actions,
+    stackedActions = false,
   }: {
     title: string;
     titleId?: string;
     context?: Snippet;
     actions?: Snippet;
+    stackedActions?: boolean;
   } = $props();
 </script>
 
-<header class="page-header" aria-labelledby={titleId}>
+<header
+  class="page-header"
+  class:page-header--has-actions={actions}
+  class:page-header--stacked={stackedActions}
+  aria-labelledby={titleId}
+>
   <h1 id={titleId}>{title}</h1>
   {#if context}
     <div class="page-header__context">{@render context()}</div>
@@ -86,13 +93,14 @@
 
   @media (max-width: 760px) {
     .page-header {
-      grid-template-columns: minmax(0, 1fr) minmax(0, auto);
-      align-items: center;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
       gap: 0.55rem 0.75rem;
     }
 
     h1 {
       font-size: 2rem;
+      overflow-wrap: break-word;
     }
 
     .page-header__context {
@@ -100,7 +108,22 @@
     }
 
     .page-header__actions {
-      max-width: min(100%, 45vw);
+      width: 100%;
+      max-width: 100%;
+      justify-content: flex-end;
+    }
+
+    .page-header--has-actions:not(.page-header--stacked) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 45%);
+    }
+
+    .page-header--stacked {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .page-header--stacked .page-header__actions {
+      grid-column: 1;
+      grid-row: 3;
       justify-content: flex-start;
     }
   }

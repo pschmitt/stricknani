@@ -261,7 +261,7 @@
     class="yarn-detail page-container page-container--wide"
     aria-labelledby="yarn-title"
   >
-    <PageHeader title={currentYarn.name} titleId="yarn-title">
+    <PageHeader title={currentYarn.name} titleId="yarn-title" stackedActions>
       {#snippet context()}
         <p class="identity">
           {[currentYarn.brand, currentYarn.colorway]
