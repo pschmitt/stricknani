@@ -215,7 +215,44 @@ def run_acceptance(
             mark_stage("filling disposable login password")
             page.locator("#password").fill(password)
             mark_stage("submitting disposable login")
-            page.get_by_role("button", name="Sign in").click()
+            try:
+                page.get_by_role("button", name="Sign in").click()
+            except PlaywrightTimeoutError:
+                # Do not expose Playwright's locator log or form values. These
+                # fixed booleans distinguish a disabled control, locale change,
+                # invalid form and client exception without capturing secrets.
+                controls = page.evaluate(
+                    """() => ({
+                      form: Boolean(document.querySelector('form.auth-form')),
+                      enabled: Boolean(document.querySelector(
+                        'form.auth-form button[type="submit"]:enabled'
+                      )),
+                      valid: Boolean(document.querySelector(
+                        'form.auth-form:valid'
+                      )),
+                      inert: Boolean(document.querySelector(
+                        'form.auth-form'
+                      )?.closest('[inert]')),
+                      english: document.documentElement.lang === 'en',
+                      german: document.documentElement.lang === 'de'
+                    })"""
+                )
+                flags = ",".join(
+                    f"{key}:{int(controls.get(key) is True)}"
+                    for key in (
+                        "form",
+                        "enabled",
+                        "valid",
+                        "inert",
+                        "english",
+                        "german",
+                    )
+                )
+                raise AcceptanceFailure(
+                    "disposable login control timed out ("
+                    f"{flags},page-error:{int(bool(page_errors))},"
+                    f"csp-error:{int(bool(csp_errors))})"
+                ) from None
             mark_stage("waiting for authenticated app shell")
             page.locator(".app-shell").wait_for(state="visible")
 
