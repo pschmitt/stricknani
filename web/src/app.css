@@ -218,7 +218,44 @@ button:disabled {
 }
 
 .rail-wordmark {
-  margin: 0 0 2.4rem 0.4rem;
+  min-width: 0;
+  margin-left: 0.4rem;
+}
+
+.rail-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 2.4rem;
+}
+
+.shell-back-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 0.6rem;
+  padding: 0;
+  color: var(--ink-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.shell-back-button:hover {
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+}
+
+.shell-back-button svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.shell-back-button:focus-visible {
+  outline: 3px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
 .primary-nav,
@@ -480,6 +517,24 @@ textarea::placeholder {
     background: var(--surface);
   }
 
+  .mobile-brand {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .mobile-brand .wordmark {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .mobile-brand .wordmark > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .mobile-account {
     display: inline-flex;
     min-width: 44px;
@@ -541,6 +596,10 @@ textarea::placeholder {
   .mobile-header {
     gap: 0.25rem;
     padding-inline: max(0.5rem, env(safe-area-inset-left));
+  }
+
+  .mobile-brand {
+    gap: 0.1rem;
   }
 
   .mobile-navigation a {

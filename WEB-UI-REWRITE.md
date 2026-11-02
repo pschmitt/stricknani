@@ -233,7 +233,7 @@ HTML messages. Reuse terminology without preserving the old layout or copy.
 
 ## Backlog
 
-Track the work as T120.1–T120.11 in `TODO.md`. Each slice owns a clear area and
+Track the work as T120.1–T120.12 in `TODO.md`. Each slice owns a clear area and
 lands as a small reviewable checkpoint. Coordinate under the repository’s
 Concord workspace; the Luna implementation waves below own only their named
 frontend area, while the parent integrates and reviews API, authorization,
@@ -250,6 +250,9 @@ the coordinator reviews their contracts and security-sensitive changes.
   TypeScript, Vite, static adapter, lockfile, build integration, typed API
   client, theme/responsive primitives, navigation shell, sign-in/signup,
   session expiry/logout, route guards, generated EN/DE catalogs, and test/lint scripts.
+  Add a compact back chevron to the left of the logo, using observed app
+  navigation when available and a meaningful parent route for direct links.
+  Keep unsaved-change protection and the right-aligned mobile profile control.
   Rust serves built assets; deployed runtime remains Rust-only.
 - [ ] **T120.3 — Focused browser API v2.** Scoped Luna Rust slice: implement
   only the v2 operations the browser needs, with typed/schema documentation,
@@ -308,6 +311,17 @@ the coordinator reviews their contracts and security-sensitive changes.
   JSON. Deleted resources and events without sufficient history need honest
   fallback states rather than invented values. Test authorization, migration,
   rollback, historical projection and the read-only browser journey.
+
+- [ ] **T120.12 — Reusable resource cards.** Share project, yarn and category
+  presentation across library lists, audit events and related resources inside
+  project/yarn readers. Use compact thumbnail rows for dense contexts and the
+  existing larger library layout where appropriate. Show names as keyboard
+  accessible links, authorized lazy-loaded images and domain-icon fallbacks
+  for missing or failed images. Audit links use the separate read-only admin
+  routes, including links to recorded history for deleted resources. Images
+  represent the current resource, not an event-time image snapshot. Keep
+  favorite and other controls outside links, preserve phone spacing, and test
+  cross-owner image authorization, deleted resources and related-resource links.
 
 ### Luna implementation waves and ownership
 

@@ -63,6 +63,7 @@ export interface LinkedProject {
   id: number;
   name: string;
   category: string | null;
+  preview_url: string | null;
 }
 
 export interface YarnFilters {
@@ -140,13 +141,52 @@ export async function getLinkedProject(
   });
   if (!record(payload) || !record(payload.data)) throw invalidResponse();
   const project = payload.data;
+  const projectId = project.id;
   if (
-    !positiveInteger(project.id) ||
+    !positiveInteger(projectId) ||
+    projectId !== id ||
     typeof project.name !== "string" ||
-    !nullableString(project.category)
+    !nullableString(project.category) ||
+    !Array.isArray(project.images)
   )
     throw invalidResponse();
-  return { id: project.id, name: project.name, category: project.category };
+  const images = project.images.map((value: unknown) => {
+    if (
+      !record(value) ||
+      !positiveInteger(value.id) ||
+      typeof value.is_title_image !== "boolean" ||
+      !ownerProjectThumbnailUrl(value.thumbnail_url, projectId)
+    )
+      throw invalidResponse();
+    return {
+      is_title_image: value.is_title_image,
+      thumbnail_url: value.thumbnail_url,
+    };
+  });
+  return {
+    id: projectId,
+    name: project.name,
+    category: project.category,
+    preview_url:
+      images.find((image) => image.is_title_image)?.thumbnail_url ??
+      images[0]?.thumbnail_url ??
+      null,
+  };
+}
+
+function ownerProjectThumbnailUrl(
+  value: unknown,
+  projectId: number,
+): value is string {
+  if (typeof value !== "string") return false;
+  const prefix = `/media/thumbnails/projects/${projectId}/`;
+  if (!value.startsWith(prefix)) return false;
+  const filename = value.slice(prefix.length);
+  return (
+    filename.length > 0 &&
+    /^[A-Za-z0-9._-]+$/.test(filename) &&
+    !filename.includes("..")
+  );
 }
 
 export async function createYarn(

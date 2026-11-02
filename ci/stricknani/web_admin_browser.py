@@ -254,7 +254,7 @@ def _browser_csrf_token(page: Page, origin: str) -> str:
 
 def _create_cross_owner_resource(
     page: Page, origin: str, mark: Callable[[str], None]
-) -> tuple[int, int, str]:
+) -> tuple[int, int, str, int, str]:
     name = "Cross-owner read-only fixture"
     mark("create synthetic owner project through authenticated v2 API")
     csrf_token = _browser_csrf_token(page, origin)
@@ -311,6 +311,57 @@ def _create_cross_owner_resource(
     ):
         raise AcceptanceFailure("cross-owner fixture did not return valid resource IDs")
 
+    yarn_name = "Cross-owner fixture yarn"
+    yarn_response = page.context.request.post(
+        f"{origin}/api/v2/yarns",
+        headers=headers,
+        data={
+            "name": yarn_name,
+            "description": "Synthetic yarn for read-only card acceptance.",
+            "brand": "Fixture mill",
+            "colorway": "Blue sample",
+            "weight_category": "DK",
+            "weight_grams": 100,
+            "length_meters": 220,
+        },
+    )
+    if yarn_response.status != 201:
+        raise AcceptanceFailure("cross-owner fixture yarn creation failed")
+    yarn_body: object = yarn_response.json()
+    yarn_data = yarn_body.get("data") if isinstance(yarn_body, dict) else None
+    yarn_id = yarn_data.get("id") if isinstance(yarn_data, dict) else None
+    if not isinstance(yarn_id, int) or yarn_id <= 0:
+        raise AcceptanceFailure("cross-owner fixture yarn response was invalid")
+    yarn_photo_response = page.context.request.post(
+        f"{origin}/api/v2/yarns/{yarn_id}/photos",
+        headers=headers,
+        multipart={
+            "file": {
+                "name": "synthetic-yarn-photo.png",
+                "mimeType": "image/png",
+                "buffer": _tiny_png_fixture(),
+            },
+            "alt_text": "Synthetic yarn sample",
+        },
+    )
+    if yarn_photo_response.status != 201:
+        raise AcceptanceFailure("synthetic yarn photo upload failed")
+
+    title_image_response = page.context.request.post(
+        f"{origin}/api/v2/projects/{project_id}/images/title",
+        headers=headers,
+        multipart={
+            "file": {
+                "name": "synthetic-project-cover.png",
+                "mimeType": "image/png",
+                "buffer": _tiny_png_fixture(),
+            },
+            "alt_text": "Synthetic project cover",
+        },
+    )
+    if title_image_response.status != 201:
+        raise AcceptanceFailure("synthetic project cover upload failed")
+
     mark("upload synthetic step image and attachment through authenticated v2 API")
     image_response = page.context.request.post(
         f"{origin}/api/v2/projects/{project_id}/steps/{step_id}/images",
@@ -358,6 +409,7 @@ def _create_cross_owner_resource(
         **create_payload,
         "name": updated_name,
         "expected_updated_at": updated_at,
+        "yarn_ids": [yarn_id],
         "steps": [{**step_payload, "id": step_id}],
     }
     update_response = page.context.request.put(
@@ -367,7 +419,7 @@ def _create_cross_owner_resource(
     )
     if update_response.status != 200:
         raise AcceptanceFailure("cross-owner fixture project update failed")
-    return project_id, step_id, updated_name
+    return project_id, step_id, updated_name, yarn_id, yarn_name
 
 
 def _delete_cross_owner_resource(page: Page, origin: str, project_id: int) -> None:
@@ -398,6 +450,112 @@ def _tiny_png_fixture() -> bytes:
         + chunk(b"IDAT", pixel)
         + chunk(b"IEND", b"")
     )
+
+
+def _save_screenshot(page: Page, directory: Path | None, name: str) -> None:
+    if directory is None:
+        return
+    destination = directory / name
+    page.screenshot(path=str(destination), full_page=True)
+    destination.chmod(0o600)
+
+
+def _assert_decoded_card_image(card: Locator, *, message: str) -> str:
+    image = card.locator(".resource-card__image img")
+    image.wait_for(state="visible")
+    source = image.get_attribute("src") or ""
+    decoded = image.evaluate(
+        "node => Promise.race([node.decode().then(() => node.complete "
+        "&& node.naturalWidth > 0), new Promise(resolve => "
+        "setTimeout(() => resolve(false), 3000))]).catch(() => false)"
+    )
+    _require(bool(decoded), message)
+    return source
+
+
+def _assert_owner_resource_cards(
+    page: Page,
+    origin: str,
+    project_id: int,
+    project_name: str,
+    yarn_id: int,
+    yarn_name: str,
+    screenshot_dir: Path | None,
+) -> None:
+    page.goto(f"{origin}/app/projects/{project_id}", wait_until="networkidle")
+    page.get_by_role("heading", name=project_name, exact=True).wait_for(state="visible")
+    embedded_card = page.locator(".details-card .resource-card").filter(
+        has_text=yarn_name
+    )
+    embedded_card.wait_for(state="visible")
+    embedded_link = embedded_card.locator("a.resource-card__link")
+    embedded_href = embedded_link.get_attribute("href") or ""
+    _require(
+        urlsplit(embedded_href).path.endswith(f"/app/yarns/{yarn_id}"),
+        "project yarn card did not use the owner's yarn route",
+    )
+    embedded_image = _assert_decoded_card_image(
+        embedded_card, message="project yarn card preview did not decode"
+    )
+    _require(
+        urlsplit(embedded_image).path.startswith(f"/api/v2/yarns/{yarn_id}/photos/"),
+        "project yarn card did not use the owner-scoped yarn photo route",
+    )
+    for width, suffix in ((390, "390"), (1280, "desktop")):
+        page.set_viewport_size({"width": width, "height": 900})
+        _assert_no_horizontal_overflow(page, "project-reader")
+        _save_screenshot(page, screenshot_dir, f"project-reader-{suffix}.png")
+    embedded_link.click()
+    page.get_by_role("heading", name=yarn_name, exact=True).wait_for(state="visible")
+
+    page.goto(f"{origin}/app/projects", wait_until="networkidle")
+    project_card = page.locator(".project-card .resource-card").filter(
+        has_text=project_name
+    )
+    project_card.wait_for(state="visible")
+    _require(
+        urlsplit(
+            project_card.locator("a.resource-card__link").get_attribute("href") or ""
+        ).path.endswith(f"/app/projects/{project_id}"),
+        "project library card did not use the owner's project route",
+    )
+    project_image = _assert_decoded_card_image(
+        project_card, message="project library card preview did not decode"
+    )
+    _require(
+        urlsplit(project_image).path.startswith("/api/v2/projects/"),
+        "project library card did not use the owner-scoped image route",
+    )
+    for width, suffix in ((390, "390"), (1280, "desktop")):
+        page.set_viewport_size({"width": width, "height": 900})
+        _assert_no_horizontal_overflow(page, "project-library")
+        _save_screenshot(page, screenshot_dir, f"project-library-{suffix}.png")
+    project_card.locator("a.resource-card__link").click()
+    page.get_by_role("heading", name=project_name, exact=True).wait_for(state="visible")
+
+    page.goto(f"{origin}/app/yarns", wait_until="networkidle")
+    yarn_card = page.locator(".yarn-card .resource-card").filter(has_text=yarn_name)
+    yarn_card.wait_for(state="visible")
+    _require(
+        urlsplit(
+            yarn_card.locator("a.resource-card__link").get_attribute("href") or ""
+        ).path.endswith(f"/app/yarns/{yarn_id}"),
+        "yarn library card did not use the owner's yarn route",
+    )
+    yarn_image = _assert_decoded_card_image(
+        yarn_card, message="yarn library card preview did not decode"
+    )
+    _require(
+        urlsplit(yarn_image).path.startswith(f"/api/v2/yarns/{yarn_id}/photos/"),
+        "yarn library card did not use the owner-scoped photo route",
+    )
+    for width, suffix in ((390, "390"), (1280, "desktop")):
+        page.set_viewport_size({"width": width, "height": 900})
+        _assert_no_horizontal_overflow(page, "yarn-library")
+        _save_screenshot(page, screenshot_dir, f"yarn-library-{suffix}.png")
+
+    yarn_card.locator("a.resource-card__link").click()
+    page.get_by_role("heading", name=yarn_name, exact=True).wait_for(state="visible")
 
 
 def _upload_account_avatar(page: Page) -> None:
@@ -499,8 +657,52 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         )
 
 
+def _assert_mobile_header_alignment(page: Page) -> None:
+    alignment = page.evaluate(
+        """() => {
+          const header = document.querySelector('.mobile-header');
+          const back = document.querySelector('.mobile-brand .shell-back-button');
+          const logo = document.querySelector('.mobile-brand .wordmark');
+          const account = document.querySelector('.mobile-account');
+          if (!header || !back || !logo || !account) return null;
+          const rect = (element) => {
+            const box = element.getBoundingClientRect();
+            return {
+              left: box.left,
+              right: box.right,
+              width: box.width,
+              height: box.height,
+            };
+          };
+          return {
+            header: rect(header),
+            back: rect(back),
+            logo: rect(logo),
+            account: rect(account),
+          };
+        }"""
+    )
+    _require(
+        isinstance(alignment, dict)
+        and alignment["back"]["width"] >= 44
+        and alignment["back"]["height"] >= 44
+        and alignment["back"]["right"] <= alignment["logo"]["left"] + 1
+        and alignment["logo"]["right"] <= alignment["account"]["left"] + 1
+        and alignment["account"]["right"] <= alignment["header"]["right"] + 1,
+        "mobile header back, brand, and account controls are misaligned",
+    )
+
+
 def _assert_no_horizontal_overflow(page: Page, route: str) -> None:
-    if route not in {"users", "audit", "resource", "diff"}:
+    if route not in {
+        "users",
+        "audit",
+        "resource",
+        "diff",
+        "project-reader",
+        "project-library",
+        "yarn-library",
+    }:
         raise AcceptanceFailure("invalid admin responsive route")
     measurements = page.evaluate(
         """(allowedClasses) => {
@@ -554,6 +756,10 @@ def _assert_no_horizontal_overflow(page: Page, route: str) -> None:
             "page-indicator",
             "pagination",
             "resource-content",
+            "resource-card",
+            "resource-card__copy",
+            "resource-card__image",
+            "resource-card__link",
             "resource-page",
             "resource-section",
             "user-actions",
@@ -585,6 +791,7 @@ def run_acceptance(
     admin_password: str,
     chromium_executable: Path | None = None,
     stage_file: Path | None = None,
+    screenshot_dir: Path | None = None,
 ) -> None:
     fixture = rust_fixture.load_fixture_environment(fixture_file)
     origin = _loopback_origin(fixture["STRICKNANI_RUST_TEST_URL"])
@@ -623,6 +830,29 @@ def run_acceptance(
             _guard_loopback(page, origin)
             mark("sign in administrator")
             _sign_in(page, origin, admin_email, admin_password)
+            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+
+            mark("check header back preserves dirty-navigation confirmation")
+            page.set_viewport_size({"width": 390, "height": 900})
+            page.goto(f"{origin}/app/projects/new", wait_until="networkidle")
+            page.get_by_role("heading", name="New project", exact=True).wait_for(
+                state="visible"
+            )
+            project_name_field = page.get_by_label("Project name", exact=True)
+            project_name_field.fill("Unsaved header back fixture")
+            page.once("dialog", lambda dialog: dialog.dismiss())
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.get_by_role("heading", name="New project", exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                project_name_field.input_value() == "Unsaved header back fixture",
+                "cancelling header back discarded the unsaved project name",
+            )
+            page.once("dialog", lambda dialog: dialog.accept())
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.wait_for_url("**/app/projects")
+            page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
             page.get_by_role("heading", name="User accounts").wait_for(state="visible")
 
             mark("check admin More cards and profile-only Account")
@@ -704,8 +934,22 @@ def run_acceptance(
             _open_account(page)
             _upload_account_avatar(page)
             mark("create cross-owner resource with step image and attachment")
-            cross_owner_project_id, _, cross_owner_name = _create_cross_owner_resource(
-                page, origin, mark
+            (
+                cross_owner_project_id,
+                _,
+                cross_owner_name,
+                cross_owner_yarn_id,
+                cross_owner_yarn_name,
+            ) = _create_cross_owner_resource(page, origin, mark)
+            mark("verify owner project and yarn cards")
+            _assert_owner_resource_cards(
+                page,
+                origin,
+                cross_owner_project_id,
+                cross_owner_name,
+                cross_owner_yarn_id,
+                cross_owner_yarn_name,
+                screenshot_dir,
             )
             _sign_out(page)
             _sign_in(page, origin, admin_email, admin_password)
@@ -798,7 +1042,105 @@ def run_acceptance(
             page.on("response", record_admin_image_response)
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             page.get_by_role("heading", name="Audit log").wait_for(state="visible")
+            _require(
+                page.locator(".desktop-rail .shell-back-button").is_visible(),
+                "desktop rail did not show the direct-entry back fallback",
+            )
             page.locator(".event-row").first.wait_for(state="visible")
+            mark("check cross-owner audit resource card and protected image")
+            audit_resource_row = (
+                page.locator(".event-row").filter(has_text=cross_owner_name).first
+            )
+            audit_resource_card = audit_resource_row.locator(".resource-card")
+            audit_resource_card.wait_for(state="visible")
+            audit_resource_href = (
+                audit_resource_card.locator("a.resource-card__link").get_attribute(
+                    "href"
+                )
+                or ""
+            )
+            _require(
+                urlsplit(audit_resource_href).path
+                == f"/app/admin/resources/project/{cross_owner_project_id}",
+                "audit resource card did not use its authorized admin route",
+            )
+            audit_project_image = _assert_decoded_card_image(
+                audit_resource_card,
+                message="cross-owner audit project thumbnail did not decode",
+            )
+            _require(
+                re.fullmatch(
+                    rf"/api/v2/admin/resources/project/{cross_owner_project_id}/media/image/\d+/thumbnail",
+                    urlsplit(audit_project_image).path,
+                )
+                is not None,
+                "cross-owner audit project card used a non-admin image route",
+            )
+            audit_yarn_row = (
+                page.locator(".event-row").filter(has_text=cross_owner_yarn_name).first
+            )
+            audit_yarn_card = audit_yarn_row.locator(".resource-card")
+            audit_yarn_card.wait_for(state="visible")
+            audit_yarn_href = (
+                audit_yarn_card.locator("a.resource-card__link").get_attribute("href")
+                or ""
+            )
+            _require(
+                urlsplit(audit_yarn_href).path
+                == f"/app/admin/resources/yarn/{cross_owner_yarn_id}",
+                "audit yarn card did not use its authorized admin route",
+            )
+            audit_yarn_image = _assert_decoded_card_image(
+                audit_yarn_card,
+                message="cross-owner audit yarn thumbnail did not decode",
+            )
+            _require(
+                re.fullmatch(
+                    rf"/api/v2/admin/resources/yarn/{cross_owner_yarn_id}/media/photo/\d+/thumbnail",
+                    urlsplit(audit_yarn_image).path,
+                )
+                is not None,
+                "cross-owner audit yarn card used a non-admin photo route",
+            )
+            for width, suffix in ((390, "390"), (1280, "desktop")):
+                page.set_viewport_size({"width": width, "height": 900})
+                _assert_no_horizontal_overflow(page, "audit")
+                _save_screenshot(page, screenshot_dir, f"admin-audit-{suffix}.png")
+            broken_preview_url = f"{origin}{urlsplit(audit_project_image).path}"
+
+            def abort_card_preview(route: Route) -> None:
+                if route.request.url == broken_preview_url:
+                    route.abort("failed")
+                else:
+                    route.continue_()
+
+            page.route(
+                "**/api/v2/admin/resources/project/*/media/image/*/thumbnail",
+                abort_card_preview,
+            )
+            page.reload(wait_until="networkidle")
+            broken_card = (
+                page.locator(".event-row")
+                .filter(has_text=cross_owner_name)
+                .first.locator(".resource-card")
+            )
+            broken_card.locator(".resource-card__image svg").wait_for(state="visible")
+            _require(
+                broken_card.locator(".resource-card__image img").count() == 0,
+                "failed audit preview remained as a broken image element",
+            )
+            page.unroute(
+                "**/api/v2/admin/resources/project/*/media/image/*/thumbnail",
+                abort_card_preview,
+            )
+            page.reload(wait_until="networkidle")
+            page.locator(".event-row").filter(has_text=cross_owner_name).first.locator(
+                "a.resource-card__link"
+            ).click()
+            page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
+                state="visible"
+            )
+            page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             mark("read-only cross-owner resource and lazy audit diff")
             audit_detail_requests: list[str] = []
 
@@ -809,6 +1151,21 @@ def run_acceptance(
 
             page.on("request", record_audit_detail_request)
             mark("open cross-owner resource route")
+            page.set_viewport_size({"width": 390, "height": 900})
+            page.goto(
+                f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
+                wait_until="networkidle",
+            )
+            page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
+                state="visible"
+            )
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.wait_for_url("**/app/admin/audit")
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.wait_for_url("**/app/more")
+            page.get_by_role("heading", name="More", exact=True).wait_for(
+                state="visible"
+            )
             page.goto(
                 f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
                 wait_until="networkidle",
@@ -841,8 +1198,33 @@ def run_acceptance(
                 initial=member_email[0].upper(),
                 image_expected=True,
             )
+            related_yarn_card = page.locator(".linked-resources .resource-card").filter(
+                has_text=cross_owner_yarn_name
+            )
+            related_yarn_card.wait_for(state="visible")
+            related_yarn_href = (
+                related_yarn_card.locator("a.resource-card__link").get_attribute("href")
+                or ""
+            )
+            related_yarn_image = _assert_decoded_card_image(
+                related_yarn_card,
+                message="admin related-yarn thumbnail did not decode",
+            )
+            _require(
+                urlsplit(related_yarn_href).path
+                == f"/app/admin/resources/yarn/{cross_owner_yarn_id}"
+                and re.fullmatch(
+                    rf"/api/v2/admin/resources/yarn/{cross_owner_yarn_id}/media/photo/\d+/thumbnail",
+                    urlsplit(related_yarn_image).path,
+                )
+                is not None,
+                "admin related-yarn card did not use scoped resource routes",
+            )
             mark("load cross-owner step image")
-            step_image = page.locator(".media-grid img")
+            step_media = page.locator(".media-grid li").filter(
+                has_text="Nested fixture step image"
+            )
+            step_image = step_media.locator("img")
             image_count = step_image.count()
             image_visible = image_count == 1 and step_image.is_visible()
             image_url_is_admin = image_count == 1 and bool(
@@ -870,7 +1252,7 @@ def run_acceptance(
                 f"statuses={admin_image_response_statuses})",
             )
             _require(
-                "Step 1" in page.locator(".media-grid li").first.inner_text(),
+                image_count == 1 and "Step 1" in step_media.inner_text(),
                 "read-only resource view did not identify the image's step",
             )
             mark("download cross-owner attachment")
@@ -919,6 +1301,9 @@ def run_acceptance(
             for width in (320, 390, 768, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
                 _assert_no_horizontal_overflow(page, "diff")
+            page.set_viewport_size({"width": 390, "height": 900})
+            page.get_by_role("button", name="Back", exact=True).click()
+            page.wait_for_url("**/app/admin/audit")
             page.goto(
                 f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
                 wait_until="networkidle",
@@ -1036,7 +1421,7 @@ def run_acceptance(
             rendered_rows = [
                 (
                     row.locator(".event-action strong").inner_text().strip(),
-                    row.locator(".resource-link").inner_text().strip(),
+                    row.locator(".resource-card__name").inner_text().strip(),
                 )
                 for row in rows
             ]
@@ -1247,7 +1632,7 @@ def run_acceptance(
                 .filter(has_text="Deleted")
                 .filter(has_text=cross_owner_name)
             )
-            deleted_resource_link = deleted_event_row.locator("a.resource-link")
+            deleted_resource_link = deleted_event_row.locator("a.resource-card__link")
             deleted_resource_link.wait_for(state="visible")
             deleted_event_href = deleted_resource_link.get_attribute("href") or ""
             deleted_event_match = re.fullmatch(
@@ -1307,6 +1692,8 @@ def run_acceptance(
                 for width in (320, 390, 768, 1280):
                     page.set_viewport_size({"width": width, "height": 900})
                     _assert_no_horizontal_overflow(page, route)
+                if route == "audit" and width <= 390:
+                    _assert_mobile_header_alignment(page)
             local_keys = page.evaluate("() => Object.keys(window.localStorage)")
             _require(
                 not any(
@@ -1371,6 +1758,7 @@ def run_live_fixture(
     web_root: Path,
     private_dir: Path,
     chromium_executable: Path | None = None,
+    screenshot_dir: Path | None = None,
 ) -> None:
     fixture_file = private_dir / "fixture.json"
     state_file = private_dir / "fixture-state.json"
@@ -1402,6 +1790,7 @@ def run_live_fixture(
             admin_password,
             chromium_executable,
             private_dir / "browser-stage.txt",
+            screenshot_dir,
         )
     finally:
         if started:
@@ -1413,13 +1802,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--web-root", type=Path, required=True)
     parser.add_argument("--private-dir", type=Path)
+    parser.add_argument("--screenshots-dir", type=Path)
     parser.add_argument("--chromium-executable", type=Path)
     args = parser.parse_args(argv)
     private_dir: Path | None = None
+    screenshot_dir: Path | None = None
     stage_file: Path | None = None
     try:
         private_dir = _private_work_dir(args.private_dir)
         stage_file = private_dir / "browser-stage.txt"
+        if args.screenshots_dir is not None:
+            screenshot_dir = rust_fixture._outside_repository(
+                args.screenshots_dir, "screenshot directory"
+            )
+            screenshot_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
+            screenshot_dir.chmod(0o700)
         web_root = args.web_root.expanduser().resolve()
         if not web_root.is_dir():
             raise AcceptanceFailure("web root must be an existing directory")
@@ -1428,6 +1825,7 @@ def main(argv: list[str] | None = None) -> int:
             web_root,
             private_dir,
             args.chromium_executable,
+            screenshot_dir,
         )
     except rust_fixture.FixtureError as error:
         print(
@@ -1454,6 +1852,8 @@ def main(argv: list[str] | None = None) -> int:
         "Admin browser acceptance passed: account management, access denial, "
         "and audit filters."
     )
+    if screenshot_dir is not None:
+        print(f"Screenshots: {screenshot_dir}")
     return 0
 
 

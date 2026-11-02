@@ -30,6 +30,7 @@ export interface AuditResourceReference {
   name: string | null;
   name_source: "event" | "current" | "unavailable";
   href: string | null;
+  preview_url: string | null;
   exists: boolean;
 }
 
@@ -209,6 +210,13 @@ function parseAuditResourceReference(
       value.name_source !== "current" &&
       value.name_source !== "unavailable") ||
     !(value.href === null || typeof value.href === "string") ||
+    !validAuditPreviewUrl(
+      value.preview_url,
+      value.kind,
+      value.id,
+      value.href,
+      value.exists,
+    ) ||
     typeof value.exists !== "boolean"
   )
     throw invalidResponse();
@@ -234,8 +242,36 @@ function parseAuditResourceReference(
     name: value.name,
     name_source: value.name_source,
     href: value.href,
+    preview_url: value.preview_url,
     exists: value.exists,
   };
+}
+
+function validAuditPreviewUrl(
+  value: unknown,
+  kind: AuditResourceKind | null,
+  id: number,
+  href: unknown,
+  exists: unknown,
+): value is string | null {
+  if (value === null) return true;
+  if (
+    typeof value !== "string" ||
+    exists !== true ||
+    id <= 0 ||
+    kind === null ||
+    href !== `/app/admin/resources/${kind}/${id}`
+  )
+    return false;
+  const mediaKind =
+    kind === "project" ? "image" : kind === "yarn" ? "photo" : null;
+  if (mediaKind === null) return false;
+  const prefix = `/api/v2/admin/resources/${kind}/${id}/media/${mediaKind}/`;
+  if (!value.startsWith(prefix) || !value.endsWith("/thumbnail")) return false;
+  const mediaId = value.slice(prefix.length, -"/thumbnail".length);
+  return (
+    positiveInteger(Number(mediaId)) && String(Number(mediaId)) === mediaId
+  );
 }
 
 const changeFields = new Set([

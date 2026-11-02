@@ -4,6 +4,7 @@
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -140,6 +141,16 @@
     return t("Unknown actor", locale);
   }
 
+  function entityLabel(entity: string): string {
+    return entity === "project"
+      ? t("Project", locale)
+      : entity === "yarn"
+        ? t("Yarn", locale)
+        : entity === "category"
+          ? t("Category", locale)
+          : t("Resource", locale);
+  }
+
   function eventDate(value: string): string {
     const parsed = new Date(value);
     if (!Number.isFinite(parsed.valueOf())) return value;
@@ -213,6 +224,7 @@
       {#each events as event (event.id)}
         {@const actor = actorLabel(event)}
         {@const action = auditActionPresentation(event.action)}
+        {@const resourceKind = event.resource.kind ?? "resource"}
         <li class="event-row">
           <div class="event-main">
             <div class="event-summary">
@@ -222,20 +234,14 @@
                   {action.known ? t(action.messageKey, locale) : action.label}
                 </strong>
               </span>
-              {#if !event.resource.name}
-                <span class="event-entity"
-                  >{event.entity_type} #{event.entity_id}</span
-                >
-              {/if}
-              {#if event.resource.href}
-                <a class="resource-link" href={event.resource.href}>
-                  {event.resource.name ??
-                    `${event.entity_type} #${event.entity_id}`}
-                </a>
-              {:else if event.resource.name}
-                <span class="resource-link">{event.resource.name}</span>
-              {/if}
             </div>
+            <ResourceCard
+              kind={resourceKind}
+              name={event.resource.name ??
+                `${entityLabel(event.entity_type)} #${event.entity_id}`}
+              href={event.resource.href}
+              imageUrl={event.resource.preview_url}
+            />
             <p>
               {t("By", locale)}
               <span class="actor-identity">
@@ -244,12 +250,16 @@
               </span>
             </p>
           </div>
-          {#if event.has_changes}
-            <a class="show-diff" href={`/app/admin/audit/${event.id}`}>
-              {t("Show diff", locale)}
-            </a>
-          {/if}
-          <time datetime={event.created_at}>{eventDate(event.created_at)}</time>
+          <div class="event-meta">
+            {#if event.has_changes}
+              <a class="show-diff" href={`/app/admin/audit/${event.id}`}>
+                {t("Show diff", locale)}
+              </a>
+            {/if}
+            <time datetime={event.created_at}
+              >{eventDate(event.created_at)}</time
+            >
+          </div>
         </li>
       {:else}
         <li class="empty-events">
@@ -407,20 +417,29 @@
     align-items: center;
     gap: 0.45rem;
   }
-  .event-entity,
   .event-main p,
   .event-row time {
     color: var(--ink-muted);
     font-size: 0.9rem;
   }
-  .resource-link,
   .show-diff {
     color: var(--accent-strong);
     font-size: 0.9rem;
     overflow-wrap: anywhere;
   }
-  .show-diff {
+  .show-diff,
+  .event-meta {
     justify-self: start;
+  }
+  .event-meta {
+    display: grid;
+    justify-items: end;
+    gap: 0.2rem;
+  }
+  .show-diff {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
   }
   .event-main p {
     display: flex;
@@ -475,6 +494,9 @@
     }
     .event-row {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .event-meta {
+      justify-items: start;
     }
     .event-row time {
       grid-column: 1;

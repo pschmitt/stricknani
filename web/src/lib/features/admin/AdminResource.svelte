@@ -4,6 +4,7 @@
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -14,14 +15,17 @@
   } from "./admin-resource-api";
 
   type LoadState = "loading" | "ready" | "error";
+  type RelatedResource = { id: number; resource: AdminResourceData | null };
 
   let { kind, id }: { kind: string; id: number } = $props();
   let resource = $state<AdminResourceData | null>(null);
+  let relatedResources = $state<RelatedResource[]>([]);
   let loadState = $state<LoadState>("loading");
   let loadError = $state("");
   let retry = $state(0);
   let loadGeneration = 0;
   let ownerGeneration = 0;
+  let relatedGeneration = 0;
   let currentOwner: number | null | undefined;
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -89,6 +93,36 @@
     return () => controller.abort();
   });
 
+  $effect(() => {
+    const current = resource;
+    const ownerId = userId;
+    const request = ++relatedGeneration;
+    const controller = new AbortController();
+    relatedResources = [];
+    if (!current || ownerId === null) return () => controller.abort();
+
+    const relatedKind = current.kind === "project" ? "yarn" : "project";
+    const ids =
+      current.kind === "project"
+        ? current.resource.yarn_ids
+        : current.kind === "yarn"
+          ? current.resource.project_ids
+          : [];
+    relatedResources = ids.map((id) => ({ id, resource: null }));
+    void loadRelatedResources(relatedKind, ids, controller.signal).then(
+      (results) => {
+        if (
+          controller.signal.aborted ||
+          request !== relatedGeneration ||
+          userId !== ownerId
+        )
+          return;
+        relatedResources = results;
+      },
+    );
+    return () => controller.abort();
+  });
+
   onDestroy(() => {
     loadGeneration += 1;
     ownerGeneration += 1;
@@ -152,6 +186,69 @@
   function updatedAt(value: AdminResourceData): string | null {
     return value.kind === "category" ? null : value.resource.updated_at;
   }
+
+  function previewUrl(value: AdminResourceData): string | null {
+    if (value.kind === "project") {
+      return (
+        value.resource.images.find((image) => image.is_title_image)
+          ?.thumbnail_url ??
+        value.resource.images[0]?.thumbnail_url ??
+        null
+      );
+    }
+    if (value.kind === "yarn") {
+      return (
+        value.resource.photos.find((photo) => photo.is_primary)
+          ?.thumbnail_url ??
+        value.resource.photos[0]?.thumbnail_url ??
+        null
+      );
+    }
+    return null;
+  }
+
+  function relatedSubtitle(value: AdminResourceData): string | null {
+    if (value.kind === "project") return value.resource.category;
+    if (value.kind === "yarn") {
+      return (
+        [value.resource.brand, value.resource.colorway]
+          .filter(Boolean)
+          .join(" · ") || null
+      );
+    }
+    return null;
+  }
+
+  async function loadRelatedResources(
+    kind: "project" | "yarn",
+    ids: number[],
+    signal: AbortSignal,
+  ): Promise<RelatedResource[]> {
+    const results: RelatedResource[] = ids.map((id) => ({
+      id,
+      resource: null,
+    }));
+    let nextIndex = 0;
+    const worker = async () => {
+      while (!signal.aborted) {
+        const index = nextIndex;
+        nextIndex += 1;
+        if (index >= ids.length) return;
+        const id = ids[index];
+        const result = results[index];
+        if (id === undefined || result === undefined) return;
+        try {
+          result.resource = await getAdminResource(kind, id, signal);
+        } catch {
+          result.resource = null;
+        }
+      }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(4, ids.length) }, () => worker()),
+    );
+    return results;
+  }
 </script>
 
 <svelte:head>
@@ -164,9 +261,19 @@
   <header class="resource-heading">
     <div>
       <p class="section-mark">{t("Administrator", locale)}</p>
-      <h1 id="resource-title">
-        {resource?.name ?? t("Resource details", locale)}
-      </h1>
+      {#if resource}
+        <ResourceCard
+          kind={resource.kind}
+          name={resource.name}
+          href={null}
+          imageUrl={previewUrl(resource)}
+          variant="compact"
+          titleTag="h1"
+          titleId="resource-title"
+        />
+      {:else}
+        <h1 id="resource-title">{t("Resource details", locale)}</h1>
+      {/if}
       <p>{t("Read-only view", locale)}</p>
     </div>
     <a class="secondary-button" href={resolve("/admin/audit")}>
@@ -265,15 +372,20 @@
           {#if project.yarn_ids.length}
             <div class="linked-resources">
               <h3>{t("Linked yarns", locale)}</h3>
-              {#each project.yarn_ids as yarnId (yarnId)}
-                <a
-                  href={resolve("/admin/resources/[kind]/[id]", {
-                    kind: "yarn",
-                    id: String(yarnId),
-                  })}
-                >
-                  {t("Yarn", locale)} #{yarnId}
-                </a>
+              {#each relatedResources as related (related.id)}
+                {@const yarn = related.resource}
+                <ResourceCard
+                  kind="yarn"
+                  name={yarn?.name ?? `${t("Yarn", locale)} #${related.id}`}
+                  href={yarn
+                    ? resolve("/admin/resources/[kind]/[id]", {
+                        kind: "yarn",
+                        id: String(related.id),
+                      })
+                    : null}
+                  imageUrl={yarn ? previewUrl(yarn) : null}
+                  subtitle={yarn ? relatedSubtitle(yarn) : null}
+                />
               {/each}
             </div>
           {/if}
@@ -448,15 +560,21 @@
           {#if yarn.project_ids.length}
             <div class="linked-resources">
               <h3>{t("Linked projects", locale)}</h3>
-              {#each yarn.project_ids as projectId (projectId)}
-                <a
-                  href={resolve("/admin/resources/[kind]/[id]", {
-                    kind: "project",
-                    id: String(projectId),
-                  })}
-                >
-                  {t("Project", locale)} #{projectId}
-                </a>
+              {#each relatedResources as related (related.id)}
+                {@const project = related.resource}
+                <ResourceCard
+                  kind="project"
+                  name={project?.name ??
+                    `${t("Project", locale)} #${related.id}`}
+                  href={project
+                    ? resolve("/admin/resources/[kind]/[id]", {
+                        kind: "project",
+                        id: String(related.id),
+                      })
+                    : null}
+                  imageUrl={project ? previewUrl(project) : null}
+                  subtitle={project ? relatedSubtitle(project) : null}
+                />
               {/each}
             </div>
           {/if}
@@ -547,6 +665,10 @@
   .resource-heading h1 {
     margin: 0;
     overflow-wrap: anywhere;
+  }
+  .resource-heading :global(.resource-card__name) {
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    letter-spacing: -0.045em;
   }
   .resource-heading > div > p:last-child {
     margin: 0.35rem 0 0;
@@ -655,6 +777,10 @@
   }
   .linked-resources {
     align-items: center;
+  }
+  .linked-resources :global(.resource-card) {
+    flex: 1 1 16rem;
+    max-width: 100%;
   }
   .linked-resources h3 {
     flex-basis: 100%;

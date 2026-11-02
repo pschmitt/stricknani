@@ -4,6 +4,7 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
@@ -817,22 +818,22 @@
                 <div>
                   <dt>{t("Yarn", locale)}</dt>
                   <dd>
-                    <strong>{yarn.name}</strong>
-                    {#if yarn.brand}<span>{yarn.brand}</span>{/if}
-                    {#if yarn.colorway}<span>{yarn.colorway}</span>{/if}
-                    {#if yarn.fiber_content}<span>{yarn.fiber_content}</span
-                      >{/if}
-                    {#if yarn.weight_category}<span>{yarn.weight_category}</span
-                      >{/if}
-                    {#if yarn.weight_grams || yarn.length_meters}
-                      <span>
-                        {#if yarn.weight_grams}{yarn.weight_grams} g{/if}
-                        {#if yarn.weight_grams && yarn.length_meters}
-                          ·
-                        {/if}
-                        {#if yarn.length_meters}{yarn.length_meters} m{/if}
-                      </span>
-                    {/if}
+                    <ResourceCard
+                      kind="yarn"
+                      href={`${resolve("/yarns")}/${yarn.id}`}
+                      imageUrl={yarn.preview_url}
+                      name={yarn.name}
+                      subtitle={[yarn.brand, yarn.colorway]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      meta={[
+                        yarn.fiber_content,
+                        yarn.weight_category,
+                        yarn.weight_grams ? `${yarn.weight_grams} g` : null,
+                        yarn.length_meters ? `${yarn.length_meters} m` : null,
+                      ].filter((value): value is string => Boolean(value))}
+                      titleTag="h3"
+                    />
                     {#if yarn.notes_html}
                       <div class="rich-text yarn-notes">
                         {@html yarn.notes_html}
@@ -1539,7 +1540,12 @@
     overflow-wrap: anywhere;
   }
 
-  .details-card dd span,
+  .details-card :global(.resource-card__link) {
+    display: grid;
+    min-height: 0;
+    align-items: center;
+  }
+
   .yarn-notes {
     color: var(--ink-muted);
     font-size: 0.88rem;

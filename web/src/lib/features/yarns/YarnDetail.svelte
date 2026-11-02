@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -326,10 +327,13 @@
               <ul class="project-list">
                 {#each linkedProjects as project (project.id)}
                   <li>
-                    <a href={`${resolve("/projects")}/${project.id}`}
-                      >{project.name}</a
-                    >
-                    {#if project.category}<span>{project.category}</span>{/if}
+                    <ResourceCard
+                      kind="project"
+                      href={`${resolve("/projects")}/${project.id}`}
+                      imageUrl={project.preview_url}
+                      name={project.name}
+                      subtitle={project.category}
+                    />
                   </li>
                 {/each}
               </ul>
@@ -642,25 +646,9 @@
   }
 
   .project-list li {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .project-list a {
     min-width: 0;
-    color: var(--accent-strong);
-    font-weight: 620;
-    overflow-wrap: anywhere;
-  }
-
-  .project-list span {
-    flex: 0 0 auto;
-    color: var(--ink-muted);
-    font-size: 0.85rem;
+    border-bottom: 1px solid var(--line);
+    padding: 0.45rem 0;
   }
 
   .notice-error,

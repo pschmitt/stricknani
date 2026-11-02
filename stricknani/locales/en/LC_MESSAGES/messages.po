@@ -1266,7 +1266,7 @@ msgstr ""
 #: stricknani/templates/macros/buttons.html:77
 #: stricknani/templates/shared/unified_navbar.html:25
 msgid "Back"
-msgstr ""
+msgstr "Back"
 
 #: stricknani/templates/macros/dialogs.html:28
 msgid "Close dialog"

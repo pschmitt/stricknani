@@ -113,18 +113,50 @@ describe("yarn browser API contract", () => {
   });
 
   it("loads linked project labels through the owner-scoped v2 detail route", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      Response.json({
-        data: { id: 8, name: "Lake socks", category: "Socks" },
-      }),
-    );
+    const project = {
+      id: 8,
+      name: "Lake socks",
+      category: "Socks",
+      images: [
+        {
+          id: 2,
+          is_title_image: false,
+          thumbnail_url: "/media/thumbnails/projects/8/first.jpg",
+        },
+        {
+          id: 3,
+          is_title_image: true,
+          thumbnail_url: "/media/thumbnails/projects/8/title.jpg",
+        },
+      ],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: project }))
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...project,
+            images: [
+              {
+                ...project.images[0],
+                thumbnail_url: "/media/thumbnails/projects/9/other.jpg",
+              },
+            ],
+          },
+        }),
+      );
     vi.stubGlobal("fetch", fetchMock);
     await expect(getLinkedProject(8)).resolves.toEqual({
       id: 8,
       name: "Lake socks",
       category: "Socks",
+      preview_url: "/media/thumbnails/projects/8/title.jpg",
     });
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/v2/projects/8");
+    await expect(getLinkedProject(8)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
   });
 
   it("rejects string IDs, invalid measurements, and malformed photo DTOs", async () => {

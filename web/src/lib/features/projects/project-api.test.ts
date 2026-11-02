@@ -5,6 +5,7 @@ import {
   deleteProjectImage,
   filtersFromSearch,
   getProject,
+  getYarn,
   listProjects,
   parseProjectDetail,
   searchFromFilters,
@@ -156,6 +157,62 @@ describe("project URL state and API DTOs", () => {
     );
     expect(page.meta).toEqual({ page: 2, per_page: 50, has_more: false });
     expect(page.data[0]).toMatchObject({ id: 42, name: "River path socks" });
+  });
+
+  it("derives a linked yarn preview from its owner-scoped photo DTO", async () => {
+    const yarn = {
+      id: 7,
+      name: "Soft wool",
+      brand: null,
+      colorway: null,
+      fiber_content: "wool",
+      weight_category: "DK",
+      recommended_needles: null,
+      notes_html: null,
+      link: null,
+      weight_grams: null,
+      length_meters: null,
+      photos: [
+        {
+          id: 1,
+          thumbnail_url: "/media/thumbnails/yarns/7/first.jpg",
+          is_primary: false,
+        },
+        {
+          id: 2,
+          thumbnail_url: "/media/thumbnails/yarns/7/primary.jpg",
+          is_primary: true,
+        },
+      ],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: yarn }))
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...yarn,
+            photos: [
+              {
+                ...yarn.photos[0],
+                thumbnail_url: "/media/thumbnails/yarns/8/other.jpg",
+              },
+            ],
+          },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getYarn(7, new AbortController().signal),
+    ).resolves.toMatchObject({
+      preview_url: "/media/thumbnails/yarns/7/primary.jpg",
+    });
+    await expect(
+      getYarn(7, new AbortController().signal),
+    ).rejects.toMatchObject({
+      code: "invalid_response",
+    });
   });
 
   it("rejects malformed list and detail resources", async () => {

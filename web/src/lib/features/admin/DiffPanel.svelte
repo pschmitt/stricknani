@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -209,6 +210,8 @@
       >
     </section>
   {:else if detail}
+    {@const resourceKind = detail.event.resource.kind ?? "resource"}
+    {@const eventDetailHref = `/app/admin/audit/${detail.event.id}`}
     <article class="event-card">
       <div class="event-actor">
         <UserAvatar
@@ -220,20 +223,20 @@
           >{dateLabel(detail.event.created_at)}</time
         >
       </div>
-      <h2>
-        {detail.event.resource.name ??
-          `${entityLabel(detail.event.entity_type)} #${detail.event.entity_id}`}
-      </h2>
       <p>{actionLabel(detail.event.action)}</p>
-      {#if detail.event.resource.href && detail.event.resource.href !== `/app/admin/audit/${detail.event.id}`}
-        <a href={detail.event.resource.href}>{t("Open resource", locale)}</a>
-      {:else if detail.event.resource.name}
-        <p>
-          {detail.event.resource.exists
-            ? detail.event.resource.name
-            : t("Resource unavailable", locale)}
-        </p>
-      {/if}
+      <ResourceCard
+        kind={resourceKind}
+        name={detail.event.resource.name ??
+          `${entityLabel(detail.event.entity_type)} #${detail.event.entity_id}`}
+        href={detail.event.resource.href === eventDetailHref
+          ? null
+          : detail.event.resource.href}
+        imageUrl={detail.event.resource.preview_url}
+        subtitle={!detail.event.resource.exists
+          ? t("Resource unavailable", locale)
+          : null}
+        titleTag="h2"
+      />
     </article>
 
     {#if detail.changes}
@@ -308,7 +311,7 @@
     margin-left: auto;
     color: var(--muted);
   }
-  .event-card h2 {
+  .event-card :global(.resource-card__name) {
     margin: 0.9rem 0 0.4rem;
     font-size: 1.1rem;
   }

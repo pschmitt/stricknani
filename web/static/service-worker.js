@@ -827,9 +827,10 @@ function publicAsset(request, url) {
         isPromotableImmutableAsset(url) &&
         responseMatches(retained, url)
       ) {
-        await queueImmutableCacheWrite(cache, url, retained.clone()).catch(
-          () => undefined,
-        );
+        void queueImmutableCacheWrite(cache, url, retained.clone())
+          .catch(() => undefined)
+          .finally(finishBackground);
+        return retained;
       }
       finishBackground();
       return retained || networkResponse;
@@ -844,9 +845,10 @@ function publicAsset(request, url) {
             isPromotableImmutableAsset(url) &&
             responseMatches(retained, url)
           ) {
-            await queueImmutableCacheWrite(cache, url, retained.clone()).catch(
-              () => undefined,
-            );
+            void queueImmutableCacheWrite(cache, url, retained.clone())
+              .catch(() => undefined)
+              .finally(finishBackground);
+            return retained;
           }
           finishBackground();
           return retained;

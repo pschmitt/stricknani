@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -238,30 +239,19 @@
     <div class="yarn-grid" aria-live="polite">
       {#each items as item (item.id)}
         <article class="yarn-card">
-          <a class="yarn-open" href={`${resolve("/yarns")}/${item.id}`}>
-            <div class="yarn-image">
-              {#if item.preview_url}
-                <img src={item.preview_url} alt="" loading="lazy" />
-              {:else}
-                <span class="skein-mark" aria-hidden="true">◌</span>
-                <span class="image-label">{t("Photo not added", locale)}</span>
-              {/if}
-            </div>
-            <div class="yarn-copy">
-              <h2>{item.name}</h2>
-              <p class="yarn-identity">
-                {[item.brand, item.colorway].filter(Boolean).join(" · ") ||
-                  t("Details to add", locale)}
-              </p>
-              <div class="yarn-meta">
-                {#if item.weight_category}<span>{item.weight_category}</span
-                  >{/if}
-                <time datetime={item.updated_at}
-                  >{formatDate(item.updated_at)}</time
-                >
-              </div>
-            </div>
-          </a>
+          <ResourceCard
+            kind="yarn"
+            href={`${resolve("/yarns")}/${item.id}`}
+            imageUrl={item.preview_url}
+            name={item.name}
+            subtitle={[item.brand, item.colorway].filter(Boolean).join(" · ") ||
+              t("Details to add", locale)}
+            meta={[item.weight_category, formatDate(item.updated_at)].filter(
+              (value): value is string => Boolean(value),
+            )}
+            variant="library"
+            titleTag="h2"
+          />
           <button
             class="favorite-button"
             class:is-favorite={item.is_favorite}
@@ -446,91 +436,6 @@
   .yarn-card:hover {
     transform: translateY(-2px);
     border-color: var(--accent);
-  }
-
-  .yarn-open {
-    display: block;
-    min-width: 0;
-    color: var(--ink);
-    text-decoration: none;
-  }
-
-  .yarn-image {
-    position: relative;
-    display: grid;
-    min-height: 10rem;
-    aspect-ratio: 1.36;
-    place-items: center;
-    overflow: hidden;
-    background: var(--surface-raised);
-  }
-
-  .yarn-image img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .skein-mark {
-    color: var(--accent);
-    font-size: 3rem;
-    line-height: 1;
-  }
-
-  .image-label {
-    position: absolute;
-    bottom: 0.7rem;
-    left: 0.75rem;
-    color: var(--ink-muted);
-    font-size: 0.8rem;
-  }
-
-  .yarn-copy {
-    display: grid;
-    gap: 0.35rem;
-    padding: 0.9rem 1rem 1rem;
-  }
-
-  .yarn-copy h2 {
-    overflow: hidden;
-    margin: 0;
-    padding-right: 2rem;
-    font-size: 1.08rem;
-    letter-spacing: -0.025em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yarn-identity {
-    overflow: hidden;
-    margin: 0;
-    color: var(--ink-muted);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yarn-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.45rem;
-    padding-top: 0.2rem;
-    color: var(--ink-muted);
-    font-size: 0.82rem;
-  }
-
-  .yarn-meta span {
-    border-radius: 999px;
-    padding: 0.2rem 0.5rem;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
-    font-weight: 620;
-  }
-
-  .yarn-meta time {
-    margin-left: auto;
   }
 
   .favorite-button {

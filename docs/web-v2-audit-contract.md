@@ -21,6 +21,7 @@ resource: {
   name: string | null;
   name_source: 'event' | 'current' | 'unavailable';
   href: string | null;
+  preview_url: string | null;
   exists: boolean;
 };
 has_changes: boolean;
@@ -32,7 +33,15 @@ Unknown historical entity kinds or invalid IDs have no resource link.
 Existing resources link to `/app/admin/resources/{kind}/{id}`. Deleted or
 unavailable resources link to `/app/admin/audit/{event_id}`, which explains
 what remains available. Never invent a deleted name or missing history.
-The list must not include full resource text or change payloads.
+For a live project or yarn, `preview_url` may reference its current title or
+primary thumbnail through the same administrator-only, parent-bound media
+route. It is current resource media, not an event-time image snapshot; category,
+deleted, and imageless resources use `null`. No image metadata is added to old
+audit rows. The list must not include full resource text or change payloads.
+
+Owner-scoped `ProjectYarn` and `LinkedProject` previews are derived from the
+existing yarn `photos` and project `images` detail DTOs. They retain the normal
+owner media URLs and do not grant cross-owner access.
 
 ## Read-only resource
 

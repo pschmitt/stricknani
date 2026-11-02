@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 from pathlib import Path
 from typing import Protocol
 from urllib.parse import urlsplit
@@ -743,6 +744,7 @@ def run_acceptance(
     service_worker_asset_requests: list[str] = []
     service_worker_asset_responses: list[str] = []
     service_worker_asset_finished: list[str] = []
+    service_worker_asset_failures: list[str] = []
     reopen_events: list[str] = []
 
     def record_worker_error(event: object) -> None:
@@ -823,6 +825,18 @@ def run_acceptance(
         ):
             service_worker_asset_finished.append(path)
 
+    def record_service_worker_asset_failure(request: object) -> None:
+        request_url = getattr(request, "url", "")
+        try:
+            path = urlsplit(request_url).path
+        except ValueError:
+            return
+        if (
+            path in expected_assets
+            and getattr(request, "service_worker", None) is not None
+        ):
+            service_worker_asset_failures.append(path)
+
     with sync_playwright() as playwright:
         mark_stage("launching packaged Chromium")
         try:
@@ -845,6 +859,7 @@ def run_acceptance(
             context.on("request", record_service_worker_asset_request)
             context.on("response", record_service_worker_asset_response)
             context.on("requestfinished", record_service_worker_asset_finished)
+            context.on("requestfailed", record_service_worker_asset_failure)
             page = context.new_page()
             cdp = context.new_cdp_session(page)
             cdp.send("ServiceWorker.enable")
@@ -1883,6 +1898,20 @@ def run_acceptance(
                 "the explicit update action is unavailable",
             )
 
+            mark_stage("opening an old-version cache-retention tab")
+            held_old_tab = context.new_page()
+            held_old_response = held_old_tab.goto(
+                f"{origin}/app/login",
+                wait_until="domcontentloaded",
+                timeout=15_000,
+            )
+            _require(
+                held_old_response is not None and held_old_response.status == 200,
+                "old-version cache-retention tab did not load",
+            )
+            _wait_for_controlled_worker(held_old_tab, expected_version)
+            held_old_time_origin = held_old_tab.evaluate("() => performance.timeOrigin")
+
             page_time_origin = page.evaluate("() => performance.timeOrigin")
             second_time_origin = second_tab.evaluate("() => performance.timeOrigin")
             asset_response_start = len(service_worker_asset_responses)
@@ -1903,10 +1932,36 @@ def run_acceptance(
                   });
                 }"""
             )
+            held_old_tab.evaluate(
+                """() => {
+                  const cancelReload = event => {
+                    event.preventDefault();
+                    event.returnValue = '';
+                  };
+                  window.addEventListener('beforeunload', cancelReload, {
+                    once: true,
+                  });
+                }"""
+            )
             page.once("dialog", cancel_one_prepared_reload)
+
+            held_old_reload_dialogs: list[str] = []
+
+            def cancel_held_old_reload(dialog: Dialog) -> None:
+                held_old_reload_dialogs.append(dialog.type)
+                dialog.dismiss()
+
+            held_old_tab.once("dialog", cancel_held_old_reload)
             mark_stage("retrying commit after prepared native reload cancellation")
             second_tab.get_by_role("button", name="Reload to update", exact=True).click(
                 no_wait_after=True, timeout=5_000
+            )
+            _wait_for_async_condition(
+                held_old_tab,
+                "() => document.querySelector('.app-shell')?.inert === true",
+                None,
+                "cache-retention tab lock before worker activation",
+                timeout_ms=5_000,
             )
             mark_stage("waiting for the prepared login tab to reload")
             try:
@@ -2011,6 +2066,17 @@ def run_acceptance(
                 f"same document: {same_page_document}, "
                 f"prepared token: {prepared_token_present})",
             )
+            mark_stage("checking the held old-version tab")
+            held_old_tab.get_by_text(
+                "The browser kept this tab open. Reload when it is safe.",
+                exact=True,
+            ).wait_for(state="visible", timeout=10_000)
+            _require(
+                held_old_reload_dialogs == ["beforeunload"]
+                and held_old_tab.evaluate("() => performance.timeOrigin")
+                == held_old_time_origin,
+                "cache-retention tab did not remain on its original document",
+            )
             mark_stage("verifying retained old and candidate app caches")
             retained_caches = _cache_snapshot(page)
             retained_activation_state = _activation_state_snapshot(page)
@@ -2044,8 +2110,36 @@ def run_acceptance(
                 "before the old page reloaded "
                 f"(safe state: {retained_state_diagnostics})",
             )
+            mark_stage("retrying the prepared reload before cache diagnostics")
+            page.get_by_role("button", name="Reload to finish", exact=True).click(
+                timeout=5_000
+            )
+            _wait_for_async_condition(
+                page,
+                "expected => performance.timeOrigin > expected",
+                page_time_origin,
+                "prepared project tab retry reload",
+                timeout_ms=20_000,
+            )
+            page.locator("#project-name").wait_for(state="visible", timeout=15_000)
+            _wait_for_controlled_worker(page, next_version)
+
+            mark_stage("confirming retained cache while the old tab remains open")
+            retained_after_retry = _cache_snapshot(page)
+            _require(
+                f"{APP_CACHE_PREFIX}{expected_version}" in retained_after_retry
+                and f"{APP_CACHE_PREFIX}{next_version}" in retained_after_retry,
+                "retrying one prepared page removed the cache still used by an old tab",
+            )
             mark_stage("preparing an active-worker network-failure fallback tab")
             network_failure_tab = context.new_page()
+            network_dialogs: list[str] = []
+
+            def dismiss_unexpected_network_dialog(dialog: Dialog) -> None:
+                network_dialogs.append(dialog.type)
+                dialog.dismiss()
+
+            network_failure_tab.on("dialog", dismiss_unexpected_network_dialog)
             network_failure_tab.on("pageerror", lambda _error: page_errors.append(True))
             network_failure_tab.on(
                 "console",
@@ -2068,42 +2162,69 @@ def run_acceptance(
             _wait_for_controlled_worker(network_failure_tab, next_version)
 
             mark_stage("forcing a network error for a retained immutable asset")
+            network_failure_tab.bring_to_front()
+            visibility_state = network_failure_tab.evaluate(
+                "() => document.visibilityState"
+            )
+            _require(
+                visibility_state == "visible" and not network_dialogs,
+                "network-failure fixture tab is not foregrounded or has a dialog",
+            )
             context.set_offline(True)
             try:
-                fallback_state = network_failure_tab.evaluate(
+                page_state = network_failure_tab.evaluate(
+                    """() => ({
+                      offline: navigator.onLine === false,
+                      controlled: Boolean(
+                        navigator.serviceWorker.controller?.scriptURL.endsWith('/app/sw.js'),
+                      ),
+                    })"""
+                )
+                _require(
+                    isinstance(page_state, dict)
+                    and page_state.get("offline") is True
+                    and page_state.get("controlled") is True,
+                    "browser page was not responsive and controlled after offline mode",
+                )
+                mark_stage("clearing the candidate cache entry for network fallback")
+                network_failure_tab.evaluate(
+                    """async ({ asset, cacheName }) => {
+                      const operation = (async () => {
+                        return await (await caches.open(cacheName)).delete(
+                          asset, { ignoreSearch: false },
+                        );
+                      })();
+                      return await Promise.race([
+                        operation,
+                        new Promise(resolve => setTimeout(() => resolve(null), 3000)),
+                      ]);
+                    }""",
+                    {
+                        "asset": cached_editor_asset,
+                        "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
+                    },
+                )
+                previous_state = network_failure_tab.evaluate(
                     """async ({ asset, oldCache, candidateCache }) => {
-                      const candidate = await caches.open(candidateCache);
-                      await candidate.delete(asset, { ignoreSearch: false });
-                      const previous = await caches.open(oldCache);
-                      const oldEntryPresent = Boolean(await previous.match(
-                        asset, { ignoreSearch: false },
-                      ));
-                      const candidateMissBeforeFetch = !await candidate.match(
-                        asset, { ignoreSearch: false },
-                      );
-                      let status = 0;
-                      let byteLength = 0;
-                      try {
-                        const response = await fetch(asset, { cache: 'no-store' });
-                        status = response.status;
-                        byteLength = (await response.arrayBuffer()).byteLength;
-                      } catch {
-                        // Return only bounded status fields.
-                      }
-                      const promoted = Boolean(await candidate.match(
-                        asset, { ignoreSearch: false },
-                      ));
-                      const clearedForHttpFallback = promoted
-                        && await candidate.delete(asset, { ignoreSearch: false });
-                      return {
-                        offlineObserved: navigator.onLine === false,
-                        oldEntryPresent,
-                        candidateMissBeforeFetch,
-                        status,
-                        byteLength,
-                        promoted,
-                        clearedForHttpFallback,
-                      };
+                      const operation = (async () => {
+                        const previous = await caches.open(oldCache);
+                        const candidate = await caches.open(candidateCache);
+                        return {
+                          cacheOperationsSettled: true,
+                          oldEntryPresent: Boolean(await previous.match(
+                            asset, { ignoreSearch: false },
+                          )),
+                          candidateMissBeforeFetch: !await candidate.match(
+                            asset, { ignoreSearch: false },
+                          ),
+                        };
+                      })();
+                      return await Promise.race([
+                        operation,
+                        new Promise(resolve => setTimeout(
+                          () => resolve({ cacheOperationsSettled: false }), 3000,
+                        )),
+                      ]);
                     }""",
                     {
                         "asset": cached_editor_asset,
@@ -2111,6 +2232,130 @@ def run_acceptance(
                         "candidateCache": f"{APP_CACHE_PREFIX}{next_version}",
                     },
                 )
+                _require(
+                    isinstance(previous_state, dict)
+                    and previous_state.get("cacheOperationsSettled") is True
+                    and previous_state.get("oldEntryPresent") is True
+                    and previous_state.get("candidateMissBeforeFetch") is True,
+                    "network fallback fixture did not isolate the retained entry",
+                )
+                mark_stage(
+                    "requesting the retained asset while browser networking fails"
+                )
+                asset_failure_start = len(service_worker_asset_failures)
+                asset_response_start = len(service_worker_asset_responses)
+                fetch_state = network_failure_tab.evaluate(
+                    """async asset => {
+                      const controller = new AbortController();
+                      const request = fetch(asset, {
+                        cache: 'no-store',
+                        signal: controller.signal,
+                      }).then(async response => ({
+                        fetchSettled: true,
+                        status: response.status,
+                        byteLength: (await response.arrayBuffer()).byteLength,
+                        fetchErrorName: '',
+                      })).catch(error => ({
+                        fetchSettled: true,
+                        status: 0,
+                        byteLength: 0,
+                        fetchErrorName: error?.name ?? 'unknown',
+                      }));
+                      const result = await Promise.race([
+                        request,
+                        new Promise(resolve => setTimeout(
+                          () => resolve(null), 8000,
+                        )),
+                      ]);
+                      if (result === null) {
+                        controller.abort();
+                        return {
+                          fetchSettled: false,
+                          status: 0,
+                          byteLength: 0,
+                          fetchErrorName: 'timeout',
+                        };
+                      }
+                      return result;
+                    }""",
+                    cached_editor_asset,
+                )
+                _require(
+                    isinstance(fetch_state, dict)
+                    and fetch_state.get("fetchSettled") is True,
+                    "controlled network-failure request did not settle",
+                )
+                mark_stage("waiting for the retained asset cache promotion")
+                _wait_for_async_condition(
+                    network_failure_tab,
+                    """async ({ asset, cacheName }) => Boolean(await (
+                      await Promise.race([
+                        (async () => Boolean(await (
+                          await caches.open(cacheName)
+                        ).match(asset, { ignoreSearch: false })))(),
+                        new Promise(resolve => setTimeout(() => resolve(false), 500)),
+                      ])
+                    ))""",
+                    {
+                        "asset": cached_editor_asset,
+                        "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
+                    },
+                    "network-failure asset cache promotion",
+                    timeout_ms=5_000,
+                )
+                worker_failure_count = len(service_worker_asset_failures) - (
+                    asset_failure_start
+                )
+                worker_response_count = sum(
+                    response == f"{cached_editor_asset}:200"
+                    for response in service_worker_asset_responses[
+                        asset_response_start:
+                    ]
+                )
+                promoted_state = network_failure_tab.evaluate(
+                    """async ({ asset, cacheName }) => {
+                      const operation = (async () => {
+                        const candidate = await caches.open(cacheName);
+                        const promoted = Boolean(await candidate.match(
+                          asset, { ignoreSearch: false },
+                        ));
+                        const clearedForHttpFallback = promoted && await (
+                          candidate.delete(asset, { ignoreSearch: false })
+                        );
+                        return {
+                          cacheOperationsSettled: true,
+                          promoted,
+                          clearedForHttpFallback,
+                        };
+                      })();
+                      return await Promise.race([
+                        operation,
+                        new Promise(resolve => setTimeout(
+                          () => resolve({
+                            cacheOperationsSettled: false,
+                            promoted: false,
+                            clearedForHttpFallback: false,
+                          }), 3000,
+                        )),
+                      ]);
+                    }""",
+                    {
+                        "asset": cached_editor_asset,
+                        "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
+                    },
+                )
+                fallback_state = {
+                    **page_state,
+                    **previous_state,
+                    **fetch_state,
+                    **promoted_state,
+                    "workerFailureCount": worker_failure_count,
+                    "workerResponseCount": worker_response_count,
+                    "offlineObserved": page_state["offline"],
+                    "controlledByAppWorker": page_state["controlled"],
+                    "diagnosticTimeout": False,
+                    "timeoutStage": "",
+                }
             finally:
                 context.set_offline(False)
                 network_failure_tab.close()
@@ -2119,20 +2364,30 @@ def run_acceptance(
                 and fallback_state.get("offlineObserved") is True
                 and fallback_state.get("oldEntryPresent") is True
                 and fallback_state.get("candidateMissBeforeFetch") is True
+                and fallback_state.get("fetchSettled") is True
                 and fallback_state.get("status") == 200
                 and isinstance(fallback_state.get("byteLength"), int)
                 and fallback_state["byteLength"] > 0
+                and fallback_state.get("workerFailureCount", 0) > 0
                 and fallback_state.get("promoted") is True
+                and fallback_state.get("cacheOperationsSettled") is True
                 and fallback_state.get("clearedForHttpFallback") is True,
-                "network-failure fallback was not promoted into the candidate cache",
+                "network-failure fallback was not promoted into the candidate cache "
+                f"(safe state: {{'timeout': {fallback_state.get('diagnosticTimeout')}, "
+                f"'stage': {fallback_state.get('timeoutStage')}, "
+                f"'settled': {fallback_state.get('fetchSettled')}, "
+                f"'status': {fallback_state.get('status')}, "
+                f"'error': {fallback_state.get('fetchErrorName')}, "
+                f"'controlled': {fallback_state.get('controlledByAppWorker')}, "
+                f"'oldEntry': {fallback_state.get('oldEntryPresent')}, "
+                f"'workerFailures': {fallback_state.get('workerFailureCount')}, "
+                f"'workerResponses': {fallback_state.get('workerResponseCount')}, "
+                f"'dialog': {bool(network_dialogs)}, "
+                f"'promoted': {fallback_state.get('promoted')}}})",
             )
-            page.get_by_role("button", name="Reload to finish", exact=True).click()
-            _wait_for_async_condition(
-                page,
-                "expected => performance.timeOrigin > expected",
-                page_time_origin,
-                "prepared project tab retry reload",
-                timeout_ms=20_000,
+            _require(
+                page.evaluate("() => performance.timeOrigin") > page_time_origin,
+                "prepared project tab did not retry before cache diagnostics",
             )
             page.locator("#project-name").wait_for(state="visible", timeout=15_000)
             second_tab.locator(".app-shell").wait_for(state="visible", timeout=15_000)
@@ -2171,6 +2426,14 @@ def run_acceptance(
                     "page-version reload acknowledgement",
                     timeout_ms=10_000,
                 )
+            mark_stage("releasing the retained old-version cache client")
+            held_old_tab.close()
+            prune_after_old_client = _request_cache_prune(page)
+            _require(
+                prune_after_old_client.get("type") == "PRUNE_REQUEST_ACCEPTED"
+                and prune_after_old_client.get("pruned") is True,
+                "candidate worker did not prune after the final old-version tab closed",
+            )
             _wait_for_async_condition(
                 page,
                 "() => caches.keys().then(keys => "
@@ -2306,9 +2569,15 @@ def main(argv: list[str] | None = None) -> int:
             stage_file = private_dir / "browser-stage.txt"
             if stage_file.is_file():
                 stage = stage_file.read_text(encoding="ascii")
+        frames = traceback.extract_tb(error.__traceback__)[-6:]
+        safe_frames = ", ".join(
+            f"{Path(frame.filename).name}:{frame.name}:{frame.lineno}"
+            for frame in frames
+        )
         print(
             "PWA browser acceptance failed during "
-            f"{stage} ({type(error).__name__}); details suppressed.",
+            f"{stage} ({type(error).__name__}; frames: {safe_frames}); "
+            "details suppressed.",
             file=sys.stderr,
         )
         return 1

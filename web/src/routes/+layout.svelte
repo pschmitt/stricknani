@@ -1,11 +1,16 @@
 <script lang="ts">
-  import { onMount, type Snippet } from "svelte";
-  import { goto } from "$app/navigation";
+  import { onMount, untrack, type Snippet } from "svelte";
+  import { afterNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
+    hasInternalRouteBack,
+    parentRouteFallback,
+    resetInternalRouteStack,
     shouldRedirectExpiredSession,
     showPublicGauge,
+    trackInternalRoute,
+    type AppShellRoutes,
   } from "#lib/app-shell.ts";
   import BrandMark from "#lib/components/BrandMark.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -31,6 +36,22 @@
       pathname.startsWith("/app/admin/resources"),
   );
   const routeIsAdminOnly = $derived(adminRoute && !user?.is_admin);
+  const shellRoutes: AppShellRoutes = {
+    projects: linkTo("/projects"),
+    yarns: linkTo("/yarns"),
+    more: linkTo("/more"),
+    imports: linkTo("/imports"),
+    categories: linkTo("/categories"),
+    adminAudit: linkTo("/admin/audit"),
+  };
+  let navigationRevision = $state(0);
+  let trackedUserId: number | null | undefined;
+  const canGoBack = $derived.by(() => {
+    navigationRevision;
+    return hasInternalRouteBack(pathname);
+  });
+  const backFallback = $derived(parentRouteFallback(pathname, shellRoutes));
+  const showBackButton = $derived(canGoBack || backFallback !== pathname);
 
   const mainNavigation = [
     { href: "/projects", label: msg("Projects"), icon: "projects" },
@@ -47,6 +68,24 @@
 
   let avatarFailed = $state(false);
   const avatarUrl = $derived(user?.avatar_url ?? null);
+
+  afterNavigate(({ to, type }) => {
+    if (to) trackInternalRoute(to.url.pathname, type);
+    navigationRevision += 1;
+  });
+
+  $effect(() => {
+    const userId = user?.id ?? null;
+    if (trackedUserId !== userId) {
+      trackedUserId = userId;
+      resetInternalRouteStack();
+      trackInternalRoute(
+        untrack(() => page.url.pathname),
+        "enter",
+      );
+      navigationRevision += 1;
+    }
+  });
 
   $effect(() => {
     avatarUrl;
@@ -93,6 +132,14 @@
 
   function linkTo(path: AppPath): string {
     return resolve(path);
+  }
+
+  function goBack() {
+    if (hasInternalRouteBack(page.url.pathname)) {
+      window.history.back();
+      return;
+    }
+    if (backFallback !== page.url.pathname) void goto(backFallback);
   }
 
   function isActive(path: AppPath): boolean {
@@ -187,10 +234,22 @@
 {:else}
   <div class="app-shell">
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
-      <a class="wordmark rail-wordmark" href={linkTo("/")}>
-        <BrandMark />
-        <span>Stricknani</span>
-      </a>
+      <div class="rail-brand">
+        {#if showBackButton}
+          <button
+            class="shell-back-button"
+            type="button"
+            aria-label={t("Back", locale)}
+            onclick={goBack}
+          >
+            <NavIcon name="previous" />
+          </button>
+        {/if}
+        <a class="wordmark rail-wordmark" href={linkTo("/")}>
+          <BrandMark />
+          <span>Stricknani</span>
+        </a>
+      </div>
 
       <nav class="primary-nav" aria-label={t("Your library", locale)}>
         {#each mainNavigation as item}
@@ -261,10 +320,22 @@
     </aside>
 
     <div class="mobile-header">
-      <a class="wordmark" href={linkTo("/")}>
-        <BrandMark />
-        <span>Stricknani</span>
-      </a>
+      <div class="mobile-brand">
+        {#if showBackButton}
+          <button
+            class="shell-back-button"
+            type="button"
+            aria-label={t("Back", locale)}
+            onclick={goBack}
+          >
+            <NavIcon name="previous" />
+          </button>
+        {/if}
+        <a class="wordmark" href={linkTo("/")}>
+          <BrandMark />
+          <span>Stricknani</span>
+        </a>
+      </div>
       <a
         class="mobile-account"
         href={linkTo("/account")}

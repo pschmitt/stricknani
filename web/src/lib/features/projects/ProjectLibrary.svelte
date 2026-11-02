@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -296,25 +297,16 @@
     <div class="project-grid" aria-live="polite">
       {#each items as item (item.id)}
         <article class="project-card">
-          <a class="project-open" href={`${resolve("/projects")}/${item.id}`}>
-            <div class="project-image">
-              {#if item.preview_url}
-                <img src={item.preview_url} alt="" loading="lazy" />
-              {:else}
-                <span class="image-placeholder" aria-hidden="true">✳</span>
-              {/if}
-              {#if item.category}
-                <span class="category-pill">{item.category}</span>
-              {/if}
-            </div>
-            <div class="project-copy">
-              <h2>{item.name}</h2>
-              <p class="updated-date">
-                {t("Updated", locale)}
-                {formatDate(item.updated_at)}
-              </p>
-            </div>
-          </a>
+          <ResourceCard
+            kind="project"
+            href={`${resolve("/projects")}/${item.id}`}
+            imageUrl={item.preview_url}
+            name={item.name}
+            badge={item.category}
+            subtitle={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
+            variant="library"
+            titleTag="h2"
+          />
           {#if item.tags.length}
             <div
               class="tag-list"
@@ -556,80 +548,6 @@
     box-shadow: var(--shadow);
   }
 
-  .project-open {
-    display: block;
-    min-width: 0;
-    color: var(--ink);
-    text-decoration: none;
-  }
-
-  .project-image {
-    position: relative;
-    display: grid;
-    min-height: 9.5rem;
-    aspect-ratio: 1.42;
-    place-items: center;
-    overflow: hidden;
-    background:
-      radial-gradient(
-        ellipse at 65% 28%,
-        color-mix(in srgb, var(--accent) 15%, transparent) 0 17%,
-        transparent 18%
-      ),
-      linear-gradient(145deg, var(--surface-raised), var(--accent-wash));
-  }
-
-  .project-image img {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    inset: 0;
-    object-fit: cover;
-  }
-
-  .image-placeholder {
-    color: color-mix(in srgb, var(--accent) 54%, transparent);
-    font-size: 2.7rem;
-  }
-
-  .category-pill {
-    position: absolute;
-    bottom: 0.65rem;
-    left: 0.65rem;
-    max-width: calc(100% - 4rem);
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.25rem 0.65rem;
-    color: var(--ink);
-    background: var(--surface);
-    font-size: 0.78rem;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .project-copy {
-    display: grid;
-    gap: 0.35rem;
-    padding: 0.9rem 1rem 1rem;
-  }
-
-  .project-copy h2 {
-    overflow: hidden;
-    margin: 0;
-    font-size: 1.08rem;
-    letter-spacing: -0.025em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .updated-date {
-    margin: 0;
-    color: var(--ink-muted);
-    font-size: 0.82rem;
-  }
-
   .tag-list {
     display: flex;
     flex-wrap: wrap;
@@ -799,21 +717,6 @@
       gap: 0.7rem;
     }
 
-    .project-image {
-      min-height: 7.8rem;
-    }
-
-    .project-copy {
-      gap: 0.25rem;
-      padding: 0.7rem;
-    }
-
-    .project-copy h2 {
-      padding-right: 1.8rem;
-      font-size: 0.96rem;
-      white-space: normal;
-    }
-
     .favorite-button {
       top: 0.4rem;
       right: 0.4rem;
@@ -851,10 +754,6 @@
 
     .project-grid {
       grid-template-columns: minmax(0, 1fr);
-    }
-
-    .project-image {
-      aspect-ratio: 1.65;
     }
   }
 

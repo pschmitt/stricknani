@@ -116,6 +116,12 @@ Use this file as the operational source of truth for working in Stricknani.
   versions can change generated HTML and CSP hashes while immutable JS/CSS
   remain identical; when they differ, run the browser and PWA gates against
   the packaged web root rather than relying on a separately built artifact.
+- Before launching a browser acceptance run, verify the checksum of the actual
+  runner file at its execution path, not just a synchronized source copy.
+  Freeze the runner and static root together; check that the generated worker
+  matches its source template and manifest substitutions. Record these hashes
+  with the receipt so stale runners or builds cannot be mistaken for failures
+  of newer source.
 - Device checks in an existing browser profile must use a unique per-run
   loopback hostname, not just a new port: cookies are shared across ports.
   Create an owned tab and clear only that test origin during cleanup.
@@ -177,6 +183,10 @@ Use this file as the operational source of truth for working in Stricknani.
 
 - Keep project and yarn pages visually and behaviorally consistent.
 - Apply layout/styling changes to both domains.
+- Reuse shared resource cards for project, yarn and category references instead
+  of rebuilding names, links, thumbnails and missing-image states per page.
+  Use compact variants in audit and related-resource lists. Cross-owner audit
+  cards must use the separate read-only administrator links and media routes.
 
 ### Release/CI Parity
 

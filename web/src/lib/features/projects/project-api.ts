@@ -51,6 +51,7 @@ export interface ProjectYarn {
   length_meters: number | null;
   notes_html: string | null;
   link: string | null;
+  preview_url: string | null;
 }
 
 export interface ProjectCategory {
@@ -347,6 +348,7 @@ export async function getYarn(
   const yarn = payload.data;
   if (
     !isSafePositiveInteger(yarn.id) ||
+    yarn.id !== id ||
     typeof yarn.name !== "string" ||
     !nullableString(yarn.brand) ||
     !nullableString(yarn.colorway) ||
@@ -356,9 +358,23 @@ export async function getYarn(
     !nullableString(yarn.notes_html) ||
     !nullableString(yarn.link) ||
     !nullableNumber(yarn.weight_grams) ||
-    !nullableNumber(yarn.length_meters)
+    !nullableNumber(yarn.length_meters) ||
+    !Array.isArray(yarn.photos)
   )
     throw invalidResponse();
+  const photos = yarn.photos.map((value: unknown) => {
+    if (
+      !isRecord(value) ||
+      !isSafePositiveInteger(value.id) ||
+      typeof value.is_primary !== "boolean" ||
+      !ownerThumbnailUrl(value.thumbnail_url, "yarns", id)
+    )
+      throw invalidResponse();
+    return {
+      is_primary: value.is_primary,
+      thumbnail_url: value.thumbnail_url,
+    };
+  });
   return {
     id: yarn.id,
     name: yarn.name,
@@ -371,7 +387,27 @@ export async function getYarn(
     length_meters: yarn.length_meters,
     notes_html: yarn.notes_html,
     link: yarn.link,
+    preview_url:
+      photos.find((photo) => photo.is_primary)?.thumbnail_url ??
+      photos[0]?.thumbnail_url ??
+      null,
   };
+}
+
+function ownerThumbnailUrl(
+  value: unknown,
+  kind: "projects" | "yarns",
+  parentId: number,
+): value is string {
+  if (typeof value !== "string") return false;
+  const prefix = `/media/thumbnails/${kind}/${parentId}/`;
+  if (!value.startsWith(prefix)) return false;
+  const filename = value.slice(prefix.length);
+  return (
+    filename.length > 0 &&
+    /^[A-Za-z0-9._-]+$/.test(filename) &&
+    !filename.includes("..")
+  );
 }
 
 export async function setProjectFavorite(

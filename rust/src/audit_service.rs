@@ -131,6 +131,7 @@ pub(crate) struct AuditResource {
     pub(crate) name: Option<String>,
     pub(crate) name_source: &'static str,
     pub(crate) href: Option<String>,
+    pub(crate) preview_url: Option<String>,
     pub(crate) exists: bool,
 }
 
@@ -204,7 +205,19 @@ pub(crate) async fn list_events(
                 (e.details IS NOT NULL) AS legacy_details_present, \
                 CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
                   WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
-                  WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name \
+                  WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
+                CASE e.entity_type \
+                  WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
+                    JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
+                    WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
+                    ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
+                      CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
+                      THEN 0 ELSE 1 END, m.id LIMIT 1) \
+                  WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
+                    JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
+                    WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
+                    ORDER BY m.id DESC LIMIT 1) \
+                END AS current_preview_media_id \
          FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
          LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
@@ -254,7 +267,19 @@ pub(crate) async fn get_event_detail(
                 (e.details IS NOT NULL) AS legacy_details_present, \
                 CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
                   WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
-                  WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name \
+                  WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
+                CASE e.entity_type \
+                  WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
+                    JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
+                    WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
+                    ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
+                      CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
+                      THEN 0 ELSE 1 END, m.id LIMIT 1) \
+                  WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
+                    JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
+                    WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
+                    ORDER BY m.id DESC LIMIT 1) \
+                END AS current_preview_media_id \
          FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
          LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
@@ -290,6 +315,7 @@ fn make_event(row: &sqlx::sqlite::SqliteRow) -> AuditEvent {
     };
     let kind = Entity::parse(&entity_type);
     let exists = current_name_present(row);
+    let preview_media_id = row.get::<Option<i64>, _>("current_preview_media_id");
     let resource = AuditResource {
         kind,
         id: entity_id,
@@ -304,6 +330,26 @@ fn make_event(row: &sqlx::sqlite::SqliteRow) -> AuditEvent {
                 }
             })
         }),
+        preview_url: if exists {
+            kind.and_then(|kind| {
+                let media_kind = match kind {
+                    Entity::Project => "image",
+                    Entity::Yarn => "photo",
+                    Entity::Category => return None,
+                };
+                preview_media_id.and_then(|media_id| {
+                    crate::media::admin_resource_media_url(
+                        kind.as_str(),
+                        entity_id,
+                        media_kind,
+                        media_id,
+                        true,
+                    )
+                })
+            })
+        } else {
+            None
+        },
         exists,
     };
     let has_changes = row.get::<bool, _>("safe_changes_present")

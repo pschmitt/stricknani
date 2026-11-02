@@ -79,6 +79,20 @@ protect waiting versions during cache pruning, and retain allowlisted public
 assets after fallback. Their new package and full PWA browser journey remain
 pending. No 739-entry candidate or schema-14 migration has been deployed.
 
+The next UI increment also adds reusable resource cards with current protected
+thumbnails in audit, project/yarn libraries and related-resource lists. Missing
+or failed images use domain icons; deleted resources retain history links.
+The header gains a back chevron before the logo, with tracked app navigation,
+direct-entry parent fallbacks and the existing unsaved-change guard. The
+additive audit preview API requires no further migration. Its integrated Rust
+snapshot passed formatting, Clippy, all 304 tests across 49 suites and four
+health tests on a separate build host. That snapshot predates a whitespace-only
+worker formatting change. The integrated frontend passed formatting, Svelte
+checking with zero errors/warnings, all 142 tests and a static build. The
+expanded admin browser runner passed Ruff, MyPy and seven helper tests.
+Exact-package browser acceptance and deployment of these additions remain
+pending.
+
 A later automatic host upgrade restored the older pinned preview (666 catalog
 entries and no app worker). The verified v8 runtime was restored using a
 temporary staging-service ExecStart override, without changing the active

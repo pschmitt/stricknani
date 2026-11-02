@@ -370,7 +370,8 @@ fn app_worker_requires_explicit_preparation_and_retains_assets_until_page_ack() 
     assert!(worker.contains("function isPromotableImmutableAsset(url)"));
     assert!(worker.contains("PUBLIC_ASSETS.includes(url.pathname)"));
     assert!(worker.contains("responseMatches(retained, url)"));
-    assert!(worker.contains("await queueImmutableCacheWrite(cache, url, retained.clone())"));
+    assert!(worker.contains("void queueImmutableCacheWrite(cache, url, retained.clone())"));
+    assert!(worker.contains(".finally(finishBackground)"));
     assert!(worker.contains("await cacheWriteQueue;"));
     let cache_pruner = worker
         .split("async function pruneOldCachesIfSafe")

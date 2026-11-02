@@ -14,6 +14,7 @@ const MEMBER_TOKEN: &str = "sna_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 const API_TOKEN: &str = "sna_cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 
 struct Fixture {
+    _media_root: tempfile::TempDir,
     app: Router,
     pool: SqlitePool,
     admin_id: i64,
@@ -45,11 +46,15 @@ async fn fixture() -> Fixture {
     add_token(&pool, admin_id, ADMIN_TOKEN, "browser").await;
     add_token(&pool, member_id, MEMBER_TOKEN, "browser").await;
     add_token(&pool, admin_id, API_TOKEN, "api").await;
+    let media_root = tempfile::tempdir().expect("media root should be created");
     Fixture {
         app: api_v2::router(
-            db::AppState::new(pool.clone()).with_secure_cookies(true),
+            db::AppState::new(pool.clone())
+                .with_secure_cookies(true)
+                .with_media_root(media_root.path().to_path_buf()),
             false,
         ),
+        _media_root: media_root,
         pool,
         admin_id,
     }
@@ -189,6 +194,250 @@ async fn audit_api_returns_only_the_safe_projection_and_preserves_legacy_actor_f
     assert!(!serialized.contains("secret audit detail"));
     assert!(!serialized.contains("secret credential"));
     assert!(!serialized.contains("never expose"));
+}
+
+#[tokio::test]
+async fn audit_resource_previews_use_current_admin_scoped_media_urls() {
+    let fixture = fixture().await;
+    let project_id: i64 = sqlx::query_scalar(
+        "INSERT INTO projects(owner_id, name, created_at, updated_at) \
+         VALUES (?, 'Preview project', '2026-01-01', '2026-01-01') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let yarn_id: i64 = sqlx::query_scalar(
+        "INSERT INTO yarns(owner_id, name, created_at, updated_at) \
+         VALUES (?, 'Preview yarn', '2026-01-01', '2026-01-01') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let category_id: i64 = sqlx::query_scalar(
+        "INSERT INTO categories(user_id, name) VALUES (?, 'Preview category') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+
+    for (kind, yarn, filename, content_type, is_primary) in [
+        ("title", false, "project-cover.jpg", "image/jpeg", true),
+        (
+            "attachment",
+            false,
+            "project-notes.pdf",
+            "application/pdf",
+            false,
+        ),
+        ("photo", true, "yarn-cover.jpg", "image/jpeg", true),
+    ] {
+        let (project_ref, yarn_ref) = if yarn {
+            (None, Some(yarn_id))
+        } else {
+            (Some(project_id), None)
+        };
+        sqlx::query(
+            "INSERT INTO media_files( \
+                 owner_id, project_id, yarn_id, kind, public_id, filename, \
+                 original_filename, content_type, size_bytes, is_primary \
+             ) VALUES (?, ?, ?, ?, 5, ?, ?, ?, 12, ?)",
+        )
+        .bind(fixture.admin_id)
+        .bind(project_ref)
+        .bind(yarn_ref)
+        .bind(kind)
+        .bind(filename)
+        .bind(filename)
+        .bind(content_type)
+        .bind(is_primary)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    }
+    let project_dir = fixture
+        ._media_root
+        .path()
+        .join("projects")
+        .join(project_id.to_string());
+    let project_thumbnail_dir = fixture
+        ._media_root
+        .path()
+        .join("thumbnails/projects")
+        .join(project_id.to_string());
+    let yarn_dir = fixture
+        ._media_root
+        .path()
+        .join("yarns")
+        .join(yarn_id.to_string());
+    let yarn_thumbnail_dir = fixture
+        ._media_root
+        .path()
+        .join("thumbnails/yarns")
+        .join(yarn_id.to_string());
+    for directory in [
+        &project_dir,
+        &project_thumbnail_dir,
+        &yarn_dir,
+        &yarn_thumbnail_dir,
+    ] {
+        tokio::fs::create_dir_all(directory).await.unwrap();
+    }
+    tokio::fs::write(project_dir.join("project-cover.jpg"), b"project image")
+        .await
+        .unwrap();
+    tokio::fs::write(
+        project_thumbnail_dir.join("thumb_project-cover.jpg"),
+        b"project thumbnail",
+    )
+    .await
+    .unwrap();
+    tokio::fs::write(project_dir.join("project-notes.pdf"), b"attachment")
+        .await
+        .unwrap();
+    tokio::fs::write(yarn_dir.join("yarn-cover.jpg"), b"yarn image")
+        .await
+        .unwrap();
+    tokio::fs::write(
+        yarn_thumbnail_dir.join("thumb_yarn-cover.jpg"),
+        b"yarn thumbnail",
+    )
+    .await
+    .unwrap();
+
+    let mut event_ids = Vec::new();
+    for (kind, id, created_at) in [
+        ("project", project_id, "2026-02-01"),
+        ("yarn", yarn_id, "2026-02-02"),
+        ("category", category_id, "2026-02-03"),
+        ("project", 987_654, "2026-02-04"),
+    ] {
+        let event_id: i64 = sqlx::query_scalar(
+            "INSERT INTO audit_events(actor_user_id, entity_type, entity_id, action, created_at) \
+             VALUES (?, ?, ?, 'created', ?) RETURNING id",
+        )
+        .bind(fixture.admin_id)
+        .bind(kind)
+        .bind(id)
+        .bind(created_at)
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+        event_ids.push((kind, id, event_id));
+    }
+
+    let response = fixture
+        .app
+        .clone()
+        .oneshot(request("/admin/audit", Some(ADMIN_TOKEN)))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = json(response).await;
+    let events = body["data"].as_array().unwrap();
+    let resource_for = |kind: &str, id: i64| {
+        events
+            .iter()
+            .find(|event| event["entity_type"] == kind && event["entity_id"] == id)
+            .unwrap()["resource"]
+            .clone()
+    };
+    let project_preview =
+        format!("/api/v2/admin/resources/project/{project_id}/media/image/5/thumbnail");
+    let yarn_preview = format!("/api/v2/admin/resources/yarn/{yarn_id}/media/photo/5/thumbnail");
+    assert_eq!(
+        resource_for("project", project_id)["preview_url"],
+        project_preview
+    );
+    assert_eq!(resource_for("yarn", yarn_id)["preview_url"], yarn_preview);
+    assert_eq!(
+        resource_for("category", category_id)["preview_url"],
+        serde_json::Value::Null
+    );
+    let deleted = resource_for("project", 987_654);
+    assert_eq!(deleted["preview_url"], serde_json::Value::Null);
+    assert_eq!(deleted["exists"], false);
+
+    for (path, token, expected_status, expected_body) in [
+        (
+            format!("/admin/resources/project/{project_id}/media/image/5/thumbnail"),
+            ADMIN_TOKEN,
+            StatusCode::OK,
+            Some(b"project thumbnail".as_slice()),
+        ),
+        (
+            format!("/admin/resources/project/{project_id}/media/image/5/thumbnail"),
+            MEMBER_TOKEN,
+            StatusCode::FORBIDDEN,
+            None,
+        ),
+        (
+            format!("/admin/resources/project/{project_id}/media/attachment/5/thumbnail"),
+            ADMIN_TOKEN,
+            StatusCode::NOT_FOUND,
+            None,
+        ),
+        (
+            format!("/admin/resources/yarn/{yarn_id}/media/photo/5/thumbnail"),
+            ADMIN_TOKEN,
+            StatusCode::OK,
+            Some(b"yarn thumbnail".as_slice()),
+        ),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(request(&path, Some(token)))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), expected_status);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        if let Some(expected_body) = expected_body {
+            assert_eq!(body.as_ref(), expected_body);
+        }
+    }
+
+    let project_event_id = event_ids
+        .iter()
+        .find(|(kind, id, _)| *kind == "project" && *id == project_id)
+        .unwrap()
+        .2;
+    let detail = fixture
+        .app
+        .clone()
+        .oneshot(request(
+            &format!("/admin/audit/{project_event_id}"),
+            Some(ADMIN_TOKEN),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(detail.status(), StatusCode::OK);
+    let detail = json(detail).await;
+    assert_eq!(
+        detail["data"]["event"]["resource"]["preview_url"],
+        project_preview
+    );
+
+    sqlx::query("DELETE FROM media_files WHERE project_id = ?")
+        .bind(project_id)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    let detail_after_media_removal = fixture
+        .app
+        .oneshot(request(
+            &format!("/admin/audit/{project_event_id}"),
+            Some(ADMIN_TOKEN),
+        ))
+        .await
+        .unwrap();
+    let detail_after_media_removal = json(detail_after_media_removal).await;
+    assert_eq!(
+        detail_after_media_removal["data"]["event"]["resource"]["preview_url"],
+        serde_json::Value::Null
+    );
 }
 
 #[tokio::test]

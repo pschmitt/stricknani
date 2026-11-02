@@ -47,6 +47,7 @@ const projectResource = (
   name,
   name_source: name === null ? "unavailable" : "current",
   href: `/app/admin/resources/project/${id}`,
+  preview_url: null,
   exists: true,
 });
 
@@ -136,6 +137,82 @@ describe("administrator API", () => {
     await expect(
       listAuditEvents({ page: 1, entity: "all", action: "" }),
     ).rejects.toMatchObject({ code: "invalid_response" });
+  });
+
+  it("binds audit preview URLs to a live resource and media namespace", async () => {
+    const event = {
+      id: 5,
+      actor_email: null,
+      actor_avatar_url: null,
+      legacy_actor_user_id: null,
+      entity_type: "project",
+      entity_id: 3,
+      action: "updated",
+      created_at: "2026-11-01T12:00:00Z",
+      resource: {
+        ...projectResource(3),
+        preview_url:
+          "/api/v2/admin/resources/project/3/media/image/8/thumbnail",
+      },
+      has_changes: false,
+    };
+    const withEvent = (previewUrl: string | null) => ({
+      ...event,
+      resource: { ...event.resource, preview_url: previewUrl },
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [event],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [withEvent("/media/thumbnails/projects/3/cover.jpg")],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            withEvent(
+              "/api/v2/admin/resources/project/4/media/image/8/thumbnail",
+            ),
+          ],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            withEvent(
+              "/api/v2/admin/resources/project/3/media/attachment/8/thumbnail",
+            ),
+          ],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      listAuditEvents({ page: 1, entity: "all", action: "" }),
+    ).resolves.toMatchObject({
+      data: [
+        {
+          resource: {
+            preview_url:
+              "/api/v2/admin/resources/project/3/media/image/8/thumbnail",
+          },
+        },
+      ],
+    });
+    for (let index = 0; index < 3; index += 1) {
+      await expect(
+        listAuditEvents({ page: 1, entity: "all", action: "" }),
+      ).rejects.toMatchObject({ code: "invalid_response" });
+    }
   });
 
   it("sends same-origin CSRF mutations and never stores password data", async () => {
@@ -240,6 +317,7 @@ describe("administrator API", () => {
         name: null,
         name_source: "unavailable",
         href: "/app/admin/audit/2",
+        preview_url: null,
         exists: false,
       },
       has_changes: false,

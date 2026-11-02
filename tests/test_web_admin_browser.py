@@ -11,7 +11,16 @@ from playwright.sync_api import Page
 from ci.stricknani import web_admin_browser
 
 
-@pytest.mark.parametrize("route", ["resource", "diff"])
+@pytest.mark.parametrize(
+    "route",
+    [
+        "resource",
+        "diff",
+        "project-reader",
+        "project-library",
+        "yarn-library",
+    ],
+)
 def test_admin_responsive_guard_accepts_readonly_routes(route: str) -> None:
     page = cast(
         Page,
