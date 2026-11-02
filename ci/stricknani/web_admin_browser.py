@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from playwright.sync_api import (
+    Dialog,
     Locator,
     Page,
     Response,
@@ -920,14 +921,65 @@ def run_acceptance(
 
             mark("check header back preserves dirty-navigation confirmation")
             page.set_viewport_size({"width": 390, "height": 900})
-            page.goto(f"{origin}/app/projects/new", wait_until="networkidle")
+            page.locator('a[href="/app/projects"]:visible').first.click()
+            page.wait_for_url("**/app/projects")
+            page.locator(".new-project").click()
+            page.wait_for_url("**/app/projects/new")
             page.get_by_role("heading", name="New project", exact=True).wait_for(
                 state="visible"
             )
             project_name_field = page.get_by_label("Project name", exact=True)
             project_name_field.fill("Unsaved header back fixture")
-            page.once("dialog", lambda dialog: dialog.dismiss())
-            page.get_by_role("button", name="Back", exact=True).click()
+            back_probe: object = page.evaluate(
+                """() => {
+                  const button = document.querySelector(
+                    '.app-header .shell-back-button');
+                  const rect = button?.getBoundingClientRect();
+                  return {
+                    route: location.pathname === '/app/projects/new',
+                    historyLength: history.length,
+                    count: document.querySelectorAll(
+                      '.app-header .shell-back-button').length,
+                    visible: Boolean(button && rect && rect.width > 0
+                      && rect.height > 0 && getComputedStyle(button).visibility
+                      === 'visible'),
+                    viewport: Boolean(rect && rect.left >= 0
+                      && rect.right <= innerWidth && rect.top >= 0
+                      && rect.bottom <= innerHeight)
+                  };
+                }"""
+            )
+            if not isinstance(back_probe, dict):
+                raise AcceptanceFailure(
+                    "header back diagnostics returned an invalid shape"
+                )
+            _require(
+                back_probe.get("route") is True
+                and isinstance(back_probe.get("historyLength"), int)
+                and not isinstance(back_probe.get("historyLength"), bool)
+                and back_probe.get("historyLength", 0) > 1
+                and back_probe.get("count") == 1
+                and back_probe.get("visible") is True
+                and back_probe.get("viewport") is True,
+                "header back was not actionable on the project editor",
+            )
+
+            def dismiss_dirty_prompt(dialog: Dialog) -> None:
+                dialog.dismiss()
+
+            page.once("dialog", dismiss_dirty_prompt)
+            with page.expect_event("dialog", timeout=5_000) as cancelled_back:
+                page.locator(".app-header .shell-back-button").click()
+            _require(
+                cancelled_back.value.type == "confirm",
+                "header back did not open the dirty-navigation confirmation",
+            )
+            page.wait_for_function(
+                "() => location.pathname === '/app/projects/new' "
+                "&& document.querySelector('#project-name')?.value "
+                "=== 'Unsaved header back fixture'",
+                timeout=5_000,
+            )
             page.get_by_role("heading", name="New project", exact=True).wait_for(
                 state="visible"
             )
@@ -936,7 +988,12 @@ def run_acceptance(
                 "cancelling header back discarded the unsaved project name",
             )
             page.once("dialog", lambda dialog: dialog.accept())
-            page.get_by_role("button", name="Back", exact=True).click()
+            with page.expect_event("dialog", timeout=5_000) as accepted_back:
+                page.locator(".app-header .shell-back-button").click()
+            _require(
+                accepted_back.value.type == "confirm",
+                "accepting header back did not show the dirty-navigation confirmation",
+            )
             page.wait_for_url("**/app/projects")
             # The following icon parity check measures the desktop rail SVGs.
             # Restore desktop width after the mobile dirty-navigation check.
@@ -1608,14 +1665,22 @@ def run_acceptance(
             page.get_by_role("button", name="Back", exact=True).click()
             page.wait_for_url("**/app/admin/audit?entity=project&action=updated")
             history_resource_row.wait_for(state="visible")
+            page.wait_for_function(
+                "target => Math.abs(window.scrollY - target) <= 2",
+                arg=audit_scroll_before_resource,
+                timeout=5_000,
+            )
+            restored_entity = page.get_by_label("Entity").input_value() == "project"
+            restored_action = page.get_by_label("Action").input_value() == "updated"
+            audit_scroll_after_back = page.evaluate("() => window.scrollY")
+            scroll_restored = (
+                abs(audit_scroll_after_back - audit_scroll_before_resource) <= 2
+            )
             _require(
-                page.get_by_label("Entity").input_value() == "project"
-                and page.get_by_label("Action").input_value() == "updated"
-                and abs(
-                    page.evaluate("() => window.scrollY") - audit_scroll_before_resource
-                )
-                <= 2,
-                "browser Back did not restore filtered audit state and scroll",
+                restored_entity and restored_action and scroll_restored,
+                "browser Back did not restore filtered audit state and scroll "
+                f"(entity={restored_entity}, action={restored_action}, "
+                f"scroll_restored={scroll_restored})",
             )
             mark("return from audit to More with browser history")
             page.get_by_role("button", name="Back", exact=True).click()

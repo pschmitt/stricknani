@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { goto, snapshot } from "$app/navigation";
   import { page } from "$app/state";
-  import { onDestroy } from "svelte";
+  import { onDestroy, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
@@ -19,12 +19,20 @@
 
   type LoadState = "loading" | "ready" | "error";
 
+  type AuditScrollSnapshot = {
+    pathname: string;
+    search: string;
+    ownerId: number;
+    scrollY: number;
+  };
+
   let events = $state<AuditEvent[]>([]);
   let pageMeta = $state({ page: 1, per_page: 50, has_more: false });
   let loadState = $state<LoadState>("loading");
   let loadError = $state("");
   let loadGeneration = 0;
   let ownerGeneration = 0;
+  let pendingScroll = $state<AuditScrollSnapshot | null>(null);
   let retry = $state(0);
   let currentOwner: number | null | undefined;
   let actionDraft = $state("");
@@ -34,6 +42,84 @@
   const userId = $derived(session.data?.user?.id ?? null);
   const filters = $derived(auditFiltersFromSearch(page.url.search));
   const pageUrl = $derived(page.url);
+
+  snapshot<AuditScrollSnapshot | null>({
+    id: "admin-audit-scroll",
+    capture: () => {
+      const ownerId = userId;
+      if (typeof window === "undefined" || ownerId === null) return null;
+      return {
+        pathname: pageUrl.pathname,
+        search: pageUrl.search,
+        ownerId,
+        scrollY: window.scrollY,
+      };
+    },
+    restore: (saved) => {
+      const ownerId = userId;
+      if (
+        !isAuditScrollSnapshot(saved) ||
+        !Number.isFinite(saved.scrollY) ||
+        saved.scrollY < 0 ||
+        saved.pathname !== pageUrl.pathname ||
+        saved.search !== pageUrl.search ||
+        ownerId === null ||
+        saved.ownerId !== ownerId
+      ) {
+        pendingScroll = null;
+        return;
+      }
+      pendingScroll = saved;
+    },
+    reset: () => (pendingScroll = null),
+  });
+
+  // SvelteKit restores history scroll at route commit, while this list loads afterward.
+  // Wait until the matching list is rendered so the browser does not clamp that position.
+  $effect(() => {
+    const saved = pendingScroll;
+    if (
+      !saved ||
+      loadState !== "ready" ||
+      saved.pathname !== pageUrl.pathname ||
+      saved.search !== pageUrl.search ||
+      saved.ownerId !== userId
+    )
+      return;
+
+    const request = loadGeneration;
+    const ownerRequest = ownerGeneration;
+    const ownerId = userId;
+    let cancelled = false;
+    void tick().then(() => {
+      if (
+        cancelled ||
+        pendingScroll !== saved ||
+        loadState !== "ready" ||
+        request !== loadGeneration ||
+        ownerRequest !== ownerGeneration ||
+        userId !== ownerId ||
+        ownerId !== saved.ownerId ||
+        pageUrl.pathname !== saved.pathname ||
+        pageUrl.search !== saved.search
+      )
+        return;
+      window.scrollTo(0, saved.scrollY);
+      pendingScroll = null;
+    });
+    return () => (cancelled = true);
+  });
+
+  function isAuditScrollSnapshot(value: unknown): value is AuditScrollSnapshot {
+    if (typeof value !== "object" || value === null) return false;
+    const candidate = value as Record<string, unknown>;
+    return (
+      typeof candidate.pathname === "string" &&
+      typeof candidate.search === "string" &&
+      Number.isSafeInteger(candidate.ownerId) &&
+      typeof candidate.scrollY === "number"
+    );
+  }
 
   $effect(() => {
     const ownerId = userId;

@@ -132,6 +132,12 @@ Use this file as the operational source of truth for working in Stricknani.
 - Use shared, bounded decorative icons alongside action labels. Preserve
   accessible names, keyboard behavior and compact phone layouts; existing
   icon-only controls do not need a second icon.
+- When changing shared chrome or avatars, inventory selectors across all
+  shipping browser runners, including signup and optional-service branches.
+  Verify account identity through the session and Account page.
+- Browser Back and its confirmation dialog are asynchronous. Await the dialog
+  event and navigation result explicitly. Exercise in-app history through real
+  app links; hard document navigation exercises browser unload protection.
 - Device checks in an existing browser profile must use a unique per-run
   loopback hostname, not just a new port: cookies are shared across ports.
   Create an owned tab and clear only that test origin during cleanup.
