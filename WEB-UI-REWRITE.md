@@ -345,6 +345,13 @@ The overall rewrite remains open until T120.9 acceptance is complete.
   shared bounded icons beside action labels throughout imports, projects, yarns,
   account and administration. Verify narrow phone widths and keyboard names.
 
+- [ ] **T120.15 — Reviewed reader and phone layout.** Implement the user's chosen
+  single reading column with a compact cover/key-facts summary and collapsible
+  materials. Recover mobile text width and make library filters readable without
+  excessive height. Preserve content, step IDs, progress, media ownership and
+  complete printing. Track remaining observations in
+  [the design review follow-ups](docs/web-ui-review-followups.md).
+
 ### Luna implementation waves and ownership
 
 The paths below are proposed new ownership boundaries, finalized in T120.1.

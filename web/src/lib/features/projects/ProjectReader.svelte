@@ -48,6 +48,7 @@
   let favoriteBusy = $state(false);
   let selectedImageId = $state<number | null>(null);
   let readerElement = $state<HTMLElement | null>(null);
+  let materialsDetailsElement = $state<HTMLDetailsElement | null>(null);
   let textSize = $state(1);
   let printPreparing = $state(false);
   let printError = $state("");
@@ -60,6 +61,8 @@
   let archiveRefreshController: AbortController | null = null;
   let activePrintImages: HTMLImageElement[] = [];
   let printDialogActive = false;
+  let materialsOpenBeforePrint = false;
+  let materialsOpenStateCaptured = false;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -79,8 +82,17 @@
         )
       : [],
   );
+  const coverImage = $derived(
+    project?.images.find(
+      (image) => image.step_id === null && image.is_title_image,
+    ) ??
+      project?.images.find((image) => image.step_id === null) ??
+      null,
+  );
   const galleryImages = $derived(
-    project?.images.filter((image) => image.step_id === null) ?? [],
+    project?.images.filter(
+      (image) => image.step_id === null && image.id !== coverImage?.id,
+    ) ?? [],
   );
   const selectedImage = $derived(
     project?.images.find((image) => image.id === selectedImageId) ?? null,
@@ -371,6 +383,11 @@
 
   function handleBeforePrint() {
     printDialogActive = true;
+    if (!materialsOpenStateCaptured) {
+      materialsOpenBeforePrint = materialsDetailsElement?.open ?? false;
+      materialsOpenStateCaptured = true;
+    }
+    if (materialsDetailsElement) materialsDetailsElement.open = true;
     try {
       attachPrintImageSources();
     } catch {
@@ -386,6 +403,10 @@
     printDialogActive = false;
     clearPrintImageSources(activePrintImages);
     printPreparing = false;
+    if (materialsOpenStateCaptured && materialsDetailsElement) {
+      materialsDetailsElement.open = materialsOpenBeforePrint;
+    }
+    materialsOpenStateCaptured = false;
   }
 
   function handlePrintImageError(event: Event) {
@@ -668,6 +689,155 @@
       </div>
     </header>
 
+    <div class="reader-overview" class:has-cover={coverImage !== null}>
+      {#if coverImage}
+        <figure class="reader-cover">
+          <button
+            class="gallery-image reader-cover-image"
+            type="button"
+            aria-label={t("Open project photo", locale) +
+              `: ${coverImage.alt_text || project.name}`}
+            onclick={() => openImage(coverImage)}
+          >
+            <img
+              class="screen-reference-image"
+              src={coverImage.thumbnail_url}
+              alt={coverImage.alt_text || project.name}
+              loading="lazy"
+            />
+            <img
+              class="print-reference-image"
+              data-print-src={coverImage.url}
+              alt={coverImage.alt_text || project.name}
+              loading="lazy"
+              onerror={handlePrintImageError}
+            />
+            {#if coverImage.is_title_image}
+              <span class="title-image-label">{t("Cover photo", locale)}</span>
+            {:else if coverImage.is_stitch_sample}
+              <span class="title-image-label">
+                {t("Stitch sample", locale)}
+              </span>
+            {/if}
+          </button>
+          <OcrControl
+            src={coverImage.url}
+            label={t("Recognized text from project photo", locale)}
+            ownerId={userId}
+            {locale}
+            enabled={canUseOcr}
+          />
+        </figure>
+      {/if}
+      <dl class="reader-keyfacts">
+        <div>
+          <dt>{t("Yarn", locale)}</dt>
+          <dd>
+            {#if yarns.length}
+              {yarns[0].name}{#if yarns.length > 1} +{yarns.length - 1}{/if}
+            {:else}
+              {project.yarn || t("Not recorded", locale)}
+            {/if}
+          </dd>
+        </div>
+        {#if project.needles || yarns.some((yarn) => yarn.recommended_needles)}
+          <div>
+            <dt>{t("Needles", locale)}</dt>
+            <dd>
+              {project.needles ||
+                yarns.find((yarn) => yarn.recommended_needles)
+                  ?.recommended_needles}
+            </dd>
+          </div>
+        {/if}
+        {#if project.stitch_sample}
+          <div>
+            <dt>{t("Gauge", locale)}</dt>
+            <dd>{project.stitch_sample}</dd>
+          </div>
+        {/if}
+      </dl>
+    </div>
+
+    <details
+      class="details-card materials-card"
+      bind:this={materialsDetailsElement}
+    >
+      <summary>{t("Materials", locale)}</summary>
+      <dl>
+        {#if yarns.length}
+          {#each yarns as yarn (yarn.id)}
+            <div>
+              <dt>{t("Yarn", locale)}</dt>
+              <dd>
+                <ResourceCard
+                  kind="yarn"
+                  href={`${resolve("/yarns")}/${yarn.id}`}
+                  imageUrl={yarn.preview_url}
+                  name={yarn.name}
+                  subtitle={[yarn.brand, yarn.colorway]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  meta={[
+                    yarn.fiber_content,
+                    yarn.weight_category,
+                    yarn.weight_grams ? `${yarn.weight_grams} g` : null,
+                    yarn.length_meters ? `${yarn.length_meters} m` : null,
+                  ].filter((value): value is string => Boolean(value))}
+                  titleTag="h3"
+                />
+                {#if yarn.notes_html}
+                  <div class="rich-text yarn-notes">
+                    {@html yarn.notes_html}
+                  </div>
+                {/if}
+                {#if safeExternalUrl(yarn.link)}
+                  <a
+                    href={safeExternalUrl(yarn.link)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("Yarn source", locale)} ↗
+                  </a>
+                {/if}
+              </dd>
+            </div>
+          {/each}
+        {:else if project.yarn}
+          <div>
+            <dt>{t("Yarn", locale)}</dt>
+            <dd>{project.yarn}</dd>
+          </div>
+        {:else}
+          <div>
+            <dt>{t("Yarn", locale)}</dt>
+            <dd>{t("Not recorded", locale)}</dd>
+          </div>
+        {/if}
+        {#if yarnWarning}
+          <p class="muted-copy">
+            {t("Some yarn details could not be loaded.", locale)}
+          </p>
+        {/if}
+        {#if project.needles || yarns.some((yarn) => yarn.recommended_needles)}
+          <div>
+            <dt>{t("Needles", locale)}</dt>
+            <dd>
+              {project.needles ??
+                yarns.find((yarn) => yarn.recommended_needles)
+                  ?.recommended_needles}
+            </dd>
+          </div>
+        {/if}
+        {#if project.stitch_sample}
+          <div>
+            <dt>{t("Gauge", locale)}</dt>
+            <dd>{project.stitch_sample}</dd>
+          </div>
+        {/if}
+      </dl>
+    </details>
+
     {#if favoriteError}
       <p class="inline-error" role="alert">{favoriteError}</p>
     {/if}
@@ -824,82 +994,6 @@
       </div>
 
       <aside class="details-column" aria-label={t("Project details", locale)}>
-        <section class="details-card">
-          <h2>{t("Materials", locale)}</h2>
-          <dl>
-            {#if yarns.length}
-              {#each yarns as yarn (yarn.id)}
-                <div>
-                  <dt>{t("Yarn", locale)}</dt>
-                  <dd>
-                    <ResourceCard
-                      kind="yarn"
-                      href={`${resolve("/yarns")}/${yarn.id}`}
-                      imageUrl={yarn.preview_url}
-                      name={yarn.name}
-                      subtitle={[yarn.brand, yarn.colorway]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      meta={[
-                        yarn.fiber_content,
-                        yarn.weight_category,
-                        yarn.weight_grams ? `${yarn.weight_grams} g` : null,
-                        yarn.length_meters ? `${yarn.length_meters} m` : null,
-                      ].filter((value): value is string => Boolean(value))}
-                      titleTag="h3"
-                    />
-                    {#if yarn.notes_html}
-                      <div class="rich-text yarn-notes">
-                        {@html yarn.notes_html}
-                      </div>
-                    {/if}
-                    {#if safeExternalUrl(yarn.link)}
-                      <a
-                        href={safeExternalUrl(yarn.link)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {t("Yarn source", locale)} ↗
-                      </a>
-                    {/if}
-                  </dd>
-                </div>
-              {/each}
-            {:else if project.yarn}
-              <div>
-                <dt>{t("Yarn", locale)}</dt>
-                <dd>{project.yarn}</dd>
-              </div>
-            {:else}
-              <div>
-                <dt>{t("Yarn", locale)}</dt>
-                <dd>{t("Not recorded", locale)}</dd>
-              </div>
-            {/if}
-            {#if yarnWarning}
-              <p class="muted-copy">
-                {t("Some yarn details could not be loaded.", locale)}
-              </p>
-            {/if}
-            {#if project.needles || yarns.some((yarn) => yarn.recommended_needles)}
-              <div>
-                <dt>{t("Needles", locale)}</dt>
-                <dd>
-                  {project.needles ??
-                    yarns.find((yarn) => yarn.recommended_needles)
-                      ?.recommended_needles}
-                </dd>
-              </div>
-            {/if}
-            {#if project.stitch_sample}
-              <div>
-                <dt>{t("Gauge", locale)}</dt>
-                <dd>{project.stitch_sample}</dd>
-              </div>
-            {/if}
-          </dl>
-        </section>
-
         <section class="details-card source-card">
           <h2>{t("Pattern source", locale)}</h2>
           {#if safeExternalUrl(project.link)}
@@ -1109,6 +1203,8 @@
 
   .reader {
     display: grid;
+    max-width: 70ch;
+    margin-inline: auto;
     gap: 1.5rem;
   }
 
@@ -1189,6 +1285,56 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .reader-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .reader-overview.has-cover {
+    grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .reader-cover {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .reader-cover-image {
+    width: 100%;
+  }
+
+  .reader-keyfacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 0.65rem 1rem;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .reader-keyfacts > div {
+    min-width: 0;
+  }
+
+  .reader-keyfacts dt {
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+  }
+
+  .reader-keyfacts dd {
+    display: -webkit-box;
+    margin: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .reader-heading h1 {
@@ -1272,6 +1418,19 @@
     margin: 0;
     font-size: 1.1rem;
     letter-spacing: -0.02em;
+  }
+
+  .materials-card > summary {
+    min-height: 44px;
+    align-content: center;
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .materials-card[open] > summary {
+    margin-bottom: 0.9rem;
   }
 
   .section-heading-row > span {
@@ -1390,9 +1549,8 @@
 
   .reader-columns {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem);
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    gap: 1.2rem;
   }
 
   .pattern-column,
@@ -1400,6 +1558,10 @@
     display: grid;
     min-width: 0;
     gap: 1.1rem;
+  }
+
+  .details-column {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .reading-copy {
@@ -1648,17 +1810,34 @@
   }
 
   @media (max-width: 900px) {
-    .reader-columns {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
     .details-column {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
   @media (max-width: 600px) {
+    .reader-overview.has-cover {
+      grid-template-columns: minmax(0, 8rem) minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+
+    .reader-keyfacts {
+      gap: 0.5rem 0.75rem;
+    }
+
+    .reader-keyfacts dt {
+      font-size: 0.72rem;
+    }
+
+    .pattern-section,
+    .steps-section {
+      padding-inline: 0.5rem;
+    }
+
+    .steps-list > li {
+      gap: 0.5rem;
+    }
+
     .reader {
       gap: 1rem;
     }
@@ -1728,9 +1907,18 @@
 
     .reader {
       display: block;
+      max-width: none;
       color: #111;
       background: #fff;
       font-size: 11pt;
+    }
+
+    .reader-overview {
+      display: block;
+    }
+
+    .reader-keyfacts {
+      display: none;
     }
 
     .reader-topline,
@@ -1795,6 +1983,10 @@
 
     .title-image-label {
       display: none !important;
+    }
+
+    .materials-card > summary {
+      display: none;
     }
 
     .reader-heading,

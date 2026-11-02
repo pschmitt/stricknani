@@ -203,7 +203,9 @@
       <span>{t("Favorites", locale)}</span>
     </label>
     <button class="search-button" type="submit">
-      <ActionLabel icon="search">{t("Search", locale)}</ActionLabel>
+      <ActionLabel icon="search">
+        <span class="search-button-label">{t("Search", locale)}</span>
+      </ActionLabel>
     </button>
     {#if hasFilters}
       <button
@@ -780,9 +782,11 @@
       min-width: 0;
       flex: 1 1 16rem;
     }
+  }
 
+  @container (max-width: 700px) {
     .filters {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr);
+      grid-template-columns: minmax(0, 1fr) max-content;
       align-items: end;
     }
 
@@ -793,18 +797,52 @@
       min-width: 0;
     }
 
-    .favorite-filter {
+    .search-field {
       grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    .search-field input {
+      width: calc(100% - 56px);
     }
 
     .search-button {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      padding-inline: 0;
+    }
+
+    .search-button-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .category-field {
       grid-column: 1;
-      grid-row: auto;
+      grid-row: 2;
+    }
+
+    .favorite-filter {
+      grid-column: 2;
+      grid-row: 2;
     }
 
     .clear-button {
-      grid-column: 2;
-      grid-row: auto;
+      grid-column: 1 / -1;
+      grid-row: 3;
+      width: 100%;
+      min-height: 44px;
+      justify-content: center;
     }
   }
 </style>

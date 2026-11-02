@@ -41,6 +41,7 @@ Execution-oriented backlog for Stricknani.
 | T120.10 | P1 | done | web-rewrite/updates | feat | Reload into an available app update on request while protecting drafts in every open tab |
 | T120.11 | P1 | done | web-rewrite/audit | feat | Link audit resource names to read-only admin views and show recorded field changes |
 | T120.12 | P1 | done | web-rewrite/resource-cards | feat | Reuse compact linked resource cards with images in audit, libraries and related resources |
+| T120.15 | P1 | wip | web-rewrite/reader | feat | Apply the reviewed single-column reader, compact materials summary and mobile filter refinements |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
 | T99 | P3 | done | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |

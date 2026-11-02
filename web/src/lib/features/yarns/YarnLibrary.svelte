@@ -167,9 +167,11 @@
       />
       <span>{t("Favorites only", locale)}</span>
     </label>
-    <button class="search-button" type="submit"
-      ><ActionLabel icon="search">{t("Search", locale)}</ActionLabel></button
-    >
+    <button class="search-button" type="submit">
+      <ActionLabel icon="search">
+        <span class="search-button-label">{t("Search", locale)}</span>
+      </ActionLabel>
+    </button>
     {#if hasFilters}
       <button
         class="clear-button"
@@ -178,9 +180,11 @@
           searchText = "";
           applyFilters({ query: "", favorite: false, page: 1 });
         }}
-        ><ActionLabel icon="reset">{t("Clear filters", locale)}</ActionLabel
-        ></button
       >
+        <ActionLabel icon="reset">
+          <span class="clear-button-label">{t("Clear filters", locale)}</span>
+        </ActionLabel>
+      </button>
     {/if}
   </form>
 
@@ -588,26 +592,59 @@
       min-width: 0;
       flex: 1 1 16rem;
     }
+  }
 
+  @container (max-width: 700px) {
     .filters {
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) 44px;
+      align-items: end;
     }
 
     .search-field {
       min-width: 0;
       grid-column: 1 / -1;
+      grid-row: 1;
     }
 
     .search-field input {
       min-width: 0;
+      width: calc(100% - 56px);
     }
 
     .search-button {
       grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      padding-inline: 0;
+    }
+
+    .search-button-label,
+    .clear-button-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .favorite-filter {
+      grid-column: 1;
+      grid-row: 2;
     }
 
     .clear-button {
-      grid-column: 1 / -1;
+      grid-column: 2;
+      grid-row: 2;
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      padding-inline: 0;
     }
   }
 
