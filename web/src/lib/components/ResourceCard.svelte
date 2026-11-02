@@ -2,7 +2,7 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
 
   export type ResourceCardKind = "project" | "yarn" | "category" | "resource";
-  export type ResourceCardVariant = "compact" | "library";
+  export type ResourceCardVariant = "compact" | "library" | "library-row";
   export type ResourceCardTitleTag = "h1" | "h2" | "h3" | "span";
 
   interface Props {
@@ -104,7 +104,11 @@
   </div>
 {/snippet}
 
-<div class="resource-card" class:library={variant === "library"}>
+<div
+  class="resource-card"
+  class:library={variant === "library"}
+  class:library-row={variant === "library-row"}
+>
   {#if href}
     <a class="resource-card__link" {href}>
       {@render cardBody()}
@@ -238,6 +242,52 @@
   .library .resource-card__subtitle,
   .library .resource-card__meta {
     font-size: 0.88rem;
+  }
+
+  .library-row .resource-card__link {
+    min-height: 56px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    overflow: visible;
+    border-radius: 0.65rem;
+  }
+
+  .library-row .resource-card__image {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    aspect-ratio: 1;
+    border-radius: 0.5rem;
+  }
+
+  .library-row .resource-card__image :global(svg) {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .library-row .resource-card__copy {
+    min-width: 0;
+    gap: 0.1rem;
+    padding: 0;
+  }
+
+  .library-row .resource-card__name {
+    overflow: hidden;
+    font-size: 0.98rem;
+    letter-spacing: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .library-row .resource-card__subtitle,
+  .library-row .resource-card__meta {
+    display: block;
+    overflow: hidden;
+    font-size: 0.76rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .resource-card__badge {
