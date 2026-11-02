@@ -594,7 +594,7 @@
     </div>
   </header>
 
-  <section class="mobile-language" aria-label={t("Language", locale)}>
+  <section class="account-language" aria-label={t("Language", locale)}>
     <LocaleSwitcher />
   </section>
 
@@ -1145,8 +1145,11 @@
     background: var(--danger);
   }
 
-  .mobile-language {
-    display: none;
+  .account-language {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    margin-bottom: 0.5rem;
   }
 
   .danger-text {
@@ -1397,16 +1400,6 @@
     .settings-columns {
       grid-template-columns: minmax(0, 1fr);
       gap: 1.8rem;
-    }
-  }
-
-  @media (max-width: 760px) {
-    .mobile-language {
-      display: flex;
-      min-height: 44px;
-      align-items: center;
-      justify-content: flex-end;
-      margin-bottom: 0.5rem;
     }
   }
 

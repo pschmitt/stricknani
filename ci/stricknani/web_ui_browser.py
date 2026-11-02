@@ -415,7 +415,10 @@ def _assert_mobile_app_header(page: Page) -> None:
     account_target = page.locator(".mobile-header .mobile-account")
     _require(
         account_target.is_visible()
-        and account_target.get_attribute("aria-label") == "Account"
+        and ACCOUNT_HEADING_NAME.fullmatch(
+            account_target.get_attribute("aria-label") or ""
+        )
+        is not None
         and urlsplit(account_target.get_attribute("href") or "").path == "/app/account",
         "the mobile profile link does not open Account",
     )
@@ -442,7 +445,10 @@ def _assert_desktop_account_target(page: Page) -> None:
     account_target = page.locator(".account-summary")
     _require(
         account_target.is_visible()
-        and account_target.get_attribute("aria-label") == "Account"
+        and ACCOUNT_HEADING_NAME.fullmatch(
+            account_target.get_attribute("aria-label") or ""
+        )
+        is not None
         and urlsplit(account_target.get_attribute("href") or "").path == "/app/account",
         "the desktop profile link does not open Account",
     )
@@ -484,7 +490,10 @@ def _open_account_from_profile(page: Page, *, mobile: bool = False) -> None:
     _require(account_link.is_visible(), "the Account profile link is unavailable")
     _require(
         account_link.evaluate("element => element.tagName === 'A'")
-        and account_link.get_attribute("aria-label") == "Account"
+        and ACCOUNT_HEADING_NAME.fullmatch(
+            account_link.get_attribute("aria-label") or ""
+        )
+        is not None
         and urlsplit(account_link.get_attribute("href") or "").path == "/app/account",
         "the profile control is not an accessible Account link",
     )
@@ -966,7 +975,7 @@ def _exercise_gauge_calculator(
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
-        language_switcher = page.locator(".mobile-language .locale-switcher")
+        language_switcher = page.locator(".account-language .locale-switcher")
     else:
         language_switcher = page.locator(".public-tool-header .locale-switcher")
     english_button = language_switcher.get_by_role("button", name="English", exact=True)
@@ -993,7 +1002,7 @@ def _exercise_gauge_calculator(
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
-        language_switcher = page.locator(".mobile-language .locale-switcher")
+        language_switcher = page.locator(".account-language .locale-switcher")
         german_button = language_switcher.get_by_role(
             "button", name="German", exact=True
         )
@@ -1026,7 +1035,7 @@ def _exercise_gauge_calculator(
     if signed_in:
         page.locator(".mobile-header .mobile-account").click()
         page.get_by_role("heading", name="Konto", exact=True).wait_for(state="visible")
-        page.locator(".mobile-language .locale-switcher button").nth(0).click()
+        page.locator(".account-language .locale-switcher button").nth(0).click()
         page.goto(f"{origin}/app/gauge", wait_until="networkidle")
     else:
         page.locator(".public-tool-header .locale-switcher button").nth(0).click()
@@ -1444,13 +1453,14 @@ def _check_mobile_language_and_screenshots(
     )
     page.locator(".mobile-header .mobile-account").click()
     page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
-    page.locator(".mobile-language .locale-switcher").wait_for(state="visible")
+    page.locator(".account-language .locale-switcher").wait_for(state="visible")
     _require(
-        page.locator(".page-header .locale-switcher").count() == 1,
-        "the desktop language control was removed",
+        page.locator(".page-header .locale-switcher").count() == 0
+        and page.locator(".account-language .locale-switcher").count() == 1,
+        "language controls did not move into Account",
     )
     language_targets = _visible_heights(
-        page, ".mobile-language .locale-switcher button"
+        page, ".account-language .locale-switcher button"
     )
     _require(
         len(language_targets) == 2 and min(language_targets) >= 44,
@@ -1485,7 +1495,7 @@ def _check_mobile_language_and_screenshots(
         reached_language_by_keyboard,
         "mobile language controls are not reachable in the keyboard tab order",
     )
-    page.locator('.mobile-language button[aria-label="German"]').focus()
+    page.locator('.account-language button[aria-label="German"]').focus()
     page.keyboard.press("Enter")
     page.wait_for_function(
         "() => document.documentElement.lang === 'de'", timeout=5_000
@@ -1508,11 +1518,7 @@ def _check_mobile_language_and_screenshots(
             )
             page.set_viewport_size({"width": width, "height": 844})
             _assert_no_horizontal_overflow(page, width)
-            switcher = (
-                ".mobile-language .locale-switcher"
-                if width <= 760
-                else ".page-header .locale-switcher"
-            )
+            switcher = ".account-language .locale-switcher"
             page.locator(switcher).wait_for(state="visible")
             control_heights = _visible_heights(page, f"{switcher} button")
             _require(
@@ -3702,7 +3708,10 @@ def run_acceptance(
             account_link = page.locator(".account-summary")
             _require(
                 account_link.is_visible()
-                and account_link.get_attribute("aria-label") == "Account"
+                and ACCOUNT_HEADING_NAME.fullmatch(
+                    account_link.get_attribute("aria-label") or ""
+                )
+                is not None
                 and account_link.get_attribute("href") == "/app/account",
                 "the desktop profile link does not target Account",
             )

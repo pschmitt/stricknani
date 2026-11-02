@@ -71,6 +71,10 @@ Use this file as the operational source of truth for working in Stricknani.
 - For isolated feature checks, start from committed source and overlay only the
   assigned files. Do not copy another agent's unfinished routes into that
   snapshot. Run integration gates again on the exact committed checkpoint.
+- Run the frontend formatter from `web/` with that snapshot's configuration
+  and lockfile; matching formatter versions alone do not prove matching settings.
+  Before evaluating a source snapshot, exclude Git metadata, generated outputs,
+  and dependency/cache symlinks. Use an explicit `path:` flake reference.
 - For Python browser runners, run both `ruff check` and `ruff format --check`
   on the changed files. The Rust-first `just check` does not run the Python
   formatter; a passing lint check alone does not satisfy the Nix format gate.
