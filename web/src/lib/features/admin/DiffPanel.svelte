@@ -1,7 +1,7 @@
 <script lang="ts">
+  import SharedButton from "#lib/components/Button.svelte";
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
@@ -198,12 +198,13 @@
   {:else if error}
     <section class="notice-panel" role="alert">
       <h2>{error}</h2>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         onclick={() => (retry += 1)}
-        ><ActionLabel icon="reset">{t("Try again", locale)}</ActionLabel
-        ></button
+        icon="reset"
+        >{t("Try again", locale)}
+        ></SharedButton
       >
     </section>
   {:else if detail}

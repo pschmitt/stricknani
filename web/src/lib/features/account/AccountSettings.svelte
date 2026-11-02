@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SharedButton from "#lib/components/Button.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, tick } from "svelte";
@@ -630,11 +631,7 @@
   class="account-page page-container page-container--standard"
   aria-labelledby="account-title"
 >
-  <PageHeader title={t("Account", locale)} titleId="account-title">
-    {#snippet context()}
-      <p>{t("Manage your profile, API access, and password.", locale)}</p>
-    {/snippet}
-  </PageHeader>
+  <PageHeader title={t("Account", locale)} titleId="account-title"></PageHeader>
 
   <section class="account-language" aria-label={t("Language", locale)}>
     <LocaleSwitcher />
@@ -660,13 +657,14 @@
         <p class="muted">{t("Loading account details…", locale)}</p>
       {:else if profileLoad === "error"}
         <p class="notice-error" role="alert">{profileError}</p>
-        <button
-          class="quiet-button"
+        <SharedButton
+          variant="ghost"
           type="button"
           onclick={() => void retryProfile()}
+          icon="refresh"
         >
-          <ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel>
-        </button>
+          {t("Try again", locale)}
+        </SharedButton>
       {:else if profile}
         <p class="profile-email">{profile.email}</p>
         <p class="role-line">
@@ -693,32 +691,30 @@
           </label>
           {#if avatarFile}
             <span class="selected-file">{avatarFile.name}</span>
-            <button
-              class="primary-button"
+            <SharedButton
+              variant="primary"
               type="button"
               disabled={operation !== null || !avatarUploadEnabled}
               onclick={() => void uploadSelectedAvatar()}
+              icon="upload"
             >
-              <ActionLabel icon="upload">
-                {operation === "avatar-upload"
-                  ? t("Uploading…", locale)
-                  : t("Upload picture", locale)}
-              </ActionLabel>
-            </button>
+              {operation === "avatar-upload"
+                ? t("Uploading…", locale)
+                : t("Upload picture", locale)}
+            </SharedButton>
           {/if}
           {#if profile.avatar_url}
-            <button
-              class="quiet-button danger-text"
+            <SharedButton
+              variant="danger"
               type="button"
               disabled={operation !== null || !avatarDeleteEnabled}
               onclick={() => void removeAvatar()}
+              icon="action-delete"
             >
-              <ActionLabel icon="action-delete">
-                {operation === "avatar-delete"
-                  ? t("Removing…", locale)
-                  : t("Remove picture", locale)}
-              </ActionLabel>
-            </button>
+              {operation === "avatar-delete"
+                ? t("Removing…", locale)
+                : t("Remove picture", locale)}
+            </SharedButton>
           {/if}
         </div>
         {#if avatarError}<p class="field-error" role="alert">
@@ -760,19 +756,18 @@
             aria-invalid={tokenNameError ? "true" : undefined}
             disabled={operation !== null || !accountActionsEnabled}
           />
-          <button
-            class="primary-button"
+          <SharedButton
+            variant="primary"
             type="submit"
             disabled={operation !== null ||
               !accountActionsEnabled ||
               tokenLoad === "loading"}
+            icon="key"
           >
-            <ActionLabel icon="key">
-              {operation === "token"
-                ? t("Working…", locale)
-                : t("Create token", locale)}
-            </ActionLabel>
-          </button>
+            {operation === "token"
+              ? t("Working…", locale)
+              : t("Create token", locale)}
+          </SharedButton>
         </div>
         {#if tokenNameError}<p
             id="token-name-error"
@@ -790,13 +785,14 @@
       {:else if tokenLoad === "error"}
         <div class="inline-error" role="alert">
           <p>{tokenLoadError}</p>
-          <button
-            class="quiet-button"
+          <SharedButton
+            variant="ghost"
             type="button"
             onclick={() => void retryTokens()}
+            icon="refresh"
           >
-            <ActionLabel icon="refresh">{t("Try again", locale)}</ActionLabel>
-          </button>
+            {t("Try again", locale)}
+          </SharedButton>
         </div>
       {:else if tokens.length === 0}
         <p class="empty-state">
@@ -817,19 +813,18 @@
                   >
                 {/if}
               </div>
-              <button
-                class="quiet-button danger-text"
+              <SharedButton
+                variant="danger"
                 type="button"
                 aria-label={t("Revoke token", locale) + ` ${token.name}`}
                 disabled={operation !== null || !accountActionsEnabled}
                 onclick={(event) => askToRevoke(token, event.currentTarget)}
+                icon="action-delete"
               >
-                <ActionLabel icon="action-delete">
-                  {revokingId === token.id
-                    ? t("Revoking…", locale)
-                    : t("Revoke", locale)}
-                </ActionLabel>
-              </button>
+                {revokingId === token.id
+                  ? t("Revoking…", locale)
+                  : t("Revoke", locale)}
+              </SharedButton>
             </li>
           {/each}
         </ul>
@@ -921,17 +916,17 @@
               role="alert">{confirmPasswordError}</small
             >{/if}
         </label>
-        <button
-          class="primary-button password-submit"
+        <SharedButton
+          variant="primary"
+          class="password-submit"
           type="submit"
           disabled={operation !== null || !accountActionsEnabled}
+          icon="save"
         >
-          <ActionLabel icon="save">
-            {operation === "password"
-              ? t("Changing password…", locale)
-              : t("Save new password", locale)}
-          </ActionLabel>
-        </button>
+          {operation === "password"
+            ? t("Changing password…", locale)
+            : t("Save new password", locale)}
+        </SharedButton>
       </form>
     </section>
   </div>
@@ -940,18 +935,17 @@
     {#if signOutError}
       <p class="field-error" role="alert">{signOutError}</p>
     {/if}
-    <button
-      class="quiet-button"
+    <SharedButton
+      variant="ghost"
       type="button"
       disabled={signOutBusy ||
         session.status !== "ready" ||
         !session.data?.user}
       onclick={() => void signOutFromAccount()}
+      icon="sign-out"
     >
-      <ActionLabel icon="sign-out">
-        {signOutBusy ? t("Working…", locale) : t("Sign out", locale)}
-      </ActionLabel>
-    </button>
+      {signOutBusy ? t("Working…", locale) : t("Sign out", locale)}
+    </SharedButton>
   </section>
 </section>
 
@@ -992,13 +986,15 @@
         aria-label={t("New API token", locale)}
         data-secret-value
       />
-      <button
-        class="primary-button copy-button"
+      <SharedButton
+        variant="primary"
+        class="copy-button"
         type="button"
         onclick={() => void copyToken()}
+        icon="copy"
       >
-        <ActionLabel icon="copy">{t("Copy token", locale)}</ActionLabel>
-      </button>
+        {t("Copy token", locale)}
+      </SharedButton>
       {#if copyStatus}<p class="copy-status" role="status" aria-live="polite">
           {copyStatus}
         </p>{/if}
@@ -1006,14 +1002,16 @@
         <input type="checkbox" bind:checked={tokenAcknowledged} />
         <span>{t("I saved this token somewhere safe.", locale)}</span>
       </label>
-      <button
-        class="quiet-button acknowledge-button"
+      <SharedButton
+        variant="ghost"
+        class="acknowledge-button"
         type="button"
         disabled={!tokenAcknowledged}
         onclick={hideRevealedToken}
+        icon="close"
       >
-        <ActionLabel icon="close">{t("Hide token", locale)}</ActionLabel>
-      </button>
+        {t("Hide token", locale)}
+      </SharedButton>
     </div>
   {/if}
 </dialog>
@@ -1035,26 +1033,26 @@
         {t("Apps using this token will no longer be able to connect.", locale)}
       </p>
       <div class="dialog-actions">
-        <button
-          class="quiet-button"
+        <SharedButton
+          variant="ghost"
           type="button"
           disabled={operation === "token"}
           onclick={() => revokeDialog?.close()}
+          icon="cancel"
         >
-          <ActionLabel icon="cancel">{t("Keep token", locale)}</ActionLabel>
-        </button>
-        <button
-          class="danger-button"
+          {t("Keep token", locale)}
+        </SharedButton>
+        <SharedButton
+          variant="danger"
           type="button"
           disabled={operation !== null}
           onclick={() => void confirmRevoke()}
+          icon="action-delete"
         >
-          <ActionLabel icon="action-delete">
-            {operation === "token"
-              ? t("Revoking…", locale)
-              : t("Revoke token", locale)}
-          </ActionLabel>
-        </button>
+          {operation === "token"
+            ? t("Revoking…", locale)
+            : t("Revoke token", locale)}
+        </SharedButton>
       </div>
     </div>
   {/if}
@@ -1146,10 +1144,7 @@
     margin-top: 0.8rem;
   }
 
-  .file-picker,
-  .primary-button,
-  .quiet-button,
-  .danger-button {
+  .file-picker {
     display: inline-flex;
     min-height: 2.85rem;
     align-items: center;
@@ -1157,6 +1152,8 @@
     border: 1px solid var(--line);
     border-radius: 0.65rem;
     padding: 0.55rem 0.85rem;
+    color: var(--accent-strong);
+    background: var(--surface);
     font: inherit;
     font-size: 0.93rem;
     font-weight: 630;
@@ -1165,27 +1162,8 @@
     cursor: pointer;
   }
 
-  .primary-button {
-    border-color: var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-
-  .file-picker,
-  .quiet-button {
-    color: var(--accent-strong);
-    background: var(--surface);
-  }
-
-  .quiet-button:hover,
   .file-picker:hover {
     background: var(--accent-wash);
-  }
-
-  .danger-button {
-    border-color: var(--danger);
-    color: var(--on-danger);
-    background: var(--danger);
   }
 
   .account-language {
@@ -1193,10 +1171,6 @@
     min-height: 44px;
     align-items: center;
     margin-bottom: 0.5rem;
-  }
-
-  .danger-text {
-    color: var(--danger);
   }
 
   .file-picker {
@@ -1334,7 +1308,7 @@
     line-height: 1.4;
   }
 
-  .password-submit {
+  :global(.password-submit) {
     justify-self: start;
     margin-top: 0.15rem;
   }
@@ -1407,8 +1381,8 @@
     user-select: all;
   }
 
-  .copy-button,
-  .acknowledge-button {
+  :global(.copy-button),
+  :global(.acknowledge-button) {
     justify-self: start;
   }
 
@@ -1463,8 +1437,7 @@
     }
 
     .file-picker,
-    .avatar-actions .primary-button,
-    .avatar-actions .quiet-button {
+    .avatar-actions :global(.ui-button) {
       min-height: 2.9rem;
     }
 
@@ -1472,7 +1445,7 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .token-create-row .primary-button {
+    .token-create-row :global(.ui-button) {
       justify-self: start;
     }
 
@@ -1480,7 +1453,7 @@
       align-items: start;
     }
 
-    .token-row .quiet-button {
+    .token-row :global(.ui-button) {
       align-self: center;
     }
 

@@ -1,10 +1,10 @@
 <script lang="ts">
+  import SharedButton from "#lib/components/Button.svelte";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
@@ -297,16 +297,14 @@
       aria-labelledby="resource-error-title"
     >
       <h2 id="resource-error-title">{loadError}</h2>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         onclick={() => (retry += 1)}
+        icon="refresh"
       >
-        <span class="button-content">
-          <NavIcon name="refresh" />
-          <span>{t("Try again", locale)}</span>
-        </span>
-      </button>
+        {t("Try again", locale)}
+      </SharedButton>
     </section>
   {:else if resource}
     <div class="resource-content">
@@ -332,9 +330,13 @@
       {/if}
 
       {#if eventHref()}
-        <a class="history-link" href={eventHref() ?? undefined}>
-          <NavIcon name="audit" />
-          <span>{t("Show recorded changes", locale)}</span>
+        <a
+          class="ui-button ui-button--secondary ui-button--md history-link"
+          href={eventHref() ?? undefined}
+        >
+          <ActionLabel icon="audit"
+            >{t("Show recorded changes", locale)}</ActionLabel
+          >
         </a>
       {/if}
 
@@ -851,15 +853,9 @@
     display: inline-flex;
     align-items: center;
     justify-self: start;
-    gap: 0.5rem;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--line);
-    border-radius: 0.7rem;
-    color: var(--accent-strong);
     text-decoration: none;
   }
-  .resource-page a:focus-visible,
-  .resource-page button:focus-visible {
+  .resource-page a:focus-visible {
     outline: 3px solid var(--accent-strong);
     outline-offset: 3px;
   }

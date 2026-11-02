@@ -1,4 +1,6 @@
 <script lang="ts">
+  import SharedButton from "#lib/components/Button.svelte";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { goto, snapshot } from "$app/navigation";
   import { page } from "$app/state";
   import { onDestroy, tick } from "svelte";
@@ -255,11 +257,8 @@
   aria-labelledby="audit-title"
 >
   <div class="audit-heading">
-    <PageHeader title={t("Audit log", locale)} titleId="audit-title">
-      {#snippet context()}
-        <p>{t("Review account and library changes in time order.", locale)}</p>
-      {/snippet}
-    </PageHeader>
+    <PageHeader title={t("Audit log", locale)} titleId="audit-title"
+    ></PageHeader>
   </div>
 
   <form class="audit-filters" onsubmit={applyFilters}>
@@ -278,12 +277,9 @@
         maxlength="64"
         autocomplete="off"
       />
-      <button class="primary-button" type="submit">
-        <span class="button-content">
-          <NavIcon name="filter" />
-          <span>{t("Filter", locale)}</span>
-        </span>
-      </button>
+      <SharedButton variant="primary" type="submit" icon="filter">
+        {t("Filter", locale)}
+      </SharedButton>
     </div>
   </form>
 
@@ -298,16 +294,14 @@
       aria-labelledby="audit-error-title"
     >
       <h2 id="audit-error-title">{loadError}</h2>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         onclick={() => (retry += 1)}
+        icon="refresh"
       >
-        <span class="button-content">
-          <NavIcon name="refresh" />
-          <span>{t("Try again", locale)}</span>
-        </span>
-      </button>
+        {t("Try again", locale)}
+      </SharedButton>
     </section>
   {:else}
     <ol class="event-list" aria-label={t("Audit events", locale)}>
@@ -342,9 +336,12 @@
           </div>
           <div class="event-meta">
             {#if event.has_changes}
-              <a class="show-diff" href={`/app/admin/audit/${event.id}`}>
-                <span class="button-content"
-                  ><NavIcon name="preview" />{t("Show diff", locale)}</span
+              <a
+                class="ui-button ui-button--secondary ui-button--md show-diff"
+                href={`/app/admin/audit/${event.id}`}
+              >
+                <ActionLabel icon="preview"
+                  >{t("Show diff", locale)}</ActionLabel
                 >
               </a>
             {/if}
@@ -361,21 +358,19 @@
     </ol>
 
     <nav class="page-controls" aria-label={t("Audit pages", locale)}>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={pageMeta.page <= 1}
         onclick={() =>
           void updateFilters({ ...filters, page: pageMeta.page - 1 })}
+        icon="previous"
       >
-        <span class="button-content">
-          <NavIcon name="previous" />
-          <span>{t("Previous page", locale)}</span>
-        </span>
-      </button>
+        {t("Previous page", locale)}
+      </SharedButton>
       <span>{t("Page", locale)} {pageMeta.page}</span>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={!pageMeta.has_more}
         onclick={() =>
@@ -385,7 +380,7 @@
           <span>{t("Next page", locale)}</span>
           <NavIcon name="next" />
         </span>
-      </button>
+      </SharedButton>
     </nav>
   {/if}
 </section>
@@ -426,15 +421,6 @@
     flex: 1;
     min-width: 0;
   }
-  .primary-button,
-  .secondary-button {
-    min-height: 44px;
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.8rem;
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
-  }
   .button-content {
     display: inline-flex;
     align-items: center;
@@ -446,20 +432,6 @@
     flex: 0 0 1rem;
     width: 1rem;
     height: 1rem;
-  }
-  .primary-button {
-    border: 1px solid var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-  .secondary-button {
-    border: 1px solid var(--line);
-    color: var(--ink);
-    background: var(--surface);
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
   }
   .event-list {
     margin: 0;
@@ -497,8 +469,6 @@
     font-size: 0.9rem;
   }
   .show-diff {
-    color: var(--accent-strong);
-    font-size: 0.9rem;
     overflow-wrap: anywhere;
   }
   .show-diff,
@@ -509,11 +479,6 @@
     display: grid;
     justify-items: end;
     gap: 0.2rem;
-  }
-  .show-diff {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
   }
   .event-main p {
     display: flex;
@@ -579,7 +544,7 @@
     .page-controls {
       gap: 0.4rem;
     }
-    .page-controls button {
+    .page-controls :global(.ui-button) {
       padding-inline: 0.55rem;
     }
   }

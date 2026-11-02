@@ -1,9 +1,9 @@
 <script lang="ts">
+  import SharedButton from "#lib/components/Button.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { page } from "$app/state";
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
@@ -562,21 +562,16 @@
 >
   <div class="admin-heading">
     <PageHeader title={t("User accounts", locale)} titleId="users-title">
-      {#snippet context()}
-        <p>{t("Manage account access and sign-in credentials.", locale)}</p>
-      {/snippet}
       {#snippet actions()}
-        <button
-          class="primary-button"
+        <SharedButton
+          variant="primary"
           type="button"
           onclick={(event) => openCreate(event.currentTarget)}
           disabled={loadState !== "ready" || operation !== null}
+          icon="user-add"
         >
-          <span class="button-content">
-            <NavIcon name="user-add" />
-            <span>{t("Create user", locale)}</span>
-          </span>
-        </button>
+          {t("Create user", locale)}
+        </SharedButton>
       {/snippet}
     </PageHeader>
   </div>
@@ -595,16 +590,14 @@
       aria-labelledby="users-error-title"
     >
       <h2 id="users-error-title">{loadError}</h2>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         onclick={() => (reload += 1)}
+        icon="refresh"
       >
-        <span class="button-content">
-          <NavIcon name="refresh" />
-          <span>{t("Try again", locale)}</span>
-        </span>
-      </button>
+        {t("Try again", locale)}
+      </SharedButton>
     </section>
   {:else}
     <div class="user-ledger" aria-label={t("User accounts", locale)}>
@@ -633,31 +626,25 @@
             {user.active ? t("Active", locale) : t("Disabled", locale)}
           </span>
           <div class="row-actions">
-            <button
-              class="quiet-button"
+            <SharedButton
+              variant={user.active ? "danger" : "secondary"}
               type="button"
               disabled={operation !== null}
               onclick={(event) =>
                 askActive(user, !user.active, event.currentTarget)}
+              icon={user.active ? "user-disable" : "user-enable"}
             >
-              <span class="button-content">
-                <NavIcon name={user.active ? "user-disable" : "user-enable"} />
-                <span>
-                  {user.active ? t("Disable", locale) : t("Enable", locale)}
-                </span>
-              </span>
-            </button>
-            <button
-              class="quiet-button"
+              {user.active ? t("Disable", locale) : t("Enable", locale)}
+            </SharedButton>
+            <SharedButton
+              variant="ghost"
               type="button"
               disabled={operation !== null}
               onclick={(event) => askReset(user, event.currentTarget)}
+              icon="key"
             >
-              <span class="button-content">
-                <NavIcon name="key" />
-                <span>{t("Reset password", locale)}</span>
-              </span>
-            </button>
+              {t("Reset password", locale)}
+            </SharedButton>
           </div>
         </article>
       {:else}
@@ -666,20 +653,18 @@
     </div>
 
     <nav class="page-controls" aria-label={t("User account pages", locale)}>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={pageMeta.page <= 1 || operation !== null}
         onclick={() => void setPage(pageMeta.page - 1)}
+        icon="previous"
       >
-        <span class="button-content">
-          <NavIcon name="previous" />
-          <span>{t("Previous page", locale)}</span>
-        </span>
-      </button>
+        {t("Previous page", locale)}
+      </SharedButton>
       <span>{t("Page", locale)} {pageMeta.page}</span>
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={!pageMeta.has_more || operation !== null}
         onclick={() => void setPage(pageMeta.page + 1)}
@@ -688,7 +673,7 @@
           <span>{t("Next page", locale)}</span>
           <NavIcon name="next" />
         </span>
-      </button>
+      </SharedButton>
     </nav>
   {/if}
 </section>
@@ -751,27 +736,23 @@
       <span>{t("Administrator access", locale)}</span></label
     >
     <div class="dialog-actions">
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={operation !== null}
         onclick={() => closeDialog(createDialog, createPassword)}
-        ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></button
+        icon="cancel">{t("Cancel", locale)}</SharedButton
       >
-      <button
-        class="primary-button"
+      <SharedButton
+        variant="primary"
         type="submit"
         disabled={operation !== null}
+        icon="user-add"
       >
-        <span class="button-content">
-          <NavIcon name="user-add" />
-          <span>
-            {operation === "create"
-              ? t("Creating…", locale)
-              : t("Create user", locale)}
-          </span>
-        </span>
-      </button>
+        {operation === "create"
+          ? t("Creating…", locale)
+          : t("Create user", locale)}
+      </SharedButton>
     </div>
   </form>
 </dialog>
@@ -812,33 +793,29 @@
         {activeError}
       </p>{/if}
     <div class="dialog-actions">
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={operation !== null}
         onclick={() => {
           activeTarget = null;
           activeDialog?.close();
         }}
-        ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></button
+        icon="cancel">{t("Cancel", locale)}</SharedButton
       >
-      <button
-        class="primary-button"
+      <SharedButton
+        variant={activeNext ? "primary" : "danger"}
         type="button"
         disabled={operation !== null}
         onclick={() => void updateActive()}
+        icon={activeNext ? "user-enable" : "user-disable"}
       >
-        <span class="button-content">
-          <NavIcon name={activeNext ? "user-enable" : "user-disable"} />
-          <span>
-            {operation === "active"
-              ? t("Saving…", locale)
-              : activeNext
-                ? t("Enable account", locale)
-                : t("Disable account", locale)}
-          </span>
-        </span>
-      </button>
+        {operation === "active"
+          ? t("Saving…", locale)
+          : activeNext
+            ? t("Enable account", locale)
+            : t("Disable account", locale)}
+      </SharedButton>
     </div>
   </section>
 </dialog>
@@ -895,27 +872,23 @@
         {resetPasswordError}
       </p>{/if}
     <div class="dialog-actions">
-      <button
-        class="secondary-button"
+      <SharedButton
+        variant="secondary"
         type="button"
         disabled={operation !== null}
         onclick={() => closeDialog(resetDialog, resetPasswordValue)}
-        ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></button
+        icon="cancel">{t("Cancel", locale)}</SharedButton
       >
-      <button
-        class="primary-button"
+      <SharedButton
+        variant="danger"
         type="submit"
         disabled={operation !== null}
+        icon="key"
       >
-        <span class="button-content">
-          <NavIcon name="key" />
-          <span>
-            {operation === "reset"
-              ? t("Resetting…", locale)
-              : t("Reset password", locale)}
-          </span>
-        </span>
-      </button>
+        {operation === "reset"
+          ? t("Resetting…", locale)
+          : t("Reset password", locale)}
+      </SharedButton>
     </div>
   </form>
 </dialog>
@@ -977,16 +950,6 @@
     flex-wrap: wrap;
     gap: 0.4rem;
   }
-  .quiet-button,
-  .secondary-button,
-  .primary-button {
-    min-height: 44px;
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.8rem;
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
-  }
   .button-content {
     display: inline-flex;
     align-items: center;
@@ -1005,29 +968,6 @@
     gap: 0.7rem;
     overflow-wrap: anywhere;
     color: var(--ink);
-  }
-  .quiet-button {
-    border: 1px solid transparent;
-    color: var(--accent-strong);
-    background: transparent;
-  }
-  .quiet-button:hover {
-    border-color: var(--line);
-    background: var(--surface-raised);
-  }
-  .secondary-button {
-    border: 1px solid var(--line);
-    color: var(--ink);
-    background: var(--surface);
-  }
-  .primary-button {
-    border: 1px solid var(--accent-strong);
-    color: var(--on-accent);
-    background: var(--accent-strong);
-  }
-  button:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
   }
   .page-controls {
     display: flex;
@@ -1128,7 +1068,7 @@
       align-items: start;
       flex-direction: column;
     }
-    .admin-heading > button {
+    .admin-heading > :global(.ui-button) {
       width: 100%;
     }
     .ledger-head {
@@ -1159,13 +1099,13 @@
     .row-actions {
       grid-column: 1 / -1;
     }
-    .row-actions button {
+    .row-actions :global(.ui-button) {
       flex: 1;
     }
     .page-controls {
       gap: 0.4rem;
     }
-    .page-controls button {
+    .page-controls :global(.ui-button) {
       padding-inline: 0.55rem;
     }
   }
