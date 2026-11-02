@@ -189,6 +189,7 @@ def run_acceptance(
                 viewport={"width": 390, "height": 844},
                 reduced_motion="reduce",
                 color_scheme="light",
+                locale="en-US",
             )
             page = context.new_page()
             page.on("response", observe_response)
@@ -209,6 +210,11 @@ def run_acceptance(
                 and "unsafe-inline" not in policy
                 and "unsafe-eval" not in policy,
                 "strict frontend CSP is missing",
+            )
+            mark_stage("choosing English for the import journey")
+            page.get_by_role("button", name=re.compile(r"^(English|Englisch)$")).click()
+            page.get_by_role("heading", name="Sign in", exact=True).wait_for(
+                state="visible"
             )
             mark_stage("filling disposable login email")
             page.locator("#email").fill(email)
