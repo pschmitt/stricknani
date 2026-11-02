@@ -1,10 +1,11 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { onDestroy, tick } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
     patchSessionAvatar,
     refreshSession,
@@ -68,6 +69,18 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: hasSensitiveDraft(),
+      busy:
+        operation !== null ||
+        signOutBusy ||
+        revokingId !== null ||
+        profileLoad === "loading" ||
+        tokenLoad === "loading",
+    })),
+  );
 
   function hasSensitiveDraft(): boolean {
     return (

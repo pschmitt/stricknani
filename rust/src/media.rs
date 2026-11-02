@@ -1648,6 +1648,112 @@ async fn serve_registered(
     media_response(&row.filename, &content_type, attachment, bytes)
 }
 
+#[derive(Debug)]
+pub(crate) enum AdminResourceMediaError {
+    Database,
+    Forbidden,
+    NotFound,
+    Unavailable,
+}
+
+/// Serve project or yarn media after checking the active administrator and
+/// the exact resource-to-media relationship.
+pub(crate) async fn serve_admin_resource_media(
+    state: &AppState,
+    admin_id: i64,
+    kind: &str,
+    media_kind: &str,
+    parent_id: i64,
+    public_id: i64,
+    thumbnail: bool,
+) -> Result<Response, AdminResourceMediaError> {
+    crate::admin_service::require_active_admin(&state.pool, admin_id)
+        .await
+        .map_err(|error| match error {
+            crate::admin_service::AdminError::Forbidden => AdminResourceMediaError::Forbidden,
+            _ => AdminResourceMediaError::Database,
+        })?;
+    if parent_id <= 0 || public_id <= 0 {
+        return Err(AdminResourceMediaError::NotFound);
+    }
+    let row = match (kind, media_kind) {
+        ("project", "image") => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT m.* FROM media_files AS m \
+                 JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
+                 WHERE p.id = ? AND m.public_id = ? AND m.kind IN ('title', 'step')",
+            )
+            .bind(parent_id)
+            .bind(public_id)
+            .fetch_optional(&state.pool)
+            .await
+        }
+        ("project", "attachment") => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT m.* FROM media_files AS m \
+                 JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
+                 WHERE p.id = ? AND m.public_id = ? AND m.kind = 'attachment'",
+            )
+            .bind(parent_id)
+            .bind(public_id)
+            .fetch_optional(&state.pool)
+            .await
+        }
+        ("yarn", "photo") => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT m.* FROM media_files AS m \
+                 JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
+                 WHERE y.id = ? AND m.public_id = ? AND m.kind = 'photo'",
+            )
+            .bind(parent_id)
+            .bind(public_id)
+            .fetch_optional(&state.pool)
+            .await
+        }
+        _ => return Err(AdminResourceMediaError::NotFound),
+    }
+    .map_err(|_| AdminResourceMediaError::Database)?
+    .ok_or(AdminResourceMediaError::NotFound)?;
+    if thumbnail && media_kind == "attachment" {
+        return Err(AdminResourceMediaError::NotFound);
+    }
+
+    let root = media_root(state).map_err(|_| AdminResourceMediaError::Unavailable)?;
+    let subdir = match kind {
+        "project" => "projects",
+        "yarn" => "yarns",
+        _ => return Err(AdminResourceMediaError::NotFound),
+    };
+    let path = if thumbnail {
+        thumbnail_path(&root, subdir, parent_id, &row.filename).await
+    } else {
+        existing_file_path(&root, subdir, parent_id, &row.filename).await
+    }
+    .map_err(|_| AdminResourceMediaError::NotFound)?
+    .ok_or(AdminResourceMediaError::NotFound)?;
+    let file = tokio::fs::File::open(path)
+        .await
+        .map_err(|_| AdminResourceMediaError::NotFound)?;
+    let mut bytes = Vec::new();
+    file.take((MAX_UPLOAD_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(|_| AdminResourceMediaError::NotFound)?;
+    if bytes.len() > MAX_UPLOAD_BYTES {
+        return Err(AdminResourceMediaError::NotFound);
+    }
+    let (content_type, attachment, filename) = if thumbnail {
+        ("image/jpeg", false, "thumbnail.jpg".to_owned())
+    } else {
+        (
+            row.content_type.as_str(),
+            row.kind == "attachment" && !row.is_safe_inline,
+            safe_disposition_filename(&row.original_filename),
+        )
+    };
+    Ok(media_response(&filename, content_type, attachment, bytes))
+}
+
 /// Return current project image and attachment DTO values for project serializers.
 pub(crate) async fn project_media(
     pool: &SqlitePool,
@@ -1806,6 +1912,28 @@ fn yarn_photo_dto(row: &MediaRow) -> YarnPhotoResponse {
 
 fn media_url(subdir: &str, parent_id: i64, filename: &str) -> String {
     format!("/media/{subdir}/{parent_id}/{filename}")
+}
+
+pub(crate) fn admin_resource_media_url(
+    kind: &str,
+    parent_id: i64,
+    media_kind: &str,
+    public_id: i64,
+    thumbnail: bool,
+) -> Option<String> {
+    let supported = matches!(
+        (kind, media_kind),
+        ("project", "image" | "attachment") | ("yarn", "photo")
+    );
+    if !supported || parent_id <= 0 || public_id <= 0 {
+        return None;
+    }
+    let url = format!("/api/v2/admin/resources/{kind}/{parent_id}/media/{media_kind}/{public_id}");
+    Some(if thumbnail {
+        format!("{url}/thumbnail")
+    } else {
+        url
+    })
 }
 
 fn thumbnail_url(subdir: &str, parent_id: i64, filename: &str) -> String {

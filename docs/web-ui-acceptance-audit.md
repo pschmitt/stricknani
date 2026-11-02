@@ -99,6 +99,12 @@ The newly requested reload-to-update action (T120.10) and audit resource
 names, separate read-only admin views, and on-demand diffs (T120.11) are in
 implementation. The user approved cross-owner read access only through the
 separate admin views; ordinary ownership and mutation permissions remain intact.
+The reviewed implementation checkpoint passes 303 Rust tests, four health tests,
+136 frontend tests, formatting, Clippy, Svelte checking and the static build.
+These are frozen-candidate receipts, not completed browser/package acceptance.
+The active v8 preview was restored after an automatic upgrade reverted its
+unpinned source; persistent pinning and temporary runtime-override cleanup
+remain required. See the current checkpoint for exact artifact provenance.
 
 1. Pass CI for the exact committed integration checkpoint and publish/pin the
    combined feature candidate. The v8 live rollout is verified; keep package

@@ -11,7 +11,7 @@ use sqlx::SqlitePool;
 
 use crate::db::AppState;
 use crate::{
-    audit::{self, Action, Entity},
+    audit::{self, Action, ChangeField, ChangeItemV1, ChangeSetV1, ChangeValue, Entity},
     auth::bearer_user,
 };
 
@@ -175,12 +175,20 @@ pub(crate) async fn create_for_owner(
         Err(_) => return Err(CategoryError::Database),
     };
     if inserted
-        && audit::record(
+        && audit::record_with_data(
             &mut tx,
             user_id,
             Entity::Category,
             category_id,
             Action::Created,
+            Some(&name),
+            ChangeItemV1::new(
+                ChangeField::CategoryName,
+                ChangeValue::Text(None),
+                ChangeValue::Text(Some(name.clone())),
+            )
+            .and_then(|item| ChangeSetV1::new(vec![item]))
+            .as_ref(),
         )
         .await
         .is_err()
@@ -253,6 +261,14 @@ pub(crate) async fn update_for_owner(
         .begin()
         .await
         .map_err(|_| CategoryError::Database)?;
+    let old_name =
+        sqlx::query_scalar::<_, String>("SELECT name FROM categories WHERE id = ? AND user_id = ?")
+            .bind(category_id)
+            .bind(user_id)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|_| CategoryError::Database)?
+            .ok_or(CategoryError::NotFound)?;
     let update = sqlx::query("UPDATE categories SET name = ? WHERE id = ? AND user_id = ?")
         .bind(&name)
         .bind(category_id)
@@ -274,12 +290,20 @@ pub(crate) async fn update_for_owner(
         let _ = tx.rollback().await;
         return Err(CategoryError::Database);
     }
-    if audit::record(
+    let changes = ChangeItemV1::new(
+        ChangeField::CategoryName,
+        ChangeValue::Text(Some(old_name.clone())),
+        ChangeValue::Text(Some(name.clone())),
+    )
+    .and_then(|item| ChangeSetV1::new(vec![item]));
+    if audit::record_with_data(
         &mut tx,
         user_id,
         Entity::Category,
         category_id,
         Action::Updated,
+        Some(&name),
+        changes.as_ref(),
     )
     .await
     .is_err()
@@ -321,6 +345,14 @@ pub(crate) async fn delete_for_owner(
         .begin()
         .await
         .map_err(|_| CategoryError::Database)?;
+    let old_name =
+        sqlx::query_scalar::<_, String>("SELECT name FROM categories WHERE id = ? AND user_id = ?")
+            .bind(category_id)
+            .bind(user_id)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|_| CategoryError::Database)?
+            .ok_or(CategoryError::NotFound)?;
     if bump_category_projects(&mut tx, user_id, category_id)
         .await
         .is_err()
@@ -334,12 +366,14 @@ pub(crate) async fn delete_for_owner(
         .await;
     match result {
         Ok(result) if result.rows_affected() == 1 => {
-            if audit::record(
+            if audit::record_with_data(
                 &mut tx,
                 user_id,
                 Entity::Category,
                 category_id,
                 Action::Deleted,
+                Some(&old_name),
+                None,
             )
             .await
             .is_err()

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { beforeNavigate } from "$app/navigation";
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ImageChoices from "./ImageChoices.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
@@ -23,6 +23,7 @@
     type ImportOperationIdentity,
   } from "./import-operation";
   import { session } from "#lib/session.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -53,6 +54,12 @@
   const hasDirtyDraft = $derived(
     Boolean(draft && preview && !createdProjectId),
   );
+  const hasSourceDraft = $derived(
+    sourceText.trim().length > 0 ||
+      sourceUrl.trim().length > 0 ||
+      selectedFile !== null ||
+      useAi,
+  );
   const documentKindLabels = {
     html: msg("HTML page"),
     plain_text: msg("Plain text"),
@@ -60,6 +67,13 @@
     pdf: msg("PDF document"),
     image: msg("Image"),
   } as const;
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: hasDirtyDraft || hasSourceDraft,
+      busy: busy || busyYarn !== null,
+    })),
+  );
 
   $effect(() => {
     const currentUserId = session.data?.user?.id ?? null;

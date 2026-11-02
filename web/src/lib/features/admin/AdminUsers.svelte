@@ -7,6 +7,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
     createAdminUser,
     listAdminUsers,
@@ -74,7 +75,22 @@
 
   onMount(() => {
     window.addEventListener("beforeunload", guardUnload);
-    return () => window.removeEventListener("beforeunload", guardUnload);
+    const unregisterUpdateGuard = registerPwaUpdateGuard(() => ({
+      dirty:
+        hasPasswordDraft() ||
+        createEmail.trim().length > 0 ||
+        createIsAdmin ||
+        activeTarget !== null ||
+        resetTarget !== null,
+      busy:
+        operation !== null ||
+        loadState === "loading" ||
+        Boolean(createDialog?.open || activeDialog?.open || resetDialog?.open),
+    }));
+    return () => {
+      unregisterUpdateGuard();
+      window.removeEventListener("beforeunload", guardUnload);
+    };
   });
 
   beforeNavigate(({ cancel }) => {

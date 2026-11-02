@@ -4,6 +4,7 @@ import {
   ApiError,
   advanceAuthEpoch,
   getSession,
+  hasPendingApiMutations,
   login,
   logout,
   setUnauthorizedHandler,
@@ -142,6 +143,47 @@ describe("same-origin API client", () => {
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).signal).toBe(
       controller.signal,
     );
+  });
+
+  it("tracks mutation requests until their response body settles", async () => {
+    let resolveResponse!: (response: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveResponse = resolve;
+          }),
+      ),
+    );
+
+    const request = apiRequest("/api/v2/projects", {
+      method: "POST",
+      body: {},
+    });
+    expect(hasPendingApiMutations()).toBe(true);
+    resolveResponse(Response.json({ data: { id: 1 } }));
+    await expect(request).resolves.toEqual({ data: { id: 1 } });
+    expect(hasPendingApiMutations()).toBe(false);
+  });
+
+  it("releases the mutation counter after a failed request", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code: "conflict", message: "changed" } },
+            { status: 409 },
+          ),
+        ),
+    );
+
+    await expect(
+      apiRequest("/api/v2/projects", { method: "PUT", body: {} }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(hasPendingApiMutations()).toBe(false);
   });
 
   it("notifies the session handler for an API 401, but not for a bad login", async () => {

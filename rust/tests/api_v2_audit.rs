@@ -5,7 +5,7 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use sha2::{Digest, Sha256};
-use sqlx::SqlitePool;
+use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
 use stricknani_server::{api_v2, db};
 use tower::ServiceExt;
 
@@ -274,4 +274,148 @@ async fn audit_api_filters_and_query_limits_match_the_legacy_view() {
         .unwrap();
     assert_eq!(oversized.status(), StatusCode::BAD_REQUEST);
     assert_eq!(json(oversized).await["error"]["code"], "invalid_query");
+}
+
+#[tokio::test]
+async fn audit_detail_projects_only_allowlisted_legacy_changes_for_admins() {
+    let fixture = fixture().await;
+    let project_id: i64 = sqlx::query_scalar(
+        "INSERT INTO projects(owner_id, name, created_at, updated_at) \
+         VALUES (?, 'Current project', '2026-01-01', '2026-01-01') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let event_id: i64 = sqlx::query_scalar(
+        "INSERT INTO audit_events(actor_user_id, entity_type, entity_id, action, details, created_at) \
+         VALUES (?, 'project', ?, 'updated', ?, '2026-02-01') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .bind(project_id)
+    .bind(r#"{"changes":{"name":{"old":"Before","new":"After"},"tags":{"old":"['a']","new":"['b']"},"password_hash":{"old":"private","new":"private2"}}}"#)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+
+    let member = fixture
+        .app
+        .clone()
+        .oneshot(request(
+            &format!("/admin/audit/{event_id}"),
+            Some(MEMBER_TOKEN),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(member.status(), StatusCode::FORBIDDEN);
+
+    let response = fixture
+        .app
+        .oneshot(request(
+            &format!("/admin/audit/{event_id}"),
+            Some(ADMIN_TOKEN),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = json(response).await;
+    assert_eq!(body["data"]["event"]["resource"]["kind"], "project");
+    assert_eq!(body["data"]["event"]["resource"]["name"], "Current project");
+    assert_eq!(body["data"]["event"]["resource"]["name_source"], "current");
+    assert_eq!(
+        body["data"]["event"]["resource"]["href"],
+        format!("/app/admin/resources/project/{project_id}")
+    );
+    assert_eq!(body["data"]["event"]["has_changes"], true);
+    assert_eq!(body["data"]["changes"]["version"], 1);
+    assert_eq!(
+        body["data"]["changes"]["items"].as_array().unwrap().len(),
+        2
+    );
+    assert_eq!(body["data"]["unavailable_reason"], serde_json::Value::Null);
+    let serialized = serde_json::to_string(&body).unwrap();
+    assert!(!serialized.contains("password_hash"));
+    assert!(!serialized.contains("private2"));
+    assert!(!serialized.contains("details"));
+}
+
+#[tokio::test]
+async fn audit_detail_distinguishes_missing_and_oversized_history() {
+    let fixture = fixture().await;
+    let missing_id: i64 = sqlx::query_scalar(
+        "INSERT INTO audit_events(actor_user_id, entity_type, entity_id, action, created_at) \
+         VALUES (?, 'project', 987654, 'created', '2026-01-01') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let oversized_id: i64 = sqlx::query_scalar(
+        "INSERT INTO audit_events(actor_user_id, entity_type, entity_id, action, change_version, safe_changes, created_at) \
+         VALUES (?, 'project', 987655, 'updated', 1, ?, '2026-01-02') RETURNING id",
+    )
+    .bind(fixture.admin_id)
+    .bind("x".repeat(262_145))
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+
+    for (id, expected_reason, expected_has_changes) in [
+        (missing_id, "not_recorded", false),
+        (oversized_id, "too_large", true),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(request(&format!("/admin/audit/{id}"), Some(ADMIN_TOKEN)))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = json(response).await;
+        assert_eq!(body["data"]["changes"], serde_json::Value::Null);
+        assert_eq!(body["data"]["unavailable_reason"], expected_reason);
+        assert_eq!(body["data"]["event"]["has_changes"], expected_has_changes);
+        assert_eq!(
+            body["data"]["event"]["resource"]["name_source"],
+            "unavailable"
+        );
+        assert_eq!(
+            body["data"]["event"]["resource"]["href"],
+            format!("/app/admin/audit/{id}")
+        );
+    }
+}
+
+#[tokio::test]
+async fn audit_history_migration_preserves_existing_legacy_rows() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    sqlx::query("CREATE TABLE audit_events (id INTEGER PRIMARY KEY, details TEXT)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO audit_events(id, details) VALUES (41, ?)")
+        .bind(r#"{"historical":true}"#)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::raw_sql(include_str!("../migrations/0014_audit_history.sql"))
+        .execute(&pool)
+        .await
+        .unwrap();
+    let row = sqlx::query(
+        "SELECT id, details, resource_name_snapshot, change_version, safe_changes FROM audit_events",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    use sqlx::Row;
+    assert_eq!(row.get::<i64, _>("id"), 41);
+    assert_eq!(row.get::<String, _>("details"), r#"{"historical":true}"#);
+    assert_eq!(row.get::<Option<String>, _>("resource_name_snapshot"), None);
+    assert_eq!(row.get::<Option<i64>, _>("change_version"), None);
+    assert_eq!(row.get::<Option<String>, _>("safe_changes"), None);
 }

@@ -4,6 +4,7 @@ import {
   auditFiltersFromSearch,
   auditSearchFromFilters,
   createAdminUser,
+  getAuditEventDetail,
   listAdminUsers,
   listAuditEvents,
   resetUserPassword,
@@ -36,6 +37,18 @@ const user: AdminUser = {
   is_admin: false,
   avatar_url: null,
 };
+
+const projectResource = (
+  id: number,
+  name: string | null = "Sample project",
+) => ({
+  kind: "project",
+  id,
+  name,
+  name_source: name === null ? "unavailable" : "current",
+  href: `/app/admin/resources/project/${id}`,
+  exists: true,
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -73,6 +86,8 @@ describe("administrator API", () => {
       entity_id: 3,
       action: "created",
       created_at: "2026-11-01T12:00:00Z",
+      resource: projectResource(3),
+      has_changes: true,
     };
     const fetchMock = vi
       .fn()
@@ -190,6 +205,8 @@ describe("administrator API", () => {
             entity_id: 6,
             action: "updated",
             created_at: "2026-11-01T12:00:00Z",
+            resource: projectResource(6),
+            has_changes: true,
           },
         ],
         meta: { page: 1, per_page: 50, has_more: false },
@@ -217,6 +234,15 @@ describe("administrator API", () => {
       entity_id: 0,
       action: "updated",
       created_at: "2026-11-01T12:00:00Z",
+      resource: {
+        kind: "project",
+        id: 0,
+        name: null,
+        name_source: "unavailable",
+        href: "/app/admin/audit/2",
+        exists: false,
+      },
+      has_changes: false,
     };
     const fetchMock = vi
       .fn()
@@ -240,6 +266,85 @@ describe("administrator API", () => {
     await expect(
       listAuditEvents({ page: 1, entity: "all", action: "" }),
     ).rejects.toMatchObject({ code: "invalid_response" });
+  });
+
+  it("loads a typed, link-safe audit diff lazily and rejects unknown fields", async () => {
+    const event = {
+      id: 31,
+      actor_email: "owner@example.invalid",
+      actor_avatar_url: null,
+      legacy_actor_user_id: null,
+      entity_type: "project",
+      entity_id: 12,
+      action: "updated",
+      created_at: "2026-11-01T12:00:00Z",
+      resource: projectResource(12),
+      has_changes: true,
+    };
+    const payload = {
+      data: {
+        event,
+        changes: {
+          version: 1,
+          items: [
+            {
+              field: "project.name",
+              before: { type: "text", value: "old name" },
+              after: { type: "text", value: "<img src=x onerror=alert(1)>" },
+            },
+            {
+              field: "project.link",
+              before: { type: "link_changed", value: true },
+              after: { type: "link_changed", value: false },
+            },
+          ],
+        },
+        unavailable_reason: null,
+      },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json(payload))
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...payload.data,
+            changes: {
+              version: 1,
+              items: [
+                {
+                  field: "project.secret",
+                  before: { type: "text", value: "x" },
+                  after: { type: "text", value: "y" },
+                },
+              ],
+            },
+          },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getAuditEventDetail(31)).resolves.toMatchObject({
+      event,
+      changes: {
+        version: 1,
+        items: [
+          {
+            field: "project.name",
+            after: { type: "text", value: "<img src=x onerror=alert(1)>" },
+          },
+          {
+            field: "project.link",
+            after: { type: "link_changed", value: false },
+          },
+        ],
+      },
+      unavailable_reason: null,
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/v2/admin/audit/31");
+    await expect(getAuditEventDetail(31)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
   });
 
   it("preserves stable errors and rejects unsafe or malformed DTOs", async () => {
@@ -269,6 +374,8 @@ describe("administrator API", () => {
               entity_id: 3,
               action: "created",
               created_at: "2026-11-01T12:00:00Z",
+              resource: projectResource(3),
+              has_changes: false,
               details: { password: "must not be accepted" },
             },
           ],

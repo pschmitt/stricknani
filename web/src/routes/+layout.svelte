@@ -27,7 +27,8 @@
   );
   const adminRoute = $derived(
     pathname.startsWith(resolve("/admin/users")) ||
-      pathname.startsWith(resolve("/admin/audit")),
+      pathname.startsWith(resolve("/admin/audit")) ||
+      pathname.startsWith("/app/admin/resources"),
   );
   const routeIsAdminOnly = $derived(adminRoute && !user?.is_admin);
 

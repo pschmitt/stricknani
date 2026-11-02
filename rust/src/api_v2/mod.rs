@@ -29,6 +29,7 @@ use crate::{auth, db::AppState, import_service::ImportContext};
 mod access;
 mod account;
 mod admin;
+mod admin_resources;
 mod archive;
 mod audit;
 mod categories;
@@ -116,6 +117,7 @@ fn router_with_context(
         .merge(tools::router())
         .merge(account::router())
         .merge(admin::router())
+        .merge(admin_resources::router())
         .merge(audit::router())
         .merge(signup::router())
         .with_state(state)

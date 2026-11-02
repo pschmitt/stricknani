@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -7,6 +8,7 @@
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
 
   let email = $state("");
   let password = $state("");
@@ -15,6 +17,13 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const accountCreated = $derived(page.url.searchParams.get("created") === "1");
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: email.length > 0 || password.length > 0,
+      busy: submitting,
+    })),
+  );
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();

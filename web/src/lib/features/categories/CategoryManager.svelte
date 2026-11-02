@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -30,6 +32,20 @@
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
   const pathname = $derived(page.url.pathname);
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty:
+        newName.trim().length > 0 ||
+        editingId !== null ||
+        deleteTarget !== null,
+      busy:
+        loadState === "loading" ||
+        saving ||
+        deleting ||
+        Boolean(deleteDialog?.open),
+    })),
+  );
 
   $effect(() => {
     const currentUserId = userId;

@@ -140,6 +140,10 @@ fn is_known_route(path: &str) -> bool {
         | ["admin", "users"]
         | ["admin", "audit"]
         | ["gauge"] => true,
+        ["admin", "audit", event_id] => valid_positive_id(event_id),
+        ["admin", "resources", kind, id] => {
+            matches!(*kind, "project" | "yarn" | "category") && valid_positive_id(id)
+        }
         ["projects", id] | ["projects", id, "edit"] | ["yarns", id] | ["yarns", id, "edit"] => {
             valid_id(id)
         }
@@ -149,6 +153,10 @@ fn is_known_route(path: &str) -> bool {
 
 fn valid_id(value: &str) -> bool {
     !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit())
+}
+
+fn valid_positive_id(value: &str) -> bool {
+    valid_id(value) && value.parse::<u64>().is_ok_and(|id| id > 0)
 }
 
 fn read_csp_manifest(path: &std::path::Path) -> Option<FrontendCsp> {

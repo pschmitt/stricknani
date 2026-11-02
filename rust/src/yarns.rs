@@ -11,7 +11,7 @@ use serde_json::json;
 use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
 
 use crate::{
-    audit::{self, Action, Entity},
+    audit::{self, Action, ChangeField, ChangeItemV1, ChangeSetV1, ChangeValue, Entity},
     auth::bearer_user,
     db::AppState,
 };
@@ -315,6 +315,7 @@ pub(crate) async fn create_for_owner(
     payload: YarnWriteRequest,
 ) -> Result<YarnResponse, YarnError> {
     let name = clean_name(&payload.name);
+    let audit_changes = yarn_audit_changes(None, &payload, &name);
     let now = timestamp(Utc::now());
     let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     let result = sqlx::query(
@@ -324,7 +325,7 @@ pub(crate) async fn create_for_owner(
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
-    .bind(name)
+    .bind(&name)
     .bind(clean_optional(payload.description))
     .bind(clean_optional(payload.brand))
     .bind(clean_optional(payload.colorway))
@@ -342,9 +343,17 @@ pub(crate) async fn create_for_owner(
     .execute(&mut *tx)
     .await;
     let id = result.map_err(|_| YarnError::Database)?.last_insert_rowid();
-    if audit::record(&mut tx, user_id, Entity::Yarn, id, Action::Created)
-        .await
-        .is_err()
+    if audit::record_with_data(
+        &mut tx,
+        user_id,
+        Entity::Yarn,
+        id,
+        Action::Created,
+        Some(&name),
+        audit_changes.as_ref(),
+    )
+    .await
+    .is_err()
     {
         return Err(YarnError::Database);
     }
@@ -406,6 +415,7 @@ pub(crate) async fn update_for_owner(
         Ok(None) => return Err(YarnError::NotFound),
         Err(_) => return Err(YarnError::Database),
     };
+    let audit_changes = yarn_audit_changes(Some(&current), &payload, &name);
     if expected
         .as_deref()
         .is_some_and(|value| value != current.updated_at)
@@ -429,7 +439,7 @@ pub(crate) async fn update_for_owner(
                  WHERE id = ? AND owner_id = ?"
     };
     let mut update = sqlx::query(query)
-        .bind(name)
+        .bind(&name)
         .bind(clean_optional(payload.description))
         .bind(clean_optional(payload.brand))
         .bind(clean_optional(payload.colorway))
@@ -475,9 +485,17 @@ pub(crate) async fn update_for_owner(
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
     }
-    if audit::record(&mut tx, user_id, Entity::Yarn, yarn_id, Action::Updated)
-        .await
-        .is_err()
+    if audit::record_with_data(
+        &mut tx,
+        user_id,
+        Entity::Yarn,
+        yarn_id,
+        Action::Updated,
+        Some(&name),
+        audit_changes.as_ref(),
+    )
+    .await
+    .is_err()
     {
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
@@ -524,8 +542,8 @@ pub(crate) async fn delete_for_owner(
     yarn_id: i64,
 ) -> Result<(), YarnError> {
     let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
-    match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
-        Ok(Some(_)) => {}
+    let old_name = match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
+        Ok(Some(yarn)) => yarn.name,
         Ok(None) => {
             let _ = tx.rollback().await;
             return Err(YarnError::NotFound);
@@ -534,7 +552,7 @@ pub(crate) async fn delete_for_owner(
             let _ = tx.rollback().await;
             return Err(YarnError::Database);
         }
-    }
+    };
     if bump_linked_project_timestamps(&mut tx, user_id, yarn_id)
         .await
         .is_err()
@@ -573,9 +591,17 @@ pub(crate) async fn delete_for_owner(
             return Err(YarnError::Database);
         }
     }
-    if audit::record(&mut tx, user_id, Entity::Yarn, yarn_id, Action::Deleted)
-        .await
-        .is_err()
+    if audit::record_with_data(
+        &mut tx,
+        user_id,
+        Entity::Yarn,
+        yarn_id,
+        Action::Deleted,
+        Some(&old_name),
+        None,
+    )
+    .await
+    .is_err()
     {
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
@@ -760,6 +786,128 @@ async fn yarn_response(
         project_ids,
         photos,
     })
+}
+
+fn yarn_audit_changes(
+    before: Option<&YarnRow>,
+    payload: &YarnWriteRequest,
+    name: &str,
+) -> Option<ChangeSetV1> {
+    let mut items = Vec::new();
+    let mut text = |field, old: Option<&str>, new: Option<&str>| {
+        if let Some(item) = audit::text_change(field, old, new) {
+            items.push(item);
+        }
+    };
+    text(
+        ChangeField::YarnName,
+        before.map(|row| row.name.as_str()),
+        Some(name),
+    );
+    text(
+        ChangeField::YarnDescription,
+        before.and_then(|row| row.description.as_deref()),
+        payload
+            .description
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnBrand,
+        before.and_then(|row| row.brand.as_deref()),
+        payload
+            .brand
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnColorway,
+        before.and_then(|row| row.colorway.as_deref()),
+        payload
+            .colorway
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnDyeLot,
+        before.and_then(|row| row.dye_lot.as_deref()),
+        payload
+            .dye_lot
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnFiberContent,
+        before.and_then(|row| row.fiber_content.as_deref()),
+        payload
+            .fiber_content
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnWeightCategory,
+        before.and_then(|row| row.weight_category.as_deref()),
+        payload
+            .weight_category
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnRecommendedNeedles,
+        before.and_then(|row| row.recommended_needles.as_deref()),
+        payload
+            .recommended_needles
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    text(
+        ChangeField::YarnNotes,
+        before.and_then(|row| row.notes.as_deref()),
+        payload
+            .notes
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    drop(text);
+    if let Some(item) = audit::change_item(
+        ChangeField::YarnWeightGrams,
+        ChangeValue::Integer(before.and_then(|row| row.weight_grams)),
+        ChangeValue::Integer(payload.weight_grams),
+    ) {
+        items.push(item);
+    }
+    if let Some(item) = audit::change_item(
+        ChangeField::YarnLengthMeters,
+        ChangeValue::Integer(before.and_then(|row| row.length_meters)),
+        ChangeValue::Integer(payload.length_meters),
+    ) {
+        items.push(item);
+    }
+    if let Some(item) = audit::change_item(
+        ChangeField::YarnIsAiEnhanced,
+        ChangeValue::Boolean(before.is_some_and(|row| row.is_ai_enhanced)),
+        ChangeValue::Boolean(payload.is_ai_enhanced),
+    ) {
+        items.push(item);
+    }
+    let before_link = before.and_then(|row| row.link.as_deref());
+    let after_link = clean_optional(payload.link.clone());
+    if before_link != after_link.as_deref() {
+        items.push(ChangeItemV1 {
+            field: ChangeField::YarnLink,
+            before: ChangeValue::LinkChanged(before_link.is_some()),
+            after: ChangeValue::LinkChanged(after_link.is_some()),
+        });
+    }
+    audit::changes(items.into_iter().map(Some))
 }
 
 async fn bump_linked_project_timestamps(

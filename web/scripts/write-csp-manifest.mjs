@@ -44,6 +44,17 @@ await writeFile(
 // internal build artifact, not a route; in particular the translation catalog
 // and all route HTML stay out of CacheStorage.
 const pwaAssets = await collectPwaAssets(buildRoot);
+const appVersionJson = JSON.parse(
+  await readFile(join(buildRoot, "_app/version.json"), "utf8"),
+);
+const appCodeVersion = appVersionJson?.version;
+if (
+  typeof appCodeVersion !== "string" ||
+  appCodeVersion.length === 0 ||
+  appCodeVersion.length > 128
+) {
+  throw new Error("SvelteKit compiled app version is missing or invalid");
+}
 const workerTemplate = await readFile(
   new URL("../static/service-worker.js", import.meta.url),
   "utf8",
@@ -56,7 +67,7 @@ const assetDigestInput = await Promise.all(
   }),
 );
 const version = createHash("sha256")
-  .update(`${assetDigestInput.join("")}\0${workerTemplate}`)
+  .update(`${appCodeVersion}\0${assetDigestInput.join("")}\0${workerTemplate}`)
   .digest("hex");
 const pwaManifest = { version, assets: pwaAssets };
 await writeFile(
@@ -65,6 +76,7 @@ await writeFile(
 );
 const worker = workerTemplate
   .replaceAll("__APP_VERSION__", version)
+  .replaceAll("__APP_CODE_VERSION__", appCodeVersion)
   .replace("__APP_ASSETS__", JSON.stringify(pwaAssets));
 if (worker.includes("__APP_")) {
   throw new Error("App service worker has an unexpanded build marker");

@@ -71,6 +71,10 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
         "/app/more",
         "/app/admin",
         "/app/audit",
+        "/app/admin/resources/project/42",
+        "/app/admin/resources/yarn/42",
+        "/app/admin/resources/category/42",
+        "/app/admin/audit/42",
     ] {
         let response = request(app.clone(), path).await;
         assert_eq!(response.status(), axum::http::StatusCode::OK, "{path}");
@@ -104,6 +108,9 @@ async fn unknown_app_paths_do_not_receive_the_shell() {
     let fixture = BuildFixture::new();
     for path in [
         "/app/admin/unknown",
+        "/app/admin/resources/other/42",
+        "/app/admin/resources/project/0",
+        "/app/admin/audit/0",
         "/app/projects/not-an-id",
         "/app/projects/42/delete/extra",
     ] {

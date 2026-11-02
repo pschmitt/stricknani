@@ -223,6 +223,95 @@ def _create_admin_audit_project(
     )
 
 
+def _create_cross_owner_resource(
+    page: Page, origin: str, mark: Callable[[str], None]
+) -> tuple[int, int, str]:
+    name = "Cross-owner read-only fixture"
+    mark("open Projects as ordinary resource owner")
+    page.goto(f"{origin}/app/projects", wait_until="networkidle")
+    page.get_by_role("link", name="New project", exact=True).click()
+    page.get_by_label("Project name", exact=True).fill(name)
+    page.get_by_label("Category", exact=True).fill("Blankets")
+    page.get_by_label("Pattern", exact=True).fill("Synthetic read-only resource")
+    page.get_by_role("button", name="Add step", exact=True).click()
+    page.get_by_label("Step title", exact=True).first.fill("Nested media step")
+    page.get_by_label("Step instructions", exact=True).first.fill(
+        "A synthetic step image and attachment belong to this owner."
+    )
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == "/api/v2/projects"
+            and response.request.method == "POST"
+        )
+    ) as create_info:
+        page.get_by_role("button", name="Create project", exact=True).click()
+    _require(
+        create_info.value.status == 201, "cross-owner fixture project creation failed"
+    )
+    payload = create_info.value.json()
+    project = payload.get("data") if isinstance(payload, dict) else None
+    _require(isinstance(project, dict), "cross-owner fixture response was invalid")
+    project_id = project.get("id")
+    steps = project.get("steps")
+    step_id = steps[0].get("id") if isinstance(steps, list) and steps else None
+    _require(
+        isinstance(project_id, int)
+        and project_id > 0
+        and isinstance(step_id, int)
+        and step_id > 0,
+        "cross-owner fixture did not return its project and step IDs",
+    )
+    page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+        state="visible"
+    )
+    expect(page.locator("#project-image-file")).to_be_enabled()
+
+    page.locator("#project-image-step").select_option(str(step_id))
+    page.locator("#project-image-alt").fill("Nested fixture step image")
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path
+            == f"/api/v2/projects/{project_id}/steps/{step_id}/images"
+            and response.request.method == "POST"
+        )
+    ) as image_info:
+        page.locator("#project-image-file").set_input_files(
+            {
+                "name": "synthetic-step-image.png",
+                "mimeType": "image/png",
+                "buffer": _tiny_png_fixture(),
+            }
+        )
+    _require(image_info.value.status == 201, "synthetic step image upload failed")
+
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == f"/api/v2/projects/{project_id}/attachments"
+            and response.request.method == "POST"
+        )
+    ) as attachment_info:
+        page.locator("#project-attachment-file").set_input_files(
+            {
+                "name": "synthetic-pattern.txt",
+                "mimeType": "text/plain",
+                "buffer": b"Synthetic fixture attachment.",
+            }
+        )
+    _require(attachment_info.value.status == 201, "synthetic attachment upload failed")
+
+    updated_name = "Cross-owner fixture <b>literal</b>"
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == f"/api/v2/projects/{project_id}"
+            and response.request.method == "PUT"
+        )
+    ) as update_info:
+        page.get_by_label("Project name", exact=True).fill(updated_name)
+        page.get_by_role("button", name="Save changes", exact=True).click()
+    _require(update_info.value.status == 200, "cross-owner fixture rename failed")
+    return project_id, step_id, updated_name
+
+
 def _tiny_png_fixture() -> bytes:
     def chunk(kind: bytes, data: bytes) -> bytes:
         checksum = zlib.crc32(kind + data) & 0xFFFFFFFF
@@ -338,7 +427,7 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
 
 
 def _assert_no_horizontal_overflow(page: Page, route: str) -> None:
-    if route not in {"users", "audit"}:
+    if route not in {"users", "audit", "resource", "diff"}:
         raise AcceptanceFailure("invalid admin responsive route")
     measurements = page.evaluate(
         """(allowedClasses) => {
@@ -383,12 +472,17 @@ def _assert_no_horizontal_overflow(page: Page, route: str) -> None:
         [
             "app-shell",
             "audit-filters",
+            "change-values",
+            "diff-page",
             "event-action",
             "event-row",
             "page-button",
             "page-controls",
             "page-indicator",
             "pagination",
+            "resource-content",
+            "resource-page",
+            "resource-section",
             "user-actions",
             "user-identity",
             "user-row",
@@ -536,6 +630,10 @@ def run_acceptance(
             _sign_in_account(page, origin, member_email, member_password)
             _open_account(page)
             _upload_account_avatar(page)
+            mark("create cross-owner resource with step image and attachment")
+            cross_owner_project_id, _, cross_owner_name = _create_cross_owner_resource(
+                page, origin, mark
+            )
             _sign_out(page)
             _sign_in(page, origin, admin_email, admin_password)
             page.get_by_role("heading", name="User accounts").wait_for(state="visible")
@@ -617,6 +715,115 @@ def run_acceptance(
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             page.get_by_role("heading", name="Audit log").wait_for(state="visible")
             page.locator(".event-row").first.wait_for(state="visible")
+            mark("read-only cross-owner resource and lazy audit diff")
+            audit_detail_requests: list[str] = []
+
+            def record_audit_detail_request(request: object) -> None:
+                request_url = urlsplit(getattr(request, "url", ""))
+                if re.fullmatch(r"/api/v2/admin/audit/\d+", request_url.path):
+                    audit_detail_requests.append(request_url.path)
+
+            page.on("request", record_audit_detail_request)
+            page.goto(
+                f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
+                wait_until="networkidle",
+            )
+            page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                audit_detail_requests == [],
+                "resource view eagerly fetched audit history",
+            )
+            _require(
+                page.locator(
+                    ".resource-content button, .resource-content input, "
+                    ".resource-content textarea, .resource-content select"
+                ).count()
+                == 0,
+                "read-only resource view exposed editing controls",
+            )
+            _require(
+                page.locator(".owner-strip")
+                .get_by_text(member_email, exact=True)
+                .count()
+                == 1,
+                "read-only resource view did not identify its owner",
+            )
+            _assert_user_avatar(
+                page.locator(".owner-strip .user-avatar"),
+                initial=member_email[0].upper(),
+                image_expected=True,
+            )
+            step_image = page.locator(".media-grid img")
+            step_image.wait_for(state="visible")
+            _require(
+                step_image.count() == 1
+                and "/api/v2/admin/resources/project/"
+                in (step_image.get_attribute("src") or "")
+                and bool(
+                    step_image.evaluate(
+                        "node => node.decode().then(() => node.complete "
+                        "&& node.naturalWidth > 0).catch(() => false)"
+                    )
+                ),
+                "cross-owner step image did not load through the admin media route",
+            )
+            _require(
+                "Step 1" in page.locator(".media-grid li").first.inner_text(),
+                "read-only resource view did not identify the image's step",
+            )
+            attachment_link = page.get_by_role(
+                "link", name="synthetic-pattern.txt", exact=True
+            )
+            attachment_link.wait_for(state="visible")
+            attachment_url = attachment_link.get_attribute("href") or ""
+            attachment_response = page.request.get(f"{origin}{attachment_url}")
+            _require(
+                attachment_url.startswith("/api/v2/admin/resources/project/")
+                and attachment_response.status == 200
+                and "attachment;"
+                in (attachment_response.headers.get("content-disposition") or ""),
+                "cross-owner attachment did not use the admin media download route",
+            )
+            page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
+            cross_owner_row = (
+                page.locator(".event-row").filter(has_text=cross_owner_name).first
+            )
+            cross_owner_row.wait_for(state="visible")
+            show_diff = cross_owner_row.get_by_role("link", name="Show diff")
+            show_diff.wait_for(state="visible")
+            show_diff.click()
+            page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
+                state="visible"
+            )
+            name_change = page.locator(".change-list li").filter(
+                has=page.get_by_role("heading", name="Project name", exact=True)
+            )
+            _require(
+                audit_detail_requests
+                and name_change.count() == 1
+                and name_change.locator(".change-values pre").last.inner_text()
+                == cross_owner_name
+                and page.locator(".change-values img").count() == 0,
+                "lazy audit diff did not render escaped, human-readable changes",
+            )
+            _require(
+                len(audit_detail_requests) == 1,
+                "audit diff detail request was not lazy or was fetched more than once",
+            )
+            for width in (320, 390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                _assert_no_horizontal_overflow(page, "diff")
+            page.goto(
+                f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
+                wait_until="networkidle",
+            )
+            for width in (320, 390, 768, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                _assert_no_horizontal_overflow(page, "resource")
+            page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
+            page.remove_listener("request", record_audit_detail_request)
             mark("check audit actor avatar and known action icons")
             admin_actor_row = (
                 page.locator(".event-row")
@@ -826,6 +1033,44 @@ def run_acceptance(
             page.get_by_role("button", name="Sign in").click()
             mark("wait for member sign-in")
             page.get_by_role("heading", name="Projects").wait_for(state="visible")
+            mark("ordinary user is denied cross-owner resource view")
+            page.goto(
+                f"{origin}/app/admin/resources/project/{cross_owner_project_id}",
+                wait_until="networkidle",
+            )
+            page.get_by_role(
+                "heading", name="You do not have access to this page."
+            ).wait_for(state="visible")
+            resource_forbidden_status = page.evaluate(
+                "async projectId => (await fetch("
+                "`/api/v2/admin/resources/project/${projectId}`)).status",
+                cross_owner_project_id,
+            )
+            _require(
+                resource_forbidden_status == 403,
+                "a member session was not denied by the admin resource API",
+            )
+            mark("owner deletes synthetic resource through its existing edit route")
+            page.goto(
+                f"{origin}/app/projects/{cross_owner_project_id}/edit",
+                wait_until="networkidle",
+            )
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+                state="visible"
+            )
+            page.once("dialog", lambda dialog: dialog.accept())
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{cross_owner_project_id}"
+                    and response.request.method == "DELETE"
+                )
+            ) as delete_info:
+                page.get_by_role("button", name="Delete project", exact=True).click()
+            _require(
+                delete_info.value.status in {200, 204},
+                "owner deletion of synthetic resource failed",
+            )
             mark("open admin route as member")
             page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
             mark("wait for member access denial")
@@ -868,6 +1113,62 @@ def run_acceptance(
             page.locator("#password").fill(admin_password)
             page.get_by_role("button", name="Sign in").click()
             page.get_by_role("heading", name="Projects").wait_for(state="visible")
+
+            mark("deleted resource remains linked to its event detail")
+            page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
+            deleted_event_row = (
+                page.locator(".event-row")
+                .filter(has_text="Deleted")
+                .filter(has_text=cross_owner_name)
+            )
+            deleted_resource_link = deleted_event_row.locator("a.resource-link")
+            deleted_resource_link.wait_for(state="visible")
+            deleted_event_href = deleted_resource_link.get_attribute("href") or ""
+            deleted_event_match = re.fullmatch(
+                r"/app/admin/audit/(\d+)", deleted_event_href
+            )
+            if deleted_event_match is None:
+                raise AcceptanceFailure(
+                    "deleted resource link did not use the event detail route"
+                )
+            deleted_event_api_path = (
+                f"/api/v2/admin/audit/{deleted_event_match.group(1)}"
+            )
+            deleted_event_response: dict[str, object] = {}
+
+            def record_deleted_event(response: Response) -> None:
+                if urlsplit(response.url).path != deleted_event_api_path:
+                    return
+                if response.status != 200:
+                    deleted_event_response["status"] = response.status
+                    return
+                payload = response.json()
+                data = payload.get("data") if isinstance(payload, dict) else None
+                event = data.get("event") if isinstance(data, dict) else None
+                resource = event.get("resource") if isinstance(event, dict) else None
+                deleted_event_response["exists"] = (
+                    resource.get("exists") if isinstance(resource, dict) else None
+                )
+                deleted_event_response["name"] = (
+                    resource.get("name") if isinstance(resource, dict) else None
+                )
+                deleted_event_response["status"] = response.status
+
+            page.on("response", record_deleted_event)
+            deleted_resource_link.click()
+            page.get_by_role("heading", name=cross_owner_name, exact=True).wait_for(
+                state="visible"
+            )
+            page.get_by_text("Resource unavailable", exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                deleted_event_response.get("status") == 200
+                and deleted_event_response.get("exists") is False
+                and deleted_event_response.get("name") == cross_owner_name,
+                "deleted resource did not resolve to an honest event detail",
+            )
+            page.remove_listener("response", record_deleted_event)
 
             mark("responsive layout and sensitive data check")
             for route, heading in (

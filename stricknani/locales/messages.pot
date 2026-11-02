@@ -61,11 +61,16 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:600
 #: web/src/lib/features/admin/AdminUsers.svelte:612
 #: web/src/lib/features/admin/AdminUsers.svelte:736
+#: web/src/lib/features/admin/AdminUsers.svelte:754
 #: web/src/lib/features/admin/AdminUsers.svelte:799
+#: web/src/lib/features/admin/AdminUsers.svelte:817
 #: web/src/lib/features/admin/AdminUsers.svelte:879
+#: web/src/lib/features/admin/AdminUsers.svelte:897
 #: web/src/lib/features/categories/CategoryManager.svelte:288
 #: web/src/lib/features/categories/CategoryManager.svelte:290
+#: web/src/lib/features/categories/CategoryManager.svelte:303
 #: web/src/lib/features/yarns/YarnForm.svelte:683
+#: web/src/lib/features/yarns/YarnForm.svelte:692
 msgid "Cancel"
 msgstr ""
 
@@ -395,6 +400,7 @@ msgstr ""
 
 #: rust/src/pwa.rs:102 stricknani/templates/offline.html:7
 #: web/src/lib/components/PwaUpdate.svelte:8
+#: web/src/lib/components/PwaUpdate.svelte:18
 msgid "No connection"
 msgstr ""
 
@@ -427,6 +433,7 @@ msgstr ""
 #: web/src/routes/admin/users/+page.svelte:8
 #: web/src/routes/admin/users/+page.svelte:10
 #: web/src/routes/more/+page.svelte:24 web/src/routes/more/+page.svelte:36
+#: web/src/routes/more/+page.svelte:44
 msgid "Admin"
 msgstr ""
 
@@ -438,6 +445,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:520
 #: web/src/lib/features/admin/AdminUsers.svelte:532
 #: web/src/lib/features/admin/AdminUsers.svelte:610
+#: web/src/lib/features/admin/AdminUsers.svelte:628
 msgid "Disabled"
 msgstr ""
 
@@ -445,6 +453,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:520
 #: web/src/lib/features/admin/AdminUsers.svelte:532
 #: web/src/lib/features/admin/AdminUsers.svelte:610
+#: web/src/lib/features/admin/AdminUsers.svelte:628
 msgid "Active"
 msgstr ""
 
@@ -463,6 +472,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:529
 #: web/src/lib/features/admin/AdminUsers.svelte:541
 #: web/src/lib/features/admin/AdminUsers.svelte:623
+#: web/src/lib/features/admin/AdminUsers.svelte:641
 msgid "Disable"
 msgstr ""
 
@@ -471,6 +481,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:529
 #: web/src/lib/features/admin/AdminUsers.svelte:541
 #: web/src/lib/features/admin/AdminUsers.svelte:623
+#: web/src/lib/features/admin/AdminUsers.svelte:641
 msgid "Enable"
 msgstr ""
 
@@ -489,7 +500,9 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:601
 #: web/src/lib/features/admin/AdminUsers.svelte:613
 #: web/src/lib/features/admin/AdminUsers.svelte:635
+#: web/src/lib/features/admin/AdminUsers.svelte:653
 #: web/src/lib/features/admin/AdminUsers.svelte:891
+#: web/src/lib/features/admin/AdminUsers.svelte:909
 msgid "Reset password"
 msgstr ""
 
@@ -543,12 +556,15 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:83
 #: web/src/lib/components/SignInForm.svelte:86
 #: web/src/lib/components/SignInForm.svelte:88
+#: web/src/lib/components/SignInForm.svelte:97
 #: web/src/lib/features/admin/AdminUsers.svelte:509
 #: web/src/lib/features/admin/AdminUsers.svelte:520
 #: web/src/lib/features/admin/AdminUsers.svelte:589
+#: web/src/lib/features/admin/AdminUsers.svelte:607
 #: web/src/lib/features/auth/SignupForm.svelte:159
 #: web/src/lib/features/auth/SignupForm.svelte:165
 #: web/src/lib/features/auth/SignupForm.svelte:166
+#: web/src/lib/features/auth/SignupForm.svelte:176
 msgid "Email"
 msgstr ""
 
@@ -578,6 +594,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:755
 #: web/src/lib/features/account/AccountSettings.svelte:771
 #: web/src/lib/features/account/AccountSettings.svelte:825
+#: web/src/lib/features/account/AccountSettings.svelte:838
 msgid "New password"
 msgstr ""
 
@@ -586,8 +603,10 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:503
 #: web/src/lib/features/admin/AdminUsers.svelte:556
 #: web/src/lib/features/admin/AdminUsers.svelte:572
+#: web/src/lib/features/admin/AdminUsers.svelte:574
 #: web/src/lib/features/admin/AdminUsers.svelte:584
 #: web/src/lib/features/admin/AdminUsers.svelte:748
+#: web/src/lib/features/admin/AdminUsers.svelte:766
 msgid "Create user"
 msgstr ""
 
@@ -607,9 +626,11 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:97
 #: web/src/lib/components/SignInForm.svelte:100
 #: web/src/lib/components/SignInForm.svelte:102
+#: web/src/lib/components/SignInForm.svelte:111
 #: web/src/lib/features/auth/SignupForm.svelte:178
 #: web/src/lib/features/auth/SignupForm.svelte:184
 #: web/src/lib/features/auth/SignupForm.svelte:185
+#: web/src/lib/features/auth/SignupForm.svelte:195
 msgid "Password"
 msgstr ""
 
@@ -666,18 +687,23 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:37
 #: web/src/lib/components/SignInForm.svelte:39
 #: web/src/lib/components/SignInForm.svelte:41
+#: web/src/lib/components/SignInForm.svelte:50
 #: web/src/lib/components/SignInForm.svelte:52
 #: web/src/lib/components/SignInForm.svelte:54
 #: web/src/lib/components/SignInForm.svelte:56
+#: web/src/lib/components/SignInForm.svelte:65
 #: web/src/lib/components/SignInForm.svelte:109
 #: web/src/lib/components/SignInForm.svelte:117
 #: web/src/lib/components/SignInForm.svelte:120
 #: web/src/lib/components/SignInForm.svelte:122
+#: web/src/lib/components/SignInForm.svelte:131
 #: web/src/lib/features/auth/SignupForm.svelte:230
 #: web/src/lib/features/auth/SignupForm.svelte:240
 #: web/src/lib/features/auth/SignupForm.svelte:241
+#: web/src/lib/features/auth/SignupForm.svelte:251
 #: web/src/lib/features/projects/ProjectEditor.svelte:658
 #: web/src/lib/features/projects/ProjectEditor.svelte:730
+#: web/src/lib/features/projects/ProjectEditor.svelte:745
 #: web/src/routes/+layout.svelte:127 web/src/routes/+layout.svelte:129
 #: web/src/routes/+layout.svelte:134 web/src/routes/+layout.svelte:136
 #: web/src/routes/+layout.svelte:139 web/src/routes/+layout.svelte:142
@@ -713,12 +739,15 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:128
 #: web/src/lib/components/SignInForm.svelte:131
 #: web/src/lib/components/SignInForm.svelte:133
+#: web/src/lib/components/SignInForm.svelte:142
 #: web/src/lib/features/auth/SignupForm.svelte:133
 #: web/src/lib/features/auth/SignupForm.svelte:135
 #: web/src/lib/features/auth/SignupForm.svelte:136
+#: web/src/lib/features/auth/SignupForm.svelte:146
 #: web/src/lib/features/auth/SignupForm.svelte:149
 #: web/src/lib/features/auth/SignupForm.svelte:155
 #: web/src/lib/features/auth/SignupForm.svelte:156
+#: web/src/lib/features/auth/SignupForm.svelte:166
 msgid "Create an account"
 msgstr ""
 
@@ -828,6 +857,8 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:165
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:169
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:176
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:190
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:202
 msgid ""
 "Calculate how many stitches to cast on and rows to knit based on your "
 "gauge and the pattern's gauge."
@@ -837,6 +868,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:173
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:177
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:184
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:210
 msgid "How to use this calculator"
 msgstr ""
 
@@ -844,6 +876,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:176
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:180
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:187
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:213
 msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
 msgstr ""
 
@@ -851,6 +884,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:182
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:186
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:193
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:219
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr ""
 
@@ -858,6 +892,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:188
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:192
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:199
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:225
 msgid "Enter the stitch count from your pattern (cast-on stitches)"
 msgstr ""
 
@@ -866,6 +901,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:194
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:198
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:205
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:231
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr ""
 
@@ -874,6 +910,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:204
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:208
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:215
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:241
 msgid "Pattern Gauge (per 10cm)"
 msgstr ""
 
@@ -883,10 +920,12 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:207
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:211
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:244
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:256
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:264
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:268
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:275
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:301
 msgid "Stitches"
 msgstr ""
 
@@ -896,10 +935,12 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:234
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:238
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:245
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:271
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:281
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:289
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:293
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:300
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:326
 msgid "Rows"
 msgstr ""
 
@@ -908,6 +949,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:261
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:265
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:272
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:298
 msgid "Your Gauge (per 10cm)"
 msgstr ""
 
@@ -916,6 +958,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:316
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:320
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:327
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:353
 msgid "Pattern Counts"
 msgstr ""
 
@@ -924,6 +967,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:319
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:323
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:330
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:356
 msgid "Stitches to cast on"
 msgstr ""
 
@@ -932,6 +976,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:346
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:350
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:357
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
 msgid "Rows to knit"
 msgstr ""
 
@@ -940,6 +985,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:347
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:351
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:358
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:384
 msgid "optional"
 msgstr ""
 
@@ -948,6 +994,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:377
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:381
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:388
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:419
 msgid "Calculate"
 msgstr ""
 
@@ -1328,8 +1375,10 @@ msgstr ""
 #: stricknani/templates/yarn/detail.html:42
 #: web/src/lib/features/categories/CategoryManager.svelte:311
 #: web/src/lib/features/categories/CategoryManager.svelte:313
+#: web/src/lib/features/categories/CategoryManager.svelte:326
 #: web/src/lib/features/categories/CategoryManager.svelte:329
 #: web/src/lib/features/categories/CategoryManager.svelte:331
+#: web/src/lib/features/categories/CategoryManager.svelte:344
 #: web/src/lib/features/yarns/YarnDetail.svelte:271
 #: web/src/lib/features/yarns/YarnDetail.svelte:281
 #: web/src/lib/features/yarns/YarnDetail.svelte:412
@@ -1401,7 +1450,8 @@ msgstr ""
 #: web/src/routes/+layout.svelte:26 web/src/routes/+layout.svelte:27
 #: web/src/routes/+layout.svelte:31 web/src/routes/+layout.svelte:32
 #: web/src/routes/+layout.svelte:35 web/src/routes/+layout.svelte:37
-#: web/src/routes/+layout.svelte:40 web/src/routes/create/+page.svelte:8
+#: web/src/routes/+layout.svelte:38 web/src/routes/+layout.svelte:40
+#: web/src/routes/create/+page.svelte:8 web/src/routes/create/+page.svelte:9
 msgid "Create"
 msgstr ""
 
@@ -1424,13 +1474,16 @@ msgstr[1] ""
 #: stricknani/templates/yarn/form.html:81
 #: web/src/lib/features/categories/CategoryManager.svelte:282
 #: web/src/lib/features/categories/CategoryManager.svelte:284
+#: web/src/lib/features/categories/CategoryManager.svelte:297
 msgid "Save"
 msgstr ""
 
 #: stricknani/templates/projects/categories.html:67
 #: web/src/lib/features/projects/ProjectEditor.svelte:976
 #: web/src/lib/features/projects/ProjectEditor.svelte:1269
+#: web/src/lib/features/projects/ProjectEditor.svelte:1284
 #: web/src/lib/features/yarns/YarnForm.svelte:79
+#: web/src/lib/features/yarns/YarnForm.svelte:81
 msgid "Save changes"
 msgstr ""
 
@@ -1438,6 +1491,7 @@ msgstr ""
 #: stricknani/templates/projects/categories.html:98
 #: web/src/lib/features/categories/CategoryManager.svelte:349
 #: web/src/lib/features/categories/CategoryManager.svelte:351
+#: web/src/lib/features/categories/CategoryManager.svelte:364
 msgid "Delete category"
 msgstr ""
 
@@ -1463,6 +1517,8 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:672
 #: web/src/lib/features/projects/ProjectEditor.svelte:739
 #: web/src/lib/features/projects/ProjectEditor.svelte:744
+#: web/src/lib/features/projects/ProjectEditor.svelte:754
+#: web/src/lib/features/projects/ProjectEditor.svelte:759
 #: web/src/lib/features/projects/ProjectReader.svelte:159
 #: web/src/lib/features/projects/ProjectReader.svelte:165
 #: web/src/lib/features/projects/ProjectReader.svelte:174
@@ -1519,8 +1575,10 @@ msgstr ""
 
 #: rust/src/web.rs:2166 stricknani/templates/projects/detail.html:139
 #: stricknani/templates/projects/form.html:211
+#: web/src/lib/features/admin/AdminResource.svelte:371
 #: web/src/lib/features/projects/ProjectEditor.svelte:954
 #: web/src/lib/features/projects/ProjectEditor.svelte:1224
+#: web/src/lib/features/projects/ProjectEditor.svelte:1239
 #: web/src/lib/features/projects/ProjectReader.svelte:415
 #: web/src/lib/features/projects/ProjectReader.svelte:511
 #: web/src/lib/features/projects/ProjectReader.svelte:516
@@ -1553,12 +1611,18 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:161
 #: web/src/lib/features/admin/AdminAudit.svelte:164
 #: web/src/lib/features/admin/AdminAudit.svelte:170
+#: web/src/lib/features/admin/AdminResource.svelte:127
+#: web/src/lib/features/admin/AdminResource.svelte:241
+#: web/src/lib/features/admin/DiffPanel.svelte:167
 #: web/src/lib/features/imports/ImportWorkbench.svelte:529
+#: web/src/lib/features/imports/ImportWorkbench.svelte:543
 #: web/src/lib/features/projects/ProjectEditor.svelte:723
 #: web/src/lib/features/projects/ProjectEditor.svelte:815
+#: web/src/lib/features/projects/ProjectEditor.svelte:830
 #: web/src/lib/features/projects/ProjectLibrary.svelte:169
 #: web/src/lib/features/projects/ProjectLibrary.svelte:175
 #: web/src/lib/features/projects/ProjectLibrary.svelte:176
+#: web/src/lib/features/projects/ProjectLibrary.svelte:178
 #: web/src/lib/features/projects/ProjectLibrary.svelte:179
 msgid "Category"
 msgstr ""
@@ -1567,9 +1631,12 @@ msgstr ""
 #: stricknani/templates/projects/detail.html:266
 #: stricknani/templates/projects/form.html:323
 #: stricknani/templates/projects/form.html:665
+#: web/src/lib/features/admin/AdminResource.svelte:281
 #: web/src/lib/features/projects/ProjectEditor.svelte:748
 #: web/src/lib/features/projects/ProjectEditor.svelte:849
+#: web/src/lib/features/projects/ProjectEditor.svelte:864
 #: web/src/lib/features/projects/ProjectEditor.svelte:875
+#: web/src/lib/features/projects/ProjectEditor.svelte:890
 msgid "Tags"
 msgstr ""
 
@@ -1582,6 +1649,9 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:688
 #: web/src/lib/features/account/AccountSettings.svelte:704
 #: web/src/lib/features/account/AccountSettings.svelte:758
+#: web/src/lib/features/account/AccountSettings.svelte:771
+#: web/src/lib/features/admin/AdminResource.svelte:257
+#: web/src/lib/features/admin/AdminResource.svelte:440
 #: web/src/lib/features/admin/audit-action.ts:26
 msgid "Created"
 msgstr ""
@@ -1642,9 +1712,13 @@ msgstr ""
 #: stricknani/templates/projects/form.html:158
 #: stricknani/templates/yarn/detail.html:353
 #: stricknani/templates/yarn/form.html:237
+#: web/src/lib/features/admin/AdminResource.svelte:293
+#: web/src/lib/features/admin/AdminResource.svelte:471
 #: web/src/lib/features/imports/ImportWorkbench.svelte:679
+#: web/src/lib/features/imports/ImportWorkbench.svelte:693
 #: web/src/lib/features/projects/ProjectEditor.svelte:795
 #: web/src/lib/features/projects/ProjectEditor.svelte:954
+#: web/src/lib/features/projects/ProjectEditor.svelte:969
 #: web/src/lib/features/projects/ProjectReader.svelte:287
 #: web/src/lib/features/projects/ProjectReader.svelte:338
 #: web/src/lib/features/projects/ProjectReader.svelte:340
@@ -1656,6 +1730,7 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:302
 #: web/src/lib/features/yarns/YarnDetail.svelte:314
 #: web/src/lib/features/yarns/YarnForm.svelte:611
+#: web/src/lib/features/yarns/YarnForm.svelte:620
 msgid "Notes"
 msgstr ""
 
@@ -1678,10 +1753,14 @@ msgstr ""
 #: stricknani/templates/projects/form.html:147
 #: stricknani/templates/yarn/detail.html:322
 #: stricknani/templates/yarn/form.html:225
+#: web/src/lib/features/admin/AdminResource.svelte:287
+#: web/src/lib/features/admin/AdminResource.svelte:465
 #: web/src/lib/features/imports/ImportWorkbench.svelte:540
+#: web/src/lib/features/imports/ImportWorkbench.svelte:554
 #: web/src/lib/features/yarns/YarnDetail.svelte:296
 #: web/src/lib/features/yarns/YarnDetail.svelte:308
 #: web/src/lib/features/yarns/YarnForm.svelte:600
+#: web/src/lib/features/yarns/YarnForm.svelte:609
 msgid "Description"
 msgstr ""
 
@@ -1735,7 +1814,9 @@ msgstr ""
 
 #: stricknani/templates/projects/detail.html:587
 #: web/src/lib/features/imports/ImportWorkbench.svelte:565
+#: web/src/lib/features/imports/ImportWorkbench.svelte:579
 #: web/src/lib/features/imports/ImportWorkbench.svelte:580
+#: web/src/lib/features/imports/ImportWorkbench.svelte:594
 msgid "Instructions"
 msgstr ""
 
@@ -1758,10 +1839,13 @@ msgstr ""
 #: stricknani/templates/projects/form.html:541
 #: stricknani/templates/yarn/detail.html:470
 #: stricknani/templates/yarn/detail.html:473
+#: web/src/lib/features/admin/AdminResource.svelte:358
 #: web/src/lib/features/projects/ProjectEditor.svelte:882
 #: web/src/lib/features/projects/ProjectEditor.svelte:940
 #: web/src/lib/features/projects/ProjectEditor.svelte:1077
+#: web/src/lib/features/projects/ProjectEditor.svelte:1092
 #: web/src/lib/features/projects/ProjectEditor.svelte:1194
+#: web/src/lib/features/projects/ProjectEditor.svelte:1209
 #: web/src/lib/features/projects/ProjectReader.svelte:399
 #: web/src/lib/features/projects/ProjectReader.svelte:432
 #: web/src/lib/features/projects/ProjectReader.svelte:434
@@ -1840,6 +1924,9 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:159
 #: web/src/lib/features/admin/AdminAudit.svelte:162
 #: web/src/lib/features/admin/AdminAudit.svelte:168
+#: web/src/lib/features/admin/AdminResource.svelte:123
+#: web/src/lib/features/admin/AdminResource.svelte:458
+#: web/src/lib/features/admin/DiffPanel.svelte:163
 msgid "Project"
 msgstr ""
 
@@ -1970,6 +2057,7 @@ msgid "Describe your stitch sample / gauge swatch..."
 msgstr ""
 
 #: rust/src/web.rs:2164 stricknani/templates/projects/form.html:531
+#: web/src/lib/features/admin/AdminResource.svelte:325
 #: web/src/lib/features/projects/ProjectReader.svelte:303
 #: web/src/lib/features/projects/ProjectReader.svelte:354
 #: web/src/lib/features/projects/ProjectReader.svelte:356
@@ -1999,8 +2087,11 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:857
 #: web/src/lib/features/projects/ProjectEditor.svelte:884
 #: web/src/lib/features/projects/ProjectEditor.svelte:886
+#: web/src/lib/features/projects/ProjectEditor.svelte:899
 #: web/src/lib/features/projects/ProjectEditor.svelte:1044
+#: web/src/lib/features/projects/ProjectEditor.svelte:1059
 #: web/src/lib/features/projects/ProjectEditor.svelte:1100
+#: web/src/lib/features/projects/ProjectEditor.svelte:1115
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:190
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:195
 msgid "Remove"
@@ -2049,11 +2140,13 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:139
 #: web/src/lib/features/projects/ProjectLibrary.svelte:145
 #: web/src/lib/features/projects/ProjectLibrary.svelte:146
+#: web/src/lib/features/projects/ProjectLibrary.svelte:148
 #: web/src/lib/features/projects/ProjectLibrary.svelte:149
 #: web/src/routes/+layout.svelte:24 web/src/routes/+layout.svelte:25
 #: web/src/routes/+layout.svelte:29 web/src/routes/+layout.svelte:30
 #: web/src/routes/+layout.svelte:33 web/src/routes/+layout.svelte:35
-#: web/src/routes/+layout.svelte:38 web/src/routes/projects/+page.svelte:8
+#: web/src/routes/+layout.svelte:36 web/src/routes/+layout.svelte:38
+#: web/src/routes/projects/+page.svelte:8
 #: web/src/routes/projects/+page.svelte:10
 msgid "Projects"
 msgstr ""
@@ -2062,10 +2155,13 @@ msgstr ""
 #: stricknani/templates/yarn/list.html:54
 #: web/src/lib/features/projects/ProjectEditor.svelte:821
 #: web/src/lib/features/projects/ProjectEditor.svelte:994
+#: web/src/lib/features/projects/ProjectEditor.svelte:1009
 #: web/src/lib/features/projects/ProjectLibrary.svelte:193
 #: web/src/lib/features/projects/ProjectLibrary.svelte:199
 #: web/src/lib/features/projects/ProjectLibrary.svelte:200
+#: web/src/lib/features/projects/ProjectLibrary.svelte:203
 #: web/src/lib/features/projects/ProjectLibrary.svelte:204
+#: web/src/lib/features/yarns/YarnLibrary.svelte:168
 #: web/src/lib/features/yarns/YarnLibrary.svelte:169
 msgid "Search"
 msgstr ""
@@ -2078,12 +2174,16 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:207
 #: web/src/lib/features/projects/ProjectLibrary.svelte:213
 #: web/src/lib/features/projects/ProjectLibrary.svelte:214
+#: web/src/lib/features/projects/ProjectLibrary.svelte:217
 #: web/src/lib/features/projects/ProjectLibrary.svelte:218
 #: web/src/lib/features/projects/ProjectLibrary.svelte:258
 #: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectLibrary.svelte:265
+#: web/src/lib/features/projects/ProjectLibrary.svelte:268
 #: web/src/lib/features/projects/ProjectLibrary.svelte:269
+#: web/src/lib/features/yarns/YarnLibrary.svelte:176
 #: web/src/lib/features/yarns/YarnLibrary.svelte:177
+#: web/src/lib/features/yarns/YarnLibrary.svelte:210
 #: web/src/lib/features/yarns/YarnLibrary.svelte:211
 msgid "Clear filters"
 msgstr ""
@@ -2148,7 +2248,9 @@ msgstr ""
 #: stricknani/templates/shared/form_base.html:16
 #: web/src/lib/features/projects/ProjectEditor.svelte:988
 #: web/src/lib/features/projects/ProjectEditor.svelte:1282
+#: web/src/lib/features/projects/ProjectEditor.svelte:1297
 #: web/src/lib/features/yarns/YarnForm.svelte:409
+#: web/src/lib/features/yarns/YarnForm.svelte:418
 msgid "Unsaved changes"
 msgstr ""
 
@@ -2191,12 +2293,13 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:217
 #: web/src/lib/features/yarns/YarnDetail.svelte:227
 #: web/src/lib/features/yarns/YarnLibrary.svelte:118
+#: web/src/lib/features/yarns/YarnLibrary.svelte:128
 #: web/src/lib/features/yarns/YarnLibrary.svelte:129
 #: web/src/routes/+layout.svelte:25 web/src/routes/+layout.svelte:26
 #: web/src/routes/+layout.svelte:30 web/src/routes/+layout.svelte:31
 #: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:36
-#: web/src/routes/+layout.svelte:39 web/src/routes/yarns/+page.svelte:8
-#: web/src/routes/yarns/+page.svelte:10
+#: web/src/routes/+layout.svelte:37 web/src/routes/+layout.svelte:39
+#: web/src/routes/yarns/+page.svelte:8 web/src/routes/yarns/+page.svelte:10
 msgid "Yarns"
 msgstr ""
 
@@ -2217,6 +2320,7 @@ msgstr ""
 #: web/src/lib/components/LocaleSwitcher.svelte:18
 #: web/src/lib/components/LocaleSwitcher.svelte:19
 #: web/src/lib/features/account/AccountSettings.svelte:597
+#: web/src/lib/features/account/AccountSettings.svelte:610
 msgid "Language"
 msgstr ""
 
@@ -2312,6 +2416,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:650
 #: web/src/lib/features/account/AccountSettings.svelte:666
 #: web/src/lib/features/account/AccountSettings.svelte:720
+#: web/src/lib/features/account/AccountSettings.svelte:733
 msgid "Create token"
 msgstr ""
 
@@ -2335,6 +2440,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:705
 #: web/src/lib/features/account/AccountSettings.svelte:721
 #: web/src/lib/features/account/AccountSettings.svelte:775
+#: web/src/lib/features/account/AccountSettings.svelte:788
 msgid "Revoke"
 msgstr ""
 
@@ -2344,11 +2450,13 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:699
 #: web/src/lib/features/account/AccountSettings.svelte:715
 #: web/src/lib/features/account/AccountSettings.svelte:769
+#: web/src/lib/features/account/AccountSettings.svelte:782
 #: web/src/lib/features/account/AccountSettings.svelte:837
 #: web/src/lib/features/account/AccountSettings.svelte:839
 #: web/src/lib/features/account/AccountSettings.svelte:888
 #: web/src/lib/features/account/AccountSettings.svelte:924
 #: web/src/lib/features/account/AccountSettings.svelte:994
+#: web/src/lib/features/account/AccountSettings.svelte:1007
 msgid "Revoke token"
 msgstr ""
 
@@ -2420,6 +2528,7 @@ msgid "Track skeins, colorways, and notes so you know what you can use next."
 msgstr ""
 
 #: stricknani/templates/yarn/_empty_state.html:9
+#: web/src/lib/features/yarns/YarnLibrary.svelte:221
 #: web/src/lib/features/yarns/YarnLibrary.svelte:222
 msgid "Add your first yarn"
 msgstr ""
@@ -2454,6 +2563,10 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:160
 #: web/src/lib/features/admin/AdminAudit.svelte:163
 #: web/src/lib/features/admin/AdminAudit.svelte:169
+#: web/src/lib/features/admin/AdminResource.svelte:125
+#: web/src/lib/features/admin/AdminResource.svelte:245
+#: web/src/lib/features/admin/AdminResource.svelte:275
+#: web/src/lib/features/admin/DiffPanel.svelte:165
 #: web/src/lib/features/projects/ProjectReader.svelte:353
 #: web/src/lib/features/projects/ProjectReader.svelte:379
 #: web/src/lib/features/projects/ProjectReader.svelte:381
@@ -2485,6 +2598,7 @@ msgstr ""
 #: stricknani/templates/yarn/detail.html:12
 #: stricknani/templates/yarn/form.html:62
 #: web/src/lib/features/yarns/YarnForm.svelte:389
+#: web/src/lib/features/yarns/YarnForm.svelte:398
 msgid "Back to yarn"
 msgstr ""
 
@@ -2508,17 +2622,21 @@ msgstr ""
 #: stricknani/templates/yarn/detail.html:139
 #: stricknani/templates/yarn/form.html:119
 #: stricknani/templates/yarn/form.html:351
+#: web/src/lib/features/admin/AdminResource.svelte:398
 #: web/src/lib/features/imports/ImportWorkbench.svelte:622
+#: web/src/lib/features/imports/ImportWorkbench.svelte:636
 #: web/src/lib/features/imports/import-draft.ts:239
 #: web/src/lib/features/yarns/YarnDetail.svelte:344
 #: web/src/lib/features/yarns/YarnDetail.svelte:356
 #: web/src/lib/features/yarns/YarnForm.svelte:500
+#: web/src/lib/features/yarns/YarnForm.svelte:509
 msgid "Brand"
 msgstr ""
 
 #: stricknani/templates/yarn/detail.html:150
 #: web/src/lib/features/projects/ProjectEditor.svelte:841
 #: web/src/lib/features/projects/ProjectEditor.svelte:1020
+#: web/src/lib/features/projects/ProjectEditor.svelte:1035
 msgid "Added"
 msgstr ""
 
@@ -2526,11 +2644,14 @@ msgstr ""
 #: stricknani/templates/yarn/detail.html:169
 #: stricknani/templates/yarn/form.html:127
 #: stricknani/templates/yarn/form.html:362
+#: web/src/lib/features/admin/AdminResource.svelte:402
 #: web/src/lib/features/imports/ImportWorkbench.svelte:627
+#: web/src/lib/features/imports/ImportWorkbench.svelte:641
 #: web/src/lib/features/imports/import-draft.ts:241
 #: web/src/lib/features/yarns/YarnDetail.svelte:348
 #: web/src/lib/features/yarns/YarnDetail.svelte:360
 #: web/src/lib/features/yarns/YarnForm.svelte:509
+#: web/src/lib/features/yarns/YarnForm.svelte:518
 msgid "Colorway"
 msgstr ""
 
@@ -2549,10 +2670,12 @@ msgid "Weight Category"
 msgstr ""
 
 #: rust/src/import_service.rs:414 stricknani/templates/yarn/detail.html:225
+#: web/src/lib/features/admin/AdminResource.svelte:422
 msgid "Weight"
 msgstr ""
 
 #: rust/src/import_service.rs:415 stricknani/templates/yarn/detail.html:235
+#: web/src/lib/features/admin/AdminResource.svelte:431
 msgid "Length"
 msgstr ""
 
@@ -2590,6 +2713,7 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:235
 #: web/src/lib/features/yarns/YarnDetail.svelte:245
 #: web/src/lib/features/yarns/YarnForm.svelte:377
+#: web/src/lib/features/yarns/YarnForm.svelte:386
 msgid "Back to yarns"
 msgstr ""
 
@@ -2605,11 +2729,14 @@ msgstr ""
 #: rust/src/import_service.rs:417 rust/src/web.rs:2181
 #: stricknani/templates/yarn/form.html:140
 #: stricknani/templates/yarn/form.html:384
+#: web/src/lib/features/admin/AdminResource.svelte:410
 #: web/src/lib/features/imports/ImportWorkbench.svelte:632
+#: web/src/lib/features/imports/ImportWorkbench.svelte:646
 #: web/src/lib/features/imports/import-draft.ts:240
 #: web/src/lib/features/yarns/YarnDetail.svelte:356
 #: web/src/lib/features/yarns/YarnDetail.svelte:368
 #: web/src/lib/features/yarns/YarnForm.svelte:529
+#: web/src/lib/features/yarns/YarnForm.svelte:538
 msgid "Fiber content"
 msgstr ""
 
@@ -2626,7 +2753,9 @@ msgstr ""
 #: rust/src/import_service.rs:416 rust/src/web.rs:2182
 #: stricknani/templates/yarn/form.html:160
 #: stricknani/templates/yarn/form.html:395
+#: web/src/lib/features/admin/AdminResource.svelte:414
 #: web/src/lib/features/imports/ImportWorkbench.svelte:637
+#: web/src/lib/features/imports/ImportWorkbench.svelte:651
 #: web/src/lib/features/imports/import-draft.ts:242
 msgid "Weight category"
 msgstr ""
@@ -2637,9 +2766,11 @@ msgid "e.g. Fingering, DK..."
 msgstr ""
 
 #: rust/src/web.rs:2165 stricknani/templates/yarn/form.html:276
+#: web/src/lib/features/admin/AdminResource.svelte:496
 #: web/src/lib/features/yarns/YarnDetail.svelte:284
 #: web/src/lib/features/yarns/YarnDetail.svelte:294
 #: web/src/lib/features/yarns/YarnForm.svelte:657
+#: web/src/lib/features/yarns/YarnForm.svelte:666
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:129
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:134
 msgid "Photos"
@@ -2678,6 +2809,7 @@ msgstr ""
 #: rust/src/import_service.rs:394 rust/src/web.rs:2149
 #: rust/src/web_accounts.rs:1060
 #: web/src/lib/features/account/AccountSettings.svelte:893
+#: web/src/lib/features/account/AccountSettings.svelte:906
 #: web/src/routes/+layout.svelte:209 web/src/routes/+layout.svelte:212
 #: web/src/routes/+layout.svelte:231 web/src/routes/+layout.svelte:234
 #: web/src/routes/+layout.svelte:239 web/src/routes/+layout.svelte:241
@@ -2716,8 +2848,10 @@ msgstr ""
 
 #: rust/src/import_service.rs:401
 #: web/src/lib/features/imports/ImportWorkbench.svelte:721
+#: web/src/lib/features/imports/ImportWorkbench.svelte:735
 #: web/src/lib/features/projects/ProjectEditor.svelte:976
 #: web/src/lib/features/projects/ProjectEditor.svelte:1268
+#: web/src/lib/features/projects/ProjectEditor.svelte:1283
 msgid "Create project"
 msgstr ""
 
@@ -2730,9 +2864,12 @@ msgid "Content fingerprint"
 msgstr ""
 
 #: rust/src/import_service.rs:405 rust/src/web.rs:2162
+#: web/src/lib/features/admin/AdminResource.svelte:249
 #: web/src/lib/features/imports/ImportWorkbench.svelte:546
+#: web/src/lib/features/imports/ImportWorkbench.svelte:560
 #: web/src/lib/features/projects/ProjectEditor.svelte:740
 #: web/src/lib/features/projects/ProjectEditor.svelte:836
+#: web/src/lib/features/projects/ProjectEditor.svelte:851
 #: web/src/lib/features/projects/ProjectReader.svelte:388
 #: web/src/lib/features/projects/ProjectReader.svelte:467
 #: web/src/lib/features/projects/ProjectReader.svelte:472
@@ -2745,9 +2882,12 @@ msgid "Needles"
 msgstr ""
 
 #: rust/src/import_service.rs:406
+#: web/src/lib/features/admin/AdminResource.svelte:253
 #: web/src/lib/features/imports/ImportWorkbench.svelte:551
+#: web/src/lib/features/imports/ImportWorkbench.svelte:565
 #: web/src/lib/features/projects/ProjectEditor.svelte:744
 #: web/src/lib/features/projects/ProjectEditor.svelte:841
+#: web/src/lib/features/projects/ProjectEditor.svelte:856
 #: web/src/lib/features/projects/ProjectReader.svelte:263
 #: web/src/lib/features/projects/ProjectReader.svelte:311
 #: web/src/lib/features/projects/ProjectReader.svelte:313
@@ -2760,9 +2900,12 @@ msgid "Stitch sample"
 msgstr ""
 
 #: rust/src/import_service.rs:407 rust/src/web.rs:2179
+#: web/src/lib/features/admin/AdminResource.svelte:299
 #: web/src/lib/features/imports/ImportWorkbench.svelte:556
+#: web/src/lib/features/imports/ImportWorkbench.svelte:570
 #: web/src/lib/features/projects/ProjectEditor.svelte:799
 #: web/src/lib/features/projects/ProjectEditor.svelte:960
+#: web/src/lib/features/projects/ProjectEditor.svelte:975
 #: web/src/lib/features/projects/ProjectReader.svelte:295
 #: web/src/lib/features/projects/ProjectReader.svelte:346
 #: web/src/lib/features/projects/ProjectReader.svelte:348
@@ -2779,22 +2922,27 @@ msgid "Link"
 msgstr ""
 
 #: rust/src/web.rs:2146 web/src/lib/components/SignInForm.svelte:139
+#: web/src/lib/components/SignInForm.svelte:148
 #: web/src/lib/features/auth/SignupForm.svelte:247
+#: web/src/lib/features/auth/SignupForm.svelte:257
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:150
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:154
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:161
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:163
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:167
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:174
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:187
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:200
 #: web/src/routes/+layout.svelte:33 web/src/routes/+layout.svelte:34
 #: web/src/routes/+layout.svelte:38 web/src/routes/+layout.svelte:39
 #: web/src/routes/+layout.svelte:42 web/src/routes/+layout.svelte:44
-#: web/src/routes/+layout.svelte:47 web/src/routes/+layout.svelte:184
-#: web/src/routes/+layout.svelte:187 web/src/routes/+layout.svelte:190
-#: web/src/routes/+layout.svelte:199 web/src/routes/+layout.svelte:200
-#: web/src/routes/+layout.svelte:202 web/src/routes/gauge/+page.svelte:9
-#: web/src/routes/gauge/+page.svelte:12 web/src/routes/more/+page.svelte:21
-#: web/src/routes/more/+page.svelte:27
+#: web/src/routes/+layout.svelte:45 web/src/routes/+layout.svelte:47
+#: web/src/routes/+layout.svelte:184 web/src/routes/+layout.svelte:187
+#: web/src/routes/+layout.svelte:190 web/src/routes/+layout.svelte:199
+#: web/src/routes/+layout.svelte:200 web/src/routes/+layout.svelte:202
+#: web/src/routes/gauge/+page.svelte:9 web/src/routes/gauge/+page.svelte:12
+#: web/src/routes/more/+page.svelte:21 web/src/routes/more/+page.svelte:27
+#: web/src/routes/more/+page.svelte:36
 msgid "Gauge calculator"
 msgstr ""
 
@@ -2806,7 +2954,9 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:338
 #: web/src/lib/features/projects/ProjectLibrary.svelte:347
 #: web/src/lib/features/projects/ProjectLibrary.svelte:353
+#: web/src/lib/features/projects/ProjectLibrary.svelte:356
 #: web/src/lib/features/projects/ProjectLibrary.svelte:357
+#: web/src/lib/features/yarns/YarnLibrary.svelte:286
 #: web/src/lib/features/yarns/YarnLibrary.svelte:287
 msgid "Previous"
 msgstr ""
@@ -2815,18 +2965,22 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:345
 #: web/src/lib/features/projects/ProjectLibrary.svelte:355
 #: web/src/lib/features/projects/ProjectLibrary.svelte:361
+#: web/src/lib/features/projects/ProjectLibrary.svelte:364
 #: web/src/lib/features/projects/ProjectLibrary.svelte:365
+#: web/src/lib/features/yarns/YarnLibrary.svelte:292
 #: web/src/lib/features/yarns/YarnLibrary.svelte:293
 msgid "Next"
 msgstr ""
 
-#: rust/src/web.rs:2167
+#: rust/src/web.rs:2167 web/src/lib/features/admin/AdminResource.svelte:308
+#: web/src/lib/features/admin/AdminResource.svelte:480
 msgid "Original source"
 msgstr ""
 
 #: rust/src/web.rs:2172 web/src/lib/features/projects/ProjectLibrary.svelte:324
 #: web/src/lib/features/projects/ProjectLibrary.svelte:332
 #: web/src/lib/features/projects/ProjectLibrary.svelte:338
+#: web/src/lib/features/projects/ProjectLibrary.svelte:341
 #: web/src/lib/features/projects/ProjectLibrary.svelte:342
 #: web/src/lib/features/projects/ProjectReader.svelte:229
 #: web/src/lib/features/projects/ProjectReader.svelte:233
@@ -2846,6 +3000,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:656
 #: web/src/lib/features/yarns/YarnDetail.svelte:262
 #: web/src/lib/features/yarns/YarnDetail.svelte:272
+#: web/src/lib/features/yarns/YarnLibrary.svelte:271
 #: web/src/lib/features/yarns/YarnLibrary.svelte:272
 msgid "Add to favorites"
 msgstr ""
@@ -2853,6 +3008,7 @@ msgstr ""
 #: rust/src/web.rs:2173 web/src/lib/features/projects/ProjectLibrary.svelte:323
 #: web/src/lib/features/projects/ProjectLibrary.svelte:331
 #: web/src/lib/features/projects/ProjectLibrary.svelte:337
+#: web/src/lib/features/projects/ProjectLibrary.svelte:340
 #: web/src/lib/features/projects/ProjectLibrary.svelte:341
 #: web/src/lib/features/projects/ProjectReader.svelte:228
 #: web/src/lib/features/projects/ProjectReader.svelte:270
@@ -2862,6 +3018,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:328
 #: web/src/lib/features/projects/ProjectReader.svelte:415
 #: web/src/lib/features/projects/ProjectReader.svelte:649
+#: web/src/lib/features/yarns/YarnLibrary.svelte:270
 #: web/src/lib/features/yarns/YarnLibrary.svelte:271
 msgid "Remove from favorites"
 msgstr ""
@@ -2874,17 +3031,21 @@ msgstr ""
 msgid "Tags (one per line)"
 msgstr ""
 
-#: rust/src/web.rs:2183 web/src/lib/features/yarns/YarnDetail.svelte:352
+#: rust/src/web.rs:2183 web/src/lib/features/admin/AdminResource.svelte:406
+#: web/src/lib/features/yarns/YarnDetail.svelte:352
 #: web/src/lib/features/yarns/YarnDetail.svelte:364
 #: web/src/lib/features/yarns/YarnForm.svelte:519
+#: web/src/lib/features/yarns/YarnForm.svelte:528
 msgid "Dye lot"
 msgstr ""
 
 #: rust/src/web.rs:2184 web/src/lib/features/imports/ImportWorkbench.svelte:642
+#: web/src/lib/features/imports/ImportWorkbench.svelte:656
 msgid "Weight in grams"
 msgstr ""
 
 #: rust/src/web.rs:2185 web/src/lib/features/imports/ImportWorkbench.svelte:650
+#: web/src/lib/features/imports/ImportWorkbench.svelte:664
 msgid "Length in meters"
 msgstr ""
 
@@ -2894,6 +3055,7 @@ msgstr ""
 
 #: rust/src/web.rs:2187 web/src/lib/features/projects/ProjectEditor.svelte:874
 #: web/src/lib/features/projects/ProjectEditor.svelte:1066
+#: web/src/lib/features/projects/ProjectEditor.svelte:1081
 msgid "Add step"
 msgstr ""
 
@@ -2902,18 +3064,21 @@ msgid "Manage categories"
 msgstr ""
 
 #: rust/src/web.rs:2189 web/src/lib/features/imports/ImportWorkbench.svelte:350
+#: web/src/lib/features/imports/ImportWorkbench.svelte:364
 #: web/src/routes/+layout.svelte:31 web/src/routes/+layout.svelte:32
 #: web/src/routes/+layout.svelte:36 web/src/routes/+layout.svelte:37
 #: web/src/routes/+layout.svelte:40 web/src/routes/+layout.svelte:42
-#: web/src/routes/+layout.svelte:45 web/src/routes/imports/+page.svelte:8
-#: web/src/routes/imports/+page.svelte:10 web/src/routes/more/+page.svelte:19
-#: web/src/routes/more/+page.svelte:21
+#: web/src/routes/+layout.svelte:43 web/src/routes/+layout.svelte:45
+#: web/src/routes/imports/+page.svelte:8 web/src/routes/imports/+page.svelte:10
+#: web/src/routes/more/+page.svelte:19 web/src/routes/more/+page.svelte:21
+#: web/src/routes/more/+page.svelte:22
 msgid "Imports"
 msgstr ""
 
 #: rust/src/web.rs:2191 web/src/lib/features/projects/ProjectLibrary.svelte:214
 #: web/src/lib/features/projects/ProjectLibrary.svelte:220
 #: web/src/lib/features/projects/ProjectLibrary.svelte:221
+#: web/src/lib/features/projects/ProjectLibrary.svelte:224
 #: web/src/lib/features/projects/ProjectLibrary.svelte:225
 msgid "Tag"
 msgstr ""
@@ -2921,6 +3086,7 @@ msgstr ""
 #: rust/src/web.rs:2192 web/src/lib/features/projects/ProjectLibrary.svelte:191
 #: web/src/lib/features/projects/ProjectLibrary.svelte:197
 #: web/src/lib/features/projects/ProjectLibrary.svelte:198
+#: web/src/lib/features/projects/ProjectLibrary.svelte:201
 #: web/src/lib/features/projects/ProjectLibrary.svelte:202
 msgid "Favorites"
 msgstr ""
@@ -2929,7 +3095,8 @@ msgstr ""
 msgid "All items"
 msgstr ""
 
-#: rust/src/web.rs:2194 web/src/lib/features/yarns/YarnLibrary.svelte:167
+#: rust/src/web.rs:2194 web/src/lib/features/yarns/YarnLibrary.svelte:166
+#: web/src/lib/features/yarns/YarnLibrary.svelte:167
 msgid "Favorites only"
 msgstr ""
 
@@ -2952,6 +3119,8 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:542
 #: web/src/lib/features/account/AccountSettings.svelte:581
 #: web/src/lib/features/account/AccountSettings.svelte:592
+#: web/src/lib/features/account/AccountSettings.svelte:594
+#: web/src/lib/features/account/AccountSettings.svelte:605
 #: web/src/routes/+layout.svelte:34 web/src/routes/+layout.svelte:35
 #: web/src/routes/+layout.svelte:39 web/src/routes/+layout.svelte:40
 #: web/src/routes/+layout.svelte:43 web/src/routes/+layout.svelte:45
@@ -2972,7 +3141,9 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:507
 #: web/src/lib/features/admin/AdminUsers.svelte:518
 #: web/src/lib/features/admin/AdminUsers.svelte:545
+#: web/src/lib/features/admin/AdminUsers.svelte:563
 #: web/src/lib/features/admin/AdminUsers.svelte:587
+#: web/src/lib/features/admin/AdminUsers.svelte:605
 msgid "User accounts"
 msgstr ""
 
@@ -3028,7 +3199,9 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:521
 #: web/src/lib/features/admin/AdminUsers.svelte:531
 #: web/src/lib/features/admin/AdminUsers.svelte:590
+#: web/src/lib/features/admin/AdminUsers.svelte:608
 #: web/src/lib/features/admin/AdminUsers.svelte:609
+#: web/src/lib/features/admin/AdminUsers.svelte:627
 msgid "Status"
 msgstr ""
 
@@ -3038,6 +3211,8 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:529
 #: web/src/lib/features/admin/AdminUsers.svelte:589
 #: web/src/lib/features/admin/AdminUsers.svelte:603
+#: web/src/lib/features/admin/AdminUsers.svelte:607
+#: web/src/lib/features/admin/AdminUsers.svelte:621
 msgid "Role"
 msgstr ""
 
@@ -3045,6 +3220,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:510
 #: web/src/lib/features/admin/AdminUsers.svelte:521
 #: web/src/lib/features/admin/AdminUsers.svelte:590
+#: web/src/lib/features/admin/AdminUsers.svelte:608
 msgid "Actions"
 msgstr ""
 
@@ -3054,15 +3230,20 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:562
 #: web/src/lib/features/account/AccountSettings.svelte:577
 #: web/src/lib/features/account/AccountSettings.svelte:631
+#: web/src/lib/features/account/AccountSettings.svelte:644
 #: web/src/lib/features/admin/AdminAudit.svelte:149
 #: web/src/lib/features/admin/AdminAudit.svelte:152
 #: web/src/lib/features/admin/AdminAudit.svelte:158
+#: web/src/lib/features/admin/AdminResource.svelte:166
 #: web/src/lib/features/admin/AdminUsers.svelte:482
 #: web/src/lib/features/admin/AdminUsers.svelte:493
 #: web/src/lib/features/admin/AdminUsers.svelte:518
 #: web/src/lib/features/admin/AdminUsers.svelte:529
 #: web/src/lib/features/admin/AdminUsers.svelte:544
+#: web/src/lib/features/admin/AdminUsers.svelte:562
 #: web/src/lib/features/admin/AdminUsers.svelte:605
+#: web/src/lib/features/admin/AdminUsers.svelte:623
+#: web/src/lib/features/admin/DiffPanel.svelte:189
 msgid "Administrator"
 msgstr ""
 
@@ -3072,9 +3253,11 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:562
 #: web/src/lib/features/account/AccountSettings.svelte:577
 #: web/src/lib/features/account/AccountSettings.svelte:631
+#: web/src/lib/features/account/AccountSettings.svelte:644
 #: web/src/lib/features/admin/AdminUsers.svelte:518
 #: web/src/lib/features/admin/AdminUsers.svelte:529
 #: web/src/lib/features/admin/AdminUsers.svelte:606
+#: web/src/lib/features/admin/AdminUsers.svelte:624
 msgid "Member"
 msgstr ""
 
@@ -3084,6 +3267,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:619
 #: web/src/lib/features/account/AccountSettings.svelte:634
 #: web/src/lib/features/account/AccountSettings.svelte:688
+#: web/src/lib/features/account/AccountSettings.svelte:701
 msgid "API tokens"
 msgstr ""
 
@@ -3097,6 +3281,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:719
 #: web/src/lib/features/account/AccountSettings.svelte:735
 #: web/src/lib/features/account/AccountSettings.svelte:789
+#: web/src/lib/features/account/AccountSettings.svelte:802
 msgid "Change password"
 msgstr ""
 
@@ -3106,6 +3291,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:736
 #: web/src/lib/features/account/AccountSettings.svelte:752
 #: web/src/lib/features/account/AccountSettings.svelte:806
+#: web/src/lib/features/account/AccountSettings.svelte:819
 msgid "Current password"
 msgstr ""
 
@@ -3170,12 +3356,14 @@ msgstr ""
 #: rust/src/web_signup.rs:275 web/src/lib/features/auth/SignupForm.svelte:223
 #: web/src/lib/features/auth/SignupForm.svelte:233
 #: web/src/lib/features/auth/SignupForm.svelte:234
+#: web/src/lib/features/auth/SignupForm.svelte:244
 msgid "Create account"
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:50
 #: web/src/lib/components/SignInForm.svelte:52
 #: web/src/lib/components/SignInForm.svelte:54
+#: web/src/lib/components/SignInForm.svelte:63
 msgid "A calm place for the work in your hands."
 msgstr ""
 
@@ -3219,18 +3407,22 @@ msgstr ""
 #: web/src/routes/admin/audit/+page.svelte:8
 #: web/src/routes/admin/audit/+page.svelte:10
 #: web/src/routes/more/+page.svelte:25 web/src/routes/more/+page.svelte:40
+#: web/src/routes/more/+page.svelte:51
 msgid "Audit log"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:184
 #: web/src/lib/features/categories/CategoryManager.svelte:195
+#: web/src/lib/features/categories/CategoryManager.svelte:197
+#: web/src/lib/features/categories/CategoryManager.svelte:208
 #: web/src/routes/+layout.svelte:32 web/src/routes/+layout.svelte:33
 #: web/src/routes/+layout.svelte:37 web/src/routes/+layout.svelte:38
 #: web/src/routes/+layout.svelte:41 web/src/routes/+layout.svelte:43
-#: web/src/routes/+layout.svelte:46 web/src/routes/categories/+page.svelte:8
+#: web/src/routes/+layout.svelte:44 web/src/routes/+layout.svelte:46
+#: web/src/routes/categories/+page.svelte:8
 #: web/src/routes/categories/+page.svelte:10
 #: web/src/routes/more/+page.svelte:20 web/src/routes/more/+page.svelte:22
-#: web/src/routes/more/+page.svelte:23
+#: web/src/routes/more/+page.svelte:23 web/src/routes/more/+page.svelte:29
 msgid "Categories"
 msgstr ""
 
@@ -3240,36 +3432,46 @@ msgstr ""
 
 #: web/src/lib/api.ts:202 web/src/lib/api.ts:208 web/src/lib/api.ts:214
 #: web/src/lib/api.ts:246 web/src/lib/api.ts:258 web/src/lib/api.ts:259
+#: web/src/lib/api.ts:280
 #: web/src/lib/features/account/AccountSettings.svelte:457
 #: web/src/lib/features/account/AccountSettings.svelte:459
 #: web/src/lib/features/account/AccountSettings.svelte:508
 #: web/src/lib/features/account/AccountSettings.svelte:521
 #: web/src/lib/features/account/AccountSettings.svelte:571
+#: web/src/lib/features/account/AccountSettings.svelte:584
 #: web/src/lib/features/auth/SignupForm.svelte:46
 #: web/src/lib/features/auth/SignupForm.svelte:49
 #: web/src/lib/features/auth/SignupForm.svelte:50
 #: web/src/lib/features/auth/SignupForm.svelte:51
 #: web/src/lib/features/auth/SignupForm.svelte:52
+#: web/src/lib/features/auth/SignupForm.svelte:60
+#: web/src/lib/features/auth/SignupForm.svelte:62
 #: web/src/lib/features/auth/SignupForm.svelte:111
 #: web/src/lib/features/auth/SignupForm.svelte:113
 #: web/src/lib/features/auth/SignupForm.svelte:114
+#: web/src/lib/features/auth/SignupForm.svelte:124
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:103
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:107
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:111
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:131
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:135
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:137
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:139
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:165
 #: web/src/lib/features/projects/ProjectEditor.svelte:427
 #: web/src/lib/features/projects/ProjectEditor.svelte:460
+#: web/src/lib/features/projects/ProjectEditor.svelte:475
 msgid "Check the highlighted fields and try again."
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:14
+#: web/src/routes/create/+page.svelte:14 web/src/routes/create/+page.svelte:15
 msgid "Choose a project or add yarn to your inventory."
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:205
 #: web/src/lib/features/account/AccountSettings.svelte:212
+#: web/src/lib/features/account/AccountSettings.svelte:218
+#: web/src/lib/features/account/AccountSettings.svelte:225
 #: web/src/routes/+layout.svelte:89 web/src/routes/+layout.svelte:90
 #: web/src/routes/+layout.svelte:94 web/src/routes/+layout.svelte:95
 #: web/src/routes/+layout.svelte:102 web/src/routes/+layout.svelte:105
@@ -3285,7 +3487,7 @@ msgstr ""
 msgid "Imports, tools and account settings will be added in later slices."
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:29
+#: web/src/routes/create/+page.svelte:29 web/src/routes/create/+page.svelte:34
 msgid "Keep a note of a yarn you own."
 msgstr ""
 
@@ -3296,8 +3498,10 @@ msgstr ""
 #: web/src/routes/+layout.svelte:27 web/src/routes/+layout.svelte:28
 #: web/src/routes/+layout.svelte:32 web/src/routes/+layout.svelte:33
 #: web/src/routes/+layout.svelte:36 web/src/routes/+layout.svelte:38
-#: web/src/routes/+layout.svelte:41 web/src/routes/more/+page.svelte:9
+#: web/src/routes/+layout.svelte:39 web/src/routes/+layout.svelte:41
+#: web/src/routes/more/+page.svelte:9 web/src/routes/more/+page.svelte:10
 #: web/src/routes/more/+page.svelte:11 web/src/routes/more/+page.svelte:13
+#: web/src/routes/more/+page.svelte:14
 msgid "More"
 msgstr ""
 
@@ -3310,18 +3514,22 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:646
 #: web/src/lib/features/projects/ProjectEditor.svelte:703
 #: web/src/lib/features/projects/ProjectEditor.svelte:713
+#: web/src/lib/features/projects/ProjectEditor.svelte:718
+#: web/src/lib/features/projects/ProjectEditor.svelte:728
 #: web/src/lib/features/projects/ProjectLibrary.svelte:146
 #: web/src/lib/features/projects/ProjectLibrary.svelte:152
 #: web/src/lib/features/projects/ProjectLibrary.svelte:153
+#: web/src/lib/features/projects/ProjectLibrary.svelte:155
 #: web/src/lib/features/projects/ProjectLibrary.svelte:156
-#: web/src/routes/create/+page.svelte:20
+#: web/src/routes/create/+page.svelte:20 web/src/routes/create/+page.svelte:23
 #: web/src/routes/projects/new/+page.svelte:8
 #: web/src/routes/projects/new/+page.svelte:11
 msgid "New project"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:360
-#: web/src/routes/create/+page.svelte:28
+#: web/src/lib/features/yarns/YarnForm.svelte:369
+#: web/src/routes/create/+page.svelte:28 web/src/routes/create/+page.svelte:33
 #: web/src/routes/yarns/new/+page.svelte:8
 #: web/src/routes/yarns/new/+page.svelte:10
 msgid "New yarn"
@@ -3331,12 +3539,14 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:138
 #: web/src/lib/components/SignInForm.svelte:141
 #: web/src/lib/components/SignInForm.svelte:149
+#: web/src/lib/components/SignInForm.svelte:158
 msgid "One row at a time."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:141
 #: web/src/lib/features/auth/SignupForm.svelte:143
 #: web/src/lib/features/auth/SignupForm.svelte:144
+#: web/src/lib/features/auth/SignupForm.svelte:154
 #: web/src/routes/+page.svelte:24 web/src/routes/login/+page.svelte:15
 msgid "Open projects"
 msgstr ""
@@ -3344,6 +3554,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:139
 #: web/src/lib/features/auth/SignupForm.svelte:141
 #: web/src/lib/features/auth/SignupForm.svelte:142
+#: web/src/lib/features/auth/SignupForm.svelte:152
 #: web/src/routes/login/+page.svelte:13
 msgid "Open your project library to continue."
 msgstr ""
@@ -3358,10 +3569,11 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:53
 #: web/src/lib/components/SignInForm.svelte:55
 #: web/src/lib/components/SignInForm.svelte:57
+#: web/src/lib/components/SignInForm.svelte:66
 msgid "Pick up where you left off."
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:21
+#: web/src/routes/create/+page.svelte:21 web/src/routes/create/+page.svelte:24
 msgid "Plan the next thing you want to knit."
 msgstr ""
 
@@ -3372,6 +3584,7 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:29
 #: web/src/lib/components/SignInForm.svelte:31
 #: web/src/lib/components/SignInForm.svelte:33
+#: web/src/lib/components/SignInForm.svelte:42
 msgid "Sign in failed."
 msgstr ""
 
@@ -3385,6 +3598,7 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:115
 #: web/src/lib/components/SignInForm.svelte:118
 #: web/src/lib/components/SignInForm.svelte:120
+#: web/src/lib/components/SignInForm.svelte:129
 msgid "Signing in…"
 msgstr ""
 
@@ -3397,7 +3611,7 @@ msgstr ""
 
 #: web/src/lib/api.ts:203 web/src/lib/api.ts:209 web/src/lib/api.ts:215
 #: web/src/lib/api.ts:247 web/src/lib/api.ts:259 web/src/lib/api.ts:260
-#: web/src/lib/features/media/media-tools-api.ts:102
+#: web/src/lib/api.ts:281 web/src/lib/features/media/media-tools-api.ts:102
 #: web/src/lib/features/media/media-tools-api.ts:155
 msgid "That item could not be found."
 msgstr ""
@@ -3408,6 +3622,7 @@ msgstr ""
 
 #: web/src/lib/api.ts:193 web/src/lib/api.ts:199 web/src/lib/api.ts:201
 #: web/src/lib/api.ts:233 web/src/lib/api.ts:245 web/src/lib/api.ts:246
+#: web/src/lib/api.ts:267
 msgid "The email or password is incorrect."
 msgstr ""
 
@@ -3421,19 +3636,21 @@ msgstr ""
 
 #: web/src/lib/api.ts:206 web/src/lib/api.ts:212 web/src/lib/api.ts:226
 #: web/src/lib/api.ts:289 web/src/lib/api.ts:301 web/src/lib/api.ts:302
+#: web/src/lib/api.ts:323
 msgid "The request could not be completed."
 msgstr ""
 
 #: web/src/lib/api.ts:126 web/src/lib/api.ts:130 web/src/lib/api.ts:133
-#: web/src/lib/api.ts:140 web/src/lib/api.ts:141
+#: web/src/lib/api.ts:140 web/src/lib/api.ts:141 web/src/lib/api.ts:162
 msgid "The server could not be reached. Check your connection and try again."
 msgstr ""
 
 #: web/src/lib/api.ts:246 web/src/lib/api.ts:252 web/src/lib/api.ts:266
 #: web/src/lib/api.ts:329 web/src/lib/api.ts:341 web/src/lib/api.ts:357
-#: web/src/lib/features/account/account-api.ts:33
+#: web/src/lib/api.ts:378 web/src/lib/features/account/account-api.ts:33
 #: web/src/lib/features/admin/admin-api.ts:53
 #: web/src/lib/features/admin/admin-api.ts:73
+#: web/src/lib/features/admin/admin-api.ts:122
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/auth/signup-api.ts:47
 #: web/src/lib/features/categories/category-api.ts:20
@@ -3471,6 +3688,7 @@ msgstr ""
 
 #: web/src/lib/api.ts:204 web/src/lib/api.ts:210 web/src/lib/api.ts:216
 #: web/src/lib/api.ts:248 web/src/lib/api.ts:260 web/src/lib/api.ts:261
+#: web/src/lib/api.ts:282
 msgid "Too many attempts. Wait a moment and try again."
 msgstr ""
 
@@ -3481,21 +3699,28 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:623
 #: web/src/lib/features/account/AccountSettings.svelte:625
 #: web/src/lib/features/account/AccountSettings.svelte:626
+#: web/src/lib/features/account/AccountSettings.svelte:639
 #: web/src/lib/features/account/AccountSettings.svelte:674
 #: web/src/lib/features/account/AccountSettings.svelte:690
 #: web/src/lib/features/account/AccountSettings.svelte:744
+#: web/src/lib/features/account/AccountSettings.svelte:757
 #: web/src/lib/features/admin/AdminAudit.svelte:175
 #: web/src/lib/features/admin/AdminAudit.svelte:178
 #: web/src/lib/features/admin/AdminAudit.svelte:207
+#: web/src/lib/features/admin/AdminResource.svelte:198
 #: web/src/lib/features/admin/AdminUsers.svelte:503
 #: web/src/lib/features/admin/AdminUsers.svelte:514
 #: web/src/lib/features/admin/AdminUsers.svelte:582
+#: web/src/lib/features/admin/AdminUsers.svelte:600
+#: web/src/lib/features/admin/DiffPanel.svelte:208
 #: web/src/lib/features/categories/CategoryManager.svelte:206
+#: web/src/lib/features/categories/CategoryManager.svelte:219
 #: web/src/lib/features/media/ArchiveControl.svelte:352
 #: web/src/lib/features/media/ArchiveControl.svelte:390
 #: web/src/lib/features/projects/ProjectLibrary.svelte:227
 #: web/src/lib/features/projects/ProjectLibrary.svelte:233
 #: web/src/lib/features/projects/ProjectLibrary.svelte:234
+#: web/src/lib/features/projects/ProjectLibrary.svelte:237
 #: web/src/lib/features/projects/ProjectLibrary.svelte:238
 #: web/src/lib/features/projects/ProjectReader.svelte:180
 #: web/src/lib/features/projects/ProjectReader.svelte:211
@@ -3507,6 +3732,8 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:232
 #: web/src/lib/features/yarns/YarnDetail.svelte:242
 #: web/src/lib/features/yarns/YarnForm.svelte:374
+#: web/src/lib/features/yarns/YarnForm.svelte:383
+#: web/src/lib/features/yarns/YarnLibrary.svelte:185
 #: web/src/lib/features/yarns/YarnLibrary.svelte:186
 #: web/src/routes/+layout.svelte:144 web/src/routes/+layout.svelte:147
 #: web/src/routes/+layout.svelte:166 web/src/routes/+layout.svelte:168
@@ -3526,11 +3753,12 @@ msgstr ""
 msgid "Welcome back"
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:12
+#: web/src/routes/create/+page.svelte:12 web/src/routes/create/+page.svelte:13
 msgid "What would you like to add?"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:194
+#: web/src/lib/features/categories/CategoryManager.svelte:207
 #: web/src/routes/+layout.svelte:174 web/src/routes/+layout.svelte:177
 #: web/src/routes/+layout.svelte:196 web/src/routes/+layout.svelte:199
 #: web/src/routes/+layout.svelte:206 web/src/routes/+layout.svelte:209
@@ -3558,6 +3786,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:138
 #: web/src/lib/features/auth/SignupForm.svelte:140
 #: web/src/lib/features/auth/SignupForm.svelte:141
+#: web/src/lib/features/auth/SignupForm.svelte:151
 #: web/src/routes/login/+page.svelte:12
 msgid "You are already signed in."
 msgstr ""
@@ -3572,6 +3801,7 @@ msgstr ""
 
 #: web/src/lib/api.ts:201 web/src/lib/api.ts:207 web/src/lib/api.ts:213
 #: web/src/lib/api.ts:245 web/src/lib/api.ts:257 web/src/lib/api.ts:258
+#: web/src/lib/api.ts:279
 msgid "You do not have permission to do that."
 msgstr ""
 
@@ -3603,12 +3833,14 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:123
 #: web/src/lib/components/SignInForm.svelte:126
 #: web/src/lib/components/SignInForm.svelte:128
+#: web/src/lib/components/SignInForm.svelte:137
 msgid "Your projects stay on your own Stricknani server."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:57
 #: web/src/lib/components/SignInForm.svelte:59
 #: web/src/lib/components/SignInForm.svelte:61
+#: web/src/lib/components/SignInForm.svelte:70
 msgid "Your session expired. Sign in again to continue."
 msgstr ""
 
@@ -3616,11 +3848,13 @@ msgstr ""
 #: web/src/lib/api.ts:202 web/src/lib/api.ts:203 web/src/lib/api.ts:208
 #: web/src/lib/api.ts:234 web/src/lib/api.ts:240 web/src/lib/api.ts:246
 #: web/src/lib/api.ts:247 web/src/lib/api.ts:252 web/src/lib/api.ts:253
+#: web/src/lib/api.ts:268 web/src/lib/api.ts:274
 msgid "Your session has expired. Refresh the page and try again."
 msgstr ""
 
 #: web/src/lib/api.ts:200 web/src/lib/api.ts:206 web/src/lib/api.ts:212
 #: web/src/lib/api.ts:244 web/src/lib/api.ts:256 web/src/lib/api.ts:257
+#: web/src/lib/api.ts:278
 msgid "Your session has expired. Sign in again."
 msgstr ""
 
@@ -3629,7 +3863,9 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:526
 #: web/src/lib/features/account/AccountSettings.svelte:541
 #: web/src/lib/features/account/AccountSettings.svelte:591
+#: web/src/lib/features/account/AccountSettings.svelte:604
 #: web/src/routes/+page.svelte:15 web/src/routes/create/+page.svelte:11
+#: web/src/routes/create/+page.svelte:12
 msgid "Your workspace"
 msgstr ""
 
@@ -3643,6 +3879,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectLibrary.svelte:275
 #: web/src/lib/features/projects/ProjectLibrary.svelte:276
+#: web/src/lib/features/projects/ProjectLibrary.svelte:279
 #: web/src/lib/features/projects/ProjectLibrary.svelte:280
 msgid "Add a project"
 msgstr ""
@@ -3650,6 +3887,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:175
 #: web/src/lib/features/projects/ProjectLibrary.svelte:181
 #: web/src/lib/features/projects/ProjectLibrary.svelte:182
+#: web/src/lib/features/projects/ProjectLibrary.svelte:185
 #: web/src/lib/features/projects/ProjectLibrary.svelte:186
 msgid "All categories"
 msgstr ""
@@ -3679,6 +3917,7 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:922
 #: web/src/lib/features/projects/ProjectEditor.svelte:1163
+#: web/src/lib/features/projects/ProjectEditor.svelte:1178
 #: web/src/lib/features/projects/ProjectReader.svelte:261
 #: web/src/lib/features/projects/ProjectReader.svelte:307
 #: web/src/lib/features/projects/ProjectReader.svelte:309
@@ -3705,6 +3944,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:141
 #: web/src/lib/features/projects/ProjectLibrary.svelte:147
 #: web/src/lib/features/projects/ProjectLibrary.svelte:148
+#: web/src/lib/features/projects/ProjectLibrary.svelte:150
 #: web/src/lib/features/projects/ProjectLibrary.svelte:151
 msgid "Find a project, pick up a row, and keep your notes close."
 msgstr ""
@@ -3765,6 +4005,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:164
 #: web/src/lib/features/projects/ProjectLibrary.svelte:170
 #: web/src/lib/features/projects/ProjectLibrary.svelte:171
+#: web/src/lib/features/projects/ProjectLibrary.svelte:173
 #: web/src/lib/features/projects/ProjectLibrary.svelte:174
 msgid "Name, notes, yarn, or tag"
 msgstr ""
@@ -3810,12 +4051,14 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:244
 #: web/src/lib/features/projects/ProjectLibrary.svelte:250
 #: web/src/lib/features/projects/ProjectLibrary.svelte:251
+#: web/src/lib/features/projects/ProjectLibrary.svelte:254
 #: web/src/lib/features/projects/ProjectLibrary.svelte:255
 msgid "No projects match those filters."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:901
 #: web/src/lib/features/projects/ProjectEditor.svelte:1130
+#: web/src/lib/features/projects/ProjectEditor.svelte:1145
 #: web/src/lib/features/projects/ProjectReader.svelte:341
 #: web/src/lib/features/projects/ProjectReader.svelte:401
 #: web/src/lib/features/projects/ProjectReader.svelte:406
@@ -3895,24 +4138,31 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:198
 #: web/src/lib/features/admin/AdminAudit.svelte:201
 #: web/src/lib/features/admin/AdminAudit.svelte:259
+#: web/src/lib/features/admin/AdminAudit.svelte:274
 #: web/src/lib/features/admin/AdminUsers.svelte:550
 #: web/src/lib/features/admin/AdminUsers.svelte:562
 #: web/src/lib/features/admin/AdminUsers.svelte:657
+#: web/src/lib/features/admin/AdminUsers.svelte:675
 #: web/src/lib/features/projects/ProjectLibrary.svelte:279
 #: web/src/lib/features/projects/ProjectLibrary.svelte:290
 #: web/src/lib/features/projects/ProjectLibrary.svelte:291
+#: web/src/lib/features/projects/ProjectLibrary.svelte:294
 #: web/src/lib/features/projects/ProjectLibrary.svelte:295
 #: web/src/lib/features/projects/ProjectLibrary.svelte:340
 #: web/src/lib/features/projects/ProjectLibrary.svelte:349
 #: web/src/lib/features/projects/ProjectLibrary.svelte:355
+#: web/src/lib/features/projects/ProjectLibrary.svelte:358
 #: web/src/lib/features/projects/ProjectLibrary.svelte:359
+#: web/src/lib/features/yarns/YarnLibrary.svelte:236
 #: web/src/lib/features/yarns/YarnLibrary.svelte:237
+#: web/src/lib/features/yarns/YarnLibrary.svelte:288
 #: web/src/lib/features/yarns/YarnLibrary.svelte:289
 msgid "Page"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:787
 #: web/src/lib/features/projects/ProjectEditor.svelte:937
+#: web/src/lib/features/projects/ProjectEditor.svelte:952
 #: web/src/lib/features/projects/ProjectReader.svelte:275
 #: web/src/lib/features/projects/ProjectReader.svelte:324
 #: web/src/lib/features/projects/ProjectReader.svelte:326
@@ -3925,6 +4175,7 @@ msgid "Pattern and notes"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:534
+#: web/src/lib/features/imports/ImportWorkbench.svelte:548
 #: web/src/lib/features/projects/ProjectReader.svelte:399
 #: web/src/lib/features/projects/ProjectReader.svelte:485
 #: web/src/lib/features/projects/ProjectReader.svelte:490
@@ -3985,8 +4236,10 @@ msgstr ""
 msgid "Project actions"
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:238
 #: web/src/lib/features/projects/ProjectEditor.svelte:644
 #: web/src/lib/features/projects/ProjectEditor.svelte:711
+#: web/src/lib/features/projects/ProjectEditor.svelte:726
 #: web/src/lib/features/projects/ProjectReader.svelte:346
 #: web/src/lib/features/projects/ProjectReader.svelte:407
 #: web/src/lib/features/projects/ProjectReader.svelte:412
@@ -4016,6 +4269,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:333
 #: web/src/lib/features/projects/ProjectLibrary.svelte:341
 #: web/src/lib/features/projects/ProjectLibrary.svelte:347
+#: web/src/lib/features/projects/ProjectLibrary.svelte:350
 #: web/src/lib/features/projects/ProjectLibrary.svelte:351
 msgid "Project pages"
 msgstr ""
@@ -4034,6 +4288,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:301
 #: web/src/lib/features/projects/ProjectLibrary.svelte:315
 #: web/src/lib/features/projects/ProjectLibrary.svelte:319
+#: web/src/lib/features/projects/ProjectLibrary.svelte:322
 #: web/src/lib/features/projects/ProjectLibrary.svelte:323
 #: web/src/lib/features/projects/ProjectReader.svelte:216
 #: web/src/lib/features/projects/ProjectReader.svelte:258
@@ -4048,6 +4303,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:217
 #: web/src/lib/features/projects/ProjectLibrary.svelte:223
 #: web/src/lib/features/projects/ProjectLibrary.svelte:224
+#: web/src/lib/features/projects/ProjectLibrary.svelte:227
 #: web/src/lib/features/projects/ProjectLibrary.svelte:228
 msgid "Remove tag filter"
 msgstr ""
@@ -4055,7 +4311,9 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:272
 #: web/src/lib/features/projects/ProjectLibrary.svelte:283
 #: web/src/lib/features/projects/ProjectLibrary.svelte:284
+#: web/src/lib/features/projects/ProjectLibrary.svelte:287
 #: web/src/lib/features/projects/ProjectLibrary.svelte:288
+#: web/src/lib/features/yarns/YarnLibrary.svelte:229
 #: web/src/lib/features/yarns/YarnLibrary.svelte:230
 msgid "Results for"
 msgstr ""
@@ -4063,6 +4321,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:153
 #: web/src/lib/features/projects/ProjectLibrary.svelte:159
 #: web/src/lib/features/projects/ProjectLibrary.svelte:160
+#: web/src/lib/features/projects/ProjectLibrary.svelte:162
 #: web/src/lib/features/projects/ProjectLibrary.svelte:163
 msgid "Search projects"
 msgstr ""
@@ -4070,6 +4329,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:160
 #: web/src/lib/features/projects/ProjectLibrary.svelte:166
 #: web/src/lib/features/projects/ProjectLibrary.svelte:167
+#: web/src/lib/features/projects/ProjectLibrary.svelte:169
 #: web/src/lib/features/projects/ProjectLibrary.svelte:170
 msgid "Search your projects"
 msgstr ""
@@ -4105,6 +4365,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:262
 #: web/src/lib/features/projects/ProjectLibrary.svelte:269
 #: web/src/lib/features/projects/ProjectLibrary.svelte:270
+#: web/src/lib/features/projects/ProjectLibrary.svelte:273
 #: web/src/lib/features/projects/ProjectLibrary.svelte:274
 msgid "Start with one project to keep its pattern and progress together."
 msgstr ""
@@ -4156,6 +4417,7 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:701
 #: web/src/lib/features/projects/ProjectEditor.svelte:783
+#: web/src/lib/features/projects/ProjectEditor.svelte:798
 #: web/src/lib/features/projects/ProjectReader.svelte:88
 #: web/src/lib/features/projects/ProjectReader.svelte:92
 #: web/src/lib/features/projects/ProjectReader.svelte:95
@@ -4193,14 +4455,19 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:245
 #: web/src/lib/features/projects/ProjectLibrary.svelte:251
 #: web/src/lib/features/projects/ProjectLibrary.svelte:252
+#: web/src/lib/features/projects/ProjectLibrary.svelte:255
 #: web/src/lib/features/projects/ProjectLibrary.svelte:256
 msgid "Try a different name, category, or tag."
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:207
+#: web/src/lib/features/admin/AdminResource.svelte:261
+#: web/src/lib/features/admin/AdminResource.svelte:444
 #: web/src/lib/features/admin/audit-action.ts:27
 #: web/src/lib/features/projects/ProjectLibrary.svelte:298
 #: web/src/lib/features/projects/ProjectLibrary.svelte:309
 #: web/src/lib/features/projects/ProjectLibrary.svelte:310
+#: web/src/lib/features/projects/ProjectLibrary.svelte:313
 #: web/src/lib/features/projects/ProjectLibrary.svelte:314
 #: web/src/lib/features/projects/ProjectReader.svelte:214
 #: web/src/lib/features/projects/ProjectReader.svelte:256
@@ -4230,6 +4497,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:274
 #: web/src/lib/features/projects/ProjectLibrary.svelte:285
 #: web/src/lib/features/projects/ProjectLibrary.svelte:286
+#: web/src/lib/features/projects/ProjectLibrary.svelte:289
 #: web/src/lib/features/projects/ProjectLibrary.svelte:290
 msgid "Your favorites"
 msgstr ""
@@ -4237,6 +4505,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:261
 #: web/src/lib/features/projects/ProjectLibrary.svelte:267
 #: web/src/lib/features/projects/ProjectLibrary.svelte:268
+#: web/src/lib/features/projects/ProjectLibrary.svelte:271
 #: web/src/lib/features/projects/ProjectLibrary.svelte:272
 msgid "Your project library is ready."
 msgstr ""
@@ -4244,6 +4513,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:276
 #: web/src/lib/features/projects/ProjectLibrary.svelte:287
 #: web/src/lib/features/projects/ProjectLibrary.svelte:288
+#: web/src/lib/features/projects/ProjectLibrary.svelte:291
 #: web/src/lib/features/projects/ProjectLibrary.svelte:292
 msgid "Your projects"
 msgstr ""
@@ -4260,64 +4530,71 @@ msgid "Your reference"
 msgstr ""
 
 #: web/src/lib/api.ts:221 web/src/lib/api.ts:284 web/src/lib/api.ts:296
-#: web/src/lib/api.ts:297
+#: web/src/lib/api.ts:297 web/src/lib/api.ts:318
 msgid "External image importing is not available right now."
 msgstr ""
 
 #: web/src/lib/api.ts:224 web/src/lib/api.ts:287 web/src/lib/api.ts:299
-#: web/src/lib/api.ts:300
+#: web/src/lib/api.ts:300 web/src/lib/api.ts:321
 msgid "The server could not complete this request. Try again."
 msgstr ""
 
 #: web/src/lib/api.ts:217 web/src/lib/api.ts:249 web/src/lib/api.ts:261
-#: web/src/lib/api.ts:262
+#: web/src/lib/api.ts:262 web/src/lib/api.ts:283
 msgid "This item changed in another window. Your unsaved changes are still here."
 msgstr ""
 
 #: web/src/lib/api.ts:220 web/src/lib/api.ts:252 web/src/lib/api.ts:264
-#: web/src/lib/api.ts:265
+#: web/src/lib/api.ts:265 web/src/lib/api.ts:286
 msgid "This upload is larger than the allowed size."
 msgstr ""
 
 #: web/src/lib/api.ts:205 web/src/lib/api.ts:237 web/src/lib/api.ts:249
-#: web/src/lib/api.ts:250
+#: web/src/lib/api.ts:250 web/src/lib/api.ts:271
 msgid "Your session check failed. Refresh the page and try again."
 msgstr ""
 
 #: web/src/lib/api.ts:211 web/src/lib/api.ts:243 web/src/lib/api.ts:255
-#: web/src/lib/api.ts:256
+#: web/src/lib/api.ts:256 web/src/lib/api.ts:277
 #: web/src/lib/features/account/AccountSettings.svelte:434
 #: web/src/lib/features/account/AccountSettings.svelte:436
 #: web/src/lib/features/account/AccountSettings.svelte:485
 #: web/src/lib/features/account/AccountSettings.svelte:498
 #: web/src/lib/features/account/AccountSettings.svelte:548
+#: web/src/lib/features/account/AccountSettings.svelte:561
 msgid "Your session expired. Sign in again."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:168
+#: web/src/lib/features/categories/CategoryManager.svelte:181
 msgid "A category with this name already exists."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:426
+#: web/src/lib/features/yarns/YarnForm.svelte:435
 msgid "A newer version was saved"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:250
 #: web/src/lib/features/categories/CategoryManager.svelte:251
+#: web/src/lib/features/categories/CategoryManager.svelte:264
 msgid "Add a category above to make your project library easier to browse."
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:215
 #: web/src/lib/features/yarns/YarnLibrary.svelte:216
 msgid "Add a skein to keep its details and project links together."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:968
 #: web/src/lib/features/projects/ProjectEditor.svelte:1251
+#: web/src/lib/features/projects/ProjectEditor.svelte:1266
 msgid "Add attachment"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:231
 #: web/src/lib/features/categories/CategoryManager.svelte:232
+#: web/src/lib/features/categories/CategoryManager.svelte:245
 msgid "Add category"
 msgstr ""
 
@@ -4328,18 +4605,25 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:949
 #: web/src/lib/features/projects/ProjectEditor.svelte:1212
+#: web/src/lib/features/projects/ProjectEditor.svelte:1227
 msgid "Add project photo"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:841
 #: web/src/lib/features/projects/ProjectEditor.svelte:1021
+#: web/src/lib/features/projects/ProjectEditor.svelte:1036
 #: web/src/lib/features/yarns/YarnForm.svelte:399
+#: web/src/lib/features/yarns/YarnForm.svelte:408
+#: web/src/lib/features/yarns/YarnLibrary.svelte:137
 #: web/src/lib/features/yarns/YarnLibrary.svelte:138
 msgid "Add yarn"
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:317
+#: web/src/lib/features/admin/AdminResource.svelte:489
 #: web/src/lib/features/projects/ProjectEditor.svelte:771
 #: web/src/lib/features/projects/ProjectEditor.svelte:919
+#: web/src/lib/features/projects/ProjectEditor.svelte:934
 #: web/src/lib/features/yarns/YarnDetail.svelte:397
 #: web/src/lib/features/yarns/YarnDetail.svelte:409
 msgid "Archived source"
@@ -4352,16 +4636,19 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:936
 #: web/src/lib/features/projects/ProjectEditor.svelte:1184
+#: web/src/lib/features/projects/ProjectEditor.svelte:1199
 msgid "Attach photo to"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:827
 #: web/src/lib/features/projects/ProjectEditor.svelte:1005
+#: web/src/lib/features/projects/ProjectEditor.svelte:1020
 msgid "Available yarn"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:651
 #: web/src/lib/features/projects/ProjectEditor.svelte:723
+#: web/src/lib/features/projects/ProjectEditor.svelte:738
 msgid "Back to project"
 msgstr ""
 
@@ -4370,25 +4657,32 @@ msgid "Browse the yarns connected to your projects."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:61
+#: web/src/lib/features/categories/CategoryManager.svelte:74
 #: web/src/lib/features/projects/ProjectEditor.svelte:157
 #: web/src/lib/features/projects/ProjectEditor.svelte:162
+#: web/src/lib/features/projects/ProjectEditor.svelte:177
 msgid "Categories could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:86
+#: web/src/lib/features/categories/CategoryManager.svelte:99
 msgid "Category added."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:156
+#: web/src/lib/features/categories/CategoryManager.svelte:169
 msgid "Category deleted."
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:523
 #: web/src/lib/features/categories/CategoryManager.svelte:269
 #: web/src/lib/features/categories/CategoryManager.svelte:270
+#: web/src/lib/features/categories/CategoryManager.svelte:283
 msgid "Category name"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:129
+#: web/src/lib/features/categories/CategoryManager.svelte:142
 msgid "Category renamed."
 msgstr ""
 
@@ -4404,16 +4698,19 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:326
 #: web/src/lib/features/categories/CategoryManager.svelte:328
+#: web/src/lib/features/categories/CategoryManager.svelte:341
 msgid "Delete category?"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:985
 #: web/src/lib/features/projects/ProjectEditor.svelte:1278
+#: web/src/lib/features/projects/ProjectEditor.svelte:1293
 msgid "Delete project"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:511
 #: web/src/lib/features/projects/ProjectEditor.svelte:560
+#: web/src/lib/features/projects/ProjectEditor.svelte:575
 msgid "Delete this project? This cannot be undone."
 msgstr ""
 
@@ -4431,20 +4728,24 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:349
 #: web/src/lib/features/categories/CategoryManager.svelte:351
+#: web/src/lib/features/categories/CategoryManager.svelte:364
 #: web/src/lib/features/projects/ProjectEditor.svelte:985
 #: web/src/lib/features/projects/ProjectEditor.svelte:1278
+#: web/src/lib/features/projects/ProjectEditor.svelte:1293
 #: web/src/lib/features/yarns/YarnDetail.svelte:430
 #: web/src/lib/features/yarns/YarnDetail.svelte:453
 #: web/src/lib/features/yarns/YarnDetail.svelte:454
 msgid "Deleting…"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:254
 #: web/src/lib/features/yarns/YarnLibrary.svelte:255
 msgid "Details to add"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:344
 #: web/src/lib/features/projects/ProjectEditor.svelte:369
+#: web/src/lib/features/projects/ProjectEditor.svelte:384
 msgid "Each step needs a title of 256 characters or fewer."
 msgstr ""
 
@@ -4452,6 +4753,8 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:646
 #: web/src/lib/features/projects/ProjectEditor.svelte:704
 #: web/src/lib/features/projects/ProjectEditor.svelte:713
+#: web/src/lib/features/projects/ProjectEditor.svelte:719
+#: web/src/lib/features/projects/ProjectEditor.svelte:728
 #: web/src/lib/features/projects/ProjectReader.svelte:316
 #: web/src/lib/features/projects/ProjectReader.svelte:318
 #: web/src/lib/features/projects/ProjectReader.svelte:320
@@ -4463,34 +4766,46 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:265
 #: web/src/lib/features/yarns/YarnDetail.svelte:275
 #: web/src/lib/features/yarns/YarnForm.svelte:361
+#: web/src/lib/features/yarns/YarnForm.svelte:370
 #: web/src/lib/features/yarns/YarnForm.svelte:399
+#: web/src/lib/features/yarns/YarnForm.svelte:408
 msgid "Edit yarn"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:75
+#: web/src/lib/features/categories/CategoryManager.svelte:88
 #: web/src/lib/features/categories/CategoryManager.svelte:116
+#: web/src/lib/features/categories/CategoryManager.svelte:129
 #: web/src/lib/features/categories/CategoryManager.svelte:169
+#: web/src/lib/features/categories/CategoryManager.svelte:182
 msgid "Enter a category name."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:342
 #: web/src/lib/features/projects/ProjectEditor.svelte:367
+#: web/src/lib/features/projects/ProjectEditor.svelte:382
 #: web/src/lib/features/yarns/YarnForm.svelte:212
+#: web/src/lib/features/yarns/YarnForm.svelte:221
 msgid "Enter a complete http or https URL."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:338
 #: web/src/lib/features/projects/ProjectEditor.svelte:363
+#: web/src/lib/features/projects/ProjectEditor.svelte:378
 msgid "Enter a project name."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:189
+#: web/src/lib/features/yarns/YarnForm.svelte:198
 #: web/src/lib/features/yarns/YarnForm.svelte:284
+#: web/src/lib/features/yarns/YarnForm.svelte:293
 msgid "Enter a whole number of zero or more."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:200
+#: web/src/lib/features/yarns/YarnForm.svelte:209
 #: web/src/lib/features/yarns/YarnForm.svelte:282
+#: web/src/lib/features/yarns/YarnForm.svelte:291
 msgid "Enter a yarn name."
 msgstr ""
 
@@ -4501,22 +4816,27 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:808
 #: web/src/lib/features/projects/ProjectEditor.svelte:978
+#: web/src/lib/features/projects/ProjectEditor.svelte:993
 msgid "Find yarn"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:533
+#: web/src/lib/features/yarns/YarnForm.svelte:542
 msgid "For example, 80% wool, 20% nylon"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:543
+#: web/src/lib/features/yarns/YarnForm.svelte:552
 msgid "For example, DK or fingering"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:341
 #: web/src/lib/features/categories/CategoryManager.svelte:343
+#: web/src/lib/features/categories/CategoryManager.svelte:356
 msgid "Keep category"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:130
 #: web/src/lib/features/yarns/YarnLibrary.svelte:131
 msgid "Keep colors, fiber details, and project links close at hand."
 msgstr ""
@@ -4528,6 +4848,7 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:648
 #: web/src/lib/features/projects/ProjectEditor.svelte:716
+#: web/src/lib/features/projects/ProjectEditor.svelte:731
 msgid "Keep the pattern and materials together for your next knitting session."
 msgstr ""
 
@@ -4540,17 +4861,22 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:475
 #: web/src/lib/features/projects/ProjectEditor.svelte:496
 #: web/src/lib/features/projects/ProjectEditor.svelte:515
+#: web/src/lib/features/projects/ProjectEditor.svelte:530
 #: web/src/lib/features/projects/ProjectEditor.svelte:540
+#: web/src/lib/features/projects/ProjectEditor.svelte:555
 #: web/src/lib/features/yarns/YarnForm.svelte:320
+#: web/src/lib/features/yarns/YarnForm.svelte:329
 msgid "Latest saved version loaded."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:224
 #: web/src/lib/features/projects/ProjectEditor.svelte:233
+#: web/src/lib/features/projects/ProjectEditor.svelte:248
 msgid "Leave without saving this project?"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:136
+#: web/src/lib/features/yarns/YarnForm.svelte:145
 msgid "Leave without saving your yarn changes?"
 msgstr ""
 
@@ -4561,12 +4887,15 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:687
 #: web/src/lib/features/projects/ProjectEditor.svelte:767
+#: web/src/lib/features/projects/ProjectEditor.svelte:782
 #: web/src/lib/features/yarns/YarnForm.svelte:457
+#: web/src/lib/features/yarns/YarnForm.svelte:466
 msgid "Load latest values"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:736
 #: web/src/lib/features/projects/ProjectEditor.svelte:829
+#: web/src/lib/features/projects/ProjectEditor.svelte:844
 msgid "Loading categories…"
 msgstr ""
 
@@ -4577,35 +4906,42 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:662
 #: web/src/lib/features/projects/ProjectEditor.svelte:734
+#: web/src/lib/features/projects/ProjectEditor.svelte:749
 msgid "Loading project details…"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:224
 #: web/src/lib/features/yarns/YarnDetail.svelte:234
 #: web/src/lib/features/yarns/YarnForm.svelte:367
+#: web/src/lib/features/yarns/YarnForm.svelte:376
 msgid "Loading yarn details…"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:825
 #: web/src/lib/features/projects/ProjectEditor.svelte:1002
+#: web/src/lib/features/projects/ProjectEditor.svelte:1017
 msgid "Loading yarn options…"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:155
 #: web/src/lib/features/yarns/YarnLibrary.svelte:156
 msgid "Name, brand, colorway, or fiber"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:221
+#: web/src/lib/features/categories/CategoryManager.svelte:234
 msgid "New category"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:965
 #: web/src/lib/features/projects/ProjectEditor.svelte:1247
+#: web/src/lib/features/projects/ProjectEditor.svelte:1262
 msgid "No attachments yet."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:248
 #: web/src/lib/features/categories/CategoryManager.svelte:249
+#: web/src/lib/features/categories/CategoryManager.svelte:262
 msgid "No categories yet."
 msgstr ""
 
@@ -4616,6 +4952,7 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:932
 #: web/src/lib/features/projects/ProjectEditor.svelte:1179
+#: web/src/lib/features/projects/ProjectEditor.svelte:1194
 msgid "No project photos yet."
 msgstr ""
 
@@ -4628,14 +4965,17 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:864
 #: web/src/lib/features/projects/ProjectEditor.svelte:1052
+#: web/src/lib/features/projects/ProjectEditor.svelte:1067
 msgid "No yarn is linked to this project yet."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:847
 #: web/src/lib/features/projects/ProjectEditor.svelte:1028
+#: web/src/lib/features/projects/ProjectEditor.svelte:1043
 msgid "No yarn matches that search."
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:202
 #: web/src/lib/features/yarns/YarnLibrary.svelte:203
 msgid "No yarn matches those filters."
 msgstr ""
@@ -4646,29 +4986,35 @@ msgid "Open yarn photo"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:187
+#: web/src/lib/features/categories/CategoryManager.svelte:200
 msgid "Organize projects with your own categories."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:791
 #: web/src/lib/features/projects/ProjectEditor.svelte:946
+#: web/src/lib/features/projects/ProjectEditor.svelte:961
 msgid "Pattern"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:758
 #: web/src/lib/features/projects/ProjectEditor.svelte:893
+#: web/src/lib/features/projects/ProjectEditor.svelte:908
 msgid "Pattern source URL"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:871
 #: web/src/lib/features/projects/ProjectEditor.svelte:1060
+#: web/src/lib/features/projects/ProjectEditor.svelte:1075
 msgid "Pattern steps"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:945
 #: web/src/lib/features/projects/ProjectEditor.svelte:1202
+#: web/src/lib/features/projects/ProjectEditor.svelte:1217
 msgid "Photo description"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:247
 #: web/src/lib/features/yarns/YarnLibrary.svelte:248
 msgid "Photo not added"
 msgstr ""
@@ -4685,32 +5031,39 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:781
 #: web/src/lib/features/projects/ProjectEditor.svelte:931
+#: web/src/lib/features/projects/ProjectEditor.svelte:946
 msgid "Previous yarn note"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:707
 #: web/src/lib/features/projects/ProjectEditor.svelte:792
+#: web/src/lib/features/projects/ProjectEditor.svelte:807
 msgid "Project basics"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:407
 #: web/src/lib/features/projects/ProjectEditor.svelte:440
+#: web/src/lib/features/projects/ProjectEditor.svelte:455
 msgid "Project changes saved."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:938
 #: web/src/lib/features/projects/ProjectEditor.svelte:1191
+#: web/src/lib/features/projects/ProjectEditor.svelte:1206
 msgid "Project cover"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:601
 #: web/src/lib/features/projects/ProjectEditor.svelte:661
+#: web/src/lib/features/projects/ProjectEditor.svelte:676
 msgid "Project media updated."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:521
+#: web/src/lib/features/imports/ImportWorkbench.svelte:535
 #: web/src/lib/features/projects/ProjectEditor.svelte:710
 #: web/src/lib/features/projects/ProjectEditor.svelte:795
+#: web/src/lib/features/projects/ProjectEditor.svelte:810
 msgid "Project name"
 msgstr ""
 
@@ -4718,36 +5071,45 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:924
 #: web/src/lib/features/projects/ProjectEditor.svelte:1156
 #: web/src/lib/features/projects/ProjectEditor.svelte:1165
+#: web/src/lib/features/projects/ProjectEditor.svelte:1171
+#: web/src/lib/features/projects/ProjectEditor.svelte:1180
 msgid "Project photo"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:908
 #: web/src/lib/features/projects/ProjectEditor.svelte:1141
+#: web/src/lib/features/projects/ProjectEditor.svelte:1156
 msgid "Project photos and files"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:329
 #: web/src/lib/features/categories/CategoryManager.svelte:331
+#: web/src/lib/features/categories/CategoryManager.svelte:344
 msgid "Projects that use this category will no longer show it."
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:418
 #: web/src/lib/features/yarns/YarnDetail.svelte:364
 #: web/src/lib/features/yarns/YarnDetail.svelte:376
 #: web/src/lib/features/yarns/YarnForm.svelte:549
+#: web/src/lib/features/yarns/YarnForm.svelte:558
 msgid "Recommended needles"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:402
+#: web/src/lib/features/yarns/YarnForm.svelte:411
 msgid "Record the details you will want when choosing yarn for a project."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:960
 #: web/src/lib/features/projects/ProjectEditor.svelte:1241
+#: web/src/lib/features/projects/ProjectEditor.svelte:1256
 msgid "Remove attachment"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:927
 #: web/src/lib/features/projects/ProjectEditor.svelte:1173
+#: web/src/lib/features/projects/ProjectEditor.svelte:1188
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:187
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:192
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:242
@@ -4757,6 +5119,7 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:571
 #: web/src/lib/features/projects/ProjectEditor.svelte:631
+#: web/src/lib/features/projects/ProjectEditor.svelte:646
 msgid "Remove this attachment?"
 msgstr ""
 
@@ -4767,6 +5130,7 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:561
 #: web/src/lib/features/projects/ProjectEditor.svelte:621
+#: web/src/lib/features/projects/ProjectEditor.svelte:636
 msgid "Remove this project photo?"
 msgstr ""
 
@@ -4775,6 +5139,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:600
 #: web/src/lib/features/account/AccountSettings.svelte:615
 #: web/src/lib/features/account/AccountSettings.svelte:669
+#: web/src/lib/features/account/AccountSettings.svelte:682
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:242
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:254
 msgid "Removing…"
@@ -4782,44 +5147,55 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:305
 #: web/src/lib/features/categories/CategoryManager.svelte:307
+#: web/src/lib/features/categories/CategoryManager.svelte:320
 msgid "Rename"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:486
 #: web/src/lib/features/projects/ProjectEditor.svelte:528
+#: web/src/lib/features/projects/ProjectEditor.svelte:543
 #: web/src/lib/features/yarns/YarnForm.svelte:314
+#: web/src/lib/features/yarns/YarnForm.svelte:323
 msgid "Replace your unsaved edits with the latest saved version?"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:454
 #: web/src/lib/features/projects/ProjectEditor.svelte:491
+#: web/src/lib/features/projects/ProjectEditor.svelte:506
 msgid "Review the project steps."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:695
 #: web/src/lib/features/projects/ProjectEditor.svelte:777
+#: web/src/lib/features/projects/ProjectEditor.svelte:792
 #: web/src/lib/features/yarns/YarnForm.svelte:470
+#: web/src/lib/features/yarns/YarnForm.svelte:479
 msgid "Save my draft over latest"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:659
+#: web/src/lib/features/yarns/YarnForm.svelte:668
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:78
+#: web/src/lib/features/yarns/YarnForm.svelte:80
 msgid "Save yarn"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:669
+#: web/src/lib/features/yarns/YarnForm.svelte:678
 msgid "Save your changes before editing photos."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:910
 #: web/src/lib/features/projects/ProjectEditor.svelte:1144
+#: web/src/lib/features/projects/ProjectEditor.svelte:1159
 msgid "Save your changes before editing project media."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:328
+#: web/src/lib/features/yarns/YarnForm.svelte:337
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:47
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:52
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:147
@@ -4828,42 +5204,55 @@ msgid "Save your yarn changes before editing photos."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:445
+#: web/src/lib/features/yarns/YarnForm.svelte:454
 msgid "Saved"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:585
 #: web/src/lib/features/admin/AdminUsers.svelte:597
 #: web/src/lib/features/admin/AdminUsers.svelte:811
+#: web/src/lib/features/admin/AdminUsers.svelte:829
 #: web/src/lib/features/categories/CategoryManager.svelte:231
 #: web/src/lib/features/categories/CategoryManager.svelte:232
+#: web/src/lib/features/categories/CategoryManager.svelte:245
 #: web/src/lib/features/categories/CategoryManager.svelte:282
 #: web/src/lib/features/categories/CategoryManager.svelte:284
+#: web/src/lib/features/categories/CategoryManager.svelte:297
 #: web/src/lib/features/projects/ProjectEditor.svelte:695
 #: web/src/lib/features/projects/ProjectEditor.svelte:776
+#: web/src/lib/features/projects/ProjectEditor.svelte:791
 #: web/src/lib/features/projects/ProjectEditor.svelte:976
 #: web/src/lib/features/projects/ProjectEditor.svelte:1266
+#: web/src/lib/features/projects/ProjectEditor.svelte:1281
 #: web/src/lib/features/yarns/YarnForm.svelte:76
+#: web/src/lib/features/yarns/YarnForm.svelte:78
 #: web/src/lib/features/yarns/YarnForm.svelte:469
+#: web/src/lib/features/yarns/YarnForm.svelte:478
 msgid "Saving…"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:807
 #: web/src/lib/features/projects/ProjectEditor.svelte:976
+#: web/src/lib/features/projects/ProjectEditor.svelte:991
+#: web/src/lib/features/yarns/YarnLibrary.svelte:144
 #: web/src/lib/features/yarns/YarnLibrary.svelte:145
 msgid "Search yarn"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:151
 #: web/src/lib/features/yarns/YarnLibrary.svelte:152
 msgid "Search your yarn"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:851
 #: web/src/lib/features/projects/ProjectEditor.svelte:1033
+#: web/src/lib/features/projects/ProjectEditor.svelte:1048
 msgid "Selected yarn"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:90
 #: web/src/lib/features/projects/ProjectEditor.svelte:93
+#: web/src/lib/features/projects/ProjectEditor.svelte:95
 msgid "Selected yarn is unavailable."
 msgstr ""
 
@@ -4876,11 +5265,13 @@ msgid "Separate tags with commas. Duplicate tags are removed when saved."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:42
+#: web/src/lib/features/categories/CategoryManager.svelte:55
 msgid "Sign in to manage categories."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:657
 #: web/src/lib/features/projects/ProjectEditor.svelte:729
+#: web/src/lib/features/projects/ProjectEditor.svelte:744
 msgid "Sign in to manage your projects."
 msgstr ""
 
@@ -4890,6 +5281,7 @@ msgid "Sign in to view this yarn."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:100
+#: web/src/lib/features/yarns/YarnForm.svelte:109
 #: web/src/lib/features/yarns/YarnLibrary.svelte:43
 msgid "Sign in to view your yarn."
 msgstr ""
@@ -4900,6 +5292,7 @@ msgid "Skein length"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:579
+#: web/src/lib/features/yarns/YarnForm.svelte:588
 msgid "Skein length in meters"
 msgstr ""
 
@@ -4909,27 +5302,33 @@ msgid "Skein weight"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:558
+#: web/src/lib/features/yarns/YarnForm.svelte:567
 msgid "Skein weight in grams"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:894
 #: web/src/lib/features/projects/ProjectEditor.svelte:1117
+#: web/src/lib/features/projects/ProjectEditor.svelte:1132
 msgid "Step instructions"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:920
 #: web/src/lib/features/projects/ProjectEditor.svelte:1161
+#: web/src/lib/features/projects/ProjectEditor.svelte:1176
 msgid "Step photo"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:575
+#: web/src/lib/features/imports/ImportWorkbench.svelte:589
 #: web/src/lib/features/projects/ProjectEditor.svelte:890
 #: web/src/lib/features/projects/ProjectEditor.svelte:1106
+#: web/src/lib/features/projects/ProjectEditor.svelte:1121
 msgid "Step title"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:872
 #: web/src/lib/features/projects/ProjectEditor.svelte:1062
+#: web/src/lib/features/projects/ProjectEditor.svelte:1077
 msgid "Steps stay in the order shown here."
 msgstr ""
 
@@ -4939,15 +5338,18 @@ msgid "Tap a photo to see it larger."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:178
+#: web/src/lib/features/categories/CategoryManager.svelte:191
 msgid "The category could not be deleted."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:179
+#: web/src/lib/features/categories/CategoryManager.svelte:192
 msgid "The category could not be saved."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:500
 #: web/src/lib/features/projects/ProjectEditor.svelte:547
+#: web/src/lib/features/projects/ProjectEditor.svelte:562
 msgid "The latest project could not be loaded."
 msgstr ""
 
@@ -4968,26 +5370,31 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:526
 #: web/src/lib/features/projects/ProjectEditor.svelte:578
+#: web/src/lib/features/projects/ProjectEditor.svelte:593
 msgid "The project could not be deleted."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:298
 #: web/src/lib/features/projects/ProjectEditor.svelte:311
+#: web/src/lib/features/projects/ProjectEditor.svelte:326
 msgid "The project could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:429
 #: web/src/lib/features/projects/ProjectEditor.svelte:464
+#: web/src/lib/features/projects/ProjectEditor.svelte:479
 msgid "The project could not be saved."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:605
 #: web/src/lib/features/projects/ProjectEditor.svelte:667
+#: web/src/lib/features/projects/ProjectEditor.svelte:682
 msgid "The project media could not be updated."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:399
 #: web/src/lib/features/projects/ProjectEditor.svelte:429
+#: web/src/lib/features/projects/ProjectEditor.svelte:444
 msgid "The project version is missing. Reload the page and try again."
 msgstr ""
 
@@ -4999,10 +5406,12 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:101
 #: web/src/lib/features/yarns/YarnDetail.svelte:104
 #: web/src/lib/features/yarns/YarnForm.svelte:124
+#: web/src/lib/features/yarns/YarnForm.svelte:133
 msgid "The yarn could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:292
+#: web/src/lib/features/yarns/YarnForm.svelte:301
 msgid "The yarn could not be saved."
 msgstr ""
 
@@ -5017,6 +5426,7 @@ msgid "This cannot be undone."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:174
+#: web/src/lib/features/categories/CategoryManager.svelte:187
 msgid "This category is no longer available."
 msgstr ""
 
@@ -5031,21 +5441,25 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:421
 #: web/src/lib/features/projects/ProjectEditor.svelte:454
+#: web/src/lib/features/projects/ProjectEditor.svelte:469
 msgid "This project changed elsewhere. Your edits are still here."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:683
 #: web/src/lib/features/projects/ProjectEditor.svelte:756
+#: web/src/lib/features/projects/ProjectEditor.svelte:771
 msgid "This project changed in another window."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:666
 #: web/src/lib/features/projects/ProjectEditor.svelte:738
+#: web/src/lib/features/projects/ProjectEditor.svelte:753
 msgid "This project could not be found."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:777
 #: web/src/lib/features/projects/ProjectEditor.svelte:926
+#: web/src/lib/features/projects/ProjectEditor.svelte:941
 msgid "This project includes AI-assisted details."
 msgstr ""
 
@@ -5056,10 +5470,12 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:453
 #: web/src/lib/features/projects/ProjectEditor.svelte:489
+#: web/src/lib/features/projects/ProjectEditor.svelte:504
 msgid "This value needs attention."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:274
+#: web/src/lib/features/yarns/YarnForm.svelte:283
 msgid "This yarn changed elsewhere. Your edits are still here."
 msgstr ""
 
@@ -5071,10 +5487,12 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:98
 #: web/src/lib/features/yarns/YarnDetail.svelte:101
 #: web/src/lib/features/yarns/YarnForm.svelte:121
+#: web/src/lib/features/yarns/YarnForm.svelte:130
 #: web/src/lib/features/yarns/YarnLibrary.svelte:99
 msgid "This yarn is no longer available."
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:203
 #: web/src/lib/features/yarns/YarnLibrary.svelte:204
 msgid "Try another search or show all yarn."
 msgstr ""
@@ -5096,6 +5514,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:588
 #: web/src/lib/features/account/AccountSettings.svelte:603
 #: web/src/lib/features/account/AccountSettings.svelte:657
+#: web/src/lib/features/account/AccountSettings.svelte:670
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:133
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:138
 msgid "Uploading…"
@@ -5103,16 +5522,20 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:340
 #: web/src/lib/features/projects/ProjectEditor.svelte:365
+#: web/src/lib/features/projects/ProjectEditor.svelte:380
 #: web/src/lib/features/yarns/YarnForm.svelte:202
+#: web/src/lib/features/yarns/YarnForm.svelte:211
 msgid "Use 256 characters or fewer."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:196
+#: web/src/lib/features/categories/CategoryManager.svelte:209
 msgid "Use categories to find projects faster."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:788
 #: web/src/lib/features/projects/ProjectEditor.svelte:939
+#: web/src/lib/features/projects/ProjectEditor.svelte:954
 msgid "Use plain text or Markdown. The reader formats it safely for you."
 msgstr ""
 
@@ -5124,36 +5547,45 @@ msgid "Used in projects"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:262
+#: web/src/lib/features/yarns/YarnForm.svelte:271
 msgid "Yarn changes saved."
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:395
 #: web/src/lib/features/yarns/YarnDetail.svelte:218
 #: web/src/lib/features/yarns/YarnDetail.svelte:228
 #: web/src/lib/features/yarns/YarnDetail.svelte:245
 #: web/src/lib/features/yarns/YarnDetail.svelte:255
 #: web/src/lib/features/yarns/YarnForm.svelte:396
+#: web/src/lib/features/yarns/YarnForm.svelte:405
 msgid "Yarn details"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:806
 #: web/src/lib/features/projects/ProjectEditor.svelte:972
+#: web/src/lib/features/projects/ProjectEditor.svelte:987
 msgid "Yarn for this project"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:478
+#: web/src/lib/features/yarns/YarnForm.svelte:487
 msgid "Yarn information"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:616
+#: web/src/lib/features/imports/ImportWorkbench.svelte:630
 #: web/src/lib/features/yarns/YarnForm.svelte:481
+#: web/src/lib/features/yarns/YarnForm.svelte:490
 msgid "Yarn name"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:206
 #: web/src/lib/features/projects/ProjectEditor.svelte:214
+#: web/src/lib/features/projects/ProjectEditor.svelte:229
 msgid "Yarn options could not be loaded."
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:281
 #: web/src/lib/features/yarns/YarnLibrary.svelte:282
 msgid "Yarn pages"
 msgstr ""
@@ -5168,10 +5600,12 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:241
 #: web/src/lib/features/yarns/YarnDetail.svelte:251
 #: web/src/lib/features/yarns/YarnForm.svelte:389
+#: web/src/lib/features/yarns/YarnForm.svelte:398
 msgid "Yarn shelf"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:621
+#: web/src/lib/features/yarns/YarnForm.svelte:630
 msgid "Yarn source URL"
 msgstr ""
 
@@ -5183,46 +5617,56 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:360
 #: web/src/lib/features/yarns/YarnDetail.svelte:372
 #: web/src/lib/features/yarns/YarnForm.svelte:539
+#: web/src/lib/features/yarns/YarnForm.svelte:548
 msgid "Yarn weight"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:684
 #: web/src/lib/features/projects/ProjectEditor.svelte:759
+#: web/src/lib/features/projects/ProjectEditor.svelte:774
 msgid "Your draft is unchanged. Choose which version to keep."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:428
+#: web/src/lib/features/yarns/YarnForm.svelte:437
 msgid ""
 "Your draft is unchanged. Compare the latest details, then choose whether "
 "to load them or save your draft over that version."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:337
+#: web/src/lib/features/yarns/YarnForm.svelte:346
 msgid "Your edits changed while the photo was uploading. Save before continuing."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:686
+#: web/src/lib/features/yarns/YarnForm.svelte:695
 msgid "Your edits stay here if saving fails."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:395
+#: web/src/lib/features/yarns/YarnForm.svelte:404
 #: web/src/lib/features/yarns/YarnLibrary.svelte:128
 msgid "Your materials"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:233
 #: web/src/lib/features/yarns/YarnLibrary.svelte:234
 msgid "Your yarn"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:231
 #: web/src/lib/features/yarns/YarnLibrary.svelte:232
 msgid "Your yarn favorites"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:213
 #: web/src/lib/features/yarns/YarnLibrary.svelte:214
 msgid "Your yarn shelf is ready."
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:198
+#: web/src/lib/features/categories/CategoryManager.svelte:211
 msgid "categories"
 msgstr ""
 
@@ -5237,82 +5681,100 @@ msgid "m"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:459
+#: web/src/lib/features/imports/ImportWorkbench.svelte:473
 msgid ""
 "AI enhancement is unavailable. You can still preview and review the "
 "extracted draft."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:465
+#: web/src/lib/features/imports/ImportWorkbench.svelte:479
 msgid ""
 "AI enhancement was unavailable, so this preview uses the original "
 "extraction."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:501
+#: web/src/lib/features/imports/ImportWorkbench.svelte:515
 msgid "AI-assisted extraction. Check every detail before saving."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:225
+#: web/src/lib/features/imports/ImportWorkbench.svelte:239
 msgid "Add a name before creating this yarn."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:274
+#: web/src/lib/features/imports/ImportWorkbench.svelte:288
 msgid "Add a project name before creating it."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:869
+#: web/src/lib/features/projects/ProjectEditor.svelte:884
 msgid "Add each tag separately; commas stay inside a tag."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:865
+#: web/src/lib/features/projects/ProjectEditor.svelte:880
 msgid "Add tag"
 msgstr ""
 
 #: web/src/lib/api.ts:283 web/src/lib/api.ts:295 web/src/lib/api.ts:296
+#: web/src/lib/api.ts:317
 msgid "Archiving is unavailable right now."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:376
+#: web/src/lib/features/imports/ImportWorkbench.svelte:390
 msgid "Ask AI to improve extraction"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:354
+#: web/src/lib/features/imports/ImportWorkbench.svelte:368
 msgid "Bring a pattern into your library"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:146
+#: web/src/lib/features/imports/ImportWorkbench.svelte:160
 msgid "Choose a document to preview."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:428
+#: web/src/lib/features/imports/ImportWorkbench.svelte:442
 msgid "Choose a file"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:368
+#: web/src/lib/features/imports/ImportWorkbench.svelte:382
 msgid "Choose a source"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:357
+#: web/src/lib/features/imports/ImportWorkbench.svelte:371
 msgid ""
 "Choose a source, review every extracted detail, then create a normal "
 "project."
 msgstr ""
 
 #: web/src/lib/api.ts:269 web/src/lib/api.ts:281 web/src/lib/api.ts:282
+#: web/src/lib/api.ts:303
 msgid "Choose a supported language for text recognition."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:607
+#: web/src/lib/features/imports/ImportWorkbench.svelte:621
 msgid ""
 "Create yarn separately. It will be linked to this project only after it "
 "is saved."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:720
+#: web/src/lib/features/imports/ImportWorkbench.svelte:734
 msgid "Creating project…"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:138
+#: web/src/lib/features/imports/ImportWorkbench.svelte:152
 msgid "Enter a valid HTTP or HTTPS URL."
 msgstr ""
 
@@ -5323,6 +5785,7 @@ msgid ""
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:407
+#: web/src/lib/features/imports/ImportWorkbench.svelte:421
 msgid "From a link"
 msgstr ""
 
@@ -5335,22 +5798,27 @@ msgid "Gauge width"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:57
+#: web/src/lib/features/imports/ImportWorkbench.svelte:64
 msgid "HTML page"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:430
+#: web/src/lib/features/imports/ImportWorkbench.svelte:444
 msgid "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:61
+#: web/src/lib/features/imports/ImportWorkbench.svelte:68
 msgid "Image"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:659
+#: web/src/lib/features/imports/ImportWorkbench.svelte:673
 msgid "Image URL suggestion (not fetched):"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:355
+#: web/src/lib/features/imports/ImportWorkbench.svelte:369
 msgid "Import a project"
 msgstr ""
 
@@ -5362,36 +5830,45 @@ msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:324
 #: web/src/lib/features/imports/ImportWorkbench.svelte:336
+#: web/src/lib/features/imports/ImportWorkbench.svelte:338
+#: web/src/lib/features/imports/ImportWorkbench.svelte:350
 msgid "Import failed. Your source and edits are still here."
 msgstr ""
 
 #: web/src/lib/api.ts:271 web/src/lib/api.ts:283 web/src/lib/api.ts:284
+#: web/src/lib/api.ts:305
 msgid "Import preview is unavailable right now. Try again later."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:383
+#: web/src/lib/features/imports/ImportWorkbench.svelte:397
 msgid "Import source"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:614
+#: web/src/lib/features/imports/ImportWorkbench.svelte:628
 #: web/src/lib/features/imports/import-draft.ts:238
 msgid "Imported yarn"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:102
+#: web/src/lib/features/imports/ImportWorkbench.svelte:116
 msgid "Leave this import review? Your changes will be lost."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:59
+#: web/src/lib/features/imports/ImportWorkbench.svelte:66
 msgid "Markdown file"
 msgstr ""
 
 #: web/src/lib/api.ts:259 web/src/lib/api.ts:271 web/src/lib/api.ts:272
+#: web/src/lib/api.ts:293
 #: web/src/lib/features/account/AccountSettings.svelte:445
 #: web/src/lib/features/account/AccountSettings.svelte:447
 #: web/src/lib/features/account/AccountSettings.svelte:496
 #: web/src/lib/features/account/AccountSettings.svelte:509
 #: web/src/lib/features/account/AccountSettings.svelte:559
+#: web/src/lib/features/account/AccountSettings.svelte:572
 msgid "Media storage is unavailable. Try again later."
 msgstr ""
 
@@ -5404,30 +5881,37 @@ msgid "Next step"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:703
+#: web/src/lib/features/imports/ImportWorkbench.svelte:717
 msgid "Open created project"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:685
+#: web/src/lib/features/imports/ImportWorkbench.svelte:699
 msgid "Other extracted details"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:60
+#: web/src/lib/features/imports/ImportWorkbench.svelte:67
 msgid "PDF document"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:417
+#: web/src/lib/features/imports/ImportWorkbench.svelte:431
 msgid "Paste pattern instructions, notes, or a recipe…"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:390
+#: web/src/lib/features/imports/ImportWorkbench.svelte:404
 msgid "Paste text"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:142
+#: web/src/lib/features/imports/ImportWorkbench.svelte:156
 msgid "Paste text to preview."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:443
+#: web/src/lib/features/imports/ImportWorkbench.svelte:457
 msgid "Pattern page URL"
 msgstr ""
 
@@ -5440,18 +5924,22 @@ msgid "Pattern step navigation"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:412
+#: web/src/lib/features/imports/ImportWorkbench.svelte:426
 msgid "Pattern text or instructions"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:58
+#: web/src/lib/features/imports/ImportWorkbench.svelte:65
 msgid "Plain text"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:472
+#: web/src/lib/features/imports/ImportWorkbench.svelte:486
 msgid "Preparing preview…"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:473
+#: web/src/lib/features/imports/ImportWorkbench.svelte:487
 msgid "Preview and review"
 msgstr ""
 
@@ -5464,99 +5952,122 @@ msgid "Previous step"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:305
+#: web/src/lib/features/imports/ImportWorkbench.svelte:319
 msgid "Project created. Your reviewed import is saved."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:476
+#: web/src/lib/features/imports/ImportWorkbench.svelte:490
 msgid "Reading the source and preparing a draft…"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:152
+#: web/src/lib/features/imports/ImportWorkbench.svelte:166
 msgid "Replace this import review? Your edits will be lost."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:493
+#: web/src/lib/features/imports/ImportWorkbench.svelte:507
 msgid "Review and correct"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:688
+#: web/src/lib/features/imports/ImportWorkbench.svelte:702
 msgid "Review and edit these details; they will be kept in project notes."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:505
+#: web/src/lib/features/imports/ImportWorkbench.svelte:519
 msgid ""
 "Review the extracted fields. Nothing is created until you choose a save "
 "action."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:671
+#: web/src/lib/features/imports/ImportWorkbench.svelte:685
 msgid "Save yarn to library"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:663
+#: web/src/lib/features/imports/ImportWorkbench.svelte:677
 msgid "Saved and ready to link to this project."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:670
+#: web/src/lib/features/imports/ImportWorkbench.svelte:684
 msgid "Saving yarn…"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:512
+#: web/src/lib/features/imports/ImportWorkbench.svelte:526
 msgid "Source image details"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:712
+#: web/src/lib/features/imports/ImportWorkbench.svelte:726
 msgid "Start another import"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:367
+#: web/src/lib/features/imports/ImportWorkbench.svelte:381
 msgid "Step 1"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:492
+#: web/src/lib/features/imports/ImportWorkbench.svelte:506
 msgid "Step 2"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:298
+#: web/src/lib/features/imports/ImportWorkbench.svelte:312
 #: web/src/lib/features/imports/ImportWorkbench.svelte:569
+#: web/src/lib/features/imports/ImportWorkbench.svelte:583
 #, python-brace-format
 msgid "Step {number}"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:597
+#: web/src/lib/features/imports/ImportWorkbench.svelte:611
 msgid "Suggested project images"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:586
+#: web/src/lib/features/imports/ImportWorkbench.svelte:600
 msgid "Suggested step images"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:422
+#: web/src/lib/features/imports/ImportWorkbench.svelte:436
 msgid "Text and files are limited to 5 MiB."
 msgstr ""
 
 #: web/src/lib/api.ts:266 web/src/lib/api.ts:278 web/src/lib/api.ts:279
+#: web/src/lib/api.ts:300
 msgid "Text recognition could not complete. You can enter the text manually."
 msgstr ""
 
 #: web/src/lib/api.ts:260 web/src/lib/api.ts:272 web/src/lib/api.ts:273
+#: web/src/lib/api.ts:294
 msgid ""
 "Text recognition is unavailable right now. You can enter the text "
 "manually."
 msgstr ""
 
 #: web/src/lib/api.ts:263 web/src/lib/api.ts:275 web/src/lib/api.ts:276
+#: web/src/lib/api.ts:297
 msgid "Text recognition took too long. Try again or enter the text manually."
 msgstr ""
 
 #: web/src/lib/api.ts:253 web/src/lib/api.ts:265 web/src/lib/api.ts:266
-#: web/src/lib/features/admin/AdminUsers.svelte:165
+#: web/src/lib/api.ts:287 web/src/lib/features/admin/AdminUsers.svelte:165
 #: web/src/lib/features/admin/AdminUsers.svelte:176
 #: web/src/lib/features/admin/AdminUsers.svelte:181
+#: web/src/lib/features/admin/AdminUsers.svelte:199
 msgid "The request could not be read. Refresh and try again."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:452
+#: web/src/lib/features/imports/ImportWorkbench.svelte:466
 msgid ""
 "The server reads the page securely. Suggested image links are never "
 "fetched by this browser."
@@ -5567,18 +6078,22 @@ msgid "The server returned an unexpected import response."
 msgstr ""
 
 #: web/src/lib/api.ts:275 web/src/lib/api.ts:287 web/src/lib/api.ts:288
+#: web/src/lib/api.ts:309
 msgid "The source could not be downloaded. Check the link and try again."
 msgstr ""
 
 #: web/src/lib/api.ts:274 web/src/lib/api.ts:286 web/src/lib/api.ts:287
+#: web/src/lib/api.ts:308
 msgid "The source took too long to import. Try again later."
 msgstr ""
 
 #: web/src/lib/api.ts:255 web/src/lib/api.ts:267 web/src/lib/api.ts:268
+#: web/src/lib/api.ts:289
 msgid "The uploaded form could not be read. Choose the file again."
 msgstr ""
 
 #: web/src/lib/api.ts:282 web/src/lib/api.ts:294 web/src/lib/api.ts:295
+#: web/src/lib/api.ts:316
 msgid "This document could not be read. Try another file."
 msgstr ""
 
@@ -5588,50 +6103,62 @@ msgid "This document is larger than the 5 MiB import limit."
 msgstr ""
 
 #: web/src/lib/api.ts:279 web/src/lib/api.ts:291 web/src/lib/api.ts:292
+#: web/src/lib/api.ts:313
 msgid ""
 "This document type is not supported. Try a web page, text, Markdown, PDF,"
 " or image."
 msgstr ""
 
 #: web/src/lib/api.ts:254 web/src/lib/api.ts:266 web/src/lib/api.ts:267
+#: web/src/lib/api.ts:288
 msgid "This feature is not enabled for this account."
 msgstr ""
 
 #: web/src/lib/api.ts:270 web/src/lib/api.ts:282 web/src/lib/api.ts:283
+#: web/src/lib/api.ts:304
 msgid "This image is not available for text recognition."
 msgstr ""
 
 #: web/src/lib/api.ts:258 web/src/lib/api.ts:270 web/src/lib/api.ts:271
+#: web/src/lib/api.ts:292
 msgid "This is not a valid image. Choose a different file."
 msgstr ""
 
 #: web/src/lib/api.ts:278 web/src/lib/api.ts:290 web/src/lib/api.ts:291
+#: web/src/lib/api.ts:312
 msgid "This link cannot be imported for security reasons."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:329
+#: web/src/lib/features/imports/ImportWorkbench.svelte:343
 #, python-brace-format
 msgid "Too many requests. Try again in {seconds} seconds."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:328
+#: web/src/lib/features/imports/ImportWorkbench.svelte:342
 msgid "Too many requests. Wait a moment, then try again."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:134
+#: web/src/lib/features/imports/ImportWorkbench.svelte:148
 #: web/src/lib/features/imports/ImportWorkbench.svelte:405
+#: web/src/lib/features/imports/ImportWorkbench.svelte:419
 msgid "URL imports are disabled for this account."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:397
+#: web/src/lib/features/imports/ImportWorkbench.svelte:411
 msgid "Upload file"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:249
+#: web/src/lib/features/imports/ImportWorkbench.svelte:263
 msgid "Yarn added to your library and linked for this project."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:605
+#: web/src/lib/features/imports/ImportWorkbench.svelte:619
 msgid "Yarn from this import"
 msgstr ""
 
@@ -5644,12 +6171,15 @@ msgid "of"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:515
+#: web/src/lib/features/imports/ImportWorkbench.svelte:529
 msgid "pixels"
 msgstr ""
 
-#: web/src/routes/more/+page.svelte:20 web/src/routes/more/+page.svelte:24
-#: web/src/routes/more/+page.svelte:28 web/src/routes/more/+page.svelte:32
+#: web/src/routes/more/+page.svelte:20 web/src/routes/more/+page.svelte:23
+#: web/src/routes/more/+page.svelte:24 web/src/routes/more/+page.svelte:28
+#: web/src/routes/more/+page.svelte:30 web/src/routes/more/+page.svelte:32
 #: web/src/routes/more/+page.svelte:37 web/src/routes/more/+page.svelte:41
+#: web/src/routes/more/+page.svelte:45 web/src/routes/more/+page.svelte:52
 msgid "Available now"
 msgstr ""
 
@@ -5658,7 +6188,7 @@ msgstr ""
 msgid "In progress"
 msgstr ""
 
-#: web/src/routes/more/+page.svelte:15
+#: web/src/routes/more/+page.svelte:15 web/src/routes/more/+page.svelte:16
 msgid "Tools and settings for your knitting library."
 msgstr ""
 
@@ -5682,6 +6212,7 @@ msgstr ""
 #: web/src/lib/components/PwaUpdate.svelte:65
 #: web/src/lib/components/PwaUpdate.svelte:75
 #: web/src/lib/components/PwaUpdate.svelte:76
+#: web/src/lib/components/PwaUpdate.svelte:325
 msgid "Update available"
 msgstr ""
 
@@ -5689,6 +6220,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:390
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:394
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:401
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:441
 msgid "Adjusted Rows"
 msgstr ""
 
@@ -5696,6 +6228,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:386
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:390
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:397
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:437
 msgid "Adjusted Stitches"
 msgstr ""
 
@@ -5703,6 +6236,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:396
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:400
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:407
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:447
 msgid "Based on a pattern cast-on of"
 msgstr ""
 
@@ -5710,6 +6244,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:377
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:381
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:388
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:419
 msgid "Calculating…"
 msgstr ""
 
@@ -5717,6 +6252,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:383
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:387
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:394
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:434
 msgid "Calculation Results"
 msgstr ""
 
@@ -5724,9 +6260,12 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:60
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:68
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:72
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:73
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:85
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:128
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:132
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:136
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:162
 msgid "Enter a positive whole number."
 msgstr ""
 
@@ -5734,18 +6273,21 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:391
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:395
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:402
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:442
 msgid "N/A"
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:141
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:145
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:149
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:175
 msgid "The calculation could not be completed."
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:133
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:137
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:141
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:167
 msgid "The calculation request is too large. Reduce the values and try again."
 msgstr ""
 
@@ -5756,6 +6298,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:162
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:166
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:173
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:199
 msgid "Tools"
 msgstr ""
 
@@ -5763,6 +6306,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:400
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:404
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:411
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:451
 msgid "and"
 msgstr ""
 
@@ -5770,6 +6314,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:402
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:406
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:413
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:453
 msgid "rows"
 msgstr ""
 
@@ -5777,6 +6322,7 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:398
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:402
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:409
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:449
 msgid "stitches"
 msgstr ""
 
@@ -5785,6 +6331,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:867
 #: web/src/lib/features/account/AccountSettings.svelte:902
 #: web/src/lib/features/account/AccountSettings.svelte:972
+#: web/src/lib/features/account/AccountSettings.svelte:985
 msgid "API access"
 msgstr ""
 
@@ -5793,6 +6340,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:280
 #: web/src/lib/features/account/AccountSettings.svelte:284
 #: web/src/lib/features/account/AccountSettings.svelte:332
+#: web/src/lib/features/account/AccountSettings.svelte:345
 msgid "API token revoked."
 msgstr ""
 
@@ -5801,6 +6349,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:682
 #: web/src/lib/features/account/AccountSettings.svelte:698
 #: web/src/lib/features/account/AccountSettings.svelte:752
+#: web/src/lib/features/account/AccountSettings.svelte:765
 msgid "Active API tokens"
 msgstr ""
 
@@ -5809,6 +6358,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:870
 #: web/src/lib/features/account/AccountSettings.svelte:905
 #: web/src/lib/features/account/AccountSettings.svelte:975
+#: web/src/lib/features/account/AccountSettings.svelte:988
 msgid "Apps using this token will no longer be able to connect."
 msgstr ""
 
@@ -5817,6 +6367,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:768
 #: web/src/lib/features/account/AccountSettings.svelte:784
 #: web/src/lib/features/account/AccountSettings.svelte:838
+#: web/src/lib/features/account/AccountSettings.svelte:851
 msgid "At least 12 characters. Avoid common passwords."
 msgstr ""
 
@@ -5825,6 +6376,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:804
 #: web/src/lib/features/account/AccountSettings.svelte:820
 #: web/src/lib/features/account/AccountSettings.svelte:874
+#: web/src/lib/features/account/AccountSettings.svelte:887
 msgid "Changing password…"
 msgstr ""
 
@@ -5833,6 +6385,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:721
 #: web/src/lib/features/account/AccountSettings.svelte:737
 #: web/src/lib/features/account/AccountSettings.svelte:791
+#: web/src/lib/features/account/AccountSettings.svelte:804
 msgid "Changing your password signs out this browser and other sessions."
 msgstr ""
 
@@ -5841,11 +6394,14 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:431
 #: web/src/lib/features/account/AccountSettings.svelte:434
 #: web/src/lib/features/account/AccountSettings.svelte:484
+#: web/src/lib/features/account/AccountSettings.svelte:497
 #: web/src/lib/features/auth/SignupForm.svelte:36
 #: web/src/lib/features/auth/SignupForm.svelte:39
 #: web/src/lib/features/auth/SignupForm.svelte:40
 #: web/src/lib/features/auth/SignupForm.svelte:43
 #: web/src/lib/features/auth/SignupForm.svelte:44
+#: web/src/lib/features/auth/SignupForm.svelte:50
+#: web/src/lib/features/auth/SignupForm.svelte:54
 msgid "Choose a password that is not commonly used."
 msgstr ""
 
@@ -5854,6 +6410,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:570
 #: web/src/lib/features/account/AccountSettings.svelte:585
 #: web/src/lib/features/account/AccountSettings.svelte:639
+#: web/src/lib/features/account/AccountSettings.svelte:652
 msgid "Choose a profile picture"
 msgstr ""
 
@@ -5862,6 +6419,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:494
 #: web/src/lib/features/account/AccountSettings.svelte:507
 #: web/src/lib/features/account/AccountSettings.svelte:557
+#: web/src/lib/features/account/AccountSettings.svelte:570
 msgid "Choose a supported image file."
 msgstr ""
 
@@ -5870,11 +6428,13 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:319
 #: web/src/lib/features/account/AccountSettings.svelte:322
 #: web/src/lib/features/account/AccountSettings.svelte:370
+#: web/src/lib/features/account/AccountSettings.svelte:383
 #: web/src/lib/features/account/AccountSettings.svelte:441
 #: web/src/lib/features/account/AccountSettings.svelte:443
 #: web/src/lib/features/account/AccountSettings.svelte:492
 #: web/src/lib/features/account/AccountSettings.svelte:505
 #: web/src/lib/features/account/AccountSettings.svelte:555
+#: web/src/lib/features/account/AccountSettings.svelte:568
 msgid "Choose an image smaller than 25 MiB."
 msgstr ""
 
@@ -5883,6 +6443,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:577
 #: web/src/lib/features/account/AccountSettings.svelte:592
 #: web/src/lib/features/account/AccountSettings.svelte:646
+#: web/src/lib/features/account/AccountSettings.svelte:659
 msgid "Choose image"
 msgstr ""
 
@@ -5891,6 +6452,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:780
 #: web/src/lib/features/account/AccountSettings.svelte:796
 #: web/src/lib/features/account/AccountSettings.svelte:850
+#: web/src/lib/features/account/AccountSettings.svelte:863
 msgid "Confirm new password"
 msgstr ""
 
@@ -5900,6 +6462,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:822
 #: web/src/lib/features/account/AccountSettings.svelte:842
 #: web/src/lib/features/account/AccountSettings.svelte:912
+#: web/src/lib/features/account/AccountSettings.svelte:925
 msgid ""
 "Copy this token now. It will not be shown again after you close this "
 "message."
@@ -5910,6 +6473,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:839
 #: web/src/lib/features/account/AccountSettings.svelte:870
 #: web/src/lib/features/account/AccountSettings.svelte:940
+#: web/src/lib/features/account/AccountSettings.svelte:953
 msgid "Copy token"
 msgstr ""
 
@@ -5918,6 +6482,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:456
 #: web/src/lib/features/account/AccountSettings.svelte:459
 #: web/src/lib/features/account/AccountSettings.svelte:509
+#: web/src/lib/features/account/AccountSettings.svelte:522
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr ""
 
@@ -5926,6 +6491,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:427
 #: web/src/lib/features/account/AccountSettings.svelte:430
 #: web/src/lib/features/account/AccountSettings.svelte:480
+#: web/src/lib/features/account/AccountSettings.svelte:493
 msgid "Current password is incorrect."
 msgstr ""
 
@@ -5941,6 +6507,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:395
 #: web/src/lib/features/account/AccountSettings.svelte:398
 #: web/src/lib/features/account/AccountSettings.svelte:448
+#: web/src/lib/features/account/AccountSettings.svelte:461
 msgid "Enter your current password."
 msgstr ""
 
@@ -5949,6 +6516,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:692
 #: web/src/lib/features/account/AccountSettings.svelte:708
 #: web/src/lib/features/account/AccountSettings.svelte:762
+#: web/src/lib/features/account/AccountSettings.svelte:775
 msgid "Expires"
 msgstr ""
 
@@ -5957,11 +6525,13 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:638
 #: web/src/lib/features/account/AccountSettings.svelte:654
 #: web/src/lib/features/account/AccountSettings.svelte:708
+#: web/src/lib/features/account/AccountSettings.svelte:721
 msgid "For example, my tablet"
 msgstr ""
 
 #: web/src/lib/components/LocaleSwitcher.svelte:28
 #: web/src/lib/components/LocaleSwitcher.svelte:31
+#: web/src/lib/components/LocaleSwitcher.svelte:45
 #: web/src/lib/features/media/OcrControl.svelte:154
 #: web/src/lib/features/media/OcrControl.svelte:188
 msgid "German"
@@ -5972,6 +6542,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:854
 #: web/src/lib/features/account/AccountSettings.svelte:885
 #: web/src/lib/features/account/AccountSettings.svelte:955
+#: web/src/lib/features/account/AccountSettings.svelte:968
 msgid "Hide token"
 msgstr ""
 
@@ -5980,6 +6551,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:846
 #: web/src/lib/features/account/AccountSettings.svelte:877
 #: web/src/lib/features/account/AccountSettings.svelte:947
+#: web/src/lib/features/account/AccountSettings.svelte:960
 msgid "I saved this token somewhere safe."
 msgstr ""
 
@@ -5988,6 +6560,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:878
 #: web/src/lib/features/account/AccountSettings.svelte:914
 #: web/src/lib/features/account/AccountSettings.svelte:984
+#: web/src/lib/features/account/AccountSettings.svelte:997
 msgid "Keep token"
 msgstr ""
 
@@ -5996,6 +6569,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:664
 #: web/src/lib/features/account/AccountSettings.svelte:680
 #: web/src/lib/features/account/AccountSettings.svelte:734
+#: web/src/lib/features/account/AccountSettings.svelte:747
 msgid "Loading API tokens…"
 msgstr ""
 
@@ -6004,6 +6578,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:549
 #: web/src/lib/features/account/AccountSettings.svelte:564
 #: web/src/lib/features/account/AccountSettings.svelte:618
+#: web/src/lib/features/account/AccountSettings.svelte:631
 msgid "Loading account details…"
 msgstr ""
 
@@ -6012,6 +6587,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:519
 #: web/src/lib/features/account/AccountSettings.svelte:534
 #: web/src/lib/features/account/AccountSettings.svelte:584
+#: web/src/lib/features/account/AccountSettings.svelte:597
 msgid "Manage your profile and sign-in security."
 msgstr ""
 
@@ -6020,6 +6596,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:528
 #: web/src/lib/features/account/AccountSettings.svelte:543
 #: web/src/lib/features/account/AccountSettings.svelte:593
+#: web/src/lib/features/account/AccountSettings.svelte:606
 msgid "Manage your profile, API access, and password."
 msgstr ""
 
@@ -6028,6 +6605,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:829
 #: web/src/lib/features/account/AccountSettings.svelte:862
 #: web/src/lib/features/account/AccountSettings.svelte:932
+#: web/src/lib/features/account/AccountSettings.svelte:945
 msgid "New API token"
 msgstr ""
 
@@ -6036,6 +6614,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:679
 #: web/src/lib/features/account/AccountSettings.svelte:695
 #: web/src/lib/features/account/AccountSettings.svelte:749
+#: web/src/lib/features/account/AccountSettings.svelte:762
 msgid "No API tokens yet. Create one when an app needs access."
 msgstr ""
 
@@ -6044,6 +6623,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:819
 #: web/src/lib/features/account/AccountSettings.svelte:839
 #: web/src/lib/features/account/AccountSettings.svelte:909
+#: web/src/lib/features/account/AccountSettings.svelte:922
 msgid "One-time display"
 msgstr ""
 
@@ -6052,11 +6632,14 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:399
 #: web/src/lib/features/account/AccountSettings.svelte:402
 #: web/src/lib/features/account/AccountSettings.svelte:452
+#: web/src/lib/features/account/AccountSettings.svelte:465
 #: web/src/lib/features/auth/SignupForm.svelte:34
 #: web/src/lib/features/auth/SignupForm.svelte:35
+#: web/src/lib/features/auth/SignupForm.svelte:45
 #: web/src/lib/features/auth/SignupForm.svelte:78
 #: web/src/lib/features/auth/SignupForm.svelte:80
 #: web/src/lib/features/auth/SignupForm.svelte:81
+#: web/src/lib/features/auth/SignupForm.svelte:91
 msgid "Passwords must be 1024 bytes or fewer."
 msgstr ""
 
@@ -6065,6 +6648,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:547
 #: web/src/lib/features/account/AccountSettings.svelte:562
 #: web/src/lib/features/account/AccountSettings.svelte:616
+#: web/src/lib/features/account/AccountSettings.svelte:629
 msgid "Profile"
 msgstr ""
 
@@ -6073,6 +6657,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:369
 #: web/src/lib/features/account/AccountSettings.svelte:372
 #: web/src/lib/features/account/AccountSettings.svelte:422
+#: web/src/lib/features/account/AccountSettings.svelte:435
 msgid "Profile picture removed."
 msgstr ""
 
@@ -6081,6 +6666,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:335
 #: web/src/lib/features/account/AccountSettings.svelte:338
 #: web/src/lib/features/account/AccountSettings.svelte:387
+#: web/src/lib/features/account/AccountSettings.svelte:400
 msgid "Profile picture updated."
 msgstr ""
 
@@ -6089,6 +6675,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:601
 #: web/src/lib/features/account/AccountSettings.svelte:616
 #: web/src/lib/features/account/AccountSettings.svelte:670
+#: web/src/lib/features/account/AccountSettings.svelte:683
 msgid "Remove picture"
 msgstr ""
 
@@ -6097,6 +6684,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:868
 #: web/src/lib/features/account/AccountSettings.svelte:903
 #: web/src/lib/features/account/AccountSettings.svelte:973
+#: web/src/lib/features/account/AccountSettings.svelte:986
 msgid "Revoke this token?"
 msgstr ""
 
@@ -6105,11 +6693,13 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:704
 #: web/src/lib/features/account/AccountSettings.svelte:720
 #: web/src/lib/features/account/AccountSettings.svelte:774
+#: web/src/lib/features/account/AccountSettings.svelte:787
 #: web/src/lib/features/account/AccountSettings.svelte:836
 #: web/src/lib/features/account/AccountSettings.svelte:838
 #: web/src/lib/features/account/AccountSettings.svelte:887
 #: web/src/lib/features/account/AccountSettings.svelte:923
 #: web/src/lib/features/account/AccountSettings.svelte:993
+#: web/src/lib/features/account/AccountSettings.svelte:1006
 msgid "Revoking…"
 msgstr ""
 
@@ -6118,6 +6708,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:805
 #: web/src/lib/features/account/AccountSettings.svelte:821
 #: web/src/lib/features/account/AccountSettings.svelte:875
+#: web/src/lib/features/account/AccountSettings.svelte:888
 msgid "Save new password"
 msgstr ""
 
@@ -6129,6 +6720,8 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:119
 #: web/src/lib/features/account/AccountSettings.svelte:129
 #: web/src/lib/features/account/AccountSettings.svelte:130
+#: web/src/lib/features/account/AccountSettings.svelte:142
+#: web/src/lib/features/account/AccountSettings.svelte:143
 msgid "Sign in to manage your account."
 msgstr ""
 
@@ -6137,6 +6730,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:248
 #: web/src/lib/features/account/AccountSettings.svelte:252
 #: web/src/lib/features/account/AccountSettings.svelte:300
+#: web/src/lib/features/account/AccountSettings.svelte:313
 msgid "The API token could not be created."
 msgstr ""
 
@@ -6144,6 +6738,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:249
 #: web/src/lib/features/account/AccountSettings.svelte:290
 #: web/src/lib/features/account/AccountSettings.svelte:338
+#: web/src/lib/features/account/AccountSettings.svelte:351
 msgid "The API token could not be revoked."
 msgstr ""
 
@@ -6152,6 +6747,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:432
 #: web/src/lib/features/account/AccountSettings.svelte:435
 #: web/src/lib/features/account/AccountSettings.svelte:485
+#: web/src/lib/features/account/AccountSettings.svelte:498
 msgid "The new password could not be accepted."
 msgstr ""
 
@@ -6160,6 +6756,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:410
 #: web/src/lib/features/account/AccountSettings.svelte:413
 #: web/src/lib/features/account/AccountSettings.svelte:463
+#: web/src/lib/features/account/AccountSettings.svelte:476
 msgid "The new passwords do not match."
 msgstr ""
 
@@ -6168,6 +6765,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:436
 #: web/src/lib/features/account/AccountSettings.svelte:439
 #: web/src/lib/features/account/AccountSettings.svelte:489
+#: web/src/lib/features/account/AccountSettings.svelte:502
 msgid "The password could not be changed."
 msgstr ""
 
@@ -6176,6 +6774,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:375
 #: web/src/lib/features/account/AccountSettings.svelte:378
 #: web/src/lib/features/account/AccountSettings.svelte:428
+#: web/src/lib/features/account/AccountSettings.svelte:441
 msgid "The profile picture could not be removed."
 msgstr ""
 
@@ -6184,6 +6783,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:341
 #: web/src/lib/features/account/AccountSettings.svelte:344
 #: web/src/lib/features/account/AccountSettings.svelte:393
+#: web/src/lib/features/account/AccountSettings.svelte:406
 msgid "The profile picture could not be uploaded."
 msgstr ""
 
@@ -6192,6 +6792,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:498
 #: web/src/lib/features/account/AccountSettings.svelte:511
 #: web/src/lib/features/account/AccountSettings.svelte:561
+#: web/src/lib/features/account/AccountSettings.svelte:574
 msgid "The uploaded image could not be read. Choose it again."
 msgstr ""
 
@@ -6200,6 +6801,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:453
 #: web/src/lib/features/account/AccountSettings.svelte:456
 #: web/src/lib/features/account/AccountSettings.svelte:506
+#: web/src/lib/features/account/AccountSettings.svelte:519
 msgid "Token copied. Keep it somewhere safe."
 msgstr ""
 
@@ -6208,6 +6810,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:631
 #: web/src/lib/features/account/AccountSettings.svelte:646
 #: web/src/lib/features/account/AccountSettings.svelte:700
+#: web/src/lib/features/account/AccountSettings.svelte:713
 msgid "Token name"
 msgstr ""
 
@@ -6216,6 +6819,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:244
 #: web/src/lib/features/account/AccountSettings.svelte:248
 #: web/src/lib/features/account/AccountSettings.svelte:296
+#: web/src/lib/features/account/AccountSettings.svelte:309
 msgid "Token names must be 255 bytes or fewer."
 msgstr ""
 
@@ -6224,6 +6828,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:487
 #: web/src/lib/features/account/AccountSettings.svelte:500
 #: web/src/lib/features/account/AccountSettings.svelte:550
+#: web/src/lib/features/account/AccountSettings.svelte:563
 msgid "Too many tokens were created recently. Try again later."
 msgstr ""
 
@@ -6232,6 +6837,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:589
 #: web/src/lib/features/account/AccountSettings.svelte:604
 #: web/src/lib/features/account/AccountSettings.svelte:658
+#: web/src/lib/features/account/AccountSettings.svelte:671
 msgid "Upload picture"
 msgstr ""
 
@@ -6241,6 +6847,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:621
 #: web/src/lib/features/account/AccountSettings.svelte:636
 #: web/src/lib/features/account/AccountSettings.svelte:690
+#: web/src/lib/features/account/AccountSettings.svelte:703
 msgid ""
 "Use a token for a trusted app or device. You can only see a new token "
 "once."
@@ -6251,15 +6858,19 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:403
 #: web/src/lib/features/account/AccountSettings.svelte:406
 #: web/src/lib/features/account/AccountSettings.svelte:456
+#: web/src/lib/features/account/AccountSettings.svelte:469
 msgid "Use at least 12 characters for your new password."
 msgstr ""
 
+#: web/src/lib/components/PwaUpdate.svelte:355
 #: web/src/lib/features/account/AccountSettings.svelte:598
 #: web/src/lib/features/account/AccountSettings.svelte:600
 #: web/src/lib/features/account/AccountSettings.svelte:649
 #: web/src/lib/features/account/AccountSettings.svelte:665
 #: web/src/lib/features/account/AccountSettings.svelte:719
+#: web/src/lib/features/account/AccountSettings.svelte:732
 #: web/src/lib/features/account/AccountSettings.svelte:893
+#: web/src/lib/features/account/AccountSettings.svelte:906
 msgid "Working…"
 msgstr ""
 
@@ -6268,9 +6879,11 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:151
 #: web/src/lib/features/account/AccountSettings.svelte:162
 #: web/src/lib/features/account/AccountSettings.svelte:167
+#: web/src/lib/features/account/AccountSettings.svelte:175
 #: web/src/lib/features/account/AccountSettings.svelte:209
 #: web/src/lib/features/account/AccountSettings.svelte:213
 #: web/src/lib/features/account/AccountSettings.svelte:261
+#: web/src/lib/features/account/AccountSettings.svelte:274
 msgid "Your API tokens could not be loaded."
 msgstr ""
 
@@ -6279,6 +6892,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:503
 #: web/src/lib/features/account/AccountSettings.svelte:516
 #: web/src/lib/features/account/AccountSettings.svelte:566
+#: web/src/lib/features/account/AccountSettings.svelte:579
 msgid "Your account changed in another window. Refresh and try again."
 msgstr ""
 
@@ -6286,9 +6900,11 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:131
 #: web/src/lib/features/account/AccountSettings.svelte:135
 #: web/src/lib/features/account/AccountSettings.svelte:146
+#: web/src/lib/features/account/AccountSettings.svelte:159
 #: web/src/lib/features/account/AccountSettings.svelte:188
 #: web/src/lib/features/account/AccountSettings.svelte:192
 #: web/src/lib/features/account/AccountSettings.svelte:240
+#: web/src/lib/features/account/AccountSettings.svelte:253
 msgid "Your account details could not be loaded."
 msgstr ""
 
@@ -6297,18 +6913,21 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:820
 #: web/src/lib/features/account/AccountSettings.svelte:840
 #: web/src/lib/features/account/AccountSettings.svelte:910
+#: web/src/lib/features/account/AccountSettings.svelte:923
 msgid "Your new API token"
 msgstr ""
 
 #: web/src/lib/components/LocaleSwitcher.svelte
 #: web/src/lib/components/PwaUpdate.svelte:8
 #: web/src/lib/components/PwaUpdate.svelte:9
+#: web/src/lib/components/PwaUpdate.svelte:19
 msgid "Your workspace is waiting online."
 msgstr ""
 
 #: web/src/lib/components/LocaleSwitcher.svelte
 #: web/src/lib/components/PwaUpdate.svelte:9
 #: web/src/lib/components/PwaUpdate.svelte:10
+#: web/src/lib/components/PwaUpdate.svelte:20
 msgid ""
 "We couldn’t reach Stricknani. Your projects, yarn, photos, and edits are "
 "not stored offline."
@@ -6317,12 +6936,15 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:82
 #: web/src/lib/features/account/AccountSettings.svelte:84
 #: web/src/lib/features/account/AccountSettings.svelte:95
+#: web/src/lib/features/account/AccountSettings.svelte:108
 #: web/src/lib/features/account/AccountSettings.svelte:194
+#: web/src/lib/features/account/AccountSettings.svelte:207
 msgid "Leave this account page without saving your changes?"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:848
 #: web/src/lib/features/account/AccountSettings.svelte:918
+#: web/src/lib/features/account/AccountSettings.svelte:931
 msgid "Acknowledge that you saved the token before closing this dialog."
 msgstr ""
 
@@ -6512,74 +7134,88 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:148
 #: web/src/lib/features/auth/SignupForm.svelte:153
 #: web/src/lib/features/auth/SignupForm.svelte:154
+#: web/src/lib/features/auth/SignupForm.svelte:164
 msgid "A place for your projects and yarn."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:59
 #: web/src/lib/features/auth/SignupForm.svelte:61
 #: web/src/lib/features/auth/SignupForm.svelte:62
+#: web/src/lib/features/auth/SignupForm.svelte:72
 #: web/src/lib/features/auth/SignupForm.svelte:144
 #: web/src/lib/features/auth/SignupForm.svelte:146
 #: web/src/lib/features/auth/SignupForm.svelte:147
+#: web/src/lib/features/auth/SignupForm.svelte:157
 msgid "Account registration is unavailable."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:229
 #: web/src/lib/features/auth/SignupForm.svelte:239
 #: web/src/lib/features/auth/SignupForm.svelte:240
+#: web/src/lib/features/auth/SignupForm.svelte:250
 msgid "Already have an account?"
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:57
 #: web/src/lib/features/auth/SignupForm.svelte:59
 #: web/src/lib/features/auth/SignupForm.svelte:60
+#: web/src/lib/features/auth/SignupForm.svelte:70
 msgid "An account already exists for this email."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:145
 #: web/src/lib/features/auth/SignupForm.svelte:147
 #: web/src/lib/features/auth/SignupForm.svelte:148
+#: web/src/lib/features/auth/SignupForm.svelte:158
 msgid "Ask your server administrator if you need an account."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:146
 #: web/src/lib/features/auth/SignupForm.svelte:149
 #: web/src/lib/features/auth/SignupForm.svelte:150
+#: web/src/lib/features/auth/SignupForm.svelte:160
 msgid "Back to sign in"
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:151
 #: web/src/lib/features/auth/SignupForm.svelte:157
 #: web/src/lib/features/auth/SignupForm.svelte:158
+#: web/src/lib/features/auth/SignupForm.svelte:168
 msgid "Choose an email and a strong password to get started."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:200
 #: web/src/lib/features/auth/SignupForm.svelte:208
 #: web/src/lib/features/auth/SignupForm.svelte:209
+#: web/src/lib/features/auth/SignupForm.svelte:219
 msgid "Confirm password"
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:221
 #: web/src/lib/features/auth/SignupForm.svelte:231
 #: web/src/lib/features/auth/SignupForm.svelte:232
+#: web/src/lib/features/auth/SignupForm.svelte:242
 msgid "Creating account…"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:154
 #: web/src/lib/features/admin/AdminUsers.svelte:165
 #: web/src/lib/features/admin/AdminUsers.svelte:167
+#: web/src/lib/features/admin/AdminUsers.svelte:185
 #: web/src/lib/features/admin/AdminUsers.svelte:324
 #: web/src/lib/features/admin/AdminUsers.svelte:334
 #: web/src/lib/features/admin/AdminUsers.svelte:350
+#: web/src/lib/features/admin/AdminUsers.svelte:368
 #: web/src/lib/features/auth/SignupForm.svelte:33
 #: web/src/lib/features/auth/SignupForm.svelte:34
+#: web/src/lib/features/auth/SignupForm.svelte:44
 msgid "Enter a valid email address."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:127
 #: web/src/lib/components/SignInForm.svelte:130
 #: web/src/lib/components/SignInForm.svelte:132
+#: web/src/lib/components/SignInForm.svelte:141
 msgid "New to Stricknani?"
 msgstr ""
 
@@ -6589,52 +7225,62 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:64
 #: web/src/lib/features/auth/SignupForm.svelte:66
 #: web/src/lib/features/auth/SignupForm.svelte:67
+#: web/src/lib/features/auth/SignupForm.svelte:68
+#: web/src/lib/features/auth/SignupForm.svelte:77
 msgid "The account could not be created. Try again."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:73
 #: web/src/lib/features/auth/SignupForm.svelte:75
 #: web/src/lib/features/auth/SignupForm.svelte:76
+#: web/src/lib/features/auth/SignupForm.svelte:86
 msgid "The passwords do not match."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:61
 #: web/src/lib/features/auth/SignupForm.svelte:63
 #: web/src/lib/features/auth/SignupForm.svelte:64
+#: web/src/lib/features/auth/SignupForm.svelte:74
 msgid "Too many sign-up attempts. Try again later."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:35
 #: web/src/lib/features/auth/SignupForm.svelte:38
 #: web/src/lib/features/auth/SignupForm.svelte:39
+#: web/src/lib/features/auth/SignupForm.svelte:49
 msgid "Use at least 12 characters."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:192
 #: web/src/lib/features/auth/SignupForm.svelte:200
 #: web/src/lib/features/auth/SignupForm.svelte:201
+#: web/src/lib/features/auth/SignupForm.svelte:211
 msgid "Use at least 12 characters. Avoid common passwords."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:65
 #: web/src/lib/components/SignInForm.svelte:67
+#: web/src/lib/components/SignInForm.svelte:76
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:63
 #: web/src/lib/features/auth/SignupForm.svelte:65
 #: web/src/lib/features/auth/SignupForm.svelte:66
+#: web/src/lib/features/auth/SignupForm.svelte:76
 msgid "Your sign-up session expired. Refresh and try again."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:138
 #: web/src/lib/features/auth/SignupForm.svelte:139
+#: web/src/lib/features/auth/SignupForm.svelte:149
 msgid "Account registration"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:569
 #: web/src/lib/features/admin/AdminUsers.svelte:581
 #: web/src/lib/features/admin/AdminUsers.svelte:728
+#: web/src/lib/features/admin/AdminUsers.svelte:746
 msgid "Administrator access"
 msgstr ""
 
@@ -6644,87 +7290,106 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:85
 #: web/src/lib/features/admin/AdminAudit.svelte:88
 #: web/src/lib/features/admin/AdminAudit.svelte:92
+#: web/src/lib/features/admin/AdminResource.svelte:54
+#: web/src/lib/features/admin/AdminResource.svelte:82
 #: web/src/lib/features/admin/AdminUsers.svelte:103
 #: web/src/lib/features/admin/AdminUsers.svelte:114
 #: web/src/lib/features/admin/AdminUsers.svelte:116
 #: web/src/lib/features/admin/AdminUsers.svelte:133
+#: web/src/lib/features/admin/AdminUsers.svelte:134
 #: web/src/lib/features/admin/AdminUsers.svelte:144
 #: web/src/lib/features/admin/AdminUsers.svelte:146
 #: web/src/lib/features/admin/AdminUsers.svelte:153
 #: web/src/lib/features/admin/AdminUsers.svelte:164
 #: web/src/lib/features/admin/AdminUsers.svelte:166
 #: web/src/lib/features/admin/AdminUsers.svelte:176
+#: web/src/lib/features/admin/AdminUsers.svelte:184
 #: web/src/lib/features/admin/AdminUsers.svelte:187
 #: web/src/lib/features/admin/AdminUsers.svelte:198
+#: web/src/lib/features/admin/AdminUsers.svelte:216
+#: web/src/lib/features/admin/DiffPanel.svelte:46
+#: web/src/lib/features/admin/DiffPanel.svelte:74
 msgid "Administrator access is required."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:158
 #: web/src/lib/features/admin/AdminUsers.svelte:169
 #: web/src/lib/features/admin/AdminUsers.svelte:174
+#: web/src/lib/features/admin/AdminUsers.svelte:192
 msgid "An account with that email already exists."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:88
 #: web/src/lib/features/admin/AdminAudit.svelte:91
 #: web/src/lib/features/admin/AdminAudit.svelte:95
+#: web/src/lib/features/admin/DiffPanel.svelte:77
 msgid "Audit events could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:196
 #: web/src/lib/features/admin/AdminAudit.svelte:199
 #: web/src/lib/features/admin/AdminAudit.svelte:246
+#: web/src/lib/features/admin/AdminAudit.svelte:261
 msgid "Audit pages"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:187
 #: web/src/lib/features/admin/AdminAudit.svelte:190
 #: web/src/lib/features/admin/AdminAudit.svelte:230
+#: web/src/lib/features/admin/AdminAudit.svelte:240
 msgid "By"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:326
 #: web/src/lib/features/admin/AdminUsers.svelte:336
 #: web/src/lib/features/admin/AdminUsers.svelte:355
+#: web/src/lib/features/admin/AdminUsers.svelte:373
 #: web/src/lib/features/admin/AdminUsers.svelte:453
 #: web/src/lib/features/admin/AdminUsers.svelte:463
 #: web/src/lib/features/admin/AdminUsers.svelte:509
+#: web/src/lib/features/admin/AdminUsers.svelte:527
 msgid "Choose a different password."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:157
 #: web/src/lib/features/admin/AdminUsers.svelte:168
 #: web/src/lib/features/admin/AdminUsers.svelte:173
+#: web/src/lib/features/admin/AdminUsers.svelte:191
 msgid "Choose a less common password."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:164
 #: web/src/lib/features/admin/AdminUsers.svelte:175
 #: web/src/lib/features/admin/AdminUsers.svelte:180
+#: web/src/lib/features/admin/AdminUsers.svelte:198
 msgid "Choose a valid page number."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:560
 #: web/src/lib/features/admin/AdminUsers.svelte:572
 #: web/src/lib/features/admin/AdminUsers.svelte:682
+#: web/src/lib/features/admin/AdminUsers.svelte:700
 msgid "Create a user account"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:572
 #: web/src/lib/features/admin/AdminUsers.svelte:584
 #: web/src/lib/features/admin/AdminUsers.svelte:747
+#: web/src/lib/features/admin/AdminUsers.svelte:765
 msgid "Creating…"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:585
 #: web/src/lib/features/admin/AdminUsers.svelte:597
 #: web/src/lib/features/admin/AdminUsers.svelte:814
+#: web/src/lib/features/admin/AdminUsers.svelte:832
 msgid "Disable account"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:579
 #: web/src/lib/features/admin/AdminUsers.svelte:591
 #: web/src/lib/features/admin/AdminUsers.svelte:768
+#: web/src/lib/features/admin/AdminUsers.svelte:786
 msgid "Disable this account?"
 msgstr ""
 
@@ -6733,42 +7398,51 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:241
 #: web/src/lib/features/admin/AdminUsers.svelte:243
 #: web/src/lib/features/admin/AdminUsers.svelte:252
+#: web/src/lib/features/admin/AdminUsers.svelte:261
 #: web/src/lib/features/admin/AdminUsers.svelte:266
 #: web/src/lib/features/admin/AdminUsers.svelte:277
+#: web/src/lib/features/admin/AdminUsers.svelte:284
 #: web/src/lib/features/admin/AdminUsers.svelte:291
+#: web/src/lib/features/admin/AdminUsers.svelte:309
 msgid "Discard this password draft?"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:563
 #: web/src/lib/features/admin/AdminUsers.svelte:575
 #: web/src/lib/features/admin/AdminUsers.svelte:692
+#: web/src/lib/features/admin/AdminUsers.svelte:710
 msgid "Email address"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:585
 #: web/src/lib/features/admin/AdminUsers.svelte:597
 #: web/src/lib/features/admin/AdminUsers.svelte:813
+#: web/src/lib/features/admin/AdminUsers.svelte:831
 msgid "Enable account"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:579
 #: web/src/lib/features/admin/AdminUsers.svelte:591
 #: web/src/lib/features/admin/AdminUsers.svelte:767
+#: web/src/lib/features/admin/AdminUsers.svelte:785
 msgid "Enable this account?"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:284
 #: web/src/lib/features/admin/AdminUsers.svelte:295
 #: web/src/lib/features/admin/AdminUsers.svelte:309
+#: web/src/lib/features/admin/AdminUsers.svelte:327
 #: web/src/lib/features/admin/AdminUsers.svelte:414
 #: web/src/lib/features/admin/AdminUsers.svelte:424
 #: web/src/lib/features/admin/AdminUsers.svelte:465
+#: web/src/lib/features/admin/AdminUsers.svelte:483
 msgid "Enter a temporary password."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:280
 #: web/src/lib/features/admin/AdminUsers.svelte:291
 #: web/src/lib/features/admin/AdminUsers.svelte:305
+#: web/src/lib/features/admin/AdminUsers.svelte:323
 msgid "Enter an email address."
 msgstr ""
 
@@ -6781,6 +7455,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:72
 #: web/src/lib/features/admin/AdminUsers.svelte:83
 #: web/src/lib/features/admin/AdminUsers.svelte:85
+#: web/src/lib/features/admin/AdminUsers.svelte:103
 msgid "Leave administrator settings without saving the password?"
 msgstr ""
 
@@ -6793,72 +7468,85 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:498
 #: web/src/lib/features/admin/AdminUsers.svelte:509
 #: web/src/lib/features/admin/AdminUsers.svelte:566
+#: web/src/lib/features/admin/AdminUsers.svelte:584
 msgid "Loading user accounts…"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:484
 #: web/src/lib/features/admin/AdminUsers.svelte:495
 #: web/src/lib/features/admin/AdminUsers.svelte:546
+#: web/src/lib/features/admin/AdminUsers.svelte:564
 msgid "Manage account access and sign-in credentials."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:561
 #: web/src/lib/features/admin/AdminUsers.svelte:573
 #: web/src/lib/features/admin/AdminUsers.svelte:684
+#: web/src/lib/features/admin/AdminUsers.svelte:702
 msgid "New accounts are members unless you choose administrator access."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:596
 #: web/src/lib/features/admin/AdminUsers.svelte:608
 #: web/src/lib/features/admin/AdminUsers.svelte:853
+#: web/src/lib/features/admin/AdminUsers.svelte:871
 msgid "New temporary password"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:199
 #: web/src/lib/features/admin/AdminAudit.svelte:202
 #: web/src/lib/features/admin/AdminAudit.svelte:268
+#: web/src/lib/features/admin/AdminAudit.svelte:283
 #: web/src/lib/features/admin/AdminUsers.svelte:552
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:665
+#: web/src/lib/features/admin/AdminUsers.svelte:683
 msgid "Next page"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:192
 #: web/src/lib/features/admin/AdminAudit.svelte:195
 #: web/src/lib/features/admin/AdminAudit.svelte:241
+#: web/src/lib/features/admin/AdminAudit.svelte:256
 msgid "No audit events match these filters."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:542
 #: web/src/lib/features/admin/AdminUsers.svelte:554
 #: web/src/lib/features/admin/AdminUsers.svelte:641
+#: web/src/lib/features/admin/AdminUsers.svelte:659
 msgid "No user accounts were found."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:434
 #: web/src/lib/features/admin/AdminUsers.svelte:444
 #: web/src/lib/features/admin/AdminUsers.svelte:488
+#: web/src/lib/features/admin/AdminUsers.svelte:506
 msgid "Password reset. The user must sign in again."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:197
 #: web/src/lib/features/admin/AdminAudit.svelte:200
 #: web/src/lib/features/admin/AdminAudit.svelte:256
+#: web/src/lib/features/admin/AdminAudit.svelte:271
 #: web/src/lib/features/admin/AdminUsers.svelte:548
 #: web/src/lib/features/admin/AdminUsers.svelte:560
 #: web/src/lib/features/admin/AdminUsers.svelte:654
+#: web/src/lib/features/admin/AdminUsers.svelte:672
 msgid "Previous page"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:592
 #: web/src/lib/features/admin/AdminUsers.svelte:604
 #: web/src/lib/features/admin/AdminUsers.svelte:837
+#: web/src/lib/features/admin/AdminUsers.svelte:855
 msgid "Reset this password?"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:601
 #: web/src/lib/features/admin/AdminUsers.svelte:613
 #: web/src/lib/features/admin/AdminUsers.svelte:890
+#: web/src/lib/features/admin/AdminUsers.svelte:908
 msgid "Resetting…"
 msgstr ""
 
@@ -6871,66 +7559,77 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:566
 #: web/src/lib/features/admin/AdminUsers.svelte:578
 #: web/src/lib/features/admin/AdminUsers.svelte:708
+#: web/src/lib/features/admin/AdminUsers.svelte:726
 msgid "Temporary password"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:163
 #: web/src/lib/features/admin/AdminUsers.svelte:174
 #: web/src/lib/features/admin/AdminUsers.svelte:179
+#: web/src/lib/features/admin/AdminUsers.svelte:197
 msgid "That user could not be found."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:395
 #: web/src/lib/features/admin/AdminUsers.svelte:430
+#: web/src/lib/features/admin/AdminUsers.svelte:448
 msgid "The account status could not be changed."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:454
 #: web/src/lib/features/admin/AdminUsers.svelte:464
 #: web/src/lib/features/admin/AdminUsers.svelte:514
+#: web/src/lib/features/admin/AdminUsers.svelte:532
 msgid "The password could not be reset."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:156
 #: web/src/lib/features/admin/AdminUsers.svelte:167
 #: web/src/lib/features/admin/AdminUsers.svelte:172
+#: web/src/lib/features/admin/AdminUsers.svelte:190
 msgid "The password is too long."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:166
 #: web/src/lib/features/admin/AdminUsers.svelte:177
 #: web/src/lib/features/admin/AdminUsers.svelte:185
+#: web/src/lib/features/admin/AdminUsers.svelte:203
 msgid "The request is larger than the allowed size."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:327
 #: web/src/lib/features/admin/AdminUsers.svelte:337
 #: web/src/lib/features/admin/AdminUsers.svelte:360
+#: web/src/lib/features/admin/AdminUsers.svelte:378
 msgid "The user account could not be created."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:581
 #: web/src/lib/features/admin/AdminUsers.svelte:593
 #: web/src/lib/features/admin/AdminUsers.svelte:782
+#: web/src/lib/features/admin/AdminUsers.svelte:800
 msgid "The user will be able to sign in again."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:581
 #: web/src/lib/features/admin/AdminUsers.svelte:593
 #: web/src/lib/features/admin/AdminUsers.svelte:783
+#: web/src/lib/features/admin/AdminUsers.svelte:801
 msgid "The user will be signed out and will not be able to sign in."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:594
 #: web/src/lib/features/admin/AdminUsers.svelte:606
 #: web/src/lib/features/admin/AdminUsers.svelte:848
+#: web/src/lib/features/admin/AdminUsers.svelte:866
 msgid "The user will need to sign in with the new password."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:159
 #: web/src/lib/features/admin/AdminUsers.svelte:170
 #: web/src/lib/features/admin/AdminUsers.svelte:175
+#: web/src/lib/features/admin/AdminUsers.svelte:193
 msgid ""
 "This change would leave the account system without an active "
 "administrator."
@@ -6939,48 +7638,57 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:131
 #: web/src/lib/features/admin/AdminAudit.svelte:134
 #: web/src/lib/features/admin/AdminAudit.svelte:140
+#: web/src/lib/features/admin/DiffPanel.svelte:216
+#: web/src/lib/features/admin/DiffPanel.svelte:218
 msgid "Unknown actor"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:155
 #: web/src/lib/features/admin/AdminUsers.svelte:166
 #: web/src/lib/features/admin/AdminUsers.svelte:168
+#: web/src/lib/features/admin/AdminUsers.svelte:186
 msgid "Use a password with at least 12 characters."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:311
 #: web/src/lib/features/admin/AdminUsers.svelte:324
 #: web/src/lib/features/admin/AdminUsers.svelte:334
+#: web/src/lib/features/admin/AdminUsers.svelte:352
 msgid "User account created."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:371
 #: web/src/lib/features/admin/AdminUsers.svelte:381
 #: web/src/lib/features/admin/AdminUsers.svelte:414
+#: web/src/lib/features/admin/AdminUsers.svelte:432
 msgid "User account disabled."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:370
 #: web/src/lib/features/admin/AdminUsers.svelte:380
 #: web/src/lib/features/admin/AdminUsers.svelte:413
+#: web/src/lib/features/admin/AdminUsers.svelte:431
 msgid "User account enabled."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:546
 #: web/src/lib/features/admin/AdminUsers.svelte:558
 #: web/src/lib/features/admin/AdminUsers.svelte:645
+#: web/src/lib/features/admin/AdminUsers.svelte:663
 msgid "User account pages"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:136
 #: web/src/lib/features/admin/AdminUsers.svelte:147
 #: web/src/lib/features/admin/AdminUsers.svelte:149
+#: web/src/lib/features/admin/AdminUsers.svelte:167
 msgid "User accounts could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:477
 #: web/src/lib/features/admin/AdminUsers.svelte:488
 #: web/src/lib/features/admin/AdminUsers.svelte:538
+#: web/src/lib/features/admin/AdminUsers.svelte:556
 msgid "User administration"
 msgstr ""
 
@@ -7051,5 +7759,226 @@ msgstr ""
 
 #: web/src/lib/features/admin/audit-action.ts:29
 msgid "Uploaded"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:345
+msgid "A new version is ready to install."
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:246
+#: web/src/lib/features/admin/DiffPanel.svelte:250
+msgid "After"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:63
+msgid "An open form has unsaved changes. Save or discard them, then try again."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:69
+msgid "An operation is still in progress. Wait for it to finish, then try again."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:75
+msgid ""
+"Another app tab did not respond. Save any edits there, then reload or "
+"close it and try again."
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:175
+#: web/src/lib/features/admin/DiffPanel.svelte:194
+msgid "Back to audit log"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:242
+#: web/src/lib/features/admin/DiffPanel.svelte:246
+msgid "Before"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:359
+msgid "Cancel update"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:520
+msgid "Category details"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:329
+msgid "Checking open tabs before updating…"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:427
+msgid "Clear"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:100
+#: web/src/lib/features/admin/DiffPanel.svelte:109
+msgid "Empty list"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:341
+msgid "Images"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:331
+msgid "Installing the update…"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:363
+msgid "Later"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:113
+msgid "Link not present"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:112
+msgid "Link present"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:450
+msgid "Linked projects"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:267
+msgid "Linked yarns"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:200
+msgid "Loading recorded changes…"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:182
+msgid "Loading resource details…"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:256
+#: web/src/lib/features/admin/DiffPanel.svelte:260
+msgid "No change snapshot was recorded for this event."
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:262
+#: web/src/lib/features/admin/DiffPanel.svelte:266
+msgid "No changes are available for this event."
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:242
+#: web/src/lib/features/admin/AdminResource.svelte:246
+#: web/src/lib/features/admin/AdminResource.svelte:250
+#: web/src/lib/features/admin/AdminResource.svelte:254
+#: web/src/lib/features/admin/AdminResource.svelte:399
+#: web/src/lib/features/admin/AdminResource.svelte:403
+#: web/src/lib/features/admin/AdminResource.svelte:407
+#: web/src/lib/features/admin/AdminResource.svelte:411
+#: web/src/lib/features/admin/AdminResource.svelte:415
+#: web/src/lib/features/admin/AdminResource.svelte:419
+#: web/src/lib/features/admin/AdminResource.svelte:425
+#: web/src/lib/features/admin/AdminResource.svelte:434
+#: web/src/lib/features/admin/DiffPanel.svelte:94
+msgid "Not provided"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:356
+#: web/src/lib/features/admin/AdminResource.svelte:507
+msgid "Open full image"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:229
+msgid "Open resource"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:219
+msgid "Owner"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:50
+msgid "Preparing update…"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:170
+msgid "Read-only view"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:183
+#: web/src/lib/features/admin/DiffPanel.svelte:190
+#: web/src/lib/features/admin/DiffPanel.svelte:236
+#: web/src/lib/features/admin/DiffPanel.svelte:240
+msgid "Recorded changes"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:158
+msgid "Recorded event"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:48
+msgid "Reload to finish"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:51
+msgid "Reload to update"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:339
+msgid "Reloading this tab with the update…"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:168
+msgid "Resource"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:159
+#: web/src/lib/features/admin/AdminResource.svelte:168
+msgid "Resource details"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:87
+msgid "Resource details could not be loaded."
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:84
+msgid "Resource not found."
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:212
+msgid "Resource owner"
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:231
+#: web/src/lib/features/admin/DiffPanel.svelte:234
+msgid "Resource unavailable"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminAudit.svelte:249
+msgid "Show diff"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminResource.svelte:228
+msgid "Show recorded changes"
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:84
+#: web/src/lib/components/PwaUpdate.svelte:338
+msgid "The browser kept this tab open. Reload when it is safe."
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:258
+#: web/src/lib/features/admin/DiffPanel.svelte:262
+msgid "The recorded change snapshot is too large to display."
+msgstr ""
+
+#: web/src/lib/features/admin/DiffPanel.svelte:260
+#: web/src/lib/features/admin/DiffPanel.svelte:264
+msgid "The recorded change snapshot is unavailable."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:86
+msgid "The update could not start. You can safely try again."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:81
+msgid "The update timed out. You can safely try again."
+msgstr ""
+
+#: web/src/lib/components/PwaUpdate.svelte:343
+msgid "The update was cancelled. You can try again later."
 msgstr ""
 

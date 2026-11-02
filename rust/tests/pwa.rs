@@ -328,14 +328,39 @@ async fn app_worker_routes_coexist_with_the_frontend_shell_without_fallback_leak
 }
 
 #[test]
-fn app_worker_is_never_eagerly_activated_or_allowed_to_claim_other_tabs() {
+fn app_worker_requires_explicit_preparation_and_retains_assets_until_page_ack() {
     let worker = include_str!("../../web/static/service-worker.js");
-    assert!(!worker.contains("skipWaiting"));
+    assert_eq!(worker.matches("skipWaiting").count(), 1);
+    let commit = worker
+        .split("async function commitUpdate")
+        .nth(1)
+        .and_then(|body| body.split("async function cancelUpdate").next())
+        .expect("worker should define one explicit commit handler");
+    assert!(commit.contains("VALIDATE_UPDATE"));
+    assert!(commit.contains("sameClientSet"));
+    assert!(commit.contains("writeActivationState"));
+    assert!(commit.contains("event.waitUntil(self.skipWaiting())"));
     assert!(!worker.contains("clients.claim"));
     assert!(worker.contains("function isAppClientPath(pathname)"));
     assert!(worker.contains("pathname === \"/app\""));
     assert!(worker.contains("__APP_VERSION__"));
+    assert!(worker.contains("__APP_CODE_VERSION__"));
     assert!(worker.contains("__APP_ASSETS__"));
+    assert!(worker.contains("UPDATE_STATE_CACHE"));
+    assert!(worker.contains("UPDATE_ACTIVATED"));
+    assert!(worker.contains("RELOAD_ACK"));
+    assert!(worker.contains("pageVersion === APP_CODE_VERSION"));
+    assert!(worker.contains("retainedImmutableResponse(request)"));
+    assert!(worker.contains("ignoreSearch: false"));
+    let activation = worker
+        .split("self.addEventListener(\"activate\"")
+        .nth(1)
+        .and_then(|body| {
+            body.split("async function retainedImmutableResponse")
+                .next()
+        })
+        .expect("worker should define an activation handler");
+    assert!(!activation.contains("deleteOldAppCaches"));
     for forbidden in ["/app/messages.json", "/api/", "/media/", "/app/projects"] {
         assert!(
             !worker.contains(forbidden),

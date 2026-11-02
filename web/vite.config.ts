@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 import { svelteKitAnnouncerStyle } from "./scripts/sveltekit-announcer-style.mjs";
 
 const { hash: announcerStyleHash } = await svelteKitAnnouncerStyle();
+const pwaTestVersion = process.env.STRICKNANI_PWA_TEST_VERSION;
 
 export default defineConfig({
   plugins: [
@@ -16,6 +17,7 @@ export default defineConfig({
       paths: {
         base: "/app",
       },
+      version: pwaTestVersion ? { name: pwaTestVersion } : {},
       csp: {
         mode: "hash",
         directives: {

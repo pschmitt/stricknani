@@ -50,12 +50,37 @@ see [`web-ui-device-acceptance.md`](web-ui-device-acceptance.md) and
 
 ## Remaining acceptance
 
+### Audit and update implementation checkpoint
+
+The next candidate implements typed audit changes, resource names and separate
+read-only administrator views, including media namespaces that distinguish
+overlapping image and attachment public IDs. It also implements requested
+reload-to-update with cross-tab draft/busy guards and retained public assets.
+This implementation checkpoint is work in progress, not a deployment claim.
+
+The frozen Rust `final-04` source manifest is
+`7c69680c96710602cc643ab369d19d252be69c0a4fed4c1e7c736496ba1af37f`.
+Formatting, all-target/all-feature Clippy, all 303 workspace tests across 49
+suites, and four health tests passed. The corresponding integrated frontend
+passed formatting, Svelte checking with zero errors/warnings, 136 tests across
+20 files, and its static build. Its catalog has 739 English/German entries.
+Browser acceptance, exact committed/package checks and deployment remain open.
+
+A later automatic host upgrade restored the older pinned preview (666 catalog
+entries and no app worker). The verified v8 runtime was restored using a
+temporary staging-service ExecStart override, without changing the active
+system generation or production service. HTTPS again matched the v8 690-entry
+catalog and worker hashes. The active generation is now `kivg6idic3sg7lsyz5pkig9aadgcm4a5`;
+the earlier `7iicbw26…` closure remains the accepted v8 artifact. Persist the
+verified application source pin and remove the temporary runtime override
+during the next verified switch. Keep this restoration separate from a new
+version rollout.
+
 T120 and its subtasks remain open. Required work includes:
 
-- Implement the requested reload-to-update action with protection for drafts
-  and busy operations across open tabs (T120.10).
-- Add audit resource names, read-only administrator links and recorded change
-  diffs, retaining existing ownership checks on ordinary routes (T120.11).
+- Complete browser/package verification and rollout of requested updates with
+  cross-tab draft/busy protection (T120.10), plus audit names, read-only admin
+  views and recorded diffs with unchanged ordinary ownership (T120.11).
 - Complete CI and pin/publication for the exact combined feature integration
   checkpoint. The v8 preview switch and post-switch checks are verified; keep
   that live state distinct from source publication.

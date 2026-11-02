@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import { t } from "#lib/i18n.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
     calculateGauge,
@@ -21,6 +22,11 @@
     pattern_cast_on_stitches: undefined,
     pattern_row_count: undefined,
   });
+  const hasInputs = $derived(
+    Object.values(values).some(
+      (value) => value !== undefined && String(value).length > 0,
+    ),
+  );
   let fieldErrors = $state<Partial<Record<GaugeField, string>>>({});
   let result = $state<GaugeResult | null>(null);
   let resultInput = $state<GaugeInput | null>(null);
@@ -28,6 +34,13 @@
   let submitting = $state(false);
   let controller: AbortController | null = null;
   let requestGeneration = 0;
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: hasInputs,
+      busy: submitting,
+    })),
+  );
 
   onDestroy(() => {
     requestGeneration += 1;
@@ -98,6 +111,19 @@
     resultInput = null;
     errorMessage = "";
     fieldErrors = {};
+  }
+
+  function clearInputs() {
+    if (submitting) return;
+    values = {
+      pattern_gauge_stitches: undefined,
+      pattern_gauge_rows: undefined,
+      user_gauge_stitches: undefined,
+      user_gauge_rows: undefined,
+      pattern_cast_on_stitches: undefined,
+      pattern_row_count: undefined,
+    };
+    valueChanged();
   }
 
   async function submit(event: SubmitEvent) {
@@ -384,9 +410,19 @@
       <p class="form-error" role="alert">{errorMessage}</p>
     {/if}
 
-    <button class="calculate-button" type="submit" disabled={submitting}>
-      {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
-    </button>
+    <div class="form-actions">
+      <button class="calculate-button" type="submit" disabled={submitting}>
+        {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
+      </button>
+      <button
+        class="clear-button"
+        type="button"
+        onclick={clearInputs}
+        disabled={submitting || !hasInputs}
+      >
+        {t("Clear", locale)}
+      </button>
+    </div>
   </form>
 
   {#if result}
@@ -559,6 +595,24 @@
     background: var(--accent-strong);
     font: inherit;
     font-weight: 680;
+    cursor: pointer;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .clear-button {
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    padding: 0.65rem 1rem;
+    color: var(--ink);
+    background: var(--surface-raised);
+    font: inherit;
+    font-weight: 650;
     cursor: pointer;
   }
 

@@ -18,6 +18,55 @@ export interface AuditEvent {
   entity_id: number;
   action: string;
   created_at: string;
+  resource: AuditResourceReference;
+  has_changes: boolean;
+}
+
+export type AuditResourceKind = "project" | "yarn" | "category";
+
+export interface AuditResourceReference {
+  kind: AuditResourceKind | null;
+  id: number;
+  name: string | null;
+  name_source: "event" | "current" | "unavailable";
+  href: string | null;
+  exists: boolean;
+}
+
+export interface ChangeStep {
+  number: number;
+  title: string;
+  description: string | null;
+}
+
+export type ChangeValue =
+  | { type: "text"; value: string | null }
+  | { type: "text_list"; value: string[] }
+  | { type: "integer"; value: number | null }
+  | { type: "boolean"; value: boolean }
+  | { type: "steps"; value: ChangeStep[] }
+  | { type: "yarns"; value: string[] }
+  | { type: "link_changed"; value: boolean }
+  | { type: "legacy_text"; value: string };
+
+export interface ChangeItemV1 {
+  field: string;
+  before: ChangeValue;
+  after: ChangeValue;
+}
+
+export interface ChangeSetV1 {
+  version: 1;
+  items: ChangeItemV1[];
+}
+
+export type ChangeUnavailableReason =
+  "not_recorded" | "malformed" | "too_large";
+
+export interface AuditEventDetail {
+  event: AuditEvent;
+  changes: ChangeSetV1 | null;
+  unavailable_reason: ChangeUnavailableReason | null;
 }
 
 export interface PageMeta {
@@ -124,7 +173,8 @@ function parseAuditEvent(value: unknown): AuditEvent {
     typeof value.entity_type !== "string" ||
     !safeInteger(value.entity_id) ||
     typeof value.action !== "string" ||
-    typeof value.created_at !== "string"
+    typeof value.created_at !== "string" ||
+    typeof value.has_changes !== "boolean"
   )
     throw invalidResponse();
   return {
@@ -136,7 +186,213 @@ function parseAuditEvent(value: unknown): AuditEvent {
     entity_id: value.entity_id,
     action: value.action,
     created_at: value.created_at,
+    resource: parseAuditResourceReference(value.resource, value),
+    has_changes: value.has_changes,
   };
+}
+
+function parseAuditResourceReference(
+  value: unknown,
+  event: Record<string, unknown>,
+): AuditResourceReference {
+  if (
+    !record(value) ||
+    !(
+      value.kind === null ||
+      value.kind === "project" ||
+      value.kind === "yarn" ||
+      value.kind === "category"
+    ) ||
+    !safeInteger(value.id) ||
+    !(value.name === null || typeof value.name === "string") ||
+    (value.name_source !== "event" &&
+      value.name_source !== "current" &&
+      value.name_source !== "unavailable") ||
+    !(value.href === null || typeof value.href === "string") ||
+    typeof value.exists !== "boolean"
+  )
+    throw invalidResponse();
+
+  if (value.href !== null) {
+    const resourceHref =
+      value.kind !== null && value.exists && value.id > 0
+        ? `/app/admin/resources/${value.kind}/${value.id}`
+        : null;
+    const eventHref = `/app/admin/audit/${event.id}`;
+    if (
+      value.href !== resourceHref &&
+      !(value.href === eventHref && !value.exists)
+    ) {
+      throw invalidResponse();
+    }
+  }
+  if (value.kind !== null && value.id !== event.entity_id)
+    throw invalidResponse();
+  return {
+    kind: value.kind,
+    id: value.id,
+    name: value.name,
+    name_source: value.name_source,
+    href: value.href,
+    exists: value.exists,
+  };
+}
+
+const changeFields = new Set([
+  "project.name",
+  "project.category",
+  "project.yarn",
+  "project.needles",
+  "project.stitch_sample",
+  "project.description",
+  "project.notes",
+  "project.other_materials",
+  "project.tags",
+  "project.yarns",
+  "project.steps",
+  "project.step_count",
+  "project.image_count",
+  "project.attachment_count",
+  "project.is_ai_enhanced",
+  "project.link",
+  "yarn.name",
+  "yarn.description",
+  "yarn.brand",
+  "yarn.colorway",
+  "yarn.dye_lot",
+  "yarn.fiber_content",
+  "yarn.weight_category",
+  "yarn.recommended_needles",
+  "yarn.weight_grams",
+  "yarn.length_meters",
+  "yarn.notes",
+  "yarn.photo_count",
+  "yarn.is_ai_enhanced",
+  "yarn.link",
+  "category.name",
+]);
+
+function compatibleChangeValue(
+  field: string,
+  type: ChangeValue["type"],
+): boolean {
+  if (type === "legacy_text")
+    return field === "project.tags" || field === "project.yarns";
+  if (field.endsWith(".link")) return type === "link_changed";
+  if (field === "project.tags") return type === "text_list";
+  if (field === "project.yarns") return type === "yarns";
+  if (field === "project.steps") return type === "steps";
+  if (
+    field.endsWith("_count") ||
+    field.endsWith("_grams") ||
+    field.endsWith("_meters")
+  )
+    return type === "integer";
+  if (field.endsWith(".is_ai_enhanced")) return type === "boolean";
+  if (field.endsWith(".tags")) return type === "text_list";
+  return type === "text";
+}
+
+function parseChangeValue(value: unknown, field: string): ChangeValue {
+  if (!record(value) || typeof value.type !== "string") throw invalidResponse();
+  switch (value.type) {
+    case "text":
+      if (
+        !(value.value === null || typeof value.value === "string") ||
+        (typeof value.value === "string" && value.value.length > 16_384)
+      )
+        throw invalidResponse();
+      return { type: "text", value: value.value };
+    case "text_list":
+    case "yarns":
+      if (
+        !Array.isArray(value.value) ||
+        value.value.length > 256 ||
+        !value.value.every(
+          (item) => typeof item === "string" && item.length <= 4096,
+        )
+      )
+        throw invalidResponse();
+      return { type: value.type, value: value.value };
+    case "integer":
+      if (!(
+        value.value === null ||
+        (typeof value.value === "number" && Number.isSafeInteger(value.value))
+      ))
+        throw invalidResponse();
+      return { type: "integer", value: value.value };
+    case "boolean":
+    case "link_changed":
+      if (typeof value.value !== "boolean") throw invalidResponse();
+      return { type: value.type, value: value.value };
+    case "steps":
+      if (!Array.isArray(value.value) || value.value.length > 256)
+        throw invalidResponse();
+      return {
+        type: "steps",
+        value: value.value.map((step: unknown) => {
+          if (
+            !record(step) ||
+            !Number.isSafeInteger(step.number) ||
+            typeof step.title !== "string" ||
+            step.title.length > 4096 ||
+            !(
+              step.description === null ||
+              (typeof step.description === "string" &&
+                step.description.length <= 16_384)
+            )
+          )
+            throw invalidResponse();
+          return {
+            number: step.number as number,
+            title: step.title,
+            description: step.description as string | null,
+          };
+        }),
+      };
+    case "legacy_text":
+      if (
+        typeof value.value !== "string" ||
+        value.value.length > 4096 ||
+        !compatibleChangeValue(field, "legacy_text")
+      )
+        throw invalidResponse();
+      return { type: "legacy_text", value: value.value };
+    default:
+      throw invalidResponse();
+  }
+}
+
+function parseChangeSet(value: unknown): ChangeSetV1 {
+  if (
+    !record(value) ||
+    value.version !== 1 ||
+    !Array.isArray(value.items) ||
+    value.items.length > 256
+  )
+    throw invalidResponse();
+  const items = value.items.map((item: unknown) => {
+    if (
+      !record(item) ||
+      typeof item.field !== "string" ||
+      item.field.length > 96 ||
+      !changeFields.has(item.field)
+    )
+      throw invalidResponse();
+    const before = parseChangeValue(item.before, item.field);
+    const after = parseChangeValue(item.after, item.field);
+    if (
+      !compatibleChangeValue(item.field, before.type) ||
+      !compatibleChangeValue(item.field, after.type)
+    )
+      throw invalidResponse();
+    return {
+      field: item.field,
+      before,
+      after,
+    };
+  });
+  return { version: 1, items };
 }
 
 export function auditFiltersFromSearch(search: string): AuditFilters {
@@ -242,5 +498,36 @@ export async function listAuditEvents(
   return {
     data: payload.data.map(parseAuditEvent),
     meta: parseMeta(payload.meta),
+  };
+}
+
+export async function getAuditEventDetail(
+  eventId: number,
+  signal?: AbortSignal,
+): Promise<AuditEventDetail> {
+  if (!positiveInteger(eventId)) throw invalidResponse();
+  const payload: unknown = await apiRequest(`/api/v2/admin/audit/${eventId}`, {
+    signal,
+  });
+  if (!record(payload) || !record(payload.data)) throw invalidResponse();
+  const event = parseAuditEvent(payload.data.event);
+  const changes =
+    payload.data.changes === null ? null : parseChangeSet(payload.data.changes);
+  const unavailableReason = payload.data.unavailable_reason;
+  if (
+    !(
+      unavailableReason === null ||
+      unavailableReason === "not_recorded" ||
+      unavailableReason === "malformed" ||
+      unavailableReason === "too_large"
+    ) ||
+    (changes !== null && unavailableReason !== null) ||
+    (changes === null && unavailableReason === null && event.has_changes)
+  )
+    throw invalidResponse();
+  return {
+    event,
+    changes,
+    unavailable_reason: unavailableReason,
   };
 }

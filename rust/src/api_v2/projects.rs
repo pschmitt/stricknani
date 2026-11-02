@@ -57,7 +57,7 @@ struct PageMeta {
 }
 
 #[derive(Serialize)]
-struct ProjectDto {
+pub(super) struct ProjectDto {
     id: i64,
     name: String,
     category: Option<String>,

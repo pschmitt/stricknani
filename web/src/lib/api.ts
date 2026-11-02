@@ -63,6 +63,7 @@ export class ApiError extends Error {
 
 let unauthorizedHandler: (() => void) | undefined;
 let authEpoch = 0;
+let pendingApiMutations = 0;
 
 export function setUnauthorizedHandler(handler: () => void): void {
   unauthorizedHandler = handler;
@@ -71,6 +72,10 @@ export function setUnauthorizedHandler(handler: () => void): void {
 /** Invalidate pending requests before the current authentication state changes. */
 export function advanceAuthEpoch(): void {
   authEpoch += 1;
+}
+
+export function hasPendingApiMutations(): boolean {
+  return pendingApiMutations > 0;
 }
 
 export async function getSession(signal?: AbortSignal): Promise<SessionData> {
@@ -112,6 +117,22 @@ export async function logout(csrfToken: string): Promise<void> {
 export async function apiRequest<T = unknown>(
   path: string,
   options: RequestOptions = {},
+): Promise<T> {
+  if ((options.method ?? "GET") === "GET") {
+    return performApiRequest<T>(path, options);
+  }
+
+  pendingApiMutations += 1;
+  try {
+    return await performApiRequest<T>(path, options);
+  } finally {
+    pendingApiMutations -= 1;
+  }
+}
+
+async function performApiRequest<T = unknown>(
+  path: string,
+  options: RequestOptions,
 ): Promise<T> {
   const method = options.method ?? "GET";
   const requestAuthEpoch = authEpoch;

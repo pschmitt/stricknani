@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sqlx::{FromRow, Sqlite, Transaction};
 
-use crate::audit::{Action as AuditAction, Entity as AuditEntity};
+use crate::audit::{
+    Action as AuditAction, ChangeField, ChangeItemV1, ChangeSetV1, ChangeValue,
+    Entity as AuditEntity, StepSnapshot,
+};
 use crate::auth::bearer_user;
 use crate::db::AppState;
 
@@ -407,9 +410,24 @@ pub(crate) async fn create_for_owner_with_tag_policy(
     let yarn_ids = owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids)
         .await
         .map_err(|_| ProjectError::Database)?;
+    let audit_yarn_names = yarn_names_for_audit(&mut transaction, user_id, &yarn_ids)
+        .await
+        .map_err(|_| ProjectError::Database)?;
     let category_id = ensure_category(&mut transaction, user_id, payload.category.as_deref())
         .await
         .map_err(|_| ProjectError::Database)?;
+    let after_category = category_name_for_audit(&mut transaction, category_id)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let audit_changes = project_audit_changes(
+        None,
+        &payload,
+        &name,
+        after_category.as_deref(),
+        Vec::new(),
+        audit_yarn_names,
+        tag_policy,
+    );
     let now = timestamp(Utc::now());
     let tags = encode_tags(&payload.tags, tag_policy);
     let inserted = sqlx::query(
@@ -419,7 +437,7 @@ pub(crate) async fn create_for_owner_with_tag_policy(
     )
     .bind(user_id)
     .bind(category_id)
-    .bind(name)
+    .bind(&name)
     .bind(cleaned_optional(payload.needles))
     .bind(cleaned_optional(payload.stitch_sample))
     .bind(cleaned_optional(payload.description))
@@ -447,12 +465,14 @@ pub(crate) async fn create_for_owner_with_tag_policy(
     let step_ids = insert_steps(&mut transaction, project_id, &payload.steps)
         .await
         .map_err(|_| ProjectError::Database)?;
-    if crate::audit::record(
+    if crate::audit::record_with_data(
         &mut transaction,
         user_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Created,
+        Some(&name),
+        audit_changes.as_ref(),
     )
     .await
     .is_err()
@@ -551,12 +571,30 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     let old_yarn_ids = linked_yarn_ids(&mut transaction, project_id)
         .await
         .map_err(|_| ProjectError::Database)?;
+    let old_audit_yarn_names = yarn_names_for_audit(&mut transaction, user_id, &old_yarn_ids)
+        .await
+        .map_err(|_| ProjectError::Database)?;
     let yarn_ids = owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let new_audit_yarn_names = yarn_names_for_audit(&mut transaction, user_id, &yarn_ids)
         .await
         .map_err(|_| ProjectError::Database)?;
     let category_id = ensure_category(&mut transaction, user_id, payload.category.as_deref())
         .await
         .map_err(|_| ProjectError::Database)?;
+    let after_category = category_name_for_audit(&mut transaction, category_id)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let audit_changes = project_audit_changes(
+        Some(&current),
+        &payload,
+        &name,
+        after_category.as_deref(),
+        old_audit_yarn_names,
+        new_audit_yarn_names,
+        tag_policy,
+    );
     let updated_at = next_timestamp(&current.updated_at).ok_or(ProjectError::Database)?;
     let tags = encode_tags(&payload.tags, tag_policy);
     let updated = sqlx::query(
@@ -566,7 +604,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
          WHERE id = ? AND owner_id = ? AND updated_at = ?",
     )
     .bind(category_id)
-    .bind(name)
+    .bind(&name)
     .bind(cleaned_optional(payload.needles))
     .bind(cleaned_optional(payload.stitch_sample))
     .bind(cleaned_optional(payload.description))
@@ -612,12 +650,14 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     {
         return Err(ProjectError::Database);
     }
-    if crate::audit::record(
+    if crate::audit::record_with_data(
         &mut transaction,
         user_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Updated,
+        Some(&name),
+        audit_changes.as_ref(),
     )
     .await
     .is_err()
@@ -705,6 +745,14 @@ pub(crate) async fn delete_for_owner(
     {
         return Err(ProjectError::Database);
     }
+    let old_name =
+        sqlx::query_scalar::<_, String>("SELECT name FROM projects WHERE id = ? AND owner_id = ?")
+            .bind(project_id)
+            .bind(user_id)
+            .fetch_optional(&mut *transaction)
+            .await
+            .map_err(|_| ProjectError::Database)?
+            .ok_or(ProjectError::NotFound)?;
     match sqlx::query("DELETE FROM projects WHERE id = ? AND owner_id = ?")
         .bind(project_id)
         .bind(user_id)
@@ -715,12 +763,14 @@ pub(crate) async fn delete_for_owner(
         Ok(_) => return Err(ProjectError::NotFound),
         Err(_) => return Err(ProjectError::Database),
     }
-    if crate::audit::record(
+    if crate::audit::record_with_data(
         &mut transaction,
         user_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Deleted,
+        Some(&old_name),
+        None,
     )
     .await
     .is_err()
@@ -925,6 +975,192 @@ async fn project_step_ids(state: &AppState, project_id: i64) -> Result<HashSet<i
         .fetch_all(&state.pool)
         .await
         .map(|ids| ids.into_iter().collect())
+}
+
+async fn yarn_names_for_audit(
+    tx: &mut Transaction<'_, Sqlite>,
+    owner_id: i64,
+    yarn_ids: &[i64],
+) -> Result<Vec<String>, sqlx::Error> {
+    let mut names = Vec::with_capacity(yarn_ids.len());
+    for id in yarn_ids {
+        if let Some(name) =
+            sqlx::query_scalar::<_, String>("SELECT name FROM yarns WHERE id = ? AND owner_id = ?")
+                .bind(id)
+                .bind(owner_id)
+                .fetch_optional(&mut **tx)
+                .await?
+        {
+            names.push(name);
+        }
+    }
+    Ok(names)
+}
+
+async fn category_name_for_audit(
+    tx: &mut Transaction<'_, Sqlite>,
+    category_id: Option<i64>,
+) -> Result<Option<String>, sqlx::Error> {
+    match category_id {
+        Some(id) => {
+            sqlx::query_scalar::<_, String>("SELECT name FROM categories WHERE id = ?")
+                .bind(id)
+                .fetch_optional(&mut **tx)
+                .await
+        }
+        None => Ok(None),
+    }
+}
+
+fn project_audit_changes(
+    before: Option<&ProjectResponse>,
+    payload: &ProjectWriteRequest,
+    name: &str,
+    after_category: Option<&str>,
+    before_yarn_names: Vec<String>,
+    after_yarn_names: Vec<String>,
+    tag_policy: TagPolicy,
+) -> Option<ChangeSetV1> {
+    let mut items = Vec::new();
+    let mut push_text = |field, old: Option<&str>, new: Option<&str>| {
+        if let Some(item) = crate::audit::text_change(field, old, new) {
+            items.push(item);
+        }
+    };
+    push_text(
+        ChangeField::ProjectName,
+        before.map(|project| project.name.as_str()),
+        Some(name),
+    );
+    push_text(
+        ChangeField::ProjectCategory,
+        before.and_then(|project| project.category.as_deref()),
+        after_category,
+    );
+    push_text(
+        ChangeField::ProjectNeedles,
+        before.and_then(|project| project.needles.as_deref()),
+        payload
+            .needles
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    push_text(
+        ChangeField::ProjectStitchSample,
+        before.and_then(|project| project.stitch_sample.as_deref()),
+        payload
+            .stitch_sample
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    push_text(
+        ChangeField::ProjectDescription,
+        before.and_then(|project| project.description.as_deref()),
+        payload
+            .description
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    push_text(
+        ChangeField::ProjectNotes,
+        before.and_then(|project| project.notes.as_deref()),
+        payload
+            .notes
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    push_text(
+        ChangeField::ProjectOtherMaterials,
+        before.and_then(|project| project.other_materials.as_deref()),
+        payload
+            .other_materials
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty()),
+    );
+    drop(push_text);
+    let before_tags = before.map_or_else(Vec::new, |project| project.tags.clone());
+    let after_tags = decode_tags(&encode_tags(&payload.tags, tag_policy), tag_policy);
+    if let Some(item) = crate::audit::change_item(
+        ChangeField::ProjectTags,
+        ChangeValue::TextList(before_tags),
+        ChangeValue::TextList(after_tags),
+    ) {
+        items.push(item);
+    }
+    let before_yarns = before_yarn_names;
+    if let Some(item) = crate::audit::change_item(
+        ChangeField::ProjectYarns,
+        ChangeValue::Yarns(before_yarns.clone()),
+        ChangeValue::Yarns(after_yarn_names.clone()),
+    ) {
+        items.push(item);
+    }
+    let before_steps = before.map_or_else(Vec::new, |project| {
+        project
+            .steps
+            .iter()
+            .map(|step| StepSnapshot {
+                number: step.step_number,
+                title: step.title.clone(),
+                description: step.description.clone(),
+            })
+            .collect()
+    });
+    let after_steps = payload
+        .steps
+        .iter()
+        .enumerate()
+        .map(|(index, step)| StepSnapshot {
+            number: if before.is_some() && step.step_number == 0 {
+                index as i64 + 1
+            } else {
+                step.step_number
+            },
+            title: step.title.trim().to_owned(),
+            description: step
+                .description
+                .as_deref()
+                .map(|value| value.trim().to_owned()),
+        })
+        .collect::<Vec<_>>();
+    if let Some(item) = crate::audit::change_item(
+        ChangeField::ProjectSteps,
+        ChangeValue::Steps(before_steps),
+        ChangeValue::Steps(after_steps),
+    ) {
+        items.push(item);
+    }
+    let before_step_count = before.map(|project| project.steps.len() as i64);
+    if let Some(item) = crate::audit::change_item(
+        ChangeField::ProjectStepCount,
+        ChangeValue::Integer(before_step_count),
+        ChangeValue::Integer(Some(payload.steps.len() as i64)),
+    ) {
+        items.push(item);
+    }
+    let old_ai = before.is_some_and(|project| project.is_ai_enhanced);
+    if let Some(item) = crate::audit::change_item(
+        ChangeField::ProjectIsAiEnhanced,
+        ChangeValue::Boolean(old_ai),
+        ChangeValue::Boolean(payload.is_ai_enhanced),
+    ) {
+        items.push(item);
+    }
+    let before_link = before.and_then(|project| project.link.as_deref());
+    let after_link = cleaned_optional(payload.link.clone());
+    if before_link != after_link.as_deref() {
+        items.push(ChangeItemV1 {
+            field: ChangeField::ProjectLink,
+            before: ChangeValue::LinkChanged(before_link.is_some()),
+            after: ChangeValue::LinkChanged(after_link.is_some()),
+        });
+    }
+    crate::audit::changes(items.into_iter().map(Some))
 }
 
 async fn ensure_category(

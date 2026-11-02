@@ -2,7 +2,7 @@
 
 use axum::{
     Json, Router,
-    extract::{RawQuery, State},
+    extract::{Path, RawQuery, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
@@ -25,7 +25,39 @@ struct AuditResponse {
 }
 
 pub(super) fn router() -> Router<ApiV2State> {
-    Router::new().route("/admin/audit", get(list_events))
+    Router::new()
+        .route("/admin/audit", get(list_events))
+        .route("/admin/audit/{event_id}", get(event_detail))
+}
+
+#[derive(Serialize)]
+struct AuditDetailResponse {
+    data: crate::audit_service::AuditDetail,
+}
+
+async fn event_detail(
+    State(state): State<ApiV2State>,
+    headers: axum::http::HeaderMap,
+    Path(event_id): Path<i64>,
+) -> Response {
+    let actor_id = match access::browser_user(&state.app, &headers).await {
+        Ok(actor_id) => actor_id,
+        Err(response) => return *response,
+    };
+    match crate::audit_service::get_event_detail(&state.app.pool, actor_id, event_id).await {
+        Ok(Some(data)) => Json(AuditDetailResponse { data }).into_response(),
+        Ok(None) => api_error(
+            StatusCode::NOT_FOUND,
+            "not_found",
+            "Audit event was not found",
+        ),
+        Err(crate::audit_service::AuditError::Forbidden) => api_error(
+            StatusCode::FORBIDDEN,
+            "admin_required",
+            "Administrator access is required",
+        ),
+        Err(_) => internal_error(),
+    }
 }
 
 async fn list_events(

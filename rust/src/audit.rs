@@ -1,7 +1,18 @@
-//! Typed, transaction-bound audit events that deliberately exclude user content.
+//! Typed, transaction-bound audit events with bounded, allowlisted changes.
+use std::collections::HashSet;
+
+use serde::{Deserialize, Serialize};
 use sqlx::{Sqlite, Transaction};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) const MAX_CHANGESET_BYTES: usize = 256 * 1024;
+pub(crate) const MAX_CHANGE_ITEMS: usize = 64;
+// Write routes accept JSON bodies up to 2 MiB. Keep a single persisted field
+// below that limit and let the aggregate limit mark unusually large diffs.
+const MAX_TEXT_BYTES: usize = 2 * 1024 * 1024;
+const MAX_LIST_ITEMS: usize = 1_000_000;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum Entity {
     Project,
     Yarn,
@@ -9,11 +20,20 @@ pub(crate) enum Entity {
 }
 
 impl Entity {
-    const fn as_str(self) -> &'static str {
+    pub(crate) const fn as_str(self) -> &'static str {
         match self {
             Self::Project => "project",
             Self::Yarn => "yarn",
             Self::Category => "category",
+        }
+    }
+
+    pub(crate) fn parse(value: &str) -> Option<Self> {
+        match value {
+            "project" => Some(Self::Project),
+            "yarn" => Some(Self::Yarn),
+            "category" => Some(Self::Category),
+            _ => None,
         }
     }
 }
@@ -39,10 +59,355 @@ impl Action {
     }
 }
 
+/// A versioned, domain-specific diff. It is deliberately separate from the
+/// legacy `details` column, whose historical contents are not trusted.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ChangeSetV1 {
+    pub(crate) version: u8,
+    pub(crate) items: Vec<ChangeItemV1>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ChangeItemV1 {
+    pub(crate) field: ChangeField,
+    pub(crate) before: ChangeValue,
+    pub(crate) after: ChangeValue,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub(crate) enum ChangeField {
+    #[serde(rename = "project.name")]
+    ProjectName,
+    #[serde(rename = "project.category")]
+    ProjectCategory,
+    #[serde(rename = "project.yarn")]
+    ProjectYarn,
+    #[serde(rename = "project.needles")]
+    ProjectNeedles,
+    #[serde(rename = "project.stitch_sample")]
+    ProjectStitchSample,
+    #[serde(rename = "project.description")]
+    ProjectDescription,
+    #[serde(rename = "project.notes")]
+    ProjectNotes,
+    #[serde(rename = "project.other_materials")]
+    ProjectOtherMaterials,
+    #[serde(rename = "project.tags")]
+    ProjectTags,
+    #[serde(rename = "project.yarns")]
+    ProjectYarns,
+    #[serde(rename = "project.steps")]
+    ProjectSteps,
+    #[serde(rename = "project.step_count")]
+    ProjectStepCount,
+    #[serde(rename = "project.image_count")]
+    ProjectImageCount,
+    #[serde(rename = "project.attachment_count")]
+    ProjectAttachmentCount,
+    #[serde(rename = "project.is_ai_enhanced")]
+    ProjectIsAiEnhanced,
+    #[serde(rename = "project.link")]
+    ProjectLink,
+    #[serde(rename = "yarn.name")]
+    YarnName,
+    #[serde(rename = "yarn.description")]
+    YarnDescription,
+    #[serde(rename = "yarn.brand")]
+    YarnBrand,
+    #[serde(rename = "yarn.colorway")]
+    YarnColorway,
+    #[serde(rename = "yarn.dye_lot")]
+    YarnDyeLot,
+    #[serde(rename = "yarn.fiber_content")]
+    YarnFiberContent,
+    #[serde(rename = "yarn.weight_category")]
+    YarnWeightCategory,
+    #[serde(rename = "yarn.recommended_needles")]
+    YarnRecommendedNeedles,
+    #[serde(rename = "yarn.weight_grams")]
+    YarnWeightGrams,
+    #[serde(rename = "yarn.length_meters")]
+    YarnLengthMeters,
+    #[serde(rename = "yarn.notes")]
+    YarnNotes,
+    #[serde(rename = "yarn.photo_count")]
+    YarnPhotoCount,
+    #[serde(rename = "yarn.is_ai_enhanced")]
+    YarnIsAiEnhanced,
+    #[serde(rename = "yarn.link")]
+    YarnLink,
+    #[serde(rename = "category.name")]
+    CategoryName,
+}
+
+/// Typed values used by the allowlisted audit fields. `LinkChanged` records
+/// only whether a URL was present before/after, never its value.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value", rename_all = "snake_case")]
+pub(crate) enum ChangeValue {
+    Text(Option<String>),
+    TextList(Vec<String>),
+    Integer(Option<i64>),
+    Boolean(bool),
+    Steps(Vec<StepSnapshot>),
+    Yarns(Vec<String>),
+    LinkChanged(bool),
+    /// The Python reference serialized list snapshots using `str(list)`.
+    /// This variant is used only after a strict legacy-list grammar check.
+    LegacyText(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct StepSnapshot {
+    pub(crate) number: i64,
+    pub(crate) title: String,
+    pub(crate) description: Option<String>,
+}
+
+impl ChangeSetV1 {
+    pub(crate) fn new(items: Vec<ChangeItemV1>) -> Option<Self> {
+        if items.is_empty() {
+            return None;
+        }
+        let changes = Self { version: 1, items };
+        changes.is_structurally_valid().then_some(changes)
+    }
+
+    pub(crate) fn is_structurally_valid(&self) -> bool {
+        self.version == 1
+            && self.items.len() <= MAX_CHANGE_ITEMS
+            && self
+                .items
+                .iter()
+                .map(|item| item.field)
+                .collect::<HashSet<_>>()
+                .len()
+                == self.items.len()
+            && self.items.iter().all(ChangeItemV1::is_valid)
+    }
+
+    pub(crate) fn matches_entity(&self, entity: Entity) -> bool {
+        self.items.iter().all(|item| item.field.entity() == entity)
+    }
+}
+
+impl ChangeItemV1 {
+    pub(crate) fn new(field: ChangeField, before: ChangeValue, after: ChangeValue) -> Option<Self> {
+        let item = Self {
+            field,
+            before,
+            after,
+        };
+        item.is_valid().then_some(item)
+    }
+
+    pub(crate) fn is_valid(&self) -> bool {
+        let expected_type = self.field.value_type();
+        self.before.value_type() == expected_type
+            && self.after.value_type() == expected_type
+            && self.before.is_within_bounds()
+            && self.after.is_within_bounds()
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ChangeValueType {
+    Text,
+    TextList,
+    Integer,
+    Boolean,
+    Steps,
+    Yarns,
+    LinkChanged,
+    LegacyText,
+}
+
+impl ChangeField {
+    const fn entity(self) -> Entity {
+        match self {
+            Self::ProjectName
+            | Self::ProjectCategory
+            | Self::ProjectYarn
+            | Self::ProjectNeedles
+            | Self::ProjectStitchSample
+            | Self::ProjectDescription
+            | Self::ProjectNotes
+            | Self::ProjectOtherMaterials
+            | Self::ProjectTags
+            | Self::ProjectYarns
+            | Self::ProjectSteps
+            | Self::ProjectStepCount
+            | Self::ProjectImageCount
+            | Self::ProjectAttachmentCount
+            | Self::ProjectIsAiEnhanced
+            | Self::ProjectLink => Entity::Project,
+            Self::YarnName
+            | Self::YarnDescription
+            | Self::YarnBrand
+            | Self::YarnColorway
+            | Self::YarnDyeLot
+            | Self::YarnFiberContent
+            | Self::YarnWeightCategory
+            | Self::YarnRecommendedNeedles
+            | Self::YarnWeightGrams
+            | Self::YarnLengthMeters
+            | Self::YarnNotes
+            | Self::YarnPhotoCount
+            | Self::YarnIsAiEnhanced
+            | Self::YarnLink => Entity::Yarn,
+            Self::CategoryName => Entity::Category,
+        }
+    }
+
+    pub(crate) fn value_type(self) -> ChangeValueType {
+        match self {
+            Self::ProjectTags => ChangeValueType::TextList,
+            Self::ProjectYarns => ChangeValueType::Yarns,
+            Self::ProjectSteps => ChangeValueType::Steps,
+            Self::ProjectStepCount
+            | Self::ProjectImageCount
+            | Self::ProjectAttachmentCount
+            | Self::YarnWeightGrams
+            | Self::YarnLengthMeters
+            | Self::YarnPhotoCount => ChangeValueType::Integer,
+            Self::ProjectIsAiEnhanced | Self::YarnIsAiEnhanced => ChangeValueType::Boolean,
+            Self::ProjectLink | Self::YarnLink => ChangeValueType::LinkChanged,
+            Self::ProjectName
+            | Self::ProjectCategory
+            | Self::ProjectYarn
+            | Self::ProjectNeedles
+            | Self::ProjectStitchSample
+            | Self::ProjectDescription
+            | Self::ProjectNotes
+            | Self::ProjectOtherMaterials
+            | Self::YarnName
+            | Self::YarnDescription
+            | Self::YarnBrand
+            | Self::YarnColorway
+            | Self::YarnDyeLot
+            | Self::YarnFiberContent
+            | Self::YarnWeightCategory
+            | Self::YarnRecommendedNeedles
+            | Self::YarnNotes
+            | Self::CategoryName => ChangeValueType::Text,
+        }
+    }
+
+    pub(crate) fn from_legacy_field(entity: Entity, field: &str) -> Option<Self> {
+        match (entity, field) {
+            (Entity::Project, "name") => Some(Self::ProjectName),
+            (Entity::Project, "category") => Some(Self::ProjectCategory),
+            (Entity::Project, "yarn") => Some(Self::ProjectYarn),
+            (Entity::Project, "needles") => Some(Self::ProjectNeedles),
+            (Entity::Project, "stitch_sample") => Some(Self::ProjectStitchSample),
+            (Entity::Project, "description") => Some(Self::ProjectDescription),
+            (Entity::Project, "notes") => Some(Self::ProjectNotes),
+            (Entity::Project, "other_materials") => Some(Self::ProjectOtherMaterials),
+            (Entity::Project, "tags") => Some(Self::ProjectTags),
+            (Entity::Project, "yarn_ids") => Some(Self::ProjectYarns),
+            (Entity::Project, "step_count") => Some(Self::ProjectStepCount),
+            (Entity::Project, "image_count") => Some(Self::ProjectImageCount),
+            (Entity::Project, "attachment_count") => Some(Self::ProjectAttachmentCount),
+            (Entity::Project, "is_ai_enhanced") => Some(Self::ProjectIsAiEnhanced),
+            (Entity::Project, "link") => Some(Self::ProjectLink),
+            (Entity::Category, "name") => Some(Self::CategoryName),
+            (Entity::Yarn, "name") => Some(Self::YarnName),
+            (Entity::Yarn, "description") => Some(Self::YarnDescription),
+            (Entity::Yarn, "brand") => Some(Self::YarnBrand),
+            (Entity::Yarn, "colorway") => Some(Self::YarnColorway),
+            (Entity::Yarn, "dye_lot") => Some(Self::YarnDyeLot),
+            (Entity::Yarn, "fiber_content") => Some(Self::YarnFiberContent),
+            (Entity::Yarn, "weight_category") => Some(Self::YarnWeightCategory),
+            (Entity::Yarn, "recommended_needles") => Some(Self::YarnRecommendedNeedles),
+            (Entity::Yarn, "weight_grams") => Some(Self::YarnWeightGrams),
+            (Entity::Yarn, "length_meters") => Some(Self::YarnLengthMeters),
+            (Entity::Yarn, "notes") => Some(Self::YarnNotes),
+            (Entity::Yarn, "photo_count") => Some(Self::YarnPhotoCount),
+            (Entity::Yarn, "is_ai_enhanced") => Some(Self::YarnIsAiEnhanced),
+            (Entity::Yarn, "link") => Some(Self::YarnLink),
+            _ => None,
+        }
+    }
+}
+
+impl ChangeValue {
+    pub(crate) fn value_type(&self) -> ChangeValueType {
+        match self {
+            Self::Text(_) => ChangeValueType::Text,
+            Self::TextList(_) => ChangeValueType::TextList,
+            Self::Integer(_) => ChangeValueType::Integer,
+            Self::Boolean(_) => ChangeValueType::Boolean,
+            Self::Steps(_) => ChangeValueType::Steps,
+            Self::Yarns(_) => ChangeValueType::Yarns,
+            Self::LinkChanged(_) => ChangeValueType::LinkChanged,
+            Self::LegacyText(_) => ChangeValueType::LegacyText,
+        }
+    }
+
+    pub(crate) fn is_within_bounds(&self) -> bool {
+        match self {
+            Self::Text(Some(text)) | Self::LegacyText(text) => text.len() <= MAX_TEXT_BYTES,
+            Self::Text(None) | Self::Integer(_) | Self::Boolean(_) | Self::LinkChanged(_) => true,
+            Self::TextList(values) | Self::Yarns(values) => {
+                values.len() <= MAX_LIST_ITEMS
+                    && values.iter().all(|value| value.len() <= MAX_TEXT_BYTES)
+            }
+            Self::Steps(steps) => {
+                steps.len() <= MAX_LIST_ITEMS
+                    && steps.iter().all(|step| {
+                        step.title.len() <= MAX_TEXT_BYTES
+                            && step
+                                .description
+                                .as_ref()
+                                .is_none_or(|value| value.len() <= MAX_TEXT_BYTES)
+                    })
+            }
+        }
+    }
+}
+
+pub(crate) fn text_change(
+    field: ChangeField,
+    before: Option<&str>,
+    after: Option<&str>,
+) -> Option<ChangeItemV1> {
+    let before = before.map(str::to_owned);
+    let after = after.map(str::to_owned);
+    (before != after).then_some(ChangeItemV1 {
+        field,
+        before: ChangeValue::Text(before),
+        after: ChangeValue::Text(after),
+    })
+}
+
+pub(crate) fn change_item(
+    field: ChangeField,
+    before: ChangeValue,
+    after: ChangeValue,
+) -> Option<ChangeItemV1> {
+    (before != after).then_some(ChangeItemV1 {
+        field,
+        before,
+        after,
+    })
+}
+
+pub(crate) fn changes(
+    items: impl IntoIterator<Item = Option<ChangeItemV1>>,
+) -> Option<ChangeSetV1> {
+    let items: Vec<_> = items.into_iter().flatten().collect();
+    ChangeSetV1::new(items)
+}
+
 /// Insert a minimal audit event in the same transaction as its domain mutation.
 ///
-/// The event records only actor, target, entity, and action identifiers. It does
-/// not accept arbitrary details, user text, credentials, hashes, or debug output.
+/// This compatibility entry point records only identifiers and a safe resource
+/// name snapshot; new domain writes should use `record_with_data` for typed,
+/// allowlisted changes. Neither path accepts raw details, credentials, hashes,
+/// or debug output.
 pub(crate) async fn record(
     tx: &mut Transaction<'_, Sqlite>,
     actor_id: i64,
@@ -50,22 +415,84 @@ pub(crate) async fn record(
     target_id: i64,
     action: Action,
 ) -> Result<(), sqlx::Error> {
+    record_with_data(tx, actor_id, entity, target_id, action, None, None).await
+}
+
+/// Record a resource snapshot and optional typed diff with the domain write.
+/// If no name is supplied, look up the current entity name in the same transaction;
+/// delete handlers pass the pre-delete name explicitly.
+pub(crate) async fn record_with_data(
+    tx: &mut Transaction<'_, Sqlite>,
+    actor_id: i64,
+    entity: Entity,
+    target_id: i64,
+    action: Action,
+    resource_name: Option<&str>,
+    changes: Option<&ChangeSetV1>,
+) -> Result<(), sqlx::Error> {
+    let resource_name = match resource_name {
+        Some(name) => Some(name.to_owned()),
+        None => lookup_resource_name(tx, entity, target_id).await?,
+    };
+    let (change_version, safe_changes) = match changes {
+        Some(changes) => {
+            if !changes.is_structurally_valid() || !changes.matches_entity(entity) {
+                return Err(sqlx::Error::Encode(Box::new(std::io::Error::other(
+                    "invalid typed audit change set",
+                ))));
+            }
+            let encoded = serde_json::to_vec(changes)
+                .map_err(|error| sqlx::Error::Encode(Box::new(error)))?;
+            if encoded.len() > MAX_CHANGESET_BYTES {
+                (Some(i64::from(changes.version)), None)
+            } else {
+                let encoded = String::from_utf8(encoded)
+                    .map_err(|error| sqlx::Error::Encode(Box::new(error)))?;
+                (Some(i64::from(changes.version)), Some(encoded))
+            }
+        }
+        None => (None, None),
+    };
     sqlx::query(
-        "INSERT INTO audit_events (actor_user_id, entity_type, entity_id, action, created_at) \
-         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'))",
+        "INSERT INTO audit_events \
+         (actor_user_id, entity_type, entity_id, action, created_at, \
+          resource_name_snapshot, change_version, safe_changes) \
+         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?)",
     )
     .bind(actor_id)
     .bind(entity.as_str())
     .bind(target_id)
     .bind(action.as_str())
+    .bind(resource_name)
+    .bind(change_version)
+    .bind(safe_changes)
     .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
+async fn lookup_resource_name(
+    tx: &mut Transaction<'_, Sqlite>,
+    entity: Entity,
+    target_id: i64,
+) -> Result<Option<String>, sqlx::Error> {
+    let query = match entity {
+        Entity::Project => "SELECT name FROM projects WHERE id = ?",
+        Entity::Yarn => "SELECT name FROM yarns WHERE id = ?",
+        Entity::Category => "SELECT name FROM categories WHERE id = ?",
+    };
+    sqlx::query_scalar::<_, String>(query)
+        .bind(target_id)
+        .fetch_optional(&mut **tx)
+        .await
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{Action, Entity, record};
+    use super::{
+        Action, ChangeField, ChangeItemV1, ChangeSetV1, ChangeValue, Entity, MAX_CHANGESET_BYTES,
+        record, record_with_data,
+    };
     use crate::db;
 
     #[tokio::test]
@@ -109,5 +536,161 @@ mod tests {
         assert_eq!(row.get::<i64, _>("entity_id"), 17);
         assert_eq!(row.get::<String, _>("action"), "created");
         assert!(row.get::<Option<String>, _>("details").is_none());
+    }
+
+    #[tokio::test]
+    async fn record_with_data_persists_snapshot_and_typed_changes_atomically() {
+        let pool = db::connect("sqlite::memory:")
+            .await
+            .expect("test database should migrate");
+        let actor_id: i64 = sqlx::query_scalar(
+            "INSERT INTO users(email, password_hash) VALUES('audit-data@example.test', 'test-hash') RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("test actor should be inserted");
+        let changes = ChangeSetV1::new(vec![
+            ChangeItemV1::new(
+                ChangeField::ProjectName,
+                ChangeValue::Text(None),
+                ChangeValue::Text(Some("Sample project".to_owned())),
+            )
+            .unwrap(),
+        ])
+        .unwrap();
+
+        let mut tx = pool.begin().await.expect("transaction should begin");
+        record_with_data(
+            &mut tx,
+            actor_id,
+            Entity::Project,
+            17,
+            Action::Created,
+            Some("Sample project"),
+            Some(&changes),
+        )
+        .await
+        .expect("typed event should be inserted");
+        tx.rollback().await.expect("transaction should roll back");
+        let rolled_back: i64 = sqlx::query_scalar("SELECT count(*) FROM audit_events")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(rolled_back, 0);
+
+        let mut tx = pool.begin().await.expect("transaction should begin");
+        record_with_data(
+            &mut tx,
+            actor_id,
+            Entity::Project,
+            17,
+            Action::Created,
+            Some("Sample project"),
+            Some(&changes),
+        )
+        .await
+        .expect("typed event should be inserted");
+        tx.commit().await.expect("transaction should commit");
+        let row = sqlx::query(
+            "SELECT resource_name_snapshot, change_version, safe_changes, details FROM audit_events",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        use sqlx::Row;
+        assert_eq!(
+            row.get::<Option<String>, _>("resource_name_snapshot")
+                .as_deref(),
+            Some("Sample project")
+        );
+        assert_eq!(row.get::<Option<i64>, _>("change_version"), Some(1));
+        assert!(
+            row.get::<Option<String>, _>("safe_changes")
+                .unwrap()
+                .contains("project.name")
+        );
+        assert!(row.get::<Option<String>, _>("details").is_none());
+    }
+
+    #[test]
+    fn changeset_uses_typed_allowlisted_values_and_rejects_mismatches() {
+        let item = ChangeItemV1::new(
+            ChangeField::CategoryName,
+            ChangeValue::Text(Some("old".to_owned())),
+            ChangeValue::Text(Some("new".to_owned())),
+        )
+        .unwrap();
+        let changes = ChangeSetV1::new(vec![item]).unwrap();
+        let json = serde_json::to_value(&changes).unwrap();
+        assert_eq!(json["version"], 1);
+        assert_eq!(json["items"][0]["field"], "category.name");
+        assert_eq!(json["items"][0]["before"]["type"], "text");
+        assert_eq!(json["items"][0]["before"]["value"], "old");
+
+        assert!(
+            ChangeItemV1::new(
+                ChangeField::CategoryName,
+                ChangeValue::Boolean(false),
+                ChangeValue::Boolean(true),
+            )
+            .is_none()
+        );
+        assert!(ChangeSetV1::new(Vec::new()).is_none());
+        assert!(!changes.matches_entity(Entity::Yarn));
+    }
+
+    #[test]
+    fn aggregate_oversize_is_distinct_from_structural_invalidity() {
+        let item = ChangeItemV1::new(
+            ChangeField::CategoryName,
+            ChangeValue::Text(None),
+            ChangeValue::Text(Some("x".repeat(MAX_CHANGESET_BYTES))),
+        )
+        .unwrap();
+        let changes = ChangeSetV1::new(vec![item]).unwrap();
+        assert!(changes.is_structurally_valid());
+        assert!(serde_json::to_vec(&changes).unwrap().len() > MAX_CHANGESET_BYTES);
+    }
+
+    #[tokio::test]
+    async fn oversized_changeset_keeps_event_and_marks_detail_unavailable() {
+        let pool = db::connect("sqlite::memory:")
+            .await
+            .expect("test database should migrate");
+        let actor_id: i64 = sqlx::query_scalar(
+            "INSERT INTO users(email, password_hash) VALUES('audit-large@example.test', 'test-hash') RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("test actor should be inserted");
+        let changes = ChangeSetV1::new(vec![
+            ChangeItemV1::new(
+                ChangeField::ProjectNotes,
+                ChangeValue::Text(None),
+                ChangeValue::Text(Some("x".repeat(MAX_CHANGESET_BYTES))),
+            )
+            .unwrap(),
+        ])
+        .unwrap();
+        let mut tx = pool.begin().await.expect("transaction should begin");
+        record_with_data(
+            &mut tx,
+            actor_id,
+            Entity::Project,
+            17,
+            Action::Updated,
+            Some("Sample project"),
+            Some(&changes),
+        )
+        .await
+        .expect("oversized history should not reject the domain update");
+        tx.commit().await.expect("event should commit");
+        let row = sqlx::query("SELECT change_version, safe_changes FROM audit_events")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        use sqlx::Row;
+        assert_eq!(row.get::<Option<i64>, _>("change_version"), Some(1));
+        assert_eq!(row.get::<Option<String>, _>("safe_changes"), None);
     }
 }

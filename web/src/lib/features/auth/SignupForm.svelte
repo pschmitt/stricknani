@@ -2,10 +2,12 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { createAccount } from "./signup-api";
 
   let email = $state("");
@@ -22,6 +24,13 @@
     session.status === "ready" &&
       session.data?.user === null &&
       session.data.capabilities.signup,
+  );
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: email.length > 0 || password.length > 0 || confirmation.length > 0,
+      busy: submitting,
+    })),
   );
 
   onDestroy(() => {

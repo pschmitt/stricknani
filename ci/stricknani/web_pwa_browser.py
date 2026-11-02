@@ -10,6 +10,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -81,23 +82,30 @@ def _version_snapshot(page: Page) -> dict[str, object]:
           const registration = await navigator.serviceWorker.getRegistration('/app/');
           if (!registration) return { scope: '', active: '', waiting: '' };
           const ask = worker => new Promise(resolve => {
-            if (!worker) return resolve('');
+            if (!worker) return resolve(null);
             const channel = new MessageChannel();
-            const timer = setTimeout(() => resolve('timeout'), 1500);
+            const timer = setTimeout(() => resolve(null), 1500);
             channel.port1.onmessage = event => {
               clearTimeout(timer);
-              resolve(event.data?.version ?? 'invalid');
+              resolve(event.data ?? null);
               channel.port1.close();
             };
             worker.postMessage({ type: 'GET_VERSION' }, [channel.port2]);
           });
+          const active = await ask(registration.active);
+          const installing = await ask(registration.installing);
+          const waiting = await ask(registration.waiting);
           return {
             scope: new URL(registration.scope).pathname,
-            active: await ask(registration.active),
+            active: active?.version ?? '',
+            activeAppVersion: active?.appVersion ?? '',
+            activeWorkerVersion: active?.workerVersion ?? '',
             activeState: registration.active?.state ?? '',
-            installing: await ask(registration.installing),
+            installing: installing?.version ?? '',
             installingState: registration.installing?.state ?? '',
-            waiting: await ask(registration.waiting),
+            waiting: waiting?.version ?? '',
+            waitingAppVersion: waiting?.appVersion ?? '',
+            waitingWorkerVersion: waiting?.workerVersion ?? '',
             waitingState: registration.waiting?.state ?? '',
           };
         }"""
@@ -164,7 +172,7 @@ def _loaded_immutable_assets(page: Page) -> set[str]:
     return {path for path in value if path.endswith((".js", ".css"))}
 
 
-def _read_asset_manifest(web_root: Path) -> tuple[str, list[str]]:
+def _read_asset_manifest(web_root: Path) -> tuple[str, str, list[str]]:
     try:
         manifest = json.loads(
             (web_root / "pwa-assets.json").read_text(encoding="utf-8")
@@ -194,6 +202,21 @@ def _read_asset_manifest(web_root: Path) -> tuple[str, list[str]]:
     if len(set(assets)) != len(assets):
         raise AcceptanceFailure("generated PWA asset manifest has duplicates")
     worker_template = _production_worker_template()
+    try:
+        app_version_data = json.loads(
+            (web_root / "_app/version.json").read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise AcceptanceFailure("compiled app version is unavailable") from error
+    app_code_version = (
+        app_version_data.get("version") if isinstance(app_version_data, dict) else None
+    )
+    if (
+        not isinstance(app_code_version, str)
+        or not app_code_version
+        or len(app_code_version) > 128
+    ):
+        raise AcceptanceFailure("compiled app version is invalid")
     digest_rows: list[str] = []
     for path in assets:
         asset_path = web_root / path.removeprefix("/app/")
@@ -203,12 +226,16 @@ def _read_asset_manifest(web_root: Path) -> tuple[str, list[str]]:
             raise AcceptanceFailure("generated PWA asset is missing") from error
         digest_rows.append(f"{path}\0{digest}\n")
     calculated_version = hashlib.sha256(
-        ("".join(digest_rows) + "\0" + worker_template).encode()
+        (
+            app_code_version + "\0" + "".join(digest_rows) + "\0" + worker_template
+        ).encode()
     ).hexdigest()
     if calculated_version != version:
         raise AcceptanceFailure("generated PWA version does not match its assets")
-    expected_worker = worker_template.replace("__APP_VERSION__", version).replace(
-        "__APP_ASSETS__", json.dumps(assets, separators=(",", ":"))
+    expected_worker = (
+        worker_template.replace("__APP_VERSION__", version)
+        .replace("__APP_CODE_VERSION__", app_code_version)
+        .replace("__APP_ASSETS__", json.dumps(assets, separators=(",", ":")))
     )
     try:
         actual_worker = (web_root / "app-sw.js").read_text(encoding="utf-8")
@@ -216,7 +243,7 @@ def _read_asset_manifest(web_root: Path) -> tuple[str, list[str]]:
         raise AcceptanceFailure("generated app worker is unavailable") from error
     if "__APP_" in actual_worker or actual_worker != expected_worker:
         raise AcceptanceFailure("generated app worker differs from the build output")
-    return version, assets
+    return version, app_code_version, assets
 
 
 def _wait_for_async_condition(
@@ -265,6 +292,21 @@ def _write_next_web_root(
     assets = manifest.get("assets") if isinstance(manifest, dict) else None
     if not isinstance(assets, list) or not assets:
         raise AcceptanceFailure("generated PWA asset manifest is invalid")
+    try:
+        app_version_data = json.loads(
+            (target / "_app/version.json").read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise AcceptanceFailure("compiled app version is unavailable") from error
+    app_code_version = (
+        app_version_data.get("version") if isinstance(app_version_data, dict) else None
+    )
+    if (
+        not isinstance(app_code_version, str)
+        or not app_code_version
+        or len(app_code_version) > 128
+    ):
+        raise AcceptanceFailure("compiled app version is invalid")
 
     css_path = target / "offline.css"
     with css_path.open("a", encoding="utf-8") as output:
@@ -279,16 +321,65 @@ def _write_next_web_root(
         except OSError as error:
             raise AcceptanceFailure("a generated app cache asset is missing") from error
         rows.append(f"{path}\0{hashlib.sha256(content).hexdigest()}\n")
-    version = hashlib.sha256(("".join(rows) + "\0" + template).encode()).hexdigest()
+    version = hashlib.sha256(
+        (app_code_version + "\0" + "".join(rows) + "\0" + template).encode()
+    ).hexdigest()
     manifest["version"] = version
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    worker = template.replace("__APP_VERSION__", version).replace(
-        "__APP_ASSETS__", json.dumps(sorted(assets), separators=(",", ":"))
+    worker = (
+        template.replace("__APP_VERSION__", version)
+        .replace("__APP_CODE_VERSION__", app_code_version)
+        .replace("__APP_ASSETS__", json.dumps(sorted(assets), separators=(",", ":")))
     )
     if "__APP_" in worker:
         raise AcceptanceFailure("generated app worker has an unexpanded marker")
     (target / "app-sw.js").write_text(worker, encoding="utf-8")
     return version
+
+
+def _build_candidate_web_root(private_dir: Path, app_code_version: str) -> Path:
+    source_web = REPO_ROOT / "web"
+    dependencies = source_web / "node_modules"
+    npm = shutil.which("npm")
+    if not dependencies.is_dir() or npm is None:
+        raise AcceptanceFailure("candidate SvelteKit build tools are unavailable")
+
+    candidate_source = private_dir / "candidate-app-source"
+    shutil.copytree(
+        source_web,
+        candidate_source,
+        ignore=shutil.ignore_patterns(
+            ".git", "node_modules", "build", ".svelte-kit", ".env", ".env.*"
+        ),
+    )
+    (candidate_source / "node_modules").symlink_to(
+        dependencies.resolve(), target_is_directory=True
+    )
+    environment = os.environ.copy()
+    environment["STRICKNANI_PWA_TEST_VERSION"] = app_code_version
+    try:
+        result = subprocess.run(
+            [npm, "run", "build"],
+            cwd=candidate_source,
+            env=environment,
+            capture_output=True,
+            check=False,
+            timeout=240,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise AcceptanceFailure("candidate SvelteKit build did not complete") from error
+    if result.returncode != 0:
+        raise AcceptanceFailure(
+            f"candidate SvelteKit build failed with status {result.returncode}"
+        )
+
+    candidate_root = candidate_source / "build"
+    _version, candidate_app_version, _assets = _read_asset_manifest(candidate_root)
+    if candidate_app_version != app_code_version:
+        raise AcceptanceFailure("candidate build used the wrong compiled app version")
+    if not candidate_root.is_dir() or not (candidate_root / "200.html").is_file():
+        raise AcceptanceFailure("candidate SvelteKit build output is incomplete")
+    return candidate_root
 
 
 def _wait_for_active_worker(page: Page, expected_version: str) -> None:
@@ -403,9 +494,19 @@ def _prepare_browser_update(
     *,
     version_marker: str = "disposable browser update fixture",
     missing_asset: str | None = None,
+    candidate_build_root: Path | None = None,
     runtime_name: str = "runtime-v2",
-) -> tuple[Path, Path, str]:
-    expected_version = _write_next_web_root(web_root, second_root, version_marker)
+) -> tuple[Path, Path, str, set[str]]:
+    if candidate_build_root is None:
+        expected_version = _write_next_web_root(web_root, second_root, version_marker)
+    else:
+        shutil.copytree(candidate_build_root, second_root, symlinks=True)
+        candidate_manifest = json.loads(
+            (second_root / "pwa-assets.json").read_text(encoding="utf-8")
+        )
+        expected_version = candidate_manifest.get("version")
+        if not isinstance(expected_version, str):
+            raise AcceptanceFailure("candidate PWA worker version is invalid")
     if missing_asset is not None:
         if not missing_asset.startswith("/app/") or ".." in missing_asset:
             raise AcceptanceFailure("failed-install fixture asset path is invalid")
@@ -435,7 +536,7 @@ def _prepare_browser_update(
         replacement_origin == origin and replacement_port == port,
         "replacement fixture did not retain the browser origin",
     )
-    return fixture_file, state_file, expected_version
+    return fixture_file, state_file, expected_version, set()
 
 
 def run_acceptance(
@@ -450,7 +551,9 @@ def run_acceptance(
     origin, port = _origin(fixture["STRICKNANI_RUST_TEST_URL"])
     email = fixture["STRICKNANI_RUST_TEST_EMAIL"]
     password = fixture["STRICKNANI_RUST_TEST_PASSWORD"]
-    expected_version, expected_assets = _read_asset_manifest(web_root)
+    expected_version, expected_app_version, expected_assets = _read_asset_manifest(
+        web_root
+    )
     _require(
         REQUIRED_OFFLINE_ASSETS.issubset(expected_assets),
         "generated allowlist omits a required offline fallback asset",
@@ -499,13 +602,14 @@ def run_acceptance(
     page_errors: list[bool] = []
     csp_errors: list[bool] = []
     activation_worker_errors: list[tuple[str, int | None]] = []
+    service_worker_versions: list[dict[str, str]] = []
     service_worker_asset_requests: list[str] = []
     service_worker_asset_responses: list[str] = []
     service_worker_asset_finished: list[str] = []
     reopen_events: list[str] = []
 
     def record_worker_error(event: object) -> None:
-        if not current_stage.startswith(("closing", "reopening")):
+        if not current_stage.startswith(("update", "committing", "reloading")):
             return
         if not isinstance(event, dict):
             activation_worker_errors.append(("unknown", None))
@@ -520,6 +624,28 @@ def run_acceptance(
         activation_worker_errors.append(
             (error_class, line if isinstance(line, int) else None)
         )
+
+    def record_worker_versions(event: object) -> None:
+        if not isinstance(event, dict):
+            return
+        versions = event.get("versions")
+        if not isinstance(versions, list):
+            return
+        for version in versions:
+            if not isinstance(version, dict):
+                continue
+            script_url = version.get("scriptURL")
+            version_id = version.get("versionId")
+            status = version.get("status")
+            if (
+                isinstance(script_url, str)
+                and urlsplit(script_url).path == "/app/sw.js"
+                and isinstance(version_id, str)
+                and isinstance(status, str)
+            ):
+                service_worker_versions.append(
+                    {"version_id": version_id, "status": status}
+                )
 
     def record_service_worker_asset_request(request: object) -> None:
         request_url = getattr(request, "url", "")
@@ -586,6 +712,7 @@ def run_acceptance(
             cdp = context.new_cdp_session(page)
             cdp.send("ServiceWorker.enable")
             cdp.on("ServiceWorker.workerErrorReported", record_worker_error)
+            cdp.on("ServiceWorker.workerVersionUpdated", record_worker_versions)
             page.on("pageerror", lambda _error: page_errors.append(True))
             page.on(
                 "console",
@@ -732,6 +859,10 @@ def run_acceptance(
                 "active app worker version differs from build",
             )
             _require(
+                snapshot.get("activeAppVersion") == expected_app_version,
+                "active worker compiled-app version differs from the build",
+            )
+            _require(
                 snapshot.get("waiting") == "", "initial app worker unexpectedly waits"
             )
 
@@ -743,12 +874,16 @@ def run_acceptance(
             )
             worker_text = worker_response.text()
             _require(
-                expected_version in worker_text and "__APP_" not in worker_text,
+                expected_version in worker_text
+                and f'const APP_CODE_VERSION = "{expected_app_version}"' in worker_text
+                and "__APP_" not in worker_text,
                 "Rust did not serve the generated versioned worker",
             )
             _require(
-                "skipWaiting" not in worker_text and "clients.claim" not in worker_text,
-                "app worker attempts eager activation or claims existing tabs",
+                worker_text.count("self.skipWaiting()") == 1
+                and "async function commitUpdate" in worker_text
+                and "clients.claim" not in worker_text,
+                "app worker activation is not limited to the checked explicit commit",
             )
             _require(
                 'pathname === "/app"' in worker_text,
@@ -924,7 +1059,7 @@ def run_acceptance(
 
             mark_stage("preparing a candidate with a missing required asset")
             failed_root = private_dir / "web-root-failed-install"
-            _, _, failed_version = _prepare_browser_update(
+            _, _, failed_version, _ = _prepare_browser_update(
                 binary,
                 web_root,
                 private_dir,
@@ -1045,7 +1180,25 @@ def run_acceptance(
             )
 
             mark_stage("restarting the actual Rust fixture with a new worker version")
-            _, _, next_version = _prepare_browser_update(
+            candidate_app_version = (
+                "pwa-update-fixture-"
+                + hashlib.sha256(
+                    f"{expected_app_version}:candidate-v1".encode()
+                ).hexdigest()[:24]
+            )
+            candidate_build_root = _build_candidate_web_root(
+                private_dir, candidate_app_version
+            )
+            (
+                candidate_build_version,
+                verified_candidate_app_version,
+                candidate_assets,
+            ) = _read_asset_manifest(candidate_build_root)
+            _require(
+                verified_candidate_app_version == candidate_app_version,
+                "second SvelteKit build did not use a distinct compiled version",
+            )
+            _, _, next_version, _ = _prepare_browser_update(
                 binary,
                 web_root,
                 private_dir,
@@ -1054,8 +1207,12 @@ def run_acceptance(
                 origin,
                 port,
                 second_root,
-                version_marker="disposable successful update fixture",
+                candidate_build_root=candidate_build_root,
                 runtime_name="runtime-pwa-success",
+            )
+            _require(
+                next_version == candidate_build_version,
+                "Rust fixture did not serve the second build's worker version",
             )
             mark_stage("checking the served candidate worker version")
             candidate_worker = second_tab.request.get(f"{origin}/app/sw.js")
@@ -1064,7 +1221,6 @@ def run_acceptance(
                 and next_version in candidate_worker.text(),
                 "served update worker has the wrong version",
             )
-            second_tab.goto(f"{origin}/app/login", wait_until="networkidle")
             second_tab.evaluate(
                 """async () => {
                   const registration = await navigator.serviceWorker
@@ -1123,129 +1279,445 @@ def run_acceptance(
                 "the app did not announce a waiting worker",
             )
             _require(
-                second_tab.get_by_text(
-                    "Close all Stricknani tabs and reopen the app to finish "
-                    "installing the update."
+                second_tab.get_by_role(
+                    "button", name="Reload to update", exact=True
                 ).is_visible(),
-                "the update notice does not explain the safe activation step",
+                "the explicit update action is unavailable",
+            )
+            _require(
+                waiting.get("waitingAppVersion") == candidate_app_version,
+                "waiting worker reports a different compiled app version",
             )
 
             mark_stage("checking out-of-scope activation monitor")
             _require(
                 monitor.url.endswith("/healthz"), "worker monitor left health scope"
             )
-            mark_stage("closing the dirty editor and app tabs for activation")
-            close_dialogs.clear()
 
-            def accept_dirty_close(dialog: Dialog) -> None:
-                close_dialogs.append(dialog.type)
-                dialog.accept()
-
-            page.once("dialog", accept_dirty_close)
-            with page.expect_event("close", timeout=10_000):
-                page.close(run_before_unload=True)
+            mark_stage("blocking update while the project draft is dirty")
+            page.get_by_role("button", name="Reload to update", exact=True).click()
+            page.get_by_text(
+                "An open form has unsaved changes. Save or discard them, "
+                "then try again.",
+                exact=True,
+            ).wait_for(state="visible", timeout=5_000)
             _require(
-                close_dialogs == ["beforeunload"] and page.is_closed(),
-                "confirmed dirty close did not leave the app client",
+                _version_snapshot(page).get("active") == expected_version
+                and _version_snapshot(page).get("waiting") == next_version,
+                "a dirty page activated the waiting worker",
             )
             _require(
-                _version_snapshot(second_tab).get("active") == expected_version,
-                "waiting worker activated before the dirty tab left the app",
+                page.locator("#project-name").input_value() == draft_title,
+                "blocked update changed the unsaved project draft",
             )
-
-            mark_stage("closing all app tabs before reopening the app")
-            second_tab.close()
-            closed_tabs_snapshot = _registration_state_snapshot(monitor)
             _require(
-                (
-                    closed_tabs_snapshot.get("activeState") == "activated"
-                    and closed_tabs_snapshot.get("waitingState") == "installed"
-                )
-                or (
-                    closed_tabs_snapshot.get("activeState") == "activated"
-                    and closed_tabs_snapshot.get("waitingState") == ""
+                page.evaluate(
+                    "() => document.querySelector('.app-shell')?.inert === false"
                 ),
-                "worker versions changed unexpectedly after closing the app tabs",
+                "a dirty update attempt left the app locked",
             )
 
-            mark_stage("reopening app to finish worker activation")
-            app_url = f"{origin}/app/login"
-            state_before_reopen = _registration_state_snapshot(monitor)
-            persist_reopen_snapshot("before-direct-request", state_before_reopen)
-            direct_response = monitor.request.get(app_url, timeout=10_000)
+            mark_stage("clearing the disposable editor draft")
+            project_name.fill("")
+            page.locator(".dirty-note").wait_for(state="hidden", timeout=5_000)
+
+            context.add_init_script(
+                """() => {
+                  if (!new URL(location.href).searchParams
+                      .has('pwa-unresponsive')) return;
+                  const prototype = ServiceWorkerContainer.prototype;
+                  const addEventListener = prototype.addEventListener;
+                  prototype.addEventListener = function(type, listener, options) {
+                    if (type === 'message') return;
+                    return addEventListener.call(this, type, listener, options);
+                  };
+                }"""
+            )
+            legacy_tab = context.new_page()
+            legacy_tab.on("pageerror", lambda _error: page_errors.append(True))
+            legacy_tab.on(
+                "console",
+                lambda message: (
+                    csp_errors.append(True)
+                    if "content security policy" in message.text.lower()
+                    or "refused to" in message.text.lower()
+                    else None
+                ),
+            )
+            legacy_tab.goto(
+                f"{origin}/app/login?pwa-unresponsive=1", wait_until="networkidle"
+            )
+            _wait_for_initial_worker(legacy_tab, expected_version)
+
+            mark_stage("cancelling preparation with an unresponsive app tab")
+            second_tab.get_by_role(
+                "button", name="Reload to update", exact=True
+            ).click()
+            _wait_for_async_condition(
+                page,
+                "() => document.querySelector('.app-shell')?.inert === true",
+                None,
+                "prepared tab lock before cancellation",
+                timeout_ms=10_000,
+            )
+            page.get_by_role("button", name="Cancel update", exact=True).wait_for(
+                state="visible", timeout=5_000
+            )
+            page.get_by_role("button", name="Cancel update", exact=True).click()
+            _wait_for_async_condition(
+                page,
+                "() => document.querySelector('.app-shell')?.inert === false",
+                None,
+                "prepared tab unlock after explicit cancellation",
+                timeout_ms=8_000,
+            )
+            _wait_for_async_condition(
+                second_tab,
+                "() => document.querySelector('.app-shell')?.inert === false",
+                None,
+                "initiating tab unlock after explicit cancellation",
+                timeout_ms=8_000,
+            )
             _require(
-                direct_response.status == 200,
-                "app resource failed before the reopen navigation",
+                second_tab.get_by_role(
+                    "button", name="Reload to update", exact=True
+                ).is_visible(),
+                "cancellation did not leave the update available for retry",
             )
-            persist_reopen_snapshot(
-                "before-browser-navigation",
-                _registration_state_snapshot(monitor),
-                direct_response.status,
-            )
-            try:
-                reopen_events.clear()
-                response = monitor.goto(app_url, wait_until="commit", timeout=10_000)
-            except PlaywrightError as error:
-                raise AcceptanceFailure(
-                    "app reopen navigation timed out after a successful direct request "
-                    f"(safe page path: {urlsplit(monitor.url).path}, "
-                    f"registration before reopen: {state_before_reopen}, "
-                    f"app request events: {reopen_events[-8:]})"
-                ) from error
+
+            mark_stage("blocking preparation for an unresponsive legacy tab")
+            second_tab.get_by_role(
+                "button", name="Reload to update", exact=True
+            ).click()
+            second_tab.get_by_text(
+                "Another app tab did not respond. Save any edits there, "
+                "then reload or close it and try again.",
+                exact=True,
+            ).wait_for(state="visible", timeout=12_000)
             _require(
-                response is not None and response.status == 200,
-                "app did not reopen after closing the old clients",
+                _version_snapshot(second_tab).get("active") == expected_version
+                and _version_snapshot(second_tab).get("waiting") == next_version,
+                "an unresponsive tab allowed the new worker to activate",
             )
-            try:
-                _wait_for_async_condition(
-                    monitor,
-                    """async expected => {
+            _wait_for_async_condition(
+                page,
+                "() => document.querySelector('.app-shell')?.inert === false",
+                None,
+                "all prepared tabs unlock after an unresponsive client",
+                timeout_ms=8_000,
+            )
+            legacy_tab.close()
+
+            mark_stage("restarting a prepared waiting worker before commit")
+            second_tab.evaluate(
+                """() => {
+                  const nativePostMessage = ServiceWorker.prototype.postMessage;
+                  let held = null;
+                  ServiceWorker.prototype.postMessage = function(message, transfer) {
+                    if (message?.type === 'COMMIT_UPDATE' && held === null) {
+                      held = { worker: this, message, transfer };
+                      window.__pwaCommitHeld = true;
+                      return;
+                    }
+                    return nativePostMessage.call(this, message, transfer);
+                  };
+                  window.__releasePwaCommit = () => {
+                    ServiceWorker.prototype.postMessage = nativePostMessage;
+                    const current = held;
+                    held = null;
+                    if (!current) return false;
+                    nativePostMessage.call(
+                      current.worker,
+                      current.message,
+                      current.transfer,
+                    );
+                    return true;
+                  };
+                }"""
+            )
+            second_tab.get_by_role(
+                "button", name="Reload to update", exact=True
+            ).click()
+            _wait_for_async_condition(
+                second_tab,
+                "() => window.__pwaCommitHeld === true",
+                None,
+                "explicit commit pause after all clients prepare",
+                timeout_ms=10_000,
+            )
+            _wait_for_async_condition(
+                page,
+                "() => document.querySelector('.app-shell')?.inert === true",
+                None,
+                "other prepared tab lock before worker restart",
+                timeout_ms=5_000,
+            )
+            waiting_versions = [
+                item
+                for item in service_worker_versions
+                if item["status"] == "installed"
+            ]
+            _require(
+                bool(waiting_versions),
+                "browser did not expose the installed waiting worker "
+                "for restart testing",
+            )
+            cdp.send(
+                "ServiceWorker.stopWorker",
+                {"versionId": waiting_versions[-1]["version_id"]},
+            )
+            _require(
+                second_tab.evaluate("() => window.__releasePwaCommit()") is True,
+                "paused explicit commit was not released after worker restart",
+            )
+            second_tab.get_by_text(
+                "The update timed out. You can safely try again.",
+                exact=True,
+            ).wait_for(state="visible", timeout=10_000)
+            _wait_for_async_condition(
+                page,
+                "() => document.querySelector('.app-shell')?.inert === false",
+                None,
+                "prepared tab unlock after waiting worker restart",
+                timeout_ms=8_000,
+            )
+            _require(
+                _version_snapshot(second_tab).get("active") == expected_version
+                and _version_snapshot(second_tab).get("waiting") == next_version,
+                "restarted worker accepted a commit without its prepare state",
+            )
+
+            mark_stage("making a cached immutable route asset unavailable")
+            cached_editor_asset = next(
+                (
+                    asset
+                    for asset in sorted(new_editor_chunks & set(candidate_assets))
+                    if (web_root / asset.removeprefix("/app/")).is_file()
+                    and (candidate_build_root / asset.removeprefix("/app/")).is_file()
+                    and hashlib.sha256(
+                        (web_root / asset.removeprefix("/app/")).read_bytes()
+                    ).digest()
+                    == hashlib.sha256(
+                        (
+                            candidate_build_root / asset.removeprefix("/app/")
+                        ).read_bytes()
+                    ).digest()
+                ),
+                None,
+            )
+            _require(
+                cached_editor_asset is not None,
+                "candidate build has no unchanged cached immutable editor asset",
+            )
+            assert cached_editor_asset is not None
+            unavailable_candidate_asset = (
+                second_root / cached_editor_asset.removeprefix("/app/")
+            )
+            _require(
+                unavailable_candidate_asset.is_file(),
+                "cached editor asset is absent from the update candidate",
+            )
+            unavailable_candidate_asset.unlink()
+            direct_missing_asset = second_tab.request.get(
+                f"{origin}{cached_editor_asset}", timeout=10_000
+            )
+            _require(
+                direct_missing_asset.status >= 400,
+                "candidate still serves the selected cached editor asset",
+            )
+
+            mark_stage("checking the served candidate worker version")
+            candidate_worker = second_tab.request.get(f"{origin}/app/sw.js")
+            _require(
+                candidate_worker.status == 200
+                and next_version in candidate_worker.text(),
+                "served update worker has the wrong version",
+            )
+            second_tab.evaluate(
+                """async () => {
                   const registration = await navigator.serviceWorker
                     .getRegistration('/app/');
-                  if (registration?.active?.state !== 'activated'
-                      || registration.waiting !== null) return false;
-                  const names = await caches.keys();
-                  const appCaches = names.filter(name =>
-                    name.startsWith('stricknani-app-shell-')
-                  );
-                  return appCaches.length === 1
-                    && appCaches[0] === `stricknani-app-shell-${expected}`
-                    && registration.active?.state === 'activated'
-                    && registration.waiting === null;
-                }""",
-                    next_version,
-                    "stable active worker and cache after app reopen",
-                    timeout_ms=20_000,
+                  if (!registration) throw new Error('App worker missing');
+                  await registration.update();
+                }"""
+            )
+            _wait_for_async_condition(
+                second_tab,
+                """expected => navigator.serviceWorker
+                  .getRegistration('/app/').then(async registration => {
+                    const worker = registration?.waiting;
+                    if (!worker) return false;
+                    return await new Promise(resolve => {
+                      const channel = new MessageChannel();
+                      const timer = setTimeout(() => resolve(false), 1000);
+                      channel.port1.onmessage = event => {
+                        clearTimeout(timer);
+                        resolve(event.data?.version === expected);
+                        channel.port1.close();
+                      };
+                      worker.postMessage({ type: 'GET_VERSION' }, [channel.port2]);
+                    });
+                  })""",
+                next_version,
+                "candidate worker waiting state",
+            )
+            waiting = _version_snapshot(second_tab)
+            _require(
+                waiting.get("active") == expected_version,
+                "active worker changed before explicit update approval",
+            )
+            _require(
+                waiting.get("waiting") == next_version,
+                "new worker did not wait for explicit update approval "
+                f"(active: {waiting.get('active')}, "
+                f"waiting: {waiting.get('waiting')}, expected: {next_version})",
+            )
+            _require(
+                waiting.get("activeAppVersion") == expected_app_version
+                and waiting.get("waitingAppVersion") == candidate_app_version,
+                "candidate worker compiled-app version did not change independently",
+            )
+            waiting_caches = _cache_snapshot(second_tab)
+            candidate_cache_paths = waiting_caches.get(
+                f"stricknani-app-shell-{next_version}"
+            )
+            _require(
+                candidate_cache_paths is not None
+                and set(candidate_cache_paths) == REQUIRED_OFFLINE_ASSETS,
+                "waiting candidate did not cache only the required offline assets",
+            )
+            _require(
+                second_tab.get_by_role("heading", name="Update available").is_visible(),
+                "the app did not announce a waiting worker",
+            )
+            _require(
+                second_tab.get_by_role(
+                    "button", name="Reload to update", exact=True
+                ).is_visible(),
+                "the explicit update action is unavailable",
+            )
+
+            page_time_origin = page.evaluate("() => performance.timeOrigin")
+            second_time_origin = second_tab.evaluate("() => performance.timeOrigin")
+            asset_response_start = len(service_worker_asset_responses)
+            reload_cancel_dialogs: list[str] = []
+
+            def cancel_one_prepared_reload(dialog: Dialog) -> None:
+                reload_cancel_dialogs.append(dialog.type)
+                dialog.dismiss()
+
+            page.evaluate(
+                """() => {
+                  const cancelReload = event => {
+                    event.preventDefault();
+                    event.returnValue = '';
+                  };
+                  window.addEventListener('beforeunload', cancelReload, {
+                    once: true,
+                  });
+                }"""
+            )
+            page.once("dialog", cancel_one_prepared_reload)
+            mark_stage("committing the explicitly requested update")
+            second_tab.get_by_role(
+                "button", name="Reload to update", exact=True
+            ).click()
+            _wait_for_async_condition(
+                second_tab,
+                "expected => performance.timeOrigin > expected",
+                second_time_origin,
+                "prepared login tab reload",
+                timeout_ms=20_000,
+            )
+            page.get_by_text(
+                "The browser kept this tab open. Reload when it is safe.",
+                exact=True,
+            ).wait_for(state="visible", timeout=10_000)
+            _require(
+                reload_cancel_dialogs == ["beforeunload"]
+                and page.evaluate("() => performance.timeOrigin") == page_time_origin
+                and page.evaluate(
+                    "() => sessionStorage.getItem('stricknani.pwa-update') !== null"
+                ),
+                "cancelled native reload lost the prepared update token or page",
+            )
+            retained_caches = _cache_snapshot(page)
+            _require(
+                len(retained_caches) == 2
+                and expected_version in retained_caches
+                and next_version in retained_caches
+                and page.evaluate(
+                    "() => caches.keys().then(keys => "
+                    "keys.includes('stricknani-app-update-state-v1'))"
+                ),
+                "old app cache or activation record was removed "
+                "before the old page reloaded",
+            )
+            page.get_by_role("button", name="Reload to finish", exact=True).click()
+            _wait_for_async_condition(
+                page,
+                "expected => performance.timeOrigin > expected",
+                page_time_origin,
+                "prepared project tab retry reload",
+                timeout_ms=20_000,
+            )
+            page.locator("#project-name").wait_for(state="visible", timeout=15_000)
+            second_tab.locator(".app-shell").wait_for(state="visible", timeout=15_000)
+            _wait_for_controlled_worker(page, next_version)
+            _wait_for_controlled_worker(second_tab, next_version)
+
+            mark_stage(
+                "verifying compiled page acknowledgements and safe cache cleanup"
+            )
+            for prepared_page in (page, second_tab):
+                runtime_version = prepared_page.evaluate(
+                    """async () => {
+                      const response = await fetch('/app/_app/version.json', {
+                        cache: 'no-store',
+                      });
+                      if (!response.ok) return '';
+                      const data = await response.json();
+                      return typeof data.version === 'string' ? data.version : '';
+                    }"""
                 )
-            except (PlaywrightError, AcceptanceFailure) as error:
-                open_page_paths = sorted(
-                    urlsplit(candidate.url).path or "/" for candidate in context.pages
+                _require(
+                    runtime_version == candidate_app_version,
+                    "reloaded page does not use the candidate compiled app version",
                 )
-                monitor_controlled = monitor.evaluate(
-                    "() => Boolean(navigator.serviceWorker.controller)"
+                snapshot = _version_snapshot(prepared_page)
+                _require(
+                    snapshot.get("active") == next_version
+                    and snapshot.get("activeAppVersion") == candidate_app_version
+                    and snapshot.get("waiting") == "",
+                    "reloaded page is controlled by a mismatched app worker",
                 )
-                raise AcceptanceFailure(
-                    "candidate worker/cache did not reach one stable active version "
-                    f"(caches: {_cache_snapshot(monitor)}, "
-                    f"registration: {_version_snapshot(monitor)}, "
-                    f"open page paths: {open_page_paths}, "
-                    f"monitor controller: {monitor_controlled}, "
-                    f"worker errors: {activation_worker_errors[-8:]})"
-                ) from error
-            activated_snapshot = _version_snapshot(monitor)
+                _wait_for_async_condition(
+                    prepared_page,
+                    "() => sessionStorage.getItem('stricknani.pwa-update') === null",
+                    None,
+                    "page-version reload acknowledgement",
+                    timeout_ms=10_000,
+                )
+            _wait_for_async_condition(
+                page,
+                "() => caches.keys().then(keys => "
+                "!keys.includes('stricknani-app-update-state-v1'))",
+                None,
+                "activation record cleanup after every live page acknowledges",
+                timeout_ms=15_000,
+            )
+            activated_snapshot = _version_snapshot(page)
+            final_caches = _cache_snapshot(page)
             _require(
                 activated_snapshot.get("active") == next_version
                 and activated_snapshot.get("activeState") == "activated"
                 and activated_snapshot.get("waiting") == "",
                 "candidate worker activated with an unexpected version",
             )
-            final_caches = _cache_snapshot(monitor)
             _require(
                 len(final_caches) == 1 and next_version in next(iter(final_caches)),
                 "activation did not leave exactly the new bounded app cache "
-                f"(caches: {final_caches}, expected: {next_version}, "
-                f"worker errors: {activation_worker_errors[-8:]}, "
-                f"registration: {_version_snapshot(monitor)})",
+                f"(caches: {final_caches}, expected: {next_version})",
             )
             _require(
                 activation_worker_errors == [],
@@ -1256,42 +1728,32 @@ def run_acceptance(
             _require(
                 REQUIRED_OFFLINE_ASSETS.issubset(final_paths)
                 and set(final_paths).issubset(expected_assets),
-                "reopened app cache omitted core assets or contained an "
+                "updated app cache omitted core assets or contained an "
                 "unallowlisted path",
             )
-            _wait_for_controlled_worker(monitor, next_version)
-            monitor.wait_for_load_state("networkidle", timeout=15_000)
-            _wait_for_async_condition(
-                monitor,
-                """async expected => {
-                  const loaded = [...new Set(
-                    performance.getEntriesByType('resource').map(entry => {
-                      try { return new URL(entry.name).pathname; }
-                      catch { return ''; }
-                    }).filter(path => path.startsWith('/app/_app/immutable/')
-                      && (path.endsWith('.js') || path.endsWith('.css')))
-                  )];
-                  const cache = await caches.open(
-                    `stricknani-app-shell-${expected}`
-                  );
-                  const cached = await Promise.all(
-                    loaded.map(async path => Boolean(await cache.match(path)))
-                  );
-                  return cached.every(Boolean);
-                }""",
-                next_version,
-                "reopened route immutable assets to finish caching",
-                timeout_ms=15_000,
-            )
-            recovered_caches = _cache_snapshot(monitor)
-            recovered_paths = set(next(iter(recovered_caches.values())))
             _require(
-                REQUIRED_OFFLINE_ASSETS.issubset(recovered_paths)
-                and _loaded_immutable_assets(monitor).issubset(recovered_paths)
-                and recovered_paths.issubset(expected_assets),
-                "updated worker did not recover using only core and on-demand "
-                "public assets",
+                any(
+                    response == f"{cached_editor_asset}:200"
+                    for response in service_worker_asset_responses[
+                        asset_response_start:
+                    ]
+                ),
+                "the updated route did not recover its missing immutable asset "
+                "from the retained old cache",
             )
+            _require(
+                cached_editor_asset in final_paths,
+                "the retained immutable editor asset was not cached by the new worker",
+            )
+            for prepared_page in (page, second_tab):
+                _wait_for_async_condition(
+                    prepared_page,
+                    "() => caches.keys().then(keys => "
+                    "!keys.includes('stricknani-app-update-state-v1'))",
+                    None,
+                    "prepared page observing activation-state cleanup",
+                    timeout_ms=10_000,
+                )
 
             mark_stage("checking online recovery and console policy")
             _require(page_errors == [], "browser reported a page exception")

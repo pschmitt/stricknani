@@ -1,9 +1,11 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { listCategories } from "../categories/category-api";
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
   import {
@@ -91,6 +93,19 @@
     draft.yarnIds.map((id) => ({
       id,
       name: selectedYarnNames[id] ?? t("Selected yarn is unavailable.", locale),
+    })),
+  );
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: isDirty,
+      busy:
+        loadState === "loading" ||
+        saving ||
+        deleting ||
+        mediaBusy ||
+        categoryLoading ||
+        yarnLoading,
     })),
   );
 

@@ -222,9 +222,19 @@
                   {action.known ? t(action.messageKey, locale) : action.label}
                 </strong>
               </span>
-              <span class="event-entity"
-                >{event.entity_type} #{event.entity_id}</span
-              >
+              {#if !event.resource.name}
+                <span class="event-entity"
+                  >{event.entity_type} #{event.entity_id}</span
+                >
+              {/if}
+              {#if event.resource.href}
+                <a class="resource-link" href={event.resource.href}>
+                  {event.resource.name ??
+                    `${event.entity_type} #${event.entity_id}`}
+                </a>
+              {:else if event.resource.name}
+                <span class="resource-link">{event.resource.name}</span>
+              {/if}
             </div>
             <p>
               {t("By", locale)}
@@ -234,6 +244,11 @@
               </span>
             </p>
           </div>
+          {#if event.has_changes}
+            <a class="show-diff" href={`/app/admin/audit/${event.id}`}>
+              {t("Show diff", locale)}
+            </a>
+          {/if}
           <time datetime={event.created_at}>{eventDate(event.created_at)}</time>
         </li>
       {:else}
@@ -397,6 +412,15 @@
   .event-row time {
     color: var(--ink-muted);
     font-size: 0.9rem;
+  }
+  .resource-link,
+  .show-diff {
+    color: var(--accent-strong);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+  .show-diff {
+    justify-self: start;
   }
   .event-main p {
     display: flex;

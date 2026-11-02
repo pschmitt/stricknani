@@ -1,4 +1,5 @@
 pub(crate) mod account_service;
+pub(crate) mod admin_resource_service;
 pub(crate) mod admin_service;
 pub mod ai;
 pub mod api_v2;

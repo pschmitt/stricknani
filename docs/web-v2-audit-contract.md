@@ -50,8 +50,13 @@ The list must not include full resource text or change payloads.
 ```
 
 The service checks administrator authorization before reading on behalf of
-an actual resource owner. Media uses a separate administrator GET namespace;
-each media ID must belong to the requested resource. Existing owner media
+an actual resource owner. Media uses the administrator GET route
+`/api/v2/admin/resources/{kind}/{id}/media/{media_kind}/{public_id}`, with
+`media_kind` equal to `image`, `attachment`, or `photo`. Image and attachment
+public IDs have separate allocation namespaces and may overlap, so an ID
+alone cannot identify project media. Each media kind and ID must belong to
+the requested resource; thumbnails are available only for images and photos.
+Existing owner media
 routes remain unchanged. The page offers reading, images and attachments,
 with no edit, delete, favorite, OCR, archive or other mutation controls.
 Show the owner's avatar beside their identity.
@@ -90,7 +95,8 @@ exceeds display limits.
 
 ## Verification and rollout
 
-Cover authorization and media-parent binding, migration preservation,
+Cover authorization and media-parent/kind binding, including an image and an
+attachment with the same public ID, migration preservation,
 transaction rollback, recognized legacy projection, rejected unknown fields,
 deleted resources, lazy diff loading and read-only browser navigation.
 Back up the isolated preview database with a WAL-safe backup before deploying

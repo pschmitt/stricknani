@@ -1,9 +1,11 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
   import {
     createYarn,
@@ -77,6 +79,13 @@
       : yarnId === null
         ? t("Save yarn", locale)
         : t("Save changes", locale),
+  );
+
+  onMount(() =>
+    registerPwaUpdateGuard(() => ({
+      dirty: isDirty,
+      busy: loadState === "loading" || saving || mediaBusy,
+    })),
   );
 
   $effect(() => {

@@ -56,7 +56,7 @@ struct PageMeta {
 }
 
 #[derive(Serialize)]
-struct YarnDto {
+pub(super) struct YarnDto {
     id: i64,
     name: String,
     description: Option<String>,

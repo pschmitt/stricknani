@@ -1,0 +1,745 @@
+<script lang="ts">
+  import { resolve } from "$app/paths";
+  import { page } from "$app/state";
+  import { onDestroy } from "svelte";
+  import { ApiError } from "#lib/api.ts";
+  import NavIcon from "#lib/components/NavIcon.svelte";
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import { t } from "#lib/i18n.svelte.ts";
+  import { session } from "#lib/session.svelte.ts";
+  import {
+    getAdminResource,
+    type AdminResourceData,
+    type AdminResourceKind,
+  } from "./admin-resource-api";
+
+  type LoadState = "loading" | "ready" | "error";
+
+  let { kind, id }: { kind: string; id: number } = $props();
+  let resource = $state<AdminResourceData | null>(null);
+  let loadState = $state<LoadState>("loading");
+  let loadError = $state("");
+  let retry = $state(0);
+  let loadGeneration = 0;
+  let ownerGeneration = 0;
+  let currentOwner: number | null | undefined;
+
+  const locale = $derived(session.data?.locale ?? "en");
+  const userId = $derived(session.data?.user?.id ?? null);
+  const queryEventId = $derived(page.url.searchParams.get("event"));
+
+  $effect(() => {
+    const requestKind = kind;
+    const requestId = id;
+    const ownerId = userId;
+    const isAdmin = session.data?.user?.is_admin === true;
+    retry;
+    const request = ++loadGeneration;
+    if (currentOwner !== ownerId) {
+      currentOwner = ownerId;
+      ownerGeneration += 1;
+      resource = null;
+    }
+    const ownerRequest = ownerGeneration;
+    const controller = new AbortController();
+    loadError = "";
+    if (
+      ownerId === null ||
+      !isAdmin ||
+      !Number.isSafeInteger(requestId) ||
+      requestId <= 0 ||
+      !isResourceKind(requestKind)
+    ) {
+      loadState = "error";
+      loadError = t("Administrator access is required.", locale);
+      return () => controller.abort();
+    }
+    loadState = "loading";
+    void getAdminResource(requestKind, requestId, controller.signal)
+      .then((result) => {
+        if (
+          controller.signal.aborted ||
+          request !== loadGeneration ||
+          ownerRequest !== ownerGeneration ||
+          userId !== ownerId
+        )
+          return;
+        resource = result;
+        loadState = "ready";
+      })
+      .catch((error: unknown) => {
+        if (
+          controller.signal.aborted ||
+          request !== loadGeneration ||
+          ownerRequest !== ownerGeneration ||
+          userId !== ownerId
+        )
+          return;
+        resource = null;
+        loadState = "error";
+        loadError =
+          error instanceof ApiError && error.status === 403
+            ? t("Administrator access is required.", locale)
+            : error instanceof ApiError && error.status === 404
+              ? t("Resource not found.", locale)
+              : error instanceof Error
+                ? error.message
+                : t("Resource details could not be loaded.", locale);
+      });
+    return () => controller.abort();
+  });
+
+  onDestroy(() => {
+    loadGeneration += 1;
+    ownerGeneration += 1;
+  });
+
+  function isResourceKind(value: string): value is AdminResourceKind {
+    return value === "project" || value === "yarn" || value === "category";
+  }
+
+  function safeExternalUrl(value: string | null): string | null {
+    if (!value) return null;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:"
+        ? value
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function eventHref(): string | null {
+    const eventId = Number(queryEventId);
+    return Number.isSafeInteger(eventId) && eventId > 0
+      ? `/app/admin/audit/${eventId}`
+      : null;
+  }
+
+  function kindLabel(value: AdminResourceKind): string {
+    switch (value) {
+      case "project":
+        return t("Project", locale);
+      case "yarn":
+        return t("Yarn", locale);
+      case "category":
+        return t("Category", locale);
+    }
+  }
+
+  function formatDate(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.valueOf())) return "";
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+  }
+
+  function formatBytes(value: number): string {
+    if (value < 1024) return `${value} B`;
+    const units = ["KB", "MB", "GB"];
+    let amount = value;
+    let unit = -1;
+    do {
+      amount /= 1024;
+      unit += 1;
+    } while (amount >= 1024 && unit < units.length - 1);
+    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(amount)} ${units[unit]}`;
+  }
+
+  function updatedAt(value: AdminResourceData): string | null {
+    return value.kind === "category" ? null : value.resource.updated_at;
+  }
+</script>
+
+<svelte:head>
+  <title>
+    Stricknani · {resource?.name ?? t("Resource details", locale)}
+  </title>
+</svelte:head>
+
+<section class="resource-page" aria-labelledby="resource-title">
+  <header class="resource-heading">
+    <div>
+      <p class="section-mark">{t("Administrator", locale)}</p>
+      <h1 id="resource-title">
+        {resource?.name ?? t("Resource details", locale)}
+      </h1>
+      <p>{t("Read-only view", locale)}</p>
+    </div>
+    <a class="secondary-button" href={resolve("/admin/audit")}>
+      <span class="button-content">
+        <NavIcon name="previous" />
+        <span>{t("Back to audit log", locale)}</span>
+      </span>
+    </a>
+  </header>
+
+  {#if loadState === "loading"}
+    <p class="notice-panel" aria-live="polite">
+      {t("Loading resource details…", locale)}
+    </p>
+  {:else if loadState === "error"}
+    <section
+      class="notice-panel"
+      role="alert"
+      aria-labelledby="resource-error-title"
+    >
+      <h2 id="resource-error-title">{loadError}</h2>
+      <button
+        class="secondary-button"
+        type="button"
+        onclick={() => (retry += 1)}
+      >
+        <span class="button-content">
+          <NavIcon name="refresh" />
+          <span>{t("Try again", locale)}</span>
+        </span>
+      </button>
+    </section>
+  {:else if resource}
+    <div class="resource-content">
+      <div class="resource-meta">
+        <span class="resource-kind">{kindLabel(resource.kind)}</span>
+        {#if updatedAt(resource)}
+          <span>{t("Updated", locale)} {formatDate(updatedAt(resource)!)}</span>
+        {/if}
+      </div>
+
+      {#if resource.owner}
+        <section class="owner-strip" aria-label={t("Resource owner", locale)}>
+          <UserAvatar
+            avatarUrl={resource.owner.avatar_url}
+            name={resource.owner.email}
+            size="large"
+          />
+          <div>
+            <p class="field-label">{t("Owner", locale)}</p>
+            <p class="owner-name">{resource.owner.email}</p>
+          </div>
+        </section>
+      {/if}
+
+      {#if eventHref()}
+        <a class="history-link" href={eventHref() ?? undefined}>
+          <NavIcon name="audit" />
+          <span>{t("Show recorded changes", locale)}</span>
+        </a>
+      {/if}
+
+      {#if resource.kind === "project"}
+        {@const project = resource.resource}
+        <section
+          class="resource-section"
+          aria-labelledby="project-details-title"
+        >
+          <h2 id="project-details-title">{t("Project details", locale)}</h2>
+          <dl class="field-grid">
+            <div>
+              <dt>{t("Category", locale)}</dt>
+              <dd>{project.category ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Yarn", locale)}</dt>
+              <dd>{project.yarn ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Needles", locale)}</dt>
+              <dd>{project.needles ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Stitch sample", locale)}</dt>
+              <dd>{project.stitch_sample ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Created", locale)}</dt>
+              <dd>{formatDate(project.created_at)}</dd>
+            </div>
+            <div>
+              <dt>{t("Updated", locale)}</dt>
+              <dd>{formatDate(project.updated_at)}</dd>
+            </div>
+          </dl>
+          {#if project.yarn_ids.length}
+            <div class="linked-resources">
+              <h3>{t("Linked yarns", locale)}</h3>
+              {#each project.yarn_ids as yarnId (yarnId)}
+                <a
+                  href={resolve("/admin/resources/[kind]/[id]", {
+                    kind: "yarn",
+                    id: String(yarnId),
+                  })}
+                >
+                  {t("Yarn", locale)} #{yarnId}
+                </a>
+              {/each}
+            </div>
+          {/if}
+          {#if project.tags.length}
+            <div class="tag-list" aria-label={t("Tags", locale)}>
+              {#each project.tags as tag (tag)}<span>{tag}</span>{/each}
+            </div>
+          {/if}
+          {#if project.description_html}
+            <section class="text-section">
+              <h3>{t("Description", locale)}</h3>
+              <div class="rich-text">{@html project.description_html}</div>
+            </section>
+          {/if}
+          {#if project.notes_html}
+            <section class="text-section">
+              <h3>{t("Notes", locale)}</h3>
+              <div class="rich-text">{@html project.notes_html}</div>
+            </section>
+          {/if}
+          {#if project.other_materials_html}
+            <section class="text-section">
+              <h3>{t("Other materials", locale)}</h3>
+              <div class="rich-text">{@html project.other_materials_html}</div>
+            </section>
+          {/if}
+          {#if safeExternalUrl(project.link)}
+            <p>
+              <a
+                href={safeExternalUrl(project.link)}
+                target="_blank"
+                rel="noopener noreferrer">{t("Original source", locale)}</a
+              >
+            </p>
+          {/if}
+          {#if safeExternalUrl(project.link_archive)}
+            <p>
+              <a
+                href={safeExternalUrl(project.link_archive)}
+                target="_blank"
+                rel="noopener noreferrer">{t("Archived source", locale)}</a
+              >
+            </p>
+          {/if}
+        </section>
+
+        {#if project.steps.length}
+          <section class="resource-section" aria-labelledby="steps-title">
+            <h2 id="steps-title">{t("Steps", locale)}</h2>
+            <ol class="step-list">
+              {#each project.steps as step (step.id)}
+                <li>
+                  <h3>{step.step_number}. {step.title}</h3>
+                  {#if step.description_html}<div class="rich-text">
+                      {@html step.description_html}
+                    </div>{/if}
+                </li>
+              {/each}
+            </ol>
+          </section>
+        {/if}
+
+        {#if project.images.length}
+          <section class="resource-section" aria-labelledby="images-title">
+            <h2 id="images-title">{t("Images", locale)}</h2>
+            <ul class="media-grid">
+              {#each project.images as image (image.id)}
+                {@const imageStep = project.steps.find(
+                  (step) => step.id === image.step_id,
+                )}
+                <li>
+                  <a href={image.url} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={image.thumbnail_url}
+                      alt={image.alt_text}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span>
+                      {image.alt_text || t("Open full image", locale)}
+                      {#if image.step_id}
+                        · {t("Step", locale)}
+                        {imageStep?.step_number ?? image.step_id}
+                      {/if}
+                    </span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+
+        {#if project.attachments.length}
+          <section class="resource-section" aria-labelledby="attachments-title">
+            <h2 id="attachments-title">{t("Attachments", locale)}</h2>
+            <ul class="attachment-list">
+              {#each project.attachments as attachment (attachment.id)}
+                <li>
+                  <a
+                    href={attachment.url}
+                    download={attachment.original_filename}
+                  >
+                    <NavIcon name="imports" />
+                    <span>{attachment.original_filename}</span>
+                  </a>
+                  <span
+                    >{attachment.content_type} · {formatBytes(
+                      attachment.size_bytes,
+                    )}</span
+                  >
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+      {:else if resource.kind === "yarn"}
+        {@const yarn = resource.resource}
+        <section class="resource-section" aria-labelledby="yarn-details-title">
+          <h2 id="yarn-details-title">{t("Yarn details", locale)}</h2>
+          <dl class="field-grid">
+            <div>
+              <dt>{t("Brand", locale)}</dt>
+              <dd>{yarn.brand ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Colorway", locale)}</dt>
+              <dd>{yarn.colorway ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Dye lot", locale)}</dt>
+              <dd>{yarn.dye_lot ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Fiber content", locale)}</dt>
+              <dd>{yarn.fiber_content ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Weight category", locale)}</dt>
+              <dd>{yarn.weight_category ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Recommended needles", locale)}</dt>
+              <dd>{yarn.recommended_needles ?? t("Not provided", locale)}</dd>
+            </div>
+            <div>
+              <dt>{t("Weight", locale)}</dt>
+              <dd>
+                {yarn.weight_grams ??
+                  t("Not provided", locale)}{yarn.weight_grams !== null
+                  ? ` ${t("grams", locale)}`
+                  : ""}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("Length", locale)}</dt>
+              <dd>
+                {yarn.length_meters ??
+                  t("Not provided", locale)}{yarn.length_meters !== null
+                  ? ` ${t("meters", locale)}`
+                  : ""}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("Created", locale)}</dt>
+              <dd>{formatDate(yarn.created_at)}</dd>
+            </div>
+            <div>
+              <dt>{t("Updated", locale)}</dt>
+              <dd>{formatDate(yarn.updated_at)}</dd>
+            </div>
+          </dl>
+          {#if yarn.project_ids.length}
+            <div class="linked-resources">
+              <h3>{t("Linked projects", locale)}</h3>
+              {#each yarn.project_ids as projectId (projectId)}
+                <a
+                  href={resolve("/admin/resources/[kind]/[id]", {
+                    kind: "project",
+                    id: String(projectId),
+                  })}
+                >
+                  {t("Project", locale)} #{projectId}
+                </a>
+              {/each}
+            </div>
+          {/if}
+          {#if yarn.description_html}
+            <section class="text-section">
+              <h3>{t("Description", locale)}</h3>
+              <div class="rich-text">{@html yarn.description_html}</div>
+            </section>
+          {/if}
+          {#if yarn.notes_html}
+            <section class="text-section">
+              <h3>{t("Notes", locale)}</h3>
+              <div class="rich-text">{@html yarn.notes_html}</div>
+            </section>
+          {/if}
+          {#if safeExternalUrl(yarn.link)}
+            <p>
+              <a
+                href={safeExternalUrl(yarn.link)}
+                target="_blank"
+                rel="noopener noreferrer">{t("Original source", locale)}</a
+              >
+            </p>
+          {/if}
+          {#if safeExternalUrl(yarn.link_archive)}
+            <p>
+              <a
+                href={safeExternalUrl(yarn.link_archive)}
+                target="_blank"
+                rel="noopener noreferrer">{t("Archived source", locale)}</a
+              >
+            </p>
+          {/if}
+        </section>
+        {#if yarn.photos.length}
+          <section class="resource-section" aria-labelledby="photos-title">
+            <h2 id="photos-title">{t("Photos", locale)}</h2>
+            <ul class="media-grid">
+              {#each yarn.photos as photo (photo.id)}
+                <li>
+                  <a href={photo.url} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={photo.thumbnail_url}
+                      alt={photo.alt_text}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span>{photo.alt_text || t("Open full image", locale)}</span
+                    >
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+      {:else}
+        <section
+          class="resource-section"
+          aria-labelledby="category-details-title"
+        >
+          <h2 id="category-details-title">{t("Category details", locale)}</h2>
+          <dl class="field-grid">
+            <div>
+              <dt>{t("Category name", locale)}</dt>
+              <dd>{resource.resource.name}</dd>
+            </div>
+          </dl>
+        </section>
+      {/if}
+    </div>
+  {/if}
+</section>
+
+<style>
+  .resource-page {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+  }
+  .resource-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .resource-heading h1 {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .resource-heading > div > p:last-child {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+  }
+  .section-mark {
+    margin: 0 0 0.25rem;
+    color: var(--accent-strong);
+    font-size: 0.9rem;
+  }
+  .resource-content {
+    display: grid;
+    gap: 1rem;
+  }
+  .resource-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .resource-kind {
+    color: var(--accent-strong);
+    font-weight: 700;
+  }
+  .owner-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background: var(--surface);
+  }
+  .owner-strip p {
+    margin: 0;
+  }
+  .owner-name {
+    font-weight: 650;
+    overflow-wrap: anywhere;
+  }
+  .field-label,
+  .field-grid dt {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 0.75rem 1rem;
+    margin: 0;
+  }
+  .field-grid div {
+    min-width: 0;
+  }
+  .field-grid dt {
+    margin-bottom: 0.15rem;
+  }
+  .field-grid dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .resource-section {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background: var(--surface);
+  }
+  .resource-section h2,
+  .resource-section h3 {
+    margin: 0;
+  }
+  .resource-section h2 {
+    font-size: 1.15rem;
+  }
+  .resource-section h3 {
+    font-size: 1rem;
+  }
+  .text-section {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .rich-text {
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+  }
+  .rich-text :global(:first-child) {
+    margin-top: 0;
+  }
+  .rich-text :global(:last-child) {
+    margin-bottom: 0;
+  }
+  .tag-list,
+  .linked-resources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .tag-list span {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-wash);
+    color: var(--accent-strong);
+  }
+  .linked-resources {
+    align-items: center;
+  }
+  .linked-resources h3 {
+    flex-basis: 100%;
+  }
+  .step-list {
+    display: grid;
+    gap: 0.75rem;
+    padding-left: 1.5rem;
+    margin: 0;
+  }
+  .step-list li {
+    padding-left: 0.25rem;
+  }
+  .step-list h3 {
+    margin-bottom: 0.4rem;
+  }
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .media-grid a {
+    display: grid;
+    gap: 0.4rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  .media-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 0.65rem;
+    background: var(--surface-raised);
+  }
+  .media-grid span {
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+  .attachment-list {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .attachment-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.4rem 1rem;
+  }
+  .attachment-list a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-wrap: anywhere;
+  }
+  .attachment-list li > span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .history-link {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    color: var(--accent-strong);
+    text-decoration: none;
+  }
+  .resource-page a:focus-visible,
+  .resource-page button:focus-visible {
+    outline: 3px solid var(--accent-strong);
+    outline-offset: 3px;
+  }
+  @media (max-width: 38rem) {
+    .resource-heading {
+      align-items: start;
+      flex-direction: column;
+    }
+  }
+</style>
