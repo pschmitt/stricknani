@@ -27,9 +27,11 @@ session endpoint returned a private, no-store response with no user. The live
 690-entry English/German catalog was verified. A WIP preview notification was
 sent after the checks. Published checkpoint `25c033e` added browser-harness
 updates to the `86d7e79` runtime; this checkpoint also includes the SVG
-comparison follow-up verified against that v8 artifact. Exact-source CI and
-preview pinning remain pending. Production Python code and storage remain
-unchanged.
+comparison follow-up verified against that v8 artifact. Public configuration
+commit `6ce9e108a` now pins application checkpoint `3630940`, whose runtime
+files match `86d7e79`; its seven public CI runs passed. The persistent native
+preview unit and removal of the temporary override are verified below.
+Production Python code and storage remain unchanged.
 
 The account/avatar navigation, action icons, More/language navigation, compact
 library headings, mobile admin pagination wrapping, and 690-key EN/DE catalog
@@ -64,17 +66,32 @@ Formatting, all-target/all-feature Clippy, all 303 workspace tests across 49
 suites, and four health tests passed. The corresponding integrated frontend
 passed formatting, Svelte checking with zero errors/warnings, 136 tests across
 20 files, and its static build. Its catalog has 739 English/German entries.
-Browser acceptance, exact committed/package checks and deployment remain open.
+Both Nix packages built from committed checkpoint `19e36d4`. The core and admin
+Chromium journeys passed against its exact realised server/web packages on a
+separate build host. The core journey verifies project creation (POST 201),
+editing (PUT 200), tags, media and dirty navigation. The admin journey verifies
+cross-owner read-only pages, step images/attachments, lazy diffs, deleted
+history, ownership denial and narrow layouts. These receipts establish those
+journeys, not native-phone or screen-reader acceptance.
+
+Follow-up worker fixes prevent activation-state reads from creating a cache,
+protect waiting versions during cache pruning, and retain allowlisted public
+assets after fallback. Their new package and full PWA browser journey remain
+pending. No 739-entry candidate or schema-14 migration has been deployed.
 
 A later automatic host upgrade restored the older pinned preview (666 catalog
 entries and no app worker). The verified v8 runtime was restored using a
 temporary staging-service ExecStart override, without changing the active
 system generation or production service. HTTPS again matched the v8 690-entry
-catalog and worker hashes. The active generation is now `kivg6idic3sg7lsyz5pkig9aadgcm4a5`;
-the earlier `7iicbw26…` closure remains the accepted v8 artifact. Persist the
-verified application source pin and remove the temporary runtime override
-during the next verified switch. Keep this restoration separate from a new
-version rollout.
+catalog and worker hashes. Persistence is now complete: the latest candidate
+already matched the active/profile generation `28772h0m0z3alv3f4h27k7rhjm9pdi6r`,
+so another system switch was unnecessary. The native unit uses the accepted v8
+server; only the verified temporary override was removed, followed by a
+staging-only restart. Production, nginx, nixbot and nix-daemon retained their
+process identities and stayed active. Root independently verified the native
+unit, override absence and accepted HTTPS hashes. This is persistence of v8,
+not a new feature rollout; the earlier `7iicbw26…` closure remains its original
+accepted artifact.
 
 T120 and its subtasks remain open. Required work includes:
 

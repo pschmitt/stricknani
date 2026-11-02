@@ -54,8 +54,14 @@ self.addEventListener("message", (event) => {
   } else if (event.data?.type === "RELOAD_ACK") {
     event.waitUntil(acknowledgeReload(event, source));
   } else if (event.data?.type === "PRUNE_APP_CACHES") {
-    event.waitUntil(pruneOldCachesIfSafe());
-    event.ports[0]?.postMessage({ type: "PRUNE_REQUEST_ACCEPTED" });
+    event.waitUntil(
+      pruneOldCachesIfSafe().then((pruned) =>
+        event.ports[0]?.postMessage({
+          type: "PRUNE_REQUEST_ACCEPTED",
+          pruned,
+        }),
+      ),
+    );
   }
 });
 
@@ -121,8 +127,8 @@ async function writeActivationState(transaction) {
 }
 
 async function readActivationState() {
-  const cache = await caches.open(UPDATE_STATE_CACHE);
-  const response = await cache.match(UPDATE_STATE_URL, {
+  const response = await caches.match(UPDATE_STATE_URL, {
+    cacheName: UPDATE_STATE_CACHE,
     ignoreSearch: false,
   });
   if (!response) return null;
@@ -135,10 +141,34 @@ async function readActivationState() {
 }
 
 async function deleteActivationState(updateId) {
-  const state = await readActivationState();
-  if (updateId && state?.updateId !== updateId) return;
+  if (!(await caches.has(UPDATE_STATE_CACHE))) return false;
+  const response = await caches.match(UPDATE_STATE_URL, {
+    cacheName: UPDATE_STATE_CACHE,
+    ignoreSearch: false,
+  });
+  if (!response) {
+    await deleteEmptyActivationStateCache();
+    return false;
+  }
+  let state;
+  try {
+    const value = await response.json();
+    state = validActivationState(value) ? value : null;
+  } catch {
+    return false;
+  }
+  if (!state || typeof updateId !== "string" || state.updateId !== updateId)
+    return false;
   const cache = await caches.open(UPDATE_STATE_CACHE);
   await cache.delete(UPDATE_STATE_URL);
+  if ((await cache.keys()).length === 0)
+    await caches.delete(UPDATE_STATE_CACHE);
+  return true;
+}
+
+async function deleteEmptyActivationStateCache() {
+  if (!(await caches.has(UPDATE_STATE_CACHE))) return;
+  const cache = await caches.open(UPDATE_STATE_CACHE);
   if ((await cache.keys()).length === 0)
     await caches.delete(UPDATE_STATE_CACHE);
 }
@@ -405,6 +435,7 @@ async function cancelUpdate(event, source) {
     return;
   }
   await cancelPreparedClients(transaction, "cancelled");
+  await deleteActivationState(transaction.updateId);
   if (preparedUpdate === transaction) preparedUpdate = null;
   event.ports[0]?.postMessage({ type: "UPDATE_CANCELLED" });
 }
@@ -428,19 +459,63 @@ async function acknowledgeReload(event, source) {
   event.waitUntil(pruneOldCachesIfSafe());
 }
 
-async function deleteOldAppCaches() {
+async function activeWorkerCanPrune(expectedActive) {
+  const registration = self.registration;
+  if (
+    !expectedActive ||
+    expectedActive.state !== "activated" ||
+    registration.active !== expectedActive ||
+    registration.waiting ||
+    registration.installing
+  ) {
+    return false;
+  }
+  const version = await askClient(expectedActive, "GET_VERSION", "", "", "");
+  return (
+    version?.workerVersion === APP_VERSION &&
+    version.appVersion === APP_CODE_VERSION &&
+    expectedActive.state === "activated" &&
+    registration.active === expectedActive &&
+    !registration.waiting &&
+    !registration.installing
+  );
+}
+
+async function deleteOldAppCaches(expectedActive) {
+  if (!(await activeWorkerCanPrune(expectedActive))) return false;
+  await cacheWriteQueue;
+  if (!(await activeWorkerCanPrune(expectedActive))) return false;
   const cacheKeys = (await caches.keys()).filter(
     (key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME,
   );
-  await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+  if (!(await activeWorkerCanPrune(expectedActive))) return false;
+  for (const key of cacheKeys) {
+    if (!(await activeWorkerCanPrune(expectedActive))) return false;
+    await caches.delete(key);
+  }
+  return true;
+}
+
+async function deleteCurrentActivationState() {
+  const activation = await readActivationState();
+  if (
+    activation?.appVersion === APP_CODE_VERSION &&
+    activation.workerVersion === APP_VERSION
+  ) {
+    await deleteActivationState(activation.updateId);
+  } else {
+    await deleteEmptyActivationStateCache();
+  }
 }
 
 async function pruneOldCachesIfSafe() {
+  const activeWorker = self.registration.active;
+  if (!(await activeWorkerCanPrune(activeWorker))) return false;
   const clients = await appWindowClients();
   if (clients.length === 0) {
-    await deleteOldAppCaches();
-    await deleteActivationState();
-    return true;
+    const deleted = await deleteOldAppCaches(activeWorker);
+    if (deleted) await deleteCurrentActivationState();
+    return deleted;
   }
   const versions = await Promise.all(
     clients.map((client) => askClient(client, "QUERY_APP_VERSION", "", "", "")),
@@ -453,8 +528,9 @@ async function pruneOldCachesIfSafe() {
       result.controllerVersion === APP_VERSION,
   );
   if (!allCurrent) return false;
-  await deleteOldAppCaches();
-  await deleteActivationState();
+  const deleted = await deleteOldAppCaches(activeWorker);
+  if (!deleted) return false;
+  await deleteCurrentActivationState();
   return true;
 }
 
@@ -485,6 +561,16 @@ function isImmutableAssetPath(pathname) {
   return (
     pathname.startsWith(IMMUTABLE_ASSET_PREFIX) &&
     (pathname.endsWith(".js") || pathname.endsWith(".css"))
+  );
+}
+
+function isPromotableImmutableAsset(url) {
+  return (
+    url.origin === self.location.origin &&
+    url.search === "" &&
+    url.hash === "" &&
+    isImmutableAssetPath(url.pathname) &&
+    PUBLIC_ASSETS.includes(url.pathname)
   );
 }
 
@@ -708,8 +794,9 @@ function publicAsset(request, url) {
     finishBackground = resolve;
   });
   const response = (async () => {
+    let cache = null;
     try {
-      const cache = await caches.open(CACHE_NAME);
+      cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(request, { ignoreSearch: false });
       if (cached) {
         finishBackground();
@@ -734,16 +821,38 @@ function publicAsset(request, url) {
       const retained = isImmutableAssetPath(url.pathname)
         ? await retainedImmutableResponse(request)
         : null;
+      if (
+        retained &&
+        cache &&
+        isPromotableImmutableAsset(url) &&
+        responseMatches(retained, url)
+      ) {
+        await queueImmutableCacheWrite(cache, url, retained.clone()).catch(
+          () => undefined,
+        );
+      }
       finishBackground();
       return retained || networkResponse;
     } catch (error) {
-      finishBackground();
       if (isImmutableAssetPath(url.pathname)) {
         const retained = await retainedImmutableResponse(request).catch(
           () => null,
         );
-        if (retained) return retained;
+        if (retained) {
+          if (
+            cache &&
+            isPromotableImmutableAsset(url) &&
+            responseMatches(retained, url)
+          ) {
+            await queueImmutableCacheWrite(cache, url, retained.clone()).catch(
+              () => undefined,
+            );
+          }
+          finishBackground();
+          return retained;
+        }
       }
+      finishBackground();
       throw error;
     }
   })();

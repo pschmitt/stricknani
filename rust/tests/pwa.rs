@@ -352,6 +352,34 @@ fn app_worker_requires_explicit_preparation_and_retains_assets_until_page_ack() 
     assert!(worker.contains("pageVersion === APP_CODE_VERSION"));
     assert!(worker.contains("retainedImmutableResponse(request)"));
     assert!(worker.contains("ignoreSearch: false"));
+    let activation_reader = worker
+        .split("async function readActivationState")
+        .nth(1)
+        .and_then(|body| body.split("async function deleteActivationState").next())
+        .expect("worker should define an activation-state reader");
+    assert!(activation_reader.contains("caches.match(UPDATE_STATE_URL"));
+    assert!(!activation_reader.contains("caches.open(UPDATE_STATE_CACHE)"));
+    let active_worker_guard = worker
+        .split("async function activeWorkerCanPrune")
+        .nth(1)
+        .and_then(|body| body.split("async function deleteOldAppCaches").next())
+        .expect("worker should verify the active worker before cache pruning");
+    assert!(active_worker_guard.contains("registration.waiting"));
+    assert!(active_worker_guard.contains("registration.installing"));
+    assert!(active_worker_guard.contains("GET_VERSION"));
+    assert!(worker.contains("function isPromotableImmutableAsset(url)"));
+    assert!(worker.contains("PUBLIC_ASSETS.includes(url.pathname)"));
+    assert!(worker.contains("responseMatches(retained, url)"));
+    assert!(worker.contains("await queueImmutableCacheWrite(cache, url, retained.clone())"));
+    assert!(worker.contains("await cacheWriteQueue;"));
+    let cache_pruner = worker
+        .split("async function pruneOldCachesIfSafe")
+        .nth(1)
+        .and_then(|body| body.split("async function installAppShell").next())
+        .expect("worker should define guarded cache pruning");
+    assert!(cache_pruner.contains("activeWorkerCanPrune(activeWorker)"));
+    assert!(worker.contains("registration.waiting"));
+    assert!(worker.contains("registration.installing"));
     let activation = worker
         .split("self.addEventListener(\"activate\"")
         .nth(1)

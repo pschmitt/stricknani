@@ -10,7 +10,7 @@ from committed source and live preview state; passing it does not complete T120.
 | Slice | Implementation and evidence | Assessment |
 | --- | --- | --- |
 | **T120.1 Design and contracts** | [`web-ui-design.md`](web-ui-design.md), [`web-v2-contract.md`](web-v2-contract.md), and the brief define routes, mobile navigation, states, theme, API shapes, and security boundaries. | **Documented.** The design and contract artifacts exist; remaining acceptance and rollout work stays open. |
-| **T120.2 Foundation and auth shell** | [`web/src/routes`](../web/src/routes), [`+layout.svelte`](../web/src/routes/+layout.svelte), [`rust/src/frontend.rs`](../rust/src/frontend.rs), [`rust/src/pwa.rs`](../rust/src/pwa.rs), [`rust/tests/frontend.rs`](../rust/tests/frontend.rs), and [`rust/tests/pwa.rs`](../rust/tests/pwa.rs) cover the static shell, route fallback, CSP manifest, and `/app` worker. [`rust/src/lib.rs`](../rust/src/lib.rs) and its tests implement the configured `/` → `/app/` landing. | **Implemented; v8 package, core/admin journeys, and preview rollout pass.** Exact-source CI and pin/publication remain open. |
+| **T120.2 Foundation and auth shell** | [`web/src/routes`](../web/src/routes), [`+layout.svelte`](../web/src/routes/+layout.svelte), [`rust/src/frontend.rs`](../rust/src/frontend.rs), [`rust/src/pwa.rs`](../rust/src/pwa.rs), [`rust/tests/frontend.rs`](../rust/tests/frontend.rs), and [`rust/tests/pwa.rs`](../rust/tests/pwa.rs) cover the static shell, route fallback, CSP manifest, and `/app` worker. [`rust/src/lib.rs`](../rust/src/lib.rs) and its tests implement the configured `/` → `/app/` landing. | **Implemented; v8 package, core/admin journeys, and preview rollout pass.** The v8 source pin and override cleanup are complete; newer feature acceptance remains open. |
 | **T120.3 Browser API v2** | [`rust/src/api_v2`](../rust/src/api_v2), [`docs/web-v2-contract.md`](web-v2-contract.md), and [`api_v2.rs`](../rust/tests/api_v2.rs), [`api_v2_projects.rs`](../rust/tests/api_v2_projects.rs), [`api_v2_resources.rs`](../rust/tests/api_v2_resources.rs), [`api_v2_media.rs`](../rust/tests/api_v2_media.rs), [`api_v2_imports.rs`](../rust/tests/api_v2_imports.rs), [`api_v2_account.rs`](../rust/tests/api_v2_account.rs), [`api_v2_admin.rs`](../rust/tests/api_v2_admin.rs), [`api_v2_audit.rs`](../rust/tests/api_v2_audit.rs), [`api_v2_signup.rs`](../rust/tests/api_v2_signup.rs), [`api_v2_ocr.rs`](../rust/tests/api_v2_ocr.rs), [`api_v2_archive.rs`](../rust/tests/api_v2_archive.rs), and [`api_v2_tools.rs`](../rust/tests/api_v2_tools.rs) cover browser sessions, CSRF, ownership, stable errors, pagination, and capabilities. | **Implemented and API-tested.** No v2 feature gap is established; API tests and the combined synthetic journeys provide candidate evidence, not live verification or a full Android-client run. |
 | **T120.4 Projects and reader** | [`ProjectLibrary.svelte`](../web/src/lib/features/projects/ProjectLibrary.svelte), [`ProjectReader.svelte`](../web/src/lib/features/projects/ProjectReader.svelte), [`web_ui_browser.py`](../ci/stricknani/web_ui_browser.py), and [`web_accessibility_browser.py`](../ci/stricknani/web_accessibility_browser.py) cover library filters, reader content, navigation, image dialogs, and keyboard behavior. | **Implemented; combined synthetic journeys pass.** Physical-phone viewport, soft-keyboard, and safe-area behavior remain unproven. |
 | **T120.5 Project editor and media** | [`ProjectEditor.svelte`](../web/src/lib/features/projects/ProjectEditor.svelte), project/media API tests, [`web_ui_browser.py`](../ci/stricknani/web_ui_browser.py), and [`ProjectReader.svelte`](../web/src/lib/features/projects/ProjectReader.svelte) cover create/edit, step ordering, conflict handling, uploads, attachments, and reader media. | **Implemented; synthetic journeys pass.** Do not infer physical-device upload or keyboard usability from desktop automation. |
@@ -77,7 +77,7 @@ from committed source and live preview state; passing it does not complete T120.
   690 German entries. Production service unit and nginx configuration remain
   unchanged. Published checkpoint `25c033e` added browser-harness updates;
   the SVG hidden-DOM comparison follow-up is included here and passed against
-  the same v8 package. Exact-source CI and preview pinning remain open.
+  the same v8 package. Public pin `6ce9e108a` and native preview persistence are now verified; the newer candidate remains separate.
 
   Earlier accepted receipts remain limited to their named artifacts: combined
   core and optional-service/signup journeys, PWA, Chromium/Firefox/WebKit and
@@ -101,10 +101,11 @@ implementation. The user approved cross-owner read access only through the
 separate admin views; ordinary ownership and mutation permissions remain intact.
 The reviewed implementation checkpoint passes 303 Rust tests, four health tests,
 136 frontend tests, formatting, Clippy, Svelte checking and the static build.
-These are frozen-candidate receipts, not completed browser/package acceptance.
-The active v8 preview was restored after an automatic upgrade reverted its
-unpinned source; persistent pinning and temporary runtime-override cleanup
-remain required. See the current checkpoint for exact artifact provenance.
+The exact realised v19 packages also pass core and read-only admin Chromium
+journeys. Follow-up worker fixes still need their own package/PWA browser gate.
+The active v8 preview source pin and temporary-override cleanup are complete;
+production and nixbot kept their process identities. See the current checkpoint
+for exact artifact provenance.
 
 1. Pass CI for the exact committed integration checkpoint and publish/pin the
    combined feature candidate. The v8 live rollout is verified; keep package

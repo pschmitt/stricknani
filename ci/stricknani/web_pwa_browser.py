@@ -161,6 +161,143 @@ def _cache_snapshot(page: Page) -> dict[str, list[str]]:
     return value
 
 
+def _activation_state_snapshot(page: Page) -> dict[str, bool]:
+    value: object = page.evaluate(
+        """async () => {
+          const cacheName = 'stricknani-app-update-state-v1';
+          const cachePresent = await caches.has(cacheName);
+          if (!cachePresent) return { cachePresent: false, entryPresent: false };
+          const cache = await caches.open(cacheName);
+          const url = new URL(
+            '/__stricknani_app_update_activation_v1__', location.origin,
+          ).href;
+          return {
+            cachePresent: true,
+            entryPresent: Boolean(await cache.match(url, { ignoreSearch: false })),
+          };
+        }"""
+    )
+    if (
+        not isinstance(value, dict)
+        or not isinstance(value.get("cachePresent"), bool)
+        or not isinstance(value.get("entryPresent"), bool)
+    ):
+        raise AcceptanceFailure("activation state snapshot is malformed")
+    return value
+
+
+def _request_cache_prune(page: Page) -> dict[str, object]:
+    value: object = page.evaluate(
+        """async () => {
+          const worker = navigator.serviceWorker.controller;
+          if (!worker) return { type: 'NO_CONTROLLER', pruned: false };
+          return await new Promise(resolve => {
+            const channel = new MessageChannel();
+            const timer = setTimeout(() => {
+              channel.port1.close();
+              resolve({ type: 'TIMEOUT', pruned: false });
+            }, 8000);
+            channel.port1.onmessage = event => {
+              clearTimeout(timer);
+              channel.port1.close();
+              resolve({
+                type: event.data?.type ?? '',
+                pruned: event.data?.pruned === true,
+              });
+            };
+            worker.postMessage(
+              { type: 'PRUNE_APP_CACHES' },
+              [channel.port2],
+            );
+          });
+        }"""
+    )
+    if not isinstance(value, dict):
+        raise AcceptanceFailure("cache prune reply is malformed")
+    return value
+
+
+def _safe_update_state(page: Page) -> dict[str, bool]:
+    value: object = page.evaluate(
+        """() => {
+          const shell = document.querySelector('.app-shell');
+          const notice = document.querySelector('.update-notice');
+          const buttons = notice ? [...notice.querySelectorAll('button')] : [];
+          const visible = element => Boolean(
+            element && element.getClientRects().length > 0
+          );
+          const copy = notice?.textContent ?? '';
+          return {
+            appShellPresent: Boolean(shell),
+            appShellInert: shell?.inert === true,
+            noticeVisible: visible(notice),
+            reloadButtonVisible: buttons.some(button =>
+              visible(button) && button.textContent?.includes('Reload')
+            ),
+            cancelButtonVisible: buttons.some(button =>
+              visible(button) && button.textContent?.includes('Cancel')
+            ),
+            dirtyReasonVisible: copy.includes('unsaved changes'),
+            busyReasonVisible: copy.includes('operation is still in progress'),
+            unresponsiveReasonVisible: copy.includes(
+              'Another app tab did not respond',
+            ),
+            preparingCopyVisible: copy.includes('Checking open tabs'),
+          };
+        }"""
+    )
+    if not isinstance(value, dict):
+        return {"diagnosticsAvailable": False}
+    return {
+        key: item
+        for key, item in value.items()
+        if isinstance(key, str) and isinstance(item, bool)
+    }
+
+
+def _install_update_history(page: Page) -> None:
+    page.evaluate(
+        """() => {
+          const allowed = new Set([
+            'preparing', 'committing', 'blocked', 'cancelled',
+            'activated', 'reload-cancelled',
+          ]);
+          window.__pwaUpdateHistory = [];
+          window.addEventListener('stricknani:pwa-update', event => {
+            const state = event.detail?.state;
+            if (!allowed.has(state)) return;
+            const history = window.__pwaUpdateHistory;
+            history.push(state);
+            if (history.length > 32) history.shift();
+          });
+        }"""
+    )
+
+
+def _safe_update_history(page: Page) -> dict[str, bool]:
+    value: object = page.evaluate(
+        """() => {
+          const history = Array.isArray(window.__pwaUpdateHistory)
+            ? window.__pwaUpdateHistory
+            : [];
+          const preparingIndex = history.indexOf('preparing');
+          return {
+            preparingObserved: preparingIndex >= 0,
+            cancelledAfterPreparing: preparingIndex >= 0
+              && history.indexOf('cancelled', preparingIndex + 1) >= 0,
+            blockedObserved: history.includes('blocked'),
+          };
+        }"""
+    )
+    if not isinstance(value, dict):
+        return {"diagnosticsAvailable": False}
+    return {
+        key: item
+        for key, item in value.items()
+        if isinstance(key, str) and isinstance(item, bool)
+    }
+
+
 def _loaded_immutable_assets(page: Page) -> set[str]:
     value: object = page.evaluate(
         """() => performance.getEntriesByType('resource').map(entry => {
@@ -1289,6 +1426,16 @@ def run_acceptance(
                 "waiting worker reports a different compiled app version",
             )
 
+            mark_stage("protecting a waiting candidate from old-worker pruning")
+            prune_reply = _request_cache_prune(page)
+            caches_after_prune = _cache_snapshot(page)
+            _require(
+                prune_reply.get("type") == "PRUNE_REQUEST_ACCEPTED"
+                and prune_reply.get("pruned") is False
+                and f"{APP_CACHE_PREFIX}{next_version}" in caches_after_prune,
+                "old active worker pruned while an update candidate was waiting",
+            )
+
             mark_stage("checking out-of-scope activation monitor")
             _require(
                 monitor.url.endswith("/healthz"), "worker monitor left health scope"
@@ -1349,26 +1496,131 @@ def run_acceptance(
             )
             _wait_for_initial_worker(legacy_tab, expected_version)
 
-            mark_stage("cancelling preparation with an unresponsive app tab")
+            mark_stage("verifying prepare cleanup after an unresponsive app tab")
+            _install_update_history(page)
+            _install_update_history(second_tab)
             second_tab.get_by_role(
                 "button", name="Reload to update", exact=True
             ).click()
             _wait_for_async_condition(
                 page,
-                "() => document.querySelector('.app-shell')?.inert === true",
+                """() => {
+                  const states = window.__pwaUpdateHistory ?? [];
+                  const preparing = states.indexOf('preparing');
+                  return preparing >= 0
+                    && states.indexOf('cancelled', preparing + 1) >= 0;
+                }""",
                 None,
-                "prepared tab lock before cancellation",
+                "prepared tab unlock after unresponsive-client abort",
                 timeout_ms=10_000,
             )
-            page.get_by_role("button", name="Cancel update", exact=True).wait_for(
-                state="visible", timeout=5_000
+            project_state = _safe_update_state(page)
+            project_history = _safe_update_history(page)
+            initiator_state = _safe_update_state(second_tab)
+            initiator_history = _safe_update_history(second_tab)
+            _require(
+                project_history.get("preparingObserved") is True
+                and project_history.get("cancelledAfterPreparing") is True
+                and project_state.get("appShellInert") is False,
+                "clean project tab did not unlock after worker rejection",
             )
-            page.get_by_role("button", name="Cancel update", exact=True).click()
+            _require(
+                initiator_history.get("preparingObserved") is True
+                and initiator_history.get("cancelledAfterPreparing") is True
+                and initiator_state.get("appShellInert") is False
+                and initiator_state.get("unresponsiveReasonVisible") is True,
+                "initiator did not report the unresponsive tab and unlock",
+            )
+            _require(
+                _version_snapshot(second_tab).get("active") == expected_version
+                and _version_snapshot(second_tab).get("waiting") == next_version,
+                "an unresponsive client allowed the waiting worker to activate",
+            )
+            _require(
+                second_tab.get_by_role(
+                    "button", name="Reload to update", exact=True
+                ).is_visible(),
+                "an unresponsive-tab rejection did not leave update retry available",
+            )
+
+            mark_stage("closing the unresponsive fixture tab")
+            legacy_tab.close()
+
+            mark_stage("holding a prepared commit for explicit user cancellation")
+            second_tab.evaluate(
+                """() => {
+                  const nativePostMessage = ServiceWorker.prototype.postMessage;
+                  let held = null;
+                  ServiceWorker.prototype.postMessage = function(message, transfer) {
+                    if (message?.type === 'COMMIT_UPDATE' && held === null) {
+                      held = { worker: this, message, transfer };
+                      window.__pwaCommitHeld = true;
+                      return;
+                    }
+                    return nativePostMessage.call(this, message, transfer);
+                  };
+                  window.__releasePwaCommit = () => {
+                    ServiceWorker.prototype.postMessage = nativePostMessage;
+                    const current = held;
+                    held = null;
+                    if (!current) return false;
+                    nativePostMessage.call(
+                      current.worker,
+                      current.message,
+                      current.transfer,
+                    );
+                    return true;
+                  };
+                }"""
+            )
+            project_time_before_cancel = page.evaluate("() => performance.timeOrigin")
+            login_time_before_cancel = second_tab.evaluate(
+                "() => performance.timeOrigin"
+            )
+            second_tab.get_by_role("button", name="Reload to update", exact=True).click(
+                no_wait_after=True
+            )
+            _wait_for_async_condition(
+                second_tab,
+                "() => window.__pwaCommitHeld === true",
+                None,
+                "prepared update commit pause",
+                timeout_ms=10_000,
+            )
+            _wait_for_async_condition(
+                page,
+                "() => document.querySelector('.app-shell')?.inert === true",
+                None,
+                "clean tab lock before explicit cancellation",
+                timeout_ms=5_000,
+            )
+            second_tab.evaluate(
+                """() => {
+                  const NativeMessageChannel = window.MessageChannel;
+                  window.__pwaCancelAcknowledged = false;
+                  window.MessageChannel = class extends NativeMessageChannel {
+                    constructor(...args) {
+                      super(...args);
+                      this.port1.addEventListener('message', event => {
+                        if (event.data?.type === 'UPDATE_CANCELLED') {
+                          window.__pwaCancelAcknowledged = true;
+                        }
+                      });
+                    }
+                  };
+                  window.__restorePwaMessageChannel = () => {
+                    window.MessageChannel = NativeMessageChannel;
+                  };
+                }"""
+            )
+            second_tab.get_by_role("button", name="Cancel update", exact=True).click(
+                no_wait_after=True
+            )
             _wait_for_async_condition(
                 page,
                 "() => document.querySelector('.app-shell')?.inert === false",
                 None,
-                "prepared tab unlock after explicit cancellation",
+                "clean tab unlock after explicit cancellation",
                 timeout_ms=8_000,
             )
             _wait_for_async_condition(
@@ -1378,35 +1630,69 @@ def run_acceptance(
                 "initiating tab unlock after explicit cancellation",
                 timeout_ms=8_000,
             )
-            _require(
-                second_tab.get_by_role(
-                    "button", name="Reload to update", exact=True
-                ).is_visible(),
-                "cancellation did not leave the update available for retry",
-            )
-
-            mark_stage("blocking preparation for an unresponsive legacy tab")
-            second_tab.get_by_role(
-                "button", name="Reload to update", exact=True
-            ).click()
-            second_tab.get_by_text(
-                "Another app tab did not respond. Save any edits there, "
-                "then reload or close it and try again.",
-                exact=True,
-            ).wait_for(state="visible", timeout=12_000)
-            _require(
-                _version_snapshot(second_tab).get("active") == expected_version
-                and _version_snapshot(second_tab).get("waiting") == next_version,
-                "an unresponsive tab allowed the new worker to activate",
-            )
             _wait_for_async_condition(
-                page,
-                "() => document.querySelector('.app-shell')?.inert === false",
+                second_tab,
+                "() => window.__pwaCancelAcknowledged === true",
                 None,
-                "all prepared tabs unlock after an unresponsive client",
+                "waiting for worker cancellation acknowledgement",
                 timeout_ms=8_000,
             )
-            legacy_tab.close()
+            second_tab.evaluate("() => window.__restorePwaMessageChannel()")
+            _require(
+                second_tab.evaluate("() => window.__releasePwaCommit()") is True,
+                "paused commit was not released after explicit cancellation",
+            )
+            second_tab.get_by_role(
+                "button", name="Reload to update", exact=True
+            ).wait_for(state="visible", timeout=5_000)
+            _require(
+                page.evaluate("() => performance.timeOrigin")
+                == project_time_before_cancel
+                and second_tab.evaluate("() => performance.timeOrigin")
+                == login_time_before_cancel,
+                "explicit cancellation reloaded a prepared tab",
+            )
+            _require(
+                page.evaluate(
+                    "() => sessionStorage.getItem('stricknani.pwa-update') === null"
+                )
+                and second_tab.evaluate(
+                    "() => sessionStorage.getItem('stricknani.pwa-update') === null"
+                ),
+                "explicit cancellation retained a prepared update token",
+            )
+            cancelled_snapshot = _version_snapshot(second_tab)
+            cancelled_caches = _cache_snapshot(second_tab)
+            cancelled_activation_state = _activation_state_snapshot(second_tab)
+            cancelled_state_diagnostics = {
+                "activeVersionMatches": (
+                    cancelled_snapshot.get("active") == expected_version
+                ),
+                "waitingVersionMatches": (
+                    cancelled_snapshot.get("waiting") == next_version
+                ),
+                "cacheCount": len(cancelled_caches),
+                "oldCachePresent": (
+                    f"{APP_CACHE_PREFIX}{expected_version}" in cancelled_caches
+                ),
+                "candidateCachePresent": (
+                    f"{APP_CACHE_PREFIX}{next_version}" in cancelled_caches
+                ),
+                "activationStateCachePresent": cancelled_activation_state[
+                    "cachePresent"
+                ],
+                "activationRecordPresent": cancelled_activation_state["entryPresent"],
+            }
+            _require(
+                cancelled_state_diagnostics["activeVersionMatches"] is True
+                and cancelled_state_diagnostics["waitingVersionMatches"] is True
+                and cancelled_state_diagnostics["cacheCount"] == 2
+                and cancelled_state_diagnostics["oldCachePresent"] is True
+                and cancelled_state_diagnostics["candidateCachePresent"] is True
+                and cancelled_state_diagnostics["activationRecordPresent"] is False,
+                "explicit cancellation state failed "
+                f"(safe state: {cancelled_state_diagnostics})",
+            )
 
             mark_stage("restarting a prepared waiting worker before commit")
             second_tab.evaluate(
@@ -1618,40 +1904,227 @@ def run_acceptance(
                 }"""
             )
             page.once("dialog", cancel_one_prepared_reload)
-            mark_stage("committing the explicitly requested update")
-            second_tab.get_by_role(
-                "button", name="Reload to update", exact=True
-            ).click()
-            _wait_for_async_condition(
-                second_tab,
-                "expected => performance.timeOrigin > expected",
-                second_time_origin,
-                "prepared login tab reload",
-                timeout_ms=20_000,
+            mark_stage("retrying commit after prepared native reload cancellation")
+            second_tab.get_by_role("button", name="Reload to update", exact=True).click(
+                no_wait_after=True, timeout=5_000
             )
-            page.get_by_text(
-                "The browser kept this tab open. Reload when it is safe.",
-                exact=True,
-            ).wait_for(state="visible", timeout=10_000)
+            mark_stage("waiting for the prepared login tab to reload")
+            try:
+                _wait_for_async_condition(
+                    second_tab,
+                    "expected => performance.timeOrigin > expected",
+                    second_time_origin,
+                    "prepared login tab reload",
+                    timeout_ms=20_000,
+                )
+            except Exception:
+                page_closed = True
+                try:
+                    page_closed = second_tab.is_closed()
+                    retry_versions = (
+                        _version_snapshot(second_tab) if not page_closed else {}
+                    )
+                    retry_state = (
+                        _safe_update_state(second_tab) if not page_closed else {}
+                    )
+                    same_document = (
+                        not page_closed
+                        and second_tab.evaluate("() => performance.timeOrigin")
+                        == second_time_origin
+                    )
+                except Exception:
+                    retry_versions = {}
+                    retry_state = {}
+                    same_document = False
+                raise AcceptanceFailure(
+                    "prepared login reload did not complete "
+                    f"(page open: {not page_closed}, "
+                    f"same document: {same_document}, "
+                    f"active candidate: "
+                    f"{retry_versions.get('active') == next_version}, "
+                    f"waiting candidate: "
+                    f"{retry_versions.get('waiting') == next_version}, "
+                    f"reload action visible: "
+                    f"{retry_state.get('reloadButtonVisible')}, "
+                    f"cancel action visible: "
+                    f"{retry_state.get('cancelButtonVisible')})"
+                ) from None
+            mark_stage("checking the native reload-cancel notice")
+            try:
+                page.get_by_text(
+                    "The browser kept this tab open. Reload when it is safe.",
+                    exact=True,
+                ).wait_for(state="visible", timeout=10_000)
+            except Exception:
+                page_state = _safe_update_state(page)
+                page_closed = True
+                try:
+                    page_closed = page.is_closed()
+                    same_page_document = (
+                        not page_closed
+                        and page.evaluate("() => performance.timeOrigin")
+                        == page_time_origin
+                    )
+                    page_path = urlsplit(page.url).path if not page_closed else ""
+                    token_present = not page_closed and page.evaluate(
+                        "() => sessionStorage.getItem('stricknani.pwa-update') !== null"
+                    )
+                except Exception:
+                    same_page_document = False
+                    page_path = ""
+                    token_present = False
+                raise AcceptanceFailure(
+                    "native reload-cancel state failed "
+                    f"(dialog observed: {reload_cancel_dialogs == ['beforeunload']}, "
+                    f"same document: {same_page_document}, "
+                    f"editor route: {page_path == '/app/projects/new'}, "
+                    f"notice visible: {page_state.get('noticeVisible')}, "
+                    f"retry action visible: {page_state.get('reloadButtonVisible')}, "
+                    f"prepared token present: {token_present})"
+                ) from None
+            mark_stage("verifying the cancelled native reload state")
+            state_check_succeeded = False
+            same_page_document = False
+            prepared_token_present = False
+            page_closed = True
+            try:
+                page_closed = page.is_closed()
+                if not page_closed:
+                    same_page_document = (
+                        page.evaluate("() => performance.timeOrigin")
+                        == page_time_origin
+                    )
+                    prepared_token_present = page.evaluate(
+                        "() => sessionStorage.getItem('stricknani.pwa-update') !== null"
+                    )
+                    state_check_succeeded = True
+            except Exception:
+                pass
             _require(
-                reload_cancel_dialogs == ["beforeunload"]
-                and page.evaluate("() => performance.timeOrigin") == page_time_origin
-                and page.evaluate(
+                state_check_succeeded
+                and reload_cancel_dialogs == ["beforeunload"]
+                and same_page_document
+                and prepared_token_present,
+                "cancelled native reload state failed "
+                f"(state query succeeded: {state_check_succeeded}, "
+                f"dialog observed: {reload_cancel_dialogs == ['beforeunload']}, "
+                f"same document: {same_page_document}, "
+                f"prepared token: {prepared_token_present})",
+            )
+            mark_stage("verifying retained old and candidate app caches")
+            retained_caches = _cache_snapshot(page)
+            retained_activation_state = _activation_state_snapshot(page)
+            retained_state_diagnostics = {
+                "cacheCount": len(retained_caches),
+                "oldCachePresent": (
+                    f"{APP_CACHE_PREFIX}{expected_version}" in retained_caches
+                ),
+                "candidateCachePresent": (
+                    f"{APP_CACHE_PREFIX}{next_version}" in retained_caches
+                ),
+                "activationStateCachePresent": retained_activation_state[
+                    "cachePresent"
+                ],
+                "activationRecordPresent": retained_activation_state["entryPresent"],
+                "originalPageStillOpen": not page.is_closed(),
+                "sameDocumentBeforeReload": page.evaluate(
+                    "() => performance.timeOrigin"
+                )
+                == page_time_origin,
+                "preparedTokenPresent": page.evaluate(
                     "() => sessionStorage.getItem('stricknani.pwa-update') !== null"
                 ),
-                "cancelled native reload lost the prepared update token or page",
-            )
-            retained_caches = _cache_snapshot(page)
+            }
             _require(
                 len(retained_caches) == 2
-                and expected_version in retained_caches
-                and next_version in retained_caches
-                and page.evaluate(
-                    "() => caches.keys().then(keys => "
-                    "keys.includes('stricknani-app-update-state-v1'))"
-                ),
+                and f"{APP_CACHE_PREFIX}{expected_version}" in retained_caches
+                and f"{APP_CACHE_PREFIX}{next_version}" in retained_caches
+                and retained_activation_state["entryPresent"],
                 "old app cache or activation record was removed "
-                "before the old page reloaded",
+                "before the old page reloaded "
+                f"(safe state: {retained_state_diagnostics})",
+            )
+            mark_stage("preparing an active-worker network-failure fallback tab")
+            network_failure_tab = context.new_page()
+            network_failure_tab.on("pageerror", lambda _error: page_errors.append(True))
+            network_failure_tab.on(
+                "console",
+                lambda message: (
+                    csp_errors.append(True)
+                    if "content security policy" in message.text.lower()
+                    or "refused to" in message.text.lower()
+                    else None
+                ),
+            )
+            network_page = network_failure_tab.goto(
+                f"{origin}/app/login",
+                wait_until="domcontentloaded",
+                timeout=15_000,
+            )
+            _require(
+                network_page is not None and network_page.status == 200,
+                "network-failure fixture tab did not load the app",
+            )
+            _wait_for_controlled_worker(network_failure_tab, next_version)
+
+            mark_stage("forcing a network error for a retained immutable asset")
+            context.set_offline(True)
+            try:
+                fallback_state = network_failure_tab.evaluate(
+                    """async ({ asset, oldCache, candidateCache }) => {
+                      const candidate = await caches.open(candidateCache);
+                      await candidate.delete(asset, { ignoreSearch: false });
+                      const previous = await caches.open(oldCache);
+                      const oldEntryPresent = Boolean(await previous.match(
+                        asset, { ignoreSearch: false },
+                      ));
+                      const candidateMissBeforeFetch = !await candidate.match(
+                        asset, { ignoreSearch: false },
+                      );
+                      let status = 0;
+                      let byteLength = 0;
+                      try {
+                        const response = await fetch(asset, { cache: 'no-store' });
+                        status = response.status;
+                        byteLength = (await response.arrayBuffer()).byteLength;
+                      } catch {
+                        // Return only bounded status fields.
+                      }
+                      const promoted = Boolean(await candidate.match(
+                        asset, { ignoreSearch: false },
+                      ));
+                      const clearedForHttpFallback = promoted
+                        && await candidate.delete(asset, { ignoreSearch: false });
+                      return {
+                        offlineObserved: navigator.onLine === false,
+                        oldEntryPresent,
+                        candidateMissBeforeFetch,
+                        status,
+                        byteLength,
+                        promoted,
+                        clearedForHttpFallback,
+                      };
+                    }""",
+                    {
+                        "asset": cached_editor_asset,
+                        "oldCache": f"{APP_CACHE_PREFIX}{expected_version}",
+                        "candidateCache": f"{APP_CACHE_PREFIX}{next_version}",
+                    },
+                )
+            finally:
+                context.set_offline(False)
+                network_failure_tab.close()
+            _require(
+                isinstance(fallback_state, dict)
+                and fallback_state.get("offlineObserved") is True
+                and fallback_state.get("oldEntryPresent") is True
+                and fallback_state.get("candidateMissBeforeFetch") is True
+                and fallback_state.get("status") == 200
+                and isinstance(fallback_state.get("byteLength"), int)
+                and fallback_state["byteLength"] > 0
+                and fallback_state.get("promoted") is True
+                and fallback_state.get("clearedForHttpFallback") is True,
+                "network-failure fallback was not promoted into the candidate cache",
             )
             page.get_by_role("button", name="Reload to finish", exact=True).click()
             _wait_for_async_condition(
@@ -1727,7 +2200,7 @@ def run_acceptance(
             final_paths = next(iter(final_caches.values()))
             _require(
                 REQUIRED_OFFLINE_ASSETS.issubset(final_paths)
-                and set(final_paths).issubset(expected_assets),
+                and set(final_paths).issubset(candidate_assets),
                 "updated app cache omitted core assets or contained an "
                 "unallowlisted path",
             )
