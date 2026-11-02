@@ -341,11 +341,33 @@ def _create_cross_owner_resource(
                 "mimeType": "image/png",
                 "buffer": _tiny_png_fixture(),
             },
-            "alt_text": "Synthetic yarn sample",
         },
     )
     if yarn_photo_response.status != 201:
-        raise AcceptanceFailure("synthetic yarn photo upload failed")
+        safe_error_code = "unavailable"
+        try:
+            response_body: object = yarn_photo_response.json()
+        except Exception:
+            response_body = None
+        if isinstance(response_body, dict):
+            error = response_body.get("error")
+            if isinstance(error, dict):
+                code = error.get("code")
+                if isinstance(code, str) and code in {
+                    "not_found",
+                    "media_unavailable",
+                    "payload_too_large",
+                    "invalid_image",
+                    "invalid_multipart",
+                    "internal_error",
+                    "unauthorized",
+                    "csrf_failed",
+                }:
+                    safe_error_code = code
+        raise AcceptanceFailure(
+            "synthetic yarn photo upload failed "
+            f"(HTTP {yarn_photo_response.status}, code {safe_error_code})"
+        )
 
     title_image_response = page.context.request.post(
         f"{origin}/api/v2/projects/{project_id}/images/title",
@@ -852,6 +874,9 @@ def run_acceptance(
             page.once("dialog", lambda dialog: dialog.accept())
             page.get_by_role("button", name="Back", exact=True).click()
             page.wait_for_url("**/app/projects")
+            # The following icon parity check measures the desktop rail SVGs.
+            # Restore desktop width after the mobile dirty-navigation check.
+            page.set_viewport_size({"width": 1280, "height": 900})
             page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
             page.get_by_role("heading", name="User accounts").wait_for(state="visible")
 

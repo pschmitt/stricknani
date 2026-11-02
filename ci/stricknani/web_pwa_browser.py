@@ -228,22 +228,37 @@ def _safe_update_state(page: Page) -> dict[str, bool]:
             element && element.getClientRects().length > 0
           );
           const copy = notice?.textContent ?? '';
+          const retryButton = buttons.find(
+            button => button.textContent?.trim() === 'Reload to finish',
+          );
           return {
             appShellPresent: Boolean(shell),
             appShellInert: shell?.inert === true,
             noticeVisible: visible(notice),
-            reloadButtonVisible: buttons.some(button =>
-              visible(button) && button.textContent?.includes('Reload')
+            retryButtonVisible: visible(retryButton),
+            retryButtonEnabled: visible(retryButton)
+              && retryButton?.disabled === false,
+            activatedCopyVisible: copy.includes(
+              'Reloading this tab with the update',
             ),
-            cancelButtonVisible: buttons.some(button =>
-              visible(button) && button.textContent?.includes('Cancel')
+            nativeCancelCopyVisible: copy.includes(
+              'The browser kept this tab open',
             ),
             dirtyReasonVisible: copy.includes('unsaved changes'),
             busyReasonVisible: copy.includes('operation is still in progress'),
             unresponsiveReasonVisible: copy.includes(
               'Another app tab did not respond',
             ),
+            reloadButtonVisible: buttons.some(button =>
+              visible(button) && button.textContent?.includes('Reload')
+            ),
+            cancelButtonVisible: buttons.some(button =>
+              visible(button) && button.textContent?.includes('Cancel')
+            ),
             preparingCopyVisible: copy.includes('Checking open tabs'),
+            preparedTokenPresent: sessionStorage.getItem(
+              'stricknani.pwa-update',
+            ) !== null,
           };
         }"""
     )
@@ -1331,6 +1346,25 @@ def run_acceptance(
                 "failed update left a path outside the active version allowlist",
             )
 
+            mark_stage("opening an old-version cache-retention tab")
+            held_old_tab = context.new_page()
+            held_old_response = held_old_tab.goto(
+                f"{origin}/app/login",
+                wait_until="domcontentloaded",
+                timeout=15_000,
+            )
+            _require(
+                held_old_response is not None and held_old_response.status == 200,
+                "old-version cache-retention tab did not load",
+            )
+            held_old_tab.locator(".app-shell, .signed-out-screen").wait_for(
+                state="visible",
+                timeout=10_000,
+            )
+            _wait_for_controlled_worker(held_old_tab, expected_version)
+            _install_update_history(held_old_tab)
+            held_old_time_origin = held_old_tab.evaluate("() => performance.timeOrigin")
+
             mark_stage("restarting the actual Rust fixture with a new worker version")
             candidate_app_version = (
                 "pwa-update-fixture-"
@@ -1789,10 +1823,15 @@ def run_acceptance(
             )
 
             mark_stage("making a cached immutable route asset unavailable")
-            cached_editor_asset = next(
+            cached_immutable_asset = next(
                 (
                     asset
-                    for asset in sorted(new_editor_chunks & set(candidate_assets))
+                    for asset in sorted(
+                        (before_editor_paths | new_editor_chunks)
+                        & set(candidate_assets)
+                    )
+                    if asset.startswith(IMMUTABLE_ASSET_PREFIX)
+                    and asset.endswith(".js")
                     if (web_root / asset.removeprefix("/app/")).is_file()
                     and (candidate_build_root / asset.removeprefix("/app/")).is_file()
                     and hashlib.sha256(
@@ -1807,12 +1846,12 @@ def run_acceptance(
                 None,
             )
             _require(
-                cached_editor_asset is not None,
-                "candidate build has no unchanged cached immutable editor asset",
+                cached_immutable_asset is not None,
+                "candidate build has no unchanged cached immutable asset",
             )
-            assert cached_editor_asset is not None
+            assert cached_immutable_asset is not None
             unavailable_candidate_asset = (
-                second_root / cached_editor_asset.removeprefix("/app/")
+                second_root / cached_immutable_asset.removeprefix("/app/")
             )
             _require(
                 unavailable_candidate_asset.is_file(),
@@ -1820,7 +1859,7 @@ def run_acceptance(
             )
             unavailable_candidate_asset.unlink()
             direct_missing_asset = second_tab.request.get(
-                f"{origin}{cached_editor_asset}", timeout=10_000
+                f"{origin}{cached_immutable_asset}", timeout=10_000
             )
             _require(
                 direct_missing_asset.status >= 400,
@@ -1898,20 +1937,6 @@ def run_acceptance(
                 "the explicit update action is unavailable",
             )
 
-            mark_stage("opening an old-version cache-retention tab")
-            held_old_tab = context.new_page()
-            held_old_response = held_old_tab.goto(
-                f"{origin}/app/login",
-                wait_until="domcontentloaded",
-                timeout=15_000,
-            )
-            _require(
-                held_old_response is not None and held_old_response.status == 200,
-                "old-version cache-retention tab did not load",
-            )
-            _wait_for_controlled_worker(held_old_tab, expected_version)
-            held_old_time_origin = held_old_tab.evaluate("() => performance.timeOrigin")
-
             page_time_origin = page.evaluate("() => performance.timeOrigin")
             second_time_origin = second_tab.evaluate("() => performance.timeOrigin")
             asset_response_start = len(service_worker_asset_responses)
@@ -1956,13 +1981,25 @@ def run_acceptance(
             second_tab.get_by_role("button", name="Reload to update", exact=True).click(
                 no_wait_after=True, timeout=5_000
             )
-            _wait_for_async_condition(
-                held_old_tab,
-                "() => document.querySelector('.app-shell')?.inert === true",
-                None,
-                "cache-retention tab lock before worker activation",
-                timeout_ms=5_000,
-            )
+            try:
+                _wait_for_async_condition(
+                    held_old_tab,
+                    "() => window.__pwaUpdateHistory?.includes('preparing') === true",
+                    None,
+                    "cache-retention tab preparation acknowledgement",
+                    timeout_ms=5_000,
+                )
+            except AcceptanceFailure:
+                held_state = _safe_update_state(held_old_tab)
+                held_history = _safe_update_history(held_old_tab)
+                raise AcceptanceFailure(
+                    "cache-retention tab did not prepare "
+                    f"(app shell present: {held_state.get('appShellPresent')}, "
+                    f"inert: {held_state.get('appShellInert')}, "
+                    f"notice visible: {held_state.get('noticeVisible')}, "
+                    f"preparing observed: {held_history.get('preparingObserved')}, "
+                    f"blocked observed: {held_history.get('blockedObserved')})"
+                ) from None
             mark_stage("waiting for the prepared login tab to reload")
             try:
                 _wait_for_async_condition(
@@ -2111,8 +2148,16 @@ def run_acceptance(
                 f"(safe state: {retained_state_diagnostics})",
             )
             mark_stage("retrying the prepared reload before cache diagnostics")
+            retry_button_state = _safe_update_state(page)
+            _require(
+                retry_button_state.get("retryButtonVisible") is True
+                and retry_button_state.get("retryButtonEnabled") is True,
+                "prepared reload retry button is unavailable "
+                f"(safe state: {retry_button_state})",
+            )
             page.get_by_role("button", name="Reload to finish", exact=True).click(
-                timeout=5_000
+                no_wait_after=True,
+                timeout=5_000,
             )
             _wait_for_async_condition(
                 page,
@@ -2200,7 +2245,7 @@ def run_acceptance(
                       ]);
                     }""",
                     {
-                        "asset": cached_editor_asset,
+                        "asset": cached_immutable_asset,
                         "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
                     },
                 )
@@ -2227,7 +2272,7 @@ def run_acceptance(
                       ]);
                     }""",
                     {
-                        "asset": cached_editor_asset,
+                        "asset": cached_immutable_asset,
                         "oldCache": f"{APP_CACHE_PREFIX}{expected_version}",
                         "candidateCache": f"{APP_CACHE_PREFIX}{next_version}",
                     },
@@ -2278,7 +2323,7 @@ def run_acceptance(
                       }
                       return result;
                     }""",
-                    cached_editor_asset,
+                    cached_immutable_asset,
                 )
                 _require(
                     isinstance(fetch_state, dict)
@@ -2297,7 +2342,7 @@ def run_acceptance(
                       ])
                     ))""",
                     {
-                        "asset": cached_editor_asset,
+                        "asset": cached_immutable_asset,
                         "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
                     },
                     "network-failure asset cache promotion",
@@ -2307,7 +2352,7 @@ def run_acceptance(
                     asset_failure_start
                 )
                 worker_response_count = sum(
-                    response == f"{cached_editor_asset}:200"
+                    response == f"{cached_immutable_asset}:200"
                     for response in service_worker_asset_responses[
                         asset_response_start:
                     ]
@@ -2340,7 +2385,7 @@ def run_acceptance(
                       ]);
                     }""",
                     {
-                        "asset": cached_editor_asset,
+                        "asset": cached_immutable_asset,
                         "cacheName": f"{APP_CACHE_PREFIX}{next_version}",
                     },
                 )
@@ -2469,7 +2514,7 @@ def run_acceptance(
             )
             _require(
                 any(
-                    response == f"{cached_editor_asset}:200"
+                    response == f"{cached_immutable_asset}:200"
                     for response in service_worker_asset_responses[
                         asset_response_start:
                     ]
@@ -2478,8 +2523,8 @@ def run_acceptance(
                 "from the retained old cache",
             )
             _require(
-                cached_editor_asset in final_paths,
-                "the retained immutable editor asset was not cached by the new worker",
+                cached_immutable_asset in final_paths,
+                "the retained immutable asset was not cached by the new worker",
             )
             for prepared_page in (page, second_tab):
                 _wait_for_async_condition(
