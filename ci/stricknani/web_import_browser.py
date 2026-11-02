@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import os
+import re
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -109,10 +110,23 @@ def run_acceptance(
     password = fixture["STRICKNANI_RUST_TEST_PASSWORD"]
     screenshots = web_ui_browser._private_screenshot_dir(screenshot_path)
     stage_file = screenshots.parent / "import-browser-stage.txt"
+    auth_status_file = screenshots.parent / "import-auth-status.txt"
 
     def mark_stage(value: str) -> None:
         stage_file.write_text(value, encoding="ascii")
         stage_file.chmod(0o600)
+
+    auth_statuses: dict[str, int | None] = {"session": None, "login": None}
+
+    def record_auth_statuses() -> None:
+        lines = [
+            f"{name}={status if status is not None else 'not-seen'}"
+            for name, status in auth_statuses.items()
+        ]
+        auth_status_file.write_text("\n".join(lines) + "\n", encoding="ascii")
+        auth_status_file.chmod(0o600)
+
+    record_auth_statuses()
 
     if chromium_executable is not None:
         chromium_executable = chromium_executable.expanduser().resolve()
@@ -129,6 +143,12 @@ def run_acceptance(
 
     def observe_response(response: Response) -> None:
         path = urlsplit(response.url).path
+        if path == "/api/v2/session":
+            auth_statuses["session"] = response.status
+            record_auth_statuses()
+        elif path == "/api/v2/auth/login":
+            auth_statuses["login"] = response.status
+            record_auth_statuses()
         if path.startswith("/api/v2/imports/") or path in {
             "/api/v2/projects",
             "/api/v2/yarns",
@@ -175,10 +195,11 @@ def run_acceptance(
             page.on("console", observe_console)
             page.on("pageerror", lambda _error: page_errors.append(True))
 
-            mark_stage("checking CSP and signing in to disposable fixture")
+            mark_stage("loading disposable login route")
             response = page.goto(f"{origin}/app/login", wait_until="networkidle")
             if response is None or response.status != 200:
                 raise AcceptanceFailure("login route failed")
+            mark_stage("checking strict frontend CSP")
             policy = response.headers.get("content-security-policy", "")
             _require(
                 "default-src 'self'" in policy
@@ -189,9 +210,13 @@ def run_acceptance(
                 and "unsafe-eval" not in policy,
                 "strict frontend CSP is missing",
             )
+            mark_stage("filling disposable login email")
             page.locator("#email").fill(email)
+            mark_stage("filling disposable login password")
             page.locator("#password").fill(password)
+            mark_stage("submitting disposable login")
             page.get_by_role("button", name="Sign in").click()
+            mark_stage("waiting for authenticated app shell")
             page.locator(".app-shell").wait_for(state="visible")
 
             mark_stage("checking capability-gated import options")
@@ -527,10 +552,29 @@ def main(argv: list[str] | None = None) -> int:
             if stage_file is not None and stage_file.is_file()
             else None
         )
+        auth_status_file = (
+            private_dir / "import-auth-status.txt" if private_dir else None
+        )
+        auth_statuses: dict[str, str] = {}
+        if auth_status_file is not None and auth_status_file.is_file():
+            for line in auth_status_file.read_text(encoding="ascii").splitlines():
+                match = re.fullmatch(r"(session|login)=(not-seen|[1-5][0-9]{2})", line)
+                if match:
+                    auth_statuses[match.group(1)] = match.group(2)
+        auth_summary = ""
+        if auth_statuses:
+            auth_summary = "; auth-status=" + ",".join(
+                f"{name}:{auth_statuses.get(name, 'not-seen')}"
+                for name in ("session", "login")
+            )
+        error_context = (
+            f" ({type(error).__name__}{auth_summary}); "
+            "diagnostic details were suppressed."
+        )
         print(
             "Import browser acceptance failed"
             + (f" during {stage}" if stage else "")
-            + f" ({type(error).__name__}); diagnostic details were suppressed.",
+            + error_context,
             file=sys.stderr,
         )
         return 1

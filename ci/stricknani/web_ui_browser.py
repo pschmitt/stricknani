@@ -12,11 +12,12 @@ import secrets
 import sys
 import tempfile
 import traceback
+import zlib
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from playwright.sync_api import Page, Request, Response, Route, sync_playwright
+from playwright.sync_api import Locator, Page, Request, Response, Route, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ci.stricknani import rust_fixture, seed_rust
@@ -24,6 +25,12 @@ from ci.stricknani import rust_fixture, seed_rust
 
 class AcceptanceFailure(RuntimeError):
     """A safe-to-display browser assertion failure."""
+
+
+ACCOUNT_HEADING_NAME = re.compile(r"^(?:Account|Konto)$")
+SIGN_OUT_BUTTON_NAME = re.compile(r"^(?:Sign out|Abmelden)$")
+UPLOAD_PICTURE_BUTTON_NAME = re.compile(r"^(?:Upload picture|Bild hochladen)$")
+REMOVE_PICTURE_BUTTON_NAME = re.compile(r"^(?:Remove picture|Bild entfernen)$")
 
 
 def _playwright_error_category(error: Exception) -> str:
@@ -40,6 +47,21 @@ def _playwright_error_category(error: Exception) -> str:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AcceptanceFailure(message)
+
+
+def _tiny_png_fixture() -> bytes:
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        checksum = zlib.crc32(kind + data) & 0xFFFFFFFF
+        return len(data).to_bytes(4, "big") + kind + data + checksum.to_bytes(4, "big")
+
+    header = (1).to_bytes(4, "big") + (1).to_bytes(4, "big") + bytes([8, 6, 0, 0, 0])
+    pixel = zlib.compress(bytes([0, 36, 118, 105, 255]))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", pixel)
+        + chunk(b"IEND", b"")
+    )
 
 
 def _loopback_origin(url: str) -> str:
@@ -376,29 +398,107 @@ def _assert_mobile_app_header(page: Page) -> None:
         "the redundant welcome greeting remains in the web UI",
     )
     _require(
-        not page.locator(".page-header").is_visible(),
-        "the desktop page header left an empty spacer on a mobile route",
+        page.locator(
+            ".page-header, .header-user, .header-sign-out, .mobile-sign-out"
+        ).count()
+        == 0,
+        "the authenticated shell still renders a legacy page header or sign-out",
+    )
+    _require(
+        page.locator(".secondary-nav .nav-icon svg[aria-hidden='true']").count() > 0,
+        "the authenticated secondary navigation has no decorative icons",
     )
     _require(
         page.locator(".mobile-header .locale-switcher").count() == 0,
         "the compact mobile header still reserves space for language controls",
     )
     account_target = page.locator(".mobile-header .mobile-account")
+    _require(
+        account_target.is_visible()
+        and account_target.get_attribute("aria-label") == "Account"
+        and urlsplit(account_target.get_attribute("href") or "").path == "/app/account",
+        "the mobile profile link does not open Account",
+    )
+    dimensions: object = account_target.evaluate(
+        "node => { const rect = node.getBoundingClientRect(); "
+        "const wordmark = document.querySelector('.mobile-header .wordmark'); "
+        "const header = document.querySelector('.mobile-header'); "
+        "const wordmarkRight = wordmark?.getBoundingClientRect().right ?? -1; "
+        "const headerRight = header?.getBoundingClientRect().right ?? -1; "
+        "return {width: rect.width, height: rect.height, left: rect.left, "
+        "right: rect.right, wordmarkRight, headerRight}; }"
+    )
+    _require(
+        isinstance(dimensions, dict)
+        and dimensions.get("width", 0) >= 44
+        and dimensions.get("height", 0) >= 44
+        and dimensions.get("left", 0) >= dimensions.get("wordmarkRight", 0)
+        and dimensions.get("right", 0) >= dimensions.get("headerRight", 0) - 32,
+        "the compact profile target is too small or not at the right edge",
+    )
+
+
+def _assert_desktop_account_target(page: Page) -> None:
+    account_target = page.locator(".account-summary")
+    _require(
+        account_target.is_visible()
+        and account_target.get_attribute("aria-label") == "Account"
+        and urlsplit(account_target.get_attribute("href") or "").path == "/app/account",
+        "the desktop profile link does not open Account",
+    )
     dimensions: object = account_target.evaluate(
         "node => ({width: node.getBoundingClientRect().width, "
         "height: node.getBoundingClientRect().height})"
     )
     _require(
-        isinstance(dimensions, dict)
-        and dimensions.get("width", 0) >= 44
-        and dimensions.get("height", 0) >= 44,
-        "the compact mobile header account target is smaller than 44px",
+        isinstance(dimensions, dict) and dimensions.get("height", 0) >= 44,
+        "the desktop profile target is smaller than 44px",
     )
-    sign_out_heights = _visible_heights(page, ".mobile-header .mobile-sign-out")
+
+
+def _assert_shell_avatar(page: Page, *, mobile: bool, present: bool) -> None:
+    target = ".mobile-account" if mobile else ".account-summary"
+    image = page.locator(f"{target} .avatar img")
+    if not present:
+        _require(image.count() == 0, "the removed avatar remains in the app shell")
+        return
+    image.wait_for(state="visible", timeout=10_000)
     _require(
-        len(sign_out_heights) == 1 and sign_out_heights[0] >= 44,
-        "mobile sign-out is not a reachable 44px target",
+        bool(
+            image.evaluate(
+                "node => node.decode().then(() => node.complete "
+                "&& node.naturalWidth > 0).catch(() => false)"
+            )
+        ),
+        "the profile avatar did not render in the app shell",
     )
+
+
+def _open_account_from_profile(page: Page, *, mobile: bool = False) -> None:
+    if mobile:
+        _assert_mobile_app_header(page)
+    else:
+        _assert_desktop_account_target(page)
+    selector = ".mobile-header .mobile-account" if mobile else ".account-summary"
+    account_link = page.locator(selector)
+    _require(account_link.is_visible(), "the Account profile link is unavailable")
+    _require(
+        account_link.evaluate("element => element.tagName === 'A'")
+        and account_link.get_attribute("aria-label") == "Account"
+        and urlsplit(account_link.get_attribute("href") or "").path == "/app/account",
+        "the profile control is not an accessible Account link",
+    )
+    account_link.click()
+    page.wait_for_url("**/app/account", timeout=10_000)
+    page.get_by_role("heading", name=ACCOUNT_HEADING_NAME).wait_for(
+        state="visible", timeout=10_000
+    )
+
+
+def _account_sign_out_button(page: Page) -> Locator:
+    button = page.get_by_role("button", name=SIGN_OUT_BUTTON_NAME, exact=True)
+    _require(button.is_visible(), "Account sign-out action is unavailable")
+    return button
 
 
 def _assert_service_capabilities(page: Page, enabled: bool) -> None:
@@ -2205,7 +2305,9 @@ def run_acceptance(
                     "the newly created account could not sign in explicitly",
                 )
                 mark_stage("returning to anonymous sign-in after signup check")
-                page.locator(".header-sign-out").click()
+                _open_account_from_profile(page)
+                _account_sign_out_button(page).click()
+                page.wait_for_url("**/app/login", timeout=10_000)
                 page.locator("#email").wait_for(state="visible")
                 browser_email = email
                 browser_password = password
@@ -3595,6 +3697,26 @@ def run_acceptance(
                 and project_name.input_value() == "Chosen local draft",
                 "the dirty-navigation guard did not keep the local project draft",
             )
+            page.set_viewport_size({"width": 1280, "height": 844})
+            project_name.fill("Account navigation draft")
+            account_link = page.locator(".account-summary")
+            _require(
+                account_link.is_visible()
+                and account_link.get_attribute("aria-label") == "Account"
+                and account_link.get_attribute("href") == "/app/account",
+                "the desktop profile link does not target Account",
+            )
+            page.once("dialog", lambda dialog: dialog.dismiss())
+            mark_stage("checking the dirty-editor guard on Account navigation")
+            account_link.click()
+            _require(
+                urlsplit(page.url).path.endswith(
+                    f"/app/projects/{editor_project_id}/edit"
+                )
+                and project_name.input_value() == "Account navigation draft",
+                "canceled Account navigation did not preserve the project draft",
+            )
+            project_name.fill("Chosen local draft")
             mark_stage("saving the concurrent project version")
             _save_remote_project_version(
                 page, editor_project_id, "Concurrent saved version"
@@ -3777,13 +3899,73 @@ def run_acceptance(
 
             page.goto(f"{origin}/app/projects", wait_until="networkidle")
             page.locator(".app-shell").wait_for(state="visible")
+            mark_stage("checking profile avatar propagation in app shell")
+            _open_account_from_profile(page)
+            page.locator('input[type="file"]').set_input_files(
+                {
+                    "name": "synthetic-avatar.png",
+                    "mimeType": "image/png",
+                    "buffer": _tiny_png_fixture(),
+                }
+            )
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/account/avatar"
+                    and response.request.method == "POST"
+                )
+            ) as avatar_upload_response_info:
+                page.get_by_role("button", name=UPLOAD_PICTURE_BUTTON_NAME).click()
+            _require(
+                avatar_upload_response_info.value.status == 200,
+                "the synthetic profile picture upload did not succeed",
+            )
+            page.locator(".profile-portrait img").wait_for(state="visible")
+            _assert_shell_avatar(page, mobile=False, present=True)
+
+            page.set_viewport_size({"width": 390, "height": 844})
+            _assert_mobile_app_header(page)
+            _assert_shell_avatar(page, mobile=True, present=True)
+            page.reload(wait_until="networkidle")
+            page.locator(".app-shell").wait_for(state="visible")
+            page.get_by_role("heading", name=ACCOUNT_HEADING_NAME).wait_for(
+                state="visible"
+            )
+            _assert_shell_avatar(page, mobile=True, present=True)
+
+            page.set_viewport_size({"width": 1280, "height": 844})
+            _assert_shell_avatar(page, mobile=False, present=True)
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == "/api/v2/account/avatar"
+                    and response.request.method == "DELETE"
+                )
+            ) as avatar_delete_response_info:
+                page.get_by_role("button", name=REMOVE_PICTURE_BUTTON_NAME).click()
+            _require(
+                avatar_delete_response_info.value.status == 204,
+                "removing the synthetic profile picture did not succeed",
+            )
+            page.locator(".profile-portrait img").wait_for(state="detached")
+            _assert_shell_avatar(page, mobile=False, present=False)
+
+            page.set_viewport_size({"width": 390, "height": 844})
+            _assert_mobile_app_header(page)
+            _assert_shell_avatar(page, mobile=True, present=False)
+            page.reload(wait_until="networkidle")
+            page.locator(".app-shell").wait_for(state="visible")
+            page.get_by_role("heading", name=ACCOUNT_HEADING_NAME).wait_for(
+                state="visible"
+            )
+            _assert_shell_avatar(page, mobile=True, present=False)
+
+            page.goto(f"{origin}/app/projects", wait_until="networkidle")
+            page.locator(".app-shell").wait_for(state="visible")
             mark_stage("logout and anonymous session restoration")
             page.set_viewport_size({"width": 1280, "height": 844})
-            logout_button = page.locator(".header-sign-out")
-            _require(
-                logout_button.is_visible(), "desktop sign-out action is unavailable"
-            )
+            _open_account_from_profile(page)
+            logout_button = _account_sign_out_button(page)
             logout_button.click()
+            page.wait_for_url("**/app/login", timeout=10_000)
             page.locator("#email").wait_for(state="visible")
             page.get_by_role("heading", name="Sign in").wait_for(state="visible")
             _require(
