@@ -94,7 +94,8 @@ Chromium journey, portable accessibility journey and worker/bootstrap byte
 checks passed. The committed upgrade completed successfully and the live
 assets match that tested package. Complete native screen-reader and physical
 phone acceptance remain open.
-All five CI workflows for `72b1faa` succeeded.
+All five CI workflows for `72b1faa` and all four public configuration CI
+workflows for `bc0645107` succeeded.
 
 T120 overall and T120.9 remain in progress. The earlier `52221ad` package passed
 84 assessable contrast samples; its five-sample mobile lab measured median

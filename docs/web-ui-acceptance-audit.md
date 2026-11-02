@@ -18,7 +18,7 @@ The deployed `/app` preview and the remaining acceptance work are described in
 | **T120.6 Yarns and categories** | [`YarnLibrary.svelte`](../web/src/lib/features/yarns/YarnLibrary.svelte), [`CategoryManager.svelte`](../web/src/lib/features/categories/CategoryManager.svelte), API tests, and [`web_yarn_browser.py`](../ci/stricknani/web_yarn_browser.py). | **Implemented.** Exact packaged yarn/category browser journey passed. |
 | **T120.7 Imports and jobs** | [`ImportWorkbench.svelte`](../web/src/lib/features/imports/ImportWorkbench.svelte), [`web_import_browser.py`](../ci/stricknani/web_import_browser.py), and OCR/archive controls and tests. | **Implemented.** Preserve SSRF, size, ownership, and feature-capability boundaries. |
 | **T120.8 Account, tools, admin, and i18n** | Account/signup/admin components, API security tests, and account/admin browser runners. | **Implemented.** English and German catalogs are packaged; exact packaged admin journey passed. |
-| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey and complete native screen-reader run remain. Current contrast/performance/native zoom passed; legacy consumer review is complete. |
+| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey and complete native screen-reader run remain. Earlier contrast/performance/native zoom evidence is retained for its named package; legacy consumer review is complete. |
 | **T120.10 Requested update activation** | Explicit reload-to-update behavior, cross-tab readiness, dirty-form and in-flight mutation guards; frontend and PWA tests plus exact packaged PWA journey. | **Complete.** The packaged PWA browser gate exited 0. |
 | **T120.11 Audit resource history** | Typed audit changes, event resource names, separate read-only cross-owner admin resource views, media authorization, and lazy diffs; Rust tests and exact packaged admin journey. | **Complete.** Ordinary ownership, edit permissions, and API v1 remain unchanged. Migration 14 is applied and database integrity passed. |
 | **T120.12 Reusable resource cards** | Shared project/yarn/category cards across audit and related-resource views, protected previews, fallbacks, and responsive links; exact packaged admin, core, yarn, and accessibility journeys. | **Complete.** All five packaged browser gates listed in the checkpoint exited 0. |
@@ -27,42 +27,28 @@ The deployed `/app` preview and the remaining acceptance work are described in
 
 ## Current source, package, and live provenance
 
-The deployed application source is
-`52221ad266d5c38124f7ca442add952055223e7b`; public configuration pins it at
-`db9a7a20cee270a113356b79a9baa7592458e3bc`. The source NAR hash
-is `sha256-OHp+SibLsGdiv4av8jtuMvZKQjjgiQyNrA8jzrvTh5Q=`.
-The web package is
-`/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0`; the
-server package is
-`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0` and
-its raw executable (`bin/.stricknani-server-wrapped`) SHA-256 is
-`9e4b0e376c7aa73019eb43a7bb2df748c616613fd1c816f103075ccd408d0c4f`.
+The deployed application is
+[`72b1faa`](https://github.com/pschmitt/stricknani/commit/72b1faaec3c3dc488cea7cc9b27a7daa14ac9b83),
+pinned by public configuration
+[`bc0645107`](https://github.com/pschmitt/nixos-config/commit/bc0645107fc5e42ac0acfc2e85f366c76a065cf2).
+The application input NAR is
+`sha256-w5Em/zSMHQIHiSQWlpSiYe5RP/+JcCRrU1cMdcQHldk=`.
+The [deployment checkpoint](web-ui-checkpoint.md) records its canonical system,
+server/core/web packages, live asset fingerprints and database verification.
+Production, nginx and nixbot identities were preserved during this rollout;
+only staging and the expected application-input Nix daemon trigger changed.
 
-Root independently verified the live HTML SHA-256
-`bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`, the
-service worker SHA-256
-`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31` with
-scope `/app/`, and the catalog SHA-256 prefix `f5b67b45` (738 entries per
-language). Migration 14 completed; SQLite integrity passed. The pre-migration
-backup is
-`/mnt/data/backups/stricknani-rust/2026-11-02-pre-audit-history/database.sqlite3`,
-SHA-256 `e9ef8e0add28ce2b2cf0f94e8d1bba1b15e1df0080fa1b5315149ecf635b58ec`.
-Production, nginx, and nixbot identities remained unchanged. The expected
-nix-daemon restart was limited to the application nix-path pointer.
+For this canonical package, formatting, Svelte checking (zero errors and
+warnings), 150 frontend tests, static build and four health tests passed.
+The consolidated capability probe, core Chromium journey, portable
+accessibility journey and worker/bootstrap byte checks all exited zero.
+All five application CI workflows and all four public configuration CI
+workflows passed. The portable accessibility result covers keyboard behavior
+and reflow; it does not establish native speech or physical-device behavior.
 
-The current frontend passed formatting, Svelte checking with zero errors and
-warnings, 138 tests, static build and four health tests. Exact `52221ad`
-packages passed core and administrator browser journeys, including native Back
-draft guards and audit filter/scroll restoration. Header/icon checks passed
-at 320/390/1280px; import controls passed at 320px in English and German.
-The earlier `fe9ff79` milestone passed 304 Rust tests across 49 suites and all
-five packaged browser gates; the PWA protocol and resource APIs are unchanged.
-
-All four CI workflows for harness checkpoint
-`2c94f380b6201a75882c4f1a4a9903c4a61f38a9` succeeded. The Android replay job's
-first attempt failed while downloading the emulator SDK before tests started;
-one retry passed. This result applies to that application checkpoint, not to
-unrelated later infrastructure commits.
+Earlier `52221ad` and `fe9ff79` journeys remain historical evidence for their
+named artifacts, including administrator/yarn/category/PWA flows and the
+three-engine matrix. Their results are not new runs against `72b1faa`.
 
 ## Remaining acceptance
 
@@ -80,6 +66,11 @@ rollout is verified at public pin `bc0645107`; the deployed application is
 2. Complete native screen-reader acceptance for labels, errors, route changes,
   and dialog changes. Synthetic accessibility and focused Firefox zoom checks
   do not establish this.
+3. Refresh the representative Firefox/WebKit matrix against the deployed
+  package, including the changed dialog and validation behavior.
+4. Refresh the bounded contrast, performance and native Firefox zoom reports
+  against that same package. Older measurements remain tied to their source.
+
 The `52221ad` browser matrix passed Chromium, Firefox and WebKit. The updated
 print-failure leg verifies an actual intercepted image failure, no premature
 printing, an accessible error and successful retry. The normal service-worker
