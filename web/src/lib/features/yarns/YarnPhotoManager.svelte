@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -38,6 +39,7 @@
   let selectedPhoto = $state<YarnPhoto | null>(null);
   let deleteTarget = $state<YarnPhoto | null>(null);
   let zoomDialog = $state<HTMLDialogElement | null>(null);
+  let zoomTitle = $state<HTMLHeadingElement | null>(null);
   let deleteDialog = $state<HTMLDialogElement | null>(null);
 
   function isCurrentOperation(resourceId: number, ownerId: number): boolean {
@@ -124,9 +126,46 @@
     }
   }
 
-  function showPhoto(photo: YarnPhoto) {
+  async function showPhoto(photo: YarnPhoto) {
+    const requestedYarnId = yarnId;
+    const requestedUserId = session.data?.user?.id ?? null;
+    const requestedPhotoId = photo.id;
     selectedPhoto = photo;
-    zoomDialog?.showModal();
+    await tick();
+    const dialog = zoomDialog;
+    const title = zoomTitle;
+    if (
+      requestedYarnId !== yarnId ||
+      requestedUserId !== (session.data?.user?.id ?? null) ||
+      selectedPhoto?.id !== requestedPhotoId ||
+      !dialog ||
+      !title ||
+      !dialog.isConnected ||
+      !dialog.contains(title) ||
+      dialog.open
+    )
+      return;
+    const previousAutofocus = title.autofocus;
+    title.autofocus = true;
+    try {
+      dialog.showModal();
+    } finally {
+      title.autofocus = previousAutofocus;
+    }
+    await tick();
+    if (
+      requestedYarnId === yarnId &&
+      requestedUserId === (session.data?.user?.id ?? null) &&
+      selectedPhoto?.id === requestedPhotoId &&
+      dialog === zoomDialog &&
+      title === zoomTitle &&
+      dialog.isConnected &&
+      dialog.open &&
+      dialog.contains(title)
+    ) {
+      if (document.activeElement === title) return;
+      title.focus();
+    }
   }
 </script>
 
@@ -219,14 +258,23 @@
   <dialog
     bind:this={zoomDialog}
     class="zoom-dialog"
-    aria-label={t("Yarn photo", locale)}
+    aria-labelledby={`yarn-photo-dialog-title-${yarnId}`}
     onclose={() => (selectedPhoto = null)}
   >
-    <form method="dialog">
-      <button aria-label={t("Close photo", locale)}
-        ><NavIcon name="close" /></button
+    <header class="zoom-dialog-header">
+      <h2
+        bind:this={zoomTitle}
+        id={`yarn-photo-dialog-title-${yarnId}`}
+        tabindex="-1"
       >
-    </form>
+        {t("Yarn photo", locale)}
+      </h2>
+      <form method="dialog">
+        <button aria-label={t("Close photo", locale)}
+          ><NavIcon name="close" /></button
+        >
+      </form>
+    </header>
     {#if selectedPhoto}
       <img
         src={selectedPhoto.url}
@@ -416,6 +464,29 @@
   .zoom-dialog form {
     display: flex;
     justify-content: end;
+  }
+
+  .zoom-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .zoom-dialog-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .zoom-dialog-header h2:focus {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: 0.15rem;
+  }
+
+  .zoom-dialog-header form {
+    flex: 0 0 auto;
   }
 
   .zoom-dialog form button {
