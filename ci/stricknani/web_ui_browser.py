@@ -17,7 +17,15 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from playwright.sync_api import Locator, Page, Request, Response, Route, sync_playwright
+from playwright.sync_api import (
+    Browser,
+    Locator,
+    Page,
+    Request,
+    Response,
+    Route,
+    sync_playwright,
+)
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ci.stricknani import rust_fixture, seed_rust
@@ -266,6 +274,172 @@ def _prepare_project_reader_fixture(page: Page) -> int:
             "the synthetic project and step-photo fixture could not be prepared"
         )
     return int(result["id"])
+
+
+def _check_print_image_failure_and_retry(
+    browser: Browser,
+    origin: str,
+    email: str,
+    password: str,
+    project_id: int,
+    mark_stage: Callable[[str], None],
+) -> None:
+    context = browser.new_context(
+        viewport={"width": 390, "height": 844},
+        reduced_motion="reduce",
+        color_scheme="light",
+        locale="en-US",
+        service_workers="block",
+    )
+    try:
+        page = context.new_page()
+        page.set_default_timeout(10_000)
+        mark_stage("opening isolated print-failure sign-in")
+        response = page.goto(f"{origin}/app/login", wait_until="domcontentloaded")
+        _require(response is not None and response.status == 200, "login_route_failed")
+        page.get_by_label("Email", exact=True).fill(email)
+        page.get_by_label("Password", exact=True).fill(password)
+        page.get_by_role("button", name="Sign in", exact=True).click()
+        page.wait_for_url("**/app/projects", timeout=15_000)
+        page.get_by_role("heading", name="Projects", exact=True).wait_for(
+            state="visible"
+        )
+        _require(
+            page.evaluate("() => !navigator.serviceWorker?.controller"),
+            "the isolated print-failure context unexpectedly has a service worker",
+        )
+
+        mark_stage("opening isolated project reader")
+        page.locator(f".project-card a[href='/app/projects/{project_id}']").click()
+        page.wait_for_url(f"**/app/projects/{project_id}", timeout=10_000)
+        page.get_by_role("heading", name="Heirloom Baby Blanket", exact=True).wait_for(
+            state="visible"
+        )
+        images = page.locator(".print-reference-image")
+        images.first.wait_for(state="attached")
+        _require(images.count() == 2, "the print fixture image count changed")
+
+        prepared_images = page.evaluate(
+            """nonce => {
+              const images = Array.from(document.querySelectorAll(
+                '.print-reference-image'));
+              for (const [index, image] of images.entries()) {
+                const source = image.dataset.printSrc;
+                if (!source) return false;
+                const url = new URL(source, location.href);
+                url.searchParams.set('print_failure_probe', `${nonce}-${index}`);
+                image.dataset.printSrc = url.href;
+              }
+              window.__printFailureProbe = {calls: 0, imageErrors: 0, atPrint: []};
+              window.print = () => {
+                window.__printFailureProbe.calls += 1;
+                window.__printFailureProbe.atPrint = images.map(image => ({
+                  complete: image.complete,
+                  loaded: image.naturalWidth > 0,
+                }));
+              };
+              for (const image of images) {
+                image.addEventListener('error', () => {
+                  window.__printFailureProbe.imageErrors += 1;
+                });
+              }
+              return images.length === 2;
+            }""",
+            secrets.token_urlsafe(12),
+        )
+        _require(bool(prepared_images), "the print fixture had no source images")
+
+        blocked_requests: list[tuple[bool, bool, bool]] = []
+
+        def abort_project_image(route: Route) -> None:
+            request = route.request
+            path = urlsplit(request.url).path
+            if path.startswith("/media/projects/"):
+                is_image_get = (
+                    request.method == "GET" and request.resource_type == "image"
+                )
+                blocked_requests.append((request.method == "GET", is_image_get, True))
+                if is_image_get:
+                    route.abort()
+                    return
+            route.continue_()
+
+        page.route("**/media/projects/**", abort_project_image)
+        mark_stage("waiting for aborted print image error")
+        page.get_by_role("button", name="Print pattern", exact=True).click()
+        alert = page.get_by_role("alert").filter(
+            has_text=(
+                "A reference photo could not be prepared for printing. Try again."
+            )
+        )
+        page.wait_for_function(
+            "() => Number(window.__printFailureProbe?.calls ?? 0) > 0 || "
+            "Array.from(document.querySelectorAll('[role=alert]')).some(node => "
+            "node.textContent?.includes('A reference photo could not be prepared "
+            "for printing. Try again.'))",
+            timeout=10_000,
+        )
+        alert_visible = alert.count() > 0 and alert.first.is_visible()
+        failure_state = page.evaluate("window.__printFailureProbe")
+        _require(
+            len(blocked_requests) > 0
+            and all(request == (True, True, True) for request in blocked_requests)
+            and failure_state.get("calls") == 0
+            and alert_visible,
+            "uncached print image failure was not handled "
+            f"(blocked_images={len(blocked_requests)}, "
+            f"print_calls={failure_state.get('calls')}, alert={alert_visible})",
+        )
+
+        page.unroute("**/media/projects/**", abort_project_image)
+        mark_stage("retrying print after removing the image abort")
+        page.wait_for_function(
+            "() => { const button = document.querySelector('.print-button'); "
+            "return button !== null && !button.disabled; }",
+            timeout=5_000,
+        )
+        successful_image_responses: list[int] = []
+
+        def observe_retry_response(response: Response) -> None:
+            request = response.request
+            if (
+                request.method == "GET"
+                and request.resource_type == "image"
+                and urlsplit(response.url).path.startswith("/media/projects/")
+            ):
+                successful_image_responses.append(response.status)
+
+        page.on("response", observe_retry_response)
+        page.evaluate(
+            "() => { window.__printFailureProbe.calls = 0; "
+            "window.__printFailureProbe.atPrint = []; }"
+        )
+        page.get_by_role("button", name="Print pattern", exact=True).click()
+        page.wait_for_function(
+            "() => Number(window.__printFailureProbe?.calls ?? 0) > 0",
+            timeout=15_000,
+        )
+        retry_state = page.evaluate("window.__printFailureProbe")
+        retry_images = retry_state.get("atPrint", [])
+        loaded_retry_images = sum(
+            bool(image.get("complete") and image.get("loaded"))
+            for image in retry_images
+        )
+        _require(
+            retry_state.get("calls") == 1
+            and len(retry_images) == 2
+            and all(
+                image.get("complete") and image.get("loaded") for image in retry_images
+            )
+            and len(successful_image_responses) == 2
+            and all(status == 200 for status in successful_image_responses),
+            "print retry did not load both images after removing the abort "
+            f"(print_calls={retry_state.get('calls')}, "
+            f"loaded_images={loaded_retry_images}, "
+            f"image_responses={len(successful_image_responses)})",
+        )
+    finally:
+        context.close()
 
 
 def _save_remote_project_version(page: Page, project_id: int, name: str) -> None:
@@ -1793,8 +1967,6 @@ def run_acceptance(
     expected_signup_conflict_window = [False]
     expected_signup_conflict_pending = [False]
     expected_conflict_paths: set[str] = set()
-    expected_print_abort_window = [False]
-    expected_print_abort_paths: set[str] = set()
 
     def observe_request(request: object) -> None:
         url = getattr(request, "url", "")
@@ -1802,8 +1974,6 @@ def run_acceptance(
         path = request_url.path
         if path.startswith("/media/projects/"):
             original_project_image_requests.append(path)
-            if expected_print_abort_window[0]:
-                expected_print_abort_paths.add(path)
         if path == "/api/v2/projects":
             project_list_queries.append(parse_qs(request_url.query))
         if path not in {
@@ -1986,12 +2156,6 @@ def run_acceptance(
             )
         ):
             console_errors.append("expected_ocr_failure_5xx")
-        elif (
-            expected_print_abort_window[0]
-            and source_path in expected_print_abort_paths
-            and "failed to load resource" in text
-        ):
-            console_errors.append("expected_print_image_abort")
         else:
             if source_path.startswith("/api/v2/projects/"):
                 source_class = "project-api"
@@ -3272,157 +3436,9 @@ def run_acceptance(
                 large_font > small_font, "reader text-size control did not grow text"
             )
             mark_stage("checking complete pattern instructions in print")
-            blocked_print_image_requests: list[dict[str, object]] = []
-
-            def block_print_image(route: Route) -> None:
-                request = route.request
-                blocked_print_image_requests.append(
-                    {
-                        "path": urlsplit(request.url).path,
-                        "get": request.method == "GET",
-                        "image": request.resource_type == "image",
-                        "project_media": urlsplit(request.url).path.startswith(
-                            "/media/projects/"
-                        ),
-                    }
-                )
-                route.abort()
-
-            page.route("**/media/projects/**", block_print_image)
-            expected_print_abort_window[0] = True
-            mark_stage("installing print failure instrumentation")
-            page.evaluate(
-                "() => { "
-                "window.__printDialogCalls = 0; "
-                "window.__expectedPrintUrls = Array.from(document.querySelectorAll("
-                "'.print-reference-image')).map(image => { try { return "
-                "new URL(image.dataset.printSrc, location.href).href; } "
-                "catch { return ''; } }); "
-                "window.__printImagesAtCall = []; "
-                "window.print = () => { "
-                "window.__printDialogCalls += 1; "
-                "window.__printImagesAtCall = Array.from(document.querySelectorAll("
-                "'.print-reference-image')).map((image, index) => ({ "
-                "hasSource: Boolean(image.getAttribute('src')), "
-                "complete: image.complete, loaded: image.naturalWidth > 0, "
-                "currentSrcEmpty: image.currentSrc === '', "
-                "srcEqualsOriginal: image.src === window.__expectedPrintUrls[index], "
-                "currentSrcEqualsOriginal: image.currentSrc === "
-                "window.__expectedPrintUrls[index] })); }; "
-                "}"
+            _check_print_image_failure_and_retry(
+                browser, origin, email, password, project_id, mark_stage
             )
-            mark_stage("checking failed print image baseline")
-            print_images_before_click = page.locator(
-                ".print-reference-image"
-            ).evaluate_all(
-                "images => images.map((image, index) => ({hasSource: "
-                "Boolean(image.getAttribute('src')), complete: image.complete, "
-                "loaded: image.naturalWidth > 0, "
-                "currentSrcEmpty: image.currentSrc === '', "
-                "srcEqualsOriginal: image.src === "
-                "window.__expectedPrintUrls[index], "
-                "currentSrcEqualsOriginal: image.currentSrc === "
-                "window.__expectedPrintUrls[index]}))"
-            )
-            mark_stage("clicking print with blocked reference photo")
-            page.get_by_role("button", name="Print pattern", exact=True).click()
-            mark_stage("waiting for blocked print image error")
-            try:
-                page.get_by_role("alert").filter(
-                    has_text=(
-                        "A reference photo could not be prepared for printing. "
-                        "Try again."
-                    )
-                ).wait_for(state="visible", timeout=5_000)
-            except Exception:
-                try:
-                    print_failure_diagnostic = page.evaluate(
-                        "() => ({path: location.pathname, lang: "
-                        "document.documentElement.lang, alerts: Array.from("
-                        "document.querySelectorAll('[role=alert]')).map(node => "
-                        "node.textContent?.trim() ?? ''), button: (() => { "
-                        "const node = document.querySelector('.print-button'); "
-                        "return node ? {disabled: node.disabled, "
-                        "text: node.textContent?.trim() ?? ''} : null; })(), "
-                        "calls: window.__printDialogCalls, "
-                        "images: Array.from(document.querySelectorAll("
-                        "'.print-reference-image')).map((image, index) => ({ "
-                        "hasSource: Boolean(image.getAttribute('src')), "
-                        "complete: image.complete, loaded: image.naturalWidth > 0, "
-                        "currentSrcEmpty: image.currentSrc === '', "
-                        "srcEqualsOriginal: image.src === "
-                        "window.__expectedPrintUrls[index], "
-                        "currentSrcEqualsOriginal: image.currentSrc === "
-                        "window.__expectedPrintUrls[index] }))})"
-                    )
-                except Exception as diagnostic_error:
-                    print_failure_diagnostic = {
-                        "path": "unavailable",
-                        "diagnosticError": type(diagnostic_error).__name__,
-                    }
-                raise AcceptanceFailure(
-                    "failed image did not produce the localized print error; "
-                    + json.dumps(print_failure_diagnostic, sort_keys=True)
-                ) from None
-            mark_stage("reading failed print image state")
-            failed_print_state = page.evaluate(
-                "() => ({calls: window.__printDialogCalls, "
-                "imagesAtCall: window.__printImagesAtCall, "
-                "images: Array.from(document.querySelectorAll("
-                "'.print-reference-image')).map((image, index) => ({ "
-                "hasSource: Boolean(image.getAttribute('src')), "
-                "complete: image.complete, loaded: image.naturalWidth > 0, "
-                "currentSrcEmpty: image.currentSrc === '', "
-                "srcEqualsOriginal: image.src === "
-                "window.__expectedPrintUrls[index], "
-                "currentSrcEqualsOriginal: image.currentSrc === "
-                "window.__expectedPrintUrls[index] }))})"
-            )
-            _require(
-                failed_print_state["calls"] == 0
-                and len(blocked_print_image_requests) >= 1
-                and all(
-                    request["get"] and request["image"] and request["project_media"]
-                    for request in blocked_print_image_requests
-                ),
-                "printing continued after a reference photo failed to load "
-                f"(print_calls={failed_print_state['calls']}, "
-                f"blocked_requests={len(blocked_print_image_requests)}, "
-                f"before_click={print_images_before_click}, "
-                f"images_at_call={failed_print_state['imagesAtCall']}, "
-                f"images={failed_print_state['images']})",
-            )
-            mark_stage("restoring print test overrides")
-            page.unroute("**/media/projects/**")
-            expected_print_abort_window[0] = False
-            mark_stage("waiting for failed print attempt to finish")
-            try:
-                page.wait_for_function(
-                    "() => { const button = document.querySelector('.print-button'); "
-                    "return button !== null && !button.disabled; }",
-                    timeout=5_000,
-                )
-            except Exception:
-                try:
-                    retry_state = page.evaluate(
-                        "() => ({button: (() => { const node = "
-                        "document.querySelector('.print-button'); return node ? "
-                        "{disabled: node.disabled, "
-                        "text: node.textContent?.trim() ?? ''} "
-                        ": null; })(), calls: window.__printDialogCalls, "
-                        "images: Array.from(document.querySelectorAll("
-                        "'.print-reference-image')).map(image => ({complete: "
-                        "image.complete, loaded: image.naturalWidth > 0}))})"
-                    )
-                except Exception as diagnostic_error:
-                    retry_state = {
-                        "pageClosed": page.is_closed(),
-                        "diagnosticError": type(diagnostic_error).__name__,
-                    }
-                raise AcceptanceFailure(
-                    "failed print attempt did not release the retry control; "
-                    + json.dumps(retry_state, sort_keys=True)
-                ) from None
             success_request_start = len(original_project_image_requests)
             success_response_start = len(original_project_image_responses)
             mark_stage("installing successful print instrumentation")

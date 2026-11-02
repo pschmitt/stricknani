@@ -78,6 +78,17 @@ Use this file as the operational source of truth for working in Stricknani.
 - Keep private native IPC runtime paths short enough for Unix-domain sockets;
   a deeply nested build/report directory can exceed the socket path limit.
   Use an owned mode-0700 runtime directory and keep reports separately.
+- A phone test on an existing personal browser profile needs an owned-target
+  connector. A raw Playwright browser connection can enumerate other targets
+  internally even when the test never reads `context.pages`. Keep discovery,
+  global cookie/storage operations and personal page data outside the test.
+- Device subprocess errors can reveal identifiers through their command/args
+  even when stderr is captured. Use checked return codes or catch and replace
+  exceptions with safe fixed statuses; never format the original command or
+  `CalledProcessError`. Return only exact allowlisted readiness booleans.
+- When recording an exposure, edit only its matching incident-note section
+  without returning the note body. Do not read an entire incident queue to
+  confirm a write; unrelated incident metadata is private too.
 - For isolated feature checks, start from committed source and overlay only the
   assigned files. Do not copy another agent's unfinished routes into that
   snapshot. Run integration gates again on the exact committed checkpoint.

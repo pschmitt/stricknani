@@ -12,13 +12,13 @@ The deployed `/app` preview and the remaining acceptance work are described in
 | --- | --- | --- |
 | **T120.1 Design and contracts** | [`web-ui-design.md`](web-ui-design.md), [`web-v2-contract.md`](web-v2-contract.md), and the brief define journeys, routes, theme, API shapes, and security boundaries. | **Documented.** The remaining acceptance and cleanup work stays open. |
 | **T120.2 Foundation and auth shell** | [`web/src/routes`](../web/src/routes), [`rust/src/frontend.rs`](../rust/src/frontend.rs), [`rust/src/pwa.rs`](../rust/src/pwa.rs), and Rust frontend/PWA tests cover the static shell, route fallback, CSP manifest, and app-scoped worker. | **Implemented.** Packaged PWA and accessibility browser gates passed. |
-| **T120.3 Browser API v2** | [`rust/src/api_v2`](../rust/src/api_v2), [`web-v2-contract.md`](web-v2-contract.md), and API tests cover sessions, CSRF, ownership, pagination, and capabilities. | **Implemented and tested.** Android v1 remains separate; a complete Android-client run is not claimed here. |
+| **T120.3 Browser API v2** | [`rust/src/api_v2`](../rust/src/api_v2), [`web-v2-contract.md`](web-v2-contract.md), and API tests cover sessions, CSRF, ownership, pagination, and capabilities. | **Workflows implemented.** T120.3 remains open for the explicit media/import/archive-state/account/admin capability fields required by the brief. Android v1 remains separate. |
 | **T120.4 Projects and reader** | [`ProjectLibrary.svelte`](../web/src/lib/features/projects/ProjectLibrary.svelte), [`ProjectReader.svelte`](../web/src/lib/features/projects/ProjectReader.svelte), and [`web_ui_browser.py`](../ci/stricknani/web_ui_browser.py). | **Implemented.** Exact packaged core project browser journey passed. Synthetic phone viewports passed; real-phone soft-keyboard and safe-area behavior remain open. |
 | **T120.5 Project editor and media** | [`ProjectEditor.svelte`](../web/src/lib/features/projects/ProjectEditor.svelte), project/media API tests, and the core browser journey cover editing, conflicts, uploads, attachments, and reader media. | **Implemented.** Synthetic browser coverage passed; physical-device media and keyboard usability remain unproven. |
 | **T120.6 Yarns and categories** | [`YarnLibrary.svelte`](../web/src/lib/features/yarns/YarnLibrary.svelte), [`CategoryManager.svelte`](../web/src/lib/features/categories/CategoryManager.svelte), API tests, and [`web_yarn_browser.py`](../ci/stricknani/web_yarn_browser.py). | **Implemented.** Exact packaged yarn/category browser journey passed. |
 | **T120.7 Imports and jobs** | [`ImportWorkbench.svelte`](../web/src/lib/features/imports/ImportWorkbench.svelte), [`web_import_browser.py`](../ci/stricknani/web_import_browser.py), and OCR/archive controls and tests. | **Implemented.** Preserve SSRF, size, ownership, and feature-capability boundaries. |
 | **T120.8 Account, tools, admin, and i18n** | Account/signup/admin components, API security tests, and account/admin browser runners. | **Implemented.** English and German catalogs are packaged; exact packaged admin journey passed. |
-| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey, complete native screen-reader run, and WebKit print-error verification remain. Current contrast/performance/native zoom passed; legacy consumer review is complete. |
+| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey and complete native screen-reader run remain. Current contrast/performance/native zoom passed; legacy consumer review is complete. |
 | **T120.10 Requested update activation** | Explicit reload-to-update behavior, cross-tab readiness, dirty-form and in-flight mutation guards; frontend and PWA tests plus exact packaged PWA journey. | **Complete.** The packaged PWA browser gate exited 0. |
 | **T120.11 Audit resource history** | Typed audit changes, event resource names, separate read-only cross-owner admin resource views, media authorization, and lazy diffs; Rust tests and exact packaged admin journey. | **Complete.** Ordinary ownership, edit permissions, and API v1 remain unchanged. Migration 14 is applied and database integrity passed. |
 | **T120.12 Reusable resource cards** | Shared project/yarn/category cards across audit and related-resource views, protected previews, fallbacks, and responsive links; exact packaged admin, core, yarn, and accessibility journeys. | **Complete.** All five packaged browser gates listed in the checkpoint exited 0. |
@@ -66,14 +66,20 @@ unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
+T120.3 also has one implementation contract gap: the session currently exposes
+optional-service flags, but not every action-availability field required in the
+brief. The coordinator is completing that additive contract with backend and
+strict client tests; existing workflows remain available.
+
 1. Run the complete approved workflow on a real phone, including touch,
   soft-keyboard, safe-area, upload, and navigation behavior.
 2. Complete native screen-reader acceptance for labels, errors, route changes,
   and dialog changes. Synthetic accessibility and focused Firefox zoom checks
   do not establish this.
-3. Resolve WebKit's blocked-image print check with actual interception evidence,
-  then complete the current-package browser matrix. Chromium and Firefox
-  journeys pass; a pre-navigation EGL failure was resolved by isolated Xvfb.
+The current browser matrix passes Chromium, Firefox and WebKit. The updated
+print-failure leg verifies an actual intercepted image failure, no premature
+printing, an accessible error and successful retry. The normal service-worker
+journey remains enabled.
 
 Current rendered contrast and five-sample mobile lab performance passed against
 the deployed package, as did native Firefox 200% zoom. These remain bounded

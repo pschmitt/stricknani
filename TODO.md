@@ -29,14 +29,14 @@ Execution-oriented backlog for Stricknani.
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T120 | P1 | wip | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
-| T120.1 | P1 | wip | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
-| T120.2 | P1 | wip | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |
+| T120.1 | P1 | done | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
+| T120.2 | P1 | done | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |
 | T120.3 | P1 | wip | web-rewrite/api | feat | Implement focused cookie-authenticated browser API v2 with shared Rust services and contract tests |
-| T120.4 | P1 | wip | web-rewrite/projects | feat | Build project browsing, search and a comfortable mobile pattern reader |
-| T120.5 | P1 | wip | web-rewrite/editor | feat | Build touch-friendly project editing, steps, uploads and conflict recovery |
-| T120.6 | P1 | wip | web-rewrite/yarns | feat | Build yarn browsing/editing, project associations and category management |
-| T120.7 | P1 | wip | web-rewrite/imports | feat | Build import review, optional OCR/archive controls and bounded job progress feedback |
-| T120.8 | P1 | wip | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
+| T120.4 | P1 | done | web-rewrite/projects | feat | Build project browsing, search and a comfortable mobile pattern reader |
+| T120.5 | P1 | done | web-rewrite/editor | feat | Build touch-friendly project editing, steps, uploads and conflict recovery |
+| T120.6 | P1 | done | web-rewrite/yarns | feat | Build yarn browsing/editing, project associations and category management |
+| T120.7 | P1 | done | web-rewrite/imports | feat | Build import review, optional OCR/archive controls and bounded job progress feedback |
+| T120.8 | P1 | done | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
 | T120.9 | P1 | wip | web-rewrite/acceptance | test | Verify mobile usability, accessibility, performance, packaging and isolated preview rollout |
 | T120.10 | P1 | done | web-rewrite/updates | feat | Reload into an available app update on request while protecting drafts in every open tab |
 | T120.11 | P1 | done | web-rewrite/audit | feat | Link audit resource names to read-only admin views and show recorded field changes |

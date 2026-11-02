@@ -34,23 +34,32 @@ Playwright 1.64.1 with its matching cached engines.
 | --- | --- | --- |
 | Chromium core journey | Pass | Reused exact-package `browser-run-02` receipt; exit 0. |
 | Firefox core journey | Pass | Fresh exact-package `firefox-02` run; exit 0. |
-| WebKit core journey | Incomplete | The Xvfb run reached the project print-error case, then exited 1 because the simulated blocked image did not produce the expected localized alert. |
+| WebKit core journey | Pass | Fresh exact-package full journey, including actual print-image failure and retry; exit 0. |
 
-The WebKit headless process initially could not create an EGL display without
-an X server. A private 1280 × 900 Xvfb display, Openbox, and Mesa llvmpipe
-software rendering allowed the browser to create pages and reach the app. The
-remaining failure occurred at the runner stage `waiting for blocked print image
-error`: the expected alert was absent and the test's `window.print` shim had
-been called once. The runner does not retain the intercepted media-request
-count in that failure diagnostic, so this result does not distinguish a WebKit
-request-interception limitation from a print-flow defect. It is not a WebKit
-pass or a confirmed application regression. A follow-up should record only the
-blocked-request count/status before changing product behavior.
+The WebKit headless process initially required an EGL display. A private
+1280×900 Xvfb display, Openbox and Mesa llvmpipe software rendering resolved
+startup. The original print-error test then failed to intercept any image
+requests behind the controlling service worker and decoded-image cache; no
+image failed, and normal printing correctly continued. That was an invalid
+failure-injection setup, rather than a demonstrated print implementation bug.
 
-The reusable run receipts are retained in a private directory under
-`stricknani-browser-matrix-522-20261102`; Firefox and Chromium exited 0, while
-the WebKit Xvfb run exited 1. No fixture credentials, cookies, screenshots, or
-response bodies are in this report.
+The reviewed runner now isolates only the failure/retry leg in a fresh browser
+context with service workers blocked and nonce-busted synthetic image sources.
+It requires an intercepted original-image GET, zero print calls and the
+localized error. After removing the abort it requires one print call with both
+images loaded and HTTP 200 responses. The normal main context keeps service
+workers enabled and retains its successful-print and cache assertions.
+
+The updated runner SHA-256 is
+`e11d0f6994eea484be9faf0bfbc69cd7f688596a1a5fb245346ae9696fbdf915`.
+Its complete WebKit journey exited 0 at
+`stricknani-webkit-print-failure-20261102/receipts/core-webkit-01/exit`.
+The changed print-failure/retry leg also exited 0 on Chromium and Firefox in
+`receipts/print-failure-chromium-02/exit` and
+`receipts/print-failure-firefox-02/exit` under the same private build directory.
+The coordinator independently read all three terminal receipts. Ruff, format,
+compilation, MyPy, 10 helper tests and 4 health tests passed. Fixture secrets,
+headers, URLs and response bodies are not included in the diagnostic output.
 
 ## Firefox native 200% zoom
 

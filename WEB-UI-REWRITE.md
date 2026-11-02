@@ -241,12 +241,12 @@ performance, and acceptance decisions. Keep file claims disjoint before
 parallel implementation. Luna agents implement the Rust API/service slices too;
 the coordinator reviews their contracts and security-sensitive changes.
 
-- [ ] **T120.1 — UX/design and contract freeze.** Produce phone and desktop
+- [x] **T120.1 — UX/design and contract freeze.** Produce phone and desktop
   screen flows, reader/editor interaction notes, navigation and role model,
   loading/empty/error/upload state inventory, palette/type/spacing tokens, and
   v2 route/error/capability contract. Record approved scope decisions. Freeze
   contracts before page slices depend on them.
-- [ ] **T120.2 — Frontend foundation and auth shell.** Add Svelte 5/SvelteKit,
+- [x] **T120.2 — Frontend foundation and auth shell.** Add Svelte 5/SvelteKit,
   TypeScript, Vite, static adapter, lockfile, build integration, typed API
   client, theme/responsive primitives, navigation shell, sign-in/signup,
   session expiry/logout, route guards, generated EN/DE catalogs, and test/lint scripts.
@@ -259,29 +259,36 @@ the coordinator reviews their contracts and security-sensitive changes.
   shared domain services, cookie/CSRF auth, authorization, pagination,
   capabilities, predictable errors, and API tests. Leave v1/Android semantics
   intact. Do not add generalized endpoints without a concrete journey.
-- [ ] **T120.4 — Project library and reader.** Deliver searchable/filterable
+- [x] **T120.4 — Project library and reader.** Deliver searchable/filterable
   project library, favorites, pagination, empty/loading/error states, compact
   project summary, readable detail/step reader, linked yarns, image zoom,
   print-complete instructions, and optional OCR/archive states. Preserve
   ownership and not-found behavior.
-- [ ] **T120.5 — Project editor and media.** Deliver create/edit with validation,
+- [x] **T120.5 — Project editor and media.** Deliver create/edit with validation,
   conflict preservation, unsaved-change warning, step ordering/editing,
   yarn association, tags, descriptions/notes, project title and step photos,
   attachments, accessible upload progress/retry/error/delete flows, and
   destructive-action confirmation.
-- [ ] **T120.6 — Yarns and categories.** Deliver yarn inventory search/filter,
+- [x] **T120.6 — Yarns and categories.** Deliver yarn inventory search/filter,
   list/detail/create/edit/photo/favorite/delete flows, linked-project
   navigation, category create/rename/delete management, and shared responsive
   patterns with projects.
-- [ ] **T120.7 — Imports and jobs.** Deliver URL, pasted text, and file import
+- [x] **T120.7 — Imports and jobs.** Deliver URL, pasted text, and file import
   entry; preview/edit extracted project and yarn fields; opt-in AI control;
   create project/yarn; and progress/success/failure/retry behavior for any
   synchronous imports/OCR and the existing asynchronous archive work. Keep
   SSRF/size/type boundaries; no new queue is required for import or OCR.
-- [ ] **T120.8 — Account, tools, admin, and i18n completion.** Deliver profile
+- [x] **T120.8 — Account, tools, admin, and i18n completion.** Deliver profile
   avatar, password, one-time API token reveal/revoke, standalone gauge, optional
   signup, admin user management, audit filter/pagination, role-gated navigation,
   complete English/German strings, and consistent async/validation feedback.
+Feature workflows T120.1–T120.8 are delivered; T120.3 still needs the
+explicit action-availability capability fields identified by the independent
+contract audit. The current
+[requirement/evidence audit](docs/web-ui-acceptance-audit.md) and
+[deployment checkpoint](docs/web-ui-checkpoint.md) record its tests and source.
+The overall rewrite remains open until T120.9 acceptance is complete.
+
 - [ ] **T120.9 — Acceptance, preview, and cleanup.** Run focused Rust tests and
   Vitest logic/component tests, type/lint/build checks, then browser acceptance in Playwright on
   Chromium/Firefox/WebKit at phone/tablet/desktop sizes. Include real-phone

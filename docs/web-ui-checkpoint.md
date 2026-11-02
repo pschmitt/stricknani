@@ -87,8 +87,9 @@ CLS 0 and a 40ms interaction candidate, within its stated budgets. Current
 Firefox native 200% zoom also passed. The conditional legacy consumer review
 is complete; active consumers require retaining the old assets for now.
 
-Remaining work is the approved physical-phone journey, complete native
-screen-reader acceptance, and WebKit's print-error check. Their diagnostics
+The current browser matrix now passes Chromium, Firefox and WebKit, including
+a real intercepted print-image failure and retry. Remaining work is the
+approved physical-phone journey and complete native screen-reader acceptance. Their diagnostics
 remain separate from passing acceptance evidence. See
 [device acceptance](web-ui-device-acceptance.md),
 [native zoom](web-ui-native-a11y.md),
