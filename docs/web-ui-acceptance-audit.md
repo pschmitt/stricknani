@@ -18,7 +18,7 @@ The deployed `/app` preview and the remaining acceptance work are described in
 | **T120.6 Yarns and categories** | [`YarnLibrary.svelte`](../web/src/lib/features/yarns/YarnLibrary.svelte), [`CategoryManager.svelte`](../web/src/lib/features/categories/CategoryManager.svelte), API tests, and [`web_yarn_browser.py`](../ci/stricknani/web_yarn_browser.py). | **Implemented.** Exact packaged yarn/category browser journey passed. |
 | **T120.7 Imports and jobs** | [`ImportWorkbench.svelte`](../web/src/lib/features/imports/ImportWorkbench.svelte), [`web_import_browser.py`](../ci/stricknani/web_import_browser.py), and OCR/archive controls and tests. | **Implemented.** Preserve SSRF, size, ownership, and feature-capability boundaries. |
 | **T120.8 Account, tools, admin, and i18n** | Account/signup/admin components, API security tests, and account/admin browser runners. | **Implemented.** English and German catalogs are packaged; exact packaged admin journey passed. |
-| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey, complete native screen-reader run, current contrast/performance reruns, and conditional legacy cleanup review remain. |
+| **T120.9 Acceptance, preview, and cleanup** | This audit and the linked device, native accessibility, screen-reader, contrast, and performance reports. | **Open.** Phone journey, complete native screen-reader run, and WebKit print-error verification remain. Current contrast/performance/native zoom passed; legacy consumer review is complete. |
 | **T120.10 Requested update activation** | Explicit reload-to-update behavior, cross-tab readiness, dirty-form and in-flight mutation guards; frontend and PWA tests plus exact packaged PWA journey. | **Complete.** The packaged PWA browser gate exited 0. |
 | **T120.11 Audit resource history** | Typed audit changes, event resource names, separate read-only cross-owner admin resource views, media authorization, and lazy diffs; Rust tests and exact packaged admin journey. | **Complete.** Ordinary ownership, edit permissions, and API v1 remain unchanged. Migration 14 is applied and database integrity passed. |
 | **T120.12 Reusable resource cards** | Shared project/yarn/category cards across audit and related-resource views, protected previews, fallbacks, and responsive links; exact packaged admin, core, yarn, and accessibility journeys. | **Complete.** All five packaged browser gates listed in the checkpoint exited 0. |
@@ -58,11 +58,11 @@ at 320/390/1280px; import controls passed at 320px in English and German.
 The earlier `fe9ff79` milestone passed 304 Rust tests across 49 suites and all
 five packaged browser gates; the PWA protocol and resource APIs are unchanged.
 
-Final harness follow-up CI remains pending at this checkpoint. The `52221ad`
-CI run found a login URL assertion racing the completed transition; the runner
-now waits for the URL and Projects heading, and the exact packaged core journey
-passes. The earlier `63d2f1ba` checkpoint passed all four registered workflows.
-This document does not claim that every current CI workflow is green.
+All four CI workflows for harness checkpoint
+`2c94f380b6201a75882c4f1a4a9903c4a61f38a9` succeeded. The Android replay job's
+first attempt failed while downloading the emulator SDK before tests started;
+one retry passed. This result applies to that application checkpoint, not to
+unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
@@ -71,13 +71,16 @@ This document does not claim that every current CI workflow is green.
 2. Complete native screen-reader acceptance for labels, errors, route changes,
   and dialog changes. Synthetic accessibility and focused Firefox zoom checks
   do not establish this.
-3. Rerun rendered contrast and lab performance against the current packaged
-  version. Earlier bounded contrast and five-sample lab performance receipts
-  remain historical and do not establish full WCAG coverage or production
-  field p75.
-4. Finish the conditional legacy consumer and cleanup review before removing
-  legacy templates, aliases, styles, scripts, routes, or the root-scope worker.
-  Preserve Android v1, `/projects/import`, `/api/v1`, `/media`, and shared
-  backend services. Production cutover remains separate.
+3. Resolve WebKit's blocked-image print check with actual interception evidence,
+  then complete the current-package browser matrix. Chromium and Firefox
+  journeys pass; a pre-navigation EGL failure was resolved by isolated Xvfb.
+
+Current rendered contrast and five-sample mobile lab performance passed against
+the deployed package, as did native Firefox 200% zoom. These remain bounded
+lab results, not full WCAG coverage or production field p75. The
+[legacy consumer review](web-ui-legacy-cleanup.md) is complete: Android v1,
+`/projects/import`, `/media`, mounted HTML views and the root-scoped worker
+still require their assets. Actual retirement and production cutover remain
+separate from this preview.
 
 This audit does not mark T120 or T120.9 complete.

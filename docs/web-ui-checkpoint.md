@@ -73,26 +73,29 @@ frontend formatter passed, Svelte checking reported zero errors and warnings,
 142 frontend tests passed, and the static build passed. Rust validation passed
 304 tests across 49 suites, four health tests, and Clippy.
 
-Final harness follow-up CI remains pending at this checkpoint. The `52221ad`
-CI run found a login URL assertion racing the completed transition; the runner
-now waits for the URL and Projects heading, and the exact packaged core journey
-passes. The earlier `63d2f1ba` checkpoint passed all four registered workflows.
-This document does not claim that every current CI workflow is green.
+All four CI workflows for harness checkpoint
+`2c94f380b6201a75882c4f1a4a9903c4a61f38a9` succeeded. The Android replay job's
+first attempt failed while downloading the emulator SDK before tests started;
+one retry passed. This result applies to that application checkpoint, not to
+unrelated later infrastructure commits.
 
 ## Remaining acceptance
 
-T120 overall and T120.9 remain in progress. Remaining work includes a real
-phone journey, complete native screen-reader acceptance, current contrast and
-performance reruns, and a conditional legacy
-consumer/cleanup review. Earlier bounded contrast, lab performance, keyboard,
-zoom, and device receipts apply only to the artifacts and environments named
-in their reports; they are not current packaged reruns. See
-[`web-ui-acceptance-audit.md`](web-ui-acceptance-audit.md),
-[`web-ui-device-acceptance.md`](web-ui-device-acceptance.md),
-[`web-ui-native-a11y.md`](web-ui-native-a11y.md),
-[`web-ui-screenreader.md`](web-ui-screenreader.md),
-[`web-ui-contrast.md`](web-ui-contrast.md), and
-[`web-ui-performance.md`](web-ui-performance.md).
+T120 overall and T120.9 remain in progress. Current-package contrast passed
+84 assessable samples; the five-sample mobile lab measured median LCP 2220ms,
+CLS 0 and a 40ms interaction candidate, within its stated budgets. Current
+Firefox native 200% zoom also passed. The conditional legacy consumer review
+is complete; active consumers require retaining the old assets for now.
+
+Remaining work is the approved physical-phone journey, complete native
+screen-reader acceptance, and WebKit's print-error check. Their diagnostics
+remain separate from passing acceptance evidence. See
+[device acceptance](web-ui-device-acceptance.md),
+[native zoom](web-ui-native-a11y.md),
+[screen-reader verification](web-ui-screenreader.md),
+[browser matrix](web-ui-browser-check.md),
+[contrast](web-ui-contrast.md), [performance](web-ui-performance.md), and
+[legacy consumers](web-ui-legacy-cleanup.md).
 
 ## Legacy compatibility and cleanup constraints
 

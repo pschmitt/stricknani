@@ -72,6 +72,12 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Frontend integration checks
 
+- Fixture runners own their `--private-dir`: pass a fresh, nonexistent leaf
+  path, rather than creating it first. Create only its private parent when
+  needed, and use the fixture environment loader instead of guessing JSON keys.
+- Keep private native IPC runtime paths short enough for Unix-domain sockets;
+  a deeply nested build/report directory can exceed the socket path limit.
+  Use an owned mode-0700 runtime directory and keep reports separately.
 - For isolated feature checks, start from committed source and overlay only the
   assigned files. Do not copy another agent's unfinished routes into that
   snapshot. Run integration gates again on the exact committed checkpoint.

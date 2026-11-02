@@ -1,9 +1,18 @@
 # Legacy browser UI cleanup boundary
 
+Reviewed against source `2c94f380b6201a75882c4f1a4a9903c4a61f38a9` and deployed
+runtime `52221ad266d5c38124f7ca442add952055223e7b` on 2026-11-02.
+
 The new browser application is served below `/app/`. `WEB_ROOT` changes the
 root landing to `/app/`, but the Rust server still composes the legacy HTML
 routers and their related services. This note separates browser-only code from
 contracts that still have concrete callers.
+
+The conditional cleanup review is complete. Actual asset removal is not safe
+yet: the mounted HTML routes, Android callers and root-worker consumers below
+remain. This is a decision to retain their contracts, not evidence that those
+consumers have been retired. No routes, assets, data or production services
+changed during this review.
 
 ## Keep Android-facing contracts
 
@@ -11,6 +20,17 @@ contracts that still have concrete callers.
   native Android client. Its Retrofit interfaces call these endpoints directly
   (`android/app/src/main/kotlin/blue/anika/wolle/data/api/ProjectsApi.kt` and
   `YarnsApi.kt`).
+- Keep `POST /projects/import`. Android's
+  [ProjectImportApi](../android/app/src/main/kotlin/blue/anika/wolle/data/api/ProjectImportApi.kt)
+  explicitly calls this bearer-authenticated JSON endpoint outside `/api/v1`.
+  [import_service.rs](../rust/src/import_service.rs) mounts it independently
+  of the `/imports/**` HTML forms. A blanket removal of unversioned routes
+  would break a current native-client workflow.
+- Keep persisted media paths and migrated filename/thumbnail aliases. Android's
+  [MediaUrlResolver](../android/app/src/main/kotlin/blue/anika/wolle/data/media/MediaUrlResolver.kt)
+  consumes these URLs; [media_aliases.rs](../rust/tests/media_aliases.rs) checks
+  live authorization and owner-scoped resolution. These are data contracts,
+  rather than obsolete frontend assets.
 - Keep the Android share-link paths reachable. The app manifest accepts
   `/projects/…` and `/yarn/…`; `DeepLinkParser` consumes numeric project and
   singular yarn IDs, and the detail view models generate those two URL forms.
@@ -49,6 +69,20 @@ references with the pages that consume them. The Rust static mount exposes the
 shared `stricknani/static` tree, which also belongs to the Python reference app;
 do not remove that shared tree as part of Rust UI cleanup without auditing the
 Python templates separately.
+
+The new [frontend router](../rust/src/frontend.rs) independently serves the
+generated `/app` shell/catalog/immutable assets, and its
+[session client](../web/src/lib/api.ts) calls `/api/v2/session` and
+`/api/v2/auth/**`. Svelte styles and feature pages are bundled from `web/`;
+the new UI does not load those old HTML templates and styles.
+The [Rust package assembly](../nix/rust-package.nix) already excludes the old
+Python frontend JavaScript, HTMX and TipTap directories, while retaining files
+required by the mounted Rust views and workers.
+
+The [frontend](../rust/tests/frontend.rs), [PWA](../rust/tests/pwa.rs),
+[Android import](../rust/tests/import_service.rs) and media-alias tests identify
+boundaries for future removal. This review inspected their coverage; it does
+not claim an additional test run.
 
 ## Root-scope PWA retirement
 

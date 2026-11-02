@@ -250,8 +250,8 @@ the coordinator reviews their contracts and security-sensitive changes.
   TypeScript, Vite, static adapter, lockfile, build integration, typed API
   client, theme/responsive primitives, navigation shell, sign-in/signup,
   session expiry/logout, route guards, generated EN/DE catalogs, and test/lint scripts.
-  Add a compact back chevron to the left of the logo, using observed app
-  navigation when available and a meaningful parent route for direct links.
+  Add a compact back chevron to the left of the logo, following native browser
+  history. Hide it when there is no prior history entry; do not infer parents.
   Keep unsaved-change protection and the right-aligned mobile profile control.
   Rust serves built assets; deployed runtime remains Rust-only.
 - [ ] **T120.3 — Focused browser API v2.** Scoped Luna Rust slice: implement
@@ -291,6 +291,9 @@ the coordinator reviews their contracts and security-sensitive changes.
   coverage. Fix issues, remove replaced Rust templates/styles/scripts only
   after route consumers are gone, update docs/screenshots, and report remaining
   limitations. Keep preview data isolated; do not cut over production.
+  The current [legacy consumer review](docs/web-ui-legacy-cleanup.md) confirms
+  active Android, Rust HTML and root-worker consumers, so asset removal is
+  conditional on their retirement rather than a safe cleanup for this preview.
 
 - [x] **T120.10 — Requested update activation.** Replace the close-all-tabs
   notice with a working reload-to-update action. Activation follows an explicit

@@ -1,18 +1,17 @@
 # Rendered contrast check
 
 This is a bounded synthetic-browser check, not a full WCAG audit. The runner
-[`web_contrast_browser.py`](../ci/stricknani/web_contrast_browser.py) now passes
-on the reviewed contrast-control overlay. Its frozen static tree SHA-256 is
-`547c6d323caaf3121134e7df955275bfdc5a1d7a3b8f72f962464b10e2694b22`; its
-manifest SHA-256 is
-`e1815123bb8c21ff18168aa9f1d89268b2bb2d16a2fabbf30705697ffc44d001`. The
-matching Rust server SHA-256 is
-`946188cc08f1be8d417b8a06484b0695232f74c64a0abf02ab7ba00f3c50b84e`. This
-static tree is included among the 65 immutable UI assets in the deployed WIP
-closure `figxvr435w5lwsd09lw98mkirbbbymfk` (full source manifest
-`477906d23f22b127c2f4d6bd5daa14e1f231a9cc29c89799088c69e51a817760`). The
-test used synthetic records and is separate from production data; dynamically
-generated HTML, version metadata, and CSP were produced by the fresh Nix build.
+[`web_contrast_browser.py`](../ci/stricknani/web_contrast_browser.py) passed
+against the deployed 522 package. Its SHA-256 is
+`c36534c5c33aab95814f59dca9037d3979306bb8b34de742a680515bb1f36f10`. The web
+root was `/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0` and
+the matching raw server was
+`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0/bin/.stricknani-server-wrapped`.
+The tested package's `200.html`, `messages.json`, and `app-sw.js` SHA-256 values
+are respectively `bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`,
+`f5b67b45f4935e871846bca290a2b6d01665cb63cdd740bf137eb69650f4b84a`, and
+`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31`. The
+test used synthetic records and was separate from production data.
 
 ## Method
 
@@ -32,7 +31,7 @@ reasons; it includes no fixture text or screenshots.
 
 ## Result
 
-The corrected run exited 0 with 84 assessable results and 28 categories skipped
+The run exited 0 with 84 assessable results and 28 categories skipped
 because those routes had no visible target for that sample (for example, the
 reader has no editable-field border or placeholder). All 84 assessable results
 passed. This includes 14 of 14 keyboard-focus samples. Every category was
@@ -46,7 +45,7 @@ assessable in each theme across the checked routes.
 | Control text | 6.00:1 | 8.17:1 | 4.5:1 |
 | Visible placeholders | 5.74:1 | 6.86:1 | 4.5:1 |
 | Editable-control borders | 3.80:1 | 4.28:1 | 3:1 |
-| Keyboard focus outline | 4.76:1 | 9.79:1 | 3:1 |
+| Keyboard focus outline | 5.16:1 | 9.79:1 | 3:1 |
 
 The lowest large-heading ratios were 12.92:1 in light mode and 12.81:1 in dark
 mode, above the 3:1 large-text threshold. The previous pre-fix run found weak
@@ -54,7 +53,9 @@ section markers, placeholders, and editable-field borders; the new report
 confirms these sampled styles now meet their thresholds on Login, Projects,
 reader/editor, yarn editor, Account, and Gauge.
 
-This result covers representative rendered samples in this Chromium fixture.
+This run used Chromium 156.0.8078.73 and exited 0. Its mode-0600 sanitized
+report and exit receipt remain in the private run directory. This result covers
+representative rendered samples in this Chromium fixture.
 It does not establish contrast for every component, state, browser, viewport,
 image, or user content, and is not a full WCAG audit. The private mode-0600 run
 report retains the exact selectors, computed colors, and ratios for this frozen

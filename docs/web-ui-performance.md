@@ -2,31 +2,32 @@
 
 ## Method
 
-The measured frontend is the frozen combined static artifact built from source
-commit `6a30d04944ed8b795832025254d7787b15687b45`. Its static tree SHA-256 is
-`606edda18fbf15643baa5ce715d0ef91aa6b92e0d95603bf3c3a20461f871e94`, and its
-manifest SHA-256 is
-`d428ec1d61d57c671498fa26b201d0ae37f16c1ae97baeb2ac4cf30046bc1f64`. The
-matching integrated Rust server executable SHA-256 is
-`946188cc08f1be8d417b8a06484b0695232f74c64a0abf02ab7ba00f3c50b84e`.
-The runner measured here has SHA-256
-`dbaeb7a4635f8a409a7463bc6efe005e96af7d21ba3dff8dce48e7aeb3076fea`.
+The measured frontend is the deployed 522 package. Its web root is
+`/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0`; the matching
+raw server is
+`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0/bin/.stricknani-server-wrapped`.
+The package's `200.html`, `messages.json`, and `app-sw.js` SHA-256 values are
+`bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`,
+`f5b67b45f4935e871846bca290a2b6d01665cb63cdd740bf137eb69650f4b84a`, and
+`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31`.
+The runner SHA-256 is
+`244cd95649ab8d26c872c00a4ac714bf19e19bf5b552a989456d4810f14040b4`.
 
-Five samples ran in Chromium 156 headless mobile emulation at 390 × 844 CSS
-pixels, device scale factor 1, CPU throttling 4×, and browser network
-throttling at 150 ms latency, 1.6 Mbps down and 750 kbps up. Each sample used
-a fresh browser context and one full document session against a disposable
-synthetic account. The runner asserted that the document's `performance.timeOrigin`
-did not change during the measured journey.
+Five samples ran in Chromium 156.0.8078.73 headless mobile emulation at 390 ×
+844 CSS pixels, device scale factor 1, CPU throttling 4×, and browser network
+throttling at 150 ms latency, 1.6 Mbps down and 750 kbps up. Each sample used a
+fresh browser context and one full document session against a disposable
+synthetic account. The runner asserted that the document's
+`performance.timeOrigin` did not change during the measured journey.
 
 The journey searched for a non-matching project, cleared the filter, opened the
 seeded project, moved to the next and previous pattern steps, increased and
 restored reading text size, opened and dismissed the photo viewer, entered a
 project name in the editor, undid the change, and returned to the reader. Each
-action was made through Playwright's normal trusted input APIs, and the runner
-checked the resulting UI state. Event collection continued for the entire
-document session; separate before-and-after snapshots measure search and
-reader-open actions without clearing the shared observer.
+action used Playwright's normal input APIs, and the runner checked the resulting
+UI state. Event collection continued for the entire document session; separate
+before-and-after snapshots measured search and reader-open actions without
+clearing the shared observer.
 
 Event Timing entries were observed with a 16 ms `durationThreshold` and grouped
 by `interactionId`. A gesture's latency is the longest `duration` among its
@@ -37,83 +38,87 @@ interaction count and candidate-index method follow the
 [web-vitals InteractionManager](https://github.com/GoogleChrome/web-vitals/blob/main/src/lib/InteractionManager.ts)
 and its
 [interaction-count polyfill](https://github.com/GoogleChrome/web-vitals/blob/main/src/lib/polyfills/interactionCountPolyfill.ts).
-The Event Timing observer uses the
-[W3C Event Timing API](https://www.w3.org/TR/event-timing/). INP's interaction
-grouping and 200 ms good threshold are described in the
+The Event Timing observer uses the [W3C Event Timing API](https://www.w3.org/TR/event-timing/).
+INP's interaction grouping and 200 ms good threshold are described in the
 [web.dev INP guide](https://web.dev/articles/inp).
 
 The harness reports the native document interaction count, observed groups,
-coverage, event-entry count, event-type counts, and duration buckets. The lab
-candidate is marked assessable only when at least eight interaction groups are
+coverage, event-entry count, event-type counts, and duration buckets. A lab
+candidate is assessable only when at least eight interaction groups are
 observed and those groups cover at least half the native document count. This
 does not convert unobserved events to zero; with the 16 ms observer threshold,
-shorter interactions are not present in the Event Timing sample.
+shorter interactions are absent from the Event Timing sample.
 
 The runner computes gzip level 6 sizes from loaded JavaScript and CSS response
-bodies. A local standard-library proxy preserves browser Host, Origin and
+bodies. Those estimates are compared with the 150 KiB JavaScript and 50 KiB CSS
+budgets. A local standard-library proxy preserves browser Host, Origin, and
 Cookie headers and gzips eligible content types over 1 KiB. Chromium Resource
-Timing reports encoded body and transfer bytes separately; small assets may
-remain identity encoded, and transfer size includes response overhead.
+Timing separately reports encoded body bytes and transfer bytes, which include
+response overhead. In this run, the JavaScript and CSS resources included both
+gzip and identity responses, while the catalog response was gzip encoded.
 
 ## Results
 
-| Sample | LCP (ms) | CLS | JS gzip-6 (B) | CSS gzip-6 (B) | Catalog gzip-6 (B) | Search ready (ms) | Reader ready (ms) | Lab INP candidate (ms) | Native interactions | Observed groups | Coverage | Event entries |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 1924 | 0.0000 | 52732 | 6150 | 21247 | 350.6 | 651.5 | 32 | 37 | 34 | 91.9% | 89 |
-| 2 | 1916 | 0.0000 | 52732 | 6150 | 21247 | 345.8 | 615.9 | 32 | 37 | 33 | 89.2% | 86 |
-| 3 | 1908 | 0.0000 | 52732 | 6150 | 21247 | 321.1 | 622.9 | 32 | 37 | 33 | 89.2% | 89 |
-| 4 | 1916 | 0.0000 | 52732 | 6150 | 21247 | 341.0 | 626.9 | 32 | 37 | 32 | 86.5% | 86 |
-| 5 | 1900 | 0.0000 | 52732 | 6150 | 21247 | 360.3 | 614.4 | 32 | 37 | 26 | 70.3% | 69 |
-| Median | 1916 | 0.0000 | 52732 | 6150 | 21247 | 345.8 | 622.9 | 32 | 37 | 33 | 89.2% | 86 |
+| Sample | LCP (ms) | CLS | JS gzip-6 (B) | CSS gzip-6 (B) | Catalog gzip-6 (B) | Cold route ready (ms) | Search ready (ms) | Reader ready (ms) | Search event (ms) | Reader event (ms) | Lab candidate (ms) | Native interactions | Observed groups | Coverage | Event entries |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 2232 | 0.0000 | 65067 | 7257 | 22876 | 1950.8 | 364.0 | 643.0 | 24 | 32 | 40 | 37 | 25 | 67.6% | 66 |
+| 2 | 2208 | 0.0000 | 65067 | 7257 | 22876 | 1925.3 | 408.7 | 645.7 | 24 | 32 | 40 | 37 | 29 | 78.4% | 72 |
+| 3 | 2216 | 0.0000 | 65067 | 7257 | 22876 | 1941.5 | 352.1 | 657.4 | 32 | 24 | 40 | 37 | 33 | 89.2% | 89 |
+| 4 | 2220 | 0.0000 | 65067 | 7257 | 22876 | 1943.4 | 382.0 | 662.8 | 24 | 40 | 40 | 37 | 28 | 75.7% | 69 |
+| 5 | 2236 | 0.0000 | 65067 | 7257 | 22876 | 1943.1 | 385.0 | 646.8 | 32 | 32 | 40 | 37 | 34 | 91.9% | 90 |
+| Median | 2220 | 0.0000 | 65067 | 7257 | 22876 | 1943.1 | 382.0 | 646.8 | 24 | 32 | 40 | 37 | 29 | 78.4% | 72 |
 
-The native count was available in every sample, and both Event Timing and
-first-input observers were supported. All five candidates were assessable.
-Each session had 37 document interactions; 26–34 groups had at least one
-Event Timing entry at the 16 ms threshold. Candidate index was 0 in every
-sample because `floor(37 / 50) = 0`, so the candidate is the slowest observed
-interaction. The candidate was 32 ms in all samples. Observed interactions
-fell in the 16–39 ms duration bucket; no measured group reached 100 ms. Across
-the sessions, event-type interaction counts ranged from 9–10 clicks, 9–10
-pointer-down/up events, 17–25 keydowns, 15–22 keypresses and 10–16 keyups.
+The native interaction count was available in all samples, as were Event Timing
+and first-input observers. Each document had 37 interactions; 25–34 groups had
+at least one Event Timing entry at the 16 ms threshold, with 66–90 entries per
+sample. Candidate index was 0 each time because `floor(37 / 50) = 0`, so the
+candidate is the slowest observed interaction. It was 40 ms in every sample.
+The observed-interaction coverage ranged from 67.6% to 91.9%. Search action
+latency was 24–32 ms and reader-open latency was 24–40 ms. Each sample loaded
+32 resources: 24 JavaScript, 7 CSS, and one catalog resource.
 
-Action-local Event Timing latency was 24–32 ms for search and 32 ms for
-reader-open. LCP ranged from 1,900 to 1,924 ms. Each sample loaded 18 JavaScript
-files, 3 CSS files and one catalog resource. All five passed the configured
-asset budgets and the scripted 200 ms lab candidate target.
+The gzip-6 estimates met the configured budgets in every sample: 65,067 B of
+JavaScript against 153,600 B, and 7,257 B of CSS against 51,200 B. In
+Resource Timing, JavaScript encoded bytes were 65,815 B and transfer bytes
+were 73,015 B; CSS encoded bytes were 7,854 B and transfer bytes were 9,954 B;
+the catalog was 22,876 B encoded and 23,176 B transferred. These transport
+measurements are distinct from the gzip-6 budget estimates. LCP ranged from
+2,208 to 2,236 ms, and CLS was 0 in all five samples.
 
-The second run had exit status 0. Its sanitized report and host metadata are
-retained with the run artifacts. The shared test machine had 32 logical CPUs;
-load average was 16.65 before and 16.99 after the run, so these timings include
-moderate background load and are not an idle-host comparison.
+The terminal run exited 0. Its mode-0600 sanitized report and exit receipt are
+retained in the private `stricknani-contrast-performance-522-20261102` run
+directory.
 
 ## Acceptance and limits
 
-- **First-route JavaScript:** pass. 52,732 B gzip-6, under 153,600 B (150 KiB).
-- **First-route CSS:** pass. 6,150 B gzip-6, under 51,200 B (50 KiB).
-- **LCP:** pass. Median 1,916 ms, under the 2,500 ms lab target.
-- **CLS:** pass in this fixture. Median 0.0000, under the 0.1 target.
-- **Scripted-session lab INP candidate:** pass. Median and maximum were 32 ms,
-  under the 200 ms lab target, with 70.3–91.9% observed interaction coverage.
+- **First-route JavaScript:** pass. Median 65,067 B gzip-6, below 153,600 B
+  (150 KiB).
+- **First-route CSS:** pass. Median 7,257 B gzip-6, below 51,200 B (50 KiB).
+- **LCP:** pass. Median 2,220 ms, below the 2,500 ms lab target.
+- **CLS:** pass in this fixture. Median 0, below the 0.1 target.
+- **Scripted-session lab INP candidate:** pass. Median and maximum were 40 ms,
+  below the 200 ms lab target, with 67.6–91.9% observed interaction coverage.
 
 This is a controlled scripted lab session with synthetic data and mobile
 emulation, not a physical handset, real mobile network, human study, field
 population estimate, or production p75. Event Timing omits interactions below
-the 16 ms threshold. It does not establish behavior across all device/browser
-combinations or all user journeys. The shared host's background load is an
-additional limitation.
+the 16 ms threshold. The lab candidate is based on the observed groups in this
+scripted document session; it is not a field INP measurement. The shared host
+had moderate background load during the run, so the results are not an
+idle-host comparison.
 
 ## Reproduction
 
-From the source checkout, run the focused harness with the frozen server and
-webroot paths for the environment:
+Run from the source checkout with an existing Playwright environment and its
+matching browser cache. Keep the synthetic fixture directory new and outside
+the source tree:
 
 ```sh
 python3 -m ci.stricknani.web_performance_browser \
   --binary <frozen-rust-server> \
-  --web-root <frozen-webroot> \
+  --web-root <frozen-web-root> \
   --private-dir <new-private-run-directory>
 ```
 
-The run directory must be new and outside the source checkout. The helper
-creates and removes its synthetic fixture data there; retain only the
+The runner creates and removes its synthetic fixture data; retain only the
 sanitized JSON report and exit status as run evidence.

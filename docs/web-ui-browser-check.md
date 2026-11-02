@@ -3,15 +3,75 @@
 The browser acceptance runner starts an isolated Rust fixture with a disposable
 SQLite database and media directory, serves the built static UI through the
 real Rust router, and exercises login, session restoration, logout, route
-handling, and responsive layouts in Chromium. It checks strict CSP, expected
-same-origin assets, mobile navigation, 44px navigation controls, reduced
-motion, and the absence of unexpected browser errors. Fixture credentials,
-cookies, and response bodies are never printed or captured.
+handling, and responsive layouts in Chromium, Firefox, and WebKit. It checks
+strict CSP, expected same-origin assets, mobile navigation, 44px navigation
+controls, reduced motion, and the absence of unexpected browser errors.
+Fixture credentials, cookies, and response bodies are never printed or
+captured.
 
 The 2026-11-01 integrated run passed against the static build and Rust server.
 It generated sanitized signed-out mobile, signed-in mobile, and post-logout
 screenshots in a private temporary output directory; screenshots are not
 checked into the repository.
+
+## Deployed 522 browser matrix
+
+The 2026-11-02 checks used the exact deployed package for checkpoint
+`52221ad266d5c38124f7ca442add952055223e7b`. The web root was
+`/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0`; the raw
+Rust server executable was
+`/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0/bin/.stricknani-server-wrapped`
+(SHA-256 `9e4b0e376c7aa73019eb43a7bb2df748c616613fd1c816f103075ccd408d0c4f`).
+The packaged `200.html`, `messages.json`, and `app-sw.js` SHA-256 values are
+`bf63f41919e0a6426e000569170ca5c66f6654492476a6f14250ccdee8d98056`,
+`f5b67b45f4935e871846bca290a2b6d01665cb63cdd740bf137eb69650f4b84a`, and
+`5feb0521c818a2ff9a5c6c13b7612cf94de49356828b96d1845b60eb4ec3aa31`.
+The committed browser runner at this revision has SHA-256
+`c80f6a9e88d3134633682ee3a2d4b343d6605b619176c0be0f9c69997f11fe50` and used
+Playwright 1.64.1 with its matching cached engines.
+
+| Engine / check | Result | Evidence |
+| --- | --- | --- |
+| Chromium core journey | Pass | Reused exact-package `browser-run-02` receipt; exit 0. |
+| Firefox core journey | Pass | Fresh exact-package `firefox-02` run; exit 0. |
+| WebKit core journey | Incomplete | The Xvfb run reached the project print-error case, then exited 1 because the simulated blocked image did not produce the expected localized alert. |
+
+The WebKit headless process initially could not create an EGL display without
+an X server. A private 1280 × 900 Xvfb display, Openbox, and Mesa llvmpipe
+software rendering allowed the browser to create pages and reach the app. The
+remaining failure occurred at the runner stage `waiting for blocked print image
+error`: the expected alert was absent and the test's `window.print` shim had
+been called once. The runner does not retain the intercepted media-request
+count in that failure diagnostic, so this result does not distinguish a WebKit
+request-interception limitation from a print-flow defect. It is not a WebKit
+pass or a confirmed application regression. A follow-up should record only the
+blocked-request count/status before changing product behavior.
+
+The reusable run receipts are retained in a private directory under
+`stricknani-browser-matrix-522-20261102`; Firefox and Chromium exited 0, while
+the WebKit Xvfb run exited 1. No fixture credentials, cookies, screenshots, or
+response bodies are in this report.
+
+## Firefox native 200% zoom
+
+A private copy of the untracked native zoom helper (SHA-256
+`329f95ca088d879aceb7aa474bf84a2f27fdc2bc06d1f89dffe7de109bb81f17`) ran
+against the same package and synthetic Rust fixture in a private Xvfb, Openbox,
+and D-Bus session. It passed at actual Firefox browser zoom 200%. The Xvfb
+geometry stayed fixed at 1280 × 900 pixels; CSS viewport width changed from
+1,237 to 619 px and `devicePixelRatio` from 1.034 to 2.069. The Projects
+heading, seeded project, search field, and search button remained visible and
+usable, with zero horizontal overflow. A trusted X11 pointer click targeted
+the search button and completed the expected search request; native keyboard
+input searched and cleared the filter successfully.
+
+The heading's computed CSS font size changed from 43.19 to 32 px as the narrower
+layout reflowed; these CSS values alone are not a measure of physical text
+scaling. The fixed display size, 200% browser zoom setting, halved CSS viewport,
+and doubled device-pixel ratio confirm the browser applied native full-page
+zoom. This is a synthetic desktop-browser check, not a physical-phone,
+screen-reader, or human accessibility assessment. The mode-0600 native run
+report and exit-0 receipt are retained with the private run artifacts.
 
 ## SvelteKit announcer CSP hash
 
