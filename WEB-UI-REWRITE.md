@@ -394,6 +394,20 @@ content-first lists/details and compact chrome before branding/motion polish;
 merge progressive form disclosure into T120.20. See the density budgets and
 before/after checks in [the follow-ups](docs/web-ui-review-followups.md).
 
+The shared-control checkpoint (T120.17) is verified in the canonical package
+selected by `81fe420`: the six-route phone/desktop inventory covered 54 controls,
+with no undersized targets or horizontal overflow; hover, keyboard focus and
+layout-shift checks passed. Signup at 320px and functional project creation,
+editing, conflicts and media also passed. The full core journey passes with
+the `d8ed929` helper: its density failure was a reproduced resize/layout race,
+fixed by waiting for two animation frames without changing the budgets.
+T120.18's scoped attachment-name wrapping rule passes the 320/390/1280px
+browser trial and source checks; its package rollout follows this checkpoint.
+Fixed action targets remain 44px; linked-yarn, tag and category text already
+wraps. The separate narrow
+YarnForm conflict-button layout belongs to the T120.20 form work and remains
+unresolved.
+
 Use the `ui-audit` inventory and motion scripts after each step on representative
 synthetic fixtures. Compare header positions, role/size button signatures,
 wrapping, hover feedback and layout shifts. Keep import/data repairs separate.

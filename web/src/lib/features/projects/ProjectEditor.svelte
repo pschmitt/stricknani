@@ -1626,6 +1626,11 @@
     overflow-wrap: anywhere;
   }
 
+  .attachment-list li > a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .yarn-results small,
   .attachment-list span {
     color: var(--ink-muted);

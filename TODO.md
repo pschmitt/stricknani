@@ -43,8 +43,8 @@ Execution-oriented backlog for Stricknani.
 | T120.12 | P1 | done | web-rewrite/resource-cards | feat | Reuse compact linked resource cards with images in audit, libraries and related resources |
 | T120.15 | P1 | wip | web-rewrite/reader | feat | Apply the reviewed single-column reader, compact materials summary and mobile filter refinements |
 | T120.16 | P1 | done | web-rewrite/headers | refactor | Stabilize scrollbars, shared page headers and widths; add logical-parent chevrons with a fixed logo slot |
-| T120.17 | P1 | wip | web-rewrite/buttons | refactor | Unify button variants, sizes and interaction states across every feature |
-| T120.18 | P1 | todo | web-rewrite/actions | fix | Prevent row actions from shrinking or wrapping into vertical labels |
+| T120.17 | P1 | done | web-rewrite/buttons | refactor | Unify button variants, sizes and interaction states across every feature |
+| T120.18 | P1 | done | web-rewrite/actions | fix | Prevent row actions from shrinking or wrapping into vertical labels |
 | T120.19 | P1 | todo | web-rewrite/parity | refactor | Align project/yarn navigation, destructive actions, photo editing, favorites and form cancellation |
 | T120.20 | P1 | todo | web-rewrite/editor | refactor | Add sticky Save/Cancel, a separate danger zone, one yarn picker and styled file controls |
 | T120.21 | P1 | todo | web-rewrite/inputs | refactor | Standardize input height, radius and 16px text across forms |
