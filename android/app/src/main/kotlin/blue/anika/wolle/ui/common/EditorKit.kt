@@ -414,7 +414,7 @@ fun EditorPhotoStrip(
                             ),
                 )
                 if (reorder != null && index == 0) {
-                    CoverTag(Modifier.align(Alignment.TopStart).padding(6.dp))
+                    CoverTag(Modifier.align(Alignment.BottomStart).padding(8.dp))
                 }
                 if (selected) {
                     // 48dp touch target, small visible red badge; only after a long-press.
@@ -423,7 +423,7 @@ fun EditorPhotoStrip(
                             selectedKey = null
                             photo.onRemove()
                         },
-                        modifier = Modifier.align(Alignment.TopEnd).size(44.dp),
+                        modifier = Modifier.align(Alignment.TopEnd).padding(1.dp).size(44.dp),
                     ) {
                         Surface(
                             shape = CircleShape,
