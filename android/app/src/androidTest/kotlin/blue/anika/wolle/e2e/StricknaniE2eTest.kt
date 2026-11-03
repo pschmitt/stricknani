@@ -110,6 +110,16 @@ abstract class StricknaniE2eTest {
             }
             .getOrDefault(false)
 
+    protected fun clickTextWithAction(text: String) {
+        val candidates = composeRule.onAllNodesWithText(text)
+        val index =
+            candidates.fetchSemanticsNodes().indexOfFirst { node ->
+                node.config.contains(SemanticsActions.OnClick)
+            }
+        check(index >= 0) { "$text is missing click semantics" }
+        candidates[index].performClick()
+    }
+
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()
         waitForText("Search projects")
@@ -196,8 +206,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         setAirplaneMode(device, enabled = true)
         try {
             // The detail remains available from Room while the server is unreachable.
-            composeRule.onNodeWithContentDescription("More actions").performClick()
-            composeRule.onNodeWithText("Edit").performClick()
+            composeRule.onNodeWithContentDescription("Edit").performClick()
             waitForText("Edit project")
             composeRule
                 .onNodeWithTag("e2e-project-editor-form")
@@ -205,7 +214,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
             composeRule
                 .onNodeWithTag("e2e-project-editor-description")
                 .performTextReplacement(queuedDescription)
-            composeRule.onNodeWithContentDescription("Save").performClick()
+            clickTextWithAction("Save")
             composeRule.waitUntil(30_000) {
                 runCatching {
                         composeRule.onNodeWithTag("e2e-project-detail").assertIsDisplayed()
@@ -306,7 +315,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
             waitForText("New yarn")
             composeRule.onNodeWithTag("e2e-yarn-editor-name").performTextReplacement(name)
             selectFixturePhoto(photoName)
-            composeRule.onNodeWithContentDescription("Save").performClick()
+            clickTextWithAction("Save")
             // Unlike the create-then-navigateUp() flows used elsewhere in this test, the Yarns
             // list screen underneath the editor is never disposed here, so it keeps whatever
             // scroll position openYarns() left it at (near "Riverbend Merino DK") rather than
@@ -334,12 +343,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         // viewport - scroll back to it explicitly rather than assuming it is still on screen.
         scrollYarnsListToText(currentName, timeoutMillis = 30_000)
         composeRule.onNodeWithText(currentName).performClick()
-        waitForContentDescription("More actions")
-        composeRule.onNodeWithContentDescription("More actions").performClick()
-        clickTextWithAction("Edit")
+        waitForContentDescription("Edit")
+        composeRule.onNodeWithContentDescription("Edit").performClick()
         waitForText("Edit yarn")
         composeRule.onNodeWithTag("e2e-yarn-editor-name").performTextReplacement(updatedName)
-        composeRule.onNodeWithContentDescription("Save").performClick()
+        clickTextWithAction("Save")
         runCatching { waitForText(updatedName) }
             .onFailure {
                 composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
@@ -360,7 +368,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         composeRule.onNodeWithTag("e2e-new-project").performClick()
         waitForText("New project")
         composeRule.onNodeWithTag("e2e-project-editor-name").performTextReplacement(name)
-        composeRule.onNodeWithContentDescription("Save").performClick()
+        clickTextWithAction("Save")
         // Same class of issue fixed for the yarns list: the Projects list underneath the pushed
         // editor is never disposed, so it stays scrolled to openProjects()'s "Heirloom Baby
         // Blanket" load marker rather than resetting to top - scroll back to the new row (sorted
@@ -392,12 +400,11 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
 
     private fun editProject(currentName: String, updatedName: String) {
         composeRule.onNodeWithText(currentName).performClick()
-        waitForContentDescription("More actions")
-        composeRule.onNodeWithContentDescription("More actions").performClick()
-        clickTextWithAction("Edit")
+        waitForContentDescription("Edit")
+        composeRule.onNodeWithContentDescription("Edit").performClick()
         waitForText("Edit project")
         composeRule.onNodeWithTag("e2e-project-editor-name").performTextReplacement(updatedName)
-        composeRule.onNodeWithContentDescription("Save").performClick()
+        clickTextWithAction("Save")
         runCatching { waitForText(updatedName) }
             .onFailure {
                 composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
@@ -626,16 +633,6 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         } finally {
             disconnect()
         }
-
-    private fun clickTextWithAction(text: String) {
-        val candidates = composeRule.onAllNodesWithText(text)
-        val index =
-            candidates.fetchSemanticsNodes().indexOfFirst { node ->
-                node.config.contains(SemanticsActions.OnClick)
-            }
-        check(index >= 0) { "$text is missing click semantics" }
-        candidates[index].performClick()
-    }
 
     private fun setAirplaneMode(device: UiDevice, enabled: Boolean) {
         val command =

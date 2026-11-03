@@ -21,8 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
@@ -66,6 +64,7 @@ import blue.anika.wolle.data.settings.YarnDetailCard
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
+import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
@@ -121,6 +120,17 @@ fun YarnDetailScreen(
                     if (state is YarnDetailUiState.Loaded) {
                         val context = LocalContext.current
                         var menuExpanded by remember { mutableStateOf(false) }
+                        // The everyday actions sit in the bar; the menu keeps Share and Delete.
+                        FavoriteToggleButton(
+                            isFavorite = state.entity.isFavorite,
+                            onClick = viewModel::toggleFavorite,
+                        )
+                        IconButton(onClick = { onEditClick(state.entity.id) }) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = stringResource(R.string.common_edit),
+                            )
+                        }
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(
                                 Icons.Filled.MoreVert,
@@ -134,38 +144,6 @@ fun YarnDetailScreen(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        stringResource(
-                                            if (state.entity.isFavorite) R.string.common_unfavorite
-                                            else R.string.common_favorite
-                                        )
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector =
-                                            if (state.entity.isFavorite) Icons.Filled.Favorite
-                                            else Icons.Filled.FavoriteBorder,
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    viewModel.toggleFavorite()
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.common_edit)) },
-                                leadingIcon = {
-                                    Icon(Icons.Filled.Edit, contentDescription = null)
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    onEditClick(state.entity.id)
-                                },
-                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {

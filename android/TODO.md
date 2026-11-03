@@ -41,6 +41,19 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-79: Favourite and Edit in the detail title bars
+
+- [x] Project and yarn detail show the animated heart (`FavoriteToggleButton`) and an Edit pencil
+      in the title bar; the "More actions" menu keeps Share and Delete. Both were only reachable
+      through the menu before.
+- [x] E2E follow-up for SNA-77: the editors' Save is a labelled text button now, so the E2E
+      journeys tap it by text (`clickTextWithAction("Save")`, moved to the shared base class)
+      instead of by the old icon's content description, and open editors via the Edit pencil.
+- [ ] Rust E2E lane and screenshot check after the push.
+
+Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host.
+
 ## SNA-78: One filter row on the project list
 
 - [x] Tags share the chip row with categories (marked with a tag icon) instead of a "Tags" label
