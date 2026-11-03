@@ -39,20 +39,21 @@ class FocusedAppSemanticsTest {
     fun onboardingValidationAndCredentialControlsAreAccessible() {
         ensureOnboarding()
 
-        composeRule.onNodeWithText("Connect to Stricknani").assertIsDisplayed()
-        composeRule.onNodeWithText("Server URL", useUnmergedTree = true).assertIsDisplayed()
-        composeRule.onNodeWithText("API token", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Hello, knitter!").assertIsDisplayed()
+        composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
+        composeRule.onNodeWithText("Stricknani address", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Access token", useUnmergedTree = true).assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Show token").assertHasClickAction()
 
         composeRule.onNodeWithText("Connect").performClick()
-        waitForText("Enter both the server URL and the API token")
+        waitForText("Enter the Stricknani address and the access token")
 
         composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput("not-a-server-url")
         composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput("focused-test-token")
         composeRule.onNodeWithContentDescription("Show token").performClick()
         composeRule.onNodeWithContentDescription("Hide token").assertIsDisplayed()
         composeRule.onNodeWithText("Connect").performClick()
-        waitForText("Enter a valid server URL, e.g. https://stricknani.example.com")
+        waitForText("That address doesn’t look right - try something like stricknani.example.com")
     }
 
     @Test
@@ -73,7 +74,7 @@ class FocusedAppSemanticsTest {
         composeRule
             .onNodeWithContentDescription("Search projects")
             .performTextInput("focused-no-project-match")
-        waitForText("No projects yet")
+        waitForText("Nothing on the needles yet")
 
         composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
@@ -81,7 +82,7 @@ class FocusedAppSemanticsTest {
         composeRule
             .onNodeWithContentDescription("Search yarns")
             .performTextInput("focused-no-yarn-match")
-        waitForText("No yarns yet")
+        waitForText("Your stash is empty")
 
         composeRule.onNodeWithText("Search").performClick()
         waitForText("Search your stash")
@@ -89,7 +90,7 @@ class FocusedAppSemanticsTest {
         composeRule
             .onNodeWithContentDescription("Search projects and yarns")
             .performTextInput("focused-no-search-match")
-        waitForText("No matches")
+        waitForText("Nothing found")
     }
 
     @Test
@@ -173,8 +174,8 @@ class FocusedAppSemanticsTest {
     }
 
     private fun ensureOnboarding() {
-        waitForEither("Connect to Stricknani", "Settings")
-        if (!hasText("Connect to Stricknani")) {
+        waitForEither("Hello, knitter!", "Settings")
+        if (!hasText("Hello, knitter!")) {
             composeRule.onNodeWithText("Settings").performClick()
             waitForText("Settings")
             composeRule
@@ -184,19 +185,20 @@ class FocusedAppSemanticsTest {
             clickSignOutButton()
             waitForText("Sign out?")
             clickSignOutButton()
-            waitForText("Connect to Stricknani")
+            waitForText("Hello, knitter!")
         }
     }
 
     private fun ensureConfigured() {
-        waitForEither("Connect to Stricknani", "Home")
-        if (hasText("Connect to Stricknani")) {
+        waitForEither("Hello, knitter!", "Home")
+        if (hasText("Hello, knitter!")) {
             val baseUrl = instrumentationArgument("e2e_base_url")
             val token = instrumentationArgument("e2e_token")
             assumeTrue(
                 "configured focused journeys require e2e_base_url and e2e_token",
                 !baseUrl.isNullOrBlank() && !token.isNullOrBlank(),
             )
+            composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
             composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl!!)
             composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token!!)
             grantNotificationPermission()

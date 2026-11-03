@@ -59,6 +59,7 @@ abstract class StricknaniE2eTest {
             hasTag("e2e-onboarding-server-url") || hasText("Projects")
         }
         if (hasTag("e2e-onboarding-server-url")) {
+            composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
             composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
             composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
             grantNotificationPermission()

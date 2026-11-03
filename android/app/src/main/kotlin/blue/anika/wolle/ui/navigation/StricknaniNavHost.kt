@@ -1,5 +1,8 @@
 package blue.anika.wolle.ui.navigation
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -8,8 +11,10 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -18,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -150,14 +157,21 @@ fun StricknaniNavHost(
                 val visibleDestinations by
                     navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
 
-                NavigationBar {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                     visibleDestinations.forEach { destination ->
                         val selected =
                             currentDestination?.hierarchy?.any {
                                 destination.routeTypes.any { routeType -> it.hasRoute(routeType) }
                             } ?: false
+                        val tone = destination.tone()
                         NavigationBarItem(
                             selected = selected,
+                            colors =
+                                NavigationBarItemDefaults.colors(
+                                    selectedIconColor = tone.onContainer,
+                                    selectedTextColor = tone.accent,
+                                    indicatorColor = tone.container,
+                                ),
                             onClick = {
                                 if (
                                     !shouldNavigateToTopLevelRoot(
@@ -170,7 +184,26 @@ fun StricknaniNavHost(
                                 navigateToTopLevelRoot(navController, destination)
                             },
                             icon = {
-                                Icon(destination.icon, contentDescription = destination.label())
+                                // A small happy hop when a tab becomes active.
+                                val hop by
+                                    animateFloatAsState(
+                                        targetValue = if (selected) 1.12f else 1f,
+                                        animationSpec =
+                                            spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessMedium,
+                                            ),
+                                        label = "nav-hop",
+                                    )
+                                Icon(
+                                    destination.icon,
+                                    contentDescription = destination.label(),
+                                    modifier =
+                                        Modifier.graphicsLayer {
+                                            scaleX = hop
+                                            scaleY = hop
+                                        },
+                                )
                             },
                             label = { Text(destination.label()) },
                         )
@@ -306,5 +339,23 @@ fun StricknaniNavHost(
                 GaugeCalculatorScreen(onBack = { navController.navigateUp() })
             }
         }
+    }
+}
+
+/** Each tab has its own yarn colour, like the web sidebar's tinted icons. */
+private data class NavTone(val accent: Color, val container: Color, val onContainer: Color)
+
+@Composable
+private fun TopLevelDestination.tone(): NavTone {
+    val c = MaterialTheme.colorScheme
+    return when (this) {
+        TopLevelDestination.HOME,
+        TopLevelDestination.SETTINGS -> NavTone(c.primary, c.primaryContainer, c.onPrimaryContainer)
+        TopLevelDestination.PROJECTS,
+        TopLevelDestination.SEARCH,
+        TopLevelDestination.GAUGE -> NavTone(c.tertiary, c.tertiaryContainer, c.onTertiaryContainer)
+        TopLevelDestination.YARNS,
+        TopLevelDestination.CATEGORIES ->
+            NavTone(c.secondary, c.secondaryContainer, c.onSecondaryContainer)
     }
 }

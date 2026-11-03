@@ -165,7 +165,7 @@ class FocusedComponentSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("No projects yet").assertIsDisplayed()
+        composeRule.onNodeWithText("Nothing on the needles yet").assertIsDisplayed()
         composeRule
             .onNodeWithText("Pull down to look for new ones, or loosen your filters.")
             .assertIsDisplayed()

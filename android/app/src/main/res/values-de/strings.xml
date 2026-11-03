@@ -20,20 +20,21 @@
     <string name="common_field_stitch_sample">Maschenprobe</string>
     <string name="common_field_other_materials">Weiteres Material</string>
 
-    <string name="onboarding_title">Mit Stricknani verbinden</string>
-    <string name="onboarding_subtitle">Gib die URL deines selbst gehosteten Stricknani-Servers und ein persönliches Zugriffstoken ein. Es wird nichts anderswohin gesendet.</string>
-    <string name="onboarding_server_url_label">Server-URL</string>
+    <string name="onboarding_title">Hallo, Strickfreund!</string>
+    <string name="onboarding_subtitle">Melde dich bei deinem Stricknani an, um deine Projekte und Garne auf dieses Gerät zu holen.</string>
+    <string name="onboarding_server_url_label">Stricknani-Adresse</string>
     <string name="onboarding_server_url_placeholder">https://stricknani.example.com</string>
-    <string name="onboarding_api_token_label">API-Token</string>
-    <string name="onboarding_api_token_help">Erstelle eines in Stricknani unter deinem Kontomenü → API-Token.</string>
+    <string name="onboarding_api_token_label">Zugangstoken</string>
+    <string name="onboarding_api_token_help">Du kannst einen auf der Stricknani-Webseite im Kontomenü unter API-Tokens erstellen.</string>
     <string name="onboarding_show_token">Token anzeigen</string>
     <string name="onboarding_hide_token">Token verbergen</string>
     <string name="onboarding_connect_button">Verbinden</string>
-    <string name="onboarding_mode_manual">Manuell</string>
-    <string name="onboarding_mode_qr">QR-Code</string>
+    <string name="onboarding_mode_manual">Mit Token</string>
+    <string name="onboarding_mode_qr">Code scannen</string>
     <string name="onboarding_mode_password">Anmelden</string>
-    <string name="onboarding_qr_instructions">Scanne den Einrichtungs-QR-Code von Stricknanis Web-Einstellungen → API-Token-Seite.</string>
-    <string name="onboarding_qr_scan_button">QR-Code scannen</string>
+    <string name="onboarding_other_ways">Andere Wege zum Verbinden</string>
+    <string name="onboarding_qr_instructions">Öffne auf der Stricknani-Webseite Einstellungen → API-Tokens und scanne den Code, der dort angezeigt wird.</string>
+    <string name="onboarding_qr_scan_button">Kamera öffnen</string>
     <string name="onboarding_email_label">E-Mail</string>
     <string name="onboarding_password_label">Passwort</string>
     <string name="onboarding_hide_password">Passwort verbergen</string>
@@ -67,8 +68,8 @@
     <string name="search_placeholder">Projekte und Wolle durchsuchen</string>
     <string name="search_empty_title">Durchsuche deinen Vorrat</string>
     <string name="search_empty_subtitle">Durchsuche deine Projekte und Garne nach Namen.</string>
-    <string name="search_no_matches_title">Keine Treffer</string>
-    <string name="search_no_matches_subtitle">Versuche einen anderen Suchbegriff.</string>
+    <string name="search_no_matches_title">Nichts gefunden</string>
+    <string name="search_no_matches_subtitle">Versuch ein anderes Wort, etwa eine Farbe oder eine Garnmarke.</string>
 
     <!-- Projects -->
     <string name="projects_list_title">Projekte</string>
@@ -120,7 +121,7 @@
     <string name="projects_list_category_all">Alle</string>
     <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
     <string name="projects_list_more_actions_description">Weitere Optionen</string>
-    <string name="projects_list_empty_title">Noch keine Projekte</string>
+    <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>
     <string name="projects_list_empty_subtitle">Zum Nachschauen nach unten ziehen oder Filter lockern.</string>
     <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
     <string name="projects_list_add_category_name_placeholder">z. B. Pullover</string>
@@ -171,7 +172,7 @@
     <string name="yarns_list_new_yarn_fab">Neue Wolle</string>
     <string name="yarns_list_search_placeholder">Wolle durchsuchen</string>
     <string name="yarns_list_favorites_only">Nur Favoriten</string>
-    <string name="yarns_list_empty_title">Noch keine Wolle</string>
+    <string name="yarns_list_empty_title">Dein Garnvorrat ist leer</string>
     <string name="yarn_detail_not_found">Wolle nicht gefunden</string>
     <string name="yarn_detail_field_brand">Marke</string>
     <string name="yarn_detail_field_colorway">Farbe</string>
@@ -413,14 +414,14 @@
     <string name="mutation_yarn_deleted_queued">Wolle gelöscht.</string>
 
     <!-- Onboarding errors -->
-    <string name="onboarding_error_missing_url_token">Gib sowohl die Server-URL als auch das API-Token ein</string>
-    <string name="onboarding_error_missing_password_fields">Gib Server-URL, E-Mail und Passwort ein</string>
+    <string name="onboarding_error_missing_url_token">Gib die Stricknani-Adresse und den Zugangstoken ein</string>
+    <string name="onboarding_error_missing_password_fields">Gib die Stricknani-Adresse, deine E-Mail und dein Passwort ein</string>
     <string name="onboarding_error_invalid_qr">Das sieht nicht wie ein Stricknani-Einrichtungscode aus</string>
-    <string name="onboarding_error_malformed_url">Gib eine gültige Server-URL ein, z. B. https://stricknani.example.com</string>
+    <string name="onboarding_error_malformed_url">Diese Adresse sieht nicht richtig aus - versuch etwas wie stricknani.example.com</string>
     <string name="onboarding_error_not_a_server">Das sieht nicht wie ein Stricknani-Server aus (HTTP %1$d).</string>
     <string name="onboarding_error_unauthorized">Der Server hat das API-Token abgelehnt. Erstelle in Stricknani unter deinem Kontomenü → API-Token ein neues und versuche es erneut.</string>
     <string name="onboarding_error_invalid_credentials">Falsche E-Mail-Adresse oder falsches Passwort.</string>
-    <string name="onboarding_error_unreachable">Der Server konnte nicht erreicht werden. Überprüfe die URL und deine Netzwerkverbindung.</string>
+    <string name="onboarding_error_unreachable">Diese Adresse ist nicht erreichbar. Prüfe sie und deine Internetverbindung.</string>
     <string name="onboarding_error_server_error">Der Server hat mit einem Fehler geantwortet (HTTP %1$d).</string>
     <string name="onboarding_error_generic">Verbindung zum Server nicht möglich.</string>
 

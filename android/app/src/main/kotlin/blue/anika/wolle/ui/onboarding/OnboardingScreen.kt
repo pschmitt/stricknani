@@ -1,31 +1,37 @@
 package blue.anika.wolle.ui.onboarding
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,8 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -46,6 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.Mascot
+import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.stitchedBorder
 
 private enum class OnboardingMode {
     MANUAL,
@@ -59,6 +68,13 @@ private fun OnboardingMode.label(): String =
         OnboardingMode.MANUAL -> stringResource(R.string.onboarding_mode_manual)
         OnboardingMode.QR -> stringResource(R.string.onboarding_mode_qr)
         OnboardingMode.PASSWORD -> stringResource(R.string.onboarding_mode_password)
+    }
+
+private fun OnboardingMode.icon(): ImageVector =
+    when (this) {
+        OnboardingMode.MANUAL -> Icons.Filled.Key
+        OnboardingMode.QR -> Icons.Filled.QrCodeScanner
+        OnboardingMode.PASSWORD -> Icons.Filled.Person
     }
 
 /**
@@ -84,7 +100,7 @@ fun OnboardingScreen(
     onScannedTextConsumed: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var mode by remember { mutableStateOf(OnboardingMode.MANUAL) }
+    var mode by remember { mutableStateOf(OnboardingMode.PASSWORD) }
     var serverUrl by remember { mutableStateOf("") }
     var apiToken by remember { mutableStateOf("") }
     var tokenVisible by remember { mutableStateOf(false) }
@@ -106,127 +122,163 @@ fun OnboardingScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // The yarn-ball mascot greets first-time users, as on the website's sign-in page. The
-        // launcher foreground is a 108dp canvas with the mark in its middle 66dp, so 160dp shows
-        // the mascot at roughly 100dp.
-        Image(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = null,
-            modifier = Modifier.size(160.dp).padding(bottom = 4.dp),
-        )
+        // The yarn-ball mascot greets first-time users, as on the website's sign-in page.
+        Mascot(size = 168.dp, bob = true)
         Text(
             text = stringResource(R.string.onboarding_title),
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineLarge,
             textAlign = TextAlign.Center,
         )
         Text(
             text = stringResource(R.string.onboarding_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+        // The form sits on a little stitched patch, like the Continue card on Home.
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            shadowElevation = 1.dp,
+            modifier =
+                Modifier.fillMaxWidth()
+                    .stitchedBorder(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                        cornerRadius = 29.dp,
+                    ),
         ) {
-            OnboardingMode.entries.forEach { candidate ->
-                FilterChip(
-                    selected = mode == candidate,
-                    onClick = { mode = candidate },
-                    enabled = !isValidating,
-                    label = { Text(candidate.label()) },
-                )
-            }
-        }
-        Spacer(Modifier.padding(top = 16.dp))
+            Column(
+                modifier = Modifier.padding(horizontal = 22.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AnimatedContent(
+                    targetState = mode,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "onboarding-mode",
+                ) { shown ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        when (shown) {
+                            OnboardingMode.MANUAL ->
+                                ManualOnboardingFields(
+                                    serverUrl = serverUrl,
+                                    onServerUrlChange = { serverUrl = it },
+                                    apiToken = apiToken,
+                                    onApiTokenChange = { apiToken = it },
+                                    tokenVisible = tokenVisible,
+                                    onTokenVisibleChange = { tokenVisible = it },
+                                    enabled = !isValidating,
+                                )
+                            OnboardingMode.QR -> {
+                                Icon(
+                                    Icons.Filled.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(56.dp).padding(bottom = 8.dp),
+                                )
+                                Text(
+                                    stringResource(R.string.onboarding_qr_instructions),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                            OnboardingMode.PASSWORD ->
+                                PasswordOnboardingFields(
+                                    serverUrl = serverUrl,
+                                    onServerUrlChange = { serverUrl = it },
+                                    email = email,
+                                    onEmailChange = { email = it },
+                                    password = password,
+                                    onPasswordChange = { password = it },
+                                    passwordVisible = passwordVisible,
+                                    onPasswordVisibleChange = { passwordVisible = it },
+                                    enabled = !isValidating,
+                                )
+                        }
+                    }
+                }
 
-        when (mode) {
-            OnboardingMode.MANUAL ->
-                ManualOnboardingFields(
-                    serverUrl = serverUrl,
-                    onServerUrlChange = { serverUrl = it },
-                    apiToken = apiToken,
-                    onApiTokenChange = { apiToken = it },
-                    tokenVisible = tokenVisible,
-                    onTokenVisibleChange = { tokenVisible = it },
-                    enabled = !isValidating,
-                )
-            OnboardingMode.QR ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (uiState is OnboardingUiState.Error) {
                     Text(
-                        stringResource(R.string.onboarding_qr_instructions),
+                        text = (uiState as OnboardingUiState.Error).message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 16.dp),
                     )
-                    OutlinedButton(
-                        onClick = { showScanner = true },
-                        enabled = !isValidating,
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    ) {
+                }
+
+                Button(
+                    onClick = {
+                        when (mode) {
+                            OnboardingMode.MANUAL -> viewModel.connect(serverUrl, apiToken)
+                            OnboardingMode.PASSWORD ->
+                                viewModel.signInWithPassword(serverUrl, email, password)
+                            OnboardingMode.QR -> showScanner = true
+                        }
+                    },
+                    enabled = !isValidating,
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                ) {
+                    if (isValidating) {
+                        YarnLoader(size = 28.dp, modifier = Modifier.padding(end = 8.dp))
+                    } else if (mode == OnboardingMode.QR) {
                         Icon(
                             Icons.Filled.QrCodeScanner,
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp),
                         )
-                        Text(stringResource(R.string.onboarding_qr_scan_button))
                     }
-                }
-            OnboardingMode.PASSWORD ->
-                PasswordOnboardingFields(
-                    serverUrl = serverUrl,
-                    onServerUrlChange = { serverUrl = it },
-                    email = email,
-                    onEmailChange = { email = it },
-                    password = password,
-                    onPasswordChange = { password = it },
-                    passwordVisible = passwordVisible,
-                    onPasswordVisibleChange = { passwordVisible = it },
-                    enabled = !isValidating,
-                )
-        }
-
-        if (uiState is OnboardingUiState.Error) {
-            Text(
-                text = (uiState as OnboardingUiState.Error).message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
-
-        if (mode != OnboardingMode.QR) {
-            Button(
-                onClick = {
-                    when (mode) {
-                        OnboardingMode.MANUAL -> viewModel.connect(serverUrl, apiToken)
-                        OnboardingMode.PASSWORD ->
-                            viewModel.signInWithPassword(serverUrl, email, password)
-                        OnboardingMode.QR -> Unit
-                    }
-                },
-                enabled = !isValidating,
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-            ) {
-                if (isValidating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.width(20.dp).padding(end = 8.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
+                    Text(
+                        when (mode) {
+                            OnboardingMode.PASSWORD ->
+                                stringResource(R.string.onboarding_mode_password)
+                            OnboardingMode.QR -> stringResource(R.string.onboarding_qr_scan_button)
+                            OnboardingMode.MANUAL ->
+                                stringResource(R.string.onboarding_connect_button)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 }
-                Text(
-                    if (mode == OnboardingMode.PASSWORD)
-                        stringResource(R.string.onboarding_mode_password)
-                    else stringResource(R.string.onboarding_connect_button)
-                )
             }
+        }
+
+        // Signing in is the friendly default; the setup code and the token are for people who
+        // already have one from the website.
+        Text(
+            text = stringResource(R.string.onboarding_other_ways),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 28.dp, bottom = 8.dp),
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        ) {
+            OnboardingMode.entries
+                .filter { it != mode }
+                .forEach { candidate ->
+                    AssistChip(
+                        onClick = { mode = candidate },
+                        enabled = !isValidating,
+                        label = { Text(candidate.label()) },
+                        leadingIcon = {
+                            Icon(candidate.icon(), contentDescription = null, Modifier.size(18.dp))
+                        },
+                        modifier =
+                            Modifier.testTag("onboarding-mode-${candidate.name.lowercase()}"),
+                    )
+                }
         }
     }
 
@@ -324,7 +376,7 @@ private fun PasswordOnboardingFields(
         singleLine = true,
         enabled = enabled,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("onboarding-email"),
     )
 
     OutlinedTextField(

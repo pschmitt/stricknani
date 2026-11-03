@@ -20,20 +20,21 @@
     <string name="common_field_stitch_sample">Stitch sample</string>
     <string name="common_field_other_materials">Other materials</string>
 
-    <string name="onboarding_title">Connect to Stricknani</string>
-    <string name="onboarding_subtitle">Enter your self-hosted Stricknani server\'s URL and a personal access token. Nothing is sent anywhere else.</string>
-    <string name="onboarding_server_url_label">Server URL</string>
+    <string name="onboarding_title">Hello, knitter!</string>
+    <string name="onboarding_subtitle">Sign in to your Stricknani to bring your projects and yarns onto this phone.</string>
+    <string name="onboarding_server_url_label">Stricknani address</string>
     <string name="onboarding_server_url_placeholder">https://stricknani.example.com</string>
-    <string name="onboarding_api_token_label">API token</string>
-    <string name="onboarding_api_token_help">Generate one in Stricknani under your account menu → API Tokens.</string>
+    <string name="onboarding_api_token_label">Access token</string>
+    <string name="onboarding_api_token_help">You can create one on the Stricknani website under your account menu → API Tokens.</string>
     <string name="onboarding_show_token">Show token</string>
     <string name="onboarding_hide_token">Hide token</string>
     <string name="onboarding_connect_button">Connect</string>
-    <string name="onboarding_mode_manual">Manual</string>
-    <string name="onboarding_mode_qr">QR code</string>
+    <string name="onboarding_mode_manual">Use a token</string>
+    <string name="onboarding_mode_qr">Scan a code</string>
     <string name="onboarding_mode_password">Sign in</string>
-    <string name="onboarding_qr_instructions">Scan the setup QR code from Stricknani\'s web Settings → API Tokens page.</string>
-    <string name="onboarding_qr_scan_button">Scan QR code</string>
+    <string name="onboarding_other_ways">Other ways to connect</string>
+    <string name="onboarding_qr_instructions">On the Stricknani website, open Settings → API Tokens and scan the code shown there.</string>
+    <string name="onboarding_qr_scan_button">Open the camera</string>
     <string name="onboarding_email_label">Email</string>
     <string name="onboarding_password_label">Password</string>
     <string name="onboarding_hide_password">Hide password</string>
@@ -67,8 +68,8 @@
     <string name="search_placeholder">Search projects and yarns</string>
     <string name="search_empty_title">Search your stash</string>
     <string name="search_empty_subtitle">Search your projects and yarns by name.</string>
-    <string name="search_no_matches_title">No matches</string>
-    <string name="search_no_matches_subtitle">Try a different search term.</string>
+    <string name="search_no_matches_title">Nothing found</string>
+    <string name="search_no_matches_subtitle">Try another word, like a colour or a yarn brand.</string>
 
     <!-- Projects -->
     <string name="projects_list_title">Projects</string>
@@ -120,7 +121,7 @@
     <string name="projects_list_category_all">All</string>
     <string name="projects_list_add_category_description">Add category</string>
     <string name="projects_list_more_actions_description">More options</string>
-    <string name="projects_list_empty_title">No projects yet</string>
+    <string name="projects_list_empty_title">Nothing on the needles yet</string>
     <string name="projects_list_empty_subtitle">Pull down to look for new ones, or loosen your filters.</string>
     <string name="projects_list_add_category_dialog_title">New category</string>
     <string name="projects_list_add_category_name_placeholder">e.g. Sweaters</string>
@@ -171,7 +172,7 @@
     <string name="yarns_list_new_yarn_fab">New yarn</string>
     <string name="yarns_list_search_placeholder">Search yarns</string>
     <string name="yarns_list_favorites_only">Favorites only</string>
-    <string name="yarns_list_empty_title">No yarns yet</string>
+    <string name="yarns_list_empty_title">Your stash is empty</string>
     <string name="yarn_detail_not_found">Yarn not found</string>
     <string name="yarn_detail_field_brand">Brand</string>
     <string name="yarn_detail_field_colorway">Colorway</string>
@@ -413,14 +414,14 @@
     <string name="mutation_yarn_deleted_queued">Yarn deleted.</string>
 
     <!-- Onboarding errors -->
-    <string name="onboarding_error_missing_url_token">Enter both the server URL and the API token</string>
-    <string name="onboarding_error_missing_password_fields">Enter the server URL, email, and password</string>
+    <string name="onboarding_error_missing_url_token">Enter the Stricknani address and the access token</string>
+    <string name="onboarding_error_missing_password_fields">Enter the Stricknani address, your email and your password</string>
     <string name="onboarding_error_invalid_qr">That doesn\'t look like a Stricknani setup code</string>
-    <string name="onboarding_error_malformed_url">Enter a valid server URL, e.g. https://stricknani.example.com</string>
+    <string name="onboarding_error_malformed_url">That address doesn’t look right - try something like stricknani.example.com</string>
     <string name="onboarding_error_not_a_server">That doesn\'t look like a Stricknani server (HTTP %1$d).</string>
     <string name="onboarding_error_unauthorized">That server rejected the API token. Generate a new one in Stricknani under your account menu → API Tokens and try again.</string>
     <string name="onboarding_error_invalid_credentials">Incorrect email or password.</string>
-    <string name="onboarding_error_unreachable">Couldn\'t reach that server. Check the URL and your network connection.</string>
+    <string name="onboarding_error_unreachable">Couldn’t reach that address. Check it and your internet connection.</string>
     <string name="onboarding_error_server_error">The server responded with an error (HTTP %1$d).</string>
     <string name="onboarding_error_generic">Couldn\'t connect to that server.</string>
 

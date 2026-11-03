@@ -55,11 +55,16 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 - [x] Plain-language copy for sync, offline, import and stuck-change messages in English and
       German ("All caught up", "Saved on this phone", "Some changes are stuck" instead of
       "Synced", "Changes pending", "Sync needs attention"); instrumentation tests updated.
-- [ ] Mascot empty states and the yarn-ball loader on the list and detail screens.
-- [ ] Friendlier onboarding (sign in with email and password first, token and QR under "other
-      ways") and coloured bottom-bar destinations.
+- [x] Empty lists show the bobbing mascot with the screen's icon as a badge and a friendly line
+      ("Nothing on the needles yet", "Your stash is empty"); detail and category loading spins
+      the yarn ball instead of a progress ring.
+- [x] Each bottom-bar tab has its own colour (raspberry, marigold, teal) and hops a little when
+      selected.
+- [x] Onboarding: "Hello, knitter!", sign in with email and password first on a stitched card;
+      "Scan a code" and "Use a token" sit under "Other ways to connect". Instrumentation tests
+      switch to the token form through the `onboarding-mode-manual` chip.
 
-Status: in progress, 2026-11-03 - remote `:app:testDebugUnitTest lintDebug
+Status: **done**, 2026-11-03 - remote `:app:testDebugUnitTest lintDebug
 compileDebugAndroidTestKotlin assembleDebug` passed; installed on the user's phone.
 
 ## SNA-82: Edit one section or step straight from the detail page
