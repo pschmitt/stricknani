@@ -3897,7 +3897,32 @@ def run_acceptance(
             page.get_by_role("heading", name="Projects", exact=True).wait_for(
                 state="visible"
             )
-            page.get_by_role("link", name="New project", exact=True).click()
+            desktop_new_project = page.locator(".desktop-create")
+            _require(
+                desktop_new_project.count() == 1,
+                "the project library desktop creation link is missing",
+            )
+            if desktop_new_project.is_visible():
+                desktop_new_project.click()
+            else:
+                create_navigation = page.locator(
+                    ".mobile-navigation a[href='/app/create']"
+                )
+                _require(
+                    create_navigation.count() == 1 and create_navigation.is_visible(),
+                    "mobile Create navigation is missing before project creation",
+                )
+                create_navigation.click()
+                page.wait_for_url("**/app/create")
+                mobile_new_project = page.locator(
+                    ".create-options a[href$='/projects/new']"
+                )
+                mobile_new_project.wait_for(state="visible")
+                _require(
+                    mobile_new_project.count() == 1 and mobile_new_project.is_visible(),
+                    "mobile project creation tile is missing",
+                )
+                mobile_new_project.click()
             page.wait_for_url("**/app/projects/new")
             page.get_by_role("heading", name="New project", exact=True).wait_for(
                 state="visible"
