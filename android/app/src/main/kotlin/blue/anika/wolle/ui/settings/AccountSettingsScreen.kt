@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -326,8 +327,15 @@ private fun <T> SegmentedChoice(
                 selected = option == selected,
                 onClick = { onSelect(option) },
                 shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                icon = {
-                    SegmentedButtonDefaults.Icon(active = option == selected) {
+                // No animated check mark slot: it reserved space in the unselected segments and
+                // shifted their labels. The selected fill already shows the choice.
+                icon = {},
+                label = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement =
+                            Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    ) {
                         icon?.let {
                             Icon(
                                 it(option),
@@ -335,9 +343,14 @@ private fun <T> SegmentedChoice(
                                 modifier = Modifier.size(SegmentedButtonDefaults.IconSize),
                             )
                         }
+                        Text(
+                            label(option),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 },
-                label = { Text(label(option), maxLines = 1) },
             )
         }
     }
