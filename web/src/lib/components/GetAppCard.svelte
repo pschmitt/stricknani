@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { androidAction, connectAppHash } from "#lib/app-links.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConnectAppDialog from "#lib/features/account/ConnectAppDialog.svelte";
+  import { createDismissable, type Dismissable } from "#lib/dismiss-card.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
 
@@ -12,14 +14,29 @@
     locale,
     variant = "compact",
     ondismiss,
+    ongone,
   }: {
     locale: "en" | "de";
     variant?: "prominent" | "compact";
+    /** Runs as the exit animation starts: remember the dismissal. */
     ondismiss?: () => void;
+    /** Runs once the card is gone and the space below has collapsed. */
+    ongone?: () => void;
   } = $props();
 
   const action = $derived(androidAction());
   let connectDialog = $state<ReturnType<typeof ConnectAppDialog>>();
+
+  let card = $state<HTMLElement>();
+  let dismissable: Dismissable | undefined;
+  onMount(() => {
+    if (!card || !ondismiss) return;
+    dismissable = createDismissable(card, {
+      onstart: ondismiss,
+      ondone: () => ongone?.(),
+    });
+    return () => dismissable?.destroy();
+  });
 
   /** One click: signed-in users get a setup QR right here, others sign in via the account page. */
   function connect(): void {
@@ -32,6 +49,7 @@
 </script>
 
 <section
+  bind:this={card}
   class="app-card"
   class:app-card--prominent={variant === "prominent"}
   aria-labelledby="app-card-title"
@@ -82,7 +100,7 @@
       size="sm"
       icon="close"
       aria-label={t("Dismiss", locale)}
-      onclick={ondismiss}
+      onclick={() => dismissable?.dismiss()}
     />
   {/if}
 </section>

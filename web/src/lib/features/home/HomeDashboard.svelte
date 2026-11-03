@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { resolve } from "$app/paths";
   import {
     appCardMode,
@@ -63,9 +63,18 @@
     return () => setHero(null);
   });
 
+  // The dismissal is remembered as the exit starts; the card leaves the page once
+  // it has flown off and the space below has collapsed.
   function dismissAppCard() {
     writeAppCardDismissed();
+  }
+
+  let dashboardEl = $state<HTMLElement>();
+  async function appCardGone() {
     appCard = "hidden";
+    await tick();
+    // The card held focus; hand it to the page so keyboard users keep their place.
+    dashboardEl?.focus({ preventScroll: true });
   }
 
   // A playful greeting for the time of day; the pick is made once per visit, so
@@ -110,6 +119,8 @@
 </svelte:head>
 
 <section
+  bind:this={dashboardEl}
+  tabindex="-1"
   class="home-dashboard page-container page-container--wide"
   aria-labelledby="home-title"
 >
@@ -329,12 +340,21 @@
     <ActivityFeed ownerId={userId} {locale} />
 
     {#if appCard !== "hidden"}
-      <GetAppCard {locale} variant={appCard} ondismiss={dismissAppCard} />
+      <GetAppCard
+        {locale}
+        variant={appCard}
+        ondismiss={dismissAppCard}
+        ongone={appCardGone}
+      />
     {/if}
   {/if}
 </section>
 
 <style>
+  .home-dashboard:focus {
+    outline: none;
+  }
+
   .home-dashboard {
     display: grid;
     min-width: 0;
