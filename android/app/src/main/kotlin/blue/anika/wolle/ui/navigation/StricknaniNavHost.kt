@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -222,7 +223,9 @@ fun StricknaniNavHost(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding),
+            // Consuming the bar's padding lets screens use imePadding() without lifting their
+            // content twice (keyboard height on top of the tab bar they already sit above).
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
             // Opening a screen slides it in a little from the side it comes from and fades; going
             // back reverses that. Short and small so it orients without slowing anyone down; the
             // system "Remove animations" setting scales it to nothing.

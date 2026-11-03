@@ -1,20 +1,27 @@
 package blue.anika.wolle.ui.gauge
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -63,7 +70,7 @@ private const val MAX_DRAWN_ROWS = 40
  * Results appear as soon as there is enough to calculate (no Calculate button), with how far they
  * are from the pattern. Pure client-side maths via [GaugeCalculator], so it works offline.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun GaugeCalculatorScreen(onBack: () -> Unit) {
     var patternStitches by rememberSaveable { mutableStateOf("") }
@@ -96,7 +103,18 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                     }
                 },
             )
-        }
+        },
+        // With the keyboard open the result card is hidden underneath it, so a compact copy of
+        // the result rides on top of the keyboard while typing.
+        bottomBar = {
+            AnimatedVisibility(
+                visible = result != null && WindowInsets.isImeVisible,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+                result?.let { CompactResultBar(it) }
+            }
+        },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -469,6 +487,63 @@ private fun ResultStat(label: String, value: String, difference: String?, modifi
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+/** One line of results above the keyboard: "Cast on 90 (−20) · Knit rows 48 (−12)". */
+@Composable
+private fun CompactResultBar(result: GaugeResult) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shadowElevation = 8.dp,
+        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+        modifier = Modifier.fillMaxWidth().imePadding(),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+        ) {
+            CompactStat(
+                label = stringResource(R.string.gauge_calculator_adjusted_stitches_label),
+                value = result.adjustedStitches.toString(),
+                difference =
+                    signedDifference(result.adjustedStitches, result.patternCastOnStitches),
+                modifier = Modifier.weight(1f),
+            )
+            result.adjustedRows?.let { rows ->
+                CompactStat(
+                    label = stringResource(R.string.gauge_calculator_adjusted_rows_label),
+                    value = rows.toString(),
+                    difference = result.patternRowCount?.let { signedDifference(rows, it) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactStat(label: String, value: String, difference: String?, modifier: Modifier) {
+    Row(verticalAlignment = Alignment.Bottom, modifier = modifier) {
+        Column {
+            Text(label, style = MaterialTheme.typography.labelMedium)
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    value,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (difference != null) {
+                    Text(
+                        difference,
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 5.dp),
+                    )
+                }
             }
         }
     }
