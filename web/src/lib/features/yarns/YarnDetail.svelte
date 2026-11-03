@@ -1,21 +1,27 @@
 <script lang="ts">
   import StickyNote from "#lib/components/StickyNote.svelte";
+  import { untrack } from "svelte";
+  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import Button from "#lib/components/Button.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
+  import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
   import {
+    deleteYarn,
     getLinkedProject,
     getYarn,
     setYarnFavorite,
@@ -35,6 +41,9 @@
   let errorMessage = $state("");
   let actionError = $state("");
   let busyFavorite = $state(false);
+  let deleteDialog = $state<ConfirmDialog | undefined>(undefined);
+  let deleting = $state(false);
+  let deleteError = $state("");
   let reload = $state(0);
   let routeGeneration = 0;
 
@@ -54,6 +63,9 @@
     reload;
     const generation = ++routeGeneration;
     busyFavorite = false;
+    deleting = false;
+    deleteError = "";
+    untrack(() => deleteDialog?.close());
     actionError = "";
     const controller = new AbortController();
     yarn = null;
@@ -153,6 +165,42 @@
     const currentOwnerId = userId;
     if (!currentYarn || currentOwnerId === null) return;
     await refreshYarn(currentYarn.id, currentOwnerId);
+  }
+
+  function openDeleteDialog() {
+    if (!session.data?.user || !yarn || deleting) return;
+    deleteError = "";
+    deleteDialog?.showModal();
+  }
+
+  async function removeYarn() {
+    const currentSession = session.data;
+    const current = yarn;
+    if (!currentSession?.user || !current || deleting) return;
+    const id = current.id;
+    const ownerId = currentSession.user.id;
+    const generation = routeGeneration;
+    deleting = true;
+    deleteError = "";
+    try {
+      await deleteYarn(id, currentSession);
+      if (!isCurrentResource(id, ownerId, generation)) return;
+      publishFeedback({
+        ownerId,
+        kind: "success",
+        message: t("Yarn deleted.", locale),
+      });
+      untrack(() => deleteDialog?.close());
+      await goto(resolve("/yarns"));
+    } catch (error) {
+      if (!isCurrentResource(id, ownerId, generation)) return;
+      deleteError =
+        error instanceof Error
+          ? error.message
+          : t("The yarn could not be deleted.", locale);
+    } finally {
+      if (isCurrentResource(id, ownerId, generation)) deleting = false;
+    }
   }
 
   async function toggleFavorite() {
@@ -314,6 +362,12 @@
                 role="menu"
                 aria-label={t("Yarn actions", locale)}
               >
+                <ShareMenuItem
+                  title={currentYarn.name}
+                  ownerId={userId}
+                  {locale}
+                  {close}
+                />
                 <button
                   class="action-overflow__item print-button"
                   role="menuitem"
@@ -325,6 +379,19 @@
                 >
                   <NavIcon name="print" />
                   <span>{t("Print yarn", locale)}</span>
+                </button>
+                <hr class="action-overflow__divider" />
+                <button
+                  class="action-overflow__item action-overflow__item--danger"
+                  role="menuitem"
+                  type="button"
+                  onclick={() => {
+                    close();
+                    openDeleteDialog();
+                  }}
+                >
+                  <NavIcon name="action-delete" />
+                  <span>{t("Delete yarn", locale)}</span>
                 </button>
               </div>
             {/snippet}
@@ -494,6 +561,47 @@
       currentEmail={session.data?.user?.email ?? null}
     />
   </main>
+  <ConfirmDialog
+    bind:this={deleteDialog}
+    titleId="delete-yarn-title"
+    title={t("Delete yarn?", locale)}
+    busy={deleting}
+  >
+    {#snippet children()}
+      <p>
+        {t("Delete", locale)} <strong>{currentYarn.name}</strong>? {t(
+          "This cannot be undone.",
+          locale,
+        )}
+      </p>
+      {#if deleteError}<p class="notice-error" role="alert">
+          {deleteError}
+        </p>{/if}
+    {/snippet}
+    {#snippet actions()}
+      <Button
+        variant="secondary"
+        icon="cancel"
+        type="button"
+        disabled={deleting}
+        onclick={() => {
+          deleteError = "";
+          untrack(() => deleteDialog?.close());
+        }}
+      >
+        {t("Keep yarn", locale)}
+      </Button>
+      <Button
+        variant="danger"
+        icon="action-delete"
+        type="button"
+        disabled={deleting}
+        onclick={() => void removeYarn()}
+      >
+        {deleting ? t("Deleting…", locale) : t("Delete yarn", locale)}
+      </Button>
+    {/snippet}
+  </ConfirmDialog>
 {/if}
 
 <style>

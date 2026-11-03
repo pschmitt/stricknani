@@ -1,6 +1,6 @@
 <script lang="ts">
   import StickyNote from "#lib/components/StickyNote.svelte";
-  import { onDestroy, tick } from "svelte";
+  import { onDestroy, tick, untrack } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -8,21 +8,25 @@
   import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import Disclosure from "#lib/components/Disclosure.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
+  import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { extraCount, plainTextSummary } from "./facts-summary.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
   import {
+    deleteProject,
     getProject,
     getYarn,
     setProjectFavorite,
@@ -76,6 +80,9 @@
   let materialsDetailsElement = $state<HTMLDetailsElement | null>(null);
   let printPreparing = $state(false);
   let printError = $state("");
+  let deleteDialog = $state<ConfirmDialog | undefined>(undefined);
+  let deleting = $state(false);
+  let deleteError = $state("");
   let reload = $state(0);
   let lastArchiveRefreshMarker: string | null = null;
   let favoriteGeneration = 0;
@@ -121,6 +128,37 @@
   const currentStepIndex = $derived(
     orderedSteps.findIndex((step) => step.id === currentStepId),
   );
+
+  function openDeleteDialog() {
+    if (adminData || !session.data?.user || !project || deleting) return;
+    deleteError = "";
+    deleteDialog?.showModal();
+  }
+
+  async function removeProject() {
+    const currentSession = session.data;
+    const current = project;
+    if (adminData || !currentSession?.user || !current || deleting) return;
+    const ownerId = currentSession.user.id;
+    const generation = resourceGeneration;
+    deleting = true;
+    deleteError = "";
+    try {
+      await deleteProject(current.id, currentSession);
+      if (generation !== resourceGeneration) return;
+      untrack(() => deleteDialog?.close());
+      await goto(resolve("/projects"));
+    } catch (error) {
+      if (generation !== resourceGeneration) return;
+      deleteError =
+        error instanceof ApiError
+          ? error.message
+          : t("The project could not be deleted.", locale);
+      publishFeedback({ ownerId, kind: "error", message: deleteError });
+    } finally {
+      if (generation === resourceGeneration) deleting = false;
+    }
+  }
 
   $effect(() => {
     const currentUserId = userId;
@@ -782,6 +820,14 @@
                 role="menu"
                 aria-label={t("Project actions", locale)}
               >
+                {#if !adminData}
+                  <ShareMenuItem
+                    title={currentProject.name}
+                    ownerId={userId}
+                    {locale}
+                    {close}
+                  />
+                {/if}
                 <button
                   class="action-overflow__item print-button"
                   role="menuitem"
@@ -800,6 +846,21 @@
                       : t("Print pattern", locale)}</span
                   >
                 </button>
+                {#if !adminData}
+                  <hr class="action-overflow__divider" />
+                  <button
+                    class="action-overflow__item action-overflow__item--danger"
+                    role="menuitem"
+                    type="button"
+                    onclick={() => {
+                      close();
+                      openDeleteDialog();
+                    }}
+                  >
+                    <NavIcon name="action-delete" />
+                    <span>{t("Delete project", locale)}</span>
+                  </button>
+                {/if}
               </div>
             {/snippet}
           </ActionOverflow>
@@ -1314,6 +1375,44 @@
     onClose={() => (selectedImageId = null)}
     onSelect={(image) => (selectedImageId = image.id)}
   />
+  {#if !adminData}
+    <ConfirmDialog
+      bind:this={deleteDialog}
+      titleId="reader-delete-project-title"
+      title={t("Delete this project? This cannot be undone.", locale)}
+      busy={deleting}
+    >
+      {#snippet children()}
+        <p>{t("This cannot be undone.", locale)}</p>
+        {#if deleteError}<p class="print-error" role="alert">
+            {deleteError}
+          </p>{/if}
+      {/snippet}
+      {#snippet actions()}
+        <Button
+          type="button"
+          variant="secondary"
+          icon="cancel"
+          disabled={deleting}
+          onclick={() => {
+            deleteError = "";
+            untrack(() => deleteDialog?.close());
+          }}
+        >
+          {t("Cancel", locale)}
+        </Button>
+        <Button
+          type="button"
+          variant="danger"
+          icon="action-delete"
+          disabled={deleting}
+          onclick={() => void removeProject()}
+        >
+          {t("Delete project", locale)}
+        </Button>
+      {/snippet}
+    </ConfirmDialog>
+  {/if}
 {/if}
 
 <style>
