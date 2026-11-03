@@ -243,19 +243,29 @@ fn request_exchange(
     verifier: &str,
     redirect_uri: &str,
 ) -> axum::http::Request<axum::body::Body> {
+    request_exchange_with(code, verifier, redirect_uri, json!({}))
+}
+
+fn request_exchange_with(
+    code: &str,
+    verifier: &str,
+    redirect_uri: &str,
+    extra: Value,
+) -> axum::http::Request<axum::body::Body> {
+    let mut payload = json!({
+        "code": code,
+        "code_verifier": verifier,
+        "redirect_uri": redirect_uri,
+        "token_name": "HTTP OIDC test"
+    });
+    for (key, value) in extra.as_object().unwrap() {
+        payload[key] = value.clone();
+    }
     axum::http::Request::builder()
         .method("POST")
         .uri("/auth/oidc/exchange")
         .header("content-type", "application/json")
-        .body(axum::body::Body::from(
-            json!({
-                "code": code,
-                "code_verifier": verifier,
-                "redirect_uri": redirect_uri,
-                "token_name": "HTTP OIDC test"
-            })
-            .to_string(),
-        ))
+        .body(axum::body::Body::from(payload.to_string()))
         .unwrap()
 }
 
@@ -734,4 +744,65 @@ async fn browser_callback_result(app: &Router, issuer: &MockOidcIssuer, subject:
                 .starts_with("__Host-stricknani_session="))
     );
     response.headers()["location"].to_str().unwrap().to_owned()
+}
+
+#[tokio::test]
+async fn native_exchange_names_the_token_after_device_name_and_limits_its_length() {
+    let database = pool().await;
+    let (app, issuer, database) = app_with_mock(database).await;
+    let user_id = seed_identity(&database, issuer.issuer(), "device-subject", true).await;
+    let verifier = "native-code-verifier-0123456789abcdef0123456789abcdef";
+    let redirect = "stricknani://oidc-callback";
+
+    // Too long: rejected as a validation error.
+    let (code, _) = native_grant(&app, &issuer, verifier, "device-long", "device-subject").await;
+    let response = app
+        .clone()
+        .oneshot(request_exchange_with(
+            &code,
+            verifier,
+            redirect,
+            json!({"device_name": "d".repeat(101)}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+
+    let (code, _) = native_grant(&app, &issuer, verifier, "device-ok", "device-subject").await;
+    let response = app
+        .clone()
+        .oneshot(request_exchange_with(
+            &code,
+            verifier,
+            redirect,
+            json!({"device_name": "  Pixel 9  "}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let name: String = sqlx::query_scalar(
+        "SELECT name FROM api_tokens WHERE user_id = ? AND purpose = 'api' ORDER BY id DESC",
+    )
+    .bind(user_id)
+    .fetch_one(&database)
+    .await
+    .unwrap();
+    assert_eq!(name, "Android \u{b7} Pixel 9");
+
+    // Without device_name the supplied token_name still applies.
+    let (code, _) = native_grant(&app, &issuer, verifier, "device-none", "device-subject").await;
+    let response = app
+        .clone()
+        .oneshot(request_exchange(&code, verifier, redirect))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let name: String = sqlx::query_scalar(
+        "SELECT name FROM api_tokens WHERE user_id = ? AND purpose = 'api' ORDER BY id DESC",
+    )
+    .bind(user_id)
+    .fetch_one(&database)
+    .await
+    .unwrap();
+    assert_eq!(name, "HTTP OIDC test");
 }

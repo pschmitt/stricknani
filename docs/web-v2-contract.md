@@ -146,8 +146,9 @@ consume that quota.
 | Method and path                   | Request                                 | Result                                                                           |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
 | `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url}}`                                      |
-| `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at}]}`                                   |
+| `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at, last_used_at}]}`; `last_used_at` is RFC 3339 or `null` for a token never used |
 | `POST /account/api-tokens`        | JSON `{name?, expires_at?, current_password?}` | `201 {data: {id, name, created_at, expires_at, token}}`                   |
+| `PATCH /account/api-tokens/current` | JSON `{name}` (1 to 100 characters after trimming) | bearer PAT only: `200 {data: {id, name, created_at, expires_at, last_used_at}}`; renames the calling token. A cookie session gets `403 forbidden`; an empty, blank or over-long name gets `422 validation_error` with `error.fields.name`; an invalid or revoked PAT gets `401 session_expired`. Not audit-logged: the auth audit has a closed action set and no fitting event |
 | `DELETE /account/api-tokens/{id}` | —                                       | browser: `204`; bearer: `200 {data: {id, revoked: true, current_token}}`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
 | `PUT /account/password`           | JSON `{current_password, new_password}` | `204`; revokes every browser session and PAT and clears the current cookie after commit |
 | `POST /account/avatar`            | Multipart `file`                        | `{data: {avatar_url}}`                                                           |
@@ -562,6 +563,16 @@ archive_unavailable`. The owner-scoped status response excludes source URLs,
 worker errors, leases, and job identifiers. Clients can poll this durable
 status; no streaming connection is needed.
 
+## Token last use
+
+`api_tokens.last_used_at` records when an API-purpose PAT last authenticated a
+request. The server writes it on a successful bearer authentication only when
+the stored value is `NULL` or at least 5 minutes old; the write runs off the
+request path and a failure is logged, never surfaced. `GET
+/account/api-tokens` returns it as `last_used_at` (RFC 3339, or `null` for a
+token never used). Browser-session cookies do not update it. Administrator
+routes do not list tokens.
+
 ## Native delta synchronization
 
 `GET /api/v2/sync/projects` and `GET /api/v2/sync/yarns` accept the same
@@ -596,9 +607,13 @@ category list is a full snapshot, and must not be treated as a delta feed.
 ## Native resource and administrator authentication
 
 Native clients can mint an API-purpose PAT with `POST /api/v2/auth/token`,
-sending `{email, password, token_name?}` and receiving `200 {data: {token}}`.
+sending `{email, password, token_name?, device_name?}` and receiving `200 {data: {token}}`.
 This password exchange sets no browser cookie and does not require CSRF.
-Missing or blank token names use `Android (password login)`. The shared
+Missing or blank token names use `Android (password login)`. A non-blank
+`device_name` (trimmed, at most 100 characters; longer returns `422
+validation_error` with `error.fields.device_name`) takes precedence and names the
+token `Android · <device_name>`; the app can later rename it with
+`PATCH /account/api-tokens/current`. The v1 token endpoint ignores it. The shared
 password verifier, hash-upgrade policy and attempt quotas also serve v1.
 
 Unknown, disabled and invalid credentials all return `401 invalid_credentials`.

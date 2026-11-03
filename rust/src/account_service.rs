@@ -65,6 +65,7 @@ pub(crate) struct TokenMetadata {
     pub(crate) name: String,
     pub(crate) created_at: String,
     pub(crate) expires_at: Option<String>,
+    pub(crate) last_used_at: Option<String>,
 }
 
 pub(crate) async fn list_tokens(
@@ -72,7 +73,7 @@ pub(crate) async fn list_tokens(
     user_id: i64,
 ) -> Result<Vec<TokenMetadata>, AccountError> {
     let rows = sqlx::query(
-        "SELECT id, name, created_at, expires_at FROM api_tokens \
+        "SELECT id, name, created_at, expires_at, last_used_at FROM api_tokens \
          WHERE user_id = ? AND purpose = 'api' AND revoked_at IS NULL \
            AND (expires_at IS NULL OR expires_at > unixepoch()) ORDER BY id DESC",
     )
@@ -89,6 +90,9 @@ pub(crate) async fn list_tokens(
             created_at: format_timestamp(row.get("created_at")),
             expires_at: row
                 .get::<Option<i64>, _>("expires_at")
+                .map(format_timestamp),
+            last_used_at: row
+                .get::<Option<i64>, _>("last_used_at")
                 .map(format_timestamp),
         })
         .collect())
@@ -221,6 +225,53 @@ pub(crate) async fn create_token_with(
         created_at: format_timestamp(created_at),
         expires_at: expires_at.map(format_timestamp),
         token: Zeroizing::new(token),
+    })
+}
+
+/// Longest token name a client may set through rename or `device_name`.
+pub(crate) const MAX_DEVICE_NAME_CHARS: usize = 100;
+
+/// Trim a client-supplied device name; `None` when blank or over the limit.
+pub(crate) fn clean_device_name(name: &str) -> Option<&str> {
+    let name = name.trim();
+    (!name.is_empty() && name.chars().count() <= MAX_DEVICE_NAME_CHARS).then_some(name)
+}
+
+/// `Android · <device_name>`, the name a minted PAT gets from `device_name`.
+pub(crate) fn device_token_name(device_name: &str) -> String {
+    format!("Android \u{b7} {device_name}")
+}
+
+/// Rename the caller's own active API token.
+pub(crate) async fn rename_token(
+    pool: &SqlitePool,
+    user_id: i64,
+    token_id: i64,
+    name: &str,
+) -> Result<TokenMetadata, AccountError> {
+    use sqlx::Row;
+    let row = sqlx::query(
+        "UPDATE api_tokens SET name = ? WHERE id = ? AND user_id = ? AND purpose = 'api' \
+         AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > unixepoch()) \
+         RETURNING id, name, created_at, expires_at, last_used_at",
+    )
+    .bind(name)
+    .bind(token_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|_| AccountError::Database)?
+    .ok_or(AccountError::CallerTokenInvalid)?;
+    Ok(TokenMetadata {
+        id: row.get("id"),
+        name: row.get("name"),
+        created_at: format_timestamp(row.get("created_at")),
+        expires_at: row
+            .get::<Option<i64>, _>("expires_at")
+            .map(format_timestamp),
+        last_used_at: row
+            .get::<Option<i64>, _>("last_used_at")
+            .map(format_timestamp),
     })
 }
 

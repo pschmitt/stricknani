@@ -12,7 +12,10 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
-use crate::auth;
+use crate::{
+    account_service::{MAX_DEVICE_NAME_CHARS, clean_device_name, device_token_name},
+    auth,
+};
 
 use super::{ApiV2State, access};
 
@@ -29,6 +32,8 @@ struct TokenRequest {
     email: String,
     password: String,
     token_name: Option<String>,
+    /// Device label; names the token `Android · <device_name>`.
+    device_name: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -65,11 +70,26 @@ async fn mint_token(
         return validation_error("token_name", "Token name is too long");
     }
 
+    if request
+        .device_name
+        .as_ref()
+        .is_some_and(|name| name.trim().chars().count() > MAX_DEVICE_NAME_CHARS)
+    {
+        return validation_error("device_name", "Device name is too long");
+    }
+
     let email = request.email;
     let name = request
-        .token_name
-        .map(|name| name.trim().to_owned())
-        .filter(|name| !name.is_empty())
+        .device_name
+        .as_deref()
+        .and_then(clean_device_name)
+        .map(device_token_name)
+        .or_else(|| {
+            request
+                .token_name
+                .map(|name| name.trim().to_owned())
+                .filter(|name| !name.is_empty())
+        })
         .unwrap_or_else(|| DEFAULT_TOKEN_NAME.to_owned());
     let ip = peer
         .map(|Extension(ConnectInfo(address))| address.ip().to_string())

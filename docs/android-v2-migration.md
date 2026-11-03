@@ -78,9 +78,16 @@ change. See the [v2 contract](web-v2-contract.md) for supported routes and
 error envelopes.
 
 Native password login uses `POST /api/v2/auth/token` with
-`{email, password, token_name?}` and returns `200 {data: {token}}`. The token
+`{email, password, token_name?, device_name?}` and returns `200 {data: {token}}`. The token
 has API purpose; this endpoint sets no browser cookie and requires no CSRF
-bootstrap. Missing or blank token names use the existing native-login default.
+bootstrap. Missing or blank token names use the existing native-login default. A
+non-blank `device_name` (at most 100 characters) names the token
+`Android · <device_name>`; `POST /api/v2/auth/oidc/exchange` accepts the same
+field. The app renames its own token later with
+`PATCH /api/v2/account/api-tokens/current` `{name}` (bearer only, `200
+{data: {id, name, created_at, expires_at, last_used_at}}`, `422` with
+`fields.name` for an empty or over-100-character name). Token lists include
+`last_used_at` (RFC 3339 or `null`), refreshed at most every 5 minutes.
 The v1 and v2 endpoints share password verification, hash upgrades and login
 attempt quotas. Do not retry rejected credentials through v1 to bypass a quota.
 

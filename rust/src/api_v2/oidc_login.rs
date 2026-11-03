@@ -70,6 +70,8 @@ struct ExchangeRequest {
     code_verifier: String,
     redirect_uri: String,
     token_name: Option<String>,
+    /// Device label; names the token `Android · <device_name>`.
+    device_name: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -544,11 +546,24 @@ async fn exchange(
     if request.redirect_uri.len() > 2048 {
         return validation_error("redirect_uri", "Redirect URI is too long");
     }
+    if request.device_name.as_ref().is_some_and(|name| {
+        name.trim().chars().count() > crate::account_service::MAX_DEVICE_NAME_CHARS
+    }) {
+        return validation_error("device_name", "Device name is too long");
+    }
     let name = request
-        .token_name
+        .device_name
         .take()
-        .map(|name| name.trim().to_owned())
-        .filter(|name| !name.is_empty())
+        .as_deref()
+        .and_then(crate::account_service::clean_device_name)
+        .map(crate::account_service::device_token_name)
+        .or_else(|| {
+            request
+                .token_name
+                .take()
+                .map(|name| name.trim().to_owned())
+                .filter(|name| !name.is_empty())
+        })
         .unwrap_or_else(|| DEFAULT_TOKEN_NAME.to_owned());
     if name.len() > MAX_TOKEN_NAME_BYTES {
         return validation_error("token_name", "Token name is too long");

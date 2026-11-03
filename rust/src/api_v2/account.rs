@@ -38,6 +38,10 @@ pub(super) fn router() -> Router<ApiV2State> {
         .route("/account", get(get_account))
         .route("/account/api-tokens", get(list_tokens).post(create_token))
         .route(
+            "/account/api-tokens/current",
+            axum::routing::patch(rename_current_token),
+        )
+        .route(
             "/account/api-tokens/{id}",
             axum::routing::delete(revoke_token),
         )
@@ -218,6 +222,52 @@ fn stepup_error(error: StepupError) -> Response {
             "internal_error",
             "Request failed",
         ),
+    }
+}
+
+#[derive(Deserialize)]
+struct RenameTokenRequest {
+    name: String,
+}
+
+/// Rename the calling PAT. Browser sessions have no device name to set.
+async fn rename_current_token(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    request: Result<Json<RenameTokenRequest>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    if !is_bearer(&headers) {
+        return super::api_error(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "Only an app token can rename itself",
+        );
+    }
+    let Json(request) = match request {
+        Ok(request) => request,
+        Err(error) => return json_rejection(error),
+    };
+    let Some(name) = account_service::clean_device_name(&request.name) else {
+        return field_error("name", "Name must be 1 to 100 characters");
+    };
+    let credential = match auth_stepup_service::current_credential(
+        &state.app.pool,
+        &headers,
+        user_id,
+        state.app.secure_cookies,
+    )
+    .await
+    {
+        Ok(credential) => credential,
+        Err(error) => return stepup_error(error),
+    };
+    match account_service::rename_token(&state.app.pool, user_id, credential.token_id, name).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => account_error(error),
     }
 }
 

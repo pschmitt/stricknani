@@ -70,7 +70,7 @@ re-enable could observe a partially applied security change.
   admin routes accept API-purpose PATs. Update the comment when editing that
   module. This is a documentation defect, not an authorization bypass.
 
-- **`last_used_at` is not updated by Rust authentication.** It is imported at
+- **`last_used_at` (resolved: now updated on PAT authentication, throttled to 5 minutes).** Original note: It is imported at
   `rust/src/importer.rs:1127-1135`; no Rust auth write was found in the bounded
   auth path search. Decide whether PAT visibility/expiry requires last-use
   tracking. This does not establish that browser sessions should be globally

@@ -192,8 +192,10 @@ async fn token_user(
     purpose: Option<&str>,
 ) -> Result<i64, AuthError> {
     let hash = token_hash(token.as_bytes());
-    sqlx::query_scalar::<_, i64>(
-        "SELECT users.id FROM api_tokens \
+    let (user_id, token_id, last_used_at, token_purpose) =
+        sqlx::query_as::<_, (i64, i64, Option<i64>, String)>(
+            "SELECT users.id, api_tokens.id, api_tokens.last_used_at, api_tokens.purpose \
+         FROM api_tokens \
          JOIN users ON users.id = api_tokens.user_id \
          WHERE api_tokens.token_hash = ? \
            AND api_tokens.revoked_at IS NULL \
@@ -205,13 +207,45 @@ async fn token_user(
              WHERE identity.id = api_tokens.oidc_identity_id \
                AND identity.user_id = api_tokens.user_id \
                AND identity.provider_id = api_tokens.oidc_provider_id))",
-    )
-    .bind(hash)
-    .bind(purpose.is_some())
-    .bind(purpose)
-    .fetch_optional(pool)
-    .await?
-    .ok_or(AuthError::Unauthorized)
+        )
+        .bind(hash)
+        .bind(purpose.is_some())
+        .bind(purpose)
+        .fetch_optional(pool)
+        .await?
+        .ok_or(AuthError::Unauthorized)?;
+    if token_purpose == "api" {
+        touch_last_used(pool, token_id, last_used_at);
+    }
+    Ok(user_id)
+}
+
+/// Only rewrite `last_used_at` when it is unset or at least this old.
+pub(crate) const LAST_USED_THROTTLE_SECONDS: i64 = 300;
+
+/// Record a PAT use without making the request wait for the write. The stale
+/// check is repeated in the UPDATE so concurrent requests write at most once.
+fn touch_last_used(pool: &SqlitePool, token_id: i64, last_used_at: Option<i64>) {
+    let now = chrono::Utc::now().timestamp();
+    if last_used_at.is_some_and(|at| now - at < LAST_USED_THROTTLE_SECONDS) {
+        return;
+    }
+    let pool = pool.clone();
+    tokio::spawn(async move {
+        if let Err(error) = sqlx::query(
+            "UPDATE api_tokens SET last_used_at = ? WHERE id = ? \
+             AND (last_used_at IS NULL OR last_used_at <= ? - ?)",
+        )
+        .bind(now)
+        .bind(token_id)
+        .bind(now)
+        .bind(LAST_USED_THROTTLE_SECONDS)
+        .execute(&pool)
+        .await
+        {
+            tracing::warn!(%error, "could not record API token last use");
+        }
+    });
 }
 
 #[derive(Deserialize)]

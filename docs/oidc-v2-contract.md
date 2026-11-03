@@ -79,8 +79,11 @@ same-origin error rather than an arbitrary redirect. The app rejects callbacks
 without its own pending in-memory state/verifier before doing any exchange.
 
 `POST /auth/oidc/exchange` accepts
-`{code, code_verifier, redirect_uri, token_name?}` and returns
-`200 {data: {token, expires_at, auth_origin: "oidc"}}`. It accepts login-purpose
+`{code, code_verifier, redirect_uri, token_name?, device_name?}` and returns
+`200 {data: {token, expires_at, auth_origin: "oidc"}}`. A non-blank `device_name`
+(trimmed, at most 100 characters, else `422 validation_error` with
+`error.fields.device_name`) names the token `Android · <device_name>` and takes
+precedence over `token_name`. It accepts login-purpose
 grants only and sets no browser cookie. `expires_at` must be valid RFC3339;
 clients reject a missing or malformed OIDC expiry rather than treating it as
 non-expiring, while preserving offline work. With multiple providers, retain
