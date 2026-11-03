@@ -843,6 +843,12 @@ def _one_sample(
         raise PerformanceFailure("pattern text size could not be restored")
 
     _CURRENT_STAGE = f"sample {sample_number}: image viewer open and close"
+    # The actions menu stays open after the text-size buttons and would cover the
+    # cover image; dismiss it as a reader would.
+    page.keyboard.press("Escape")
+    page.get_by_role("button", name="Decrease text size", exact=True).wait_for(
+        state="hidden", timeout=5_000
+    )
     page.locator(".gallery-image").first.click()
     dialog = page.get_by_role("dialog", name="Project image viewer", exact=True)
     dialog.wait_for(state="visible", timeout=10_000)

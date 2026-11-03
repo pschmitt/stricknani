@@ -41,6 +41,7 @@ REQUIRED_OFFLINE_ASSETS = {
     "/app/manifest.webmanifest",
     "/app/offline.html",
     "/app/offline.css",
+    "/app/offline-theme.js",
     "/app/favicon.svg",
     "/app/icons/icon-192.png",
     "/app/icons/icon-512.png",
@@ -1024,6 +1025,7 @@ def run_acceptance(
             )
 
             mark_stage("checking responsive offline fallback")
+            page.evaluate("localStorage.setItem('stricknani.theme', 'dark')")
             context.set_offline(True)
             offline_response = page.goto(
                 f"{origin}/app/projects/42",
@@ -1047,6 +1049,10 @@ def run_acceptance(
                 page.get_by_text("are not stored offline.").is_visible(),
                 "offline page does not explain that private edits are not stored",
             )
+            _require(
+                page.evaluate("document.documentElement.dataset.theme") == "dark",
+                "offline page ignored the saved theme (offline-theme.js blocked?)",
+            )
             for width in (320, 390):
                 page.set_viewport_size({"width": width, "height": 844})
                 dimensions = page.evaluate(
@@ -1067,6 +1073,7 @@ def run_acceptance(
             page.set_viewport_size({"width": 390, "height": 844})
             page.screenshot(path=str(screenshots / "offline-mobile.png"), caret="hide")
             context.set_offline(False)
+            page.evaluate("localStorage.removeItem('stricknani.theme')")
             recovered = page.goto(f"{origin}/app/login", wait_until="networkidle")
             _require(
                 recovered is not None and recovered.status == 200,

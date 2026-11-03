@@ -145,12 +145,27 @@ def _tab_to_tile(page: Page, tile: Locator) -> bool:
     """Reach a tile with real Tab presses so focus-visible applies."""
     page.evaluate(
         "() => { if (document.activeElement instanceof HTMLElement) "
-        "document.activeElement.blur(); window.scrollTo(0, 0); }"
+        "document.activeElement.blur(); window.scrollTo(0, 0); "
+        # Firefox keeps the sequential-focus starting point where the last
+        # touch, click or focus landed, and blur() does not reset it: a Tab
+        # would then continue from inside the tile under test, skip the tile
+        # itself and run on to the end of the page. Its starting point also
+        # follows the selection, so park that at the top of the document.
+        "document.getSelection()?.collapse(document.body, 0); }"
     )
+    trail: list[str] = []
     for _ in range(120):
         page.keyboard.press("Tab")
         if tile.evaluate("element => element === document.activeElement"):
             return True
+        trail.append(
+            page.evaluate(
+                "() => { const e = document.activeElement; return e ? "
+                "e.tagName + '.' + e.className + ' ' + (e.textContent||'').trim()"
+                ".slice(0, 20) : 'none'; }"
+            )
+        )
+    print("DEBUG tab trail", trail[:8], trail[-4:], flush=True)
     return False
 
 
@@ -275,7 +290,9 @@ def _check_tile(
         page.wait_for_timeout(200)
         touch.press(first)
         page.wait_for_timeout(LONG_PRESS_MS + 50)
-        armed = first.evaluate("tile => tile.classList.contains('armed')")
+        armed = first.evaluate(
+            "tile => tile.closest('.reorder-list')?.classList.contains('editing')"
+        )
         try:
             expect(first.locator(".delete-button")).to_have_css("opacity", "1")
             shown = True
@@ -286,11 +303,32 @@ def _check_tile(
             f"{tag}: {LONG_PRESS_MS} ms long press without moving shows the trash "
             f"({touch.kind})",
         )
-        revealed = _geometry(first)
         _shot(page, shots, f"{shot_name}-2-longpress", list_locator)
+        # The jiggle rotates every tile by a degree or two; measure the layout
+        # with the animation paused so the corner insets are exact.
+        # (CSSOM writes are allowed under the page CSP; an injected <style> is not.)
+        pause_js = (
+            "on => document.querySelectorAll('.reorder-item').forEach(el => "
+            "on ? el.style.setProperty('animation', 'none', 'important') "
+            ": el.style.removeProperty('animation'))"
+        )
+        page.evaluate(pause_js, True)
+        revealed = _geometry(first)
+        page.evaluate(pause_js, False)
         touch.release(first)
         page.wait_for_timeout(300)
         viewer_open = page.locator("dialog[open]").count() > 0
+        report.check(
+            not viewer_open
+            and bool(
+                first.evaluate(
+                    "tile => tile.closest('.reorder-list')"
+                    "?.classList.contains('editing')"
+                )
+            ),
+            f"{tag}: lifting after the long press stays in edit mode with no photo "
+            f"viewer on top of the trash ({touch.kind})",
+        )
         if first.locator(".thumb-button").count() > 0:
             report.check(
                 not viewer_open,
