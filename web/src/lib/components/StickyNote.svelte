@@ -2,8 +2,8 @@
   import type { Snippet } from "svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
 
-  // The Notes section as a paper sticky note: butter-yellow paper, a washi-tape
-  // strip, a folded corner and a slight tilt. Only the paper layer is rotated,
+  // The Notes section as a paper sticky note: butter-yellow paper, a push pin,
+  // a folded corner and a slight tilt. Only the paper layer is rotated,
   // so the text stays upright and crisp. With `emptyHref` and no content it is
   // the faint dashed "Add a note" invitation instead.
   let {
@@ -73,30 +73,31 @@
       drop-shadow(0 14px 18px rgb(var(--sticky-shadow) / 10%));
   }
 
-  /* Washi tape: translucent, with a stitched seam along both edges. */
+  /* Push pin: a glossy round head with a soft drop shadow, pressed into the
+     top edge of the paper. */
   .sticky__paper::before {
     content: "";
     position: absolute;
-    top: -0.7rem;
+    top: -0.55rem;
     left: 50%;
-    width: 5.5rem;
-    height: 1.5rem;
-    border-radius: 3px;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
     background:
-      repeating-linear-gradient(
-          90deg,
-          rgb(255 255 255 / 65%) 0 4px,
-          transparent 4px 7px
-        )
-        center 4px / 100% 1px no-repeat,
-      repeating-linear-gradient(
-          90deg,
-          rgb(255 255 255 / 65%) 0 4px,
-          transparent 4px 7px
-        )
-        center calc(100% - 4px) / 100% 1px no-repeat,
-      color-mix(in srgb, var(--sticky-tape) 55%, transparent);
-    transform: translateX(-50%) rotate(2.5deg);
+      radial-gradient(
+        circle at 34% 30%,
+        rgb(255 255 255 / 75%) 0 14%,
+        rgb(255 255 255 / 0%) 32%
+      ),
+      radial-gradient(
+        circle at 50% 50%,
+        var(--sticky-tape) 0 55%,
+        color-mix(in srgb, var(--sticky-tape) 65%, black) 100%
+      );
+    box-shadow:
+      0 1px 1px rgb(0 0 0 / 35%),
+      3px 5px 6px rgb(var(--sticky-shadow) / 30%);
+    transform: translateX(-50%);
   }
 
   /* The folded-over corner. */
