@@ -2,8 +2,10 @@
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import Button from "#lib/components/Button.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
@@ -32,6 +34,7 @@
   let actionError = $state("");
   let busyFavorite = $state(false);
   let reload = $state(0);
+  let textSize = $state(1);
   let routeGeneration = 0;
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -42,6 +45,11 @@
     session.data?.capabilities.archive_state === true,
   );
   const yarnId = $derived(id);
+  const textSizeLabels = ["90%", "100%", "115%"];
+  const textSizeClass = $derived(
+    ["reading-small", "reading-medium", "reading-large"][textSize] ??
+      "reading-medium",
+  );
 
   $effect(() => {
     const id = yarnId;
@@ -264,6 +272,68 @@
               >{t("Edit yarn", locale)}</ActionLabel
             ></a
           >
+          <ActionOverflow label={t("More actions", locale)}>
+            {#snippet children(close)}
+              <div class="action-overflow__section">
+                <p class="action-overflow__heading" id="yarn-text-size-label">
+                  {t("Text size", locale)}
+                </p>
+                <div
+                  class="action-overflow__segmented text-size-controls"
+                  role="group"
+                  aria-labelledby="yarn-text-size-label"
+                >
+                  <button
+                    class="action-overflow__segment"
+                    type="button"
+                    aria-label={t("Decrease text size", locale)}
+                    disabled={textSize === 0}
+                    onclick={() => (textSize = Math.max(0, textSize - 1))}
+                    >A−</button
+                  >
+                  <span class="action-overflow__segment action-overflow__value"
+                    >{textSizeLabels[textSize] ?? "100%"}</span
+                  >
+                  <button
+                    class="action-overflow__segment"
+                    type="button"
+                    aria-label={t("Increase text size", locale)}
+                    disabled={textSize === 2}
+                    onclick={() => (textSize = Math.min(2, textSize + 1))}
+                    >A+</button
+                  >
+                </div>
+                {#if textSize !== 1}
+                  <button
+                    class="text-size-reset"
+                    type="button"
+                    onclick={() => (textSize = 1)}
+                  >
+                    {t("Reset text size", locale)}
+                  </button>
+                {/if}
+              </div>
+              <hr class="action-overflow__divider" />
+              <div
+                class="action-overflow__menu"
+                role="menu"
+                aria-label={t("Yarn actions", locale)}
+              >
+                <button
+                  class="action-overflow__item print-button"
+                  role="menuitem"
+                  type="button"
+                  onclick={() => {
+                    close();
+                    window.print();
+                  }}
+                >
+                  <NavIcon name="print" />
+                  <span>{t("Print yarn", locale)}</span>
+                </button>
+              </div>
+            {/snippet}
+          </ActionOverflow>
         </div>
       {/snippet}
     </PageHeader>
@@ -292,13 +362,15 @@
         {#if yarn.description_html}
           <section class="detail-section">
             <h2>{t("Description", locale)}</h2>
-            <div class="rich-text">{@html yarn.description_html}</div>
+            <div class="rich-text {textSizeClass}">
+              {@html yarn.description_html}
+            </div>
           </section>
         {/if}
         {#if yarn.notes_html}
           <section class="detail-section">
             <h2>{t("Notes", locale)}</h2>
-            <div class="rich-text">{@html yarn.notes_html}</div>
+            <div class="rich-text {textSizeClass}">{@html yarn.notes_html}</div>
           </section>
         {/if}
         {#if yarn.project_ids.length > 0}
@@ -340,7 +412,7 @@
 
       <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
         <h2>{t("At a glance", locale)}</h2>
-        <dl>
+        <dl class={textSizeClass}>
           {#if yarn.brand}<div>
               <dt>{t("Brand", locale)}</dt>
               <dd>{yarn.brand}</dd>
@@ -476,6 +548,37 @@
     padding: 1rem;
   }
 
+  .reading-small {
+    font-size: 0.94rem;
+  }
+
+  .reading-medium {
+    font-size: 1.06rem;
+  }
+
+  .reading-large {
+    font-size: 1.22rem;
+  }
+
+  .text-size-reset {
+    justify-self: start;
+    min-height: 32px;
+    padding: 0 0.4rem;
+    border: 0;
+    border-radius: var(--radius-xs);
+    color: var(--accent-strong);
+    background: transparent;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .text-size-reset:focus-visible {
+    outline: 2px solid var(--focus);
+  }
+
   .rich-text {
     max-width: 68ch;
     overflow-wrap: anywhere;
@@ -511,7 +614,7 @@
 
   dt {
     color: var(--ink-muted);
-    font-size: 0.87rem;
+    font-size: 0.87em;
   }
 
   dd {
@@ -597,7 +700,8 @@
       flex: 1;
     }
 
-    .heading-actions > :global(.favorite-button) {
+    .heading-actions > :global(.favorite-button),
+    .heading-actions > :global(.action-overflow) {
       flex: 0 0 44px;
     }
 
@@ -610,10 +714,49 @@
     }
   }
 
+  @media print {
+    :global(.desktop-rail),
+    :global(.app-header),
+    :global(.mobile-navigation),
+    :global(.skip-link),
+    .heading-actions {
+      display: none !important;
+    }
+
+    :global(.app-shell) {
+      display: block;
+      min-height: 0;
+    }
+
+    :global(.content-main) {
+      width: 100%;
+      max-width: none;
+      padding: 0;
+    }
+
+    .spec-panel {
+      position: static;
+    }
+
+    .detail-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .detail-section,
+    .spec-panel {
+      break-inside: avoid;
+    }
+
+    .rich-text {
+      max-width: none;
+      color: #111;
+    }
+  }
+
   @media (max-width: 480px) {
     .heading-actions {
       display: grid;
-      grid-template-columns: 44px minmax(0, 1fr);
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
     }
 
     .heading-actions > * {
