@@ -3,7 +3,6 @@
   import { androidAction, connectAppHash } from "#lib/app-links.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
-  import Mascot from "#lib/components/Mascot.svelte";
   import { t } from "#lib/i18n.svelte.ts";
 
   let {
@@ -25,7 +24,15 @@
   class:app-card--prominent={variant === "prominent"}
   aria-labelledby="app-card-title"
 >
-  <Mascot size={variant === "prominent" ? 72 : 48} />
+  <!-- Android robot head, Phosphor Icons (fill, 2.1.1), MIT. -->
+  <span class="app-card__logo" aria-hidden="true">
+    <svg viewBox="0 0 256 256" focusable="false">
+      <path
+        fill="currentColor"
+        d="M207.06,80.67c-.74-.74-1.49-1.46-2.24-2.17l24.84-24.84a8,8,0,0,0-11.32-11.32l-26,26a111.43,111.43,0,0,0-128.55.19L37.66,42.34A8,8,0,0,0,26.34,53.66L51.4,78.72A113.38,113.38,0,0,0,16,161.13V184a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V160A111.25,111.25,0,0,0,207.06,80.67ZM92,160a12,12,0,1,1,12-12A12,12,0,0,1,92,160Zm72,0a12,12,0,1,1,12-12A12,12,0,0,1,164,160Z"
+      />
+    </svg>
+  </span>
   <div class="app-card__copy">
     <h2 id="app-card-title">
       {t("Knit offline with the Stricknani app for Android", locale)}
@@ -72,6 +79,28 @@
 </section>
 
 <style>
+  /* Android green with the brand's dark navy for the robot. */
+  .app-card__logo {
+    --logo-size: 48px;
+    display: grid;
+    flex: none;
+    width: var(--logo-size);
+    height: var(--logo-size);
+    place-items: center;
+    border-radius: 50%;
+    color: #073042;
+    background: #3ddc84;
+  }
+
+  .app-card--prominent .app-card__logo {
+    --logo-size: 72px;
+  }
+
+  .app-card__logo svg {
+    width: 62%;
+    height: 62%;
+  }
+
   .app-card {
     position: relative;
     display: flex;
