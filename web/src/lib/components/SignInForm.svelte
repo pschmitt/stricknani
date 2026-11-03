@@ -10,6 +10,7 @@
   import Mascot from "#lib/components/Mascot.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { androidAction } from "#lib/app-links.ts";
+  import OidcSignIn from "#lib/features/auth/OidcSignIn.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -94,6 +95,8 @@
         {/if}
       </div>
     {/if}
+
+    <OidcSignIn {locale} />
 
     <form class="auth-form" onsubmit={submit}>
       <label for="email">{t("Email", locale)}</label>

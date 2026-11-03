@@ -7,6 +7,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
@@ -930,6 +931,8 @@
       </form>
     </section>
   </div>
+
+  <LinkedLogins />
 
   <section class="settings-section signout-section">
     {#if signOutError}

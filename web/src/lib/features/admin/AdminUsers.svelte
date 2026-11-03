@@ -7,6 +7,11 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import AdminUserIdentities from "#lib/features/auth/AdminUserIdentities.svelte";
+  import {
+    getAuthOptions,
+    type OidcProvider,
+  } from "#lib/features/auth/oidc-api.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -53,6 +58,7 @@
   let activeTarget = $state<AdminUser | null>(null);
   let activeNext = $state(false);
   let resetTarget = $state<AdminUser | null>(null);
+  let oidcProviders = $state<OidcProvider[]>([]);
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -76,6 +82,10 @@
   }
 
   onMount(() => {
+    const providerRequest = new AbortController();
+    void getAuthOptions(providerRequest.signal)
+      .then((options) => (oidcProviders = options.oidc))
+      .catch(() => undefined);
     window.addEventListener("beforeunload", guardUnload);
     const unregisterUpdateGuard = registerPwaUpdateGuard(() => ({
       dirty:
@@ -90,6 +100,7 @@
         Boolean(createDialog?.open || activeDialog?.open || resetDialog?.open),
     }));
     return () => {
+      providerRequest.abort();
       unregisterUpdateGuard();
       window.removeEventListener("beforeunload", guardUnload);
     };
@@ -651,6 +662,13 @@
             >
               {t("Reset password", locale)}
             </SharedButton>
+            {#if oidcProviders.length > 0}
+              <AdminUserIdentities
+                {user}
+                providers={oidcProviders}
+                disabled={operation !== null}
+              />
+            {/if}
           </div>
         </article>
       {:else}

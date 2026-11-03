@@ -193,6 +193,7 @@ async function performApiRequest<T = unknown>(
     if (
       response.status === 401 &&
       path !== "/api/v2/auth/login" &&
+      failure?.code !== "invalid_credentials" &&
       !options.signal?.aborted &&
       requestAuthEpoch === authEpoch
     )
@@ -329,6 +330,23 @@ function localizedError(code: string): string {
       "External image importing is not available right now.",
     ),
     internal_error: t("The server could not complete this request. Try again."),
+    reauth_required: t("Confirm it is you to continue."),
+    oidc_identity_unlinked: t(
+      "No Stricknani account is linked to this login yet. Sign in with your password, then link it in your account settings.",
+    ),
+    oidc_disabled: t("This sign-in method is not available."),
+    identity_already_linked: t(
+      "This login is already linked to a Stricknani account.",
+    ),
+    last_login_method: t(
+      "This is your only way to sign in. Set up another sign-in method first.",
+    ),
+    invalid_oidc_flow: t(
+      "That sign-in attempt expired or could not be verified. Start again.",
+    ),
+    oidc_unavailable: t(
+      "The login provider is unavailable right now. Try again later or use your password.",
+    ),
   };
   return known[code] ?? t("The request could not be completed.");
 }

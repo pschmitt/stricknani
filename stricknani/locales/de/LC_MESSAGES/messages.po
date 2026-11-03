@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 17:11+0100\n"
+"POT-Creation-Date: 2026-11-03 17:10+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -56,9 +56,10 @@ msgstr "Stricknani"
 #: stricknani/templates/yarn/_delete_dialog.html:18
 #: stricknani/templates/yarn/detail.html:600
 #: stricknani/templates/yarn/form.html:515
-#: web/src/lib/features/admin/AdminUsers.svelte:753
-#: web/src/lib/features/admin/AdminUsers.svelte:813
-#: web/src/lib/features/admin/AdminUsers.svelte:889
+#: web/src/lib/features/admin/AdminUsers.svelte:771
+#: web/src/lib/features/admin/AdminUsers.svelte:831
+#: web/src/lib/features/admin/AdminUsers.svelte:907
+#: web/src/lib/features/auth/ReauthDialog.svelte:173
 #: web/src/lib/features/categories/CategoryManager.svelte:330
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
 #: web/src/lib/features/projects/ProjectEditor.svelte:1580
@@ -70,6 +71,7 @@ msgid "Cancel"
 msgstr "Abbrechen"
 
 #: stricknani/templates/base.html:22 stricknani/templates/base.html:253
+#: web/src/lib/features/auth/ReauthDialog.svelte:198
 msgid "Confirm"
 msgstr "Bestätigen"
 
@@ -275,8 +277,8 @@ msgstr "Du bist offline. Einige Funktionen sind möglicherweise nicht verfügbar
 #: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
 #: stricknani/templates/legal/privacy.html:3
 #: stricknani/templates/legal/privacy.html:17
-#: web/src/lib/components/AccountMenu.svelte:312
-#: web/src/lib/components/SignInForm.svelte:150
+#: web/src/lib/components/AccountMenu.svelte:292
+#: web/src/lib/components/SignInForm.svelte:153
 #: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:42
 #: web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
@@ -284,8 +286,7 @@ msgid "Privacy Policy"
 msgstr "Datenschutzerklärung"
 
 #: stricknani/templates/base.html:141
-#: web/src/lib/components/AccountMenu.svelte:303
-#: web/src/lib/components/SignInForm.svelte:154
+#: web/src/lib/components/SignInForm.svelte:157
 msgid "Get the Android app"
 msgstr "Android-App holen"
 
@@ -382,6 +383,7 @@ msgid "Reset"
 msgstr "Zurücksetzen"
 
 #: stricknani/templates/base.html:385
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:191
 msgid "Close"
 msgstr "Schließen"
 
@@ -430,24 +432,24 @@ msgstr "Profilbild für %(email)s"
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/lib/components/AccountMenu.svelte:259
-#: web/src/lib/components/AccountMenu.svelte:291
+#: web/src/lib/components/AccountMenu.svelte:250
+#: web/src/lib/components/AccountMenu.svelte:282
 #: web/src/routes/+layout.svelte:269 web/src/routes/more/+page.svelte:60
 msgid "Admin"
 msgstr "Admin"
 
 #: stricknani/templates/admin/_user_card.html:23
-#: web/src/lib/features/admin/AdminUsers.svelte:618
+#: web/src/lib/features/admin/AdminUsers.svelte:629
 msgid "You"
 msgstr "Du"
 
 #: rust/src/web_accounts.rs:843 stricknani/templates/admin/_user_card.html:30
-#: web/src/lib/features/admin/AdminUsers.svelte:629
+#: web/src/lib/features/admin/AdminUsers.svelte:640
 msgid "Disabled"
 msgstr "Deaktiviert"
 
 #: rust/src/web_accounts.rs:842 stricknani/templates/admin/_user_card.html:34
-#: web/src/lib/features/admin/AdminUsers.svelte:629
+#: web/src/lib/features/admin/AdminUsers.svelte:640
 msgid "Active"
 msgstr "Aktiv"
 
@@ -463,13 +465,13 @@ msgstr "Benutzer aktiviert"
 
 #: rust/src/web_accounts.rs:846 stricknani/templates/admin/_user_card.html:58
 #: stricknani/templates/admin/_user_card.html:116
-#: web/src/lib/features/admin/AdminUsers.svelte:642
+#: web/src/lib/features/admin/AdminUsers.svelte:653
 msgid "Disable"
 msgstr "Deaktivieren"
 
 #: rust/src/web_accounts.rs:847 stricknani/templates/admin/_user_card.html:64
 #: stricknani/templates/admin/_user_card.html:119
-#: web/src/lib/features/admin/AdminUsers.svelte:642
+#: web/src/lib/features/admin/AdminUsers.svelte:653
 msgid "Enable"
 msgstr "Aktivieren"
 
@@ -483,8 +485,8 @@ msgstr "Profil bearbeiten"
 #: stricknani/templates/admin/_user_card.html:138
 #: stricknani/templates/admin/users.html:72
 #: stricknani/templates/admin/users.html:89
-#: web/src/lib/features/admin/AdminUsers.svelte:652
-#: web/src/lib/features/admin/AdminUsers.svelte:899
+#: web/src/lib/features/admin/AdminUsers.svelte:663
+#: web/src/lib/features/admin/AdminUsers.svelte:917
 msgid "Reset password"
 msgstr "Passwort zurücksetzen"
 
@@ -534,8 +536,8 @@ msgstr "Profil aktualisiert"
 #: rust/src/web.rs:2163 rust/src/web_accounts.rs:838 rust/src/web_signup.rs:273
 #: stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
-#: web/src/lib/components/SignInForm.svelte:99
-#: web/src/lib/features/admin/AdminUsers.svelte:605
+#: web/src/lib/components/SignInForm.svelte:102
+#: web/src/lib/features/admin/AdminUsers.svelte:616
 #: web/src/lib/features/auth/SignupForm.svelte:183
 msgid "Email"
 msgstr "E-Mail"
@@ -561,13 +563,13 @@ msgid "Password reset"
 msgstr "Passwort zurückgesetzt"
 
 #: rust/src/web_accounts.rs:848 stricknani/templates/admin/users.html:82
-#: web/src/lib/features/account/AccountSettings.svelte:876
+#: web/src/lib/features/account/AccountSettings.svelte:877
 msgid "New password"
 msgstr "Neues Passwort"
 
 #: stricknani/templates/admin/users.html:94
-#: web/src/lib/features/admin/AdminUsers.svelte:573
-#: web/src/lib/features/admin/AdminUsers.svelte:763
+#: web/src/lib/features/admin/AdminUsers.svelte:584
+#: web/src/lib/features/admin/AdminUsers.svelte:781
 msgid "Create user"
 msgstr "Benutzer erstellen"
 
@@ -583,7 +585,8 @@ msgstr "Benutzer erstellt"
 #: stricknani/templates/admin/users.html:109
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
-#: web/src/lib/components/SignInForm.svelte:113
+#: web/src/lib/components/SignInForm.svelte:116
+#: web/src/lib/features/auth/ReauthDialog.svelte:149
 #: web/src/lib/features/auth/SignupForm.svelte:202
 msgid "Password"
 msgstr "Passwort"
@@ -638,9 +641,9 @@ msgstr "Bitte melde dich unten an"
 
 #: rust/src/web.rs:2160 rust/src/web_signup.rs:276
 #: stricknani/templates/auth/login.html:22
-#: web/src/lib/components/SignInForm.svelte:54
-#: web/src/lib/components/SignInForm.svelte:67
-#: web/src/lib/components/SignInForm.svelte:134
+#: web/src/lib/components/SignInForm.svelte:55
+#: web/src/lib/components/SignInForm.svelte:68
+#: web/src/lib/components/SignInForm.svelte:137
 #: web/src/lib/features/auth/SignupForm.svelte:267
 #: web/src/lib/features/home/HomeDashboard.svelte:127
 #: web/src/lib/features/projects/ProjectEditor.svelte:1005
@@ -673,7 +676,7 @@ msgstr "ODER"
 
 #: rust/src/web.rs:2161 rust/src/web_accounts.rs:850 rust/src/web_signup.rs:272
 #: stricknani/templates/auth/login.html:78
-#: web/src/lib/components/SignInForm.svelte:145
+#: web/src/lib/components/SignInForm.svelte:148
 #: web/src/lib/features/auth/SignupForm.svelte:147
 #: web/src/lib/features/auth/SignupForm.svelte:173
 msgid "Create an account"
@@ -697,7 +700,7 @@ msgid "Already have an account? Sign in"
 msgstr "Hast du bereits ein Konto? Anmelden"
 
 #: stricknani/templates/auth/login.html:137
-#: web/src/lib/components/SignInForm.svelte:149
+#: web/src/lib/components/SignInForm.svelte:152
 msgid "Learn how Stricknani handles your data in the"
 msgstr "Erfahre, wie Stricknani deine Daten in der"
 
@@ -1588,7 +1591,7 @@ msgstr "Tags"
 #: stricknani/templates/projects/detail.html:227
 #: stricknani/templates/projects/detail.html:279
 #: stricknani/templates/user/api_tokens.html:117
-#: web/src/lib/features/account/AccountSettings.svelte:808
+#: web/src/lib/features/account/AccountSettings.svelte:809
 #: web/src/lib/features/admin/AdminResource.svelte:448
 #: web/src/lib/features/admin/AdminResource.svelte:649
 #: web/src/lib/features/admin/audit-action.ts:26
@@ -2176,9 +2179,9 @@ msgstr "Angemeldet"
 
 #: stricknani/templates/shared/unified_navbar.html:235
 #: stricknani/templates/shared/unified_navbar.html:293
-#: web/src/lib/components/AccountMenu.svelte:265
+#: web/src/lib/components/AccountMenu.svelte:256
 #: web/src/lib/components/LocaleSwitcher.svelte:20
-#: web/src/lib/features/account/AccountSettings.svelte:636
+#: web/src/lib/features/account/AccountSettings.svelte:637
 msgid "Language"
 msgstr "Sprache"
 
@@ -2280,7 +2283,7 @@ msgid "Stricknani Android"
 msgstr "Stricknani Android"
 
 #: stricknani/templates/user/api_tokens.html:102
-#: web/src/lib/features/account/AccountSettings.svelte:769
+#: web/src/lib/features/account/AccountSettings.svelte:770
 msgid "Create token"
 msgstr "Token erstellen"
 
@@ -2299,13 +2302,13 @@ msgstr "Nie verwendet"
 #: rust/src/web_accounts.rs:859 stricknani/templates/user/api_tokens.html:125
 #: stricknani/templates/user/api_tokens.html:132
 #: stricknani/templates/user/api_tokens.html:139
-#: web/src/lib/features/account/AccountSettings.svelte:826
+#: web/src/lib/features/account/AccountSettings.svelte:827
 msgid "Revoke"
 msgstr "Widerrufen"
 
 #: stricknani/templates/user/api_tokens.html:130
-#: web/src/lib/features/account/AccountSettings.svelte:819
-#: web/src/lib/features/account/AccountSettings.svelte:1054
+#: web/src/lib/features/account/AccountSettings.svelte:820
+#: web/src/lib/features/account/AccountSettings.svelte:1057
 msgid "Revoke token"
 msgstr "Token widerrufen"
 
@@ -2629,8 +2632,8 @@ msgid "Import a pattern"
 msgstr "Anleitung importieren"
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
-#: rust/src/web_accounts.rs:835 web/src/lib/components/AccountMenu.svelte:323
-#: web/src/lib/features/account/AccountSettings.svelte:947
+#: rust/src/web_accounts.rs:835 web/src/lib/components/AccountMenu.svelte:303
+#: web/src/lib/features/account/AccountSettings.svelte:950
 msgid "Sign out"
 msgstr "Abmelden"
 
@@ -2705,7 +2708,7 @@ msgstr "Weitere Materialien"
 msgid "Link"
 msgstr "Link"
 
-#: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:162
+#: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:165
 #: web/src/lib/features/auth/SignupForm.svelte:275
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
@@ -2810,17 +2813,17 @@ msgid "Apply filters"
 msgstr "Filter anwenden"
 
 #: rust/src/web.rs:2210 rust/src/web_accounts.rs:832 rust/src/web_audit.rs:124
-#: web/src/lib/components/AccountMenu.svelte:214
-#: web/src/lib/components/AccountMenu.svelte:240
-#: web/src/lib/components/AccountMenu.svelte:272
-#: web/src/lib/features/account/AccountSettings.svelte:623
-#: web/src/lib/features/account/AccountSettings.svelte:634
+#: web/src/lib/components/AccountMenu.svelte:205
+#: web/src/lib/components/AccountMenu.svelte:231
+#: web/src/lib/components/AccountMenu.svelte:263
+#: web/src/lib/features/account/AccountSettings.svelte:624
+#: web/src/lib/features/account/AccountSettings.svelte:635
 msgid "Account"
 msgstr "Konto"
 
 #: rust/src/web.rs:2211 rust/src/web_accounts.rs:837 rust/src/web_audit.rs:125
-#: web/src/lib/features/admin/AdminUsers.svelte:564
-#: web/src/lib/features/admin/AdminUsers.svelte:603
+#: web/src/lib/features/admin/AdminUsers.svelte:575
+#: web/src/lib/features/admin/AdminUsers.svelte:614
 msgid "User accounts"
 msgstr "Benutzerkonten"
 
@@ -2861,7 +2864,7 @@ msgstr "OCR-Sprache"
 msgid "Reading text…"
 msgstr "Text wird erkannt …"
 
-#: rust/src/web_accounts.rs:828 web/src/lib/components/AccountMenu.svelte:281
+#: rust/src/web_accounts.rs:828 web/src/lib/components/AccountMenu.svelte:272
 msgid "Account settings"
 msgstr "Kontoeinstellungen"
 
@@ -2870,36 +2873,36 @@ msgid "Signed in as"
 msgstr "Angemeldet als"
 
 #: rust/src/web_accounts.rs:839
-#: web/src/lib/features/admin/AdminUsers.svelte:606
-#: web/src/lib/features/admin/AdminUsers.svelte:628
+#: web/src/lib/features/admin/AdminUsers.svelte:617
+#: web/src/lib/features/admin/AdminUsers.svelte:639
 msgid "Status"
 msgstr "Status"
 
 #: rust/src/web_accounts.rs:840
-#: web/src/lib/features/admin/AdminUsers.svelte:605
-#: web/src/lib/features/admin/AdminUsers.svelte:622
+#: web/src/lib/features/admin/AdminUsers.svelte:616
+#: web/src/lib/features/admin/AdminUsers.svelte:633
 msgid "Role"
 msgstr "Rolle"
 
 #: rust/src/web_accounts.rs:841
-#: web/src/lib/features/admin/AdminUsers.svelte:606
+#: web/src/lib/features/admin/AdminUsers.svelte:617
 msgid "Actions"
 msgstr "Aktionen"
 
 #: rust/src/web_accounts.rs:844
-#: web/src/lib/features/account/AccountSettings.svelte:671
-#: web/src/lib/features/admin/AdminUsers.svelte:624
+#: web/src/lib/features/account/AccountSettings.svelte:672
+#: web/src/lib/features/admin/AdminUsers.svelte:635
 msgid "Administrator"
 msgstr "Administrator"
 
 #: rust/src/web_accounts.rs:845
-#: web/src/lib/features/account/AccountSettings.svelte:671
-#: web/src/lib/features/admin/AdminUsers.svelte:625
+#: web/src/lib/features/account/AccountSettings.svelte:672
+#: web/src/lib/features/admin/AdminUsers.svelte:636
 msgid "Member"
 msgstr "Mitglied"
 
 #: rust/src/web_accounts.rs:852
-#: web/src/lib/features/account/AccountSettings.svelte:734
+#: web/src/lib/features/account/AccountSettings.svelte:735
 msgid "API tokens"
 msgstr "API-Tokens"
 
@@ -2908,12 +2911,12 @@ msgid "Create API token"
 msgstr "API-Token erstellen"
 
 #: rust/src/web_accounts.rs:861
-#: web/src/lib/features/account/AccountSettings.svelte:840
+#: web/src/lib/features/account/AccountSettings.svelte:841
 msgid "Change password"
 msgstr "Passwort ändern"
 
 #: rust/src/web_accounts.rs:862
-#: web/src/lib/features/account/AccountSettings.svelte:857
+#: web/src/lib/features/account/AccountSettings.svelte:858
 msgid "Current password"
 msgstr "Aktuelles Passwort"
 
@@ -3035,11 +3038,11 @@ msgstr ""
 msgid "AI-assisted extraction. Check every detail before saving."
 msgstr "Mit KI extrahiert. Prüfe alle Angaben, bevor du speicherst."
 
-#: web/src/lib/features/account/AccountSettings.svelte:1030
+#: web/src/lib/features/account/AccountSettings.svelte:1033
 msgid "API access"
 msgstr "API-Zugriff"
 
-#: web/src/lib/features/account/AccountSettings.svelte:363
+#: web/src/lib/features/account/AccountSettings.svelte:364
 msgid "API token revoked."
 msgstr "API-Token widerrufen."
 
@@ -3064,13 +3067,13 @@ msgstr "Konto erstellen"
 msgid "Account registration is unavailable."
 msgstr "Die Registrierung ist nicht verfügbar."
 
-#: web/src/lib/features/account/AccountSettings.svelte:972
+#: web/src/lib/features/account/AccountSettings.svelte:975
 msgid "Acknowledge that you saved the token before closing this dialog."
 msgstr ""
 "Bestätige, dass du das Token gespeichert hast, bevor du diesen Dialog "
 "schließt."
 
-#: web/src/lib/features/account/AccountSettings.svelte:802
+#: web/src/lib/features/account/AccountSettings.svelte:803
 msgid "Active API tokens"
 msgstr "Aktive API-Tokens"
 
@@ -3166,7 +3169,7 @@ msgstr "Anzahl Reihen"
 msgid "Adjusted Stitches"
 msgstr "Anzahl Maschen"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:745
+#: web/src/lib/features/admin/AdminUsers.svelte:763
 msgid "Administrator access"
 msgstr "Administratorzugriff"
 
@@ -3174,10 +3177,10 @@ msgstr "Administratorzugriff"
 #: web/src/lib/features/admin/AdminAudit.svelte:183
 #: web/src/lib/features/admin/AdminResource.svelte:122
 #: web/src/lib/features/admin/AdminResource.svelte:150
-#: web/src/lib/features/admin/AdminUsers.svelte:134
-#: web/src/lib/features/admin/AdminUsers.svelte:164
-#: web/src/lib/features/admin/AdminUsers.svelte:184
-#: web/src/lib/features/admin/AdminUsers.svelte:216
+#: web/src/lib/features/admin/AdminUsers.svelte:145
+#: web/src/lib/features/admin/AdminUsers.svelte:175
+#: web/src/lib/features/admin/AdminUsers.svelte:195
+#: web/src/lib/features/admin/AdminUsers.svelte:227
 #: web/src/lib/features/admin/DiffPanel.svelte:45
 #: web/src/lib/features/admin/DiffPanel.svelte:73
 #: web/src/lib/features/projects/ProjectReader.svelte:153
@@ -3200,7 +3203,7 @@ msgstr "Hast du bereits ein Konto?"
 msgid "An account already exists for this email."
 msgstr "Für diese E-Mail-Adresse gibt es bereits ein Konto."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:192
+#: web/src/lib/features/admin/AdminUsers.svelte:203
 msgid "An account with that email already exists."
 msgstr "Ein Konto mit dieser E-Mail-Adresse existiert bereits."
 
@@ -3216,7 +3219,7 @@ msgstr "Android-App"
 msgid "Any action"
 msgstr "Beliebige Aktion"
 
-#: web/src/lib/features/account/AccountSettings.svelte:1033
+#: web/src/lib/features/account/AccountSettings.svelte:1036
 msgid "Apps using this token will no longer be able to connect."
 msgstr "Apps mit diesem Token können sich nicht mehr verbinden."
 
@@ -3244,7 +3247,7 @@ msgstr "Diese Quelle archivieren"
 msgid "Archived source"
 msgstr "Archivierte Quelle"
 
-#: web/src/lib/api.ts:327
+#: web/src/lib/api.ts:328
 msgid "Archiving is unavailable right now."
 msgstr "Archivierung ist derzeit nicht verfügbar."
 
@@ -3264,7 +3267,7 @@ msgstr "Wende dich an die Serververwaltung, wenn du ein Konto benötigst."
 msgid "At a glance"
 msgstr "Auf einen Blick"
 
-#: web/src/lib/features/account/AccountSettings.svelte:889
+#: web/src/lib/features/account/AccountSettings.svelte:890
 msgid "At least 12 characters. Avoid common passwords."
 msgstr "Mindestens 12 Zeichen. Vermeide häufig verwendete Passwörter."
 
@@ -3402,11 +3405,11 @@ msgstr "Geändert"
 msgid "Changed {fields}"
 msgstr "{fields} geändert"
 
-#: web/src/lib/features/account/AccountSettings.svelte:927
+#: web/src/lib/features/account/AccountSettings.svelte:928
 msgid "Changing password…"
 msgstr "Passwort wird geändert …"
 
-#: web/src/lib/features/account/AccountSettings.svelte:842
+#: web/src/lib/features/account/AccountSettings.svelte:843
 msgid "Changing your password signs out this browser and other sessions."
 msgstr ""
 "Wenn du dein Passwort änderst, werden dieser Browser und andere Sitzungen"
@@ -3417,8 +3420,8 @@ msgstr ""
 msgid "Check archive status again"
 msgstr "Archivstatus erneut prüfen"
 
-#: web/src/lib/api.ts:290
-#: web/src/lib/features/account/AccountSettings.svelte:613
+#: web/src/lib/api.ts:291
+#: web/src/lib/features/account/AccountSettings.svelte:614
 #: web/src/lib/features/auth/SignupForm.svelte:61
 #: web/src/lib/features/auth/SignupForm.svelte:63
 #: web/src/lib/features/auth/SignupForm.svelte:125
@@ -3433,8 +3436,8 @@ msgstr "Prüfe die markierten Felder und versuche es erneut."
 msgid "Checking archive status…"
 msgstr "Archivstatus wird geprüft…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:373
-#: web/src/lib/features/admin/AdminUsers.svelte:527
+#: web/src/lib/features/admin/AdminUsers.svelte:384
+#: web/src/lib/features/admin/AdminUsers.svelte:538
 msgid "Choose a different password."
 msgstr "Wähle ein anderes Passwort."
 
@@ -3446,17 +3449,17 @@ msgstr "Wähle ein Dokument für die Vorschau aus."
 msgid "Choose a file"
 msgstr "Datei auswählen"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:191
+#: web/src/lib/features/admin/AdminUsers.svelte:202
 msgid "Choose a less common password."
 msgstr "Wähle ein Passwort, das nicht häufig verwendet wird."
 
-#: web/src/lib/features/account/AccountSettings.svelte:526
+#: web/src/lib/features/account/AccountSettings.svelte:527
 #: web/src/lib/features/auth/SignupForm.svelte:51
 #: web/src/lib/features/auth/SignupForm.svelte:55
 msgid "Choose a password that is not commonly used."
 msgstr "Wähle ein Passwort, das nicht häufig verwendet wird."
 
-#: web/src/lib/features/account/AccountSettings.svelte:679
+#: web/src/lib/features/account/AccountSettings.svelte:680
 msgid "Choose a profile picture"
 msgstr "Profilbild auswählen"
 
@@ -3464,15 +3467,15 @@ msgstr "Profilbild auswählen"
 msgid "Choose a source"
 msgstr "Quelle auswählen"
 
-#: web/src/lib/features/account/AccountSettings.svelte:599
+#: web/src/lib/features/account/AccountSettings.svelte:600
 msgid "Choose a supported image file."
 msgstr "Wähle eine unterstützte Bilddatei aus."
 
-#: web/src/lib/api.ts:313
+#: web/src/lib/api.ts:314
 msgid "Choose a supported language for text recognition."
 msgstr "Wähle eine unterstützte Sprache für die Texterkennung aus."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:198
+#: web/src/lib/features/admin/AdminUsers.svelte:209
 msgid "Choose a valid page number."
 msgstr "Gib eine gültige Seitennummer ein."
 
@@ -3484,12 +3487,12 @@ msgstr "Garnfoto auswählen"
 msgid "Choose an email and a strong password to get started."
 msgstr "Wähle eine E-Mail-Adresse und ein sicheres Passwort."
 
-#: web/src/lib/features/account/AccountSettings.svelte:402
-#: web/src/lib/features/account/AccountSettings.svelte:597
+#: web/src/lib/features/account/AccountSettings.svelte:403
+#: web/src/lib/features/account/AccountSettings.svelte:598
 msgid "Choose an image smaller than 25 MiB."
 msgstr "Wähle ein Bild mit weniger als 25 MiB aus."
 
-#: web/src/lib/features/account/AccountSettings.svelte:690
+#: web/src/lib/features/account/AccountSettings.svelte:691
 msgid "Choose image"
 msgstr "Bild auswählen"
 
@@ -3516,13 +3519,30 @@ msgstr "Bildansicht schließen"
 msgid "Close photo"
 msgstr "Foto schließen"
 
-#: web/src/lib/features/account/AccountSettings.svelte:901
+#: web/src/lib/features/auth/ReauthDialog.svelte:134
+msgid "Confirm it is you"
+msgstr "Bestätige, dass du es bist"
+
+#: web/src/lib/api.ts:333
+msgid "Confirm it is you to continue."
+msgstr "Bestätige, dass du es bist, um fortzufahren."
+
+#: web/src/lib/features/account/AccountSettings.svelte:902
 msgid "Confirm new password"
 msgstr "Neues Passwort bestätigen"
 
 #: web/src/lib/features/auth/SignupForm.svelte:226
 msgid "Confirm password"
 msgstr "Passwort bestätigen"
+
+#: web/src/lib/features/auth/ReauthDialog.svelte:182
+#, python-brace-format
+msgid "Confirm with {name}"
+msgstr "Mit {name} bestätigen"
+
+#: web/src/lib/features/auth/ReauthDialog.svelte:197
+msgid "Confirming…"
+msgstr "Wird bestätigt…"
 
 #: web/src/lib/components/GetAppCard.svelte:58
 msgid "Connect the app"
@@ -3532,11 +3552,19 @@ msgstr "App verbinden"
 msgid "Continue knitting"
 msgstr "Weiterstricken"
 
+#: web/src/lib/features/auth/LinkedLogins.svelte:218
+msgid "Continue linking"
+msgstr "Verknüpfung fortsetzen"
+
+#: web/src/lib/features/auth/LinkedLogins.svelte:217
+msgid "Continue unlinking"
+msgstr "Trennen fortsetzen"
+
 #: web/src/lib/features/media/OcrControl.svelte:227
 msgid "Copy recognized text"
 msgstr "Erkannten Text kopieren"
 
-#: web/src/lib/features/account/AccountSettings.svelte:966
+#: web/src/lib/features/account/AccountSettings.svelte:969
 msgid ""
 "Copy this token now. It will not be shown again after you close this "
 "message."
@@ -3544,17 +3572,17 @@ msgstr ""
 "Kopiere dieses Token jetzt. Nach dem Schließen dieser Meldung wird es "
 "nicht erneut angezeigt."
 
-#: web/src/lib/features/account/AccountSettings.svelte:996
+#: web/src/lib/features/account/AccountSettings.svelte:999
 msgid "Copy token"
 msgstr "Token kopieren"
 
-#: web/src/lib/features/account/AccountSettings.svelte:551
+#: web/src/lib/features/account/AccountSettings.svelte:552
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr "Das Kopieren wurde blockiert. Markiere und kopiere das Token manuell."
 
-#: web/src/lib/components/AccountMenu.svelte:181
-#: web/src/lib/features/account/AccountSettings.svelte:230
-#: web/src/lib/features/account/AccountSettings.svelte:237
+#: web/src/lib/components/AccountMenu.svelte:176
+#: web/src/lib/features/account/AccountSettings.svelte:231
+#: web/src/lib/features/account/AccountSettings.svelte:238
 msgid "Could not sign out."
 msgstr "Abmelden nicht möglich."
 
@@ -3573,7 +3601,7 @@ msgstr "Coverfoto geändert"
 msgid "Create a project draft from text, a file, or a pattern link."
 msgstr "Erstelle einen Projektentwurf aus Text, einer Datei oder einem Musterlink."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:699
+#: web/src/lib/features/admin/AdminUsers.svelte:717
 msgid "Create a user account"
 msgstr "Benutzerkonto erstellen"
 
@@ -3597,11 +3625,11 @@ msgstr "Konto wird erstellt …"
 msgid "Creating project…"
 msgstr "Projekt wird erstellt…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:762
+#: web/src/lib/features/admin/AdminUsers.svelte:780
 msgid "Creating…"
 msgstr "Wird erstellt …"
 
-#: web/src/lib/features/account/AccountSettings.svelte:522
+#: web/src/lib/features/account/AccountSettings.svelte:523
 msgid "Current password is incorrect."
 msgstr "Das aktuelle Passwort ist falsch."
 
@@ -3653,17 +3681,17 @@ msgstr "Wird gelöscht …"
 msgid "Details to add"
 msgstr "Angaben zum Ergänzen"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:826
+#: web/src/lib/features/admin/AdminUsers.svelte:844
 msgid "Disable account"
 msgstr "Konto deaktivieren"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:781
+#: web/src/lib/features/admin/AdminUsers.svelte:799
 msgid "Disable this account?"
 msgstr "Dieses Konto deaktivieren?"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:261
-#: web/src/lib/features/admin/AdminUsers.svelte:284
-#: web/src/lib/features/admin/AdminUsers.svelte:309
+#: web/src/lib/features/admin/AdminUsers.svelte:272
+#: web/src/lib/features/admin/AdminUsers.svelte:295
+#: web/src/lib/features/admin/AdminUsers.svelte:320
 msgid "Discard this password draft?"
 msgstr "Diesen Passwortentwurf verwerfen?"
 
@@ -3703,7 +3731,7 @@ msgstr "Änderungen an diesem Projekt erscheinen hier."
 msgid "Edits to this yarn will show up here."
 msgstr "Änderungen an diesem Garn erscheinen hier."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:709
+#: web/src/lib/features/admin/AdminUsers.svelte:727
 msgid "Email address"
 msgstr "E-Mail-Adresse"
 
@@ -3712,11 +3740,11 @@ msgstr "E-Mail-Adresse"
 msgid "Empty list"
 msgstr "Leere Liste"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:825
+#: web/src/lib/features/admin/AdminUsers.svelte:843
 msgid "Enable account"
 msgstr "Konto aktivieren"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:780
+#: web/src/lib/features/admin/AdminUsers.svelte:798
 msgid "Enable this account?"
 msgstr "Dieses Konto aktivieren?"
 
@@ -3748,8 +3776,8 @@ msgstr "Gib einen Projektnamen ein."
 msgid "Enter a size above 0 and up to 100 cm."
 msgstr "Gib eine Größe über 0 und bis 100 cm ein."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:327
-#: web/src/lib/features/admin/AdminUsers.svelte:483
+#: web/src/lib/features/admin/AdminUsers.svelte:338
+#: web/src/lib/features/admin/AdminUsers.svelte:494
 msgid "Enter a temporary password."
 msgstr "Gib ein temporäres Passwort ein."
 
@@ -3757,8 +3785,8 @@ msgstr "Gib ein temporäres Passwort ein."
 msgid "Enter a valid HTTP or HTTPS URL."
 msgstr "Gib eine gültige HTTP- oder HTTPS-Adresse ein."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:185
-#: web/src/lib/features/admin/AdminUsers.svelte:368
+#: web/src/lib/features/admin/AdminUsers.svelte:196
+#: web/src/lib/features/admin/AdminUsers.svelte:379
 #: web/src/lib/features/auth/SignupForm.svelte:45
 msgid "Enter a valid email address."
 msgstr "Gib eine gültige E-Mail-Adresse ein."
@@ -3773,19 +3801,19 @@ msgstr "Gib eine ganze Zahl ab null ein."
 msgid "Enter a yarn name."
 msgstr "Gib einen Garnnamen ein."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:323
+#: web/src/lib/features/admin/AdminUsers.svelte:334
 msgid "Enter an email address."
 msgstr "Gib eine E-Mail-Adresse ein."
 
-#: web/src/lib/features/account/AccountSettings.svelte:490
+#: web/src/lib/features/account/AccountSettings.svelte:491
 msgid "Enter your current password."
 msgstr "Gib dein aktuelles Passwort ein."
 
-#: web/src/lib/features/account/AccountSettings.svelte:812
+#: web/src/lib/features/account/AccountSettings.svelte:813
 msgid "Expires"
 msgstr "Läuft ab"
 
-#: web/src/lib/api.ts:328
+#: web/src/lib/api.ts:329
 msgid "External image importing is not available right now."
 msgstr "Der Import externer Bilder ist derzeit nicht verfügbar."
 
@@ -3835,9 +3863,15 @@ msgstr "Zum Beispiel: 80 % Wolle, 20 % Nylon"
 msgid "For example, DK or fingering"
 msgstr "Zum Beispiel: DK oder Fingering"
 
-#: web/src/lib/features/account/AccountSettings.svelte:754
+#: web/src/lib/features/account/AccountSettings.svelte:755
 msgid "For example, my tablet"
 msgstr "Zum Beispiel: Mein Tablet"
+
+#: web/src/lib/features/auth/ReauthDialog.svelte:139
+msgid "For your security, confirm your identity before changing how you sign in."
+msgstr ""
+"Aus Sicherheitsgründen musst du deine Identität bestätigen, bevor du "
+"ändern kannst, wie du dich anmeldest."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:449
 msgid "From a link"
@@ -3893,11 +3927,11 @@ msgstr "Höhe"
 msgid "Hello there!"
 msgstr "Hallo!"
 
-#: web/src/lib/components/SignInForm.svelte:65
+#: web/src/lib/components/SignInForm.svelte:66
 msgid "Hello, knitter!"
 msgstr "Hallo, Strickfreund!"
 
-#: web/src/lib/features/account/AccountSettings.svelte:1013
+#: web/src/lib/features/account/AccountSettings.svelte:1016
 msgid "Hide token"
 msgstr "Token ausblenden"
 
@@ -3911,7 +3945,7 @@ msgstr ""
 "Wie groß war die Fläche, die du gezählt hast? Anleitungen nehmen meist 10"
 " × 10 cm."
 
-#: web/src/lib/features/account/AccountSettings.svelte:1003
+#: web/src/lib/features/account/AccountSettings.svelte:1006
 msgid "I saved this token somewhere safe."
 msgstr "Ich habe dieses Token sicher gespeichert."
 
@@ -3965,7 +3999,7 @@ msgstr "Projekt importieren"
 msgid "Import failed. Your source and edits are still here."
 msgstr "Import fehlgeschlagen. Quelle und Änderungen sind weiterhin vorhanden."
 
-#: web/src/lib/api.ts:315
+#: web/src/lib/api.ts:316
 #: web/src/lib/features/imports/ImportWorkbench.svelte:154
 #: web/src/lib/features/imports/ImportWorkbench.svelte:502
 msgid "Import preview is unavailable right now. Try again later."
@@ -3995,11 +4029,15 @@ msgstr "Notiere ein Garn aus deinem Vorrat."
 msgid "Keep category"
 msgstr "Kategorie behalten"
 
+#: web/src/lib/features/auth/LinkedLogins.svelte:362
+msgid "Keep linked"
+msgstr "Verknüpft lassen"
+
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:446
 msgid "Keep photo"
 msgstr "Foto behalten"
 
-#: web/src/lib/features/account/AccountSettings.svelte:1043
+#: web/src/lib/features/account/AccountSettings.svelte:1046
 msgid "Keep token"
 msgstr "Token behalten"
 
@@ -4032,12 +4070,12 @@ msgstr "Später"
 msgid "Latest saved version loaded."
 msgstr "Zuletzt gespeicherte Version geladen."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:103
+#: web/src/lib/features/admin/AdminUsers.svelte:114
 msgid "Leave administrator settings without saving the password?"
 msgstr "Administrator-Einstellungen verlassen, ohne das Passwort zu speichern?"
 
-#: web/src/lib/features/account/AccountSettings.svelte:120
-#: web/src/lib/features/account/AccountSettings.svelte:219
+#: web/src/lib/features/account/AccountSettings.svelte:121
+#: web/src/lib/features/account/AccountSettings.svelte:220
 msgid "Leave this account page without saving your changes?"
 msgstr "Diese Kontoseite verlassen, ohne deine Änderungen zu speichern?"
 
@@ -4065,6 +4103,24 @@ msgstr "Link nicht vorhanden"
 msgid "Link present"
 msgstr "Link vorhanden"
 
+#: web/src/lib/features/auth/LinkedLogins.svelte:333
+#, python-brace-format
+msgid "Link {name}"
+msgstr "{name} verknüpfen"
+
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:121
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:122
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:128
+#: web/src/lib/features/auth/LinkedLogins.svelte:228
+msgid "Linked logins"
+msgstr "Verknüpfte Anmeldungen"
+
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:154
+#: web/src/lib/features/auth/LinkedLogins.svelte:289
+#, python-brace-format
+msgid "Linked on {date}"
+msgstr "Verknüpft am {date}"
+
 #: web/src/lib/features/admin/AdminResource.svelte:659
 msgid "Linked projects"
 msgstr "Verknüpfte Projekte"
@@ -4078,6 +4134,10 @@ msgstr "Verknüpfte Projekte konnten nicht geladen werden."
 msgid "Linked yarns"
 msgstr "Verknüpfte Garne"
 
+#: web/src/lib/features/auth/LinkedLogins.svelte:120
+msgid "Linking the login did not work. Try again."
+msgstr "Das Verknüpfen der Anmeldung hat nicht geklappt. Versuche es noch einmal."
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:1038
 #: web/src/lib/features/projects/ProjectEditor.svelte:1676
 #: web/src/lib/features/yarns/YarnForm.svelte:651
@@ -4085,11 +4145,11 @@ msgstr "Verknüpfte Garne"
 msgid "Load latest values"
 msgstr "Neueste Werte laden"
 
-#: web/src/lib/features/account/AccountSettings.svelte:783
+#: web/src/lib/features/account/AccountSettings.svelte:784
 msgid "Loading API tokens…"
 msgstr "API-Tokens werden geladen …"
 
-#: web/src/lib/features/account/AccountSettings.svelte:657
+#: web/src/lib/features/account/AccountSettings.svelte:658
 msgid "Loading account details…"
 msgstr "Kontodaten werden geladen …"
 
@@ -4104,6 +4164,11 @@ msgstr "Audit-Ereignisse werden geladen …"
 #: web/src/lib/features/projects/ProjectEditor.svelte:1107
 msgid "Loading categories…"
 msgstr "Kategorien werden geladen …"
+
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:138
+#: web/src/lib/features/auth/LinkedLogins.svelte:260
+msgid "Loading linked logins…"
+msgstr "Verknüpfte Anmeldungen werden geladen…"
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:382
 msgid "Loading linked projects…"
@@ -4130,7 +4195,7 @@ msgstr "Aufgezeichnete Änderungen werden geladen…"
 msgid "Loading resource details…"
 msgstr "Ressourcendetails werden geladen…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:584
+#: web/src/lib/features/admin/AdminUsers.svelte:595
 msgid "Loading user accounts…"
 msgstr "Benutzerkonten werden geladen …"
 
@@ -4151,7 +4216,7 @@ msgstr "Startseite wird geladen…"
 msgid "Manage accounts, sign-in access, and roles."
 msgstr "Verwalte Konten, Anmeldung und Rollen."
 
-#: web/src/lib/features/account/AccountSettings.svelte:626
+#: web/src/lib/features/account/AccountSettings.svelte:627
 msgid "Manage your profile and sign-in security."
 msgstr "Verwalte dein Profil und die Sicherheit deiner Anmeldung."
 
@@ -4163,8 +4228,8 @@ msgstr "Markdown-Datei"
 msgid "Materials"
 msgstr "Materialien"
 
-#: web/src/lib/api.ts:303
-#: web/src/lib/features/account/AccountSettings.svelte:601
+#: web/src/lib/api.ts:304
+#: web/src/lib/features/account/AccountSettings.svelte:602
 #: web/src/lib/features/projects/ProjectEditor.svelte:1424
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:319
 msgid "Media storage is unavailable. Try again later."
@@ -4205,11 +4270,11 @@ msgstr "Name, Marke, Farbe oder Faser"
 msgid "Name, notes, yarn, or tag"
 msgstr "Name, Notizen, Garn oder Schlagwort"
 
-#: web/src/lib/features/account/AccountSettings.svelte:986
+#: web/src/lib/features/account/AccountSettings.svelte:989
 msgid "New API token"
 msgstr "Neues API-Token"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:701
+#: web/src/lib/features/admin/AdminUsers.svelte:719
 msgid "New accounts are members unless you choose administrator access."
 msgstr ""
 "Neue Konten sind Mitglieder, sofern du ihnen keine Administratorrechte "
@@ -4226,11 +4291,11 @@ msgstr "Neue Kategorie"
 msgid "New project"
 msgstr "Neues Projekt"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:863
+#: web/src/lib/features/admin/AdminUsers.svelte:881
 msgid "New temporary password"
 msgstr "Neues temporäres Passwort"
 
-#: web/src/lib/components/SignInForm.svelte:144
+#: web/src/lib/components/SignInForm.svelte:147
 msgid "New to Stricknani?"
 msgstr "Neu bei Stricknani?"
 
@@ -4248,7 +4313,7 @@ msgid "Next image"
 msgstr "Nächstes Bild"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:454
-#: web/src/lib/features/admin/AdminUsers.svelte:682
+#: web/src/lib/features/admin/AdminUsers.svelte:700
 msgid "Next page"
 msgstr "Nächste Seite"
 
@@ -4256,9 +4321,28 @@ msgstr "Nächste Seite"
 msgid "Next step"
 msgstr "Nächster Schritt"
 
-#: web/src/lib/features/account/AccountSettings.svelte:799
+#: web/src/lib/features/account/AccountSettings.svelte:800
 msgid "No API tokens yet. Create one when an app needs access."
 msgstr "Noch keine API-Tokens. Erstelle eines, wenn eine App Zugriff benötigt."
+
+#: web/src/lib/api.ts:334
+msgid ""
+"No Stricknani account is linked to this login yet. Sign in with your "
+"password, then link it in your account settings."
+msgstr ""
+"Zu dieser Anmeldung ist noch kein Stricknani-Konto verknüpft. Melde dich "
+"mit deinem Passwort an und verknüpfe sie dann in deinen "
+"Kontoeinstellungen."
+
+#: web/src/lib/features/auth/oidc-api.ts:211
+#, python-brace-format
+msgid ""
+"No Stricknani account is linked to this {name} login yet. Sign in with "
+"your password, then link {name} in your account settings."
+msgstr ""
+"Zu dieser {name}-Anmeldung ist noch kein Stricknani-Konto verknüpft. "
+"Melde dich mit deinem Passwort an und verknüpfe {name} dann in deinen "
+"Kontoeinstellungen."
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1234
 msgid "No attachments have been added yet."
@@ -4289,6 +4373,11 @@ msgstr "Für dieses Ereignis sind keine Änderungen verfügbar."
 #: web/src/lib/features/history/HistorySection.svelte:271
 msgid "No changes recorded yet"
 msgstr "Noch keine Änderungen aufgezeichnet"
+
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:144
+#: web/src/lib/features/auth/LinkedLogins.svelte:277
+msgid "No logins are linked yet."
+msgstr "Es sind noch keine Anmeldungen verknüpft."
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1178
 msgid "No pattern link has been saved."
@@ -4328,7 +4417,7 @@ msgstr "Es wurden noch keine Schritte hinzugefügt."
 msgid "No text was found in this photo."
 msgstr "In diesem Foto wurde kein Text gefunden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:657
+#: web/src/lib/features/admin/AdminUsers.svelte:675
 msgid "No user accounts were found."
 msgstr "Es wurden keine Benutzerkonten gefunden."
 
@@ -4381,11 +4470,11 @@ msgstr ""
 " Benachrichtigung wird auf dem Gerät erzeugt, und die Synchronisierung "
 "hängt nicht von ihr ab."
 
-#: web/src/lib/components/SignInForm.svelte:173
+#: web/src/lib/components/SignInForm.svelte:176
 msgid "One row at a time."
 msgstr "Masche für Masche."
 
-#: web/src/lib/features/account/AccountSettings.svelte:963
+#: web/src/lib/features/account/AccountSettings.svelte:966
 msgid "One-time display"
 msgstr "Einmalige Anzeige"
 
@@ -4437,6 +4526,11 @@ msgstr "Deine Anleitung wird geöffnet …"
 msgid "Opening your workspace…"
 msgstr "Dein Arbeitsbereich wird geöffnet …"
 
+#: web/src/lib/features/auth/OidcSignIn.svelte:101
+#, python-brace-format
+msgid "Opening {name}…"
+msgstr "{name} wird geöffnet…"
+
 #: web/src/lib/features/categories/CategoryManager.svelte:206
 msgid "Organize projects with your own categories."
 msgstr "Ordne Projekte mit eigenen Kategorien."
@@ -4463,17 +4557,21 @@ msgid "PDF document"
 msgstr "PDF-Dokument"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:445
-#: web/src/lib/features/admin/AdminUsers.svelte:674
+#: web/src/lib/features/admin/AdminUsers.svelte:692
 #: web/src/lib/features/projects/ProjectLibrary.svelte:341
 #: web/src/lib/features/yarns/YarnLibrary.svelte:263
 msgid "Page"
 msgstr "Seite"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:506
+#: web/src/lib/features/admin/AdminUsers.svelte:517
 msgid "Password reset. The user must sign in again."
 msgstr "Passwort zurückgesetzt. Die Person muss sich erneut anmelden."
 
-#: web/src/lib/features/account/AccountSettings.svelte:494
+#: web/src/lib/features/auth/LinkedLogins.svelte:273
+msgid "Password sign-in is not enabled for your account."
+msgstr "Die Anmeldung mit Passwort ist für dein Konto nicht aktiviert."
+
+#: web/src/lib/features/account/AccountSettings.svelte:495
 #: web/src/lib/features/auth/SignupForm.svelte:46
 #: web/src/lib/features/auth/SignupForm.svelte:92
 msgid "Passwords must be 1024 bytes or fewer."
@@ -4549,7 +4647,7 @@ msgstr "Foto hochgeladen"
 msgid "Photo uploaded."
 msgstr "Foto hochgeladen."
 
-#: web/src/lib/components/SignInForm.svelte:68
+#: web/src/lib/components/SignInForm.svelte:69
 msgid "Pick up where you left off."
 msgstr "Mach dort weiter, wo du aufgehört hast."
 
@@ -4579,7 +4677,7 @@ msgid "Previous image"
 msgstr "Vorheriges Bild"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:443
-#: web/src/lib/features/admin/AdminUsers.svelte:672
+#: web/src/lib/features/admin/AdminUsers.svelte:690
 msgid "Previous page"
 msgstr "Vorherige Seite"
 
@@ -4599,15 +4697,15 @@ msgstr "Anleitung drucken"
 msgid "Print yarn"
 msgstr "Garn drucken"
 
-#: web/src/lib/features/account/AccountSettings.svelte:655
+#: web/src/lib/features/account/AccountSettings.svelte:656
 msgid "Profile"
 msgstr "Profil"
 
-#: web/src/lib/features/account/AccountSettings.svelte:459
+#: web/src/lib/features/account/AccountSettings.svelte:460
 msgid "Profile picture removed."
 msgstr "Profilbild entfernt."
 
-#: web/src/lib/features/account/AccountSettings.svelte:419
+#: web/src/lib/features/account/AccountSettings.svelte:420
 msgid "Profile picture updated."
 msgstr "Profilbild aktualisiert."
 
@@ -4780,7 +4878,7 @@ msgstr "Filter entfernen"
 msgid "Remove photo"
 msgstr "Foto entfernen"
 
-#: web/src/lib/features/account/AccountSettings.svelte:716
+#: web/src/lib/features/account/AccountSettings.svelte:717
 msgid "Remove picture"
 msgstr "Bild entfernen"
 
@@ -4828,7 +4926,7 @@ msgstr "{n} Fotos entfernt"
 msgid "Removed {n} steps"
 msgstr "{n} Schritte entfernt"
 
-#: web/src/lib/features/account/AccountSettings.svelte:715
+#: web/src/lib/features/account/AccountSettings.svelte:716
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:456
 msgid "Removing…"
 msgstr "Wird entfernt …"
@@ -4857,11 +4955,11 @@ msgstr "Neue Archivierung anfordern"
 msgid "Reset text size"
 msgstr "Textgröße zurücksetzen"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:847
+#: web/src/lib/features/admin/AdminUsers.svelte:865
 msgid "Reset this password?"
 msgstr "Dieses Passwort zurücksetzen?"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:898
+#: web/src/lib/features/admin/AdminUsers.svelte:916
 msgid "Resetting…"
 msgstr "Wird zurückgesetzt …"
 
@@ -4917,12 +5015,12 @@ msgstr ""
 msgid "Review the project steps."
 msgstr "Überprüfe die Projektschritte."
 
-#: web/src/lib/features/account/AccountSettings.svelte:1031
+#: web/src/lib/features/account/AccountSettings.svelte:1034
 msgid "Revoke this token?"
 msgstr "Dieses Token widerrufen?"
 
-#: web/src/lib/features/account/AccountSettings.svelte:825
-#: web/src/lib/features/account/AccountSettings.svelte:1053
+#: web/src/lib/features/account/AccountSettings.svelte:826
+#: web/src/lib/features/account/AccountSettings.svelte:1056
 msgid "Revoking…"
 msgstr "Wird widerrufen …"
 
@@ -4935,7 +5033,7 @@ msgstr "Eine Kopie der Quelle im Webarchiv speichern."
 msgid "Save my draft over latest"
 msgstr "Entwurf über die neueste Version speichern"
 
-#: web/src/lib/features/account/AccountSettings.svelte:928
+#: web/src/lib/features/account/AccountSettings.svelte:929
 msgid "Save new password"
 msgstr "Neues Passwort speichern"
 
@@ -4981,7 +5079,7 @@ msgstr "Gespeichert und bereit, mit diesem Projekt verknüpft zu werden."
 msgid "Saving yarn…"
 msgstr "Garn wird gespeichert…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:823
+#: web/src/lib/features/admin/AdminUsers.svelte:841
 #: web/src/lib/features/categories/CategoryManager.svelte:262
 #: web/src/lib/features/categories/CategoryManager.svelte:320
 #: web/src/lib/features/projects/ProjectEditor.svelte:1049
@@ -5032,7 +5130,7 @@ msgstr "Ältere Änderungen anzeigen"
 msgid "Show recorded changes"
 msgstr "Aufgezeichnete Änderungen anzeigen"
 
-#: web/src/lib/components/SignInForm.svelte:46
+#: web/src/lib/components/SignInForm.svelte:47
 msgid "Sign in failed."
 msgstr "Anmeldung fehlgeschlagen."
 
@@ -5040,8 +5138,8 @@ msgstr "Anmeldung fehlgeschlagen."
 msgid "Sign in to manage categories."
 msgstr "Melde dich an, um Kategorien zu verwalten."
 
-#: web/src/lib/features/account/AccountSettings.svelte:154
 #: web/src/lib/features/account/AccountSettings.svelte:155
+#: web/src/lib/features/account/AccountSettings.svelte:156
 msgid "Sign in to manage your account."
 msgstr "Melde dich an, um dein Konto zu verwalten."
 
@@ -5070,7 +5168,22 @@ msgstr "Melde dich an, um deine Projekte anzusehen."
 msgid "Sign in to view your yarn."
 msgstr "Melde dich an, um deine Garne anzusehen."
 
-#: web/src/lib/components/SignInForm.svelte:132
+#: web/src/lib/features/auth/LinkedLogins.svelte:230
+msgid "Sign in with a login provider instead of typing your password."
+msgstr "Melde dich über einen Anmeldedienst an, statt dein Passwort einzutippen."
+
+#: web/src/lib/features/auth/OidcSignIn.svelte:102
+#, python-brace-format
+msgid "Sign in with {name}"
+msgstr "Mit {name} anmelden"
+
+#: web/src/lib/features/auth/OidcSignIn.svelte:69
+#: web/src/lib/features/auth/oidc-api.ts:215
+#, python-brace-format
+msgid "Signing in with {name} did not work. Try again."
+msgstr "Die Anmeldung mit {name} hat nicht geklappt. Versuche es noch einmal."
+
+#: web/src/lib/components/SignInForm.svelte:135
 msgid "Signing in…"
 msgstr "Anmeldung läuft …"
 
@@ -5203,7 +5316,7 @@ msgstr "Tippe auf ein Foto, um es zu vergrößern."
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr "Tippe bei einem Projekt oder Garn auf ♥, um es hier zu behalten."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:725
+#: web/src/lib/features/admin/AdminUsers.svelte:743
 msgid "Temporary password"
 msgstr "Temporäres Passwort"
 
@@ -5215,7 +5328,7 @@ msgstr "Text und Dateien sind auf 5 MiB begrenzt."
 msgid "Text copied"
 msgstr "Text kopiert"
 
-#: web/src/lib/api.ts:310
+#: web/src/lib/api.ts:311
 msgid "Text recognition could not complete. You can enter the text manually."
 msgstr ""
 "Die Texterkennung konnte nicht abgeschlossen werden. Du kannst den Text "
@@ -5228,7 +5341,7 @@ msgstr ""
 "Die Texterkennung ist nicht erreichbar. Prüfe deine Verbindung und "
 "versuche es erneut."
 
-#: web/src/lib/api.ts:304
+#: web/src/lib/api.ts:305
 msgid ""
 "Text recognition is unavailable right now. You can enter the text "
 "manually."
@@ -5241,7 +5354,7 @@ msgstr ""
 msgid "Text recognition returned an unreadable response."
 msgstr "Die Texterkennung hat eine unlesbare Antwort zurückgegeben."
 
-#: web/src/lib/api.ts:307
+#: web/src/lib/api.ts:308
 msgid "Text recognition took too long. Try again or enter the text manually."
 msgstr ""
 "Die Texterkennung dauerte zu lange. Bitte erneut versuchen oder den Text "
@@ -5252,19 +5365,29 @@ msgstr ""
 msgid "Text size"
 msgstr "Textgröße"
 
-#: web/src/lib/api.ts:291 web/src/lib/features/media/media-tools-api.ts:155
+#: web/src/lib/api.ts:292 web/src/lib/features/media/media-tools-api.ts:155
 msgid "That item could not be found."
 msgstr "Dieser Eintrag wurde nicht gefunden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:197
+#: web/src/lib/features/auth/ReauthDialog.svelte:117
+msgid "That password is not correct."
+msgstr "Das Passwort ist nicht richtig."
+
+#: web/src/lib/api.ts:344
+msgid "That sign-in attempt expired or could not be verified. Start again."
+msgstr ""
+"Dieser Anmeldeversuch ist abgelaufen oder konnte nicht überprüft werden. "
+"Starte noch einmal von vorn."
+
+#: web/src/lib/features/admin/AdminUsers.svelte:208
 msgid "That user could not be found."
 msgstr "Dieses Benutzerkonto wurde nicht gefunden."
 
-#: web/src/lib/features/account/AccountSettings.svelte:330
+#: web/src/lib/features/account/AccountSettings.svelte:331
 msgid "The API token could not be created."
 msgstr "Das API-Token konnte nicht erstellt werden."
 
-#: web/src/lib/features/account/AccountSettings.svelte:369
+#: web/src/lib/features/account/AccountSettings.svelte:370
 msgid "The API token could not be revoked."
 msgstr "Das API-Token konnte nicht widerrufen werden."
 
@@ -5288,7 +5411,7 @@ msgstr ""
 msgid "The account could not be created. Try again."
 msgstr "Das Konto konnte nicht erstellt werden. Bitte versuche es erneut."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:448
+#: web/src/lib/features/admin/AdminUsers.svelte:459
 msgid "The account status could not be changed."
 msgstr "Der Kontostatus konnte nicht geändert werden."
 
@@ -5340,7 +5463,7 @@ msgstr "Die Kategorie konnte nicht gelöscht werden."
 msgid "The category could not be saved."
 msgstr "Die Kategorie konnte nicht gespeichert werden."
 
-#: web/src/lib/api.ts:277
+#: web/src/lib/api.ts:278
 msgid "The email or password is incorrect."
 msgstr "E-Mail-Adresse oder Passwort ist falsch."
 
@@ -5354,23 +5477,35 @@ msgstr "Der Favoritenstatus konnte nicht aktualisiert werden."
 msgid "The latest project could not be loaded."
 msgstr "Die neueste Projektversion konnte nicht geladen werden."
 
-#: web/src/lib/features/account/AccountSettings.svelte:527
+#: web/src/lib/api.ts:347 web/src/lib/features/auth/ReauthDialog.svelte:121
+msgid ""
+"The login provider is unavailable right now. Try again later or use your "
+"password."
+msgstr ""
+"Der Anmeldedienst ist gerade nicht erreichbar. Versuche es später noch "
+"einmal oder melde dich mit deinem Passwort an."
+
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:95
+msgid "The login was unlinked."
+msgstr "Die Anmeldung wurde getrennt."
+
+#: web/src/lib/features/account/AccountSettings.svelte:528
 msgid "The new password could not be accepted."
 msgstr "Das neue Passwort wurde nicht akzeptiert."
 
-#: web/src/lib/features/account/AccountSettings.svelte:505
+#: web/src/lib/features/account/AccountSettings.svelte:506
 msgid "The new passwords do not match."
 msgstr "Die neuen Passwörter stimmen nicht überein."
 
-#: web/src/lib/features/account/AccountSettings.svelte:531
+#: web/src/lib/features/account/AccountSettings.svelte:532
 msgid "The password could not be changed."
 msgstr "Das Passwort konnte nicht geändert werden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:532
+#: web/src/lib/features/admin/AdminUsers.svelte:543
 msgid "The password could not be reset."
 msgstr "Das Passwort konnte nicht zurückgesetzt werden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:190
+#: web/src/lib/features/admin/AdminUsers.svelte:201
 msgid "The password is too long."
 msgstr "Das Passwort ist zu lang."
 
@@ -5394,11 +5529,11 @@ msgstr "Das Foto konnte nicht hochgeladen werden."
 msgid "The photo will be removed from this yarn."
 msgstr "Das Foto wird von diesem Garn entfernt."
 
-#: web/src/lib/features/account/AccountSettings.svelte:465
+#: web/src/lib/features/account/AccountSettings.svelte:466
 msgid "The profile picture could not be removed."
 msgstr "Das Profilbild konnte nicht entfernt werden."
 
-#: web/src/lib/features/account/AccountSettings.svelte:425
+#: web/src/lib/features/account/AccountSettings.svelte:426
 msgid "The profile picture could not be uploaded."
 msgstr "Das Profilbild konnte nicht hochgeladen werden."
 
@@ -5436,17 +5571,21 @@ msgstr "Der aufgezeichnete Änderungsstand ist zu groß zum Anzeigen."
 msgid "The recorded change snapshot is unavailable."
 msgstr "Der aufgezeichnete Änderungsstand ist nicht verfügbar."
 
-#: web/src/lib/api.ts:333
+#: web/src/lib/api.ts:351
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:49
+#: web/src/lib/features/auth/LinkedLogins.svelte:85
+#: web/src/lib/features/auth/LinkedLogins.svelte:149
+#: web/src/lib/features/auth/ReauthDialog.svelte:126
 msgid "The request could not be completed."
 msgstr "Die Anfrage konnte nicht abgeschlossen werden."
 
-#: web/src/lib/api.ts:297 web/src/lib/features/admin/AdminUsers.svelte:199
+#: web/src/lib/api.ts:298 web/src/lib/features/admin/AdminUsers.svelte:210
 msgid "The request could not be read. Refresh and try again."
 msgstr ""
 "Die Anfrage konnte nicht gelesen werden. Aktualisiere die Seite und "
 "versuche es erneut."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:203
+#: web/src/lib/features/admin/AdminUsers.svelte:214
 msgid "The request is larger than the allowed size."
 msgstr "Die Anfrage überschreitet die zulässige Größe."
 
@@ -5460,7 +5599,7 @@ msgstr ""
 "Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es "
 "erneut."
 
-#: web/src/lib/api.ts:331
+#: web/src/lib/api.ts:332
 msgid "The server could not complete this request. Try again."
 msgstr "Der Server konnte die Anfrage nicht abschließen. Versuche es erneut."
 
@@ -5476,8 +5615,9 @@ msgstr ""
 msgid "The server returned an unexpected import response."
 msgstr "Der Server lieferte eine unerwartete Importantwort."
 
-#: web/src/lib/api.ts:398 web/src/lib/features/account/account-api.ts:33
+#: web/src/lib/api.ts:416 web/src/lib/features/account/account-api.ts:33
 #: web/src/lib/features/admin/admin-api.ts:123
+#: web/src/lib/features/auth/oidc-api.ts:72
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
@@ -5494,7 +5634,7 @@ msgstr "Die Sitzung konnte nicht geladen werden."
 msgid "The session token is missing. Refresh and try again."
 msgstr "Das Sitzungstoken fehlt. Lade die Seite neu und versuche es erneut."
 
-#: web/src/lib/api.ts:319
+#: web/src/lib/api.ts:320
 msgid "The source could not be downloaded. Check the link and try again."
 msgstr ""
 "Die Quelle konnte nicht heruntergeladen werden. Prüfe den Link und "
@@ -5504,33 +5644,33 @@ msgstr ""
 msgid "The source link changed; request a new archive."
 msgstr "Der Quelllink wurde geändert. Fordere eine neue Archivierung an."
 
-#: web/src/lib/api.ts:318
+#: web/src/lib/api.ts:319
 msgid "The source took too long to import. Try again later."
 msgstr "Der Import der Quelle dauerte zu lange. Bitte später erneut versuchen."
 
-#: web/src/lib/api.ts:299
+#: web/src/lib/api.ts:300
 msgid "The uploaded form could not be read. Choose the file again."
 msgstr ""
 "Das Upload-Formular konnte nicht gelesen werden. Wähle die Datei erneut "
 "aus."
 
-#: web/src/lib/features/account/AccountSettings.svelte:603
+#: web/src/lib/features/account/AccountSettings.svelte:604
 msgid "The uploaded image could not be read. Choose it again."
 msgstr "Das hochgeladene Bild konnte nicht gelesen werden. Wähle es erneut aus."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:378
+#: web/src/lib/features/admin/AdminUsers.svelte:389
 msgid "The user account could not be created."
 msgstr "Das Benutzerkonto konnte nicht erstellt werden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:795
+#: web/src/lib/features/admin/AdminUsers.svelte:813
 msgid "The user will be able to sign in again."
 msgstr "Die Person kann sich danach wieder anmelden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:796
+#: web/src/lib/features/admin/AdminUsers.svelte:814
 msgid "The user will be signed out and will not be able to sign in."
 msgstr "Die Person wird abgemeldet und kann sich nicht mehr anmelden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:858
+#: web/src/lib/features/admin/AdminUsers.svelte:876
 msgid "The user will need to sign in with the new password."
 msgstr "Die Person muss sich mit dem neuen Passwort anmelden."
 
@@ -5553,6 +5693,10 @@ msgstr "Das Garn konnte nicht gespeichert werden."
 msgid "The yarn list could not be loaded."
 msgstr "Die Garnliste konnte nicht geladen werden."
 
+#: web/src/lib/features/auth/ReauthDialog.svelte:163
+msgid "There is no way to confirm your identity right now."
+msgstr "Du kannst deine Identität gerade nicht bestätigen."
+
 #: web/src/lib/features/history/HistorySection.svelte:339
 msgid "These changes could not be loaded."
 msgstr "Diese Änderungen konnten nicht geladen werden."
@@ -5571,7 +5715,7 @@ msgstr "Dieser Vorgang kann nicht rückgängig gemacht werden."
 msgid "This category is no longer available."
 msgstr "Diese Kategorie ist nicht mehr verfügbar."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:193
+#: web/src/lib/features/admin/AdminUsers.svelte:204
 msgid ""
 "This change would leave the account system without an active "
 "administrator."
@@ -5579,7 +5723,7 @@ msgstr ""
 "Dadurch gäbe es im Kontosystem keine aktive Administratorin und keinen "
 "aktiven Administrator mehr."
 
-#: web/src/lib/api.ts:326
+#: web/src/lib/api.ts:327
 msgid "This document could not be read. Try another file."
 msgstr ""
 "Dieses Dokument konnte nicht gelesen werden. Versuche es mit einer "
@@ -5590,7 +5734,7 @@ msgstr ""
 msgid "This document is larger than the 5 MiB import limit."
 msgstr "Dieses Dokument überschreitet das Importlimit von 5 MiB."
 
-#: web/src/lib/api.ts:323
+#: web/src/lib/api.ts:324
 msgid ""
 "This document type is not supported. Try a web page, text, Markdown, PDF,"
 " or image."
@@ -5598,19 +5742,38 @@ msgstr ""
 "Dieses Dokumentformat wird nicht unterstützt. Verwende eine Webseite, "
 "Text, Markdown, PDF oder ein Bild."
 
-#: web/src/lib/api.ts:298
+#: web/src/lib/api.ts:299
 msgid "This feature is not enabled for this account."
 msgstr "Diese Funktion ist für dieses Konto nicht aktiviert."
 
-#: web/src/lib/api.ts:314
+#: web/src/lib/api.ts:315
 msgid "This image is not available for text recognition."
 msgstr "Dieses Bild ist für die Texterkennung nicht verfügbar."
 
-#: web/src/lib/api.ts:302
+#: web/src/lib/api.ts:303
 msgid "This is not a valid image. Choose a different file."
 msgstr "Dies ist kein gültiges Bild. Wähle eine andere Datei aus."
 
-#: web/src/lib/api.ts:293
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:161
+msgid "This is the only way this account can sign in, so it cannot be unlinked."
+msgstr ""
+"Das ist die einzige Möglichkeit, wie sich dieses Konto anmelden kann, "
+"daher kann sie nicht getrennt werden."
+
+#: web/src/lib/features/auth/LinkedLogins.svelte:296
+#: web/src/lib/features/auth/LinkedLogins.svelte:312
+msgid "This is your only way to sign in, so it cannot be unlinked."
+msgstr ""
+"Das ist deine einzige Möglichkeit, dich anzumelden, daher kann sie nicht "
+"getrennt werden."
+
+#: web/src/lib/api.ts:341
+msgid "This is your only way to sign in. Set up another sign-in method first."
+msgstr ""
+"Das ist deine einzige Möglichkeit, dich anzumelden. Richte zuerst eine "
+"andere Anmeldemethode ein."
+
+#: web/src/lib/api.ts:294
 msgid "This item changed in another window. Your unsaved changes are still here."
 msgstr ""
 "Dieser Eintrag wurde in einem anderen Fenster geändert. Deine nicht "
@@ -5622,9 +5785,13 @@ msgstr ""
 "Diese Sprache ist für die Texterkennung nicht verfügbar. Probiere eine "
 "andere Sprache."
 
-#: web/src/lib/api.ts:322
+#: web/src/lib/api.ts:323
 msgid "This link cannot be imported for security reasons."
 msgstr "Dieser Link kann aus Sicherheitsgründen nicht importiert werden."
+
+#: web/src/lib/api.ts:338
+msgid "This login is already linked to a Stricknani account."
+msgstr "Diese Anmeldung ist bereits mit einem Stricknani-Konto verknüpft."
 
 #: web/src/lib/features/yarns/yarn-api.ts:250
 msgid "This photo is larger than the 25 MiB limit."
@@ -5667,11 +5834,15 @@ msgstr ""
 "Das Projekt wurde möglicherweise entfernt oder gehört nicht zu deinem "
 "Konto."
 
+#: web/src/lib/api.ts:337
+msgid "This sign-in method is not available."
+msgstr "Diese Anmeldemethode ist nicht verfügbar."
+
 #: web/src/lib/features/projects/project-api.ts:335
 msgid "This upload is larger than the 25 MiB limit."
 msgstr "Diese Datei ist größer als das Limit von 25 MiB."
 
-#: web/src/lib/api.ts:296
+#: web/src/lib/api.ts:297
 msgid "This upload is larger than the allowed size."
 msgstr "Die Datei ist größer als die zulässige Maximalgröße."
 
@@ -5706,15 +5877,15 @@ msgstr "Titelbild hochgeladen"
 msgid "Today"
 msgstr "Heute"
 
-#: web/src/lib/features/account/AccountSettings.svelte:548
+#: web/src/lib/features/account/AccountSettings.svelte:549
 msgid "Token copied. Keep it somewhere safe."
 msgstr "Token kopiert. Bewahre es sicher auf."
 
-#: web/src/lib/features/account/AccountSettings.svelte:746
+#: web/src/lib/features/account/AccountSettings.svelte:747
 msgid "Token name"
 msgstr "Tokenname"
 
-#: web/src/lib/features/account/AccountSettings.svelte:326
+#: web/src/lib/features/account/AccountSettings.svelte:327
 msgid "Token names must be 255 bytes or fewer."
 msgstr "Tokennamen dürfen höchstens 255 Bytes lang sein."
 
@@ -5722,7 +5893,7 @@ msgstr "Tokennamen dürfen höchstens 255 Bytes lang sein."
 msgid "Too many archive requests. Try again later."
 msgstr "Zu viele Archivierungsanfragen. Versuche es später erneut."
 
-#: web/src/lib/api.ts:292
+#: web/src/lib/api.ts:293 web/src/lib/features/auth/ReauthDialog.svelte:119
 msgid "Too many attempts. Wait a moment and try again."
 msgstr "Zu viele Versuche. Warte kurz und versuche es erneut."
 
@@ -5745,7 +5916,7 @@ msgstr ""
 "Zu viele Texterkennungsanfragen. Warte einen Moment und versuche es "
 "erneut."
 
-#: web/src/lib/features/account/AccountSettings.svelte:592
+#: web/src/lib/features/account/AccountSettings.svelte:593
 msgid "Too many tokens were created recently. Try again later."
 msgstr "Kürzlich wurden zu viele Tokens erstellt. Versuche es später erneut."
 
@@ -5755,12 +5926,14 @@ msgstr ""
 "Versuche einen anderen Namen, eine andere Kategorie oder ein anderes "
 "Schlagwort."
 
-#: web/src/lib/features/account/AccountSettings.svelte:666
-#: web/src/lib/features/account/AccountSettings.svelte:794
+#: web/src/lib/features/account/AccountSettings.svelte:667
+#: web/src/lib/features/account/AccountSettings.svelte:795
 #: web/src/lib/features/admin/AdminAudit.svelte:368
 #: web/src/lib/features/admin/AdminResource.svelte:384
-#: web/src/lib/features/admin/AdminUsers.svelte:599
+#: web/src/lib/features/admin/AdminUsers.svelte:610
 #: web/src/lib/features/admin/DiffPanel.svelte:129
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:141
+#: web/src/lib/features/auth/LinkedLogins.svelte:268
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
@@ -5795,6 +5968,21 @@ msgstr "URL-Importe sind für dieses Konto deaktiviert."
 msgid "Unknown actor"
 msgstr "Unbekannte Person"
 
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:178
+#: web/src/lib/features/auth/LinkedLogins.svelte:319
+#: web/src/lib/features/auth/LinkedLogins.svelte:369
+msgid "Unlink"
+msgstr "Trennen"
+
+#: web/src/lib/features/auth/LinkedLogins.svelte:347
+msgid "Unlink this login?"
+msgstr "Diese Anmeldung trennen?"
+
+#: web/src/lib/features/auth/LinkedLogins.svelte:343
+#, python-brace-format
+msgid "Unlink {name}?"
+msgstr "{name} trennen?"
+
 #: web/src/lib/features/admin/AdminResource.svelte:393
 #: web/src/lib/features/admin/AdminResource.svelte:452
 #: web/src/lib/features/admin/AdminResource.svelte:653
@@ -5809,7 +5997,7 @@ msgstr "Aktualisiert"
 msgid "Upload file"
 msgstr "Datei hochladen"
 
-#: web/src/lib/features/account/AccountSettings.svelte:703
+#: web/src/lib/features/account/AccountSettings.svelte:704
 msgid "Upload picture"
 msgstr "Bild hochladen"
 
@@ -5826,7 +6014,7 @@ msgstr "Foto wird hochgeladen"
 msgid "Uploading photo…"
 msgstr "Foto wird hochgeladen …"
 
-#: web/src/lib/features/account/AccountSettings.svelte:702
+#: web/src/lib/features/account/AccountSettings.svelte:703
 msgid "Uploading…"
 msgstr "Wird hochgeladen …"
 
@@ -5835,11 +6023,11 @@ msgstr "Wird hochgeladen …"
 msgid "Use 256 characters or fewer."
 msgstr "Verwende höchstens 256 Zeichen."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:186
+#: web/src/lib/features/admin/AdminUsers.svelte:197
 msgid "Use a password with at least 12 characters."
 msgstr "Verwende ein Passwort mit mindestens 12 Zeichen."
 
-#: web/src/lib/features/account/AccountSettings.svelte:736
+#: web/src/lib/features/account/AccountSettings.svelte:737
 msgid ""
 "Use a token for a trusted app or device. You can only see a new token "
 "once."
@@ -5847,7 +6035,7 @@ msgstr ""
 "Verwende ein Token für eine vertrauenswürdige App oder ein Gerät. Ein "
 "neues Token wird nur einmal angezeigt."
 
-#: web/src/lib/features/account/AccountSettings.svelte:498
+#: web/src/lib/features/account/AccountSettings.svelte:499
 msgid "Use at least 12 characters for your new password."
 msgstr "Dein neues Passwort muss mindestens 12 Zeichen lang sein."
 
@@ -5870,27 +6058,27 @@ msgstr ""
 msgid "Used in projects"
 msgstr "In Projekten verwendet"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:352
+#: web/src/lib/features/admin/AdminUsers.svelte:363
 msgid "User account created."
 msgstr "Benutzerkonto erstellt."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:432
+#: web/src/lib/features/admin/AdminUsers.svelte:443
 msgid "User account disabled."
 msgstr "Benutzerkonto deaktiviert."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:431
+#: web/src/lib/features/admin/AdminUsers.svelte:442
 msgid "User account enabled."
 msgstr "Benutzerkonto aktiviert."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:663
+#: web/src/lib/features/admin/AdminUsers.svelte:681
 msgid "User account pages"
 msgstr "Seiten der Benutzerkonten"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:167
+#: web/src/lib/features/admin/AdminUsers.svelte:178
 msgid "User accounts could not be loaded."
 msgstr "Benutzerkonten konnten nicht geladen werden."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:556
+#: web/src/lib/features/admin/AdminUsers.svelte:567
 msgid "User administration"
 msgstr "Benutzerverwaltung"
 
@@ -5918,9 +6106,9 @@ msgstr "Was möchtest du hinzufügen?"
 msgid "Width"
 msgstr "Breite"
 
-#: web/src/lib/components/AccountMenu.svelte:323
-#: web/src/lib/features/account/AccountSettings.svelte:768
-#: web/src/lib/features/account/AccountSettings.svelte:947
+#: web/src/lib/components/AccountMenu.svelte:303
+#: web/src/lib/features/account/AccountSettings.svelte:769
+#: web/src/lib/features/account/AccountSettings.svelte:950
 msgid "Working…"
 msgstr "Wird verarbeitet …"
 
@@ -6015,31 +6203,45 @@ msgstr "Gestern"
 msgid "You are already signed in."
 msgstr "Du bist bereits angemeldet."
 
+#: web/src/lib/features/auth/LinkedLogins.svelte:245
+msgid "You confirmed it is you. Continue where you left off."
+msgstr ""
+"Du hast bestätigt, dass du es bist. Mach dort weiter, wo du aufgehört "
+"hast."
+
 #: web/src/routes/+layout.svelte:292
 msgid "You do not have access to this page."
 msgstr "Du hast keinen Zugriff auf diese Seite."
 
-#: web/src/lib/api.ts:289
+#: web/src/lib/api.ts:290
 msgid "You do not have permission to do that."
 msgstr "Du darfst diese Aktion nicht ausführen."
 
-#: web/src/lib/features/account/AccountSettings.svelte:187
-#: web/src/lib/features/account/AccountSettings.svelte:286
+#: web/src/lib/features/auth/LinkedLogins.svelte:351
+msgid ""
+"You will no longer be able to sign in with this login. You can link it "
+"again later."
+msgstr ""
+"Du kannst dich dann nicht mehr mit dieser Anmeldung anmelden. Du kannst "
+"sie später wieder verknüpfen."
+
+#: web/src/lib/features/account/AccountSettings.svelte:188
+#: web/src/lib/features/account/AccountSettings.svelte:287
 msgid "Your API tokens could not be loaded."
 msgstr "Deine API-Tokens konnten nicht geladen werden."
 
-#: web/src/lib/features/account/AccountSettings.svelte:608
+#: web/src/lib/features/account/AccountSettings.svelte:609
 msgid "Your account changed in another window. Refresh and try again."
 msgstr ""
 "Dein Konto wurde in einem anderen Fenster geändert. Lade die Seite neu "
 "und versuche es erneut."
 
-#: web/src/lib/features/account/AccountSettings.svelte:171
-#: web/src/lib/features/account/AccountSettings.svelte:265
+#: web/src/lib/features/account/AccountSettings.svelte:172
+#: web/src/lib/features/account/AccountSettings.svelte:266
 msgid "Your account details could not be loaded."
 msgstr "Deine Kontodaten konnten nicht geladen werden."
 
-#: web/src/lib/components/SignInForm.svelte:78
+#: web/src/lib/components/SignInForm.svelte:79
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 "Dein Konto ist bereit. Melde dich mit deiner E-Mail-Adresse und deinem "
@@ -6076,7 +6278,11 @@ msgstr "Deine favorisierten Projekte und Garne an einem Ort."
 msgid "Your library"
 msgstr "Deine Übersicht"
 
-#: web/src/lib/features/account/AccountSettings.svelte:964
+#: web/src/lib/features/auth/LinkedLogins.svelte:114
+msgid "Your login was linked to your account."
+msgstr "Deine Anmeldung wurde mit deinem Konto verknüpft."
+
+#: web/src/lib/features/account/AccountSettings.svelte:967
 msgid "Your new API token"
 msgstr "Dein neues API-Token"
 
@@ -6084,7 +6290,7 @@ msgstr "Dein neues API-Token"
 msgid "Your projects and yarn stay with you, even without a connection."
 msgstr "Deine Projekte und deine Wolle sind auch ohne Verbindung dabei."
 
-#: web/src/lib/components/SignInForm.svelte:140
+#: web/src/lib/components/SignInForm.svelte:143
 msgid "Your projects stay on your own Stricknani server."
 msgstr "Deine Projekte bleiben auf deinem eigenen Stricknani-Server."
 
@@ -6092,26 +6298,26 @@ msgstr "Deine Projekte bleiben auf deinem eigenen Stricknani-Server."
 msgid "Your reference"
 msgstr "Deine Referenz"
 
-#: web/src/lib/api.ts:281
+#: web/src/lib/api.ts:282
 msgid "Your session check failed. Refresh the page and try again."
 msgstr ""
 "Die Sitzungsprüfung ist fehlgeschlagen. Lade die Seite neu und versuche "
 "es erneut."
 
-#: web/src/lib/components/SignInForm.svelte:72
+#: web/src/lib/components/SignInForm.svelte:73
 msgid "Your session expired. Sign in again to continue."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an, um fortzufahren."
 
-#: web/src/lib/api.ts:287
-#: web/src/lib/features/account/AccountSettings.svelte:590
+#: web/src/lib/api.ts:288
+#: web/src/lib/features/account/AccountSettings.svelte:591
 msgid "Your session expired. Sign in again."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an."
 
-#: web/src/lib/api.ts:278 web/src/lib/api.ts:284
+#: web/src/lib/api.ts:279 web/src/lib/api.ts:285
 msgid "Your session has expired. Refresh the page and try again."
 msgstr "Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es erneut."
 
-#: web/src/lib/api.ts:288
+#: web/src/lib/api.ts:289
 msgid "Your session has expired. Sign in again."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an."
 
@@ -6209,6 +6415,11 @@ msgstr "Notizen"
 msgid "of"
 msgstr "von"
 
+#: web/src/lib/features/auth/OidcSignIn.svelte:109
+#: web/src/lib/features/auth/OidcSignIn.svelte:110
+msgid "or"
+msgstr "oder"
+
 #: web/src/lib/features/history/history-summary.ts:49
 msgid "other materials"
 msgstr "weitere Materialien"
@@ -6261,6 +6472,11 @@ msgstr "Garn"
 #: web/src/lib/features/history/history-summary.ts:60
 msgid "yarn weight"
 msgstr "Garnstärke"
+
+#: web/src/lib/features/auth/LinkedLogins.svelte:187
+#, python-brace-format
+msgid "{name} was unlinked from your account."
+msgstr "{name} wurde von deinem Konto getrennt."
 
 #: web/src/lib/features/history/history-summary.ts:160
 #, python-brace-format

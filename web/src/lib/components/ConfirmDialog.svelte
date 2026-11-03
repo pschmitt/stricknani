@@ -7,12 +7,14 @@
     children,
     actions,
     busy = false,
+    onclose,
   }: {
     titleId: string;
     title: string;
     children: Snippet;
     actions: Snippet;
     busy?: boolean;
+    onclose?: () => void;
   } = $props();
 
   let dialog = $state<HTMLDialogElement>();
@@ -35,6 +37,7 @@
   class="confirm-dialog"
   aria-labelledby={titleId}
   oncancel={preventCancelWhileBusy}
+  {onclose}
 >
   <h2 id={titleId}>{title}</h2>
   <div class="confirm-dialog__content">{@render children()}</div>
