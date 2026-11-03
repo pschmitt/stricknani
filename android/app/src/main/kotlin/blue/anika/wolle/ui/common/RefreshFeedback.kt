@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.common
 
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +34,17 @@ fun RefreshFeedbackEffect(
     LaunchedEffect(state) {
         if (state is RefreshState.Idle || state is RefreshState.Refreshing) return@LaunchedEffect
 
-        message?.let { snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Short) }
+        message?.let {
+            val kind =
+                when (state) {
+                    RefreshState.Offline -> FeedbackKind.Offline
+                    RefreshState.Error -> FeedbackKind.Error
+                    is RefreshState.Finished ->
+                        if (state.changed) FeedbackKind.Success else FeedbackKind.Info
+                    else -> FeedbackKind.Info
+                }
+            snackbarHostState.showFeedback(it, kind)
+        }
         // Automatic no-change refreshes have no useful message, but still need to be consumed so
         // the state does not remain stuck at Finished until the next explicit gesture.
         onConsumed()

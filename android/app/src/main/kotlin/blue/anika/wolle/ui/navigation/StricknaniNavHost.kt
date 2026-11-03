@@ -17,7 +17,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +41,7 @@ import blue.anika.wolle.ui.admin.AdminAuditScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
+import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -145,7 +145,7 @@ fun StricknaniNavHost(
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         // Each destination owns its content scaffold and applies the status-bar inset alongside
         // its own top app bar (or, for Onboarding, its own padding). Applying the outer scaffold's
         // default system-bar insets here would offset that whole destination a second time -

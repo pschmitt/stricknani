@@ -30,7 +30,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -52,7 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.backup.BackupFrequency
+import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.StricknaniSnackbarHost
+import blue.anika.wolle.ui.common.showFeedback
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
@@ -102,11 +104,11 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
     LaunchedEffect(backupState) {
         when (val state = backupState) {
             is BackupOperationState.Success -> {
-                snackbarHostState.showSnackbar(state.message)
+                snackbarHostState.showFeedback(state.message)
                 viewModel.dismissBackupState()
             }
             is BackupOperationState.Error -> {
-                snackbarHostState.showSnackbar(state.message)
+                snackbarHostState.showFeedback(state.message, FeedbackKind.Error)
                 viewModel.dismissBackupState()
             }
             BackupOperationState.PasswordRequired -> showRestorePasswordDialog = true
@@ -115,7 +117,7 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(SettingsCategory.Backup.title()) },
@@ -322,7 +324,7 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
                 showScheduledPasswordDialog = false
                 viewModel.setScheduledBackupPassword(password)
                 scope.launch {
-                    snackbarHostState.showSnackbar(
+                    snackbarHostState.showFeedback(
                         if (password.isBlank()) passwordRemovedMessage else passwordSetMessage
                     )
                 }

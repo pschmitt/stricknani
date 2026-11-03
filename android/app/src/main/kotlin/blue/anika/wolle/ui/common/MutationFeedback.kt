@@ -2,7 +2,6 @@ package blue.anika.wolle.ui.common
 
 import android.content.Context
 import androidx.annotation.StringRes
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,11 +49,24 @@ fun MutationFeedbackEffect(feedback: MutationFeedback, snackbarHostState: Snackb
     val context = LocalContext.current
     LaunchedEffect(feedback) {
         feedback.events.collect { event ->
-            snackbarHostState.showSnackbar(
+            snackbarHostState.showFeedback(
                 message = context.localizedMutationMessage(event),
-                duration = SnackbarDuration.Short,
+                kind = context.mutationFeedbackKind(event),
             )
         }
+    }
+}
+
+/**
+ * The catalogue already names its messages: `error_*` entries are failures and `*_queued` ones are
+ * writes parked for the next sync, so the badge follows from the resource name.
+ */
+private fun Context.mutationFeedbackKind(event: MutationFeedbackEvent): FeedbackKind {
+    val name = resources.getResourceEntryName(event.messageResId)
+    return when {
+        name.startsWith("error_") -> FeedbackKind.Error
+        name.endsWith("_queued") -> FeedbackKind.Offline
+        else -> FeedbackKind.Success
     }
 }
 

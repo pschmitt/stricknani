@@ -37,8 +37,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -74,8 +72,11 @@ import blue.anika.wolle.ui.common.EditorPhoto
 import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
+import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
+import blue.anika.wolle.ui.common.showFeedback
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -178,7 +179,7 @@ fun ProjectEditorScreen(
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -524,10 +525,10 @@ fun ProjectEditorScreen(
                         scope.launch {
                             snackbarHostState.currentSnackbarData?.dismiss()
                             val result =
-                                snackbarHostState.showSnackbar(
+                                snackbarHostState.showFeedback(
                                     message = stepRemovedMessage,
+                                    kind = FeedbackKind.Info,
                                     actionLabel = undoLabel,
-                                    duration = SnackbarDuration.Long,
                                 )
                             if (result == SnackbarResult.ActionPerformed) {
                                 viewModel.insertStep(index, step)

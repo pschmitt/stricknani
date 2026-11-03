@@ -4,6 +4,7 @@
 
     <!-- Common / shared -->
     <string name="common_back">Zurück</string>
+    <string name="feedback_dismiss">Schließen</string>
     <string name="common_close">Schließen</string>
     <string name="common_add">Hinzufügen</string>
     <string name="common_save">Speichern</string>
