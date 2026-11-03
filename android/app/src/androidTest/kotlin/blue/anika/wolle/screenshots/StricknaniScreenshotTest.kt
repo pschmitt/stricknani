@@ -2,6 +2,9 @@ package blue.anika.wolle.screenshots
 
 import android.Manifest
 import android.os.Build
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -146,7 +149,16 @@ class StricknaniScreenshotTest {
         // Returning to Home starts its automatic refresh. Wait for that refresh to settle before
         // the explicit offline gesture, otherwise RefreshController correctly ignores the pull as
         // a duplicate and the offline snackbar never appears.
-        waitForText("All caught up", timeoutMillis = 120_000)
+        // The sync card stays hidden when all is well, so wait on the refresh state instead.
+        composeRule.waitUntil(timeoutMillis = 120_000) {
+            composeRule
+                .onAllNodes(
+                    hasTestTag("e2e-home-refresh") and
+                        SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "idle")
+                )
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         // The fixture is reached through adb reverse. The host-side screenshot harness removes
         // that reverse after this marker, making only the API endpoint unreachable while keeping
         // the test activity alive on emulator images that recreate activities for airplane mode.

@@ -2,8 +2,10 @@ package blue.anika.wolle.ui.home
 
 import android.text.format.DateUtils
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -43,7 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,7 +61,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -99,6 +106,15 @@ fun HomeScreen(
     val current = recentProjects.firstOrNull()
     val otherRecent = recentProjects.drop(1)
     val isEmpty = favoriteProjects.isEmpty() && favoriteYarns.isEmpty() && current == null
+    // The sync card is noise when everything is fine: show it only when something needs
+    // attention (failures, changes waiting, never synced yet) or once the user pulled to
+    // refresh here and so asked for the status.
+    var pulledToRefresh by rememberSaveable { mutableStateOf(false) }
+    val showSyncStatus =
+        pulledToRefresh ||
+            failedMutations.isNotEmpty() ||
+            pendingChangesCount > 0 ||
+            lastSyncedMillis == null
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -108,8 +124,15 @@ fun HomeScreen(
     ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
-            onRefresh = viewModel::refresh,
-            modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-home-refresh"),
+            onRefresh = {
+                pulledToRefresh = true
+                viewModel.refresh()
+            },
+            modifier =
+                Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-home-refresh").semantics {
+                    // Lets tests wait for a refresh to settle without the sync card being shown.
+                    stateDescription = if (isRefreshing) "refreshing" else "idle"
+                },
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -127,17 +150,32 @@ fun HomeScreen(
                         )
                     }
                 }
-                item {
-                    HomeSyncStatusCard(
-                        isRefreshing = isRefreshing,
-                        lastSyncedMillis = lastSyncedMillis,
-                        pendingChangesCount = pendingChangesCount,
-                        failedChangesCount = failedMutations.size,
-                        onOpenSyncIssues = onOpenSyncIssues,
-                        onRetrySync = viewModel::retryFailedMutations,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
+                if (showSyncStatus)
+                    item(key = "sync-status") {
+                        HomeSyncStatusCard(
+                            isRefreshing = isRefreshing,
+                            lastSyncedMillis = lastSyncedMillis,
+                            pendingChangesCount = pendingChangesCount,
+                            failedChangesCount = failedMutations.size,
+                            onOpenSyncIssues = onOpenSyncIssues,
+                            onRetrySync = viewModel::retryFailedMutations,
+                            // Fades in/out while the cards below slide into place (and nothing when
+                            // animations
+                            // are off - animateItem follows the system animator scale).
+                            modifier =
+                                Modifier.animateItem(
+                                        fadeInSpec = tween(220),
+                                        fadeOutSpec = tween(160),
+                                        placementSpec =
+                                            spring(
+                                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                                stiffness = Spring.StiffnessMediumLow,
+                                                visibilityThreshold = IntOffset.VisibilityThreshold,
+                                            ),
+                                    )
+                                    .padding(horizontal = 16.dp),
+                        )
+                    }
                 item {
                     SyncIssueBanner(
                         issues = failedMutations,
