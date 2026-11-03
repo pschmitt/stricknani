@@ -61,13 +61,16 @@ differences, Room decision and the `ApiCapabilities` design: `android/docs/v2-mi
       fallback. Tags are split on commas client side (`parseTagInput`). Left: verify on a device
       signed in to a v2 server (create/edit/delete, favourite, uploads, 409), persist the probe
       result for offline starts.
-- [ ] Phase (b) sync. Needs: `GET /api/v2/sync/{projects,yarns,categories}` (Codex).
-- [ ] Phase (c) auth/token + meta/me and `ApiCapabilities` probe (v2 where supported, v1
-      fallback for old servers). Needs: v2 token login and a Bearer `GET /api/v2/me` with
-      `user {id, email, is_admin}` (Codex).
+- [x] Phase (b) sync (projects, yarns): `SyncV2Api` + `runV2Sync` (cursor paging, `full_resync_required`
+      refetch with stale-row cleanup, cursor stored only after the last page); verified on the
+      Zenfone (`/api/v2/sync/*` 200). Categories stay on v1 until `/api/v2/sync/categories` exists.
+- [x] Phase (c) token login and onboarding: `POST /api/v2/auth/token` (429 -> friendly "too many
+      attempts" message), server identification via anonymous `GET /api/v2/meta`, v1 fallback
+      only on 404/405. Unit-tested with MockWebServer; not exercised on a device (needs a sign-out).
 - [ ] Phase (d) favorites and deletes call switch (routes exist, cookie-only until (a)).
-- [ ] Phase (e) URL import via `/api/v2/imports/preview` (needs Bearer and a draft -> import mapper),
-      then remove v1 paths and DTOs once the minimum supported server is v2.
+- [x] Phase (e1) URL import via `POST /api/v2/imports/preview` (draft -> import confirmation
+      mapper, 429/422 messages); unit-tested, not yet seen on a device.
+- [ ] Phase (e2) remove v1 paths and DTOs once the minimum supported server is v2; categories sync.
 
 ## SNA-86: Admin screens - activity log and accounts
 
