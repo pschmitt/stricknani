@@ -91,6 +91,10 @@
     <string name="notes_close">Notizen schließen</string>
     <string name="notes_state_expanded">Notizen, geöffnet</string>
     <string name="notes_state_collapsed">Notizen, zugeklappt</string>
+    <string name="notes_fab_hint">Lange drücken und ziehen zum Verschieben</string>
+    <string name="notes_fab_move_up">Notizen nach oben verschieben</string>
+    <string name="notes_fab_move_down">Notizen nach unten verschieben</string>
+    <string name="notes_fab_move_side">Notizen auf die andere Seite verschieben</string>
     <string name="notes_add_empty">Notiz hinzufügen</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>

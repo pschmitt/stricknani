@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import blue.anika.wolle.data.backup.BackupFrequency
@@ -133,7 +134,20 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_READING_TEXT_STEP] = step }
     }
 
+    /** The movable notes note: its edge ("left"/"right", null = never moved) and height 0..1. */
+    val notesFabPlacement =
+        dataStore.data.map { prefs -> prefs[KEY_NOTES_FAB_SIDE] to prefs[KEY_NOTES_FAB_Y] }
+
+    suspend fun setNotesFabPlacement(side: String, yFraction: Float) {
+        dataStore.edit { prefs ->
+            prefs[KEY_NOTES_FAB_SIDE] = side
+            prefs[KEY_NOTES_FAB_Y] = yFraction
+        }
+    }
+
     private companion object {
+        val KEY_NOTES_FAB_SIDE = stringPreferencesKey("notes_fab_side")
+        val KEY_NOTES_FAB_Y = floatPreferencesKey("notes_fab_y")
         val KEY_READING_TEXT_STEP = intPreferencesKey("reading_text_step")
         val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val KEY_PRINT_CONTENT = stringPreferencesKey("print_content")

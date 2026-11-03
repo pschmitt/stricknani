@@ -91,6 +91,10 @@
     <string name="notes_close">Close notes</string>
     <string name="notes_state_expanded">Notes, expanded</string>
     <string name="notes_state_collapsed">Notes, collapsed</string>
+    <string name="notes_fab_hint">Long-press and drag to move</string>
+    <string name="notes_fab_move_up">Move notes up</string>
+    <string name="notes_fab_move_down">Move notes down</string>
+    <string name="notes_fab_move_side">Move notes to the other side</string>
     <string name="notes_add_empty">Add a note</string>
     <string name="project_detail_attachments_title">Attachments</string>
     <string name="project_detail_delete_attachment_description">Delete attachment</string>
