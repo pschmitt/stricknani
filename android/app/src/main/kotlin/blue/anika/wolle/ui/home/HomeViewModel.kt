@@ -14,6 +14,7 @@ import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.UpdateChecker
 import blue.anika.wolle.data.util.DateTimeUtils
@@ -53,6 +54,7 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val updateChecker: UpdateChecker,
     private val appPreferences: AppPreferencesRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val foundUpdate = MutableStateFlow<AppUpdate?>(null)
@@ -64,7 +66,11 @@ constructor(
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
-    private val refreshController = RefreshController(viewModelScope)
+    private val refreshController =
+        RefreshController(
+            viewModelScope,
+            skipAutomatic = { settingsRepository.sessionExpired.value },
+        )
     val refreshState: StateFlow<RefreshState> = refreshController.state
     val isRefreshing: StateFlow<Boolean> =
         refreshState

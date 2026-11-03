@@ -9,6 +9,7 @@ import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectImporter
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
@@ -71,6 +72,7 @@ constructor(
     private val mutationFeedback: MutationFeedback,
     private val projectImporter: ProjectImporter,
     private val syncScheduler: SyncScheduler,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -87,7 +89,11 @@ constructor(
     private val _selectedTag = MutableStateFlow<String?>(null)
     val selectedTag: StateFlow<String?> = _selectedTag.asStateFlow()
 
-    private val refreshController = RefreshController(viewModelScope)
+    private val refreshController =
+        RefreshController(
+            viewModelScope,
+            skipAutomatic = { settingsRepository.sessionExpired.value },
+        )
     val refreshState: StateFlow<RefreshState> = refreshController.state
     val isRefreshing: StateFlow<Boolean> =
         refreshState

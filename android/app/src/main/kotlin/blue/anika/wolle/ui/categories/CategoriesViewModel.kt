@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.repository.CategoryRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
@@ -66,9 +67,14 @@ class CategoriesViewModel
 constructor(
     private val categoryRepository: CategoryRepository,
     private val mutationFeedback: MutationFeedback,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private val initialSyncComplete = MutableStateFlow(false)
-    private val refreshController = RefreshController(viewModelScope)
+    private val refreshController =
+        RefreshController(
+            viewModelScope,
+            skipAutomatic = { settingsRepository.sessionExpired.value },
+        )
 
     private val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository

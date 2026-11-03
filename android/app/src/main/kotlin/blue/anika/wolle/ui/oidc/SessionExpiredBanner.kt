@@ -1,29 +1,7 @@
 package blue.anika.wolle.ui.oidc
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.oidc.AUTH_ORIGIN_OIDC
@@ -32,7 +10,6 @@ import blue.anika.wolle.data.oidc.OidcEvent
 import blue.anika.wolle.data.oidc.OidcFlowType
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
-import blue.anika.wolle.ui.common.PhosphorIcons
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,12 +17,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Drives the "sign in again" card. The card appears only for a signed-in OIDC session that is known
- * to have expired (`401 session_expired`, or past its `expires_at`); nothing is wiped, so the cache
+ * Drives the "sign in again" card. [ended] is true for any signed-in session whose token the server
+ * rejected (`401 session_expired`, or an OIDC token past its `expires_at`); [visible] is the same
+ * for an OIDC session, which signs in again through the identity provider right here. Other
+ * sessions (password, QR setup) sign in again on their own screen. Nothing is wiped, so the cache
  * and queued writes wait for the new sign-in, which then restarts the sync.
  */
 @HiltViewModel
@@ -57,13 +37,20 @@ constructor(
     private val feedback: MutationFeedback,
 ) : ViewModel() {
 
-    val visible: StateFlow<Boolean> =
-        combine(settings.isConfigured, settings.sessionExpired, settings.authInfo) {
-                configured,
-                expired,
-                auth ->
-                configured && expired && auth.origin == AUTH_ORIGIN_OIDC
+    val ended: StateFlow<Boolean> =
+        combine(settings.isConfigured, settings.sessionExpired) { configured, expired ->
+                configured && expired
             }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** Whether the session came from the identity provider (and so signs in again with it). */
+    val isOidc: StateFlow<Boolean> =
+        settings.authInfo
+            .map { it.origin == AUTH_ORIGIN_OIDC }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val visible: StateFlow<Boolean> =
+        combine(ended, isOidc) { ended, oidc -> ended && oidc }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val _starting = MutableStateFlow(false)
@@ -118,76 +105,6 @@ constructor(
                 }
             } finally {
                 _starting.value = false
-            }
-        }
-    }
-}
-
-/**
- * A gentle card floating above the bottom bar when the OIDC sign-in expired. Draws nothing
- * otherwise, so it is safe to place on every screen.
- */
-@Composable
-fun SessionExpiredBanner(
-    modifier: Modifier = Modifier,
-    viewModel: SessionExpiredViewModel = hiltViewModel(),
-) {
-    val visible by viewModel.visible.collectAsStateWithLifecycle()
-    if (!visible) return
-    val working by viewModel.working.collectAsStateWithLifecycle()
-    val providerName by viewModel.providerName.collectAsStateWithLifecycle()
-
-    Box(modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        Card(
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-            modifier = Modifier.fillMaxWidth().testTag("session-expired-banner"),
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.Top,
-            ) {
-                Icon(
-                    PhosphorIcons.LockKey,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(24.dp),
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.oidc_session_expired_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    )
-                    Text(
-                        stringResource(R.string.oidc_session_expired_text),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    )
-                    Button(
-                        onClick = viewModel::signInAgain,
-                        enabled = !working,
-                        modifier = Modifier.padding(top = 8.dp).testTag("session-expired-sign-in"),
-                    ) {
-                        if (working) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp).padding(end = 0.dp),
-                                strokeWidth = 2.dp,
-                            )
-                        }
-                        Text(
-                            stringResource(R.string.oidc_session_expired_button, providerName),
-                            modifier = Modifier.padding(start = if (working) 8.dp else 0.dp),
-                        )
-                    }
-                }
             }
         }
     }

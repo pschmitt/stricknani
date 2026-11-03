@@ -204,7 +204,9 @@ class OidcLoginApiTest {
     fun `session expiry interceptor flags only a 401 session_expired with the used token`() {
         val seen = mutableListOf<String?>()
         val client =
-            OkHttpClient.Builder().addInterceptor(SessionExpiryInterceptor { seen += it }).build()
+            OkHttpClient.Builder()
+                .addInterceptor(SessionExpiryInterceptor(onExpired = { seen += it }))
+                .build()
         fun call(response: MockResponse) {
             server.enqueue(response)
             client

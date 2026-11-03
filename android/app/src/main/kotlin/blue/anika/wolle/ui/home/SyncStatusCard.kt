@@ -85,6 +85,9 @@ fun HomeSyncStatusCard(
     modifier: Modifier = Modifier,
     // Set when the last pull could not check for news; the card is then the only place saying so.
     refreshProblem: SyncCardProblem? = null,
+    // The server rejected the token: sync is paused until the user signs in again (the panel above
+    // says how), so the card must not claim to be caught up.
+    sessionEnded: Boolean = false,
     onRetryRefresh: () -> Unit = {},
     leaving: Boolean = false,
     // Raw PullToRefreshState.distanceFraction, read lazily (layout/draw phase only).
@@ -95,13 +98,21 @@ fun HomeSyncStatusCard(
     // The failed count includes conflicts, which the pending count leaves out; the
     // failure text must use it so the card agrees with SyncIssueBanner below it.
     val hasSyncFailures = failedChangesCount > 0
-    val hasProblem = refreshProblem != null && !isRefreshing
-    val isActionable = !isRefreshing && (hasSyncFailures || pendingChangesCount > 0 || hasProblem)
+    val paused = sessionEnded && !isRefreshing
+    val hasProblem = refreshProblem != null && !isRefreshing && !paused
+    val isActionable =
+        !isRefreshing && !paused && (hasSyncFailures || pendingChangesCount > 0 || hasProblem)
     val actionLabel =
         if (hasSyncFailures) stringResource(R.string.sync_issue_view_details)
         else stringResource(R.string.sync_issue_retry)
     val still = animationsDisabled()
-    val mood = syncBadgeMood(isRefreshing, pendingChangesCount, hasSyncFailures, refreshProblem)
+    val mood =
+        syncBadgeMood(
+            isRefreshing,
+            pendingChangesCount,
+            hasSyncFailures,
+            refreshProblem ?: SyncCardProblem.Failed.takeIf { paused },
+        )
     val density = LocalDensity.current
     // Enter: drop in from slightly above with a squash-and-stretch spring.
     val enter = remember { Animatable(if (still || peeking) 1f else 0f) }
@@ -129,6 +140,20 @@ fun HomeSyncStatusCard(
             )
         }
         wasPeeking = peeking
+    }
+    // Whatever interrupted the enter animation (a pull starting or ending mid-way cancels it), a
+    // card that is on screen and not being pulled must end up fully shown, never as an empty slot.
+    LaunchedEffect(peeking, leaving, still) {
+        if (peeking || leaving || enter.value >= 1f) return@LaunchedEffect
+        if (still) enter.snapTo(1f)
+        else
+            enter.animateTo(
+                1f,
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
     }
     LaunchedEffect(still) {
         if (still || peeking) return@LaunchedEffect
@@ -244,7 +269,7 @@ fun HomeSyncStatusCard(
             // marigold while changes wait, red only for real failures.
             val (badgeTint, badgeOn) =
                 when {
-                    hasSyncFailures || hasProblem ->
+                    hasSyncFailures || hasProblem || paused ->
                         MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
                     pendingChangesCount > 0 && !isRefreshing ->
                         MaterialTheme.colorScheme.tertiaryContainer to
@@ -297,7 +322,7 @@ fun HomeSyncStatusCard(
                             strokeWidth = 2.5.dp,
                             color = badgeOn,
                         )
-                    hasSyncFailures || hasProblem ->
+                    hasSyncFailures || hasProblem || paused ->
                         Icon(
                             PhosphorIcons.CloudSlash,
                             contentDescription = null,
@@ -323,7 +348,8 @@ fun HomeSyncStatusCard(
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (hasProblem && !hasSyncFailures)
+                    if (paused) stringResource(R.string.sync_status_paused)
+                    else if (hasProblem && !hasSyncFailures)
                         stringResource(
                             if (refreshProblem == SyncCardProblem.Offline)
                                 R.string.sync_status_offline
@@ -333,7 +359,8 @@ fun HomeSyncStatusCard(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    if (hasProblem && !hasSyncFailures)
+                    if (paused) stringResource(R.string.sync_status_paused_detail)
+                    else if (hasProblem && !hasSyncFailures)
                         stringResource(R.string.sync_status_showing_saved)
                     else
                         syncStatusDetails(
@@ -345,13 +372,14 @@ fun HomeSyncStatusCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-            if (hasProblem && !hasSyncFailures) {
-                TextButton(
-                    onClick = onRetryRefresh,
-                    modifier = Modifier.testTag("home-sync-retry"),
-                ) {
-                    Text(stringResource(R.string.sync_issue_retry), maxLines = 1, softWrap = false)
+                // Below the text, not beside it: the title needs the full width on a narrow phone.
+                if (hasProblem && !hasSyncFailures) {
+                    TextButton(
+                        onClick = onRetryRefresh,
+                        modifier = Modifier.testTag("home-sync-retry"),
+                    ) {
+                        Text(stringResource(R.string.sync_issue_retry))
+                    }
                 }
             }
         }

@@ -97,21 +97,32 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     val authInfo: StateFlow<AuthInfo> = _authInfo.asStateFlow()
 
     /**
-     * True once an OIDC token is known to be expired or revoked (`401 session_expired`, or its
-     * `expires_at` has passed): the app keeps its cache and queued writes and asks the user to sign
-     * in again. In memory only; the next 401 sets it again after a restart.
+     * True once the stored token is known to be rejected (`401 session_expired`, a 401 on the v1
+     * data routes, or an OIDC token past its `expires_at`): the app keeps its cache and queued
+     * writes and asks the user to sign in again. In memory only; the next 401 sets it again after a
+     * restart.
      */
     private val _sessionExpired = MutableStateFlow(_authInfo.value.isPastExpiry())
     val sessionExpired: StateFlow<Boolean> = _sessionExpired.asStateFlow()
 
     /**
-     * Called by the network layer on a `401 session_expired`. Only an OIDC token that is still the
-     * stored one counts: a stale request from before a re-sign-in must not flag the new token.
+     * Called by the network layer on a rejected token. Only a token that is still the stored one
+     * counts: a stale request from before a re-sign-in must not flag the new token.
      */
     fun markSessionExpired(tokenUsed: String?) {
-        if (_authInfo.value.origin != AUTH_ORIGIN_OIDC) return
         if (tokenUsed.isNullOrBlank() || tokenUsed != _credentials.value.apiToken) return
         _sessionExpired.value = true
+    }
+
+    /**
+     * Called when the server accepted the stored token again: a 401 that was only a blip must not
+     * leave the "sign in again" card up. An OIDC token past its own `expires_at` stays expired.
+     */
+    fun markSessionValid(tokenUsed: String?) {
+        if (!_sessionExpired.value) return
+        if (tokenUsed.isNullOrBlank() || tokenUsed != _credentials.value.apiToken) return
+        if (_authInfo.value.isPastExpiry()) return
+        _sessionExpired.value = false
     }
 
     override val hasSession: Boolean

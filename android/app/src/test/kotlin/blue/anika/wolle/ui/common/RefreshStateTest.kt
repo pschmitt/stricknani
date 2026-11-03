@@ -168,4 +168,23 @@ class RefreshStateTest {
         )
         assertEquals(SyncBadgeMood.Done, syncBadgeMood(false, 0, false, null))
     }
+
+    @Test
+    fun `automatic refreshes are skipped while signed out, a pull still goes out`() = runTest {
+        val controller = RefreshController(this, skipAutomatic = { true })
+        var calls = 0
+
+        assertFalse(
+            controller.refresh(trigger = RefreshTrigger.Automatic) { true.also { calls++ } }
+        )
+        advanceUntilIdle()
+        assertEquals(0, calls)
+        assertEquals(RefreshState.Idle, controller.state.value)
+
+        assertTrue(
+            controller.refresh(trigger = RefreshTrigger.UserInitiated) { true.also { calls++ } }
+        )
+        advanceUntilIdle()
+        assertEquals(1, calls)
+    }
 }

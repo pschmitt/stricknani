@@ -841,9 +841,6 @@
     <string name="error_oidc_account_mismatch">Dieser %1$s-Login gehört zu einem anderen Konto als dem auf diesem Handy. Es wurde nichts geändert.</string>
     <string name="error_oidc_offline">Der Server ist nicht erreichbar. Prüfe deine Internetverbindung.</string>
     <string name="error_oidc_generic">Etwas ist schiefgelaufen. Bitte versuche es noch einmal.</string>
-    <string name="oidc_session_expired_title">Melde dich erneut an, damit weiter synchronisiert wird</string>
-    <string name="oidc_session_expired_text">Deine Anmeldung ist abgelaufen. Alles auf diesem Handy, auch noch nicht synchronisierte Änderungen, bleibt erhalten.</string>
-    <string name="oidc_session_expired_button">Mit %1$s anmelden</string>
     <string name="oidc_session_expired_unavailable">Die Anmeldung mit %1$s ist gerade nicht verfügbar. Versuche es später noch einmal.</string>
     <string name="oidc_linked_logins_title">Verknüpfte Logins</string>
     <string name="oidc_linked_logins_hint">Melde dich bei Stricknani mit einem anderen Konto an, zum Beispiel mit %1$s.</string>
@@ -869,4 +866,22 @@
     <string name="oidc_admin_unlink_text">%2$s kann sich dann nicht mehr mit %1$s anmelden. Konto und Daten bleiben unverändert.</string>
     <string name="oidc_admin_empty">Dieses Konto hat keine verknüpften Logins.</string>
     <string name="error_oidc_admin_last_login_method">Das ist die einzige Anmeldemöglichkeit dieses Kontos und kann deshalb nicht getrennt werden.</string>
+
+    <!-- Abgemeldet (der Server akzeptiert den Token dieses Geräts nicht mehr) -->
+    <string name="signed_out_title">Du wurdest abgemeldet</string>
+    <string name="signed_out_text">Deine Änderungen auf diesem Gerät bleiben erhalten und werden hochgeladen, sobald du dich erneut anmeldest.</string>
+    <plurals name="signed_out_waiting">
+        <item quantity="one">%1$d Änderung wartet</item>
+        <item quantity="other">%1$d Änderungen warten</item>
+    </plurals>
+    <string name="signed_out_button">Erneut anmelden</string>
+    <string name="signed_out_banner">Abgemeldet - Sync pausiert</string>
+    <string name="signed_out_banner_action">Anmelden</string>
+    <string name="sync_status_paused">Sync pausiert</string>
+    <string name="sync_status_paused_detail">Melde dich erneut an, um weiterzumachen.</string>
+    <string name="sign_in_again_title">Erneut anmelden</string>
+    <string name="sign_in_again_text">Melde dich bei %1$s an, um weiter zu synchronisieren. Alles auf diesem Gerät bleibt, wie es ist.</string>
+    <string name="sign_in_again_button">Anmelden</string>
+    <string name="sign_in_again_not_now">Jetzt nicht</string>
+    <string name="sign_in_again_missing_fields">Gib deine E-Mail und dein Passwort ein</string>
 </resources>

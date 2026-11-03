@@ -82,6 +82,7 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SyncIssueBanner
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.common.stitchedBorder
+import blue.anika.wolle.ui.signin.SignedOutPanel
 import coil3.compose.AsyncImage
 import java.util.Calendar
 import kotlin.math.roundToInt
@@ -90,6 +91,9 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
+    signedOut: Boolean,
+    signInWorking: Boolean,
+    onSignIn: () -> Unit,
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
     onYarnsClick: () -> Unit,
@@ -115,7 +119,8 @@ fun HomeScreen(
         viewModel::dismissRefreshFeedback,
         problemsShownInline = true,
     )
-    val refreshProblem = syncCardProblem(refreshState)
+    // While signed out the panel says why, so a failed pull adds no second message.
+    val refreshProblem = if (signedOut) null else syncCardProblem(refreshState)
 
     // The project touched last gets the big card; the row below shows the others.
     val current = recentProjects.firstOrNull()
@@ -136,6 +141,7 @@ fun HomeScreen(
         failedMutations.isEmpty(),
         pendingChangesCount,
         refreshProblem,
+        signedOut,
     ) {
         leavingSyncCard = false
         if (
@@ -143,7 +149,8 @@ fun HomeScreen(
                 !isRefreshing &&
                 failedMutations.isEmpty() &&
                 pendingChangesCount == 0 &&
-                refreshProblem == null
+                refreshProblem == null &&
+                !signedOut
         ) {
             delay(SYNC_CARD_LINGER_MILLIS)
             if (!reduceMotion) {
@@ -158,6 +165,7 @@ fun HomeScreen(
         pulledToRefresh ||
             failedMutations.isNotEmpty() ||
             refreshProblem != null ||
+            signedOut ||
             pendingChangesCount > 0 ||
             lastSyncedMillis == null
 
@@ -201,7 +209,16 @@ fun HomeScreen(
                 // can grow with the pull; the last item's gap makes up part of the old 24dp.
                 contentPadding = PaddingValues(bottom = 8.dp),
             ) {
-                spacedItem { Greeting(onGaugeClick = onGaugeClick) }
+                if (signedOut) {
+                    spacedItem {
+                        SignedOutPanel(
+                            pendingChangesCount = pendingChangesCount,
+                            working = signInWorking,
+                            onSignIn = onSignIn,
+                        )
+                    }
+                }
+                spacedItem { Greeting(onGaugeClick = onGaugeClick, padStatusBar = !signedOut) }
                 availableUpdate?.let { update ->
                     spacedItem {
                         UpdateAvailableCard(
@@ -252,6 +269,7 @@ fun HomeScreen(
                                 onOpenSyncIssues = onOpenSyncIssues,
                                 onRetrySync = viewModel::retryFailedMutations,
                                 refreshProblem = refreshProblem,
+                                sessionEnded = signedOut,
                                 onRetryRefresh = { viewModel.refresh() },
                                 leaving = leavingSyncCard,
                                 pullFraction = pullFraction,
@@ -364,7 +382,7 @@ private fun LazyListScope.spacedItem(content: @Composable () -> Unit) {
 
 /** A friendly hello with the mascot, instead of a title bar. */
 @Composable
-private fun Greeting(onGaugeClick: () -> Unit) {
+private fun Greeting(onGaugeClick: () -> Unit, padStatusBar: Boolean = true) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     // One pick per screen entry: it survives recomposition, theme switches and rotation.
     val pick = rememberSaveable { Random.nextInt(GREETING_POOL_SIZE) }
@@ -382,7 +400,10 @@ private fun Greeting(onGaugeClick: () -> Unit) {
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.statusBars)
+                .then(
+                    if (padStatusBar) Modifier.windowInsetsPadding(WindowInsets.statusBars)
+                    else Modifier
+                )
                 .padding(start = 8.dp, end = 16.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -4,11 +4,12 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -20,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -46,7 +46,7 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
-import blue.anika.wolle.ui.oidc.SessionExpiredBanner
+import blue.anika.wolle.ui.oidc.SessionExpiredViewModel
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
 import blue.anika.wolle.ui.projects.ProjectDetailScreen
 import blue.anika.wolle.ui.projects.ProjectEditorScreen
@@ -56,6 +56,8 @@ import blue.anika.wolle.ui.settings.LibrariesScreen
 import blue.anika.wolle.ui.settings.SettingsCategory
 import blue.anika.wolle.ui.settings.SettingsCategoryScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
+import blue.anika.wolle.ui.signin.SignInAgainScreen
+import blue.anika.wolle.ui.signin.SignedOutBanner
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
 import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
@@ -133,6 +135,18 @@ fun StricknaniNavHost(
     val reduceMotion = animationsDisabled()
 
     MutationFeedbackEffect(mutationFeedback, snackbarHostState)
+
+    // The server no longer accepts this phone's token: Home shows a big panel, every other screen
+    // a slim banner. An OIDC session signs in again through its provider, others on their own
+    // screen.
+    val sessionViewModel: SessionExpiredViewModel = hiltViewModel()
+    val signedOut by sessionViewModel.ended.collectAsStateWithLifecycle()
+    val sessionIsOidc by sessionViewModel.isOidc.collectAsStateWithLifecycle()
+    val signInWorking by sessionViewModel.working.collectAsStateWithLifecycle()
+    val signInAgain: () -> Unit = {
+        if (sessionIsOidc) sessionViewModel.signInAgain()
+        else navController.navigate(Route.SignInAgain) { launchSingleTop = true }
+    }
 
     LaunchedEffect(pendingDeepLinkRoute) {
         pendingDeepLinkRoute?.let { route ->
@@ -224,160 +238,172 @@ fun StricknaniNavHost(
             }
         },
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            // Consuming the bar's padding lets screens use imePadding() without lifting their
-            // content twice (keyboard height on top of the tab bar they already sit above).
-            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
-            // Drilling down stacks a card on top of the screen below, back unstacks it (and the
-            // predictive-back gesture peels it); editors rise as a sheet; tab switches cross-fade.
-            // See ScreenMotion.kt. Animations switched off in system settings means no motion.
-            enterTransition = { motion.enter(this, isPop = false, reduceMotion) },
-            exitTransition = { motion.exit(this, isPop = false, reduceMotion) },
-            popEnterTransition = { motion.enter(this, isPop = true, reduceMotion) },
-            popExitTransition = { motion.exit(this, isPop = true, reduceMotion) },
-        ) {
-            screen<Route.Onboarding>(motion) {
-                OnboardingScreen(
-                    pendingScannedText = pendingSetupUri,
-                    onScannedTextConsumed = onSetupUriConsumed,
-                )
+        val bannerEntry by navController.currentBackStackEntryAsState()
+        val onHome = bannerEntry?.destination?.hasRoute(Route.Home::class) == true
+        val onSignInScreen = bannerEntry?.destination?.hasRoute(Route.SignInAgain::class) == true
+        val showSignedOutBanner =
+            signedOut && startDestination != Route.Onboarding && !onHome && !onSignInScreen
+        Column(Modifier.fillMaxSize().padding(innerPadding)) {
+            if (showSignedOutBanner) {
+                SignedOutBanner(working = signInWorking, onSignIn = signInAgain)
             }
-            screen<Route.Home>(motion) {
-                HomeScreen(
-                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
-                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
-                    onYarnsClick = { navController.navigate(Route.Yarns) },
-                    onGaugeClick = { navController.navigate(Route.Gauge) },
-                    onOpenSyncIssues = {
-                        navController.navigate(
-                            Route.SettingsCategoryRoute(SettingsCategory.Sync.name)
+            NavHost(
+                navController = navController,
+                startDestination = startDestination,
+                // Consuming the bar's padding lets screens use imePadding() without lifting their
+                // content twice (keyboard height on top of the tab bar they already sit above).
+                // With
+                // the banner showing, it has already taken the status bar's space.
+                modifier =
+                    Modifier.weight(1f)
+                        .then(
+                            if (showSignedOutBanner)
+                                Modifier.consumeWindowInsets(WindowInsets.statusBars)
+                            else Modifier
                         )
-                    },
-                )
-            }
-            screen<Route.Projects>(motion) {
-                ProjectsListScreen(
-                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
-                    onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
-                )
-            }
-            screen<Route.Categories>(motion) { CategoriesScreen() }
-            screen<Route.Yarns>(motion) {
-                val tabs by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
-                YarnsListScreen(
-                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
-                    onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
-                    // Without a Yarns tab the list is opened from Home, so offer a way back.
-                    onBack =
-                        if (TopLevelDestination.YARNS in tabs) null
-                        else ({ navController.popBackStack() }),
-                )
-            }
-            screen<Route.Search>(motion) {
-                SearchScreen(
-                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
-                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
-                )
-            }
-            screen<Route.Settings>(motion) {
-                SettingsScreen(
-                    onCategoryClick = { category ->
-                        navController.navigate(Route.SettingsCategoryRoute(category.name))
-                    }
-                )
-            }
-            screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->
-                val route: Route.SettingsCategoryRoute = backStackEntry.toRoute()
-                SettingsCategoryScreen(
-                    category = SettingsCategory.valueOf(route.categoryName),
-                    onBack = { navController.navigateUp() },
-                    onShowLibraries = { navController.navigate(Route.Libraries) },
-                    onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
-                    onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
-                    onOpenCategory = {
-                        navController.navigate(Route.SettingsCategoryRoute(it.name))
-                    },
-                )
-            }
-            screen<Route.AdminAudit>(motion) {
-                AdminAuditScreen(onBack = { navController.navigateUp() })
-            }
-            screen<Route.AdminAccounts>(motion) {
-                AdminAccountsScreen(onBack = { navController.navigateUp() })
-            }
-            screen<Route.Libraries>(motion) {
-                LibrariesScreen(onBack = { navController.navigateUp() })
-            }
-            screen<Route.ProjectDetail>(motion) {
-                ProjectDetailScreen(
-                    onBack = { navController.navigateUp() },
-                    onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
-                    onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
-                    onEditSection = { id, focus ->
-                        navController.navigate(Route.ProjectEditor(id, focus))
-                    },
-                    onDeleted = {
-                        navController.navigate(Route.Projects) {
-                            popUpTo(Route.Projects) { inclusive = true }
-                        }
-                    },
-                )
-            }
-            screen<Route.YarnDetail>(motion) {
-                YarnDetailScreen(
-                    onBack = { navController.navigateUp() },
-                    onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
-                    onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
-                    onEditSection = { id, focus ->
-                        navController.navigate(Route.YarnEditor(id, focus))
-                    },
-                    onDeleted = {
-                        navController.navigate(Route.Yarns) {
-                            popUpTo(Route.Yarns) { inclusive = true }
-                        }
-                    },
-                )
-            }
-            screen<Route.ProjectEditor>(motion) {
-                ProjectEditorScreen(
-                    onSaved = { navController.navigateUp() },
-                    onDeleted = {
-                        navController.navigate(Route.Projects) {
-                            popUpTo(Route.Projects) { inclusive = true }
-                        }
-                    },
-                    onBack = { navController.navigateUp() },
-                )
-            }
-            screen<Route.YarnEditor>(motion) {
-                YarnEditorScreen(
-                    onSaved = { navController.navigateUp() },
-                    onDeleted = {
-                        navController.navigate(Route.Yarns) {
-                            popUpTo(Route.Yarns) { inclusive = true }
-                        }
-                    },
-                    onBack = { navController.navigateUp() },
-                )
-            }
-            screen<Route.Gauge>(motion) {
-                GaugeCalculatorScreen(onBack = { navController.navigateUp() })
-            }
-        }
-        // An expired OIDC sign-in: a gentle card above the tab bar (nothing is shown otherwise).
-        // Not over an editor's own Save bar.
-        val currentEntry by navController.currentBackStackEntryAsState()
-        val inEditorScreen =
-            currentEntry?.destination?.hasRoute(Route.ProjectEditor::class) == true ||
-                currentEntry?.destination?.hasRoute(Route.YarnEditor::class) == true
-        if (startDestination != Route.Onboarding && !inEditorScreen) {
-            Box(
-                Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.BottomCenter,
+                        .consumeWindowInsets(innerPadding),
+                // Drilling down stacks a card on top of the screen below, back unstacks it (and the
+                // predictive-back gesture peels it); editors rise as a sheet; tab switches
+                // cross-fade.
+                // See ScreenMotion.kt. Animations switched off in system settings means no motion.
+                enterTransition = { motion.enter(this, isPop = false, reduceMotion) },
+                exitTransition = { motion.exit(this, isPop = false, reduceMotion) },
+                popEnterTransition = { motion.enter(this, isPop = true, reduceMotion) },
+                popExitTransition = { motion.exit(this, isPop = true, reduceMotion) },
             ) {
-                SessionExpiredBanner()
+                screen<Route.Onboarding>(motion) {
+                    OnboardingScreen(
+                        pendingScannedText = pendingSetupUri,
+                        onScannedTextConsumed = onSetupUriConsumed,
+                    )
+                }
+                screen<Route.SignInAgain>(motion) {
+                    SignInAgainScreen(onDone = { navController.navigateUp() })
+                }
+                screen<Route.Home>(motion) {
+                    HomeScreen(
+                        signedOut = signedOut,
+                        signInWorking = signInWorking,
+                        onSignIn = signInAgain,
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onYarnsClick = { navController.navigate(Route.Yarns) },
+                        onGaugeClick = { navController.navigate(Route.Gauge) },
+                        onOpenSyncIssues = {
+                            navController.navigate(
+                                Route.SettingsCategoryRoute(SettingsCategory.Sync.name)
+                            )
+                        },
+                    )
+                }
+                screen<Route.Projects>(motion) {
+                    ProjectsListScreen(
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
+                    )
+                }
+                screen<Route.Categories>(motion) { CategoriesScreen() }
+                screen<Route.Yarns>(motion) {
+                    val tabs by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
+                    YarnsListScreen(
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
+                        // Without a Yarns tab the list is opened from Home, so offer a way back.
+                        onBack =
+                            if (TopLevelDestination.YARNS in tabs) null
+                            else ({ navController.popBackStack() }),
+                    )
+                }
+                screen<Route.Search>(motion) {
+                    SearchScreen(
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                    )
+                }
+                screen<Route.Settings>(motion) {
+                    SettingsScreen(
+                        onCategoryClick = { category ->
+                            navController.navigate(Route.SettingsCategoryRoute(category.name))
+                        }
+                    )
+                }
+                screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->
+                    val route: Route.SettingsCategoryRoute = backStackEntry.toRoute()
+                    SettingsCategoryScreen(
+                        category = SettingsCategory.valueOf(route.categoryName),
+                        onBack = { navController.navigateUp() },
+                        onShowLibraries = { navController.navigate(Route.Libraries) },
+                        onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
+                        onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
+                        onOpenCategory = {
+                            navController.navigate(Route.SettingsCategoryRoute(it.name))
+                        },
+                    )
+                }
+                screen<Route.AdminAudit>(motion) {
+                    AdminAuditScreen(onBack = { navController.navigateUp() })
+                }
+                screen<Route.AdminAccounts>(motion) {
+                    AdminAccountsScreen(onBack = { navController.navigateUp() })
+                }
+                screen<Route.Libraries>(motion) {
+                    LibrariesScreen(onBack = { navController.navigateUp() })
+                }
+                screen<Route.ProjectDetail>(motion) {
+                    ProjectDetailScreen(
+                        onBack = { navController.navigateUp() },
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
+                        onEditSection = { id, focus ->
+                            navController.navigate(Route.ProjectEditor(id, focus))
+                        },
+                        onDeleted = {
+                            navController.navigate(Route.Projects) {
+                                popUpTo(Route.Projects) { inclusive = true }
+                            }
+                        },
+                    )
+                }
+                screen<Route.YarnDetail>(motion) {
+                    YarnDetailScreen(
+                        onBack = { navController.navigateUp() },
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
+                        onEditSection = { id, focus ->
+                            navController.navigate(Route.YarnEditor(id, focus))
+                        },
+                        onDeleted = {
+                            navController.navigate(Route.Yarns) {
+                                popUpTo(Route.Yarns) { inclusive = true }
+                            }
+                        },
+                    )
+                }
+                screen<Route.ProjectEditor>(motion) {
+                    ProjectEditorScreen(
+                        onSaved = { navController.navigateUp() },
+                        onDeleted = {
+                            navController.navigate(Route.Projects) {
+                                popUpTo(Route.Projects) { inclusive = true }
+                            }
+                        },
+                        onBack = { navController.navigateUp() },
+                    )
+                }
+                screen<Route.YarnEditor>(motion) {
+                    YarnEditorScreen(
+                        onSaved = { navController.navigateUp() },
+                        onDeleted = {
+                            navController.navigate(Route.Yarns) {
+                                popUpTo(Route.Yarns) { inclusive = true }
+                            }
+                        },
+                        onBack = { navController.navigateUp() },
+                    )
+                }
+                screen<Route.Gauge>(motion) {
+                    GaugeCalculatorScreen(onBack = { navController.navigateUp() })
+                }
             }
         }
     }

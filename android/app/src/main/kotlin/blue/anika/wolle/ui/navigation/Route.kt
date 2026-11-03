@@ -14,6 +14,9 @@ import kotlinx.serialization.Serializable
 sealed interface Route {
     @Serializable data object Onboarding : Route
 
+    /** Password sign-in again after the server rejected the saved token (nothing is wiped). */
+    @Serializable data object SignInAgain : Route
+
     @Serializable data object Home : Route
 
     @Serializable data object Projects : Route

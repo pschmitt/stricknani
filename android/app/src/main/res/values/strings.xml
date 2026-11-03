@@ -841,9 +841,6 @@
     <string name="error_oidc_account_mismatch">That %1$s login belongs to a different account than the one on this phone. Nothing was changed.</string>
     <string name="error_oidc_offline">Couldn’t reach the server. Check your internet connection.</string>
     <string name="error_oidc_generic">Something went wrong. Please try again.</string>
-    <string name="oidc_session_expired_title">Sign in again to keep syncing</string>
-    <string name="oidc_session_expired_text">Your sign-in expired. Everything on this phone, including changes waiting to sync, is safe.</string>
-    <string name="oidc_session_expired_button">Sign in with %1$s</string>
     <string name="oidc_session_expired_unavailable">Sign-in with %1$s isn’t available right now. Try again later.</string>
     <string name="oidc_linked_logins_title">Linked logins</string>
     <string name="oidc_linked_logins_hint">Sign in to Stricknani with another account, such as %1$s.</string>
@@ -869,4 +866,22 @@
     <string name="oidc_admin_unlink_text">%2$s will no longer be able to sign in with %1$s. Their account and data stay as they are.</string>
     <string name="oidc_admin_empty">This account has no linked logins.</string>
     <string name="error_oidc_admin_last_login_method">That’s this account’s only way to sign in, so it can’t be unlinked.</string>
+
+    <!-- Signed out (the server no longer accepts this phone's token) -->
+    <string name="signed_out_title">You’ve been signed out</string>
+    <string name="signed_out_text">Your changes on this phone are kept and will be uploaded after you sign in again.</string>
+    <plurals name="signed_out_waiting">
+        <item quantity="one">%1$d change waiting</item>
+        <item quantity="other">%1$d changes waiting</item>
+    </plurals>
+    <string name="signed_out_button">Sign in again</string>
+    <string name="signed_out_banner">Signed out - sync is paused</string>
+    <string name="signed_out_banner_action">Sign in</string>
+    <string name="sync_status_paused">Sync is paused</string>
+    <string name="sync_status_paused_detail">Sign in again to carry on.</string>
+    <string name="sign_in_again_title">Sign in again</string>
+    <string name="sign_in_again_text">Sign in to %1$s to carry on syncing. Everything on this phone stays where it is.</string>
+    <string name="sign_in_again_button">Sign in</string>
+    <string name="sign_in_again_not_now">Not now</string>
+    <string name="sign_in_again_missing_fields">Enter your email and your password</string>
 </resources>

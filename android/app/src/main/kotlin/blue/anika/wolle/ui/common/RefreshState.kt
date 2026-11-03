@@ -36,16 +36,24 @@ enum class RefreshTrigger {
  * atomic guard is intentional: a pull gesture and another refresh trigger can arrive before the
  * first coroutine gets its first dispatch, so checking a StateFlow alone is not sufficient.
  */
-class RefreshController(private val scope: CoroutineScope) {
+class RefreshController(
+    private val scope: CoroutineScope,
+    /**
+     * True while the server is known to reject our token: automatic refreshes then stay quiet
+     * instead of asking again on every screen. A refresh the user asks for still goes out.
+     */
+    private val skipAutomatic: () -> Boolean = { false },
+) {
     private val refreshInProgress = AtomicBoolean(false)
     private val _state = MutableStateFlow<RefreshState>(RefreshState.Idle)
     val state: StateFlow<RefreshState> = _state.asStateFlow()
 
-    /** Returns false when another refresh is already running. */
+    /** Returns false when another refresh is already running or an automatic one is skipped. */
     fun refresh(
         trigger: RefreshTrigger = RefreshTrigger.UserInitiated,
         block: suspend () -> Boolean,
     ): Boolean {
+        if (trigger == RefreshTrigger.Automatic && skipAutomatic()) return false
         if (!refreshInProgress.compareAndSet(false, true)) return false
 
         _state.value = RefreshState.Refreshing(trigger)

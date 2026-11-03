@@ -6,6 +6,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
@@ -34,6 +35,7 @@ constructor(
     private val yarnRepository: YarnRepository,
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -46,7 +48,11 @@ constructor(
     private val _favoritesOnly = MutableStateFlow(false)
     val favoritesOnly: StateFlow<Boolean> = _favoritesOnly.asStateFlow()
 
-    private val refreshController = RefreshController(viewModelScope)
+    private val refreshController =
+        RefreshController(
+            viewModelScope,
+            skipAutomatic = { settingsRepository.sessionExpired.value },
+        )
     val refreshState: StateFlow<RefreshState> = refreshController.state
     val isRefreshing: StateFlow<Boolean> =
         refreshState
