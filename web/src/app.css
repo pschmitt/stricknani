@@ -441,13 +441,15 @@ button {
   white-space: nowrap;
 }
 
-.ui-button > svg {
+/* Beats the glyph's own 1em flex-basis, so icon-only buttons keep full size. */
+.ui-button.ui-button > svg {
+  flex: none;
   width: var(--ui-action-icon-size-md);
   height: var(--ui-action-icon-size-md);
   stroke-width: 2;
 }
 
-.ui-button--sm > svg {
+.ui-button--sm.ui-button--sm > svg {
   width: var(--ui-action-icon-size-sm);
   height: var(--ui-action-icon-size-sm);
 }

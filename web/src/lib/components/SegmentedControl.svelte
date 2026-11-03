@@ -70,6 +70,7 @@
   }
 
   .segmented__option :global(svg) {
+    flex: none;
     width: var(--ui-action-icon-size-sm);
     height: var(--ui-action-icon-size-sm);
   }

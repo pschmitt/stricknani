@@ -1444,6 +1444,12 @@
     transition: transform 160ms ease;
   }
 
+  .avatar__badge :global(svg) {
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+
   /* The visible hit area stays 36px, the tap target grows to 44px. */
   .avatar__badge::after {
     position: absolute;
@@ -1537,6 +1543,12 @@
 
   :global(.quiet-danger) {
     color: var(--ink-muted);
+  }
+
+  /* Icon-only revoke: a 20px glyph inside the 44px target. */
+  .token-row :global(.quiet-danger.ui-button.ui-button > svg) {
+    width: 20px;
+    height: 20px;
   }
 
   :global(.quiet-danger:hover:not(:disabled)) {
