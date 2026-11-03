@@ -1,7 +1,9 @@
 package blue.anika.wolle.ui.common
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -13,6 +15,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
@@ -56,8 +60,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -70,6 +77,8 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -80,8 +89,12 @@ import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -101,6 +114,7 @@ import androidx.compose.ui.zIndex
 import blue.anika.wolle.R
 import coil3.compose.AsyncImage
 import kotlin.math.abs
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -150,6 +164,55 @@ fun rememberPhotoRemovalAnnouncer(host: SnackbarHostState): (PhotoRemoval) -> Un
     }
 }
 
+/**
+ * Lets a screen end a photo strip's edit mode when the user taps anywhere outside the strip: the
+ * strip registers itself while editing, and [photoEditHost] on the screen's root watches touches.
+ */
+class PhotoEditHost {
+    private var dismiss: (() -> Unit)? = null
+    private var bounds: () -> Rect? = { null }
+
+    internal fun activate(stop: () -> Unit, stripBounds: () -> Rect?) {
+        if (dismiss != null && dismiss !== stop) dismiss?.invoke()
+        dismiss = stop
+        bounds = stripBounds
+    }
+
+    internal fun deactivate(stop: () -> Unit) {
+        if (dismiss === stop) dismiss = null
+    }
+
+    internal fun touchDown(positionInWindow: Offset) {
+        val stop = dismiss ?: return
+        val strip = bounds()
+        if (strip == null || !strip.contains(positionInWindow)) stop()
+    }
+}
+
+val LocalPhotoEditHost = compositionLocalOf<PhotoEditHost?> { null }
+
+/** Wraps a screen: provides a [PhotoEditHost] and ends photo edit mode on outside touches. */
+@Composable
+fun PhotoEditHostProvider(content: @Composable (Modifier) -> Unit) {
+    val host = remember { PhotoEditHost() }
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    CompositionLocalProvider(LocalPhotoEditHost provides host) {
+        content(
+            Modifier.onGloballyPositioned { origin = it.positionInWindow() }
+                .pointerInput(host) {
+                    awaitEachGesture {
+                        val down =
+                            awaitFirstDown(
+                                requireUnconsumed = false,
+                                pass = PointerEventPass.Initial,
+                            )
+                        host.touchDown(down.position + origin)
+                    }
+                }
+        )
+    }
+}
+
 /** Saturated delete red, fixed in both themes; white on it is at least 4.5:1 (5.6 and 4.6). */
 private val DeleteRedLight = Color(0xFFC62828)
 private val DeleteRedDark = Color(0xFFD93A3A)
@@ -192,7 +255,17 @@ fun EditorPhotoStrip(
     val spacingPx = with(LocalDensity.current) { 10.dp.toPx() }
     val currentReorder by rememberUpdatedState(reorder)
     var draggedKey by remember { mutableStateOf<String?>(null) }
+    // Edit mode (long-press any photo): every tile jiggles and shows its trash; selectedKey is the
+    // photo that was pressed. interaction restarts the idle timer that ends the mode.
+    var editing by remember { mutableStateOf(false) }
     var selectedKey by remember { mutableStateOf<String?>(null) }
+    var interaction by remember { mutableIntStateOf(0) }
+    var stripBounds by remember { mutableStateOf<Rect?>(null) }
+    val editHost = LocalPhotoEditHost.current
+    val stopEditing = {
+        editing = false
+        selectedKey = null
+    }
     var dragDelta by remember { mutableFloatStateOf(0f) }
     var startOffset by remember { mutableIntStateOf(0) }
 
@@ -201,13 +274,22 @@ fun EditorPhotoStrip(
     val hasPhotos = photos.isNotEmpty()
     LaunchedEffect(hasPhotos) { if (hasPhotos) listState.scrollToItem(0) }
 
-    // Leave the selected state when the photo goes away, the strip scrolls or Back is pressed.
-    BackHandler(enabled = selectedKey != null) { selectedKey = null }
+    // Edit mode ends on Back, a tap outside the strip (see [PhotoEditHost]), or after 5s idle.
+    BackHandler(enabled = editing) { stopEditing() }
+    LaunchedEffect(editing, interaction, draggedKey) {
+        if (editing && draggedKey == null) {
+            delay(EDIT_IDLE_MILLIS)
+            stopEditing()
+        }
+    }
     LaunchedEffect(photos.map { it.key }) {
         if (selectedKey !in photos.map { it.key }) selectedKey = null
+        if (photos.isEmpty()) editing = false
     }
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress && draggedKey == null) selectedKey = null
+    LaunchedEffect(listState.isScrollInProgress) { if (listState.isScrollInProgress) interaction++ }
+    DisposableEffect(editing) {
+        if (editing) editHost?.activate(stopEditing) { stripBounds }
+        onDispose { editHost?.deactivate(stopEditing) }
     }
 
     // While a thumbnail is held: keep the strip scrolling near its edges and swap places whenever
@@ -260,7 +342,8 @@ fun EditorPhotoStrip(
 
     LazyRow(
         state = listState,
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier.fillMaxWidth().onGloballyPositioned { stripBounds = it.boundsInWindow() },
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(vertical = 2.dp),
     ) {
@@ -274,19 +357,32 @@ fun EditorPhotoStrip(
                     animationSpec = if (reduceMotion) snap() else spring(),
                     label = "photo-lift",
                 )
-            val wiggleState: State<Float> =
-                if (selected && !held && !reduceMotion) {
-                    rememberInfiniteTransition(label = "photo-wiggle")
+            // Eased in and out so edit mode settles smoothly; the loop only runs while there is
+            // something to show, and is read inside graphicsLayer so the strip does not recompose.
+            val jiggleAmount =
+                animateFloatAsState(
+                    if (editing && !held && !reduceMotion) 1f else 0f,
+                    animationSpec = tween(180),
+                    label = "jiggle-amount",
+                )
+            val period = 260 + (index * 23) % 40
+            val jigglePhase: State<Float> =
+                if (jiggleAmount.value > 0f) {
+                    rememberInfiniteTransition(label = "photo-jiggle")
                         .animateFloat(
-                            initialValue = -1.5f,
-                            targetValue = 1.5f,
-                            animationSpec = infiniteRepeatable(tween(110), RepeatMode.Reverse),
-                            label = "wiggle",
+                            initialValue = -1f,
+                            targetValue = 1f,
+                            animationSpec =
+                                infiniteRepeatable(
+                                    tween(period, easing = LinearEasing),
+                                    RepeatMode.Reverse,
+                                    initialStartOffset = StartOffset((index * 61) % period),
+                                ),
+                            label = "jiggle",
                         )
                 } else {
                     remember { mutableStateOf(0f) }
                 }
-            val wiggle = wiggleState.value
             val earlierLabel = stringResource(R.string.editor_photo_move_earlier)
             val laterLabel = stringResource(R.string.editor_photo_move_later)
             val positionLabel =
@@ -303,9 +399,10 @@ fun EditorPhotoStrip(
                         fadeOutSpec = null,
                     )
                     .zIndex(if (held) 1f else 0f)
-                    // Tap another photo (or scroll, or Back) to leave the selected state.
-                    .pointerInput(photo.key) { detectTapGestures(onTap = { selectedKey = null }) }
-                    // Long-press: select the photo (delete shows up); keep dragging to reorder.
+                    // A tap in edit mode just keeps it alive; tapping outside the strip ends it.
+                    .pointerInput(photo.key) { detectTapGestures(onTap = { interaction++ }) }
+                    // Long-press: enter edit mode with this photo selected; keep dragging to
+                    // reorder.
                     .pointerInput(photo.key) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
@@ -314,7 +411,9 @@ fun EditorPhotoStrip(
                                         it.key == photo.key
                                     }
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                editing = true
                                 selectedKey = photo.key
+                                interaction++
                                 if (info != null && reorderable) {
                                     startOffset = info.offset
                                     dragDelta = 0f
@@ -338,7 +437,9 @@ fun EditorPhotoStrip(
                     // Outside the layer below, so the pointer coordinates do not move with the
                     // lift.
                     .graphicsLayer {
-                        rotationZ = wiggle
+                        val amount = jiggleAmount.value
+                        rotationZ = jigglePhase.value * JIGGLE_DEGREES * amount
+                        translationY = -abs(jigglePhase.value) * JIGGLE_BOB_DP.dp.toPx() * amount
                         if (held) {
                             val info =
                                 listState.layoutInfo.visibleItemsInfo.firstOrNull {
@@ -416,11 +517,11 @@ fun EditorPhotoStrip(
                 if (reorder != null && index == 0) {
                     CoverTag(Modifier.align(Alignment.BottomStart).padding(8.dp))
                 }
-                if (selected) {
-                    // 48dp touch target, small visible red badge; only after a long-press.
+                if (editing) {
+                    // 48dp touch target, small visible red badge; only in edit mode.
                     IconButton(
                         onClick = {
-                            selectedKey = null
+                            interaction++
                             photo.onRemove()
                         },
                         modifier = Modifier.align(Alignment.TopEnd).padding(1.dp).size(44.dp),
@@ -483,6 +584,9 @@ fun EditorPhotoStrip(
 
 private const val EDGE_SCROLL_STEP = 14f
 private const val DRAG_SLOP_PX = 8f
+private const val EDIT_IDLE_MILLIS = 5_000L
+private const val JIGGLE_DEGREES = 1.8f
+private const val JIGGLE_BOB_DP = 0.8f
 private const val MAX_SETTLE_FRAMES = 6
 
 /** The "Cover" tag on the first photo: a yarn-ball chip in the theme's primary container. */

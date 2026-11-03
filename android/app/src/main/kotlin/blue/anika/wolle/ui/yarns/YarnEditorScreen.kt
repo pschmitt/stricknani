@@ -52,6 +52,7 @@ import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.PhotoEditHostProvider
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
@@ -138,282 +139,305 @@ fun YarnEditorScreen(
             capitalization = KeyboardCapitalization.Sentences,
             imeAction = ImeAction.Next,
         )
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(
-                            if (viewModel.isEditing) R.string.yarn_editor_title_edit
-                            else R.string.yarns_list_new_yarn_fab
+    PhotoEditHostProvider { hostModifier ->
+        Scaffold(
+            modifier = hostModifier,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(
+                                if (viewModel.isEditing) R.string.yarn_editor_title_edit
+                                else R.string.yarns_list_new_yarn_fab
+                            )
                         )
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = leave) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back),
-                        )
-                    }
-                },
-                actions = {
-                    if (viewModel.isEditing) {
-                        IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
-                            DestructiveDeleteIcon(
-                                contentDescription =
-                                    stringResource(R.string.yarn_editor_delete_description)
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = leave) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.common_back),
                             )
                         }
-                    }
-                },
-            )
-        },
-        bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
-            state = listState,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            // 0: what's on the label.
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.editor_section_yarn_details),
-                    icon = PhosphorIcons.Info,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = form.name,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(name = value) }
-                            },
-                            label = { Text(stringResource(R.string.project_editor_name_label)) },
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .focusRequester(detailsFocus)
-                                    .testTag("e2e-yarn-editor-name"),
-                            singleLine = true,
-                            keyboardOptions = nextSentences,
-                        )
-                        OutlinedTextField(
-                            value = form.brand,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(brand = value) }
-                            },
-                            label = { Text(stringResource(R.string.yarn_detail_field_brand)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = nextSentences,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    },
+                    actions = {
+                        if (viewModel.isEditing) {
+                            IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
+                                DestructiveDeleteIcon(
+                                    contentDescription =
+                                        stringResource(R.string.yarn_editor_delete_description)
+                                )
+                            }
+                        }
+                    },
+                )
+            },
+            bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },
+        ) { innerPadding ->
+            LazyColumn(
+                modifier =
+                    Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
+                state = listState,
+                contentPadding =
+                    PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                // 0: what's on the label.
+                item {
+                    EditorSectionCard(
+                        title = stringResource(R.string.editor_section_yarn_details),
+                        icon = PhosphorIcons.Info,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedTextField(
-                                value = form.colorway,
+                                value = form.name,
                                 onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(colorway = value) }
+                                    viewModel.updateForm { it.copy(name = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.yarn_detail_field_colorway))
+                                    Text(stringResource(R.string.project_editor_name_label))
                                 },
-                                modifier = Modifier.weight(1.4f),
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .focusRequester(detailsFocus)
+                                        .testTag("e2e-yarn-editor-name"),
                                 singleLine = true,
                                 keyboardOptions = nextSentences,
                             )
                             OutlinedTextField(
-                                value = form.dyeLot,
+                                value = form.brand,
                                 onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(dyeLot = value) }
+                                    viewModel.updateForm { it.copy(brand = value) }
                                 },
-                                label = {
-                                    Text(stringResource(R.string.yarn_detail_field_dye_lot))
-                                },
-                                modifier = Modifier.weight(1f),
+                                label = { Text(stringResource(R.string.yarn_detail_field_brand)) },
+                                modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Characters,
-                                        imeAction = ImeAction.Next,
-                                    ),
+                                keyboardOptions = nextSentences,
                             )
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedTextField(
+                                    value = form.colorway,
+                                    onValueChange = { value ->
+                                        viewModel.updateForm { it.copy(colorway = value) }
+                                    },
+                                    label = {
+                                        Text(stringResource(R.string.yarn_detail_field_colorway))
+                                    },
+                                    modifier = Modifier.weight(1.4f),
+                                    singleLine = true,
+                                    keyboardOptions = nextSentences,
+                                )
+                                OutlinedTextField(
+                                    value = form.dyeLot,
+                                    onValueChange = { value ->
+                                        viewModel.updateForm { it.copy(dyeLot = value) }
+                                    },
+                                    label = {
+                                        Text(stringResource(R.string.yarn_detail_field_dye_lot))
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions =
+                                        KeyboardOptions(
+                                            capitalization = KeyboardCapitalization.Characters,
+                                            imeAction = ImeAction.Next,
+                                        ),
+                                )
+                            }
                         }
                     }
                 }
-            }
-            // 1: photos, right under the name - a yarn is recognised by its colour.
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.editor_section_photos),
-                    icon = PhosphorIcons.Images,
-                ) {
-                    EditorPhotoStrip(
-                        photos =
-                            form.existingPhotos.map { photo ->
-                                EditorPhoto(
-                                    key = "existing-${photo.id}",
-                                    model = viewModel.imageUrl(photo.thumbnailUrl),
-                                    description = photo.altText,
-                                    onRemove = {
-                                        viewModel
-                                            .removeExistingPhoto(photo.id)
-                                            ?.let(announceRemoval)
-                                    },
-                                )
-                            } +
-                                form.photos.mapIndexed { index, upload ->
+                // 1: photos, right under the name - a yarn is recognised by its colour.
+                item {
+                    EditorSectionCard(
+                        title = stringResource(R.string.editor_section_photos),
+                        icon = PhosphorIcons.Images,
+                    ) {
+                        EditorPhotoStrip(
+                            photos =
+                                form.existingPhotos.map { photo ->
                                     EditorPhoto(
-                                        key = "new-${upload.path}",
-                                        model = File(upload.path),
-                                        description = upload.fileName,
+                                        key = "existing-${photo.id}",
+                                        model = viewModel.imageUrl(photo.thumbnailUrl),
+                                        description = photo.altText,
                                         onRemove = {
-                                            viewModel.removePhoto(index)?.let(announceRemoval)
+                                            viewModel
+                                                .removeExistingPhoto(photo.id)
+                                                ?.let(announceRemoval)
                                         },
                                     )
-                                },
-                        addLabel = stringResource(R.string.editor_add_photo_short),
-                        removeLabel = stringResource(R.string.yarn_editor_remove_photo),
-                        onAdd = { photoPicker.launch("image/*") },
-                        reorder =
-                            if (reorderAvailable) {
-                                PhotoReorder(form.existingPhotos.size) { from, to ->
-                                    viewModel.moveExistingPhoto(from, to)
-                                }
-                            } else null,
-                    )
+                                } +
+                                    form.photos.mapIndexed { index, upload ->
+                                        EditorPhoto(
+                                            key = "new-${upload.path}",
+                                            model = File(upload.path),
+                                            description = upload.fileName,
+                                            onRemove = {
+                                                viewModel.removePhoto(index)?.let(announceRemoval)
+                                            },
+                                        )
+                                    },
+                            addLabel = stringResource(R.string.editor_add_photo_short),
+                            removeLabel = stringResource(R.string.yarn_editor_remove_photo),
+                            onAdd = { photoPicker.launch("image/*") },
+                            reorder =
+                                if (reorderAvailable) {
+                                    PhotoReorder(form.existingPhotos.size) { from, to ->
+                                        viewModel.moveExistingPhoto(from, to)
+                                    }
+                                } else null,
+                        )
+                    }
                 }
-            }
-            // 2: what it's made of and how it knits.
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.editor_section_yarn_specs),
-                    icon = PhosphorIcons.SlidersHorizontal,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = form.fiberContent,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(fiberContent = value) }
-                            },
-                            label = {
-                                Text(stringResource(R.string.yarn_detail_field_fiber_content))
-                            },
-                            placeholder = {
-                                Text(stringResource(R.string.yarn_editor_fiber_content_hint))
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = nextSentences,
-                        )
-                        SuggestionTextField(
-                            value = form.weightCategory,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(weightCategory = value) }
-                            },
-                            label = stringResource(R.string.yarn_detail_field_weight_category),
-                            suggestions = YARN_WEIGHT_SUGGESTIONS,
-                        )
-                        OutlinedTextField(
-                            value = form.recommendedNeedles,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(recommendedNeedles = value) }
-                            },
-                            label = {
-                                Text(stringResource(R.string.yarn_detail_field_recommended_needles))
-                            },
-                            placeholder = {
-                                Text(stringResource(R.string.project_editor_needles_hint))
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // 2: what it's made of and how it knits.
+                item {
+                    EditorSectionCard(
+                        title = stringResource(R.string.editor_section_yarn_specs),
+                        icon = PhosphorIcons.SlidersHorizontal,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedTextField(
-                                value = form.weightGrams,
+                                value = form.fiberContent,
                                 onValueChange = { value ->
-                                    viewModel.updateForm {
-                                        it.copy(weightGrams = value.filter(Char::isDigit))
-                                    }
+                                    viewModel.updateForm { it.copy(fiberContent = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.yarn_editor_weight_grams_label))
+                                    Text(stringResource(R.string.yarn_detail_field_fiber_content))
                                 },
-                                suffix = { Text("g") },
-                                modifier = Modifier.weight(1f),
+                                placeholder = {
+                                    Text(stringResource(R.string.yarn_editor_fiber_content_hint))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        keyboardType = KeyboardType.Number,
-                                        imeAction = ImeAction.Next,
-                                    ),
+                                keyboardOptions = nextSentences,
+                            )
+                            SuggestionTextField(
+                                value = form.weightCategory,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(weightCategory = value) }
+                                },
+                                label = stringResource(R.string.yarn_detail_field_weight_category),
+                                suggestions = YARN_WEIGHT_SUGGESTIONS,
                             )
                             OutlinedTextField(
-                                value = form.lengthMeters,
+                                value = form.recommendedNeedles,
                                 onValueChange = { value ->
-                                    viewModel.updateForm {
-                                        it.copy(lengthMeters = value.filter(Char::isDigit))
-                                    }
+                                    viewModel.updateForm { it.copy(recommendedNeedles = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.yarn_editor_length_meters_label))
+                                    Text(
+                                        stringResource(
+                                            R.string.yarn_detail_field_recommended_needles
+                                        )
+                                    )
                                 },
-                                suffix = { Text("m") },
-                                modifier = Modifier.weight(1f),
+                                placeholder = {
+                                    Text(stringResource(R.string.project_editor_needles_hint))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        keyboardType = KeyboardType.Number,
-                                        imeAction = ImeAction.Next,
-                                    ),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                             )
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedTextField(
+                                    value = form.weightGrams,
+                                    onValueChange = { value ->
+                                        viewModel.updateForm {
+                                            it.copy(weightGrams = value.filter(Char::isDigit))
+                                        }
+                                    },
+                                    label = {
+                                        Text(
+                                            stringResource(R.string.yarn_editor_weight_grams_label)
+                                        )
+                                    },
+                                    suffix = { Text("g") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions =
+                                        KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Next,
+                                        ),
+                                )
+                                OutlinedTextField(
+                                    value = form.lengthMeters,
+                                    onValueChange = { value ->
+                                        viewModel.updateForm {
+                                            it.copy(lengthMeters = value.filter(Char::isDigit))
+                                        }
+                                    },
+                                    label = {
+                                        Text(
+                                            stringResource(R.string.yarn_editor_length_meters_label)
+                                        )
+                                    },
+                                    suffix = { Text("m") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions =
+                                        KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Next,
+                                        ),
+                                )
+                            }
                         }
                     }
                 }
-            }
-            // 3: free text and the shop link.
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.editor_section_content),
-                    icon = PhosphorIcons.NotePencil,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = form.description,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(description = value) }
-                            },
-                            label = {
-                                Text(stringResource(R.string.project_detail_description_title))
-                            },
-                            modifier = Modifier.fillMaxWidth().focusRequester(descriptionFocus),
-                            minLines = 3,
-                            keyboardOptions =
-                                KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        )
-                        OutlinedTextField(
-                            value = form.notes,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(notes = value) }
-                            },
-                            label = { Text(stringResource(R.string.project_detail_notes_title)) },
-                            modifier = Modifier.fillMaxWidth().focusRequester(notesFocus),
-                            minLines = 3,
-                            keyboardOptions =
-                                KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        )
-                        OutlinedTextField(
-                            value = form.link,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(link = value) }
-                            },
-                            label = { Text(stringResource(R.string.project_editor_link_label)) },
-                            placeholder = { Text("https://") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                        )
+                // 3: free text and the shop link.
+                item {
+                    EditorSectionCard(
+                        title = stringResource(R.string.editor_section_content),
+                        icon = PhosphorIcons.NotePencil,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = form.description,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(description = value) }
+                                },
+                                label = {
+                                    Text(stringResource(R.string.project_detail_description_title))
+                                },
+                                modifier = Modifier.fillMaxWidth().focusRequester(descriptionFocus),
+                                minLines = 3,
+                                keyboardOptions =
+                                    KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Sentences
+                                    ),
+                            )
+                            OutlinedTextField(
+                                value = form.notes,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(notes = value) }
+                                },
+                                label = {
+                                    Text(stringResource(R.string.project_detail_notes_title))
+                                },
+                                modifier = Modifier.fillMaxWidth().focusRequester(notesFocus),
+                                minLines = 3,
+                                keyboardOptions =
+                                    KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Sentences
+                                    ),
+                            )
+                            OutlinedTextField(
+                                value = form.link,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(link = value) }
+                                },
+                                label = {
+                                    Text(stringResource(R.string.project_editor_link_label))
+                                },
+                                placeholder = { Text("https://") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            )
+                        }
                     }
                 }
             }
