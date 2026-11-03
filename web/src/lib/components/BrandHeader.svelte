@@ -2,6 +2,12 @@
   import BrandMark from "#lib/components/BrandMark.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { appVersion } from "#lib/app-version.ts";
+  import {
+    brandMarkShown,
+    flipBetween,
+    handoff,
+    type HeroRect,
+  } from "#lib/components/brand-handoff.svelte.ts";
 
   let {
     href = "/app/",
@@ -19,6 +25,102 @@
   // whole lockup (chevron, mark and name) links to the parent route. The
   // chevron lives in a fixed column left of the mark, so the mark never moves.
   const parent = $derived(reserveParentSlot && parentHref ? parentHref : null);
+
+  // On Home the greeting mascot is the hero, so the mark in the slot below
+  // stays empty until the hero has scrolled away. The hand-off is a mascot
+  // clone that flies between the hero and the slot; with reduced motion the
+  // mark just crossfades.
+  const FLIGHT_MS = 280;
+  const FLIGHT_EASING = "cubic-bezier(0.34, 1.45, 0.5, 1)";
+  const shown = $derived(brandMarkShown(handoff.heroActive, handoff.heroRatio));
+
+  let markEl: HTMLElement | undefined = $state();
+  let flying = $state(false);
+  let overlay: HTMLElement | null = null;
+  let lastShown: boolean | null = null;
+
+  function rectOf(el: Element): HeroRect {
+    const box = el.getBoundingClientRect();
+    return { left: box.left, top: box.top, size: box.width };
+  }
+
+  function endFlight() {
+    overlay?.remove();
+    overlay = null;
+    flying = false;
+  }
+
+  function fly(from: HTMLElement, to: HTMLElement, arriving: boolean) {
+    const art = from.querySelector("svg");
+    if (!art) return;
+    endFlight();
+    const small = rectOf(arriving ? to : from);
+    const big = rectOf(arriving ? from : to);
+    // The clone is laid out at the destination and animated from the source.
+    const dest = arriving ? small : big;
+    const source = arriving ? big : small;
+    const flip = flipBetween(source, dest);
+    const clone = document.createElement("div");
+    const svg = art.cloneNode(true) as SVGElement;
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.style.cssText = "display:block;width:100%;height:100%";
+    clone.append(svg);
+    clone.setAttribute("aria-hidden", "true");
+    clone.style.cssText =
+      `position:fixed;z-index:60;left:${dest.left}px;top:${dest.top}px;` +
+      `width:${dest.size}px;height:${dest.size}px;pointer-events:none;` +
+      "transform-origin:0 0;will-change:transform";
+    document.body.append(clone);
+    overlay = clone;
+    flying = true;
+    const motion = clone.animate(
+      [
+        {
+          transform: `translate(${flip.dx}px, ${flip.dy}px) scale(${flip.scale})`,
+        },
+        { transform: "none" },
+      ],
+      { duration: FLIGHT_MS, easing: FLIGHT_EASING, fill: "both" },
+    );
+    const done = () => {
+      if (overlay !== clone) return;
+      endFlight();
+      // A tiny pop as the mark lands in the slot.
+      if (arriving) {
+        markEl?.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.16)", offset: 0.4 },
+            { transform: "scale(1)" },
+          ],
+          { duration: 200, easing: "ease-out" },
+        );
+      }
+    };
+    motion.finished.then(done, () => {});
+  }
+
+  $effect(() => {
+    const now = shown;
+    const hero = handoff.hero;
+    const animate = handoff.animate;
+    if (lastShown === null || lastShown === now) {
+      lastShown = now;
+      return;
+    }
+    lastShown = now;
+    if (!animate || !hero || !markEl) {
+      endFlight();
+      return;
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduced.matches) return;
+    if (now) fly(hero, markEl, true);
+    else fly(markEl, hero, false);
+  });
+
+  $effect(() => () => endFlight());
 </script>
 
 <div class="brand-header" class:with-parent-column={reserveParentSlot}>
@@ -33,7 +135,11 @@
         <NavIcon name="previous" />
       </span>
     {/if}
-    <span class="brand-mark-wrap"><BrandMark /></span>
+    <span
+      class="brand-mark-wrap"
+      class:mark-hidden={!shown || flying}
+      bind:this={markEl}><BrandMark /></span
+    >
     <span class="brand-copy">
       <span class="brand-title">Stricknani</span>
       <span class="brand-version">{appVersion}</span>
@@ -153,6 +259,12 @@
     transition: transform 420ms var(--brand-ease);
   }
 
+  /* Waiting for (or flying to) the hero: the slot keeps its size. */
+  .brand-mark-wrap.mark-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .with-parent-column .brand-mark-wrap {
     margin-right: 0.6rem;
   }
@@ -208,9 +320,13 @@
   @media (prefers-reduced-motion: reduce) {
     .brand-lockup,
     .brand-lockup::before,
-    .brand-chevron,
-    .brand-mark-wrap {
+    .brand-chevron {
       transition: none;
+    }
+
+    /* No flight: the mark crossfades. */
+    .brand-mark-wrap {
+      transition: opacity 120ms ease;
     }
 
     .brand-lockup:active,

@@ -21,6 +21,11 @@
     loadFavoriteYarns,
     loadRecentProjects,
   } from "./home-api";
+  import {
+    setHero,
+    setHeroRatio,
+    HERO_VISIBLE_THRESHOLD,
+  } from "#lib/components/brand-handoff.svelte.ts";
   import { greetingFor, visitGreetingIndex } from "./greeting";
   import { homeSection } from "./home-section.svelte";
 
@@ -50,6 +55,37 @@
       standalone: isStandaloneDisplay(),
       dismissed: readAppCardDismissed(),
     });
+  });
+
+  // The header brand mark stays hidden while this mascot is the hero and flies
+  // in once it has mostly scrolled away (see BrandHeader).
+  let heroEl = $state<HTMLElement>();
+  onMount(() => {
+    if (!heroEl || !("IntersectionObserver" in window)) return;
+    setHero(heroEl);
+    // The sticky header covers the top of the viewport.
+    const header = document.querySelector<HTMLElement>(".app-header");
+    const cover = Math.round(header?.getBoundingClientRect().bottom ?? 0);
+    let first = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        setHeroRatio(
+          entry.isIntersecting ? entry.intersectionRatio : 0,
+          !first,
+        );
+        first = false;
+      },
+      {
+        rootMargin: `-${cover}px 0px 0px 0px`,
+        threshold: [0, 0.1, HERO_VISIBLE_THRESHOLD, 0.5, 1],
+      },
+    );
+    observer.observe(heroEl);
+    return () => {
+      observer.disconnect();
+      setHero(null);
+    };
   });
 
   function dismissAppCard() {
@@ -103,7 +139,9 @@
   aria-labelledby="home-title"
 >
   <header class="home-greeting">
-    <Mascot size={88} bob={true} />
+    <span class="home-greeting__mascot" bind:this={heroEl}
+      ><Mascot size={88} bob={true} /></span
+    >
     <div class="home-greeting__copy">
       <h1 id="home-title" class="home-greeting__title">{greeting}</h1>
       <p>{t("What are we knitting today?", locale)}</p>
@@ -339,6 +377,10 @@
     display: flex;
     align-items: center;
     gap: 0.9rem;
+  }
+  .home-greeting__mascot {
+    display: inline-flex;
+    flex: none;
   }
   .home-greeting__copy h1 {
     margin: 0;
