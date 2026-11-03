@@ -60,6 +60,7 @@ msgstr "Stricknani"
 #: web/src/lib/features/admin/AdminUsers.svelte:813
 #: web/src/lib/features/admin/AdminUsers.svelte:889
 #: web/src/lib/features/categories/CategoryManager.svelte:329
+#: web/src/lib/features/categories/CategoryManager.svelte:330
 #: web/src/lib/features/projects/ProjectEditor.svelte:1557
 #: web/src/lib/features/projects/ProjectEditor.svelte:1578
 #: web/src/lib/features/projects/ProjectEditor.svelte:1594
@@ -638,6 +639,7 @@ msgstr "Bitte melde dich unten an"
 #: web/src/lib/features/auth/SignupForm.svelte:267
 #: web/src/lib/features/home/HomeDashboard.svelte:87
 #: web/src/lib/features/home/HomeDashboard.svelte:103
+#: web/src/lib/features/home/HomeDashboard.svelte:104
 #: web/src/lib/features/projects/ProjectEditor.svelte:973
 #: web/src/lib/features/projects/ProjectEditor.svelte:1004
 #: web/src/routes/+layout.svelte:149 web/src/routes/login/+page.svelte:8
@@ -1344,7 +1346,9 @@ msgstr "Erneut importieren"
 #: stricknani/templates/yarn/_cards_page.html:140
 #: stricknani/templates/yarn/detail.html:42
 #: web/src/lib/features/categories/CategoryManager.svelte:358
+#: web/src/lib/features/categories/CategoryManager.svelte:359
 #: web/src/lib/features/categories/CategoryManager.svelte:376
+#: web/src/lib/features/categories/CategoryManager.svelte:377
 #: web/src/lib/features/yarns/YarnForm.svelte:917
 #: web/src/lib/features/yarns/YarnForm.svelte:984
 msgid "Delete"
@@ -1432,6 +1436,7 @@ msgstr[1] "%(num)d Projekte"
 #: stricknani/templates/yarn/form.html:78
 #: stricknani/templates/yarn/form.html:81
 #: web/src/lib/features/categories/CategoryManager.svelte:319
+#: web/src/lib/features/categories/CategoryManager.svelte:320
 msgid "Save"
 msgstr "Speichern"
 
@@ -1446,6 +1451,7 @@ msgstr "Änderungen speichern"
 #: stricknani/templates/projects/categories.html:71
 #: stricknani/templates/projects/categories.html:98
 #: web/src/lib/features/categories/CategoryManager.svelte:402
+#: web/src/lib/features/categories/CategoryManager.svelte:403
 msgid "Delete category"
 msgstr "Kategorie löschen"
 
@@ -1537,6 +1543,7 @@ msgstr "Projektdetails"
 #: web/src/lib/features/projects/ProjectEditor.svelte:1072
 #: web/src/lib/features/projects/ProjectEditor.svelte:1092
 #: web/src/lib/features/projects/ProjectLibrary.svelte:220
+#: web/src/lib/features/projects/ProjectLibrary.svelte:221
 msgid "Category"
 msgstr "Kategorie"
 
@@ -2013,7 +2020,9 @@ msgstr "Alle Garne auswählen"
 #: stricknani/templates/shared/unified_navbar.html:61
 #: stricknani/templates/shared/unified_navbar.html:125
 #: web/src/lib/features/projects/ProjectLibrary.svelte:182
+#: web/src/lib/features/projects/ProjectLibrary.svelte:183
 #: web/src/lib/features/projects/ProjectLibrary.svelte:193
+#: web/src/lib/features/projects/ProjectLibrary.svelte:194
 #: web/src/routes/+layout.svelte:54
 msgid "Projects"
 msgstr "Projekte"
@@ -2030,9 +2039,13 @@ msgstr "Keine passenden Ergebnisse"
 
 #: stricknani/templates/shared/_empty_search_state.html:8
 #: web/src/lib/features/projects/ProjectLibrary.svelte:210
+#: web/src/lib/features/projects/ProjectLibrary.svelte:211
 #: web/src/lib/features/projects/ProjectLibrary.svelte:283
+#: web/src/lib/features/projects/ProjectLibrary.svelte:284
 #: web/src/lib/features/yarns/YarnLibrary.svelte:156
+#: web/src/lib/features/yarns/YarnLibrary.svelte:157
 #: web/src/lib/features/yarns/YarnLibrary.svelte:201
+#: web/src/lib/features/yarns/YarnLibrary.svelte:202
 msgid "Clear filters"
 msgstr "Filter löschen"
 
@@ -2043,8 +2056,10 @@ msgstr "Entfavorisieren"
 #: stricknani/templates/shared/_favorite_toggle.html:3
 #: web/src/lib/features/projects/ProjectLibrary.svelte:323
 #: web/src/lib/features/projects/ProjectLibrary.svelte:324
+#: web/src/lib/features/projects/ProjectLibrary.svelte:325
 #: web/src/lib/features/yarns/YarnLibrary.svelte:245
 #: web/src/lib/features/yarns/YarnLibrary.svelte:246
+#: web/src/lib/features/yarns/YarnLibrary.svelte:247
 msgid "Favorite"
 msgstr "Favorisieren"
 
@@ -2127,7 +2142,9 @@ msgstr "Hauptnavigation"
 #: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
 #: web/src/lib/features/yarns/YarnDetail.svelte:206
 #: web/src/lib/features/yarns/YarnLibrary.svelte:128
+#: web/src/lib/features/yarns/YarnLibrary.svelte:129
 #: web/src/lib/features/yarns/YarnLibrary.svelte:139
+#: web/src/lib/features/yarns/YarnLibrary.svelte:140
 #: web/src/routes/+layout.svelte:55
 msgid "Yarns"
 msgstr "Garne"
@@ -2353,6 +2370,7 @@ msgstr ""
 
 #: stricknani/templates/yarn/_empty_state.html:9
 #: web/src/lib/features/yarns/YarnLibrary.svelte:216
+#: web/src/lib/features/yarns/YarnLibrary.svelte:217
 msgid "Add your first yarn"
 msgstr "Füge dein erstes Garn hinzu"
 
@@ -2690,13 +2708,17 @@ msgstr "Deine Sammlung ist leer."
 
 #: rust/src/web.rs:2170 rust/src/web_audit.rs:140
 #: web/src/lib/features/projects/ProjectLibrary.svelte:338
+#: web/src/lib/features/projects/ProjectLibrary.svelte:339
 #: web/src/lib/features/yarns/YarnLibrary.svelte:260
+#: web/src/lib/features/yarns/YarnLibrary.svelte:261
 msgid "Previous"
 msgstr "Zurück"
 
 #: rust/src/web.rs:2171 rust/src/web_audit.rs:141
 #: web/src/lib/features/projects/ProjectLibrary.svelte:347
+#: web/src/lib/features/projects/ProjectLibrary.svelte:348
 #: web/src/lib/features/yarns/YarnLibrary.svelte:269
+#: web/src/lib/features/yarns/YarnLibrary.svelte:270
 msgid "Next"
 msgstr "Weiter"
 
@@ -2755,11 +2777,14 @@ msgid "Imports"
 msgstr "Daten importieren"
 
 #: rust/src/web.rs:2204 web/src/lib/features/projects/ProjectLibrary.svelte:237
+#: web/src/lib/features/projects/ProjectLibrary.svelte:238
 msgid "Tag"
 msgstr "Schlagwort"
 
 #: rust/src/web.rs:2205 web/src/lib/features/projects/ProjectLibrary.svelte:72
+#: web/src/lib/features/projects/ProjectLibrary.svelte:73
 #: web/src/lib/features/projects/ProjectLibrary.svelte:254
+#: web/src/lib/features/projects/ProjectLibrary.svelte:255
 msgid "Favorites"
 msgstr "Favoriten"
 
@@ -2768,7 +2793,9 @@ msgid "All items"
 msgstr "Alle Einträge"
 
 #: rust/src/web.rs:2207 web/src/lib/features/yarns/YarnLibrary.svelte:41
+#: web/src/lib/features/yarns/YarnLibrary.svelte:42
 #: web/src/lib/features/yarns/YarnLibrary.svelte:172
+#: web/src/lib/features/yarns/YarnLibrary.svelte:173
 msgid "Favorites only"
 msgstr "Nur Favoriten"
 
@@ -2947,6 +2974,7 @@ msgid "A calm place for the work in your hands."
 msgstr "Ein ruhiger Ort für dein aktuelles Handarbeitsprojekt."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:186
+#: web/src/lib/features/categories/CategoryManager.svelte:187
 msgid "A category with this name already exists."
 msgstr "Eine Kategorie mit diesem Namen gibt es bereits."
 
@@ -3023,6 +3051,7 @@ msgid "Active API tokens"
 msgstr "Aktive API-Tokens"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:280
+#: web/src/lib/features/categories/CategoryManager.svelte:281
 msgid "Add a category above to make your project library easier to browse."
 msgstr "Füge oben eine Kategorie hinzu, damit du deine Projekte leichter findest."
 
@@ -3031,6 +3060,7 @@ msgid "Add a name before creating this yarn."
 msgstr "Gib vor dem Erstellen dieses Garns einen Namen ein."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:297
+#: web/src/lib/features/projects/ProjectLibrary.svelte:298
 msgid "Add a project"
 msgstr "Projekt hinzufügen"
 
@@ -3039,6 +3069,7 @@ msgid "Add a project name before creating it."
 msgstr "Gib vor dem Erstellen einen Projektnamen ein."
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:206
+#: web/src/lib/features/yarns/YarnLibrary.svelte:207
 msgid "Add a skein to keep its details and project links together."
 msgstr ""
 "Füge ein Knäuel hinzu, um seine Angaben und Projektverknüpfungen "
@@ -3050,6 +3081,7 @@ msgid "Add attachment"
 msgstr "Anhang hinzufügen"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:261
+#: web/src/lib/features/categories/CategoryManager.svelte:262
 msgid "Add category"
 msgstr "Kategorie hinzufügen"
 
@@ -3076,6 +3108,7 @@ msgstr "Schlagwort hinzufügen"
 #: web/src/lib/features/yarns/YarnForm.svelte:570
 #: web/src/lib/features/yarns/YarnForm.svelte:603
 #: web/src/lib/features/yarns/YarnLibrary.svelte:145
+#: web/src/lib/features/yarns/YarnLibrary.svelte:146
 msgid "Add yarn"
 msgstr "Garn hinzufügen"
 
@@ -3110,6 +3143,7 @@ msgid "After"
 msgstr "Danach"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:227
+#: web/src/lib/features/projects/ProjectLibrary.svelte:228
 msgid "All categories"
 msgstr "Alle Kategorien"
 
@@ -3228,10 +3262,12 @@ msgid "Before"
 msgstr "Zuvor"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:185
+#: web/src/lib/features/projects/ProjectLibrary.svelte:186
 msgid "Browse and find your knitting projects."
 msgstr "Durchsuche deine Strickprojekte."
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:131
+#: web/src/lib/features/yarns/YarnLibrary.svelte:132
 msgid "Browse the yarns connected to your projects."
 msgstr "Sieh dir die Garne an, die mit deinen Projekten verknüpft sind."
 
@@ -3248,22 +3284,27 @@ msgid "Calculation Results"
 msgstr "Berechnungsergebnisse"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:202
+#: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:213
+#: web/src/lib/features/categories/CategoryManager.svelte:214
 #: web/src/routes/+layout.svelte:65 web/src/routes/more/+page.svelte:22
 msgid "Categories"
 msgstr "Kategorien"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:79
+#: web/src/lib/features/categories/CategoryManager.svelte:80
 #: web/src/lib/features/projects/ProjectEditor.svelte:250
 #: web/src/lib/features/projects/ProjectEditor.svelte:254
 msgid "Categories could not be loaded."
 msgstr "Kategorien konnten nicht geladen werden."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:104
+#: web/src/lib/features/categories/CategoryManager.svelte:105
 msgid "Category added."
 msgstr "Kategorie hinzugefügt."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:174
+#: web/src/lib/features/categories/CategoryManager.svelte:175
 msgid "Category deleted."
 msgstr "Kategorie gelöscht."
 
@@ -3273,10 +3314,12 @@ msgstr "Kategoriedetails"
 
 #: web/src/lib/features/admin/AdminResource.svelte:743
 #: web/src/lib/features/categories/CategoryManager.svelte:299
+#: web/src/lib/features/categories/CategoryManager.svelte:300
 msgid "Category name"
 msgstr "Kategoriename"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:147
+#: web/src/lib/features/categories/CategoryManager.svelte:148
 msgid "Category renamed."
 msgstr "Kategorie umbenannt."
 
@@ -3384,7 +3427,9 @@ msgstr ""
 " und kopiere ihn manuell."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:209
+#: web/src/lib/features/projects/ProjectLibrary.svelte:210
 #: web/src/lib/features/yarns/YarnLibrary.svelte:155
+#: web/src/lib/features/yarns/YarnLibrary.svelte:156
 msgid "Close filters"
 msgstr "Filter schließen"
 
@@ -3406,6 +3451,7 @@ msgstr "Passwort bestätigen"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:94
 #: web/src/lib/features/home/HomeDashboard.svelte:112
+#: web/src/lib/features/home/HomeDashboard.svelte:113
 msgid "Continue knitting"
 msgstr "Weiterstricken"
 
@@ -3464,6 +3510,7 @@ msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:150
 #: web/src/lib/features/home/HomeDashboard.svelte:174
+#: web/src/lib/features/home/HomeDashboard.svelte:175
 msgid "Create your first project"
 msgstr "Lege dein erstes Projekt an"
 
@@ -3493,6 +3540,7 @@ msgid "Decrease text size"
 msgstr "Text verkleinern"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:373
+#: web/src/lib/features/categories/CategoryManager.svelte:374
 msgid "Delete category?"
 msgstr "Kategorie löschen?"
 
@@ -3529,6 +3577,7 @@ msgid "Deleted"
 msgstr "Gelöscht"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:402
+#: web/src/lib/features/categories/CategoryManager.svelte:403
 #: web/src/lib/features/projects/ProjectEditor.svelte:1383
 #: web/src/lib/features/projects/ProjectEditor.svelte:1404
 #: web/src/lib/features/yarns/YarnForm.svelte:948
@@ -3537,6 +3586,7 @@ msgid "Deleting…"
 msgstr "Wird gelöscht …"
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:237
+#: web/src/lib/features/yarns/YarnLibrary.svelte:238
 msgid "Details to add"
 msgstr "Angaben zum Ergänzen"
 
@@ -3597,8 +3647,11 @@ msgid "English"
 msgstr "Englisch"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:93
+#: web/src/lib/features/categories/CategoryManager.svelte:94
 #: web/src/lib/features/categories/CategoryManager.svelte:134
+#: web/src/lib/features/categories/CategoryManager.svelte:135
 #: web/src/lib/features/categories/CategoryManager.svelte:187
+#: web/src/lib/features/categories/CategoryManager.svelte:188
 msgid "Enter a category name."
 msgstr "Gib einen Kategorienamen ein."
 
@@ -3675,27 +3728,33 @@ msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:164
 #: web/src/lib/features/home/HomeDashboard.svelte:188
+#: web/src/lib/features/home/HomeDashboard.svelte:189
 msgid "Favorite projects"
 msgstr "Favorisierte Projekte"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:164
 #: web/src/lib/features/home/HomeDashboard.svelte:188
+#: web/src/lib/features/home/HomeDashboard.svelte:189
 msgid "Favorite projects could not be loaded."
 msgstr "Favorisierte Projekte konnten nicht geladen werden."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:164
 #: web/src/lib/features/home/HomeDashboard.svelte:188
+#: web/src/lib/features/home/HomeDashboard.svelte:189
 msgid "Favorite yarns"
 msgstr "Favorisierte Garne"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:164
 #: web/src/lib/features/home/HomeDashboard.svelte:188
+#: web/src/lib/features/home/HomeDashboard.svelte:189
 msgid "Favorite yarns could not be loaded."
 msgstr "Favorisierte Garne konnten nicht geladen werden."
 
 #: web/src/lib/features/admin/AdminAudit.svelte:347
 #: web/src/lib/features/projects/ProjectLibrary.svelte:208
+#: web/src/lib/features/projects/ProjectLibrary.svelte:209
 #: web/src/lib/features/yarns/YarnLibrary.svelte:154
+#: web/src/lib/features/yarns/YarnLibrary.svelte:155
 msgid "Filter"
 msgstr "Filtern"
 
@@ -3822,6 +3881,7 @@ msgid "Keep a note of a yarn you own."
 msgstr "Notiere ein Garn aus deinem Vorrat."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:392
+#: web/src/lib/features/categories/CategoryManager.svelte:393
 msgid "Keep category"
 msgstr "Kategorie behalten"
 
@@ -3946,6 +4006,7 @@ msgstr "Projektdetails werden geladen …"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:108
 #: web/src/lib/features/home/HomeDashboard.svelte:126
+#: web/src/lib/features/home/HomeDashboard.svelte:127
 msgid "Loading recent projects…"
 msgstr "Zuletzt aktualisierte Projekte werden geladen…"
 
@@ -3973,6 +4034,7 @@ msgstr "Garnoptionen werden geladen …"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:78
 #: web/src/lib/features/home/HomeDashboard.svelte:94
+#: web/src/lib/features/home/HomeDashboard.svelte:95
 msgid "Loading your home…"
 msgstr "Startseite wird geladen…"
 
@@ -4026,10 +4088,12 @@ msgid "N/A"
 msgstr "n. v."
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:153
+#: web/src/lib/features/yarns/YarnLibrary.svelte:154
 msgid "Name, brand, colorway, or fiber"
 msgstr "Name, Marke, Farbe oder Faser"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:207
+#: web/src/lib/features/projects/ProjectLibrary.svelte:208
 msgid "Name, notes, yarn, or tag"
 msgstr "Name, Notizen, Garn oder Schlagwort"
 
@@ -4044,6 +4108,7 @@ msgstr ""
 "gibst."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:244
+#: web/src/lib/features/categories/CategoryManager.svelte:245
 msgid "New category"
 msgstr "Neue Kategorie"
 
@@ -4052,6 +4117,7 @@ msgstr "Neue Kategorie"
 #: web/src/lib/features/projects/ProjectEditor.svelte:987
 #: web/src/lib/features/projects/ProjectEditor.svelte:997
 #: web/src/lib/features/projects/ProjectLibrary.svelte:199
+#: web/src/lib/features/projects/ProjectLibrary.svelte:200
 #: web/src/routes/create/+page.svelte:24
 msgid "New project"
 msgstr "Neues Projekt"
@@ -4105,6 +4171,7 @@ msgid "No audit events match these filters."
 msgstr "Keine Audit-Ereignisse entsprechen diesen Filtern."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:278
+#: web/src/lib/features/categories/CategoryManager.svelte:279
 msgid "No categories yet."
 msgstr "Noch keine Kategorien."
 
@@ -4134,6 +4201,7 @@ msgid "No project photos yet."
 msgstr "Noch keine Projektfotos."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:280
+#: web/src/lib/features/projects/ProjectLibrary.svelte:281
 msgid "No projects match those filters."
 msgstr "Keine Projekte passen zu diesen Filtern."
 
@@ -4144,6 +4212,7 @@ msgstr "Noch keine Projekte verwenden dieses Garn."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:144
 #: web/src/lib/features/home/HomeDashboard.svelte:167
+#: web/src/lib/features/home/HomeDashboard.svelte:168
 msgid "No projects yet."
 msgstr "Noch keine Projekte."
 
@@ -4170,6 +4239,7 @@ msgid "No yarn matches that search."
 msgstr "Kein Garn passt zu dieser Suche."
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:198
+#: web/src/lib/features/yarns/YarnLibrary.svelte:199
 msgid "No yarn matches those filters."
 msgstr "Kein Garn passt zu diesen Filtern."
 
@@ -4251,6 +4321,7 @@ msgid "Opening your workspace…"
 msgstr "Dein Arbeitsbereich wird geöffnet …"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:205
+#: web/src/lib/features/categories/CategoryManager.svelte:206
 msgid "Organize projects with your own categories."
 msgstr "Ordne Projekte mit eigenen Kategorien."
 
@@ -4273,7 +4344,9 @@ msgstr "PDF-Dokument"
 #: web/src/lib/features/admin/AdminAudit.svelte:445
 #: web/src/lib/features/admin/AdminUsers.svelte:674
 #: web/src/lib/features/projects/ProjectLibrary.svelte:340
+#: web/src/lib/features/projects/ProjectLibrary.svelte:341
 #: web/src/lib/features/yarns/YarnLibrary.svelte:262
+#: web/src/lib/features/yarns/YarnLibrary.svelte:263
 msgid "Page"
 msgstr "Seite"
 
@@ -4474,6 +4547,7 @@ msgid "Project not found"
 msgstr "Projekt nicht gefunden"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:331
+#: web/src/lib/features/projects/ProjectLibrary.svelte:332
 msgid "Project pages"
 msgstr "Projektseiten"
 
@@ -4498,6 +4572,7 @@ msgid "Project tags"
 msgstr "Projekt-Schlagwörter"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:376
+#: web/src/lib/features/categories/CategoryManager.svelte:377
 msgid "Projects that use this category will no longer show it."
 msgstr "Projekte, die diese Kategorie verwenden, zeigen sie danach nicht mehr an."
 
@@ -4513,12 +4588,15 @@ msgstr "Quelle wird gelesen und ein Entwurf vorbereitet…"
 #: web/src/lib/features/home/HomeDashboard.svelte:212
 #: web/src/lib/features/home/HomeDashboard.svelte:218
 #: web/src/lib/features/home/HomeDashboard.svelte:247
+#: web/src/lib/features/home/HomeDashboard.svelte:248
 #: web/src/lib/features/home/HomeDashboard.svelte:253
+#: web/src/lib/features/home/HomeDashboard.svelte:254
 msgid "Recent projects"
 msgstr "Zuletzt bearbeitet"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:112
 #: web/src/lib/features/home/HomeDashboard.svelte:130
+#: web/src/lib/features/home/HomeDashboard.svelte:131
 msgid "Recently updated projects could not be loaded."
 msgstr "Zuletzt aktualisierte Projekte konnten nicht geladen werden."
 
@@ -4578,7 +4656,9 @@ msgid "Remove attachment"
 msgstr "Anhang entfernen"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:211
+#: web/src/lib/features/projects/ProjectLibrary.svelte:212
 #: web/src/lib/features/yarns/YarnLibrary.svelte:157
+#: web/src/lib/features/yarns/YarnLibrary.svelte:158
 msgid "Remove filter"
 msgstr "Filter entfernen"
 
@@ -4617,6 +4697,7 @@ msgid "Removing…"
 msgstr "Wird entfernt …"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:349
+#: web/src/lib/features/categories/CategoryManager.svelte:350
 msgid "Rename"
 msgstr "Umbenennen"
 
@@ -4772,7 +4853,9 @@ msgstr "Garn wird gespeichert…"
 
 #: web/src/lib/features/admin/AdminUsers.svelte:823
 #: web/src/lib/features/categories/CategoryManager.svelte:261
+#: web/src/lib/features/categories/CategoryManager.svelte:262
 #: web/src/lib/features/categories/CategoryManager.svelte:319
+#: web/src/lib/features/categories/CategoryManager.svelte:320
 #: web/src/lib/features/projects/ProjectEditor.svelte:1028
 #: web/src/lib/features/projects/ProjectEditor.svelte:1048
 #: web/src/lib/features/projects/ProjectEditor.svelte:1545
@@ -4789,17 +4872,21 @@ msgid "Search yarn"
 msgstr "Garn suchen"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:206
+#: web/src/lib/features/projects/ProjectLibrary.svelte:207
 msgid "Search your projects"
 msgstr "Deine Projekte durchsuchen"
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:152
+#: web/src/lib/features/yarns/YarnLibrary.svelte:153
 msgid "Search your yarn"
 msgstr "Garne durchsuchen"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:177
 #: web/src/lib/features/home/HomeDashboard.svelte:209
+#: web/src/lib/features/home/HomeDashboard.svelte:210
 #: web/src/lib/features/home/HomeDashboard.svelte:215
 #: web/src/lib/features/home/HomeDashboard.svelte:250
+#: web/src/lib/features/home/HomeDashboard.svelte:251
 msgid "See all"
 msgstr "Alle anzeigen"
 
@@ -4821,6 +4908,7 @@ msgid "Sign in failed."
 msgstr "Anmeldung fehlgeschlagen."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:60
+#: web/src/lib/features/categories/CategoryManager.svelte:61
 msgid "Sign in to manage categories."
 msgstr "Melde dich an, um Kategorien zu verwalten."
 
@@ -4840,6 +4928,7 @@ msgstr "Melde dich an, um dieses Projekt zu öffnen."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:82
 #: web/src/lib/features/home/HomeDashboard.svelte:98
+#: web/src/lib/features/home/HomeDashboard.svelte:99
 msgid "Sign in to see your favorite projects and yarns."
 msgstr "Melde dich an, um deine favorisierten Projekte und Garne zu sehen."
 
@@ -4848,12 +4937,14 @@ msgid "Sign in to view this yarn."
 msgstr "Melde dich an, um dieses Garn anzusehen."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:101
+#: web/src/lib/features/projects/ProjectLibrary.svelte:102
 msgid "Sign in to view your projects."
 msgstr "Melde dich an, um deine Projekte anzusehen."
 
 #: web/src/lib/features/yarns/YarnForm.svelte:168
 #: web/src/lib/features/yarns/YarnForm.svelte:174
 #: web/src/lib/features/yarns/YarnLibrary.svelte:61
+#: web/src/lib/features/yarns/YarnLibrary.svelte:62
 msgid "Sign in to view your yarn."
 msgstr "Melde dich an, um deine Garne anzusehen."
 
@@ -4896,6 +4987,7 @@ msgid "Start another import"
 msgstr "Weiteren Import starten"
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:288
+#: web/src/lib/features/projects/ProjectLibrary.svelte:289
 msgid "Start with one project to keep its pattern and progress together."
 msgstr ""
 "Beginne mit einem Projekt und bewahre Anleitung und Fortschritt zusammen "
@@ -4982,6 +5074,7 @@ msgstr "Tippe auf ein Foto, um es zu vergrößern."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:161
 #: web/src/lib/features/home/HomeDashboard.svelte:185
+#: web/src/lib/features/home/HomeDashboard.svelte:186
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr "Tippe bei einem Projekt oder Garn auf ♥, um es hier zu behalten."
 
@@ -5087,10 +5180,12 @@ msgid "The calculator returned an unreadable response."
 msgstr "Der Rechner hat eine nicht lesbare Antwort zurückgegeben."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:196
+#: web/src/lib/features/categories/CategoryManager.svelte:197
 msgid "The category could not be deleted."
 msgstr "Die Kategorie konnte nicht gelöscht werden."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:197
+#: web/src/lib/features/categories/CategoryManager.svelte:198
 msgid "The category could not be saved."
 msgstr "Die Kategorie konnte nicht gespeichert werden."
 
@@ -5173,6 +5268,7 @@ msgid "The project could not be saved."
 msgstr "Das Projekt konnte nicht gespeichert werden."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:119
+#: web/src/lib/features/projects/ProjectLibrary.svelte:120
 msgid "The project list could not be loaded."
 msgstr "Die Projektliste konnte nicht geladen werden."
 
@@ -5307,6 +5403,7 @@ msgid "The yarn could not be saved."
 msgstr "Das Garn konnte nicht gespeichert werden."
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:79
+#: web/src/lib/features/yarns/YarnLibrary.svelte:80
 msgid "The yarn list could not be loaded."
 msgstr "Die Garnliste konnte nicht geladen werden."
 
@@ -5324,6 +5421,7 @@ msgid "This cannot be undone."
 msgstr "Dieser Vorgang kann nicht rückgängig gemacht werden."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:192
+#: web/src/lib/features/categories/CategoryManager.svelte:193
 msgid "This category is no longer available."
 msgstr "Diese Kategorie ist nicht mehr verfügbar."
 
@@ -5514,6 +5612,7 @@ msgid "Too many tokens were created recently. Try again later."
 msgstr "Kürzlich wurden zu viele Tokens erstellt. Versuche es später erneut."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:281
+#: web/src/lib/features/projects/ProjectLibrary.svelte:282
 msgid "Try a different name, category, or tag."
 msgstr ""
 "Versuche einen anderen Namen, eine andere Kategorie oder ein anderes "
@@ -5526,22 +5625,28 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:599
 #: web/src/lib/features/admin/DiffPanel.svelte:199
 #: web/src/lib/features/categories/CategoryManager.svelte:229
+#: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/home/HomeDashboard.svelte:114
 #: web/src/lib/features/home/HomeDashboard.svelte:132
+#: web/src/lib/features/home/HomeDashboard.svelte:133
 #: web/src/lib/features/home/HomeDashboard.svelte:169
 #: web/src/lib/features/home/HomeDashboard.svelte:193
+#: web/src/lib/features/home/HomeDashboard.svelte:194
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:263
+#: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:665
 #: web/src/lib/features/yarns/YarnDetail.svelte:229
 #: web/src/lib/features/yarns/YarnForm.svelte:556
 #: web/src/lib/features/yarns/YarnForm.svelte:589
 #: web/src/lib/features/yarns/YarnLibrary.svelte:181
+#: web/src/lib/features/yarns/YarnLibrary.svelte:182
 #: web/src/routes/+layout.svelte:186
 msgid "Try again"
 msgstr "Erneut versuchen"
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:199
+#: web/src/lib/features/yarns/YarnLibrary.svelte:200
 msgid "Try another search or show all yarn."
 msgstr "Versuche eine andere Suche oder zeige alle Garne."
 
@@ -5566,6 +5671,7 @@ msgstr "Unbekannte Person"
 #: web/src/lib/features/admin/audit-action.ts:27
 #: web/src/lib/features/home/HomeDashboard.svelte:134
 #: web/src/lib/features/home/HomeDashboard.svelte:153
+#: web/src/lib/features/home/HomeDashboard.svelte:154
 #: web/src/lib/features/projects/ProjectReader.svelte:681
 #: web/src/lib/features/yarns/YarnDetail.svelte:376
 msgid "Updated"
@@ -5742,6 +5848,7 @@ msgid "Yarn options could not be loaded."
 msgstr "Garnoptionen konnten nicht geladen werden."
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:253
+#: web/src/lib/features/yarns/YarnLibrary.svelte:254
 msgid "Yarn pages"
 msgstr "Garnseiten"
 
@@ -5907,6 +6014,7 @@ msgid "and"
 msgstr "und"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:215
+#: web/src/lib/features/categories/CategoryManager.svelte:216
 msgid "categories"
 msgstr "Kategorien"
 
@@ -5947,6 +6055,8 @@ msgid "Hello there!"
 msgstr "Hallo!"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:166
+#: web/src/lib/features/home/HomeDashboard.svelte:167
+#: web/src/lib/features/projects/ProjectLibrary.svelte:287
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
 
@@ -5957,6 +6067,10 @@ msgstr "Noch am Stricken?"
 #: web/src/lib/features/home/HomeDashboard.svelte:88
 msgid "What are we knitting today?"
 msgstr "Was stricken wir heute?"
+
+#: web/src/lib/features/yarns/YarnLibrary.svelte:205
+msgid "Your stash is empty"
+msgstr "Dein Garnvorrat ist leer"
 
 # Navigation and General
 #~ msgid "Stricknani"

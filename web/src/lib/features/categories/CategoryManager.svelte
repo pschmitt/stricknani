@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EmptyArt from "#lib/components/EmptyArt.svelte";
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
@@ -274,7 +275,7 @@
     </div>
   {:else if loadState === "ready" && categories.length === 0}
     <div class="empty-state" aria-live="polite">
-      <span class="empty-mark" aria-hidden="true">⌁</span>
+      <EmptyArt icon="categories" tone="yarns" />
       <h2>{t("No categories yet.", locale)}</h2>
       <p>
         {t(
@@ -520,31 +521,6 @@
 
   .rename-form .field-error {
     grid-column: 1 / -1;
-  }
-
-  .empty-state {
-    display: grid;
-    justify-items: center;
-    gap: 0.45rem;
-    border: 1px dashed var(--line);
-    border-radius: 1rem;
-    padding: clamp(1.5rem, 6vw, 3rem) 1rem;
-    text-align: center;
-  }
-
-  .empty-mark {
-    color: var(--accent);
-    font-size: 2rem;
-  }
-
-  .empty-state h2,
-  .empty-state p {
-    margin: 0;
-  }
-
-  .empty-state p {
-    max-width: 30rem;
-    color: var(--ink-muted);
   }
 
   .category-skeleton {

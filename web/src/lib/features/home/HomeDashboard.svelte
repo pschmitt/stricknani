@@ -91,6 +91,7 @@
 
   {#if session.status === "loading"}
     <p class="home-status" role="status" aria-live="polite">
+      <Mascot size={48} roll={true} />
       {t("Loading your home…", locale)}
     </p>
   {:else if userId === null}
@@ -571,8 +572,12 @@
   }
 
   .home-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     margin: 0;
     color: var(--ink-muted);
+    font-weight: 700;
   }
   .home-error,
   .home-signed-out {

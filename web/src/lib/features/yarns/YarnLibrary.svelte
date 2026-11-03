@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EmptyArt from "#lib/components/EmptyArt.svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
@@ -193,7 +194,7 @@
     </div>
   {:else if loadState === "ready" && items.length === 0}
     <section class="empty-state" aria-live="polite">
-      <span class="empty-mark" aria-hidden="true">◌</span>
+      <EmptyArt icon="yarns" tone="yarns" />
       {#if hasFilters}
         <h2>{t("No yarn matches those filters.", locale)}</h2>
         <p>{t("Try another search or show all yarn.", locale)}</p>
@@ -201,7 +202,7 @@
           {t("Clear filters", locale)}
         </Button>
       {:else}
-        <h2>{t("Your yarn shelf is ready.", locale)}</h2>
+        <h2>{t("Your stash is empty", locale)}</h2>
         <p>
           {t(
             "Add a skein to keep its details and project links together.",
@@ -350,31 +351,6 @@
   .pagination span {
     color: var(--ink-muted);
     font-size: 0.88rem;
-  }
-
-  .empty-state {
-    display: grid;
-    justify-items: center;
-    gap: 0.5rem;
-    border: 1px dashed var(--line);
-    border-radius: 1rem;
-    padding: clamp(1.5rem, 6vw, 3rem) 1rem;
-    text-align: center;
-  }
-
-  .empty-mark {
-    color: var(--accent);
-    font-size: 2rem;
-  }
-
-  .empty-state h2,
-  .empty-state p {
-    margin: 0;
-  }
-
-  .empty-state p {
-    max-width: 32rem;
-    color: var(--ink-muted);
   }
 
   .yarn-skeleton {

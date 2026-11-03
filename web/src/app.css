@@ -574,7 +574,7 @@ button:disabled {
 
 .primary-nav a.active .nav-icon,
 .secondary-nav a.active .nav-icon {
-  background: color-mix(in srgb, var(--tone) 16%, var(--surface));
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 
 /* A small happy hop when a destination becomes the current one. */
@@ -912,4 +912,26 @@ textarea::placeholder {
   .mobile-navigation a {
     font-size: 0.68rem;
   }
+}
+
+/* Empty states: the mascot, a friendly title and a hint (see EmptyState.svelte). */
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 5vw, 2.75rem) 1.25rem;
+  text-align: center;
+}
+
+.empty-state > h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.25;
+}
+
+.empty-state > p {
+  max-width: 34rem;
+  margin: 0 0 0.45rem;
+  color: var(--ink-muted);
 }

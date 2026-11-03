@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EmptyArt from "#lib/components/EmptyArt.svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -275,7 +276,7 @@
     </div>
   {:else if loadState === "ready" && items.length === 0}
     <div class="empty-state" aria-live="polite">
-      <span class="empty-mark" aria-hidden="true">✳</span>
+      <EmptyArt icon="projects" tone="projects" />
       {#if hasFilters}
         <h2>{t("No projects match those filters.", locale)}</h2>
         <p>{t("Try a different name, category, or tag.", locale)}</p>
@@ -283,7 +284,7 @@
           {t("Clear filters", locale)}
         </Button>
       {:else}
-        <h2>{t("Your project library is ready.", locale)}</h2>
+        <h2>{t("Nothing on the needles yet", locale)}</h2>
         <p>
           {t(
             "Start with one project to keep its pattern and progress together.",
@@ -450,39 +451,6 @@
   .pagination span {
     color: var(--ink-muted);
     font-size: 0.88rem;
-  }
-
-  .empty-state {
-    display: grid;
-    justify-items: center;
-    gap: 0.45rem;
-    border: 1px dashed var(--line);
-    border-radius: 1rem;
-    padding: clamp(1.5rem, 6vw, 3rem) 1rem;
-    background: var(--surface);
-    text-align: center;
-  }
-
-  .empty-mark {
-    display: grid;
-    width: 3.5rem;
-    aspect-ratio: 1;
-    place-items: center;
-    border-radius: 1rem;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
-    font-size: 1.8rem;
-  }
-
-  .empty-state h2 {
-    margin: 0.4rem 0 0;
-    font-size: 1.2rem;
-  }
-
-  .empty-state p {
-    max-width: 34rem;
-    margin: 0 0 0.45rem;
-    color: var(--ink-muted);
   }
 
   .project-skeleton {
