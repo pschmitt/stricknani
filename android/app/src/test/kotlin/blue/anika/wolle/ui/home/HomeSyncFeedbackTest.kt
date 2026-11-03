@@ -101,19 +101,4 @@ class HomeSyncFeedbackTest {
     fun `signed out never shows the problem card`() {
         assertEquals(null, problemAfter(SyncProblem.Failed, RefreshState.Error, signedOut = true))
     }
-
-    @Test
-    fun `the top bar takes over as the greeting scrolls out`() {
-        assertEquals(0f, greetingHandoff(0f, instant = false), 0f)
-        assertEquals(0f, greetingHandoff(0.25f, instant = false), 0f)
-        assertEquals(0.5f, greetingHandoff(0.475f, instant = false), 0.001f)
-        assertEquals(1f, greetingHandoff(0.7f, instant = false), 0f)
-        assertEquals(1f, greetingHandoff(3f, instant = false), 0f)
-    }
-
-    @Test
-    fun `without animations the top bar just toggles`() {
-        assertEquals(0f, greetingHandoff(0.3f, instant = true), 0f)
-        assertEquals(1f, greetingHandoff(0.5f, instant = true), 0f)
-    }
 }

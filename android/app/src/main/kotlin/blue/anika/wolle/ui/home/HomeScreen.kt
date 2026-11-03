@@ -58,11 +58,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -93,6 +97,7 @@ import blue.anika.wolle.ui.common.stitchedBorder
 import blue.anika.wolle.ui.signin.SignedOutPanel
 import coil3.compose.AsyncImage
 import java.util.Calendar
+import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -176,24 +181,27 @@ fun HomeScreen(
     // The pull indicator is the stock one: the greeting and the mascot carry the status.
     val pullState = rememberPullToRefreshState()
 
-    // The compact top bar takes over from the greeting once it has scrolled away.
+    // The hero mascot flies into the compact top bar as the list scrolls (see HeroFlight).
     val listState = rememberLazyListState()
     val greetingIndex = if (signedOut) 1 else 0
-    val handoff by
-        remember(listState, greetingIndex, reduceMotion) {
-            derivedStateOf {
-                val info =
-                    listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == greetingIndex }
-                val gone =
-                    when {
-                        info != null -> (-info.offset).coerceAtLeast(0) / info.size.toFloat()
-                        listState.firstVisibleItemIndex > greetingIndex -> 1f
-                        else -> 0f
-                    }
-                greetingHandoff(gone, instant = reduceMotion)
+    val density = LocalDensity.current
+    val statusTopPx = WindowInsets.statusBars.getTop(density).toFloat()
+    val flight =
+        remember(listState, greetingIndex, signedOut, statusTopPx, density, reduceMotion) {
+            with(density) {
+                HeroFlight(
+                    listState = listState,
+                    greetingIndex = greetingIndex,
+                    restLeftPx = HERO_START_PADDING.toPx(),
+                    restTopPx = (if (signedOut) 0f else statusTopPx) + GREETING_TOP_PADDING.toPx(),
+                    heroPx = HERO_SIZE.toPx(),
+                    slotLeftPx = BAR_PADDING.toPx(),
+                    slotTopPx = statusTopPx + ((BAR_HEIGHT - BAR_MASCOT_SIZE) / 2).toPx(),
+                    slotPx = BAR_MASCOT_SIZE.toPx(),
+                    instant = reduceMotion,
+                )
             }
         }
-    val handoffProgress = remember(listState) { { handoff } }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -241,9 +249,6 @@ fun HomeScreen(
                             onGaugeClick = onGaugeClick,
                             padStatusBar = !signedOut,
                             status = subtitle,
-                            busy = refreshing && !signedOut,
-                            cue = cue,
-                            handoff = handoffProgress,
                         )
                     }
                     availableUpdate?.let { update ->
@@ -360,9 +365,25 @@ fun HomeScreen(
                 }
             }
             CollapsedBar(
-                progress = handoffProgress,
-                busy = refreshing && !signedOut,
+                progress = flight::progress,
                 onClick = { scope.launch { listState.animateScrollToItem(0) } },
+            )
+            // The one and only Winky Pom: it rides along with the greeting at the top and shrinks
+            // into the bar's logo slot as the list scrolls, so it stays tappable in both places.
+            Mascot(
+                size = HERO_SIZE,
+                bob = true,
+                busy = refreshing && !signedOut,
+                cue = cue,
+                modifier =
+                    Modifier.align(Alignment.TopStart).graphicsLayer {
+                        val placement = flight.placement()
+                        transformOrigin = TransformOrigin(0f, 0f)
+                        translationX = placement.x
+                        translationY = placement.y
+                        scaleX = placement.scale
+                        scaleY = placement.scale
+                    },
             )
         }
     }
@@ -373,28 +394,20 @@ private fun LazyListScope.spacedItem(content: @Composable () -> Unit) {
     item { Column(Modifier.padding(bottom = 16.dp)) { content() } }
 }
 
-/**
- * How far the compact top bar has taken over from the greeting, 0 to 1: it fades in as the greeting
- * scrolls out ([gone] is the share of it above the top edge). With [instant] (animations off) it
- * just toggles halfway.
- */
-fun greetingHandoff(gone: Float, instant: Boolean): Float {
-    val progress = ((gone - HANDOFF_START) / (HANDOFF_END - HANDOFF_START)).coerceIn(0f, 1f)
-    return if (instant) (if (progress >= 0.5f) 1f else 0f) else progress
-}
+private val HERO_SIZE = 96.dp
+private val HERO_START_PADDING = 8.dp
+private val GREETING_TOP_PADDING = 8.dp
+private val BAR_HEIGHT = 56.dp
+private val BAR_PADDING = 16.dp
+private val BAR_MASCOT_SIZE = 44.dp
+private val BAR_MASCOT_GAP = 8.dp
 
-private const val HANDOFF_START = 0.25f
-private const val HANDOFF_END = 0.7f
-
-/** A friendly hello with the mascot, instead of a title bar. */
+/** A friendly hello next to the mascot's place, instead of a title bar. */
 @Composable
 private fun Greeting(
     onGaugeClick: () -> Unit,
     padStatusBar: Boolean = true,
     status: GreetingStatus = GreetingStatus.Question,
-    busy: Boolean = false,
-    cue: MascotCue? = null,
-    handoff: () -> Float = { 0f },
 ) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     // One pick per screen entry: it survives recomposition, theme switches and rotation.
@@ -417,24 +430,12 @@ private fun Greeting(
                     if (padStatusBar) Modifier.windowInsetsPadding(WindowInsets.statusBars)
                     else Modifier
                 )
-                .padding(start = 8.dp, end = 16.dp, top = 8.dp),
+                .padding(start = HERO_START_PADDING, end = 16.dp, top = GREETING_TOP_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Mascot(
-            size = 96.dp,
-            bob = true,
-            busy = busy,
-            cue = cue,
-            // It shrinks towards the top bar that takes over from it.
-            modifier =
-                Modifier.graphicsLayer {
-                    val p = handoff()
-                    scaleX = 1f - 0.5f * p
-                    scaleY = 1f - 0.5f * p
-                    alpha = 1f - p
-                    transformOrigin = TransformOrigin(0.5f, 0f)
-                },
-        )
+        // The mascot itself is drawn by HomeScreen's overlay, which flies it into the top bar;
+        // this only keeps its place in the row.
+        Spacer(Modifier.size(HERO_SIZE).align(Alignment.Top))
         Column(Modifier.weight(1f)) {
             Text(
                 greeting,
@@ -484,61 +485,53 @@ private fun greetingStatusText(status: GreetingStatus): String =
     }
 
 /**
- * The compact top bar: the small mascot and the app name, with the status bar's inset. It fades and
- * slides in as the greeting scrolls away ([progress]) and is not composed while hidden, so it never
- * blocks touches on the content below. Tapping it scrolls Home back to the top.
+ * The compact top bar: a logo slot that opens as the hero mascot flies in ([progress], 0 to 1) and
+ * pushes the app name right in step, with the status bar's inset. It is transparent while the hero
+ * is around and fills in once the mascot has arrived, like a collapsing top bar. The mascot itself
+ * is HomeScreen's overlay, so the slot is only empty space. Not composed at 0, so it never blocks
+ * touches on the content below; once filled, tapping it scrolls Home back to the top.
  */
 @Composable
-private fun BoxScope.CollapsedBar(
-    progress: () -> Float,
-    busy: Boolean,
-    onClick: () -> Unit,
-) {
+private fun BoxScope.CollapsedBar(progress: () -> Float, onClick: () -> Unit) {
     val visible by remember(progress) { derivedStateOf { progress() > 0f } }
     if (!visible) return
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 3.dp,
+    val tappable by remember(progress) { derivedStateOf { progress() >= 0.5f } }
+    val container = MaterialTheme.colorScheme.surface
+    val slotPx = with(LocalDensity.current) { (BAR_MASCOT_SIZE + BAR_MASCOT_GAP).toPx() }
+    Row(
         modifier =
             Modifier.align(Alignment.TopStart)
                 .fillMaxWidth()
                 .testTag("home-collapsed-bar")
                 .graphicsLayer {
-                    val p = progress()
-                    alpha = p
-                    translationY = -12.dp.toPx() * (1f - p)
+                    shadowElevation = 3.dp.toPx() * morphBarOpacity(progress())
+                    shape = RectangleShape
                 }
+                .drawBehind { drawRect(container, alpha = morphBarOpacity(progress())) }
                 .clickable(
+                    enabled = tappable,
                     onClickLabel = stringResource(R.string.home_scroll_to_top),
                     role = Role.Button,
                     onClick = onClick,
-                ),
+                )
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .height(BAR_HEIGHT)
+                .padding(horizontal = BAR_PADDING),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier =
-                Modifier.windowInsetsPadding(WindowInsets.statusBars)
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Mascot(
-                size = 44.dp,
-                busy = busy,
-                exposeSemantics = false,
-                modifier =
-                    Modifier.graphicsLayer {
-                        val p = progress()
-                        scaleX = 0.6f + 0.4f * p
-                        scaleY = 0.6f + 0.4f * p
-                    },
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 1,
-            )
-        }
+        // The logo slot: 0 wide at the top of Home, full width once the mascot sits in it.
+        Spacer(
+            Modifier.layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                layout(morphSlotWidth(progress(), slotPx).roundToInt(), placeable.height) {}
+            }
+        )
+        Text(
+            stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+            modifier = Modifier.graphicsLayer { alpha = morphBarOpacity(progress()) },
+        )
     }
 }
 
