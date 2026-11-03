@@ -40,6 +40,27 @@ Migration backfill, uploads/deletes, primary promotion and audit snapshots need
 one consistent grouping/order policy. Freeze the response DTO after the schema
 inventory; do not silently change v1 JSON.
 
+Sync ships first for projects and yarns. Existing v1 category sync is a complete
+snapshot: it ignores `since` and has no tombstones or category timestamps.
+Proper v2 category delta sync therefore needs a separate storage migration;
+do not present the old snapshot as a delta. Migration 0015 is reserved for media
+positions and 0016 for category sync storage. The category portion of T121.2
+stays open until that implementation and its paging/deletion tests pass.
+
+The v2 sync envelope is `{data: {updated, deleted_ids, server_time,
+full_resync_required, has_more, next_cursor}}`. Updated records use existing
+v2 DTOs. V2 always bounds a page (default/max 50 combined update/delete events),
+and its cursors are bound to owner, entity and protocol version. Clients must
+reset stored v1 cursors when switching an area to v2. The page sequence keeps
+one server watermark; writes after that watermark belong to the next delta.
+
+The first v2 sync for an area must discard its v1 continuation cursor and
+finish the complete paged snapshot before saving a new watermark. Reconcile
+the category cache against that complete snapshot while preserving pending
+local writes: deletions from before category tombstone storage existed cannot
+be reconstructed. Account switches must keep both cursors and pending writes
+scoped to their original account.
+
 ## Authentication and metadata
 
 Domain/resource and administrator routes accept either an API-purpose PAT in

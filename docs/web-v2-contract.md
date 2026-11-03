@@ -499,6 +499,37 @@ archive_unavailable`. The owner-scoped status response excludes source URLs,
 worker errors, leases, and job identifiers. Clients can poll this durable
 status; no streaming connection is needed.
 
+## Native delta synchronization
+
+`GET /api/v2/sync/projects` and `GET /api/v2/sync/yarns` accept the same
+resource authentication as ordinary v2 reads: a strict API-purpose PAT or a
+browser session. Explicit invalid Bearer credentials never fall back to a
+browser cookie.
+
+The response is `{data: {updated, deleted_ids, server_time,
+full_resync_required, has_more, next_cursor}}`. Updated records use the
+corresponding v2 resource DTO; `deleted_ids` contains resource IDs.
+`full_resync_required` is currently false. Every page contains at most 50
+combined update and deletion events, with a default limit of 50.
+
+Use an optional RFC3339 `since` timestamp for the first delta page, or an
+opaque `cursor` for continuation. These parameters are mutually exclusive.
+An optional integer `limit` must be from 1 through 50. Continuations retain
+their original limit when it is omitted. `server_time` stays fixed throughout
+the page sequence; after consuming all pages, save it for the next delta.
+Later writes and deletions belong to the following delta. Cursors are bound
+to the authenticated owner, entity type and protocol version; discard stored
+v1 cursors when migrating a resource to v2.
+
+Invalid `since` or `limit` values return 422 `validation_error` with the
+corresponding `error.fields` entry. Unknown or duplicate query parameters,
+or combining `since` and `cursor`, return 400 `invalid_query`. Malformed,
+oversized, foreign-owner, foreign-entity or v1 cursors return 400
+`invalid_cursor`. Responses retain the v2 `no-store` policy.
+
+Category delta sync remains pending its storage migration. The existing
+category list is a full snapshot, and must not be treated as a delta feed.
+
 ## Native resource and administrator authentication
 
 Project, yarn, category, media, import, OCR, archive and draft-preview routes

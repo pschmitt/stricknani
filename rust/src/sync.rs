@@ -15,8 +15,8 @@ use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 use crate::auth::bearer_user;
 use crate::db::AppState;
 
-const MAX_PAGE_SIZE: i64 = 50;
-const MAX_CURSOR_BYTES: usize = 4096;
+pub(crate) const MAX_PAGE_SIZE: i64 = 50;
+pub(crate) const MAX_CURSOR_BYTES: usize = 4096;
 const CURSOR_VERSION: u8 = 1;
 
 /// Build project and yarn sync routes, to be nested under `/api/v1`.
@@ -35,7 +35,7 @@ struct SyncQuery {
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-enum EntityKind {
+pub(crate) enum EntityKind {
     Project,
     Yarn,
 }
@@ -52,6 +52,22 @@ impl EntityKind {
         match self {
             Self::Project => "project",
             Self::Yarn => "yarn",
+        }
+    }
+}
+
+/// Cursor encoding is deliberately versioned separately from the route version.
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum CursorProtocol {
+    V1,
+    V2,
+}
+
+impl CursorProtocol {
+    fn version(self) -> u8 {
+        match self {
+            Self::V1 => CURSOR_VERSION,
+            Self::V2 => 2,
         }
     }
 }
@@ -76,6 +92,7 @@ struct CursorPayload {
 
 #[derive(Debug, Clone)]
 struct PageState {
+    protocol: CursorProtocol,
     since: Option<String>,
     snapshot: String,
     updated: Option<CursorPosition>,
@@ -105,21 +122,32 @@ struct PageEvents {
     has_more: bool,
 }
 
+/// A bounded page of changed entity IDs shared by the v1 and v2 adapters.
 #[derive(Debug)]
-enum SyncFailure {
-    Database,
-    Serialization,
+pub(crate) struct SyncPage {
+    pub(crate) updated_ids: Vec<i64>,
+    pub(crate) deleted_ids: Vec<i64>,
+    pub(crate) server_time: String,
+    pub(crate) has_more: bool,
+    pub(crate) next_cursor: Option<String>,
 }
 
-impl From<sqlx::Error> for SyncFailure {
+#[derive(Debug)]
+pub(crate) enum SyncPageError {
+    MutuallyExclusive,
+    InvalidCursor,
+    Internal,
+}
+
+impl From<sqlx::Error> for SyncPageError {
     fn from(_: sqlx::Error) -> Self {
-        Self::Database
+        Self::Internal
     }
 }
 
-impl From<serde_json::Error> for SyncFailure {
+impl From<serde_json::Error> for SyncPageError {
     fn from(_: serde_json::Error) -> Self {
-        Self::Serialization
+        Self::Internal
     }
 }
 
@@ -186,35 +214,51 @@ async fn sync_entities(
         None => None,
     };
 
-    let snapshot = format_timestamp(now_utc_micros());
-    let page = match resolve_page(
-        query.cursor.as_deref(),
-        since.as_deref(),
-        limit,
+    if limit.is_none() && query.cursor.is_none() {
+        return match legacy_sync(&state, kind, user_id, since.as_deref()).await {
+            Ok(response) => Json(response).into_response(),
+            Err(_) => error_response(StatusCode::INTERNAL_SERVER_ERROR, "database error"),
+        };
+    }
+
+    let page = match sync_page(
+        &state,
         kind,
         user_id,
-        &snapshot,
-    ) {
+        since.as_deref(),
+        limit,
+        query.cursor.as_deref(),
+        CursorProtocol::V1,
+    )
+    .await
+    {
         Ok(page) => page,
-        Err(PageError::MutuallyExclusive) => {
+        Err(SyncPageError::MutuallyExclusive) => {
             return error_response(
                 StatusCode::BAD_REQUEST,
                 "Use either since or cursor, not both",
             );
         }
-        Err(PageError::InvalidCursor) => {
+        Err(SyncPageError::InvalidCursor) => {
             return error_response(StatusCode::BAD_REQUEST, "Invalid sync cursor");
         }
+        Err(SyncPageError::Internal) => {
+            return error_response(StatusCode::INTERNAL_SERVER_ERROR, "database error");
+        }
     };
-
-    let output = match page {
-        None => legacy_sync(&state, kind, user_id, since.as_deref()).await,
-        Some(page) => bounded_sync(&state, kind, user_id, page).await,
+    let updated = match serialize_ids(&state, kind, user_id, &page.updated_ids).await {
+        Ok(updated) => updated,
+        Err(_) => return error_response(StatusCode::INTERNAL_SERVER_ERROR, "database error"),
     };
-    match output {
-        Ok(response) => Json(response).into_response(),
-        Err(_) => error_response(StatusCode::INTERNAL_SERVER_ERROR, "database error"),
-    }
+    Json(SyncResponse {
+        updated,
+        deleted_ids: page.deleted_ids,
+        server_time: page.server_time,
+        full_resync_required: false,
+        has_more: page.has_more,
+        next_cursor: page.next_cursor,
+    })
+    .into_response()
 }
 
 async fn legacy_sync(
@@ -222,7 +266,7 @@ async fn legacy_sync(
     kind: EntityKind,
     user_id: i64,
     since: Option<&str>,
-) -> Result<SyncResponse, SyncFailure> {
+) -> Result<SyncResponse, SyncPageError> {
     let snapshot = format_timestamp(now_utc_micros());
     let updated_events = load_updates(&state.pool, kind, user_id, since, None, None, None).await?;
     let updated_ids: Vec<i64> = updated_events.iter().map(|event| event.id).collect();
@@ -247,12 +291,36 @@ async fn legacy_sync(
     })
 }
 
-async fn bounded_sync(
+/// Run the shared change-log page query. Route adapters own auth, validation,
+/// response DTOs, and error encoding.
+pub(crate) async fn sync_page(
+    state: &AppState,
+    kind: EntityKind,
+    user_id: i64,
+    since: Option<&str>,
+    limit: Option<i64>,
+    raw_cursor: Option<&str>,
+    protocol: CursorProtocol,
+) -> Result<SyncPage, SyncPageError> {
+    let snapshot = format_timestamp(now_utc_micros());
+    let page = resolve_page(raw_cursor, since, limit, kind, user_id, &snapshot, protocol).map_err(
+        |error| match error {
+            PageError::MutuallyExclusive => SyncPageError::MutuallyExclusive,
+            PageError::InvalidCursor => SyncPageError::InvalidCursor,
+        },
+    )?;
+    match page {
+        Some(page) => bounded_page(state, kind, user_id, page).await,
+        None => Err(SyncPageError::Internal),
+    }
+}
+
+async fn bounded_page(
     state: &AppState,
     kind: EntityKind,
     user_id: i64,
     page: PageState,
-) -> Result<SyncResponse, SyncFailure> {
+) -> Result<SyncPage, SyncPageError> {
     let updates = load_updates(
         &state.pool,
         kind,
@@ -274,10 +342,9 @@ async fn bounded_sync(
     )
     .await?;
     let events = choose_events(updates, deletions, page.limit);
-    let updated = serialize_ids(state, kind, user_id, &events.updated_ids).await?;
     let next_cursor = if events.has_more {
         Some(encode_cursor(&CursorPayload {
-            v: CURSOR_VERSION,
+            v: page.protocol.version(),
             entity: kind,
             user_id,
             since: page.since.clone(),
@@ -290,11 +357,10 @@ async fn bounded_sync(
         None
     };
 
-    Ok(SyncResponse {
-        updated,
+    Ok(SyncPage {
+        updated_ids: events.updated_ids,
         deleted_ids: events.deleted_ids,
         server_time: page.snapshot,
-        full_resync_required: false,
         has_more: events.has_more,
         next_cursor,
     })
@@ -492,13 +558,14 @@ fn resolve_page(
     kind: EntityKind,
     user_id: i64,
     snapshot: &str,
+    protocol: CursorProtocol,
 ) -> Result<Option<PageState>, PageError> {
     if let Some(raw_cursor) = raw_cursor {
         if since.is_some() {
             return Err(PageError::MutuallyExclusive);
         }
         let mut cursor = decode_cursor(raw_cursor)?;
-        if cursor.v != CURSOR_VERSION || cursor.entity != kind || cursor.user_id != user_id {
+        if cursor.v != protocol.version() || cursor.entity != kind || cursor.user_id != user_id {
             return Err(PageError::InvalidCursor);
         }
         if !(1..=MAX_PAGE_SIZE).contains(&cursor.limit) {
@@ -526,6 +593,7 @@ fn resolve_page(
             .transpose()
             .map_err(|_| PageError::InvalidCursor)?;
         return Ok(Some(PageState {
+            protocol,
             since: cursor.since,
             snapshot: cursor.snapshot,
             updated: cursor.updated,
@@ -535,6 +603,7 @@ fn resolve_page(
     }
 
     Ok(limit.map(|limit| PageState {
+        protocol,
         since: since.map(str::to_owned),
         snapshot: snapshot.to_owned(),
         updated: None,
@@ -586,6 +655,10 @@ fn normalize_position(position: CursorPosition) -> Result<CursorPosition, ()> {
         at: normalized_timestamp(&position.at)?,
         id: position.id,
     })
+}
+
+pub(crate) fn normalize_timestamp(value: &str) -> Result<String, ()> {
+    normalized_timestamp(value)
 }
 
 fn normalized_timestamp(value: &str) -> Result<String, ()> {
