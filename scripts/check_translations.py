@@ -8,7 +8,7 @@ from pathlib import Path
 from babel.messages.catalog import Message
 from babel.messages.pofile import read_po
 
-LOCALES_DIR = Path(__file__).resolve().parents[1] / "locales"
+LOCALES_DIR = Path(__file__).resolve().parents[1] / "stricknani" / "locales"
 
 
 def _load_catalog(path: Path) -> list[Message]:

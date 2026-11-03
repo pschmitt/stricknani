@@ -12,7 +12,7 @@ EOF
 
 should_skip() {
   case "$1" in
-    stricknani/static/vendor/*) return 0 ;;
+    rust/static/vendor/*) return 0 ;;
     *.png|*.jpg|*.jpeg|*.gif|*.webp|*.avif|*.ico|*.svg) return 0 ;;
     *.pdf|*.db) return 0 ;;
     *.woff|*.woff2|*.ttf|*.otf|*.eot) return 0 ;;

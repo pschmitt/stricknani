@@ -2,16 +2,6 @@ apiVersion: vendir.k14s.io/v1alpha1
 directories:
 - contents:
   - http: {}
-    path: mdi
-  - http: {}
-    path: photoswipe
-  - http: {}
-    path: cropperjs
-  - http: {}
-    path: htmx
-  - http: {}
-    path: sentry
-  - http: {}
     path: fonts/space-grotesk
-  path: stricknani/static/vendor
+  path: rust/static/vendor
 kind: LockConfig

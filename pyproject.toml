@@ -1,95 +1,37 @@
 [project]
-name = "stricknani"
+name = "stricknani-tooling"
 version = "1.0.0"
-description = "A self-hosted web app for managing knitting projects"
+description = "Development tooling for Stricknani: i18n catalog generators and browser/CI harnesses (the product itself is Rust, web/ and android/)"
 readme = "README.md"
 license = { text = "GPL-3.0-only" }
 authors = [
     { name = "Philipp Schmitt", email = "philipp@schmitt.co" }
 ]
 requires-python = ">=3.12"
-dependencies = [
-    "aiosqlite>=0.20.0",
-    "alembic>=1.13.3",
-    "babel>=2.14.0",
-    "bcrypt>=4.0.0",
-    "beautifulsoup4>=4.12.0",
-    "fastapi>=0.115.0",
-    "fastapi-csrf-protect>=1.0.7",
-    "httpx>=0.28.1",
-    "jinja2>=3.1.4",
-    "markdown>=3.7",
-    "nh3>=0.2.18",
-    "openai>=1.57.0",
-    "pypdf>=5.1.0",
-    "pillow>=10.4.0",
-    "python-dotenv>=1.0.1",
-    "python-jose[cryptography]>=3.3.0",
-    "python-multipart>=0.0.9",
-    "rich>=13.9.4",
-    "scikit-image>=0.24.0",
-    "sentry-sdk[fastapi]>=2.20.0",
-    "sqlalchemy[asyncio]>=2.0.35",
-    "trafilatura>=1.12.0",
-    "uvicorn[standard]>=0.30.0",
-    "waybackpy>=3.0.6",
-    "weasyprint>=60.0",
-    "pymupdf>=1.26.4,<2",
-    # QR-code setup payloads for the Android app's SNA-13 onboarding flow.
-    "qrcode[pil]>=7.4.2",
-    # 0.12.0 is the version pinned in nixpkgs' python3.pkgs.curl-cffi at the
-    # time of writing; keep the floor at what nixpkgs ships so `nix build`
-    # doesn't outrun it. Only stable, long-established curl_cffi APIs
-    # (AsyncSession, impersonate="chrome", RequestException) are used here,
-    # so any newer release resolved by uv/pip remains compatible.
-    "curl-cffi>=0.12.0",
-]
+# Nothing in this project is installed or shipped. The scripts under scripts/
+# and ci/ and their tests only need the dev group below.
+dependencies = []
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
+    # Translation catalog tooling (scripts/*_i18n.py, scripts/check_translations.py).
+    "babel>=2.14.0",
+    # Browser acceptance harnesses (ci/stricknani/web_*_browser.py).
     "playwright==1.64.1",
     "pytest>=8.3.3",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=5.0.0",
-    "pytest-socket>=0.7.0",
     "ruff>=0.6.9",
     "mypy>=1.11.2",
-    "types-markdown>=3.7.0.20240822",
-    "types-qrcode>=8.2.0.20250809",
 ]
 
-[project.scripts]
-stricknani = "stricknani.scripts.run:main"
-stricknani-cli = "stricknani.scripts.cli:main"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatchling.build.targets.wheel]
-packages = [
-    "stricknani",
-    "stricknani.routes",
-    "stricknani.utils",
-    "stricknani.scripts",
-    "stricknani.alembic",
-    "stricknani.alembic.versions",
-]
-include = [
-    "stricknani/**",
-]
-
-[tool.hatch.build]
-include = [
-    "stricknani/**",
-]
+[tool.uv]
+package = false
+default-groups = ["dev"]
 
 [tool.ruff]
 line-length = 88
 target-version = "py313"
 exclude = [
     ".venv",
-    "stricknani/static/vendor",
 ]
 
 [tool.ruff.lint]
@@ -102,13 +44,9 @@ select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
-ignore = [
-    "B008",  # Function call in default argument (required for FastAPI Depends)
-]
 
 [tool.ruff.lint.isort]
-known-first-party = ["stricknani"]
-known-third-party = ["alembic", "sqlalchemy"]
+known-first-party = ["ci", "scripts"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -125,69 +63,10 @@ warn_no_return = true
 strict_equality = true
 exclude = [
     ".venv",
-    "stricknani/static/vendor",
-]
-
-[[tool.mypy.overrides]]
-module = [
-    "pymupdf",
-    "jose.*",
-    "openai",
-    "skimage.*",
-    "weasyprint",
-]
-ignore_missing_imports = true
-
-[tool.coverage.run]
-source = ["stricknani"]
-omit = [
-    # Optional import engines and their external-format adapters are covered
-    # by dedicated mocked/integration lanes rather than the offline core suite.
-    "stricknani/importing/*",
-    "stricknani/utils/ai_importer.py",
-    "stricknani/utils/project_import.py",
-    "stricknani/utils/wayback.py",
-    # CLI/demo entry points are exercised by their own command-level checks.
-    "stricknani/scripts/*",
-    # These HTML-only mutation routes are exercised by the browser E2E lanes,
-    # which run in a separate server process and cannot contribute to this
-    # in-process Python coverage measurement.
-    "stricknani/routes/admin.py",
-    "stricknani/routes/projects.py",
-    "stricknani/routes/yarn.py",
-    "stricknani/routes/utils.py",
-    "stricknani/services/projects/import_*.py",
-    "stricknani/services/yarn/images.py",
-]
-
-[tool.coverage.report]
-fail_under = 80
-show_missing = true
-omit = [
-    "stricknani/importing/*",
-    "stricknani/utils/ai_importer.py",
-    "stricknani/utils/project_import.py",
-    "stricknani/utils/wayback.py",
-    "stricknani/scripts/*",
-    "stricknani/routes/admin.py",
-    "stricknani/routes/projects.py",
-    "stricknani/routes/yarn.py",
-    "stricknani/routes/utils.py",
-    "stricknani/services/projects/import_*.py",
-    "stricknani/services/yarn/images.py",
 ]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-# Block real network access during tests. The suite talks to the app through
-# httpx's in-process ASGITransport and an in-memory SQLite DB, so no real
-# sockets are needed. AF_UNIX sockets stay allowed because asyncio's event
-# loop uses socketpair(2) internally for its self-pipe.
-addopts = "--disable-socket --allow-unix-socket --ignore=tests/e2e"
-markers = [
-    "e2e: browser tests that require a running Stricknani server",
-]

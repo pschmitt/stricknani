@@ -1,18 +1,25 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended"
+  ],
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "automerge": true
     },
     {
-      "matchPackageNames": ["htmx.org"],
-      "groupName": "frontend dependencies"
-    },
-    {
-      "matchManagers": ["custom.regex"],
-      "matchFileNames": ["vendir.yml"],
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "vendir.yml"
+      ],
       "commitMessageTopic": "vendored dependencies"
     }
   ],
@@ -20,20 +27,13 @@
     {
       "customType": "regex",
       "description": "Update vendir npm dependencies",
-      "fileMatch": ["^vendir\\.yml$"],
+      "fileMatch": [
+        "^vendir\\.yml$"
+      ],
       "matchStrings": [
         "# renovate: datasource=npm depName=(?<depName>[^\\s]+)\\n\\s*- path:[^\\n]+\\n\\s*http:\\n\\s*url: https://registry\\.npmjs\\.org/(?:@[^/]+/)?[^/]+/-/[^-\\n]+-(?<currentValue>[^/\\s]+)\\.tgz"
       ],
       "datasourceTemplate": "npm"
-    },
-    {
-      "customType": "regex",
-      "description": "Update vendir Sentry browser SDK",
-      "fileMatch": ["^vendir\\.yml$"],
-      "matchStrings": [
-        "# renovate: datasource=github-releases depName=(?<depName>[^\\s]+)\\n\\s*- path:[^\\n]+\\n\\s*http:\\n\\s*url: https://browser\\.sentry-cdn\\.com/(?<currentValue>[^/]+)/bundle\\.tracing\\.min\\.js"
-      ],
-      "datasourceTemplate": "github-releases"
     }
   ],
   "pep621": {

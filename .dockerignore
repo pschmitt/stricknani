@@ -5,17 +5,10 @@
 !nix/**
 !rust/
 !rust/**
-!stricknani/
-!stricknani/**
 !web/
 !web/**
-!demo_assets/
-!demo_assets/**
 !README.md
-!pyproject.toml
-!uv.lock
 !Dockerfile
-!Dockerfile.python
 **/.git
 **/.direnv
 **/.venv

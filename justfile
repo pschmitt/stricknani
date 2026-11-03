@@ -1,4 +1,8 @@
 # Stricknani justfile
+#
+# The product is the Rust server (rust/), the Svelte web app (web/) and the
+# Android app (android/). The Python in this repository is development tooling
+# only: i18n catalog generators (scripts/) and browser/CI harnesses (ci/).
 
 set shell := ["bash", "-c"]
 
@@ -8,16 +12,15 @@ dev_port := env("PORT", "7674")
 default:
   @just --choose
 
-# Setup uv environment
+# Install the Python development tooling (i18n generators, browser harnesses)
 [group: 'dev']
 setup:
-  uv venv
-  uv pip install -e ".[dev]"
+  uv sync
 
 # CI helpers
 [group: 'ci']
 ci-setup-py:
-  uv sync --extra dev
+  uv sync --locked
 
 # Run the Rust dev server. Set RUST_DATABASE_URL and RUST_MEDIA_ROOT to
 # disposable Rust-owned storage paths before starting it.
@@ -30,15 +33,11 @@ run *args:
   : "${RUST_MEDIA_ROOT:?Set RUST_MEDIA_ROOT to a Rust-owned media directory}"
   BIND_PORT="${BIND_PORT:-{{ dev_port }}}" cargo run --manifest-path rust/Cargo.toml -- serve {{ args }}
 
-# Run the legacy Python dev server with reload. Use -b to skip opening the browser.
-[group: 'dev']
-[positional-arguments]
-run-python *args:
-  ./scripts/run.sh --port "{{ dev_port }}" {{ args }}
-
-# Run linters
+# Lint the Python tooling (scripts/, ci/, tests/) and the Rust server's static
+# CSS. Rust, web and Nix lint recipes are `rust-lint`, `web-check` and
+# `lint-nix`.
 [group: 'lint']
-lint: lint-ruff lint-mypy lint-js lint-css lint-template-js lint-template-js-format
+lint: lint-ruff lint-mypy lint-css
 
 [group: 'lint']
 lint-ruff:
@@ -51,35 +50,24 @@ lint-mypy:
 biome_action := if env('CI', '') != '' { 'ci' } else { 'lint' }
 
 [group: 'lint']
-lint-js:
-  biome "{{ biome_action }}" stricknani/static/js
-
-# Best-effort JS syntax check for Jinja2 template JS.
-[group: 'lint']
-lint-template-js:
-  uv run python scripts/lint_template_js_syntax.py
-
-[group: 'lint']
-lint-template-js-format:
-  uv run python scripts/lint_template_js_format.py
-
-[group: 'lint']
 lint-css:
-  biome "{{ biome_action }}" stricknani/static/css
+  biome "{{ biome_action }}" rust/static/css
 
 # Check translations
 [group: 'i18n']
 i18n-check:
-  uv run python -m stricknani.scripts.check_translations
+  uv run python -m scripts.check_translations
   uv run python -m scripts.generate_rust_i18n --check
   uv run python -m scripts.generate_web_i18n --check
 
-# Extract translation strings from source files
+# Rebuild the POT template from the Rust and web sources. Babel only writes the
+# empty template (babel.cfg has no gettext sources left); the Rust and web
+# extractors then fill it.
 [group: 'i18n']
 i18n-extract:
   uv run python -m babel.messages.frontend extract \
     -F babel.cfg \
-    -o stricknani/locales/messages.pot stricknani
+    -o stricknani/locales/messages.pot scripts
   uv run python -m scripts.extract_rust_i18n
   uv run python -m scripts.generate_web_i18n --extract
 
@@ -102,7 +90,7 @@ i18n-compile:
 
 # Format code
 [group: 'fmt']
-fmt: fmt-ruff fmt-nix fmt-biome fmt-rust
+fmt: fmt-ruff fmt-nix fmt-css fmt-rust
 
 # Cargo formatting is fast; cargo builds and tests should run on the remote
 # build host described in AGENTS.md.
@@ -121,19 +109,8 @@ fmt-nix:
   statix fix nix/
 
 [group: 'fmt']
-fmt-biome: fmt-js fmt-css
-
-[group: 'fmt']
-fmt-js:
-  biome format --write stricknani/static/js
-
-[group: 'fmt']
-fmt-template-js:
-  uv run python scripts/fmt_template_js.py --write
-
-[group: 'fmt']
 fmt-css:
-  biome format --write stricknani/static/css
+  biome format --write rust/static/css
 
 # Trim trailing whitespace
 [group: 'fmt']
@@ -160,37 +137,14 @@ todo-wip:
 todo-todo:
   ./scripts/todo.sh --todo
 
-# Run tests
-[group: 'test']
-test-python:
-  uv run pytest -v --cov=stricknani --cov-report=term-missing --cov-report=xml
-
-# Tests for Python tooling retained to support Rust shipping and migration.
-# Keep this set focused on helpers and disable the legacy application coverage
-# threshold; the full Python reference suite remains `just test-python`.
+# Python tooling tests: i18n generators and the browser/CI harness helpers.
 [group: 'test']
 test-harness:
-  uv run pytest -q --no-cov \
-    tests/test_health.py \
-    tests/test_rust_fixture.py \
-    tests/test_rust_e2e_seed.py \
-    tests/test_rust_replay_runner.py \
-    tests/test_rust_e2e_diagnostics.py \
-    tests/test_rust_import_verifier.py \
-    tests/test_rust_i18n.py \
-    tests/test_web_i18n.py \
-    tests/test_web_ui_browser.py \
-    tests/test_web_accessibility_browser.py \
-    tests/test_web_pwa_browser.py \
-    tests/test_web_performance_browser.py
+  uv run pytest -q
 
-# Native Rust suite plus the small Python shipping-harness test set.
+# Native Rust suite plus the Python tooling tests.
 [group: 'test']
 test: rust-test test-harness
-
-# Full lint, coverage, and translation gate for the legacy Python app.
-[group: 'test']
-check-python: lint test-python i18n-check
 
 # Run Rust tests on the remote build host described in AGENTS.md.
 [group: 'test']
@@ -203,21 +157,6 @@ rust-lint:
   cargo fmt --manifest-path rust/Cargo.toml --check
   cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings
 
-# Run the fast browser smoke suite against a disposable local database.
-[group: 'test']
-e2e-smoke:
-  ./scripts/e2e.sh smoke
-
-# Run the longer browser suite against a disposable local database.
-[group: 'test']
-e2e-full:
-  ./scripts/e2e.sh full
-
-# Backwards-compatible alias for the pull-request smoke suite.
-[group: 'test']
-e2e *args:
-  ./scripts/e2e.sh {{ args }}
-
 # Sync vendored assets
 alias vendor-sync := vendir-sync
 [group: 'vendir']
@@ -228,22 +167,9 @@ vendir-sync *args:
 alias vendor-check := vendir-check
 [group: 'vendir']
 vendir-check: vendir-sync
-  git diff --exit-code -- vendir.lock.yml stricknani/static/vendor
+  git diff --exit-code -- vendir.lock.yml rust/static/vendor
 
-# Rebuild the vendored TipTap bundle (stricknani/static/vendor-tiptap/tiptap-bundle.min.js).
-# TipTap's npm packages pull in ~30 transitive modules (prosemirror-*, etc.)
-# that reference each other via bare specifiers, so vendir alone can't vendor
-# them; esbuild bundles the pinned versions in package.json into one
-# self-contained file instead. Lives outside stricknani/static/vendor/ (not
-# .../vendor/tiptap/) because that directory is exclusively managed by
-# `vendir sync`, which would delete anything under it not declared in
-# vendir.yml. Run after bumping versions in package.json and commit the
-# regenerated bundle + package-lock.json.
-[group: 'vendir']
-vendor-tiptap:
-  cd stricknani/static/vendor-tiptap && npm install && npm run build
-
-# Run the Rust-first native app and repository checks.
+# Run every repository check: Python tooling, Rust, web, Nix and i18n.
 check: lint lint-nix rust-lint test i18n-check web-check web-test web-build
 
 # Browser dependencies are locked and installed only for development/builds.
@@ -300,88 +226,6 @@ push-image:
   docker tag stricknani:latest ghcr.io/pschmitt/stricknani:latest
   docker push ghcr.io/pschmitt/stricknani:${COMMIT_SHA}
   docker push ghcr.io/pschmitt/stricknani:latest
-
-# Seed demo data
-[group: 'demo']
-demo-data *args:
-  mkdir -p ./media
-  uv run python -m stricknani.scripts.seed_demo {{ args }}
-
-[group: 'demo']
-[confirm("Delete media dir?")]
-purge-media:
-  rm -rf ./media
-  mkdir -p ./media
-
-# Reset demo data and re-seed
-[group: 'demo']
-[confirm("Delete database and media dir?")]
-demo-reset: purge-media (demo-data "--reset")
-
-# Run CLI with arguments
-[group: 'cli']
-cli *args:
-  uv run stricknani-cli {{ args }}
-
-# AI ingestion helpers (CLI-only)
-[group: 'cli']
-ai *args:
-  uv run stricknani-cli ai {{ args }}
-
-# Convenience wrappers
-# Usage:
-# - `just ai-schema` (project)
-# - `just ai-schema yarn`
-[group: 'cli']
-ai-schema target="project":
-  uv run stricknani-cli ai schema --target {{ target }}
-
-[group: 'cli']
-ai-ingest *args:
-  uv run stricknani-cli ai ingest {{ args }}
-
-# Create or update admin user
-[group: 'cli']
-admin-create email password='':
-  #!/usr/bin/env bash
-  ARGS=(
-    --admin
-    --email "{{ email }}"
-  )
-  if [[ -n "{{ password }}" ]]
-  then
-    ARGS+=(--password "{{ password }}")
-  fi
-
-  uv run stricknani-cli user create "${ARGS[@]}"
-
-# List all users
-[group: 'cli']
-user-list:
-  uv run stricknani-cli user list
-
-# Database migrations
-[group: 'db']
-migrate-create name:
-  uv run alembic --config stricknani/alembic.ini revision --autogenerate -m "{{ name }}"
-
-[group: 'db']
-migrate-up:
-  uv run alembic --config stricknani/alembic.ini upgrade head
-
-[group: 'db']
-migrate-down:
-  uv run alembic --config stricknani/alembic.ini downgrade -1
-
-# Run alembic with arguments
-[group: 'db']
-alembic *args:
-  uv run alembic --config stricknani/alembic.ini {{ args }}
-
-[group: 'db']
-sql *args:
-  #!/usr/bin/env sh
-  sqlite3 ./stricknani.db {{ args }}
 
 # Deploy to production
 [group: 'actions']
