@@ -13,6 +13,7 @@ let
       ../web/static/manifest.webmanifest
       ../web/static/offline.html
       ../web/static/offline.css
+      ../web/static/offline-theme.js
       ../web/static/service-worker.js
     ];
   };

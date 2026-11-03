@@ -12,6 +12,7 @@ const REQUIRED_OFFLINE_ASSETS = [
   `${APP_PREFIX}manifest.webmanifest`,
   `${APP_PREFIX}offline.html`,
   `${APP_PREFIX}offline.css`,
+  `${APP_PREFIX}offline-theme.js`,
   `${APP_PREFIX}favicon.svg`,
   `${APP_PREFIX}icons/icon-192.png`,
   `${APP_PREFIX}icons/icon-512.png`,

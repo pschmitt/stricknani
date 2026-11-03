@@ -213,6 +213,7 @@ pub async fn security_headers(request: axum::extract::Request, next: Next) -> Re
             | "/app/manifest.webmanifest"
             | "/app/offline.html"
             | "/app/offline.css"
+            | "/app/offline-theme.js"
             | "/app/icons/icon-192.png"
             | "/app/icons/icon-512.png"
     );

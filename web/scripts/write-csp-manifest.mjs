@@ -161,6 +161,7 @@ async function collectPwaAssets(directory) {
     "/app/manifest.webmanifest",
     "/app/offline.html",
     "/app/offline.css",
+    "/app/offline-theme.js",
     "/app/favicon.svg",
     "/app/icons/icon-192.png",
     "/app/icons/icon-512.png",

@@ -185,6 +185,11 @@ async fn app_worker_and_offline_assets_are_explicit_app_scoped_public_routes() {
         include_str!("../../web/static/offline.css"),
     )
     .unwrap();
+    fs::write(
+        root.path().join("offline-theme.js"),
+        include_str!("../../web/static/offline-theme.js"),
+    )
+    .unwrap();
     fs::write(root.path().join("icons/icon-192.png"), b"png192").unwrap();
     fs::write(root.path().join("icons/icon-512.png"), b"png512").unwrap();
     let app = pwa::router_with_web_root(Some(root.path().to_path_buf()))
@@ -211,6 +216,7 @@ async fn app_worker_and_offline_assets_are_explicit_app_scoped_public_routes() {
         ),
         ("/app/offline.html", "text/html; charset=utf-8"),
         ("/app/offline.css", "text/css; charset=utf-8"),
+        ("/app/offline-theme.js", "text/javascript; charset=utf-8"),
         ("/app/icons/icon-192.png", "image/png"),
         ("/app/icons/icon-512.png", "image/png"),
     ] {
@@ -225,6 +231,21 @@ async fn app_worker_and_offline_assets_are_explicit_app_scoped_public_routes() {
         assert!(response.headers().contains_key("content-security-policy"));
         if path == "/app/offline.html" {
             assert_eq!(response.headers()["content-language"], "en, de");
+            let body = response.into_body().collect().await.unwrap().to_bytes();
+            let html = String::from_utf8(body.to_vec()).unwrap();
+            assert!(
+                html.contains(r#"<script src="/app/offline-theme.js"></script>"#),
+                "the theme script must be external: script-src is 'self'"
+            );
+            let inline = scraper::Selector::parse("script:not([src])").unwrap();
+            assert!(
+                scraper::Html::parse_document(&html)
+                    .select(&inline)
+                    .next()
+                    .is_none(),
+                "offline.html must not carry an inline script"
+            );
+            continue;
         }
         match path {
             "/app/offline.html" => {
@@ -265,6 +286,7 @@ async fn configured_app_pwa_assets_fail_closed_when_the_build_is_incomplete() {
         "/app/sw.js",
         "/app/manifest.webmanifest",
         "/app/offline.html",
+        "/app/offline-theme.js",
     ] {
         let response = app
             .clone()
@@ -298,6 +320,11 @@ async fn app_worker_routes_coexist_with_the_frontend_shell_without_fallback_leak
     fs::write(
         root.path().join("offline.css"),
         include_str!("../../web/static/offline.css"),
+    )
+    .unwrap();
+    fs::write(
+        root.path().join("offline-theme.js"),
+        include_str!("../../web/static/offline-theme.js"),
     )
     .unwrap();
     fs::write(root.path().join("icons/icon-192.png"), b"png192").unwrap();

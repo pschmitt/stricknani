@@ -22,6 +22,7 @@ const MAX_APP_WORKER_BYTES: u64 = 512 * 1024;
 const MAX_APP_MANIFEST_BYTES: u64 = 32 * 1024;
 const MAX_APP_OFFLINE_HTML_BYTES: u64 = 64 * 1024;
 const MAX_APP_OFFLINE_CSS_BYTES: u64 = 64 * 1024;
+const MAX_APP_OFFLINE_JS_BYTES: u64 = 8 * 1024;
 const MAX_APP_ICON_BYTES: u64 = 256 * 1024;
 
 #[derive(Clone, Default)]
@@ -31,6 +32,7 @@ struct AppPwaState {
     manifest: Option<Arc<Vec<u8>>>,
     offline_html: Option<Arc<Vec<u8>>>,
     offline_css: Option<Arc<Vec<u8>>>,
+    offline_theme_js: Option<Arc<Vec<u8>>>,
     icon_192: Option<Arc<Vec<u8>>>,
     icon_512: Option<Arc<Vec<u8>>>,
 }
@@ -52,6 +54,7 @@ pub fn router_with_web_root(web_root: Option<PathBuf>) -> Router {
         .route("/app/manifest.webmanifest", get(app_manifest))
         .route("/app/offline.html", get(app_offline_html))
         .route("/app/offline.css", get(app_offline_css))
+        .route("/app/offline-theme.js", get(app_offline_theme_js))
         .route("/app/icons/icon-192.png", get(app_icon_192))
         .route("/app/icons/icon-512.png", get(app_icon_512))
         .with_state(state)
@@ -64,6 +67,10 @@ fn load_app_pwa_assets(root: PathBuf) -> AppPwaState {
         manifest: read_bounded_file(&root.join("manifest.webmanifest"), MAX_APP_MANIFEST_BYTES),
         offline_html: read_bounded_file(&root.join("offline.html"), MAX_APP_OFFLINE_HTML_BYTES),
         offline_css: read_bounded_file(&root.join("offline.css"), MAX_APP_OFFLINE_CSS_BYTES),
+        offline_theme_js: read_bounded_file(
+            &root.join("offline-theme.js"),
+            MAX_APP_OFFLINE_JS_BYTES,
+        ),
         icon_192: read_bounded_file(&root.join("icons/icon-192.png"), MAX_APP_ICON_BYTES),
         icon_512: read_bounded_file(&root.join("icons/icon-512.png"), MAX_APP_ICON_BYTES),
     }
@@ -162,6 +169,15 @@ async fn app_offline_css(State(state): State<AppPwaState>) -> Response<Body> {
         state.offline_css.clone(),
         &state,
         "text/css; charset=utf-8",
+        "public, max-age=3600",
+    )
+}
+
+async fn app_offline_theme_js(State(state): State<AppPwaState>) -> Response<Body> {
+    optional_asset(
+        state.offline_theme_js.clone(),
+        &state,
+        "text/javascript; charset=utf-8",
         "public, max-age=3600",
     )
 }
