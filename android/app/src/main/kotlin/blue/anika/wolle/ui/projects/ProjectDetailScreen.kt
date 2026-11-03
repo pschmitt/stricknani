@@ -67,6 +67,7 @@ import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
@@ -356,7 +357,6 @@ private fun ProjectDetailContent(
         if (linkedYarns.isNotEmpty()) add(ProjectDetailCard.LINKED_YARNS)
         if (detail.description != null) add(ProjectDetailCard.DESCRIPTION)
         if (detail.steps.isNotEmpty()) add(ProjectDetailCard.STEPS)
-        if (detail.notes != null) add(ProjectDetailCard.NOTES)
     }
     val savedVisibleOrder =
         remember(cardOrder, availableCardKeys) {
@@ -377,274 +377,273 @@ private fun ProjectDetailContent(
         }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().testTag("e2e-project-detail"),
-        state = listState,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        if (detail.images.isNotEmpty()) {
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(detail.images, key = { _, image -> image.id }) { _, image ->
-                        val url = resolveMediaUrl(image.url)
-                        AsyncImage(
-                            // SNA-36: reuse the already-remembered imageUrls instead of
-                            // recomputing resolveMediaUrl per item.
-                            model = url,
-                            contentDescription = image.altText,
-                            contentScale = ContentScale.Crop,
-                            modifier =
-                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                    url?.let(openViewerImage)
-                                },
-                        )
-                    }
-                }
-            }
-        }
-        item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
-
-        items(orderedCardKeys, key = { it }) { cardKey ->
-            val cardIndex = orderedCardKeys.indexOf(cardKey)
-            when (cardKey) {
-                ProjectDetailCard.ATTACHMENTS ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_attachments_title),
-                        onEdit = { onEditSection(ProjectEditorFocus.ATTACHMENTS) },
-                        copyText = detail.attachments.joinToString("\n") { it.originalFilename },
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        detail.attachments.forEachIndexed { index, attachment ->
-                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    attachment.originalFilename,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                IconButton(onClick = { onDeleteAttachment(attachment) }) {
-                                    DestructiveDeleteIcon(
-                                        contentDescription =
-                                            stringResource(
-                                                R.string
-                                                    .project_detail_delete_attachment_description
-                                            )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                ProjectDetailCard.DETAILS ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_details_title),
-                        onEdit = { onEditSection(ProjectEditorFocus.DETAILS) },
-                        copyText =
-                            copyLines(
-                                stringResource(R.string.common_field_category) to detail.category,
-                                stringResource(R.string.common_field_needles) to detail.needles,
-                                stringResource(R.string.project_detail_field_yarn) to detail.yarn,
-                                stringResource(R.string.common_field_other_materials) to
-                                    detail.otherMaterials,
-                                stringResource(R.string.project_editor_tags_label) to
-                                    detail.tags.joinToString(", "),
-                            ),
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        detail.category?.let {
-                            DetailRow(stringResource(R.string.common_field_category), it)
-                        }
-                        detail.needles?.let {
-                            DetailRow(stringResource(R.string.common_field_needles), it)
-                        }
-                        detail.yarn?.let {
-                            DetailRow(stringResource(R.string.project_detail_field_yarn), it)
-                        }
-                        detail.otherMaterials?.let {
-                            DetailRow(stringResource(R.string.common_field_other_materials), it)
-                        }
-                        if (detail.tags.isNotEmpty()) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(top = 8.dp),
-                            ) {
-                                detail.tags.forEach { tag ->
-                                    AssistChip(onClick = {}, label = { Text(tag) })
-                                }
-                            }
-                        }
-                    }
-                ProjectDetailCard.STITCH_SAMPLE ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.common_field_stitch_sample),
-                        onEdit = { onEditSection(ProjectEditorFocus.STITCH_SAMPLE) },
-                        copyText = detail.stitchSample,
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        ProjectMarkdown(
-                            value = detail.stitchSample.orEmpty(),
-                            resolveMediaUrl = resolveMediaUrl,
-                            onImageClick = openViewerImage,
-                        )
-                        if (stitchSampleImages.isNotEmpty()) {
-                            LazyRow(
-                                modifier = Modifier.padding(top = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                itemsIndexed(stitchSampleImages, key = { _, image -> image.id }) {
-                                    _,
-                                    image ->
-                                    AsyncImage(
-                                        model = resolveMediaUrl(image.url),
-                                        contentDescription = image.altText,
-                                        contentScale = ContentScale.Crop,
-                                        modifier =
-                                            Modifier.size(160.dp)
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .clickable {
-                                                    resolveMediaUrl(image.url)?.let(openViewerImage)
-                                                },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                ProjectDetailCard.LINKED_YARNS ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_linked_yarns_title),
-                        onEdit = { onEditSection(ProjectEditorFocus.LINKED_YARNS) },
-                        copyText = linkedYarns.joinToString("\n") { it.name },
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        linkedYarns.forEachIndexed { index, yarn ->
-                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                            LinkedEntityRow(
-                                name = yarn.name,
-                                previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
-                                fallbackIcon = MdiIcons.YarnBall,
-                                onClick = { onYarnClick(yarn.id) },
+    Box(modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().testTag("e2e-project-detail"),
+            state = listState,
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (detail.images.isNotEmpty()) {
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        itemsIndexed(detail.images, key = { _, image -> image.id }) { _, image ->
+                            val url = resolveMediaUrl(image.url)
+                            AsyncImage(
+                                // SNA-36: reuse the already-remembered imageUrls instead of
+                                // recomputing resolveMediaUrl per item.
+                                model = url,
+                                contentDescription = image.altText,
+                                contentScale = ContentScale.Crop,
+                                modifier =
+                                    Modifier.size(160.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable {
+                                            url?.let(openViewerImage)
+                                        },
                             )
                         }
                     }
-                ProjectDetailCard.DESCRIPTION ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_description_title),
-                        onEdit = { onEditSection(ProjectEditorFocus.DESCRIPTION) },
-                        copyText = detail.description,
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        ProjectMarkdown(
-                            value = detail.description.orEmpty(),
-                            resolveMediaUrl = resolveMediaUrl,
-                            onImageClick = openViewerImage,
-                        )
-                    }
-                ProjectDetailCard.STEPS ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_steps_title),
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        val sortedSteps =
-                            remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
-                        sortedSteps.forEachIndexed { index, step ->
-                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                            // Each step has its own Edit / Copy text menu; Edit opens that step.
-                            val stepHeading = "${step.stepNumber}. ${step.title}"
-                            SectionActions(
-                                what = stepHeading,
-                                copyText =
-                                    listOfNotNull(stepHeading, step.description)
-                                        .joinToString("\n\n"),
-                                onEdit = { onEditSection(ProjectEditorFocus.step(step.id)) },
-                            ) {
-                                Text(
-                                    "${step.stepNumber}. ${step.title}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                                step.description?.let {
-                                    ProjectMarkdown(
-                                        value = it,
-                                        resolveMediaUrl = resolveMediaUrl,
-                                        onImageClick = openViewerImage,
-                                        modifier = Modifier.padding(top = 4.dp),
+                }
+            }
+            item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
+
+            items(orderedCardKeys, key = { it }) { cardKey ->
+                val cardIndex = orderedCardKeys.indexOf(cardKey)
+                when (cardKey) {
+                    ProjectDetailCard.ATTACHMENTS ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_attachments_title),
+                            onEdit = { onEditSection(ProjectEditorFocus.ATTACHMENTS) },
+                            copyText =
+                                detail.attachments.joinToString("\n") { it.originalFilename },
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            detail.attachments.forEachIndexed { index, attachment ->
+                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        attachment.originalFilename,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f),
                                     )
+                                    IconButton(onClick = { onDeleteAttachment(attachment) }) {
+                                        DestructiveDeleteIcon(
+                                            contentDescription =
+                                                stringResource(
+                                                    R.string
+                                                        .project_detail_delete_attachment_description
+                                                )
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                ProjectDetailCard.NOTES ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_notes_title),
-                        onEdit = { onEditSection(ProjectEditorFocus.NOTES) },
-                        copyText = detail.notes,
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                        sticky = true,
-                    ) {
-                        ProjectMarkdown(
-                            value = detail.notes.orEmpty(),
-                            resolveMediaUrl = resolveMediaUrl,
-                            onImageClick = openViewerImage,
-                        )
-                    }
+                    ProjectDetailCard.DETAILS ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_details_title),
+                            onEdit = { onEditSection(ProjectEditorFocus.DETAILS) },
+                            copyText =
+                                copyLines(
+                                    stringResource(R.string.common_field_category) to
+                                        detail.category,
+                                    stringResource(R.string.common_field_needles) to detail.needles,
+                                    stringResource(R.string.project_detail_field_yarn) to
+                                        detail.yarn,
+                                    stringResource(R.string.common_field_other_materials) to
+                                        detail.otherMaterials,
+                                    stringResource(R.string.project_editor_tags_label) to
+                                        detail.tags.joinToString(", "),
+                                ),
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            detail.category?.let {
+                                DetailRow(stringResource(R.string.common_field_category), it)
+                            }
+                            detail.needles?.let {
+                                DetailRow(stringResource(R.string.common_field_needles), it)
+                            }
+                            detail.yarn?.let {
+                                DetailRow(stringResource(R.string.project_detail_field_yarn), it)
+                            }
+                            detail.otherMaterials?.let {
+                                DetailRow(stringResource(R.string.common_field_other_materials), it)
+                            }
+                            if (detail.tags.isNotEmpty()) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.padding(top = 8.dp),
+                                ) {
+                                    detail.tags.forEach { tag ->
+                                        AssistChip(onClick = {}, label = { Text(tag) })
+                                    }
+                                }
+                            }
+                        }
+                    ProjectDetailCard.STITCH_SAMPLE ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.common_field_stitch_sample),
+                            onEdit = { onEditSection(ProjectEditorFocus.STITCH_SAMPLE) },
+                            copyText = detail.stitchSample,
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            ProjectMarkdown(
+                                value = detail.stitchSample.orEmpty(),
+                                resolveMediaUrl = resolveMediaUrl,
+                                onImageClick = openViewerImage,
+                            )
+                            if (stitchSampleImages.isNotEmpty()) {
+                                LazyRow(
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    itemsIndexed(
+                                        stitchSampleImages,
+                                        key = { _, image -> image.id },
+                                    ) { _, image ->
+                                        AsyncImage(
+                                            model = resolveMediaUrl(image.url),
+                                            contentDescription = image.altText,
+                                            contentScale = ContentScale.Crop,
+                                            modifier =
+                                                Modifier.size(160.dp)
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .clickable {
+                                                        resolveMediaUrl(image.url)
+                                                            ?.let(openViewerImage)
+                                                    },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    ProjectDetailCard.LINKED_YARNS ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_linked_yarns_title),
+                            onEdit = { onEditSection(ProjectEditorFocus.LINKED_YARNS) },
+                            copyText = linkedYarns.joinToString("\n") { it.name },
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            linkedYarns.forEachIndexed { index, yarn ->
+                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                LinkedEntityRow(
+                                    name = yarn.name,
+                                    previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
+                                    fallbackIcon = MdiIcons.YarnBall,
+                                    onClick = { onYarnClick(yarn.id) },
+                                )
+                            }
+                        }
+                    ProjectDetailCard.DESCRIPTION ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_description_title),
+                            onEdit = { onEditSection(ProjectEditorFocus.DESCRIPTION) },
+                            copyText = detail.description,
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            ProjectMarkdown(
+                                value = detail.description.orEmpty(),
+                                resolveMediaUrl = resolveMediaUrl,
+                                onImageClick = openViewerImage,
+                            )
+                        }
+                    ProjectDetailCard.STEPS ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_steps_title),
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            val sortedSteps =
+                                remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
+                            sortedSteps.forEachIndexed { index, step ->
+                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                                // Each step has its own Edit / Copy text menu; Edit opens that
+                                // step.
+                                val stepHeading = "${step.stepNumber}. ${step.title}"
+                                SectionActions(
+                                    what = stepHeading,
+                                    copyText =
+                                        listOfNotNull(stepHeading, step.description)
+                                            .joinToString("\n\n"),
+                                    onEdit = { onEditSection(ProjectEditorFocus.step(step.id)) },
+                                ) {
+                                    Text(
+                                        "${step.stepNumber}. ${step.title}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                    )
+                                    step.description?.let {
+                                        ProjectMarkdown(
+                                            value = it,
+                                            resolveMediaUrl = resolveMediaUrl,
+                                            onImageClick = openViewerImage,
+                                            modifier = Modifier.padding(top = 4.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+            if (detail.notes == null) {
+                item(key = "notes-empty") {
+                    StickyNoteEmpty(
+                        label = stringResource(R.string.notes_add_empty),
+                        onClick = { onEditSection(ProjectEditorFocus.NOTES) },
+                    )
+                }
+            }
+            // Fixed last section (not reorderable); hidden entirely on servers without history.
+            if (historyState.phase != HistoryPhase.Hidden) {
+                item(key = "history") {
+                    HistorySection(
+                        state = historyState,
+                        controller = history,
+                        avatarUrl = resolveMediaUrl,
+                    )
+                }
             }
         }
-        if (detail.notes == null) {
-            item(key = "notes-empty") {
-                StickyNoteEmpty(
-                    label = stringResource(R.string.notes_add_empty),
-                    onClick = { onEditSection(ProjectEditorFocus.NOTES) },
-                )
-            }
-        }
-        // Fixed last section (not reorderable); hidden entirely on servers without history.
-        if (historyState.phase != HistoryPhase.Hidden) {
-            item(key = "history") {
-                HistorySection(
-                    state = historyState,
-                    controller = history,
-                    avatarUrl = resolveMediaUrl,
+        if (detail.notes != null) {
+            NotesDisclosure(listState) {
+                ProjectMarkdown(
+                    value = detail.notes.orEmpty(),
+                    resolveMediaUrl = resolveMediaUrl,
+                    onImageClick = openViewerImage,
                 )
             }
         }

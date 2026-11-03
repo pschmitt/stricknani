@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -55,12 +56,12 @@ import blue.anika.wolle.ui.theme.StickyPaperInkDark
 import blue.anika.wolle.ui.theme.StickyPaperInkLight
 import blue.anika.wolle.ui.theme.StickyPaperLight
 
-private const val TILT_DEGREES = -1.5f
+internal const val TILT_DEGREES = -1.5f
 private val FoldSize = 22.dp
-private val CornerRadius = 14.dp
+internal val CornerRadius = 14.dp
 
 /** A rounded rectangle whose bottom-right corner is cut off diagonally, like a folded page. */
-private class FoldedCornerShape(private val fold: Float, private val radius: Float) : Shape {
+internal class FoldedCornerShape(private val fold: Float, private val radius: Float) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density) =
         Outline.Generic(
             Path().apply {
@@ -160,51 +161,48 @@ internal fun StickyNoteSurface(
         // drop shadow. It sits in the tilted box, so it turns with the paper.
         Box(
             Modifier.align(Alignment.TopCenter).padding(top = 1.dp).size(PinSize).drawBehind {
-                val r = size.width / 2f
-                val center = Offset(r, r)
-                val shadow = Color.Black
-                // Tight contact shadow, then a softer one further down and right.
-                drawCircle(shadow.copy(alpha = 0.35f), r, center + Offset(1.dp.toPx(), 1.dp.toPx()))
-                val soft = center + Offset(3.dp.toPx(), 5.dp.toPx())
-                drawCircle(
-                    brush =
-                        Brush.radialGradient(
-                            listOf(shadow.copy(alpha = 0.28f), shadow.copy(alpha = 0f)),
-                            soft,
-                            r * 1.5f,
-                        ),
-                    radius = r * 1.5f,
-                    center = soft,
-                )
-                drawCircle(
-                    brush =
-                        Brush.radialGradient(
-                            listOf(tape, tape.darkened(0.65f)),
-                            center,
-                            r,
-                        ),
-                    radius = r,
-                    center = center,
-                )
-                val glint = Offset(size.width * 0.34f, size.height * 0.30f)
-                drawCircle(
-                    brush =
-                        Brush.radialGradient(
-                            0f to Color.White.copy(alpha = 0.75f),
-                            0.32f to Color.Transparent,
-                            1f to Color.Transparent,
-                            center = glint,
-                            radius = r,
-                        ),
-                    radius = r,
-                    center = center,
-                )
+                drawPin(tape, Offset(size.width / 2f, size.width / 2f), size.width / 2f)
             }
         )
     }
 }
 
 private val PinSize = 21.dp
+
+/** A glossy push-pin head in [tape] at [center], with a tight and a soft drop shadow. */
+internal fun DrawScope.drawPin(tape: Color, center: Offset, r: Float) {
+    val shadow = Color.Black
+    drawCircle(shadow.copy(alpha = 0.35f), r, center + Offset(1.dp.toPx(), 1.dp.toPx()))
+    val soft = center + Offset(3.dp.toPx(), 5.dp.toPx())
+    drawCircle(
+        brush =
+            Brush.radialGradient(
+                listOf(shadow.copy(alpha = 0.28f), shadow.copy(alpha = 0f)),
+                soft,
+                r * 1.5f,
+            ),
+        radius = r * 1.5f,
+        center = soft,
+    )
+    drawCircle(
+        brush = Brush.radialGradient(listOf(tape, tape.darkened(0.65f)), center, r),
+        radius = r,
+        center = center,
+    )
+    val glint = center + Offset(-r * 0.32f, -r * 0.40f)
+    drawCircle(
+        brush =
+            Brush.radialGradient(
+                0f to Color.White.copy(alpha = 0.75f),
+                0.32f to Color.Transparent,
+                1f to Color.Transparent,
+                center = glint,
+                radius = r,
+            ),
+        radius = r,
+        center = center,
+    )
+}
 
 /** [this] with its colour channels scaled by [factor] (alpha kept). */
 private fun Color.darkened(factor: Float) =

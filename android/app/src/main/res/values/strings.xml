@@ -88,6 +88,9 @@
     <string name="project_detail_description_title">Description</string>
     <string name="project_detail_steps_title">Steps</string>
     <string name="project_detail_notes_title">Notes</string>
+    <string name="notes_close">Close notes</string>
+    <string name="notes_state_expanded">Notes, expanded</string>
+    <string name="notes_state_collapsed">Notes, collapsed</string>
     <string name="notes_add_empty">Add a note</string>
     <string name="project_detail_attachments_title">Attachments</string>
     <string name="project_detail_delete_attachment_description">Delete attachment</string>

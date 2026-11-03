@@ -66,6 +66,7 @@ import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
+import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
@@ -340,7 +341,6 @@ private fun YarnDetailContent(
         }
         if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
         if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
-        if (detail.notes != null) add(YarnDetailCard.NOTES)
     }
     val savedVisibleOrder =
         remember(cardOrder, availableCardKeys) {
@@ -361,207 +361,207 @@ private fun YarnDetailContent(
         }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().testTag("e2e-yarn-detail"),
-        state = listState,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        if (photos.isNotEmpty()) {
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(photos, key = { _, photo -> photo.id }) { _, photo ->
-                        val url = resolveMediaUrl(photo.url)
-                        AsyncImage(
-                            // SNA-36: reuse the already-remembered photoUrls instead of
-                            // recomputing resolveMediaUrl per item.
-                            model = url,
-                            contentDescription = photo.altText,
-                            contentScale = ContentScale.Crop,
-                            modifier =
-                                Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
-                                    url?.let(openViewerImage)
-                                },
-                        )
+    Box(modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().testTag("e2e-yarn-detail"),
+            state = listState,
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (photos.isNotEmpty()) {
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        itemsIndexed(photos, key = { _, photo -> photo.id }) { _, photo ->
+                            val url = resolveMediaUrl(photo.url)
+                            AsyncImage(
+                                // SNA-36: reuse the already-remembered photoUrls instead of
+                                // recomputing resolveMediaUrl per item.
+                                model = url,
+                                contentDescription = photo.altText,
+                                contentScale = ContentScale.Crop,
+                                modifier =
+                                    Modifier.size(160.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable {
+                                            url?.let(openViewerImage)
+                                        },
+                            )
+                        }
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
-                Spacer(Modifier.height(16.dp))
             }
-        }
 
-        item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
+            item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
 
-        items(orderedCardKeys, key = { it }) { cardKey ->
-            val cardIndex = orderedCardKeys.indexOf(cardKey)
-            when (cardKey) {
-                YarnDetailCard.DETAILS ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.yarn_detail_details_title),
-                        onEdit = { onEditSection(YarnEditorFocus.DETAILS) },
-                        copyText =
-                            copyLines(
-                                stringResource(R.string.yarn_detail_field_brand) to detail.brand,
-                                stringResource(R.string.yarn_detail_field_colorway) to
-                                    detail.colorway,
-                                stringResource(R.string.yarn_detail_field_dye_lot) to detail.dyeLot,
-                                stringResource(R.string.yarn_detail_field_fiber_content) to
-                                    detail.fiberContent,
-                                stringResource(R.string.yarn_detail_field_weight_category) to
-                                    detail.weightCategory,
-                                stringResource(R.string.yarn_detail_field_recommended_needles) to
-                                    detail.recommendedNeedles,
-                            ),
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        detail.brand?.let {
-                            DetailRow(stringResource(R.string.yarn_detail_field_brand), it)
+            items(orderedCardKeys, key = { it }) { cardKey ->
+                val cardIndex = orderedCardKeys.indexOf(cardKey)
+                when (cardKey) {
+                    YarnDetailCard.DETAILS ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.yarn_detail_details_title),
+                            onEdit = { onEditSection(YarnEditorFocus.DETAILS) },
+                            copyText =
+                                copyLines(
+                                    stringResource(R.string.yarn_detail_field_brand) to
+                                        detail.brand,
+                                    stringResource(R.string.yarn_detail_field_colorway) to
+                                        detail.colorway,
+                                    stringResource(R.string.yarn_detail_field_dye_lot) to
+                                        detail.dyeLot,
+                                    stringResource(R.string.yarn_detail_field_fiber_content) to
+                                        detail.fiberContent,
+                                    stringResource(R.string.yarn_detail_field_weight_category) to
+                                        detail.weightCategory,
+                                    stringResource(
+                                        R.string.yarn_detail_field_recommended_needles
+                                    ) to detail.recommendedNeedles,
+                                ),
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            detail.brand?.let {
+                                DetailRow(stringResource(R.string.yarn_detail_field_brand), it)
+                            }
+                            detail.colorway?.let {
+                                DetailRow(stringResource(R.string.yarn_detail_field_colorway), it)
+                            }
+                            detail.dyeLot?.let {
+                                DetailRow(stringResource(R.string.yarn_detail_field_dye_lot), it)
+                            }
+                            detail.fiberContent?.let {
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_fiber_content),
+                                    it,
+                                )
+                            }
+                            detail.weightCategory?.let {
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_weight_category),
+                                    it,
+                                )
+                            }
+                            detail.recommendedNeedles?.let {
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_recommended_needles),
+                                    it,
+                                )
+                            }
+                            if (detail.weightGrams != null || detail.lengthMeters != null) {
+                                val amount =
+                                    listOfNotNull(
+                                            detail.weightGrams?.let { "${it}g" },
+                                            detail.lengthMeters?.let { "${it}m" },
+                                        )
+                                        .joinToString(" / ")
+                                DetailRow(stringResource(R.string.yarn_detail_field_amount), amount)
+                            }
                         }
-                        detail.colorway?.let {
-                            DetailRow(stringResource(R.string.yarn_detail_field_colorway), it)
-                        }
-                        detail.dyeLot?.let {
-                            DetailRow(stringResource(R.string.yarn_detail_field_dye_lot), it)
-                        }
-                        detail.fiberContent?.let {
-                            DetailRow(stringResource(R.string.yarn_detail_field_fiber_content), it)
-                        }
-                        detail.weightCategory?.let {
-                            DetailRow(
-                                stringResource(R.string.yarn_detail_field_weight_category),
-                                it,
+                    YarnDetailCard.DESCRIPTION ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_description_title),
+                            onEdit = { onEditSection(YarnEditorFocus.DESCRIPTION) },
+                            copyText = detail.description,
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            YarnMarkdown(
+                                value = detail.description.orEmpty(),
+                                resolveMediaUrl = resolveMediaUrl,
+                                onImageClick = openViewerImage,
                             )
                         }
-                        detail.recommendedNeedles?.let {
-                            DetailRow(
-                                stringResource(R.string.yarn_detail_field_recommended_needles),
-                                it,
-                            )
-                        }
-                        if (detail.weightGrams != null || detail.lengthMeters != null) {
-                            val amount =
-                                listOfNotNull(
-                                        detail.weightGrams?.let { "${it}g" },
-                                        detail.lengthMeters?.let { "${it}m" },
-                                    )
-                                    .joinToString(" / ")
-                            DetailRow(stringResource(R.string.yarn_detail_field_amount), amount)
-                        }
-                    }
-                YarnDetailCard.DESCRIPTION ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_description_title),
-                        onEdit = { onEditSection(YarnEditorFocus.DESCRIPTION) },
-                        copyText = detail.description,
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        YarnMarkdown(
-                            value = detail.description.orEmpty(),
-                            resolveMediaUrl = resolveMediaUrl,
-                            onImageClick = openViewerImage,
-                        )
-                    }
-                YarnDetailCard.USED_IN ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.yarn_detail_used_in_title),
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                    ) {
-                        linkedProjects.forEachIndexed { index, project ->
-                            if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                            Card(onClick = { onProjectClick(project.id) }) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    Box(
-                                        modifier =
-                                            Modifier.size(48.dp)
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .background(
-                                                    MaterialTheme.colorScheme.surfaceVariant
-                                                )
+                    YarnDetailCard.USED_IN ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.yarn_detail_used_in_title),
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            linkedProjects.forEachIndexed { index, project ->
+                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                Card(onClick = { onProjectClick(project.id) }) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     ) {
-                                        if (project.previewUrl != null) {
-                                            AsyncImage(
-                                                model = resolveMediaUrl(project.previewUrl),
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize(),
-                                            )
-                                        } else {
-                                            Box(
-                                                Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Icon(
-                                                    PhosphorIcons.Hoodie,
+                                        Box(
+                                            modifier =
+                                                Modifier.size(48.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant
+                                                    )
+                                        ) {
+                                            if (project.previewUrl != null) {
+                                                AsyncImage(
+                                                    model = resolveMediaUrl(project.previewUrl),
                                                     contentDescription = null,
-                                                    tint =
-                                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxSize(),
                                                 )
+                                            } else {
+                                                Box(
+                                                    Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Icon(
+                                                        PhosphorIcons.Hoodie,
+                                                        contentDescription = null,
+                                                        tint =
+                                                            MaterialTheme.colorScheme
+                                                                .onSurfaceVariant,
+                                                    )
+                                                }
                                             }
                                         }
+                                        Text(project.name)
                                     }
-                                    Text(project.name)
                                 }
                             }
                         }
-                    }
-                YarnDetailCard.NOTES ->
-                    ReorderableDetailCard(
-                        title = stringResource(R.string.project_detail_notes_title),
-                        onEdit = { onEditSection(YarnEditorFocus.NOTES) },
-                        copyText = detail.notes,
-                        cardKey = cardKey,
-                        cardIndex = cardIndex,
-                        listState = listState,
-                        orderedKeys = orderedCardKeys,
-                        itemIndexOffset = itemIndexOffset,
-                        reorderState = reorderState,
-                        onMove = moveCard,
-                        sticky = true,
-                    ) {
-                        YarnMarkdown(
-                            value = detail.notes.orEmpty(),
-                            resolveMediaUrl = resolveMediaUrl,
-                            onImageClick = openViewerImage,
-                        )
-                    }
+                }
+            }
+            if (detail.notes == null) {
+                item(key = "notes-empty") {
+                    StickyNoteEmpty(
+                        label = stringResource(R.string.notes_add_empty),
+                        onClick = { onEditSection(YarnEditorFocus.NOTES) },
+                    )
+                }
+            }
+            // Fixed last section (not reorderable); hidden entirely on servers without history.
+            if (historyState.phase != HistoryPhase.Hidden) {
+                item(key = "history") {
+                    HistorySection(
+                        state = historyState,
+                        controller = history,
+                        avatarUrl = resolveMediaUrl,
+                    )
+                }
             }
         }
-        if (detail.notes == null) {
-            item(key = "notes-empty") {
-                StickyNoteEmpty(
-                    label = stringResource(R.string.notes_add_empty),
-                    onClick = { onEditSection(YarnEditorFocus.NOTES) },
-                )
-            }
-        }
-        // Fixed last section (not reorderable); hidden entirely on servers without history.
-        if (historyState.phase != HistoryPhase.Hidden) {
-            item(key = "history") {
-                HistorySection(
-                    state = historyState,
-                    controller = history,
-                    avatarUrl = resolveMediaUrl,
+        if (detail.notes != null) {
+            NotesDisclosure(listState) {
+                YarnMarkdown(
+                    value = detail.notes.orEmpty(),
+                    resolveMediaUrl = resolveMediaUrl,
+                    onImageClick = openViewerImage,
                 )
             }
         }
