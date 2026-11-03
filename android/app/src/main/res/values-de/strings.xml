@@ -328,21 +328,22 @@
 
     <!-- Gauge calculator -->
     <string name="gauge_calculator_title">Maschenprobenrechner</string>
-    <string name="gauge_calculator_description">Berechne, wie viele Maschen anzuschlagen und Reihen zu stricken sind, basierend auf deiner Maschenprobe und der Maschenprobe der Anleitung.</string>
-    <string name="gauge_calculator_pattern_gauge_title">Maschenprobe der Anleitung (pro 10cm)</string>
-    <string name="gauge_calculator_your_gauge_title">Deine Maschenprobe (pro 10cm)</string>
-    <string name="gauge_calculator_pattern_counts_title">Angaben der Anleitung</string>
+    <string name="gauge_calculator_description">Strickst du fester oder lockerer als die Anleitung? Verrate mir beide Maschenproben, und ich rechne deine Zahlen aus.</string>
+    <string name="gauge_calculator_pattern_gauge_title">Maschenprobe der Anleitung</string>
+    <string name="gauge_calculator_your_gauge_title">Deine Maschenprobe</string>
+    <string name="gauge_calculator_pattern_counts_title">Was die Anleitung sagt</string>
     <string name="gauge_calculator_cast_on_label">Anzuschlagende Maschen</string>
     <string name="gauge_calculator_rows_to_knit_label">Zu strickende Reihen (optional)</string>
-    <string name="gauge_calculator_calculate_button">Berechnen</string>
     <string name="gauge_calculator_stitches_label">Maschen</string>
     <string name="gauge_calculator_rows_label">Reihen</string>
-    <string name="gauge_calculator_results_title">Berechnungsergebnis</string>
-    <string name="gauge_calculator_adjusted_stitches_label">Angepasste Maschen</string>
-    <string name="gauge_calculator_adjusted_rows_label">Angepasste Reihen</string>
-    <string name="gauge_calculator_not_available">k. A.</string>
+    <string name="gauge_calculator_results_title">Deine Zahlen</string>
+    <string name="gauge_calculator_adjusted_stitches_label">Anschlagen</string>
+    <string name="gauge_calculator_adjusted_rows_label">Reihen stricken</string>
+    <string name="gauge_calculator_not_available">–</string>
     <string name="gauge_calculator_summary_with_rows">Basierend auf %1$d angeschlagenen Maschen und %2$d Reihen der Anleitung.</string>
     <string name="gauge_calculator_summary_without_rows">Basierend auf %1$d angeschlagenen Maschen der Anleitung.</string>
+    <string name="gauge_calculator_hint">Fülle beide Maschenproben und den Anschlag aus, dann erscheinen hier deine Zahlen.</string>
+    <string name="gauge_calculator_difference">%1$s gegenüber der Anleitung</string>
 
     <!-- Home sync status card -->
     <string name="sync_status_syncing">Wird aktualisiert…</string>

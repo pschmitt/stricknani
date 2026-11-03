@@ -328,21 +328,22 @@
 
     <!-- Gauge calculator -->
     <string name="gauge_calculator_title">Gauge calculator</string>
-    <string name="gauge_calculator_description">Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern\'s gauge.</string>
-    <string name="gauge_calculator_pattern_gauge_title">Pattern gauge (per 10cm)</string>
-    <string name="gauge_calculator_your_gauge_title">Your gauge (per 10cm)</string>
-    <string name="gauge_calculator_pattern_counts_title">Pattern counts</string>
+    <string name="gauge_calculator_description">Knitting tighter or looser than the pattern? Tell me both swatches and I’ll work out your numbers.</string>
+    <string name="gauge_calculator_pattern_gauge_title">The pattern’s swatch</string>
+    <string name="gauge_calculator_your_gauge_title">Your swatch</string>
+    <string name="gauge_calculator_pattern_counts_title">What the pattern says</string>
     <string name="gauge_calculator_cast_on_label">Stitches to cast on</string>
     <string name="gauge_calculator_rows_to_knit_label">Rows to knit (optional)</string>
-    <string name="gauge_calculator_calculate_button">Calculate</string>
     <string name="gauge_calculator_stitches_label">Stitches</string>
     <string name="gauge_calculator_rows_label">Rows</string>
-    <string name="gauge_calculator_results_title">Calculation results</string>
-    <string name="gauge_calculator_adjusted_stitches_label">Adjusted stitches</string>
-    <string name="gauge_calculator_adjusted_rows_label">Adjusted rows</string>
-    <string name="gauge_calculator_not_available">N/A</string>
+    <string name="gauge_calculator_results_title">Your numbers</string>
+    <string name="gauge_calculator_adjusted_stitches_label">Cast on</string>
+    <string name="gauge_calculator_adjusted_rows_label">Knit rows</string>
+    <string name="gauge_calculator_not_available">–</string>
     <string name="gauge_calculator_summary_with_rows">Based on a pattern cast-on of %1$d stitches and %2$d rows.</string>
     <string name="gauge_calculator_summary_without_rows">Based on a pattern cast-on of %1$d stitches.</string>
+    <string name="gauge_calculator_hint">Fill in both swatches and the cast-on, and your numbers show up here.</string>
+    <string name="gauge_calculator_difference">%1$s compared to the pattern</string>
 
     <!-- Home sync status card -->
     <string name="sync_status_syncing">Catching up…</string>
