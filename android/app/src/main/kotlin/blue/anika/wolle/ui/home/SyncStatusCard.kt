@@ -54,11 +54,14 @@ fun HomeSyncStatusCard(
     isRefreshing: Boolean,
     lastSyncedMillis: Long?,
     pendingChangesCount: Int,
-    hasSyncFailures: Boolean,
+    failedChangesCount: Int,
     onOpenSyncIssues: () -> Unit,
     onRetrySync: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The failed count includes conflicts, which the pending count leaves out; the
+    // failure text must use it so the card agrees with SyncIssueBanner below it.
+    val hasSyncFailures = failedChangesCount > 0
     val isActionable = !isRefreshing && (hasSyncFailures || pendingChangesCount > 0)
     val actionLabel =
         if (hasSyncFailures) stringResource(R.string.sync_issue_view_details)
@@ -117,7 +120,7 @@ fun HomeSyncStatusCard(
                         isRefreshing,
                         lastSyncedMillis,
                         pendingChangesCount,
-                        hasSyncFailures,
+                        failedChangesCount,
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -145,16 +148,16 @@ internal fun syncStatusDetails(
     isRefreshing: Boolean,
     lastSyncedMillis: Long?,
     pendingChangesCount: Int,
-    hasSyncFailures: Boolean,
+    failedChangesCount: Int,
     nowMillis: Long = System.currentTimeMillis(),
 ): String =
     when {
         isRefreshing -> stringResource(R.string.sync_status_pulling_latest)
-        hasSyncFailures ->
+        failedChangesCount > 0 ->
             pluralStringResource(
-                R.plurals.sync_status_changes_failed,
-                pendingChangesCount,
-                pendingChangesCount,
+                R.plurals.sync_issue_count,
+                failedChangesCount,
+                failedChangesCount,
             )
         pendingChangesCount > 0 ->
             pluralStringResource(

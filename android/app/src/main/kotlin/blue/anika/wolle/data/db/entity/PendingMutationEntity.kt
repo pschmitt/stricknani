@@ -47,7 +47,7 @@ data class PendingMutationEntity(
      * rather than a transient failure worth retrying. `WriteReplayWorker` excludes these rows from
      * future replay passes - they're kept (not deleted outright) so `lastErrorMessage` stays
      * visible as a "Sync issue" via
-     * `PendingMutationDao.observeFailed()`/`HomeViewModel.hasSyncFailures`.
+     * `PendingMutationDao.observeFailed()`/`HomeViewModel.failedMutations`.
      */
     val isConflict: Boolean = false,
 )

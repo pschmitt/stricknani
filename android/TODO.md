@@ -41,6 +41,21 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-76: Home sync card and sync banner report the same count
+
+- [x] The grey Home sync card counted pending changes (`observeCount()`, conflicts excluded) while
+      its failure text and the red `SyncIssueBanner` used failed changes (`observeFailed()`,
+      conflicts included); with one conflicted change it read "0 changes couldn't reach the server
+      yet." right above "1 queued change needs attention." (the SNA-60 follow-up).
+- [x] `HomeSyncStatusCard` takes `failedChangesCount` (the banner's list size) instead of a boolean,
+      and its failure line now uses the banner's `sync_issue_count` plural, which is also true for
+      conflicts; the unused `sync_status_changes_failed` plural and `HomeViewModel.hasSyncFailures`
+      are removed.
+- [x] Focused Compose test for the conflict-only case (0 pending, 1 failed).
+
+Status: **done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug compileDebugAndroidTestKotlin`
+passed on the remote build host; the instrumented test runs in the emulator lanes, not locally.
+
 ## SNA-75: Open canonical website project and yarn links in Android
 
 - [x] Parse canonical `/app/projects/{id}` and `/app/yarns/{id}` paths alongside existing legacy

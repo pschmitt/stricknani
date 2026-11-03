@@ -41,7 +41,7 @@ class FocusedComponentSemanticsTest {
                     isRefreshing = true,
                     lastSyncedMillis = null,
                     pendingChangesCount = 0,
-                    hasSyncFailures = false,
+                    failedChangesCount = 0,
                     onOpenSyncIssues = {},
                     onRetrySync = {},
                 )
@@ -66,7 +66,7 @@ class FocusedComponentSemanticsTest {
                     isRefreshing = false,
                     lastSyncedMillis = null,
                     pendingChangesCount = 1,
-                    hasSyncFailures = true,
+                    failedChangesCount = 1,
                     onOpenSyncIssues = {},
                     onRetrySync = {},
                 )
@@ -74,7 +74,30 @@ class FocusedComponentSemanticsTest {
         }
 
         composeRule.onNodeWithText("Sync issue").assertIsDisplayed()
-        composeRule.onNodeWithText("1 change couldn't reach the server yet.").assertIsDisplayed()
+        composeRule.onNodeWithText("1 queued change needs attention.").assertIsDisplayed()
+        composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
+    }
+
+    @Test
+    fun syncStatusCountsConflictsLikeTheSyncIssueBanner() {
+        // A conflicted change is not pending any more (observeCount skips it) but still needs
+        // attention (observeFailed keeps it). The card used to print the pending count here:
+        // "0 changes couldn't reach the server yet." right above the banner's "1 queued change".
+        composeRule.setContent {
+            StricknaniTheme {
+                HomeSyncStatusCard(
+                    isRefreshing = false,
+                    lastSyncedMillis = null,
+                    pendingChangesCount = 0,
+                    failedChangesCount = 1,
+                    onOpenSyncIssues = {},
+                    onRetrySync = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Sync issue").assertIsDisplayed()
+        composeRule.onNodeWithText("1 queued change needs attention.").assertIsDisplayed()
         composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
     }
 
@@ -91,7 +114,7 @@ class FocusedComponentSemanticsTest {
                     isRefreshing = false,
                     lastSyncedMillis = null,
                     pendingChangesCount = 1,
-                    hasSyncFailures = true,
+                    failedChangesCount = 1,
                     onOpenSyncIssues = { openedSyncIssues = true },
                     onRetrySync = { retriedSync = true },
                 )
@@ -115,7 +138,7 @@ class FocusedComponentSemanticsTest {
                     isRefreshing = false,
                     lastSyncedMillis = null,
                     pendingChangesCount = 1,
-                    hasSyncFailures = false,
+                    failedChangesCount = 0,
                     onOpenSyncIssues = { openedSyncIssues = true },
                     onRetrySync = { retriedSync = true },
                 )

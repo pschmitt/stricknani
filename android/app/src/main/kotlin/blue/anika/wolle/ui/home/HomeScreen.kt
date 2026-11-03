@@ -70,7 +70,6 @@ fun HomeScreen(
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
-    val hasSyncFailures by viewModel.hasSyncFailures.collectAsStateWithLifecycle()
     val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
     val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
@@ -119,7 +118,7 @@ fun HomeScreen(
                             isRefreshing = isRefreshing,
                             lastSyncedMillis = lastSyncedMillis,
                             pendingChangesCount = pendingChangesCount,
-                            hasSyncFailures = hasSyncFailures,
+                            failedChangesCount = failedMutations.size,
                             onOpenSyncIssues = onOpenSyncIssues,
                             onRetrySync = viewModel::retryFailedMutations,
                             modifier = Modifier.padding(16.dp),
@@ -163,7 +162,7 @@ fun HomeScreen(
                             isRefreshing = isRefreshing,
                             lastSyncedMillis = lastSyncedMillis,
                             pendingChangesCount = pendingChangesCount,
-                            hasSyncFailures = hasSyncFailures,
+                            failedChangesCount = failedMutations.size,
                             onOpenSyncIssues = onOpenSyncIssues,
                             onRetrySync = viewModel::retryFailedMutations,
                             modifier = Modifier.padding(horizontal = 16.dp),

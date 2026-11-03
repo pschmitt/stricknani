@@ -93,11 +93,6 @@ constructor(
                 emptyList(),
             )
 
-    val hasSyncFailures: StateFlow<Boolean> =
-        failedMutations
-            .map { it.isNotEmpty() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
-
     val favoriteProjects: StateFlow<List<ProjectEntity>> =
         projectRepository
             .observeAll()
