@@ -215,6 +215,7 @@
   }
 
   .action-overflow__trigger :global(svg) {
+    flex: none;
     width: 22px;
     height: 22px;
   }
