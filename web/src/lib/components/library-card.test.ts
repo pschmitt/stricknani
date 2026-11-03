@@ -47,7 +47,7 @@ describe("LibraryCard", () => {
         favorite: true,
       },
     });
-    expect(body.match(/class="library-card__chip /g)).toHaveLength(3);
+    expect(body.split('class="library-card__chip ').length - 1).toBe(3);
     expect(body).not.toContain(">d<");
     expect(body).toContain('aria-label="Remove from favorites"');
     expect(body).toContain("library-card--yarn");

@@ -263,12 +263,16 @@ def run_acceptance(
             token_dialog = page.locator("dialog").first
             page.wait_for_function(
                 "() => document.querySelector('[data-secret-value]') !== null "
-                + "|| document.querySelector('section[aria-labelledby=tokens-title] [role=alert]') !== null",
+                + "|| document.querySelector("
+                + "'section[aria-labelledby=tokens-title] [role=alert]'"
+                + ") !== null",
                 timeout=5000,
             )
             dialog_open = token_dialog.evaluate("(dialog) => dialog.open")
             if not dialog_open:
-                error_visible = page.locator("section[aria-labelledby=tokens-title] [role=alert]").is_visible()
+                error_visible = page.locator(
+                    "section[aria-labelledby=tokens-title] [role=alert]"
+                ).is_visible()
                 _mark_stage(
                     stage_file,
                     f"token dialog did not open; token error visible={error_visible}",

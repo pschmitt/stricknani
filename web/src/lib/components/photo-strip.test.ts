@@ -32,7 +32,7 @@ describe("PhotoStrip", () => {
 
   it("renders every tile lazily with a 4:3 box and prev/next buttons", () => {
     const { body } = render(PhotoStrip, { props: props(5) });
-    expect(body.match(/class="photo-strip__tile /g)).toHaveLength(5);
+    expect(body.split('class="photo-strip__tile ').length - 1).toBe(5);
     expect(body.match(/loading="lazy"/g)).toHaveLength(5);
     expect(body).toContain('decoding="async"');
     expect(body).toContain('aria-label="Previous"');
