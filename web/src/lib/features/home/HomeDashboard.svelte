@@ -1,6 +1,14 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { resolve } from "$app/paths";
+  import {
+    appCardMode,
+    isStandaloneDisplay,
+    readAppCardDismissed,
+    writeAppCardDismissed,
+  } from "#lib/app-links.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import GetAppCard from "#lib/components/GetAppCard.svelte";
   import Button from "#lib/components/Button.svelte";
   import EmptyState from "#lib/components/EmptyState.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
@@ -32,6 +40,21 @@
   const hasFavorites = $derived(
     favoriteProjects.items.length > 0 || favoriteYarns.items.length > 0,
   );
+
+  // "Get the app" card: browser-only facts, so it stays hidden until mounted.
+  let appCard = $state<"hidden" | "prominent" | "compact">("hidden");
+  onMount(() => {
+    appCard = appCardMode({
+      userAgent: navigator.userAgent,
+      standalone: isStandaloneDisplay(),
+      dismissed: readAppCardDismissed(),
+    });
+  });
+
+  function dismissAppCard() {
+    writeAppCardDismissed();
+    appCard = "hidden";
+  }
 
   // A greeting that follows the time of day, then the question that starts the session.
   const greeting = $derived.by(() => {
@@ -289,6 +312,10 @@
           {/each}
         </ul>
       </section>
+    {/if}
+
+    {#if appCard !== "hidden"}
+      <GetAppCard {locale} variant={appCard} ondismiss={dismissAppCard} />
     {/if}
   {/if}
 </section>

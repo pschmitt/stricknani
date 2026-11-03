@@ -1,11 +1,13 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import { androidAction } from "#lib/app-links.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import NavigationTile from "#lib/components/NavigationTile.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
+  const androidApp = androidAction();
 </script>
 
 <svelte:head><title>Stricknani · {t("More", locale)}</title></svelte:head>
@@ -39,6 +41,17 @@
       icon="help"
       title={t("Privacy Policy", locale)}
       description={t("How Stricknani handles your data.", locale)}
+    />
+    <NavigationTile
+      href={androidApp.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      icon="download"
+      title={t("Android app", locale)}
+      description={t(
+        "Knit offline with the Stricknani app for Android.",
+        locale,
+      )}
     />
     {#if session.data?.user?.is_admin}
       <NavigationTile

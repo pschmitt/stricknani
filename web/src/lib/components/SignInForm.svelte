@@ -9,6 +9,7 @@
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
+  import { androidAction } from "#lib/app-links.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -147,6 +148,11 @@
     <p class="auth-privacy">
       {t("Learn how Stricknani handles your data in the", locale)}
       <a href={resolve("/privacy")}>{t("Privacy Policy", locale)}</a>.
+    </p>
+    <p class="auth-app-link">
+      <a href={androidAction().url} target="_blank" rel="noopener noreferrer"
+        >{t("Get the Android app", locale)}</a
+      >
     </p>
     <footer class="auth-footer">
       <LocaleSwitcher />
@@ -310,6 +316,19 @@
   }
 
   .auth-signup-link a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    color: var(--accent-strong);
+    font-weight: 650;
+  }
+
+  .auth-app-link {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .auth-app-link a {
     display: inline-flex;
     min-height: 44px;
     align-items: center;

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 17:00+0100\n"
+"POT-Creation-Date: 2026-11-03 17:01+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -274,14 +274,15 @@ msgstr "You are offline. Some features may be unavailable."
 #: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
 #: stricknani/templates/legal/privacy.html:3
 #: stricknani/templates/legal/privacy.html:17
-#: web/src/lib/components/SignInForm.svelte:149
-#: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:40
+#: web/src/lib/components/SignInForm.svelte:150
+#: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:42
 #: web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
 
 #: stricknani/templates/base.html:141
+#: web/src/lib/components/SignInForm.svelte:154
 msgid "Get the Android app"
 msgstr "Get the Android app"
 
@@ -426,7 +427,7 @@ msgstr ""
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/routes/+layout.svelte:269 web/src/routes/more/+page.svelte:47
+#: web/src/routes/+layout.svelte:269 web/src/routes/more/+page.svelte:60
 msgid "Admin"
 msgstr "Admin"
 
@@ -529,7 +530,7 @@ msgstr ""
 #: rust/src/web.rs:2163 rust/src/web_accounts.rs:838 rust/src/web_signup.rs:273
 #: stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
-#: web/src/lib/components/SignInForm.svelte:98
+#: web/src/lib/components/SignInForm.svelte:99
 #: web/src/lib/features/admin/AdminUsers.svelte:605
 #: web/src/lib/features/auth/SignupForm.svelte:183
 msgid "Email"
@@ -581,7 +582,7 @@ msgstr "Category created"
 #: stricknani/templates/admin/users.html:109
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
-#: web/src/lib/components/SignInForm.svelte:112
+#: web/src/lib/components/SignInForm.svelte:113
 #: web/src/lib/features/auth/SignupForm.svelte:202
 msgid "Password"
 msgstr "Password"
@@ -640,11 +641,11 @@ msgstr "Please sign in below"
 
 #: rust/src/web.rs:2160 rust/src/web_signup.rs:276
 #: stricknani/templates/auth/login.html:22
-#: web/src/lib/components/SignInForm.svelte:53
-#: web/src/lib/components/SignInForm.svelte:66
-#: web/src/lib/components/SignInForm.svelte:133
+#: web/src/lib/components/SignInForm.svelte:54
+#: web/src/lib/components/SignInForm.svelte:67
+#: web/src/lib/components/SignInForm.svelte:134
 #: web/src/lib/features/auth/SignupForm.svelte:267
-#: web/src/lib/features/home/HomeDashboard.svelte:104
+#: web/src/lib/features/home/HomeDashboard.svelte:127
 #: web/src/lib/features/projects/ProjectEditor.svelte:1005
 #: web/src/routes/+layout.svelte:157 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
@@ -675,7 +676,7 @@ msgstr "OR"
 
 #: rust/src/web.rs:2161 rust/src/web_accounts.rs:850 rust/src/web_signup.rs:272
 #: stricknani/templates/auth/login.html:78
-#: web/src/lib/components/SignInForm.svelte:144
+#: web/src/lib/components/SignInForm.svelte:145
 #: web/src/lib/features/auth/SignupForm.svelte:147
 #: web/src/lib/features/auth/SignupForm.svelte:173
 msgid "Create an account"
@@ -699,7 +700,7 @@ msgid "Already have an account? Sign in"
 msgstr "Already have an account? Sign in"
 
 #: stricknani/templates/auth/login.html:137
-#: web/src/lib/components/SignInForm.svelte:148
+#: web/src/lib/components/SignInForm.svelte:149
 msgid "Learn how Stricknani handles your data in the"
 msgstr "Learn how Stricknani handles your data in the"
 
@@ -2153,7 +2154,7 @@ msgid "Yarns"
 msgstr "Yarns"
 
 #: stricknani/templates/shared/unified_navbar.html:97
-#: web/src/lib/features/home/HomeDashboard.svelte:73
+#: web/src/lib/features/home/HomeDashboard.svelte:96
 #: web/src/routes/+layout.svelte:58
 msgid "Home"
 msgstr "Home"
@@ -2692,11 +2693,11 @@ msgstr "Other materials"
 msgid "Link"
 msgstr "Login"
 
-#: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:156
+#: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:162
 #: web/src/lib/features/auth/SignupForm.svelte:275
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/routes/+layout.svelte:71 web/src/routes/more/+page.svelte:31
+#: web/src/routes/+layout.svelte:71 web/src/routes/more/+page.svelte:33
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
 
@@ -3205,6 +3206,10 @@ msgstr "An account with that email already exists."
 msgid "An archived copy is ready."
 msgstr "An archived copy is ready."
 
+#: web/src/routes/more/+page.svelte:50
+msgid "Android app"
+msgstr "Android app"
+
 #: web/src/lib/features/admin/AdminAudit.svelte:339
 msgid "Any action"
 msgstr "Any action"
@@ -3282,7 +3287,7 @@ msgstr "Audit events could not be loaded."
 
 #: web/src/lib/features/admin/AdminAudit.svelte:306
 #: web/src/lib/features/admin/AdminAudit.svelte:313
-#: web/src/routes/+layout.svelte:280 web/src/routes/more/+page.svelte:53
+#: web/src/routes/+layout.svelte:280 web/src/routes/more/+page.svelte:66
 msgid "Audit log"
 msgstr "Audit log"
 
@@ -3319,7 +3324,7 @@ msgstr "Browse and find your knitting projects."
 msgid "Browse the yarns connected to your projects."
 msgstr "Browse the yarns connected to your projects."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:195
+#: web/src/lib/features/home/HomeDashboard.svelte:218
 msgid "Browse, add and find your yarns"
 msgstr "Browse, add and find your yarns"
 
@@ -3347,7 +3352,7 @@ msgstr "Calculation Results"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/routes/+layout.svelte:70 web/src/routes/more/+page.svelte:22
+#: web/src/routes/+layout.svelte:70 web/src/routes/more/+page.svelte:24
 msgid "Categories"
 msgstr "Categories"
 
@@ -3510,7 +3515,11 @@ msgstr "Confirm new password"
 msgid "Confirm password"
 msgstr "Confirm password"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:113
+#: web/src/lib/components/GetAppCard.svelte:58
+msgid "Connect the app"
+msgstr "Connect the app"
+
+#: web/src/lib/features/home/HomeDashboard.svelte:136
 msgid "Continue knitting"
 msgstr "Continue knitting"
 
@@ -3566,7 +3575,7 @@ msgstr ""
 "Create yarn separately. It will be linked to this project only after it "
 "is saved."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:175
+#: web/src/lib/features/home/HomeDashboard.svelte:198
 msgid "Create your first project"
 msgstr "Create your first project"
 
@@ -3646,9 +3655,17 @@ msgstr "Disable this account?"
 msgid "Discard this password draft?"
 msgstr "Discard this password draft?"
 
+#: web/src/lib/components/GetAppCard.svelte:68
+msgid "Dismiss"
+msgstr "Dismiss"
+
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:117
 msgid "Done"
 msgstr "Done"
+
+#: web/src/lib/components/GetAppCard.svelte:51
+msgid "Download for Android"
+msgstr "Download for Android"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:470
 msgid "Each step needs a title of 256 characters or fewer."
@@ -3768,19 +3785,19 @@ msgstr ""
 "External images are disabled. Links will be kept in notes and never "
 "attached."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:210
+#: web/src/lib/features/home/HomeDashboard.svelte:233
 msgid "Favorite projects"
 msgstr "Favorite projects"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:210
+#: web/src/lib/features/home/HomeDashboard.svelte:233
 msgid "Favorite projects could not be loaded."
 msgstr "Favorite projects could not be loaded."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:210
+#: web/src/lib/features/home/HomeDashboard.svelte:233
 msgid "Favorite yarns"
 msgstr "Favorite yarns"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:210
+#: web/src/lib/features/home/HomeDashboard.svelte:233
 msgid "Favorite yarns could not be loaded."
 msgstr "Favorite yarns could not be loaded."
 
@@ -3836,11 +3853,15 @@ msgstr "German"
 msgid "German and English"
 msgstr "German and English"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:41
+#: web/src/lib/components/GetAppCard.svelte:50
+msgid "Get it on Google Play"
+msgstr "Get it on Google Play"
+
+#: web/src/lib/features/home/HomeDashboard.svelte:64
 msgid "Good evening!"
 msgstr "Good evening!"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:39
+#: web/src/lib/features/home/HomeDashboard.svelte:62
 msgid "Good morning!"
 msgstr "Good morning!"
 
@@ -3856,11 +3877,11 @@ msgstr "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 msgid "Height"
 msgstr "Height"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:40
+#: web/src/lib/features/home/HomeDashboard.svelte:63
 msgid "Hello there!"
 msgstr "Hello there!"
 
-#: web/src/lib/components/SignInForm.svelte:64
+#: web/src/lib/components/SignInForm.svelte:65
 msgid "Hello, knitter!"
 msgstr "Hello, knitter!"
 
@@ -3868,7 +3889,7 @@ msgstr "Hello, knitter!"
 msgid "Hide token"
 msgstr "Hide token"
 
-#: web/src/routes/more/+page.svelte:41
+#: web/src/routes/more/+page.svelte:43
 msgid "How Stricknani handles your data."
 msgstr "How Stricknani handles your data."
 
@@ -3968,6 +3989,14 @@ msgstr "Keep token"
 #: web/src/lib/features/yarns/YarnForm.svelte:1007
 msgid "Keep yarn"
 msgstr "Keep yarn"
+
+#: web/src/lib/components/GetAppCard.svelte:31
+msgid "Knit offline with the Stricknani app for Android"
+msgstr "Knit offline with the Stricknani app for Android"
+
+#: web/src/routes/more/+page.svelte:51
+msgid "Knit offline with the Stricknani app for Android."
+msgstr "Knit offline with the Stricknani app for Android."
 
 #: web/src/lib/features/projects/ProjectReader.svelte:688
 msgid "Knitting project"
@@ -4071,7 +4100,7 @@ msgstr "Loading project details…"
 msgid "Loading recent changes…"
 msgstr "Loading recent changes…"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:127
+#: web/src/lib/features/home/HomeDashboard.svelte:150
 msgid "Loading recent projects…"
 msgstr "Loading recent projects…"
 
@@ -4097,11 +4126,11 @@ msgstr "Loading yarn details…"
 msgid "Loading yarn options…"
 msgstr "Loading yarn options…"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:95
+#: web/src/lib/features/home/HomeDashboard.svelte:118
 msgid "Loading your home…"
 msgstr "Loading your home…"
 
-#: web/src/routes/more/+page.svelte:48
+#: web/src/routes/more/+page.svelte:61
 msgid "Manage accounts, sign-in access, and roles."
 msgstr "Manage accounts, sign-in access, and roles."
 
@@ -4124,8 +4153,8 @@ msgstr "Materials"
 msgid "Media storage is unavailable. Try again later."
 msgstr "Media storage is unavailable. Try again later."
 
-#: web/src/routes/+layout.svelte:62 web/src/routes/more/+page.svelte:11
-#: web/src/routes/more/+page.svelte:17
+#: web/src/routes/+layout.svelte:62 web/src/routes/more/+page.svelte:13
+#: web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "More"
 
@@ -4133,7 +4162,7 @@ msgstr "More"
 msgid "More changes could not be loaded."
 msgstr "More changes could not be loaded."
 
-#: web/src/routes/more/+page.svelte:18
+#: web/src/routes/more/+page.svelte:20
 msgid "More pages"
 msgstr "More pages"
 
@@ -4180,7 +4209,7 @@ msgstr "New project"
 msgid "New temporary password"
 msgstr "New temporary password"
 
-#: web/src/lib/components/SignInForm.svelte:143
+#: web/src/lib/components/SignInForm.svelte:144
 msgid "New to Stricknani?"
 msgstr "New to Stricknani?"
 
@@ -4265,7 +4294,7 @@ msgstr "No projects match those filters."
 msgid "No projects use this yarn yet."
 msgstr "No projects use this yarn yet."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:168
+#: web/src/lib/features/home/HomeDashboard.svelte:191
 msgid "No projects yet."
 msgstr "No projects yet."
 
@@ -4315,7 +4344,7 @@ msgstr "Not provided"
 msgid "Not recorded"
 msgstr "Not recorded"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:167
+#: web/src/lib/features/home/HomeDashboard.svelte:190
 #: web/src/lib/features/projects/ProjectLibrary.svelte:287
 msgid "Nothing on the needles yet"
 msgstr "Nothing on the needles yet"
@@ -4330,7 +4359,7 @@ msgstr ""
 "notification when a background sync finds changes. The notification is "
 "created on the device, and syncing does not depend on it."
 
-#: web/src/lib/components/SignInForm.svelte:167
+#: web/src/lib/components/SignInForm.svelte:173
 msgid "One row at a time."
 msgstr "One row at a time."
 
@@ -4390,7 +4419,7 @@ msgstr "Opening your workspace…"
 msgid "Organize projects with your own categories."
 msgstr "Organize projects with your own categories."
 
-#: web/src/routes/more/+page.svelte:23
+#: web/src/routes/more/+page.svelte:25
 msgid "Organize projects with your own category labels."
 msgstr "Organize projects with your own category labels."
 
@@ -4498,7 +4527,7 @@ msgstr "Photo uploaded"
 msgid "Photo uploaded."
 msgstr "Photo uploaded."
 
-#: web/src/lib/components/SignInForm.svelte:67
+#: web/src/lib/components/SignInForm.svelte:68
 msgid "Pick up where you left off."
 msgstr "Pick up where you left off."
 
@@ -4650,12 +4679,12 @@ msgstr "Recent changes"
 msgid "Recent changes could not be loaded."
 msgstr "Recent changes could not be loaded."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:269
-#: web/src/lib/features/home/HomeDashboard.svelte:275
+#: web/src/lib/features/home/HomeDashboard.svelte:292
+#: web/src/lib/features/home/HomeDashboard.svelte:298
 msgid "Recent projects"
 msgstr "Recent projects"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:131
+#: web/src/lib/features/home/HomeDashboard.svelte:154
 msgid "Recently updated projects could not be loaded."
 msgstr "Recently updated projects could not be loaded."
 
@@ -4846,7 +4875,7 @@ msgstr "Review and correct"
 msgid "Review and edit these details; they will be kept in project notes."
 msgstr "Review and edit these details; they will be kept in project notes."
 
-#: web/src/routes/more/+page.svelte:54
+#: web/src/routes/more/+page.svelte:67
 msgid "Review recent changes to projects, yarn, and categories."
 msgstr "Review recent changes to projects, yarn, and categories."
 
@@ -4948,8 +4977,8 @@ msgstr "Search your projects"
 msgid "Search your yarn"
 msgstr "Search your yarn"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:231
-#: web/src/lib/features/home/HomeDashboard.svelte:272
+#: web/src/lib/features/home/HomeDashboard.svelte:254
+#: web/src/lib/features/home/HomeDashboard.svelte:295
 msgid "See all"
 msgstr "See all"
 
@@ -4977,7 +5006,7 @@ msgstr "Show older changes"
 msgid "Show recorded changes"
 msgstr "Show recorded changes"
 
-#: web/src/lib/components/SignInForm.svelte:45
+#: web/src/lib/components/SignInForm.svelte:46
 msgid "Sign in failed."
 msgstr "Sign in failed."
 
@@ -4998,7 +5027,7 @@ msgstr "Sign in to manage your projects."
 msgid "Sign in to open this project."
 msgstr "Sign in to open this project."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:99
+#: web/src/lib/features/home/HomeDashboard.svelte:122
 msgid "Sign in to see your favorite projects and yarns."
 msgstr "Sign in to see your favorite projects and yarns."
 
@@ -5015,7 +5044,7 @@ msgstr "Sign in to view your projects."
 msgid "Sign in to view your yarn."
 msgstr "Sign in to view your yarn."
 
-#: web/src/lib/components/SignInForm.svelte:131
+#: web/src/lib/components/SignInForm.svelte:132
 msgid "Signing in…"
 msgstr "Signing in…"
 
@@ -5114,7 +5143,7 @@ msgstr "Step {number}"
 msgid "Steps stay in the order shown here."
 msgstr "Steps stay in the order shown here."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:42
+#: web/src/lib/features/home/HomeDashboard.svelte:65
 msgid "Still knitting?"
 msgstr "Still knitting?"
 
@@ -5142,7 +5171,7 @@ msgstr "Swatch size"
 msgid "Tap a photo to see it larger."
 msgstr "Tap a photo to see it larger."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:207
+#: web/src/lib/features/home/HomeDashboard.svelte:230
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr "Tap ♥ on a project or yarn to keep it here."
 
@@ -5672,8 +5701,8 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/HomeDashboard.svelte:133
-#: web/src/lib/features/home/HomeDashboard.svelte:215
+#: web/src/lib/features/home/HomeDashboard.svelte:156
+#: web/src/lib/features/home/HomeDashboard.svelte:238
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:675
@@ -5688,7 +5717,7 @@ msgstr "Try again"
 msgid "Try another search or show all yarn."
 msgstr "Try another search or show all yarn."
 
-#: web/src/routes/more/+page.svelte:32
+#: web/src/routes/more/+page.svelte:34
 msgid "Turn swatch measurements into stitch and row counts."
 msgstr "Turn swatch measurements into stitch and row counts."
 
@@ -5707,7 +5736,7 @@ msgstr "Unknown actor"
 #: web/src/lib/features/admin/AdminResource.svelte:452
 #: web/src/lib/features/admin/AdminResource.svelte:653
 #: web/src/lib/features/admin/audit-action.ts:27
-#: web/src/lib/features/home/HomeDashboard.svelte:154
+#: web/src/lib/features/home/HomeDashboard.svelte:177
 #: web/src/lib/features/projects/ProjectReader.svelte:691
 #: web/src/lib/features/yarns/YarnDetail.svelte:450
 msgid "Updated"
@@ -5812,7 +5841,7 @@ msgstr ""
 "We couldn’t reach Stricknani. Your projects, yarn, photos, and edits are "
 "not stored offline."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:88
+#: web/src/lib/features/home/HomeDashboard.svelte:111
 msgid "What are we knitting today?"
 msgstr "What are we knitting today?"
 
@@ -5942,7 +5971,7 @@ msgstr "Your account changed in another window. Refresh and try again."
 msgid "Your account details could not be loaded."
 msgstr "Your account details could not be loaded."
 
-#: web/src/lib/components/SignInForm.svelte:77
+#: web/src/lib/components/SignInForm.svelte:78
 msgid "Your account is ready. Sign in with your email and password."
 msgstr "Your account is ready. Sign in with your email and password."
 
@@ -5966,7 +5995,7 @@ msgstr "Your edits changed while the photo was uploading. Save before continuing
 msgid "Your edits stay here if saving fails."
 msgstr "Your edits stay here if saving fails."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:76
+#: web/src/lib/features/home/HomeDashboard.svelte:99
 msgid "Your favorite projects and yarns, together."
 msgstr "Your favorite projects and yarns, together."
 
@@ -5978,7 +6007,11 @@ msgstr "Your library"
 msgid "Your new API token"
 msgstr "Your new API token"
 
-#: web/src/lib/components/SignInForm.svelte:139
+#: web/src/lib/components/GetAppCard.svelte:35
+msgid "Your projects and yarn stay with you, even without a connection."
+msgstr "Your projects and yarn stay with you, even without a connection."
+
+#: web/src/lib/components/SignInForm.svelte:140
 msgid "Your projects stay on your own Stricknani server."
 msgstr "Your projects stay on your own Stricknani server."
 
@@ -5990,7 +6023,7 @@ msgstr "Your reference"
 msgid "Your session check failed. Refresh the page and try again."
 msgstr "Your session check failed. Refresh the page and try again."
 
-#: web/src/lib/components/SignInForm.svelte:71
+#: web/src/lib/components/SignInForm.svelte:72
 msgid "Your session expired. Sign in again to continue."
 msgstr "Your session expired. Sign in again to continue."
 
@@ -6023,7 +6056,7 @@ msgstr "Your workspace is taking a moment."
 msgid "Your workspace is waiting online."
 msgstr "Your workspace is waiting online."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:193
+#: web/src/lib/features/home/HomeDashboard.svelte:216
 msgid "Your yarn stash"
 msgstr "Your yarn stash"
 
