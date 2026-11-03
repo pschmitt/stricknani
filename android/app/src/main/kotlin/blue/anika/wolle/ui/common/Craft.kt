@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.mascot.MascotCanvas
 
 /**
  * A dashed "running stitch" just inside the edge, like a patch sewn onto fabric - the app's
@@ -66,12 +67,23 @@ fun animationsDisabled(): Boolean {
 }
 
 /**
- * The yarn-ball mascot. The launcher foreground draws it in the middle 66 of 108 units, so [size]
- * is the box and the ball itself is about 60% of it. [bob] adds a slow, gentle sway.
+ * The yarn-ball mascot ("Winky Pom"). The ball is about 60% of [size] (the launcher geometry), so
+ * existing layouts keep their size. [bob] adds a slow, gentle sway. With [reactive] it answers
+ * taps, drags and flicks and fidgets while idle; [exposeSemantics] = false keeps it out of the
+ * accessibility tree and focus order, for a mascot inside another clickable (a header that
+ * navigates): the reaction still plays and the parent still gets the click. [onReact] runs on every
+ * tap on the ball.
  */
 @Composable
-fun Mascot(size: Dp, modifier: Modifier = Modifier, bob: Boolean = false) {
-    val still = !bob || animationsDisabled()
+fun Mascot(
+    size: Dp,
+    modifier: Modifier = Modifier,
+    bob: Boolean = false,
+    reactive: Boolean = true,
+    exposeSemantics: Boolean = true,
+    onReact: (() -> Unit)? = null,
+) {
+    val reduced = animationsDisabled()
     val transition = rememberInfiniteTransition(label = "mascot")
     val sway by
         transition.animateFloat(
@@ -80,16 +92,15 @@ fun Mascot(size: Dp, modifier: Modifier = Modifier, bob: Boolean = false) {
             animationSpec = infiniteRepeatable(tween(1800), RepeatMode.Reverse),
             label = "mascot-sway",
         )
-    Image(
-        painter = painterResource(R.drawable.ic_launcher_foreground),
-        contentDescription = null,
-        modifier =
-            modifier.size(size).graphicsLayer {
-                if (!still) {
-                    rotationZ = sway
-                    translationY = sway * 0.6f
-                }
-            },
+    MascotCanvas(
+        size = size,
+        modifier = modifier,
+        bob = bob,
+        reactive = reactive,
+        exposeSemantics = exposeSemantics,
+        onReact = onReact,
+        reduced = reduced,
+        sway = { sway },
     )
 }
 

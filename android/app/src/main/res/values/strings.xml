@@ -886,4 +886,5 @@
     <string name="sign_in_again_missing_fields">Enter your email and your password</string>
     <string name="library_card_updated">Updated %1$s</string>
     <string name="library_card_details_to_add">Details to add</string>
+    <string name="mascot_say_hi">Say hi to the yarn ball</string>
 </resources>

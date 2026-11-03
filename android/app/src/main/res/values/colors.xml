@@ -2,6 +2,6 @@
 <resources>
     <!-- Window and splash background before Compose draws: the theme's lilac-mist surface
          (ui/theme/Color.kt LilacMist), so launching doesn't flash a different colour. The
-         launcher icon has its own raspberry background (drawable/ic_launcher_background). -->
+         launcher icon has its own butter-yellow background (drawable/ic_launcher_background). -->
     <color name="splash_background">#F7F3FC</color>
 </resources>

@@ -1,25 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launcher background (SNA-88): a raspberry glow from the app's "hand-dyed skein" palette
-     (ui/theme/Color.kt) instead of the old near-white plate, which read as a white frame
-     around the yarn ball. Lighter above the centre, deeper at the edges, so the blue ball
-     sits on it like on a cushion. -->
+<!-- Launcher background: flat butter yellow of the "Winky Pom" icon (branding/icon-square.svg). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M0,0h108v108h-108z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="radial"
-                android:centerX="50"
-                android:centerY="44"
-                android:gradientRadius="78">
-                <item android:offset="0" android:color="#FFE6779F" />
-                <item android:offset="0.55" android:color="#FFC23A6E" />
-                <item android:offset="1" android:color="#FF8E1F4E" />
-            </gradient>
-        </aapt:attr>
-    </path>
+    <path
+        android:fillColor="#FFFFE2AE"
+        android:pathData="M0,0h108v108h-108z" />
 </vector>

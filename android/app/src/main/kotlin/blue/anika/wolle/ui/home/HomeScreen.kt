@@ -504,7 +504,7 @@ private fun ContinueKnittingCard(
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {
-                        Mascot(size = 96.dp)
+                        Mascot(size = 96.dp, reactive = false)
                     }
                 }
                 Column(

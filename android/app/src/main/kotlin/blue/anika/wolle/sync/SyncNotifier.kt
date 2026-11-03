@@ -56,7 +56,7 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
         }
         val notification =
             NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_monochrome)
+                .setSmallIcon(R.drawable.ic_stat_stricknani)
                 .setContentTitle(context.getString(R.string.app_name))
                 .setContentText(context.getString(R.string.sync_notification_content))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
