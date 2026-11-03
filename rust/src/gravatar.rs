@@ -224,6 +224,7 @@ async fn fetch(settings: &GravatarSettings, hash: &str) -> Fetched {
     )) else {
         return Fetched::Failed;
     };
+    let plain_http = base.scheme() == "http";
     // Only same-origin redirects are followed; anything else is a failure.
     let policy = Policy::custom(move |attempt| {
         let target = attempt.url();
@@ -237,7 +238,7 @@ async fn fetch(settings: &GravatarSettings, hash: &str) -> Fetched {
             attempt.stop()
         }
     });
-    let Ok(client) = Client::builder()
+    let mut builder = Client::builder()
         .no_proxy()
         .redirect(policy)
         .timeout(settings.timeout)
@@ -246,9 +247,14 @@ async fn fetch(settings: &GravatarSettings, hash: &str) -> Fetched {
             env!("CARGO_PKG_NAME"),
             "/",
             env!("CARGO_PKG_VERSION")
-        ))
-        .build()
-    else {
+        ));
+    if plain_http {
+        // Plain-HTTP base URLs only exist for the local test server. They never
+        // negotiate TLS, so do not require system CA certificates, which the
+        // Nix build sandbox lacks.
+        builder = builder.tls_certs_only(Vec::new());
+    }
+    let Ok(client) = builder.build() else {
         return Fetched::Failed;
     };
     let Ok(mut response) = client.get(url).send().await else {
