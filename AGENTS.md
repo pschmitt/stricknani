@@ -136,6 +136,13 @@ Use this file as the operational source of truth for working in Stricknani.
 - Browser URL changes and API responses do not prove that controls or data
   have rendered. Wait for the intended visible element before assertions;
   scope single-element reads explicitly when several content blocks match.
+- After viewport changes, wait for two animation frames before geometry
+  assertions; the resize acknowledgement can precede responsive layout. Await
+  font readiness when measuring text. Keep numeric measurements in failure
+  messages without including form values or fixture credentials.
+- Sequence native dialog tests with `dialog.open` and visible/hidden state.
+  `aria-expanded` can update later through the close event and is not a reliable
+  signal for immediately reopening a dialog.
 - Give selects an explicit, unique label association and verify their accessible
   names. Nesting option text inside a wrapping label can make the name include
   every option; translated exact-label browser checks should catch this.

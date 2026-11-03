@@ -490,6 +490,10 @@ def _save_remote_project_version(page: Page, project_id: int, name: str) -> None
 
 
 def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
+    page.evaluate(
+        "() => new Promise(resolve => requestAnimationFrame(() => "
+        "requestAnimationFrame(resolve)))"
+    )
     dimensions = page.evaluate(
         """() => ({
           viewport: window.innerWidth,
@@ -569,7 +573,8 @@ def _measure_library_density(
         and isinstance(measured.get("targetHeights"), list)
         and measured["targetHeights"]
         and min(measured["targetHeights"]) >= 44,
-        f"{route_name} first-row density, readable title, thumbnail, or targets failed",
+        f"{route_name} first-row density, readable title, thumbnail, "
+        f"or targets failed; numeric_metrics={json.dumps(measured, sort_keys=True)}",
     )
     return {**measured, "width": width}
 
