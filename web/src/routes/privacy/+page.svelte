@@ -163,6 +163,12 @@
     </p>
     <p>
       {t(
+        "Profile pictures: if you have not uploaded one, the server may look up your Gravatar. It sends Gravatar a SHA-256 hash of your email address (never the address itself), receives the image, and keeps a copy for up to 24 hours. Your browser and the Android app never contact Gravatar, so only the server's address is visible to it. Gravatar processes the request under its own privacy policy. You can turn this off in your account settings, and the instance operator can disable it for the whole instance.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
         "These integrations are optional and controlled by the instance operator. Their providers process information under their own terms and privacy policies; review those policies before enabling or using the related feature.",
         locale,
       )}

@@ -14,11 +14,15 @@ export type Capability =
   | "admin_actions";
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+/** Where the avatar comes from: an upload, or the server-fetched Gravatar. */
+export type AvatarSource = "upload" | "gravatar";
+
 export interface SessionUser {
   id: number;
   email: string;
   is_admin: boolean;
   avatar_url: string | null;
+  avatar_source?: AvatarSource | null;
 }
 
 export interface SessionData {
@@ -365,7 +369,17 @@ function isSessionData(value: unknown): value is SessionData {
         Number.isSafeInteger(user.id) &&
         typeof user.email === "string" &&
         typeof user.is_admin === "boolean" &&
-        isAvatarUrl(user.avatar_url, user.id)))
+        isAvatarUrl(user.avatar_url, user.id) &&
+        isAvatarSource(user.avatar_source)))
+  );
+}
+
+function isAvatarSource(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    value === "upload" ||
+    value === "gravatar"
   );
 }
 
@@ -380,7 +394,10 @@ function isAvatarUrl(value: unknown, userId: unknown): value is string | null {
   const prefix = `/media/thumbnails/users/${userId}/`;
   if (!value.startsWith(prefix)) return false;
   const filename = value.slice(prefix.length);
-  return /^thumb_[A-Za-z0-9._-]+\.jpg$/.test(filename);
+  // The Gravatar is served by the same protected route under a fixed name.
+  return (
+    filename === "gravatar" || /^thumb_[A-Za-z0-9._-]+\.jpg$/.test(filename)
+  );
 }
 
 function isCapabilities(value: unknown): value is SessionData["capabilities"] {

@@ -5,6 +5,7 @@ import {
   login as postLogin,
   logout as postLogout,
   setUnauthorizedHandler,
+  type AvatarSource,
   type SessionData,
 } from "./api";
 import { t } from "./i18n.svelte";
@@ -119,6 +120,7 @@ export async function signOut(): Promise<void> {
 export function patchSessionAvatar(
   expectedSession: SessionData,
   avatarUrl: string | null,
+  avatarSource: AvatarSource | null = avatarUrl === null ? null : "upload",
 ): boolean {
   if (
     session.status !== "ready" ||
@@ -128,7 +130,11 @@ export function patchSessionAvatar(
     return false;
   session.data = {
     ...expectedSession,
-    user: { ...expectedSession.user, avatar_url: avatarUrl },
+    user: {
+      ...expectedSession.user,
+      avatar_url: avatarUrl,
+      avatar_source: avatarSource,
+    },
   };
   return true;
 }

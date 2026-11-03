@@ -134,6 +134,70 @@ describe("same-origin API client", () => {
     });
   });
 
+  it("accepts the same-user Gravatar route and its source", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...sessionFixture.data,
+            user: {
+              ...sessionFixture.data.user,
+              avatar_url: "/media/thumbnails/users/42/gravatar",
+              avatar_source: "gravatar",
+            },
+          },
+        }),
+      ),
+    );
+
+    await expect(getSession()).resolves.toMatchObject({
+      user: {
+        avatar_url: "/media/thumbnails/users/42/gravatar",
+        avatar_source: "gravatar",
+      },
+    });
+  });
+
+  it.each([
+    "/media/thumbnails/users/43/gravatar",
+    "/media/thumbnails/users/42/gravatar/extra",
+  ])("rejects another user's Gravatar route (%s)", async (avatarUrl) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...sessionFixture.data,
+            user: { ...sessionFixture.data.user, avatar_url: avatarUrl },
+          },
+        }),
+      ),
+    );
+
+    await expect(getSession()).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+  });
+
+  it("rejects an unknown avatar source", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: {
+            ...sessionFixture.data,
+            user: { ...sessionFixture.data.user, avatar_source: "facebook" },
+          },
+        }),
+      ),
+    );
+
+    await expect(getSession()).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+  });
+
   it.each([
     "https://images.example.test/avatar.jpg",
     "/media/thumbnails/users/43/thumb_0123456789abcdef0123456789abcdef.jpg",

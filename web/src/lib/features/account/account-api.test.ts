@@ -6,6 +6,7 @@ import {
   getAccount,
   listApiTokens,
   revokeApiToken,
+  setUseGravatar,
   uploadAvatar,
 } from "./account-api";
 
@@ -38,6 +39,9 @@ const account = {
   email: "knitter@example.test",
   is_admin: false,
   avatar_url: "/media/thumbnails/users/17/avatar.jpg",
+  avatar_source: "upload",
+  use_gravatar: true,
+  gravatar_enabled: true,
 };
 
 const token = {
@@ -64,6 +68,79 @@ describe("account v2 API contract", () => {
     );
     await expect(getAccount()).resolves.toEqual(account);
     await expect(listApiTokens()).resolves.toEqual([token]);
+  });
+
+  it("parses the Gravatar fields and defaults them for older servers", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json({
+            data: {
+              ...account,
+              avatar_url: "/media/thumbnails/users/17/gravatar",
+              avatar_source: "gravatar",
+            },
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            data: {
+              id: 17,
+              email: "knitter@example.test",
+              is_admin: false,
+              avatar_url: null,
+            },
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ data: { ...account, avatar_source: "ldap" } }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ data: { ...account, use_gravatar: "yes" } }),
+        ),
+    );
+    await expect(getAccount()).resolves.toMatchObject({
+      avatar_source: "gravatar",
+      use_gravatar: true,
+      gravatar_enabled: true,
+    });
+    await expect(getAccount()).resolves.toMatchObject({
+      avatar_source: null,
+      use_gravatar: true,
+      gravatar_enabled: false,
+    });
+    await expect(getAccount()).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+    await expect(getAccount()).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+  });
+
+  it("patches the Gravatar preference with CSRF and returns the new profile", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        data: {
+          ...account,
+          avatar_url: null,
+          avatar_source: null,
+          use_gravatar: false,
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(setUseGravatar(false, session)).resolves.toMatchObject({
+      use_gravatar: false,
+      avatar_url: null,
+    });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/v2/account");
+    expect(init.method).toBe("PATCH");
+    expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
+    expect(JSON.parse(String(init.body))).toEqual({ use_gravatar: false });
   });
 
   it("sends same-origin CSRF on create, revoke, password, and avatar operations", async () => {

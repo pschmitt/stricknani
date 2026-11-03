@@ -1,4 +1,9 @@
-import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
+import {
+  ApiError,
+  apiRequest,
+  type AvatarSource,
+  type SessionData,
+} from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
 
 export interface AccountProfile {
@@ -6,6 +11,12 @@ export interface AccountProfile {
   email: string;
   is_admin: boolean;
   avatar_url: string | null;
+  /** Where `avatar_url` comes from; null when no avatar applies. */
+  avatar_source: AvatarSource | null;
+  /** The user's Gravatar fallback preference. */
+  use_gravatar: boolean;
+  /** Whether the server offers the Gravatar fallback at all. */
+  gravatar_enabled: boolean;
 }
 
 export interface ApiToken {
@@ -30,6 +41,9 @@ const validId = (value: unknown): value is number =>
 const nullableString = (value: unknown): value is string | null =>
   value === null || typeof value === "string";
 
+const optionalBoolean = (value: unknown): value is boolean | undefined =>
+  value === undefined || typeof value === "boolean";
+
 function invalidResponse(): ApiError {
   return new ApiError(
     t("The server returned an unexpected response."),
@@ -44,7 +58,15 @@ function parseProfile(value: unknown): AccountProfile {
     !validId(value.id) ||
     typeof value.email !== "string" ||
     typeof value.is_admin !== "boolean" ||
-    !nullableString(value.avatar_url)
+    !nullableString(value.avatar_url) ||
+    !(
+      value.avatar_source === undefined ||
+      value.avatar_source === null ||
+      value.avatar_source === "upload" ||
+      value.avatar_source === "gravatar"
+    ) ||
+    !optionalBoolean(value.use_gravatar) ||
+    !optionalBoolean(value.gravatar_enabled)
   )
     throw invalidResponse();
   return {
@@ -52,6 +74,9 @@ function parseProfile(value: unknown): AccountProfile {
     email: value.email,
     is_admin: value.is_admin,
     avatar_url: value.avatar_url,
+    avatar_source: value.avatar_source ?? null,
+    use_gravatar: value.use_gravatar ?? true,
+    gravatar_enabled: value.gravatar_enabled ?? false,
   };
 }
 
@@ -151,4 +176,18 @@ export async function deleteAvatar(currentSession: SessionData): Promise<void> {
     method: "DELETE",
     csrfToken: currentSession.csrf_token,
   });
+}
+
+/** Set the per-user "use Gravatar when no picture is uploaded" preference. */
+export async function setUseGravatar(
+  enabled: boolean,
+  currentSession: SessionData,
+): Promise<AccountProfile> {
+  const payload: unknown = await apiRequest("/api/v2/account", {
+    method: "PATCH",
+    csrfToken: currentSession.csrf_token,
+    body: { use_gravatar: enabled },
+  });
+  if (!record(payload)) throw invalidResponse();
+  return parseProfile(payload.data);
 }

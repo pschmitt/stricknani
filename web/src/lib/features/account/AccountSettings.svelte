@@ -30,6 +30,7 @@
     getAccount,
     listApiTokens,
     revokeApiToken,
+    setUseGravatar,
     uploadAvatar,
     type AccountProfile,
     type ApiToken,
@@ -37,7 +38,8 @@
   } from "./account-api";
 
   type PageLoad = "loading" | "ready" | "error";
-  type Operation = "token" | "avatar-upload" | "avatar-delete" | "password";
+  type Operation =
+    "token" | "avatar-upload" | "avatar-delete" | "gravatar" | "password";
 
   let profile = $state<AccountProfile | null>(null);
   let tokens = $state<ApiToken[]>([]);
@@ -49,6 +51,7 @@
   let tokenNameError = $state("");
   let tokenError = $state("");
   let avatarError = $state("");
+  let brokenAvatarUrl = $state<string | null>(null);
   let passwordError = $state("");
   let pageStatus = $state("");
   let operation = $state<Operation | null>(null);
@@ -496,8 +499,8 @@
         !profile
       )
         return;
-      profile = { ...profile, avatar_url: avatarUrl };
-      patchSessionAvatar(activeSession, avatarUrl);
+      profile = { ...profile, avatar_url: avatarUrl, avatar_source: "upload" };
+      patchSessionAvatar(activeSession, avatarUrl, "upload");
       avatarFile = null;
       if (avatarInput) avatarInput.value = "";
       pageStatus = t("Profile picture updated.", locale);
@@ -530,14 +533,24 @@
     const mutationId = ++operationGeneration;
     try {
       await deleteAvatar(activeSession);
+      // Without an upload the server may fall back to the Gravatar.
+      const refreshed = await getAccount().catch(() => null);
       if (
         userId !== capturedUserId ||
         mutationId !== operationGeneration ||
         !profile
       )
         return;
-      profile = { ...profile, avatar_url: null };
-      patchSessionAvatar(activeSession, null);
+      profile = refreshed ?? {
+        ...profile,
+        avatar_url: null,
+        avatar_source: null,
+      };
+      patchSessionAvatar(
+        activeSession,
+        profile.avatar_url,
+        profile.avatar_source,
+      );
       avatarFile = null;
       if (avatarInput) avatarInput.value = "";
       pageStatus = t("Profile picture removed.", locale);
@@ -547,6 +560,47 @@
       avatarError = errorMessage(
         error,
         t("The profile picture could not be removed.", locale),
+      );
+    } finally {
+      if (userId === capturedUserId && mutationId === operationGeneration)
+        operation = null;
+    }
+  }
+
+  async function changeGravatar(enabled: boolean) {
+    const activeSession = session.data;
+    const capturedUserId = activeSession?.user?.id;
+    if (
+      !accountActionsEnabled ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      operation !== null
+    )
+      return;
+    avatarError = "";
+    pageStatus = "";
+    operation = "gravatar";
+    const mutationId = ++operationGeneration;
+    try {
+      const next = await setUseGravatar(enabled, activeSession);
+      if (
+        userId !== capturedUserId ||
+        mutationId !== operationGeneration ||
+        !profile
+      )
+        return;
+      profile = next;
+      brokenAvatarUrl = null;
+      patchSessionAvatar(activeSession, next.avatar_url, next.avatar_source);
+      pageStatus = enabled
+        ? t("Gravatar enabled.", locale)
+        : t("Gravatar disabled.", locale);
+    } catch (error) {
+      if (userId !== capturedUserId || mutationId !== operationGeneration)
+        return;
+      avatarError = errorMessage(
+        error,
+        t("The Gravatar setting could not be saved.", locale),
       );
     } finally {
       if (userId === capturedUserId && mutationId === operationGeneration)
@@ -745,8 +799,15 @@
       <div class="profile">
         <div class="avatar">
           <div class="avatar__portrait" aria-hidden="true">
-            {#if profile.avatar_url}
-              <img src={profile.avatar_url} alt="" />
+            {#if profile.avatar_url && profile.avatar_url !== brokenAvatarUrl}
+              {@const source = profile.avatar_url}
+              {#key source}
+                <img
+                  src={source}
+                  alt=""
+                  onerror={() => (brokenAvatarUrl = source)}
+                />
+              {/key}
             {:else}
               <span>{profile.email.slice(0, 1).toLocaleUpperCase(locale)}</span>
             {/if}
@@ -780,7 +841,7 @@
                 : t("Member", locale)}</span
             >
           </p>
-          {#if profile.avatar_url}
+          {#if profile.avatar_url && profile.avatar_source !== "gravatar"}
             <SharedButton
               variant="ghost"
               size="sm"
@@ -797,6 +858,27 @@
           {/if}
         </div>
       </div>
+
+      {#if profile.gravatar_enabled}
+        <label class="gravatar-toggle">
+          <input
+            type="checkbox"
+            checked={profile.use_gravatar}
+            disabled={operation !== null || !accountActionsEnabled}
+            onchange={(event) =>
+              void changeGravatar(event.currentTarget.checked)}
+          />
+          <span class="gravatar-toggle__copy">
+            <span>{t("Use Gravatar when no picture is uploaded", locale)}</span>
+            <small class="muted"
+              >{t(
+                "The server fetches it from Gravatar using your email address.",
+                locale,
+              )}</small
+            >
+          </span>
+        </label>
+      {/if}
 
       {#if avatarFile}
         <div class="avatar-pending">
@@ -1555,6 +1637,26 @@
     border-radius: var(--radius-sm);
     padding: 0.75rem;
     background: var(--surface-raised);
+  }
+
+  .gravatar-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+  }
+
+  .gravatar-toggle input {
+    flex: 0 0 auto;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-top: 0.15rem;
+    accent-color: var(--accent-strong);
+  }
+
+  .gravatar-toggle__copy {
+    display: grid;
+    gap: 0.15rem;
   }
 
   .selected-file {

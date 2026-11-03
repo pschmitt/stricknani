@@ -132,6 +132,22 @@ describe("session request ordering", () => {
     );
   });
 
+  it("records the avatar source, defaulting uploads", () => {
+    session.data = authenticated;
+    const expectedSession = session.data;
+    expect(
+      patchSessionAvatar(
+        expectedSession,
+        "/media/thumbnails/users/73/gravatar",
+        "gravatar",
+      ),
+    ).toBe(true);
+    expect(session.data?.user?.avatar_source).toBe("gravatar");
+    const next = session.data;
+    expect(patchSessionAvatar(next, null)).toBe(true);
+    expect(session.data?.user?.avatar_source).toBeNull();
+  });
+
   it("ignores avatar mutations that complete after session replacement", () => {
     session.data = authenticated;
     const expectedSession = session.data;
