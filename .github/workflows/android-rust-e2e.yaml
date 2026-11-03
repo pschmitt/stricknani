@@ -3,7 +3,17 @@ name: Android Rust E2E
 on:
   push:
     branches:
+      - main
       - rust
+    paths:
+      - "android/**"
+      - "ci/stricknani/**"
+      - "rust/**"
+      - "nix/rust-package.nix"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/android-rust-e2e.yaml"
+  pull_request:
     paths:
       - "android/**"
       - "ci/stricknani/**"
