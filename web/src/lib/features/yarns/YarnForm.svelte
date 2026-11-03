@@ -86,6 +86,9 @@
   let mediaBusy = $state(false);
   let deleting = $state(false);
   let deleteDialog = $state<ConfirmDialog | undefined>(undefined);
+  let conflictDialog = $state<ConfirmDialog | undefined>(undefined);
+  let conflictDialogBusy = $state(false);
+  let conflictDialogError = $state("");
   let yarnForm = $state<HTMLFormElement | undefined>(undefined);
   let optionalDetailsOpen = $state(false);
   let reload = $state(0);
@@ -154,6 +157,9 @@
     deleting = false;
     deleteError = "";
     untrack(() => deleteDialog?.close());
+    untrack(() => conflictDialog?.close());
+    conflictDialogBusy = false;
+    conflictDialogError = "";
     if (id === null) {
       loadedYarn = null;
       loadState = "ready";
@@ -464,17 +470,44 @@
   }
 
   function useLatestValues() {
-    if (!conflictYarn) return;
-    if (
-      typeof window !== "undefined" &&
-      !window.confirm(
-        t("Replace your unsaved edits with the latest saved version?", locale),
-      )
-    )
+    if (!conflictYarn || conflictDialogBusy) return;
+    conflictDialogError = "";
+    conflictDialog?.showModal();
+  }
+
+  async function confirmLoadLatestValues() {
+    const currentSession = session.data;
+    const id = yarnId;
+    const conflict = conflictYarn;
+    if (!currentSession?.user || id === null || !conflict || conflictDialogBusy)
       return;
-    applyLoadedYarn(conflictYarn);
-    serverError = "";
-    statusMessage = t("Latest saved version loaded.", locale);
+    const ownerId = currentSession.user.id;
+    const generation = routeGeneration;
+    if (!isCurrentRoute(id, ownerId, generation) || conflictYarn !== conflict)
+      return;
+    conflictDialogBusy = true;
+    conflictDialogError = "";
+    try {
+      const latest = await getYarn(id);
+      if (!isCurrentRoute(id, ownerId, generation) || conflictYarn !== conflict)
+        return;
+      if (latest.id !== id)
+        throw new Error(t("The yarn could not be loaded.", locale));
+      applyLoadedYarn(latest);
+      serverError = "";
+      statusMessage = t("Latest saved version loaded.", locale);
+      publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      untrack(() => conflictDialog?.close());
+    } catch (error) {
+      if (!isCurrentRoute(id, ownerId, generation) || conflictYarn !== conflict)
+        return;
+      conflictDialogError =
+        error instanceof Error
+          ? error.message
+          : t("The yarn could not be loaded.", locale);
+    } finally {
+      if (isCurrentRoute(id, ownerId, generation)) conflictDialogBusy = false;
+    }
   }
 
   async function reloadAfterMediaChange(id: number, ownerId: number) {
@@ -576,17 +609,6 @@
           >{/if}
       {/snippet}
     </PageHeader>
-
-    {#if serverError}<div class="notice-error">
-        {serverError}
-      </div>{/if}
-    {#if statusMessage}<p
-        class="success-message"
-        role="status"
-        aria-live="polite"
-      >
-        {statusMessage}
-      </p>{/if}
 
     {#if conflictYarn}
       <section class="conflict-panel" aria-labelledby="conflict-title">
@@ -877,7 +899,14 @@
           >
         {/snippet}
         {#snippet status()}
-          {#if isDirty}
+          {#if serverError}
+            <span aria-hidden="true" class="action-status action-status--error"
+              >{serverError}</span
+            >
+          {:else if statusMessage}
+            <span aria-hidden="true" class="action-status">{statusMessage}</span
+            >
+          {:else if isDirty}
             <span class="draft-note">
               {t("Your edits stay here if saving fails.", locale)}
             </span>
@@ -904,6 +933,44 @@
       </section>
     {/if}
   </main>
+  <ConfirmDialog
+    bind:this={conflictDialog}
+    titleId="load-latest-yarn-title"
+    title={t(
+      "Replace your unsaved edits with the latest saved version?",
+      locale,
+    )}
+    busy={conflictDialogBusy}
+  >
+    {#snippet children()}
+      {#if conflictDialogError}<p class="error-text" role="alert">
+          {conflictDialogError}
+        </p>{/if}
+    {/snippet}
+    {#snippet actions()}
+      <Button
+        variant="secondary"
+        icon="cancel"
+        type="button"
+        disabled={conflictDialogBusy}
+        onclick={() => {
+          conflictDialogError = "";
+          untrack(() => conflictDialog?.close());
+        }}
+      >
+        {t("Cancel", locale)}
+      </Button>
+      <Button
+        variant="primary"
+        icon="refresh"
+        type="button"
+        disabled={conflictDialogBusy || !conflictYarn}
+        onclick={confirmLoadLatestValues}
+      >
+        {t("Load latest values", locale)}
+      </Button>
+    {/snippet}
+  </ConfirmDialog>
   {#if loadedYarn}
     {@const yarnToDelete = loadedYarn}
     <ConfirmDialog
@@ -1118,22 +1185,19 @@
     font-size: 0.88rem;
   }
 
-  .notice-error,
-  .success-message,
+  .action-status {
+    font-size: 0.88rem;
+  }
+
+  .action-status--error {
+    color: var(--danger);
+  }
+
   .conflict-panel {
     border: 1px solid var(--line);
     border-radius: 0.85rem;
     padding: 0.9rem 1rem;
     background: var(--surface);
-  }
-
-  .notice-error {
-    color: var(--danger);
-  }
-
-  .success-message {
-    margin: 0;
-    color: var(--accent-strong);
   }
 
   .conflict-panel h2 {

@@ -60,7 +60,6 @@
   let fieldErrors = $state<Partial<Record<DraftField | "steps", string>>>({});
   let loadError = $state("");
   let serverError = $state("");
-  let serverErrorAnnounced = $state(false);
   let mediaError = $state("");
   let statusMessage = $state("");
   let saving = $state(false);
@@ -71,6 +70,9 @@
   let mediaAltText = $state("");
   let mediaStepId = $state("");
   let confirmationDialog = $state<ConfirmDialog | undefined>(undefined);
+  let conflictDialog = $state<ConfirmDialog | undefined>(undefined);
+  let conflictLoadBusy = $state(false);
+  let conflictLoadError = $state("");
   let confirmedAction = $state<ConfirmedAction | null>(null);
   let confirmationOwnerId = 0;
   let confirmationProjectId = 0;
@@ -183,7 +185,10 @@
     const controller = new AbortController();
     untrack(() => {
       confirmationDialog?.close();
+      conflictDialog?.close();
       confirmedAction = null;
+      conflictLoadBusy = false;
+      conflictLoadError = "";
     });
     optionalDetailsOpen = id !== null;
     project = null;
@@ -191,7 +196,6 @@
     clearPrivateDraft();
     loadError = "";
     serverError = "";
-    serverErrorAnnounced = false;
     statusMessage = "";
     mediaError = "";
     saving = false;
@@ -492,15 +496,34 @@
       optionalDetailsOpen = true;
     await tick();
     if (!isCurrentRoute(id, ownerId, generation)) return;
-    const targetId = fieldErrors.name
-      ? "project-name"
-      : fieldErrors.link
-        ? "project-link"
-        : invalidStep
-          ? `step-title-${invalidStep.key}`
-          : null;
+    const firstField = [
+      ["name", "project-name"],
+      ["category", "project-category"],
+      ["needles", "project-needles"],
+      ["stitchSample", "project-stitch-sample"],
+      ["tags", "project-tag-entry"],
+      ["link", "project-link"],
+      ["description", "project-description"],
+      ["notes", "project-notes"],
+      ["otherMaterials", "project-materials"],
+    ].find(([field]) => Boolean(fieldErrors[field as DraftField]));
+    const targetId =
+      firstField?.[1] ??
+      (invalidStep
+        ? `step-title-${invalidStep.key}`
+        : fieldErrors.steps
+          ? draft.steps[0]
+            ? `step-title-${draft.steps[0].key}`
+            : "add-project-step"
+          : null);
     const target = targetId ? document.getElementById(targetId) : null;
-    if (target instanceof HTMLInputElement && target.isConnected)
+    if (
+      (target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target instanceof HTMLButtonElement) &&
+      target.isConnected
+    )
       target.focus();
   }
 
@@ -553,10 +576,10 @@
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
     const controller = new AbortController();
+    let focusServerErrors = false;
     operationControllers.add(controller);
     saving = true;
     serverError = "";
-    serverErrorAnnounced = false;
     statusMessage = "";
     fieldErrors = {};
     try {
@@ -579,7 +602,6 @@
           locale,
         );
         publishFeedback({ ownerId, kind: "error", message: serverError });
-        serverErrorAnnounced = true;
         return;
       }
       applyLoadedProject(result);
@@ -609,6 +631,7 @@
       } else if (error instanceof ApiError && error.status === 422) {
         mapServerFieldErrors(error.fields);
         serverError = t("Check the highlighted fields and try again.", locale);
+        focusServerErrors = Object.keys(fieldErrors).length > 0;
       } else {
         serverError = safeError(
           error,
@@ -617,12 +640,13 @@
       }
       if (serverError && userId === ownerId) {
         publishFeedback({ ownerId, kind: "error", message: serverError });
-        serverErrorAnnounced = true;
       }
     } finally {
       operationControllers.delete(controller);
       if (isCurrentRoute(id, ownerId, generation)) saving = false;
     }
+    if (focusServerErrors && isCurrentRoute(id, ownerId, generation))
+      await focusFirstValidationError(id, ownerId, generation);
   }
 
   function mapServerFieldErrors(fields?: Record<string, string>): void {
@@ -665,48 +689,56 @@
   }
 
   function loadConflictLatest(): void {
-    if (conflictProject) {
-      applyLoadedProject(conflictProject);
-      statusMessage = t("Latest saved version loaded.", locale);
-      serverError = "";
-      serverErrorAnnounced = false;
-      return;
-    }
-    void reloadLatestProject();
+    if (!conflictProject || conflictLoadBusy) return;
+    conflictLoadError = "";
+    conflictDialog?.showModal();
   }
 
-  async function reloadLatestProject(): Promise<void> {
+  async function confirmLoadConflictLatest(): Promise<void> {
     const currentSession = session.data;
     const id = projectId;
-    if (!currentSession?.user || id === null) return;
+    const currentConflict = conflictProject;
     if (
-      !window.confirm(
-        t("Replace your unsaved edits with the latest saved version?", locale),
-      )
+      !currentSession?.user ||
+      id === null ||
+      currentConflict === null ||
+      conflictLoadBusy
     )
       return;
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
     const controller = new AbortController();
     operationControllers.add(controller);
-    serverError = "";
-    serverErrorAnnounced = false;
+    conflictLoadBusy = true;
+    conflictLoadError = "";
     try {
       const latest = await getProject(id, controller.signal);
-      if (!isCurrentRoute(id, ownerId, generation)) return;
+      if (
+        !isCurrentRoute(id, ownerId, generation) ||
+        conflictProject !== currentConflict
+      )
+        return;
+      if (latest.id !== id)
+        throw new Error(t("The latest project could not be loaded.", locale));
       applyLoadedProject(latest);
       statusMessage = t("Latest saved version loaded.", locale);
       serverError = "";
-      serverErrorAnnounced = false;
+      publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      untrack(() => conflictDialog?.close());
     } catch (error) {
-      if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
+      if (
+        controller.signal.aborted ||
+        !isCurrentRoute(id, ownerId, generation) ||
+        conflictProject !== currentConflict
+      )
         return;
-      serverError = safeError(
+      conflictLoadError = safeError(
         error,
         t("The latest project could not be loaded.", locale),
       );
     } finally {
       operationControllers.delete(controller);
+      if (isCurrentRoute(id, ownerId, generation)) conflictLoadBusy = false;
     }
   }
 
@@ -801,7 +833,6 @@
     operationControllers.add(controller);
     deleting = true;
     serverError = "";
-    serverErrorAnnounced = false;
     try {
       await deleteProject(id, currentSession, controller.signal);
       if (!isCurrentRoute(id, ownerId, generation)) return;
@@ -814,7 +845,6 @@
         t("The project could not be deleted.", locale),
       );
       publishFeedback({ ownerId, kind: "error", message: serverError });
-      serverErrorAnnounced = true;
     } finally {
       operationControllers.delete(controller);
       if (isCurrentRoute(id, ownerId, generation)) {
@@ -910,6 +940,7 @@
       if (!isCurrentRoute(id, ownerId, generation)) return false;
       applyLoadedProject(latest);
       statusMessage = t("Project media updated.", locale);
+      publishFeedback({ ownerId, kind: "success", message: statusMessage });
       return true;
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
@@ -987,17 +1018,6 @@
       <a href={resolve("/projects")}>{t("Back to projects", locale)}</a>
     </div>
   {:else}
-    {#if serverError && !conflictProject}
-      <div
-        class="notice notice-error"
-        role={serverErrorAnnounced ? undefined : "alert"}
-      >
-        <p>{serverError}</p>
-      </div>
-    {/if}
-    {#if statusMessage}
-      <p class="status-message" role="status">{statusMessage}</p>
-    {/if}
     {#if conflictProject}
       <section class="conflict-panel" aria-labelledby="conflict-heading">
         <h2 id="conflict-heading">
@@ -1117,6 +1137,7 @@
                     }}
                   />
                   <Button
+                    id="add-project-step"
                     type="button"
                     class="secondary-button"
                     variant="secondary"
@@ -1558,7 +1579,16 @@
             >
           {/snippet}
           {#snippet status()}
-            {#if isDirty}
+            {#if serverError}
+              <span
+                aria-hidden="true"
+                class="action-status action-status--error">{serverError}</span
+              >
+            {:else if statusMessage}
+              <span aria-hidden="true" class="action-status"
+                >{statusMessage}</span
+              >
+            {:else if isDirty}
               <span class="dirty-note" role="status"
                 >{t("Unsaved changes", locale)}</span
               >
@@ -1607,6 +1637,44 @@
         {/snippet}
       </ConfirmDialog>
     {/if}
+    <ConfirmDialog
+      bind:this={conflictDialog}
+      titleId="load-latest-project-title"
+      title={t(
+        "Replace your unsaved edits with the latest saved version?",
+        locale,
+      )}
+      busy={conflictLoadBusy}
+    >
+      {#snippet children()}
+        {#if conflictLoadError}<p class="field-error" role="alert">
+            {conflictLoadError}
+          </p>{/if}
+      {/snippet}
+      {#snippet actions()}
+        <Button
+          type="button"
+          variant="secondary"
+          icon="cancel"
+          disabled={conflictLoadBusy}
+          onclick={() => {
+            conflictLoadError = "";
+            untrack(() => conflictDialog?.close());
+          }}
+        >
+          {t("Cancel", locale)}
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          icon="refresh"
+          disabled={conflictLoadBusy || !conflictProject}
+          onclick={() => void confirmLoadConflictLatest()}
+        >
+          {t("Load latest values", locale)}
+        </Button>
+      {/snippet}
+    </ConfirmDialog>
   {/if}
 </section>
 
@@ -1750,9 +1818,13 @@
     cursor: not-allowed;
   }
 
-  .status-message {
+  .action-status {
     color: var(--accent-strong);
-    font-weight: 650;
+    font-size: 0.88rem;
+  }
+
+  .action-status--error {
+    color: var(--danger);
   }
 
   .conflict-panel {
