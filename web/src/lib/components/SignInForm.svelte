@@ -7,6 +7,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import SharedButton from "#lib/components/Button.svelte";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
+  import Mascot from "#lib/components/Mascot.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
@@ -50,7 +51,7 @@
 
 <svelte:head>
   <title>{t("Sign in", locale)} · Stricknani</title>
-  <meta name="theme-color" content="#f3f6fb" />
+  <meta name="theme-color" content="#f7f3fc" />
 </svelte:head>
 
 <main id="main-content" class="auth-page">
@@ -58,9 +59,10 @@
     <BrandHeader href="/app/" />
 
     <div class="auth-copy">
-      <p class="welcome-line">
-        {t("A calm place for the work in your hands.", locale)}
-      </p>
+      <div class="auth-hello">
+        <Mascot size={88} bob={true} />
+        <p class="welcome-line">{t("Hello, knitter!", locale)}</p>
+      </div>
       <h1 id="auth-title">{t("Sign in", locale)}</h1>
       <p class="auth-description">{t("Pick up where you left off.", locale)}</p>
     </div>
@@ -173,33 +175,54 @@
   }
 
   .auth-panel {
+    position: relative;
     align-self: center;
     width: min(100%, 28rem);
     margin-inline: auto;
-    padding: clamp(1.25rem, 5vw, 3rem);
-    border: 1px solid var(--line);
-    border-radius: 1.35rem;
+    padding: clamp(1.5rem, 5vw, 3rem);
+    border-radius: var(--radius-lg);
     background: var(--surface);
     box-shadow: var(--shadow);
   }
 
+  /* The running stitch, sewn just inside the card's edge. */
+  .auth-panel::after {
+    position: absolute;
+    inset: 7px;
+    border: 1.6px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 21px;
+    content: "";
+    pointer-events: none;
+  }
+
   .auth-copy {
-    margin-top: clamp(2.75rem, 7vh, 4.25rem);
+    margin-top: 1.25rem;
+  }
+
+  .auth-hello {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
   }
 
   .welcome-line {
-    margin: 0 0 0.75rem;
-    color: var(--accent);
-    font-size: 0.92rem;
-    font-weight: 650;
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 6vw, 2.2rem);
+    font-weight: 700;
+    line-height: 1.1;
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 1;
   }
 
   h1 {
     margin: 0;
-    font-size: clamp(2rem, 6vw, 2.7rem);
-    font-weight: 680;
-    letter-spacing: -0.055em;
-    line-height: 1.12;
+    color: var(--accent-strong);
+    font-size: 1.35rem;
+    line-height: 1.2;
   }
 
   .auth-description {
@@ -216,15 +239,15 @@
   label {
     margin-top: 0.7rem;
     font-size: 0.92rem;
-    font-weight: 620;
+    font-weight: 800;
   }
 
   input {
     width: 100%;
     min-height: 3rem;
-    border: 1px solid var(--control-border);
-    border-radius: 0.7rem;
-    padding: 0.65rem 0.8rem;
+    border: 1.5px solid var(--control-border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 1rem;
     color: var(--ink);
     background: var(--surface-raised);
   }
@@ -238,8 +261,11 @@
   }
 
   :global(.spinner-light) {
-    width: 1rem;
-    border-color: rgb(255 255 255 / 40%);
+    width: 1.25rem;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: none;
+    border-color: color-mix(in srgb, var(--on-accent) 35%, transparent);
     border-top-color: var(--on-accent);
   }
 
@@ -305,20 +331,23 @@
     align-items: flex-end;
     justify-content: flex-end;
     margin: 1rem;
-    border-radius: 1.35rem;
+    border-radius: var(--radius-xl);
     padding: clamp(1.5rem, 4vw, 3.5rem);
     overflow: hidden;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
   }
 
   .auth-side p {
     position: relative;
     z-index: 1;
     margin: 0;
-    font-size: clamp(1.2rem, 2vw, 1.75rem);
-    font-weight: 620;
-    letter-spacing: -0.035em;
+    font-family: var(--font-display);
+    font-size: clamp(1.3rem, 2vw, 1.9rem);
+    font-weight: 700;
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 1;
   }
 
   .thread-art {
@@ -326,7 +355,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    opacity: 0.38;
+    opacity: 0.6;
     transform: rotate(-20deg) scale(1.35);
   }
 
@@ -336,6 +365,14 @@
     height: 16rem;
     border: 1.7rem solid var(--accent);
     border-radius: 48% 52% 45% 55%;
+  }
+
+  .thread-loop-two {
+    border-color: var(--tone-yarns);
+  }
+
+  .thread-loop-three {
+    border-color: var(--tone-projects);
   }
 
   .thread-loop-one {

@@ -1,6 +1,5 @@
 {
   "de": {
-    "A calm place for the work in your hands.": "Ein ruhiger Ort für dein aktuelles Handarbeitsprojekt.",
     "A category with this name already exists.": "Eine Kategorie mit diesem Namen gibt es bereits.",
     "A newer version was saved": "Eine neuere Version wurde gespeichert",
     "A place for your projects and yarn.": "Ein Ort für deine Projekte und deine Wolle.",
@@ -220,6 +219,7 @@
     "HTML page": "HTML-Seite",
     "HTML, text, Markdown, PDF, or image · up to 5 MiB": "HTML, Text, Markdown, PDF oder Bild · bis zu 5 MiB",
     "Hello there!": "Hallo!",
+    "Hello, knitter!": "Hallo, Strickfreund!",
     "Hide token": "Token ausblenden",
     "Home": "Start",
     "How to use this calculator": "Wie man diesen Rechner benutzt",
@@ -737,7 +737,6 @@
     "stitches": "Maschen"
   },
   "en": {
-    "A calm place for the work in your hands.": "A calm place for the work in your hands.",
     "A category with this name already exists.": "A category with this name already exists.",
     "A newer version was saved": "A newer version was saved",
     "A place for your projects and yarn.": "A place for your projects and yarn.",
@@ -957,6 +956,7 @@
     "HTML page": "HTML page",
     "HTML, text, Markdown, PDF, or image · up to 5 MiB": "HTML, text, Markdown, PDF, or image · up to 5 MiB",
     "Hello there!": "Hello there!",
+    "Hello, knitter!": "Hello, knitter!",
     "Hide token": "Hide token",
     "Home": "Home",
     "How to use this calculator": "How to use this calculator",

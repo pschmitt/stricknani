@@ -530,6 +530,7 @@ msgstr "Profil aktualisiert"
 #: stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
 #: web/src/lib/components/SignInForm.svelte:96
+#: web/src/lib/components/SignInForm.svelte:98
 #: web/src/lib/features/admin/AdminUsers.svelte:605
 #: web/src/lib/features/auth/SignupForm.svelte:183
 msgid "Email"
@@ -579,6 +580,7 @@ msgstr "Benutzer erstellt"
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
 #: web/src/lib/components/SignInForm.svelte:110
+#: web/src/lib/components/SignInForm.svelte:112
 #: web/src/lib/features/auth/SignupForm.svelte:202
 msgid "Password"
 msgstr "Passwort"
@@ -634,8 +636,11 @@ msgstr "Bitte melde dich unten an"
 #: rust/src/web.rs:2160 rust/src/web_signup.rs:276
 #: stricknani/templates/auth/login.html:22
 #: web/src/lib/components/SignInForm.svelte:52
+#: web/src/lib/components/SignInForm.svelte:53
 #: web/src/lib/components/SignInForm.svelte:64
+#: web/src/lib/components/SignInForm.svelte:66
 #: web/src/lib/components/SignInForm.svelte:131
+#: web/src/lib/components/SignInForm.svelte:133
 #: web/src/lib/features/auth/SignupForm.svelte:267
 #: web/src/lib/features/home/HomeDashboard.svelte:87
 #: web/src/lib/features/home/HomeDashboard.svelte:103
@@ -672,6 +677,7 @@ msgstr "ODER"
 #: rust/src/web.rs:2161 rust/src/web_accounts.rs:850 rust/src/web_signup.rs:272
 #: stricknani/templates/auth/login.html:78
 #: web/src/lib/components/SignInForm.svelte:142
+#: web/src/lib/components/SignInForm.svelte:144
 #: web/src/lib/features/auth/SignupForm.svelte:147
 #: web/src/lib/features/auth/SignupForm.svelte:173
 msgid "Create an account"
@@ -2695,6 +2701,7 @@ msgid "Link"
 msgstr "Link"
 
 #: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:150
+#: web/src/lib/components/SignInForm.svelte:152
 #: web/src/lib/features/auth/SignupForm.svelte:275
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:189
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:203
@@ -4127,6 +4134,7 @@ msgid "New temporary password"
 msgstr "Neues temporäres Passwort"
 
 #: web/src/lib/components/SignInForm.svelte:141
+#: web/src/lib/components/SignInForm.svelte:143
 msgid "New to Stricknani?"
 msgstr "Neu bei Stricknani?"
 
@@ -4265,6 +4273,7 @@ msgid "Not recorded"
 msgstr "Nicht angegeben"
 
 #: web/src/lib/components/SignInForm.svelte:161
+#: web/src/lib/components/SignInForm.svelte:163
 msgid "One row at a time."
 msgstr "Masche für Masche."
 
@@ -4436,6 +4445,7 @@ msgid "Photo uploaded."
 msgstr "Foto hochgeladen."
 
 #: web/src/lib/components/SignInForm.svelte:65
+#: web/src/lib/components/SignInForm.svelte:67
 msgid "Pick up where you left off."
 msgstr "Mach dort weiter, wo du aufgehört hast."
 
@@ -4904,6 +4914,7 @@ msgid "Show recorded changes"
 msgstr "Aufgezeichnete Änderungen anzeigen"
 
 #: web/src/lib/components/SignInForm.svelte:44
+#: web/src/lib/components/SignInForm.svelte:45
 msgid "Sign in failed."
 msgstr "Anmeldung fehlgeschlagen."
 
@@ -4949,6 +4960,7 @@ msgid "Sign in to view your yarn."
 msgstr "Melde dich an, um deine Garne anzusehen."
 
 #: web/src/lib/components/SignInForm.svelte:129
+#: web/src/lib/components/SignInForm.svelte:131
 msgid "Signing in…"
 msgstr "Anmeldung läuft …"
 
@@ -5911,6 +5923,7 @@ msgid "Your account details could not be loaded."
 msgstr "Deine Kontodaten konnten nicht geladen werden."
 
 #: web/src/lib/components/SignInForm.svelte:75
+#: web/src/lib/components/SignInForm.svelte:77
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 "Dein Konto ist bereit. Melde dich mit deiner E-Mail-Adresse und deinem "
@@ -5961,6 +5974,7 @@ msgid "Your project library is ready."
 msgstr "Deine Projektübersicht ist bereit."
 
 #: web/src/lib/components/SignInForm.svelte:137
+#: web/src/lib/components/SignInForm.svelte:139
 msgid "Your projects stay on your own Stricknani server."
 msgstr "Deine Projekte bleiben auf deinem eigenen Stricknani-Server."
 
@@ -5975,6 +5989,7 @@ msgstr ""
 "es erneut."
 
 #: web/src/lib/components/SignInForm.svelte:69
+#: web/src/lib/components/SignInForm.svelte:71
 msgid "Your session expired. Sign in again to continue."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an, um fortzufahren."
 
@@ -6071,6 +6086,10 @@ msgstr "Was stricken wir heute?"
 #: web/src/lib/features/yarns/YarnLibrary.svelte:205
 msgid "Your stash is empty"
 msgstr "Dein Garnvorrat ist leer"
+
+#: web/src/lib/components/SignInForm.svelte:64
+msgid "Hello, knitter!"
+msgstr "Hallo, Strickfreund!"
 
 # Navigation and General
 #~ msgid "Stricknani"

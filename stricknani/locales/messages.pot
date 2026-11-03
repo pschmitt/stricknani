@@ -525,6 +525,7 @@ msgstr ""
 #: stricknani/templates/admin/users.html:49
 #: stricknani/templates/admin/users.html:102
 #: web/src/lib/components/SignInForm.svelte:96
+#: web/src/lib/components/SignInForm.svelte:98
 #: web/src/lib/features/admin/AdminUsers.svelte:605
 #: web/src/lib/features/auth/SignupForm.svelte:183
 msgid "Email"
@@ -574,6 +575,7 @@ msgstr ""
 #: stricknani/templates/auth/login.html:53
 #: stricknani/templates/auth/login.html:106
 #: web/src/lib/components/SignInForm.svelte:110
+#: web/src/lib/components/SignInForm.svelte:112
 #: web/src/lib/features/auth/SignupForm.svelte:202
 msgid "Password"
 msgstr ""
@@ -629,8 +631,11 @@ msgstr ""
 #: rust/src/web.rs:2160 rust/src/web_signup.rs:276
 #: stricknani/templates/auth/login.html:22
 #: web/src/lib/components/SignInForm.svelte:52
+#: web/src/lib/components/SignInForm.svelte:53
 #: web/src/lib/components/SignInForm.svelte:64
+#: web/src/lib/components/SignInForm.svelte:66
 #: web/src/lib/components/SignInForm.svelte:131
+#: web/src/lib/components/SignInForm.svelte:133
 #: web/src/lib/features/auth/SignupForm.svelte:267
 #: web/src/lib/features/home/HomeDashboard.svelte:87
 #: web/src/lib/features/home/HomeDashboard.svelte:103
@@ -667,6 +672,7 @@ msgstr ""
 #: rust/src/web.rs:2161 rust/src/web_accounts.rs:850 rust/src/web_signup.rs:272
 #: stricknani/templates/auth/login.html:78
 #: web/src/lib/components/SignInForm.svelte:142
+#: web/src/lib/components/SignInForm.svelte:144
 #: web/src/lib/features/auth/SignupForm.svelte:147
 #: web/src/lib/features/auth/SignupForm.svelte:173
 msgid "Create an account"
@@ -2555,6 +2561,7 @@ msgid "Link"
 msgstr ""
 
 #: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:150
+#: web/src/lib/components/SignInForm.svelte:152
 #: web/src/lib/features/auth/SignupForm.svelte:275
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:189
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:203
@@ -3955,6 +3962,7 @@ msgid "New temporary password"
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:141
+#: web/src/lib/components/SignInForm.svelte:143
 msgid "New to Stricknani?"
 msgstr ""
 
@@ -4093,6 +4101,7 @@ msgid "Not recorded"
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:161
+#: web/src/lib/components/SignInForm.svelte:163
 msgid "One row at a time."
 msgstr ""
 
@@ -4264,6 +4273,7 @@ msgid "Photo uploaded."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:65
+#: web/src/lib/components/SignInForm.svelte:67
 msgid "Pick up where you left off."
 msgstr ""
 
@@ -4726,6 +4736,7 @@ msgid "Show recorded changes"
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:44
+#: web/src/lib/components/SignInForm.svelte:45
 msgid "Sign in failed."
 msgstr ""
 
@@ -4771,6 +4782,7 @@ msgid "Sign in to view your yarn."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:129
+#: web/src/lib/components/SignInForm.svelte:131
 msgid "Signing in…"
 msgstr ""
 
@@ -5681,6 +5693,7 @@ msgid "Your account details could not be loaded."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:75
+#: web/src/lib/components/SignInForm.svelte:77
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 
@@ -5724,6 +5737,7 @@ msgid "Your project library is ready."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:137
+#: web/src/lib/components/SignInForm.svelte:139
 msgid "Your projects stay on your own Stricknani server."
 msgstr ""
 
@@ -5736,6 +5750,7 @@ msgid "Your session check failed. Refresh the page and try again."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:69
+#: web/src/lib/components/SignInForm.svelte:71
 msgid "Your session expired. Sign in again to continue."
 msgstr ""
 
@@ -5829,5 +5844,9 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:205
 msgid "Your stash is empty"
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:64
+msgid "Hello, knitter!"
 msgstr ""
 
