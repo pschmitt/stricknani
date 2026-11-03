@@ -1,0 +1,18 @@
+<!--
+  Stricknani brand mark, single-colour version (Android 13+ themed icon): the ball silhouette
+  with the face and the two wraps cut out. See branding/README.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="108" height="108">
+    <rect width="108" height="108" fill="#000"/>
+    <g transform="rotate(-8 54 54)">
+      <circle cx="54" cy="54" r="27" fill="#fff"/>
+      <clipPath id="ball"><circle cx="54" cy="54" r="27"/></clipPath>
+      <path d="M24 38Q54 27 86 42M22 70Q56 88 88 64" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" clip-path="url(#ball)"/>
+      <circle cx="45" cy="51" r="3.8"/>
+      <path d="M58 52Q62 46 67 52" fill="none" stroke="#000" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M45 60Q54 74 63 60Z" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+    </g>
+  </mask>
+  <rect width="108" height="108" fill="#000" mask="url(#cut)"/>
+</svg>

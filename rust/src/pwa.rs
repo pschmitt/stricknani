@@ -35,6 +35,7 @@ struct AppPwaState {
     offline_theme_js: Option<Arc<Vec<u8>>>,
     icon_192: Option<Arc<Vec<u8>>>,
     icon_512: Option<Arc<Vec<u8>>>,
+    icon_maskable_512: Option<Arc<Vec<u8>>>,
 }
 
 /// Routes for the service worker, PWA manifest, registration script, and offline page.
@@ -57,6 +58,7 @@ pub fn router_with_web_root(web_root: Option<PathBuf>) -> Router {
         .route("/app/offline-theme.js", get(app_offline_theme_js))
         .route("/app/icons/icon-192.png", get(app_icon_192))
         .route("/app/icons/icon-512.png", get(app_icon_512))
+        .route("/app/icons/icon-maskable-512.png", get(app_icon_maskable_512))
         .with_state(state)
 }
 
@@ -73,6 +75,10 @@ fn load_app_pwa_assets(root: PathBuf) -> AppPwaState {
         ),
         icon_192: read_bounded_file(&root.join("icons/icon-192.png"), MAX_APP_ICON_BYTES),
         icon_512: read_bounded_file(&root.join("icons/icon-512.png"), MAX_APP_ICON_BYTES),
+        icon_maskable_512: read_bounded_file(
+            &root.join("icons/icon-maskable-512.png"),
+            MAX_APP_ICON_BYTES,
+        ),
     }
 }
 
@@ -194,6 +200,15 @@ async fn app_icon_192(State(state): State<AppPwaState>) -> Response<Body> {
 async fn app_icon_512(State(state): State<AppPwaState>) -> Response<Body> {
     optional_asset(
         state.icon_512.clone(),
+        &state,
+        "image/png",
+        "public, max-age=3600",
+    )
+}
+
+async fn app_icon_maskable_512(State(state): State<AppPwaState>) -> Response<Body> {
+    optional_asset(
+        state.icon_maskable_512.clone(),
         &state,
         "image/png",
         "public, max-age=3600",

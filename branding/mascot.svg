@@ -1,0 +1,19 @@
+<!--
+  Stricknani brand mark: "Winky Pom". Master artwork; see branding/README.md for how the
+  PNGs, the web favicon and the Android vectors are derived from it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="21 21 66 66">
+  <g transform="rotate(-8 54 54)">
+    <clipPath id="ball"><circle cx="54" cy="54" r="27"/></clipPath>
+    <circle cx="54" cy="54" r="27" fill="#8cb8ff"/>
+    <g clip-path="url(#ball)" fill="none" stroke="#2f6fed" stroke-width="7" stroke-linecap="round">
+      <path d="M24 38Q54 27 86 42"/>
+      <path d="M22 70Q56 88 88 64"/>
+    </g>
+    <circle cx="45" cy="51" r="3.8" fill="#16233f"/>
+    <path d="M58 52Q62 46 67 52" fill="none" stroke="#16233f" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M45 60Q54 74 63 60Z" fill="#16233f" stroke="#16233f" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="38" cy="60" r="4.2" fill="#ff6f9f"/>
+    <circle cx="70" cy="60" r="4.2" fill="#ff6f9f"/>
+  </g>
+</svg>

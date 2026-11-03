@@ -236,3 +236,7 @@ deploy *args:
 [group: 'actions']
 renovate *args:
   ./scripts/renovate.sh {{ args }}
+
+# Regenerate derived brand assets (PNGs, favicon, Android vectors) from branding/*.svg
+branding:
+	nix-shell -p resvg -p 'python3.withPackages (p: [p.shapely])' --run 'python3 branding/build.py'

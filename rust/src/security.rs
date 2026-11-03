@@ -216,6 +216,7 @@ pub async fn security_headers(request: axum::extract::Request, next: Next) -> Re
             | "/app/offline-theme.js"
             | "/app/icons/icon-192.png"
             | "/app/icons/icon-512.png"
+            | "/app/icons/icon-maskable-512.png"
     );
     let mut response = next.run(request).await;
     let cache_static = is_static && response.status().is_success();

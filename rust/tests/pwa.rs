@@ -192,6 +192,7 @@ async fn app_worker_and_offline_assets_are_explicit_app_scoped_public_routes() {
     .unwrap();
     fs::write(root.path().join("icons/icon-192.png"), b"png192").unwrap();
     fs::write(root.path().join("icons/icon-512.png"), b"png512").unwrap();
+    fs::write(root.path().join("icons/icon-maskable-512.png"), b"pngmask").unwrap();
     let app = pwa::router_with_web_root(Some(root.path().to_path_buf()))
         .layer(middleware::from_fn(security_headers));
 
@@ -219,6 +220,7 @@ async fn app_worker_and_offline_assets_are_explicit_app_scoped_public_routes() {
         ("/app/offline-theme.js", "text/javascript; charset=utf-8"),
         ("/app/icons/icon-192.png", "image/png"),
         ("/app/icons/icon-512.png", "image/png"),
+        ("/app/icons/icon-maskable-512.png", "image/png"),
     ] {
         let response = app
             .clone()
@@ -329,6 +331,7 @@ async fn app_worker_routes_coexist_with_the_frontend_shell_without_fallback_leak
     .unwrap();
     fs::write(root.path().join("icons/icon-192.png"), b"png192").unwrap();
     fs::write(root.path().join("icons/icon-512.png"), b"png512").unwrap();
+    fs::write(root.path().join("icons/icon-maskable-512.png"), b"pngmask").unwrap();
     fs::write(root.path().join("200.html"), "<html>app shell</html>").unwrap();
     fs::write(
         root.path().join("csp.json"),
