@@ -21,10 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -70,6 +67,7 @@ import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
@@ -186,7 +184,7 @@ fun YarnDetailScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.print_action)) },
                                 leadingIcon = {
-                                    Icon(Icons.Filled.Print, contentDescription = null)
+                                    Icon(PhosphorIcons.Printer, contentDescription = null)
                                 },
                                 onClick = {
                                     menuExpanded = false
@@ -196,7 +194,7 @@ fun YarnDetailScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {
-                                    Icon(Icons.Filled.Share, contentDescription = null)
+                                    Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
                                 },
                                 onClick = {
                                     menuExpanded = false
@@ -513,7 +511,7 @@ private fun YarnDetailContent(
                                                 contentAlignment = Alignment.Center,
                                             ) {
                                                 Icon(
-                                                    Icons.Filled.Folder,
+                                                    PhosphorIcons.Hoodie,
                                                     contentDescription = null,
                                                     tint =
                                                         MaterialTheme.colorScheme.onSurfaceVariant,

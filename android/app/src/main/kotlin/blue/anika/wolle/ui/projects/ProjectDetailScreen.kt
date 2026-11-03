@@ -21,8 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -70,6 +68,7 @@ import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
@@ -189,7 +188,7 @@ fun ProjectDetailScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.print_action)) },
                                 leadingIcon = {
-                                    Icon(Icons.Filled.Print, contentDescription = null)
+                                    Icon(PhosphorIcons.Printer, contentDescription = null)
                                 },
                                 onClick = {
                                     menuExpanded = false
@@ -199,7 +198,7 @@ fun ProjectDetailScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {
-                                    Icon(Icons.Filled.Share, contentDescription = null)
+                                    Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
                                 },
                                 onClick = {
                                     menuExpanded = false
