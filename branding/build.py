@@ -22,6 +22,7 @@ from pathlib import Path
 
 from shapely import affinity
 from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 BRANDING = Path(__file__).resolve().parent
@@ -43,7 +44,10 @@ def resvg(svg: Path, out: Path, width: int, height: int | None = None) -> None:
 # --- geometry shared by the monochrome and notification vectors ------------------------------
 
 
-def quad(p0, p1, p2, n=24):
+Point2 = tuple[float, float]
+
+
+def quad(p0: Point2, p1: Point2, p2: Point2, n: int = 24) -> list[Point2]:
     return [
         (
             (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t**2 * p2[0],
@@ -53,10 +57,10 @@ def quad(p0, p1, p2, n=24):
     ]
 
 
-def silhouette(*, wraps: bool, face_scale: float = 1.0):
+def silhouette(*, wraps: bool, face_scale: float = 1.0) -> BaseGeometry:
     """Ball (r=27 at 54,54, tilted -8 degrees) with its face and wraps cut out."""
     ball = Point(54, 54).buffer(27, quad_segs=48)
-    cuts = []
+    cuts: list[BaseGeometry] = []
     if wraps:
         for pts in (
             quad((24, 38), (54, 27), (86, 42)),
@@ -75,7 +79,7 @@ def silhouette(*, wraps: bool, face_scale: float = 1.0):
     return affinity.rotate(shape, -8, origin=(54, 54))
 
 
-def path_data(geom, digits: int = 2) -> str:
+def path_data(geom: BaseGeometry, digits: int = 2) -> str:
     geom = geom.simplify(0.04)
     polys = [geom] if geom.geom_type == "Polygon" else list(geom.geoms)
     parts = []

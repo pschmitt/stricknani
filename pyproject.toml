@@ -65,6 +65,11 @@ exclude = [
     ".venv",
 ]
 
+[[tool.mypy.overrides]]
+# Shapely ships no type stubs; only the branding generator uses it.
+module = ["shapely", "shapely.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
