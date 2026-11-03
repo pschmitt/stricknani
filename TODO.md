@@ -39,6 +39,7 @@ Execution-oriented backlog for Stricknani.
 | T122 | P2 | todo | tools/gauge | feat | Add optional 10 cm swatch dimensions, bounded decimal validation and density-based half-even rounding |
 | T123 | P1 | wip | resources/history | feat | Add owner-scoped recent changes and safe change details on project/yarn views; share audit projections without granting admin access |
 | T124 | P1 | todo | auth/oidc | feat | Optional OIDC alongside local users, explicit identity linking and Android PKCE handoff; follow `docs/oidc-plan.md` |
+| T125 | P1 | wip | ops/cutover | docs | Review the dated production cutover checklist, exact-candidate gates, fresh rehearsal, Android compatibility and rollback; production requires explicit approval |
 | T120 | P1 | wip | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
 | T120.1 | P1 | done | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
 | T120.2 | P1 | done | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |
