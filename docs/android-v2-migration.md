@@ -99,7 +99,7 @@ wrong field types return `400 invalid_json`, oversized bodies return
     "version": "0.1.0",
     "build_id": "server-build-identifier",
     "is_admin": true,
-    "user": {"id": 1, "email": "admin@example.test", "is_admin": true}
+    "user": {"id": 1, "email": "admin@example.test", "is_admin": true, "avatar_url": null}
   }
 }
 ```
@@ -110,6 +110,10 @@ Bearer credentials return `401` in the v2 error envelope. An invalid or expired
 cookie without a Bearer credential is anonymous. Responses use `no-store`.
 The client reads `data.user.id` for “You” and `data.user.is_admin` for admin
 navigation. The projection contains no credential material.
+`data.user.avatar_url` is null when no valid avatar is registered; otherwise it
+uses the same protected self-thumbnail URL as the browser session. Native
+clients attach their PAT to that media request. Replacing an avatar updates the
+URL on the next metadata read; other users' avatar permissions are unchanged.
 
 ## Current route mapping
 

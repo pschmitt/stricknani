@@ -4,8 +4,10 @@ use axum::{
     http::{HeaderValue, Request, StatusCode},
 };
 use http_body_util::BodyExt;
+use image::{DynamicImage, ImageBuffer, ImageFormat, Rgba};
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
+use std::io::Cursor;
 use stricknani_server::{app_with_state, db};
 use tower::ServiceExt;
 
@@ -51,7 +53,9 @@ async fn fixture() -> Fixture {
     add_token(&pool, member_id, MEMBER_SESSION, "browser", None, false).await;
     add_token(&pool, member_id, MEMBER_PAT, "api", None, false).await;
     let static_root = tempfile::tempdir().unwrap();
-    let state = db::AppState::new(pool.clone()).with_secure_cookies(true);
+    let state = db::AppState::new(pool.clone())
+        .with_secure_cookies(true)
+        .with_media_root(static_root.path().to_path_buf());
     Fixture {
         app: app_with_state(static_root.path().to_path_buf(), state),
         pool,
@@ -499,7 +503,8 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
     assert_eq!(browser_admin["user"]["id"], fixture.admin_id);
     assert_eq!(browser_admin["user"]["email"], "pat-admin@example.test");
     assert_eq!(browser_admin["user"]["is_admin"], true);
-    assert_eq!(browser_admin["user"].as_object().unwrap().len(), 3);
+    assert_eq!(browser_admin["user"]["avatar_url"], serde_json::Value::Null);
+    assert_eq!(browser_admin["user"].as_object().unwrap().len(), 4);
 
     for cookie in [
         "synthetic-unknown-browser-cookie",
@@ -561,7 +566,8 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
         assert_eq!(data["user"]["id"], user_id);
         assert_eq!(data["user"]["email"], email);
         assert_eq!(data["user"]["is_admin"], expected_admin);
-        assert_eq!(data["user"].as_object().unwrap().len(), 3);
+        assert_eq!(data["user"]["avatar_url"], serde_json::Value::Null);
+        assert_eq!(data["user"].as_object().unwrap().len(), 4);
     }
 
     let bad_authorization_with_admin_cookie = fixture
@@ -592,4 +598,146 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
     let error = json(bad_authorization_with_admin_cookie).await;
     assert_eq!(error["error"]["code"], "session_expired");
     assert!(error.get("data").is_none());
+}
+
+#[tokio::test]
+async fn v2_meta_exposes_owner_avatar_thumbnail_to_api_pat() {
+    let fixture = fixture().await;
+
+    let absent = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get("/api/v2/meta")
+                .header("authorization", format!("Bearer {ADMIN_PAT}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(absent.status(), StatusCode::OK);
+    assert_eq!(
+        json(absent).await["data"]["user"]["avatar_url"],
+        serde_json::Value::Null
+    );
+
+    let first_upload = upload_avatar(&fixture, [25, 100, 200, 255]).await;
+    assert_eq!(first_upload.status(), StatusCode::OK);
+    let first_avatar_url = json(first_upload).await["data"]["avatar_url"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    let first_meta = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get("/api/v2/meta")
+                .header("authorization", format!("Bearer {ADMIN_PAT}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let first_meta = json(first_meta).await;
+    assert_eq!(first_meta["data"]["user"]["avatar_url"], first_avatar_url);
+
+    let own_thumbnail = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(&first_avatar_url)
+                .header("authorization", format!("Bearer {ADMIN_PAT}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(own_thumbnail.status(), StatusCode::OK);
+    assert!(own_thumbnail.headers().get("content-type").is_some());
+    assert!(
+        !own_thumbnail
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .is_empty()
+    );
+
+    let foreign_thumbnail = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(&first_avatar_url)
+                .header("authorization", format!("Bearer {MEMBER_PAT}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(foreign_thumbnail.status(), StatusCode::FORBIDDEN);
+
+    let replacement = upload_avatar(&fixture, [220, 30, 75, 255]).await;
+    assert_eq!(replacement.status(), StatusCode::OK);
+    let replacement_url = json(replacement).await["data"]["avatar_url"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert_ne!(replacement_url, first_avatar_url);
+
+    let replacement_meta = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get("/api/v2/meta")
+                .header("authorization", format!("Bearer {ADMIN_PAT}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        json(replacement_meta).await["data"]["user"]["avatar_url"],
+        replacement_url
+    );
+}
+
+async fn upload_avatar(fixture: &Fixture, color: [u8; 4]) -> axum::response::Response {
+    let boundary = "meta-avatar-test-boundary";
+    let mut body = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"profile.png\"\r\nContent-Type: image/png\r\n\r\n"
+    )
+    .into_bytes();
+    body.extend(png_bytes(color));
+    body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+    fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::post("/api/v2/account/avatar")
+                .header(
+                    "cookie",
+                    format!("__Host-stricknani_session={ADMIN_SESSION}"),
+                )
+                .header("host", "app.example.test")
+                .header("origin", ORIGIN)
+                .header("sec-fetch-site", "same-origin")
+                .header("x-csrf-token", csrf_token(ADMIN_SESSION))
+                .header(
+                    "content-type",
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+}
+
+fn png_bytes(color: [u8; 4]) -> Vec<u8> {
+    let image = DynamicImage::ImageRgba8(ImageBuffer::from_pixel(2, 2, Rgba(color)));
+    let mut output = Cursor::new(Vec::new());
+    image.write_to(&mut output, ImageFormat::Png).unwrap();
+    output.into_inner()
 }

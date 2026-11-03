@@ -569,11 +569,14 @@ browser authentication.
 
 Android can discover server metadata and its current user through
 `GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, user}}`.
-`user` is `{id, email, is_admin}` for a valid session or PAT; anonymous or
+`user` is `{id, email, is_admin, avatar_url}` for a valid session or PAT; anonymous or
 invalid-cookie requests return `user: null` and `is_admin: false`.
 Explicit invalid Bearer credentials return the v2 `401 session_expired`
 envelope. Metadata responses are not cacheable. The public v1 metadata
 contract stays unchanged. See [the migration plan](android-v2-migration.md).
+The nullable avatar URL uses the same protected self-thumbnail path as the
+browser session. Native clients attach their PAT; other users' avatar access
+is unchanged. A replacement avatar is reflected by the next metadata read.
 
 Read-only administrator resources use the same authentication:
 

@@ -1,5 +1,6 @@
 //! Public API metadata with optional current-user role information.
 
+use super::{ApiV2State, access, api_error};
 use axum::{
     Json, Router,
     extract::State,
@@ -8,9 +9,6 @@ use axum::{
     routing::get,
 };
 use serde::Serialize;
-use sqlx::Row;
-
-use super::{ApiV2State, access, api_error};
 
 #[derive(Serialize)]
 struct MetaEnvelope {
@@ -30,6 +28,7 @@ struct MetaUser {
     id: i64,
     email: String,
     is_admin: bool,
+    avatar_url: Option<String>,
 }
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -43,26 +42,21 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
     };
 
     let user = match user_id {
-        Some(user_id) => {
-            match sqlx::query("SELECT id, email, is_admin FROM users WHERE id = ? AND active = 1")
-                .bind(user_id)
-                .fetch_optional(&state.app.pool)
-                .await
-            {
-                Ok(row) => row.map(|row| MetaUser {
-                    id: row.get("id"),
-                    email: row.get("email"),
-                    is_admin: row.get::<i64, _>("is_admin") != 0,
-                }),
-                Err(_) => {
-                    return api_error(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "internal_error",
-                        "Request failed",
-                    );
-                }
+        Some(user_id) => match super::load_user(&state.app.pool, user_id).await {
+            Ok(user) => user.map(|user| MetaUser {
+                id: user.id,
+                email: user.email,
+                is_admin: user.is_admin,
+                avatar_url: user.avatar_url,
+            }),
+            Err(_) => {
+                return api_error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "Request failed",
+                );
             }
-        }
+        },
         None => None,
     };
     let is_admin = user.as_ref().is_some_and(|user| user.is_admin);
