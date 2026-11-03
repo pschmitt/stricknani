@@ -522,14 +522,14 @@ def run_acceptance(
                 page.set_viewport_size({"width": width, "height": 844})
                 _assert_no_overflow(page, width)
             page.set_viewport_size({"width": 320, "height": 844})
-            page.locator(".reorder-item .thumb-button").first.wait_for(state="visible")
-            page.locator(".reorder-item .thumb-button").first.click()
-            zoom_dialog = page.get_by_role("dialog", name="Yarn photo")
+            page.locator(".photo-strip__open").first.wait_for(state="visible")
+            page.locator(".photo-strip__open").first.click()
+            zoom_dialog = page.get_by_role("dialog", name="Project image viewer")
             zoom_dialog.wait_for(state="visible")
             page.keyboard.press("Escape")
             zoom_dialog.wait_for(state="hidden")
             detail_remove_controls = page.locator(
-                ".reorder-item button[aria-label='Remove photo']"
+                ".photo-strip button[aria-label='Remove photo']"
             )
             _require(
                 page.get_by_label("Choose a yarn photo", exact=True).count() == 0

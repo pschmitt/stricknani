@@ -260,7 +260,7 @@ def run_acceptance(
             _mark_stage(stage_file, "submit new API token name")
             page.get_by_role("button", name="Create token").click()
             _mark_stage(stage_file, "show one-time token dialog")
-            token_dialog = page.locator("dialog").first
+            token_dialog = page.get_by_role("dialog", name="Your new API token")
             token_dialog.wait_for(state="visible")
             token_dialog.get_by_role("heading", name="Your new API token").wait_for(
                 state="visible"

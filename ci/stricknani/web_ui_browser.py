@@ -4861,7 +4861,7 @@ def run_acceptance(
                 editor_delete_response_info.value.status == 204,
                 "project deletion did not complete with 204",
             )
-            page.locator(".project-grid").wait_for(state="visible")
+            page.locator(".library-grid").wait_for(state="visible")
             _require(
                 page.get_by_role("heading", name="Soft winter throw").count() == 0,
                 "the deleted editor project remained in the library",
@@ -4881,8 +4881,8 @@ def run_acceptance(
             page.locator(".app-shell").wait_for(state="visible")
             mark_stage("checking project and yarn library density")
             library_density_cases = (
-                ("projects", "/app/projects", ".project-row", "Projects"),
-                ("yarns", "/app/yarns", ".yarn-row", "Yarns"),
+                ("projects", "/app/projects", ".project-card", "Projects"),
+                ("yarns", "/app/yarns", ".yarn-card", "Yarns"),
             )
             for route_name, route_path, row_selector, heading in library_density_cases:
                 page.goto(f"{origin}{route_path}", wait_until="networkidle")
