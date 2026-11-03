@@ -18,7 +18,7 @@ against the Rust service. The new website's `/api/v2` is a same-origin browser A
 cookie and CSRF model is intentionally different. Do not change the Android base path to v2 or reuse
 web cookies in the native app.
 
-The immediate implementation is canonical website-link support, alongside documentation and
+The completed implementation is inbound canonical website-link support, alongside documentation and
 compatibility tracking. No API prefix change is needed to use the Rust backend. A future native v2
 migration first needs an explicit mobile authentication contract and a sync decision.
 
@@ -27,7 +27,7 @@ migration first needs an explicit mobile authentication contract and a sync deci
 | Area | Android contract today | Rust/web contract | Compatibility and migration concern |
 | --- | --- | --- | --- |
 | Server discovery and onboarding | `GET /api/v1/meta`, then bearer-authenticated `GET /api/v1/categories`; optional email/password onboarding exchanges credentials at `POST /api/v1/auth/token` for a PAT. Settings retain the server URL and PAT in encrypted preferences. | Rust mounts these v1 routes. V2 instead has `GET /api/v2/session` and `POST /api/v2/auth/login`; login establishes a browser session cookie and CSRF token. | V1 onboarding remains suitable for Android. V2 login is not a replacement for PAT onboarding: cookie storage, same-origin checks, CSRF, browser session lifetime, and password handling need a separate native design. Do not persist website cookies or silently mint/replace a PAT. |
-| Projects | Retrofit uses `/api/v1/projects` list/detail/create/update/delete and favorite `POST`/`DELETE`; Kotlin DTOs model direct JSON objects and current project fields. Writes carry the existing optimistic concurrency field. | V2 project routes use the same resource names but return `{data: ...}` envelopes (paged lists also have `meta`), expose HTML-rendered companion fields, and use `PUT` for favorite. | Domain overlap does not imply wire compatibility. V2 needs separate envelope/list/error/write DTOs and method mapping; keep existing v1 DTOs stable. |
+| Projects | Retrofit uses `/api/v1/projects` list/detail/create/update/delete and favorite `POST`/`DELETE`; Kotlin DTOs model direct JSON objects and current project fields. Writes carry the existing optimistic concurrency field. | V2 project routes use the same resource names but return `{data: ...}` envelopes (paged lists also have `meta`), expose HTML-rendered companion fields, and use `PUT`/`DELETE` for favorite. | Domain overlap does not imply wire compatibility. V2 needs separate envelope/list/error/write DTOs and method mapping; keep existing v1 DTOs stable. |
 | Yarns | `/api/v1/yarns` list/detail/CRUD and `POST`/`DELETE` favorite, with direct DTO responses. | V2 yarn routes use browser-session auth, envelopes, paged-list metadata, and `PUT`/`DELETE` favorite. | Same shape and authentication risks as projects. Compare all write fields and conflict responses before a versioned client is introduced. |
 | Categories | `/api/v1/categories` and full category replacement through `/api/v1/sync/categories`. | V2 has category CRUD with browser-session auth and `{data: ...}` responses; it has no Android-compatible sync endpoint. | A v2 client would need its own authenticated category refresh and explicit deletion semantics. Do not change Room replacement behavior based only on the v2 CRUD routes. |
 | Delta sync | `/api/v1/sync/projects` and `/api/v1/sync/yarns` send the last `server_time` as `since`; responses include updated rows, `deleted_ids`, and server time. Categories are fetched as a full list. | Rust v1 retains these routes and supports optional bounded pages with `limit` and opaque `next_cursor`; default requests remain complete-response form. V2 has no matching delta-sync routes. | The current client does not request bounded pages. Kotlin DTOs model `full_resync_required` but repositories currently ignore it, and do not model `has_more`/`next_cursor`. If bounded pages are enabled, the client must drain every page from one snapshot before advancing the durable timestamp watermark; the opaque page cursor is separate state. Also define full-resync and pending-write behavior. |
@@ -100,6 +100,13 @@ all optional capabilities, or every self-hosted reverse-proxy configuration.
    coverage.
 
 ## Follow-up boundaries
+
+Android's outgoing share buttons still generate legacy `/projects/{id}` and `/yarn/{id}` URLs
+through `MediaUrlResolver`, preserving the configured server path prefix. Rust redirects the legacy
+yarn URL to the SPA when its web root is mounted; the legacy project URL still opens the
+server-rendered page. Inbound canonical support therefore does not mean outgoing shares are
+canonical. A follow-up should select canonical `/app/...` shares after deciding how to support older
+servers, reuse the existing base-path resolver, and test both resource types.
 
 SNA-75 is the small application change justified by the canonical website paths; it changes only
 native URL routing and does not change API authentication, server URLs, or account selection. The
