@@ -41,6 +41,15 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-81: Attachments near the top of the project editor
+
+- [x] The project editor listed Attachments last, below every instruction step; it now follows
+      the Gallery as its own section card, so pattern files are reachable without scrolling past
+      the steps.
+
+Status: **done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug assembleDebug` passed on the
+remote build host; installed on the user's phone for review.
+
 ## SNA-80: Calmer detail pages and a five-item bottom bar
 
 - [x] The detail pages' "Long-press a card title to reorder sections." tip no longer sits above

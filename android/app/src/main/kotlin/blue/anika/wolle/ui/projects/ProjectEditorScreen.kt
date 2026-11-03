@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
@@ -236,6 +237,38 @@ fun ProjectEditorScreen(
                                         Icons.Filled.Delete,
                                         contentDescription =
                                             stringResource(R.string.project_editor_remove_image),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Attachments (pattern PDFs and the like) sit with the gallery, right after the
+            // details, instead of below every instruction step at the very end of the form.
+            item {
+                EditorSectionCard(
+                    title = stringResource(R.string.project_editor_attachments_label),
+                    icon = Icons.Filled.AttachFile,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { attachmentPicker.launch("*/*") }) {
+                            Text(stringResource(R.string.project_editor_add_attachment))
+                        }
+                        form.attachments.forEachIndexed { index, attachment ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    attachment.fileName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                IconButton(onClick = { viewModel.removeAttachment(index) }) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.project_editor_remove_attachment
+                                            ),
                                     )
                                 }
                             }
@@ -469,31 +502,6 @@ fun ProjectEditorScreen(
             item {
                 TextButton(onClick = viewModel::addStep) {
                     Text(stringResource(R.string.project_editor_add_step))
-                }
-            }
-            item {
-                Text(
-                    stringResource(R.string.project_editor_attachments_label),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                TextButton(onClick = { attachmentPicker.launch("*/*") }) {
-                    Text(stringResource(R.string.project_editor_add_attachment))
-                }
-                form.attachments.forEachIndexed { index, attachment ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            attachment.fileName,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(onClick = { viewModel.removeAttachment(index) }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription =
-                                    stringResource(R.string.project_editor_remove_attachment),
-                            )
-                        }
-                    }
                 }
             }
         }
