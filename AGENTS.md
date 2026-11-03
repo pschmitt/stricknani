@@ -16,6 +16,11 @@ Use this file as the operational source of truth for working in Stricknani.
   - Repo root: `/home/pschmitt/devel/private/pschmitt/stricknani.git`
 - When working from worktrees (such as `stricknani-rust-port.worktree`) or subdirectories, pass `workspace_id: "ws_L2hvbWUvcHNjaG1pdHQvZGV2ZWwvcHJpdmF0ZS9wc2NobWl0dC9zdHJpY2tuYW5pLmdpdA"` (or export `CONCORD_REPO_ROOT=/home/pschmitt/devel/private/pschmitt/stricknani.git`) so active tasks, claims, and overlap checks are shared.
 
+- Read the coordinator's Concord inbox directly at every handoff, before long
+  build/deploy waits, and before reporting status; do not rely only on live hooks.
+  Reply in the original thread with a concrete interface, commit, or next action.
+  Check receipts when a peer appears blocked; queued messages are not delivery.
+
 ## Critical Requirements
 
 ### Rust rewrite workflow

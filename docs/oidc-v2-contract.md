@@ -77,7 +77,13 @@ without its own pending in-memory state/verifier before doing any exchange.
 grants only and sets no browser cookie. State/grants are single-use; codes
 expire after at most 60 seconds and are consumed on the first exchange attempt,
 including invalid proofs. S256 verifier length is 43–128 characters. Redirect
-comparison is exact. Never put a PAT or provider token in a URL.
+comparison is exact. For the self-hosted Android client, the explicitly
+configured fallback URI is `stricknani://oidc-callback`; allowlist that complete
+URI, not the whole scheme. App-side S256 PKCE and pending state are required
+because a custom URI scheme does not establish exclusive app ownership.
+Verified HTTPS App Links remain preferred where the domain can be configured
+in the manifest and verified by the server. Never put a PAT or provider token
+in a URL.
 
 OIDC PATs have a provider/identity marker and finite expiry (initial policy:
 7 days, server configurable downward). Account disable/reset and identity unlink

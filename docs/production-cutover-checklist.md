@@ -2,11 +2,12 @@
 
 This is a conditional schedule for moving `https://wolle.anika.blue` from the
 Python service to the Rust service and its new web UI. It is planning material,
-not authorization or a booked maintenance window. The earliest candidate window
-is provisionally **2026-11-10**, for roughly **60–90 minutes**, only if every gate below has
-fresh evidence and the user records an explicit GO. Durations are estimates
-until a fresh rehearsal measures them. No date or deadline overrides a failed,
-unknown, or unchecked gate. Until GO, production traffic, storage, and services
+not authorization or a booked maintenance window. Schedule by readiness:
+freeze as soon as the required changes and checks pass, rehearse as soon as
+authorized, then cut over once rehearsal passes and the user records an explicit
+GO for the window. There is no calendar waiting period. Allow roughly
+**60–90 minutes** initially; a fresh rehearsal must measure the actual duration.
+No deadline overrides a failed, unknown, or unchecked gate. Until GO, production traffic, storage, and services
 remain untouched.
 
 A rehearsal snapshot/copy requires its own explicit authorization and a
@@ -17,8 +18,8 @@ either operation merely because its proposed date has arrived.
 The user's updated decision makes **Authelia OIDC on web and Android, linking
 existing local users, and the associated authentication fixes mandatory before
 cutover**. This supersedes the earlier Nov 6 proposal and the suggestion to
-enable OIDC after go-live. The schedule remains provisional until that flow is
-implemented and rehearsed against Authelia.
+enable OIDC after go-live. Readiness depends on implementing and rehearsing
+that flow against Authelia; it does not require waiting for a particular date.
 
 Use [`rust-migration-plan.md`](rust-migration-plan.md) as the operational
 runbook for snapshot, import, verification, routing, and rollback mechanics.
@@ -28,19 +29,20 @@ of later UI, API, Android, packaging, or migration changes.
 
 ## Conditional milestones
 
-- **Nov 6 — earliest candidate freeze (Claude + Codex):** close T120 P1 work required
+- **Candidate freeze, immediately when ready (Claude + Codex):** close T120 P1 work required
   for acceptance, freeze the UI, and identify the exact packaged web assets,
   Rust revision, and Android compatibility evidence. If P1s remain or the
   candidate changes, reset the schedule and repeat affected checks.
-- **Nov 9 — earliest rehearsal and click-through (Codex, with Claude and user):** rehearse
+- **Rehearsal and click-through, immediately after freeze and authorization
+  (Codex, with Claude and user):** rehearse
   the exact frozen candidate from a fresh authorized production copy into the
   isolated preview, then complete independent verification and user browser
   click-through. Protect the preview's existing edited data: record and verify
   its backup before replacing anything. Measure rehearsal and recovery time.
-- **Nov 10 — earliest possible cutover:** proceed only after all gates below are
+- **Cutover, immediately after successful rehearsal and explicit user GO:** proceed only after all gates below are
   checked, the candidate is unchanged since evidence was collected, and the
   user explicitly approves the recorded window and data-loss policy. Otherwise
-  choose a later date after closing the gaps.
+  close the gaps and repeat affected checks before requesting the window.
 
 ## GO gates — complete before touching production
 
