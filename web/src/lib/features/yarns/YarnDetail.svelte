@@ -434,6 +434,13 @@
             title={t("Notes", locale)}
             headingId="yarn-notes-heading"
             closeLabel={t("Close notes", locale)}
+            moveHint={t("Long-press and drag to move", locale)}
+            movedLabels={{
+              left: t("Notes moved to the left", locale),
+              right: t("Notes moved to the right", locale),
+              up: t("Notes moved up", locale),
+              down: t("Notes moved down", locale),
+            }}
           >
             <div class="rich-text {textSizeClass}">{@html yarn.notes_html}</div>
           </StickyNote>

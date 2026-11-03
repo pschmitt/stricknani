@@ -3,7 +3,6 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import {
     CARD_TILT,
-    FAB_TILT,
     MORPH_EASING,
     MORPH_MS,
     SWAY_KEYFRAMES,
@@ -14,6 +13,28 @@
     type NotesDirection,
     type NotesPhase,
   } from "./notes-disclosure";
+  import {
+    SNAP_EASING,
+    SNAP_MS,
+    SNAP_REDUCED_MS,
+    clampToViewport,
+    createFabDrag,
+    createTiltTracker,
+    defaultPlacement,
+    describeMove,
+    fitCardBottom,
+    isMoveKey,
+    loadPlacement,
+    placementToPoint,
+    restTilt,
+    savePlacement,
+    snapPlacement,
+    stepPlacement,
+    type FabGeometry,
+    type MoveAnnouncement,
+    type Placement,
+    type Side,
+  } from "./notes-drag";
 
   // The Notes section as a paper sticky note. With content it rests as a small
   // FAB-sized note at the right edge of the screen and morphs into the full
@@ -26,6 +47,13 @@
     closeLabel = "Close notes",
     emptyHref = "",
     emptyLabel = "",
+    moveHint = "Long-press and drag to move",
+    movedLabels = {
+      left: "Notes moved to the left",
+      right: "Notes moved to the right",
+      up: "Notes moved up",
+      down: "Notes moved down",
+    },
     children,
   }: {
     title: string;
@@ -34,6 +62,8 @@
     closeLabel?: string;
     emptyHref?: string;
     emptyLabel?: string;
+    moveHint?: string;
+    movedLabels?: Record<MoveAnnouncement, string>;
     children?: Snippet;
   } = $props();
 
@@ -41,6 +71,8 @@
   let phase = $state<NotesPhase>("closed");
   const expanded = $derived(phase === "open" || phase === "opening");
 
+  let root = $state<HTMLElement>();
+  let probe = $state<HTMLElement>();
   let fab = $state<HTMLButtonElement>();
   let fabPaper = $state<HTMLElement>();
   let card = $state<HTMLElement>();
@@ -60,6 +92,264 @@
   const reducedMotion = () =>
     typeof matchMedia === "function" &&
     matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Where the FAB rests and how it is being moved. The FAB is placed with a
+  // transform from the top-left corner once mounted; until then CSS puts it
+  // at the default spot on the right edge.
+  let side = $state<Side>("right");
+  let placed = $state(false);
+  let lifted = $state(false);
+  let dragging = $state(false);
+  let announcement = $state("");
+  let placement: Placement | null = null; // null: the CSS default spot
+  let current = { x: 0, y: 0 };
+  let fabAnim: Animation | null = null;
+  let announceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const drag = createFabDrag();
+  let tracker = createTiltTracker();
+  let longPressTimer: ReturnType<typeof setTimeout> | undefined;
+  let suppressClick = false;
+  let suppressTimer: ReturnType<typeof setTimeout> | undefined;
+  let frameId = 0;
+  let pointerX = 0;
+  let startPoint = { x: 0, y: 0 };
+  let dragGeometry: FabGeometry | null = null;
+
+  const probeRect = (name: string) =>
+    probe
+      ?.querySelector<HTMLElement>(`[data-probe="${name}"]`)
+      ?.getBoundingClientRect();
+
+  function measure(): (FabGeometry & { defaultTop: number }) | null {
+    const area = probe?.getBoundingClientRect();
+    const top = probeRect("top");
+    const bottom = probeRect("bottom");
+    const left = probeRect("left");
+    const right = probeRect("right");
+    const rest = probeRect("default");
+    if (!area || !fab || !top || !bottom || !left || !right || !rest) {
+      return null;
+    }
+    return {
+      width: area.width,
+      height: area.height,
+      size: fab.offsetWidth,
+      top: top.top,
+      bottomLimit: area.bottom - bottom.bottom,
+      insetLeft: left.left - area.left,
+      insetRight: area.right - right.right,
+      defaultTop: rest.top,
+    };
+  }
+
+  function setPoint(point: { x: number; y: number }) {
+    current = point;
+    if (fab) {
+      fab.style.transform = `translate3d(${point.x}px, ${point.y}px, 0)`;
+    }
+  }
+
+  /** Puts the FAB on its stored (or default) spot, without animating. */
+  function layout() {
+    const g = measure();
+    if (!g) return;
+    const rest = placement ?? defaultPlacement(g.defaultTop, g);
+    side = rest.side;
+    setPoint(placementToPoint(rest, g));
+    placed = true;
+  }
+
+  function springTo(point: { x: number; y: number }, wobble: boolean) {
+    if (!fab) return;
+    const from = current;
+    fabAnim?.cancel();
+    fabAnim = null;
+    setPoint(point);
+    if (from.x === point.x && from.y === point.y) {
+      if (wobble) swayOnce();
+      return;
+    }
+    const reduced = reducedMotion();
+    const frame = (p: { x: number; y: number }) =>
+      `translate3d(${p.x}px, ${p.y}px, 0)`;
+    const anim = fab.animate(
+      [{ transform: frame(from) }, { transform: frame(point) }],
+      {
+        duration: reduced ? SNAP_REDUCED_MS : SNAP_MS,
+        easing: reduced ? "linear" : SNAP_EASING,
+      },
+    );
+    fabAnim = anim;
+    anim.onfinish = () => {
+      if (fabAnim !== anim) return;
+      fabAnim = null;
+      fabPaper?.style.removeProperty("rotate");
+      if (wobble) swayOnce();
+    };
+  }
+
+  function announce(text: string) {
+    clearTimeout(announceTimer);
+    announcement = "";
+    // A fresh text node each time, so repeated moves are read out again.
+    announceTimer = setTimeout(() => (announcement = text), 60);
+  }
+
+  function pickUp() {
+    const g = measure();
+    if (!g || !fab) return;
+    dragGeometry = g;
+    startPoint = current;
+    lifted = true;
+    dragging = true;
+    sway?.cancel();
+    tracker = createTiltTracker();
+    frameId = requestAnimationFrame(dragFrame);
+  }
+
+  function dragFrame(now: number) {
+    if (!drag.dragging) return;
+    if (fabPaper && !reducedMotion()) {
+      fabPaper.style.rotate = `${tracker.frame(pointerX, now)}deg`;
+    }
+    frameId = requestAnimationFrame(dragFrame);
+  }
+
+  function release(event: PointerEvent) {
+    try {
+      fab?.releasePointerCapture(event.pointerId);
+    } catch {
+      // Capture was already gone.
+    }
+  }
+
+  function endDrag() {
+    cancelAnimationFrame(frameId);
+    lifted = false;
+    dragging = false;
+    const g = dragGeometry ?? measure();
+    dragGeometry = null;
+    if (!g) return;
+    const next = snapPlacement(current, g);
+    placement = next;
+    side = next.side;
+    savePlacement(next);
+    if (fabPaper) fabPaper.style.rotate = "0deg";
+    springTo(placementToPoint(next, g), true);
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    if (disclosure.phase !== "closed" || !placed) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (fabAnim && fab) {
+      const rect = fab.getBoundingClientRect();
+      fabAnim.cancel();
+      fabAnim = null;
+      setPoint({ x: rect.left, y: rect.top });
+    }
+    startPoint = current;
+    pointerX = event.clientX;
+    const kind =
+      event.pointerType === "touch"
+        ? "touch"
+        : event.pointerType === "pen"
+          ? "pen"
+          : "mouse";
+    const delay = drag.down(kind, event.clientX, event.clientY);
+    try {
+      fab?.setPointerCapture(event.pointerId);
+    } catch {
+      // Synthetic events have no capturable pointer.
+    }
+    clearTimeout(longPressTimer);
+    if (delay !== null) {
+      longPressTimer = setTimeout(() => {
+        if (drag.longPress()) pickUp();
+      }, delay);
+    }
+  }
+
+  function onPointerMove(event: PointerEvent) {
+    const result = drag.move(event.clientX, event.clientY);
+    pointerX = event.clientX;
+    if (result === "cancel") {
+      clearTimeout(longPressTimer);
+      release(event);
+      return;
+    }
+    if (result === "pickup") pickUp();
+    if (!drag.dragging || !dragGeometry) return;
+    event.preventDefault();
+    const { dx, dy } = drag.offset;
+    setPoint(
+      clampToViewport(
+        { x: startPoint.x + dx, y: startPoint.y + dy },
+        dragGeometry,
+      ),
+    );
+  }
+
+  function onPointerUp(event: PointerEvent) {
+    clearTimeout(longPressTimer);
+    const outcome = drag.up();
+    release(event);
+    if (outcome !== "drop") return;
+    suppressClick = true;
+    clearTimeout(suppressTimer);
+    suppressTimer = setTimeout(() => (suppressClick = false), 120);
+    endDrag();
+  }
+
+  function onPointerCancel(event: PointerEvent) {
+    clearTimeout(longPressTimer);
+    release(event);
+    if (drag.cancel()) endDrag();
+  }
+
+  function onFabClick(event: MouseEvent) {
+    if (suppressClick) {
+      suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    disclosure.toggle();
+  }
+
+  function onFabKeydown(event: KeyboardEvent) {
+    if (
+      !event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      !isMoveKey(event.key)
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (disclosure.phase !== "closed" || drag.phase !== "idle") return;
+    const g = measure();
+    if (!g) return;
+    const from = placement ?? defaultPlacement(g.defaultTop, g);
+    const next = stepPlacement(from, event.key);
+    const moved = describeMove(from, next);
+    if (!moved) return;
+    placement = next;
+    side = next.side;
+    savePlacement(next);
+    springTo(placementToPoint(next, g), true);
+    announce(movedLabels[moved]);
+  }
+
+  /** Keeps the open card next to the FAB but inside the visible band. */
+  function fitCard() {
+    const g = measure();
+    if (!g || !fab || !card || !root) return;
+    const fabBottom = g.height - fab.getBoundingClientRect().bottom;
+    const bottom = fitCardBottom(fabBottom, card.offsetHeight, g);
+    root.style.setProperty("--notes-card-bottom", `${bottom}px`);
+  }
 
   function buildMorph(): Animation[] {
     if (!fab || !card) return [];
@@ -100,7 +390,7 @@
       anims.push(
         paper.animate(
           [
-            { transform: `rotate(${FAB_TILT}deg)` },
+            { transform: `rotate(${restTilt(side)}deg)` },
             { transform: `rotate(${CARD_TILT}deg)` },
           ],
           timing,
@@ -188,6 +478,7 @@
         if (direction === "open" && !morph) {
           await tick(); // the card is display: block from here on
           if (settle !== resolve) return;
+          fitCard();
           morph = buildMorph();
         } else if (morph) {
           for (const animation of morph) animation.reverse();
@@ -231,12 +522,21 @@
   });
 
   function swayOnce() {
-    if (!fabPaper || disclosure.phase !== "closed" || reducedMotion()) return;
+    if (
+      !fabPaper ||
+      disclosure.phase !== "closed" ||
+      drag.dragging ||
+      reducedMotion()
+    ) {
+      return;
+    }
     sway?.cancel();
+    const rest = restTilt(side);
+    const mirror = side === "left" ? -1 : 1;
     sway = fabPaper.animate(
       SWAY_KEYFRAMES.map(({ offset, delta }) => ({
         offset,
-        transform: `rotate(${FAB_TILT + delta}deg)`,
+        transform: `rotate(${rest + delta * mirror}deg)`,
         easing: "ease-in-out",
       })),
       { duration: SWAY_MS, fill: "none" },
@@ -262,6 +562,28 @@
       if (target && (card?.contains(target) || fab?.contains(target))) return;
       disclosure.close();
     };
+    // Not in the Svelte attribute typings yet; the title says the same.
+    fab?.setAttribute("aria-description", moveHint);
+    // Stored spot first, so the FAB is where the person left it.
+    placement = loadPlacement();
+    layout();
+    const onResize = () => {
+      if (disclosure.phase === "closed" && drag.phase === "idle") {
+        fabAnim?.cancel();
+        fabAnim = null;
+        layout();
+      }
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (drag.dragging) event.preventDefault();
+    };
+    const onContextMenu = (event: Event) => {
+      if (drag.phase !== "idle") event.preventDefault();
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    fab?.addEventListener("touchmove", onTouchMove, { passive: false });
+    fab?.addEventListener("contextmenu", onContextMenu);
     document.addEventListener("scroll", onScroll, {
       capture: true,
       passive: true,
@@ -270,6 +592,16 @@
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => {
       clearTimeout(timer);
+      clearTimeout(longPressTimer);
+      clearTimeout(suppressTimer);
+      clearTimeout(announceTimer);
+      cancelAnimationFrame(frameId);
+      fabAnim?.cancel();
+      fabAnim = null;
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      fab?.removeEventListener("touchmove", onTouchMove);
+      fab?.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("scroll", onScroll, true);
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown, true);
@@ -291,15 +623,39 @@
     </span>
   </a>
 {:else}
-  <div class="notes" data-phase={phase}>
+  <div
+    bind:this={root}
+    class="notes"
+    class:notes--placed={placed}
+    data-phase={phase}
+    data-side={side}
+    data-lift={lifted ? "" : undefined}
+  >
+    <div bind:this={probe} class="notes__probe" aria-hidden="true">
+      <span data-probe="top"></span>
+      <span data-probe="bottom"></span>
+      <span data-probe="left"></span>
+      <span data-probe="right"></span>
+      <span data-probe="default"></span>
+    </div>
+    <span class="notes__live" role="status" aria-live="polite"
+      >{announcement}</span
+    >
     <button
       bind:this={fab}
       type="button"
       class="notes__fab"
+      class:notes__fab--dragging={dragging}
       aria-expanded={expanded}
       aria-controls={cardId}
       aria-label={title}
-      onclick={() => disclosure.toggle()}
+      title={moveHint}
+      onclick={onFabClick}
+      onkeydown={onFabKeydown}
+      onpointerdown={onPointerDown}
+      onpointermove={onPointerMove}
+      onpointerup={onPointerUp}
+      onpointercancel={onPointerCancel}
     >
       <span bind:this={fabPaper} class="notes__fab-paper" aria-hidden="true">
         <svg viewBox="0 0 24 24" class="notes__glyph" focusable="false">
@@ -537,12 +893,70 @@
   .notes {
     --fold: 1.4rem;
     --notes-right: max(1.25rem, env(safe-area-inset-right));
+    --notes-left: max(1.25rem, env(safe-area-inset-left));
     --notes-bottom: clamp(4.5rem, 24dvh, 14rem);
+    --notes-bottom-limit: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    --fab-tilt: 4deg;
     --notes-ease: cubic-bezier(0.3, 1.3, 0.5, 1);
     --sticky-shadows: drop-shadow(0 1px 1px rgb(var(--sticky-shadow) / 22%))
       drop-shadow(0 6px 8px rgb(var(--sticky-shadow) / 16%))
       drop-shadow(0 14px 18px rgb(var(--sticky-shadow) / 10%));
+    /* The same stack lifted: every offset grows by 4px. */
+    --sticky-shadows-lift: drop-shadow(
+        0 5px 1px rgb(var(--sticky-shadow) / 22%)
+      )
+      drop-shadow(0 10px 8px rgb(var(--sticky-shadow) / 18%))
+      drop-shadow(0 18px 18px rgb(var(--sticky-shadow) / 12%));
     color: var(--sticky-ink);
+  }
+
+  .notes[data-side="left"] {
+    --fab-tilt: -4deg;
+  }
+
+  /* Measuring stick for the drag geometry: the viewport, with a marker at
+     each limit the FAB has to respect. Never painted. */
+  .notes__probe {
+    position: fixed;
+    inset: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .notes__probe span {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .notes__probe [data-probe="top"] {
+    top: calc(var(--app-header-height, 4.25rem) + 1rem);
+  }
+
+  .notes__probe [data-probe="bottom"] {
+    bottom: var(--notes-bottom-limit);
+  }
+
+  .notes__probe [data-probe="left"] {
+    left: var(--notes-left);
+  }
+
+  .notes__probe [data-probe="right"] {
+    right: var(--notes-right);
+  }
+
+  .notes__probe [data-probe="default"] {
+    bottom: var(--notes-bottom);
+    height: 3.5rem;
+  }
+
+  .notes__live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .notes__fab {
@@ -559,6 +973,23 @@
     background: none;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Once placed from script the FAB sits at the top-left corner and a
+     transform moves it, so dragging never touches layout. */
+  .notes--placed .notes__fab {
+    top: 0;
+    right: auto;
+    bottom: auto;
+    left: 0;
+  }
+
+  /* No page scroll while it is being moved. */
+  .notes__fab--dragging {
+    touch-action: none;
   }
 
   .notes[data-phase="open"] .notes__fab {
@@ -586,8 +1017,43 @@
       var(--sticky-paper) var(--fold)
     );
     filter: var(--sticky-shadows);
-    transform: rotate(4deg);
+    transform: rotate(var(--fab-tilt));
     transform-origin: 50% 0.35rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .notes__fab-paper {
+      transition:
+        transform 200ms ease-out,
+        rotate 200ms ease-out,
+        scale 160ms ease-out,
+        filter 160ms ease-out;
+    }
+
+    .notes__fab-paper::before {
+      rotate: 0deg;
+      transition: rotate 160ms ease-out;
+    }
+
+    /* Picked up: bigger, with a deeper shadow, the pin pulled out a little. */
+    .notes[data-lift] .notes__fab-paper::before {
+      rotate: -6deg;
+    }
+  }
+
+  /* While held, the tilt follows the drag per frame, so it must not lag. */
+  .notes[data-lift] .notes__fab-paper {
+    scale: 1.12;
+    filter: var(--sticky-shadows-lift);
+    transition:
+      scale 160ms ease-out,
+      filter 160ms ease-out;
+  }
+
+  .notes[data-lift] .notes__fab,
+  .notes[data-lift] .notes__fab:hover {
+    translate: none;
+    transition: none;
   }
 
   .notes__fab-paper::before {
@@ -650,7 +1116,7 @@
     position: fixed;
     z-index: 7;
     right: var(--notes-right);
-    bottom: var(--notes-bottom);
+    bottom: var(--notes-card-bottom, var(--notes-bottom));
     display: none;
     box-sizing: border-box;
     width: min(22.5rem, calc(100vw - 2.5rem));
@@ -826,9 +1292,26 @@
     }
   }
 
+  /* On the left edge the desktop card anchors to the left, too. */
+  @media (min-width: 761px) {
+    .notes[data-side="left"] .notes__card {
+      right: auto;
+      left: var(--notes-left);
+    }
+  }
+
   @media (max-width: 760px) {
     .notes {
       --notes-right: max(0.6rem, env(safe-area-inset-right));
+      --notes-left: max(0.6rem, env(safe-area-inset-left));
+      --notes-bottom-limit: calc(
+        var(--app-mobile-nav-height, 57px) +
+          var(
+            --app-mobile-nav-bottom-inset,
+            max(4px, env(safe-area-inset-bottom, 0px))
+          ) +
+          1rem
+      );
       --notes-bottom: calc(
         var(--app-mobile-nav-height, 57px) +
           var(

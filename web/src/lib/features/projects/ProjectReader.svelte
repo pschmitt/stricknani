@@ -1088,6 +1088,13 @@
               headingId="notes-heading"
               headingLevel={3}
               closeLabel={t("Close notes", locale)}
+              moveHint={t("Long-press and drag to move", locale)}
+              movedLabels={{
+                left: t("Notes moved to the left", locale),
+                right: t("Notes moved to the right", locale),
+                up: t("Notes moved up", locale),
+                down: t("Notes moved down", locale),
+              }}
             >
               <div class="reading-copy {textSizeClass}">
                 <div class="rich-text">{@html project.notes_html}</div>
