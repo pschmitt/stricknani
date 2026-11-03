@@ -103,7 +103,7 @@ fun SearchScreen(
                                                 .joinToString(" · ")
                                                 .ifBlank { null },
                                         previewUrl = viewModel.previewUrl(result.entity.previewUrl),
-                                        fallbackIcon = MdiIcons.Sheep,
+                                        fallbackIcon = MdiIcons.YarnBall,
                                         onClick = { onYarnClick(result.entity.id) },
                                     )
                             }

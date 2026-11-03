@@ -2,6 +2,8 @@ package blue.anika.wolle.ui.common
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
@@ -47,6 +49,39 @@ object MdiIcons {
                             .toNodes(),
                     fill = SolidColor(Color.Black),
                 )
+            }
+            .build()
+    }
+
+    /**
+     * Ball of yarn: circle, wound strands and a loose tail. Same path data as the web `NavIcon`
+     * "yarns" glyph (24 viewport, 1.8 round stroke).
+     */
+    val YarnBall: ImageVector by lazy {
+        ImageVector.Builder(
+                name = "YarnBall",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            )
+            .apply {
+                for (d in
+                    listOf(
+                        "M3,11A8,8 0 1,0 19,11A8,8 0 1,0 3,11Z",
+                        "M5.2,5.6C9.6,6.6 14,10.6 15.2,18M3.4,12.4C6.4,12.8 9,14.6 " +
+                            "10.8,18.8M8.6,3.4c4,1.4 7.6,5 9.2,9.2",
+                        "M4.4,15.4C9,13.6 14.6,8.6 15.8,4.6",
+                        "M15.6,17.4c1.2,2.8 3.6,3.4 5.2,1.6",
+                    )) {
+                    addPath(
+                        pathData = PathParser().parsePathString(d).toNodes(),
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 1.8f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    )
+                }
             }
             .build()
     }

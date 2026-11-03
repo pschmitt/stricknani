@@ -193,7 +193,7 @@ fun HomeScreen(
                     item {
                         HomeShelf(
                             title = stringResource(R.string.home_favorite_yarns_title),
-                            icon = MdiIcons.Sheep,
+                            icon = MdiIcons.YarnBall,
                             accent = MaterialTheme.colorScheme.secondary,
                         ) {
                             itemsIndexed(favoriteYarns, key = { _, it -> "fy-${it.id}" }) {
@@ -202,7 +202,7 @@ fun HomeScreen(
                                 ShelfTile(
                                     title = yarn.name,
                                     previewUrl = viewModel.previewUrl(yarn.previewUrl),
-                                    fallbackIcon = MdiIcons.Sheep,
+                                    fallbackIcon = MdiIcons.YarnBall,
                                     tint = tileTint(index + 1),
                                     onClick = { onYarnClick(yarn.id) },
                                 )
@@ -421,7 +421,7 @@ private fun StashCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(MdiIcons.Sheep, contentDescription = null, modifier = Modifier.size(24.dp))
+                Icon(MdiIcons.YarnBall, contentDescription = null, modifier = Modifier.size(24.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(

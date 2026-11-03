@@ -358,7 +358,7 @@ fun ProjectEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_materials),
-                    icon = blue.anika.wolle.ui.common.MdiIcons.Sheep,
+                    icon = blue.anika.wolle.ui.common.MdiIcons.YarnBall,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(

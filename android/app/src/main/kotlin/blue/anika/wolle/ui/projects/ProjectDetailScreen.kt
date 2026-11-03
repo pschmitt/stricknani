@@ -529,7 +529,7 @@ private fun ProjectDetailContent(
                             LinkedEntityRow(
                                 name = yarn.name,
                                 previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
-                                fallbackIcon = MdiIcons.Sheep,
+                                fallbackIcon = MdiIcons.YarnBall,
                                 onClick = { onYarnClick(yarn.id) },
                             )
                         }

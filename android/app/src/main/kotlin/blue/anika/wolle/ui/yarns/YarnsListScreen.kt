@@ -130,7 +130,7 @@ fun YarnsListScreen(
                     ) {
                         item {
                             EmptyState(
-                                icon = MdiIcons.Sheep,
+                                icon = MdiIcons.YarnBall,
                                 title = stringResource(R.string.yarns_list_empty_title),
                                 subtitle = stringResource(R.string.projects_list_empty_subtitle),
                                 modifier = Modifier.fillMaxWidth().height(400.dp),
@@ -181,7 +181,7 @@ private fun YarnListCard(
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(MdiIcons.Sheep, contentDescription = null)
+                        Icon(MdiIcons.YarnBall, contentDescription = null)
                     }
                 }
             }

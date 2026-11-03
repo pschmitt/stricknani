@@ -87,7 +87,7 @@ internal fun YarnThumbnail(url: String?, size: Int = 44) {
             modifier = Modifier.size(size.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(MdiIcons.Sheep, contentDescription = null, modifier = Modifier.size(22.dp))
+                Icon(MdiIcons.YarnBall, contentDescription = null, modifier = Modifier.size(22.dp))
             }
         }
     }
