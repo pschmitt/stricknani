@@ -261,22 +261,6 @@ def run_acceptance(
             page.get_by_role("button", name="Create token").click()
             _mark_stage(stage_file, "show one-time token dialog")
             token_dialog = page.locator("dialog").first
-            page.wait_for_function(
-                "() => document.querySelector('[data-secret-value]') !== null "
-                + "|| document.querySelector("
-                + "'section[aria-labelledby=tokens-title] [role=alert]'"
-                + ") !== null",
-                timeout=5000,
-            )
-            dialog_open = token_dialog.evaluate("(dialog) => dialog.open")
-            if not dialog_open:
-                error_visible = page.locator(
-                    "section[aria-labelledby=tokens-title] [role=alert]"
-                ).is_visible()
-                _mark_stage(
-                    stage_file,
-                    f"token dialog did not open; token error visible={error_visible}",
-                )
             token_dialog.wait_for(state="visible")
             token_dialog.get_by_role("heading", name="Your new API token").wait_for(
                 state="visible"

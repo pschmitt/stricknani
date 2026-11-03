@@ -687,7 +687,7 @@ def _upload_account_avatar(page: Page) -> None:
         upload_response_info.value.status == 200,
         "synthetic profile avatar upload failed",
     )
-    portrait = page.locator(".profile-portrait img")
+    portrait = page.locator(".avatar__portrait img")
     portrait.wait_for(state="visible")
     _require(
         bool(

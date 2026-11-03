@@ -40,6 +40,36 @@ class AcceptanceFailure(RuntimeError):
 ACCOUNT_HEADING_NAME = re.compile(r"^(?:Account|Konto)$")
 ACCOUNT_SETTINGS_ITEM_NAME = re.compile(r"^(?:Account settings|Kontoeinstellungen)$")
 SIGN_OUT_BUTTON_NAME = re.compile(r"^(?:Sign out|Abmelden)$")
+# Mirrors GREETINGS in web/src/lib/features/home/greeting.ts (random per visit).
+HOME_GREETING_NAME = re.compile(
+    "^(?:"
+    + "|".join(
+        re.escape(greeting)
+        for greeting in (
+            "Good morning!",
+            "Morning, sunshine!",
+            "Rise and knit!",
+            "Mooorning!",
+            "Up already?",
+            "Hello there!",
+            "Hellooo!",
+            "Hey hey!",
+            "Howdy, knitter!",
+            "Well, hi!",
+            "Good evening!",
+            "Evening, knitter!",
+            "Cosy evening?",
+            "Hey, night is near!",
+            "Evening!",
+            "Still knitting?",
+            "Hello, night owl!",
+            "Still awake?",
+            "Just one more row?",
+            "Shh, everyone is asleep!",
+        )
+    )
+    + ")$"
+)
 UPLOAD_PICTURE_BUTTON_NAME = re.compile(r"^(?:Upload picture|Bild hochladen)$")
 REMOVE_PICTURE_BUTTON_NAME = re.compile(r"^(?:Remove picture|Bild entfernen)$")
 
@@ -779,8 +809,9 @@ def _assert_header_parent_link(page: Page, href: str, description: str) -> Locat
     return link
 
 
-def _visible_heights(page: Page, selector: str) -> list[float]:
-    values: object = page.locator(selector).evaluate_all(
+def _visible_heights(page: Page, selector: str | Locator) -> list[float]:
+    locator = page.locator(selector) if isinstance(selector, str) else selector
+    values: object = locator.evaluate_all(
         "elements => elements.filter(el => el.getClientRects().length).map("
         "el => el.getBoundingClientRect().height)"
     )
@@ -875,44 +906,31 @@ def _assert_desktop_account_target(page: Page) -> None:
     )
 
 
-def _assert_locale_switcher_flags(page: Page, selector: str) -> None:
-    buttons = page.locator(f"{selector} button")
-    _require(buttons.count() == 2, "the locale switcher does not have two buttons")
-    expected = (
-        ("EN", {"English", "Englisch"}),
-        ("DE", {"German", "Deutsch"}),
+def _account_language_group(page: Page) -> Locator:
+    """The Account page language segmented control, found by role and name."""
+    return page.get_by_role("group", name=re.compile(r"^(Language|Sprache)$"))
+
+
+def _assert_account_language_control(page: Page) -> None:
+    group = _account_language_group(page)
+    _require(
+        group.count() == 1,
+        "the Account page does not have exactly one language control",
     )
-    for index, (visible_label, accessible_labels) in enumerate(expected):
+    buttons = group.get_by_role("button")
+    _require(buttons.count() == 2, "the language control does not have two options")
+    for index, name in enumerate(("English", "Deutsch")):
         button = buttons.nth(index)
-        flag = button.locator("svg.language-flag")
         _require(
-            button.inner_text().strip() == visible_label
-            and (button.get_attribute("aria-label") or "") in accessible_labels,
-            "a locale control lost its visible or accessible language name",
+            button.inner_text().strip() == name
+            and button.get_attribute("aria-pressed") in {"true", "false"},
+            "a language option lost its visible name or pressed state",
         )
-        _require(
-            flag.count() == 1
-            and flag.get_attribute("aria-hidden") == "true"
-            and flag.get_attribute("focusable") == "false",
-            "a locale flag is missing or exposed as separate content",
-        )
-        button_size: object = button.evaluate(
-            "node => ({width: node.getBoundingClientRect().width, "
-            "height: node.getBoundingClientRect().height})"
-        )
-        flag_size: object = flag.evaluate(
-            "node => ({width: node.getBoundingClientRect().width, "
-            "height: node.getBoundingClientRect().height})"
-        )
-        _require(
-            isinstance(button_size, dict)
-            and button_size.get("width", 0) >= 44
-            and button_size.get("height", 0) >= 44
-            and isinstance(flag_size, dict)
-            and 8 <= flag_size.get("width", 0) <= 16
-            and 6 <= flag_size.get("height", 0) <= 12,
-            "a locale flag or language control has an unexpected size",
-        )
+    _require(
+        {button.get_attribute("aria-pressed") for button in buttons.all()}
+        == {"true", "false"},
+        "the language control does not mark exactly one option as selected",
+    )
 
 
 def _svg_shape_signature(icon: Locator) -> str:
@@ -1439,11 +1457,15 @@ def _exercise_gauge_calculator(
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
-        language_switcher = page.locator(".account-language .locale-switcher")
+        language_switcher = _account_language_group(page)
+        german_name = "Deutsch"
     else:
         language_switcher = page.locator(".public-tool-header .locale-switcher")
+        german_name = "German"
     english_button = language_switcher.get_by_role("button", name="English", exact=True)
-    german_button = language_switcher.get_by_role("button", name="German", exact=True)
+    german_button = language_switcher.get_by_role(
+        "button", name=german_name, exact=True
+    )
     _require(
         english_button.is_visible() and german_button.is_visible(),
         "the language switch is missing from the gauge page",
@@ -1466,9 +1488,8 @@ def _exercise_gauge_calculator(
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
-        language_switcher = page.locator(".account-language .locale-switcher")
-        german_button = language_switcher.get_by_role(
-            "button", name="German", exact=True
+        german_button = _account_language_group(page).get_by_role(
+            "button", name="Deutsch", exact=True
         )
     german_button.click()
     if signed_in:
@@ -1499,7 +1520,7 @@ def _exercise_gauge_calculator(
     if signed_in:
         _open_account_settings(page)
         page.get_by_role("heading", name="Konto", exact=True).wait_for(state="visible")
-        page.locator(".account-language .locale-switcher button").nth(0).click()
+        _account_language_group(page).get_by_role("button").nth(0).click()
         page.goto(f"{origin}/app/gauge", wait_until="networkidle")
     else:
         page.locator(".public-tool-header .locale-switcher button").nth(0).click()
@@ -2020,15 +2041,15 @@ def _check_mobile_language_and_screenshots(
     )
     _open_account_settings(page)
     page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
-    page.locator(".account-language .locale-switcher").wait_for(state="visible")
+    _account_language_group(page).wait_for(state="visible")
     _require(
         page.locator(".app-header .locale-switcher").count() == 0
-        and page.locator(".account-language .locale-switcher").count() == 1,
+        and _account_language_group(page).count() == 1,
         "language controls did not move into Account",
     )
-    _assert_locale_switcher_flags(page, ".account-language .locale-switcher")
+    _assert_account_language_control(page)
     language_targets = _visible_heights(
-        page, ".account-language .locale-switcher button"
+        page, _account_language_group(page).get_by_role("button")
     )
     _require(
         len(language_targets) == 2 and min(language_targets) >= 44,
@@ -2053,17 +2074,19 @@ def _check_mobile_language_and_screenshots(
     reached_language_by_keyboard = False
     for _ in range(18):
         page.keyboard.press("Tab")
-        focused_label = page.evaluate(
-            "document.activeElement?.getAttribute('aria-label') || ''"
+        focused_text = page.evaluate(
+            "document.activeElement?.textContent?.trim() || ''"
         )
-        if focused_label in {"English", "German"}:
+        if focused_text in {"English", "Deutsch"}:
             reached_language_by_keyboard = True
             break
     _require(
         reached_language_by_keyboard,
         "mobile language controls are not reachable in the keyboard tab order",
     )
-    page.locator('.account-language button[aria-label="German"]').focus()
+    _account_language_group(page).get_by_role(
+        "button", name="Deutsch", exact=True
+    ).focus()
     page.keyboard.press("Enter")
     page.wait_for_function(
         "() => document.documentElement.lang === 'de'", timeout=5_000
@@ -2086,16 +2109,18 @@ def _check_mobile_language_and_screenshots(
             )
             page.set_viewport_size({"width": width, "height": 844})
             _assert_no_horizontal_overflow(page, width)
-            switcher = ".account-language .locale-switcher"
-            page.locator(switcher).wait_for(state="visible")
-            _assert_locale_switcher_flags(page, switcher)
-            control_heights = _visible_heights(page, f"{switcher} button")
+            language_group = _account_language_group(page)
+            language_group.wait_for(state="visible")
+            _assert_account_language_control(page)
+            control_heights = _visible_heights(
+                page, language_group.get_by_role("button")
+            )
             _require(
                 len(control_heights) == 2 and min(control_heights) >= 44,
                 f"locale controls are not 44px targets at {width}px",
             )
             for locale_index, locale_code in ((1, "de"), (0, "en")):
-                page.locator(switcher).get_by_role("button").nth(locale_index).click()
+                language_group.get_by_role("button").nth(locale_index).click()
                 page.wait_for_function(
                     "locale => document.documentElement.lang === locale",
                     arg=locale_code,
@@ -4070,9 +4095,7 @@ def run_acceptance(
 
             mark_stage("direct routes and explicit unfinished states")
             route_headings = {
-                "/app/": re.compile(
-                    r"^(Good morning!|Hello there!|Good evening!|Still knitting\?)$"
-                ),
+                "/app/": HOME_GREETING_NAME,
                 "/app/login": "You are already signed in.",
                 "/app/more": "More",
                 "/app/create": "What would you like to add?",
@@ -4946,7 +4969,7 @@ def run_acceptance(
                 avatar_upload_response_info.value.status == 200,
                 "the synthetic profile picture upload did not succeed",
             )
-            page.locator(".profile-portrait img").wait_for(state="visible")
+            page.locator(".avatar__portrait img").wait_for(state="visible")
             _assert_shell_avatar(page, mobile=False, present=True)
 
             page.set_viewport_size({"width": 390, "height": 844})
@@ -4972,7 +4995,7 @@ def run_acceptance(
                 avatar_delete_response_info.value.status == 204,
                 "removing the synthetic profile picture did not succeed",
             )
-            page.locator(".profile-portrait img").wait_for(state="detached")
+            page.locator(".avatar__portrait img").wait_for(state="detached")
             _assert_shell_avatar(page, mobile=False, present=False)
 
             page.set_viewport_size({"width": 390, "height": 844})
