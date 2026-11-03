@@ -244,12 +244,6 @@
 
   input {
     width: 100%;
-    min-height: 3rem;
-    border: 1.5px solid var(--control-border);
-    border-radius: var(--radius-sm);
-    padding: 0.65rem 1rem;
-    color: var(--ink);
-    background: var(--surface-raised);
   }
 
   input:focus {

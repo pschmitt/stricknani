@@ -486,16 +486,6 @@
     font-size: 0.8rem;
     font-weight: 650;
   }
-  .audit-filters select,
-  .audit-filters input {
-    min-height: 44px;
-    border: 1px solid var(--control-border);
-    border-radius: 0.55rem;
-    padding: 0.5rem 0.7rem;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
-  }
 
   .event-days {
     display: grid;

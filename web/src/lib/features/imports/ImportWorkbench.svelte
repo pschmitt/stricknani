@@ -875,17 +875,9 @@
   .field textarea {
     width: 100%;
     min-width: 0;
-    min-height: 2.75rem;
-    padding: 0.7rem 0.75rem;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    color: var(--ink);
-    background: var(--surface);
-    font-weight: 400;
   }
   .field textarea {
     resize: vertical;
-    line-height: 1.55;
   }
   .field small {
     color: var(--ink-muted);

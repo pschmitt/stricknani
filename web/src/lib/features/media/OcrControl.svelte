@@ -265,20 +265,7 @@
 
   select,
   textarea {
-    box-sizing: border-box;
     max-width: 100%;
-    min-height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 0.55rem;
-    padding: 0.55rem 0.7rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
-  }
-
-  select,
-  textarea {
-    border-color: var(--control-border);
   }
 
   select:disabled {

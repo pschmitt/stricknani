@@ -385,6 +385,8 @@
     min-width: 0;
     min-height: 46px;
     border: 0;
+    border-radius: 0;
+    padding: 0;
     outline: 0;
     color: var(--ink);
     background: transparent;

@@ -1088,13 +1088,6 @@
   }
   .admin-dialog input:not([type="checkbox"]) {
     width: 100%;
-    min-height: 46px;
-    border: 1px solid var(--control-border);
-    border-radius: 0.55rem;
-    padding: 0.65rem 0.75rem;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
   }
   .check-field {
     display: flex;

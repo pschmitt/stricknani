@@ -1765,19 +1765,10 @@
   textarea,
   select {
     width: 100%;
-    min-height: 44px;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    padding: 0.65rem 0.75rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
   }
 
   textarea {
-    min-height: 7rem;
     resize: vertical;
-    line-height: 1.55;
   }
 
   input[type="file"] {

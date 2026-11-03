@@ -1095,23 +1095,10 @@
   .field textarea {
     width: 100%;
     min-width: 0;
-    min-height: 44px;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    padding: 0.6rem 0.7rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
-    font-weight: 400;
   }
 
   .field textarea {
-    min-height: 7rem;
     resize: vertical;
-  }
-
-  .field input[aria-invalid="true"] {
-    border-color: var(--danger);
   }
 
   .wide {

@@ -88,6 +88,9 @@
   --ui-action-icon-size-md: 20px;
   --ui-action-icon-size-sm: 18px;
   --ui-navigation-icon-size: 24px;
+  --ui-input-height: 44px;
+  --ui-input-radius: var(--radius-xs);
+  --ui-input-font-size: 16px;
   --app-mobile-nav-height: 64px;
   --app-mobile-nav-bottom-inset: max(4px, env(safe-area-inset-bottom, 0px));
 
@@ -199,6 +202,52 @@ a {
 
 button {
   color: inherit;
+}
+
+/* Shared text-entry controls (T120.21): one height, radius and 16px text, which also keeps
+   iOS from zooming on focus. :where() keeps specificity at zero so a component can still
+   override a single property (for example a textarea min-height) without a hack. */
+:where(
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="file"],
+    [type="range"],
+    [type="color"],
+    [type="hidden"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"],
+    [type="image"]
+  ),
+  select,
+  textarea
+) {
+  box-sizing: border-box;
+  min-height: var(--ui-input-height);
+  border: 1px solid var(--control-border);
+  border-radius: var(--ui-input-radius);
+  padding: 0.55rem 0.75rem;
+  color: var(--ink);
+  background: var(--surface-raised);
+  font: inherit;
+  font-size: var(--ui-input-font-size);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+:where(textarea) {
+  min-height: 7rem;
+  line-height: 1.55;
+}
+
+:where(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+:where(input, select, textarea):disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
 }
 
 .ui-button {

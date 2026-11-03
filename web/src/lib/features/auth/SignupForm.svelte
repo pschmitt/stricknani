@@ -322,12 +322,6 @@
 
   input {
     width: 100%;
-    min-height: 3rem;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    padding: 0.65rem 0.8rem;
-    color: var(--ink);
-    background: var(--surface-raised);
   }
 
   input:focus {

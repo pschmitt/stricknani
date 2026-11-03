@@ -377,13 +377,6 @@
   .panel-field select {
     width: 100%;
     min-width: 0;
-    min-height: 44px;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    padding: 0.55rem 0.7rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
   }
 
   .favorite-filter {
