@@ -674,4 +674,10 @@
     <string name="history_noun_recommended_needles">recommended needles</string>
     <string name="history_noun_skein_weight">skein weight</string>
     <string name="history_noun_skein_length">skein length</string>
+
+    <!-- Reading text size (detail menus) -->
+    <string name="text_size_title">Text size</string>
+    <string name="text_size_reset">Reset text size</string>
+    <string name="text_size_smaller">Smaller text</string>
+    <string name="text_size_larger">Larger text</string>
 </resources>

@@ -70,9 +70,11 @@ import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.SectionActions
+import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
@@ -100,6 +102,7 @@ fun ProjectDetailScreen(
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val textStep by viewModel.textStep.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val cardOrder by
@@ -178,6 +181,11 @@ fun ProjectDetailScreen(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
+                            TextSizeMenuSection(
+                                step = textStep,
+                                onStepChange = viewModel::setTextStep,
+                            )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.print_action)) },
                                 leadingIcon = {
@@ -250,17 +258,19 @@ fun ProjectDetailScreen(
                         }
                     }
                 is ProjectDetailUiState.Loaded ->
-                    ProjectDetailContent(
-                        detail = state.detail,
-                        linkedYarns = state.linkedYarns,
-                        cardOrder = cardOrder,
-                        onCardOrderChanged = viewModel::saveCardOrder,
-                        resolveMediaUrl = viewModel::resolveMediaUrl,
-                        onYarnClick = onYarnClick,
-                        onDeleteAttachment = { attachmentToDelete = it },
-                        onEditSection = { focus -> onEditSection(state.entity.id, focus) },
-                        history = viewModel.history,
-                    )
+                    ReadingTextScale(textStep) {
+                        ProjectDetailContent(
+                            detail = state.detail,
+                            linkedYarns = state.linkedYarns,
+                            cardOrder = cardOrder,
+                            onCardOrderChanged = viewModel::saveCardOrder,
+                            resolveMediaUrl = viewModel::resolveMediaUrl,
+                            onYarnClick = onYarnClick,
+                            onDeleteAttachment = { attachmentToDelete = it },
+                            onEditSection = { focus -> onEditSection(state.entity.id, focus) },
+                            history = viewModel.history,
+                        )
+                    }
             }
         }
     }

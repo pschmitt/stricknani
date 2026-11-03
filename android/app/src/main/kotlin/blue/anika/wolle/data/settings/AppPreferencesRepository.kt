@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import blue.anika.wolle.data.backup.BackupFrequency
 import javax.inject.Inject
@@ -122,7 +123,18 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         }
     }
 
+    /**
+     * The reading text size step of the project and yarn detail screens (0 = 90%, 1 = 100%, 2 =
+     * 115%), see `ReadingTextSize`.
+     */
+    val readingTextStep = dataStore.data.map { prefs -> prefs[KEY_READING_TEXT_STEP] ?: 1 }
+
+    suspend fun setReadingTextStep(step: Int) {
+        dataStore.edit { prefs -> prefs[KEY_READING_TEXT_STEP] = step }
+    }
+
     private companion object {
+        val KEY_READING_TEXT_STEP = intPreferencesKey("reading_text_step")
         val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val KEY_PRINT_CONTENT = stringPreferencesKey("print_content")
         val KEY_PRINT_IMAGES = booleanPreferencesKey("print_include_images")

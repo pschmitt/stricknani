@@ -17,6 +17,7 @@ import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrderRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.ReadingTextSize
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.isOfflineFailure
@@ -125,6 +126,20 @@ constructor(
             )
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
+
+    /** The reading text size step (see `ReadingTextSize`), kept across restarts. */
+    val textStep: StateFlow<Int> =
+        appPreferences.readingTextStep
+            .map { ReadingTextSize.clamp(it) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                ReadingTextSize.DEFAULT_STEP,
+            )
+
+    fun setTextStep(step: Int) {
+        viewModelScope.launch { appPreferences.setReadingTextStep(ReadingTextSize.clamp(step)) }
+    }
 
     /** The print dialog's last choices, so it opens the way it was used. */
     val printOptions: StateFlow<PrintOptions> =

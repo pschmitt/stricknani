@@ -70,8 +70,10 @@ import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
+import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
+import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
@@ -99,6 +101,7 @@ fun YarnDetailScreen(
     viewModel: YarnDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val textStep by viewModel.textStep.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val cardOrder by
@@ -175,6 +178,11 @@ fun YarnDetailScreen(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
+                            TextSizeMenuSection(
+                                step = textStep,
+                                onStepChange = viewModel::setTextStep,
+                            )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.print_action)) },
                                 leadingIcon = {
@@ -247,16 +255,18 @@ fun YarnDetailScreen(
                         }
                     }
                 is YarnDetailUiState.Loaded ->
-                    YarnDetailContent(
-                        detail = state.detail,
-                        linkedProjects = state.linkedProjects,
-                        cardOrder = cardOrder,
-                        onCardOrderChanged = viewModel::saveCardOrder,
-                        resolveMediaUrl = viewModel::resolveMediaUrl,
-                        onProjectClick = onProjectClick,
-                        onEditSection = { focus -> onEditSection(state.entity.id, focus) },
-                        history = viewModel.history,
-                    )
+                    ReadingTextScale(textStep) {
+                        YarnDetailContent(
+                            detail = state.detail,
+                            linkedProjects = state.linkedProjects,
+                            cardOrder = cardOrder,
+                            onCardOrderChanged = viewModel::saveCardOrder,
+                            resolveMediaUrl = viewModel::resolveMediaUrl,
+                            onProjectClick = onProjectClick,
+                            onEditSection = { focus -> onEditSection(state.entity.id, focus) },
+                            history = viewModel.history,
+                        )
+                    }
             }
         }
     }

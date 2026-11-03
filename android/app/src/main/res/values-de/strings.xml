@@ -674,4 +674,10 @@
     <string name="history_noun_recommended_needles">empfohlene Nadeln</string>
     <string name="history_noun_skein_weight">Knäuelgewicht</string>
     <string name="history_noun_skein_length">Lauflänge</string>
+
+    <!-- Reading text size (detail menus) -->
+    <string name="text_size_title">Textgröße</string>
+    <string name="text_size_reset">Textgröße zurücksetzen</string>
+    <string name="text_size_smaller">Kleinerer Text</string>
+    <string name="text_size_larger">Größerer Text</string>
 </resources>
