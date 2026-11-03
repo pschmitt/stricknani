@@ -9,6 +9,8 @@
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
+  import ConnectAppDialog from "./ConnectAppDialog.svelte";
+  import { formatLastUsed } from "./connect-app.ts";
   import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -73,6 +75,7 @@
   let passwordOpen = $state(false);
   let tokenFormOpen = $state(false);
   let newTokenButton = $state<HTMLButtonElement | null>(null);
+  let connectDialog = $state<ReturnType<typeof ConnectAppDialog>>();
   let passwordButton = $state<HTMLButtonElement | null>(null);
   let currentPasswordInput = $state<HTMLInputElement | null>(null);
   let sessionGeneration = 0;
@@ -1027,19 +1030,31 @@
         >
         <h2 id="tokens-title">{t("Apps and devices", locale)}</h2>
       </div>
-      <SharedButton
-        bind:element={newTokenButton}
-        variant="secondary"
-        size="sm"
-        type="button"
-        aria-expanded={tokenFormOpen}
-        aria-controls="token-panel"
-        disabled={operation !== null || !accountActionsEnabled}
-        onclick={() => void toggleTokenForm()}
-        icon="action-create"
-      >
-        {t("New token", locale)}
-      </SharedButton>
+      <div class="button-row">
+        <SharedButton
+          variant="primary"
+          size="sm"
+          type="button"
+          disabled={operation !== null || !accountActionsEnabled}
+          onclick={() => void connectDialog?.start()}
+          icon="key"
+        >
+          {t("Connect the app", locale)}
+        </SharedButton>
+        <SharedButton
+          bind:element={newTokenButton}
+          variant="secondary"
+          size="sm"
+          type="button"
+          aria-expanded={tokenFormOpen}
+          aria-controls="token-panel"
+          disabled={operation !== null || !accountActionsEnabled}
+          onclick={() => void toggleTokenForm()}
+          icon="action-create"
+        >
+          {t("New token", locale)}
+        </SharedButton>
+      </div>
     </header>
     <p class="card__intro">
       {t(
@@ -1130,6 +1145,14 @@
             <div class="token-detail">
               <strong>{token.name}</strong>
               <span>{t("Created", locale)} {formatDate(token.created_at)}</span>
+              {#if token.last_used_at}
+                <span
+                  >{t("Last used", locale)}
+                  {formatLastUsed(token.last_used_at, locale)}</span
+                >
+              {:else}
+                <span>{t("Never used", locale)}</span>
+              {/if}
               {#if token.expires_at}
                 <span
                   >{t("Expires", locale)} {formatDate(token.expires_at)}</span
@@ -1172,6 +1195,15 @@
     </SharedButton>
   </section>
 </section>
+
+<ConnectAppDialog
+  bind:this={connectDialog}
+  {locale}
+  oncreated={(token) => {
+    tokens = [token, ...tokens];
+    tokenLoad = "ready";
+  }}
+/>
 
 <dialog
   bind:this={tokenDialog}

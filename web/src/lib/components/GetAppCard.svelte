@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { androidAction, connectAppHash } from "#lib/app-links.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import ConnectAppDialog from "#lib/features/account/ConnectAppDialog.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import { session } from "#lib/session.svelte.ts";
 
   let {
     locale,
@@ -16,7 +19,16 @@
   } = $props();
 
   const action = $derived(androidAction());
-  const connectHref = $derived(`${resolve("/account")}${connectAppHash}`);
+  let connectDialog = $state<ReturnType<typeof ConnectAppDialog>>();
+
+  /** One click: signed-in users get a setup QR right here, others sign in via the account page. */
+  function connect(): void {
+    if (session.data?.user) {
+      void connectDialog?.start();
+    } else {
+      void goto(`${resolve("/account")}${connectAppHash}`);
+    }
+  }
 </script>
 
 <section
@@ -58,12 +70,9 @@
             : t("Download for Android", locale)}
         </ActionLabel>
       </a>
-      <a
-        class="ui-button ui-button--secondary ui-button--md"
-        href={connectHref}
-      >
-        <ActionLabel icon="key">{t("Connect the app", locale)}</ActionLabel>
-      </a>
+      <Button variant="secondary" icon="key" onclick={connect}>
+        {t("Connect the app", locale)}
+      </Button>
     </div>
   </div>
   {#if ondismiss}
@@ -77,6 +86,8 @@
     />
   {/if}
 </section>
+
+<ConnectAppDialog bind:this={connectDialog} {locale} />
 
 <style>
   /* Android green with the brand's dark navy for the robot. */

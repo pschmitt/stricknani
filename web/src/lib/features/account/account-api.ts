@@ -13,6 +13,8 @@ export interface ApiToken {
   name: string;
   created_at: string;
   expires_at: string | null;
+  /** When the token last authenticated a request; null if it never has. */
+  last_used_at: string | null;
 }
 
 export interface CreatedApiToken extends ApiToken {
@@ -55,12 +57,14 @@ function parseProfile(value: unknown): AccountProfile {
 
 function parseToken(value: unknown): ApiToken {
   const expiry = record(value) ? value.expires_at : undefined;
+  const lastUsed = record(value) ? value.last_used_at : undefined;
   if (
     !record(value) ||
     !validId(value.id) ||
     typeof value.name !== "string" ||
     typeof value.created_at !== "string" ||
-    (expiry !== undefined && !nullableString(expiry))
+    (expiry !== undefined && !nullableString(expiry)) ||
+    (lastUsed !== undefined && !nullableString(lastUsed))
   )
     throw invalidResponse();
   return {
@@ -68,6 +72,7 @@ function parseToken(value: unknown): ApiToken {
     name: value.name,
     created_at: value.created_at,
     expires_at: expiry ?? null,
+    last_used_at: lastUsed ?? null,
   };
 }
 

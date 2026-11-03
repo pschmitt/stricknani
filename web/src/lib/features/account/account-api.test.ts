@@ -45,6 +45,7 @@ const token = {
   name: "laptop",
   created_at: "2026-11-01T12:00:00.000000Z",
   expires_at: null,
+  last_used_at: null,
 };
 
 afterEach(() => {
