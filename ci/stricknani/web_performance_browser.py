@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
-from ci.stricknani import rust_fixture, seed_rust
 from playwright.sync_api import (
     Browser,
     BrowserContext,
@@ -28,6 +27,8 @@ from playwright.sync_api import (
     sync_playwright,
 )
 from playwright.sync_api import Error as PlaywrightError
+
+from ci.stricknani import rust_fixture, seed_rust
 
 SAMPLE_COUNT = 5
 JS_BUDGET = 150 * 1024

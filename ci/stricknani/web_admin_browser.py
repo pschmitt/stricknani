@@ -17,7 +17,6 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from ci.stricknani import rust_fixture, seed_rust
 from playwright.sync_api import (
     Dialog,
     Locator,
@@ -28,6 +27,8 @@ from playwright.sync_api import (
     sync_playwright,
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+from ci.stricknani import rust_fixture, seed_rust
 
 
 class AcceptanceFailure(RuntimeError):
