@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.privacyPolicyUrl
 
 private const val GITHUB_URL = "https://github.com/pschmitt/stricknani"
 
@@ -41,6 +42,7 @@ internal fun AboutSettingsScreen(
     viewModel: SettingsViewModel,
 ) {
     val serverMeta by viewModel.serverMeta.collectAsStateWithLifecycle()
+    val serverUrl by viewModel.serverUrl.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
 
@@ -123,6 +125,16 @@ internal fun AboutSettingsScreen(
                         },
                         supportingContent = {
                             Text(stringResource(R.string.about_settings_license_value))
+                        },
+                    )
+                    SettingsListItem(
+                        modifier =
+                            Modifier.clickable { uriHandler.openUri(privacyPolicyUrl(serverUrl)) },
+                        headlineContent = {
+                            Text(stringResource(R.string.about_settings_privacy_label))
+                        },
+                        supportingContent = {
+                            Text(stringResource(R.string.about_settings_privacy_description))
                         },
                     )
                     TextButton(

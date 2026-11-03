@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.DEFAULT_PRIVACY_POLICY_URL
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.stitchedBorder
@@ -109,6 +112,7 @@ fun OnboardingScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val isValidating = uiState is OnboardingUiState.Validating
+    val uriHandler = LocalUriHandler.current
 
     // SNA-61: a stricknani://setup URI delivered by the OS (not the in-app scanner) goes through
     // the exact same connectFromScannedText path a real scan result does - switching to QR mode
@@ -279,6 +283,12 @@ fun OnboardingScreen(
                             Modifier.testTag("onboarding-mode-${candidate.name.lowercase()}"),
                     )
                 }
+        }
+        TextButton(
+            onClick = { uriHandler.openUri(DEFAULT_PRIVACY_POLICY_URL) },
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Text(stringResource(R.string.onboarding_privacy_link))
         }
     }
 

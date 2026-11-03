@@ -34,6 +34,7 @@
     <string name="onboarding_mode_qr">Scan a code</string>
     <string name="onboarding_mode_password">Sign in</string>
     <string name="onboarding_other_ways">Other ways to connect</string>
+    <string name="onboarding_privacy_link">Privacy policy</string>
     <string name="onboarding_qr_instructions">On the Stricknani website, open Settings → API Tokens and scan the code shown there.</string>
     <string name="onboarding_qr_scan_button">Open the camera</string>
     <string name="onboarding_email_label">Email</string>
@@ -292,6 +293,8 @@
     <string name="about_settings_license_label">License</string>
     <string name="about_settings_license_value">GPL-3.0</string>
     <string name="about_settings_view_source_button">View source on GitHub</string>
+    <string name="about_settings_privacy_label">Privacy policy</string>
+    <string name="about_settings_privacy_description">How Stricknani handles your data</string>
     <string name="libraries_title">Libraries</string>
     <string name="libraries_open_source_title">Open-source dependencies</string>
     <string name="libraries_open_content_description">Open %1$s</string>

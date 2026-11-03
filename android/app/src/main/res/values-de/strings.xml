@@ -34,6 +34,7 @@
     <string name="onboarding_mode_qr">Code scannen</string>
     <string name="onboarding_mode_password">Anmelden</string>
     <string name="onboarding_other_ways">Andere Wege zum Verbinden</string>
+    <string name="onboarding_privacy_link">Datenschutzerklärung</string>
     <string name="onboarding_qr_instructions">Öffne auf der Stricknani-Webseite Einstellungen → API-Tokens und scanne den Code, der dort angezeigt wird.</string>
     <string name="onboarding_qr_scan_button">Kamera öffnen</string>
     <string name="onboarding_email_label">E-Mail</string>
@@ -292,6 +293,8 @@
     <string name="about_settings_license_label">Lizenz</string>
     <string name="about_settings_license_value">GPL-3.0</string>
     <string name="about_settings_view_source_button">Quellcode auf GitHub ansehen</string>
+    <string name="about_settings_privacy_label">Datenschutzerklärung</string>
+    <string name="about_settings_privacy_description">So geht Stricknani mit deinen Daten um</string>
     <string name="libraries_title">Bibliotheken</string>
     <string name="libraries_open_source_title">Open-Source-Abhängigkeiten</string>
     <string name="libraries_open_content_description">%1$s öffnen</string>
