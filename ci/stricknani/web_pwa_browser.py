@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Protocol
 from urllib.parse import urlsplit
 
-from playwright.sync_api import BrowserContext, Dialog, Page, sync_playwright
+from playwright.sync_api import BrowserContext, Dialog, Page, Route, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 
 from ci.stricknani import rust_fixture, web_ui_browser
@@ -706,6 +706,8 @@ def run_acceptance(
                 color_scheme="light",
                 locale="en-US",
             )
+            boundary_tab: Page | None = None
+            boundary_cdp = None
             context.on("request", record_service_worker_asset_request)
             context.on("response", record_service_worker_asset_response)
             context.on("requestfinished", record_service_worker_asset_finished)
@@ -1029,6 +1031,83 @@ def run_acceptance(
             second_tab.goto(f"{origin}/app/login", wait_until="networkidle")
             _wait_for_initial_worker(second_tab, expected_version)
 
+            mark_stage("before update: preparing the synthetic navigation tab")
+            boundary_tab = context.new_page()
+            boundary_cdp = context.new_cdp_session(boundary_tab)
+            boundary_cdp.send("ServiceWorker.enable")
+            boundary_cdp.on("ServiceWorker.workerErrorReported", record_worker_error)
+            boundary_cdp.on(
+                "ServiceWorker.workerVersionUpdated", record_worker_versions
+            )
+            boundary_tab.on("pageerror", lambda _error: page_errors.append(True))
+            boundary_tab.on(
+                "console",
+                lambda message: (
+                    csp_errors.append(True)
+                    if "content security policy" in message.text.lower()
+                    or "refused to" in message.text.lower()
+                    else None
+                ),
+            )
+            boundary_dialog_count = [0]
+
+            def dismiss_boundary_dialog(dialog: Dialog) -> None:
+                boundary_dialog_count[0] += 1
+                dialog.dismiss()
+
+            boundary_tab.on("dialog", dismiss_boundary_dialog)
+
+            def boundary_metrics() -> tuple[float, int]:
+                try:
+                    metrics = boundary_tab.evaluate(
+                        "() => [performance.timeOrigin, history.length]"
+                    )
+                except PlaywrightError:
+                    return 0.0, 0
+                if (
+                    not isinstance(metrics, list)
+                    or len(metrics) != 2
+                    or not isinstance(metrics[0], (int, float))
+                    or not isinstance(metrics[1], int)
+                ):
+                    return 0.0, 0
+                return float(metrics[0]), metrics[1]
+
+            def wait_for_boundary_state(
+                predicate: str, stage: str, *, timeout: int = 10_000
+            ) -> None:
+                try:
+                    boundary_tab.wait_for_function(predicate, timeout=timeout)
+                except PlaywrightError:
+                    time_origin, history_length = boundary_metrics()
+                    raise AcceptanceFailure(
+                        f"{stage} failed (time-origin: {time_origin:.0f}; "
+                        f"history: {history_length}; "
+                        f"dialogs: {boundary_dialog_count[0]})"
+                    ) from None
+
+            boundary_tab.goto(f"{origin}/app/login", wait_until="networkidle")
+            _wait_for_initial_worker(boundary_tab, expected_version)
+            _sign_in_through_api(boundary_tab, fixture_file)
+            boundary_tab.goto(f"{origin}/app/projects", wait_until="networkidle")
+            boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+            _wait_for_controlled_worker(boundary_tab, expected_version)
+            boundary_time_origin = boundary_tab.evaluate("() => performance.timeOrigin")
+            boundary_tab.get_by_role("link", name="Yarns", exact=True).first.click()
+            boundary_tab.wait_for_url(f"{origin}/app/yarns", timeout=10_000)
+            boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+            boundary_tab.get_by_role("link", name="Projects", exact=True).first.click()
+            boundary_tab.wait_for_url(f"{origin}/app/projects", timeout=10_000)
+            boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+            boundary_history_length = boundary_tab.evaluate("() => history.length")
+            _require(
+                boundary_tab.evaluate("() => performance.timeOrigin")
+                == boundary_time_origin
+                and boundary_history_length >= 2,
+                "synthetic navigation tab did not warm SPA history "
+                f"(history length: {boundary_history_length})",
+            )
+
             mark_stage("cancelling navigation away from a dirty editor")
             close_dialogs: list[str] = []
 
@@ -1288,12 +1367,14 @@ def run_acceptance(
                 f"(active: {takeover.get('active')}, "
                 f"waiting: {takeover.get('waiting')}, expected: {next_version})",
             )
-            for open_tab in (second_tab, page, unresponsive_tab):
+            for open_tab in (second_tab, page, unresponsive_tab, boundary_tab):
                 _wait_for_controlled_worker(open_tab, next_version)
             _require(
                 page.evaluate("() => performance.timeOrigin") == page_time_origin
                 and second_tab.evaluate("() => performance.timeOrigin")
-                == second_time_origin,
+                == second_time_origin
+                and boundary_tab.evaluate("() => performance.timeOrigin")
+                == boundary_time_origin,
                 "the worker takeover reloaded an open tab",
             )
             _require(
@@ -1302,6 +1383,7 @@ def run_acceptance(
             )
 
             _sign_in_through_api(second_tab, fixture_file)
+            _sign_in_through_api(boundary_tab, fixture_file)
 
             mark_stage("update: checking retained caches after the takeover")
             takeover_caches = _cache_snapshot(second_tab)
@@ -1383,6 +1465,258 @@ def run_acceptance(
             second_tab.screenshot(
                 path=str(screenshots / "update-ready-mobile.png"), caret="hide"
             )
+
+            mark_stage("update boundary: detecting readiness in the synthetic tab")
+            boundary_tab.evaluate("() => window.dispatchEvent(new Event('focus'))")
+            boundary_tab.get_by_text("New version ready", exact=True).wait_for(
+                state="visible", timeout=10_000
+            )
+            boundary_dialogs_before = boundary_dialog_count[0]
+
+            mark_stage("update boundary: browser Back to the warmed Yarn route")
+            origin_before_popstate, history_before_popstate = boundary_metrics()
+            try:
+                boundary_tab.go_back()
+            except PlaywrightError:
+                time_origin, history_length = boundary_metrics()
+                raise AcceptanceFailure(
+                    "browser Back failed (time-origin: "
+                    f"{time_origin:.0f}; history: {history_length}; "
+                    f"dialogs: {boundary_dialog_count[0]})"
+                ) from None
+            wait_for_boundary_state(
+                "() => location.pathname === '/app/yarns'",
+                "browser Back to the warmed route",
+            )
+            boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+            origin_after_back = boundary_tab.evaluate("() => performance.timeOrigin")
+            history_after_back = boundary_tab.evaluate("() => history.length")
+
+            mark_stage("update boundary: browser Forward to the warmed Projects route")
+            try:
+                boundary_tab.go_forward()
+            except PlaywrightError:
+                time_origin, history_length = boundary_metrics()
+                raise AcceptanceFailure(
+                    "browser Forward failed (time-origin: "
+                    f"{time_origin:.0f}; history: {history_length}; "
+                    f"dialogs: {boundary_dialog_count[0]})"
+                ) from None
+            wait_for_boundary_state(
+                "() => location.pathname === '/app/projects'",
+                "browser Forward to the warmed route",
+            )
+            boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+            origin_after_forward = boundary_tab.evaluate("() => performance.timeOrigin")
+            history_after_forward = boundary_tab.evaluate("() => history.length")
+            back_forward_dialog_delta = (
+                boundary_dialog_count[0] - boundary_dialogs_before
+            )
+            _require(
+                origin_after_back == origin_before_popstate
+                and origin_after_forward == origin_before_popstate
+                and history_after_back == history_before_popstate
+                and history_after_forward == history_before_popstate
+                and back_forward_dialog_delta == 0,
+                "update boundary changed native Back/Forward state "
+                f"(time-origin deltas: "
+                f"{origin_after_back - origin_before_popstate}, "
+                f"{origin_after_forward - origin_before_popstate}; history "
+                f"deltas: {history_after_back - history_before_popstate}, "
+                f"{history_after_forward - history_before_popstate}; "
+                f"dialogs: {back_forward_dialog_delta})",
+            )
+
+            mark_stage("update boundary: clicking a same-document hash link")
+            boundary_tab.evaluate(
+                """() => {
+                  const target = document.createElement('span');
+                  target.id = 'pwa-update-boundary-hash-target';
+                  document.body.append(target);
+                  const link = document.createElement('a');
+                  link.id = 'pwa-update-boundary-hash-link';
+                  link.href = '#pwa-update-boundary-hash-target';
+                  link.textContent = 'Navigation boundary';
+                  document.body.append(link);
+                }"""
+            )
+            hash_origin_before = boundary_tab.evaluate("() => performance.timeOrigin")
+            hash_history_before = boundary_tab.evaluate("() => history.length")
+            hash_dialogs_before = boundary_dialog_count[0]
+            boundary_tab.locator("#pwa-update-boundary-hash-link").click()
+            wait_for_boundary_state(
+                "() => location.hash === '#pwa-update-boundary-hash-target'",
+                "same-document hash navigation",
+                timeout=5_000,
+            )
+            hash_origin_after = boundary_tab.evaluate("() => performance.timeOrigin")
+            hash_history_after = boundary_tab.evaluate("() => history.length")
+            hash_dialog_delta = boundary_dialog_count[0] - hash_dialogs_before
+            _require(
+                hash_origin_after == hash_origin_before
+                and hash_history_after == hash_history_before + 1
+                and hash_dialog_delta == 0,
+                "same-document hash navigation changed native update state "
+                f"(time-origin delta: {hash_origin_after - hash_origin_before}; "
+                f"history delta: {hash_history_after - hash_history_before}; "
+                f"dialogs: {hash_dialog_delta})",
+            )
+
+            mark_stage("update boundary: following an external loopback link")
+            origin_parts = urlsplit(origin)
+            external_host = (
+                "localhost" if origin_parts.hostname != "localhost" else "127.0.0.1"
+            )
+            external_url = (
+                f"{origin_parts.scheme}://{external_host}:{port}/pwa-boundary"
+            )
+            external_route_count = [0]
+
+            def fulfill_boundary_destination(route: Route) -> None:
+                external_route_count[0] += 1
+                route.fulfill(
+                    status=200,
+                    content_type="text/html; charset=utf-8",
+                    body=(
+                        "<!doctype html><html><head><title>Controlled loopback "
+                        "destination</title></head><body><h1>Controlled loopback "
+                        "destination</h1></body></html>"
+                    ),
+                )
+
+            boundary_tab.route(external_url, fulfill_boundary_destination)
+            boundary_tab.evaluate(
+                """url => {
+                  const link = document.createElement('a');
+                  link.id = 'pwa-update-boundary-external-link';
+                  link.href = url;
+                  link.textContent = 'External loopback destination';
+                  document.body.append(link);
+                }""",
+                external_url,
+            )
+            external_origin_before = boundary_tab.evaluate(
+                "() => performance.timeOrigin"
+            )
+            external_history_before = boundary_tab.evaluate("() => history.length")
+            external_dialogs_before = boundary_dialog_count[0]
+            try:
+                with boundary_tab.expect_navigation(
+                    wait_until="domcontentloaded", timeout=10_000
+                ) as external_navigation:
+                    boundary_tab.locator("#pwa-update-boundary-external-link").click()
+            except PlaywrightError:
+                time_origin, history_length = boundary_metrics()
+                raise AcceptanceFailure(
+                    "external loopback navigation failed (time-origin: "
+                    f"{time_origin:.0f}; history: {history_length}; "
+                    f"route hits: {external_route_count[0]}; "
+                    f"dialogs: {boundary_dialog_count[0]})"
+                ) from None
+            external_response = external_navigation.value
+            boundary_tab.get_by_role(
+                "heading", name="Controlled loopback destination", exact=True
+            ).wait_for(state="visible", timeout=5_000)
+            external_destination_reached = (
+                boundary_tab.evaluate(
+                    "() => location.hostname === 'localhost' "
+                    "&& location.pathname === '/pwa-boundary'"
+                )
+                if external_host == "localhost"
+                else boundary_tab.evaluate(
+                    "() => location.hostname === '127.0.0.1' "
+                    "&& location.pathname === '/pwa-boundary'"
+                )
+            )
+            external_origin_after = boundary_tab.evaluate(
+                "() => performance.timeOrigin"
+            )
+            external_history_after = boundary_tab.evaluate("() => history.length")
+            external_dialog_delta = boundary_dialog_count[0] - external_dialogs_before
+            _require(
+                external_response is not None
+                and external_response.status == 200
+                and external_route_count[0] == 1
+                and external_destination_reached
+                and external_origin_after != external_origin_before
+                and external_history_after == external_history_before + 1
+                and external_dialog_delta == 0,
+                "external loopback navigation did not follow normal browser history "
+                "(response: "
+                f"{external_response is not None and external_response.status == 200}; "
+                f"route hits: {external_route_count[0]}; "
+                f"destination: {external_destination_reached}; "
+                "time-origin changed: "
+                f"{external_origin_after != external_origin_before}; "
+                f"history delta: {external_history_after - external_history_before}; "
+                f"dialogs: {external_dialog_delta})",
+            )
+
+            mark_stage("update boundary: browser Back from the loopback destination")
+            try:
+                boundary_tab.go_back()
+            except PlaywrightError:
+                time_origin, history_length = boundary_metrics()
+                raise AcceptanceFailure(
+                    "browser Back from the destination failed (time-origin: "
+                    f"{time_origin:.0f}; history: {history_length}; "
+                    f"dialogs: {boundary_dialog_count[0]})"
+                ) from None
+            wait_for_boundary_state(
+                "() => location.pathname === '/app/projects' "
+                "&& location.hash === '#pwa-update-boundary-hash-target'",
+                "browser Back from the destination",
+            )
+            boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
+            external_back_in_app = boundary_tab.evaluate(
+                "() => location.pathname === '/app/projects' "
+                "&& location.hash === '#pwa-update-boundary-hash-target'"
+            )
+
+            mark_stage("update boundary: browser Forward to the loopback destination")
+            try:
+                boundary_tab.go_forward()
+            except PlaywrightError:
+                time_origin, history_length = boundary_metrics()
+                raise AcceptanceFailure(
+                    "browser Forward to the destination failed (time-origin: "
+                    f"{time_origin:.0f}; history: {history_length}; "
+                    f"dialogs: {boundary_dialog_count[0]})"
+                ) from None
+            wait_for_boundary_state(
+                "() => location.pathname === '/pwa-boundary'",
+                "browser Forward to the destination",
+            )
+            boundary_tab.get_by_role(
+                "heading", name="Controlled loopback destination", exact=True
+            ).wait_for(state="visible", timeout=5_000)
+            external_forward_to_destination = boundary_tab.evaluate(
+                "() => location.pathname === '/pwa-boundary'"
+            )
+            try:
+                boundary_tab.go_back()
+            except PlaywrightError:
+                time_origin, history_length = boundary_metrics()
+                raise AcceptanceFailure(
+                    "browser Back to the app failed (time-origin: "
+                    f"{time_origin:.0f}; history: {history_length}; "
+                    f"dialogs: {boundary_dialog_count[0]})"
+                ) from None
+            wait_for_boundary_state(
+                "() => location.pathname === '/app/projects' "
+                "&& location.hash === '#pwa-update-boundary-hash-target'",
+                "browser Back to the app",
+            )
+            _require(
+                external_back_in_app
+                and external_forward_to_destination
+                and boundary_dialog_count[0] == external_dialogs_before,
+                "loopback Back/Forward opened an update prompt or lost history "
+                f"(back: {external_back_in_app}; forward: "
+                f"{external_forward_to_destination}; dialogs: "
+                f"{boundary_dialog_count[0] - external_dialogs_before})",
+            )
+            boundary_tab.unroute(external_url, fulfill_boundary_destination)
 
             mark_stage("update: refusing to reload a dirty tab")
             page.evaluate("() => window.dispatchEvent(new Event('focus'))")
@@ -1909,9 +2243,23 @@ def run_acceptance(
             mark_stage("checking online recovery and console policy")
             _require(page_errors == [], "browser reported a page exception")
             _require(csp_errors == [], "browser reported a CSP violation")
+            if boundary_tab is not None and not boundary_tab.is_closed():
+                boundary_tab.close()
+            if boundary_cdp is not None:
+                boundary_cdp.detach()
             context.close()
             browser.close()
         except BaseException:
+            if boundary_tab is not None and not boundary_tab.is_closed():
+                try:
+                    boundary_tab.close()
+                except PlaywrightError:
+                    pass
+            if boundary_cdp is not None:
+                try:
+                    boundary_cdp.detach()
+                except PlaywrightError:
+                    pass
             browser.close()
             raise
     return screenshots

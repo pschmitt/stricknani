@@ -328,72 +328,60 @@ async fn app_worker_routes_coexist_with_the_frontend_shell_without_fallback_leak
 }
 
 #[test]
-fn app_worker_requires_explicit_preparation_and_retains_assets_until_page_ack() {
+fn app_worker_uses_per_tab_updates_and_retains_only_public_immutable_assets() {
     let worker = include_str!("../../web/static/service-worker.js");
-    assert_eq!(worker.matches("skipWaiting").count(), 1);
-    let commit = worker
-        .split("async function commitUpdate")
+    let install = worker
+        .split("self.addEventListener(\"install\"")
         .nth(1)
-        .and_then(|body| body.split("async function cancelUpdate").next())
-        .expect("worker should define one explicit commit handler");
-    assert!(commit.contains("VALIDATE_UPDATE"));
-    assert!(commit.contains("sameClientSet"));
-    assert!(commit.contains("writeActivationState"));
-    assert!(commit.contains("event.waitUntil(self.skipWaiting())"));
-    assert!(!worker.contains("clients.claim"));
-    assert!(worker.contains("function isAppClientPath(pathname)"));
-    assert!(worker.contains("pathname === \"/app\""));
-    assert!(worker.contains("__APP_VERSION__"));
-    assert!(worker.contains("__APP_CODE_VERSION__"));
-    assert!(worker.contains("__APP_ASSETS__"));
-    assert!(worker.contains("UPDATE_STATE_CACHE"));
-    assert!(worker.contains("UPDATE_ACTIVATED"));
-    assert!(worker.contains("RELOAD_ACK"));
-    assert!(worker.contains("pageVersion === APP_CODE_VERSION"));
-    assert!(worker.contains("retainedImmutableResponse(request)"));
-    assert!(worker.contains("ignoreSearch: false"));
-    let activation_reader = worker
-        .split("async function readActivationState")
-        .nth(1)
-        .and_then(|body| body.split("async function deleteActivationState").next())
-        .expect("worker should define an activation-state reader");
-    assert!(activation_reader.contains("caches.match(UPDATE_STATE_URL"));
-    assert!(!activation_reader.contains("caches.open(UPDATE_STATE_CACHE)"));
-    let active_worker_guard = worker
-        .split("async function activeWorkerCanPrune")
-        .nth(1)
-        .and_then(|body| body.split("async function deleteOldAppCaches").next())
-        .expect("worker should verify the active worker before cache pruning");
-    assert!(active_worker_guard.contains("registration.waiting"));
-    assert!(active_worker_guard.contains("registration.installing"));
-    assert!(active_worker_guard.contains("GET_VERSION"));
-    assert!(worker.contains("function isPromotableImmutableAsset(url)"));
-    assert!(worker.contains("PUBLIC_ASSETS.includes(url.pathname)"));
-    assert!(worker.contains("responseMatches(retained, url)"));
-    assert!(worker.contains("void queueImmutableCacheWrite(cache, url, retained.clone())"));
-    assert!(worker.contains(".finally(finishBackground)"));
-    assert!(worker.contains("await cacheWriteQueue;"));
-    let cache_pruner = worker
-        .split("async function pruneOldCachesIfSafe")
-        .nth(1)
-        .and_then(|body| body.split("async function installAppShell").next())
-        .expect("worker should define guarded cache pruning");
-    assert!(cache_pruner.contains("activeWorkerCanPrune(activeWorker)"));
-    assert!(worker.contains("registration.waiting"));
-    assert!(worker.contains("registration.installing"));
+        .and_then(|body| body.split("self.addEventListener(\"activate\"").next())
+        .expect("worker should install its cached app shell");
     let activation = worker
         .split("self.addEventListener(\"activate\"")
         .nth(1)
-        .and_then(|body| {
-            body.split("async function retainedImmutableResponse")
-                .next()
-        })
-        .expect("worker should define an activation handler");
-    assert!(!activation.contains("deleteOldAppCaches"));
+        .and_then(|body| body.split("self.addEventListener(\"fetch\"").next())
+        .expect("worker should activate and claim open tabs");
+    let messaging = worker
+        .split("self.addEventListener(\"message\"")
+        .nth(1)
+        .and_then(|body| body.split("self.addEventListener(\"install\"").next())
+        .expect("worker should answer version and prune requests");
+
+    assert!(install.contains("await self.skipWaiting()"));
+    assert!(install.find("cache.put").unwrap() < install.find("self.skipWaiting").unwrap());
+    assert!(activation.contains("await self.clients.claim()"));
+    assert!(!activation.contains("postMessage"));
+    assert!(messaging.contains("GET_VERSION"));
+    assert!(messaging.contains("PRUNE_APP_CACHES"));
+    for retired_message in [
+        "PREPARE_UPDATE",
+        "COMMIT_UPDATE",
+        "CANCEL_UPDATE",
+        "VALIDATE_UPDATE",
+        "RELOAD_ACK",
+        "QUERY_APP_VERSION",
+    ] {
+        assert!(
+            !worker.contains(retired_message),
+            "worker must not depend on retired cross-tab message {retired_message}"
+        );
+    }
+    assert!(worker.contains("const MAX_RETAINED_CACHES = 3;"));
+    assert!(worker.contains("MAX_RETAINED_CACHES - 1"));
+
+    assert!(worker.contains("ignoreSearch: false"));
+    assert!(worker.contains("response.url === url.href"));
+    assert!(worker.contains("!response.redirected"));
+    assert!(worker.contains("PUBLIC_ASSETS.includes(url.pathname)"));
+    assert!(worker.contains("isImmutableAssetPath(url.pathname)"));
+    assert!(worker.contains("retainedImmutableResponse(request)"));
+
+    assert!(worker.contains("const PUBLIC_ASSETS = __APP_ASSETS__;"));
+    assert!(worker.contains("__APP_VERSION__"));
+    assert!(worker.contains("__APP_CODE_VERSION__"));
     for forbidden in ["/app/messages.json", "/api/", "/media/", "/app/projects"] {
         assert!(
             !worker.contains(forbidden),
-            "private or mutable path listed: {forbidden}"
+            "worker template must not allowlist private or mutable path {forbidden}"
         );
     }
 }
