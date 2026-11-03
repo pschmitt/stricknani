@@ -1,3 +1,5 @@
+pub mod oidc_http_state;
+pub(crate) mod auth_stepup_service;
 pub(crate) mod account_service;
 pub(crate) mod admin_resource_service;
 pub(crate) mod admin_service;
@@ -23,6 +25,9 @@ pub mod media;
 pub mod media_ids;
 pub mod ocr;
 pub mod ocr_service;
+pub mod oidc;
+pub mod oidc_configuration_service;
+pub(crate) mod oidc_identity_service;
 pub mod projects;
 pub mod pwa;
 pub mod security;

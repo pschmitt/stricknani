@@ -440,3 +440,39 @@ async fn browser_admin_reset_uses_the_shared_revocation_service() {
         assert!(revoked.is_some());
     }
 }
+
+#[tokio::test]
+async fn admin_password_recovery_enables_password_capability_and_preserves_disabled_status() {
+    let fixture = fixture().await;
+    sqlx::query("UPDATE users SET active = 0, password_enabled = 0 WHERE id = ?")
+        .bind(fixture.member_id)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    let reset = fixture
+        .app
+        .clone()
+        .oneshot(admin_request(
+            "POST",
+            &format!("/api/v2/admin/users/{}/reset-password", fixture.member_id),
+            r#"{"password":"recovered-local-password-long"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(reset.status(), StatusCode::OK);
+    let capabilities: (i64, i64) =
+        sqlx::query_as("SELECT active, password_enabled FROM users WHERE id = ?")
+            .bind(fixture.member_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(capabilities, (0, 1));
+    let live_tokens: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM api_tokens WHERE user_id = ? AND revoked_at IS NULL",
+    )
+    .bind(fixture.member_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(live_tokens, 0);
+}

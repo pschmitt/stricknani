@@ -17,6 +17,7 @@ pub struct AppState {
     pub auth_limiter: Arc<crate::auth::RateLimiter>,
     pub external_imports: bool,
     pub image_fetcher: Arc<dyn crate::image_import::ImageFetcher>,
+    pub oidc: Option<Arc<crate::oidc_http_state::OidcRuntime>>,
 }
 
 impl AppState {
@@ -62,6 +63,12 @@ impl AppState {
         self
     }
 
+    /// Enable an explicitly configured OIDC provider for API v2.
+    pub fn with_oidc(mut self, runtime: Arc<crate::oidc_http_state::OidcRuntime>) -> Self {
+        self.oidc = Some(runtime);
+        self
+    }
+
     pub fn new(pool: SqlitePool) -> Self {
         Self {
             pool,
@@ -74,6 +81,7 @@ impl AppState {
             auth_limiter: Arc::new(crate::auth::RateLimiter::default()),
             external_imports: false,
             image_fetcher: Arc::new(crate::image_import::HttpImageFetcher),
+            oidc: None,
         }
     }
 }

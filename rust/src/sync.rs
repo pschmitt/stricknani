@@ -1,4 +1,4 @@
-//! Authenticated full and delta sync endpoints for projects and yarns.
+//! Authenticated full and delta sync endpoints for projects, yarns and categories.
 
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -10,7 +10,7 @@ use base64::engine::general_purpose::{URL_SAFE, URL_SAFE_NO_PAD};
 use chrono::{DateTime, SecondsFormat, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use sqlx::{QueryBuilder, Sqlite, SqlitePool};
+use sqlx::{Connection, QueryBuilder, Sqlite, SqlitePool};
 
 use crate::auth::bearer_user;
 use crate::db::AppState;
@@ -38,6 +38,7 @@ struct SyncQuery {
 pub(crate) enum EntityKind {
     Project,
     Yarn,
+    Category,
 }
 
 impl EntityKind {
@@ -45,6 +46,7 @@ impl EntityKind {
         match self {
             Self::Project => "projects",
             Self::Yarn => "yarns",
+            Self::Category => "category_sync_metadata",
         }
     }
 
@@ -52,6 +54,7 @@ impl EntityKind {
         match self {
             Self::Project => "project",
             Self::Yarn => "yarn",
+            Self::Category => "category",
         }
     }
 }
@@ -98,6 +101,16 @@ struct PageState {
     updated: Option<CursorPosition>,
     deleted: Option<CursorPosition>,
     limit: i64,
+}
+
+#[derive(Clone, Copy)]
+struct SyncPageRequest<'a> {
+    kind: EntityKind,
+    user_id: i64,
+    since: Option<&'a str>,
+    limit: Option<i64>,
+    raw_cursor: Option<&'a str>,
+    protocol: CursorProtocol,
 }
 
 #[derive(Debug)]
@@ -303,14 +316,96 @@ pub(crate) async fn sync_page(
     protocol: CursorProtocol,
 ) -> Result<SyncPage, SyncPageError> {
     let snapshot = format_timestamp(now_utc_micros());
-    let page = resolve_page(raw_cursor, since, limit, kind, user_id, &snapshot, protocol).map_err(
-        |error| match error {
-            PageError::MutuallyExclusive => SyncPageError::MutuallyExclusive,
-            PageError::InvalidCursor => SyncPageError::InvalidCursor,
+    sync_page_at(
+        state,
+        SyncPageRequest {
+            kind,
+            user_id,
+            since,
+            limit,
+            raw_cursor,
+            protocol,
         },
-    )?;
+        snapshot.as_str(),
+    )
+    .await
+}
+
+/// Run category sync against a watermark advanced under SQLite's writer lock.
+/// Cursor continuation pages keep their original snapshot and do not update
+/// the logical clock.
+pub(crate) async fn sync_category_page(
+    state: &AppState,
+    user_id: i64,
+    since: Option<&str>,
+    limit: Option<i64>,
+    raw_cursor: Option<&str>,
+) -> Result<SyncPage, SyncPageError> {
+    let snapshot = if raw_cursor.is_some() {
+        // resolve_page takes the cursor's snapshot; this value is unused.
+        format_timestamp(now_utc_micros())
+    } else {
+        category_sync_watermark(state, user_id).await?
+    };
+    sync_page_at(
+        state,
+        SyncPageRequest {
+            kind: EntityKind::Category,
+            user_id,
+            since,
+            limit,
+            raw_cursor,
+            protocol: CursorProtocol::V2,
+        },
+        snapshot.as_str(),
+    )
+    .await
+}
+
+async fn category_sync_watermark(state: &AppState, user_id: i64) -> Result<String, SyncPageError> {
+    // Acquire the SQLite writer lock before reading/updating the per-owner
+    // clock. This prevents a deferred read-to-write lock upgrade race.
+    let mut connection = state.pool.acquire().await?;
+    let mut transaction = connection.begin_with("BEGIN IMMEDIATE").await?;
+    sqlx::query(
+        "INSERT INTO category_sync_clock(owner_id, changed_at) \
+         VALUES (?, strftime('%Y-%m-%dT%H:%M:%f', 'now') || '000Z') \
+         ON CONFLICT(owner_id) DO UPDATE SET changed_at = \
+             max(category_sync_clock.changed_at, excluded.changed_at)",
+    )
+    .bind(user_id)
+    .execute(&mut *transaction)
+    .await?;
+    let watermark = sqlx::query_scalar::<_, String>(
+        "SELECT changed_at FROM category_sync_clock WHERE owner_id = ?",
+    )
+    .bind(user_id)
+    .fetch_one(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(watermark)
+}
+
+async fn sync_page_at(
+    state: &AppState,
+    request: SyncPageRequest<'_>,
+    snapshot: &str,
+) -> Result<SyncPage, SyncPageError> {
+    let page = resolve_page(
+        request.raw_cursor,
+        request.since,
+        request.limit,
+        request.kind,
+        request.user_id,
+        snapshot,
+        request.protocol,
+    )
+    .map_err(|error| match error {
+        PageError::MutuallyExclusive => SyncPageError::MutuallyExclusive,
+        PageError::InvalidCursor => SyncPageError::InvalidCursor,
+    })?;
     match page {
-        Some(page) => bounded_page(state, kind, user_id, page).await,
+        Some(page) => bounded_page(state, request.kind, request.user_id, page).await,
         None => Err(SyncPageError::Internal),
     }
 }
@@ -375,21 +470,37 @@ async fn load_updates(
     position: Option<&CursorPosition>,
     row_limit: Option<i64>,
 ) -> Result<Vec<UpdateEvent>, sqlx::Error> {
-    let mut query = QueryBuilder::<Sqlite>::new("SELECT id, updated_at FROM ");
-    query
-        .push(kind.table())
-        .push(" WHERE owner_id = ")
-        .push_bind(user_id);
+    let id_column = if matches!(kind, EntityKind::Category) {
+        "category_id"
+    } else {
+        "id"
+    };
+    let mut query = match kind {
+        EntityKind::Category => QueryBuilder::<Sqlite>::new(
+            "SELECT category_id AS id, updated_at FROM category_sync_metadata WHERE owner_id = ",
+        ),
+        _ => {
+            let mut query = QueryBuilder::<Sqlite>::new("SELECT id, updated_at FROM ");
+            query.push(kind.table()).push(" WHERE owner_id = ");
+            query
+        }
+    };
+    query.push_bind(user_id);
     if let Some(snapshot) = snapshot {
         query.push(" AND updated_at <= ").push_bind(snapshot);
     }
-    push_position_filter(&mut query, "updated_at", "id", since, position);
+    push_position_filter(&mut query, "updated_at", id_column, since, position);
     if let Some(row_limit) = row_limit {
         query
-            .push(" ORDER BY updated_at ASC, id ASC LIMIT ")
+            .push(" ORDER BY updated_at ASC, ")
+            .push(id_column)
+            .push(" ASC LIMIT ")
             .push_bind(row_limit);
     } else {
-        query.push(" ORDER BY updated_at ASC, id ASC");
+        query
+            .push(" ORDER BY updated_at ASC, ")
+            .push(id_column)
+            .push(" ASC");
     }
     query
         .build_query_as::<(i64, String)>()
@@ -411,14 +522,18 @@ async fn load_deletions(
     position: Option<&CursorPosition>,
     row_limit: Option<i64>,
 ) -> Result<Vec<DeleteEvent>, sqlx::Error> {
-    let mut query = QueryBuilder::<Sqlite>::new(
-        "SELECT entity_id, id, changed_at FROM deletion_events \
-         WHERE owner_id = ",
-    );
-    query
-        .push_bind(user_id)
-        .push(" AND entity_type = ")
-        .push_bind(kind.as_str());
+    let mut query = match kind {
+        EntityKind::Category => QueryBuilder::<Sqlite>::new(
+            "SELECT category_id, id, changed_at FROM category_deletion_events WHERE owner_id = ",
+        ),
+        _ => QueryBuilder::<Sqlite>::new(
+            "SELECT entity_id, id, changed_at FROM deletion_events WHERE owner_id = ",
+        ),
+    };
+    query.push_bind(user_id);
+    if !matches!(kind, EntityKind::Category) {
+        query.push(" AND entity_type = ").push_bind(kind.as_str());
+    }
     if let Some(snapshot) = snapshot {
         query.push(" AND changed_at <= ").push_bind(snapshot);
     }
@@ -538,6 +653,7 @@ async fn serialize_ids(
         let value = match kind {
             EntityKind::Project => crate::projects::sync_value(state, user_id, *id).await?,
             EntityKind::Yarn => crate::yarns::sync_value(state, user_id, *id).await?,
+            EntityKind::Category => crate::categories::sync_value(state, user_id, *id).await?,
         };
         if let Some(value) = value {
             values.push(value);

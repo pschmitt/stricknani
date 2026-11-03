@@ -102,6 +102,21 @@ pub(crate) async fn list_for_owner(
     .map_err(|_| CategoryError::Database)
 }
 
+pub(crate) async fn sync_value(
+    state: &AppState,
+    user_id: i64,
+    category_id: i64,
+) -> Result<Option<serde_json::Value>, sqlx::Error> {
+    sqlx::query_as::<_, (i64, String)>(
+        "SELECT id, name FROM categories WHERE id = ? AND user_id = ?",
+    )
+    .bind(category_id)
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map(|row| row.map(|(id, name)| serde_json::json!({"id": id, "name": name})))
+}
+
 async fn sync_categories(
     State(state): State<AppState>,
     headers: HeaderMap,

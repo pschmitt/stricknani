@@ -165,12 +165,13 @@ pub(crate) async fn change_password(
         return Err(AccountError::PasswordTooLong);
     }
     auth::validate_new_password(&new_password).map_err(AccountError::PasswordPolicy)?;
-    let old_hash: Option<String> =
-        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ? AND active = 1")
-            .bind(user_id)
-            .fetch_optional(pool)
-            .await
-            .map_err(|_| AccountError::Database)?;
+    let old_hash: Option<String> = sqlx::query_scalar(
+        "SELECT password_hash FROM users WHERE id = ? AND active = 1 AND password_enabled = 1",
+    )
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|_| AccountError::Database)?;
     let Some(old_hash) = old_hash else {
         return Err(AccountError::PasswordConflict);
     };
@@ -200,7 +201,7 @@ pub(crate) async fn update_password_and_revoke_sessions(
 ) -> Result<bool, sqlx::Error> {
     let mut tx = pool.begin().await?;
     let result = sqlx::query(
-        "UPDATE users SET password_hash = ? WHERE id = ? AND active = 1 AND password_hash = ?",
+        "UPDATE users SET password_hash = ? WHERE id = ? AND active = 1 AND password_enabled = 1 AND password_hash = ?",
     )
     .bind(password_hash)
     .bind(user_id)
@@ -212,7 +213,7 @@ pub(crate) async fn update_password_and_revoke_sessions(
     }
     sqlx::query(
         "UPDATE api_tokens SET revoked_at = unixepoch() \
-         WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
+         WHERE user_id = ? AND revoked_at IS NULL",
     )
     .bind(user_id)
     .execute(&mut *tx)

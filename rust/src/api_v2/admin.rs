@@ -1,4 +1,4 @@
-//! Browser-only administration endpoints for user accounts.
+//! Browser-session and API-PAT administration endpoints for user accounts.
 
 use std::collections::BTreeMap;
 

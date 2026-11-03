@@ -1,0 +1,241 @@
+{
+  "root_owned": [
+    {
+      "path": "rust/Cargo.lock",
+      "status": " M",
+      "sha256": "2184d9a939c4d7c4f1c687958c5b78dd4b4f924f47e480b1e6f1986f79f8c93f"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "status": " M",
+      "sha256": "b9b15be543c7d7acff23b1bacee78fd494df12c7f3d2754f66aff8a8555641d8"
+    },
+    {
+      "path": "rust/src/account_service.rs",
+      "status": " M",
+      "sha256": "fd64fa53f09410ab1737f4595b2383eb5b67b5c161ec5c15476e12bab4efa3de"
+    },
+    {
+      "path": "rust/src/admin_service.rs",
+      "status": " M",
+      "sha256": "951c64955953bd0723304cfe69632e93315e51a9f0105ba54d39a6b28b26c40c"
+    },
+    {
+      "path": "rust/src/api_v2/admin.rs",
+      "status": " M",
+      "sha256": "a006b331f17c2f56413881a9d1f0a9baee7701c0093cce345d07dbabcd09ef55"
+    },
+    {
+      "path": "rust/src/api_v2/meta.rs",
+      "status": " M",
+      "sha256": "52e687b6fd52c54c9f1c39c421e005ec8d3db79d260bcd4c1b7cff0a7f7b797a"
+    },
+    {
+      "path": "rust/src/api_v2/sync.rs",
+      "status": " M",
+      "sha256": "382af296841fe9512db95a1c71270b47baa7348051974e92fa2304df32bca4b2"
+    },
+    {
+      "path": "rust/src/auth.rs",
+      "status": " M",
+      "sha256": "1a3fa25319f1ff1ac5abfcb32f758657b6dbe1201a450e62adf5433fbb8ed8e5"
+    },
+    {
+      "path": "rust/src/categories.rs",
+      "status": " M",
+      "sha256": "bfc7f8459431890c303a88495911d504fe74530d74f75ef6ec95b5fb462c97fc"
+    },
+    {
+      "path": "rust/src/lib.rs",
+      "status": " M",
+      "sha256": "6eee6f7a71a853d0863e12a212156a867ecba3c7756ab12f3d36f899ebdab0ea"
+    },
+    {
+      "path": "rust/src/sync.rs",
+      "status": " M",
+      "sha256": "e738a905d80f4642041f0ca4966792c79cee6a4a2ef06efb7a30c5b7b78330b0"
+    },
+    {
+      "path": "rust/tests/admin_token_revocation.rs",
+      "status": " M",
+      "sha256": "766b87eedf9179e322137bab9190b59ff808b271e3c7228012a9f2805d8fdc69"
+    },
+    {
+      "path": "rust/tests/api_v2_account.rs",
+      "status": " M",
+      "sha256": "58986613cb9d88377f4631b18b469644a07ea282662e49e154bc143069a7ed1c"
+    },
+    {
+      "path": "rust/tests/auth_invalid_hash.rs",
+      "status": " M",
+      "sha256": "ae2439ab0dc8b24b0cf1993ed043ba8f175078417b1bd3023a061ee4919ad821"
+    },
+    {
+      "path": "docs/auth-security-followups.md",
+      "status": "??",
+      "sha256": "7c0cee74d078b59f8010a0e04f275d5e10cd89e565e8a6521cad54e81bfe4db8"
+    },
+    {
+      "path": "docs/release-pipeline-inventory.md",
+      "status": "??",
+      "sha256": "d309c1bd1734ba25793f878b787ae902c91313948f481db813e5ce482f920ba3"
+    },
+    {
+      "path": "rust/migrations/0016_category_sync.sql",
+      "status": "??",
+      "sha256": "702deeec9eace67ff691247abeee70b31ad688cc86c0c28e7770a9123945a0bc"
+    },
+    {
+      "path": "rust/migrations/0017_oidc_identities.sql",
+      "status": "??",
+      "sha256": "31709a2d32a2812e9c797159e352e767b554ce141f9fd8c678cc8638989f2efa"
+    },
+    {
+      "path": "rust/src/oidc/flow.rs",
+      "status": "??",
+      "sha256": "2176f63a857a44b122c7f0819797a1eced1454ac61394c38cd91a298ea06c457"
+    },
+    {
+      "path": "rust/src/oidc/mod.rs",
+      "status": "??",
+      "sha256": "77869004383e75deaf9c9f1395690a00f29dd4dc485c09e5400586e724657445"
+    },
+    {
+      "path": "rust/src/oidc/provider.rs",
+      "status": "??",
+      "sha256": "115d0ace8f7eb747086b0b435fd1c403d7e5642457d29729f5cdb26a25ec6e3a"
+    },
+    {
+      "path": "rust/src/oidc/types.rs",
+      "status": "??",
+      "sha256": "24a1c6a60d87ba79b4e59e5d9d2ec8e7ca3a53c39f11fb05605cd348ba6aa183"
+    },
+    {
+      "path": "rust/src/oidc_configuration_service.rs",
+      "status": "??",
+      "sha256": "98d9a105c3e1c64940139403f378b11b5a8c20cf1a352ee2baabfd8adebfa9cf"
+    },
+    {
+      "path": "rust/src/oidc_identity_service.rs",
+      "status": "??",
+      "sha256": "e6ec35d97770fee4e75bc9d12c0137b1d36917fc68ea023513fd069dda23fd0f"
+    },
+    {
+      "path": "rust/tests/api_v2_category_sync.rs",
+      "status": "??",
+      "sha256": "8ecf93d5912b7ef15960a878cff3c12851fcb0abcdfbf18cd92da32dc1aac46e"
+    },
+    {
+      "path": "rust/tests/api_v2_oidc_meta.rs",
+      "status": "??",
+      "sha256": "b03fc6ec8262df5edfb99f5587a9dcbce0f27763f55b5ee14bb3410fec043699"
+    }
+  ],
+  "isolated_overlays": [
+    {
+      "path": "rust/Cargo.toml",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "b9b15be543c7d7acff23b1bacee78fd494df12c7f3d2754f66aff8a8555641d8"
+    },
+    {
+      "path": "rust/Cargo.lock",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "2184d9a939c4d7c4f1c687958c5b78dd4b4f924f47e480b1e6f1986f79f8c93f"
+    },
+    {
+      "path": "rust/src/db.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "56db9421bf3e10d6c57c5f8f7dbcd01eeb6a683e0c17d0eca0a1c642741e8559"
+    },
+    {
+      "path": "rust/src/oidc_http_state.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "fb32b13b487c8346f20b8d91363011223c557b4449ac631c7245655079d1499c"
+    },
+    {
+      "path": "rust/src/api_v2/oidc_login.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "6d0de4553d9567cb1dd651442421b63ec83d3d2d824953bf9545fb4b1ddf71f6"
+    },
+    {
+      "path": "rust/tests/api_v2_oidc_login.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "c9e4332537242c18f22a3abd5c141cd922695b4ca13423f2521419635aaca962"
+    },
+    {
+      "path": "rust/tests/common/mod.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "c6f47e6221bb34adc08c0cd300e4251bf33da07ebd18391e4be6c27c44cf8d47"
+    },
+    {
+      "path": "rust/tests/common/oidc.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "61d8b38f601d36844f7c6c6b35a965c468bfe56c7116bad241c0965538450420"
+    },
+    {
+      "path": "rust/src/oidc/flow.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "fc1463bb40ad4accef10f7e4d3c11f80c95cdea3657b99ae67de7066286e8641"
+    },
+    {
+      "path": "rust/src/oidc/mod.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "77869004383e75deaf9c9f1395690a00f29dd4dc485c09e5400586e724657445"
+    },
+    {
+      "path": "rust/src/oidc/provider.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "19eaebf10c63441f1f41885aae1e46c0cd7a226c38ed5f82ebd09c031d505e17"
+    },
+    {
+      "path": "rust/src/oidc/types.rs",
+      "source_worktree": "stricknani-oidc-core.worktree",
+      "sha256": "24a1c6a60d87ba79b4e59e5d9d2ec8e7ca3a53c39f11fb05605cd348ba6aa183"
+    },
+    {
+      "path": "rust/migrations/0017_oidc_identities.sql",
+      "source_worktree": "stricknani-oidc-storage.worktree",
+      "sha256": "31709a2d32a2812e9c797159e352e767b554ce141f9fd8c678cc8638989f2efa"
+    },
+    {
+      "path": "rust/src/oidc_identity_service.rs",
+      "source_worktree": "stricknani-oidc-storage.worktree",
+      "sha256": "0c7d4489ae4c2dc46f4fc6037c1080a98521896d2d732b687753efbddbc0359e"
+    },
+    {
+      "path": "rust/src/auth_stepup_service.rs",
+      "source_worktree": "stricknani-oidc-storage.worktree",
+      "sha256": "8bbad16267497aa289c866373e65b287849b30399c766b0a339b3495ffd7c4e2"
+    },
+    {
+      "path": "rust/src/api_v2/oidc_account.rs",
+      "source_worktree": "stricknani-oidc-storage.worktree",
+      "sha256": "5a2649cfada6c32ed744faa959c6cf953758273f4196a05b8be290cbcc8d9acf"
+    },
+    {
+      "path": "rust/tests/api_v2_oidc_account.rs",
+      "source_worktree": "stricknani-oidc-storage.worktree",
+      "sha256": "bcfdbe1ccd2bb5bce56dbf478da5b9a72b69f4f15d516a32cf1e17807287db60"
+    },
+    {
+      "path": "rust/src/config.rs",
+      "source_worktree": "stricknani-oidc-config.worktree",
+      "sha256": "92a129dd02a9c6a0e07afac5943675a906bc1a977434763d6d8f128ffa2393c5"
+    },
+    {
+      "path": "rust/src/main.rs",
+      "source_worktree": "stricknani-oidc-config.worktree",
+      "sha256": "13de9b2bc391ec8701788b545d9469f7de0efc894a87e631f6009052653bbc76"
+    },
+    {
+      "path": "nix/module.nix",
+      "source_worktree": "stricknani-oidc-config.worktree",
+      "sha256": "727016e284637435ebe02ecb93a3ff2960e17dc2abb548933465581b9d962305"
+    },
+    {
+      "path": "docs/oidc-server-configuration.md",
+      "source_worktree": "stricknani-oidc-config.worktree",
+      "sha256": "101d2dd910f9b5ca7513693faeaea700bfb2b3f4199212c9dcfe8cf4d6dcccd3"
+    }
+  ]
+}

@@ -251,7 +251,7 @@ async fn reset_password_with_hash(
     if !exists {
         return Err(AdminError::NotFound);
     }
-    sqlx::query("UPDATE users SET password_hash = ? WHERE id = ?")
+    sqlx::query("UPDATE users SET password_hash = ?, password_enabled = 1 WHERE id = ?")
         .bind(password_hash)
         .bind(target_id)
         .execute(&mut *tx)

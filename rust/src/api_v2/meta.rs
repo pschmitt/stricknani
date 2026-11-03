@@ -21,6 +21,19 @@ struct MetaData {
     build_id: String,
     is_admin: bool,
     user: Option<MetaUser>,
+    auth: AuthDiscovery,
+}
+
+#[derive(Serialize)]
+struct AuthDiscovery {
+    password: bool,
+    oidc: Vec<ProviderSummary>,
+}
+
+#[derive(Serialize)]
+struct ProviderSummary {
+    id: String,
+    name: &'static str,
 }
 
 #[derive(Serialize)]
@@ -60,6 +73,16 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
         None => None,
     };
     let is_admin = user.as_ref().is_some_and(|user| user.is_admin);
+    let oidc = state
+        .app
+        .oidc
+        .as_ref()
+        .map(|runtime| ProviderSummary {
+            id: runtime.provider_id().to_owned(),
+            name: "Authelia",
+        })
+        .into_iter()
+        .collect();
 
     Json(MetaEnvelope {
         data: MetaData {
@@ -67,6 +90,10 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
             build_id: state.app.build_id,
             is_admin,
             user,
+            auth: AuthDiscovery {
+                password: true,
+                oidc,
+            },
         },
     })
     .into_response()
