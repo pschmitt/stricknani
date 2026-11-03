@@ -4,7 +4,7 @@
 Run `just branding` (it provides resvg and shapely through nix). The masters are:
 
   icon.svg             full icon, rounded square (web favicon, README)
-  icon-square.svg      full icon, full-bleed square (Play, maskable and legacy PNGs)
+  icon-square.svg      full icon, full-bleed square (legacy launcher PNGs)
   icon-foreground.svg  ball and face on transparent (Android adaptive foreground)
   icon-monochrome.svg  single-colour ball with the face cut out (themed icon)
   mascot.svg           the ball cropped to its bounds (web Mascot component)
@@ -29,8 +29,6 @@ BRANDING = Path(__file__).resolve().parent
 ROOT = BRANDING.parent
 RES = ROOT / "android/app/src/main/res"
 FONT_DIRS = [ROOT / "android/app/src/main/res/font"]
-
-BG = "#ffe2ae"
 
 
 def resvg(svg: Path, out: Path, width: int, height: int | None = None) -> None:
@@ -182,7 +180,6 @@ def launcher_svgs(tmp: Path) -> tuple[Path, Path]:
 
 def rasters() -> None:
     icon = BRANDING / "icon.svg"
-    square = BRANDING / "icon-square.svg"
     with tempfile.TemporaryDirectory() as t:
         # PWA icons match the Android launcher icon (no padding, blue ground).
         launcher_round, launcher_maskable = launcher_svgs(Path(t))
@@ -191,9 +188,10 @@ def rasters() -> None:
             resvg(launcher_round, web / "icons/icon-192.png", 192)
             resvg(launcher_round, web / "icons/icon-512.png", 512)
         resvg(launcher_maskable, ROOT / "web/static/icons/icon-maskable-512.png", 512)
+        # Play's 512 px icon is the launcher icon too: full-bleed blue square, Play masks it.
+        resvg(launcher_maskable, BRANDING / "playstore/icon-512.png", 512)
+        feature_graphic(Path(t), launcher_round)
     shutil.copy(BRANDING / "mascot.svg", ROOT / "web/static/mascot.svg")
-
-    resvg(square, BRANDING / "playstore/icon-512.png", 512)
 
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
@@ -208,16 +206,15 @@ def rasters() -> None:
             d = RES / f"mipmap-{density}dpi"
             resvg(icon, d / "ic_launcher.png", px)
             resvg(round_icon, d / "ic_launcher_round.png", px)
-        feature_graphic(tmp)
 
 
-def feature_graphic(tmp: Path) -> None:
-    mascot = (BRANDING / "mascot.svg").read_text()
-    inner = mascot.split("<svg", 1)[1].split(">", 1)[1].rsplit("</svg>", 1)[0]
+def feature_graphic(tmp: Path, launcher_round: Path) -> None:
+    """The launcher icon (ball filling its blue circle) next to the wordmark."""
+    icon = launcher_round.read_text()
+    inner = icon.split("<svg", 1)[1].split(">", 1)[1].rsplit("</svg>", 1)[0]
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
   <rect width="1024" height="500" fill="#fff6e6"/>
-  <circle cx="260" cy="250" r="235" fill="{BG}"/>
-  <svg x="85" y="75" width="350" height="350" viewBox="21 21 66 66">{inner}</svg>
+  <svg x="50" y="50" width="400" height="400" viewBox="18 18 72 72">{inner}</svg>
   <text x="490" y="232" font-family="Nunito" font-weight="800" font-size="100" fill="#16233f">Stricknani</text>
   <text x="494" y="296" font-family="Nunito" font-weight="500" font-size="23" fill="#5b6784">Knitting projects &amp; yarn stash — self-hosted</text>
 </svg>

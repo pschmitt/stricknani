@@ -1,18 +1,16 @@
-Stricknani is an offline-first Android client for your own self-hosted Stricknani server.
+Stricknani is an offline-first Android client for your own self-hosted Stricknani server: your knitting projects and yarn stash, always in your pocket.
 
-Connect the app to any Stricknani instance with its server URL and a personal access token. Your
-account password is never stored in the app. Once connected, projects and yarn stash entries stay
-available on your device when you are offline and synchronize with your configured server when a
-connection is available.
+Connect in a few taps. Scan the "Connect the app" code on your Stricknani website, sign in with your email and password, or use your server's single sign-on provider (such as Authelia) if it offers one. Your account password is never stored in the app; it keeps a personal access token instead. Once connected, projects and yarn stash entries stay available on your device when you are offline and synchronize with your server when a connection is available.
 
 Features:
 • Browse and search knitting projects and yarn stash entries
+• See recent activity and your latest projects on Home
 • View descriptions, notes, steps, tags, photos, and linked yarns
 • Create and edit projects and yarn entries, including while offline
-• Keep changes in a local queue until the configured server is reachable
+• Keep changes in a local queue until your server is reachable again; the app tells "you're offline" apart from "can't reach the server"
+• Background sync that respects battery saver
 • Use the gauge calculator without a network connection
+• Swipe cards away, enjoy the Winky Pom mascot, and see whether an update is available in About
 • Choose light, dark, or system appearance and configure the navigation bar
 
-Stricknani does not provide a hosted account or server. You choose the Stricknani server that the
-app connects to and remain responsible for that server, its data, and its privacy policy. The app
-contains no advertising or analytics service.
+Stricknani does not provide a hosted account or server. You choose the Stricknani server that the app connects to and remain responsible for that server, its data, and its privacy policy. The app contains no advertising or analytics service.

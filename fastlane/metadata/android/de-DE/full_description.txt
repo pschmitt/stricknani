@@ -1,0 +1,16 @@
+Stricknani ist ein Offline-first-Android-Client für deinen eigenen Stricknani-Server: deine Strickprojekte und dein Wollvorrat, immer dabei.
+
+Verbinden in wenigen Tipps. Scanne den Code unter "App verbinden" auf deiner Stricknani-Website, melde dich mit E-Mail und Passwort an oder nutze den Single-Sign-on-Anbieter deines Servers (z. B. Authelia), falls er einen anbietet. Dein Konto-Passwort wird nicht in der App gespeichert, stattdessen nutzt sie ein persönliches Zugriffstoken. Nach dem Verbinden bleiben Projekte und Wollvorrat auch offline auf deinem Gerät verfügbar und werden mit deinem Server abgeglichen, sobald eine Verbindung besteht.
+
+Funktionen:
+• Strickprojekte und Wolleinträge durchsuchen und ansehen
+• Letzte Aktivitäten und neueste Projekte auf der Startseite
+• Beschreibungen, Notizen, Schritte, Tags, Fotos und verknüpfte Wolle ansehen
+• Projekte und Wolleinträge erstellen und bearbeiten, auch offline
+• Änderungen werden lokal vorgemerkt, bis dein Server wieder erreichbar ist; die App unterscheidet "du bist offline" von "Server nicht erreichbar"
+• Hintergrund-Synchronisierung, die den Energiesparmodus respektiert
+• Maschenprobe-Rechner ohne Netzverbindung
+• Karten wegwischen, das Maskottchen Winky Pom und die Update-Anzeige unter "Über"
+• Hell, Dunkel oder Systemdesign wählen und die Navigationsleiste anpassen
+
+Stricknani bietet kein gehostetes Konto und keinen Server an. Du wählst den Stricknani-Server, mit dem sich die App verbindet, und bleibst für diesen Server, seine Daten und seine Datenschutzerklärung selbst verantwortlich. Die App enthält weder Werbung noch Analysedienste.
