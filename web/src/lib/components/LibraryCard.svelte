@@ -107,12 +107,12 @@
   .library-card__link {
     display: grid;
     min-width: 0;
-    min-height: 72px;
-    grid-template-columns: 64px minmax(0, 1fr);
+    min-height: 104px;
+    grid-template-columns: 112px minmax(0, 1fr);
     align-items: center;
-    gap: 0.8rem;
+    gap: 1rem;
     border-radius: var(--radius-xs);
-    padding: 0.5rem 3.4rem 0.5rem 0.25rem;
+    padding: 0.7rem 3.4rem 0.7rem 0.25rem;
     color: inherit;
     text-decoration: none;
   }
@@ -125,10 +125,10 @@
   .library-card__media {
     position: relative;
     display: block;
-    width: 64px;
+    width: 112px;
     aspect-ratio: 4 / 3;
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 14px;
     background: var(--tone-wash);
   }
 
@@ -154,32 +154,35 @@
   }
 
   .library-card__placeholder :global(svg) {
-    width: 1.6rem;
-    height: 1.6rem;
+    width: 2.2rem;
+    height: 2.2rem;
   }
 
   .library-card__copy {
     display: grid;
     min-width: 0;
-    gap: 0.1rem;
+    gap: 0.2rem;
   }
 
   .library-card__title {
+    display: -webkit-box;
     overflow: hidden;
     margin: 0;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 1.15rem;
     font-weight: 650;
     line-height: 1.25;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
   .library-card__meta,
   .library-card__updated {
     overflow: hidden;
     color: var(--ink-muted);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;

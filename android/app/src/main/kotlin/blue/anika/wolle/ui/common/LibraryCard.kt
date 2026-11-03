@@ -203,7 +203,7 @@ fun LibraryCard(
     }
 }
 
-/** Phone row: 64dp 4:3 thumbnail, title, meta, updated date and the heart at the end. */
+/** Phone row: 112dp 4:3 thumbnail, a title of up to two lines, meta, updated date and the heart. */
 @Composable
 fun LibraryRow(
     data: LibraryCardData,
@@ -222,22 +222,22 @@ fun LibraryRow(
             ),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(width = 85.dp, height = 64.dp).clip(RoundedCornerShape(12.dp))) {
-                LibraryCover(data = data, iconSize = 28.dp, modifier = Modifier.fillMaxSize())
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(width = 112.dp, height = 84.dp).clip(RoundedCornerShape(14.dp))) {
+                LibraryCover(data = data, iconSize = 36.dp, modifier = Modifier.fillMaxSize())
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = data.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 data.meta?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -245,7 +245,7 @@ fun LibraryRow(
                 }
                 Text(
                     text = updatedLabel(data.updatedAt),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
