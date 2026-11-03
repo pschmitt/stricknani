@@ -1,5 +1,7 @@
 package blue.anika.wolle.ui.gauge
 
+import blue.anika.wolle.data.util.SwatchSize
+import blue.anika.wolle.data.util.formatCm
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -22,5 +24,33 @@ class GaugeCalculatorScreenTest {
         assertEquals("+4", signedDifference(104, 100))
         assertEquals("−3", signedDifference(97, 100))
         assertEquals("±0", signedDifference(100, 100))
+    }
+
+    @Test
+    fun `swatch sizes compare densities, 10 by 10 cm by default`() {
+        // 9 stitches and 12 rows over 5 x 5 cm is the same as 18 and 24 over 10 x 10 cm.
+        val small =
+            gaugeResultOrNull(
+                "22",
+                "30",
+                "9",
+                "12",
+                "110",
+                "60",
+                userSwatch = SwatchSize(5.0, 5.0),
+            )!!
+        val default = gaugeResultOrNull("22", "30", "18", "24", "110", "60")!!
+        assertEquals(default, small)
+        assertEquals(90, small.adjustedStitches)
+        assertEquals(48, small.adjustedRows)
+    }
+
+    @Test
+    fun `swatch size parsing and formatting`() {
+        assertEquals(7.5, SwatchSize.parseCm("7,5")!!, 0.0)
+        assertEquals(null, SwatchSize.parseCm("0"))
+        assertEquals(null, SwatchSize.parseCm("101"))
+        assertEquals("10", formatCm(10.0))
+        assertEquals("7.5", formatCm(7.5))
     }
 }

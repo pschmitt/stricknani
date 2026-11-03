@@ -344,6 +344,11 @@
     <string name="gauge_calculator_summary_without_rows">Basierend auf %1$d angeschlagenen Maschen der Anleitung.</string>
     <string name="gauge_calculator_hint">Fülle beide Maschenproben und den Anschlag aus, dann erscheinen hier deine Zahlen.</string>
     <string name="gauge_calculator_difference">%1$s gegenüber der Anleitung</string>
+    <string name="gauge_calculator_swatch_size_change">Größe der Maschenprobe %1$s, ändern</string>
+    <string name="gauge_calculator_swatch_size_hint">Wie groß war die Fläche, die du gezählt hast? Anleitungen nehmen meist 10 × 10 cm.</string>
+    <string name="gauge_calculator_swatch_width">Breite</string>
+    <string name="gauge_calculator_swatch_height">Höhe</string>
+    <string name="gauge_calculator_swatch_size_reset">Zurück zu 10 × 10 cm</string>
 
     <!-- Home sync status card -->
     <string name="sync_status_syncing">Wird aktualisiert…</string>

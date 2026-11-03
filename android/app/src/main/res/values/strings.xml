@@ -344,6 +344,11 @@
     <string name="gauge_calculator_summary_without_rows">Based on a pattern cast-on of %1$d stitches.</string>
     <string name="gauge_calculator_hint">Fill in both swatches and the cast-on, and your numbers show up here.</string>
     <string name="gauge_calculator_difference">%1$s compared to the pattern</string>
+    <string name="gauge_calculator_swatch_size_change">Swatch size %1$s, change</string>
+    <string name="gauge_calculator_swatch_size_hint">How big was the area you counted? Patterns usually use 10 × 10 cm.</string>
+    <string name="gauge_calculator_swatch_width">Width</string>
+    <string name="gauge_calculator_swatch_height">Height</string>
+    <string name="gauge_calculator_swatch_size_reset">Back to 10 × 10 cm</string>
 
     <!-- Home sync status card -->
     <string name="sync_status_syncing">Catching up…</string>

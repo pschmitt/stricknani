@@ -20,23 +20,29 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +56,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
@@ -57,6 +65,8 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.util.GaugeCalculator
 import blue.anika.wolle.data.util.GaugeResult
+import blue.anika.wolle.data.util.SwatchSize
+import blue.anika.wolle.data.util.formatCm
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.stitchedBorder
 
@@ -79,6 +89,14 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
     var userRows by rememberSaveable { mutableStateOf("") }
     var castOnStitches by rememberSaveable { mutableStateOf("") }
     var rowCount by rememberSaveable { mutableStateOf("") }
+    // Patterns almost always give gauge per 10 × 10 cm; the size sits behind the "10 × 10 cm"
+    // label under each swatch for the times it doesn't (or you measured a smaller swatch).
+    var patternWidth by rememberSaveable { mutableStateOf(SwatchSize.DEFAULT.widthCm) }
+    var patternHeight by rememberSaveable { mutableStateOf(SwatchSize.DEFAULT.heightCm) }
+    var userWidth by rememberSaveable { mutableStateOf(SwatchSize.DEFAULT.widthCm) }
+    var userHeight by rememberSaveable { mutableStateOf(SwatchSize.DEFAULT.heightCm) }
+    val patternSwatch = SwatchSize(patternWidth, patternHeight)
+    val userSwatch = SwatchSize(userWidth, userHeight)
 
     val result =
         gaugeResultOrNull(
@@ -88,6 +106,8 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
             userRows,
             castOnStitches,
             rowCount,
+            patternSwatch,
+            userSwatch,
         )
 
     Scaffold(
@@ -132,24 +152,19 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                     onStitchesChange = { patternStitches = it },
                     rows = patternRows,
                     onRowsChange = { patternRows = it },
+                    swatch = patternSwatch,
+                    onSwatchChange = {
+                        patternWidth = it.widthCm
+                        patternHeight = it.heightCm
+                    },
                 )
             }
             item {
-                SwatchCard(
-                    title = stringResource(R.string.gauge_calculator_your_gauge_title),
-                    container = MaterialTheme.colorScheme.secondaryContainer,
-                    onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
-                    yarn = MaterialTheme.colorScheme.secondary,
-                    stitches = userStitches,
-                    onStitchesChange = { userStitches = it },
-                    rows = userRows,
-                    onRowsChange = { userRows = it },
-                )
-            }
-            item {
+                // Same marigold as the pattern's swatch above: both come from the pattern.
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f),
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(
@@ -175,6 +190,23 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
                         )
                     }
                 }
+            }
+            item {
+                SwatchCard(
+                    title = stringResource(R.string.gauge_calculator_your_gauge_title),
+                    container = MaterialTheme.colorScheme.secondaryContainer,
+                    onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
+                    yarn = MaterialTheme.colorScheme.secondary,
+                    stitches = userStitches,
+                    onStitchesChange = { userStitches = it },
+                    rows = userRows,
+                    onRowsChange = { userRows = it },
+                    swatch = userSwatch,
+                    onSwatchChange = {
+                        userWidth = it.widthCm
+                        userHeight = it.heightCm
+                    },
+                )
             }
             item {
                 AnimatedContent(
@@ -205,6 +237,8 @@ internal fun gaugeResultOrNull(
     userRows: String,
     castOn: String,
     rowCount: String,
+    patternSwatch: SwatchSize = SwatchSize.DEFAULT,
+    userSwatch: SwatchSize = SwatchSize.DEFAULT,
 ): GaugeResult? {
     val ps = patternStitches.toIntOrNull()?.takeIf { it > 0 } ?: return null
     val pr = patternRows.toIntOrNull()?.takeIf { it > 0 } ?: return null
@@ -213,7 +247,7 @@ internal fun gaugeResultOrNull(
     val co = castOn.toIntOrNull()?.takeIf { it > 0 } ?: return null
     val rows =
         if (rowCount.isBlank()) null else rowCount.toIntOrNull()?.takeIf { it > 0 } ?: return null
-    return GaugeCalculator.calculate(ps, pr, us, ur, co, rows)
+    return GaugeCalculator.calculate(ps, pr, us, ur, co, rows, patternSwatch, userSwatch)
 }
 
 /** "+4" / "−3" / "±0" for how far a result is from the pattern. */
@@ -261,7 +295,10 @@ private fun SwatchCard(
     onStitchesChange: (String) -> Unit,
     rows: String,
     onRowsChange: (String) -> Unit,
+    swatch: SwatchSize,
+    onSwatchChange: (SwatchSize) -> Unit,
 ) {
+    var editingSize by rememberSaveable { mutableStateOf(false) }
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = container,
@@ -284,12 +321,9 @@ private fun SwatchCard(
                         yarn = yarn,
                         background = yarn.copy(alpha = 0.16f),
                         size = 92.dp,
+                        aspect = (swatch.widthCm / swatch.heightCm).toFloat(),
                     )
-                    Text(
-                        "10 × 10 cm",
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                    SwatchSizeButton(swatch = swatch, onClick = { editingSize = true })
                 }
                 Column(
                     Modifier.weight(1f),
@@ -311,6 +345,119 @@ private fun SwatchCard(
             }
         }
     }
+    if (editingSize) {
+        SwatchSizeDialog(
+            title = title,
+            current = swatch,
+            onDismiss = { editingSize = false },
+            onConfirm = {
+                onSwatchChange(it)
+                editingSize = false
+            },
+        )
+    }
+}
+
+/** "10 × 10 cm ✎" under a swatch: shows the measured size and opens [SwatchSizeDialog]. */
+@Composable
+private fun SwatchSizeButton(swatch: SwatchSize, onClick: () -> Unit) {
+    val label = "${formatCm(swatch.widthCm)} \u00d7 ${formatCm(swatch.heightCm)} cm"
+    val description = stringResource(R.string.gauge_calculator_swatch_size_change, label)
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color =
+            if (swatch.isDefault) Color.Transparent
+            else LocalContentColor.current.copy(alpha = 0.12f),
+        modifier =
+            Modifier.padding(top = 2.dp).heightIn(min = 36.dp).semantics {
+                contentDescription = description
+            },
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+        ) {
+            Text(label, style = MaterialTheme.typography.labelSmall)
+            Icon(
+                Icons.Filled.Edit,
+                contentDescription = null,
+                modifier = Modifier.padding(start = 4.dp).size(13.dp),
+            )
+        }
+    }
+}
+
+/** Width and height the gauge was measured over, with a one-tap way back to 10 × 10 cm. */
+@Composable
+private fun SwatchSizeDialog(
+    title: String,
+    current: SwatchSize,
+    onDismiss: () -> Unit,
+    onConfirm: (SwatchSize) -> Unit,
+) {
+    var width by rememberSaveable { mutableStateOf(formatCm(current.widthCm)) }
+    var height by rememberSaveable { mutableStateOf(formatCm(current.heightCm)) }
+    val parsedWidth = SwatchSize.parseCm(width)
+    val parsedHeight = SwatchSize.parseCm(height)
+    val decimal = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(R.string.gauge_calculator_swatch_size_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = width,
+                        onValueChange = {
+                            width = it.filter { c -> c.isDigit() || c == '.' || c == ',' }.take(5)
+                        },
+                        label = { Text(stringResource(R.string.gauge_calculator_swatch_width)) },
+                        suffix = { Text("cm") },
+                        isError = parsedWidth == null,
+                        singleLine = true,
+                        keyboardOptions = decimal,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = height,
+                        onValueChange = {
+                            height = it.filter { c -> c.isDigit() || c == '.' || c == ',' }.take(5)
+                        },
+                        label = { Text(stringResource(R.string.gauge_calculator_swatch_height)) },
+                        suffix = { Text("cm") },
+                        isError = parsedHeight == null,
+                        singleLine = true,
+                        keyboardOptions = decimal.copy(imeAction = ImeAction.Done),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                TextButton(
+                    onClick = {
+                        width = formatCm(SwatchSize.DEFAULT.widthCm)
+                        height = formatCm(SwatchSize.DEFAULT.heightCm)
+                    }
+                ) {
+                    Text(stringResource(R.string.gauge_calculator_swatch_size_reset))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = parsedWidth != null && parsedHeight != null,
+                onClick = { onConfirm(SwatchSize(parsedWidth!!, parsedHeight!!)) },
+            ) {
+                Text(stringResource(R.string.common_done))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }
 
 /**
@@ -318,13 +465,26 @@ private fun SwatchCard(
  * tighter gauge visibly looks denser. Decorative - screen readers get the numbers from the fields.
  */
 @Composable
-private fun KnittedSwatch(stitches: Int, rows: Int, yarn: Color, background: Color, size: Dp) {
+private fun KnittedSwatch(
+    stitches: Int,
+    rows: Int,
+    yarn: Color,
+    background: Color,
+    size: Dp,
+    aspect: Float = 1f,
+) {
     val columns = stitches.coerceIn(0, MAX_DRAWN_STITCHES)
     val lines = rows.coerceIn(0, MAX_DRAWN_ROWS)
     Surface(
         shape = MaterialTheme.shapes.small,
         color = background,
-        modifier = Modifier.size(size).clearAndSetSemantics {},
+        // The longer side is [size]; a 10 × 5 cm swatch is drawn half as tall.
+        modifier =
+            Modifier.size(
+                    width = if (aspect >= 1f) size else size * aspect,
+                    height = if (aspect >= 1f) size / aspect else size,
+                )
+                .clearAndSetSemantics {},
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (columns == 0 || lines == 0) {
