@@ -4,7 +4,6 @@
   import { ApiError } from "#lib/api.ts";
   import SharedButton from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -222,10 +221,8 @@
 {#if enabled}
   <section class="linked-logins" aria-labelledby="linked-logins-title">
     <header class="section-heading">
-      <span class="heading-icon" aria-hidden="true"><NavIcon name="key" /></span
-      >
       <div>
-        <h2 id="linked-logins-title">{t("Linked logins", locale)}</h2>
+        <h3 id="linked-logins-title">{t("Linked logins", locale)}</h3>
         <p>
           {t(
             "Sign in with a login provider instead of typing your password.",
@@ -385,8 +382,6 @@
     display: grid;
     min-width: 0;
     gap: 0.9rem;
-    border-top: 2px solid var(--line);
-    padding-top: 1rem;
   }
 
   .section-heading {
@@ -395,24 +390,19 @@
     gap: 0.75rem;
   }
 
-  .section-heading h2 {
+  .section-heading h3 {
     margin: 0;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0;
   }
 
   .section-heading p {
-    margin: 0.25rem 0 0;
+    margin: 0.2rem 0 0;
     color: var(--ink-muted);
-  }
-
-  .heading-icon {
-    display: inline-flex;
-    flex: none;
-    color: var(--accent-strong);
-  }
-
-  .heading-icon :global(svg) {
-    width: 1.6rem;
-    height: 1.6rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 
   .muted {

@@ -1,12 +1,9 @@
-<script lang="ts">
-  import { setLocale, t, type Locale } from "#lib/i18n.svelte.ts";
+<script module lang="ts">
+  import { setLocale, type Locale } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
-  import SharedButton from "#lib/components/Button.svelte";
 
-  const locale = $derived(session.data?.locale ?? "en");
-  const enabled = $derived(session.status === "ready" && session.data !== null);
-
-  function chooseLocale(next: Locale) {
+  /** Switch the UI language and remember it in the language cookie. */
+  export function chooseLocale(next: Locale): void {
     setLocale(next);
     if (session.data) session.data = { ...session.data, locale: next };
 
@@ -15,6 +12,14 @@
     const secure = location.protocol === "https:" ? "; Secure" : "";
     document.cookie = `language=${next}; Max-Age=31536000; Path=/; SameSite=Lax${secure}`;
   }
+</script>
+
+<script lang="ts">
+  import { t } from "#lib/i18n.svelte.ts";
+  import SharedButton from "#lib/components/Button.svelte";
+
+  const locale = $derived(session.data?.locale ?? "en");
+  const enabled = $derived(session.status === "ready" && session.data !== null);
 </script>
 
 <div class="locale-switcher" role="group" aria-label={t("Language", locale)}>

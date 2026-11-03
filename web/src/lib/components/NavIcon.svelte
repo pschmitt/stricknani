@@ -54,7 +54,11 @@
     | "search"
     | "help"
     | "edit"
-    | "chevron-down";
+    | "chevron-down"
+    | "camera"
+    | "device"
+    | "lock"
+    | "sliders";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -319,6 +323,28 @@
       fill="currentColor"
       stroke="none"
       d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+    />
+  {:else if name === "camera"}
+    <path
+      d="M4 8.5h3l1.5-2.5h7L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1Z"
+    />
+    <circle cx="12" cy="13.5" r="3.5" />
+  {:else if name === "device"}
+    <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+    <path d="M10.5 18.5h3" />
+  {:else if name === "lock"}
+    <path
+      transform="translate(1.3333 1.3333) scale(0.083333)"
+      fill="currentColor"
+      stroke="none"
+      d="M128,112a28,28,0,0,0-8,54.83V184a8,8,0,0,0,16,0V166.83A28,28,0,0,0,128,112Zm0,40a12,12,0,1,1,12-12A12,12,0,0,1,128,152Zm80-72H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Z"
+    />
+  {:else if name === "sliders"}
+    <path
+      transform="translate(1.3333 1.3333) scale(0.083333)"
+      fill="currentColor"
+      stroke="none"
+      d="M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z"
     />
   {:else}
     <path d="M5 4.5h14v15H5zM8 8h8M8 12h8M8 16h5" />

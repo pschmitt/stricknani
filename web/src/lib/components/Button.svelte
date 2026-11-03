@@ -15,6 +15,7 @@
     "children" | "class" | "type"
   > & {
     class?: string;
+    element?: HTMLButtonElement | null;
     size?: ButtonSize;
     type?: "button" | "submit" | "reset";
     variant?: ButtonVariant;
@@ -23,6 +24,7 @@
   let {
     children,
     class: className = "",
+    element = $bindable(null),
     icon,
     size = "md",
     type = "button",
@@ -37,7 +39,7 @@
   );
 </script>
 
-<button {...restProps} {type} class={classes}>
+<button bind:this={element} {...restProps} {type} class={classes}>
   {#if children}
     {#if icon}
       <ActionLabel {icon} {size}>{@render children()}</ActionLabel>

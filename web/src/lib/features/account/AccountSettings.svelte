@@ -5,11 +5,12 @@
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
-  import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
+  import { chooseLocale } from "#lib/components/LocaleSwitcher.svelte";
+  import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
-  import ThemeSwitcher from "#lib/components/ThemeSwitcher.svelte";
+  import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
-  import { t } from "#lib/i18n.svelte.ts";
+  import { t, type Locale } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
     patchSessionAvatar,
@@ -17,6 +18,9 @@
     session,
     signOut,
   } from "#lib/session.svelte.ts";
+  import { theme, setTheme } from "#lib/theme.svelte.ts";
+  import { themeChoices, type ThemeChoice } from "#lib/theme.ts";
+  import { textSize } from "#lib/text-size.svelte.ts";
   import {
     changePassword,
     createApiToken,
@@ -66,6 +70,11 @@
   let currentPasswordError = $state("");
   let newPasswordError = $state("");
   let confirmPasswordError = $state("");
+  let passwordOpen = $state(false);
+  let tokenFormOpen = $state(false);
+  let newTokenButton = $state<HTMLButtonElement | null>(null);
+  let passwordButton = $state<HTMLButtonElement | null>(null);
+  let currentPasswordInput = $state<HTMLInputElement | null>(null);
   let sessionGeneration = 0;
   let profileGeneration = 0;
   let tokenGeneration = 0;
@@ -83,6 +92,33 @@
   const avatarDeleteEnabled = $derived(
     accountActionsEnabled && session.data?.capabilities.media_delete === true,
   );
+
+  const themeIcons = {
+    system: "monitor",
+    light: "sun",
+    dark: "moon",
+  } as const satisfies Record<ThemeChoice, NavIconName>;
+  const localeOptions: { value: Locale; label: string }[] = [
+    { value: "en", label: "English" },
+    { value: "de", label: "Deutsch" },
+  ];
+  const themeOptions = $derived(
+    themeChoices.map((choice) => ({
+      value: choice,
+      icon: themeIcons[choice],
+      label:
+        choice === "system"
+          ? t("System", locale)
+          : choice === "light"
+            ? t("Light", locale)
+            : t("Dark", locale),
+    })),
+  );
+  const sizeOptions = $derived([
+    { value: 0, label: t("Small", locale) },
+    { value: 1, label: t("Default", locale) },
+    { value: 2, label: t("Large", locale) },
+  ]);
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
@@ -143,6 +179,8 @@
     confirmPassword = "";
     revealedToken = null;
     tokenAcknowledged = false;
+    passwordOpen = false;
+    tokenFormOpen = false;
     if (tokenDialog?.open) tokenDialog.close();
     if (revokeDialog?.open) revokeDialog.close();
     profileError = "";
@@ -291,6 +329,45 @@
     }
   }
 
+  async function togglePasswordForm() {
+    if (passwordOpen) {
+      cancelPasswordForm();
+      return;
+    }
+    passwordOpen = true;
+    await tick();
+    currentPasswordInput?.focus();
+  }
+
+  function cancelPasswordForm() {
+    currentPassword = "";
+    newPassword = "";
+    confirmPassword = "";
+    passwordError = "";
+    currentPasswordError = "";
+    newPasswordError = "";
+    confirmPasswordError = "";
+    passwordOpen = false;
+    passwordButton?.focus();
+  }
+
+  async function toggleTokenForm() {
+    if (tokenFormOpen) {
+      cancelTokenForm();
+      return;
+    }
+    tokenFormOpen = true;
+    await tick();
+    tokenNameInput?.focus();
+  }
+
+  function cancelTokenForm() {
+    tokenName = "";
+    tokenNameError = "";
+    tokenFormOpen = false;
+    newTokenButton?.focus();
+  }
+
   async function addToken(event: SubmitEvent) {
     event.preventDefault();
     const activeSession = session.data;
@@ -316,6 +393,7 @@
       tokenLoad = "ready";
       tokenLoadError = "";
       tokenName = "";
+      tokenFormOpen = false;
       revealedToken = created;
       tokenAcknowledged = false;
       copyStatus = "";
@@ -379,7 +457,8 @@
         await tick();
         if (userId === capturedUserId && mutationId === operationGeneration) {
           if (revokeOpener?.isConnected) revokeOpener.focus();
-          else tokenNameInput?.focus();
+          else if (tokenFormOpen) tokenNameInput?.focus();
+          else newTokenButton?.focus();
           revokeOpener = null;
         }
       }
@@ -516,6 +595,7 @@
       currentPassword = "";
       newPassword = "";
       confirmPassword = "";
+      passwordOpen = false;
       await refreshSession();
     } catch (error) {
       if (userId !== capturedUserId || mutationId !== operationGeneration)
@@ -629,56 +709,46 @@
   />
 </svelte:head>
 
-<section
-  class="account-page page-container page-container--standard"
-  aria-labelledby="account-title"
->
+<section class="account-page" aria-labelledby="account-title">
   <PageHeader title={t("Account", locale)} titleId="account-title"></PageHeader>
-
-  <section class="account-language" aria-label={t("Language", locale)}>
-    <LocaleSwitcher />
-  </section>
-
-  <section class="account-appearance" aria-labelledby="appearance-title">
-    <h2 id="appearance-title">{t("Appearance", locale)}</h2>
-    <ThemeSwitcher {locale} showLabels />
-  </section>
 
   {#if pageStatus}
     <p class="page-status" role="status" aria-live="polite">{pageStatus}</p>
   {/if}
 
-  <section class="profile-section" aria-labelledby="profile-title">
-    <div class="profile-portrait" aria-hidden="true">
-      {#if profile?.avatar_url}
-        <img src={profile.avatar_url} alt="" />
-      {:else}
-        <span
-          >{profile?.email.slice(0, 1).toLocaleUpperCase(locale) ?? "…"}</span
-        >
-      {/if}
-    </div>
-    <div class="profile-copy">
+  <section class="card" aria-labelledby="profile-title">
+    <header class="card__header">
+      <span class="card__icon card__icon--profile" aria-hidden="true"
+        ><NavIcon name="account" /></span
+      >
       <h2 id="profile-title">{t("Profile", locale)}</h2>
-      {#if profileLoad === "loading"}
-        <p class="muted">{t("Loading account details…", locale)}</p>
-      {:else if profileLoad === "error"}
-        <p class="notice-error" role="alert">{profileError}</p>
+    </header>
+
+    {#if profileLoad === "loading"}
+      <p class="muted">{t("Loading account details…", locale)}</p>
+    {:else if profileLoad === "error"}
+      <p class="notice-error" role="alert">{profileError}</p>
+      <div>
         <SharedButton
-          variant="ghost"
+          variant="secondary"
           type="button"
           onclick={() => void retryProfile()}
           icon="refresh"
         >
           {t("Try again", locale)}
         </SharedButton>
-      {:else if profile}
-        <p class="profile-email">{profile.email}</p>
-        <p class="role-line">
-          {profile.is_admin ? t("Administrator", locale) : t("Member", locale)}
-        </p>
-        <div class="avatar-actions">
-          <label class="file-picker">
+      </div>
+    {:else if profile}
+      <div class="profile">
+        <div class="avatar">
+          <div class="avatar__portrait" aria-hidden="true">
+            {#if profile.avatar_url}
+              <img src={profile.avatar_url} alt="" />
+            {:else}
+              <span>{profile.email.slice(0, 1).toLocaleUpperCase(locale)}</span>
+            {/if}
+          </div>
+          <label class="avatar__badge" title={t("Choose image", locale)}>
             <input
               bind:this={avatarInput}
               type="file"
@@ -694,25 +764,24 @@
                 avatarError = "";
               }}
             />
-            <ActionLabel icon="upload">{t("Choose image", locale)}</ActionLabel>
+            <NavIcon name="camera" />
           </label>
-          {#if avatarFile}
-            <span class="selected-file">{avatarFile.name}</span>
-            <SharedButton
-              variant="primary"
-              type="button"
-              disabled={operation !== null || !avatarUploadEnabled}
-              onclick={() => void uploadSelectedAvatar()}
-              icon="upload"
+        </div>
+        <div class="profile__copy">
+          <p class="profile__email">{profile.email}</p>
+          <p class="role-chip">
+            <NavIcon name={profile.is_admin ? "admin" : "account"} />
+            <span
+              >{profile.is_admin
+                ? t("Administrator", locale)
+                : t("Member", locale)}</span
             >
-              {operation === "avatar-upload"
-                ? t("Uploading…", locale)
-                : t("Upload picture", locale)}
-            </SharedButton>
-          {/if}
+          </p>
           {#if profile.avatar_url}
             <SharedButton
-              variant="danger"
+              variant="ghost"
+              size="sm"
+              class="quiet-danger"
               type="button"
               disabled={operation !== null || !avatarDeleteEnabled}
               onclick={() => void removeAvatar()}
@@ -724,228 +793,374 @@
             </SharedButton>
           {/if}
         </div>
-        {#if avatarError}<p class="field-error" role="alert">
-            {avatarError}
-          </p>{/if}
+      </div>
+
+      {#if avatarFile}
+        <div class="avatar-pending">
+          <span class="selected-file">{avatarFile.name}</span>
+          <div class="button-row">
+            <SharedButton
+              variant="primary"
+              type="button"
+              disabled={operation !== null || !avatarUploadEnabled}
+              onclick={() => void uploadSelectedAvatar()}
+              icon="upload"
+            >
+              {operation === "avatar-upload"
+                ? t("Uploading…", locale)
+                : t("Upload picture", locale)}
+            </SharedButton>
+            <SharedButton
+              variant="ghost"
+              type="button"
+              disabled={operation !== null}
+              onclick={() => {
+                avatarFile = null;
+                if (avatarInput) avatarInput.value = "";
+              }}
+            >
+              {t("Cancel", locale)}
+            </SharedButton>
+          </div>
+        </div>
       {/if}
+      {#if avatarError}<p class="field-error" role="alert">
+          {avatarError}
+        </p>{/if}
+    {/if}
+  </section>
+
+  <section class="card" aria-labelledby="preferences-title">
+    <header class="card__header">
+      <span class="card__icon card__icon--prefs" aria-hidden="true"
+        ><NavIcon name="sliders" /></span
+      >
+      <h2 id="preferences-title">{t("Preferences", locale)}</h2>
+    </header>
+    <div class="rows">
+      <div class="row">
+        <span class="row__label" id="pref-language"
+          >{t("Language", locale)}</span
+        >
+        <div class="row__control">
+          <SegmentedControl
+            options={localeOptions}
+            value={locale}
+            label={t("Language", locale)}
+            disabled={session.status !== "ready" || !session.data}
+            onchange={chooseLocale}
+          />
+        </div>
+      </div>
+      <div class="row">
+        <span class="row__label" id="pref-theme">{t("Appearance", locale)}</span
+        >
+        <div class="row__control">
+          <SegmentedControl
+            options={themeOptions}
+            value={theme.choice}
+            label={t("Theme", locale)}
+            onchange={setTheme}
+          />
+        </div>
+      </div>
+      <div class="row">
+        <div class="row__text">
+          <span class="row__label" id="pref-text-size"
+            >{t("Text size", locale)}</span
+          >
+          <p class="row__hint">
+            {t("Used when reading projects and yarns.", locale)}
+          </p>
+        </div>
+        <div class="row__control">
+          <SegmentedControl
+            options={sizeOptions}
+            value={textSize.index}
+            label={t("Text size", locale)}
+            onchange={(next) => textSize.set(next)}
+          />
+        </div>
+      </div>
     </div>
   </section>
 
-  <div class="settings-columns">
-    <section
-      class="settings-section token-section"
-      aria-labelledby="tokens-title"
-    >
-      <header class="section-heading">
-        <div>
-          <h2 id="tokens-title">{t("API tokens", locale)}</h2>
-          <p>
-            {t(
-              "Use a token for a trusted app or device. You can only see a new token once.",
-              locale,
-            )}
-          </p>
-        </div>
-      </header>
-
-      {#if tokenError}<p class="notice-error" role="alert">{tokenError}</p>{/if}
-      <form class="token-create" onsubmit={(event) => void addToken(event)}>
-        <label for="token-name">{t("Token name", locale)}</label>
-        <div class="token-create-row">
-          <input
-            id="token-name"
-            bind:this={tokenNameInput}
-            bind:value={tokenName}
-            maxlength="255"
-            autocomplete="off"
-            placeholder={t("For example, my tablet", locale)}
-            aria-describedby={tokenNameError ? "token-name-error" : undefined}
-            aria-invalid={tokenNameError ? "true" : undefined}
-            disabled={operation !== null || !accountActionsEnabled}
-          />
-          <SharedButton
-            variant="primary"
-            type="submit"
-            disabled={operation !== null ||
-              !accountActionsEnabled ||
-              tokenLoad === "loading"}
-            icon="key"
-          >
-            {operation === "token"
-              ? t("Working…", locale)
-              : t("Create token", locale)}
-          </SharedButton>
-        </div>
-        {#if tokenNameError}<p
-            id="token-name-error"
-            class="field-error"
-            role="alert"
-          >
-            {tokenNameError}
-          </p>{/if}
-      </form>
-
-      {#if tokenLoad === "loading"}
-        <p class="muted" aria-live="polite">
-          {t("Loading API tokens…", locale)}
-        </p>
-      {:else if tokenLoad === "error"}
-        <div class="inline-error" role="alert">
-          <p>{tokenLoadError}</p>
-          <SharedButton
-            variant="ghost"
-            type="button"
-            onclick={() => void retryTokens()}
-            icon="refresh"
-          >
-            {t("Try again", locale)}
-          </SharedButton>
-        </div>
-      {:else if tokens.length === 0}
-        <p class="empty-state">
-          {t("No API tokens yet. Create one when an app needs access.", locale)}
-        </p>
-      {:else}
-        <ul class="token-list" aria-label={t("Active API tokens", locale)}>
-          {#each tokens as token (token.id)}
-            <li class="token-row">
-              <div class="token-detail">
-                <strong>{token.name}</strong>
-                <span
-                  >{t("Created", locale)} {formatDate(token.created_at)}</span
-                >
-                {#if token.expires_at}
-                  <span
-                    >{t("Expires", locale)} {formatDate(token.expires_at)}</span
-                  >
-                {/if}
-              </div>
-              <SharedButton
-                variant="danger"
-                type="button"
-                aria-label={t("Revoke token", locale) + ` ${token.name}`}
-                disabled={operation !== null || !accountActionsEnabled}
-                onclick={(event) => askToRevoke(token, event.currentTarget)}
-                icon="action-delete"
-              >
-                {revokingId === token.id
-                  ? t("Revoking…", locale)
-                  : t("Revoke", locale)}
-              </SharedButton>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
-
-    <section
-      class="settings-section password-section"
-      aria-labelledby="password-title"
-    >
-      <header class="section-heading">
-        <div>
-          <h2 id="password-title">{t("Change password", locale)}</h2>
-          <p>
+  <section class="card" aria-labelledby="security-title">
+    <header class="card__header">
+      <span class="card__icon card__icon--security" aria-hidden="true"
+        ><NavIcon name="lock" /></span
+      >
+      <h2 id="security-title">{t("Sign-in and security", locale)}</h2>
+    </header>
+    <div class="rows">
+      <div class="row row--top">
+        <div class="row__text">
+          <span class="row__label">{t("Password", locale)}</span>
+          <p class="row__hint">
             {t(
               "Changing your password signs out this browser and other sessions.",
               locale,
             )}
           </p>
         </div>
-      </header>
-      {#if passwordError}<p class="notice-error" role="alert">
-          {passwordError}
-        </p>{/if}
-      <form
-        class="password-form"
-        onsubmit={(event) => void submitPassword(event)}
-      >
-        <label class="form-field" for="current-password">
-          <span>{t("Current password", locale)}</span>
-          <input
-            id="current-password"
-            bind:value={currentPassword}
-            type="password"
-            autocomplete="current-password"
-            aria-invalid={currentPasswordError ? "true" : undefined}
-            aria-describedby={currentPasswordError
-              ? "current-password-error"
-              : undefined}
-            disabled={operation !== null || !accountActionsEnabled}
-          />
-          {#if currentPasswordError}<small
-              id="current-password-error"
-              class="field-error"
-              role="alert">{currentPasswordError}</small
-            >{/if}
-        </label>
-        <label class="form-field" for="new-password">
-          <span>{t("New password", locale)}</span>
-          <input
-            id="new-password"
-            bind:value={newPassword}
-            type="password"
-            autocomplete="new-password"
-            aria-invalid={newPasswordError ? "true" : undefined}
-            aria-describedby={newPasswordError
-              ? "new-password-error"
-              : "password-rule"}
-            disabled={operation !== null || !accountActionsEnabled}
-          />
-          <small id="password-rule" class="muted"
-            >{t(
-              "At least 12 characters. Avoid common passwords.",
-              locale,
-            )}</small
+        <div class="row__control">
+          <SharedButton
+            bind:element={passwordButton}
+            variant="secondary"
+            type="button"
+            aria-expanded={passwordOpen}
+            aria-controls="password-panel"
+            disabled={!accountActionsEnabled}
+            onclick={() => void togglePasswordForm()}
+            icon="key"
           >
-          {#if newPasswordError}<small
-              id="new-password-error"
-              class="field-error"
-              role="alert">{newPasswordError}</small
-            >{/if}
-        </label>
-        <label class="form-field" for="confirm-password">
-          <span>{t("Confirm new password", locale)}</span>
-          <input
-            id="confirm-password"
-            bind:value={confirmPassword}
-            type="password"
-            autocomplete="new-password"
-            aria-invalid={confirmPasswordError ? "true" : undefined}
-            aria-describedby={confirmPasswordError
-              ? "confirm-password-error"
-              : undefined}
-            disabled={operation !== null || !accountActionsEnabled}
-          />
-          {#if confirmPasswordError}<small
-              id="confirm-password-error"
-              class="field-error"
-              role="alert">{confirmPasswordError}</small
-            >{/if}
-        </label>
-        <SharedButton
-          variant="primary"
-          class="password-submit"
-          type="submit"
-          disabled={operation !== null || !accountActionsEnabled}
-          icon="save"
+            {t("Change password", locale)}
+          </SharedButton>
+        </div>
+      </div>
+      <div class="disclosure" class:disclosure--open={passwordOpen}>
+        <div class="disclosure__clip" id="password-panel" inert={!passwordOpen}>
+          {#if passwordError}<p class="notice-error" role="alert">
+              {passwordError}
+            </p>{/if}
+          <form
+            class="stack-form"
+            onsubmit={(event) => void submitPassword(event)}
+          >
+            <label class="form-field" for="current-password">
+              <span>{t("Current password", locale)}</span>
+              <input
+                id="current-password"
+                bind:this={currentPasswordInput}
+                bind:value={currentPassword}
+                type="password"
+                autocomplete="current-password"
+                aria-invalid={currentPasswordError ? "true" : undefined}
+                aria-describedby={currentPasswordError
+                  ? "current-password-error"
+                  : undefined}
+                disabled={operation !== null || !accountActionsEnabled}
+              />
+              {#if currentPasswordError}<small
+                  id="current-password-error"
+                  class="field-error"
+                  role="alert">{currentPasswordError}</small
+                >{/if}
+            </label>
+            <label class="form-field" for="new-password">
+              <span>{t("New password", locale)}</span>
+              <input
+                id="new-password"
+                bind:value={newPassword}
+                type="password"
+                autocomplete="new-password"
+                aria-invalid={newPasswordError ? "true" : undefined}
+                aria-describedby={newPasswordError
+                  ? "new-password-error"
+                  : "password-rule"}
+                disabled={operation !== null || !accountActionsEnabled}
+              />
+              <small id="password-rule" class="muted"
+                >{t(
+                  "At least 12 characters. Avoid common passwords.",
+                  locale,
+                )}</small
+              >
+              {#if newPasswordError}<small
+                  id="new-password-error"
+                  class="field-error"
+                  role="alert">{newPasswordError}</small
+                >{/if}
+            </label>
+            <label class="form-field" for="confirm-password">
+              <span>{t("Confirm new password", locale)}</span>
+              <input
+                id="confirm-password"
+                bind:value={confirmPassword}
+                type="password"
+                autocomplete="new-password"
+                aria-invalid={confirmPasswordError ? "true" : undefined}
+                aria-describedby={confirmPasswordError
+                  ? "confirm-password-error"
+                  : undefined}
+                disabled={operation !== null || !accountActionsEnabled}
+              />
+              {#if confirmPasswordError}<small
+                  id="confirm-password-error"
+                  class="field-error"
+                  role="alert">{confirmPasswordError}</small
+                >{/if}
+            </label>
+            <div class="button-row">
+              <SharedButton
+                variant="primary"
+                class="password-submit"
+                type="submit"
+                disabled={operation !== null || !accountActionsEnabled}
+                icon="save"
+              >
+                {operation === "password"
+                  ? t("Changing password…", locale)
+                  : t("Save new password", locale)}
+              </SharedButton>
+              <SharedButton
+                variant="ghost"
+                type="button"
+                disabled={operation !== null}
+                onclick={cancelPasswordForm}
+              >
+                {t("Cancel", locale)}
+              </SharedButton>
+            </div>
+          </form>
+        </div>
+      </div>
+      <LinkedLogins />
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="tokens-title">
+    <header class="card__header card__header--split">
+      <div class="card__title">
+        <span class="card__icon card__icon--apps" aria-hidden="true"
+          ><NavIcon name="device" /></span
         >
-          {operation === "password"
-            ? t("Changing password…", locale)
-            : t("Save new password", locale)}
+        <h2 id="tokens-title">{t("Apps and devices", locale)}</h2>
+      </div>
+      <SharedButton
+        bind:element={newTokenButton}
+        variant="secondary"
+        size="sm"
+        type="button"
+        aria-expanded={tokenFormOpen}
+        aria-controls="token-panel"
+        disabled={operation !== null || !accountActionsEnabled}
+        onclick={() => void toggleTokenForm()}
+        icon="action-create"
+      >
+        {t("New token", locale)}
+      </SharedButton>
+    </header>
+    <p class="card__intro">
+      {t(
+        "Use a token for a trusted app or device. You can only see a new token once.",
+        locale,
+      )}
+    </p>
+
+    {#if tokenError}<p class="notice-error" role="alert">{tokenError}</p>{/if}
+
+    <div class="disclosure" class:disclosure--open={tokenFormOpen}>
+      <div class="disclosure__clip" id="token-panel" inert={!tokenFormOpen}>
+        <form class="token-create" onsubmit={(event) => void addToken(event)}>
+          <label for="token-name">{t("Token name", locale)}</label>
+          <div class="token-create-row">
+            <input
+              id="token-name"
+              bind:this={tokenNameInput}
+              bind:value={tokenName}
+              maxlength="255"
+              autocomplete="off"
+              placeholder={t("For example, my tablet", locale)}
+              aria-describedby={tokenNameError ? "token-name-error" : undefined}
+              aria-invalid={tokenNameError ? "true" : undefined}
+              disabled={operation !== null || !accountActionsEnabled}
+            />
+            <div class="button-row">
+              <SharedButton
+                variant="primary"
+                type="submit"
+                disabled={operation !== null ||
+                  !accountActionsEnabled ||
+                  tokenLoad === "loading"}
+                icon="key"
+              >
+                {operation === "token"
+                  ? t("Working…", locale)
+                  : t("Create token", locale)}
+              </SharedButton>
+              <SharedButton
+                variant="ghost"
+                type="button"
+                disabled={operation !== null}
+                onclick={cancelTokenForm}
+              >
+                {t("Cancel", locale)}
+              </SharedButton>
+            </div>
+          </div>
+          {#if tokenNameError}<p
+              id="token-name-error"
+              class="field-error"
+              role="alert"
+            >
+              {tokenNameError}
+            </p>{/if}
+        </form>
+      </div>
+    </div>
+
+    {#if tokenLoad === "loading"}
+      <p class="muted" aria-live="polite">
+        {t("Loading API tokens…", locale)}
+      </p>
+    {:else if tokenLoad === "error"}
+      <div class="inline-error" role="alert">
+        <p>{tokenLoadError}</p>
+        <SharedButton
+          variant="ghost"
+          type="button"
+          onclick={() => void retryTokens()}
+          icon="refresh"
+        >
+          {t("Try again", locale)}
         </SharedButton>
-      </form>
-    </section>
-  </div>
+      </div>
+    {:else if tokens.length === 0}
+      <p class="empty-state">
+        {t("No API tokens yet. Create one when an app needs access.", locale)}
+      </p>
+    {:else}
+      <ul class="token-list" aria-label={t("Active API tokens", locale)}>
+        {#each tokens as token (token.id)}
+          <li class="token-row">
+            <span class="token-row__icon" aria-hidden="true"
+              ><NavIcon name="device" /></span
+            >
+            <div class="token-detail">
+              <strong>{token.name}</strong>
+              <span>{t("Created", locale)} {formatDate(token.created_at)}</span>
+              {#if token.expires_at}
+                <span
+                  >{t("Expires", locale)} {formatDate(token.expires_at)}</span
+                >
+              {/if}
+            </div>
+            <SharedButton
+              variant="ghost"
+              size="sm"
+              class="quiet-danger"
+              type="button"
+              icon="action-delete"
+              aria-label={t("Revoke token", locale) + ` ${token.name}`}
+              title={t("Revoke", locale)}
+              aria-busy={revokingId === token.id ? "true" : undefined}
+              disabled={operation !== null || !accountActionsEnabled}
+              onclick={(event) => askToRevoke(token, event.currentTarget)}
+            />
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </section>
 
-  <LinkedLogins />
-
-  <section class="settings-section signout-section">
+  <section class="card card--footer" aria-label={t("Sign out", locale)}>
     {#if signOutError}
       <p class="field-error" role="alert">{signOutError}</p>
     {/if}
     <SharedButton
-      variant="ghost"
+      variant="secondary"
+      class="signout-button"
       type="button"
       disabled={signOutBusy ||
         session.status !== "ready" ||
@@ -1070,14 +1285,78 @@
 <style>
   .account-page {
     display: grid;
-    gap: clamp(1.5rem, 3vw, 2.4rem);
+    width: 100%;
+    max-width: 44rem;
+    margin-inline: auto;
+    gap: 1rem;
   }
 
-  .section-mark {
-    margin: 0 0 0.35rem;
-    color: var(--accent-strong);
-    font-size: 0.9rem;
-    font-weight: 650;
+  .card {
+    display: grid;
+    min-width: 0;
+    gap: 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    background: var(--surface);
+  }
+
+  .card__header {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .card__header--split {
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .card__title {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .card__icon,
+  .token-row__icon {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.35rem;
+  }
+
+  .card__icon--profile {
+    color: var(--tone-home);
+    background: var(--tone-home-wash);
+  }
+
+  .card__icon--prefs {
+    color: var(--tone-categories);
+    background: var(--tone-categories-wash);
+  }
+
+  .card__icon--security {
+    color: var(--tone-audit);
+    background: var(--tone-audit-wash);
+  }
+
+  .card__icon--apps,
+  .token-row__icon {
+    color: var(--tone-gauge);
+    background: var(--tone-gauge-wash);
+  }
+
+  .token-row__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.2rem;
   }
 
   h2,
@@ -1086,229 +1365,291 @@
   }
 
   h2 {
-    margin-bottom: 0.4rem;
+    margin: 0;
     font-size: 1.25rem;
     font-weight: 660;
     letter-spacing: -0.025em;
   }
 
-  .section-heading p {
-    margin-bottom: 0;
+  .card__intro {
+    margin: -0.25rem 0 0;
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+
+  .muted,
+  .row__hint {
+    margin: 0;
     color: var(--ink-muted);
   }
 
-  .profile-section {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 1.5rem;
-    border-block: 1px solid var(--line);
-    padding-block: 1.5rem;
+  .card--footer {
+    padding-block: 0.75rem;
   }
 
-  .profile-portrait {
+  :global(.signout-button) {
+    width: 100%;
+  }
+
+  /* Profile */
+  .profile {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .avatar {
+    position: relative;
+    flex: none;
+  }
+
+  .avatar__portrait {
     display: grid;
-    width: clamp(5.5rem, 12vw, 7rem);
+    width: 5rem;
     aspect-ratio: 1;
     place-items: center;
     overflow: hidden;
-    border: 2px solid var(--accent);
     border-radius: 50%;
-    outline: 1px dashed var(--accent);
-    outline-offset: 4px;
     color: var(--accent-strong);
     background: var(--accent-wash);
-    font-size: 2rem;
+    box-shadow:
+      0 0 0 3px var(--surface),
+      0 0 0 5px var(--line);
+    font-size: 1.9rem;
     font-weight: 700;
   }
 
-  .profile-portrait img {
+  .avatar__portrait img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .profile-copy h2 {
-    margin-bottom: 0.3rem;
-  }
-
-  .profile-email {
-    margin-bottom: 0.1rem;
-    overflow-wrap: anywhere;
-    font-size: 1.08rem;
-    font-weight: 620;
-  }
-
-  .role-line,
-  .muted {
-    margin-bottom: 0;
-    color: var(--ink-muted);
-  }
-
-  .avatar-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.45rem;
-    margin-top: 0.8rem;
-  }
-
-  .file-picker {
+  .avatar__badge {
+    position: absolute;
+    right: -0.35rem;
+    bottom: -0.35rem;
     display: inline-flex;
-    min-height: 2.85rem;
+    width: 2.25rem;
+    height: 2.25rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0.55rem 0.85rem;
-    color: var(--accent-strong);
-    background: var(--surface);
-    font: inherit;
-    font-size: 0.93rem;
-    font-weight: 630;
-    text-align: center;
-    text-decoration: none;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+    color: var(--on-accent);
+    background: var(--accent-strong);
+    font-size: 1.15rem;
     cursor: pointer;
+    transition: transform 160ms ease;
   }
 
-  .file-picker:hover {
-    background: var(--accent-wash);
+  /* The visible hit area stays 36px, the tap target grows to 44px. */
+  .avatar__badge::after {
+    position: absolute;
+    inset: -0.35rem;
+    content: "";
   }
 
-  .account-language {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
-    margin-bottom: 0.5rem;
+  .avatar__badge:hover {
+    transform: scale(1.08);
   }
 
-  .account-appearance {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem 1rem;
-    margin-bottom: 0.5rem;
+  .avatar__badge:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.62;
   }
 
-  .account-appearance h2 {
-    margin: 0;
-    font-size: 1rem;
+  .avatar__badge:focus-within {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
   }
 
-  .file-picker {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .file-picker input {
+  .avatar__badge input {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    cursor: pointer;
+    margin: 0;
+    cursor: inherit;
     opacity: 0;
   }
 
-  .file-picker:focus-within {
-    outline: 3px solid var(--focus);
-    outline-offset: 3px;
+  .profile__copy {
+    display: grid;
+    min-width: 0;
+    gap: 0.4rem;
+  }
+
+  .profile__email {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: 1.1rem;
+    font-weight: 650;
+  }
+
+  .role-chip {
+    display: inline-flex;
+    justify-self: start;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    border-radius: 999px;
+    padding: 0.2rem 0.7rem 0.2rem 0.55rem;
+    color: var(--on-primary-container);
+    background: var(--primary-container);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .role-chip :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .avatar-pending {
+    display: grid;
+    gap: 0.6rem;
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    background: var(--surface-raised);
   }
 
   .selected-file {
-    max-width: 15rem;
     overflow: hidden;
     color: var(--ink-muted);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .settings-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
-    align-items: start;
-    gap: clamp(1.5rem, 4vw, 3.2rem);
-  }
-
-  .settings-section {
-    min-width: 0;
-    border-top: 2px solid var(--line);
-    padding-top: 1rem;
-  }
-
-  .section-heading {
-    margin-bottom: 1.25rem;
-  }
-
-  .section-heading p {
-    max-width: 38rem;
-    line-height: 1.55;
-  }
-
-  .token-create {
-    display: grid;
-    gap: 0.45rem;
-    margin-bottom: 1.2rem;
-  }
-
-  .token-create label,
-  .form-field > span {
-    font-size: 0.9rem;
-    font-weight: 620;
-  }
-
-  .token-create-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
   }
 
-  input:not([type="checkbox"]):not([type="file"]) {
-    width: 100%;
-    min-width: 0;
+  .profile__copy :global(.quiet-danger) {
+    margin-left: -0.7rem;
+    justify-self: start;
   }
 
-  .token-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  :global(.quiet-danger) {
+    color: var(--ink-muted);
   }
 
-  .token-row {
+  :global(.quiet-danger:hover:not(:disabled)) {
+    border-color: transparent;
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+  }
+
+  :global(.quiet-danger:focus-visible) {
+    color: var(--danger);
+  }
+
+  /* Rows */
+  .rows {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rows > :global(*) {
+    border-top: 1px solid var(--line);
+    padding-block: 0.9rem;
+  }
+
+  .rows > :global(:first-child) {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .rows > :global(:last-child),
+  .rows > .row:has(+ .disclosure:last-child) {
+    padding-bottom: 0;
+  }
+
+  .row {
+    display: flex;
+    min-width: 0;
     align-items: center;
-    gap: 0.75rem;
-    border-top: 1px solid var(--line);
-    padding-block: 0.8rem;
+    justify-content: space-between;
+    gap: 1rem;
   }
 
-  .token-detail {
+  .row--top {
+    align-items: flex-start;
+  }
+
+  .row__text {
     display: grid;
     min-width: 0;
-    gap: 0.12rem;
+    gap: 0.2rem;
   }
 
-  .token-detail strong {
-    overflow-wrap: anywhere;
+  .row__label {
+    font-weight: 700;
   }
 
-  .token-detail span {
-    color: var(--ink-muted);
-    font-size: 0.85rem;
+  .row__hint {
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 
-  .empty-state {
-    border-top: 1px solid var(--line);
-    margin: 0;
-    padding: 0.8rem 0;
-    color: var(--ink-muted);
+  .row__control {
+    flex: none;
   }
 
-  .password-form {
+  /* Smooth disclosure: the grid row animates between 0fr and 1fr. */
+  .disclosure {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 240ms ease;
+  }
+
+  .disclosure--open {
+    grid-template-rows: 1fr;
+  }
+
+  /* A closed disclosure must not add two grid gaps inside a card. */
+  .card > .disclosure {
+    margin-block: -0.5rem;
+    transition:
+      grid-template-rows 240ms ease,
+      margin 240ms ease;
+  }
+
+  .card > .disclosure--open {
+    margin-block: 0;
+  }
+
+  .rows > .disclosure:last-child .stack-form {
+    padding-bottom: 0;
+  }
+
+  .disclosure__clip {
+    min-height: 0;
+    margin: -4px;
+    padding: 4px;
+    overflow: hidden;
+    visibility: hidden;
+    transition: visibility 0s 240ms;
+  }
+
+  .disclosure--open .disclosure__clip {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .rows > .disclosure {
+    padding-block: 0;
+    border-top: 0;
+  }
+
+  .stack-form {
     display: grid;
     gap: 1rem;
+    padding: 0.9rem 0 0.9rem;
   }
 
   .form-field {
@@ -1320,12 +1661,77 @@
     line-height: 1.4;
   }
 
-  :global(.password-submit) {
-    justify-self: start;
-    margin-top: 0.15rem;
+  .form-field > span,
+  .token-create label {
+    font-size: 0.9rem;
+    font-weight: 650;
+  }
+
+  input:not([type="checkbox"]):not([type="file"]) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Tokens */
+  .token-create {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.5rem 0 0.75rem;
+  }
+
+  .token-create-row {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .token-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .token-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    border-top: 1px solid var(--line);
+    padding-block: 0.65rem;
+  }
+
+  .token-row:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .token-row:last-child {
+    padding-bottom: 0;
+  }
+
+  .token-detail {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+  }
+
+  .token-detail strong {
+    flex-basis: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .token-detail span {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .empty-state {
+    margin: 0;
+    color: var(--ink-muted);
   }
 
   .field-error {
+    margin: 0;
     color: var(--danger);
     font-size: 0.87rem;
   }
@@ -1333,7 +1739,7 @@
   .notice-error,
   .inline-error {
     border-left: 3px solid var(--danger);
-    margin: 0.5rem 0;
+    margin: 0;
     padding: 0.55rem 0.75rem;
     color: var(--danger);
     background: color-mix(in srgb, var(--danger) 7%, var(--surface));
@@ -1344,9 +1750,17 @@
   }
 
   .page-status {
-    margin: -1rem 0 0;
+    margin: 0;
     color: var(--accent-strong);
     font-weight: 600;
+  }
+
+  /* Dialogs */
+  .section-mark {
+    margin: 0 0 0.35rem;
+    color: var(--accent-strong);
+    font-size: 0.9rem;
+    font-weight: 650;
   }
 
   .account-dialog {
@@ -1425,52 +1839,63 @@
     margin-top: 0.3rem;
   }
 
-  @media (max-width: 800px) {
-    .settings-columns {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 1.8rem;
-    }
-  }
-
-  @media (max-width: 540px) {
-    .profile-section {
-      grid-template-columns: 4.4rem minmax(0, 1fr);
-      gap: 1rem;
-      align-items: start;
+  @media (min-width: 40rem) {
+    .account-page {
+      gap: 1.25rem;
     }
 
-    .profile-portrait {
-      width: 4.25rem;
-      font-size: 1.4rem;
+    .card {
+      padding: 1.5rem;
     }
 
-    .avatar-actions {
-      align-items: stretch;
+    .card--footer {
+      padding-block: 1rem;
     }
 
-    .file-picker,
-    .avatar-actions :global(.ui-button) {
-      min-height: 2.9rem;
+    .avatar__portrait {
+      width: 6rem;
+      font-size: 2.2rem;
     }
 
     .token-create-row {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .token-create-row :global(.ui-button) {
-      justify-self: start;
-    }
-
-    .token-row {
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
     }
+  }
 
-    .token-row :global(.ui-button) {
-      align-self: center;
+  @media (max-width: 39.99rem) {
+    .row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.6rem;
     }
 
-    .page-status {
-      margin-top: -1.1rem;
+    .row__control {
+      flex: initial;
+    }
+
+    .row__control :global(.segmented),
+    .row__control :global(.ui-button) {
+      display: flex;
+      width: 100%;
+    }
+
+    .row__control :global(.ui-button) {
+      justify-content: center;
+    }
+
+    .stack-form .button-row :global(.ui-button),
+    .token-create .button-row :global(.ui-button) {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .disclosure,
+    .card > .disclosure,
+    .disclosure__clip,
+    .avatar__badge {
+      transition: none;
     }
   }
 </style>
