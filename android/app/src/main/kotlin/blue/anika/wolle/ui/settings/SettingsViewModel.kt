@@ -29,6 +29,7 @@ import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.ReadingTextSize
 import blue.anika.wolle.ui.navigation.NavbarCustomization
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -98,6 +99,22 @@ constructor(
 
     init {
         viewModelScope.launch { _serverMeta.value = runCatching { metaApi.getMeta() }.getOrNull() }
+    }
+
+    /** The reading text size step of the project and yarn pages (see `ReadingTextSize`). */
+    val readingTextStep: StateFlow<Int> =
+        appPreferencesRepository.readingTextStep
+            .map { ReadingTextSize.clamp(it) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                ReadingTextSize.DEFAULT_STEP,
+            )
+
+    fun setReadingTextStep(step: Int) {
+        viewModelScope.launch {
+            appPreferencesRepository.setReadingTextStep(ReadingTextSize.clamp(step))
+        }
     }
 
     fun setThemeMode(mode: ThemeMode) {

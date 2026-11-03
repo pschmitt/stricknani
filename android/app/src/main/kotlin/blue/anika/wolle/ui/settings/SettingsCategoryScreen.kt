@@ -15,10 +15,16 @@ fun SettingsCategoryScreen(
     onShowLibraries: () -> Unit = {},
     onOpenAdminActivity: () -> Unit = {},
     onOpenAdminAccounts: () -> Unit = {},
+    onOpenCategory: (SettingsCategory) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     when (category) {
-        SettingsCategory.Account -> AccountSettingsScreen(onBack = onBack, viewModel = viewModel)
+        SettingsCategory.Account ->
+            AccountSettingsScreen(
+                onBack = onBack,
+                viewModel = viewModel,
+                onOpenCategory = onOpenCategory,
+            )
         SettingsCategory.Appearance ->
             AppearanceSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Navigation ->

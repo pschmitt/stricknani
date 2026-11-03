@@ -296,6 +296,9 @@ fun StricknaniNavHost(
                     onShowLibraries = { navController.navigate(Route.Libraries) },
                     onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
                     onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
+                    onOpenCategory = {
+                        navController.navigate(Route.SettingsCategoryRoute(it.name))
+                    },
                 )
             }
             screen<Route.AdminAudit>(motion) {

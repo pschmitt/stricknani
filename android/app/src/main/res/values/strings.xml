@@ -274,6 +274,21 @@
     <string name="settings_sign_out_description">Removes the saved server URL and API token from this device.</string>
 
     <!-- Settings: Account -->
+    <string name="account_profile_title">Profile</string>
+    <string name="account_role_admin">Administrator</string>
+    <string name="account_role_member">Member</string>
+    <string name="account_preferences_title">Preferences</string>
+    <string name="account_option_system">System</string>
+    <string name="account_pref_language">Language</string>
+    <string name="account_pref_appearance">Appearance</string>
+    <string name="account_pref_text_size">Text size</string>
+    <string name="account_pref_text_size_hint">Used when reading projects and yarns.</string>
+    <string name="account_text_small">Small</string>
+    <string name="account_text_default">Default</string>
+    <string name="account_text_large">Large</string>
+    <string name="account_security_title">Sign-in and security</string>
+    <string name="account_data_title">Data and sync</string>
+    <string name="account_sign_out_title">Sign out</string>
     <string name="account_settings_server_title">Server</string>
     <string name="account_settings_server_url_label">Server URL</string>
     <string name="account_settings_not_connected">Not connected</string>
