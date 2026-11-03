@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 19:19+0100\n"
+"POT-Creation-Date: 2026-11-03 19:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,2494 +17,30 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: stricknani/routes/admin.py:61 stricknani/routes/auth.py:48
-msgid "Password must be at least 8 characters long."
+#: rust/src/import_service.rs:421
+msgid "Import a pattern"
 msgstr ""
 
-#: stricknani/routes/admin.py:64 stricknani/routes/auth.py:50
-msgid "This password is too common. Please choose a stronger one."
-msgstr ""
-
-#: stricknani/templates/auth/login.html:4 stricknani/templates/base.html:7
-#: stricknani/templates/base.html:136 stricknani/templates/errors/401.html:3
-#: stricknani/templates/errors/403.html:3
-#: stricknani/templates/errors/404.html:3
-#: stricknani/templates/errors/429.html:3
-#: stricknani/templates/errors/500.html:3
-#: stricknani/templates/legal/privacy.html:3
-#: stricknani/templates/offline.html:3
-#: stricknani/templates/shared/unified_navbar.html:14
-#: stricknani/templates/yarn/list.html:5
-msgid "Stricknani"
-msgstr ""
-
-#: rust/src/web.rs:2188 stricknani/templates/admin/users.html:66
-#: stricknani/templates/admin/users.html:88
-#: stricknani/templates/admin/users.html:125
-#: stricknani/templates/admin/users.html:142 stricknani/templates/base.html:21
-#: stricknani/templates/base.html:173 stricknani/templates/base.html:249
-#: stricknani/templates/base.html:418
-#: stricknani/templates/projects/_delete_dialog.html:18
-#: stricknani/templates/projects/detail.html:820
-#: stricknani/templates/projects/form.html:819
-#: stricknani/templates/projects/form.html:835
-#: stricknani/templates/shared/_import_dialog.html:119
-#: stricknani/templates/shared/form_base.html:19
-#: stricknani/templates/user/api_tokens.html:136
-#: stricknani/templates/yarn/_delete_dialog.html:18
-#: stricknani/templates/yarn/detail.html:600
-#: stricknani/templates/yarn/form.html:515
-#: web/src/lib/features/account/AccountSettings.svelte:822
-#: web/src/lib/features/account/AccountSettings.svelte:1012
-#: web/src/lib/features/account/AccountSettings.svelte:1088
-#: web/src/lib/features/admin/AdminUsers.svelte:771
-#: web/src/lib/features/admin/AdminUsers.svelte:831
-#: web/src/lib/features/admin/AdminUsers.svelte:907
-#: web/src/lib/features/auth/ReauthDialog.svelte:173
-#: web/src/lib/features/categories/CategoryManager.svelte:330
-#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
-#: web/src/lib/features/projects/ProjectEditor.svelte:1705
-#: web/src/lib/features/projects/ProjectEditor.svelte:1751
-#: web/src/lib/features/projects/ProjectEditor.svelte:1792
-#: web/src/lib/features/projects/ProjectReader.svelte:1413
-#: web/src/lib/features/yarns/YarnForm.svelte:901
-#: web/src/lib/features/yarns/YarnForm.svelte:964
-msgid "Cancel"
-msgstr ""
-
-#: stricknani/templates/base.html:22 stricknani/templates/base.html:253
-#: web/src/lib/features/auth/ReauthDialog.svelte:198
-msgid "Confirm"
-msgstr ""
-
-#: stricknani/templates/base.html:23
-msgid "Copied to clipboard"
-msgstr ""
-
-#: stricknani/templates/base.html:24
-msgid "Dark Mode"
-msgstr ""
-
-#: stricknani/templates/base.html:25
-#: web/src/lib/components/ActionFeedback.svelte:60
-msgid "Dismiss message"
-msgstr ""
-
-#: stricknani/templates/base.html:26
-msgid "Failed to copy"
-msgstr ""
-
-#: stricknani/templates/base.html:27
-msgid "Failed to delete project"
-msgstr ""
-
-#: stricknani/templates/base.html:28
-msgid "Failed to delete yarn"
-msgstr ""
-
-#: stricknani/templates/base.html:29
-msgid "Failed to upload image"
-msgstr ""
-
-#: stricknani/templates/base.html:30
-msgid "Image cropper failed to load"
-msgstr ""
-
-#: stricknani/templates/base.html:31
-msgid "Light Mode"
-msgstr ""
-
-#: stricknani/templates/base.html:32
-msgid "Nothing to preview"
-msgstr ""
-
-#: stricknani/templates/base.html:33
-msgid "Only image files are supported"
-msgstr ""
-
-#: stricknani/templates/base.html:34
-#: stricknani/templates/macros/image_upload.html:87
-msgid "Delete image"
-msgstr ""
-
-#: stricknani/templates/base.html:35
-msgid "Download image"
-msgstr ""
-
-#: stricknani/templates/base.html:36
-msgid "Extract text"
-msgstr ""
-
-#: stricknani/templates/base.html:37
-msgid "Extracting text..."
-msgstr ""
-
-#: stricknani/templates/base.html:38
-msgid "Gallery thumbnails"
-msgstr ""
-
-#: stricknani/templates/base.html:39
-msgid "This image cannot be processed."
-msgstr ""
-
-#: stricknani/templates/base.html:40
-msgid "No text detected."
-msgstr ""
-
-#: stricknani/templates/base.html:41
-msgid "OCR failed."
-msgstr ""
-
-#: stricknani/templates/base.html:42
-msgid "OCR is not available on this server."
-msgstr ""
-
-#: stricknani/templates/base.html:43
-msgid "Open image"
-msgstr ""
-
-#: stricknani/templates/base.html:44
-msgid "Set as primary"
-msgstr ""
-
-#: stricknani/templates/base.html:45
-msgid "Text extracted."
-msgstr ""
-
-#: stricknani/templates/base.html:46
-msgid "Profile picture updated successfully"
-msgstr ""
-
-#: stricknani/templates/base.html:47
-#: stricknani/templates/projects/detail.html:824
-#: stricknani/templates/projects/form.html:839
-msgid "Reload page"
-msgstr ""
-
-#: stricknani/templates/base.html:48
-#: stricknani/templates/projects/detail.html:811
-#: stricknani/templates/projects/form.html:831
-msgid "Your session has expired. Reload the page to continue."
-msgstr ""
-
-#: stricknani/templates/base.html:49
-#: stricknani/templates/projects/detail.html:810
-#: stricknani/templates/projects/form.html:829
-msgid "Session expired"
-msgstr ""
-
-#: stricknani/templates/base.html:50
-msgid "Something went wrong. Please try again"
-msgstr ""
-
-#: stricknani/templates/base.html:51
-msgid "Uploading..."
-msgstr ""
-
-#: stricknani/templates/base.html:52
-#: stricknani/templates/shared/unified_navbar.html:166
-#: stricknani/templates/shared/unified_navbar.html:167
-#: stricknani/templates/shared/unified_navbar.html:170
-msgid "Install App"
-msgstr ""
-
-#: stricknani/templates/base.html:53
-msgid "App installation is not available."
-msgstr ""
-
-#: stricknani/templates/base.html:54
-msgid "App installed."
-msgstr ""
-
-#: stricknani/templates/base.html:55
-msgid "Enter URL:"
-msgstr ""
-
-#: stricknani/templates/base.html:60
-msgid "Project created successfully"
-msgstr ""
-
-#: stricknani/templates/base.html:61
-msgid "Project updated successfully"
-msgstr ""
-
-#: stricknani/templates/base.html:62 stricknani/templates/projects/list.html:82
-msgid "Project deleted"
-msgstr ""
-
-#: stricknani/templates/base.html:63
-msgid "Yarn created successfully"
-msgstr ""
-
-#: stricknani/templates/base.html:64
-msgid "Yarn updated successfully"
-msgstr ""
-
-#: stricknani/templates/base.html:65 stricknani/templates/yarn/list.html:78
-msgid "Yarn deleted"
-msgstr ""
-
-#: stricknani/templates/base.html:66
-msgid "Profile updated successfully"
-msgstr ""
-
-#: stricknani/templates/base.html:67
-msgid "Category created"
-msgstr ""
-
-#: stricknani/templates/base.html:68
-msgid "Category updated"
-msgstr ""
-
-#: stricknani/templates/base.html:69
-msgid "Category deleted"
-msgstr ""
-
-#: stricknani/templates/base.html:71
-msgid "Archive snapshot request queued"
-msgstr ""
-
-#: stricknani/templates/base.html:75
-msgid "Archive snapshot request unavailable"
-msgstr ""
-
-#: stricknani/templates/base.html:116
-msgid "Skip to main content"
-msgstr ""
-
-#: stricknani/templates/base.html:122
-msgid "You are offline. Some features may be unavailable."
-msgstr ""
-
-#: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
-#: stricknani/templates/legal/privacy.html:3
-#: stricknani/templates/legal/privacy.html:17
-#: web/src/lib/components/AccountMenu.svelte:337
-#: web/src/lib/components/SignInForm.svelte:152
-#: web/src/routes/+layout.svelte:73 web/src/routes/about/+page.svelte:99
-#: web/src/routes/more/+page.svelte:42 web/src/routes/privacy/+page.svelte:12
-#: web/src/routes/privacy/+page.svelte:25
-msgid "Privacy Policy"
-msgstr ""
-
-#: stricknani/templates/base.html:141
-#: web/src/lib/components/AccountMenu.svelte:315
-#: web/src/lib/components/SignInForm.svelte:156
-#: web/src/routes/about/+page.svelte:88
-msgid "Get the Android app"
-msgstr ""
-
-#: stricknani/templates/base.html:148
-msgid "Download APK"
-msgstr ""
-
-#: stricknani/templates/base.html:149
-msgid "Latest build, direct download"
-msgstr ""
-
-#: stricknani/templates/base.html:156
-msgid "Play Store (closed testing)"
-msgstr ""
-
-#: stricknani/templates/base.html:157
-msgid "Join the testing program"
-msgstr ""
-
-#: stricknani/templates/base.html:167
-msgid "Crop Profile Picture"
-msgstr ""
-
-#: stricknani/templates/base.html:174
-msgid "Save & Upload"
-msgstr ""
-
-#: stricknani/templates/base.html:196
-msgid "Search projects, yarns..."
-msgstr ""
-
-#: stricknani/templates/base.html:210
-msgid "Start typing to search..."
-msgstr ""
-
-#: stricknani/templates/base.html:215
-msgid "↑↓ to navigate"
-msgstr ""
-
-#: stricknani/templates/base.html:216
-msgid "Enter to select"
-msgstr ""
-
-#: stricknani/templates/base.html:234
-msgid "Confirm Action"
-msgstr ""
-
-#: stricknani/templates/base.html:240
-msgid "Are you sure you want to proceed?"
-msgstr ""
-
-#: stricknani/templates/base.html:265 stricknani/templates/base.html:281
-#: stricknani/templates/base.html:291
-#: stricknani/templates/projects/form.html:47
-#: stricknani/templates/yarn/form.html:49
-msgid "Preview"
-msgstr ""
-
-#: stricknani/templates/base.html:270 stricknani/templates/base.html:296
-#: stricknani/templates/projects/detail.html:186
-#: stricknani/templates/projects/form.html:262
-msgid "Download"
-msgstr ""
-
-#: stricknani/templates/base.html:274 stricknani/templates/base.html:300
-#: stricknani/templates/base.html:334
-msgid "close"
-msgstr ""
-
-#: stricknani/templates/base.html:321
-msgid "OCR"
-msgstr ""
-
-#: stricknani/templates/base.html:326
-msgid "Copy text"
-msgstr ""
-
-#: stricknani/templates/base.html:330
-#: stricknani/templates/projects/detail.html:338
-#: stricknani/templates/yarn/detail.html:287
-msgid "Retry"
-msgstr ""
-
-#: stricknani/templates/base.html:373
-msgid "Crop Image"
-msgstr ""
-
-#: stricknani/templates/base.html:380
-msgid "Reset crop"
-msgstr ""
-
-#: stricknani/templates/base.html:382
-msgid "Reset"
-msgstr ""
-
-#: stricknani/templates/base.html:385
-#: web/src/lib/features/auth/AdminUserIdentities.svelte:191
-msgid "Close"
-msgstr ""
-
-#: stricknani/templates/base.html:414
-msgid "Drag to crop, scroll to zoom"
-msgstr ""
-
-#: stricknani/templates/base.html:420
-msgid "Save Crop"
-msgstr ""
-
-#: rust/src/pwa.rs:256 stricknani/templates/offline.html:3
-msgid "You are offline"
-msgstr ""
-
-#: rust/src/pwa.rs:257 stricknani/templates/offline.html:6
-msgid "Offline"
-msgstr ""
-
-#: rust/src/pwa.rs:258 stricknani/templates/offline.html:7
-#: web/src/lib/components/PwaUpdate.svelte:16
-msgid "No connection"
-msgstr ""
-
-#: stricknani/templates/offline.html:9
-msgid ""
-"You're offline and this page hasn't been viewed before, so it isn't "
-"available yet. Previously viewed projects and yarns still work offline."
-msgstr ""
-
-#: rust/src/pwa.rs:263 stricknani/templates/offline.html:14
-msgid "Try Again"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:9
-#: stricknani/templates/shared/unified_navbar.html:198
-#: stricknani/templates/shared/unified_navbar.html:214
-#, python-format
-msgid "Profile picture for %(email)s"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:13
-#: stricknani/templates/admin/users.html:7
-#: stricknani/templates/shared/unified_navbar.html:88
-#: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/lib/components/AccountMenu.svelte:265
-#: web/src/lib/components/AccountMenu.svelte:303
-#: web/src/routes/+layout.svelte:273 web/src/routes/more/+page.svelte:66
-msgid "Admin"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:23
-#: web/src/lib/features/admin/AdminUsers.svelte:629
-msgid "You"
-msgstr ""
-
-#: rust/src/web_accounts.rs:843 stricknani/templates/admin/_user_card.html:30
-#: web/src/lib/features/admin/AdminUsers.svelte:640
-msgid "Disabled"
-msgstr ""
-
-#: rust/src/web_accounts.rs:842 stricknani/templates/admin/_user_card.html:34
-#: web/src/lib/features/admin/AdminUsers.svelte:640
-msgid "Active"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:50
-#: stricknani/templates/admin/_user_card.html:112
-msgid "User disabled"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:50
-#: stricknani/templates/admin/_user_card.html:112
-msgid "User activated"
-msgstr ""
-
-#: rust/src/web_accounts.rs:846 stricknani/templates/admin/_user_card.html:58
-#: stricknani/templates/admin/_user_card.html:116
-#: web/src/lib/features/admin/AdminUsers.svelte:653
-msgid "Disable"
-msgstr ""
-
-#: rust/src/web_accounts.rs:847 stricknani/templates/admin/_user_card.html:64
-#: stricknani/templates/admin/_user_card.html:119
-#: web/src/lib/features/admin/AdminUsers.svelte:653
-msgid "Enable"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:72
-#: stricknani/templates/admin/_user_card.html:132
-#: stricknani/templates/admin/users.html:39
-msgid "Edit profile"
-msgstr ""
-
-#: rust/src/web_accounts.rs:849 stricknani/templates/admin/_user_card.html:78
-#: stricknani/templates/admin/_user_card.html:138
-#: stricknani/templates/admin/users.html:72
-#: stricknani/templates/admin/users.html:89
-#: web/src/lib/features/admin/AdminUsers.svelte:663
-#: web/src/lib/features/admin/AdminUsers.svelte:917
-msgid "Reset password"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:85
-#: stricknani/templates/admin/_user_card.html:145
-msgid "Admin access revoked"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:85
-#: stricknani/templates/admin/_user_card.html:145
-msgid "Admin access granted"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:92
-#: stricknani/templates/admin/_user_card.html:152
-msgid "Revoke admin"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:92
-#: stricknani/templates/admin/_user_card.html:152
-msgid "Make admin"
-msgstr ""
-
-#: stricknani/templates/admin/_user_card.html:101
-#: stricknani/templates/admin/_user_card.html:161
-#: stricknani/templates/admin/users.html:134
-msgid "Delete user"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:9
-#: stricknani/templates/admin/users.html:12
-msgid "New User"
-msgstr ""
-
-#: rust/src/web_accounts.rs:833 stricknani/templates/admin/users.html:25
-msgid "Users"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:41
-msgid "Update profile details for"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:44
-msgid "Profile updated"
-msgstr ""
-
-#: rust/src/web.rs:2163 rust/src/web_accounts.rs:838 rust/src/web_signup.rs:273
-#: stricknani/templates/admin/users.html:49
-#: stricknani/templates/admin/users.html:102
-#: web/src/lib/components/SignInForm.svelte:101
-#: web/src/lib/features/admin/AdminUsers.svelte:616
-#: web/src/lib/features/auth/SignupForm.svelte:183
-msgid "Email"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:57
-msgid "Profile Image"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:61
-msgid "Change Photo"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:67
-msgid "Save Changes"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:74
-msgid "Set a new password for"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:77
-msgid "Password reset"
-msgstr ""
-
-#: rust/src/web_accounts.rs:848 stricknani/templates/admin/users.html:82
-#: web/src/lib/features/account/AccountSettings.svelte:951
-msgid "New password"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:94
-#: web/src/lib/features/admin/AdminUsers.svelte:584
-#: web/src/lib/features/admin/AdminUsers.svelte:781
-msgid "Create user"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:95
-msgid "Add a new account with a temporary password."
-msgstr ""
-
-#: stricknani/templates/admin/users.html:97
-msgid "User created"
-msgstr ""
-
-#: rust/src/web.rs:2164 rust/src/web_signup.rs:274
-#: stricknani/templates/admin/users.html:109
-#: stricknani/templates/auth/login.html:53
-#: stricknani/templates/auth/login.html:106
-#: web/src/lib/components/SignInForm.svelte:115
-#: web/src/lib/features/account/AccountSettings.svelte:898
-#: web/src/lib/features/auth/ReauthDialog.svelte:149
-#: web/src/lib/features/auth/SignupForm.svelte:202
-msgid "Password"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:118
-msgid "Grant admin access"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:119
-msgid "Allow this user to manage accounts and settings."
-msgstr ""
-
-#: stricknani/templates/admin/users.html:126
-msgid "Create User"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:137
-#: stricknani/templates/projects/_delete_dialog.html:13
-#: stricknani/templates/yarn/_delete_dialog.html:13
-#: stricknani/templates/yarn/detail.html:596
-msgid "Are you sure you want to delete"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:139
-msgid "This will permanently remove their projects and yarn."
-msgstr ""
-
-#: stricknani/templates/admin/users.html:143
-msgid "User deleted"
-msgstr ""
-
-#: stricknani/templates/admin/users.html:146
-#: stricknani/templates/yarn/detail.html:604
-#: stricknani/templates/yarn/form.html:519
-msgid "Delete Forever"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:4
-#: stricknani/templates/errors/401.html:16
-#: stricknani/templates/shared/unified_navbar.html:74
-#: stricknani/templates/shared/unified_navbar.html:138
-msgid "Login"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:18
-msgid "Welcome to Stricknani"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:19
-msgid "Please sign in below"
-msgstr ""
-
-#: rust/src/web.rs:2160 rust/src/web_signup.rs:276
-#: stricknani/templates/auth/login.html:22
-#: web/src/lib/components/SignInForm.svelte:55
-#: web/src/lib/components/SignInForm.svelte:67
-#: web/src/lib/components/SignInForm.svelte:136
-#: web/src/lib/features/auth/SignupForm.svelte:267
-#: web/src/lib/features/home/HomeDashboard.svelte:127
-#: web/src/lib/features/projects/ProjectEditor.svelte:1114
-#: web/src/routes/+layout.svelte:161 web/src/routes/login/+page.svelte:8
-msgid "Sign in"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:28
-msgid "Login failed"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:29
-msgid "Please check your credentials and try again."
-msgstr ""
-
-#: stricknani/templates/auth/login.html:40
-#: stricknani/templates/auth/login.html:96
-msgid "Email Address"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:65
-msgid "Sign In"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:71
-#: stricknani/templates/auth/login.html:121
-#: stricknani/templates/shared/_import_dialog.html:41
-msgid "OR"
-msgstr ""
-
-#: rust/src/web.rs:2161 rust/src/web_accounts.rs:850 rust/src/web_signup.rs:272
-#: stricknani/templates/auth/login.html:78
-#: web/src/lib/components/SignInForm.svelte:147
-#: web/src/lib/features/auth/SignupForm.svelte:147
-#: web/src/lib/features/auth/SignupForm.svelte:173
-msgid "Create an account"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:88
-#: stricknani/templates/auth/login.html:116
-msgid "Create Account"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:89
-msgid "Join our knitting community"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:112
-msgid "At least 8 characters"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:128
-msgid "Already have an account? Sign in"
-msgstr ""
-
-#: stricknani/templates/auth/login.html:137
-#: web/src/lib/components/SignInForm.svelte:151
-msgid "Learn how Stricknani handles your data in the"
-msgstr ""
-
-#: stricknani/templates/errors/401.html:3
-msgid "Unauthorized"
-msgstr ""
-
-#: stricknani/templates/errors/401.html:8
-msgid "Members only"
-msgstr ""
-
-#: stricknani/templates/errors/401.html:10
-msgid ""
-"You need to be signed in to access this area of Stricknani. Please log in"
-" to continue your knitting journey."
-msgstr ""
-
-#: stricknani/templates/errors/403.html:3
-msgid "Forbidden"
-msgstr ""
-
-#: stricknani/templates/errors/403.html:8
-msgid "No entry"
-msgstr ""
-
-#: stricknani/templates/errors/403.html:10
-msgid ""
-"You don't have permission to view this project or area. If you believe "
-"this is a mistake, please check with the owner."
-msgstr ""
-
-#: stricknani/templates/errors/404.html:3
-msgid "Page Not Found"
-msgstr ""
-
-#: stricknani/templates/errors/404.html:7
-msgid "Lost in the stitches?"
-msgstr ""
-
-#: stricknani/templates/errors/404.html:9
-msgid ""
-"We couldn't find the page you're looking for. It might have been moved, "
-"deleted, or perhaps it never existed in our pattern."
-msgstr ""
-
-#: stricknani/templates/errors/429.html:3
-msgid "Too Many Requests"
-msgstr ""
-
-#: stricknani/templates/errors/429.html:8
-msgid "Slow down"
-msgstr ""
-
-#: stricknani/templates/errors/429.html:10
-msgid "Too many attempts. Please wait a few minutes and try again."
-msgstr ""
-
-#: stricknani/templates/errors/500.html:3
-msgid "Internal Server Error"
-msgstr ""
-
-#: stricknani/templates/errors/500.html:8
-msgid "Dropped a stitch"
-msgstr ""
-
-#: stricknani/templates/errors/500.html:10
-msgid ""
-"Something went wrong on our end. We've encountered an unexpected error "
-"and are looking into it. Please try again later."
-msgstr ""
-
-#: stricknani/templates/errors/base.html:23
-msgid "Go Home"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:7
-#: stricknani/templates/shared/unified_navbar.html:81
-#: stricknani/templates/shared/unified_navbar.html:145
-msgid "Gauge Calculator"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:19
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:221
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:240
-msgid ""
-"Calculate how many stitches to cast on and rows to knit based on your "
-"gauge and the pattern's gauge."
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:26
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:237
-msgid "How to use this calculator"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:28
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:247
-msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:29
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:253
-msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:30
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:259
-msgid "Enter the stitch count from your pattern (cast-on stitches)"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:31
-msgid "Click Calculate to see how many stitches and rows you need"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:43
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:275
-msgid "Pattern Gauge (per 10cm)"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:51
-#: stricknani/templates/gauge/calculator.html:81
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:286
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:425
-msgid "Stitches"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:62
-#: stricknani/templates/gauge/calculator.html:92
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:316
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:455
-msgid "Rows"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:73
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:414
-msgid "Your Gauge (per 10cm)"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:103
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:349
-msgid "Pattern Counts"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:111
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:352
-msgid "Stitches to cast on"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:122
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
-msgid "Rows to knit"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:122
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:384
-msgid "optional"
-msgstr ""
-
-#: stricknani/templates/gauge/calculator.html:132
-msgid "Calculate"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:15
-#: web/src/routes/privacy/+page.svelte:24
-msgid "Privacy"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:19
-#: web/src/routes/privacy/+page.svelte:26
-msgid "Effective date: 19 August 2026"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:25
-#: web/src/routes/privacy/+page.svelte:30
-msgid "About this policy"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:26
-#: web/src/routes/privacy/+page.svelte:32
-msgid ""
-"This policy explains how Stricknani handles information when you use a "
-"Stricknani web instance or the companion Android app."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:27
-#: web/src/routes/privacy/+page.svelte:38
-msgid ""
-"Stricknani is self-hosted software. The operator of the instance you use "
-"is responsible for its deployment, configuration, backups, and legal "
-"obligations. This page describes the default behavior of the software and"
-" is not a promise about every deployment."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:31
-#: web/src/routes/privacy/+page.svelte:46
-msgid "Who is responsible for your data?"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:32
-#: web/src/routes/privacy/+page.svelte:48
-msgid ""
-"For a self-hosted installation, the person or organization operating that"
-" installation is the controller of the data stored there. The Stricknani "
-"project does not receive data from independent self-hosted instances."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:33
-#: web/src/routes/privacy/+page.svelte:54
-msgid ""
-"If you use an instance operated by somebody else, contact that operator "
-"about access, deletion, retention, or other privacy requests. Questions "
-"about the Stricknani software can be reported through the"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:33
-#: stricknani/templates/legal/privacy.html:80
-#: web/src/routes/privacy/+page.svelte:59
-#: web/src/routes/privacy/+page.svelte:224
-msgid "GitHub issue tracker"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:37
-#: web/src/routes/privacy/+page.svelte:65
-msgid "Information handled by the web app"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:39
-msgid ""
-"Account information: your email address, a password hash, and account "
-"security state such as token version."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:40
-#: web/src/routes/privacy/+page.svelte:74
-msgid ""
-"Knitting content: projects, yarn entries, notes, instructions, "
-"categories, steps, attachments, profile images, and other information you"
-" choose to store."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:41
-#: web/src/routes/privacy/+page.svelte:80
-msgid ""
-"Authentication information: a session cookie for browser login and "
-"personal access tokens for API or Android access. Token values are shown "
-"only when they are created; the server stores a hash for later "
-"verification."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:42
-#: web/src/routes/privacy/+page.svelte:86
-msgid ""
-"Operational information: application and import logs may contain "
-"timestamps, routes, status information, error details, and identifiers "
-"needed to operate and troubleshoot the instance. The operator chooses log"
-" destinations and retention."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:47
-#: web/src/routes/privacy/+page.svelte:95
-msgid "Why this information is used"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:48
-#: web/src/routes/privacy/+page.svelte:97
-msgid ""
-"The web app uses this information to authenticate you, provide project "
-"and yarn management, synchronize API clients, serve your authorized "
-"media, process imports, protect the service, and diagnose failures. It "
-"does not sell your information or use it for advertising."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:52
-#: web/src/routes/privacy/+page.svelte:105
-msgid "Android app and offline data"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:53
-#: web/src/routes/privacy/+page.svelte:107
-msgid ""
-"The Android app connects only to the Stricknani server URL that you "
-"configure. It stores that URL and your personal access token locally, "
-"encrypted at rest, and does not ask for or store your Stricknani account "
-"password."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:54
-#: web/src/routes/privacy/+page.svelte:113
-msgid ""
-"Projects, yarn entries, and their photos are cached on the device so the "
-"app can work offline. Offline edits may be queued locally and are sent to"
-" your configured server when synchronization resumes. Removing the app or"
-" clearing its application data removes the local cache according to "
-"Android behavior."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:55
-#: web/src/routes/privacy/+page.svelte:119
-msgid ""
-"The Android app has no analytics, advertising, tracking, or crash-"
-"reporting service of its own. Data sent during synchronization goes to "
-"the server you configured."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:59
-#: web/src/routes/privacy/+page.svelte:157
-msgid "Optional external services"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:60
-msgid ""
-"A deployment may enable integrations that send limited information "
-"outside the Stricknani instance. For example, an AI provider may receive "
-"material submitted for AI-assisted pattern import, an archive service may"
-" receive a URL when you request an archive snapshot, and Sentry may "
-"receive diagnostic events when an operator configures it."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:61
-#: web/src/routes/privacy/+page.svelte:165
-msgid ""
-"These integrations are optional and controlled by the instance operator. "
-"Their providers process information under their own terms and privacy "
-"policies; review those policies before enabling or using the related "
-"feature."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:62
-#: web/src/routes/privacy/+page.svelte:171
-msgid ""
-"The web interface itself uses locally served assets and does not require "
-"an analytics or advertising network."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:66
-#: web/src/routes/privacy/+page.svelte:179
-msgid "Storage, retention, and deletion"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:67
-#: web/src/routes/privacy/+page.svelte:181
-msgid ""
-"The instance stores account data and content in its configured database "
-"and media storage. There is no universal retention period: the operator "
-"determines retention, backups, log rotation, and whether deleted data "
-"remains in backups for a time."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:68
-#: web/src/routes/privacy/+page.svelte:187
-msgid ""
-"You can manage your content and revoke personal access tokens through the"
-" available features. To request deletion or an export of account data, "
-"contact the instance operator. Deleting content or an account does not "
-"necessarily remove copies already retained in backups, logs, or external "
-"services."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:72
-#: web/src/routes/privacy/+page.svelte:195
-msgid "Security"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:73
-#: web/src/routes/privacy/+page.svelte:197
-msgid ""
-"Stricknani uses password hashing, access checks, CSRF protection, upload "
-"validation, and security response headers. Operators should use HTTPS, "
-"protect application secrets, restrict access to the database and media "
-"volume, keep the software and host updated, and configure backups "
-"securely."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:74
-#: web/src/routes/privacy/+page.svelte:203
-msgid ""
-"No software can guarantee absolute security. The security and "
-"confidentiality of a self-hosted installation also depend on the "
-"operator, hosting environment, network, integrations, and devices used to"
-" access it."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:78
-#: web/src/routes/privacy/+page.svelte:211
-msgid "Your choices and contact"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:79
-#: web/src/routes/privacy/+page.svelte:213
-msgid ""
-"You may choose what to enter, upload, synchronize, or send to optional "
-"integrations. You may stop using the Android app, clear its local data, "
-"revoke API tokens, and contact the relevant instance operator about your "
-"rights under applicable law."
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:80
-#: web/src/routes/privacy/+page.svelte:219
-msgid ""
-"For software questions or privacy concerns that relate to the project, "
-"use the"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:84
-#: web/src/routes/privacy/+page.svelte:230
-msgid "Changes to this policy"
-msgstr ""
-
-#: stricknani/templates/legal/privacy.html:85
-#: web/src/routes/privacy/+page.svelte:232
-msgid ""
-"This policy may be updated when Stricknani behavior or integrations "
-"change. The current version is published at this URL. Check the effective"
-" date above for the latest revision."
-msgstr ""
-
-#: stricknani/templates/macros/buttons.html:77
-#: stricknani/templates/shared/unified_navbar.html:25
-#: web/src/routes/+layout.svelte:218
-msgid "Back"
-msgstr ""
-
-#: stricknani/templates/macros/dialogs.html:28
-msgid "Close dialog"
-msgstr ""
-
-#: stricknani/templates/macros/image_upload.html:33
-#: stricknani/templates/macros/image_upload.html:58
-#: stricknani/templates/macros/image_upload.html:60
-msgid "Drag and drop images here or click to upload"
-msgstr ""
-
-#: stricknani/templates/macros/image_upload.html:59
-msgid "Save the project before adding images to this step"
-msgstr ""
-
-#: stricknani/templates/macros/image_upload.html:75
-msgid "Uploaded image"
-msgstr ""
-
-#: stricknani/templates/macros/image_upload.html:81
-msgid "Make title image"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:6
-msgid "Bold"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:9
-msgid "Italic"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:12
-msgid "Underline"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:18
-msgid "Heading 1"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:23
-msgid "Heading 2"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:28
-msgid "Heading 3"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:34
-msgid "Add link"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:37
-msgid "Remove link"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:40
-msgid "Insert image"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:45
-msgid "Undo"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:48
-msgid "Redo"
-msgstr ""
-
-#: stricknani/templates/macros/wysiwyg.html:51
-msgid "Edit Markdown"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:5
-#, python-format
-msgid "%(count)s linked yarn: %(names)s"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:8
-#, python-format
-msgid "%(count)s linked yarns: %(names)s"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:12
-msgid "No linked yarns"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:56
-msgid "Open project details"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:59
-#, python-format
-msgid "Open project details for %(name)s"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:65
-#: stricknani/templates/yarn/_cards_page.html:49
-#, python-format
-msgid "Edit %(name)s"
-msgstr ""
-
-#: rust/src/web.rs:2182 stricknani/templates/projects/_cards_page.html:67
-#: stricknani/templates/projects/_cards_page.html:113
-#: stricknani/templates/projects/detail.html:17
-#: stricknani/templates/projects/form.html:7
-#: stricknani/templates/yarn/_cards_page.html:51
-#: stricknani/templates/yarn/_cards_page.html:128
-#: stricknani/templates/yarn/detail.html:17
-msgid "Edit"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:80
-#: stricknani/templates/shared/_favorite_toggle.html:37
-#: stricknani/templates/shared/_favorite_toggle.html:48
-#: stricknani/templates/yarn/_cards_page.html:63
-msgid "In favorites"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:84
-#: stricknani/templates/projects/detail.html:290
-#: stricknani/templates/projects/form.html:387
-#: stricknani/templates/projects/form.html:732
-#: stricknani/templates/yarn/_cards_page.html:67
-#: stricknani/templates/yarn/detail.html:161
-#: stricknani/templates/yarn/form.html:213
-#: stricknani/templates/yarn/form.html:479
-msgid "AI Enhanced"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:119
-#: stricknani/templates/projects/detail.html:35
-msgid "Print"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:125
-#: stricknani/templates/projects/detail.html:41
-#: stricknani/templates/projects/form.html:354
-#: stricknani/templates/projects/form.html:698
-#: stricknani/templates/yarn/_cards_page.html:134
-#: stricknani/templates/yarn/detail.html:35
-#: stricknani/templates/yarn/form.html:181
-#: stricknani/templates/yarn/form.html:257
-#: stricknani/templates/yarn/form.html:447
-msgid "Re-import"
-msgstr ""
-
-#: rust/src/web.rs:2184 stricknani/templates/projects/_cards_page.html:131
-#: stricknani/templates/projects/detail.html:48
-#: stricknani/templates/projects/form.html:267
-#: stricknani/templates/projects/form.html:821
-#: stricknani/templates/yarn/_cards_page.html:140
-#: stricknani/templates/yarn/detail.html:42
-#: web/src/lib/features/categories/CategoryManager.svelte:359
-#: web/src/lib/features/categories/CategoryManager.svelte:377
-#: web/src/lib/features/yarns/YarnDetail.svelte:576
-#: web/src/lib/features/yarns/YarnForm.svelte:987
-msgid "Delete"
-msgstr ""
-
-#: stricknani/templates/projects/_cards_page.html:142
-#: stricknani/templates/yarn/_cards_page.html:151
-#: web/src/lib/features/history/HistorySection.svelte:394
-msgid "Loading…"
-msgstr ""
-
-#: stricknani/templates/projects/_delete_dialog.html:7
-#: stricknani/templates/projects/_delete_dialog.html:20
-#: stricknani/templates/projects/form.html:749
-#: stricknani/templates/projects/form.html:767
-msgid "Delete Project"
-msgstr ""
-
-#: stricknani/templates/projects/_delete_dialog.html:8
-#: stricknani/templates/yarn/_delete_dialog.html:8
-msgid "This action cannot be undone."
-msgstr ""
-
-#: stricknani/templates/projects/_empty_state.html:6
-msgid "No projects yet"
-msgstr ""
-
-#: stricknani/templates/projects/_empty_state.html:7
-msgid "Start a project to track photos, gauge notes, and progress."
-msgstr ""
-
-#: stricknani/templates/projects/_empty_state.html:9
-msgid "Create Your First Project"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:4
-#: stricknani/templates/projects/categories.html:8
-#: stricknani/templates/projects/categories.html:18
-#: stricknani/templates/projects/list.html:31
-msgid "Manage Categories"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:10
-#: stricknani/templates/projects/categories.html:25
-msgid "Back to Projects"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:21
-msgid "Create, rename, or remove project categories."
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:36
-msgid "Add New Category"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:40
-#: stricknani/templates/projects/categories.html:57
-msgid "Category Name"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:42
-msgid "e.g., Socks, Shawl, Amigurumi"
-msgstr ""
-
-#: rust/src/web.rs:2181 rust/src/web_accounts.rs:851
-#: stricknani/templates/projects/categories.html:44
-#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:10
-msgid "Create"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:61
-#, python-format
-msgid "%(num)d project"
-msgid_plural "%(num)d projects"
-msgstr[0] ""
-msgstr[1] ""
-
-#: rust/src/web.rs:2183 stricknani/templates/projects/categories.html:67
-#: stricknani/templates/projects/form.html:18
-#: stricknani/templates/projects/form.html:79
-#: stricknani/templates/projects/form.html:82
-#: stricknani/templates/projects/form.html:556
-#: stricknani/templates/projects/form.html:558
-#: stricknani/templates/shared/form_base.html:21
-#: stricknani/templates/yarn/form.html:23
-#: stricknani/templates/yarn/form.html:78
-#: stricknani/templates/yarn/form.html:81
-#: web/src/lib/features/categories/CategoryManager.svelte:320
-msgid "Save"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:67
-#: web/src/lib/features/projects/ProjectEditor.svelte:1696
-#: web/src/lib/features/yarns/YarnForm.svelte:110
-msgid "Save changes"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:71
-#: stricknani/templates/projects/categories.html:98
-#: web/src/lib/features/categories/CategoryManager.svelte:403
-msgid "Delete category"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:85
-msgid "You have no custom categories yet."
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:99
-msgid "Are you sure you want to delete this category?"
-msgstr ""
-
-#: stricknani/templates/projects/categories.html:100
-#, python-format
-msgid ""
-"This category is used by %(num)s project(s). They will be uncategorized. "
-"Delete anyway?"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:12
-#: stricknani/templates/projects/form.html:13
-#: stricknani/templates/projects/form.html:60
-#: web/src/lib/features/projects/ProjectEditor.svelte:1123
-#: web/src/lib/features/projects/ProjectEditor.svelte:1128
-#: web/src/lib/features/projects/ProjectReader.svelte:676
-#: web/src/lib/features/projects/ProjectReader.svelte:684
-#: web/src/lib/features/projects/ProjectReader.svelte:700
-#: web/src/routes/+layout.svelte:300
-msgid "Back to projects"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:21
-#: stricknani/templates/yarn/detail.html:21
-#: web/src/lib/features/projects/ProjectReader.svelte:780
-#: web/src/lib/features/yarns/YarnDetail.svelte:320
-msgid "More actions"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:97
-#: stricknani/templates/projects/form.html:178
-#: stricknani/templates/yarn/detail.html:79
-msgid "Gallery"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:100
-msgid "images"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:119
-#: stricknani/templates/yarn/detail.html:103
-msgid "Open gallery"
-msgstr ""
-
-#: rust/src/web.rs:2179 stricknani/templates/projects/detail.html:139
-#: stricknani/templates/projects/form.html:211
-#: web/src/lib/features/admin/AdminResource.svelte:577
-#: web/src/lib/features/projects/ProjectEditor.svelte:1638
-#: web/src/lib/features/projects/ProjectReader.svelte:1278
-msgid "Attachments"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:142
-msgid "files"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:207
-#: stricknani/templates/projects/form.html:297
-#: stricknani/templates/projects/form.html:618
-#: stricknani/templates/projects/form.html:619
-#: stricknani/templates/projects/form.html:621
-#: stricknani/templates/projects/form.html:636
-msgid "Project Details"
-msgstr ""
-
-#: rust/src/import_service.rs:435 rust/src/web.rs:2172
-#: rust/src/web_audit.rs:134 stricknani/templates/projects/detail.html:216
-#: stricknani/templates/projects/detail.html:254
-#: stricknani/templates/projects/form.html:304
-#: stricknani/templates/projects/form.html:645
-#: web/src/lib/features/admin/AdminAudit.svelte:240
-#: web/src/lib/features/admin/AdminAudit.svelte:328
-#: web/src/lib/features/admin/AdminResource.svelte:237
-#: web/src/lib/features/admin/AdminResource.svelte:433
-#: web/src/lib/features/admin/DiffPanel.svelte:92
-#: web/src/lib/features/history/change-format.ts:104
-#: web/src/lib/features/imports/ImportWorkbench.svelte:580
-#: web/src/lib/features/projects/ProjectEditor.svelte:1202
-#: web/src/lib/features/projects/ProjectLibrary.svelte:221
-msgid "Category"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:222
-#: stricknani/templates/projects/detail.html:266
-#: stricknani/templates/projects/form.html:323
-#: stricknani/templates/projects/form.html:665
-#: web/src/lib/features/admin/AdminResource.svelte:478
-#: web/src/lib/features/history/change-format.ts:112
-#: web/src/lib/features/projects/ProjectEditor.svelte:1236
-#: web/src/lib/features/projects/ProjectEditor.svelte:1267
-msgid "Tags"
-msgstr ""
-
-#: rust/src/web_accounts.rs:858 rust/src/web_audit.rs:138
-#: stricknani/templates/projects/detail.html:227
-#: stricknani/templates/projects/detail.html:279
-#: stricknani/templates/user/api_tokens.html:117
-#: web/src/lib/features/account/AccountSettings.svelte:1132
-#: web/src/lib/features/admin/AdminResource.svelte:449
-#: web/src/lib/features/admin/AdminResource.svelte:650
-#: web/src/lib/features/admin/audit-action.ts:26
-msgid "Created"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:232
-#: stricknani/templates/projects/detail.html:289
-#: stricknani/templates/yarn/detail.html:160
-msgid "Data Source"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:237
-#: stricknani/templates/projects/detail.html:298
-#: stricknani/templates/projects/form.html:349
-#: stricknani/templates/projects/form.html:692
-msgid "Pattern Source"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:242
-#: stricknani/templates/projects/detail.html:360
-msgid "No link provided"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:308
-#: stricknani/templates/projects/form.html:364
-#: stricknani/templates/projects/form.html:708
-#: stricknani/templates/yarn/detail.html:257
-#: stricknani/templates/yarn/form.html:191
-#: stricknani/templates/yarn/form.html:457
-msgid "Copy URL"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:317
-#: stricknani/templates/yarn/detail.html:266
-msgid "Archived snapshot"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:323
-#: stricknani/templates/yarn/detail.html:272
-msgid "Request new snapshot"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:332
-#: stricknani/templates/yarn/detail.html:281
-msgid "Archive request failed"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:348
-#: stricknani/templates/yarn/detail.html:297
-msgid "Open in Wayback Machine"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:354
-#: stricknani/templates/yarn/detail.html:303
-msgid "Request snapshot"
-msgstr ""
-
-#: rust/src/web.rs:2176 stricknani/templates/projects/detail.html:375
-#: stricknani/templates/projects/form.html:158
-#: stricknani/templates/yarn/detail.html:353
-#: stricknani/templates/yarn/form.html:237
-#: web/src/lib/features/admin/AdminResource.svelte:490
-#: web/src/lib/features/admin/AdminResource.svelte:687
-#: web/src/lib/features/history/change-format.ts:110
-#: web/src/lib/features/history/change-format.ts:129
-#: web/src/lib/features/imports/ImportWorkbench.svelte:734
-#: web/src/lib/features/projects/ProjectEditor.svelte:1352
-#: web/src/lib/features/projects/ProjectReader.svelte:1087
-#: web/src/lib/features/projects/ProjectReader.svelte:1098
-#: web/src/lib/features/yarns/YarnDetail.svelte:434
-#: web/src/lib/features/yarns/YarnDetail.svelte:442
-#: web/src/lib/features/yarns/YarnForm.svelte:818
-msgid "Notes"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:380
-#: stricknani/templates/yarn/detail.html:358
-msgid "Copy Notes"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:382
-#: stricknani/templates/projects/detail.html:409
-#: stricknani/templates/projects/detail.html:607
-#: stricknani/templates/user/api_tokens.html:51
-#: stricknani/templates/yarn/detail.html:330
-#: stricknani/templates/yarn/detail.html:360
-#: web/src/routes/about/+page.svelte:163
-msgid "Copy"
-msgstr ""
-
-#: rust/src/import_service.rs:440 rust/src/web.rs:2190
-#: stricknani/templates/projects/detail.html:401
-#: stricknani/templates/projects/form.html:147
-#: stricknani/templates/yarn/detail.html:322
-#: stricknani/templates/yarn/form.html:225
-#: web/src/lib/features/admin/AdminResource.svelte:484
-#: web/src/lib/features/admin/AdminResource.svelte:681
-#: web/src/lib/features/history/change-format.ts:109
-#: web/src/lib/features/history/change-format.ts:120
-#: web/src/lib/features/imports/ImportWorkbench.svelte:591
-#: web/src/lib/features/yarns/YarnDetail.svelte:426
-#: web/src/lib/features/yarns/YarnForm.svelte:807
-msgid "Description"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:407
-#: stricknani/templates/yarn/detail.html:328
-msgid "Copy Description"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:432
-#: stricknani/templates/projects/form.html:402
-msgid "Technical Specifications"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:442
-#: stricknani/templates/projects/detail.html:485
-#: stricknani/templates/projects/form.html:412
-msgid "Yarns Used"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:455
-#: stricknani/templates/projects/detail.html:517
-#: stricknani/templates/projects/form.html:472
-msgid "Other Materials"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:461
-#: stricknani/templates/projects/detail.html:534
-#: stricknani/templates/projects/form.html:483
-#: stricknani/templates/yarn/detail.html:212
-#: stricknani/templates/yarn/form.html:168
-#: stricknani/templates/yarn/form.html:406
-msgid "Recommended Needles"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:467
-#: stricknani/templates/projects/detail.html:546
-#: stricknani/templates/projects/detail.html:565
-#: stricknani/templates/projects/form.html:495
-msgid "Stitch Sample"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:501
-#: stricknani/templates/projects/form.html:801
-msgid "Unknown Brand"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:558
-#: stricknani/templates/projects/form.html:503
-msgid "Stitch Sample Photos"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:587
-#: web/src/lib/features/imports/ImportWorkbench.svelte:616
-#: web/src/lib/features/imports/ImportWorkbench.svelte:631
-msgid "Instructions"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:605
-msgid "Copy Instructions"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:623
-#: stricknani/templates/projects/form.html:581
-msgid "Step Photos"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:653
-#: stricknani/templates/yarn/detail.html:434
-msgid "Audit Log"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:689
-#: stricknani/templates/projects/detail.html:692
-#: stricknani/templates/projects/form.html:541
-#: stricknani/templates/yarn/detail.html:470
-#: stricknani/templates/yarn/detail.html:473
-#: web/src/lib/features/admin/AdminResource.svelte:561
-#: web/src/lib/features/projects/ProjectEditor.svelte:1419
-#: web/src/lib/features/projects/ProjectEditor.svelte:1605
-#: web/src/lib/features/projects/ProjectReader.svelte:1143
-msgid "Step"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:707
-#: stricknani/templates/projects/detail.html:740
-#: stricknani/templates/yarn/detail.html:488
-#: stricknani/templates/yarn/detail.html:521
-msgid "Filename"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:713
-#: stricknani/templates/yarn/detail.html:494
-msgid "Alt text"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:719
-#: stricknani/templates/yarn/detail.html:500
-msgid "Image ID"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:725
-#: stricknani/templates/yarn/detail.html:506
-msgid "Step ID"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:731
-#: stricknani/templates/yarn/detail.html:512
-msgid "Title image"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:746
-#: stricknani/templates/yarn/detail.html:527
-msgid "Original filename"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:752
-#: stricknani/templates/yarn/detail.html:533
-msgid "Attachment ID"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:758
-#: stricknani/templates/yarn/detail.html:539
-msgid "Content type"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:764
-#: stricknani/templates/yarn/detail.html:545
-msgid "Size (bytes)"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:787
-#: stricknani/templates/yarn/detail.html:568
-msgid "Raw details"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:797
-#: stricknani/templates/yarn/detail.html:578
-msgid "No audit entries yet"
-msgstr ""
-
-#: stricknani/templates/projects/detail.html:816
-#: stricknani/templates/projects/form.html:832
-msgid "This can happen after restarting the server."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:7
-msgid "New"
-msgstr ""
-
-#: rust/src/web_audit.rs:132 stricknani/templates/projects/form.html:7
-#: web/src/lib/features/admin/AdminAudit.svelte:236
-#: web/src/lib/features/admin/AdminAudit.svelte:326
-#: web/src/lib/features/admin/AdminResource.svelte:233
-#: web/src/lib/features/admin/DiffPanel.svelte:88
-msgid "Project"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:10
-#: stricknani/templates/projects/form.html:86
-#: stricknani/templates/projects/list.html:13
-#: stricknani/templates/projects/list.html:38
-msgid "New Project"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:22
-#: stricknani/templates/projects/list.html:17
-#: stricknani/templates/yarn/form.html:27
-#: stricknani/templates/yarn/list.html:14
-msgid "More options"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:30
-#: stricknani/templates/projects/form.html:70
-#: stricknani/templates/projects/list.html:25
-#: stricknani/templates/shared/_import_dialog.html:3
-#: stricknani/templates/yarn/form.html:35
-#: stricknani/templates/yarn/list.html:22
-msgid "Import"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:109
-msgid "Imported Data - Not Saved Yet"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:111
-msgid ""
-"This project was imported from an external source. Please review all "
-"fields carefully and click \"Save\" to keep it."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:128
-msgid "Basic Information"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:136
-msgid "Project Name"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:140
-msgid "e.g. My Amazing Project"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:147
-#: stricknani/templates/projects/form.html:158
-#: stricknani/templates/yarn/form.html:225
-#: stricknani/templates/yarn/form.html:237
-msgid "Optional"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:151
-msgid "Brief description of this project..."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:163
-msgid "Personal notes about this project..."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:285
-msgid "Click or drag files here to attach (PDF, etc.)"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:308
-#: stricknani/templates/projects/form.html:649
-msgid "Manage"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:312
-#: stricknani/templates/projects/form.html:653
-msgid "Select a category"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:330
-#: stricknani/templates/projects/form.html:670
-msgid "Add a tag..."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:342
-#: stricknani/templates/projects/form.html:682
-msgid "Press Enter or choose a suggestion."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:358
-#: stricknani/templates/projects/form.html:702
-#: stricknani/templates/yarn/form.html:185
-#: stricknani/templates/yarn/form.html:451
-msgid "Visit Website"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:360
-#: stricknani/templates/projects/form.html:704
-#: stricknani/templates/yarn/form.html:187
-#: stricknani/templates/yarn/form.html:453
-msgid "Visit"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:374
-#: stricknani/templates/projects/form.html:719
-#: stricknani/templates/yarn/form.html:201
-#: stricknani/templates/yarn/form.html:266
-#: stricknani/templates/yarn/form.html:467
-msgid "Archive on Wayback Machine"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:416
-msgid "Add new"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:425
-msgid "Search yarns..."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:475
-msgid "e.g. Buttons, zippers, ribbon, etc."
-msgstr ""
-
-#: stricknani/templates/projects/form.html:487
-msgid "e.g. 4.0mm circular"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:499
-msgid "Describe your stitch sample / gauge swatch..."
-msgstr ""
-
-#: rust/src/web.rs:2177 stricknani/templates/projects/form.html:531
-#: web/src/lib/features/admin/AdminResource.svelte:524
-#: web/src/lib/features/history/change-format.ts:113
-#: web/src/lib/features/projects/ProjectReader.svelte:1117
-msgid "Steps"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:546
-#: stricknani/templates/projects/form.html:548
-msgid "Move Up"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:551
-#: stricknani/templates/projects/form.html:553
-msgid "Move Down"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:561
-msgid "Remove Step"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:563
-#: web/src/lib/features/projects/ProjectEditor.svelte:1279
-#: web/src/lib/features/projects/ProjectEditor.svelte:1452
-#: web/src/lib/features/projects/ProjectEditor.svelte:1762
-#: web/src/lib/features/projects/YarnPicker.svelte:84
-msgid "Remove"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:569
-msgid "Step Title"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:598
-msgid "Add Step"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:747
-#: stricknani/templates/yarn/form.html:494
-msgid "Danger Zone"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:770
-msgid "Are you sure you want to delete this project?"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:780
-msgid "Some yarns are only used in this project:"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:781
-msgid "Select the yarns you want to delete:"
-msgstr ""
-
-#: stricknani/templates/projects/form.html:811
-msgid "Select all yarns"
+#: rust/src/import_service.rs:422 rust/src/web_accounts.rs:829
+#: web/src/routes/+layout.svelte:230 web/src/routes/+layout.svelte:310
+msgid "Main navigation"
 msgstr ""
 
 #: rust/src/import_service.rs:423 rust/src/web.rs:2156
 #: rust/src/web_accounts.rs:830 rust/src/web_audit.rs:122
-#: stricknani/templates/projects/list.html:4
-#: stricknani/templates/projects/list.html:11
-#: stricknani/templates/projects/list.html:46
-#: stricknani/templates/shared/unified_navbar.html:61
-#: stricknani/templates/shared/unified_navbar.html:125
 #: web/src/lib/features/projects/ProjectLibrary.svelte:183
 #: web/src/lib/features/projects/ProjectLibrary.svelte:194
 #: web/src/routes/+layout.svelte:60
 msgid "Projects"
 msgstr ""
 
-#: rust/src/web.rs:2203 stricknani/templates/projects/list.html:56
-#: stricknani/templates/yarn/list.html:54
-#: web/src/lib/features/projects/YarnPicker.svelte:61
-msgid "Search"
-msgstr ""
-
-#: stricknani/templates/shared/_empty_search_state.html:2
-msgid "No matching results"
-msgstr ""
-
-#: stricknani/templates/shared/_empty_search_state.html:8
-#: web/src/lib/features/projects/ProjectLibrary.svelte:211
-#: web/src/lib/features/projects/ProjectLibrary.svelte:284
-#: web/src/lib/features/yarns/YarnLibrary.svelte:157
-#: web/src/lib/features/yarns/YarnLibrary.svelte:202
-msgid "Clear filters"
-msgstr ""
-
-#: stricknani/templates/shared/_favorite_toggle.html:3
-msgid "Unfavorite"
-msgstr ""
-
-#: stricknani/templates/shared/_favorite_toggle.html:3
-#: web/src/lib/features/projects/ProjectLibrary.svelte:324
-#: web/src/lib/features/projects/ProjectLibrary.svelte:325
-#: web/src/lib/features/yarns/YarnLibrary.svelte:246
-#: web/src/lib/features/yarns/YarnLibrary.svelte:247
-msgid "Favorite"
-msgstr ""
-
-#: stricknani/templates/shared/_favorite_toggle.html:4
-msgid "Removed from favorites"
-msgstr ""
-
-#: stricknani/templates/shared/_favorite_toggle.html:4
-msgid "Added to favorites"
-msgstr ""
-
-#: stricknani/templates/shared/_global_search_results.html:28
-#, python-format
-msgid "No results found for \"%(query)s\""
-msgstr ""
-
-#: stricknani/templates/shared/_import_dialog.html:21
-msgid "Magic Import"
-msgstr ""
-
-#: stricknani/templates/shared/_import_dialog.html:47
-msgid "Select File"
-msgstr ""
-
-#: stricknani/templates/shared/_import_dialog.html:88
-msgid "Upload New File"
-msgstr ""
-
-#: stricknani/templates/shared/_import_dialog.html:90
-msgid "Drag & drop or click to browse"
-msgstr ""
-
-#: stricknani/templates/shared/_import_dialog.html:113
-msgid "Working some magic..."
-msgstr ""
-
-#: stricknani/templates/shared/_import_dialog.html:123
-msgid "Analyze & Import"
-msgstr ""
-
-#: stricknani/templates/shared/_search_bar.html:32
-msgid "Clear search"
-msgstr ""
-
-#: stricknani/templates/shared/form_base.html:16
-#: web/src/lib/features/projects/ProjectEditor.svelte:1720
-#: web/src/lib/features/yarns/YarnForm.svelte:610
-msgid "Unsaved changes"
-msgstr ""
-
-#: stricknani/templates/shared/form_base.html:17
-msgid "You have unsaved changes. Save before leaving?"
-msgstr ""
-
-#: stricknani/templates/shared/form_base.html:20
-msgid "Discard"
-msgstr ""
-
-#: stricknani/templates/shared/list_base.html:34
-msgid "Drop to Import"
-msgstr ""
-
-#: stricknani/templates/shared/list_base.html:35
-msgid "Release to start AI analysis"
-msgstr ""
-
-#: rust/src/import_service.rs:422 rust/src/web_accounts.rs:829
-#: stricknani/templates/shared/unified_navbar.html:16
-#: web/src/routes/+layout.svelte:230 web/src/routes/+layout.svelte:310
-msgid "Main navigation"
-msgstr ""
-
 #: rust/src/import_service.rs:424 rust/src/web.rs:2157
 #: rust/src/web_accounts.rs:831 rust/src/web_audit.rs:123
-#: stricknani/templates/shared/unified_navbar.html:67
-#: stricknani/templates/shared/unified_navbar.html:131
-#: stricknani/templates/yarn/list.html:9 stricknani/templates/yarn/list.html:36
 #: web/src/lib/features/yarns/YarnDetail.svelte:260
 #: web/src/lib/features/yarns/YarnLibrary.svelte:129
 #: web/src/lib/features/yarns/YarnLibrary.svelte:140
 #: web/src/routes/+layout.svelte:61
 msgid "Yarns"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:97
-#: web/src/lib/features/home/HomeDashboard.svelte:96
-#: web/src/routes/+layout.svelte:59
-msgid "Home"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:211
-msgid "Change profile picture"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:227
-msgid "Signed in"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:235
-#: stricknani/templates/shared/unified_navbar.html:293
-#: web/src/lib/components/AccountMenu.svelte:272
-#: web/src/lib/components/LocaleSwitcher.svelte:25
-#: web/src/lib/features/account/AccountSettings.svelte:843
-#: web/src/lib/features/account/AccountSettings.svelte:849
-msgid "Language"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:244
-#: stricknani/templates/shared/unified_navbar.html:302
-#: web/src/lib/features/account/AccountSettings.svelte:856
-msgid "Appearance"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:251
-#: stricknani/templates/shared/unified_navbar.html:309
-#: web/src/lib/components/ThemeSwitcher.svelte:13
-#: web/src/lib/features/account/AccountSettings.svelte:113
-msgid "Light"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:256
-#: stricknani/templates/shared/unified_navbar.html:314
-#: web/src/lib/components/ThemeSwitcher.svelte:14
-#: web/src/lib/features/account/AccountSettings.svelte:114
-msgid "Dark"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:264
-#: stricknani/templates/user/api_tokens.html:5
-#: stricknani/templates/user/api_tokens.html:7
-#: stricknani/templates/user/api_tokens.html:19
-msgid "API Tokens"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:268
-#: stricknani/templates/shared/unified_navbar.html:322
-msgid "Android App"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:274
-msgid "Logout"
-msgstr ""
-
-#: stricknani/templates/shared/unified_navbar.html:284
-msgid "Settings"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:22
-msgid ""
-"Personal access tokens let apps like the Stricknani Android app sign in "
-"without your password. Anyone with a token can access your account "
-"through the API, so treat it like a password."
-msgstr ""
-
-#: rust/src/web_accounts.rs:863 stricknani/templates/user/api_tokens.html:30
-msgid "Token created"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:33
-msgid "Copy this token now - for your security, it won't be shown again."
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:61
-msgid "Scan to set up the app"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:64
-msgid ""
-"This code is only shown once - it lets a device scanning it sign in "
-"immediately. Treat it like a password until it's scanned."
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:69
-msgid "Stricknani setup QR code"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:79
-msgid "Set up a new device"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:81
-msgid ""
-"Scan this from the Stricknani app during onboarding instead of typing the"
-" server URL and token by hand."
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:85
-msgid "Generate setup QR code"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:92
-#: web/src/lib/features/account/AccountSettings.svelte:1041
-msgid "New token"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:99
-msgid "Stricknani Android"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:102
-#: web/src/lib/features/account/AccountSettings.svelte:1080
-msgid "Create token"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:108
-msgid "Active tokens"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:119
-msgid "Last used"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:121
-msgid "Never used"
-msgstr ""
-
-#: rust/src/web_accounts.rs:859 stricknani/templates/user/api_tokens.html:125
-#: stricknani/templates/user/api_tokens.html:132
-#: stricknani/templates/user/api_tokens.html:139
-#: web/src/lib/features/account/AccountSettings.svelte:1146
-msgid "Revoke"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:130
-#: web/src/lib/features/account/AccountSettings.svelte:1145
-#: web/src/lib/features/account/AccountSettings.svelte:1278
-msgid "Revoke token"
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:133
-msgid "Any app using this token will stop working immediately."
-msgstr ""
-
-#: stricknani/templates/user/api_tokens.html:148
-msgid "No API tokens yet."
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:6
-#, python-format
-msgid "Brand: %(brand)s"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:9
-#, python-format
-msgid "Colorway: %(colorway)s"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:13
-#, python-format
-msgid "%(count)s linked project"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:15
-#, python-format
-msgid "%(count)s linked projects"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:18
-msgid "No linked projects"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:27
-#, python-format
-msgid "Photo for %(name)s"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:34
-#: stricknani/templates/yarn/_cards_page.html:41
-msgid "Open yarn details"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:43
-#, python-format
-msgid "Open yarn details for %(name)s"
-msgstr ""
-
-#: stricknani/templates/yarn/_cards_page.html:117
-msgid "No description yet."
-msgstr ""
-
-#: stricknani/templates/yarn/_delete_dialog.html:7
-#: stricknani/templates/yarn/_delete_dialog.html:20
-#: stricknani/templates/yarn/detail.html:590
-#: stricknani/templates/yarn/form.html:496
-#: stricknani/templates/yarn/form.html:509
-msgid "Delete Yarn"
-msgstr ""
-
-#: stricknani/templates/yarn/_empty_state.html:6
-msgid "Start your stash"
-msgstr ""
-
-#: stricknani/templates/yarn/_empty_state.html:7
-msgid "Track skeins, colorways, and notes so you know what you can use next."
-msgstr ""
-
-#: stricknani/templates/yarn/_empty_state.html:9
-#: web/src/lib/features/yarns/YarnLibrary.svelte:217
-msgid "Add your first yarn"
-msgstr ""
-
-#: stricknani/templates/yarn/_import_dialog.html:3
-msgid "Yarn URL"
-msgstr ""
-
-#: stricknani/templates/yarn/_import_dialog.html:4
-msgid "e.g. https://www.garnstudio.com/yarn.php?id=..."
-msgstr ""
-
-#: stricknani/templates/yarn/_import_dialog.html:6
-msgid ""
-"Paste a URL from a yarn shop, manufacturer, or Ravelry. We'll try to "
-"extract all the details for you."
-msgstr ""
-
-#: stricknani/templates/yarn/_import_dialog.html:7
-msgid ""
-"We are analyzing the source and extracting yarn details. This usually "
-"takes 10-20 seconds."
-msgstr ""
-
-#: stricknani/templates/yarn/_import_dialog.html:13
-msgid "AI-powered extraction enabled"
-msgstr ""
-
-#: rust/src/import_service.rs:439 rust/src/web.rs:2158
-#: rust/src/web_audit.rs:133 stricknani/templates/yarn/detail.html:6
-#: stricknani/templates/yarn/form.html:7 stricknani/templates/yarn/list.html:5
-#: web/src/lib/features/admin/AdminAudit.svelte:238
-#: web/src/lib/features/admin/AdminAudit.svelte:327
-#: web/src/lib/features/admin/AdminResource.svelte:235
-#: web/src/lib/features/admin/AdminResource.svelte:437
-#: web/src/lib/features/admin/DiffPanel.svelte:90
-#: web/src/lib/features/history/change-format.ts:105
-#: web/src/lib/features/projects/ProjectReader.svelte:926
-#: web/src/lib/features/projects/ProjectReader.svelte:973
-#: web/src/lib/features/projects/ProjectReader.svelte:1015
-#: web/src/lib/features/projects/ProjectReader.svelte:1020
-#: web/src/lib/features/projects/ProjectReader.svelte:1027
-msgid "Yarn"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:12
-#: stricknani/templates/yarn/form.html:62
-msgid "Back to yarn"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:81
-msgid "photos"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:119
-msgid "No photos yet"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:131
-#: stricknani/templates/yarn/form.html:114
-#: stricknani/templates/yarn/form.html:328
-#: stricknani/templates/yarn/form.html:330
-#: stricknani/templates/yarn/form.html:342
-msgid "Yarn Details"
-msgstr ""
-
-#: rust/src/import_service.rs:443 rust/src/web.rs:2173
-#: stricknani/templates/yarn/detail.html:139
-#: stricknani/templates/yarn/form.html:119
-#: stricknani/templates/yarn/form.html:351
-#: web/src/lib/features/admin/AdminResource.svelte:608
-#: web/src/lib/features/history/change-format.ts:121
-#: web/src/lib/features/imports/ImportWorkbench.svelte:673
-#: web/src/lib/features/imports/import-draft.ts:239
-#: web/src/lib/features/yarns/YarnDetail.svelte:489
-#: web/src/lib/features/yarns/YarnForm.svelte:703
-msgid "Brand"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:150
-#: web/src/lib/features/history/change-format.ts:64
-msgid "Added"
-msgstr ""
-
-#: rust/src/import_service.rs:444 rust/src/web.rs:2174
-#: stricknani/templates/yarn/detail.html:169
-#: stricknani/templates/yarn/form.html:127
-#: stricknani/templates/yarn/form.html:362
-#: web/src/lib/features/admin/AdminResource.svelte:612
-#: web/src/lib/features/history/change-format.ts:122
-#: web/src/lib/features/imports/ImportWorkbench.svelte:678
-#: web/src/lib/features/imports/import-draft.ts:241
-#: web/src/lib/features/yarns/YarnDetail.svelte:493
-#: web/src/lib/features/yarns/YarnForm.svelte:712
-msgid "Colorway"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:180
-#: stricknani/templates/yarn/form.html:133
-#: stricknani/templates/yarn/form.html:371
-msgid "Dye Lot"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:191
-msgid "Fiber Content"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:202
-msgid "Weight Category"
-msgstr ""
-
-#: rust/src/import_service.rs:445 stricknani/templates/yarn/detail.html:225
-#: web/src/lib/features/admin/AdminResource.svelte:632
-#: web/src/lib/features/history/change-format.ts:127
-msgid "Weight"
-msgstr ""
-
-#: rust/src/import_service.rs:446 stricknani/templates/yarn/detail.html:235
-#: web/src/lib/features/admin/AdminResource.svelte:641
-#: web/src/lib/features/history/change-format.ts:128
-msgid "Length"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:247
-#: stricknani/templates/yarn/form.html:176
-#: stricknani/templates/yarn/form.html:251
-#: stricknani/templates/yarn/form.html:441
-msgid "Source Link"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:382
-msgid "Linked Projects"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:423
-msgid "No projects linked"
-msgstr ""
-
-#: stricknani/templates/yarn/detail.html:591
-msgid "This will remove its photos too."
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:7
-msgid "Add Yarn"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:15
-#: stricknani/templates/yarn/list.html:11
-#: stricknani/templates/yarn/list.html:28
-msgid "New Yarn"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:18
-#: stricknani/templates/yarn/form.html:64
-#: web/src/lib/features/yarns/YarnDetail.svelte:287
-#: web/src/lib/features/yarns/YarnForm.svelte:595
-msgid "Back to yarns"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:85
-msgid "New yarn entry"
-msgstr ""
-
-#: rust/src/import_service.rs:441 rust/src/web.rs:2189
-#: rust/src/web_accounts.rs:857 stricknani/templates/yarn/form.html:103
-msgid "Name"
-msgstr ""
-
-#: rust/src/import_service.rs:448 rust/src/web.rs:2194
-#: stricknani/templates/yarn/form.html:140
-#: stricknani/templates/yarn/form.html:384
-#: web/src/lib/features/admin/AdminResource.svelte:620
-#: web/src/lib/features/history/change-format.ts:124
-#: web/src/lib/features/imports/ImportWorkbench.svelte:683
-#: web/src/lib/features/imports/import-draft.ts:240
-#: web/src/lib/features/yarns/YarnDetail.svelte:501
-#: web/src/lib/features/yarns/YarnForm.svelte:736
-msgid "Fiber content"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:147
-#: stricknani/templates/yarn/form.html:419
-msgid "Weight (g)"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:153
-#: stricknani/templates/yarn/form.html:428
-msgid "Length (m)"
-msgstr ""
-
-#: rust/src/import_service.rs:447 rust/src/web.rs:2195
-#: stricknani/templates/yarn/form.html:160
-#: stricknani/templates/yarn/form.html:395
-#: web/src/lib/features/admin/AdminResource.svelte:624
-#: web/src/lib/features/history/change-format.ts:125
-#: web/src/lib/features/imports/ImportWorkbench.svelte:688
-#: web/src/lib/features/imports/import-draft.ts:242
-msgid "Weight category"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:161
-#: stricknani/templates/yarn/form.html:398
-msgid "e.g. Fingering, DK..."
-msgstr ""
-
-#: rust/src/web.rs:2178 stricknani/templates/yarn/form.html:276
-#: web/src/lib/features/admin/AdminResource.svelte:712
-#: web/src/lib/features/yarns/YarnDetail.svelte:411
-#: web/src/lib/features/yarns/YarnForm.svelte:867
-#: web/src/lib/features/yarns/YarnPhotoManager.svelte:352
-#: web/src/lib/features/yarns/YarnPhotoManager.svelte:401
-msgid "Photos"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:294
-msgid "Make primary photo"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:299
-msgid "Delete photo"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:321
-msgid "Supported: JPG, PNG, GIF. Thumbnails are generated automatically."
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:387
-msgid "e.g. 80% Merino..."
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:511
-msgid "Are you sure you want to delete this yarn?"
-msgstr ""
-
-#: stricknani/templates/yarn/form.html:512
-msgid ""
-"This will also delete all photos associated with this yarn. This action "
-"cannot be undone."
-msgstr ""
-
-#: rust/src/import_service.rs:421
-msgid "Import a pattern"
 msgstr ""
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
@@ -2552,6 +88,19 @@ msgstr ""
 msgid "Content fingerprint"
 msgstr ""
 
+#: rust/src/import_service.rs:435 rust/src/web.rs:2172
+#: rust/src/web_audit.rs:134 web/src/lib/features/admin/AdminAudit.svelte:240
+#: web/src/lib/features/admin/AdminAudit.svelte:328
+#: web/src/lib/features/admin/AdminResource.svelte:237
+#: web/src/lib/features/admin/AdminResource.svelte:433
+#: web/src/lib/features/admin/DiffPanel.svelte:92
+#: web/src/lib/features/history/change-format.ts:104
+#: web/src/lib/features/imports/ImportWorkbench.svelte:580
+#: web/src/lib/features/projects/ProjectEditor.svelte:1202
+#: web/src/lib/features/projects/ProjectLibrary.svelte:221
+msgid "Category"
+msgstr ""
+
 #: rust/src/import_service.rs:436 rust/src/web.rs:2175
 #: web/src/lib/features/admin/AdminResource.svelte:441
 #: web/src/lib/features/history/change-format.ts:107
@@ -2582,8 +131,105 @@ msgstr ""
 msgid "Other materials"
 msgstr ""
 
+#: rust/src/import_service.rs:439 rust/src/web.rs:2158
+#: rust/src/web_audit.rs:133 web/src/lib/features/admin/AdminAudit.svelte:238
+#: web/src/lib/features/admin/AdminAudit.svelte:327
+#: web/src/lib/features/admin/AdminResource.svelte:235
+#: web/src/lib/features/admin/AdminResource.svelte:437
+#: web/src/lib/features/admin/DiffPanel.svelte:90
+#: web/src/lib/features/history/change-format.ts:105
+#: web/src/lib/features/projects/ProjectReader.svelte:926
+#: web/src/lib/features/projects/ProjectReader.svelte:973
+#: web/src/lib/features/projects/ProjectReader.svelte:1015
+#: web/src/lib/features/projects/ProjectReader.svelte:1020
+#: web/src/lib/features/projects/ProjectReader.svelte:1027
+msgid "Yarn"
+msgstr ""
+
+#: rust/src/import_service.rs:440 rust/src/web.rs:2190
+#: web/src/lib/features/admin/AdminResource.svelte:484
+#: web/src/lib/features/admin/AdminResource.svelte:681
+#: web/src/lib/features/history/change-format.ts:109
+#: web/src/lib/features/history/change-format.ts:120
+#: web/src/lib/features/imports/ImportWorkbench.svelte:591
+#: web/src/lib/features/yarns/YarnDetail.svelte:426
+#: web/src/lib/features/yarns/YarnForm.svelte:807
+msgid "Description"
+msgstr ""
+
+#: rust/src/import_service.rs:441 rust/src/web.rs:2189
+#: rust/src/web_accounts.rs:857
+msgid "Name"
+msgstr ""
+
 #: rust/src/import_service.rs:442 rust/src/web.rs:2193
 msgid "Link"
+msgstr ""
+
+#: rust/src/import_service.rs:443 rust/src/web.rs:2173
+#: web/src/lib/features/admin/AdminResource.svelte:608
+#: web/src/lib/features/history/change-format.ts:121
+#: web/src/lib/features/imports/ImportWorkbench.svelte:673
+#: web/src/lib/features/imports/import-draft.ts:239
+#: web/src/lib/features/yarns/YarnDetail.svelte:489
+#: web/src/lib/features/yarns/YarnForm.svelte:703
+msgid "Brand"
+msgstr ""
+
+#: rust/src/import_service.rs:444 rust/src/web.rs:2174
+#: web/src/lib/features/admin/AdminResource.svelte:612
+#: web/src/lib/features/history/change-format.ts:122
+#: web/src/lib/features/imports/ImportWorkbench.svelte:678
+#: web/src/lib/features/imports/import-draft.ts:241
+#: web/src/lib/features/yarns/YarnDetail.svelte:493
+#: web/src/lib/features/yarns/YarnForm.svelte:712
+msgid "Colorway"
+msgstr ""
+
+#: rust/src/import_service.rs:445
+#: web/src/lib/features/admin/AdminResource.svelte:632
+#: web/src/lib/features/history/change-format.ts:127
+msgid "Weight"
+msgstr ""
+
+#: rust/src/import_service.rs:446
+#: web/src/lib/features/admin/AdminResource.svelte:641
+#: web/src/lib/features/history/change-format.ts:128
+msgid "Length"
+msgstr ""
+
+#: rust/src/import_service.rs:447 rust/src/web.rs:2195
+#: web/src/lib/features/admin/AdminResource.svelte:624
+#: web/src/lib/features/history/change-format.ts:125
+#: web/src/lib/features/imports/ImportWorkbench.svelte:688
+#: web/src/lib/features/imports/import-draft.ts:242
+msgid "Weight category"
+msgstr ""
+
+#: rust/src/import_service.rs:448 rust/src/web.rs:2194
+#: web/src/lib/features/admin/AdminResource.svelte:620
+#: web/src/lib/features/history/change-format.ts:124
+#: web/src/lib/features/imports/ImportWorkbench.svelte:683
+#: web/src/lib/features/imports/import-draft.ts:240
+#: web/src/lib/features/yarns/YarnDetail.svelte:501
+#: web/src/lib/features/yarns/YarnForm.svelte:736
+msgid "Fiber content"
+msgstr ""
+
+#: rust/src/pwa.rs:256
+msgid "You are offline"
+msgstr ""
+
+#: rust/src/pwa.rs:257
+msgid "Offline"
+msgstr ""
+
+#: rust/src/pwa.rs:258 web/src/lib/components/PwaUpdate.svelte:16
+msgid "No connection"
+msgstr ""
+
+#: rust/src/pwa.rs:263
+msgid "Try Again"
 msgstr ""
 
 #: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:164
@@ -2592,6 +238,39 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
 #: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:33
 msgid "Gauge calculator"
+msgstr ""
+
+#: rust/src/web.rs:2160 rust/src/web_signup.rs:276
+#: web/src/lib/components/SignInForm.svelte:55
+#: web/src/lib/components/SignInForm.svelte:67
+#: web/src/lib/components/SignInForm.svelte:136
+#: web/src/lib/features/auth/SignupForm.svelte:267
+#: web/src/lib/features/home/HomeDashboard.svelte:127
+#: web/src/lib/features/projects/ProjectEditor.svelte:1114
+#: web/src/routes/+layout.svelte:161 web/src/routes/login/+page.svelte:8
+msgid "Sign in"
+msgstr ""
+
+#: rust/src/web.rs:2161 rust/src/web_accounts.rs:850 rust/src/web_signup.rs:272
+#: web/src/lib/components/SignInForm.svelte:147
+#: web/src/lib/features/auth/SignupForm.svelte:147
+#: web/src/lib/features/auth/SignupForm.svelte:173
+msgid "Create an account"
+msgstr ""
+
+#: rust/src/web.rs:2163 rust/src/web_accounts.rs:838 rust/src/web_signup.rs:273
+#: web/src/lib/components/SignInForm.svelte:101
+#: web/src/lib/features/admin/AdminUsers.svelte:613
+#: web/src/lib/features/auth/SignupForm.svelte:183
+msgid "Email"
+msgstr ""
+
+#: rust/src/web.rs:2164 rust/src/web_signup.rs:274
+#: web/src/lib/components/SignInForm.svelte:115
+#: web/src/lib/features/account/AccountSettings.svelte:898
+#: web/src/lib/features/auth/ReauthDialog.svelte:149
+#: web/src/lib/features/auth/SignupForm.svelte:202
+msgid "Password"
 msgstr ""
 
 #: rust/src/web.rs:2169
@@ -2610,9 +289,65 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
+#: rust/src/web.rs:2176 web/src/lib/features/admin/AdminResource.svelte:490
+#: web/src/lib/features/admin/AdminResource.svelte:687
+#: web/src/lib/features/history/change-format.ts:110
+#: web/src/lib/features/history/change-format.ts:129
+#: web/src/lib/features/imports/ImportWorkbench.svelte:734
+#: web/src/lib/features/projects/ProjectEditor.svelte:1352
+#: web/src/lib/features/projects/ProjectReader.svelte:1087
+#: web/src/lib/features/projects/ProjectReader.svelte:1098
+#: web/src/lib/features/yarns/YarnDetail.svelte:434
+#: web/src/lib/features/yarns/YarnDetail.svelte:442
+#: web/src/lib/features/yarns/YarnForm.svelte:818
+msgid "Notes"
+msgstr ""
+
+#: rust/src/web.rs:2177 web/src/lib/features/admin/AdminResource.svelte:524
+#: web/src/lib/features/history/change-format.ts:113
+#: web/src/lib/features/projects/ProjectReader.svelte:1117
+msgid "Steps"
+msgstr ""
+
+#: rust/src/web.rs:2178 web/src/lib/features/admin/AdminResource.svelte:712
+#: web/src/lib/features/yarns/YarnDetail.svelte:411
+#: web/src/lib/features/yarns/YarnForm.svelte:867
+#: web/src/lib/features/yarns/YarnPhotoManager.svelte:352
+#: web/src/lib/features/yarns/YarnPhotoManager.svelte:401
+msgid "Photos"
+msgstr ""
+
+#: rust/src/web.rs:2179 web/src/lib/features/admin/AdminResource.svelte:577
+#: web/src/lib/features/projects/ProjectEditor.svelte:1638
+#: web/src/lib/features/projects/ProjectReader.svelte:1278
+msgid "Attachments"
+msgstr ""
+
 #: rust/src/web.rs:2180 web/src/lib/features/admin/AdminResource.svelte:507
 #: web/src/lib/features/admin/AdminResource.svelte:696
 msgid "Original source"
+msgstr ""
+
+#: rust/src/web.rs:2181 rust/src/web_accounts.rs:851
+#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:10
+msgid "Create"
+msgstr ""
+
+#: rust/src/web.rs:2182
+msgid "Edit"
+msgstr ""
+
+#: rust/src/web.rs:2183
+#: web/src/lib/features/categories/CategoryManager.svelte:320
+msgid "Save"
+msgstr ""
+
+#: rust/src/web.rs:2184
+#: web/src/lib/features/categories/CategoryManager.svelte:359
+#: web/src/lib/features/categories/CategoryManager.svelte:377
+#: web/src/lib/features/yarns/YarnDetail.svelte:576
+#: web/src/lib/features/yarns/YarnForm.svelte:987
+msgid "Delete"
 msgstr ""
 
 #: rust/src/web.rs:2185 web/src/lib/components/FavoriteButton.svelte:21
@@ -2625,6 +360,24 @@ msgstr ""
 
 #: rust/src/web.rs:2187
 msgid "Delete this item?"
+msgstr ""
+
+#: rust/src/web.rs:2188 web/src/lib/features/account/AccountSettings.svelte:822
+#: web/src/lib/features/account/AccountSettings.svelte:1012
+#: web/src/lib/features/account/AccountSettings.svelte:1088
+#: web/src/lib/features/admin/AdminUsers.svelte:768
+#: web/src/lib/features/admin/AdminUsers.svelte:828
+#: web/src/lib/features/admin/AdminUsers.svelte:904
+#: web/src/lib/features/auth/ReauthDialog.svelte:173
+#: web/src/lib/features/categories/CategoryManager.svelte:330
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
+#: web/src/lib/features/projects/ProjectEditor.svelte:1705
+#: web/src/lib/features/projects/ProjectEditor.svelte:1751
+#: web/src/lib/features/projects/ProjectEditor.svelte:1792
+#: web/src/lib/features/projects/ProjectReader.svelte:1413
+#: web/src/lib/features/yarns/YarnForm.svelte:901
+#: web/src/lib/features/yarns/YarnForm.svelte:964
+msgid "Cancel"
 msgstr ""
 
 #: rust/src/web.rs:2191
@@ -2664,6 +417,10 @@ msgstr ""
 msgid "Imports"
 msgstr ""
 
+#: rust/src/web.rs:2203 web/src/lib/features/projects/YarnPicker.svelte:61
+msgid "Search"
+msgstr ""
+
 #: rust/src/web.rs:2204 web/src/lib/features/projects/ProjectLibrary.svelte:238
 msgid "Tag"
 msgstr ""
@@ -2700,8 +457,8 @@ msgid "Account"
 msgstr ""
 
 #: rust/src/web.rs:2211 rust/src/web_accounts.rs:837 rust/src/web_audit.rs:125
-#: web/src/lib/features/admin/AdminUsers.svelte:575
-#: web/src/lib/features/admin/AdminUsers.svelte:614
+#: web/src/lib/features/admin/AdminUsers.svelte:572
+#: web/src/lib/features/admin/AdminUsers.svelte:611
 msgid "User accounts"
 msgstr ""
 
@@ -2746,41 +503,89 @@ msgstr ""
 msgid "Account settings"
 msgstr ""
 
+#: rust/src/web_accounts.rs:833
+msgid "Users"
+msgstr ""
+
 #: rust/src/web_accounts.rs:836 rust/src/web_audit.rs:127
 msgid "Signed in as"
 msgstr ""
 
 #: rust/src/web_accounts.rs:839
-#: web/src/lib/features/admin/AdminUsers.svelte:617
-#: web/src/lib/features/admin/AdminUsers.svelte:639
+#: web/src/lib/features/admin/AdminUsers.svelte:614
+#: web/src/lib/features/admin/AdminUsers.svelte:636
 msgid "Status"
 msgstr ""
 
 #: rust/src/web_accounts.rs:840
-#: web/src/lib/features/admin/AdminUsers.svelte:616
-#: web/src/lib/features/admin/AdminUsers.svelte:633
+#: web/src/lib/features/admin/AdminUsers.svelte:613
+#: web/src/lib/features/admin/AdminUsers.svelte:630
 msgid "Role"
 msgstr ""
 
 #: rust/src/web_accounts.rs:841
-#: web/src/lib/features/admin/AdminUsers.svelte:617
+#: web/src/lib/features/admin/AdminUsers.svelte:614
 msgid "Actions"
+msgstr ""
+
+#: rust/src/web_accounts.rs:842
+#: web/src/lib/features/admin/AdminUsers.svelte:637
+msgid "Active"
+msgstr ""
+
+#: rust/src/web_accounts.rs:843
+#: web/src/lib/features/admin/AdminUsers.svelte:637
+msgid "Disabled"
 msgstr ""
 
 #: rust/src/web_accounts.rs:844
 #: web/src/lib/features/account/AccountSettings.svelte:776
-#: web/src/lib/features/admin/AdminUsers.svelte:635
+#: web/src/lib/features/admin/AdminUsers.svelte:632
 msgid "Administrator"
 msgstr ""
 
 #: rust/src/web_accounts.rs:845
 #: web/src/lib/features/account/AccountSettings.svelte:777
-#: web/src/lib/features/admin/AdminUsers.svelte:636
+#: web/src/lib/features/admin/AdminUsers.svelte:633
 msgid "Member"
+msgstr ""
+
+#: rust/src/web_accounts.rs:846
+#: web/src/lib/features/admin/AdminUsers.svelte:650
+msgid "Disable"
+msgstr ""
+
+#: rust/src/web_accounts.rs:847
+#: web/src/lib/features/admin/AdminUsers.svelte:650
+msgid "Enable"
+msgstr ""
+
+#: rust/src/web_accounts.rs:848
+#: web/src/lib/features/account/AccountSettings.svelte:951
+msgid "New password"
+msgstr ""
+
+#: rust/src/web_accounts.rs:849
+#: web/src/lib/features/admin/AdminUsers.svelte:660
+#: web/src/lib/features/admin/AdminUsers.svelte:914
+msgid "Reset password"
 msgstr ""
 
 #: rust/src/web_accounts.rs:852
 msgid "API tokens"
+msgstr ""
+
+#: rust/src/web_accounts.rs:858 rust/src/web_audit.rs:138
+#: web/src/lib/features/account/AccountSettings.svelte:1132
+#: web/src/lib/features/admin/AdminResource.svelte:449
+#: web/src/lib/features/admin/AdminResource.svelte:650
+#: web/src/lib/features/admin/audit-action.ts:26
+msgid "Created"
+msgstr ""
+
+#: rust/src/web_accounts.rs:859
+#: web/src/lib/features/account/AccountSettings.svelte:1146
+msgid "Revoke"
 msgstr ""
 
 #: rust/src/web_accounts.rs:860
@@ -2795,6 +600,10 @@ msgstr ""
 #: rust/src/web_accounts.rs:862
 #: web/src/lib/features/account/AccountSettings.svelte:931
 msgid "Current password"
+msgstr ""
+
+#: rust/src/web_accounts.rs:863
+msgid "Token created"
 msgstr ""
 
 #: rust/src/web_accounts.rs:868
@@ -2835,6 +644,13 @@ msgstr ""
 
 #: rust/src/web_audit.rs:131 web/src/lib/features/admin/AdminAudit.svelte:325
 msgid "All entities"
+msgstr ""
+
+#: rust/src/web_audit.rs:132 web/src/lib/features/admin/AdminAudit.svelte:236
+#: web/src/lib/features/admin/AdminAudit.svelte:326
+#: web/src/lib/features/admin/AdminResource.svelte:233
+#: web/src/lib/features/admin/DiffPanel.svelte:88
+msgid "Project"
 msgstr ""
 
 #: rust/src/web_audit.rs:136
@@ -2922,6 +738,10 @@ msgstr ""
 msgid "About"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:30
+msgid "About this policy"
+msgstr ""
+
 #: web/src/routes/+layout.svelte:294
 msgid "Account access"
 msgstr ""
@@ -3004,6 +824,14 @@ msgstr ""
 msgid "Add yarn"
 msgstr ""
 
+#: web/src/lib/features/yarns/YarnLibrary.svelte:217
+msgid "Add your first yarn"
+msgstr ""
+
+#: web/src/lib/features/history/change-format.ts:64
+msgid "Added"
+msgstr ""
+
 #: web/src/lib/features/history/history-summary.ts:90
 msgid "Added a photo"
 msgstr ""
@@ -3039,7 +867,13 @@ msgstr ""
 msgid "Adjusted Stitches"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:763
+#: web/src/lib/components/AccountMenu.svelte:265
+#: web/src/lib/components/AccountMenu.svelte:303
+#: web/src/routes/+layout.svelte:273 web/src/routes/more/+page.svelte:66
+msgid "Admin"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminUsers.svelte:760
 msgid "Administrator access"
 msgstr ""
 
@@ -3085,12 +919,20 @@ msgstr ""
 msgid "Android app"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:105
+msgid "Android app and offline data"
+msgstr ""
+
 #: web/src/lib/features/admin/AdminAudit.svelte:339
 msgid "Any action"
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:143
 msgid "App version"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:856
+msgid "Appearance"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1028
@@ -3178,6 +1020,18 @@ msgstr ""
 msgid "Audit pages"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:80
+msgid ""
+"Authentication information: a session cookie for browser login and "
+"personal access tokens for API or Android access. Token values are shown "
+"only when they are created; the server stores a hash for later "
+"verification."
+msgstr ""
+
+#: web/src/routes/+layout.svelte:218
+msgid "Back"
+msgstr ""
+
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:111
 msgid "Back to 10 × 10 cm"
 msgstr ""
@@ -3186,9 +1040,23 @@ msgstr ""
 msgid "Back to More"
 msgstr ""
 
+#: web/src/lib/features/projects/ProjectEditor.svelte:1123
+#: web/src/lib/features/projects/ProjectEditor.svelte:1128
+#: web/src/lib/features/projects/ProjectReader.svelte:676
+#: web/src/lib/features/projects/ProjectReader.svelte:684
+#: web/src/lib/features/projects/ProjectReader.svelte:700
+#: web/src/routes/+layout.svelte:300
+msgid "Back to projects"
+msgstr ""
+
 #: web/src/lib/features/auth/SignupForm.svelte:166
 #: web/src/routes/about/+page.svelte:122 web/src/routes/privacy/+page.svelte:20
 msgid "Back to sign in"
+msgstr ""
+
+#: web/src/lib/features/yarns/YarnDetail.svelte:287
+#: web/src/lib/features/yarns/YarnForm.svelte:595
+msgid "Back to yarns"
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:541
@@ -3224,6 +1092,13 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:398
 msgid "By"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:221
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:240
+msgid ""
+"Calculate how many stitches to cast on and rows to knit based on your "
+"gauge and the pattern's gauge."
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:502
@@ -3281,6 +1156,10 @@ msgstr ""
 msgid "Changed {fields}"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:230
+msgid "Changes to this policy"
+msgstr ""
+
 #: web/src/lib/features/account/AccountSettings.svelte:1003
 msgid "Changing password…"
 msgstr ""
@@ -3311,7 +1190,7 @@ msgid "Checking archive status…"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:384
-#: web/src/lib/features/admin/AdminUsers.svelte:538
+#: web/src/lib/features/admin/AdminUsers.svelte:535
 msgid "Choose a different password."
 msgstr ""
 
@@ -3374,12 +1253,23 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
+#: web/src/lib/features/projects/ProjectLibrary.svelte:211
+#: web/src/lib/features/projects/ProjectLibrary.svelte:284
+#: web/src/lib/features/yarns/YarnLibrary.svelte:157
+#: web/src/lib/features/yarns/YarnLibrary.svelte:202
+msgid "Clear filters"
+msgstr ""
+
 #: web/src/lib/components/UrlField.svelte:112
 msgid "Clear link"
 msgstr ""
 
 #: web/src/lib/features/media/OcrControl.svelte:118
 msgid "Clipboard access is unavailable. Select and copy the text manually."
+msgstr ""
+
+#: web/src/lib/features/auth/AdminUserIdentities.svelte:191
+msgid "Close"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:210
@@ -3398,6 +1288,10 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:451
 msgid "Close photo"
+msgstr ""
+
+#: web/src/lib/features/auth/ReauthDialog.svelte:198
+msgid "Confirm"
 msgstr ""
 
 #: web/src/lib/features/auth/ReauthDialog.svelte:134
@@ -3425,7 +1319,7 @@ msgstr ""
 msgid "Confirming…"
 msgstr ""
 
-#: web/src/lib/components/GetAppCard.svelte:58
+#: web/src/lib/components/GetAppCard.svelte:65
 msgid "Connect the app"
 msgstr ""
 
@@ -3443,6 +1337,10 @@ msgstr ""
 
 #: web/src/routes/about/+page.svelte:167
 msgid "Copied. Paste it into your bug report."
+msgstr ""
+
+#: web/src/routes/about/+page.svelte:163
+msgid "Copy"
 msgstr ""
 
 #: web/src/lib/features/media/OcrControl.svelte:227
@@ -3487,8 +1385,17 @@ msgstr ""
 msgid "Create a project draft from text, a file, or a pattern link."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:717
+#: web/src/lib/features/admin/AdminUsers.svelte:714
 msgid "Create a user account"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:1080
+msgid "Create token"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminUsers.svelte:581
+#: web/src/lib/features/admin/AdminUsers.svelte:778
+msgid "Create user"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:658
@@ -3509,7 +1416,7 @@ msgstr ""
 msgid "Creating project…"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:780
+#: web/src/lib/features/admin/AdminUsers.svelte:777
 msgid "Creating…"
 msgstr ""
 
@@ -3525,6 +1432,11 @@ msgstr ""
 msgid "Danger zone"
 msgstr ""
 
+#: web/src/lib/components/ThemeSwitcher.svelte:14
+#: web/src/lib/features/account/AccountSettings.svelte:114
+msgid "Dark"
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectReader.svelte:794
 #: web/src/lib/features/yarns/YarnDetail.svelte:334
 msgid "Decrease text size"
@@ -3532,6 +1444,10 @@ msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:119
 msgid "Default"
+msgstr ""
+
+#: web/src/lib/features/categories/CategoryManager.svelte:403
+msgid "Delete category"
 msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:374
@@ -3578,11 +1494,11 @@ msgstr ""
 msgid "Details to add"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:844
+#: web/src/lib/features/admin/AdminUsers.svelte:841
 msgid "Disable account"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:799
+#: web/src/lib/features/admin/AdminUsers.svelte:796
 msgid "Disable this account?"
 msgstr ""
 
@@ -3592,15 +1508,19 @@ msgstr ""
 msgid "Discard this password draft?"
 msgstr ""
 
-#: web/src/lib/components/GetAppCard.svelte:68
+#: web/src/lib/components/GetAppCard.svelte:75
 msgid "Dismiss"
+msgstr ""
+
+#: web/src/lib/components/ActionFeedback.svelte:60
+msgid "Dismiss message"
 msgstr ""
 
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:117
 msgid "Done"
 msgstr ""
 
-#: web/src/lib/components/GetAppCard.svelte:51
+#: web/src/lib/components/GetAppCard.svelte:58
 msgid "Download for Android"
 msgstr ""
 
@@ -3632,7 +1552,11 @@ msgstr ""
 msgid "Edits to this yarn will show up here."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:727
+#: web/src/routes/privacy/+page.svelte:26
+msgid "Effective date: 19 August 2026"
+msgstr ""
+
+#: web/src/lib/features/admin/AdminUsers.svelte:724
 msgid "Email address"
 msgstr ""
 
@@ -3641,11 +1565,11 @@ msgstr ""
 msgid "Empty list"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:843
+#: web/src/lib/features/admin/AdminUsers.svelte:840
 msgid "Enable account"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:798
+#: web/src/lib/features/admin/AdminUsers.svelte:795
 msgid "Enable this account?"
 msgstr ""
 
@@ -3706,6 +1630,18 @@ msgstr ""
 msgid "Enter an email address."
 msgstr ""
 
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:247
+msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:259
+msgid "Enter the stitch count from your pattern (cast-on stitches)"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:253
+msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
+msgstr ""
+
 #: web/src/lib/features/account/AccountSettings.svelte:571
 msgid "Enter your current password."
 msgstr ""
@@ -3722,6 +1658,13 @@ msgstr ""
 msgid ""
 "External images are disabled. Links will be kept in notes and never "
 "attached."
+msgstr ""
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:324
+#: web/src/lib/features/projects/ProjectLibrary.svelte:325
+#: web/src/lib/features/yarns/YarnLibrary.svelte:246
+#: web/src/lib/features/yarns/YarnLibrary.svelte:247
+msgid "Favorite"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:233
@@ -3758,6 +1701,13 @@ msgstr ""
 msgid "Follow system"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:48
+msgid ""
+"For a self-hosted installation, the person or organization operating that"
+" installation is the controller of the data stored there. The Stricknani "
+"project does not receive data from independent self-hosted instances."
+msgstr ""
+
 #: web/src/lib/features/yarns/YarnForm.svelte:740
 msgid "For example, 80% wool, 20% nylon"
 msgstr ""
@@ -3768,6 +1718,12 @@ msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1064
 msgid "For example, my tablet"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:219
+msgid ""
+"For software questions or privacy concerns that relate to the project, "
+"use the"
 msgstr ""
 
 #: web/src/lib/features/auth/ReauthDialog.svelte:139
@@ -3804,8 +1760,19 @@ msgstr ""
 msgid "German and English"
 msgstr ""
 
-#: web/src/lib/components/GetAppCard.svelte:50
+#: web/src/lib/components/GetAppCard.svelte:57
 msgid "Get it on Google Play"
+msgstr ""
+
+#: web/src/lib/components/AccountMenu.svelte:315
+#: web/src/lib/components/SignInForm.svelte:156
+#: web/src/routes/about/+page.svelte:88
+msgid "Get the Android app"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:59
+#: web/src/routes/privacy/+page.svelte:224
+msgid "GitHub issue tracker"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:64
@@ -3840,12 +1807,21 @@ msgstr ""
 msgid "Hide token"
 msgstr ""
 
+#: web/src/lib/features/home/HomeDashboard.svelte:96
+#: web/src/routes/+layout.svelte:59
+msgid "Home"
+msgstr ""
+
 #: web/src/routes/about/+page.svelte:100 web/src/routes/more/+page.svelte:43
 msgid "How Stricknani handles your data."
 msgstr ""
 
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:67
 msgid "How big was the area you counted? Patterns usually use 10 × 10 cm."
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:237
+msgid "How to use this calculator"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1227
@@ -3864,6 +1840,13 @@ msgid ""
 " version, device model, Android version, and a stack trace, with access "
 "tokens redacted) and shows it at the next launch. The report is not sent "
 "anywhere unless you copy and share it yourself."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:54
+msgid ""
+"If you use an instance operated by somebody else, contact that operator "
+"about access, deletion, retention, or other privacy requests. Questions "
+"about the Stricknani software can be reported through the"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:74
@@ -3915,6 +1898,15 @@ msgstr ""
 msgid "Increase text size"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:65
+msgid "Information handled by the web app"
+msgstr ""
+
+#: web/src/lib/features/imports/ImportWorkbench.svelte:616
+#: web/src/lib/features/imports/ImportWorkbench.svelte:631
+msgid "Instructions"
+msgstr ""
+
 #: web/src/routes/create/+page.svelte:31
 msgid "Keep a note of a yarn you own."
 msgstr ""
@@ -3940,7 +1932,7 @@ msgstr ""
 msgid "Keep yarn"
 msgstr ""
 
-#: web/src/lib/components/GetAppCard.svelte:31
+#: web/src/lib/components/GetAppCard.svelte:38
 msgid "Knit offline with the Stricknani app for Android"
 msgstr ""
 
@@ -3948,8 +1940,22 @@ msgstr ""
 msgid "Knit offline with the Stricknani app for Android."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:74
+msgid ""
+"Knitting content: projects, yarn entries, notes, instructions, "
+"categories, steps, attachments, profile images, and other information you"
+" choose to store."
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectReader.svelte:728
 msgid "Knitting project"
+msgstr ""
+
+#: web/src/lib/components/AccountMenu.svelte:272
+#: web/src/lib/components/LocaleSwitcher.svelte:25
+#: web/src/lib/features/account/AccountSettings.svelte:843
+#: web/src/lib/features/account/AccountSettings.svelte:849
+msgid "Language"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:120
@@ -3967,6 +1973,10 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:758
 #: web/src/lib/features/yarns/YarnForm.svelte:500
 msgid "Latest saved version loaded."
+msgstr ""
+
+#: web/src/lib/components/SignInForm.svelte:151
+msgid "Learn how Stricknani handles your data in the"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:114
@@ -3992,6 +2002,11 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:45
 msgid "Legacy user"
+msgstr ""
+
+#: web/src/lib/components/ThemeSwitcher.svelte:13
+#: web/src/lib/features/account/AccountSettings.svelte:113
+msgid "Light"
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:81
@@ -4106,7 +2121,7 @@ msgstr ""
 msgid "Loading resource details…"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:595
+#: web/src/lib/features/admin/AdminUsers.svelte:592
 msgid "Loading user accounts…"
 msgstr ""
 
@@ -4121,6 +2136,10 @@ msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:118
 msgid "Loading your home…"
+msgstr ""
+
+#: web/src/lib/features/history/HistorySection.svelte:394
+msgid "Loading…"
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:243
@@ -4153,6 +2172,11 @@ msgstr ""
 #: web/src/routes/+layout.svelte:63 web/src/routes/more/+page.svelte:13
 #: web/src/routes/more/+page.svelte:19
 msgid "More"
+msgstr ""
+
+#: web/src/lib/features/projects/ProjectReader.svelte:780
+#: web/src/lib/features/yarns/YarnDetail.svelte:320
+msgid "More actions"
 msgstr ""
 
 #: web/src/lib/features/history/HistorySection.svelte:371
@@ -4197,7 +2221,7 @@ msgstr ""
 msgid "New API token"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:719
+#: web/src/lib/features/admin/AdminUsers.svelte:716
 msgid "New accounts are members unless you choose administrator access."
 msgstr ""
 
@@ -4212,12 +2236,16 @@ msgstr ""
 msgid "New project"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:881
+#: web/src/lib/features/admin/AdminUsers.svelte:878
 msgid "New temporary password"
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:146
 msgid "New to Stricknani?"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:1041
+msgid "New token"
 msgstr ""
 
 #: web/src/lib/components/PwaUpdate.svelte:117
@@ -4234,7 +2262,7 @@ msgid "Next image"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:454
-#: web/src/lib/features/admin/AdminUsers.svelte:700
+#: web/src/lib/features/admin/AdminUsers.svelte:697
 msgid "Next page"
 msgstr ""
 
@@ -4323,6 +2351,14 @@ msgstr ""
 msgid "No projects yet."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:203
+msgid ""
+"No software can guarantee absolute security. The security and "
+"confidentiality of a self-hosted installation also depend on the "
+"operator, hosting environment, network, integrations, and devices used to"
+" access it."
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:1492
 #: web/src/lib/features/projects/ProjectReader.svelte:1231
 msgid "No steps have been added yet."
@@ -4332,7 +2368,7 @@ msgstr ""
 msgid "No text was found in this photo."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:675
+#: web/src/lib/features/admin/AdminUsers.svelte:672
 msgid "No user accounts were found."
 msgstr ""
 
@@ -4446,6 +2482,18 @@ msgstr ""
 msgid "Opening {name}…"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:86
+msgid ""
+"Operational information: application and import logs may contain "
+"timestamps, routes, status information, error details, and identifiers "
+"needed to operate and troubleshoot the instance. The operator chooses log"
+" destinations and retention."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:157
+msgid "Optional external services"
+msgstr ""
+
 #: web/src/lib/features/categories/CategoryManager.svelte:206
 msgid "Organize projects with your own categories."
 msgstr ""
@@ -4472,13 +2520,13 @@ msgid "PDF document"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:445
-#: web/src/lib/features/admin/AdminUsers.svelte:692
+#: web/src/lib/features/admin/AdminUsers.svelte:689
 #: web/src/lib/features/projects/ProjectLibrary.svelte:341
 #: web/src/lib/features/yarns/YarnLibrary.svelte:263
 msgid "Page"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:517
+#: web/src/lib/features/admin/AdminUsers.svelte:514
 msgid "Password reset. The user must sign in again."
 msgstr ""
 
@@ -4506,6 +2554,14 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1343
 msgid "Pattern"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:349
+msgid "Pattern Counts"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:275
+msgid "Pattern Gauge (per 10cm)"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1333
@@ -4606,7 +2662,7 @@ msgid "Previous image"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:443
-#: web/src/lib/features/admin/AdminUsers.svelte:690
+#: web/src/lib/features/admin/AdminUsers.svelte:687
 msgid "Previous page"
 msgstr ""
 
@@ -4624,6 +2680,18 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:381
 msgid "Print yarn"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:24
+msgid "Privacy"
+msgstr ""
+
+#: web/src/lib/components/AccountMenu.svelte:337
+#: web/src/lib/components/SignInForm.svelte:152
+#: web/src/routes/+layout.svelte:73 web/src/routes/about/+page.svelte:99
+#: web/src/routes/more/+page.svelte:42 web/src/routes/privacy/+page.svelte:12
+#: web/src/routes/privacy/+page.svelte:25
+msgid "Privacy Policy"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:724
@@ -4714,6 +2782,15 @@ msgstr ""
 msgid "Projects that use this category will no longer show it."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:113
+msgid ""
+"Projects, yarn entries, and their photos are cached on the device so the "
+"app can work offline. Offline edits may be queued locally and are sent to"
+" your configured server when synchronization resumes. Removing the app or"
+" clearing its application data removes the local cache according to "
+"Android behavior."
+msgstr ""
+
 #: web/src/lib/components/AccountMenu.svelte:322
 msgid "QR code for the Android app download"
 msgstr ""
@@ -4802,6 +2879,13 @@ msgstr ""
 
 #: web/src/lib/components/PwaUpdate.svelte:121
 msgid "Reload"
+msgstr ""
+
+#: web/src/lib/features/projects/ProjectEditor.svelte:1279
+#: web/src/lib/features/projects/ProjectEditor.svelte:1452
+#: web/src/lib/features/projects/ProjectEditor.svelte:1762
+#: web/src/lib/features/projects/YarnPicker.svelte:84
+msgid "Remove"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1658
@@ -4897,11 +2981,11 @@ msgstr ""
 msgid "Reset text size"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:865
+#: web/src/lib/features/admin/AdminUsers.svelte:862
 msgid "Reset this password?"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:916
+#: web/src/lib/features/admin/AdminUsers.svelte:913
 msgid "Resetting…"
 msgstr ""
 
@@ -4957,12 +3041,31 @@ msgstr ""
 msgid "Revoke this token?"
 msgstr ""
 
+#: web/src/lib/features/account/AccountSettings.svelte:1145
+#: web/src/lib/features/account/AccountSettings.svelte:1278
+msgid "Revoke token"
+msgstr ""
+
 #: web/src/lib/features/account/AccountSettings.svelte:1277
 msgid "Revoking…"
 msgstr ""
 
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:316
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:455
+msgid "Rows"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
+msgid "Rows to knit"
+msgstr ""
+
 #: web/src/lib/features/media/ArchiveControl.svelte:426
 msgid "Save a copy of the source in the web archive."
+msgstr ""
+
+#: web/src/lib/features/projects/ProjectEditor.svelte:1696
+#: web/src/lib/features/yarns/YarnForm.svelte:110
+msgid "Save changes"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1159
@@ -5016,7 +3119,7 @@ msgstr ""
 msgid "Saving yarn…"
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:841
+#: web/src/lib/features/admin/AdminUsers.svelte:838
 #: web/src/lib/features/categories/CategoryManager.svelte:262
 #: web/src/lib/features/categories/CategoryManager.svelte:320
 #: web/src/lib/features/projects/ProjectEditor.svelte:1158
@@ -5040,6 +3143,10 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:153
 msgid "Search your yarn"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:195
+msgid "Security"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:254
@@ -5188,6 +3295,13 @@ msgstr ""
 msgid "Status checks pause in the background."
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:561
+#: web/src/lib/features/projects/ProjectEditor.svelte:1419
+#: web/src/lib/features/projects/ProjectEditor.svelte:1605
+#: web/src/lib/features/projects/ProjectReader.svelte:1143
+msgid "Step"
+msgstr ""
+
 #: web/src/lib/features/imports/ImportWorkbench.svelte:397
 msgid "Step 1"
 msgstr ""
@@ -5251,8 +3365,38 @@ msgstr ""
 msgid "Stitch sample image uploaded"
 msgstr ""
 
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:286
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:425
+msgid "Stitches"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:352
+msgid "Stitches to cast on"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:179
+msgid "Storage, retention, and deletion"
+msgstr ""
+
 #: web/src/routes/about/+page.svelte:224
 msgid "Stricknani is free software, licensed under the"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:38
+msgid ""
+"Stricknani is self-hosted software. The operator of the instance you use "
+"is responsible for its deployment, configuration, backups, and legal "
+"obligations. This page describes the default behavior of the software and"
+" is not a promise about every deployment."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:197
+msgid ""
+"Stricknani uses password hashing, access checks, CSRF protection, upload "
+"validation, and security response headers. Operators should use HTTPS, "
+"protect application secrets, restrict access to the database and media "
+"volume, keep the software and host updated, and configure backups "
+"securely."
 msgstr ""
 
 #: web/src/lib/components/PwaUpdate.svelte:76
@@ -5275,6 +3419,13 @@ msgstr ""
 msgid "System"
 msgstr ""
 
+#: web/src/lib/features/admin/AdminResource.svelte:478
+#: web/src/lib/features/history/change-format.ts:112
+#: web/src/lib/features/projects/ProjectEditor.svelte:1236
+#: web/src/lib/features/projects/ProjectEditor.svelte:1267
+msgid "Tags"
+msgstr ""
+
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:353
 msgid "Tap a photo to see it larger."
 msgstr ""
@@ -5283,7 +3434,7 @@ msgstr ""
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:743
+#: web/src/lib/features/admin/AdminUsers.svelte:740
 msgid "Temporary password"
 msgstr ""
 
@@ -5350,6 +3501,14 @@ msgstr ""
 msgid "The API token could not be revoked."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:107
+msgid ""
+"The Android app connects only to the Stricknani server URL that you "
+"configure. It stores that URL and your personal access token locally, "
+"encrypted at rest, and does not ask for or store your Stricknani account "
+"password."
+msgstr ""
+
 #: web/src/routes/privacy/+page.svelte:125
 msgid ""
 "The Android app does not use Android cloud backup. You can export a "
@@ -5357,6 +3516,13 @@ msgid ""
 " access token, to a file or folder that you choose, either manually or on"
 " a schedule. A backup can be protected with a password; without one, the "
 "file is readable by anyone who can open it."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:119
+msgid ""
+"The Android app has no analytics, advertising, tracking, or crash-"
+"reporting service of its own. Data sent during synchronization goes to "
+"the server you configured."
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:69
@@ -5425,6 +3591,14 @@ msgid ""
 "change the order."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:181
+msgid ""
+"The instance stores account data and content in its configured database "
+"and media storage. There is no universal retention period: the operator "
+"determines retention, backups, log rotation, and whether deleted data "
+"remains in backups for a time."
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:756
 #: web/src/lib/features/projects/ProjectEditor.svelte:771
 msgid "The latest project could not be loaded."
@@ -5460,7 +3634,7 @@ msgstr ""
 msgid "The password could not be changed."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:543
+#: web/src/lib/features/admin/AdminUsers.svelte:540
 msgid "The password could not be reset."
 msgstr ""
 
@@ -5618,16 +3792,30 @@ msgstr ""
 msgid "The user account could not be created."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:813
+#: web/src/lib/features/admin/AdminUsers.svelte:810
 msgid "The user will be able to sign in again."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:814
+#: web/src/lib/features/admin/AdminUsers.svelte:811
 msgid "The user will be signed out and will not be able to sign in."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:876
+#: web/src/lib/features/admin/AdminUsers.svelte:873
 msgid "The user will need to sign in with the new password."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:97
+msgid ""
+"The web app uses this information to authenticate you, provide project "
+"and yarn management, synchronize API clients, serve your authorized "
+"media, process imports, protect the service, and diagnose failures. It "
+"does not sell your information or use it for advertising."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:171
+msgid ""
+"The web interface itself uses locally served assets and does not require "
+"an analytics or advertising network."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:200
@@ -5662,6 +3850,14 @@ msgstr ""
 
 #: web/src/lib/features/history/HistorySection.svelte:339
 msgid "These changes could not be loaded."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:165
+msgid ""
+"These integrations are optional and controlled by the instance operator. "
+"Their providers process information under their own terms and privacy "
+"policies; review those policies before enabling or using the related "
+"feature."
 msgstr ""
 
 #: web/src/lib/components/PreviewSection.svelte:16
@@ -5748,6 +3944,19 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:248
 msgid "This photo is no longer available."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:32
+msgid ""
+"This policy explains how Stricknani handles information when you use a "
+"Stricknani web instance or the companion Android app."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:232
+msgid ""
+"This policy may be updated when Stricknani behavior or integrations "
+"change. The current version is published at this URL. Check the effective"
+" date above for the latest revision."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:661
@@ -5869,7 +4078,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:1116
 #: web/src/lib/features/admin/AdminAudit.svelte:368
 #: web/src/lib/features/admin/AdminResource.svelte:385
-#: web/src/lib/features/admin/AdminUsers.svelte:610
+#: web/src/lib/features/admin/AdminUsers.svelte:607
 #: web/src/lib/features/admin/DiffPanel.svelte:129
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:141
 #: web/src/lib/features/auth/LinkedLogins.svelte:265
@@ -5920,6 +4129,11 @@ msgstr ""
 #: web/src/lib/features/auth/LinkedLogins.svelte:340
 #, python-brace-format
 msgid "Unlink {name}?"
+msgstr ""
+
+#: web/src/lib/features/projects/ProjectEditor.svelte:1720
+#: web/src/lib/features/yarns/YarnForm.svelte:610
+msgid "Unsaved changes"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:394
@@ -6009,7 +4223,7 @@ msgstr ""
 msgid "User account enabled."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:681
+#: web/src/lib/features/admin/AdminUsers.svelte:678
 msgid "User account pages"
 msgstr ""
 
@@ -6017,7 +4231,7 @@ msgstr ""
 msgid "User accounts could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/admin/AdminUsers.svelte:567
+#: web/src/lib/features/admin/AdminUsers.svelte:564
 msgid "User administration"
 msgstr ""
 
@@ -6049,6 +4263,14 @@ msgstr ""
 
 #: web/src/routes/create/+page.svelte:17
 msgid "What would you like to add?"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:46
+msgid "Who is responsible for your data?"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:95
+msgid "Why this information is used"
 msgstr ""
 
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:73
@@ -6149,9 +4371,22 @@ msgstr ""
 msgid "Yesterday"
 msgstr ""
 
+#: web/src/lib/features/admin/AdminUsers.svelte:626
+msgid "You"
+msgstr ""
+
 #: web/src/lib/features/auth/SignupForm.svelte:152
 #: web/src/routes/login/+page.svelte:12
 msgid "You are already signed in."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:187
+msgid ""
+"You can manage your content and revoke personal access tokens through the"
+" available features. To request deletion or an export of account data, "
+"contact the instance operator. Deleting content or an account does not "
+"necessarily remove copies already retained in backups, logs, or external "
+"services."
 msgstr ""
 
 #: web/src/lib/features/auth/LinkedLogins.svelte:242
@@ -6166,6 +4401,14 @@ msgstr ""
 msgid "You do not have permission to do that."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:213
+msgid ""
+"You may choose what to enter, upload, synchronize, or send to optional "
+"integrations. You may stop using the Android app, clear its local data, "
+"revoke API tokens, and contact the relevant instance operator about your "
+"rights under applicable law."
+msgstr ""
+
 #: web/src/lib/features/auth/LinkedLogins.svelte:348
 msgid ""
 "You will no longer be able to sign in with this login. You can link it "
@@ -6175,6 +4418,10 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:227
 #: web/src/lib/features/account/AccountSettings.svelte:326
 msgid "Your API tokens could not be loaded."
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:414
+msgid "Your Gauge (per 10cm)"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:690
@@ -6188,6 +4435,10 @@ msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:78
 msgid "Your account is ready. Sign in with your email and password."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:211
+msgid "Your choices and contact"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1137
@@ -6224,7 +4475,7 @@ msgstr ""
 msgid "Your new API token"
 msgstr ""
 
-#: web/src/lib/components/GetAppCard.svelte:35
+#: web/src/lib/components/GetAppCard.svelte:42
 msgid "Your projects and yarn stay with you, even without a connection."
 msgstr ""
 
@@ -6347,6 +4598,10 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1145
 msgid "of"
+msgstr ""
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:384
+msgid "optional"
 msgstr ""
 
 #: web/src/lib/features/auth/OidcSignIn.svelte:109
