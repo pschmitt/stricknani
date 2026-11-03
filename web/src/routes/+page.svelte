@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ProjectLibrary from "#lib/features/projects/ProjectLibrary.svelte";
+  import HomeDashboard from "#lib/features/home/HomeDashboard.svelte";
 </script>
 
-<ProjectLibrary />
+<HomeDashboard />

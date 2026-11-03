@@ -613,9 +613,12 @@
         >
           <div class="user-identity">
             <UserAvatar avatarUrl={user.avatar_url} name={user.email} />
-            <strong>{user.email}</strong>
+            <strong class="user-email" title={user.email}>{user.email}</strong>
+            {#if user.id === userId}<span class="you-marker"
+                >{t("You", locale)}</span
+              >{/if}
           </div>
-          <span class="role-value"
+          <span class="role-value" class:admin={user.is_admin}
             ><span class="cell-label">{t("Role", locale)}:</span>
             {user.is_admin
               ? t("Administrator", locale)
@@ -627,7 +630,9 @@
           </span>
           <div class="row-actions">
             <SharedButton
-              variant={user.active ? "danger" : "secondary"}
+              variant="secondary"
+              size="sm"
+              class={user.active ? "user-action--danger" : ""}
               type="button"
               disabled={operation !== null}
               onclick={(event) =>
@@ -638,6 +643,7 @@
             </SharedButton>
             <SharedButton
               variant="ghost"
+              size="sm"
               type="button"
               disabled={operation !== null}
               onclick={(event) => askReset(user, event.currentTarget)}
@@ -652,29 +658,32 @@
       {/each}
     </div>
 
-    <nav class="page-controls" aria-label={t("User account pages", locale)}>
-      <SharedButton
-        variant="secondary"
-        type="button"
-        disabled={pageMeta.page <= 1 || operation !== null}
-        onclick={() => void setPage(pageMeta.page - 1)}
-        icon="previous"
+    {#if pageMeta.page > 1 || pageMeta.has_more}<nav
+        class="page-controls"
+        aria-label={t("User account pages", locale)}
       >
-        {t("Previous page", locale)}
-      </SharedButton>
-      <span>{t("Page", locale)} {pageMeta.page}</span>
-      <SharedButton
-        variant="secondary"
-        type="button"
-        disabled={!pageMeta.has_more || operation !== null}
-        onclick={() => void setPage(pageMeta.page + 1)}
-      >
-        <span class="button-content">
-          <span>{t("Next page", locale)}</span>
-          <NavIcon name="next" />
-        </span>
-      </SharedButton>
-    </nav>
+        <SharedButton
+          variant="secondary"
+          type="button"
+          disabled={pageMeta.page <= 1 || operation !== null}
+          onclick={() => void setPage(pageMeta.page - 1)}
+          icon="previous"
+        >
+          {t("Previous page", locale)}
+        </SharedButton>
+        <span>{t("Page", locale)} {pageMeta.page}</span>
+        <SharedButton
+          variant="secondary"
+          type="button"
+          disabled={!pageMeta.has_more || operation !== null}
+          onclick={() => void setPage(pageMeta.page + 1)}
+        >
+          <span class="button-content">
+            <span>{t("Next page", locale)}</span>
+            <NavIcon name="next" />
+          </span>
+        </SharedButton>
+      </nav>{/if}
   {/if}
 </section>
 
@@ -907,11 +916,18 @@
   .user-row {
     display: grid;
     grid-template-columns:
-      minmax(14rem, 2fr) minmax(8rem, 1fr) minmax(7rem, 0.8fr)
-      minmax(18rem, 1.5fr);
+      minmax(14rem, 2fr) minmax(8rem, 0.8fr) minmax(6rem, 0.6fr)
+      minmax(16rem, auto);
     align-items: center;
     gap: 0.8rem;
-    padding: 0.85rem 1rem;
+    padding: 0.6rem 0.75rem 0.6rem 1rem;
+  }
+  .user-row {
+    min-height: 3.75rem;
+    transition: background-color 120ms ease;
+  }
+  .user-row:hover {
+    background: var(--surface-raised);
   }
   .ledger-head {
     color: var(--ink-muted);
@@ -927,7 +943,36 @@
     align-items: center;
     gap: 0.65rem;
     min-width: 0;
-    overflow-wrap: anywhere;
+  }
+  .user-email {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 620;
+  }
+  .you-marker {
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+  /* Role as a quiet label; administrators get the accent so they stand out in the list. */
+  .role-value {
+    justify-self: start;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+  .role-value.admin {
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    color: var(--accent-strong);
+    background: var(--accent-wash);
+    font-size: 0.83rem;
+    font-weight: 650;
   }
   .cell-label {
     display: none;
@@ -947,8 +992,18 @@
   }
   .row-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    flex-wrap: nowrap;
+    justify-content: end;
+    gap: 0.35rem;
+  }
+  /* Disabling is a rare, destructive action: outlined in the danger colour instead of a solid
+     pink block on every row. The confirmation dialog stays the real safeguard. */
+  .row-actions :global(.user-action--danger) {
+    border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+    color: var(--danger);
+  }
+  .row-actions :global(.user-action--danger:hover:not(:disabled)) {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
   }
   .button-content {
     display: inline-flex;
@@ -1083,8 +1138,8 @@
       grid-column: 1 / -1;
     }
     .role-value {
-      color: var(--ink-muted);
-      font-size: 0.9rem;
+      grid-column: 1;
+      grid-row: 2;
     }
     .cell-label {
       font-weight: 650;
@@ -1098,6 +1153,7 @@
     }
     .row-actions {
       grid-column: 1 / -1;
+      justify-content: stretch;
     }
     .row-actions :global(.ui-button) {
       flex: 1;

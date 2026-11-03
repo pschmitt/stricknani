@@ -1,5 +1,6 @@
 <script lang="ts">
   export type NavIconName =
+    | "home"
     | "projects"
     | "yarns"
     | "create"
@@ -59,7 +60,9 @@
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  {#if name === "projects"}
+  {#if name === "home"}
+    <path d="m3.5 10 8.5-7 8.5 7M5.5 8.5V21h13V8.5M9.5 21v-7h5v7" />
+  {:else if name === "projects"}
     <path d="M4.5 5.5h10l5 5v8h-15z" />
     <path d="M14.5 5.5v5h5M8 14h8M8 17h6" />
   {:else if name === "yarns"}
@@ -87,10 +90,13 @@
     <path d="M12 3.5 19 6v5.2c0 4.1-2.8 7.3-7 9.3-4.2-2-7-5.2-7-9.3V6z" />
     <path d="m9 12 2 2 4-4" />
   {:else if name === "audit"}
-    <path d="M5 5.5h14M5 12h14M5 18.5h14" />
-    <circle cx="3.5" cy="5.5" r=".5" />
-    <circle cx="3.5" cy="12" r=".5" />
-    <circle cx="3.5" cy="18.5" r=".5" />
+    <!-- Shifted so the drawing (bullets plus lines) is centred in the 24-unit box. -->
+    <g transform="translate(0.75 0)">
+      <path d="M5 5.5h14M5 12h14M5 18.5h14" />
+      <circle cx="3.5" cy="5.5" r=".5" />
+      <circle cx="3.5" cy="12" r=".5" />
+      <circle cx="3.5" cy="18.5" r=".5" />
+    </g>
   {:else if name === "user-add"}
     <circle cx="9" cy="8" r="3" />
     <path

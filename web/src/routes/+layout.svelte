@@ -50,6 +50,7 @@
   const routeIsAdminOnly = $derived(adminRoute && !canManageAdmin);
 
   const mainNavigation = [
+    { href: "/", label: msg("Home"), icon: "home" },
     { href: "/projects", label: msg("Projects"), icon: "projects" },
     { href: "/yarns", label: msg("Yarns"), icon: "yarns" },
     { href: "/create", label: msg("Create"), icon: "create" },
@@ -110,7 +111,7 @@
   }
 
   function isActive(path: AppPath): boolean {
-    if (path === "/projects" && pathname === linkTo("/")) return true;
+    if (path === "/") return pathname === linkTo("/");
     const fullPath = linkTo(path);
     return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
   }
@@ -222,7 +223,9 @@
             aria-current={isActive(item.href) ? "page" : undefined}
             href={linkTo(item.href)}
           >
-            <span class="nav-icon"><NavIcon name={item.icon} /></span>
+            <span class="nav-icon" data-tone={item.icon}
+              ><NavIcon name={item.icon} /></span
+            >
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
@@ -237,7 +240,9 @@
             aria-current={isActive(item.href) ? "page" : undefined}
             href={linkTo(item.href)}
           >
-            <span class="nav-icon"><NavIcon name={item.icon} /></span>
+            <span class="nav-icon" data-tone={item.icon}
+              ><NavIcon name={item.icon} /></span
+            >
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
@@ -247,7 +252,9 @@
             aria-current={isActive("/admin/users") ? "page" : undefined}
             href={linkTo("/admin/users")}
           >
-            <span class="nav-icon"><NavIcon name="admin" /></span>
+            <span class="nav-icon" data-tone="admin"
+              ><NavIcon name="admin" /></span
+            >
             <span>{t("Admin", locale)}</span>
           </a>
           <a
@@ -255,7 +262,9 @@
             aria-current={isActive("/admin/audit") ? "page" : undefined}
             href={linkTo("/admin/audit")}
           >
-            <span class="nav-icon"><NavIcon name="audit" /></span>
+            <span class="nav-icon" data-tone="audit"
+              ><NavIcon name="audit" /></span
+            >
             <span>{t("Audit log", locale)}</span>
           </a>
         {/if}
@@ -289,7 +298,9 @@
             aria-current={isActive(item.href) ? "page" : undefined}
             href={linkTo(item.href)}
           >
-            <span class="nav-icon"><NavIcon name={item.icon} /></span>
+            <span class="nav-icon" data-tone={item.icon}
+              ><NavIcon name={item.icon} /></span
+            >
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}

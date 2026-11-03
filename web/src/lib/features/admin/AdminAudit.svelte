@@ -10,6 +10,7 @@
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
+  import { knownAuditActions } from "./audit-action";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -240,6 +241,58 @@
           : t("Resource", locale);
   }
 
+  // Events arrive newest first; group them under one heading per local day.
+  const eventDays = $derived.by(() => {
+    const groups: { key: string; label: string; events: AuditEvent[] }[] = [];
+    for (const event of events) {
+      const key = dayKey(event.created_at);
+      const last = groups.at(-1);
+      if (last?.key === key) last.events.push(event);
+      else
+        groups.push({
+          key,
+          label: dayLabel(event.created_at),
+          events: [event],
+        });
+    }
+    return groups;
+  });
+
+  const knownActionNames = Object.keys(knownAuditActions);
+
+  function dayKey(value: string): string {
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.valueOf())) return value;
+    return `${parsed.getFullYear()}-${parsed.getMonth()}-${parsed.getDate()}`;
+  }
+
+  function dayLabel(value: string): string {
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.valueOf())) return value;
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (dayKey(value) === dayKey(today.toISOString()))
+      return t("Today", locale);
+    if (dayKey(value) === dayKey(yesterday.toISOString()))
+      return t("Yesterday", locale);
+    return new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year:
+        parsed.getFullYear() === today.getFullYear() ? undefined : "numeric",
+    }).format(parsed);
+  }
+
+  function eventTime(value: string): string {
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.valueOf())) return value;
+    return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(
+      parsed,
+    );
+  }
+
   function eventDate(value: string): string {
     const parsed = new Date(value);
     if (!Number.isFinite(parsed.valueOf())) return value;
@@ -261,26 +314,38 @@
     ></PageHeader>
   </div>
 
-  <form class="audit-filters" onsubmit={applyFilters}>
-    <label for="audit-entity">{t("Entity", locale)}</label>
-    <select id="audit-entity" value={filters.entity} onchange={changeEntity}>
-      <option value="all">{t("All entities", locale)}</option>
-      <option value="project">{t("Project", locale)}</option>
-      <option value="yarn">{t("Yarn", locale)}</option>
-      <option value="category">{t("Category", locale)}</option>
-    </select>
-    <label for="audit-action">{t("Action", locale)}</label>
-    <div class="action-search">
+  <form
+    class="audit-filters"
+    onsubmit={applyFilters}
+    aria-label={t("Filter audit events", locale)}
+  >
+    <label class="filter-field">
+      <span>{t("Entity", locale)}</span>
+      <select id="audit-entity" value={filters.entity} onchange={changeEntity}>
+        <option value="all">{t("All entities", locale)}</option>
+        <option value="project">{t("Project", locale)}</option>
+        <option value="yarn">{t("Yarn", locale)}</option>
+        <option value="category">{t("Category", locale)}</option>
+      </select>
+    </label>
+    <label class="filter-field filter-field--grow">
+      <span>{t("Action", locale)}</span>
       <input
         id="audit-action"
         bind:value={actionDraft}
         maxlength="64"
         autocomplete="off"
+        list="audit-action-names"
+        placeholder={t("Any action", locale)}
       />
-      <SharedButton variant="primary" type="submit" icon="filter">
-        {t("Filter", locale)}
-      </SharedButton>
-    </div>
+    </label>
+    <datalist id="audit-action-names">
+      {#each knownActionNames as name (name)}<option value={name}
+        ></option>{/each}
+    </datalist>
+    <SharedButton variant="secondary" type="submit" icon="filter">
+      {t("Filter", locale)}
+    </SharedButton>
   </form>
 
   {#if loadState === "loading"}
@@ -303,100 +368,122 @@
         {t("Try again", locale)}
       </SharedButton>
     </section>
+  {:else if events.length === 0}
+    <p class="empty-events">
+      {t("No audit events match these filters.", locale)}
+    </p>
   {:else}
-    <ol class="event-list" aria-label={t("Audit events", locale)}>
-      {#each events as event (event.id)}
-        {@const actor = actorLabel(event)}
-        {@const resourceKind = event.resource.kind ?? "resource"}
-        <li class="event-row">
-          <div class="event-main">
-            <div class="event-summary">
-              <AuditActionBadge action={event.action} {locale} />
-            </div>
-            <ResourceCard
-              kind={resourceKind}
-              name={event.resource.name ??
-                `${entityLabel(event.entity_type)} #${event.entity_id}`}
-              href={event.resource.href}
-              imageUrl={event.resource.preview_url}
-            />
-            <p>
-              {t("By", locale)}
-              <span class="actor-identity">
-                <UserAvatar avatarUrl={event.actor_avatar_url} name={actor} />
-                <span>{actor}</span>
-              </span>
-            </p>
-          </div>
-          <div class="event-meta">
-            <div class="event-diff-slot" aria-hidden={!event.has_changes}>
-              {#if event.has_changes}
-                <a
-                  class="ui-button ui-button--secondary ui-button--md show-diff"
-                  href={`/app/admin/audit/${event.id}`}
-                >
-                  <ActionLabel icon="preview"
-                    >{t("Show diff", locale)}</ActionLabel
+    <div class="event-days" aria-label={t("Audit events", locale)}>
+      {#each eventDays as day (day.key)}
+        <section class="event-day" aria-labelledby={`audit-day-${day.key}`}>
+          <h2 class="day-heading" id={`audit-day-${day.key}`}>{day.label}</h2>
+          <ol class="event-list">
+            {#each day.events as event (event.id)}
+              {@const actor = actorLabel(event)}
+              {@const resourceKind = event.resource.kind ?? "resource"}
+              <li class="event-row">
+                <div class="event-action">
+                  <AuditActionBadge action={event.action} {locale} />
+                </div>
+                <div class="event-resource">
+                  <ResourceCard
+                    kind={resourceKind}
+                    name={event.resource.name ??
+                      `${entityLabel(event.entity_type)} #${event.entity_id}`}
+                    href={event.resource.href}
+                    imageUrl={event.resource.preview_url}
+                  />
+                </div>
+                <p class="event-actor">
+                  <span class="visually-hidden">{t("By", locale)}</span>
+                  <span class="actor-identity" title={actor}>
+                    <UserAvatar
+                      avatarUrl={event.actor_avatar_url}
+                      name={actor}
+                    />
+                    <span class="actor-name">{actor}</span>
+                  </span>
+                </p>
+                <div class="event-meta">
+                  <time
+                    datetime={event.created_at}
+                    title={eventDate(event.created_at)}
+                    >{eventTime(event.created_at)}</time
                   >
-                </a>
-              {/if}
-            </div>
-            <time datetime={event.created_at}
-              >{eventDate(event.created_at)}</time
-            >
-          </div>
-        </li>
-      {:else}
-        <li class="empty-events">
-          {t("No audit events match these filters.", locale)}
-        </li>
+                  <div class="event-diff-slot" aria-hidden={!event.has_changes}>
+                    {#if event.has_changes}
+                      <a
+                        class="ui-button ui-button--ghost ui-button--sm show-diff"
+                        href={`/app/admin/audit/${event.id}`}
+                      >
+                        <ActionLabel icon="preview"
+                          >{t("Show diff", locale)}</ActionLabel
+                        >
+                      </a>
+                    {/if}
+                  </div>
+                </div>
+              </li>
+            {/each}
+          </ol>
+        </section>
       {/each}
-    </ol>
+    </div>
 
-    <nav class="page-controls" aria-label={t("Audit pages", locale)}>
-      <SharedButton
-        variant="secondary"
-        type="button"
-        disabled={pageMeta.page <= 1}
-        onclick={() =>
-          void updateFilters({ ...filters, page: pageMeta.page - 1 })}
-        icon="previous"
-      >
-        {t("Previous page", locale)}
-      </SharedButton>
-      <span>{t("Page", locale)} {pageMeta.page}</span>
-      <SharedButton
-        variant="secondary"
-        type="button"
-        disabled={!pageMeta.has_more}
-        onclick={() =>
-          void updateFilters({ ...filters, page: pageMeta.page + 1 })}
-      >
-        <span class="button-content">
-          <span>{t("Next page", locale)}</span>
-          <NavIcon name="next" />
-        </span>
-      </SharedButton>
-    </nav>
+    {#if pageMeta.page > 1 || pageMeta.has_more}
+      <nav class="page-controls" aria-label={t("Audit pages", locale)}>
+        <SharedButton
+          variant="secondary"
+          type="button"
+          disabled={pageMeta.page <= 1}
+          onclick={() =>
+            void updateFilters({ ...filters, page: pageMeta.page - 1 })}
+          icon="previous"
+        >
+          {t("Previous page", locale)}
+        </SharedButton>
+        <span>{t("Page", locale)} {pageMeta.page}</span>
+        <SharedButton
+          variant="secondary"
+          type="button"
+          disabled={!pageMeta.has_more}
+          onclick={() =>
+            void updateFilters({ ...filters, page: pageMeta.page + 1 })}
+        >
+          <span class="button-content">
+            <span>{t("Next page", locale)}</span>
+            <NavIcon name="next" />
+          </span>
+        </SharedButton>
+      </nav>
+    {/if}
   {/if}
 </section>
 
 <style>
   .audit-heading {
-    margin-bottom: 1.3rem;
+    margin-bottom: 1rem;
   }
+
+  /* One quiet filter bar instead of a boxed form. */
   .audit-filters {
-    display: grid;
-    grid-template-columns: auto minmax(8rem, 0.8fr) auto minmax(16rem, 1.5fr);
-    align-items: center;
-    gap: 0.55rem 0.75rem;
-    margin: 0 0 1rem;
-    padding: 0.8rem;
-    border: 1px solid var(--line);
-    border-radius: 0.8rem;
-    background: var(--surface);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.6rem 0.75rem;
+    margin: 0 0 1.5rem;
   }
-  .audit-filters label {
+  .filter-field {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 11rem;
+  }
+  .filter-field--grow {
+    flex: 1 1 14rem;
+  }
+  .filter-field > span {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
     font-weight: 650;
   }
   .audit-filters select,
@@ -404,19 +491,137 @@
     min-height: 44px;
     border: 1px solid var(--control-border);
     border-radius: 0.55rem;
-    padding: 0.55rem 0.7rem;
+    padding: 0.5rem 0.7rem;
     color: var(--ink);
     background: var(--surface);
     font: inherit;
   }
-  .action-search {
-    display: flex;
-    gap: 0.5rem;
+
+  .event-days {
+    display: grid;
+    gap: 1.4rem;
   }
-  .action-search input {
-    flex: 1;
+  .day-heading {
+    position: sticky;
+    z-index: 1;
+    top: var(--app-header-height, 0px);
+    margin: 0 0 0.45rem;
+    padding: 0.35rem 0;
+    color: var(--ink-muted);
+    background: var(--canvas);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .event-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: 0.85rem;
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  /* One line per event: what happened, to what, by whom, when. Every cell keeps a fixed height
+     and truncates long names, so all rows are the same height and the times line up. */
+  .event-row {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr) minmax(0, 14rem) auto;
+    grid-template-areas: "action resource actor meta";
+    align-items: center;
+    gap: 1rem;
+    min-height: 3.75rem;
+    padding: 0.35rem 0.5rem 0.35rem 0.9rem;
+    transition: background-color 120ms ease;
+  }
+  .event-row:hover {
+    background: var(--surface-raised);
+  }
+  .event-row + .event-row {
+    border-top: 1px solid var(--line);
+  }
+  .event-action {
+    grid-area: action;
     min-width: 0;
   }
+  .event-action :global(.audit-action-badge) {
+    white-space: nowrap;
+  }
+  .event-resource {
+    grid-area: resource;
+    min-width: 0;
+  }
+  .event-resource :global(.resource-card__link) {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.6rem;
+  }
+  .event-resource :global(.resource-card__image) {
+    width: 2rem;
+    border-radius: 0.45rem;
+  }
+  .event-resource :global(.resource-card__name) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .event-actor {
+    grid-area: actor;
+    min-width: 0;
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+  .actor-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .actor-identity :global(.user-avatar) {
+    flex: none;
+  }
+  .actor-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .event-meta {
+    grid-area: meta;
+    display: grid;
+    grid-template-columns: 5rem 7.5rem;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .event-meta time {
+    white-space: nowrap;
+    color: var(--ink-muted);
+    font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .event-diff-slot {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: end;
+  }
+  .show-diff {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
   .button-content {
     display: inline-flex;
     align-items: center;
@@ -427,81 +632,6 @@
     flex: 0 0 1rem;
     width: 1rem;
     height: 1rem;
-  }
-  .event-list {
-    display: grid;
-    grid-auto-rows: 1fr;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border: 1px solid var(--line);
-    border-radius: 0.85rem;
-    background: var(--surface);
-  }
-  .event-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(10rem, auto);
-    align-items: start;
-    gap: 0.75rem;
-    padding: 1rem;
-  }
-  .event-row + .event-row {
-    border-top: 1px solid var(--line);
-  }
-  .event-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.7rem;
-    align-items: center;
-    overflow-wrap: anywhere;
-    margin-bottom: 0.15rem;
-  }
-  .event-main {
-    display: grid;
-    min-width: 0;
-    align-content: start;
-    gap: 0.65rem;
-  }
-  .event-main p,
-  .event-row time {
-    color: var(--ink-muted);
-    font-size: 0.9rem;
-  }
-  .show-diff {
-    overflow-wrap: anywhere;
-    min-height: 44px;
-  }
-  .event-meta {
-    display: grid;
-    grid-template-rows: minmax(44px, auto) auto;
-    justify-self: end;
-    justify-items: end;
-    align-content: start;
-    gap: 0.4rem;
-  }
-  .event-diff-slot {
-    display: flex;
-    min-height: 44px;
-    align-items: start;
-  }
-  .event-main p {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.3rem 0.45rem;
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
-  .actor-identity {
-    display: inline-flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.4rem;
-    color: var(--ink);
-  }
-  .event-row time {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
   }
   .empty-events,
   .notice-panel {
@@ -517,7 +647,7 @@
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    margin: 1rem 0;
+    margin: 1.25rem 0;
   }
   .page-controls span {
     min-width: 5rem;
@@ -528,34 +658,47 @@
     outline: 3px solid #e2a61f;
     outline-offset: 3px;
   }
+
   @media (max-width: 850px) {
+    /* Two short rows: entity, then action with the Filter button beside it. The labels stay
+       for screen readers; the select and the placeholder say what each field is. */
     .audit-filters {
-      grid-template-columns: minmax(0, 1fr);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.5rem;
+      margin-bottom: 1.1rem;
     }
-    .audit-filters label:not(:first-child) {
-      margin-top: 0.35rem;
+    .filter-field {
+      grid-column: 1 / -1;
+      min-width: 0;
     }
+    .filter-field--grow {
+      grid-column: 1;
+    }
+    .filter-field > span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    /* Phones: badge and time on top, then the resource, then who and the diff link. */
     .event-row {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas:
+        "action meta"
+        "resource resource"
+        "actor actor";
+      gap: 0.4rem 0.75rem;
+      padding: 0.6rem 0.75rem;
     }
     .event-meta {
-      width: 100%;
-      grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-      grid-template-rows: auto;
-      justify-self: stretch;
-      align-items: center;
-      justify-items: stretch;
-      gap: 0.75rem;
+      grid-template-columns: auto auto;
+      justify-self: end;
     }
-    .event-row time {
-      grid-column: 2;
-      text-align: right;
-    }
-    .page-controls {
-      gap: 0.4rem;
-    }
-    .page-controls :global(.ui-button) {
-      padding-inline: 0.55rem;
+    .event-actor {
+      padding-right: 0;
     }
   }
 </style>

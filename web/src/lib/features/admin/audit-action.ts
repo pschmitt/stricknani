@@ -64,6 +64,9 @@ const knownActions: Record<
   },
 };
 
+/** Every action the audit log knows by name (for filter suggestions). */
+export const knownAuditActions: Readonly<typeof knownActions> = knownActions;
+
 export function auditActionPresentation(
   action: string,
 ): AuditActionPresentation {
