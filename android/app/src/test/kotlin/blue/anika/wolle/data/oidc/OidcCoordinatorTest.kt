@@ -164,6 +164,7 @@ class OidcCoordinatorTest {
             CoroutineScope(UnconfinedTestDispatcher(testScheduler)),
             afterSignIn = { syncs++ },
             tokenName = { "Android test" },
+            deviceName = { "Pixel 9" },
             newState = { "state-${++stateCounter}" },
             newVerifier = { "v".repeat(64) },
         )
@@ -205,6 +206,7 @@ class OidcCoordinatorTest {
         assertEquals("v".repeat(64), ex.codeVerifier)
         assertEquals("stricknani://oidc-callback", ex.redirectUri)
         assertEquals("Android test", ex.tokenName)
+        assertEquals("Pixel 9", ex.deviceName)
         assertEquals(
             listOf("https://s", "pat-new", "2026-11-10T12:00:00Z", "oidc"),
             session.saved.single(),

@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.oidc
 
-import android.os.Build
+import blue.anika.wolle.data.device.DeviceNameProvider
+import blue.anika.wolle.data.device.deviceTokenName
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import java.io.IOException
@@ -58,6 +59,7 @@ internal constructor(
     private val scope: CoroutineScope,
     private val afterSignIn: () -> Unit,
     private val tokenName: () -> String,
+    private val deviceName: () -> String? = { null },
     private val newState: () -> String = { Pkce.newAppState() },
     private val newVerifier: () -> String = { Pkce.newCodeVerifier() },
 ) {
@@ -68,6 +70,7 @@ internal constructor(
         pending: PendingOidcFlow,
         settings: SettingsRepository,
         syncScheduler: SyncScheduler,
+        deviceNames: DeviceNameProvider,
     ) : this(
         loginApi,
         accountApi,
@@ -75,7 +78,8 @@ internal constructor(
         settings,
         CoroutineScope(SupervisorJob() + Dispatchers.Default),
         { syncScheduler.replayThenSyncNow() },
-        { "Android (${Build.MODEL.take(40)}, Authelia login)" },
+        { deviceTokenName(deviceNames.deviceName()) },
+        { deviceNames.deviceName() },
     )
 
     private val _browserRequests =
@@ -336,6 +340,7 @@ internal constructor(
                     codeVerifier = flow.codeVerifier,
                     redirectUri = OIDC_REDIRECT_URI,
                     tokenName = tokenName(),
+                    deviceName = deviceName(),
                 ),
             )
         val reSignIn = session.hasSession && sameServer(session.sessionServerUrl, flow.serverUrl)

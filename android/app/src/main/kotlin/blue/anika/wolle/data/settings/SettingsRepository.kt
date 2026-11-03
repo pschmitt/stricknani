@@ -188,6 +188,14 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         _isConfigured.value = _credentials.value.isValid
     }
 
+    /**
+     * Set when the app connected with a web-minted setup token ("Stricknani app (setup)") that
+     * still has to be renamed after the device; cleared once that was tried.
+     */
+    var pendingTokenRename: Boolean
+        get() = prefs.getBoolean(KEY_PENDING_TOKEN_RENAME, false)
+        set(value) = prefs.edit().putBoolean(KEY_PENDING_TOKEN_RENAME, value).apply()
+
     /** Wipes credentials. The Room cache (SNA-7) is wiped by the caller alongside this. */
     fun signOut() {
         prefs
@@ -198,6 +206,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .remove(KEY_ACCOUNT_AVATAR)
             .remove(KEY_TOKEN_EXPIRES_AT)
             .remove(KEY_AUTH_ORIGIN)
+            .remove(KEY_PENDING_TOKEN_RENAME)
             .apply()
         _accountEmail.value = null
         _accountAvatarUrl.value = null
@@ -225,6 +234,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private companion object {
         const val KEY_TOKEN_EXPIRES_AT = "token_expires_at"
         const val KEY_AUTH_ORIGIN = "auth_origin"
+        const val KEY_PENDING_TOKEN_RENAME = "pending_token_rename"
         const val KEY_SERVER_URL = "server_url"
         const val KEY_API_TOKEN = "api_token"
         const val KEY_ACCOUNT_EMAIL = "account_email"

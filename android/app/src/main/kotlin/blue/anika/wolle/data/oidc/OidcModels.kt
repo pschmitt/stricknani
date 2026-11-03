@@ -1,5 +1,7 @@
 package blue.anika.wolle.data.oidc
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -57,6 +59,11 @@ data class OidcLoginExchangeRequest(
     @SerialName("code_verifier") val codeVerifier: String,
     @SerialName("redirect_uri") val redirectUri: String,
     @SerialName("token_name") val tokenName: String? = null,
+    /** Names the minted token `Android · <device_name>` on a server that knows the field. */
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName("device_name")
+    val deviceName: String? = null,
 )
 
 /** Link and reauthentication exchange: no token name, nothing is minted. */

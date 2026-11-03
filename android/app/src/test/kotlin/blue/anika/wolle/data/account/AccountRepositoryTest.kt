@@ -30,6 +30,7 @@ class AccountRepositoryTest {
         var password: (ChangePasswordRequest) -> Unit = {}
         var avatar: () -> V2Envelope<AvatarDto> = { error("unused") }
         var lastCreate: CreateTokenRequest? = null
+        var rename: (RenameTokenRequest) -> V2Envelope<ApiTokenDto> = { error("unused") }
 
         override suspend fun tokens() = tokens.invoke()
 
@@ -39,6 +40,8 @@ class AccountRepositoryTest {
         }
 
         override suspend fun revokeToken(id: Long) = revoke(id)
+
+        override suspend fun renameCurrentToken(request: RenameTokenRequest) = rename(request)
 
         override suspend fun changePassword(request: ChangePasswordRequest) = password(request)
 
@@ -76,6 +79,21 @@ class AccountRepositoryTest {
         assertEquals(listOf(4L, 9L), tokens.map { it.id })
         assertNull(tokens[0].expiresAt)
         assertEquals("2027-01-01T00:00:00Z", tokens[1].expiresAt)
+    }
+
+    @Test
+    fun `token list parses last_used_at and tolerates servers that omit it`() {
+        val body =
+            """{"data":[
+              {"id":4,"name":"tablet","created_at":"2026-11-03T10:00:00Z","last_used_at":"2026-11-04T09:15:00Z"},
+              {"id":5,"name":"unused","created_at":"2026-11-03T10:00:00Z","last_used_at":null},
+              {"id":9,"name":"old server","created_at":"2026-11-01T08:30:00Z"}
+            ]}"""
+        val tokens = json.decodeFromString<V2Envelope<List<ApiTokenDto>>>(body).data
+
+        assertEquals("2026-11-04T09:15:00Z", tokens[0].lastUsedAt)
+        assertNull(tokens[1].lastUsedAt)
+        assertNull(tokens[2].lastUsedAt)
     }
 
     @Test

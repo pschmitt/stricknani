@@ -364,6 +364,8 @@
     <string name="account_token_err_create">Das Token konnte nicht erstellt werden.</string>
     <string name="account_token_created_on">Erstellt am %1$s</string>
     <string name="account_token_expires_on">Läuft ab am %1$s</string>
+    <string name="account_token_last_used">Zuletzt genutzt am %1$s</string>
+    <string name="account_token_never_used">Nie genutzt</string>
     <string name="account_token_this_device">Dieses Gerät</string>
     <string name="account_token_revoke_cd">Token %1$s widerrufen</string>
     <string name="account_token_revoke_title">Token widerrufen?</string>

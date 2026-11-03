@@ -448,6 +448,11 @@ internal fun TokenRow(
                         formatTokenDate(token.createdAt),
                     )
                 )
+                Text(
+                    token.lastUsedAt?.let {
+                        stringResource(R.string.account_token_last_used, formatTokenDate(it))
+                    } ?: stringResource(R.string.account_token_never_used)
+                )
                 token.expiresAt?.let {
                     Text(stringResource(R.string.account_token_expires_on, formatTokenDate(it)))
                 }

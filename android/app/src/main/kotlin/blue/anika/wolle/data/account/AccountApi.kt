@@ -9,6 +9,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
@@ -30,6 +31,10 @@ interface AccountV2Api {
     @DELETE("api/v2/account/api-tokens/{id}")
     suspend fun revokeToken(@Path("id") id: Long): Response<V2Envelope<RevokedTokenDto>>
 
+    /** Renames the token this request is sent with; bearer only. Older servers: 401/404/405. */
+    @PATCH("api/v2/account/api-tokens/current")
+    suspend fun renameCurrentToken(@Body request: RenameTokenRequest): V2Envelope<ApiTokenDto>
+
     /** 204; the server revokes every session and token of the account, this one included. */
     @PUT("api/v2/account/password") suspend fun changePassword(@Body request: ChangePasswordRequest)
 
@@ -47,6 +52,8 @@ data class ApiTokenDto(
     val name: String,
     @SerialName("created_at") val createdAt: String,
     @SerialName("expires_at") val expiresAt: String? = null,
+    /** RFC 3339 of the last request made with the token; null when never used or not reported. */
+    @SerialName("last_used_at") val lastUsedAt: String? = null,
 )
 
 /** `201` body of a token creation: [token] is the secret, shown exactly once. */
@@ -80,6 +87,8 @@ data class CreateTokenRequest(
 ) {
     override fun toString(): String = "CreateTokenRequest(name=$name)"
 }
+
+@Serializable data class RenameTokenRequest(val name: String)
 
 @Serializable
 data class ChangePasswordRequest(

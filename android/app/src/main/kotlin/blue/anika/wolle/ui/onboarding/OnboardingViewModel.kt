@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.account.DeviceTokenRenamer
+import blue.anika.wolle.data.device.DeviceNameProvider
 import blue.anika.wolle.data.oidc.OidcCoordinator
 import blue.anika.wolle.data.oidc.OidcEvent
 import blue.anika.wolle.data.oidc.OidcFlowType
@@ -50,6 +52,8 @@ constructor(
     private val settingsRepository: SettingsRepository,
     private val syncScheduler: SyncScheduler,
     private val oidc: OidcCoordinator,
+    private val deviceNames: DeviceNameProvider,
+    private val tokenRenamer: DeviceTokenRenamer,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -125,7 +129,7 @@ constructor(
         }
     }
 
-    fun connect(serverUrl: String, apiToken: String) {
+    fun connect(serverUrl: String, apiToken: String, renameAfterConnect: Boolean = false) {
         if (serverUrl.isBlank() || apiToken.isBlank()) {
             _uiState.value =
                 OnboardingUiState.Error(
@@ -137,7 +141,10 @@ constructor(
         viewModelScope.launch {
             validator
                 .validate(serverUrl, apiToken)
-                .onSuccess { persistAndSucceed(serverUrl, apiToken) }
+                .onSuccess {
+                    persistAndSucceed(serverUrl, apiToken)
+                    if (renameAfterConnect) tokenRenamer.renameAfterSetup()
+                }
                 .onFailure { error ->
                     _uiState.value = OnboardingUiState.Error(error.toUserMessage())
                 }
@@ -162,7 +169,13 @@ constructor(
         _uiState.value = OnboardingUiState.Validating
         viewModelScope.launch {
             passwordTokenMinter
-                .mintToken(serverUrl, email, password, tokenName = "Android (password login)")
+                .mintToken(
+                    serverUrl,
+                    email,
+                    password,
+                    tokenName = deviceNames.tokenName(),
+                    deviceName = deviceNames.deviceName(),
+                )
                 .onSuccess { apiToken ->
                     persistAndSucceed(serverUrl, apiToken)
                     settingsRepository.setAccountEmail(email)
@@ -186,7 +199,7 @@ constructor(
                 OnboardingUiState.Error(context.getString(R.string.onboarding_error_invalid_qr))
             return
         }
-        connect(payload.baseUrl, payload.token)
+        connect(payload.baseUrl, payload.token, renameAfterConnect = true)
     }
 
     private fun persistAndSucceed(serverUrl: String, apiToken: String) {

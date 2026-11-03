@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -135,6 +136,23 @@ class OnboardingV2Test {
         assertEquals(listOf("GET /api/v2/meta", "POST /api/v2/auth/token"), seen)
         assertTrue(posted.contains("\"email\":\"me@x.org\""))
         assertTrue(posted.contains("\"token_name\":\"Android\""))
+    }
+
+    @Test
+    fun `password login sends device_name and omits it when none is given`() = runTest {
+        val posted = mutableListOf<String>()
+        serve {
+            if (it.path == "/api/v2/meta") body(200, anonymousMeta)
+            else {
+                posted += it.body.readUtf8()
+                body(200, """{"data":{"token":"pat-123"}}""")
+            }
+        }
+        minter.mintToken(url(), "me@x.org", "pw", "Android · Pixel 9", deviceName = "Pixel 9")
+        minter.mintToken(url(), "me@x.org", "pw", "Android")
+
+        assertTrue(posted[0].contains("\"device_name\":\"Pixel 9\""))
+        assertFalse(posted[1].contains("device_name"))
     }
 
     private suspend fun mintWith(status: Int, text: String): Result<String> {

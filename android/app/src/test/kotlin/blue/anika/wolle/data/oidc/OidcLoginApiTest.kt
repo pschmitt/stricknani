@@ -114,7 +114,13 @@ class OidcLoginApiTest {
         val result =
             api.exchange(
                 base,
-                OidcLoginExchangeRequest("code-1", "verifier", OIDC_REDIRECT_URI, "Android"),
+                OidcLoginExchangeRequest(
+                    "code-1",
+                    "verifier",
+                    OIDC_REDIRECT_URI,
+                    "Android · Pixel 9",
+                    "Pixel 9",
+                ),
             )
         assertEquals("pat-1", result.token)
         assertEquals("2026-11-10T12:00:00Z", result.expiresAt)
@@ -125,7 +131,16 @@ class OidcLoginApiTest {
         val body = json.parseToJsonElement(request.body.readUtf8()).jsonObject
         assertEquals("code-1", body["code"]!!.jsonPrimitive.content)
         assertEquals("verifier", body["code_verifier"]!!.jsonPrimitive.content)
-        assertEquals("Android", body["token_name"]!!.jsonPrimitive.content)
+        assertEquals("Android · Pixel 9", body["token_name"]!!.jsonPrimitive.content)
+        assertEquals("Pixel 9", body["device_name"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun `exchange leaves device_name out when there is none`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"data":{"token":"pat-1"}}"""))
+        api.exchange(base, OidcLoginExchangeRequest("c", "v", OIDC_REDIRECT_URI))
+        val body = json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
+        assertFalse(body.containsKey("device_name"))
     }
 
     @Test

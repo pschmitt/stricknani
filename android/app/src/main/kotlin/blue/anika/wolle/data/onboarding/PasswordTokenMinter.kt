@@ -6,6 +6,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -22,6 +24,10 @@ private data class TokenMintRequest(
     val email: String,
     val password: String,
     @SerialName("token_name") val tokenName: String,
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    @SerialName("device_name")
+    val deviceName: String? = null,
 )
 
 @Serializable private data class TokenMintResponse(val token: String)
@@ -52,6 +58,7 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
         email: String,
         password: String,
         tokenName: String,
+        deviceName: String? = null,
     ): Result<String> =
         withContext(Dispatchers.IO) {
             val baseUrl =
@@ -80,7 +87,7 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
 
             val body =
                 json
-                    .encodeToString(TokenMintRequest(email.trim(), password, tokenName))
+                    .encodeToString(TokenMintRequest(email.trim(), password, tokenName, deviceName))
                     .toRequestBody("application/json".toMediaType())
             val path = if (v2) "api/v2/auth/token" else "api/v1/auth/token"
             val request =
