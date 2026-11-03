@@ -66,6 +66,7 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
     for path in [
         "/app/",
         "/app/privacy",
+        "/app/about",
         "/app/projects",
         "/app/projects/42/edit",
         "/app/create",

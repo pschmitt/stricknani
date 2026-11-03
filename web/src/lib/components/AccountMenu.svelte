@@ -336,6 +336,15 @@
           <NavIcon name="help" />
           <span>{t("Privacy Policy", locale)}</span>
         </a>
+        <a
+          class="account-menu-item"
+          role="menuitem"
+          href={resolve("/about")}
+          onclick={() => closeMenu(false)}
+        >
+          <NavIcon name="info" />
+          <span>{t("About", locale)}</span>
+        </a>
         <button
           class="account-menu-item account-menu-item--danger"
           type="button"

@@ -43,6 +43,12 @@
       description={t("How Stricknani handles your data.", locale)}
     />
     <NavigationTile
+      href={resolve("/about")}
+      icon="info"
+      title={t("About", locale)}
+      description={t("Version, links and credits.", locale)}
+    />
+    <NavigationTile
       href={androidApp.url}
       target="_blank"
       rel="noopener noreferrer"

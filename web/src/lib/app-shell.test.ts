@@ -106,7 +106,16 @@ describe("anonymous public gauge shell", () => {
 });
 
 describe("public pages", () => {
-  const publicPaths = ["/app/gauge", "/app/privacy"];
+  const publicPaths = ["/app/gauge", "/app/privacy", "/app/about"];
+
+  it("serves the about page to anonymous visitors once the session is ready", () => {
+    expect(showPublicPage("/app/about", publicPaths, "ready", false)).toBe(
+      true,
+    );
+    expect(showPublicPage("/app/about", publicPaths, "ready", true)).toBe(
+      false,
+    );
+  });
 
   it("serves the privacy policy to anonymous visitors once the session is ready", () => {
     expect(showPublicPage("/app/privacy", publicPaths, "ready", false)).toBe(

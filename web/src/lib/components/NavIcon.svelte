@@ -58,7 +58,11 @@
     | "camera"
     | "device"
     | "lock"
-    | "sliders";
+    | "sliders"
+    | "heart"
+    | "code"
+    | "info"
+    | "flag";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -346,6 +350,17 @@
       stroke="none"
       d="M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z"
     />
+  {:else if name === "heart"}
+    <path
+      d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z"
+    />
+  {:else if name === "code"}
+    <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5.5l-3 13" />
+  {:else if name === "info"}
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 11v5.5M12 7.6v.1" />
+  {:else if name === "flag"}
+    <path d="M6 20.5V4M6 4.5h11.5l-2.5 4 2.5 4H6" />
   {:else}
     <path d="M5 4.5h14v15H5zM8 8h8M8 12h8M8 16h5" />
   {/if}

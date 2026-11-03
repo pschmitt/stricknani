@@ -13,6 +13,7 @@ describe("routeParent", () => {
     ["/app/yarns/17", "/app", "/app/yarns"],
     ["/app/yarns/17/edit", "/app", "/app/yarns/17"],
     ["/app/privacy", "/app", "/app/more"],
+    ["/app/about", "/app", "/app/more"],
     ["/app/admin/audit/123", "/app", "/app/admin/audit"],
     ["/app/admin/resources/projects/42", "/app", "/app/admin/audit"],
     ["/workspace/projects/42/edit", "/workspace/", "/workspace/projects/42"],

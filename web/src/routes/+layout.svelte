@@ -39,7 +39,7 @@
   const publicGauge = $derived(
     showPublicPage(
       pathname,
-      [linkTo("/gauge"), linkTo("/privacy")],
+      [linkTo("/gauge"), linkTo("/privacy"), linkTo("/about")],
       session.status,
       user !== null,
     ),
@@ -71,6 +71,7 @@
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
     { href: "/privacy", label: msg("Privacy Policy"), icon: "help" },
+    { href: "/about", label: msg("About"), icon: "info" },
   ] as const;
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
@@ -112,6 +113,7 @@
     | "/categories"
     | "/gauge"
     | "/privacy"
+    | "/about"
     | "/account"
     | "/admin/users"
     | "/admin/audit";
