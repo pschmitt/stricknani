@@ -4,20 +4,31 @@
   import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import KnittedSwatch from "./KnittedSwatch.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
+  import SwatchSizeDialog from "./SwatchSizeDialog.svelte";
+  import {
+    defaultSwatchSize,
+    isDefaultSize,
+    type SwatchSize,
+  } from "./swatch-size";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
     calculateGauge,
+    SWATCH_SIZE_SUPPORTED,
     type GaugeInput,
     type GaugeResult,
   } from "./gauge-api";
+  import {
+    GAUGE_FIELDS,
+    parseGaugeValues,
+    type GaugeField,
+    type GaugeValue,
+  } from "./gauge-input";
 
-  type GaugeField = keyof GaugeInput;
-  type GaugeValue = number | string | undefined;
-
-  const locale = $derived(session.data?.locale ?? "en");
-  let values = $state<Record<GaugeField, GaugeValue>>({
+  const DEBOUNCE_MS = 300;
+  const emptyValues = (): Record<GaugeField, GaugeValue> => ({
     pattern_gauge_stitches: undefined,
     pattern_gauge_rows: undefined,
     user_gauge_stitches: undefined,
@@ -25,127 +36,133 @@
     pattern_cast_on_stitches: undefined,
     pattern_row_count: undefined,
   });
+
+  const locale = $derived(session.data?.locale ?? "en");
+  let values = $state<Record<GaugeField, GaugeValue>>(emptyValues());
   const hasInputs = $derived(
     Object.values(values).some(
-      (value) => value !== undefined && String(value).length > 0,
+      (value) =>
+        value !== undefined && value !== null && String(value).length > 0,
     ),
   );
-  let fieldErrors = $state<Partial<Record<GaugeField, string>>>({});
+  const parsed = $derived(parseGaugeValues(values));
+  let sizes = $state<{ pattern: SwatchSize; user: SwatchSize }>({
+    pattern: defaultSwatchSize(),
+    user: defaultSwatchSize(),
+  });
+  let patternSizeDialog = $state<ReturnType<typeof SwatchSizeDialog>>();
+  let userSizeDialog = $state<ReturnType<typeof SwatchSizeDialog>>();
+
+  /** Swatch sizes are only sent when they differ from the server's 10 x 10 cm default. */
+  function withSizes(input: GaugeInput): GaugeInput {
+    if (!SWATCH_SIZE_SUPPORTED) return input;
+    const next = { ...input };
+    if (!isDefaultSize(sizes.pattern)) {
+      next.pattern_swatch_width_cm = sizes.pattern.width;
+      next.pattern_swatch_height_cm = sizes.pattern.height;
+    }
+    if (!isDefaultSize(sizes.user)) {
+      next.user_swatch_width_cm = sizes.user.width;
+      next.user_swatch_height_cm = sizes.user.height;
+    }
+    return next;
+  }
+  let touched = $state<Partial<Record<GaugeField, boolean>>>({});
+  let submitAttempted = $state(false);
+  let serverFields = $state<Partial<Record<GaugeField, boolean>>>({});
+  // Empty fields only complain after blur or an explicit submit; clearly invalid
+  // values complain at once.
+  const fieldErrors = $derived.by(() => {
+    const errors: Partial<Record<GaugeField, string>> = {};
+    for (const field of GAUGE_FIELDS) {
+      const state = parsed.states[field];
+      if (
+        serverFields[field] ||
+        state === "invalid" ||
+        (state === "empty" && (touched[field] || submitAttempted))
+      ) {
+        errors[field] = t("Enter a positive whole number.", locale);
+      }
+    }
+    return errors;
+  });
   let result = $state<GaugeResult | null>(null);
   let resultInput = $state<GaugeInput | null>(null);
   let errorMessage = $state("");
+  let pending = $state(false);
   let submitting = $state(false);
+  const calculating = $derived(pending || submitting);
   let controller: AbortController | null = null;
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let requestGeneration = 0;
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
       dirty: hasInputs,
-      busy: submitting,
+      busy: calculating,
     })),
   );
 
   onDestroy(() => {
     requestGeneration += 1;
+    clearTimeout(debounceTimer);
     controller?.abort();
   });
 
-  function parsePositiveU32(value: GaugeValue): number | null {
-    if (value === undefined || (typeof value === "string" && !value.trim()))
-      return null;
-    const parsed = typeof value === "number" ? value : Number(value);
-    return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 0xffff_ffff
-      ? parsed
-      : null;
-  }
-
-  function inputValues(): GaugeInput | null {
-    const requiredFields = [
-      "pattern_gauge_stitches",
-      "pattern_gauge_rows",
-      "user_gauge_stitches",
-      "user_gauge_rows",
-      "pattern_cast_on_stitches",
-    ] as const;
-    const parsed: Partial<Record<GaugeField, number>> = {};
-    const nextErrors: Partial<Record<GaugeField, string>> = {};
-
-    for (const field of requiredFields) {
-      const value = parsePositiveU32(values[field]);
-      if (value === null) {
-        nextErrors[field] = t("Enter a positive whole number.", locale);
-      } else {
-        parsed[field] = value;
-      }
-    }
-
-    const optionalValue = values.pattern_row_count;
-    const hasOptionalRows = optionalValue !== undefined && optionalValue !== "";
-    const optionalRows = hasOptionalRows
-      ? parsePositiveU32(optionalValue)
-      : null;
-    if (hasOptionalRows && optionalRows === null) {
-      nextErrors.pattern_row_count = t(
-        "Enter a positive whole number.",
-        locale,
-      );
-    }
-
-    fieldErrors = nextErrors;
-    if (Object.keys(nextErrors).length > 0) return null;
-
-    const input: GaugeInput = {
-      pattern_gauge_stitches: parsed.pattern_gauge_stitches!,
-      pattern_gauge_rows: parsed.pattern_gauge_rows!,
-      user_gauge_stitches: parsed.user_gauge_stitches!,
-      user_gauge_rows: parsed.user_gauge_rows!,
-      pattern_cast_on_stitches: parsed.pattern_cast_on_stitches!,
-    };
-    if (optionalRows !== null) input.pattern_row_count = optionalRows;
-    return input;
-  }
-
-  function valueChanged() {
+  function cancelInFlight() {
     requestGeneration += 1;
+    clearTimeout(debounceTimer);
     controller?.abort();
     controller = null;
+    pending = false;
     submitting = false;
-    result = null;
-    resultInput = null;
-    errorMessage = "";
-    fieldErrors = {};
   }
 
-  function clearInputs() {
-    if (submitting) return;
-    values = {
-      pattern_gauge_stitches: undefined,
-      pattern_gauge_rows: undefined,
-      user_gauge_stitches: undefined,
-      user_gauge_rows: undefined,
-      pattern_cast_on_stitches: undefined,
-      pattern_row_count: undefined,
-    };
+  function sizeChanged(which: "pattern" | "user", size: SwatchSize) {
+    sizes[which] = size;
     valueChanged();
   }
 
-  async function submit(event: SubmitEvent) {
-    event.preventDefault();
-    if (submitting) return;
+  function touch(field: GaugeField) {
+    touched[field] = true;
+  }
+
+  function valueChanged() {
+    cancelInFlight();
+    errorMessage = "";
+    serverFields = {};
+    submitAttempted = false;
+    const { input } = parseGaugeValues(values);
+    if (!input) {
+      // Incomplete or invalid: drop the result rather than show a stale one.
+      result = null;
+      resultInput = null;
+      return;
+    }
+    // Keep the previous result (dimmed) until the new one arrives.
+    pending = true;
+    debounceTimer = setTimeout(() => void run(withSizes(input)), DEBOUNCE_MS);
+  }
+
+  function clearInputs() {
+    cancelInFlight();
+    values = emptyValues();
+    sizes = { pattern: defaultSwatchSize(), user: defaultSwatchSize() };
+    touched = {};
+    submitAttempted = false;
+    serverFields = {};
     result = null;
     resultInput = null;
     errorMessage = "";
-    const input = inputValues();
-    if (!input) {
-      errorMessage = t("Check the highlighted fields and try again.", locale);
-      return;
-    }
+  }
 
-    const generation = ++requestGeneration;
-    controller?.abort();
+  async function run(input: GaugeInput) {
+    cancelInFlight();
+    const generation = requestGeneration;
     const nextController = new AbortController();
     controller = nextController;
     submitting = true;
+    errorMessage = "";
     try {
       const calculated = await calculateGauge(input, nextController.signal);
       if (generation !== requestGeneration) return;
@@ -154,16 +171,14 @@
     } catch (error) {
       if (nextController.signal.aborted || generation !== requestGeneration)
         return;
+      result = null;
+      resultInput = null;
       if (error instanceof ApiError && error.status === 422) {
-        const serverFields = error.fields ?? {};
-        const recognizedFields = Object.keys(serverFields).filter(
+        const recognized = Object.keys(error.fields ?? {}).filter(
           (field): field is GaugeField => field in values,
         );
-        fieldErrors = Object.fromEntries(
-          recognizedFields.map((field) => [
-            field,
-            t("Enter a positive whole number.", locale),
-          ]),
+        serverFields = Object.fromEntries(
+          recognized.map((field) => [field, true]),
         );
         errorMessage = t("Check the highlighted fields and try again.", locale);
       } else if (error instanceof ApiError && error.status === 413) {
@@ -183,6 +198,21 @@
         controller = null;
       }
     }
+  }
+
+  // Enter in a field calculates right away instead of waiting for the debounce.
+  function submit(event: SubmitEvent) {
+    event.preventDefault();
+    const { input } = parseGaugeValues(values);
+    if (!input) {
+      cancelInFlight();
+      result = null;
+      resultInput = null;
+      submitAttempted = true;
+      errorMessage = t("Check the highlighted fields and try again.", locale);
+      return;
+    }
+    void run(withSizes(input));
   }
 </script>
 
@@ -204,7 +234,11 @@
   <PageHeader title={t("Gauge calculator", locale)} titleId="gauge-title" />
 
   <details class="help-panel">
-    <summary>{t("How to use this calculator", locale)}</summary>
+    <summary>
+      <span class="help-icon"><NavIcon name="help" /></span>
+      <span class="help-label">{t("How to use this calculator", locale)}</span>
+      <span class="help-chevron"><NavIcon name="chevron-down" /></span>
+    </summary>
     <p class="help-intro">
       {t(
         "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.",
@@ -232,7 +266,7 @@
       </li>
       <li>
         {t(
-          "Click Calculate to see how many stitches and rows you need",
+          "The result appears automatically as soon as every field is filled in",
           locale,
         )}
       </li>
@@ -244,8 +278,13 @@
       <legend>{t("Pattern Gauge (per 10cm)", locale)}</legend>
       <div class="swatch-row">
         <KnittedSwatch
-          stitches={values.pattern_gauge_stitches}
-          rows={values.pattern_gauge_rows}
+          stitches={values.pattern_gauge_stitches ?? undefined}
+          rows={values.pattern_gauge_rows ?? undefined}
+          size={sizes.pattern}
+          changeLabel={t("Change swatch size", locale)}
+          onchange={SWATCH_SIZE_SUPPORTED
+            ? () => patternSizeDialog?.open(sizes.pattern)
+            : undefined}
         />
         <div class="field-grid">
           <label for="pattern-gauge-stitches">
@@ -268,6 +307,7 @@
                   ? "pattern-gauge-stitches-error"
                   : undefined}
                 oninput={valueChanged}
+                onblur={() => touch("pattern_gauge_stitches")}
               />
               {#if fieldErrors.pattern_gauge_stitches}
                 <small id="pattern-gauge-stitches-error" class="field-error">
@@ -297,6 +337,7 @@
                   ? "pattern-gauge-rows-error"
                   : undefined}
                 oninput={valueChanged}
+                onblur={() => touch("pattern_gauge_rows")}
               />
               {#if fieldErrors.pattern_gauge_rows}
                 <small id="pattern-gauge-rows-error" class="field-error">
@@ -309,74 +350,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="swatch-fieldset swatch-fieldset--yours">
-      <legend>{t("Your Gauge (per 10cm)", locale)}</legend>
-      <div class="swatch-row">
-        <KnittedSwatch
-          stitches={values.user_gauge_stitches}
-          rows={values.user_gauge_rows}
-        />
-        <div class="field-grid">
-          <label for="user-gauge-stitches">
-            <span class="field-caption">{t("Stitches", locale)}</span>
-            <span class="field-control">
-              <input
-                bind:value={values.user_gauge_stitches}
-                id="user-gauge-stitches"
-                name="user_gauge_stitches"
-                type="number"
-                min="1"
-                max="4294967295"
-                step="1"
-                inputmode="numeric"
-                required
-                aria-invalid={fieldErrors.user_gauge_stitches
-                  ? "true"
-                  : undefined}
-                aria-describedby={fieldErrors.user_gauge_stitches
-                  ? "user-gauge-stitches-error"
-                  : undefined}
-                oninput={valueChanged}
-              />
-              {#if fieldErrors.user_gauge_stitches}
-                <small id="user-gauge-stitches-error" class="field-error">
-                  {fieldErrors.user_gauge_stitches}
-                </small>
-              {/if}
-            </span>
-          </label>
-
-          <label for="user-gauge-rows">
-            <span class="field-caption">{t("Rows", locale)}</span>
-            <span class="field-control">
-              <input
-                bind:value={values.user_gauge_rows}
-                id="user-gauge-rows"
-                name="user_gauge_rows"
-                type="number"
-                min="1"
-                max="4294967295"
-                step="1"
-                inputmode="numeric"
-                required
-                aria-invalid={fieldErrors.user_gauge_rows ? "true" : undefined}
-                aria-describedby={fieldErrors.user_gauge_rows
-                  ? "user-gauge-rows-error"
-                  : undefined}
-                oninput={valueChanged}
-              />
-              {#if fieldErrors.user_gauge_rows}
-                <small id="user-gauge-rows-error" class="field-error">
-                  {fieldErrors.user_gauge_rows}
-                </small>
-              {/if}
-            </span>
-          </label>
-        </div>
-      </div>
-    </fieldset>
-
-    <fieldset>
+    <fieldset class="swatch-fieldset swatch-fieldset--pattern counts-fieldset">
       <legend>{t("Pattern Counts", locale)}</legend>
       <div class="field-grid">
         <label for="pattern-cast-on-stitches">
@@ -399,6 +373,7 @@
                 ? "pattern-cast-on-stitches-error"
                 : undefined}
               oninput={valueChanged}
+              onblur={() => touch("pattern_cast_on_stitches")}
             />
             {#if fieldErrors.pattern_cast_on_stitches}
               <small id="pattern-cast-on-stitches-error" class="field-error">
@@ -428,6 +403,7 @@
                 ? "pattern-row-count-error"
                 : undefined}
               oninput={valueChanged}
+              onblur={() => touch("pattern_row_count")}
             />
             {#if fieldErrors.pattern_row_count}
               <small id="pattern-row-count-error" class="field-error">
@@ -439,20 +415,85 @@
       </div>
     </fieldset>
 
+    <fieldset class="swatch-fieldset swatch-fieldset--yours">
+      <legend>{t("Your Gauge (per 10cm)", locale)}</legend>
+      <div class="swatch-row">
+        <KnittedSwatch
+          stitches={values.user_gauge_stitches ?? undefined}
+          rows={values.user_gauge_rows ?? undefined}
+          size={sizes.user}
+          changeLabel={t("Change swatch size", locale)}
+          onchange={SWATCH_SIZE_SUPPORTED
+            ? () => userSizeDialog?.open(sizes.user)
+            : undefined}
+        />
+        <div class="field-grid">
+          <label for="user-gauge-stitches">
+            <span class="field-caption">{t("Stitches", locale)}</span>
+            <span class="field-control">
+              <input
+                bind:value={values.user_gauge_stitches}
+                id="user-gauge-stitches"
+                name="user_gauge_stitches"
+                type="number"
+                min="1"
+                max="4294967295"
+                step="1"
+                inputmode="numeric"
+                required
+                aria-invalid={fieldErrors.user_gauge_stitches
+                  ? "true"
+                  : undefined}
+                aria-describedby={fieldErrors.user_gauge_stitches
+                  ? "user-gauge-stitches-error"
+                  : undefined}
+                oninput={valueChanged}
+                onblur={() => touch("user_gauge_stitches")}
+              />
+              {#if fieldErrors.user_gauge_stitches}
+                <small id="user-gauge-stitches-error" class="field-error">
+                  {fieldErrors.user_gauge_stitches}
+                </small>
+              {/if}
+            </span>
+          </label>
+
+          <label for="user-gauge-rows">
+            <span class="field-caption">{t("Rows", locale)}</span>
+            <span class="field-control">
+              <input
+                bind:value={values.user_gauge_rows}
+                id="user-gauge-rows"
+                name="user_gauge_rows"
+                type="number"
+                min="1"
+                max="4294967295"
+                step="1"
+                inputmode="numeric"
+                required
+                aria-invalid={fieldErrors.user_gauge_rows ? "true" : undefined}
+                aria-describedby={fieldErrors.user_gauge_rows
+                  ? "user-gauge-rows-error"
+                  : undefined}
+                oninput={valueChanged}
+                onblur={() => touch("user_gauge_rows")}
+              />
+              {#if fieldErrors.user_gauge_rows}
+                <small id="user-gauge-rows-error" class="field-error">
+                  {fieldErrors.user_gauge_rows}
+                </small>
+              {/if}
+            </span>
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
     {#if errorMessage}
       <p class="form-error" role="alert">{errorMessage}</p>
     {/if}
 
     <div class="form-actions">
-      <Button
-        class="calculate-button"
-        variant="primary"
-        icon="gauge"
-        type="submit"
-        disabled={submitting}
-      >
-        {submitting ? t("Calculating…", locale) : t("Calculate", locale)}
-      </Button>
       <Button
         class="clear-button"
         variant="secondary"
@@ -460,15 +501,39 @@
         size="sm"
         type="button"
         onclick={clearInputs}
-        disabled={submitting || !hasInputs}
+        disabled={!hasInputs}
       >
         {t("Clear", locale)}
       </Button>
+      <p class="calc-status" class:visible={calculating} role="status">
+        {calculating ? t("Calculating…", locale) : ""}
+      </p>
     </div>
   </form>
 
+  {#if SWATCH_SIZE_SUPPORTED}
+    <SwatchSizeDialog
+      bind:this={patternSizeDialog}
+      id="pattern-swatch-size"
+      {locale}
+      onsave={(size) => sizeChanged("pattern", size)}
+    />
+    <SwatchSizeDialog
+      bind:this={userSizeDialog}
+      id="user-swatch-size"
+      {locale}
+      onsave={(size) => sizeChanged("user", size)}
+    />
+  {/if}
+
   {#if result}
-    <section class="results" aria-labelledby="results-title" aria-live="polite">
+    <section
+      class="results"
+      class:stale={calculating}
+      aria-labelledby="results-title"
+      aria-live="polite"
+      aria-busy={calculating}
+    >
       <h2 id="results-title">{t("Calculation Results", locale)}</h2>
       <div class="result-grid">
         <div>
@@ -502,7 +567,6 @@
     gap: 1rem;
   }
 
-  .help-panel,
   .gauge-form,
   .results {
     border: 1px solid var(--line);
@@ -511,26 +575,85 @@
     background: var(--surface);
   }
 
-  .help-intro {
-    max-width: 42rem;
-    margin: 0.5rem 0 0;
-    color: var(--ink-muted);
-    line-height: 1.55;
+  .help-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
   }
 
   .help-panel summary {
-    min-height: 44px;
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+    min-height: 56px;
+    padding: 0.5rem clamp(1rem, 3vw, 1.5rem);
     color: var(--accent-strong);
     font-weight: 650;
     cursor: pointer;
+    list-style: none;
+  }
+
+  .help-panel summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .help-panel summary:hover {
+    background: color-mix(in srgb, var(--accent-strong) 8%, transparent);
+  }
+
+  .help-panel summary:focus-visible {
+    outline: 3px solid var(--accent-strong);
+    outline-offset: -3px;
+  }
+
+  .help-icon,
+  .help-chevron {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .help-icon :global(svg),
+  .help-chevron :global(svg) {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .help-label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .help-chevron :global(svg) {
+    transform: rotate(0deg);
+  }
+
+  .help-panel[open] .help-chevron :global(svg) {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .help-chevron :global(svg) {
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .help-intro,
+  .help-panel ol {
+    margin-inline: clamp(1rem, 3vw, 1.5rem);
+  }
+
+  .help-intro {
+    max-width: 42rem;
+    margin-block: 0.25rem 0;
+    color: var(--ink-muted);
+    line-height: 1.55;
   }
 
   .help-panel ol {
     display: grid;
     gap: 0.55rem;
-    margin: 0.75rem 0 0;
+    margin-block: 0.75rem 1.25rem;
     padding-left: 1.35rem;
     color: var(--ink-muted);
   }
@@ -659,7 +782,41 @@
   .form-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.65rem;
+  }
+
+  .calc-status {
+    margin: 0;
+    min-height: 1.4em;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    opacity: 0;
+  }
+
+  .calc-status.visible {
+    opacity: 1;
+  }
+
+  .results.stale {
+    opacity: 0.55;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .calc-status,
+    .results {
+      transition: opacity 0.2s ease;
+    }
+
+    .results {
+      animation: results-in 0.25s ease both;
+    }
+  }
+
+  @keyframes results-in {
+    from {
+      opacity: 0;
+    }
   }
 
   .results h2 {

@@ -1508,11 +1508,34 @@ def _exercise_gauge_calculator(
     for width in (320, 390, 1280):
         page.set_viewport_size({"width": width, "height": 844})
         _assert_no_horizontal_overflow(page, width)
-        controls = _visible_heights(page, ".gauge-form input, .calculate-button")
+        controls = _visible_heights(page, ".gauge-form input")
         _require(
-            len(controls) == 7 and min(controls) >= 44,
+            len(controls) == 6 and min(controls) >= 44,
             "a gauge form control is below the 44px target size",
         )
+
+    legends = page.locator(".gauge-form legend").all_inner_texts()
+    _require(
+        legends
+        == ["Pattern Gauge (per 10cm)", "Pattern Counts", "Your Gauge (per 10cm)"],
+        "the gauge fieldsets are not ordered pattern gauge, pattern counts, your gauge",
+    )
+    help_summary = page.locator(".help-panel summary")
+    _require(
+        help_summary.locator("svg").count() == 2
+        and page.locator(".help-panel[open]").count() == 0,
+        "the gauge help summary lacks its icon and chevron or starts open",
+    )
+    help_summary.click()
+    _require(
+        page.locator(".help-panel[open]").count() == 1,
+        "the gauge help summary did not open",
+    )
+    help_summary.click()
+    _require(
+        page.locator(".size-button").count() == 0,
+        "the swatch size button is shown although the server does not support it",
+    )
 
     page.set_viewport_size({"width": 390, "height": 844})
     mark_stage(f"capturing sanitized {account_state} gauge screen")
@@ -1534,22 +1557,23 @@ def _exercise_gauge_calculator(
         "pattern_cast_on_stitches": 80,
         "pattern_row_count": 100,
     }
-    mark_stage(f"filling {account_state} gauge inputs")
-    for field, value in expected_input.items():
-        page.locator(f"[name='{field}']").fill(str(value))
-
-    mark_stage(f"submitting {account_state} gauge calculation")
     _require(
-        page.locator(".gauge-form").evaluate("form => form.checkValidity()"),
-        "the seeded gauge form is not valid before submit",
+        page.get_by_role("button", name="Calculate", exact=True).count() == 0,
+        "the gauge page still shows a Calculate button",
     )
-    gauge_request_methods: list[str] = []
+    gauge_requests: list[Request] = []
     gauge_response_statuses: list[int] = []
     gauge_page_error_locations: list[str] = []
 
-    def observe_gauge_request(request: object) -> None:
-        if urlsplit(getattr(request, "url", "")).path == "/api/v2/tools/gauge":
-            gauge_request_methods.append(getattr(request, "method", "unknown"))
+    def is_gauge_request(request: Request) -> bool:
+        return (
+            urlsplit(request.url).path == "/api/v2/tools/gauge"
+            and request.method == "POST"
+        )
+
+    def observe_gauge_request(request: Request) -> None:
+        if is_gauge_request(request):
+            gauge_requests.append(request)
 
     def observe_gauge_response(response: Response) -> None:
         if _response_path(response) == "/api/v2/tools/gauge":
@@ -1567,7 +1591,25 @@ def _exercise_gauge_calculator(
     page.on("request", observe_gauge_request)
     page.on("response", observe_gauge_response)
     page.on("pageerror", observe_gauge_page_error)
-    click_completed = False
+
+    mark_stage(f"checking {account_state} incomplete gauge input stays quiet")
+    page.locator("[name='pattern_gauge_stitches']").fill("20")
+    page.wait_for_timeout(700)
+    _require(
+        not gauge_requests
+        and page.locator(".results").count() == 0
+        and page.locator(".field-error").count() == 0
+        and page.locator('[role="alert"]').count() == 0,
+        "incomplete gauge input triggered a request, a result or an error while typing",
+    )
+    page.locator("[name='pattern_gauge_stitches']").fill("")
+
+    # The optional field goes first so the only complete input set is the final one and
+    # the debounce cannot fire on a half-filled form, however slow the machine is.
+    mark_stage(f"filling {account_state} gauge inputs")
+    fill_order = ["pattern_row_count"] + [
+        field for field in expected_input if field != "pattern_row_count"
+    ]
     try:
         with page.expect_response(
             lambda response: (
@@ -1576,43 +1618,27 @@ def _exercise_gauge_calculator(
             ),
             timeout=10_000,
         ) as gauge_response_info:
-            page.get_by_role("button", name="Calculate", exact=True).click(
-                timeout=5_000
-            )
-            click_completed = True
+            for field in fill_order:
+                page.locator(f"[name='{field}']").fill(str(expected_input[field]))
     except PlaywrightTimeoutError:
-        form_valid = page.locator(".gauge-form").evaluate(
-            "form => form.checkValidity()"
-        )
-        alert_visible = page.locator('[role="alert"]').is_visible()
-        submit_disabled = page.get_by_role(
-            "button", name="Calculate", exact=True
-        ).is_disabled()
         _mask_fixture_identity(page)
         _prepare_screenshot(page)
         diagnostic_path = screenshots / f"gauge-{account_state}-failure.png"
         page.screenshot(path=str(diagnostic_path), caret="initial")
         raise AcceptanceFailure(
-            "the gauge form did not issue its API request "
-            f"(route={urlsplit(page.url).path}; form valid={form_valid}; "
-            f"submit disabled={submit_disabled}; alert visible={alert_visible}; "
-            f"click completed={click_completed}; "
-            f"request methods={gauge_request_methods}; "
+            "the gauge form did not calculate on its own after its inputs settled "
+            f"(route={urlsplit(page.url).path}; "
+            f"requests={len(gauge_requests)}; "
             f"responses={gauge_response_statuses}; "
             f"page error locations={gauge_page_error_locations}; "
             f"screenshot={diagnostic_path})"
         ) from None
     except Exception as error:
         raise AcceptanceFailure(
-            "gauge submission raised "
+            "automatic gauge calculation raised "
             f"{type(error).__name__} before a response "
-            f"(request methods={gauge_request_methods}; "
-            f"responses={gauge_response_statuses})"
+            f"(requests={len(gauge_requests)}; responses={gauge_response_statuses})"
         ) from None
-    finally:
-        page.remove_listener("request", observe_gauge_request)
-        page.remove_listener("response", observe_gauge_response)
-        page.remove_listener("pageerror", observe_gauge_page_error)
 
     gauge_response = gauge_response_info.value
     mark_stage(f"checking {account_state} gauge response envelope")
@@ -1642,10 +1668,19 @@ def _exercise_gauge_calculator(
         == [data["adjusted_stitches"], data["adjusted_rows"]],
         "the gauge page changed the exact server-calculated result strings",
     )
+    page.wait_for_timeout(700)
+    _require(
+        len(gauge_requests) == 1,
+        f"one settled gauge input set sent {len(gauge_requests)} requests, not one",
+    )
+    _require(
+        page.locator(".results.stale").count() == 0
+        and page.locator(".calc-status.visible").count() == 0,
+        "the gauge result stayed dimmed after the calculation finished",
+    )
 
     mark_stage(f"checking {account_state} stale gauge request cancellation")
     stitch_input = page.locator("[name='user_gauge_stitches']")
-    stitch_input.fill("23")
     page.evaluate(
         """() => {
           const originalFetch = window.fetch.bind(window);
@@ -1691,20 +1726,13 @@ def _exercise_gauge_calculator(
         }"""
     )
 
-    def request_filter(request: Request) -> bool:
-        return (
-            urlsplit(request.url).path == "/api/v2/tools/gauge"
-            and request.method == "POST"
-        )
-
+    race_start_input = {**expected_input, "user_gauge_stitches": 23}
     try:
-        with page.expect_request(request_filter, timeout=5_000) as delayed_request_info:
-            page.get_by_role("button", name="Calculate", exact=True).click(
-                timeout=5_000
-            )
+        with page.expect_request(
+            is_gauge_request, timeout=5_000
+        ) as delayed_request_info:
+            stitch_input.fill("23")
         delayed_request = delayed_request_info.value
-        race_start_input = dict(expected_input)
-        race_start_input["user_gauge_stitches"] = 23
         try:
             request_payload = json.loads(delayed_request.post_data or "")
         except (TypeError, ValueError):
@@ -1718,10 +1746,23 @@ def _exercise_gauge_calculator(
         page.wait_for_function(
             "() => window.__gaugeResponseHold?.responseReady", timeout=5_000
         )
-        stitch_input.fill("24")
-        page.wait_for_function(
-            "() => window.__gaugeResponseHold?.aborted", timeout=5_000
+        _require(
+            page.locator(".results.stale").count() == 1
+            and page.locator(".calc-status.visible").count() == 1,
+            "the previous gauge result was not kept dimmed with a status while "
+            "recalculating",
         )
+        with page.expect_response(
+            lambda response: (
+                urlsplit(response.url).path == "/api/v2/tools/gauge"
+                and response.request.method == "POST"
+            ),
+            timeout=10_000,
+        ) as current_response_info:
+            stitch_input.fill("24")
+            page.wait_for_function(
+                "() => window.__gaugeResponseHold?.aborted", timeout=5_000
+            )
         _require(
             not page.evaluate("() => window.__gaugeResponseHold?.missingSignal"),
             "editing the gauge did not abort its in-flight API request",
@@ -1732,19 +1773,6 @@ def _exercise_gauge_calculator(
             "window.fetch = window.__gaugeResponseHold.originalFetch; }"
         )
 
-    _require(
-        stitch_input.input_value() == "24"
-        and page.locator(".results").count() == 0
-        and not page.get_by_role("button", name="Calculate", exact=True).is_disabled(),
-        "a stale gauge result replaced the edited values or left submit locked",
-    )
-    with page.expect_response(
-        lambda response: (
-            urlsplit(response.url).path == "/api/v2/tools/gauge"
-            and response.request.method == "POST"
-        )
-    ) as current_response_info:
-        page.get_by_role("button", name="Calculate", exact=True).click()
     current_response = current_response_info.value
     _require(
         current_response.status == 200,
@@ -1758,7 +1786,8 @@ def _exercise_gauge_calculator(
             "the recalculated gauge response was unreadable"
         ) from None
     _require(
-        current_request_input == {**race_start_input, "user_gauge_stitches": 24},
+        stitch_input.input_value() == "24"
+        and current_request_input == {**race_start_input, "user_gauge_stitches": 24},
         "the recalculated gauge request did not preserve the edited values",
     )
     current_data = (
@@ -1771,11 +1800,35 @@ def _exercise_gauge_calculator(
     ):
         raise AcceptanceFailure("the recalculated gauge result had unexpected types")
     page.locator(".results").wait_for(state="visible")
+    page.wait_for_function(
+        "() => !document.querySelector('.results.stale')", timeout=5_000
+    )
     _require(
         page.locator(".result-grid strong").all_inner_texts()
         == [current_data["adjusted_stitches"], current_data["adjusted_rows"]],
         "the recalculated result did not match the exact server response",
     )
+    page.wait_for_timeout(700)
+    _require(
+        len(gauge_requests) == 3,
+        f"the cancellation scenario sent {len(gauge_requests)} requests, not 3",
+    )
+
+    mark_stage(f"checking {account_state} gauge result clears on invalid input")
+    stitch_input.fill("0")
+    page.locator(".field-error").first.wait_for(state="visible")
+    _require(
+        page.locator(".results").count() == 0,
+        "an invalid gauge value left a stale result on screen",
+    )
+    page.wait_for_timeout(700)
+    _require(
+        len(gauge_requests) == 3,
+        "an invalid gauge value still triggered a request",
+    )
+    page.remove_listener("request", observe_gauge_request)
+    page.remove_listener("response", observe_gauge_response)
+    page.remove_listener("pageerror", observe_gauge_page_error)
 
 
 def _mask_fixture_identity(page: Page) -> None:

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 14:40+0100\n"
+"POT-Creation-Date: 2026-11-03 14:32+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -58,6 +58,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:813
 #: web/src/lib/features/admin/AdminUsers.svelte:889
 #: web/src/lib/features/categories/CategoryManager.svelte:330
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
 #: web/src/lib/features/projects/ProjectEditor.svelte:1578
 #: web/src/lib/features/projects/ProjectEditor.svelte:1624
 #: web/src/lib/features/projects/ProjectEditor.svelte:1665
@@ -784,8 +785,8 @@ msgid "Gauge Calculator"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:19
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:193
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:209
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:223
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:243
 msgid ""
 "Calculate how many stitches to cast on and rows to knit based on your "
 "gauge and the pattern's gauge."
@@ -794,76 +795,74 @@ msgstr ""
 "gauge and the pattern's gauge."
 
 #: stricknani/templates/gauge/calculator.html:26
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:207
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:239
 msgid "How to use this calculator"
 msgstr "How to use this calculator"
 
 #: stricknani/templates/gauge/calculator.html:28
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:216
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:250
 msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
 msgstr "Enter the gauge from your pattern (stitches and rows per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:29
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:222
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:256
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:30
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:228
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:262
 msgid "Enter the stitch count from your pattern (cast-on stitches)"
 msgstr "Enter the stitch count from your pattern (cast-on stitches)"
 
 #: stricknani/templates/gauge/calculator.html:31
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:234
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr "Click Calculate to see how many stitches and rows you need"
 
 #: stricknani/templates/gauge/calculator.html:43
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:244
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:278
 msgid "Pattern Gauge (per 10cm)"
 msgstr "Pattern Gauge (per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:51
 #: stricknani/templates/gauge/calculator.html:81
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:252
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:321
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:291
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:432
 msgid "Stitches"
 msgstr "Stitches"
 
 #: stricknani/templates/gauge/calculator.html:62
 #: stricknani/templates/gauge/calculator.html:92
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:281
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:350
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:321
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:462
 msgid "Rows"
 msgstr "Rows"
 
 #: stricknani/templates/gauge/calculator.html:73
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:313
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:419
 msgid "Your Gauge (per 10cm)"
 msgstr "Your Gauge (per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:103
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:380
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:354
 msgid "Pattern Counts"
 msgstr "Pattern Counts"
 
 #: stricknani/templates/gauge/calculator.html:111
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:357
 msgid "Stitches to cast on"
 msgstr "Stitches to cast on"
 
 #: stricknani/templates/gauge/calculator.html:122
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:413
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:388
 msgid "Rows to knit"
 msgstr "Rows to knit"
 
 #: stricknani/templates/gauge/calculator.html:122
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:414
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:389
 msgid "optional"
 msgstr "optional"
 
 #: stricknani/templates/gauge/calculator.html:132
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:454
 msgid "Calculate"
 msgstr "Calculate"
 
@@ -2563,8 +2562,8 @@ msgstr "Login"
 
 #: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:152
 #: web/src/lib/features/auth/SignupForm.svelte:275
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:190
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:204
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:220
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:234
 #: web/src/routes/+layout.svelte:66 web/src/routes/more/+page.svelte:31
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
@@ -2965,11 +2964,11 @@ msgstr "Add tag"
 msgid "Add yarn"
 msgstr "Add yarn"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:479
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:544
 msgid "Adjusted Rows"
 msgstr "Adjusted Rows"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:475
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:540
 msgid "Adjusted Stitches"
 msgstr "Adjusted Stitches"
 
@@ -3096,11 +3095,15 @@ msgstr "Audit log"
 msgid "Audit pages"
 msgstr "Audit pages"
 
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:111
+msgid "Back to 10 × 10 cm"
+msgstr "Back to 10 × 10 cm"
+
 #: web/src/lib/features/auth/SignupForm.svelte:166
 msgid "Back to sign in"
 msgstr "Back to sign in"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:485
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:550
 msgid "Based on a pattern cast-on of"
 msgstr "Based on a pattern cast-on of"
 
@@ -3124,11 +3127,11 @@ msgstr "Browse, add and find your yarns"
 msgid "By"
 msgstr "By"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:454
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:509
 msgid "Calculating…"
 msgstr "Calculating…"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:472
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:537
 msgid "Calculation Results"
 msgstr "Calculation Results"
 
@@ -3164,6 +3167,11 @@ msgstr "Category name"
 msgid "Category renamed."
 msgstr "Category renamed."
 
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:284
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:425
+msgid "Change swatch size"
+msgstr "Change swatch size"
+
 #: web/src/lib/features/admin/DiffPanel.svelte:151
 msgid "Changed"
 msgstr "Changed"
@@ -3186,8 +3194,8 @@ msgstr "Check archive status again"
 #: web/src/lib/features/auth/SignupForm.svelte:61
 #: web/src/lib/features/auth/SignupForm.svelte:63
 #: web/src/lib/features/auth/SignupForm.svelte:125
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:140
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:168
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:183
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:212
 #: web/src/lib/features/projects/ProjectEditor.svelte:633
 #: web/src/lib/features/yarns/YarnForm.svelte:329
 msgid "Check the highlighted fields and try again."
@@ -3257,7 +3265,7 @@ msgstr "Choose an image smaller than 25 MiB."
 msgid "Choose image"
 msgstr "Choose image"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:465
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:506
 msgid "Clear"
 msgstr "Clear"
 
@@ -3421,6 +3429,10 @@ msgstr "Disable this account?"
 msgid "Discard this password draft?"
 msgstr "Discard this password draft?"
 
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:117
+msgid "Done"
+msgstr "Done"
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:469
 msgid "Each step needs a title of 256 characters or fewer."
 msgstr "Each step needs a title of 256 characters or fewer."
@@ -3470,15 +3482,17 @@ msgstr "Enter a category name."
 msgid "Enter a complete http or https URL."
 msgstr "Enter a complete http or https URL."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:76
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:88
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:165
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:84
 msgid "Enter a positive whole number."
 msgstr "Enter a positive whole number."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:463
 msgid "Enter a project name."
 msgstr "Enter a project name."
+
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:28
+msgid "Enter a size above 0 and up to 100 cm."
+msgstr "Enter a size above 0 and up to 100 cm."
 
 #: web/src/lib/features/admin/AdminUsers.svelte:327
 #: web/src/lib/features/admin/AdminUsers.svelte:483
@@ -3613,6 +3627,10 @@ msgstr "HTML page"
 msgid "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 msgstr "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:89
+msgid "Height"
+msgstr "Height"
+
 #: web/src/lib/features/home/HomeDashboard.svelte:40
 msgid "Hello there!"
 msgstr "Hello there!"
@@ -3624,6 +3642,10 @@ msgstr "Hello, knitter!"
 #: web/src/lib/features/account/AccountSettings.svelte:1013
 msgid "Hide token"
 msgstr "Hide token"
+
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:67
+msgid "How big was the area you counted? Patterns usually use 10 × 10 cm."
+msgstr "How big was the area you counted? Patterns usually use 10 × 10 cm."
 
 #: web/src/lib/features/account/AccountSettings.svelte:1003
 msgid "I saved this token somewhere safe."
@@ -3867,7 +3889,7 @@ msgstr "More project details"
 msgid "More yarn details"
 msgstr "More yarn details"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:480
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:545
 msgid "N/A"
 msgstr "N/A"
 
@@ -4767,6 +4789,10 @@ msgstr "Suggested project images"
 msgid "Suggested step images"
 msgstr "Suggested step images"
 
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:56
+msgid "Swatch size"
+msgstr "Swatch size"
+
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:291
 msgid "Tap a photo to see it larger."
 msgstr "Tap a photo to see it larger."
@@ -4858,15 +4884,15 @@ msgstr "The archive request is waiting to start."
 msgid "The archive service is working on this source."
 msgstr "The archive service is working on this source."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:178
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:193
 msgid "The calculation could not be completed."
 msgstr "The calculation could not be completed."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:170
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:185
 msgid "The calculation request is too large. Reduce the values and try again."
 msgstr "The calculation request is too large. Reduce the values and try again."
 
-#: web/src/lib/features/gauge/gauge-api.ts:32
+#: web/src/lib/features/gauge/gauge-api.ts:43
 msgid "The calculator returned an unreadable response."
 msgstr "The calculator returned an unreadable response."
 
@@ -4983,6 +5009,10 @@ msgstr "The request could not be read. Refresh and try again."
 #: web/src/lib/features/admin/AdminUsers.svelte:203
 msgid "The request is larger than the allowed size."
 msgstr "The request is larger than the allowed size."
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:268
+msgid "The result appears automatically as soon as every field is filled in"
+msgstr "The result appears automatically as soon as every field is filled in"
 
 #: web/src/lib/api.ts:172
 msgid "The server could not be reached. Check your connection and try again."
@@ -5414,6 +5444,10 @@ msgstr "What are we knitting today?"
 msgid "What would you like to add?"
 msgstr "What would you like to add?"
 
+#: web/src/lib/features/gauge/SwatchSizeDialog.svelte:73
+msgid "Width"
+msgstr "Width"
+
 #: web/src/lib/features/account/AccountSettings.svelte:768
 #: web/src/lib/features/account/AccountSettings.svelte:947
 msgid "Working…"
@@ -5612,7 +5646,7 @@ msgstr "Your workspace is waiting online."
 msgid "Your yarn stash"
 msgstr "Your yarn stash"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:489
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:554
 msgid "and"
 msgstr "and"
 
@@ -5636,11 +5670,11 @@ msgstr "of"
 msgid "pixels"
 msgstr "pixels"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:491
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:556
 msgid "rows"
 msgstr "rows"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:487
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:552
 msgid "stitches"
 msgstr "stitches"
 

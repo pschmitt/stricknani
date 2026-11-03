@@ -45,7 +45,10 @@
     | "collapse"
     | "print"
     | "reset"
-    | "search";
+    | "search"
+    | "help"
+    | "edit"
+    | "chevron-down";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -125,6 +128,14 @@
     <path
       d="M20 11a8 8 0 0 0-14.2-4L4 9m0-5v5h5M4 13a8 8 0 0 0 14.2 4L20 15m0 5v-5h-5"
     />
+  {:else if name === "help"}
+    <path
+      d="M9 18h6M10 21h4M8.2 14.5C6.8 13.4 6 11.8 6 10a6 6 0 0 1 12 0c0 1.8-.8 3.4-2.2 4.5-.6.5-.8 1-.8 1.5H9c0-.5-.2-1-.8-1.5Z"
+    />
+  {:else if name === "edit"}
+    <path d="m4.5 16.5-.8 4 4-.8 11-11-3.2-3.2zM13.8 6.2l3.2 3.2" />
+  {:else if name === "chevron-down"}
+    <path d="m5 9 7 7 7-7" />
   {:else if name === "previous"}
     <path d="m15 5-7 7 7 7" />
   {:else if name === "next"}
