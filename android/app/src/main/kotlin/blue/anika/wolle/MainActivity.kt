@@ -3,12 +3,15 @@ package blue.anika.wolle
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -77,6 +80,23 @@ class MainActivity : ComponentActivity() {
                 }
             val dynamicColor by
                 appPreferencesRepository.dynamicColor.collectAsStateWithLifecycle(false)
+            // Status and navigation bar icons follow the app's own theme, not the system one:
+            // with "Light" chosen in the app on a phone in dark mode they stayed white on the
+            // light app (and dark on dark the other way round).
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle =
+                        SystemBarStyle.auto(
+                            AndroidColor.TRANSPARENT,
+                            AndroidColor.TRANSPARENT,
+                        ) {
+                            darkTheme
+                        },
+                    navigationBarStyle =
+                        SystemBarStyle.auto(LIGHT_NAV_SCRIM, DARK_NAV_SCRIM) { darkTheme },
+                )
+                onDispose {}
+            }
             StricknaniTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
                 StricknaniNavHost(
                     startDestination = if (isConfigured) Route.Home else Route.Onboarding,
@@ -135,3 +155,7 @@ class MainActivity : ComponentActivity() {
         finishAffinity()
     }
 }
+
+/** The same translucent navigation-bar scrims androidx uses by default for button navigation. */
+private val LIGHT_NAV_SCRIM = AndroidColor.argb(0xe6, 0xFF, 0xFF, 0xFF)
+private val DARK_NAV_SCRIM = AndroidColor.argb(0x80, 0x1b, 0x1b, 0x1b)
