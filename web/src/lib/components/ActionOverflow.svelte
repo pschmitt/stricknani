@@ -154,7 +154,7 @@
     bind:this={trigger}
     aria-label={label}
   >
-    <NavIcon name="more" />
+    <NavIcon name="overflow" />
     <span class="action-overflow__visually-hidden">{label}</span>
   </summary>
   <div
@@ -184,10 +184,13 @@
     height: 44px;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
+    border: 1px solid var(--control-border);
+    border-radius: 999px;
     color: var(--accent-strong);
     background: var(--surface);
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
     cursor: pointer;
     list-style: none;
     -webkit-tap-highlight-color: transparent;
@@ -212,9 +215,13 @@
   }
 
   .action-overflow__trigger :global(svg) {
-    width: var(--ui-action-icon-size-md);
-    height: var(--ui-action-icon-size-md);
-    stroke-width: 2;
+    width: 22px;
+    height: 22px;
+  }
+
+  .action-overflow[open] .action-overflow__trigger {
+    border-color: var(--accent);
+    background: var(--accent-wash);
   }
 
   .action-overflow__panel {
