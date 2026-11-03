@@ -126,7 +126,7 @@ function invalidResponse(): ApiError {
   );
 }
 
-function parseMeta(value: unknown): PageMeta {
+export function parseMeta(value: unknown): PageMeta {
   if (
     !record(value) ||
     !positiveInteger(value.page) ||
@@ -399,7 +399,7 @@ function parseChangeValue(value: unknown, field: string): ChangeValue {
   }
 }
 
-function parseChangeSet(value: unknown): ChangeSetV1 {
+export function parseChangeSet(value: unknown): ChangeSetV1 {
   if (
     !record(value) ||
     value.version !== 1 ||

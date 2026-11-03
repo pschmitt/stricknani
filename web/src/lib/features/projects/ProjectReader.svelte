@@ -14,6 +14,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
+  import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -1270,6 +1271,15 @@
           {/each}
         </div>
       </section>
+    {/if}
+
+    {#if !adminData}
+      <HistorySection
+        kind="projects"
+        id={project.id}
+        {locale}
+        currentEmail={session.data?.user?.email ?? null}
+      />
     {/if}
 
     <footer class="reader-footer">

@@ -6,6 +6,7 @@
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -412,6 +413,13 @@
         {/if}
       </aside>
     </div>
+
+    <HistorySection
+      kind="yarns"
+      id={currentYarn.id}
+      {locale}
+      currentEmail={session.data?.user?.email ?? null}
+    />
   </main>
 {/if}
 
