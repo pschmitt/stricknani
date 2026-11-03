@@ -57,13 +57,22 @@ cleanup_capture_markers() {
     kill "$capture_watch_pid" 2>/dev/null || true
     wait "$capture_watch_pid" 2>/dev/null || true
   fi
-  adb reverse tcp:7674 tcp:7674 >/dev/null 2>&1 || true
+  adb reverse tcp:7674 "tcp:${FIXTURE_PORT}" >/dev/null 2>&1 || true
   adb shell rm -f "$offline_marker" >/dev/null 2>&1 || true
   for name in "${capture_names[@]}"
   do
     adb shell rm -f "${capture_marker_prefix}${name}" >/dev/null 2>&1 || true
   done
 }
+
+# The app always talks to 127.0.0.1:7674 on the device; FIXTURE_PORT is the host port the
+# disposable server listens on (the native Rust fixture picks a free one).
+FIXTURE_PORT="${FIXTURE_PORT:-7674}"
+if [[ ! "$FIXTURE_PORT" =~ ^[0-9]{1,5}$ ]]
+then
+  printf '%s\n' 'FIXTURE_PORT must be a TCP port number.' >&2
+  exit 2
+fi
 
 mkdir -p "$GITHUB_WORKSPACE/screenshot-captures"
 adb shell rm -f "$offline_marker" >/dev/null 2>&1 || true

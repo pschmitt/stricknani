@@ -25,6 +25,11 @@ MAX_MEDIA_BYTES = 5 * 1024 * 1024
 REQUEST_TIMEOUT = 8
 PROJECT_NAME = "Heirloom Baby Blanket"
 YARN_NAME = "Riverbend Merino DK"
+SCREENSHOT_PROJECT_DETAIL = {
+    "needles": "4.0 mm circular, 80 cm",
+    "stitch_sample": "22 stitches and 30 rows = 10 cm in seed stitch, blocked",
+    "notes": "Knit the border first, then pick up along the edge for the centre panel.",
+}
 CATEGORY_NAME = "Schal"
 
 
@@ -261,8 +266,14 @@ def seed_fixture(
     token_file: Path,
     *,
     opener: Any | None = None,
+    screenshot_detail: bool = False,
 ) -> None:
-    """Create the demo records and private PAT in an existing disposable fixture."""
+    """Create the demo records and private PAT in an existing disposable fixture.
+
+    ``screenshot_detail`` also fills the project's needles, stitch sample and notes,
+    which the Android screenshot lane captures as detail cards. E2E lanes leave them
+    empty.
+    """
     environment = load_fixture_environment(fixture_file)
     token_target = _validate_token_path(token_file, fixture_file)
     client = ApiClient(environment["STRICKNANI_RUST_TEST_URL"], opener or _opener())
@@ -323,6 +334,7 @@ def seed_fixture(
                 ),
                 "link": "https://example.invalid/projects/heirloom-baby-blanket",
                 "yarn_ids": [yarn_id],
+                **(SCREENSHOT_PROJECT_DETAIL if screenshot_detail else {}),
             },
         ),
         "/api/v1/projects",
@@ -448,9 +460,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture-file", type=Path, required=True)
     parser.add_argument("--token-file", type=Path, required=True)
+    parser.add_argument(
+        "--screenshot-detail",
+        action="store_true",
+        help="also fill the stitch sample and notes shown in Android screenshots",
+    )
     args = parser.parse_args(argv)
     try:
-        seed_fixture(args.fixture_file, args.token_file)
+        seed_fixture(
+            args.fixture_file,
+            args.token_file,
+            screenshot_detail=args.screenshot_detail,
+        )
     except (FixtureError, SeedError) as error:
         print(f"Rust E2E seed failed: {error}", file=sys.stderr)
         return 1
