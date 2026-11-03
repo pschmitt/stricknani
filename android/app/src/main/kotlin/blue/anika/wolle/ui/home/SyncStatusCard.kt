@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,6 +83,9 @@ fun HomeSyncStatusCard(
     onOpenSyncIssues: () -> Unit,
     onRetrySync: () -> Unit,
     modifier: Modifier = Modifier,
+    // Set when the last pull could not check for news; the card is then the only place saying so.
+    refreshProblem: SyncCardProblem? = null,
+    onRetryRefresh: () -> Unit = {},
     leaving: Boolean = false,
     // Raw PullToRefreshState.distanceFraction, read lazily (layout/draw phase only).
     pullFraction: () -> Float = { 0f },
@@ -91,12 +95,13 @@ fun HomeSyncStatusCard(
     // The failed count includes conflicts, which the pending count leaves out; the
     // failure text must use it so the card agrees with SyncIssueBanner below it.
     val hasSyncFailures = failedChangesCount > 0
-    val isActionable = !isRefreshing && (hasSyncFailures || pendingChangesCount > 0)
+    val hasProblem = refreshProblem != null && !isRefreshing
+    val isActionable = !isRefreshing && (hasSyncFailures || pendingChangesCount > 0 || hasProblem)
     val actionLabel =
         if (hasSyncFailures) stringResource(R.string.sync_issue_view_details)
         else stringResource(R.string.sync_issue_retry)
     val still = animationsDisabled()
-    val mood = syncBadgeMood(isRefreshing, pendingChangesCount, hasSyncFailures)
+    val mood = syncBadgeMood(isRefreshing, pendingChangesCount, hasSyncFailures, refreshProblem)
     val density = LocalDensity.current
     // Enter: drop in from slightly above with a squash-and-stretch spring.
     val enter = remember { Animatable(if (still || peeking) 1f else 0f) }
@@ -222,7 +227,9 @@ fun HomeSyncStatusCard(
                         it.clickable(
                             onClickLabel = actionLabel,
                             role = Role.Button,
-                            onClick = if (hasSyncFailures) onOpenSyncIssues else onRetrySync,
+                            onClick =
+                                if (hasSyncFailures) onOpenSyncIssues
+                                else if (hasProblem) onRetryRefresh else onRetrySync,
                         )
                     } else {
                         it
@@ -237,7 +244,7 @@ fun HomeSyncStatusCard(
             // marigold while changes wait, red only for real failures.
             val (badgeTint, badgeOn) =
                 when {
-                    hasSyncFailures ->
+                    hasSyncFailures || hasProblem ->
                         MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
                     pendingChangesCount > 0 && !isRefreshing ->
                         MaterialTheme.colorScheme.tertiaryContainer to
@@ -290,7 +297,7 @@ fun HomeSyncStatusCard(
                             strokeWidth = 2.5.dp,
                             color = badgeOn,
                         )
-                    hasSyncFailures ->
+                    hasSyncFailures || hasProblem ->
                         Icon(
                             PhosphorIcons.CloudSlash,
                             contentDescription = null,
@@ -314,21 +321,38 @@ fun HomeSyncStatusCard(
                 }
             }
             Spacer(Modifier.width(14.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    syncStatusHeadline(isRefreshing, pendingChangesCount, hasSyncFailures),
+                    if (hasProblem && !hasSyncFailures)
+                        stringResource(
+                            if (refreshProblem == SyncCardProblem.Offline)
+                                R.string.sync_status_offline
+                            else R.string.sync_status_refresh_failed
+                        )
+                    else syncStatusHeadline(isRefreshing, pendingChangesCount, hasSyncFailures),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    syncStatusDetails(
-                        isRefreshing,
-                        lastSyncedMillis,
-                        pendingChangesCount,
-                        failedChangesCount,
-                    ),
+                    if (hasProblem && !hasSyncFailures)
+                        stringResource(R.string.sync_status_showing_saved)
+                    else
+                        syncStatusDetails(
+                            isRefreshing,
+                            lastSyncedMillis,
+                            pendingChangesCount,
+                            failedChangesCount,
+                        ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            if (hasProblem && !hasSyncFailures) {
+                TextButton(
+                    onClick = onRetryRefresh,
+                    modifier = Modifier.testTag("home-sync-retry"),
+                ) {
+                    Text(stringResource(R.string.sync_issue_retry), maxLines = 1, softWrap = false)
+                }
             }
         }
     }

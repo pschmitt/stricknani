@@ -45,7 +45,12 @@ class CategorySyncTest {
 
     private fun http(status: Int) =
         HttpException(
-            Response.error<Any>(status, "{}".toResponseBody("application/json".toMediaType()))
+            Response.error<Any>(
+                status,
+                // A v2 server always answers with an error envelope.
+                """{"error":{"code":"error_$status","message":"x"}}"""
+                    .toResponseBody("application/json".toMediaType()),
+            )
         )
 
     private class FakeCategoryDao(initial: List<CategoryEntity> = emptyList()) : CategoryDao {

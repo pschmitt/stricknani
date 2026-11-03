@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.api
 
 import blue.anika.wolle.data.api.v2.MetaV2Api
+import blue.anika.wolle.data.oidc.errorCodeOf
 import blue.anika.wolle.data.settings.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -40,10 +41,11 @@ data class ApiCapabilitiesState(
  * One probe of `GET /api/v2/meta` with the Bearer token, cached for the rest of the process and
  * keyed by server URL + token (a sign-out or token change clears it):
  * - 200 with a `user` -> V2, and the body also tells us the user's id, email and admin flag;
- * - 404/405 (a server without v2), or 200 without a user -> V1, cached.
+ * - 404/405 (a server without v2), a 401/403 without a v2 error body (a legacy server), or 200
+ *   without a user -> V1, cached.
  *
- * Only a server that lacks v2 selects v1. Any other failure (401 `session_expired`, 403, 5xx, no
- * connection) is thrown to the caller as that call's normal failure, so offline handling, the
+ * Only a server that lacks v2 selects v1. Any other failure (a v2 401 `session_expired`, 403, 5xx,
+ * no connection) is thrown to the caller as that call's normal failure, so offline handling, the
  * outbox and the expired-token handling behave as before, and it is not cached: the next call
  * probes again.
  */
@@ -123,11 +125,28 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
                     ),
             )
         } catch (failure: HttpException) {
-            if (failure.code() == 404 || failure.code() == 405)
-                remember(key, ApiCapabilitiesState())
+            if (isNoV2Server(failure)) remember(key, ApiCapabilitiesState())
             else throw undecided(failure)
         } catch (failure: Exception) {
             throw undecided(failure)
+        }
+
+    /**
+     * A server without v2: 404/405 (no route), or a 401/403 that is not a v2 error envelope. A v2
+     * server always answers `{"error": {"code": ...}}`; a legacy server whose auth runs before the
+     * router answers 401 on unknown routes with its own body, which must not read as a rejected
+     * token (the v1 calls then decide that on their own).
+     */
+    private fun isNoV2Server(failure: HttpException): Boolean =
+        when (failure.code()) {
+            404,
+            405 -> true
+            401,
+            403 ->
+                errorCodeOf(
+                    runCatching { failure.response()?.errorBody()?.string() }.getOrNull().orEmpty()
+                ) == null
+            else -> false
         }
 
     private fun remember(key: String, result: ApiCapabilitiesState): ApiCapabilitiesState {

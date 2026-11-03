@@ -490,6 +490,9 @@
     <string name="sync_status_changes_pending">Saved on this phone</string>
     <string name="sync_status_synced">All caught up</string>
     <string name="sync_status_pulling_latest">Fetching your newest projects and yarns.</string>
+    <string name="sync_status_refresh_failed">Couldn’t check for news</string>
+    <string name="sync_status_offline">You’re offline</string>
+    <string name="sync_status_showing_saved">Here’s what’s on this phone.</string>
     <string name="sync_status_not_synced_yet">Not caught up yet</string>
     <string name="sync_status_last_synced_just_now">Checked just now</string>
     <string name="sync_status_last_synced_minutes">Checked %1$d min ago</string>

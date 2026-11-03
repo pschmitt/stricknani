@@ -490,6 +490,9 @@
     <string name="sync_status_changes_pending">Auf diesem Gerät gespeichert</string>
     <string name="sync_status_synced">Alles aktuell</string>
     <string name="sync_status_pulling_latest">Deine neuesten Projekte und Garne werden geholt.</string>
+    <string name="sync_status_refresh_failed">Konnte nicht nach Neuem schauen</string>
+    <string name="sync_status_offline">Du bist offline</string>
+    <string name="sync_status_showing_saved">Hier ist, was auf diesem Gerät liegt.</string>
     <string name="sync_status_not_synced_yet">Noch nicht aktualisiert</string>
     <string name="sync_status_last_synced_just_now">Gerade eben nachgeschaut</string>
     <string name="sync_status_last_synced_minutes">Vor %1$d Min. nachgeschaut</string>

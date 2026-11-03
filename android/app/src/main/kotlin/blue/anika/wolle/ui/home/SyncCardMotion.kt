@@ -1,5 +1,7 @@
 package blue.anika.wolle.ui.home
 
+import blue.anika.wolle.ui.common.RefreshState
+
 /** What the sync card's status badge is currently showing. */
 enum class SyncBadgeMood {
     Busy,
@@ -17,14 +19,33 @@ enum class SyncBadgeCue {
     Shake,
 }
 
+/** Why the last foreground refresh could not check for news; shown by the sync card itself. */
+enum class SyncCardProblem {
+    /** The device could not reach the server. */
+    Offline,
+    /** The server was reached but the sync failed (for example a rejected sign-in). */
+    Failed,
+}
+
+/** The card's view of a refresh outcome: only a real failure is a problem, nothing else is. */
+fun syncCardProblem(state: RefreshState): SyncCardProblem? =
+    when (state) {
+        RefreshState.Offline -> SyncCardProblem.Offline
+        RefreshState.Error -> SyncCardProblem.Failed
+        RefreshState.Idle,
+        is RefreshState.Refreshing,
+        is RefreshState.Finished -> null
+    }
+
 fun syncBadgeMood(
     isRefreshing: Boolean,
     pendingChangesCount: Int,
     hasSyncFailures: Boolean,
+    refreshProblem: SyncCardProblem? = null,
 ): SyncBadgeMood =
     when {
         isRefreshing -> SyncBadgeMood.Busy
-        hasSyncFailures -> SyncBadgeMood.Failed
+        hasSyncFailures || refreshProblem != null -> SyncBadgeMood.Failed
         pendingChangesCount > 0 -> SyncBadgeMood.Pending
         else -> SyncBadgeMood.Done
     }

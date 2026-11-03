@@ -30,6 +30,21 @@ class ApiCapabilitiesTest {
             Response.error<Any>(status, "{}".toResponseBody("application/json".toMediaType()))
         )
 
+    /** A v2 server's error answer: always `{"error": {"code": ...}}`. */
+    private fun v2Http(status: Int) =
+        HttpException(
+            Response.error<Any>(
+                status,
+                """{"error":{"code":"session_expired","message":"Sign in to continue"}}"""
+                    .toResponseBody("application/json".toMediaType()),
+            )
+        )
+
+    private fun legacyHttp(status: Int, body: String = """{"detail":"Not authenticated"}""") =
+        HttpException(
+            Response.error<Any>(status, body.toResponseBody("application/json".toMediaType()))
+        )
+
     private val admin =
         MetaV2Dto(user = MetaV2UserDto(id = 3, email = "me@example.org", isAdmin = true))
 
@@ -104,8 +119,8 @@ class ApiCapabilitiesTest {
         runTest {
             val failures =
                 listOf<() -> MetaV2Dto>(
-                    { throw http(401) },
-                    { throw http(403) },
+                    { throw v2Http(401) },
+                    { throw v2Http(403) },
                     { throw http(503) },
                     { throw IOException("off") },
                 )
@@ -123,6 +138,25 @@ class ApiCapabilitiesTest {
         }
 
     @Test
+    fun `a legacy server answering 401 on the unknown v2 route is v1, not a failure`() = runTest {
+        for (legacy in
+            listOf(legacyHttp(401), legacyHttp(403), legacyHttp(401, "<html>no</html>"))) {
+            val meta = FakeMeta { throw legacy }
+            val caps = capabilities(meta)
+
+            assertEquals(ApiGeneration.V1, caps.generation())
+            assertEquals(ApiGeneration.V1, caps.generation())
+            assertEquals(1, meta.calls)
+        }
+    }
+
+    @Test
+    fun `a v2 server rejecting the token is still a failure`() = runTest {
+        val caps = capabilities(FakeMeta { throw v2Http(401) })
+        assertTrue(runCatching { caps.generation() }.exceptionOrNull() is HttpException)
+    }
+
+    @Test
     fun `a failure after a good probe for other credentials does not leak the old answer`() =
         runTest {
             val meta = FakeMeta { admin }
@@ -130,7 +164,7 @@ class ApiCapabilitiesTest {
             caps.generation()
 
             key = "https://other\ntoken"
-            meta.respond = { throw http(401) }
+            meta.respond = { throw v2Http(401) }
             assertTrue(runCatching { caps.generation() }.isFailure)
             assertNull(caps.current.user)
         }

@@ -109,7 +109,13 @@ fun HomeScreen(
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
+    RefreshFeedbackEffect(
+        refreshState,
+        snackbarHostState,
+        viewModel::dismissRefreshFeedback,
+        problemsShownInline = true,
+    )
+    val refreshProblem = syncCardProblem(refreshState)
 
     // The project touched last gets the big card; the row below shows the others.
     val current = recentProjects.firstOrNull()
@@ -124,13 +130,20 @@ fun HomeScreen(
     // The card plays a short "poof" before it leaves the list, so the item is only removed after.
     var leavingSyncCard by remember { mutableStateOf(false) }
     val reduceMotion = animationsDisabled()
-    LaunchedEffect(pulledToRefresh, isRefreshing, failedMutations.isEmpty(), pendingChangesCount) {
+    LaunchedEffect(
+        pulledToRefresh,
+        isRefreshing,
+        failedMutations.isEmpty(),
+        pendingChangesCount,
+        refreshProblem,
+    ) {
         leavingSyncCard = false
         if (
             pulledToRefresh &&
                 !isRefreshing &&
                 failedMutations.isEmpty() &&
-                pendingChangesCount == 0
+                pendingChangesCount == 0 &&
+                refreshProblem == null
         ) {
             delay(SYNC_CARD_LINGER_MILLIS)
             if (!reduceMotion) {
@@ -144,6 +157,7 @@ fun HomeScreen(
     val showSyncStatus =
         pulledToRefresh ||
             failedMutations.isNotEmpty() ||
+            refreshProblem != null ||
             pendingChangesCount > 0 ||
             lastSyncedMillis == null
 
@@ -237,6 +251,8 @@ fun HomeScreen(
                                 failedChangesCount = failedMutations.size,
                                 onOpenSyncIssues = onOpenSyncIssues,
                                 onRetrySync = viewModel::retryFailedMutations,
+                                refreshProblem = refreshProblem,
+                                onRetryRefresh = { viewModel.refresh() },
                                 leaving = leavingSyncCard,
                                 pullFraction = pullFraction,
                                 peeking = peekSyncCard,

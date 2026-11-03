@@ -27,12 +27,17 @@ fun RefreshFeedbackEffect(
     state: RefreshState,
     snackbarHostState: SnackbarHostState,
     onConsumed: () -> Unit,
+    // True on a screen with its own status card: offline/error outcomes are shown there, so no
+    // snackbar says it a second time, and the state stays until the next refresh replaces it.
+    problemsShownInline: Boolean = false,
 ) {
     val messageResource = refreshFeedbackResource(state)
     val message = messageResource?.let { stringResource(it) }
 
     LaunchedEffect(state) {
         if (state is RefreshState.Idle || state is RefreshState.Refreshing) return@LaunchedEffect
+        if (problemsShownInline && (state is RefreshState.Offline || state is RefreshState.Error))
+            return@LaunchedEffect
 
         message?.let {
             val kind =
