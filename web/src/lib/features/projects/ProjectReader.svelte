@@ -1,4 +1,5 @@
 <script lang="ts">
+  import StickyNote from "#lib/components/StickyNote.svelte";
   import { onDestroy, tick } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -7,6 +8,7 @@
   import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import Disclosure from "#lib/components/Disclosure.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -17,6 +19,7 @@
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import { extraCount, plainTextSummary } from "./facts-summary.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
   import {
@@ -61,6 +64,15 @@
   let favoriteBusy = $state(false);
   let selectedImageId = $state<number | null>(null);
   let readerElement = $state<HTMLElement | null>(null);
+  const needlesText = $derived(
+    plainTextSummary(
+      project?.needles ||
+        yarns.find((yarn) => yarn.recommended_needles)?.recommended_needles,
+    ),
+  );
+  const gaugeText = $derived(plainTextSummary(project?.stitch_sample));
+  const yarnText = $derived(plainTextSummary(project?.yarn));
+  const moreYarns = $derived(extraCount(yarns.length));
   let materialsDetailsElement = $state<HTMLDetailsElement | null>(null);
   let printPreparing = $state(false);
   let printError = $state("");
@@ -851,38 +863,43 @@
           <dt>{t("Yarn", locale)}</dt>
           <dd>
             {#if yarns.length}
-              {yarns[0].name}{#if yarns.length > 1}
-                +{yarns.length - 1}{/if}
+              {yarns[0].name}{#if moreYarns > 0}
+                <span
+                  class="more-pill"
+                  title={`${moreYarns} ${t("more yarns", locale)}`}
+                >
+                  <span aria-hidden="true">+{moreYarns}</span>
+                  <span class="visually-hidden"
+                    >{moreYarns} {t("more yarns", locale)}</span
+                  ></span
+                >{/if}
             {:else}
-              {project.yarn || t("Not recorded", locale)}
+              {yarnText || t("Not recorded", locale)}
             {/if}
           </dd>
         </div>
-        {#if project.needles || yarns.some((yarn) => yarn.recommended_needles)}
+        {#if needlesText}
           <div>
             <dt>{t("Needles", locale)}</dt>
-            <dd>
-              {project.needles ||
-                yarns.find((yarn) => yarn.recommended_needles)
-                  ?.recommended_needles}
-            </dd>
+            <dd>{needlesText}</dd>
           </div>
         {/if}
-        {#if project.stitch_sample}
+        {#if gaugeText}
           <div>
             <dt>{t("Gauge", locale)}</dt>
-            <dd>{project.stitch_sample}</dd>
+            <dd>{gaugeText}</dd>
           </div>
         {/if}
       </dl>
     </div>
 
-    <details
-      class="details-card materials-card"
-      bind:this={materialsDetailsElement}
+    <Disclosure
+      class="materials-card"
+      icon="needle"
+      label={t("Materials", locale)}
+      bind:element={materialsDetailsElement}
     >
-      <summary>{t("Materials", locale)}</summary>
-      <dl>
+      <dl class="materials-body">
         {#if yarns.length}
           {#each yarns as yarn (yarn.id)}
             <div>
@@ -926,10 +943,10 @@
               </dd>
             </div>
           {/each}
-        {:else if project.yarn}
+        {:else if yarnText}
           <div>
             <dt>{t("Yarn", locale)}</dt>
-            <dd>{project.yarn}</dd>
+            <dd>{yarnText}</dd>
           </div>
         {:else}
           <div>
@@ -959,24 +976,20 @@
             {t("Some yarn details could not be loaded.", locale)}
           </p>
         {/if}
-        {#if project.needles || yarns.some((yarn) => yarn.recommended_needles)}
+        {#if needlesText}
           <div>
             <dt>{t("Needles", locale)}</dt>
-            <dd>
-              {project.needles ??
-                yarns.find((yarn) => yarn.recommended_needles)
-                  ?.recommended_needles}
-            </dd>
+            <dd>{needlesText}</dd>
           </div>
         {/if}
-        {#if project.stitch_sample}
+        {#if gaugeText}
           <div>
             <dt>{t("Gauge", locale)}</dt>
-            <dd>{project.stitch_sample}</dd>
+            <dd>{gaugeText}</dd>
           </div>
         {/if}
       </dl>
-    </details>
+    </Disclosure>
 
     {#if favoriteError}
       <p class="inline-error" role="alert">{favoriteError}</p>
@@ -999,12 +1012,25 @@
             {/if}
           </div>
           {#if project.notes_html}
-            <section class="note-section" aria-labelledby="notes-heading">
-              <h3 id="notes-heading">{t("Notes", locale)}</h3>
+            <StickyNote
+              title={t("Notes", locale)}
+              headingId="notes-heading"
+              headingLevel={3}
+            >
               <div class="reading-copy {textSizeClass}">
                 <div class="rich-text">{@html project.notes_html}</div>
               </div>
-            </section>
+            </StickyNote>
+          {:else if !adminData}
+            <StickyNote
+              title={t("Notes", locale)}
+              headingId="notes-heading"
+              headingLevel={3}
+              emptyLabel={t("Add a note", locale)}
+              emptyHref={`${resolve("/projects/[id]/edit", {
+                id: String(currentProject.id),
+              })}#project-notes`}
+            />
           {/if}
           {#if project.other_materials_html}
             <section class="note-section" aria-labelledby="materials-heading">
@@ -1516,17 +1542,31 @@
     letter-spacing: -0.02em;
   }
 
-  .materials-card > summary {
-    min-height: 44px;
-    align-content: center;
-    color: var(--ink);
-    font-size: 1.1rem;
-    font-weight: 650;
-    cursor: pointer;
+  :global(.materials-card) .materials-body {
+    padding: 0.25rem clamp(1rem, 3vw, 1.4rem) clamp(1rem, 3vw, 1.4rem);
   }
 
-  .materials-card[open] > summary {
-    margin-bottom: 0.9rem;
+  .more-pill {
+    display: inline-block;
+    margin-left: 0.25rem;
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+    background: color-mix(in srgb, var(--accent-strong) 12%, transparent);
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .section-heading-row > span {
@@ -1786,25 +1826,25 @@
     margin-bottom: 0.9rem;
   }
 
-  .details-card dl {
+  .materials-body {
     display: grid;
     gap: 0.8rem;
     margin: 0;
   }
 
-  .details-card dl > div {
+  .materials-body > div {
     display: grid;
     gap: 0.2rem;
     border-top: 1px solid var(--line);
     padding-top: 0.7rem;
   }
 
-  .details-card dl > div:first-child {
+  .materials-body > div:first-child {
     border-top: 0;
     padding-top: 0;
   }
 
-  .details-card dt {
+  .materials-body dt {
     color: var(--ink-muted);
     font-size: 0.78rem;
     font-weight: 650;
@@ -1812,7 +1852,7 @@
     letter-spacing: 0.045em;
   }
 
-  .details-card dd {
+  .materials-body dd {
     display: grid;
     gap: 0.22rem;
     margin: 0;
@@ -1820,6 +1860,7 @@
     overflow-wrap: anywhere;
   }
 
+  .materials-body :global(.resource-card__link),
   .details-card :global(.resource-card__link) {
     display: grid;
     min-height: 0;
@@ -1831,6 +1872,7 @@
     font-size: 0.88rem;
   }
 
+  .materials-body a,
   .details-card a {
     display: inline-flex;
     min-height: 44px;
@@ -2064,8 +2106,13 @@
       display: none !important;
     }
 
-    .materials-card > summary {
+    :global(.materials-card > summary) {
       display: none;
+    }
+
+    :global(.materials-card) {
+      border: 0;
+      border-radius: 0;
     }
 
     .reader-heading-actions,
@@ -2087,7 +2134,7 @@
 
     .section-heading-row,
     .steps-list > li,
-    .details-card dl > div {
+    .materials-body > div {
       break-inside: avoid;
     }
 

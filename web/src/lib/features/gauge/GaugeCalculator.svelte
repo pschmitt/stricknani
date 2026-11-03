@@ -4,7 +4,7 @@
   import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import KnittedSwatch from "./KnittedSwatch.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
+  import Disclosure from "#lib/components/Disclosure.svelte";
   import SwatchSizeDialog from "./SwatchSizeDialog.svelte";
   import {
     defaultSwatchSize,
@@ -231,12 +231,11 @@
 >
   <PageHeader title={t("Gauge calculator", locale)} titleId="gauge-title" />
 
-  <details class="help-panel">
-    <summary>
-      <span class="help-icon"><NavIcon name="help" /></span>
-      <span class="help-label">{t("How to use this calculator", locale)}</span>
-      <span class="help-chevron"><NavIcon name="chevron-down" /></span>
-    </summary>
+  <Disclosure
+    class="help-panel"
+    icon="help"
+    label={t("How to use this calculator", locale)}
+  >
     <p class="help-intro">
       {t(
         "Calculate how many stitches to cast on and rows to knit based on your gauge and the pattern's gauge.",
@@ -269,7 +268,7 @@
         )}
       </li>
     </ol>
-  </details>
+  </Disclosure>
 
   <form class="gauge-form" onsubmit={submit}>
     <fieldset class="swatch-fieldset swatch-fieldset--pattern">
@@ -567,71 +566,8 @@
     background: var(--surface);
   }
 
-  .help-panel {
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    overflow: hidden;
-  }
-
-  .help-panel summary {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    min-height: 56px;
-    padding: 0.5rem clamp(1rem, 3vw, 1.5rem);
-    color: var(--accent-strong);
-    font-weight: 650;
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .help-panel summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .help-panel summary:hover {
-    background: color-mix(in srgb, var(--accent-strong) 8%, transparent);
-  }
-
-  .help-panel summary:focus-visible {
-    outline: 3px solid var(--accent-strong);
-    outline-offset: -3px;
-  }
-
-  .help-icon,
-  .help-chevron {
-    display: inline-flex;
-    flex: none;
-  }
-
-  .help-icon :global(svg),
-  .help-chevron :global(svg) {
-    width: 1.35rem;
-    height: 1.35rem;
-  }
-
-  .help-label {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .help-chevron :global(svg) {
-    transform: rotate(0deg);
-  }
-
-  .help-panel[open] .help-chevron :global(svg) {
-    transform: rotate(180deg);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .help-chevron :global(svg) {
-      transition: transform 0.2s ease;
-    }
-  }
-
   .help-intro,
-  .help-panel ol {
+  :global(.help-panel) ol {
     margin-inline: clamp(1rem, 3vw, 1.5rem);
   }
 
@@ -642,7 +578,7 @@
     line-height: 1.55;
   }
 
-  .help-panel ol {
+  :global(.help-panel) ol {
     display: grid;
     gap: 0.55rem;
     margin-block: 0.75rem 1.25rem;
