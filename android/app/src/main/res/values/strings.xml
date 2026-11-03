@@ -611,4 +611,67 @@
     <string name="admin_error_password_long">That password is too long.</string>
     <string name="admin_error_not_found">That account doesn\'t exist any more.</string>
     <string name="admin_error_other">Something went wrong. Please try again.</string>
+
+    <!-- Recent changes (project and yarn detail) -->
+    <string name="history_title">Recent changes</string>
+    <string name="history_load_failed">Recent changes could not be loaded.</string>
+    <string name="history_more_failed">More changes could not be loaded.</string>
+    <string name="history_detail_failed">These changes could not be loaded.</string>
+    <string name="history_empty_title">No changes recorded yet</string>
+    <string name="history_empty_hint">Edits will show up here.</string>
+    <string name="history_show_all">Show all changes</string>
+    <string name="history_show_older">Show older changes</string>
+    <string name="history_show_fewer">Show fewer</string>
+    <string name="history_loading">Loading…</string>
+    <string name="history_by">by %1$s</string>
+    <string name="history_open_changes">Show details</string>
+    <string name="history_show_date">Show full date</string>
+    <string name="history_list_and">and</string>
+    <string name="history_n_more">%1$d more</string>
+    <string name="history_changed_fields">Changed %1$s</string>
+    <plurals name="history_added_photos">
+        <item quantity="one">Added a photo</item>
+        <item quantity="other">Added %1$d photos</item>
+    </plurals>
+    <plurals name="history_removed_photos">
+        <item quantity="one">Removed a photo</item>
+        <item quantity="other">Removed %1$d photos</item>
+    </plurals>
+    <plurals name="history_added_steps">
+        <item quantity="one">Added a step</item>
+        <item quantity="other">Added %1$d steps</item>
+    </plurals>
+    <plurals name="history_removed_steps">
+        <item quantity="one">Removed a step</item>
+        <item quantity="other">Removed %1$d steps</item>
+    </plurals>
+    <plurals name="history_added_attachments">
+        <item quantity="one">Added an attachment</item>
+        <item quantity="other">Added %1$d attachments</item>
+    </plurals>
+    <plurals name="history_removed_attachments">
+        <item quantity="one">Removed an attachment</item>
+        <item quantity="other">Removed %1$d attachments</item>
+    </plurals>
+    <string name="history_noun_name">name</string>
+    <string name="history_noun_category">category</string>
+    <string name="history_noun_yarn">yarn</string>
+    <string name="history_noun_linked_yarns">linked yarns</string>
+    <string name="history_noun_needles">needles</string>
+    <string name="history_noun_stitch_sample">stitch sample</string>
+    <string name="history_noun_description">description</string>
+    <string name="history_noun_notes">notes</string>
+    <string name="history_noun_other_materials">other materials</string>
+    <string name="history_noun_tags">tags</string>
+    <string name="history_noun_steps">steps</string>
+    <string name="history_noun_ai">AI enhancement</string>
+    <string name="history_noun_link">source link</string>
+    <string name="history_noun_brand">brand</string>
+    <string name="history_noun_colorway">colorway</string>
+    <string name="history_noun_dye_lot">dye lot</string>
+    <string name="history_noun_fiber_content">fiber content</string>
+    <string name="history_noun_yarn_weight">yarn weight</string>
+    <string name="history_noun_recommended_needles">recommended needles</string>
+    <string name="history_noun_skein_weight">skein weight</string>
+    <string name="history_noun_skein_length">skein length</string>
 </resources>

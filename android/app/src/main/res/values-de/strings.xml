@@ -611,4 +611,67 @@
     <string name="admin_error_password_long">Dieses Passwort ist zu lang.</string>
     <string name="admin_error_not_found">Dieses Konto gibt es nicht mehr.</string>
     <string name="admin_error_other">Etwas ist schiefgelaufen. Bitte versuch es nochmal.</string>
+
+    <!-- Recent changes (project and yarn detail) -->
+    <string name="history_title">Letzte Änderungen</string>
+    <string name="history_load_failed">Letzte Änderungen konnten nicht geladen werden.</string>
+    <string name="history_more_failed">Weitere Änderungen konnten nicht geladen werden.</string>
+    <string name="history_detail_failed">Diese Änderungen konnten nicht geladen werden.</string>
+    <string name="history_empty_title">Noch keine Änderungen aufgezeichnet</string>
+    <string name="history_empty_hint">Änderungen erscheinen hier.</string>
+    <string name="history_show_all">Alle Änderungen anzeigen</string>
+    <string name="history_show_older">Ältere Änderungen anzeigen</string>
+    <string name="history_show_fewer">Weniger anzeigen</string>
+    <string name="history_loading">Lädt…</string>
+    <string name="history_by">von %1$s</string>
+    <string name="history_open_changes">Details anzeigen</string>
+    <string name="history_show_date">Ganzes Datum anzeigen</string>
+    <string name="history_list_and">und</string>
+    <string name="history_n_more">%1$d weitere</string>
+    <string name="history_changed_fields">%1$s geändert</string>
+    <plurals name="history_added_photos">
+        <item quantity="one">Foto hinzugefügt</item>
+        <item quantity="other">%1$d Fotos hinzugefügt</item>
+    </plurals>
+    <plurals name="history_removed_photos">
+        <item quantity="one">Foto entfernt</item>
+        <item quantity="other">%1$d Fotos entfernt</item>
+    </plurals>
+    <plurals name="history_added_steps">
+        <item quantity="one">Schritt hinzugefügt</item>
+        <item quantity="other">%1$d Schritte hinzugefügt</item>
+    </plurals>
+    <plurals name="history_removed_steps">
+        <item quantity="one">Schritt entfernt</item>
+        <item quantity="other">%1$d Schritte entfernt</item>
+    </plurals>
+    <plurals name="history_added_attachments">
+        <item quantity="one">Anhang hinzugefügt</item>
+        <item quantity="other">%1$d Anhänge hinzugefügt</item>
+    </plurals>
+    <plurals name="history_removed_attachments">
+        <item quantity="one">Anhang entfernt</item>
+        <item quantity="other">%1$d Anhänge entfernt</item>
+    </plurals>
+    <string name="history_noun_name">Name</string>
+    <string name="history_noun_category">Kategorie</string>
+    <string name="history_noun_yarn">Garn</string>
+    <string name="history_noun_linked_yarns">verknüpfte Garne</string>
+    <string name="history_noun_needles">Nadeln</string>
+    <string name="history_noun_stitch_sample">Maschenprobe</string>
+    <string name="history_noun_description">Beschreibung</string>
+    <string name="history_noun_notes">Notizen</string>
+    <string name="history_noun_other_materials">weitere Materialien</string>
+    <string name="history_noun_tags">Tags</string>
+    <string name="history_noun_steps">Schritte</string>
+    <string name="history_noun_ai">KI-Ergänzung</string>
+    <string name="history_noun_link">Quelllink</string>
+    <string name="history_noun_brand">Marke</string>
+    <string name="history_noun_colorway">Farbe</string>
+    <string name="history_noun_dye_lot">Partie</string>
+    <string name="history_noun_fiber_content">Faseranteil</string>
+    <string name="history_noun_yarn_weight">Garnstärke</string>
+    <string name="history_noun_recommended_needles">empfohlene Nadeln</string>
+    <string name="history_noun_skein_weight">Knäuelgewicht</string>
+    <string name="history_noun_skein_length">Lauflänge</string>
 </resources>

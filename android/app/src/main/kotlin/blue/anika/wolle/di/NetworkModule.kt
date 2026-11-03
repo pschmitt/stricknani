@@ -5,6 +5,7 @@ import blue.anika.wolle.data.api.AdminApi
 import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
+import blue.anika.wolle.data.api.HistoryApi
 import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.ProjectsApi
@@ -117,6 +118,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAdminApi(retrofit: Retrofit): AdminApi = retrofit.create(AdminApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideHistoryApi(retrofit: Retrofit): HistoryApi = retrofit.create(HistoryApi::class.java)
 
     @Provides
     @Singleton

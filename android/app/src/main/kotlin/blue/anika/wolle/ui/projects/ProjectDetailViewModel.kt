@@ -8,6 +8,8 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
+import blue.anika.wolle.data.repository.HistoryKind
+import blue.anika.wolle.data.repository.HistoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -19,6 +21,7 @@ import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
+import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.print.PrintContent
 import blue.anika.wolle.ui.print.PrintImageLoader
@@ -65,12 +68,17 @@ constructor(
     private val detailCardOrderRepository: DetailCardOrderRepository,
     private val printImageLoader: PrintImageLoader,
     private val appPreferences: AppPreferencesRepository,
+    historyRepository: HistoryRepository,
 ) : ViewModel() {
 
     private val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
+
+    /** The "Recent changes" section's state; online-only and loaded when it scrolls into view. */
+    val history =
+        HistoryController(viewModelScope, HistoryKind.Project, projectId, historyRepository)
 
     val cardOrder = detailCardOrderRepository.projectOrder
 
@@ -154,6 +162,7 @@ constructor(
 
     /** Refreshes this project and only the yarns currently linked from its latest detail. */
     fun refresh() {
+        history.reloadIfLoaded()
         refreshController.refresh {
             val project = projectRepository.refreshOne(projectId)
             var changed = project.changed

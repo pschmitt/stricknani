@@ -79,6 +79,9 @@ import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
+import blue.anika.wolle.ui.history.HistoryController
+import blue.anika.wolle.ui.history.HistoryPhase
+import blue.anika.wolle.ui.history.HistorySection
 import blue.anika.wolle.ui.print.PrintDialog
 import blue.anika.wolle.ui.projects.print.PrintLabels
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
@@ -256,6 +259,7 @@ fun ProjectDetailScreen(
                         onYarnClick = onYarnClick,
                         onDeleteAttachment = { attachmentToDelete = it },
                         onEditSection = { focus -> onEditSection(state.entity.id, focus) },
+                        history = viewModel.history,
                     )
             }
         }
@@ -319,9 +323,11 @@ private fun ProjectDetailContent(
     onYarnClick: (Int) -> Unit,
     onDeleteAttachment: (AttachmentDto) -> Unit,
     onEditSection: (focus: String) -> Unit,
+    history: HistoryController,
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    val historyState by history.state.collectAsStateWithLifecycle()
     val viewerImages =
         remember(detail, resolveMediaUrl) { projectViewerImages(detail, resolveMediaUrl) }
     val openViewerImage: (String) -> Unit = { url ->
@@ -613,6 +619,16 @@ private fun ProjectDetailContent(
                             onImageClick = openViewerImage,
                         )
                     }
+            }
+        }
+        // Fixed last section (not reorderable); hidden entirely on servers without history.
+        if (historyState.phase != HistoryPhase.Hidden) {
+            item(key = "history") {
+                HistorySection(
+                    state = historyState,
+                    controller = history,
+                    avatarUrl = resolveMediaUrl,
+                )
             }
         }
     }
