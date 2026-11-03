@@ -9,9 +9,11 @@
   }: { icon: NavIconName; tone?: "home" | "projects" | "yarns" } = $props();
 </script>
 
-<div class="empty-art" aria-hidden="true">
+<div class="empty-art">
   <Mascot size={120} bob={true} />
-  <span class="empty-art__badge" data-tone={tone}><NavIcon name={icon} /></span>
+  <span class="empty-art__badge" data-tone={tone} aria-hidden="true"
+    ><NavIcon name={icon} /></span
+  >
 </div>
 
 <style>

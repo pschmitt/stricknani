@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 21:16+0100\n"
+"POT-Creation-Date: 2026-11-03 21:23+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -3319,6 +3319,10 @@ msgstr "Garn wird gespeichert…"
 #: web/src/lib/features/yarns/YarnForm.svelte:667
 msgid "Saving…"
 msgstr "Wird gespeichert …"
+
+#: web/src/lib/components/Mascot.svelte:118
+msgid "Say hi to the yarn ball"
+msgstr "Dem Wollknäuel Hallo sagen"
 
 #: web/src/lib/features/account/ConnectAppDialog.svelte:100
 msgid "Scan with the Stricknani app"

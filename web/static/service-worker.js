@@ -16,6 +16,7 @@ const REQUIRED_OFFLINE_ASSETS = [
   `${APP_PREFIX}favicon.svg`,
   `${APP_PREFIX}icons/icon-192.png`,
   `${APP_PREFIX}icons/icon-512.png`,
+  `${APP_PREFIX}icons/icon-maskable-512.png`,
 ];
 const MAX_ASSETS = 512;
 const MAX_ASSET_BYTES = 5 * 1024 * 1024;

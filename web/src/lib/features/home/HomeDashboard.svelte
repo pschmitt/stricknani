@@ -112,7 +112,7 @@
 
   {#if session.status === "loading"}
     <p class="home-status" role="status" aria-live="polite">
-      <Mascot size={48} roll={true} />
+      <Mascot size={48} roll={true} reactive={false} />
       {t("Loading your home…", locale)}
     </p>
   {:else if userId === null}
@@ -163,7 +163,7 @@
             {#if current.preview_url}
               <img src={current.preview_url} alt="" loading="eager" />
             {:else}
-              <Mascot size={72} />
+              <Mascot size={72} interactive="decorative" />
             {/if}
           </span>
           <span class="continue-card__copy">

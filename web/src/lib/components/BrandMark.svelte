@@ -1,16 +1,9 @@
 <script lang="ts">
-  import { asset } from "$app/paths";
+  import Mascot from "#lib/components/Mascot.svelte";
 </script>
 
-<img
-  class="brand-mark"
-  src={asset("favicon.svg")}
-  alt=""
-  aria-hidden="true"
-  width="32"
-  height="32"
-  draggable="false"
-/>
+<!-- Always used inside the brand link, which stays the only focus target. -->
+<span class="brand-mark"><Mascot size={32} interactive="decorative" /></span>
 
 <style>
   .brand-mark {
@@ -18,6 +11,9 @@
     width: 2rem;
     height: 2rem;
     flex: 0 0 auto;
-    object-fit: contain;
+  }
+
+  .brand-mark :global(.mascot-art) {
+    filter: none;
   }
 </style>
