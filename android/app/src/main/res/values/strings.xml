@@ -167,6 +167,7 @@
     <string name="project_import_error_title">That didn’t work</string>
     <string name="project_import_error_invalid_url">Paste the full link to the pattern, starting with https://</string>
     <string name="project_import_error_offline">Couldn’t reach Stricknani. Check your internet and try again.</string>
+    <string name="project_import_error_rate_limited">Too many imports just now. Try again in a few minutes.</string>
     <string name="project_import_error_server">Stricknani couldn’t read that pattern. Try another link, or add the project by hand.</string>
     <string name="project_import_error_unknown">The project could not be imported. Please try again.</string>
 

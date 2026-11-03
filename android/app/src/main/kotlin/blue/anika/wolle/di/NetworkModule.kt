@@ -2,6 +2,7 @@ package blue.anika.wolle.di
 
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.data.api.AdminApi
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
@@ -12,6 +13,7 @@ import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
+import blue.anika.wolle.data.api.v2.ImportsV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
@@ -159,7 +161,24 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideProjectImporter(api: ProjectImportApi): ProjectImporter = ApiProjectImporter(api)
+    fun provideImportsV2Api(retrofit: Retrofit, okHttpClient: OkHttpClient): ImportsV2Api {
+        // Same long timeouts as the v1 import: fetching and parsing a pattern page is slow.
+        val importClient =
+            okHttpClient
+                .newBuilder()
+                .readTimeout(65, TimeUnit.SECONDS)
+                .callTimeout(75, TimeUnit.SECONDS)
+                .build()
+        return retrofit.newBuilder().client(importClient).build().create(ImportsV2Api::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProjectImporter(
+        api: ProjectImportApi,
+        v2Api: ImportsV2Api,
+        capabilities: ApiCapabilities,
+    ): ProjectImporter = ApiProjectImporter(api, v2Api, capabilities)
 
     @Provides
     @Singleton

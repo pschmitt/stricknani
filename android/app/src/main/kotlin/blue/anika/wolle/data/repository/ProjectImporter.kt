@@ -1,9 +1,13 @@
 package blue.anika.wolle.data.repository
 
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
+import blue.anika.wolle.data.api.v2.ImportPreviewRequest
+import blue.anika.wolle.data.api.v2.ImportsV2Api
+import blue.anika.wolle.data.api.v2.toV1
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,14 +24,27 @@ interface ProjectImporter {
     suspend fun importFromUrl(url: String): ImportedProjectPreview
 }
 
-/** Imports through the server's existing JSON-returning web import route. */
+/**
+ * Imports through `POST /api/v2/imports/preview` (SNA-87), or the web `POST /projects/import` route
+ * on a server without v2.
+ */
 @Singleton
-class ApiProjectImporter @Inject constructor(private val api: ProjectImportApi) : ProjectImporter {
+class ApiProjectImporter
+@Inject
+constructor(
+    private val api: ProjectImportApi,
+    private val v2Api: ImportsV2Api,
+    private val capabilities: ApiCapabilities,
+) : ProjectImporter {
     override suspend fun importFromUrl(url: String): ImportedProjectPreview =
-        api.importProject(url = url).toPreview(sourceUrl = url)
+        if (capabilities.useV2()) {
+            v2Api.previewImport(ImportPreviewRequest(url = url)).data.toV1().toPreview(url)
+        } else {
+            api.importProject(url = url).toPreview(sourceUrl = url)
+        }
 }
 
-private fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProjectPreview {
+internal fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProjectPreview {
     val importedName = name.orEmpty().trim().ifBlank { title.orEmpty().trim() }
     val projectName = importedName.ifBlank { "Imported project" }
     val importedSteps = steps.mapIndexed { index, step ->

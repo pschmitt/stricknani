@@ -222,6 +222,7 @@ private fun importFailureMessage(reason: ProjectImportFailure): String =
         when (reason) {
             ProjectImportFailure.InvalidUrl -> R.string.project_import_error_invalid_url
             ProjectImportFailure.Offline -> R.string.project_import_error_offline
+            ProjectImportFailure.RateLimited -> R.string.project_import_error_rate_limited
             ProjectImportFailure.Server -> R.string.project_import_error_server
             ProjectImportFailure.Unknown -> R.string.project_import_error_unknown
         }

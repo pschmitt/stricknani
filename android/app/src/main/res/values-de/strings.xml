@@ -167,6 +167,7 @@
     <string name="project_import_error_title">Das hat nicht geklappt</string>
     <string name="project_import_error_invalid_url">Füge den vollständigen Link zur Anleitung ein, beginnend mit https://</string>
     <string name="project_import_error_offline">Stricknani ist nicht erreichbar. Prüfe dein Internet und versuche es erneut.</string>
+    <string name="project_import_error_rate_limited">Gerade zu viele Importe. Versuch es in ein paar Minuten erneut.</string>
     <string name="project_import_error_server">Stricknani konnte diese Anleitung nicht lesen. Versuche einen anderen Link oder lege das Projekt selbst an.</string>
     <string name="project_import_error_unknown">Das Projekt konnte nicht importiert werden. Bitte versuche es erneut.</string>
 

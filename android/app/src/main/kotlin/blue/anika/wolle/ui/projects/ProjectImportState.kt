@@ -32,6 +32,7 @@ sealed interface ProjectImportState {
 enum class ProjectImportFailure {
     InvalidUrl,
     Offline,
+    RateLimited,
     Server,
     Unknown,
 }
@@ -125,8 +126,29 @@ class ProjectImportController(
         fun classifyFailure(failure: Throwable): ProjectImportFailure =
             when {
                 failure is IOException -> ProjectImportFailure.Offline
-                failure is HttpException -> ProjectImportFailure.Server
+                failure is HttpException -> classifyHttp(failure)
                 else -> ProjectImportFailure.Unknown
             }
+
+        /**
+         * v2 import errors (`rust/src/api_v2/imports.rs`): 429 `rate_limited` -> try again later;
+         * 422 `validation_error` (bad URL) and `unsafe_url` -> the "check the link" message;
+         * `import_unavailable`, `feature_disabled`, timeouts, fetch failures and unparsable
+         * documents -> "couldn't read that pattern".
+         */
+        fun classifyHttp(failure: HttpException): ProjectImportFailure {
+            if (failure.code() == 429) return ProjectImportFailure.RateLimited
+            val code =
+                runCatching { failure.response()?.errorBody()?.string() }
+                    .getOrNull()
+                    ?.let { CODE_PATTERN.find(it)?.groupValues?.get(1) }
+            return when {
+                failure.code() == 422 && (code == "validation_error" || code == "unsafe_url") ->
+                    ProjectImportFailure.InvalidUrl
+                else -> ProjectImportFailure.Server
+            }
+        }
+
+        val CODE_PATTERN = Regex("\"code\"\\s*:\\s*\"([a-z_]+)\"")
     }
 }

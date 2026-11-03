@@ -8,9 +8,13 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProjectImportControllerTest {
@@ -89,6 +93,56 @@ class ProjectImportControllerTest {
             ProjectImportState.Failed("https://example.com/pattern", ProjectImportFailure.Offline),
             controller.state.value,
         )
+    }
+
+    private fun http(status: Int, body: String) =
+        HttpException(
+            Response.error<Any>(status, body.toResponseBody("application/json".toMediaType()))
+        )
+
+    private suspend fun kotlinx.coroutines.test.TestScope.failureOf(
+        failure: Throwable
+    ): ProjectImportFailure {
+        val controller =
+            ProjectImportController(
+                scope = this,
+                importer = FakeImporter { throw failure },
+                save = { 1 },
+            )
+        controller.start("https://example.com/pattern")
+        advanceUntilIdle()
+        return (controller.state.value as ProjectImportState.Failed).reason
+    }
+
+    @Test
+    fun `v2 import errors map to the friendly messages`() = runTest {
+        fun body(code: String) = """{"error":{"code":"$code","message":"m"}}"""
+        assertEquals(
+            ProjectImportFailure.RateLimited,
+            failureOf(http(429, body("rate_limited"))),
+        )
+        assertEquals(
+            ProjectImportFailure.InvalidUrl,
+            failureOf(http(422, body("validation_error"))),
+        )
+        assertEquals(ProjectImportFailure.InvalidUrl, failureOf(http(422, body("unsafe_url"))))
+        assertEquals(
+            ProjectImportFailure.Server,
+            failureOf(http(503, body("import_unavailable"))),
+        )
+        assertEquals(
+            ProjectImportFailure.Server,
+            failureOf(http(503, body("feature_disabled"))),
+        )
+        assertEquals(
+            ProjectImportFailure.Server,
+            failureOf(http(504, body("import_timeout"))),
+        )
+        assertEquals(
+            ProjectImportFailure.Server,
+            failureOf(http(422, body("unsupported_document"))),
+        )
+        assertEquals(ProjectImportFailure.Server, failureOf(http(502, "not json")))
     }
 
     @Test
