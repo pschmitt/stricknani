@@ -602,6 +602,13 @@
     <string name="developer_card_token">Token-ID</string>
     <string name="developer_card_token_this_device">Dieses Gerät (#%1$d)</string>
     <string name="developer_card_app_version">App-Version</string>
+    <string name="developer_obtainium_stable">Zu Obtainium hinzufügen</string>
+    <string name="developer_obtainium_stable_description">Getaggte Releases für Updates verfolgen</string>
+    <string name="developer_obtainium_rolling">Zu Obtainium hinzufügen (Rolling Builds)</string>
+    <string name="developer_obtainium_rolling_description">Zusätzlich den neuesten Build von main verfolgen</string>
+    <string name="developer_obtainium_missing_title">Obtainium nicht gefunden</string>
+    <string name="developer_obtainium_missing_message">Installiere Obtainium, um Stricknani-Updates direkt von GitHub zu beziehen.</string>
+    <string name="developer_obtainium_missing_get">Obtainium holen</string>
     <string name="developer_card_revision">Git-Revision</string>
 
     <!-- Settings: backup export/import messages -->

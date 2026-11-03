@@ -1,8 +1,11 @@
 package blue.anika.wolle.ui.settings
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -40,6 +43,7 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -110,6 +114,39 @@ internal fun AboutSettingsScreen(
     val toastHolder = remember { arrayOfNulls<Toast>(1) }
     var mascotCue by remember { mutableStateOf<MascotCue?>(null) }
     val developerMode by viewModel.developerMode.collectAsStateWithLifecycle()
+    var obtainiumMissing by remember { mutableStateOf(false) }
+    fun addToObtainium(rolling: Boolean) {
+        val intent =
+            Intent(Intent.ACTION_VIEW, Uri.parse(ObtainiumLink.build(rolling)))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            context.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            obtainiumMissing = true
+        }
+    }
+    if (obtainiumMissing) {
+        AlertDialog(
+            onDismissRequest = { obtainiumMissing = false },
+            title = { Text(stringResource(R.string.developer_obtainium_missing_title)) },
+            text = { Text(stringResource(R.string.developer_obtainium_missing_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        obtainiumMissing = false
+                        uriHandler.openUri(ObtainiumLink.OBTAINIUM_RELEASES_URL)
+                    }
+                ) {
+                    Text(stringResource(R.string.developer_obtainium_missing_get))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { obtainiumMissing = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
     val apiState by viewModel.apiState.collectAsStateWithLifecycle()
     val pendingWrites by viewModel.pendingWrites.collectAsStateWithLifecycle()
     val lastSyncedMillis by viewModel.lastSyncedMillis.collectAsStateWithLifecycle()
@@ -256,6 +293,7 @@ internal fun AboutSettingsScreen(
                         pendingWrites = pendingWrites,
                         revision = revision,
                         onDeveloperModeChange = viewModel::setDeveloperMode,
+                        onAddToObtainium = { rolling -> addToObtainium(rolling) },
                     )
                 }
             }
@@ -542,6 +580,7 @@ private fun DeveloperCard(
     pendingWrites: Int,
     revision: BuildRevision?,
     onDeveloperModeChange: (Boolean) -> Unit,
+    onAddToObtainium: (rolling: Boolean) -> Unit,
 ) {
     val unknown = stringResource(R.string.developer_card_unknown)
     SettingsGroupCard(
@@ -602,7 +641,39 @@ private fun DeveloperCard(
             stringResource(R.string.developer_card_revision),
             revision?.full ?: stringResource(R.string.about_settings_build_unknown),
         )
+        // Play builds update through the store; Obtainium only makes sense for sideloaded APKs.
+        if (BuildConfig.SELF_UPDATE_ENABLED) {
+            ObtainiumRow(
+                stringResource(R.string.developer_obtainium_stable),
+                stringResource(R.string.developer_obtainium_stable_description),
+            ) {
+                onAddToObtainium(false)
+            }
+            ObtainiumRow(
+                stringResource(R.string.developer_obtainium_rolling),
+                stringResource(R.string.developer_obtainium_rolling_description),
+            ) {
+                onAddToObtainium(true)
+            }
+        }
     }
+}
+
+@Composable
+private fun ObtainiumRow(title: String, description: String, onClick: () -> Unit) {
+    SettingsListItem(
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
+        headlineContent = { Text(title) },
+        supportingContent = { Text(description) },
+        trailingContent = {
+            Icon(
+                PhosphorIcons.ArrowSquareOut,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+    )
 }
 
 @Composable

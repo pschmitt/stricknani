@@ -602,6 +602,13 @@
     <string name="developer_card_token">Token ID</string>
     <string name="developer_card_token_this_device">This device (#%1$d)</string>
     <string name="developer_card_app_version">App version</string>
+    <string name="developer_obtainium_stable">Add to Obtainium</string>
+    <string name="developer_obtainium_stable_description">Track tagged releases for updates</string>
+    <string name="developer_obtainium_rolling">Add to Obtainium (rolling builds)</string>
+    <string name="developer_obtainium_rolling_description">Also follow the latest build of main</string>
+    <string name="developer_obtainium_missing_title">Obtainium not found</string>
+    <string name="developer_obtainium_missing_message">Install Obtainium to track Stricknani updates straight from GitHub.</string>
+    <string name="developer_obtainium_missing_get">Get Obtainium</string>
     <string name="developer_card_revision">Git revision</string>
 
     <!-- Settings: backup export/import messages -->
