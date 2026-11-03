@@ -37,12 +37,6 @@
       )}
     />
     <NavigationTile
-      href={resolve("/privacy")}
-      icon="help"
-      title={t("Privacy Policy", locale)}
-      description={t("How Stricknani handles your data.", locale)}
-    />
-    <NavigationTile
       href={resolve("/about")}
       icon="info"
       title={t("About", locale)}

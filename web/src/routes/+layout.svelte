@@ -70,7 +70,6 @@
   const secondaryNavigation = [
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
-    { href: "/privacy", label: msg("Privacy Policy"), icon: "help" },
     { href: "/about", label: msg("About"), icon: "info" },
   ] as const;
 

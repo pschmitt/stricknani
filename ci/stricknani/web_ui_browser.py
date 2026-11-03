@@ -4102,7 +4102,6 @@ def run_acceptance(
                     more_cards = [
                         ("Categories", "/categories"),
                         ("Gauge calculator", "/gauge"),
-                        ("Privacy Policy", "/privacy"),
                     ]
                     android_card = more_links.locator(
                         "a[target='_blank']",
