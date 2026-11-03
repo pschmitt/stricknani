@@ -1,153 +1,117 @@
 <p align="center">
-
-[![nixbot](https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=main)](https://nixbot.brkn.lol/repos/github/pschmitt/stricknani)
-  <img src="branding/icon.svg" alt="Stricknani icon" width="128">
+  <img src="branding/icon.svg" alt="Stricknani" width="128">
 </p>
 
 <h1 align="center">Stricknani</h1>
 
-🧶 **A Mealie for knitting** — a self-hosted web app for managing knitting projects.
+<p align="center">A private, self-hosted place to plan knitting projects, track yarn, and calculate gauge.</p>
+
+<p align="center">
+  <a href="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani"><img src="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=main" alt="nixbot"></a>
+  <a href="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml"><img src="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml/badge.svg?branch=main" alt="Main branch tests"></a>
+</p>
+
+Stricknani is a self-hosted knitting project manager. The `main` branch runs
+the Python application: FastAPI serves server-rendered Jinja pages enhanced
+with HTMX. The Android companion uses the versioned API v1.
 
 ## Features
 
-- Projects with photos, notes, and metadata
-- Built-in gauge calculator
-- Private, self-hosted, mobile-friendly UI
-- FastAPI + Jinja2 + HTMX (no SPA)
+- Organize projects, steps, notes, and photos.
+- Keep a yarn collection and link yarn to projects.
+- Calculate stitch and row counts from pattern and personal gauge.
+- Import project and yarn details from supported sources.
+- Run privately on your own server, with responsive web and Android clients.
 
-## Quick Start
+## Install and quick start
 
-### Docker
+### Run from source
 
-```bash
-docker run -d \
-  -p 7674:7674 \
-  -v stricknani-data:/app/media \
-  -e SECRET_KEY=your-secret-key \
-  ghcr.io/pschmitt/stricknani:latest
-```
-
-Health check: `GET /healthz`
-
-### Development
-
-Requirements:
-
-- Python 3.13+
-- uv
-- just
+Requirements: Python 3.12 or newer, [uv](https://docs.astral.sh/uv/), and
+[just](https://just.systems/).
 
 ```bash
 git clone https://github.com/pschmitt/stricknani.git
 cd stricknani
-
 just setup
+cp .env.sample .env
+# Set INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD in .env.
 just run
 ```
 
-App runs at http://localhost:7674
+Public signup is disabled by default; the initial administrator settings create
+your first login. Open `http://localhost:7674`. The development runner creates temporary signing
+keys when none are supplied. For a persistent deployment, set strong
+`SECRET_KEY` and `CSRF_SECRET_KEY` values and configure the database, media
+directory, and allowed hosts. See [`.env.sample`](.env.sample) for the
+available settings.
+
+### Run the Python container
+
+Build the image from this branch, then run it with persistent storage. Copy
+`.env.sample` to a private `.env` file first, set production signing keys and
+the initial administrator credentials, and keep that file out of source
+control.
+
+```bash
+docker build -t stricknani:python .
+docker volume create stricknani-data
+docker run -d \
+  --name stricknani \
+  --restart unless-stopped \
+  -p 127.0.0.1:7674:7674 \
+  --env-file .env \
+  -e DATABASE_URL=sqlite:////app/media/stricknani.db \
+  -e MEDIA_ROOT=/app/media \
+  -v stricknani-data:/app/media \
+  stricknani:python
+```
+
+The container listens on port `7674`; `/healthz` is its health endpoint. Put
+public deployments behind HTTPS and set `ALLOWED_HOSTS` to the hostnames that
+serve the app.
 
 ## Configuration
 
-All config is via environment variables or `.env` (see `.env.sample`).
+The application reads configuration from environment variables. These are the
+settings most deployments need:
 
-| Variable                             | Description                         | Default                               |
-| ------------------------------------ | ----------------------------------- | ------------------------------------- |
-| `SECRET_KEY`                         | Secret key for sessions             | Random per `just run`; set explicitly in production |
-| `CSRF_SECRET_KEY`                    | CSRF secret key                     | Random per `just run`; set explicitly in production |
-| `PORT`                               | Port to listen on                   | `7674`                                |
-| `DEBUG`                              | Enable debug mode                   | `false`                               |
-| `AUTO_RELOAD`                        | Inject dev auto-reload script       | `false`                               |
-| `TESTING`                            | Force testing mode                  | `false`                               |
-| `BIND_HOST`                          | Host to bind the dev server         | `127.0.0.1`                           |
-| `BIND_PORT`                          | Port to bind the dev server         | `7674`                                |
-| `DATABASE_URL`                       | Database connection string          | `sqlite:///./stricknani.db`           |
-| `MEDIA_ROOT`                         | Directory for uploaded files        | `./media`                             |
-| `IMPORT_TRACE_ENABLED`               | Enable import tracing               | `false`                               |
-| `IMPORT_TRACE_DIR`                   | Import trace directory              | `./media/import-traces`               |
-| `IMPORT_TRACE_MAX_CHARS`             | Max chars captured per import trace | `12000`                               |
-| `ALLOWED_HOSTS`                      | Comma-separated host list           | `localhost,127.0.0.1`                 |
-| `SESSION_COOKIE_SECURE`              | Secure session cookies              | `false`                               |
-| `LANGUAGE_COOKIE_SECURE`             | Secure language cookie              | `false`                               |
-| `COOKIE_SAMESITE`                    | SameSite policy                     | `strict`                              |
-| `FEATURE_SIGNUP_ENABLED`             | Enable user signup                  | `false`                               |
-| `FEATURE_WAYBACK_ENABLED`            | Enable Wayback Machine snapshots    | `false`                               |
-| `FEATURE_AI_IMPORT_ENABLED`          | Enable AI-powered pattern import    | `true`                                |
-| `DEFAULT_LANGUAGE`                   | Default language                    | `de`                                  |
-| `AI_PROVIDER`                        | AI provider (`openai/openrouter/groq`) | `openai`                           |
-| `AI_API_KEY`                         | Generic AI API key                  | (optional)                            |
-| `AI_BASE_URL`                        | Override provider base URL          | (provider default)                    |
-| `AI_MODEL`                           | Default model override              | (provider default)                    |
-| `OPENAI_API_KEY`                     | OpenAI API key for AI import        | (optional)                            |
-| `OPENROUTER_API_KEY`                 | OpenRouter API key                  | (optional)                            |
-| `GROQ_API_KEY`                       | Groq API key                        | (optional)                            |
-| `SENTRY_DSN_BACKEND`                 | Sentry DSN for backend              | (optional)                            |
-| `SENTRY_DSN_FRONTEND`                | Sentry DSN for frontend             | (optional)                            |
-| `SENTRY_ENVIRONMENT`                 | Sentry environment name             | `production`                          |
-| `SENTRY_TRACES_SAMPLE_RATE`          | Sentry perf sample rate             | `0`                                   |
-| `SENTRY_FRONTEND_TRACES_SAMPLE_RATE` | Frontend perf sample rate           | `0`                                   |
-| `LOG_LEVEL`                          | Logging level override              | (optional)                            |
-| `IMPORT_LOG_PATH`                    | Import log file path                | (optional)                            |
-| `INITIAL_ADMIN_EMAIL`                | Bootstrap admin email               | (optional)                            |
-| `INITIAL_ADMIN_USERNAME`             | Bootstrap admin username            | (optional)                            |
-| `INITIAL_ADMIN_PASSWORD`             | Bootstrap admin password            | (optional)                            |
+| Variable | Purpose |
+| --- | --- |
+| `SECRET_KEY`, `CSRF_SECRET_KEY` | Signing and CSRF protection; set strong values in persistent deployments. |
+| `DATABASE_URL` | SQLAlchemy database URL; SQLite is the development default. |
+| `MEDIA_ROOT` | Directory for uploaded media. |
+| `ALLOWED_HOSTS` | Comma-separated host allowlist. |
+| `FEATURE_SIGNUP_ENABLED` | Enable public account signup; disabled by default. |
+| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | Create the first administrator when the database has no users. |
 
-## AI-Powered Pattern Import
+AI import, Wayback lookup, language, cookie, and observability options are also
+listed in [`.env.sample`](.env.sample). Keep credentials in a protected
+environment file or secret manager, not in source control.
 
-Install AI extras:
+## Development
 
 ```bash
-uv pip install -e ".[ai]"
+just lint
+just test
+just i18n-check
+just check
 ```
 
-Then set one of these in `.env`:
-- `AI_PROVIDER=openai` and `OPENAI_API_KEY=...` (or `AI_API_KEY=...`)
-- `AI_PROVIDER=openrouter` and `OPENROUTER_API_KEY=...` (or `AI_API_KEY=...`)
-- `AI_PROVIDER=groq` and `GROQ_API_KEY=...` (or `AI_API_KEY=...`)
-
-## Developer Workflow
-
-```bash
-just setup          # Setup uv environment
-just run            # Run dev server (reload)
-just lint           # ruff + mypy
-just fmt            # ruff format + fixes
-just test           # pytest -v
-uv run playwright install chromium  # Install the local E2E browser
-just e2e-smoke      # Run the fast disposable browser smoke suite
-just e2e-full       # Run the longer disposable browser suite
-just i18n-check     # Verify translations
-just check          # lint + test + i18n-check
-just build-image    # Build Docker image
-just build-nix      # Build Nix package
-just build-container # Build Nix container
-just demo-data      # Seed demo data
-just demo-reset     # Reset and re-seed demo data
-```
+`just check` runs the repository lint, test, Nix lint, and translation checks.
+The disposable browser suites are available with `just e2e-smoke` and
+`just e2e-full`.
 
 ## Documentation
 
-- Operational rules for agents: `AGENTS.md`
-- Active work queue: `TODO.md`
-- Documentation index: `docs/README.md`
-- Full product spec + implementation snapshot: `docs/spec-and-implementation.md`
-
-When editing UI text, update translations in:
-
-- `stricknani/locales/en/LC_MESSAGES/messages.po`
-- `stricknani/locales/de/LC_MESSAGES/messages.po`
-
-Then compile:
-
-```bash
-uv run python -m babel.messages.frontend compile -d stricknani/locales
-```
-
-## Architecture (Short)
-
-- FastAPI + Jinja2 + HTMX
-- SQLite for dev, PostgreSQL optional
-- Local filesystem media storage
+| Topic | Guide |
+| --- | --- |
+| Documentation index | [`docs/README.md`](docs/README.md) |
+| Product scope and implementation | [`docs/spec-and-implementation.md`](docs/spec-and-implementation.md) |
+| Android companion | [`android/README.md`](android/README.md) |
+| Android privacy | [`android/PRIVACY.md`](android/PRIVACY.md) |
+| Contributor instructions | [`AGENTS.md`](AGENTS.md) |
+| Current work queue | [`TODO.md`](TODO.md) |
 
 ## License
 
@@ -155,4 +119,4 @@ GPL-3.0-only
 
 ## Maintainer
 
-Philipp Schmitt (GitHub: @pschmitt)
+Philipp Schmitt ([`@pschmitt`](https://github.com/pschmitt))
