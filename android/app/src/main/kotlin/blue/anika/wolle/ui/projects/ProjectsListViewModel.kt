@@ -169,6 +169,9 @@ constructor(
 
     fun previewUrl(entity: ProjectEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
 
+    fun tagsOf(entity: ProjectEntity): List<String> =
+        runCatching { projectRepository.decodeTags(entity) }.getOrDefault(emptyList())
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }

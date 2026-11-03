@@ -884,4 +884,6 @@
     <string name="sign_in_again_button">Sign in</string>
     <string name="sign_in_again_not_now">Not now</string>
     <string name="sign_in_again_missing_fields">Enter your email and your password</string>
+    <string name="library_card_updated">Updated %1$s</string>
+    <string name="library_card_details_to_add">Details to add</string>
 </resources>

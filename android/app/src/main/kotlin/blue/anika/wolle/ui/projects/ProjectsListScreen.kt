@@ -1,28 +1,23 @@
 package blue.anika.wolle.ui.projects
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,7 +26,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -45,25 +39,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
-import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.EmptyState
-import blue.anika.wolle.ui.common.FavoriteToggleButton
+import blue.anika.wolle.ui.common.LibraryCardData
+import blue.anika.wolle.ui.common.LibraryCollection
+import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
-import coil3.compose.AsyncImage
+import blue.anika.wolle.ui.common.isWideLibraryLayout
+import blue.anika.wolle.ui.common.libraryChips
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +77,8 @@ fun ProjectsListScreen(
     var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+    val wide = isWideLibraryLayout()
 
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
@@ -140,7 +134,8 @@ fun ProjectsListScreen(
                 modifier = Modifier.testTag("e2e-new-project"),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.project_new_label)) },
-                expanded = !listState.canScrollBackward,
+                expanded =
+                    !(if (wide) gridState.canScrollBackward else listState.canScrollBackward),
             )
         },
     ) { innerPadding ->
@@ -214,21 +209,29 @@ fun ProjectsListScreen(
                         }
                     }
                 } else {
-                    LazyColumn(
-                        state = listState,
+                    LibraryCollection(
+                        items = projects,
+                        key = { it.id },
+                        toCard = { project ->
+                            val tags = viewModel.tagsOf(project)
+                            remember(project, tags) {
+                                LibraryCardData(
+                                    domain = LibraryDomain.Project,
+                                    title = project.name,
+                                    meta = project.category,
+                                    updatedAt = project.updatedAt,
+                                    imageUrl = viewModel.previewUrl(project),
+                                    isFavorite = project.isFavorite,
+                                    chips = libraryChips(tags),
+                                )
+                            }
+                        },
+                        onClick = { onProjectClick(it.id) },
+                        onFavoriteClick = viewModel::toggleFavorite,
+                        listState = listState,
+                        gridState = gridState,
                         modifier = Modifier.testTag("e2e-projects-list"),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(projects, key = { it.id }) { project ->
-                            ProjectListCard(
-                                project = project,
-                                previewUrl = viewModel.previewUrl(project),
-                                onClick = { onProjectClick(project.id) },
-                                onFavoriteClick = { viewModel.toggleFavorite(project) },
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
@@ -255,53 +258,6 @@ fun ProjectsListScreen(
         },
         onRetry = viewModel::retryImport,
     )
-}
-
-@Composable
-private fun ProjectListCard(
-    project: ProjectEntity,
-    previewUrl: String?,
-    onClick: () -> Unit,
-    onFavoriteClick: () -> Unit,
-) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))) {
-                if (previewUrl != null) {
-                    AsyncImage(
-                        model = previewUrl,
-                        contentDescription = project.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Box(
-                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(PhosphorIcons.Hoodie, contentDescription = null)
-                    }
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = project.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (project.category != null) {
-                    Text(
-                        text = project.category,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            FavoriteToggleButton(isFavorite = project.isFavorite, onClick = onFavoriteClick)
-        }
-    }
 }
 
 @Composable

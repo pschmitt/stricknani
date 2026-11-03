@@ -1,32 +1,24 @@
 package blue.anika.wolle.ui.yarns
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -35,25 +27,24 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
-import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
-import blue.anika.wolle.ui.common.FavoriteToggleButton
+import blue.anika.wolle.ui.common.LibraryCardData
+import blue.anika.wolle.ui.common.LibraryCollection
+import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
-import coil3.compose.AsyncImage
+import blue.anika.wolle.ui.common.isWideLibraryLayout
+import blue.anika.wolle.ui.common.yarnChips
+import blue.anika.wolle.ui.common.yarnMetaLine
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +62,8 @@ fun YarnsListScreen(
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+    val wide = isWideLibraryLayout()
 
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
@@ -98,7 +91,8 @@ fun YarnsListScreen(
                 modifier = Modifier.testTag("e2e-new-yarn"),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.yarns_list_new_yarn_fab)) },
-                expanded = !listState.canScrollBackward,
+                expanded =
+                    !(if (wide) gridState.canScrollBackward else listState.canScrollBackward),
             )
         },
     ) { innerPadding ->
@@ -138,71 +132,31 @@ fun YarnsListScreen(
                         }
                     }
                 } else {
-                    LazyColumn(
-                        state = listState,
+                    val detailsToAdd = stringResource(R.string.library_card_details_to_add)
+                    LibraryCollection(
+                        items = yarns,
+                        key = { it.id },
+                        toCard = { yarn ->
+                            remember(yarn, detailsToAdd) {
+                                LibraryCardData(
+                                    domain = LibraryDomain.Yarn,
+                                    title = yarn.name,
+                                    meta = yarnMetaLine(yarn.brand, yarn.colorway, detailsToAdd),
+                                    updatedAt = yarn.updatedAt,
+                                    imageUrl = viewModel.previewUrl(yarn),
+                                    isFavorite = yarn.isFavorite,
+                                    chips = yarnChips(yarn.weightCategory),
+                                )
+                            }
+                        },
+                        onClick = { onYarnClick(it.id) },
+                        onFavoriteClick = viewModel::toggleFavorite,
+                        listState = listState,
+                        gridState = gridState,
                         modifier = Modifier.testTag("e2e-yarns-list"),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(yarns, key = { it.id }) { yarn ->
-                            YarnListCard(
-                                yarn = yarn,
-                                previewUrl = viewModel.previewUrl(yarn),
-                                onClick = { onYarnClick(yarn.id) },
-                                onFavoriteClick = { viewModel.toggleFavorite(yarn) },
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun YarnListCard(
-    yarn: YarnEntity,
-    previewUrl: String?,
-    onClick: () -> Unit,
-    onFavoriteClick: () -> Unit,
-) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))) {
-                if (previewUrl != null) {
-                    AsyncImage(
-                        model = previewUrl,
-                        contentDescription = yarn.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Box(
-                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(MdiIcons.YarnBall, contentDescription = null)
-                    }
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = yarn.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                val subtitle = listOfNotNull(yarn.brand, yarn.colorway).joinToString(" · ")
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            FavoriteToggleButton(isFavorite = yarn.isFavorite, onClick = onFavoriteClick)
         }
     }
 }
