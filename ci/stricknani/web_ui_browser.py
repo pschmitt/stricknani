@@ -4073,7 +4073,14 @@ def run_acceptance(
                     more_cards = [
                         ("Categories", "/categories"),
                         ("Gauge calculator", "/gauge"),
+                        ("Privacy Policy", "/privacy"),
                     ]
+                    android_card = more_links.locator(
+                        "a[target='_blank']",
+                        has=page.locator(
+                            ".ui-navigation-tile__title", has_text="Android app"
+                        ),
+                    )
                     admin_cards = (
                         ("Admin", "/admin/users"),
                         ("Audit log", "/admin/audit"),
@@ -4137,7 +4144,9 @@ def run_acceptance(
                         "This area is not connected yet."
                     ).count()
                     if (
-                        more_links.locator("a").count() != len(more_cards)
+                        more_links.locator("a").count() < len(more_cards) + 1
+                        or android_card.count() != 1
+                        or "noopener" not in (android_card.get_attribute("rel") or "")
                         or icon_failures != 0
                         or not profile_links
                         or duplicate_accounts != 0

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 17:08+0100\n"
+"POT-Creation-Date: 2026-11-03 17:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -273,7 +273,7 @@ msgstr ""
 #: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
 #: stricknani/templates/legal/privacy.html:3
 #: stricknani/templates/legal/privacy.html:17
-#: web/src/lib/components/AccountMenu.svelte:292
+#: web/src/lib/components/AccountMenu.svelte:312
 #: web/src/lib/components/SignInForm.svelte:150
 #: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:42
 #: web/src/routes/privacy/+page.svelte:12
@@ -282,6 +282,7 @@ msgid "Privacy Policy"
 msgstr ""
 
 #: stricknani/templates/base.html:141
+#: web/src/lib/components/AccountMenu.svelte:303
 #: web/src/lib/components/SignInForm.svelte:154
 msgid "Get the Android app"
 msgstr ""
@@ -424,8 +425,8 @@ msgstr ""
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/lib/components/AccountMenu.svelte:250
-#: web/src/lib/components/AccountMenu.svelte:282
+#: web/src/lib/components/AccountMenu.svelte:259
+#: web/src/lib/components/AccountMenu.svelte:291
 #: web/src/routes/+layout.svelte:269 web/src/routes/more/+page.svelte:60
 msgid "Admin"
 msgstr ""
@@ -2054,7 +2055,7 @@ msgstr ""
 
 #: stricknani/templates/shared/unified_navbar.html:235
 #: stricknani/templates/shared/unified_navbar.html:293
-#: web/src/lib/components/AccountMenu.svelte:256
+#: web/src/lib/components/AccountMenu.svelte:265
 #: web/src/lib/components/LocaleSwitcher.svelte:20
 #: web/src/lib/features/account/AccountSettings.svelte:636
 msgid "Language"
@@ -2488,7 +2489,7 @@ msgid "Import a pattern"
 msgstr ""
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
-#: rust/src/web_accounts.rs:835 web/src/lib/components/AccountMenu.svelte:303
+#: rust/src/web_accounts.rs:835 web/src/lib/components/AccountMenu.svelte:323
 #: web/src/lib/features/account/AccountSettings.svelte:947
 msgid "Sign out"
 msgstr ""
@@ -2669,9 +2670,9 @@ msgid "Apply filters"
 msgstr ""
 
 #: rust/src/web.rs:2210 rust/src/web_accounts.rs:832 rust/src/web_audit.rs:124
-#: web/src/lib/components/AccountMenu.svelte:205
-#: web/src/lib/components/AccountMenu.svelte:231
-#: web/src/lib/components/AccountMenu.svelte:263
+#: web/src/lib/components/AccountMenu.svelte:214
+#: web/src/lib/components/AccountMenu.svelte:240
+#: web/src/lib/components/AccountMenu.svelte:272
 #: web/src/lib/features/account/AccountSettings.svelte:623
 #: web/src/lib/features/account/AccountSettings.svelte:634
 msgid "Account"
@@ -2720,7 +2721,7 @@ msgstr ""
 msgid "Reading text…"
 msgstr ""
 
-#: rust/src/web_accounts.rs:828 web/src/lib/components/AccountMenu.svelte:272
+#: rust/src/web_accounts.rs:828 web/src/lib/components/AccountMenu.svelte:281
 msgid "Account settings"
 msgstr ""
 
@@ -3382,7 +3383,7 @@ msgstr ""
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr ""
 
-#: web/src/lib/components/AccountMenu.svelte:176
+#: web/src/lib/components/AccountMenu.svelte:181
 #: web/src/lib/features/account/AccountSettings.svelte:230
 #: web/src/lib/features/account/AccountSettings.svelte:237
 msgid "Could not sign out."
@@ -5659,7 +5660,7 @@ msgstr ""
 msgid "Width"
 msgstr ""
 
-#: web/src/lib/components/AccountMenu.svelte:303
+#: web/src/lib/components/AccountMenu.svelte:323
 #: web/src/lib/features/account/AccountSettings.svelte:768
 #: web/src/lib/features/account/AccountSettings.svelte:947
 msgid "Working…"

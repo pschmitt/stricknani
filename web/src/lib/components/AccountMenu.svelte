@@ -13,7 +13,9 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-  import { signOut } from "#lib/session.svelte.ts";
+  import { androidAction } from "#lib/app-links.ts";
+  import { publishFeedback } from "#lib/feedback.ts";
+  import { session, signOut } from "#lib/session.svelte.ts";
 
   let {
     email,
@@ -29,6 +31,7 @@
     locale: Locale;
   } = $props();
 
+  const androidApp = androidAction();
   const exitMs = 180;
   const focusableSelector =
     'button:not(:disabled), a[href], [role="menuitem"]:not([aria-disabled="true"])';
@@ -44,7 +47,6 @@
   let dragging = $state(false);
   let dragStart: { y: number; at: number } | null = null;
   let signOutBusy = $state(false);
-  let signOutError = $state("");
   let closeTimer: ReturnType<typeof setTimeout> | undefined;
 
   const reducedMotion = () =>
@@ -74,7 +76,6 @@
     const anchor = trigger.getBoundingClientRect();
     anchorTop = anchor.bottom + 6;
     anchorRight = Math.max(8, window.innerWidth - anchor.right);
-    signOutError = "";
     dragY = 0;
     mounted = true;
     open = true;
@@ -166,14 +167,22 @@
 
   async function handleSignOut() {
     if (signOutBusy) return;
-    signOutError = "";
     signOutBusy = true;
+    const ownerId = session.data?.user?.id;
+    const origin = page.url.pathname + page.url.search + page.url.hash;
     try {
-      await signOut();
-      closeMenu(false);
+      // Leave the current page first so its own unsaved-changes confirm runs.
+      // A cancelled navigation keeps the page, the draft and the session.
       await goto(resolve("/login"));
-    } catch {
-      signOutError = t("Could not sign out.", locale);
+      if (page.url.pathname !== resolve("/login")) return;
+      try {
+        await signOut();
+      } catch {
+        const message = t("Could not sign out.", locale);
+        if (ownerId !== undefined)
+          publishFeedback({ ownerId, kind: "error", message });
+        await goto(origin, { replaceState: true });
+      }
     } finally {
       signOutBusy = false;
     }
@@ -285,6 +294,17 @@
         <a
           class="account-menu-item"
           role="menuitem"
+          href={androidApp.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onclick={() => closeMenu(false)}
+        >
+          <NavIcon name="download" />
+          <span>{t("Get the Android app", locale)}</span>
+        </a>
+        <a
+          class="account-menu-item"
+          role="menuitem"
           href={resolve("/privacy")}
           onclick={() => closeMenu(false)}
         >
@@ -304,9 +324,6 @@
           >
         </button>
       </div>
-      {#if signOutError}
-        <p class="account-menu-error" role="alert">{signOutError}</p>
-      {/if}
     </div>
   </div>
 {/if}
@@ -521,12 +538,6 @@
   .account-menu-item--danger,
   .account-menu-item--danger :global(svg) {
     color: var(--danger);
-  }
-
-  .account-menu-error {
-    margin: 0.5rem 0.25rem 0;
-    color: var(--danger);
-    font-size: 0.9rem;
   }
 
   @keyframes popover-in {
