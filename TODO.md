@@ -32,7 +32,7 @@ Execution-oriented backlog for Stricknani.
 | T121.1 | P1 | done | native-api-v2/auth | feat | Accept strict PATs on existing resource/admin routes and expose v2 metadata with current-user identity |
 | T121.2 | P1 | wip | native-api-v2/sync | feat | Add project, yarn and category delta sync with stable cursors and tombstones |
 | T121.3 | P1 | done | native-api-v2/login | feat | Add native token login using shared password policy, quotas and PAT minting |
-| T121.4 | P1 | todo | native-api-v2/parity | test | Verify mutation/import/media parity and document v2 method, payload, pagination and error differences |
+| T121.4 | P1 | wip (contracts: Claude) | native-api-v2/parity | test | Verify mutation/import/media parity and document v2 method, payload, pagination and error differences |
 | T121.5 | P1 | todo | native-api-v2/acceptance | test | Verify Android offline/account isolation and inventory v1 retirement blockers; keep v1 available |
 | T121.6 | P1 | wip | native-api-v2/media-order | feat | Persist and backfill media positions; add exact-set reorder endpoints with primary selection, audit and parent sync updates |
 | T121.7 | P1 | wip | native-api-v2/android | feat | Android client: resources, favourites and media on v2 behind a meta capability probe (done), then sync/login/media order as the server slices land (owner: Claude, SNA-87) |
