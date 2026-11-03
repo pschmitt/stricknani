@@ -44,7 +44,14 @@ async fn event_detail(
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };
-    match crate::audit_service::get_event_detail(&state.app.pool, actor_id, event_id).await {
+    match crate::audit_service::get_event_detail(
+        &state.app.pool,
+        actor_id,
+        event_id,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(Some(data)) => Json(AuditDetailResponse { data }).into_response(),
         Ok(None) => api_error(
             StatusCode::NOT_FOUND,
@@ -80,7 +87,14 @@ async fn list_events(
         }
         Err(_) => return internal_error(),
     };
-    match crate::audit_service::list_events(&state.app.pool, actor_id, &filter).await {
+    match crate::audit_service::list_events(
+        &state.app.pool,
+        actor_id,
+        &filter,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(page) => Json(AuditResponse {
             data: page.events,
             meta: AuditMeta {

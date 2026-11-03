@@ -163,6 +163,7 @@ struct UserSummary {
     email: String,
     is_admin: bool,
     avatar_url: Option<String>,
+    avatar_source: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -268,7 +269,14 @@ async fn no_store(request: Request<Body>, next: Next) -> Response {
 }
 
 async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
-    let user = match session_user(&state.app.pool, &headers, state.app.secure_cookies).await {
+    let user = match session_user(
+        &state.app.pool,
+        &headers,
+        state.app.secure_cookies,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(Some((user, token))) => {
             let csrf_token = crate::web::csrf(&token);
             let capabilities = Capabilities::from_state(&state, Some(&user));
@@ -415,7 +423,7 @@ async fn login(
                 );
             }
         };
-    let user = match load_user(&state.app.pool, token.user_id).await {
+    let user = match load_user(&state.app.pool, token.user_id, state.app.gravatar.enabled).await {
         Ok(Some(user)) => user,
         _ => {
             return api_error(
@@ -529,10 +537,11 @@ async fn session_user(
     pool: &SqlitePool,
     headers: &HeaderMap,
     secure: bool,
+    gravatar_enabled: bool,
 ) -> Result<Option<(UserSummary, String)>, sqlx::Error> {
     match auth::browser_user(pool, headers, secure).await {
         Ok(user_id) => match auth::cookie(headers, auth::session_cookie_name(secure)) {
-            Some(token) => load_user(pool, user_id)
+            Some(token) => load_user(pool, user_id, gravatar_enabled)
                 .await
                 .map(|user| user.map(|user| (user, token.to_owned()))),
             None => Ok(None),
@@ -542,9 +551,13 @@ async fn session_user(
     }
 }
 
-async fn load_user(pool: &SqlitePool, id: i64) -> Result<Option<UserSummary>, sqlx::Error> {
-    sqlx::query_as::<_, (String, bool, Option<String>)>(
-        "SELECT users.email, users.is_admin, user_avatars.filename \
+async fn load_user(
+    pool: &SqlitePool,
+    id: i64,
+    gravatar_enabled: bool,
+) -> Result<Option<UserSummary>, sqlx::Error> {
+    sqlx::query_as::<_, (String, bool, bool, Option<String>)>(
+        "SELECT users.email, users.is_admin, users.use_gravatar, user_avatars.filename \
          FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ? AND users.active = 1",
     )
@@ -552,16 +565,16 @@ async fn load_user(pool: &SqlitePool, id: i64) -> Result<Option<UserSummary>, sq
     .fetch_optional(pool)
     .await
     .map(|user| {
-        user.map(|(email, is_admin, filename)| UserSummary {
-            id,
-            email,
-            is_admin,
-            avatar_url: filename.map(|filename| {
-                format!(
-                    "/media/thumbnails/users/{id}/{}",
-                    crate::media::avatar_thumbnail_name(&filename)
-                )
-            }),
+        user.map(|(email, is_admin, use_gravatar, filename)| {
+            let avatar =
+                crate::media::self_avatar(id, filename.as_deref(), use_gravatar, gravatar_enabled);
+            UserSummary {
+                id,
+                email,
+                is_admin,
+                avatar_source: avatar.as_ref().map(|(_, source)| source.as_str()),
+                avatar_url: avatar.map(|(url, _)| url),
+            }
         })
     })
 }

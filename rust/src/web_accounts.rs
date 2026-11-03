@@ -397,6 +397,7 @@ async fn create_user(
         form.email,
         std::mem::take(&mut password),
         form.is_admin.as_deref() == Some("1"),
+        state.app.gravatar.enabled,
     )
     .await
     {
@@ -479,7 +480,14 @@ async fn set_user_active(
     }) else {
         return StatusCode::UNPROCESSABLE_ENTITY.into_response();
     };
-    match crate::admin_service::set_user_active(&state.app.pool, session.user_id, id, active).await
+    match crate::admin_service::set_user_active(
+        &state.app.pool,
+        session.user_id,
+        id,
+        active,
+        state.app.gravatar.enabled,
+    )
+    .await
     {
         Ok(_) => {}
         Err(crate::admin_service::AdminError::Forbidden) => {
@@ -710,7 +718,13 @@ async fn render_admin(
     error: Option<&str>,
     status: StatusCode,
 ) -> Response {
-    let users = match crate::admin_service::list_users(&state.app.pool, session.user_id).await {
+    let users = match crate::admin_service::list_users(
+        &state.app.pool,
+        session.user_id,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(users) => users
             .into_iter()
             .map(|user| UserRow {

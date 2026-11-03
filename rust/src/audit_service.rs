@@ -171,7 +171,7 @@ enum AuditAudience {
 }
 
 const RESOURCE_EVENT_SELECT: &str = "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
-        u.email AS actor_email, avatar.filename AS actor_avatar_filename, \
+        u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
         e.entity_type, e.entity_id, e.action, e.created_at, \
         e.resource_name_snapshot, e.change_version, \
         CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
@@ -212,6 +212,7 @@ pub(crate) async fn list_events(
     pool: &SqlitePool,
     actor_id: i64,
     filter: &AuditFilter,
+    gravatar_enabled: bool,
 ) -> Result<AuditPage, AuditError> {
     require_active_admin(pool, actor_id)
         .await
@@ -242,7 +243,7 @@ pub(crate) async fn list_events(
     let offset = i64::from(page - 1) * PAGE_SIZE;
     let rows = sqlx::query(
         "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
-                u.email AS actor_email, avatar.filename AS actor_avatar_filename, \
+                u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
                 e.entity_type, e.entity_id, e.action, e.created_at, \
                 e.resource_name_snapshot, e.change_version, \
                 (e.safe_changes IS NOT NULL) AS safe_changes_present, \
@@ -277,7 +278,7 @@ pub(crate) async fn list_events(
     .map_err(|_| AuditError::Database)?;
     let events = rows
         .into_iter()
-        .map(|row| make_event(&row, AuditAudience::Administrator))
+        .map(|row| make_event(&row, AuditAudience::Administrator, gravatar_enabled))
         .collect();
     Ok(AuditPage {
         events,
@@ -292,6 +293,7 @@ pub(crate) async fn get_event_detail(
     pool: &SqlitePool,
     actor_id: i64,
     event_id: i64,
+    gravatar_enabled: bool,
 ) -> Result<Option<AuditDetail>, AuditError> {
     require_active_admin(pool, actor_id)
         .await
@@ -301,7 +303,7 @@ pub(crate) async fn get_event_detail(
         })?;
     let row = sqlx::query(
         "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
-                u.email AS actor_email, avatar.filename AS actor_avatar_filename, \
+                u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
                 e.entity_type, e.entity_id, e.action, e.created_at, \
                 e.resource_name_snapshot, e.change_version, \
                 CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
@@ -335,7 +337,7 @@ pub(crate) async fn get_event_detail(
     let Some(row) = row else {
         return Ok(None);
     };
-    let event = make_event(&row, AuditAudience::Administrator);
+    let event = make_event(&row, AuditAudience::Administrator, gravatar_enabled);
     let (changes, unavailable_reason) = project_changes(&row);
     Ok(Some(AuditDetail {
         event,
@@ -350,6 +352,7 @@ pub(crate) async fn list_resource_events(
     entity: AuditEntity,
     resource_id: i64,
     page: u32,
+    gravatar_enabled: bool,
 ) -> Result<Option<AuditPage>, AuditError> {
     if page == 0 || page > MAX_PAGE || !matches!(entity, AuditEntity::Project | AuditEntity::Yarn) {
         return Err(AuditError::InvalidQuery);
@@ -402,7 +405,7 @@ pub(crate) async fn list_resource_events(
         .map_err(|_| AuditError::Database)?;
     let events = rows
         .into_iter()
-        .map(|row| make_event(&row, AuditAudience::Owner { owner_id }))
+        .map(|row| make_event(&row, AuditAudience::Owner { owner_id }, gravatar_enabled))
         .collect();
     transaction
         .commit()
@@ -423,6 +426,7 @@ pub(crate) async fn get_resource_event_detail(
     entity: AuditEntity,
     resource_id: i64,
     event_id: i64,
+    gravatar_enabled: bool,
 ) -> Result<Option<AuditDetail>, AuditError> {
     if !matches!(entity, AuditEntity::Project | AuditEntity::Yarn) {
         return Err(AuditError::InvalidQuery);
@@ -453,7 +457,7 @@ pub(crate) async fn get_resource_event_detail(
     let Some(row) = row else {
         return Ok(None);
     };
-    let event = make_event(&row, AuditAudience::Owner { owner_id });
+    let event = make_event(&row, AuditAudience::Owner { owner_id }, gravatar_enabled);
     let (changes, unavailable_reason) = project_changes(&row);
     transaction
         .commit()
@@ -487,7 +491,11 @@ async fn resource_belongs_to(
         .map_err(|_| AuditError::Database)
 }
 
-fn make_event(row: &sqlx::sqlite::SqliteRow, audience: AuditAudience) -> AuditEvent {
+fn make_event(
+    row: &sqlx::sqlite::SqliteRow,
+    audience: AuditAudience,
+    gravatar_enabled: bool,
+) -> AuditEvent {
     let entity_type: String = row.get("entity_type");
     let entity_id: i64 = row.get("entity_id");
     let snapshot: Option<String> = row.get("resource_name_snapshot");
@@ -566,24 +574,30 @@ fn make_event(row: &sqlx::sqlite::SqliteRow, audience: AuditAudience) -> AuditEv
     AuditEvent {
         id: row.get("id"),
         actor_email: row.get("actor_email"),
-        actor_avatar_url: row
-            .get::<Option<String>, _>("actor_avatar_filename")
-            .and_then(|filename| match audience {
-                AuditAudience::Administrator => row
-                    .get::<Option<i64>, _>("actor_user_id")
-                    .and_then(|actor_id| {
-                        crate::media::admin_avatar_thumbnail_url(actor_id, &filename)
-                    }),
-                AuditAudience::Owner { owner_id }
-                    if row.get::<Option<i64>, _>("actor_user_id") == Some(owner_id) =>
-                {
-                    Some(format!(
-                        "/media/thumbnails/users/{owner_id}/{}",
-                        crate::media::avatar_thumbnail_name(&filename)
-                    ))
+        actor_avatar_url: {
+            let actor_user_id = row.get::<Option<i64>, _>("actor_user_id");
+            let filename = row.get::<Option<String>, _>("actor_avatar_filename");
+            let use_gravatar = row.get::<Option<i64>, _>("actor_use_gravatar").unwrap_or(1) != 0;
+            match (audience, actor_user_id) {
+                (AuditAudience::Administrator, Some(actor_id)) => crate::media::admin_avatar(
+                    actor_id,
+                    filename.as_deref(),
+                    use_gravatar,
+                    gravatar_enabled,
+                )
+                .map(|(url, _)| url),
+                (AuditAudience::Owner { owner_id }, Some(actor_id)) if actor_id == owner_id => {
+                    crate::media::self_avatar(
+                        owner_id,
+                        filename.as_deref(),
+                        use_gravatar,
+                        gravatar_enabled,
+                    )
+                    .map(|(url, _)| url)
                 }
-                AuditAudience::Owner { .. } => None,
-            }),
+                _ => None,
+            }
+        },
         legacy_actor_user_id: row.get("legacy_actor_user_id"),
         entity_type,
         entity_id,

@@ -14,6 +14,7 @@ pub mod config;
 pub mod db;
 pub mod document_worker;
 pub mod frontend;
+pub mod gravatar;
 mod i18n;
 pub mod image_import;
 pub mod import_document;

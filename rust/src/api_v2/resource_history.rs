@@ -92,8 +92,15 @@ async fn list_history(
         Ok(page) => page,
         Err(()) => return invalid_query(),
     };
-    match audit_service::list_resource_events(&state.app.pool, owner_id, entity, resource_id, page)
-        .await
+    match audit_service::list_resource_events(
+        &state.app.pool,
+        owner_id,
+        entity,
+        resource_id,
+        page,
+        state.app.gravatar.enabled,
+    )
+    .await
     {
         Ok(Some(result)) => Json(HistoryEnvelope {
             data: result.events,
@@ -143,6 +150,7 @@ async fn event_detail(
         entity,
         resource_id,
         event_id,
+        state.app.gravatar.enabled,
     )
     .await
     {

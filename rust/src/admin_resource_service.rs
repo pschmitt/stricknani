@@ -69,6 +69,7 @@ pub(crate) struct AdminResource {
 struct OwnerRow {
     id: i64,
     email: Option<String>,
+    use_gravatar: bool,
     avatar_filename: Option<String>,
 }
 
@@ -78,40 +79,35 @@ async fn owner_for_resource(
     resource_id: i64,
 ) -> Result<Option<OwnerRow>, sqlx::Error> {
     let row = match kind {
-        ResourceKind::Project => {
-            sqlx::query(
-                "SELECT p.owner_id AS id, u.email, avatar.filename AS avatar_filename \
+        ResourceKind::Project => sqlx::query(
+            "SELECT p.owner_id AS id, u.email, u.use_gravatar, avatar.filename AS avatar_filename \
                  FROM projects AS p LEFT JOIN users AS u ON u.id = p.owner_id \
                  LEFT JOIN user_avatars AS avatar ON avatar.user_id = u.id WHERE p.id = ?",
-            )
-            .bind(resource_id)
-            .fetch_optional(pool)
-            .await?
-        }
-        ResourceKind::Yarn => {
-            sqlx::query(
-                "SELECT y.owner_id AS id, u.email, avatar.filename AS avatar_filename \
+        )
+        .bind(resource_id)
+        .fetch_optional(pool)
+        .await?,
+        ResourceKind::Yarn => sqlx::query(
+            "SELECT y.owner_id AS id, u.email, u.use_gravatar, avatar.filename AS avatar_filename \
                  FROM yarns AS y LEFT JOIN users AS u ON u.id = y.owner_id \
                  LEFT JOIN user_avatars AS avatar ON avatar.user_id = u.id WHERE y.id = ?",
-            )
-            .bind(resource_id)
-            .fetch_optional(pool)
-            .await?
-        }
-        ResourceKind::Category => {
-            sqlx::query(
-                "SELECT c.user_id AS id, u.email, avatar.filename AS avatar_filename \
+        )
+        .bind(resource_id)
+        .fetch_optional(pool)
+        .await?,
+        ResourceKind::Category => sqlx::query(
+            "SELECT c.user_id AS id, u.email, u.use_gravatar, avatar.filename AS avatar_filename \
                  FROM categories AS c LEFT JOIN users AS u ON u.id = c.user_id \
                  LEFT JOIN user_avatars AS avatar ON avatar.user_id = u.id WHERE c.id = ?",
-            )
-            .bind(resource_id)
-            .fetch_optional(pool)
-            .await?
-        }
+        )
+        .bind(resource_id)
+        .fetch_optional(pool)
+        .await?,
     };
     Ok(row.map(|row| OwnerRow {
         id: row.get("id"),
         email: row.get("email"),
+        use_gravatar: row.get::<Option<i64>, _>("use_gravatar").unwrap_or(1) != 0,
         avatar_filename: row.get("avatar_filename"),
     }))
 }
@@ -183,10 +179,13 @@ pub(crate) async fn load(
         owner: owner.email.map(|email| ResourceOwner {
             id: owner_id,
             email,
-            avatar_url: owner
-                .avatar_filename
-                .as_deref()
-                .and_then(|filename| crate::media::admin_avatar_thumbnail_url(owner_id, filename)),
+            avatar_url: crate::media::admin_avatar(
+                owner_id,
+                owner.avatar_filename.as_deref(),
+                owner.use_gravatar,
+                state.gravatar.enabled,
+            )
+            .map(|(url, _)| url),
         }),
         resource,
     })

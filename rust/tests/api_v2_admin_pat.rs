@@ -526,7 +526,7 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
     assert_eq!(browser_admin["user"]["email"], "pat-admin@example.test");
     assert_eq!(browser_admin["user"]["is_admin"], true);
     assert_eq!(browser_admin["user"]["avatar_url"], serde_json::Value::Null);
-    assert_eq!(browser_admin["user"].as_object().unwrap().len(), 4);
+    assert_eq!(browser_admin["user"].as_object().unwrap().len(), 5);
 
     for cookie in [
         "synthetic-unknown-browser-cookie",
@@ -589,7 +589,7 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
         assert_eq!(data["user"]["email"], email);
         assert_eq!(data["user"]["is_admin"], expected_admin);
         assert_eq!(data["user"]["avatar_url"], serde_json::Value::Null);
-        assert_eq!(data["user"].as_object().unwrap().len(), 4);
+        assert_eq!(data["user"].as_object().unwrap().len(), 5);
     }
 
     let bad_authorization_with_admin_cookie = fixture

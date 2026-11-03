@@ -41,7 +41,8 @@ The initial implementation exposes the following routes, mounted below
       "id": 42,
       "email": "knitter@example.test",
       "is_admin": false,
-      "avatar_url": "/media/thumbnails/users/42/thumb_0123456789abcdef0123456789abcdef.jpg"
+      "avatar_url": "/media/thumbnails/users/42/thumb_0123456789abcdef0123456789abcdef.jpg",
+      "avatar_source": "upload"
     },
     "csrf_token": "opaque-token",
     "capabilities": {
@@ -76,7 +77,8 @@ A successful login returns the same session envelope with a non-null `user`.
 The session user includes `avatar_url`, which is `null` when no profile image
 is set and otherwise a same-origin thumbnail path under
 `/media/thumbnails/users/{user_id}/`. This is presentation metadata only; it
-does not add a separate authorization capability. After an avatar upload or
+does not add a separate authorization capability. `avatar_source` is `"upload"`,
+`"gravatar"` or `null` (see [Gravatar](#gravatar)). After an avatar upload or
 deletion, the client updates the current session's avatar field only if the
 same authenticated session is still active.
 
@@ -145,7 +147,8 @@ consume that quota.
 
 | Method and path                   | Request                                 | Result                                                                           |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
-| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url}}`                                      |
+| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url, avatar_source, use_gravatar, gravatar_enabled}}` |
+| `PATCH /account`                  | JSON `{use_gravatar?: boolean}` (unknown fields rejected) | `200 {data: <same as GET /account>}`                              |
 | `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at, last_used_at}]}`; `last_used_at` is RFC 3339 or `null` for a token never used |
 | `POST /account/api-tokens`        | JSON `{name?, expires_at?, current_password?}` | `201 {data: {id, name, created_at, expires_at, token}}`                   |
 | `PATCH /account/api-tokens/current` | JSON `{name}` (1 to 100 characters after trimming) | bearer PAT only: `200 {data: {id, name, created_at, expires_at, last_used_at}}`; renames the calling token. A cookie session gets `403 forbidden`; an empty, blank or over-long name gets `422 validation_error` with `error.fields.name`; an invalid or revoked PAT gets `401 session_expired`. Not audit-logged: the auth audit has a closed action set and no fitting event |
@@ -165,6 +168,40 @@ one `file` field, caps the file at 25 MiB and the request at 26 MiB, and returns
 the same thumbnail URL used by the browser pages. All account reads and writes
 are owner-scoped by the authenticated account; token IDs owned by another user
 or belonging to browser sessions return `404`.
+
+### Gravatar
+
+Users without an uploaded avatar can show their Gravatar. Clients never contact
+Gravatar: the server computes the SHA-256 hash of the trimmed, lowercased email,
+fetches `https://gravatar.com/avatar/{hash}?s=256&d=404` (fixed host, 5 s
+timeout, no off-host redirects, image content types only, 1 MiB cap) and caches
+the image, and 404s, on disk under `{media_root}/gravatar/` for 24 hours. A
+transient failure is remembered for five minutes and serves a stale copy when
+one exists. Lookups are lazy: payloads never wait for Gravatar.
+
+- **Route.** The Gravatar is served through the existing protected avatar
+  routes under the fixed name `gravatar`: `GET /media/thumbnails/users/{id}/gravatar`
+  (self only, like uploaded avatars: other users receive `403`) and
+  `GET /api/v2/admin/users/{id}/avatar/gravatar` (active administrators). The
+  response carries the real image content type, `nosniff` and `no-store`.
+  It is `404` when an upload exists (an upload always wins), the user opted out,
+  Gravatar is disabled, or Gravatar has no image. Clients treat `404` as "no
+  avatar" and show their initials.
+- **Payloads.** `avatar_url` in `GET /meta` (`user`), `GET /account`, the
+  session user and the admin user, resource-owner and audit-actor views points
+  at the Gravatar route when there is no upload, the user has not opted out and
+  the server enables Gravatar; it may still `404` at fetch time.
+  `avatar_source` is `"upload"`, `"gravatar"` or `null` (`/meta` `user`,
+  `/account`, session `user`).
+  After `DELETE /account/avatar` clients re-read `GET /account`, because the
+  avatar may fall back to the Gravatar.
+- **Settings.** `GET /account` also returns `use_gravatar` (boolean, default
+  `true`) and `gravatar_enabled` (whether the server offers it). `PATCH /account`
+  with `{use_gravatar}` stores the preference for browser sessions (with CSRF)
+  and bearer PATs, and returns the updated account.
+- **Server.** `RUST_GRAVATAR_ENABLED` (default `true`; NixOS option
+  `services.stricknani.gravatar.enable`) switches the feature off for the whole
+  instance. Migration `0019_user_gravatar.sql` adds `users.use_gravatar`.
 
 ### Bearer PAT access to the account routes
 
@@ -649,7 +686,7 @@ self-service account routes additionally accept a PAT, see
 Android can discover server metadata and its current user through
 `GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, user, current_token_id}}`.
 `current_token_id` is the id of the calling PAT, or absent for browser sessions.
-`user` is `{id, email, is_admin, avatar_url}` for a valid session or PAT; anonymous or
+`user` is `{id, email, is_admin, avatar_url, avatar_source}` for a valid session or PAT; anonymous or
 invalid-cookie requests return `user: null` and `is_admin: false`.
 Explicit invalid Bearer credentials return the v2 `401 session_expired`
 envelope. Metadata responses are not cacheable. The public v1 metadata
@@ -692,8 +729,10 @@ creates a member.
 | `POST /admin/users/{id}/reset-password` | JSON `{new_password}`                                            | `200 {data: {id, session_revoked: true}}`                     |
 
 `UserSummary` is `{id, email, active, is_admin, avatar_url}`. IDs are JSON numbers.
-`avatar_url` is null when no registered avatar exists; otherwise it points to
-`GET /admin/users/{id}/avatar/{filename}` under `/api/v2`. This
+`avatar_url` is null when no registered avatar exists and no Gravatar applies
+(see [Gravatar](#gravatar)); otherwise it points to
+`GET /admin/users/{id}/avatar/{filename}` under `/api/v2`, where `filename` is
+`gravatar` for the server-fetched Gravatar. This
 endpoint independently requires an active administrator and serves only the
 registered JPEG thumbnail with `nosniff` and `Cache-Control: no-store`.
 Anonymous or inactive sessions receive `401`, members receive `403`, and

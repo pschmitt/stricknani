@@ -2096,6 +2096,9 @@ async fn serve_user_avatar(
     if actor_id != user_id {
         return StatusCode::FORBIDDEN.into_response();
     }
+    if requested_name == crate::gravatar::SERVE_NAME {
+        return serve_gravatar(state, user_id).await;
+    }
     let avatar = match sqlx::query_as::<_, AvatarRow>(
         "SELECT filename, original_filename, content_type FROM user_avatars WHERE user_id = ?",
     )
@@ -2154,6 +2157,108 @@ async fn serve_user_avatar(
     media_response(&disposition_name, &content_type, attachment, bytes)
 }
 
+/// Serve the server-fetched Gravatar for `user_id`. The caller has already
+/// authorized access. An uploaded avatar, the user's opt-out, the global switch
+/// and a missing Gravatar all answer 404 so clients show their fallback.
+async fn serve_gravatar(state: &AppState, user_id: i64) -> Response {
+    if !state.gravatar.enabled {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    let row = match sqlx::query_as::<_, (String, bool, bool)>(
+        "SELECT users.email, users.use_gravatar, \
+         EXISTS(SELECT 1 FROM user_avatars WHERE user_avatars.user_id = users.id) \
+         FROM users WHERE users.id = ? AND users.active = 1",
+    )
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await
+    {
+        Ok(Some(row)) => row,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return database_error(),
+    };
+    let (email, use_gravatar, has_upload) = row;
+    if has_upload || !use_gravatar {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    let root = match media_root(state) {
+        Ok(root) => root,
+        Err(error) => return error.into_response(),
+    };
+    match crate::gravatar::resolve(&state.gravatar, &root, &email).await {
+        Some(image) => media_response("gravatar", image.content_type, false, image.bytes),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+/// Where a user's avatar comes from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AvatarSource {
+    Upload,
+    Gravatar,
+}
+
+impl AvatarSource {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Upload => "upload",
+            Self::Gravatar => "gravatar",
+        }
+    }
+}
+
+/// Resolve which avatar a user shows. An upload always wins; otherwise the
+/// Gravatar applies when it is globally enabled and the user has not opted out.
+pub(crate) fn avatar_source(
+    upload_filename: Option<&str>,
+    use_gravatar: bool,
+    gravatar_enabled: bool,
+) -> Option<AvatarSource> {
+    match upload_filename {
+        Some(_) => Some(AvatarSource::Upload),
+        None if use_gravatar && gravatar_enabled => Some(AvatarSource::Gravatar),
+        None => None,
+    }
+}
+
+/// The protected self-avatar path for the user's own sessions.
+pub(crate) fn self_avatar(
+    user_id: i64,
+    upload_filename: Option<&str>,
+    use_gravatar: bool,
+    gravatar_enabled: bool,
+) -> Option<(String, AvatarSource)> {
+    let source = avatar_source(upload_filename, use_gravatar, gravatar_enabled)?;
+    let name = match (source, upload_filename) {
+        (AvatarSource::Upload, Some(filename)) => thumbnail_name(filename),
+        _ => crate::gravatar::SERVE_NAME.to_owned(),
+    };
+    Some((format!("/media/thumbnails/users/{user_id}/{name}"), source))
+}
+
+/// The administrator-readable avatar path for another user.
+pub(crate) fn admin_avatar(
+    user_id: i64,
+    upload_filename: Option<&str>,
+    use_gravatar: bool,
+    gravatar_enabled: bool,
+) -> Option<(String, AvatarSource)> {
+    let source = avatar_source(upload_filename, use_gravatar, gravatar_enabled)?;
+    match (source, upload_filename) {
+        (AvatarSource::Upload, Some(filename)) => {
+            admin_avatar_thumbnail_url(user_id, filename).map(|url| (url, source))
+        }
+        _ if user_id > 0 => Some((
+            format!(
+                "/api/v2/admin/users/{user_id}/avatar/{}",
+                crate::gravatar::SERVE_NAME
+            ),
+            source,
+        )),
+        _ => None,
+    }
+}
+
 /// Serve a registered avatar thumbnail only after verifying the requesting admin is active.
 pub(crate) async fn serve_admin_user_avatar_thumbnail(
     state: &AppState,
@@ -2169,6 +2274,18 @@ pub(crate) async fn serve_admin_user_avatar_thumbnail(
         })?;
     if user_id <= 0 || !safe_user_avatar_filename(requested_name) {
         return Err(AdminAvatarError::NotFound);
+    }
+    if requested_name == crate::gravatar::SERVE_NAME {
+        return match serve_gravatar(state, user_id).await {
+            response if response.status() == StatusCode::OK => Ok(response),
+            response if response.status() == StatusCode::SERVICE_UNAVAILABLE => {
+                Err(AdminAvatarError::Unavailable)
+            }
+            response if response.status() == StatusCode::INTERNAL_SERVER_ERROR => {
+                Err(AdminAvatarError::Database)
+            }
+            _ => Err(AdminAvatarError::NotFound),
+        };
     }
     let avatar = sqlx::query_as::<_, AvatarRow>(
         "SELECT filename, original_filename, content_type FROM user_avatars WHERE user_id = ?",

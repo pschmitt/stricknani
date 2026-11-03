@@ -178,6 +178,12 @@ in
       description = "Path to a file containing environment variables (e.g. SECRET_KEY, OPENAI_API_KEY).";
     };
 
+    gravatar.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Let the server fetch Gravatar images (SHA-256 of the account email) for users without an uploaded avatar. Clients never contact Gravatar. Sets RUST_GRAVATAR_ENABLED; users can still opt out individually.";
+    };
+
     oidc = {
       enable = lib.mkEnableOption "OIDC sign-in for the Rust backend";
       providerId = lib.mkOption {
@@ -367,6 +373,7 @@ in
           RUST_MEDIA_ROOT = toString cfg.mediaRoot;
           TRUSTED_HOSTS = trustedHosts;
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
+          RUST_GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
         }
         // oidcEnvironment
         // cfg.extraConfig;

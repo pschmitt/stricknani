@@ -46,6 +46,7 @@ struct MetaUser {
     email: String,
     is_admin: bool,
     avatar_url: Option<String>,
+    avatar_source: Option<&'static str>,
 }
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -59,21 +60,24 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
     };
 
     let user = match user_id {
-        Some(user_id) => match super::load_user(&state.app.pool, user_id).await {
-            Ok(user) => user.map(|user| MetaUser {
-                id: user.id,
-                email: user.email,
-                is_admin: user.is_admin,
-                avatar_url: user.avatar_url,
-            }),
-            Err(_) => {
-                return api_error(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "internal_error",
-                    "Request failed",
-                );
+        Some(user_id) => {
+            match super::load_user(&state.app.pool, user_id, state.app.gravatar.enabled).await {
+                Ok(user) => user.map(|user| MetaUser {
+                    id: user.id,
+                    email: user.email,
+                    is_admin: user.is_admin,
+                    avatar_url: user.avatar_url,
+                    avatar_source: user.avatar_source,
+                }),
+                Err(_) => {
+                    return api_error(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "internal_error",
+                        "Request failed",
+                    );
+                }
             }
-        },
+        }
         None => None,
     };
     let current_token_id = match (

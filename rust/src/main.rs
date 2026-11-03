@@ -231,7 +231,10 @@ async fn serve() -> Result<(), &'static str> {
         .with_secure_cookies(config.secure_cookies)
         .with_signup_enabled(config.signup_enabled)
         .with_archive_enabled(config.archive_enabled)
-        .with_ocr_enabled(config.ocr_enabled);
+        .with_ocr_enabled(config.ocr_enabled)
+        .with_gravatar(stricknani_server::gravatar::GravatarSettings::enabled(
+            config.gravatar_enabled,
+        ));
     let state = match config.oidc {
         Some(provider_config) => {
             let runtime =

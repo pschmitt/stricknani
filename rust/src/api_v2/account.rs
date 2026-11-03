@@ -35,7 +35,7 @@ const MAX_AVATAR_REQUEST_BYTES: usize = 26 * 1024 * 1024;
 
 pub(super) fn router() -> Router<ApiV2State> {
     let json_routes = Router::new()
-        .route("/account", get(get_account))
+        .route("/account", get(get_account).patch(update_account))
         .route("/account/api-tokens", get(list_tokens).post(create_token))
         .route(
             "/account/api-tokens/current",
@@ -58,7 +58,38 @@ async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    match account_service::account_dto(&state.app.pool, user_id).await {
+    match account_service::account_dto(&state.app.pool, user_id, state.app.gravatar.enabled).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => account_error(error),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UpdateAccountRequest {
+    use_gravatar: Option<bool>,
+}
+
+async fn update_account(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    request: Result<Json<UpdateAccountRequest>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Json(request) = match request {
+        Ok(request) => request,
+        Err(error) => return json_rejection(error),
+    };
+    if let Some(enabled) = request.use_gravatar
+        && let Err(error) =
+            account_service::set_use_gravatar(&state.app.pool, user_id, enabled).await
+    {
+        return account_error(error);
+    }
+    match account_service::account_dto(&state.app.pool, user_id, state.app.gravatar.enabled).await {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => account_error(error),
     }

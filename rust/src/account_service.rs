@@ -438,10 +438,12 @@ pub(crate) async fn delete_avatar(pool: &SqlitePool, user_id: i64) -> Result<(),
 pub(crate) async fn account_dto(
     pool: &SqlitePool,
     user_id: i64,
+    gravatar_enabled: bool,
 ) -> Result<AccountDto, AccountError> {
     use sqlx::Row;
     let row = sqlx::query(
-        "SELECT users.id, users.email, users.is_admin, user_avatars.filename \
+        "SELECT users.id, users.email, users.is_admin, users.use_gravatar, \
+         user_avatars.filename \
          FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ? AND users.active = 1",
     )
@@ -451,17 +453,36 @@ pub(crate) async fn account_dto(
     .map_err(|_| AccountError::Database)?
     .ok_or(AccountError::TokenNotFound)?;
     let filename: Option<String> = row.get("filename");
+    let use_gravatar = row.get::<i64, _>("use_gravatar") != 0;
+    let avatar = media::self_avatar(user_id, filename.as_deref(), use_gravatar, gravatar_enabled);
     Ok(AccountDto {
         id: row.get("id"),
         email: row.get("email"),
         is_admin: row.get::<i64, _>("is_admin") != 0,
-        avatar_url: filename.map(|filename| {
-            format!(
-                "/media/thumbnails/users/{user_id}/{}",
-                media::avatar_thumbnail_name(&filename)
-            )
-        }),
+        avatar_source: avatar.as_ref().map(|(_, source)| source.as_str()),
+        avatar_url: avatar.map(|(url, _)| url),
+        use_gravatar,
+        gravatar_enabled,
     })
+}
+
+/// Store the per-user Gravatar preference.
+pub(crate) async fn set_use_gravatar(
+    pool: &SqlitePool,
+    user_id: i64,
+    enabled: bool,
+) -> Result<(), AccountError> {
+    let result = sqlx::query("UPDATE users SET use_gravatar = ? WHERE id = ? AND active = 1")
+        .bind(i64::from(enabled))
+        .bind(user_id)
+        .execute(pool)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(AccountError::TokenNotFound)
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -470,6 +491,12 @@ pub(crate) struct AccountDto {
     pub(crate) email: String,
     pub(crate) is_admin: bool,
     pub(crate) avatar_url: Option<String>,
+    /// `"upload"`, `"gravatar"` or null when no avatar applies.
+    pub(crate) avatar_source: Option<&'static str>,
+    /// The user's preference for the Gravatar fallback (default true).
+    pub(crate) use_gravatar: bool,
+    /// Whether the server offers the Gravatar fallback at all.
+    pub(crate) gravatar_enabled: bool,
 }
 
 fn format_timestamp(timestamp: i64) -> String {

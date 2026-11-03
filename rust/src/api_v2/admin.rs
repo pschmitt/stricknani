@@ -85,7 +85,14 @@ async fn list_users(
         Err(_) => return invalid_query(),
     };
     let page = query.page.unwrap_or(1);
-    match crate::admin_service::list_users_page(&state.app.pool, actor, page).await {
+    match crate::admin_service::list_users_page(
+        &state.app.pool,
+        actor,
+        page,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(result) => Json(PageData {
             data: result.users,
             meta: PageMeta {
@@ -129,6 +136,7 @@ async fn create_user(
         request.email,
         Zeroizing::new(request.password),
         request.is_admin,
+        state.app.gravatar.enabled,
     )
     .await
     {
@@ -157,7 +165,15 @@ async fn set_active(
         Ok(request) => request,
         Err(rejection) => return json_rejection(rejection),
     };
-    match crate::admin_service::set_user_active(&state.app.pool, actor, id, request.active).await {
+    match crate::admin_service::set_user_active(
+        &state.app.pool,
+        actor,
+        id,
+        request.active,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(user) => Json(Envelope { data: user }).into_response(),
         Err(error) => map_admin_error(error, "active"),
     }

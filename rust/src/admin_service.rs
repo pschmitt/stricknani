@@ -37,17 +37,24 @@ pub(crate) struct UserPage {
     pub(crate) has_more: bool,
 }
 
-fn decode_user(row: sqlx::sqlite::SqliteRow) -> AdminUser {
-    AdminUser {
-        id: row.get("id"),
-        email: row.get("email"),
-        active: row.get::<i64, _>("active") != 0,
-        is_admin: row.get::<i64, _>("is_admin") != 0,
-        avatar_url: row
-            .get::<Option<String>, _>("avatar_filename")
-            .and_then(|filename| {
-                crate::media::admin_avatar_thumbnail_url(row.get("id"), &filename)
-            }),
+fn decode_user(gravatar_enabled: bool) -> impl Fn(sqlx::sqlite::SqliteRow) -> AdminUser {
+    move |row| {
+        let id: i64 = row.get("id");
+        let use_gravatar = row.get::<i64, _>("use_gravatar") != 0;
+        let filename = row.get::<Option<String>, _>("avatar_filename");
+        AdminUser {
+            id,
+            email: row.get("email"),
+            active: row.get::<i64, _>("active") != 0,
+            is_admin: row.get::<i64, _>("is_admin") != 0,
+            avatar_url: crate::media::admin_avatar(
+                id,
+                filename.as_deref(),
+                use_gravatar,
+                gravatar_enabled,
+            )
+            .map(|(url, _)| url),
+        }
     }
 }
 
@@ -76,24 +83,29 @@ pub(crate) async fn require_active_admin(
 pub(crate) async fn list_users(
     pool: &SqlitePool,
     actor_id: i64,
+    gravatar_enabled: bool,
 ) -> Result<Vec<AdminUser>, AdminError> {
     require_admin(pool, actor_id).await?;
     let rows = sqlx::query(
         "SELECT users.id, users.email, users.active, users.is_admin, \
-         user_avatars.filename AS avatar_filename FROM users \
+         users.use_gravatar, user_avatars.filename AS avatar_filename FROM users \
          LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          ORDER BY users.email COLLATE NOCASE, users.id",
     )
     .fetch_all(pool)
     .await
     .map_err(|_| AdminError::Database)?;
-    Ok(rows.into_iter().map(decode_user).collect())
+    Ok(rows
+        .into_iter()
+        .map(decode_user(gravatar_enabled))
+        .collect())
 }
 
 pub(crate) async fn list_users_page(
     pool: &SqlitePool,
     actor_id: i64,
     page: u32,
+    gravatar_enabled: bool,
 ) -> Result<UserPage, AdminError> {
     if !(1..=10_000).contains(&page) {
         return Err(AdminError::InvalidPage);
@@ -101,7 +113,7 @@ pub(crate) async fn list_users_page(
     require_admin(pool, actor_id).await?;
     let rows = sqlx::query(
         "SELECT users.id, users.email, users.active, users.is_admin, \
-         user_avatars.filename AS avatar_filename FROM users \
+         users.use_gravatar, user_avatars.filename AS avatar_filename FROM users \
          LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          ORDER BY users.email COLLATE NOCASE, users.id LIMIT ? OFFSET ?",
     )
@@ -114,7 +126,7 @@ pub(crate) async fn list_users_page(
     let users = rows
         .into_iter()
         .take(PAGE_SIZE as usize)
-        .map(decode_user)
+        .map(decode_user(gravatar_enabled))
         .collect();
     Ok(UserPage {
         users,
@@ -130,6 +142,7 @@ pub(crate) async fn create_user(
     email: String,
     password: Zeroizing<String>,
     is_admin: bool,
+    gravatar_enabled: bool,
 ) -> Result<AdminUser, AdminError> {
     require_admin(pool, actor_id).await?;
     let email = email.trim().to_lowercase();
@@ -144,7 +157,15 @@ pub(crate) async fn create_user(
         .await
         .map_err(|_| AdminError::Database)?;
 
-    create_user_with_hash(pool, actor_id, &email, &password_hash, is_admin).await
+    create_user_with_hash(
+        pool,
+        actor_id,
+        &email,
+        &password_hash,
+        is_admin,
+        gravatar_enabled,
+    )
+    .await
 }
 
 async fn create_user_with_hash(
@@ -153,6 +174,7 @@ async fn create_user_with_hash(
     email: &str,
     password_hash: &str,
     is_admin: bool,
+    gravatar_enabled: bool,
 ) -> Result<AdminUser, AdminError> {
     let mut tx = pool.begin().await.map_err(|_| AdminError::Database)?;
     require_admin_tx(&mut tx, actor_id).await?;
@@ -169,7 +191,7 @@ async fn create_user_with_hash(
         Err(db::DatabaseError::InvalidAccount) => return Err(AdminError::InvalidEmail),
         Err(_) => return Err(AdminError::Database),
     };
-    let user = get_user_tx(&mut tx, id).await?;
+    let user = get_user_tx(&mut tx, id, gravatar_enabled).await?;
     tx.commit().await.map_err(|_| AdminError::Database)?;
     Ok(user)
 }
@@ -179,6 +201,7 @@ pub(crate) async fn set_user_active(
     actor_id: i64,
     target_id: i64,
     active: bool,
+    gravatar_enabled: bool,
 ) -> Result<AdminUser, AdminError> {
     let mut tx = pool.begin().await.map_err(|_| AdminError::Database)?;
     require_admin_tx(&mut tx, actor_id).await?;
@@ -212,7 +235,7 @@ pub(crate) async fn set_user_active(
     if !active {
         revoke_all_tokens(&mut tx, target_id).await?;
     }
-    let user = get_user_tx(&mut tx, target_id).await?;
+    let user = get_user_tx(&mut tx, target_id, gravatar_enabled).await?;
     tx.commit().await.map_err(|_| AdminError::Database)?;
     Ok(user)
 }
@@ -281,10 +304,11 @@ async fn require_admin_tx(
 async fn get_user_tx(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     user_id: i64,
+    gravatar_enabled: bool,
 ) -> Result<AdminUser, AdminError> {
     sqlx::query(
         "SELECT users.id, users.email, users.active, users.is_admin, \
-         user_avatars.filename AS avatar_filename FROM users \
+         users.use_gravatar, user_avatars.filename AS avatar_filename FROM users \
          LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ?",
     )
@@ -292,7 +316,7 @@ async fn get_user_tx(
     .fetch_optional(&mut **tx)
     .await
     .map_err(|_| AdminError::Database)?
-    .map(decode_user)
+    .map(decode_user(gravatar_enabled))
     .ok_or(AdminError::NotFound)
 }
 
@@ -352,6 +376,7 @@ mod tests {
             "target@example.test",
             "prepared-password-hash",
             false,
+            true,
         )
         .await;
         assert!(matches!(result, Err(AdminError::Forbidden)));

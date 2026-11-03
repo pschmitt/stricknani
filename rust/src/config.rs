@@ -28,6 +28,7 @@ pub struct Config {
     pub external_imports: bool,
     pub ocr_enabled: bool,
     pub signup_enabled: bool,
+    pub gravatar_enabled: bool,
     pub archive_enabled: bool,
     /// Validated provider configuration, absent unless `RUST_AI_ENABLED=true`.
     pub ai: Option<AiConfig>,
@@ -152,6 +153,11 @@ impl Config {
             Some("true" | "1") => true,
             _ => return Err(ConfigError("RUST_SIGNUP_ENABLED must be true or false")),
         };
+        let gravatar_enabled = match get("RUST_GRAVATAR_ENABLED").as_deref() {
+            None | Some("true" | "1") => true,
+            Some("false" | "0") => false,
+            _ => return Err(ConfigError("RUST_GRAVATAR_ENABLED must be true or false")),
+        };
         let ocr_enabled = match get("RUST_OCR_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
@@ -203,6 +209,7 @@ impl Config {
             external_imports,
             ocr_enabled,
             signup_enabled,
+            gravatar_enabled,
             archive_enabled,
             ai,
             oidc,
@@ -430,6 +437,26 @@ mod tests {
             .map(|(key, value)| ((*key).to_owned(), (*value).to_owned()))
             .collect();
         Config::from_lookup(|key| values.get(key).cloned())
+    }
+
+    #[test]
+    fn gravatar_is_on_by_default_and_can_be_disabled() {
+        let base = [
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+        ];
+        assert!(parse(&base).expect("default config").gravatar_enabled);
+        for (value, expected) in [("true", true), ("1", true), ("false", false), ("0", false)] {
+            let mut values = base.to_vec();
+            values.push(("RUST_GRAVATAR_ENABLED", value));
+            assert_eq!(
+                parse(&values).expect("valid flag").gravatar_enabled,
+                expected
+            );
+        }
+        let mut values = base.to_vec();
+        values.push(("RUST_GRAVATAR_ENABLED", "maybe"));
+        assert!(parse(&values).is_err());
     }
 
     #[test]

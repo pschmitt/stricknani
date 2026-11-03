@@ -75,7 +75,14 @@ async fn audit_page(
         }
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
-    let page = match audit_service::list_events(&state.app.pool, session.user_id, &filter).await {
+    let page = match audit_service::list_events(
+        &state.app.pool,
+        session.user_id,
+        &filter,
+        state.app.gravatar.enabled,
+    )
+    .await
+    {
         Ok(page) => page,
         Err(audit_service::AuditError::Forbidden) => return StatusCode::FORBIDDEN.into_response(),
         Err(audit_service::AuditError::InvalidQuery) => {
