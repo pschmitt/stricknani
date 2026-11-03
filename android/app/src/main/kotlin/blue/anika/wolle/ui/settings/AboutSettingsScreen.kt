@@ -3,7 +3,6 @@ package blue.anika.wolle.ui.settings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -25,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
@@ -61,6 +61,7 @@ import blue.anika.wolle.ui.common.privacyPolicyUrl
 
 private const val GITHUB_URL = "https://github.com/pschmitt/stricknani"
 private const val SPONSOR_URL = "https://github.com/sponsors/pschmitt"
+private const val LICENSE_URL = "https://github.com/pschmitt/stricknani/blob/main/LICENSE"
 private const val ISSUES_URL = "https://github.com/pschmitt/stricknani/issues"
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,14 +84,14 @@ internal fun AboutSettingsScreen(
 
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
     val serverVersion = serverMeta?.let { "${it.version} (${it.buildId})" } ?: unavailable
-    val appVersion = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-    val copyText =
-        stringResource(
-            R.string.about_copy_template,
-            appVersion,
-            BuildConfig.GIT_REVISION,
-            serverVersion,
-        )
+    val appVersion = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+    val build =
+        BuildConfig.GIT_REVISION.trim().takeIf { it.isNotEmpty() && it != "unknown" }?.take(8)
+    val copyText = buildString {
+        append("Stricknani $appVersion")
+        if (build != null) append("\nBuild: $build")
+        serverMeta?.let { append("\nServer: ${it.version} (${it.buildId})") }
+    }
     val copiedMessage = stringResource(R.string.about_copied)
 
     Scaffold(
@@ -125,19 +126,22 @@ internal fun AboutSettingsScreen(
                         },
                         supportingContent = { Text(appVersion) },
                     )
-                    SettingsListItem(
-                        modifier = Modifier.clickable(onClick = viewModel::onBuildRowTap),
-                        headlineContent = {
-                            Text(stringResource(R.string.about_settings_build_label))
-                        },
-                        supportingContent = { Text(BuildConfig.GIT_REVISION) },
-                    )
-                    SettingsListItem(
-                        headlineContent = {
-                            Text(stringResource(R.string.about_settings_server_version_label))
-                        },
-                        supportingContent = { Text(serverVersion) },
-                    )
+                    if (build != null) {
+                        SettingsListItem(
+                            modifier = Modifier.clickable(onClick = viewModel::onBuildRowTap),
+                            headlineContent = {
+                                Text(stringResource(R.string.about_settings_build_label))
+                            },
+                            supportingContent = { Text(build) },
+                        )
+                    }
+                    if (serverMeta != null)
+                        SettingsListItem(
+                            headlineContent = {
+                                Text(stringResource(R.string.about_settings_server_version_label))
+                            },
+                            supportingContent = { Text(serverVersion) },
+                        )
                     TextButton(
                         onClick = {
                             copyToClipboard(context, copyText, copiedMessage)
@@ -178,6 +182,7 @@ internal fun AboutSettingsScreen(
                         icon = PhosphorIcons.ShieldCheck,
                         title = stringResource(R.string.about_settings_privacy_label),
                         description = stringResource(R.string.about_settings_privacy_description),
+                        chevron = true,
                         onClick = { uriHandler.openUri(privacyPolicyUrl(serverUrl)) },
                     )
                     AboutLinkRow(
@@ -193,25 +198,27 @@ internal fun AboutSettingsScreen(
                     title = stringResource(R.string.about_credits_title),
                     icon = PhosphorIcons.Sparkle,
                 ) {
-                    SettingsListItem(
-                        headlineContent = {
-                            Text(stringResource(R.string.about_settings_license_label))
-                        },
-                        supportingContent = {
-                            Text(stringResource(R.string.about_credits_license_value))
+                    AboutCreditRow(
+                        title = stringResource(R.string.about_credits_license_prefix),
+                        detail = null,
+                        onClick = { uriHandler.openUri(LICENSE_URL) },
+                    )
+                    AboutCreditRow(
+                        title = stringResource(R.string.about_credit_icons_title),
+                        detail = stringResource(R.string.about_credit_icons_detail),
+                        onClick = { uriHandler.openUri("https://phosphoricons.com") },
+                    )
+                    AboutCreditRow(
+                        title = stringResource(R.string.about_credit_display_title),
+                        detail = stringResource(R.string.about_credit_display_detail),
+                        onClick = {
+                            uriHandler.openUri("https://github.com/undercasetype/Fraunces")
                         },
                     )
-                    SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.about_credits_icons)) },
-                        supportingContent = {
-                            Text(stringResource(R.string.about_credits_icons_value))
-                        },
-                    )
-                    SettingsListItem(
-                        headlineContent = { Text(stringResource(R.string.about_credits_fonts)) },
-                        supportingContent = {
-                            Text(stringResource(R.string.about_credits_fonts_value))
-                        },
+                    AboutCreditRow(
+                        title = stringResource(R.string.about_credit_text_title),
+                        detail = stringResource(R.string.about_credit_text_detail),
+                        onClick = { uriHandler.openUri("https://github.com/googlefonts/nunito") },
                     )
                     SettingsListItem(
                         modifier =
@@ -287,6 +294,7 @@ private fun AboutLinkRow(
     description: String,
     onClick: () -> Unit,
     warm: Boolean = false,
+    chevron: Boolean = false,
 ) {
     val chipColor =
         if (warm) MaterialTheme.colorScheme.tertiaryContainer
@@ -318,7 +326,8 @@ private fun AboutLinkRow(
         supportingContent = { Text(description) },
         trailingContent = {
             Icon(
-                PhosphorIcons.ArrowSquareOut,
+                if (chevron) Icons.AutoMirrored.Filled.KeyboardArrowRight
+                else PhosphorIcons.ArrowSquareOut,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp),
@@ -330,8 +339,21 @@ private fun AboutLinkRow(
 private fun copyToClipboard(context: Context, text: String, confirmation: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText("Stricknani", text))
-    // Android 13+ shows its own "copied" confirmation.
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        Toast.makeText(context, confirmation, Toast.LENGTH_SHORT).show()
-    }
+    Toast.makeText(context, confirmation, Toast.LENGTH_LONG).show()
+}
+
+/** A credit or licence line that opens its project page or licence text. */
+@Composable
+private fun AboutCreditRow(title: String, detail: String?, onClick: () -> Unit) {
+    SettingsListItem(
+        modifier =
+            Modifier.heightIn(min = 48.dp)
+                .clickable(
+                    onClickLabel = stringResource(R.string.about_open_in_browser),
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
+        headlineContent = { Text(title) },
+        supportingContent = detail?.let { { Text(it) } },
+    )
 }
