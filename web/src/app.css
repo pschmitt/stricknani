@@ -982,6 +982,12 @@ textarea::placeholder {
     padding: 1.15rem 1rem 2rem;
   }
 
+  /* The floating notes note sits above the phone navigation: leave room so
+     the last lines of a page can scroll clear of it. */
+  .content-main:has(.notes) {
+    padding-bottom: 5.5rem;
+  }
+
   .mobile-navigation {
     position: fixed;
     z-index: 5;

@@ -1087,6 +1087,7 @@
               title={t("Notes", locale)}
               headingId="notes-heading"
               headingLevel={3}
+              closeLabel={t("Close notes", locale)}
             >
               <div class="reading-copy {textSizeClass}">
                 <div class="rich-text">{@html project.notes_html}</div>

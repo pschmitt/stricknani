@@ -430,7 +430,11 @@
           </section>
         {/if}
         {#if yarn.notes_html}
-          <StickyNote title={t("Notes", locale)} headingId="yarn-notes-heading">
+          <StickyNote
+            title={t("Notes", locale)}
+            headingId="yarn-notes-heading"
+            closeLabel={t("Close notes", locale)}
+          >
             <div class="rich-text {textSizeClass}">{@html yarn.notes_html}</div>
           </StickyNote>
         {:else}
