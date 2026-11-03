@@ -255,6 +255,8 @@ struct SourceMedia {
     size_bytes: Option<i64>,
     alt_text: String,
     is_primary: bool,
+    position: i64,
+    is_project_cover: bool,
     width: Option<i64>,
     height: Option<i64>,
     created_at: String,
@@ -1035,6 +1037,8 @@ fn source_media_records(data: &SourceData) -> Vec<SourceMedia> {
         // Legacy title-image state is kept independently: Python allowed multiple
         // title images, while the Rust `is_primary` index allows only one.
         is_primary: false,
+        position: 0,
+        is_project_cover: false,
         width: row.width,
         height: row.height,
         created_at: row.created_at.clone(),
@@ -1058,6 +1062,8 @@ fn source_media_records(data: &SourceData) -> Vec<SourceMedia> {
         size_bytes: Some(row.size_bytes),
         alt_text: row.original_filename.clone(),
         is_primary: false,
+        position: 0,
+        is_project_cover: false,
         width: None,
         height: None,
         created_at: row.created_at.clone(),
@@ -1081,6 +1087,8 @@ fn source_media_records(data: &SourceData) -> Vec<SourceMedia> {
         size_bytes: None,
         alt_text: row.alt_text.clone(),
         is_primary: row.is_primary,
+        position: 0,
+        is_project_cover: false,
         width: None,
         height: None,
         created_at: row.created_at.clone(),
@@ -1091,7 +1099,66 @@ fn source_media_records(data: &SourceData) -> Vec<SourceMedia> {
         is_stitch_sample: None,
         legacy_is_title_image: None,
     }));
+    assign_source_media_positions(&mut records);
     records
+}
+
+fn assign_source_media_positions(records: &mut [SourceMedia]) {
+    let mut project_positions = HashMap::new();
+    let mut project_images: HashMap<i64, Vec<(usize, i64, bool)>> = HashMap::new();
+    for record in records
+        .iter_mut()
+        .filter(|record| matches!(record.kind, "title" | "step"))
+    {
+        let group = (record.project_id, record.step_id);
+        let position = project_positions.entry(group).or_insert(0_i64);
+        record.position = *position;
+        *position += 1;
+    }
+    for (index, record) in records
+        .iter()
+        .enumerate()
+        .filter(|(_, record)| matches!(record.kind, "title" | "step"))
+    {
+        if let Some(project_id) = record.project_id {
+            project_images.entry(project_id).or_default().push((
+                index,
+                record.id,
+                record.legacy_is_title_image.unwrap_or(false),
+            ));
+        }
+    }
+    for images in project_images.values_mut() {
+        images.sort_by_key(|(_, id, _)| *id);
+        let cover_index = images
+            .iter()
+            .find(|(_, _, is_legacy_cover)| *is_legacy_cover)
+            .or_else(|| images.first())
+            .map(|(index, _, _)| *index);
+        if let Some(index) = cover_index {
+            records[index].is_project_cover = true;
+        }
+    }
+
+    let mut yarn_photos: Vec<_> = records
+        .iter()
+        .enumerate()
+        .filter(|(_, record)| record.kind == "photo")
+        .map(|(index, record)| (index, record.parent_id, record.is_primary, record.id))
+        .collect();
+    yarn_photos.sort_by_key(|(_, yarn_id, is_primary, id)| {
+        (*yarn_id, !*is_primary, std::cmp::Reverse(*id))
+    });
+    let mut current_yarn = None;
+    let mut position = 0_i64;
+    for (index, yarn_id, _, _) in yarn_photos {
+        if current_yarn != Some(yarn_id) {
+            current_yarn = Some(yarn_id);
+            position = 0;
+        }
+        records[index].position = position;
+        position += 1;
+    }
 }
 
 async fn insert_users(
@@ -1653,8 +1720,8 @@ async fn insert_media(
 ) -> Result<(), ImportError> {
     let source = &media.source;
     let result = sqlx::query(
-        "INSERT INTO media_files (owner_id,project_id,yarn_id,step_id,kind,public_id,filename,original_filename,content_type,size_bytes,width,height,alt_text,is_primary,is_safe_inline,created_at,legacy_image_type,is_stitch_sample,legacy_is_title_image,legacy_source,legacy_id) \
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO media_files (owner_id,project_id,yarn_id,step_id,kind,public_id,filename,original_filename,content_type,size_bytes,width,height,alt_text,is_primary,position,is_project_cover,is_safe_inline,created_at,legacy_image_type,is_stitch_sample,legacy_is_title_image,legacy_source,legacy_id) \
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
     )
     .bind(source.owner_id)
     .bind(source.project_id)
@@ -1670,6 +1737,8 @@ async fn insert_media(
     .bind(media.height)
     .bind(&source.alt_text)
     .bind(source.is_primary)
+    .bind(source.position)
+    .bind(source.is_project_cover)
     .bind(media.is_safe_inline)
     .bind(timestamp(&source.created_at)?)
     .bind(&source.legacy_image_type)
@@ -1875,4 +1944,104 @@ fn publish_noreplace(
     _destination_name: &OsStr,
 ) -> Result<(), ImportError> {
     Err(ImportError::UnsupportedPublication)
+}
+
+#[cfg(test)]
+mod media_position_tests {
+    use super::{SourceMedia, assign_source_media_positions};
+
+    fn image(id: i64, step_id: Option<i64>, legacy_cover: bool) -> SourceMedia {
+        SourceMedia {
+            source: "images",
+            id,
+            owner_id: 1,
+            subdir: "projects",
+            parent_id: 1,
+            kind: if step_id.is_some() { "step" } else { "title" },
+            filename: format!("{id}.png"),
+            original_filename: format!("{id}.png"),
+            content_type: None,
+            size_bytes: None,
+            alt_text: String::new(),
+            is_primary: false,
+            position: 0,
+            is_project_cover: false,
+            width: None,
+            height: None,
+            created_at: "2026-01-01T00:00:00Z".to_owned(),
+            project_id: Some(1),
+            yarn_id: None,
+            step_id,
+            legacy_image_type: Some("image/png".to_owned()),
+            is_stitch_sample: None,
+            legacy_is_title_image: Some(legacy_cover),
+        }
+    }
+
+    fn yarn_photo(id: i64, yarn_id: i64, is_primary: bool) -> SourceMedia {
+        SourceMedia {
+            source: "yarn_images",
+            id,
+            owner_id: 1,
+            subdir: "yarns",
+            parent_id: yarn_id,
+            kind: "photo",
+            filename: format!("{id}.png"),
+            original_filename: format!("{id}.png"),
+            content_type: None,
+            size_bytes: None,
+            alt_text: String::new(),
+            is_primary,
+            position: 0,
+            is_project_cover: false,
+            width: None,
+            height: None,
+            created_at: "2026-01-01T00:00:00Z".to_owned(),
+            project_id: None,
+            yarn_id: Some(yarn_id),
+            step_id: None,
+            legacy_image_type: None,
+            is_stitch_sample: None,
+            legacy_is_title_image: None,
+        }
+    }
+
+    #[test]
+    fn import_positions_follow_existing_project_and_yarn_display_order() {
+        let mut records = vec![
+            image(9, Some(11), false),
+            image(20, None, false),
+            image(30, None, true),
+            yarn_photo(101, 5, false),
+            yarn_photo(100, 5, true),
+            yarn_photo(102, 5, false),
+            yarn_photo(600, 6, false),
+            yarn_photo(601, 6, false),
+        ];
+        assign_source_media_positions(&mut records);
+
+        assert_eq!(records[0].position, 0, "each step has an independent group");
+        assert_eq!(records[1].position, 0);
+        assert_eq!(records[2].position, 1);
+        assert!(
+            records[2].is_project_cover,
+            "legacy title flag remains the chosen cover"
+        );
+        assert!(!records[1].is_project_cover);
+        assert!(
+            records
+                .iter()
+                .filter(|row| matches!(row.kind, "title" | "step"))
+                .all(|row| !row.is_primary)
+        );
+        assert_eq!(records[4].position, 0, "primary photo remains first");
+        assert_eq!(
+            records[5].position, 1,
+            "nonprimary photos retain descending-id order"
+        );
+        assert_eq!(records[3].position, 2);
+        assert_eq!(records[6].position, 1);
+        assert_eq!(records[7].position, 0);
+        assert!(!records[6].is_primary && !records[7].is_primary);
+    }
 }

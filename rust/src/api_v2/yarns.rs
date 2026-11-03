@@ -14,7 +14,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::yarns as yarn_service;
-use yarn_service::{ListQuery, YarnError, YarnResponse, YarnWriteRequest};
+use yarn_service::{ListQuery, YarnError, YarnListItemResponse, YarnResponse, YarnWriteRequest};
 
 use super::{
     ApiV2State, Envelope,
@@ -79,6 +79,7 @@ pub(super) struct YarnDto {
     updated_at: String,
     project_ids: Vec<i64>,
     photos: Vec<serde_json::Value>,
+    preview_url: Option<String>,
 }
 
 impl From<YarnResponse> for YarnDto {
@@ -106,8 +107,42 @@ impl From<YarnResponse> for YarnDto {
             updated_at: yarn.updated_at,
             project_ids: yarn.project_ids,
             photos: yarn.photos,
+            preview_url: None,
         }
     }
+}
+
+pub(super) async fn yarn_dto_v2(
+    state: &ApiV2State,
+    user_id: i64,
+    yarn: YarnResponse,
+) -> Result<YarnDto, sqlx::Error> {
+    let permit = state
+        .sync_projection_slots
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|_| sqlx::Error::Protocol("yarn projection capacity closed".into()))?;
+    let yarn_id = yarn.id;
+    let (photos, preview_url) =
+        crate::media::yarn_photos_v2(&state.app.pool, user_id, yarn_id).await?;
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        yarn_dto_v2_with_media(yarn, photos, preview_url)
+    })
+    .await
+    .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+}
+
+pub(super) fn yarn_dto_v2_with_media(
+    yarn: YarnResponse,
+    photos: Vec<serde_json::Value>,
+    preview_url: Option<String>,
+) -> YarnDto {
+    let mut dto = YarnDto::from(yarn);
+    dto.photos = photos;
+    dto.preview_url = preview_url;
+    dto
 }
 
 #[derive(Serialize)]
@@ -204,15 +239,31 @@ async fn list_yarns(
     )
     .await
     {
-        Ok(page) => Json(ListEnvelope {
-            data: page.items,
-            meta: PageMeta {
-                page: page.page,
-                per_page: page.per_page,
-                has_more: page.has_more,
-            },
-        })
-        .into_response(),
+        Ok(page) => {
+            let ids: Vec<_> = page.items.iter().map(|yarn| yarn.id).collect();
+            let previews =
+                match crate::media::yarn_previews_v2(&state.app.pool, user_id, &ids).await {
+                    Ok(previews) => previews,
+                    Err(_) => return yarn_error(YarnError::Database),
+                };
+            let data: Vec<YarnListItemResponse> = page
+                .items
+                .into_iter()
+                .map(|mut yarn| {
+                    yarn.preview_url = previews.get(&yarn.id).cloned();
+                    yarn
+                })
+                .collect();
+            Json(ListEnvelope {
+                data,
+                meta: PageMeta {
+                    page: page.page,
+                    per_page: page.per_page,
+                    has_more: page.has_more,
+                },
+            })
+            .into_response()
+        }
         Err(error) => yarn_error(error),
     }
 }
@@ -227,10 +278,10 @@ async fn get_yarn(
         Err(error) => return *error,
     };
     match yarn_service::load_for_owner(&state.app, user_id, yarn_id).await {
-        Ok(Some(yarn)) => Json(Envelope {
-            data: YarnDto::from(yarn),
-        })
-        .into_response(),
+        Ok(Some(yarn)) => match yarn_dto_v2(&state, user_id, yarn).await {
+            Ok(yarn) => Json(Envelope { data: yarn }).into_response(),
+            Err(_) => yarn_error(YarnError::Database),
+        },
         Ok(None) => yarn_error(YarnError::NotFound),
         Err(_) => yarn_error(YarnError::Database),
     }
@@ -253,13 +304,10 @@ async fn create_yarn(
         return response;
     }
     match yarn_service::create_for_owner(&state.app, user_id, payload).await {
-        Ok(yarn) => (
-            StatusCode::CREATED,
-            Json(Envelope {
-                data: YarnDto::from(yarn),
-            }),
-        )
-            .into_response(),
+        Ok(yarn) => match yarn_dto_v2(&state, user_id, yarn).await {
+            Ok(yarn) => (StatusCode::CREATED, Json(Envelope { data: yarn })).into_response(),
+            Err(_) => yarn_error(YarnError::Database),
+        },
         Err(error) => yarn_error(error),
     }
 }
@@ -282,10 +330,10 @@ async fn update_yarn(
         return response;
     }
     match yarn_service::update_for_owner(&state.app, user_id, yarn_id, payload).await {
-        Ok(yarn) => Json(Envelope {
-            data: YarnDto::from(yarn),
-        })
-        .into_response(),
+        Ok(yarn) => match yarn_dto_v2(&state, user_id, yarn).await {
+            Ok(yarn) => Json(Envelope { data: yarn }).into_response(),
+            Err(_) => yarn_error(YarnError::Database),
+        },
         Err(error) => yarn_error(error),
     }
 }
@@ -332,10 +380,10 @@ async fn set_favorite(
         Err(error) => return *error,
     };
     match yarn_service::set_favorite_for_owner(&state.app, user_id, yarn_id, favorite).await {
-        Ok(yarn) => Json(Envelope {
-            data: YarnDto::from(yarn),
-        })
-        .into_response(),
+        Ok(yarn) => match yarn_dto_v2(&state, user_id, yarn).await {
+            Ok(yarn) => Json(Envelope { data: yarn }).into_response(),
+            Err(_) => yarn_error(YarnError::Database),
+        },
         Err(error) => yarn_error(error),
     }
 }

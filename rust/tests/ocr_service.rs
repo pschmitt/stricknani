@@ -462,8 +462,8 @@ async fn rejects_media_bodies_over_25_mib_before_calling_ocr() {
     sqlx::query(
         "INSERT INTO media_files \
          (owner_id, project_id, kind, public_id, filename, original_filename, content_type, size_bytes, \
-          width, height, alt_text, is_primary, is_safe_inline) \
-         VALUES (?, ?, 'title', 3, ?, ?, 'image/png', ?, 2, 2, '', 0, 1)",
+          width, height, alt_text, is_primary, position, is_safe_inline) \
+         VALUES (?, ?, 'title', 3, ?, ?, 'image/png', ?, 2, 2, '', 0, 1, 1)",
     )
     .bind(owner_id)
     .bind(harness.owner_project_id)

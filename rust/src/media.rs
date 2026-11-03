@@ -1,5 +1,7 @@
 //! Authenticated, owner-scoped media uploads and serving.
 
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::io::{Cursor, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
@@ -16,7 +18,7 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use serde::Serialize;
 use serde_json::Value;
-use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
+use sqlx::{FromRow, QueryBuilder, Sqlite, SqlitePool, Transaction};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use crate::audit::{Action as AuditAction, Entity as AuditEntity};
@@ -30,6 +32,7 @@ const MAX_IMAGE_DIMENSION: u32 = 20_000;
 const MAX_IMAGE_ALLOCATION: u64 = 256 * 1024 * 1024;
 const MAX_ALT_TEXT_BYTES: usize = 4096;
 const GC_BATCH_SIZE: i64 = 100;
+const MAX_ORDERED_MEDIA_COUNT: usize = 4096;
 
 /// Build media upload and serving endpoints at their full API/media paths.
 pub fn router() -> Router<AppState> {
@@ -86,6 +89,8 @@ struct MediaRow {
     size_bytes: i64,
     alt_text: String,
     is_primary: bool,
+    position: i64,
+    is_project_cover: bool,
     is_safe_inline: bool,
     legacy_image_type: Option<String>,
     is_stitch_sample: Option<bool>,
@@ -293,7 +298,7 @@ async fn bump_project_timestamp(
     tx: &mut Transaction<'_, Sqlite>,
     user_id: i64,
     project_id: i64,
-) -> Result<(), sqlx::Error> {
+) -> Result<String, sqlx::Error> {
     let current = sqlx::query_scalar::<_, String>(
         "SELECT updated_at FROM projects WHERE id = ? AND owner_id = ?",
     )
@@ -302,20 +307,21 @@ async fn bump_project_timestamp(
     .fetch_optional(&mut **tx)
     .await?
     .ok_or_else(|| sqlx::Error::Protocol("owned project disappeared".to_owned()))?;
+    let updated_at = newer_timestamp(&current);
     sqlx::query("UPDATE projects SET updated_at = ? WHERE id = ? AND owner_id = ?")
-        .bind(newer_timestamp(&current))
+        .bind(&updated_at)
         .bind(project_id)
         .bind(user_id)
         .execute(&mut **tx)
         .await?;
-    Ok(())
+    Ok(updated_at)
 }
 
 async fn bump_yarn_timestamp(
     tx: &mut Transaction<'_, Sqlite>,
     user_id: i64,
     yarn_id: i64,
-) -> Result<(), sqlx::Error> {
+) -> Result<String, sqlx::Error> {
     let current = sqlx::query_scalar::<_, String>(
         "SELECT updated_at FROM yarns WHERE id = ? AND owner_id = ?",
     )
@@ -324,13 +330,111 @@ async fn bump_yarn_timestamp(
     .fetch_optional(&mut **tx)
     .await?
     .ok_or_else(|| sqlx::Error::Protocol("owned yarn disappeared".to_owned()))?;
+    let updated_at = newer_timestamp(&current);
     sqlx::query("UPDATE yarns SET updated_at = ? WHERE id = ? AND owner_id = ?")
-        .bind(newer_timestamp(&current))
+        .bind(&updated_at)
         .bind(yarn_id)
         .bind(user_id)
         .execute(&mut **tx)
         .await?;
+    Ok(updated_at)
+}
+
+async fn next_project_position(
+    tx: &mut Transaction<'_, Sqlite>,
+    project_id: i64,
+    step_id: Option<i64>,
+) -> Result<i64, sqlx::Error> {
+    let kind = if step_id.is_some() { "step" } else { "title" };
+    sqlx::query_scalar::<_, i64>(
+        "SELECT COALESCE(MAX(position) + 1, 0) FROM media_files \
+         WHERE project_id = ? AND kind = ? AND step_id IS ?",
+    )
+    .bind(project_id)
+    .bind(kind)
+    .bind(step_id)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn next_yarn_position(
+    tx: &mut Transaction<'_, Sqlite>,
+    yarn_id: i64,
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar::<_, i64>(
+        "SELECT COALESCE(MAX(position) + 1, 0) FROM media_files \
+         WHERE yarn_id = ? AND kind = 'photo'",
+    )
+    .bind(yarn_id)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn shift_yarn_photo_positions(
+    tx: &mut Transaction<'_, Sqlite>,
+    yarn_id: i64,
+) -> Result<(), sqlx::Error> {
+    let (count, max_position) = sqlx::query_as::<_, (i64, Option<i64>)>(
+        "SELECT COUNT(*),MAX(position) FROM media_files WHERE yarn_id = ? AND kind = 'photo'",
+    )
+    .bind(yarn_id)
+    .fetch_one(&mut **tx)
+    .await?;
+    if count == 0 {
+        return Ok(());
+    }
+    let offset = max_position
+        .unwrap_or(0)
+        .checked_add(count)
+        .and_then(|value| value.checked_add(1))
+        .ok_or_else(|| sqlx::Error::Protocol("photo positions exhausted".to_owned()))?;
+    sqlx::query(
+        "UPDATE media_files SET position = position + ? WHERE yarn_id = ? AND kind = 'photo'",
+    )
+    .bind(offset)
+    .bind(yarn_id)
+    .execute(&mut **tx)
+    .await?;
+    let rows = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT id,position FROM media_files WHERE yarn_id = ? AND kind = 'photo' ORDER BY position,id",
+    )
+    .bind(yarn_id)
+    .fetch_all(&mut **tx)
+    .await?;
+    for (position, (id, _)) in rows.into_iter().enumerate() {
+        sqlx::query("UPDATE media_files SET position = ? WHERE id = ?")
+            .bind(position as i64 + 1)
+            .bind(id)
+            .execute(&mut **tx)
+            .await?;
+    }
     Ok(())
+}
+
+async fn project_has_cover(
+    tx: &mut Transaction<'_, Sqlite>,
+    project_id: i64,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM media_files \
+         WHERE project_id = ? AND kind IN ('title', 'step') AND is_project_cover = 1)",
+    )
+    .bind(project_id)
+    .fetch_one(&mut **tx)
+    .await
+}
+
+async fn project_has_media(
+    tx: &mut Transaction<'_, Sqlite>,
+    project_id: i64,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM media_files \
+         WHERE project_id = ? AND kind IN ('title', 'step'))",
+    )
+    .bind(project_id)
+    .fetch_one(&mut **tx)
+    .await
 }
 
 async fn registered_media(
@@ -548,6 +652,431 @@ pub(crate) enum MediaOperationError {
     Database,
 }
 
+#[derive(Debug)]
+pub(crate) enum MediaOrderError {
+    NotFound,
+    Invalid,
+    Database,
+}
+
+#[derive(Debug)]
+pub(crate) struct MediaOrderResult {
+    pub(crate) ids: Vec<i64>,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Clone, Copy)]
+enum MediaOrderGroup {
+    ProjectTitles(i64),
+    ProjectSteps { project_id: i64, step_id: i64 },
+    YarnPhotos(i64),
+}
+
+type OrderedMediaRow = (i64, i64, i64, bool);
+
+pub(crate) async fn reorder_project_titles(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    ids: Vec<i64>,
+) -> Result<MediaOrderResult, MediaOrderError> {
+    reorder_media(
+        state,
+        user_id,
+        MediaOrderGroup::ProjectTitles(project_id),
+        ids,
+    )
+    .await
+}
+
+pub(crate) async fn reorder_project_step_images(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    step_id: i64,
+    ids: Vec<i64>,
+) -> Result<MediaOrderResult, MediaOrderError> {
+    reorder_media(
+        state,
+        user_id,
+        MediaOrderGroup::ProjectSteps {
+            project_id,
+            step_id,
+        },
+        ids,
+    )
+    .await
+}
+
+pub(crate) async fn reorder_yarn_photos(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    ids: Vec<i64>,
+) -> Result<MediaOrderResult, MediaOrderError> {
+    reorder_media(state, user_id, MediaOrderGroup::YarnPhotos(yarn_id), ids).await
+}
+
+async fn reorder_media(
+    state: &AppState,
+    user_id: i64,
+    group: MediaOrderGroup,
+    ids: Vec<i64>,
+) -> Result<MediaOrderResult, MediaOrderError> {
+    if ids.len() > MAX_ORDERED_MEDIA_COUNT {
+        return Err(MediaOrderError::Invalid);
+    }
+    let mut tx = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| MediaOrderError::Database)?;
+    lock_media_parent(&mut tx, user_id, group).await?;
+    if let MediaOrderGroup::ProjectSteps {
+        project_id,
+        step_id,
+    } = group
+    {
+        let belongs = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM project_steps WHERE id = ? AND project_id = ?)",
+        )
+        .bind(step_id)
+        .bind(project_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|_| MediaOrderError::Database)?;
+        if !belongs {
+            let _ = tx.rollback().await;
+            return Err(MediaOrderError::NotFound);
+        }
+    }
+    let rows = load_ordered_group(&mut tx, group).await?;
+    let current_ids: Vec<_> = rows.iter().map(|(_, public_id, _, _)| *public_id).collect();
+    let current_id_set: HashSet<_> = current_ids.iter().copied().collect();
+    let requested_set: HashSet<_> = ids.iter().copied().collect();
+    if requested_set.len() != ids.len() || requested_set != current_id_set {
+        let _ = tx.rollback().await;
+        return Err(MediaOrderError::Invalid);
+    }
+    let first_internal_id = ids.first().and_then(|first| {
+        rows.iter()
+            .find(|(_, public_id, _, _)| public_id == first)
+            .map(|(id, _, _, _)| *id)
+    });
+    let current_primary = rows
+        .iter()
+        .find(|(_, _, _, is_primary)| *is_primary)
+        .map(|(id, _, _, _)| *id);
+    let primary_changes = match group {
+        MediaOrderGroup::ProjectTitles(_) | MediaOrderGroup::YarnPhotos(_) => {
+            first_internal_id != current_primary
+        }
+        MediaOrderGroup::ProjectSteps { .. } => false,
+    };
+    let changed = current_ids != ids || primary_changes;
+    let updated_at = if changed {
+        rewrite_group_order(&mut tx, group, &rows, &ids).await?;
+        if matches!(
+            group,
+            MediaOrderGroup::ProjectTitles(_) | MediaOrderGroup::YarnPhotos(_)
+        ) {
+            set_group_primary(&mut tx, group, first_internal_id).await?;
+        }
+        let updated_at = match group {
+            MediaOrderGroup::ProjectTitles(project_id)
+            | MediaOrderGroup::ProjectSteps { project_id, .. } => {
+                bump_project_timestamp(&mut tx, user_id, project_id).await
+            }
+            MediaOrderGroup::YarnPhotos(yarn_id) => {
+                bump_yarn_timestamp(&mut tx, user_id, yarn_id).await
+            }
+        }
+        .map_err(|_| MediaOrderError::Database)?;
+        if record_order_change(&mut tx, user_id, group).await.is_err() {
+            let _ = tx.rollback().await;
+            return Err(MediaOrderError::Database);
+        }
+        updated_at
+    } else {
+        current_parent_timestamp(&mut tx, user_id, group).await?
+    };
+    tx.commit().await.map_err(|_| MediaOrderError::Database)?;
+    Ok(MediaOrderResult { ids, updated_at })
+}
+
+async fn lock_media_parent(
+    tx: &mut Transaction<'_, Sqlite>,
+    user_id: i64,
+    group: MediaOrderGroup,
+) -> Result<(), MediaOrderError> {
+    let result = match group {
+        MediaOrderGroup::ProjectTitles(project_id)
+        | MediaOrderGroup::ProjectSteps { project_id, .. } => {
+            sqlx::query("UPDATE projects SET updated_at = updated_at WHERE id = ? AND owner_id = ?")
+                .bind(project_id)
+                .bind(user_id)
+                .execute(&mut **tx)
+                .await
+        }
+        MediaOrderGroup::YarnPhotos(yarn_id) => {
+            sqlx::query("UPDATE yarns SET updated_at = updated_at WHERE id = ? AND owner_id = ?")
+                .bind(yarn_id)
+                .bind(user_id)
+                .execute(&mut **tx)
+                .await
+        }
+    }
+    .map_err(|_| MediaOrderError::Database)?;
+    if result.rows_affected() == 0 {
+        return Err(MediaOrderError::NotFound);
+    }
+    Ok(())
+}
+
+async fn load_ordered_group(
+    tx: &mut Transaction<'_, Sqlite>,
+    group: MediaOrderGroup,
+) -> Result<Vec<OrderedMediaRow>, MediaOrderError> {
+    let query = match group {
+        MediaOrderGroup::ProjectTitles(project_id) => sqlx::query_as::<_, OrderedMediaRow>(
+            "SELECT id,public_id,position,is_project_cover FROM media_files \
+             WHERE project_id = ? AND kind = 'title' AND step_id IS NULL \
+             ORDER BY position,id",
+        )
+        .bind(project_id)
+        .fetch_all(&mut **tx),
+        MediaOrderGroup::ProjectSteps {
+            project_id,
+            step_id,
+        } => sqlx::query_as::<_, OrderedMediaRow>(
+            "SELECT id,public_id,position,is_project_cover FROM media_files \
+                 WHERE project_id = ? AND kind = 'step' AND step_id = ? \
+                 ORDER BY position,id",
+        )
+        .bind(project_id)
+        .bind(step_id)
+        .fetch_all(&mut **tx),
+        MediaOrderGroup::YarnPhotos(yarn_id) => sqlx::query_as::<_, OrderedMediaRow>(
+            "SELECT id,public_id,position,is_primary FROM media_files \
+             WHERE yarn_id = ? AND kind = 'photo' ORDER BY position,id",
+        )
+        .bind(yarn_id)
+        .fetch_all(&mut **tx),
+    };
+    query.await.map_err(|_| MediaOrderError::Database)
+}
+
+async fn rewrite_group_order(
+    tx: &mut Transaction<'_, Sqlite>,
+    group: MediaOrderGroup,
+    rows: &[OrderedMediaRow],
+    ids: &[i64],
+) -> Result<(), MediaOrderError> {
+    if rows.is_empty() {
+        return Ok(());
+    }
+    let max_position = rows
+        .iter()
+        .map(|(_, _, position, _)| *position)
+        .max()
+        .unwrap_or(0);
+    let offset = max_position
+        .checked_add(rows.len() as i64)
+        .and_then(|value| value.checked_add(1))
+        .ok_or(MediaOrderError::Database)?;
+    match group {
+        MediaOrderGroup::ProjectTitles(project_id) => {
+            sqlx::query("UPDATE media_files SET position = position + ? WHERE project_id = ? AND kind = 'title' AND step_id IS NULL")
+                .bind(offset)
+                .bind(project_id)
+                .execute(&mut **tx)
+                .await
+        }
+        MediaOrderGroup::ProjectSteps { project_id, step_id } => {
+            sqlx::query("UPDATE media_files SET position = position + ? WHERE project_id = ? AND kind = 'step' AND step_id = ?")
+                .bind(offset)
+                .bind(project_id)
+                .bind(step_id)
+                .execute(&mut **tx)
+                .await
+        }
+        MediaOrderGroup::YarnPhotos(yarn_id) => {
+            sqlx::query("UPDATE media_files SET position = position + ? WHERE yarn_id = ? AND kind = 'photo'")
+                .bind(offset)
+                .bind(yarn_id)
+                .execute(&mut **tx)
+                .await
+        }
+    }
+    .map_err(|_| MediaOrderError::Database)?;
+    for (position, public_id) in ids.iter().enumerate() {
+        let internal_id = rows
+            .iter()
+            .find(|(_, existing_public_id, _, _)| existing_public_id == public_id)
+            .map(|(id, _, _, _)| *id)
+            .ok_or(MediaOrderError::Invalid)?;
+        sqlx::query("UPDATE media_files SET position = ? WHERE id = ?")
+            .bind(position as i64)
+            .bind(internal_id)
+            .execute(&mut **tx)
+            .await
+            .map_err(|_| MediaOrderError::Database)?;
+    }
+    Ok(())
+}
+
+async fn set_group_primary(
+    tx: &mut Transaction<'_, Sqlite>,
+    group: MediaOrderGroup,
+    id: Option<i64>,
+) -> Result<(), MediaOrderError> {
+    if matches!(group, MediaOrderGroup::ProjectTitles(_)) && id.is_none() {
+        let has_step_cover = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM media_files WHERE project_id = ? \
+             AND kind = 'step' AND is_project_cover = 1)",
+        )
+        .bind(match group {
+            MediaOrderGroup::ProjectTitles(project_id) => project_id,
+            _ => unreachable!(),
+        })
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(|_| MediaOrderError::Database)?;
+        if has_step_cover {
+            return Ok(());
+        }
+    }
+    let cleared = match group {
+        MediaOrderGroup::ProjectTitles(project_id) => {
+            sqlx::query("UPDATE media_files SET is_project_cover = 0 WHERE project_id = ? AND kind IN ('title','step')")
+                .bind(project_id)
+                .execute(&mut **tx)
+                .await
+        }
+        MediaOrderGroup::ProjectSteps { .. } => return Ok(()),
+        MediaOrderGroup::YarnPhotos(yarn_id) => {
+            sqlx::query("UPDATE media_files SET is_primary = 0 WHERE yarn_id = ? AND kind = 'photo'")
+                .bind(yarn_id)
+                .execute(&mut **tx)
+                .await
+        }
+    }
+    .map_err(|_| MediaOrderError::Database)?;
+    let _ = cleared;
+    if let Some(id) = id {
+        let query = match group {
+            MediaOrderGroup::ProjectTitles(_) => {
+                "UPDATE media_files SET is_project_cover = 1 WHERE id = ?"
+            }
+            MediaOrderGroup::YarnPhotos(_) => "UPDATE media_files SET is_primary = 1 WHERE id = ?",
+            MediaOrderGroup::ProjectSteps { .. } => return Ok(()),
+        };
+        sqlx::query(query)
+            .bind(id)
+            .execute(&mut **tx)
+            .await
+            .map_err(|_| MediaOrderError::Database)?;
+    }
+    Ok(())
+}
+
+async fn current_parent_timestamp(
+    tx: &mut Transaction<'_, Sqlite>,
+    user_id: i64,
+    group: MediaOrderGroup,
+) -> Result<String, MediaOrderError> {
+    match group {
+        MediaOrderGroup::ProjectTitles(project_id)
+        | MediaOrderGroup::ProjectSteps { project_id, .. } => {
+            sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ? AND owner_id = ?")
+                .bind(project_id)
+                .bind(user_id)
+                .fetch_one(&mut **tx)
+                .await
+        }
+        MediaOrderGroup::YarnPhotos(yarn_id) => {
+            sqlx::query_scalar("SELECT updated_at FROM yarns WHERE id = ? AND owner_id = ?")
+                .bind(yarn_id)
+                .bind(user_id)
+                .fetch_one(&mut **tx)
+                .await
+        }
+    }
+    .map_err(|_| MediaOrderError::Database)
+}
+
+async fn record_order_change(
+    tx: &mut Transaction<'_, Sqlite>,
+    user_id: i64,
+    group: MediaOrderGroup,
+) -> Result<(), sqlx::Error> {
+    match group {
+        MediaOrderGroup::ProjectTitles(project_id)
+        | MediaOrderGroup::ProjectSteps { project_id, .. } => {
+            crate::audit::record(
+                tx,
+                user_id,
+                AuditEntity::Project,
+                project_id,
+                AuditAction::Updated,
+            )
+            .await
+        }
+        MediaOrderGroup::YarnPhotos(yarn_id) => {
+            crate::audit::record(
+                tx,
+                user_id,
+                AuditEntity::Yarn,
+                yarn_id,
+                AuditAction::Updated,
+            )
+            .await
+        }
+    }
+}
+
+async fn compact_group(
+    tx: &mut Transaction<'_, Sqlite>,
+    group: MediaOrderGroup,
+) -> Result<Vec<OrderedMediaRow>, MediaOrderError> {
+    let rows = load_ordered_group(tx, group).await?;
+    let ids: Vec<_> = rows.iter().map(|(_, public_id, _, _)| *public_id).collect();
+    rewrite_group_order(tx, group, &rows, &ids).await?;
+    Ok(rows)
+}
+
+async fn select_project_cover_after_delete(
+    tx: &mut Transaction<'_, Sqlite>,
+    project_id: i64,
+) -> Result<Option<i64>, sqlx::Error> {
+    sqlx::query_scalar::<_, i64>(
+        "SELECT id FROM media_files WHERE project_id = ? AND kind IN ('title','step') \
+         ORDER BY CASE kind WHEN 'title' THEN 0 ELSE 1 END, position, id LIMIT 1",
+    )
+    .bind(project_id)
+    .fetch_optional(&mut **tx)
+    .await
+}
+
+async fn restore_project_cover_after_delete(
+    tx: &mut Transaction<'_, Sqlite>,
+    project_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE media_files SET is_project_cover = 0 WHERE project_id = ? AND kind IN ('title','step')",
+    )
+    .bind(project_id)
+    .execute(&mut **tx)
+    .await?;
+    if let Some(id) = select_project_cover_after_delete(tx, project_id).await? {
+        sqlx::query("UPDATE media_files SET is_project_cover = 1 WHERE id = ?")
+            .bind(id)
+            .execute(&mut **tx)
+            .await?;
+    }
+    Ok(())
+}
+
 async fn upload_title_image(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -657,6 +1186,14 @@ pub(crate) async fn upload_project_image(
             return Err(MediaOperationError::Database);
         }
     }
+    if bump_project_timestamp(&mut tx, user_id, project_id)
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, "projects", project_id, &files).await;
+        return Err(MediaOperationError::Database);
+    }
     let is_primary = if kind == "title" {
         match sqlx::query_scalar::<_, i64>(
             "SELECT EXISTS(SELECT 1 FROM media_files \
@@ -678,14 +1215,22 @@ pub(crate) async fn upload_project_image(
     } else {
         false
     };
-    if bump_project_timestamp(&mut tx, user_id, project_id)
-        .await
-        .is_err()
-    {
-        let _ = tx.rollback().await;
-        cleanup_saved_files(&root, "projects", project_id, &files).await;
-        return Err(MediaOperationError::Database);
-    }
+    let is_project_cover = match project_has_cover(&mut tx, project_id).await {
+        Ok(has_cover) => !has_cover,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(MediaOperationError::Database);
+        }
+    };
+    let position = match next_project_position(&mut tx, project_id, step_id).await {
+        Ok(position) => position,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(MediaOperationError::Database);
+        }
+    };
     let public_id = match media_ids::allocate(&mut tx, Namespace::Image).await {
         Ok(public_id) => public_id,
         Err(_) => {
@@ -697,8 +1242,8 @@ pub(crate) async fn upload_project_image(
     let insert = sqlx::query(
         "INSERT INTO media_files \
          (owner_id, project_id, step_id, kind, public_id, filename, original_filename, content_type, \
-          size_bytes, width, height, alt_text, is_primary, created_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          size_bytes, width, height, alt_text, is_primary, position, is_project_cover, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(project_id)
@@ -713,6 +1258,8 @@ pub(crate) async fn upload_project_image(
     .bind(prepared.height as i64)
     .bind(&alt_text)
     .bind(is_primary)
+    .bind(position)
+    .bind(is_project_cover)
     .bind(Utc::now().to_rfc3339_opts(SecondsFormat::Micros, true))
     .execute(&mut *tx)
     .await;
@@ -756,6 +1303,8 @@ pub(crate) async fn upload_project_image(
         size_bytes: prepared.bytes.len() as i64,
         alt_text,
         is_primary,
+        position,
+        is_project_cover,
         is_safe_inline: true,
         legacy_image_type: None,
         is_stitch_sample: None,
@@ -827,6 +1376,32 @@ pub(crate) async fn persist_imported_project_image(
         cleanup_saved_files(&root, "projects", project_id, &files).await;
         return Err(ProjectImageStoreError::Database);
     }
+    let has_project_cover = match project_has_cover(&mut tx, project_id).await {
+        Ok(has_cover) => has_cover,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    };
+    let has_media = match project_has_media(&mut tx, project_id).await {
+        Ok(has_media) => has_media,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    };
+    let is_primary = metadata.is_primary;
+    let is_project_cover = !has_project_cover && (metadata.is_primary || !has_media);
+    let position = match next_project_position(&mut tx, project_id, step_id).await {
+        Ok(position) => position,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "projects", project_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    };
     let public_id = match media_ids::allocate(&mut tx, Namespace::Image).await {
         Ok(public_id) => public_id,
         Err(_) => {
@@ -838,8 +1413,8 @@ pub(crate) async fn persist_imported_project_image(
     let inserted = sqlx::query(
         "INSERT INTO media_files \
          (owner_id, project_id, step_id, kind, public_id, filename, original_filename, content_type, \
-          size_bytes, width, height, alt_text, is_primary, created_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          size_bytes, width, height, alt_text, is_primary, position, is_project_cover, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(project_id)
@@ -853,7 +1428,9 @@ pub(crate) async fn persist_imported_project_image(
     .bind(prepared.width as i64)
     .bind(prepared.height as i64)
     .bind(metadata.alt_text)
-    .bind(metadata.is_primary)
+    .bind(is_primary)
+    .bind(position)
+    .bind(is_project_cover)
     .bind(Utc::now().to_rfc3339_opts(SecondsFormat::Micros, true))
     .execute(&mut *tx)
     .await;
@@ -1019,6 +1596,8 @@ pub(crate) async fn upload_project_attachment(
         size_bytes: upload.bytes.len() as i64,
         alt_text: String::new(),
         is_primary: false,
+        position: 0,
+        is_project_cover: false,
         is_safe_inline,
         legacy_image_type: None,
         is_stitch_sample: None,
@@ -1094,21 +1673,6 @@ pub(crate) async fn upload_yarn_photo_for_owner(
             return Err(MediaOperationError::Database);
         }
     }
-    let primary = sqlx::query_scalar::<_, i64>(
-        "SELECT EXISTS(SELECT 1 FROM media_files WHERE yarn_id = ? AND kind = 'photo' \
-         AND is_primary = 1)",
-    )
-    .bind(yarn_id)
-    .fetch_one(&mut *tx)
-    .await;
-    let is_primary = match primary {
-        Ok(exists) => exists == 0,
-        Err(_) => {
-            let _ = tx.rollback().await;
-            cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
-            return Err(MediaOperationError::Database);
-        }
-    };
     if bump_yarn_timestamp(&mut tx, user_id, yarn_id)
         .await
         .is_err()
@@ -1117,6 +1681,38 @@ pub(crate) async fn upload_yarn_photo_for_owner(
         cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
         return Err(MediaOperationError::Database);
     }
+    let is_primary = match sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM media_files WHERE yarn_id = ? AND kind = 'photo' \
+         AND is_primary = 1)",
+    )
+    .bind(yarn_id)
+    .fetch_one(&mut *tx)
+    .await
+    {
+        Ok(has_primary) => !has_primary,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+            return Err(MediaOperationError::Database);
+        }
+    };
+    let position = if is_primary {
+        if shift_yarn_photo_positions(&mut tx, yarn_id).await.is_err() {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+            return Err(MediaOperationError::Database);
+        }
+        0
+    } else {
+        match next_yarn_position(&mut tx, yarn_id).await {
+            Ok(position) => position,
+            Err(_) => {
+                let _ = tx.rollback().await;
+                cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+                return Err(MediaOperationError::Database);
+            }
+        }
+    };
     let public_id = match media_ids::allocate(&mut tx, Namespace::Photo).await {
         Ok(public_id) => public_id,
         Err(_) => {
@@ -1128,8 +1724,8 @@ pub(crate) async fn upload_yarn_photo_for_owner(
     let insert = sqlx::query(
         "INSERT INTO media_files \
          (owner_id, yarn_id, kind, public_id, filename, original_filename, content_type, size_bytes, \
-          width, height, alt_text, is_primary, created_at) \
-         VALUES (?, ?, 'photo', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          width, height, alt_text, is_primary, position, created_at) \
+         VALUES (?, ?, 'photo', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(yarn_id)
@@ -1142,6 +1738,7 @@ pub(crate) async fn upload_yarn_photo_for_owner(
     .bind(prepared.height as i64)
     .bind(&yarn_name)
     .bind(is_primary)
+    .bind(position)
     .bind(Utc::now().to_rfc3339_opts(SecondsFormat::Micros, true))
     .execute(&mut *tx)
     .await;
@@ -1185,6 +1782,8 @@ pub(crate) async fn upload_yarn_photo_for_owner(
         size_bytes: prepared.bytes.len() as i64,
         alt_text: yarn_name,
         is_primary,
+        position,
+        is_project_cover: false,
         is_safe_inline: true,
         legacy_image_type: None,
         is_stitch_sample: None,
@@ -1286,6 +1885,28 @@ pub(crate) async fn delete_project_media(
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
     }
+    let group = match (row.kind.as_str(), row.step_id) {
+        ("title", None) => Some(MediaOrderGroup::ProjectTitles(project_id)),
+        ("step", Some(step_id)) => Some(MediaOrderGroup::ProjectSteps {
+            project_id,
+            step_id,
+        }),
+        _ => None,
+    };
+    if let Some(group) = group
+        && compact_group(&mut tx, group).await.is_err()
+    {
+        let _ = tx.rollback().await;
+        return Err(MediaOperationError::Database);
+    }
+    if row.is_project_cover
+        && restore_project_cover_after_delete(&mut tx, project_id)
+            .await
+            .is_err()
+    {
+        let _ = tx.rollback().await;
+        return Err(MediaOperationError::Database);
+    }
     if crate::audit::record(
         &mut tx,
         user_id,
@@ -1382,6 +2003,26 @@ pub(crate) async fn delete_yarn_photo_for_owner(
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
     }
+    let photo_group = MediaOrderGroup::YarnPhotos(yarn_id);
+    let remaining = match compact_group(&mut tx, photo_group).await {
+        Ok(rows) => rows,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            return Err(MediaOperationError::Database);
+        }
+    };
+    if photo.is_primary
+        && set_group_primary(
+            &mut tx,
+            photo_group,
+            remaining.first().map(|(id, _, _, _)| *id),
+        )
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        return Err(MediaOperationError::Database);
+    }
     if crate::audit::record(
         &mut tx,
         user_id,
@@ -1394,33 +2035,6 @@ pub(crate) async fn delete_yarn_photo_for_owner(
     {
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
-    }
-    if photo.is_primary {
-        let next = sqlx::query_scalar::<_, i64>(
-            "SELECT id FROM media_files WHERE yarn_id = ? AND kind = 'photo' \
-             ORDER BY id LIMIT 1",
-        )
-        .bind(yarn_id)
-        .fetch_optional(&mut *tx)
-        .await;
-        match next {
-            Ok(Some(id)) => {
-                if sqlx::query("UPDATE media_files SET is_primary = 1 WHERE id = ?")
-                    .bind(id)
-                    .execute(&mut *tx)
-                    .await
-                    .is_err()
-                {
-                    let _ = tx.rollback().await;
-                    return Err(MediaOperationError::Database);
-                }
-            }
-            Ok(None) => {}
-            Err(_) => {
-                let _ = tx.rollback().await;
-                return Err(MediaOperationError::Database);
-            }
-        }
     }
     if tx.commit().await.is_err() {
         return Err(MediaOperationError::Database);
@@ -1786,6 +2400,89 @@ pub(crate) async fn project_media(
     Ok((images, attachments))
 }
 
+/// Return ordered v2 media DTOs and the canonical project cover preview.
+pub(crate) async fn project_media_v2(
+    pool: &SqlitePool,
+    user_id: i64,
+    project_id: i64,
+) -> Result<(Vec<Value>, Vec<Value>, Option<String>), sqlx::Error> {
+    let rows = sqlx::query_as::<_, MediaRow>(
+        "SELECT * FROM media_files WHERE owner_id = ? AND project_id = ? \
+         ORDER BY CASE kind WHEN 'title' THEN 0 WHEN 'step' THEN 1 ELSE 2 END, \
+                  step_id, position, id",
+    )
+    .bind(user_id)
+    .bind(project_id)
+    .fetch_all(pool)
+    .await?;
+    let mut id_order: Vec<_> = rows
+        .iter()
+        .filter(|row| matches!(row.kind.as_str(), "title" | "step"))
+        .collect();
+    id_order.sort_by_key(|row| row.id);
+    let canonical_cover = id_order
+        .iter()
+        .find(|row| row.is_project_cover)
+        .map(|row| row.id);
+    let mut images = Vec::new();
+    let mut attachments = Vec::new();
+    let mut preview = None;
+    for row in rows {
+        match row.kind.as_str() {
+            "title" | "step" => {
+                let is_primary = canonical_cover == Some(row.id);
+                let mut value = serde_json::to_value(image_dto(&row))
+                    .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+                let object = value
+                    .as_object_mut()
+                    .ok_or_else(|| sqlx::Error::Protocol("image DTO was not an object".into()))?;
+                object.insert("position".into(), Value::from(row.position));
+                object.insert("is_primary".into(), Value::from(is_primary));
+                if is_primary {
+                    preview = value["thumbnail_url"].as_str().map(str::to_owned);
+                }
+                images.push(value);
+            }
+            "attachment" => attachments.push(
+                serde_json::to_value(attachment_dto(&row))
+                    .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
+            ),
+            _ => {}
+        }
+    }
+    Ok((images, attachments, preview))
+}
+
+/// Load canonical project cover thumbnails for one paged list response.
+pub(crate) async fn project_previews_v2(
+    pool: &SqlitePool,
+    user_id: i64,
+    project_ids: &[i64],
+) -> Result<HashMap<i64, String>, sqlx::Error> {
+    if project_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let mut query = QueryBuilder::<Sqlite>::new(
+        "SELECT project_id,filename FROM media_files WHERE owner_id = ",
+    );
+    query.push_bind(user_id).push(" AND project_id IN (");
+    let mut separated = query.separated(",");
+    for project_id in project_ids {
+        separated.push_bind(project_id);
+    }
+    separated.push_unseparated(") AND kind IN ('title','step') AND is_project_cover = 1");
+    let rows = query
+        .build_query_as::<(i64, String)>()
+        .fetch_all(pool)
+        .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(project_id, filename)| {
+            (project_id, thumbnail_url("projects", project_id, &filename))
+        })
+        .collect())
+}
+
 /// Return current yarn photo DTO values for yarn serializers.
 pub(crate) async fn yarn_photos(
     pool: &SqlitePool,
@@ -1806,6 +2503,69 @@ pub(crate) async fn yarn_photos(
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))
         })
         .collect()
+}
+
+/// Return ordered v2 yarn photo DTOs and the canonical cover preview.
+pub(crate) async fn yarn_photos_v2(
+    pool: &SqlitePool,
+    user_id: i64,
+    yarn_id: i64,
+) -> Result<(Vec<Value>, Option<String>), sqlx::Error> {
+    let rows = sqlx::query_as::<_, MediaRow>(
+        "SELECT * FROM media_files WHERE owner_id = ? AND yarn_id = ? AND kind = 'photo' \
+         ORDER BY position,id",
+    )
+    .bind(user_id)
+    .bind(yarn_id)
+    .fetch_all(pool)
+    .await?;
+    let canonical_cover = rows.iter().find(|row| row.is_primary);
+    let mut preview = None;
+    let photos = rows
+        .iter()
+        .map(|row| {
+            let is_primary = canonical_cover.is_some_and(|cover| cover.id == row.id);
+            let mut value = serde_json::to_value(yarn_photo_dto(row))
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+            let object = value
+                .as_object_mut()
+                .ok_or_else(|| sqlx::Error::Protocol("photo DTO was not an object".into()))?;
+            object.insert("position".into(), Value::from(row.position));
+            object.insert("is_primary".into(), Value::from(is_primary));
+            if is_primary {
+                preview = value["thumbnail_url"].as_str().map(str::to_owned);
+            }
+            Ok(value)
+        })
+        .collect::<Result<Vec<_>, sqlx::Error>>()?;
+    Ok((photos, preview))
+}
+
+/// Load canonical yarn cover thumbnails for one paged list response.
+pub(crate) async fn yarn_previews_v2(
+    pool: &SqlitePool,
+    user_id: i64,
+    yarn_ids: &[i64],
+) -> Result<HashMap<i64, String>, sqlx::Error> {
+    if yarn_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let mut query =
+        QueryBuilder::<Sqlite>::new("SELECT yarn_id,filename FROM media_files WHERE owner_id = ");
+    query.push_bind(user_id).push(" AND yarn_id IN (");
+    let mut separated = query.separated(",");
+    for yarn_id in yarn_ids {
+        separated.push_bind(yarn_id);
+    }
+    separated.push_unseparated(") AND kind = 'photo' AND is_primary = 1");
+    let rows = query
+        .build_query_as::<(i64, String)>()
+        .fetch_all(pool)
+        .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(yarn_id, filename)| (yarn_id, thumbnail_url("yarns", yarn_id, &filename)))
+        .collect())
 }
 
 /// Select the project preview URL from an already serialized image list.

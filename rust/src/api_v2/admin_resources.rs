@@ -48,20 +48,41 @@ async fn get_resource(
     };
     match crate::admin_resource_service::load(&state.app, actor_id, kind, id).await {
         Ok(resource) => {
-            let serialized = match resource.resource {
+            let owner_id = resource.owner.as_ref().map(|owner| owner.id);
+            let value = match resource.resource {
                 crate::admin_resource_service::ResourceData::Project(project) => {
-                    serde_json::to_value(super::projects::ProjectDto::from(project))
+                    let Some(owner_id) = owner_id else {
+                        return internal_error();
+                    };
+                    let project =
+                        match super::projects::project_dto_v2(&state, owner_id, project).await {
+                            Ok(project) => project,
+                            Err(_) => return internal_error(),
+                        };
+                    match serde_json::to_value(project) {
+                        Ok(value) => value,
+                        Err(_) => return internal_error(),
+                    }
                 }
                 crate::admin_resource_service::ResourceData::Yarn(yarn) => {
-                    serde_json::to_value(super::yarns::YarnDto::from(yarn))
+                    let Some(owner_id) = owner_id else {
+                        return internal_error();
+                    };
+                    let yarn = match super::yarns::yarn_dto_v2(&state, owner_id, yarn).await {
+                        Ok(yarn) => yarn,
+                        Err(_) => return internal_error(),
+                    };
+                    match serde_json::to_value(yarn) {
+                        Ok(value) => value,
+                        Err(_) => return internal_error(),
+                    }
                 }
                 crate::admin_resource_service::ResourceData::Category(category) => {
-                    serde_json::to_value(category)
+                    match serde_json::to_value(category) {
+                        Ok(value) => value,
+                        Err(_) => return internal_error(),
+                    }
                 }
-            };
-            let value = match serialized {
-                Ok(value) => value,
-                Err(_) => return internal_error(),
             };
             let mut value = value;
             rewrite_media_urls(&mut value, kind.as_str(), resource.id);

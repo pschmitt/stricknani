@@ -7,11 +7,14 @@ use crate::{
 };
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, Path, State, multipart::MultipartRejection},
+    extract::{
+        DefaultBodyLimit, Path, State, multipart::MultipartRejection, rejection::JsonRejection,
+    },
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{post, put},
 };
+use serde::{Deserialize, Serialize};
 
 use super::{ApiV2State, Envelope, access::resource_mutation_user};
 
@@ -40,11 +43,138 @@ pub(super) fn router() -> Router<ApiV2State> {
             axum::routing::delete(delete_project_attachment),
         )
         .route("/yarns/{yarn_id}/photos", post(upload_yarn_photo))
+        .route("/yarns/{yarn_id}/photos/order", put(reorder_yarn_photos))
         .route(
             "/yarns/{yarn_id}/photos/{photo_id}",
             axum::routing::delete(delete_yarn_photo),
         )
+        .route(
+            "/projects/{project_id}/images/order",
+            put(reorder_project_titles),
+        )
+        .route(
+            "/projects/{project_id}/steps/{step_id}/images/order",
+            put(reorder_project_step_images),
+        )
         .layer(DefaultBodyLimit::max(MAX_MULTIPART_BODY_BYTES))
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MediaOrderPayload {
+    ids: Vec<i64>,
+}
+
+#[derive(Serialize)]
+struct MediaOrderDto {
+    ids: Vec<i64>,
+    updated_at: String,
+}
+
+fn media_order_error(error: media::MediaOrderError) -> Response {
+    match error {
+        media::MediaOrderError::NotFound => {
+            super::api_error(StatusCode::NOT_FOUND, "not_found", "Media group not found")
+        }
+        media::MediaOrderError::Invalid => super::api_error(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+            "Media order must include each item exactly once",
+        ),
+        media::MediaOrderError::Database => super::api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Request failed",
+        ),
+    }
+}
+
+fn media_order_payload_error(_error: JsonRejection) -> Response {
+    super::api_error(
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "validation_error",
+        "Media order is invalid",
+    )
+}
+
+async fn reorder_project_titles(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path(project_id): Path<i64>,
+    payload: Result<Json<MediaOrderPayload>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Json(payload) = match payload {
+        Ok(payload) => payload,
+        Err(error) => return media_order_payload_error(error),
+    };
+    match media::reorder_project_titles(&state.app, user_id, project_id, payload.ids).await {
+        Ok(result) => Json(Envelope {
+            data: MediaOrderDto {
+                ids: result.ids,
+                updated_at: result.updated_at,
+            },
+        })
+        .into_response(),
+        Err(error) => media_order_error(error),
+    }
+}
+
+async fn reorder_project_step_images(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path((project_id, step_id)): Path<(i64, i64)>,
+    payload: Result<Json<MediaOrderPayload>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Json(payload) = match payload {
+        Ok(payload) => payload,
+        Err(error) => return media_order_payload_error(error),
+    };
+    match media::reorder_project_step_images(&state.app, user_id, project_id, step_id, payload.ids)
+        .await
+    {
+        Ok(result) => Json(Envelope {
+            data: MediaOrderDto {
+                ids: result.ids,
+                updated_at: result.updated_at,
+            },
+        })
+        .into_response(),
+        Err(error) => media_order_error(error),
+    }
+}
+
+async fn reorder_yarn_photos(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path(yarn_id): Path<i64>,
+    payload: Result<Json<MediaOrderPayload>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Json(payload) = match payload {
+        Ok(payload) => payload,
+        Err(error) => return media_order_payload_error(error),
+    };
+    match media::reorder_yarn_photos(&state.app, user_id, yarn_id, payload.ids).await {
+        Ok(result) => Json(Envelope {
+            data: MediaOrderDto {
+                ids: result.ids,
+                updated_at: result.updated_at,
+            },
+        })
+        .into_response(),
+        Err(error) => media_order_error(error),
+    }
 }
 
 fn media_error(error: MediaOperationError) -> Response {

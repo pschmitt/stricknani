@@ -12,7 +12,9 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use project_service::{ListQuery, ProjectError, ProjectResponse, ProjectWriteRequest, TagPolicy};
+use project_service::{
+    ListQuery, ProjectError, ProjectListItem, ProjectResponse, ProjectWriteRequest, TagPolicy,
+};
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -64,6 +66,7 @@ pub(super) struct ProjectDto {
     yarn: Option<String>,
     needles: Option<String>,
     stitch_sample: Option<String>,
+    stitch_sample_html: Option<String>,
     description: Option<String>,
     description_html: Option<String>,
     notes: Option<String>,
@@ -77,6 +80,7 @@ pub(super) struct ProjectDto {
     is_favorite: bool,
     created_at: String,
     updated_at: String,
+    preview_url: Option<String>,
     yarn_ids: Vec<i64>,
     steps: Vec<StepDto>,
     images: Vec<serde_json::Value>,
@@ -100,6 +104,7 @@ impl From<ProjectResponse> for ProjectDto {
             category: project.category,
             yarn: project.yarn,
             needles: project.needles,
+            stitch_sample_html: project.stitch_sample.as_deref().map(crate::web::rich_text),
             stitch_sample: project.stitch_sample,
             description_html: project.description.as_deref().map(crate::web::rich_text),
             description: project.description,
@@ -117,6 +122,7 @@ impl From<ProjectResponse> for ProjectDto {
             is_favorite: project.is_favorite,
             created_at: project.created_at,
             updated_at: project.updated_at,
+            preview_url: None,
             yarn_ids: project.yarn_ids,
             steps: project
                 .steps
@@ -133,6 +139,41 @@ impl From<ProjectResponse> for ProjectDto {
             attachments: project.attachments,
         }
     }
+}
+
+pub(super) async fn project_dto_v2(
+    state: &ApiV2State,
+    user_id: i64,
+    project: ProjectResponse,
+) -> Result<ProjectDto, sqlx::Error> {
+    let permit = state
+        .sync_projection_slots
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|_| sqlx::Error::Protocol("project projection capacity closed".into()))?;
+    let project_id = project.id;
+    let (images, attachments, preview_url) =
+        crate::media::project_media_v2(&state.app.pool, user_id, project_id).await?;
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        project_dto_v2_with_media(project, images, attachments, preview_url)
+    })
+    .await
+    .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+}
+
+pub(super) fn project_dto_v2_with_media(
+    project: ProjectResponse,
+    images: Vec<serde_json::Value>,
+    attachments: Vec<serde_json::Value>,
+    preview_url: Option<String>,
+) -> ProjectDto {
+    let mut dto = ProjectDto::from(project);
+    dto.images = images;
+    dto.attachments = attachments;
+    dto.preview_url = preview_url;
+    dto
 }
 
 #[derive(Serialize)]
@@ -242,7 +283,19 @@ async fn list_projects(
         Ok(page) => page,
         Err(error) => return project_error(error),
     };
-    let data = page.items;
+    let ids: Vec<_> = page.items.iter().map(|project| project.id).collect();
+    let previews = match crate::media::project_previews_v2(&state.app.pool, user_id, &ids).await {
+        Ok(previews) => previews,
+        Err(_) => return project_error(ProjectError::Database),
+    };
+    let data: Vec<ProjectListItem> = page
+        .items
+        .into_iter()
+        .map(|mut project| {
+            project.preview_url = previews.get(&project.id).cloned();
+            project
+        })
+        .collect();
     Json(ListEnvelope {
         data,
         meta: PageMeta {
@@ -271,10 +324,10 @@ async fn get_project(
     )
     .await
     {
-        Ok(Some(project)) => Json(Envelope {
-            data: ProjectDto::from(project),
-        })
-        .into_response(),
+        Ok(Some(project)) => match project_dto_v2(&state, user_id, project).await {
+            Ok(project) => Json(Envelope { data: project }).into_response(),
+            Err(_) => project_error(ProjectError::Database),
+        },
         Ok(None) => project_error(ProjectError::NotFound),
         Err(_) => project_error(ProjectError::Database),
     }
@@ -304,13 +357,10 @@ async fn create_project(
     )
     .await
     {
-        Ok(project) => (
-            StatusCode::CREATED,
-            Json(Envelope {
-                data: ProjectDto::from(project),
-            }),
-        )
-            .into_response(),
+        Ok(project) => match project_dto_v2(&state, user_id, project).await {
+            Ok(project) => (StatusCode::CREATED, Json(Envelope { data: project })).into_response(),
+            Err(_) => project_error(ProjectError::Database),
+        },
         Err(error) => project_error(error),
     }
 }
@@ -349,10 +399,10 @@ async fn update_project(
     )
     .await
     {
-        Ok(project) => Json(Envelope {
-            data: ProjectDto::from(project),
-        })
-        .into_response(),
+        Ok(project) => match project_dto_v2(&state, user_id, project).await {
+            Ok(project) => Json(Envelope { data: project }).into_response(),
+            Err(_) => project_error(ProjectError::Database),
+        },
         Err(error) => project_error(error),
     }
 }
@@ -407,10 +457,10 @@ async fn set_favorite(
     )
     .await
     {
-        Ok(project) => Json(Envelope {
-            data: ProjectDto::from(project),
-        })
-        .into_response(),
+        Ok(project) => match project_dto_v2(&state, user_id, project).await {
+            Ok(project) => Json(Envelope { data: project }).into_response(),
+            Err(_) => project_error(ProjectError::Database),
+        },
         Err(error) => project_error(error),
     }
 }

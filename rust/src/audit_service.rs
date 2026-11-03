@@ -187,25 +187,21 @@ const RESOURCE_EVENT_SELECT: &str = "SELECT e.id, e.actor_user_id, e.legacy_acto
           WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
             JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
             WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
-            ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
-              CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
-              THEN 0 ELSE 1 END, m.id LIMIT 1) \
+            ORDER BY m.is_project_cover DESC, m.position, m.id LIMIT 1) \
           WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
             JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
             WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
-            ORDER BY m.id DESC LIMIT 1) \
+            ORDER BY m.position, m.id LIMIT 1) \
         END AS current_preview_media_id, \
         CASE e.entity_type \
           WHEN 'project' THEN (SELECT m.filename FROM media_files AS m \
             JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
             WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
-            ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
-              CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
-              THEN 0 ELSE 1 END, m.id LIMIT 1) \
+            ORDER BY m.is_project_cover DESC, m.position, m.id LIMIT 1) \
           WHEN 'yarn' THEN (SELECT m.filename FROM media_files AS m \
             JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
             WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
-            ORDER BY m.id DESC LIMIT 1) \
+            ORDER BY m.position, m.id LIMIT 1) \
         END AS current_preview_filename \
  FROM audit_events AS e \
  LEFT JOIN users AS u ON u.id = e.actor_user_id \
@@ -258,13 +254,11 @@ pub(crate) async fn list_events(
                   WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
                     JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
                     WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
-                    ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
-                      CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
-                      THEN 0 ELSE 1 END, m.id LIMIT 1) \
+                    ORDER BY m.is_project_cover DESC, m.position, m.id LIMIT 1) \
                   WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
                     JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
                     WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
-                    ORDER BY m.id DESC LIMIT 1) \
+                    ORDER BY m.position, m.id LIMIT 1) \
                 END AS current_preview_media_id \
          FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
@@ -323,13 +317,11 @@ pub(crate) async fn get_event_detail(
                   WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
                     JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
                     WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
-                    ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
-                      CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
-                      THEN 0 ELSE 1 END, m.id LIMIT 1) \
+                    ORDER BY m.is_project_cover DESC, m.position, m.id LIMIT 1) \
                   WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
                     JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
                     WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
-                    ORDER BY m.id DESC LIMIT 1) \
+                    ORDER BY m.position, m.id LIMIT 1) \
                 END AS current_preview_media_id \
          FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \

@@ -227,6 +227,76 @@ fn multipart_request(spec: MultipartSpec<'_>) -> Request<Body> {
     request.body(Body::from(body)).unwrap()
 }
 
+fn media_order_request(path: &str, session: &str, csrf: &str, ids: &[i64]) -> Request<Body> {
+    Request::put(path)
+        .header("host", HOST)
+        .header("origin", ORIGIN)
+        .header("sec-fetch-site", "same-origin")
+        .header("cookie", format!("__Host-stricknani_session={session}"))
+        .header("x-csrf-token", csrf)
+        .header("content-type", "application/json")
+        .body(Body::from(serde_json::json!({"ids": ids}).to_string()))
+        .unwrap()
+}
+
+fn delete_request(path: &str, session: &str, csrf: &str) -> Request<Body> {
+    Request::delete(path)
+        .header("host", HOST)
+        .header("origin", ORIGIN)
+        .header("sec-fetch-site", "same-origin")
+        .header("cookie", format!("__Host-stricknani_session={session}"))
+        .header("x-csrf-token", csrf)
+        .body(Body::empty())
+        .unwrap()
+}
+
+struct OrderedMediaFixture {
+    owner_id: i64,
+    project_id: Option<i64>,
+    yarn_id: Option<i64>,
+    step_id: Option<i64>,
+    kind: &'static str,
+    public_id: i64,
+    position: i64,
+    is_primary: bool,
+    legacy_is_title_image: Option<bool>,
+}
+
+async fn insert_ordered_media(pool: &SqlitePool, media: OrderedMediaFixture) -> i64 {
+    let OrderedMediaFixture {
+        owner_id,
+        project_id,
+        yarn_id,
+        step_id,
+        kind,
+        public_id,
+        position,
+        is_primary,
+        legacy_is_title_image,
+    } = media;
+    sqlx::query_scalar(
+        "INSERT INTO media_files \
+         (owner_id,project_id,yarn_id,step_id,kind,public_id,filename,original_filename, \
+          content_type,size_bytes,alt_text,is_primary,position,is_project_cover,legacy_is_title_image) \
+         VALUES (?,?,?,?,?,?,?,?, 'image/png',0,'',?,?,?,?) RETURNING id",
+    )
+    .bind(owner_id)
+    .bind(project_id)
+    .bind(yarn_id)
+    .bind(step_id)
+    .bind(kind)
+    .bind(public_id)
+    .bind(format!("ordered-{public_id}.png"))
+    .bind(format!("ordered-{public_id}.png"))
+    .bind(is_primary)
+    .bind(position)
+    .bind(is_primary && kind != "photo")
+    .bind(legacy_is_title_image)
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
 fn png_bytes() -> Vec<u8> {
     let image = image::DynamicImage::new_rgba8(2, 2);
     let mut output = Cursor::new(Vec::new());
@@ -336,6 +406,433 @@ async fn project_title_and_step_uploads_share_storage_and_delete_semantics() {
     .await
     .unwrap();
     assert_eq!(removed, 1);
+}
+
+#[tokio::test]
+async fn media_order_is_exact_owner_scoped_and_step_reorder_preserves_global_cover() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let step_cover_id = insert_ordered_media(
+        &fixture.pool,
+        OrderedMediaFixture {
+            owner_id: fixture.owner_id,
+            project_id: Some(fixture.project_id),
+            yarn_id: None,
+            step_id: Some(fixture.step_id),
+            kind: "step",
+            public_id: 7001,
+            position: 0,
+            is_primary: true,
+            legacy_is_title_image: Some(true),
+        },
+    )
+    .await;
+    insert_ordered_media(
+        &fixture.pool,
+        OrderedMediaFixture {
+            owner_id: fixture.owner_id,
+            project_id: Some(fixture.project_id),
+            yarn_id: None,
+            step_id: Some(fixture.step_id),
+            kind: "step",
+            public_id: 7002,
+            position: 1,
+            is_primary: false,
+            legacy_is_title_image: Some(false),
+        },
+    )
+    .await;
+    let empty_title_order = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/projects/{}/images/order", fixture.project_id),
+            &session,
+            &csrf,
+            &[],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(empty_title_order.status(), StatusCode::OK);
+    let preserved_step_cover: i64 = sqlx::query_scalar(
+        "SELECT id FROM media_files WHERE project_id = ? AND is_project_cover = 1",
+    )
+    .bind(fixture.project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(preserved_step_cover, step_cover_id);
+    let title_first_id = insert_ordered_media(
+        &fixture.pool,
+        OrderedMediaFixture {
+            owner_id: fixture.owner_id,
+            project_id: Some(fixture.project_id),
+            yarn_id: None,
+            step_id: None,
+            kind: "title",
+            public_id: 7101,
+            position: 0,
+            is_primary: false,
+            legacy_is_title_image: Some(false),
+        },
+    )
+    .await;
+    let title_second_id = insert_ordered_media(
+        &fixture.pool,
+        OrderedMediaFixture {
+            owner_id: fixture.owner_id,
+            project_id: Some(fixture.project_id),
+            yarn_id: None,
+            step_id: None,
+            kind: "title",
+            public_id: 7102,
+            position: 1,
+            is_primary: false,
+            legacy_is_title_image: Some(false),
+        },
+    )
+    .await;
+    let photo_first_id = insert_ordered_media(
+        &fixture.pool,
+        OrderedMediaFixture {
+            owner_id: fixture.owner_id,
+            project_id: None,
+            yarn_id: Some(fixture.yarn_id),
+            step_id: None,
+            kind: "photo",
+            public_id: 8001,
+            position: 0,
+            is_primary: false,
+            legacy_is_title_image: None,
+        },
+    )
+    .await;
+    let photo_second_id = insert_ordered_media(
+        &fixture.pool,
+        OrderedMediaFixture {
+            owner_id: fixture.owner_id,
+            project_id: None,
+            yarn_id: Some(fixture.yarn_id),
+            step_id: None,
+            kind: "photo",
+            public_id: 8002,
+            position: 1,
+            is_primary: false,
+            legacy_is_title_image: None,
+        },
+    )
+    .await;
+    assert_ne!(
+        step_cover_id, 7001,
+        "routes accept public IDs, not internal row IDs"
+    );
+
+    let initial_project = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!("/projects/{}", fixture.project_id))
+                .header("host", HOST)
+                .header("cookie", format!("__Host-stricknani_session={session}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(initial_project.status(), StatusCode::OK);
+    let initial_project = json(initial_project).await["data"].clone();
+    assert_eq!(
+        initial_project["preview_url"],
+        format!(
+            "/media/thumbnails/projects/{}/thumb_ordered-7001.jpg",
+            fixture.project_id
+        )
+    );
+    let initial_step_cover = initial_project["images"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["id"] == 7001)
+        .unwrap();
+    assert_eq!(initial_step_cover["position"], 0);
+    assert_eq!(initial_step_cover["is_primary"], true);
+    assert_eq!(initial_step_cover["is_title_image"], true);
+
+    let before_step_reorder: String =
+        sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ?")
+            .bind(fixture.project_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    let step_reorder = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!(
+                "/projects/{}/steps/{}/images/order",
+                fixture.project_id, fixture.step_id
+            ),
+            &session,
+            &csrf,
+            &[7002, 7001],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(step_reorder.status(), StatusCode::OK);
+    let step_reorder = json(step_reorder).await;
+    assert_eq!(step_reorder["data"]["ids"], serde_json::json!([7002, 7001]));
+    let step_updated_at = step_reorder["data"]["updated_at"].as_str().unwrap();
+    assert!(step_updated_at > before_step_reorder.as_str());
+    let step_cover_position: i64 =
+        sqlx::query_scalar("SELECT position FROM media_files WHERE id = ?")
+            .bind(step_cover_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(step_cover_position, 1);
+    let project_cover: i64 = sqlx::query_scalar(
+        "SELECT id FROM media_files WHERE project_id = ? AND is_project_cover = 1",
+    )
+    .bind(fixture.project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        project_cover, step_cover_id,
+        "step ordering must not change the project cover"
+    );
+
+    let invalid = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/projects/{}/images/order", fixture.project_id),
+            &session,
+            &csrf,
+            &[7101, 7101],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(invalid.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let wrong_group = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/projects/{}/images/order", fixture.project_id),
+            &session,
+            &csrf,
+            &[7101, 7001],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(wrong_group.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let missing_id = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/projects/{}/images/order", fixture.project_id),
+            &session,
+            &csrf,
+            &[7101],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(missing_id.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let foreign_step_id: i64 = sqlx::query_scalar(
+        "INSERT INTO project_steps (project_id,title,step_number) VALUES (?, 'other', 2) RETURNING id",
+    )
+    .bind(fixture.foreign_project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let wrong_step = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!(
+                "/projects/{}/steps/{}/images/order",
+                fixture.project_id, foreign_step_id
+            ),
+            &session,
+            &csrf,
+            &[],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(wrong_step.status(), StatusCode::NOT_FOUND);
+    let foreign_parent = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/projects/{}/images/order", fixture.foreign_project_id),
+            &session,
+            &csrf,
+            &[],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(foreign_parent.status(), StatusCode::NOT_FOUND);
+    let title_positions: Vec<(i64, i64)> = sqlx::query_as(
+        "SELECT public_id,position FROM media_files WHERE project_id = ? AND kind = 'title' ORDER BY position",
+    )
+    .bind(fixture.project_id)
+    .fetch_all(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(title_positions, vec![(7101, 0), (7102, 1)]);
+
+    let title_reorder = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/projects/{}/images/order", fixture.project_id),
+            &session,
+            &csrf,
+            &[7102, 7101],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(title_reorder.status(), StatusCode::OK);
+    assert_eq!(
+        json(title_reorder).await["data"]["ids"],
+        serde_json::json!([7102, 7101])
+    );
+    let cover_id: i64 = sqlx::query_scalar(
+        "SELECT id FROM media_files WHERE project_id = ? AND is_project_cover = 1",
+    )
+    .bind(fixture.project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(cover_id, title_second_id);
+    let step_legacy_flag: Option<bool> =
+        sqlx::query_scalar("SELECT legacy_is_title_image FROM media_files WHERE id = ?")
+            .bind(step_cover_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(step_legacy_flag, Some(true));
+
+    let delete_title_cover = fixture
+        .app
+        .clone()
+        .oneshot(delete_request(
+            &format!("/projects/{}/images/7102", fixture.project_id),
+            &session,
+            &csrf,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(delete_title_cover.status(), StatusCode::NO_CONTENT);
+    let restored_cover: i64 = sqlx::query_scalar(
+        "SELECT id FROM media_files WHERE project_id = ? AND is_project_cover = 1",
+    )
+    .bind(fixture.project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        restored_cover, title_first_id,
+        "deleting an explicit cover promotes the first remaining title image"
+    );
+
+    let initial_yarn = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!("/yarns/{}", fixture.yarn_id))
+                .header("host", HOST)
+                .header("cookie", format!("__Host-stricknani_session={session}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(initial_yarn.status(), StatusCode::OK);
+    let initial_yarn = json(initial_yarn).await["data"].clone();
+    assert_eq!(initial_yarn["preview_url"], serde_json::Value::Null);
+    assert_eq!(initial_yarn["photos"][0]["is_primary"], false);
+    let upload_first_photo = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/yarns/{}/photos", fixture.yarn_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "first-primary.png",
+            content_type: "image/png",
+            bytes: &png_bytes(),
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(upload_first_photo.status(), StatusCode::CREATED);
+    let upload_first_photo = json(upload_first_photo).await["data"].clone();
+    let uploaded_photo_id = upload_first_photo["id"].as_i64().unwrap();
+    assert_eq!(upload_first_photo["is_primary"], true);
+    let old_photo_positions: Vec<(i64, i64)> = sqlx::query_as(
+        "SELECT public_id,position FROM media_files WHERE yarn_id = ? AND public_id IN (8001,8002) ORDER BY position",
+    )
+    .bind(fixture.yarn_id)
+    .fetch_all(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(old_photo_positions, vec![(8001, 1), (8002, 2)]);
+    let photo_reorder = fixture
+        .app
+        .clone()
+        .oneshot(media_order_request(
+            &format!("/yarns/{}/photos/order", fixture.yarn_id),
+            &session,
+            &csrf,
+            &[8002, 8001, uploaded_photo_id],
+        ))
+        .await
+        .unwrap();
+    assert_eq!(photo_reorder.status(), StatusCode::OK);
+    assert_eq!(
+        json(photo_reorder).await["data"]["ids"],
+        serde_json::json!([8002, 8001, uploaded_photo_id])
+    );
+    let primary_photo: i64 =
+        sqlx::query_scalar("SELECT id FROM media_files WHERE yarn_id = ? AND is_primary = 1")
+            .bind(fixture.yarn_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(primary_photo, photo_second_id);
+    let delete_photo_cover = fixture
+        .app
+        .clone()
+        .oneshot(delete_request(
+            &format!("/yarns/{}/photos/8002", fixture.yarn_id),
+            &session,
+            &csrf,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(delete_photo_cover.status(), StatusCode::NO_CONTENT);
+    let compacted_photo: (i64, i64, bool) =
+        sqlx::query_as("SELECT id,position,is_primary FROM media_files WHERE public_id = 8001")
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(compacted_photo, (photo_first_id, 0, true));
+
+    let audit_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM audit_events WHERE entity_type IN ('project','yarn') AND action = 'updated'",
+    )
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(audit_count, 3);
 }
 
 #[tokio::test]
@@ -488,6 +985,15 @@ async fn yarn_photo_upload_delete_promotes_primary_photo() {
         let photo = json(response).await["data"].clone();
         ids.push(photo["id"].as_i64().unwrap());
         assert_eq!(photo["is_primary"], ids.len() == 1);
+        let position: i64 = sqlx::query_scalar(
+            "SELECT position FROM media_files WHERE yarn_id = ? AND public_id = ?",
+        )
+        .bind(fixture.yarn_id)
+        .bind(ids.last().unwrap())
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+        assert_eq!(position, (ids.len() - 1) as i64);
     }
 
     let delete_primary = fixture
@@ -515,6 +1021,14 @@ async fn yarn_photo_upload_delete_promotes_primary_photo() {
     .await
     .unwrap();
     assert_eq!(remaining_primary, 1);
+    let remaining_position: i64 =
+        sqlx::query_scalar("SELECT position FROM media_files WHERE yarn_id = ? AND public_id = ?")
+            .bind(fixture.yarn_id)
+            .bind(ids[1])
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(remaining_position, 0);
 }
 
 #[tokio::test]

@@ -532,3 +532,87 @@ async fn history_page_query_and_deleted_parent_are_not_disclosed() {
         assert_eq!(response.status(), StatusCode::NOT_FOUND, "{path}");
     }
 }
+
+#[tokio::test]
+async fn audit_previews_follow_canonical_cover_even_when_legacy_flags_disagree() {
+    let fixture = fixture().await;
+    let id = project(&fixture.pool, fixture.owner_id, "Reordered project").await;
+    let event_id = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.owner_id),
+            entity_type: "project",
+            entity_id: id,
+            action: "updated",
+            created_at: "2026-04-01T00:00:00Z",
+            details: None,
+            safe_changes: None,
+        },
+    )
+    .await;
+    for (public_id, filename, position, old_primary, cover) in [
+        (42, "old-cover.jpg", 0, 1, 0),
+        (43, "selected-cover.jpg", 1, 0, 1),
+    ] {
+        sqlx::query(
+            "INSERT INTO media_files(owner_id, project_id, kind, public_id, filename, \
+             original_filename, content_type, size_bytes, position, is_primary, is_project_cover) \
+             VALUES (?, ?, 'title', ?, ?, ?, 'image/jpeg', 1, ?, ?, ?)",
+        )
+        .bind(fixture.owner_id)
+        .bind(id)
+        .bind(public_id)
+        .bind(filename)
+        .bind(filename)
+        .bind(position)
+        .bind(old_primary)
+        .bind(cover)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    }
+    for path in [
+        format!("/projects/{id}/history"),
+        format!("/projects/{id}/history/{event_id}"),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(bearer(&path, OWNER_PAT))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = json(response).await;
+        let event = if path.ends_with("/history") {
+            &body["data"][0]
+        } else {
+            &body["data"]["event"]
+        };
+        assert_eq!(
+            event["resource"]["preview_url"],
+            format!("/media/thumbnails/projects/{id}/thumb_selected-cover.jpg")
+        );
+    }
+    for path in [
+        "/admin/audit".to_owned(),
+        format!("/admin/audit/{event_id}"),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(bearer(&path, ADMIN_PAT))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = json(response).await;
+        let event = if path == "/admin/audit" {
+            &body["data"][0]
+        } else {
+            &body["data"]["event"]
+        };
+        assert_eq!(
+            event["resource"]["preview_url"],
+            format!("/api/v2/admin/resources/project/{id}/media/image/43/thumbnail")
+        );
+    }
+}

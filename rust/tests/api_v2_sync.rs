@@ -184,6 +184,90 @@ fn encode_query_value(value: &str) -> String {
         .replace('+', "%2B")
 }
 
+struct OrderedMediaFixture {
+    project_id: Option<i64>,
+    yarn_id: Option<i64>,
+    step_id: Option<i64>,
+    kind: &'static str,
+    public_id: i64,
+    position: i64,
+    is_primary: bool,
+    is_project_cover: bool,
+}
+
+async fn insert_ordered_media(pool: &SqlitePool, owner_id: i64, media: OrderedMediaFixture) {
+    sqlx::query(
+        "INSERT INTO media_files \
+         (owner_id,project_id,yarn_id,step_id,kind,public_id,filename,original_filename, \
+          content_type,size_bytes,position,is_primary,is_project_cover) \
+         VALUES (?,?,?,?,?,?,?,?,'image/png',0,?,?,?)",
+    )
+    .bind(owner_id)
+    .bind(media.project_id)
+    .bind(media.yarn_id)
+    .bind(media.step_id)
+    .bind(media.kind)
+    .bind(media.public_id)
+    .bind(format!("sync-media-{}.png", media.public_id))
+    .bind(format!("sync-media-{}.png", media.public_id))
+    .bind(media.position)
+    .bind(media.is_primary)
+    .bind(media.is_project_cover)
+    .execute(pool)
+    .await
+    .expect("ordered media fixture is inserted");
+}
+
+async fn put_json(
+    app: &axum::Router,
+    path: &str,
+    bearer: &str,
+    body: serde_json::Value,
+) -> axum::response::Response {
+    let request = Request::builder()
+        .method("PUT")
+        .uri(path)
+        .header("authorization", format!("Bearer {bearer}"))
+        .header("content-type", "application/json")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    app.clone().oneshot(request).await.expect("router responds")
+}
+
+async fn assert_project_sync_matches_detail(fixture: &Fixture, project_id: i64) {
+    let detail = json(
+        send(
+            &fixture.app,
+            &format!("/api/v2/projects/{project_id}"),
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(detail["data"]["id"], project_id);
+    let sync = json(
+        send(
+            &fixture.app,
+            "/api/v2/sync/projects?since=2020-01-01T00%3A00%3A00Z",
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    let synced = sync["data"]["updated"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["id"] == project_id)
+        .expect("changed project appears in delta");
+    assert_eq!(synced["images"], detail["data"]["images"]);
+    assert_eq!(synced["attachments"], detail["data"]["attachments"]);
+    assert_eq!(synced["preview_url"], detail["data"]["preview_url"]);
+    assert_eq!(synced["updated_at"], detail["data"]["updated_at"]);
+}
+
 #[tokio::test]
 async fn v2_project_and_yarn_sync_return_owner_scoped_dtos_and_tombstones() {
     let fixture = fixture().await;
@@ -751,4 +835,271 @@ async fn v2_sync_uses_browser_reads_but_invalid_bearer_never_falls_back_to_cooki
 
     let anonymous = send(&fixture.app, "/api/v2/sync/projects", None, None).await;
     assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn v2_sync_media_projection_tracks_title_step_and_photo_reorders() {
+    let fixture = fixture().await;
+    let project_id = insert_project(
+        &fixture.pool,
+        fixture.owner_id,
+        "Ordered project",
+        "2024-01-01T01:00:00Z",
+        Some("Project description"),
+        None,
+    )
+    .await;
+    let step_id: i64 = sqlx::query_scalar(
+        "INSERT INTO project_steps (project_id,title,step_number) \
+         VALUES (?,'Step',1) RETURNING id",
+    )
+    .bind(project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let yarn_id = insert_yarn(
+        &fixture.pool,
+        fixture.owner_id,
+        "Ordered yarn",
+        "2024-01-01T01:00:00Z",
+        None,
+    )
+    .await;
+    for media in [
+        OrderedMediaFixture {
+            project_id: Some(project_id),
+            yarn_id: None,
+            step_id: None,
+            kind: "title",
+            public_id: 1001,
+            position: 0,
+            is_primary: true,
+            is_project_cover: true,
+        },
+        OrderedMediaFixture {
+            project_id: Some(project_id),
+            yarn_id: None,
+            step_id: None,
+            kind: "title",
+            public_id: 1002,
+            position: 1,
+            is_primary: false,
+            is_project_cover: false,
+        },
+        OrderedMediaFixture {
+            project_id: Some(project_id),
+            yarn_id: None,
+            step_id: Some(step_id),
+            kind: "step",
+            public_id: 1101,
+            position: 0,
+            is_primary: false,
+            is_project_cover: false,
+        },
+        OrderedMediaFixture {
+            project_id: Some(project_id),
+            yarn_id: None,
+            step_id: Some(step_id),
+            kind: "step",
+            public_id: 1102,
+            position: 1,
+            is_primary: false,
+            is_project_cover: false,
+        },
+        OrderedMediaFixture {
+            project_id: None,
+            yarn_id: Some(yarn_id),
+            step_id: None,
+            kind: "photo",
+            public_id: 2001,
+            position: 0,
+            is_primary: true,
+            is_project_cover: false,
+        },
+        OrderedMediaFixture {
+            project_id: None,
+            yarn_id: Some(yarn_id),
+            step_id: None,
+            kind: "photo",
+            public_id: 2002,
+            position: 1,
+            is_primary: false,
+            is_project_cover: false,
+        },
+    ] {
+        insert_ordered_media(&fixture.pool, fixture.owner_id, media).await;
+    }
+
+    let before_step_order: String =
+        sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ?")
+            .bind(project_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    let step_reorder = put_json(
+        &fixture.app,
+        &format!("/api/v2/projects/{project_id}/steps/{step_id}/images/order"),
+        OWNER_PAT,
+        serde_json::json!({"ids": [1102, 1101]}),
+    )
+    .await;
+    assert_eq!(step_reorder.status(), StatusCode::OK);
+    let after_step_order: String =
+        sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ?")
+            .bind(project_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert!(after_step_order > before_step_order);
+    assert_project_sync_matches_detail(&fixture, project_id).await;
+    let step_synced = json(
+        send(
+            &fixture.app,
+            "/api/v2/sync/projects?since=2020-01-01T00%3A00%3A00Z",
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(!step_synced["data"]["updated"][0]["preview_url"].is_null());
+    assert_eq!(
+        step_synced["data"]["updated"][0]["images"][0]["id"], 1001,
+        "step ordering does not change the project cover"
+    );
+    assert_eq!(step_synced["data"]["updated"][0]["images"][2]["id"], 1102);
+    assert_eq!(
+        step_synced["data"]["updated"][0]["images"][2]["position"],
+        0
+    );
+
+    let title_reorder = put_json(
+        &fixture.app,
+        &format!("/api/v2/projects/{project_id}/images/order"),
+        OWNER_PAT,
+        serde_json::json!({"ids": [1002, 1001]}),
+    )
+    .await;
+    assert_eq!(title_reorder.status(), StatusCode::OK);
+    assert_project_sync_matches_detail(&fixture, project_id).await;
+    let title_synced = json(
+        send(
+            &fixture.app,
+            "/api/v2/sync/projects?since=2020-01-01T00%3A00%3A00Z",
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(title_synced["data"]["updated"][0]["images"][0]["id"], 1002);
+    assert!(
+        title_synced["data"]["updated"][0]["images"][0]["is_primary"]
+            .as_bool()
+            .unwrap()
+    );
+    assert_eq!(
+        title_synced["data"]["updated"][0]["images"][1]["position"],
+        1
+    );
+
+    let before_yarn_order: String = sqlx::query_scalar("SELECT updated_at FROM yarns WHERE id = ?")
+        .bind(yarn_id)
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    let photo_reorder = put_json(
+        &fixture.app,
+        &format!("/api/v2/yarns/{yarn_id}/photos/order"),
+        OWNER_PAT,
+        serde_json::json!({"ids": [2002, 2001]}),
+    )
+    .await;
+    assert_eq!(photo_reorder.status(), StatusCode::OK);
+    let after_yarn_order: String = sqlx::query_scalar("SELECT updated_at FROM yarns WHERE id = ?")
+        .bind(yarn_id)
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    assert!(after_yarn_order > before_yarn_order);
+    let yarn_detail = json(
+        send(
+            &fixture.app,
+            &format!("/api/v2/yarns/{yarn_id}"),
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    let yarn_sync = json(
+        send(
+            &fixture.app,
+            "/api/v2/sync/yarns?since=2020-01-01T00%3A00%3A00Z",
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    let yarn_synced = &yarn_sync["data"]["updated"][0];
+    assert_eq!(yarn_synced["photos"], yarn_detail["data"]["photos"]);
+    assert_eq!(
+        yarn_synced["preview_url"],
+        yarn_detail["data"]["preview_url"]
+    );
+    assert_eq!(yarn_synced["photos"][0]["id"], 2002);
+    assert_eq!(yarn_synced["photos"][0]["position"], 0);
+    assert!(yarn_synced["photos"][0]["is_primary"].as_bool().unwrap());
+
+    let audit_count_before: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM audit_events WHERE entity_type = 'project' AND entity_id = ?",
+    )
+    .bind(project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let updated_at_before_invalid: String =
+        sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ?")
+            .bind(project_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    let invalid = put_json(
+        &fixture.app,
+        &format!("/api/v2/projects/{project_id}/images/order"),
+        OWNER_PAT,
+        serde_json::json!({"ids": [1002, 1002]}),
+    )
+    .await;
+    assert_eq!(invalid.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let current_updated_at: String =
+        sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ?")
+            .bind(project_id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(current_updated_at, updated_at_before_invalid);
+    let audit_count_after: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM audit_events WHERE entity_type = 'project' AND entity_id = ?",
+    )
+    .bind(project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(audit_count_after, audit_count_before);
+    let no_new_sync = json(
+        send(
+            &fixture.app,
+            &format!(
+                "/api/v2/sync/projects?since={}",
+                encode_query_value(&updated_at_before_invalid)
+            ),
+            Some(OWNER_PAT),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(no_new_sync["data"]["updated"], serde_json::json!([]));
 }
