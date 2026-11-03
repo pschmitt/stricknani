@@ -24,6 +24,7 @@
   import { setHero } from "#lib/components/brand-handoff.svelte.ts";
   import { greetingFor, visitGreetingIndex } from "./greeting";
   import { homeSection } from "./home-section.svelte";
+  import ActivityFeed from "./ActivityFeed.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -323,6 +324,9 @@
         </ul>
       </section>
     {/if}
+
+    <!-- 4. What changed lately, newest first. -->
+    <ActivityFeed ownerId={userId} {locale} />
 
     {#if appCard !== "hidden"}
       <GetAppCard {locale} variant={appCard} ondismiss={dismissAppCard} />

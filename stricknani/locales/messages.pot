@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 22:47+0100\n"
+"POT-Creation-Date: 2026-11-03 23:35+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,7 +22,7 @@ msgid "Import a pattern"
 msgstr ""
 
 #: rust/src/import_service.rs:422 rust/src/web_accounts.rs:843
-#: web/src/routes/+layout.svelte:229 web/src/routes/+layout.svelte:309
+#: web/src/routes/+layout.svelte:249 web/src/routes/+layout.svelte:329
 msgid "Main navigation"
 msgstr ""
 
@@ -243,9 +243,9 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:67
 #: web/src/lib/components/SignInForm.svelte:136
 #: web/src/lib/features/auth/SignupForm.svelte:267
-#: web/src/lib/features/home/HomeDashboard.svelte:163
+#: web/src/lib/features/home/HomeDashboard.svelte:138
 #: web/src/lib/features/projects/ProjectEditor.svelte:1114
-#: web/src/routes/+layout.svelte:160 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:180 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr ""
 
@@ -694,7 +694,7 @@ msgstr ""
 msgid "A place for your projects and yarn."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:140
+#: web/src/routes/+layout.svelte:160
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr ""
 
@@ -743,7 +743,7 @@ msgstr ""
 msgid "About this policy"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:293
+#: web/src/routes/+layout.svelte:313
 msgid "Account access"
 msgstr ""
 
@@ -833,29 +833,29 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:90
+#: web/src/lib/features/history/history-summary.ts:96
 msgid "Added a photo"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:97
+#: web/src/lib/features/history/history-summary.ts:103
 msgid "Added a step"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:104
+#: web/src/lib/features/history/history-summary.ts:110
 msgid "Added an attachment"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:108
+#: web/src/lib/features/history/history-summary.ts:114
 #, python-brace-format
 msgid "Added {n} attachments"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:92
+#: web/src/lib/features/history/history-summary.ts:98
 #, python-brace-format
 msgid "Added {n} photos"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:99
+#: web/src/lib/features/history/history-summary.ts:105
 #, python-brace-format
 msgid "Added {n} steps"
 msgstr ""
@@ -870,7 +870,7 @@ msgstr ""
 
 #: web/src/lib/components/AccountMenu.svelte:265
 #: web/src/lib/components/AccountMenu.svelte:303
-#: web/src/routes/+layout.svelte:272 web/src/routes/more/+page.svelte:60
+#: web/src/routes/+layout.svelte:292 web/src/routes/more/+page.svelte:60
 msgid "Admin"
 msgstr ""
 
@@ -910,6 +910,36 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:203
 msgid "An account with that email already exists."
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:156
+#, python-brace-format
+msgid "An admin added files to {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:160
+#, python-brace-format
+msgid "An admin changed {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:153
+#, python-brace-format
+msgid "An admin created {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:155
+#, python-brace-format
+msgid "An admin deleted {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:157
+#, python-brace-format
+msgid "An admin removed files from {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:154
+#, python-brace-format
+msgid "An admin updated {name}"
 msgstr ""
 
 #: web/src/lib/features/media/ArchiveControl.svelte:420
@@ -974,7 +1004,7 @@ msgstr ""
 msgid "Ask AI to improve extraction"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:297
+#: web/src/routes/+layout.svelte:317
 msgid "Ask an administrator if you need access."
 msgstr ""
 
@@ -1013,7 +1043,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:306
 #: web/src/lib/features/admin/AdminAudit.svelte:313
-#: web/src/routes/+layout.svelte:283 web/src/routes/more/+page.svelte:66
+#: web/src/routes/+layout.svelte:303 web/src/routes/more/+page.svelte:66
 msgid "Audit log"
 msgstr ""
 
@@ -1029,7 +1059,7 @@ msgid ""
 "verification."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:217
+#: web/src/routes/+layout.svelte:237
 msgid "Back"
 msgstr ""
 
@@ -1046,7 +1076,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:688
 #: web/src/lib/features/projects/ProjectReader.svelte:696
 #: web/src/lib/features/projects/ProjectReader.svelte:712
-#: web/src/routes/+layout.svelte:299
+#: web/src/routes/+layout.svelte:319
 msgid "Back to projects"
 msgstr ""
 
@@ -1076,7 +1106,7 @@ msgstr ""
 msgid "Browse the yarns connected to your projects."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:254
+#: web/src/lib/features/home/HomeDashboard.svelte:229
 msgid "Browse, add and find your yarns"
 msgstr ""
 
@@ -1152,7 +1182,7 @@ msgstr ""
 msgid "Changed"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:164
+#: web/src/lib/features/history/history-summary.ts:170
 #, python-brace-format
 msgid "Changed {fields}"
 msgstr ""
@@ -1331,7 +1361,7 @@ msgstr ""
 msgid "Connect the app"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:172
+#: web/src/lib/features/home/HomeDashboard.svelte:147
 msgid "Continue knitting"
 msgstr ""
 
@@ -1414,7 +1444,7 @@ msgid ""
 "is saved."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:234
+#: web/src/lib/features/home/HomeDashboard.svelte:209
 msgid "Create your first project"
 msgstr ""
 
@@ -1690,19 +1720,19 @@ msgid ""
 "attached."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:269
+#: web/src/lib/features/home/HomeDashboard.svelte:244
 msgid "Favorite projects"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:269
+#: web/src/lib/features/home/HomeDashboard.svelte:244
 msgid "Favorite projects could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:269
+#: web/src/lib/features/home/HomeDashboard.svelte:244
 msgid "Favorite yarns"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:269
+#: web/src/lib/features/home/HomeDashboard.svelte:244
 msgid "Favorite yarns could not be loaded."
 msgstr ""
 
@@ -1854,7 +1884,7 @@ msgstr ""
 msgid "Hide token"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:130
+#: web/src/lib/features/home/HomeDashboard.svelte:105
 #: web/src/routes/+layout.svelte:59
 msgid "Home"
 msgstr ""
@@ -2163,11 +2193,15 @@ msgstr ""
 msgid "Loading project details…"
 msgstr ""
 
+#: web/src/lib/features/home/ActivityFeed.svelte:94
+msgid "Loading recent activity…"
+msgstr ""
+
 #: web/src/lib/features/history/HistorySection.svelte:258
 msgid "Loading recent changes…"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:186
+#: web/src/lib/features/home/HomeDashboard.svelte:161
 msgid "Loading recent projects…"
 msgstr ""
 
@@ -2193,7 +2227,7 @@ msgstr ""
 msgid "Loading yarn options…"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:154
+#: web/src/lib/features/home/HomeDashboard.svelte:129
 msgid "Loading your home…"
 msgstr ""
 
@@ -2427,7 +2461,7 @@ msgstr ""
 msgid "No projects use this yarn yet."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:227
+#: web/src/lib/features/home/HomeDashboard.svelte:202
 msgid "No projects yet."
 msgstr ""
 
@@ -2505,9 +2539,13 @@ msgstr ""
 msgid "Notes moved up"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:226
+#: web/src/lib/features/home/HomeDashboard.svelte:201
 #: web/src/lib/features/projects/ProjectLibrary.svelte:311
 msgid "Nothing on the needles yet"
+msgstr ""
+
+#: web/src/lib/features/home/ActivityFeed.svelte:105
+msgid "Nothing yet - your changes will show up here."
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:214
@@ -2584,7 +2622,7 @@ msgstr ""
 msgid "Opening your pattern…"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:176
+#: web/src/routes/+layout.svelte:196
 msgid "Opening your workspace…"
 msgstr ""
 
@@ -2931,6 +2969,15 @@ msgstr ""
 msgid "Reading the source and preparing a draft…"
 msgstr ""
 
+#: web/src/lib/features/home/ActivityFeed.svelte:71
+msgid "Recent activity"
+msgstr ""
+
+#: web/src/lib/features/home/ActivityFeed.svelte:98
+#: web/src/lib/features/home/ActivityFeed.svelte:154
+msgid "Recent activity could not be loaded."
+msgstr ""
+
 #: web/src/lib/features/history/HistorySection.svelte:249
 #: web/src/lib/features/history/HistorySection.svelte:280
 msgid "Recent changes"
@@ -2940,12 +2987,12 @@ msgstr ""
 msgid "Recent changes could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:328
-#: web/src/lib/features/home/HomeDashboard.svelte:334
+#: web/src/lib/features/home/HomeDashboard.svelte:303
+#: web/src/lib/features/home/HomeDashboard.svelte:309
 msgid "Recent projects"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:190
+#: web/src/lib/features/home/HomeDashboard.svelte:165
 msgid "Recently updated projects could not be loaded."
 msgstr ""
 
@@ -3046,29 +3093,29 @@ msgstr ""
 msgid "Removed"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:90
+#: web/src/lib/features/history/history-summary.ts:96
 msgid "Removed a photo"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:97
+#: web/src/lib/features/history/history-summary.ts:103
 msgid "Removed a step"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:105
+#: web/src/lib/features/history/history-summary.ts:111
 msgid "Removed an attachment"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:109
+#: web/src/lib/features/history/history-summary.ts:115
 #, python-brace-format
 msgid "Removed {n} attachments"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:92
+#: web/src/lib/features/history/history-summary.ts:98
 #, python-brace-format
 msgid "Removed {n} photos"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:99
+#: web/src/lib/features/history/history-summary.ts:105
 #, python-brace-format
 msgid "Removed {n} steps"
 msgstr ""
@@ -3284,8 +3331,8 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:290
-#: web/src/lib/features/home/HomeDashboard.svelte:331
+#: web/src/lib/features/home/HomeDashboard.svelte:265
+#: web/src/lib/features/home/HomeDashboard.svelte:306
 msgid "See all"
 msgstr ""
 
@@ -3325,6 +3372,10 @@ msgstr ""
 msgid "Show fewer"
 msgstr ""
 
+#: web/src/lib/features/home/ActivityFeed.svelte:162
+msgid "Show more"
+msgstr ""
+
 #: web/src/lib/features/history/HistorySection.svelte:395
 msgid "Show older changes"
 msgstr ""
@@ -3354,7 +3405,7 @@ msgstr ""
 msgid "Sign in to open this project."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:158
+#: web/src/lib/features/home/HomeDashboard.svelte:133
 msgid "Sign in to see your favorite projects and yarns."
 msgstr ""
 
@@ -3410,7 +3461,7 @@ msgstr ""
 msgid "Skein weight in grams"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:148
+#: web/src/routes/+layout.svelte:168
 msgid "Skip to content"
 msgstr ""
 
@@ -3585,7 +3636,7 @@ msgstr ""
 msgid "Tap a photo to see it larger."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:266
+#: web/src/lib/features/home/HomeDashboard.svelte:241
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr ""
 
@@ -3929,7 +3980,7 @@ msgstr ""
 msgid "The server returned an unexpected response."
 msgstr ""
 
-#: web/src/lib/session.svelte.ts:145 web/src/routes/+layout.svelte:189
+#: web/src/lib/session.svelte.ts:145 web/src/routes/+layout.svelte:209
 msgid "The session could not be loaded."
 msgstr ""
 
@@ -4255,15 +4306,17 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/HomeDashboard.svelte:192
-#: web/src/lib/features/home/HomeDashboard.svelte:274
+#: web/src/lib/features/home/ActivityFeed.svelte:100
+#: web/src/lib/features/home/ActivityFeed.svelte:156
+#: web/src/lib/features/home/HomeDashboard.svelte:167
+#: web/src/lib/features/home/HomeDashboard.svelte:249
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:288
 #: web/src/lib/features/projects/ProjectReader.svelte:727
 #: web/src/lib/features/yarns/YarnDetail.svelte:306
 #: web/src/lib/features/yarns/YarnForm.svelte:591
 #: web/src/lib/features/yarns/YarnLibrary.svelte:206
-#: web/src/routes/+layout.svelte:197
+#: web/src/routes/+layout.svelte:217
 msgid "Try again"
 msgstr ""
 
@@ -4319,7 +4372,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:453
 #: web/src/lib/features/admin/AdminResource.svelte:654
 #: web/src/lib/features/admin/audit-action.ts:27
-#: web/src/lib/features/home/HomeDashboard.svelte:213
+#: web/src/lib/features/home/HomeDashboard.svelte:188
 #: web/src/lib/features/projects/ProjectReader.svelte:743
 #: web/src/lib/features/yarns/YarnDetail.svelte:558
 msgid "Updated"
@@ -4444,7 +4497,7 @@ msgstr ""
 msgid "Well, hi!"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:147
+#: web/src/lib/features/home/HomeDashboard.svelte:122
 msgid "What are we knitting today?"
 msgstr ""
 
@@ -4471,11 +4524,11 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:247
+#: web/src/routes/+layout.svelte:267
 msgid "Workspace"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:248
+#: web/src/routes/+layout.svelte:268
 msgid "Workspace navigation"
 msgstr ""
 
@@ -4564,6 +4617,11 @@ msgstr ""
 msgid "You"
 msgstr ""
 
+#: web/src/lib/features/home/activity.ts:149
+#, python-brace-format
+msgid "You added files to {name}"
+msgstr ""
+
 #: web/src/lib/features/auth/SignupForm.svelte:152
 #: web/src/routes/login/+page.svelte:12
 msgid "You are already signed in."
@@ -4598,11 +4656,26 @@ msgid ""
 "services."
 msgstr ""
 
+#: web/src/lib/features/home/activity.ts:159
+#, python-brace-format
+msgid "You changed {name}"
+msgstr ""
+
 #: web/src/lib/features/auth/LinkedLogins.svelte:242
 msgid "You confirmed it is you. Continue where you left off."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:295
+#: web/src/lib/features/home/activity.ts:146
+#, python-brace-format
+msgid "You created {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:148
+#, python-brace-format
+msgid "You deleted {name}"
+msgstr ""
+
+#: web/src/routes/+layout.svelte:315
 msgid "You do not have access to this page."
 msgstr ""
 
@@ -4616,6 +4689,16 @@ msgid ""
 "integrations. You may stop using the Android app, clear its local data, "
 "revoke API tokens, and contact the relevant instance operator about your "
 "rights under applicable law."
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:150
+#, python-brace-format
+msgid "You removed files from {name}"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:147
+#, python-brace-format
+msgid "You updated {name}"
 msgstr ""
 
 #: web/src/lib/features/auth/LinkedLogins.svelte:348
@@ -4668,11 +4751,11 @@ msgstr ""
 msgid "Your edits stay here if saving fails."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:133
+#: web/src/lib/features/home/HomeDashboard.svelte:108
 msgid "Your favorite projects and yarns, together."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:230
+#: web/src/routes/+layout.svelte:250
 msgid "Your library"
 msgstr ""
 
@@ -4726,7 +4809,7 @@ msgstr ""
 msgid "Your stash is empty"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:185
+#: web/src/routes/+layout.svelte:205
 msgid "Your workspace is taking a moment."
 msgstr ""
 
@@ -4734,12 +4817,24 @@ msgstr ""
 msgid "Your workspace is waiting online."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:252
+#: web/src/lib/features/home/HomeDashboard.svelte:227
 msgid "Your yarn stash"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:174
+msgid "a project"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:175
+msgid "a yarn"
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:545
 msgid "and"
+msgstr ""
+
+#: web/src/lib/features/home/activity.ts:191
+msgid "attachments"
 msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:56
@@ -4760,6 +4855,10 @@ msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:57
 msgid "colorway"
+msgstr ""
+
+#: web/src/lib/features/home/ActivityFeed.svelte:132
+msgid "deleted"
 msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:47
@@ -4823,6 +4922,11 @@ msgstr ""
 msgid "other materials"
 msgstr ""
 
+#: web/src/lib/features/home/activity.ts:188
+#: web/src/lib/features/home/activity.ts:189
+msgid "photos"
+msgstr ""
+
 #: web/src/lib/features/imports/ImportWorkbench.svelte:566
 msgid "pixels"
 msgstr ""
@@ -4849,6 +4953,7 @@ msgid "source link"
 msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:51
+#: web/src/lib/features/home/activity.ts:190
 msgid "steps"
 msgstr ""
 
@@ -4877,7 +4982,13 @@ msgstr ""
 msgid "{name} was unlinked from your account."
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:160
+#: web/src/lib/features/home/activity.ts:200
+#, python-brace-format
+msgid "{n} changes"
+msgstr ""
+
+#: web/src/lib/features/history/history-summary.ts:166
+#: web/src/lib/features/home/activity.ts:212
 #, python-brace-format
 msgid "{n} more"
 msgstr ""

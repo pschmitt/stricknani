@@ -67,6 +67,12 @@ const fieldNouns: Record<string, string> = {
   "category.name": msg("name"),
 };
 
+/** The short noun for a change-field key ("name"), or null for a field without one. */
+export function fieldNoun(field: string, locale: Locale): string | null {
+  const noun = fieldNouns[field];
+  return noun ? t(noun, locale) : null;
+}
+
 type CountKind = "photo" | "step" | "attachment";
 
 const countFields: Record<string, CountKind> = {
