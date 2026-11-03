@@ -31,6 +31,16 @@ class AccountRepositoryTest {
         var avatar: () -> V2Envelope<AvatarDto> = { error("unused") }
         var lastCreate: CreateTokenRequest? = null
         var rename: (RenameTokenRequest) -> V2Envelope<ApiTokenDto> = { error("unused") }
+        var account: () -> V2Envelope<AccountDto> = { error("unused") }
+        var update: (UpdateAccountRequest) -> V2Envelope<AccountDto> = { error("unused") }
+        var lastUpdate: UpdateAccountRequest? = null
+
+        override suspend fun account() = account.invoke()
+
+        override suspend fun updateAccount(request: UpdateAccountRequest): V2Envelope<AccountDto> {
+            lastUpdate = request
+            return update(request)
+        }
 
         override suspend fun tokens() = tokens.invoke()
 
@@ -242,9 +252,103 @@ class AccountRepositoryTest {
     }
 
     @Test
+    fun `account DTO parses avatar_source, the toggle and the server switch`() {
+        val gravatar =
+            json
+                .decodeFromString<V2Envelope<AccountDto>>(
+                    """{"data":{"id":1,"email":"a@b.c","is_admin":false,
+                    "avatar_url":"/media/thumbnails/users/1/gravatar","avatar_source":"gravatar",
+                    "use_gravatar":false,"gravatar_enabled":true}}"""
+                )
+                .data
+        assertEquals(AvatarSource.GRAVATAR, gravatar.avatarSource)
+        assertFalse(gravatar.useGravatar)
+        assertTrue(gravatar.gravatarEnabled)
+
+        val upload =
+            json
+                .decodeFromString<V2Envelope<AccountDto>>(
+                    """{"data":{"id":1,"email":"a@b.c","avatar_url":"/p","avatar_source":"upload"}}"""
+                )
+                .data
+        assertEquals(AvatarSource.UPLOAD, upload.avatarSource)
+
+        // An older server sends neither the source nor the toggle: no source, toggle hidden.
+        val legacy =
+            json
+                .decodeFromString<V2Envelope<AccountDto>>("""{"data":{"id":1,"email":"a@b.c"}}""")
+                .data
+        assertNull(legacy.avatarSource)
+        assertTrue(legacy.useGravatar)
+        assertFalse(legacy.gravatarEnabled)
+
+        val unknown =
+            json.decodeFromString<V2Envelope<AccountDto>>(
+                """{"data":{"id":1,"email":"a@b.c","avatar_source":"carrier-pigeon"}}"""
+            )
+        assertNull(unknown.data.avatarSource)
+    }
+
+    @Test
+    fun `toggling Gravatar patches the preference and remembers the resulting avatar`() = runTest {
+        api.update = {
+            V2Envelope(
+                AccountDto(
+                    1,
+                    "a@b.c",
+                    avatarUrl = "/media/thumbnails/users/1/gravatar",
+                    avatarSourceRaw = "gravatar",
+                    useGravatar = it.useGravatar,
+                    gravatarEnabled = true,
+                )
+            )
+        }
+
+        val on = repository.setUseGravatar(true) as AccountProfileResult.Loaded
+
+        assertEquals(UpdateAccountRequest(true), api.lastUpdate)
+        assertEquals(AvatarSource.GRAVATAR, on.account.avatarSource)
+        assertEquals(listOf<String?>("/media/thumbnails/users/1/gravatar"), savedAvatar)
+
+        api.update = { V2Envelope(AccountDto(1, "a@b.c", useGravatar = false)) }
+        repository.setUseGravatar(false)
+        assertEquals(UpdateAccountRequest(false), api.lastUpdate)
+        assertNull(savedAvatar.last())
+    }
+
+    @Test
+    fun `account read failures map to unsupported or failed`() = runTest {
+        for (status in listOf(401, 404, 405)) {
+            api.account = { throw http(status) }
+            assertEquals(AccountProfileResult.Unsupported, repository.loadProfile())
+        }
+        api.account = { throw http(500, error("internal_error")) }
+        assertEquals(AccountProfileResult.Failed(offline = false), repository.loadProfile())
+        api.update = { throw IOException("offline") }
+        assertEquals(AccountProfileResult.Failed(offline = true), repository.setUseGravatar(true))
+    }
+
+    @Test
     fun `removing the avatar clears the saved path`() = runTest {
+        api.account = { V2Envelope(AccountDto(1, "a@b.c")) }
         assertEquals(AvatarResult.Removed, repository.deleteAvatar())
         assertEquals(listOf<String?>(null), savedAvatar)
+    }
+
+    @Test
+    fun `removing the upload keeps the Gravatar the server falls back to`() = runTest {
+        api.account = {
+            V2Envelope(
+                AccountDto(
+                    1,
+                    "a@b.c",
+                    avatarUrl = "/media/thumbnails/users/1/gravatar",
+                    avatarSourceRaw = "gravatar",
+                )
+            )
+        }
+        assertEquals(AvatarResult.Removed, repository.deleteAvatar())
+        assertEquals(listOf<String?>("/media/thumbnails/users/1/gravatar"), savedAvatar)
     }
 
     @Test

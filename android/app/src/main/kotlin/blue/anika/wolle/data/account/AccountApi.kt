@@ -21,6 +21,13 @@ import retrofit2.http.Path
  * [AccountRepository] maps to "feature unavailable".
  */
 interface AccountV2Api {
+    /** The profile with the avatar source and the Gravatar preference (bearer PATs may read it). */
+    @GET("api/v2/account") suspend fun account(): V2Envelope<AccountDto>
+
+    /** `{use_gravatar}`: the per-user "use Gravatar when no picture is uploaded" preference. */
+    @PATCH("api/v2/account")
+    suspend fun updateAccount(@Body request: UpdateAccountRequest): V2Envelope<AccountDto>
+
     @GET("api/v2/account/api-tokens") suspend fun tokens(): V2Envelope<List<ApiTokenDto>>
 
     /** A bearer caller must send `current_password` (step-up), otherwise 403 `reauth_required`. */
@@ -99,3 +106,41 @@ data class ChangePasswordRequest(
 }
 
 @Serializable data class AvatarDto(@SerialName("avatar_url") val avatarUrl: String)
+
+/** Where an avatar comes from (`avatar_source`); anything else the server may add is "none". */
+enum class AvatarSource {
+    UPLOAD,
+    GRAVATAR;
+
+    companion object {
+        fun parse(value: String?): AvatarSource? =
+            when (value) {
+                "upload" -> UPLOAD
+                "gravatar" -> GRAVATAR
+                else -> null
+            }
+    }
+}
+
+/**
+ * `GET`/`PATCH /api/v2/account`. [avatarUrl] is a protected `/media/...` path: for a Gravatar it is
+ * the server's `/media/thumbnails/users/{id}/gravatar` route, which may still answer 404 (no
+ * Gravatar exists), in which case the UI keeps showing the initials.
+ */
+@Serializable
+data class AccountDto(
+    val id: Long,
+    val email: String,
+    @SerialName("is_admin") val isAdmin: Boolean = false,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("avatar_source") val avatarSourceRaw: String? = null,
+    /** The user's preference; servers without Gravatar support omit it (treated as on). */
+    @SerialName("use_gravatar") val useGravatar: Boolean = true,
+    /** False when the server does not offer Gravatar (or predates it): hide the toggle. */
+    @SerialName("gravatar_enabled") val gravatarEnabled: Boolean = false,
+) {
+    val avatarSource: AvatarSource?
+        get() = AvatarSource.parse(avatarSourceRaw)
+}
+
+@Serializable data class UpdateAccountRequest(@SerialName("use_gravatar") val useGravatar: Boolean)

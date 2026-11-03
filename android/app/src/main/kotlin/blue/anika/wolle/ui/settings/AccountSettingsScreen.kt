@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.account.AvatarSource
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
@@ -140,10 +141,21 @@ internal fun AccountSettingsScreen(
                             }
                         }
                     }
-                    if (security.available && profile.avatarUrl != null) {
+                    if (
+                        security.available &&
+                            profile.avatarUrl != null &&
+                            security.avatarSource != AvatarSource.GRAVATAR
+                    ) {
                         RemovePictureButton(
                             enabled = !security.avatarBusy,
                             onClick = securityModel::askRemoveAvatar,
+                        )
+                    }
+                    if (security.available && security.gravatarEnabled) {
+                        GravatarToggleRow(
+                            checked = security.useGravatar,
+                            enabled = !security.gravatarBusy,
+                            onChange = securityModel::setUseGravatar,
                         )
                     }
                 }

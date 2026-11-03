@@ -1,9 +1,12 @@
 package blue.anika.wolle.ui.settings
 
 import blue.anika.wolle.R
+import blue.anika.wolle.data.account.AccountDto
 import blue.anika.wolle.data.account.AccountGateway
+import blue.anika.wolle.data.account.AccountProfileResult
 import blue.anika.wolle.data.account.ApiTokenDto
 import blue.anika.wolle.data.account.AvatarResult
+import blue.anika.wolle.data.account.AvatarSource
 import blue.anika.wolle.data.account.CreateTokenResult
 import blue.anika.wolle.data.account.CreatedTokenDto
 import blue.anika.wolle.data.account.PasswordChangeResult
@@ -39,8 +42,19 @@ class AccountSecurityViewModelTest {
         var revoke: RevokeResult = RevokeResult.Revoked(false)
         var password: PasswordChangeResult = PasswordChangeResult.Changed
         var avatar: AvatarResult = AvatarResult.Uploaded("/p")
+        var profile: AccountProfileResult =
+            AccountProfileResult.Loaded(AccountDto(1, "me@example.org"))
+        var toggle: AccountProfileResult? = null
+        val toggled = mutableListOf<Boolean>()
         var passwordCalls = 0
         var createCalls = 0
+
+        override suspend fun loadProfile() = profile
+
+        override suspend fun setUseGravatar(enabled: Boolean): AccountProfileResult {
+            toggled += enabled
+            return toggle ?: AccountProfileResult.Failed(offline = false)
+        }
 
         override suspend fun loadTokens() = list
 
@@ -295,5 +309,64 @@ class AccountSecurityViewModelTest {
 
             assertFalse(vm.state.value.avatarBusy)
             assertEquals(listOf(R.string.error_avatar_too_large), seen)
+        }
+
+    @Test
+    fun `the profile load fills the avatar source and the Gravatar toggle`() {
+        gateway.profile =
+            AccountProfileResult.Loaded(
+                AccountDto(
+                    1,
+                    "me@example.org",
+                    avatarUrl = "/media/thumbnails/users/1/gravatar",
+                    avatarSourceRaw = "gravatar",
+                    useGravatar = true,
+                    gravatarEnabled = true,
+                )
+            )
+        val state = viewModel().state.value
+
+        assertEquals(AvatarSource.GRAVATAR, state.avatarSource)
+        assertTrue(state.gravatarEnabled)
+        assertTrue(state.useGravatar)
+    }
+
+    @Test
+    fun `a server without Gravatar keeps the toggle hidden`() {
+        val state = viewModel().state.value
+
+        assertFalse(state.gravatarEnabled)
+        assertNull(state.avatarSource)
+    }
+
+    @Test
+    fun `the toggle sends the preference and applies the answer`() {
+        gateway.toggle =
+            AccountProfileResult.Loaded(
+                AccountDto(1, "me@example.org", useGravatar = false, gravatarEnabled = true)
+            )
+        val vm = viewModel()
+
+        vm.setUseGravatar(false)
+
+        assertEquals(listOf(false), gateway.toggled)
+        assertFalse(vm.state.value.useGravatar)
+        assertTrue(vm.state.value.gravatarEnabled)
+        assertFalse(vm.state.value.gravatarBusy)
+        assertNull(vm.state.value.avatarSource)
+    }
+
+    @Test
+    fun `a failed toggle keeps the old value and tells the user`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val seen = mutableListOf<Int>()
+            backgroundScope.launch { feedback.events.collect { seen += it.messageResId } }
+            val vm = viewModel()
+
+            vm.setUseGravatar(false)
+
+            assertTrue(vm.state.value.useGravatar)
+            assertFalse(vm.state.value.gravatarBusy)
+            assertEquals(listOf(R.string.error_gravatar_save_failed), seen)
         }
 }

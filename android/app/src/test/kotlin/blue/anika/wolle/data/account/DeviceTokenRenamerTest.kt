@@ -25,6 +25,10 @@ class DeviceTokenRenamerTest {
             return V2Envelope(ApiTokenDto(1, request.name, "2026-11-03T10:00:00Z"))
         }
 
+        override suspend fun account() = error("unused")
+
+        override suspend fun updateAccount(request: UpdateAccountRequest) = error("unused")
+
         override suspend fun tokens() = error("unused")
 
         override suspend fun createToken(request: CreateTokenRequest) = error("unused")

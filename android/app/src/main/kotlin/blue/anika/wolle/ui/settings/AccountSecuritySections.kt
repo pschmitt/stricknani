@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -42,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -168,6 +170,27 @@ internal fun ProfilePicture(
         }
         content()
     }
+}
+
+/**
+ * "Use Gravatar when no picture is uploaded": the whole row toggles. The server (never the app)
+ * fetches the image from Gravatar using the account email, which the supporting line says.
+ */
+@Composable
+internal fun GravatarToggleRow(checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .toggleable(
+                    value = checked,
+                    enabled = enabled,
+                    role = Role.Switch,
+                    onValueChange = onChange,
+                ),
+        headlineContent = { Text(stringResource(R.string.account_gravatar_toggle)) },
+        supportingContent = { Text(stringResource(R.string.account_gravatar_toggle_help)) },
+        trailingContent = { Switch(checked = checked, enabled = enabled, onCheckedChange = null) },
+    )
 }
 
 /** The quiet "Remove picture" button; the caller shows it only when an avatar exists. */

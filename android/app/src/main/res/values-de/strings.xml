@@ -325,6 +325,9 @@
     <string name="error_avatar_too_large">Wähle ein Bild unter 25 MiB.</string>
     <string name="error_avatar_invalid">Wähle eine unterstützte Bilddatei.</string>
     <string name="error_avatar_remove_failed">Das Bild konnte nicht entfernt werden - versuche es erneut.</string>
+    <string name="account_gravatar_toggle">Gravatar verwenden, wenn kein Bild hochgeladen ist</string>
+    <string name="account_gravatar_toggle_help">Der Server ruft es mit deiner E-Mail-Adresse bei Gravatar ab.</string>
+    <string name="error_gravatar_save_failed">Die Gravatar-Einstellung konnte nicht gespeichert werden - versuche es erneut.</string>
     <string name="account_password_label">Passwort</string>
     <string name="account_password_notice">Wenn du dein Passwort änderst, wirst du auf allen Geräten abgemeldet, auch auf diesem.</string>
     <string name="account_password_change">Passwort ändern</string>

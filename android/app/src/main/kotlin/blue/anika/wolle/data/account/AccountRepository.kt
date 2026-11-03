@@ -88,8 +88,23 @@ sealed interface AvatarResult {
     data class Failed(val offline: Boolean) : AvatarResult
 }
 
+sealed interface AccountProfileResult {
+    data class Loaded(val account: AccountDto) : AccountProfileResult
+
+    /** An older server without bearer account reads (401/404/405): hide the Gravatar toggle. */
+    data object Unsupported : AccountProfileResult
+
+    data class Failed(val offline: Boolean) : AccountProfileResult
+}
+
 /** What the account UI needs from the server; faked in tests. */
 interface AccountGateway {
+    /** `GET /account`; remembers the avatar path it reports so the bar shows it right away. */
+    suspend fun loadProfile(): AccountProfileResult
+
+    /** `PATCH /account {use_gravatar}`; remembers the resulting avatar path. */
+    suspend fun setUseGravatar(enabled: Boolean): AccountProfileResult
+
     suspend fun loadTokens(): TokenListResult
 
     suspend fun createToken(name: String, currentPassword: String): CreateTokenResult
@@ -152,6 +167,27 @@ internal constructor(
         { settings.setAccountAvatarUrl(it) },
         { uri -> readFromResolver(context, uri) },
     )
+
+    override suspend fun loadProfile(): AccountProfileResult = profileCall { api.account().data }
+
+    override suspend fun setUseGravatar(enabled: Boolean): AccountProfileResult = profileCall {
+        api.updateAccount(UpdateAccountRequest(enabled)).data
+    }
+
+    private suspend fun profileCall(call: suspend () -> AccountDto): AccountProfileResult =
+        try {
+            val account = call()
+            saveAvatarPath(account.avatarUrl)
+            AccountProfileResult.Loaded(account)
+        } catch (failure: Exception) {
+            if (failure is CancellationException) throw failure
+            val http = failure.httpFailure()
+            when {
+                http != null && http.status in UNSUPPORTED_STATUSES ->
+                    AccountProfileResult.Unsupported
+                else -> AccountProfileResult.Failed(failure.isOfflineFailure())
+            }
+        }
 
     override suspend fun loadTokens(): TokenListResult =
         try {
@@ -254,7 +290,15 @@ internal constructor(
     override suspend fun deleteAvatar(): AvatarResult =
         try {
             api.deleteAvatar()
-            saveAvatarPath(null)
+            // Without an upload the server may fall back to the Gravatar.
+            val fallback =
+                try {
+                    api.account().data.avatarUrl
+                } catch (failure: Exception) {
+                    if (failure is CancellationException) throw failure
+                    null
+                }
+            saveAvatarPath(fallback)
             AvatarResult.Removed
         } catch (failure: Exception) {
             if (failure is CancellationException) throw failure

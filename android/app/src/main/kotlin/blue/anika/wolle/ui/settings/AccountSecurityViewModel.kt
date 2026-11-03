@@ -4,9 +4,12 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.account.AccountDto
 import blue.anika.wolle.data.account.AccountGateway
+import blue.anika.wolle.data.account.AccountProfileResult
 import blue.anika.wolle.data.account.ApiTokenDto
 import blue.anika.wolle.data.account.AvatarResult
+import blue.anika.wolle.data.account.AvatarSource
 import blue.anika.wolle.data.account.CreateTokenResult
 import blue.anika.wolle.data.account.CreatedTokenDto
 import blue.anika.wolle.data.account.PasswordChangeResult
@@ -90,6 +93,13 @@ data class AccountSecurityState(
     /** The token this app signs in with: its row gets the "This device" chip. */
     val currentTokenId: Long? = null,
     val avatarBusy: Boolean = false,
+    /** Where the shown avatar comes from; "Remove picture" only applies to an upload. */
+    val avatarSource: AvatarSource? = null,
+    /** The user's Gravatar preference. */
+    val useGravatar: Boolean = true,
+    /** The server offers Gravatar (`gravatar_enabled`); false hides the toggle. */
+    val gravatarEnabled: Boolean = false,
+    val gravatarBusy: Boolean = false,
     val confirmRemoveAvatar: Boolean = false,
     val passwordOpen: Boolean = false,
     val passwordBusy: Boolean = false,
@@ -138,6 +148,7 @@ constructor(
                 } catch (_: Exception) {
                     null
                 }
+            loadProfile()
             when (val result = gateway.loadTokens()) {
                 is TokenListResult.Loaded ->
                     _state.update {
@@ -174,6 +185,32 @@ constructor(
 
     // ---- avatar ----------------------------------------------------------------------------
 
+    private suspend fun loadProfile() {
+        val result = gateway.loadProfile()
+        if (result is AccountProfileResult.Loaded) applyProfile(result.account)
+    }
+
+    private fun applyProfile(account: AccountDto) = _state.update {
+        it.copy(
+            avatarSource = account.avatarSource,
+            useGravatar = account.useGravatar,
+            gravatarEnabled = account.gravatarEnabled,
+        )
+    }
+
+    fun setUseGravatar(enabled: Boolean) {
+        if (_state.value.gravatarBusy) return
+        _state.update { it.copy(gravatarBusy = true) }
+        viewModelScope.launch {
+            val result = gateway.setUseGravatar(enabled)
+            _state.update { it.copy(gravatarBusy = false) }
+            when (result) {
+                is AccountProfileResult.Loaded -> applyProfile(result.account)
+                else -> feedback.show(R.string.error_gravatar_save_failed)
+            }
+        }
+    }
+
     fun uploadAvatar(uri: String) {
         if (_state.value.avatarBusy) return
         _state.update { it.copy(avatarBusy = true) }
@@ -181,7 +218,10 @@ constructor(
             val result = gateway.uploadAvatar(uri)
             _state.update { it.copy(avatarBusy = false) }
             when (result) {
-                is AvatarResult.Uploaded -> feedback.show(R.string.account_avatar_updated)
+                is AvatarResult.Uploaded -> {
+                    _state.update { it.copy(avatarSource = AvatarSource.UPLOAD) }
+                    feedback.show(R.string.account_avatar_updated)
+                }
                 AvatarResult.TooLarge -> feedback.show(R.string.error_avatar_too_large)
                 AvatarResult.UnsupportedImage -> feedback.show(R.string.error_avatar_invalid)
                 is AvatarResult.Failed -> feedback.show(R.string.error_avatar_upload_failed)
@@ -199,6 +239,8 @@ constructor(
         viewModelScope.launch {
             val result = gateway.deleteAvatar()
             _state.update { it.copy(avatarBusy = false) }
+            // The server may now fall back to the Gravatar.
+            if (result == AvatarResult.Removed) loadProfile()
             feedback.show(
                 if (result == AvatarResult.Removed) R.string.account_avatar_removed
                 else R.string.error_avatar_remove_failed
