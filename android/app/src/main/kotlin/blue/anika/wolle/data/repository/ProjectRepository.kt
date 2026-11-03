@@ -406,7 +406,7 @@ constructor(
  * `ProjectResponse` (unlike `ProjectListItemResponse`) has no server-computed `preview_url` - the
  * title image's thumbnail is the client-side equivalent, falling back to the first image.
  */
-private fun ProjectDto.toEntity(json: Json): ProjectEntity =
+internal fun ProjectDto.toEntity(json: Json): ProjectEntity =
     ProjectEntity(
         id = id,
         name = name,

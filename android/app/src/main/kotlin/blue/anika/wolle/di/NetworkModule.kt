@@ -10,6 +10,9 @@ import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
+import blue.anika.wolle.data.api.v2.CategoriesV2Api
+import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.repository.ApiProjectImporter
 import blue.anika.wolle.data.repository.ProjectImporter
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -154,4 +157,21 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideSyncApi(retrofit: Retrofit): SyncApi = retrofit.create(SyncApi::class.java)
+
+    // SNA-87: v2 clients, provided but deliberately unused until the server accepts Bearer tokens
+    // on
+    // v2 resource routes. See docs/v2-migration.md.
+    @Provides
+    @Singleton
+    fun provideProjectsV2Api(retrofit: Retrofit): ProjectsV2Api =
+        retrofit.create(ProjectsV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideYarnsV2Api(retrofit: Retrofit): YarnsV2Api = retrofit.create(YarnsV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCategoriesV2Api(retrofit: Retrofit): CategoriesV2Api =
+        retrofit.create(CategoriesV2Api::class.java)
 }

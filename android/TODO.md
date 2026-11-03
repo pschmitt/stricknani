@@ -41,6 +41,26 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-87: Migrate the app from `/api/v1` to `/api/v2`
+
+Status: in progress (2026-11-03). Groundwork done, no live call switched. Plan, endpoint map,
+shape differences, Room decision and the `ApiCapabilities` design: `android/docs/v2-migration.md`.
+The server rejects Bearer tokens on v2 resource routes today, so each phase waits for its slice.
+
+- [x] Groundwork: v2 Retrofit interfaces (`ProjectsV2Api`, `YarnsV2Api`, `CategoriesV2Api`),
+      envelope/DTO types, v2 -> v1-domain mappers and Room entity mappers, v2 409 parser; provided
+      in DI but unused. Unit-tested against sample JSON from the Rust serializers
+      (`V2DtoTest`). Room is unchanged: v2 is mapped into the v1-shaped `detailJson` (no migration).
+- [ ] Phase (a) projects/yarns/categories/media reads and writes, favorites (PUT) and deletes.
+      Needs: Bearer PAT auth on the v2 resource routes (Codex).
+- [ ] Phase (b) sync. Needs: `GET /api/v2/sync/{projects,yarns,categories}` (Codex).
+- [ ] Phase (c) auth/token + meta/me and `ApiCapabilities` probe (v2 where supported, v1
+      fallback for old servers). Needs: v2 token login and a Bearer `GET /api/v2/me` with
+      `user {id, email, is_admin}` (Codex).
+- [ ] Phase (d) favorites and deletes call switch (routes exist, cookie-only until (a)).
+- [ ] Phase (e) URL import via `/api/v2/imports/preview` (needs Bearer and a draft -> import mapper),
+      then remove v1 paths and DTOs once the minimum supported server is v2.
+
 ## SNA-86: Admin screens - activity log and accounts
 
 - [x] Settings -> Admin (administrators only) with two items, "Activity" and "Accounts". Admin
