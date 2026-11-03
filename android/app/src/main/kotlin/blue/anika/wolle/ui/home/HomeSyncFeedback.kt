@@ -23,8 +23,10 @@ sealed interface GreetingStatus {
 
 /** Why the last refresh could not check for news; shown by [SyncProblemCard]. */
 enum class SyncProblem {
-    /** The device could not reach the server. */
+    /** The device has no working internet connection. */
     Offline,
+    /** The internet works, but the server did not answer. */
+    ServerUnreachable,
     /** The server was reached but the sync failed (for example a rejected sign-in). */
     Failed,
 }
@@ -63,6 +65,7 @@ fun problemAfter(previous: SyncProblem?, state: RefreshState, signedOut: Boolean
     when {
         signedOut -> null
         state == RefreshState.Offline -> SyncProblem.Offline
+        state == RefreshState.ServerUnreachable -> SyncProblem.ServerUnreachable
         state == RefreshState.Error -> SyncProblem.Failed
         state is RefreshState.Finished -> null
         else -> previous

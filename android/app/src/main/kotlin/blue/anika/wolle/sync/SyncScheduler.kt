@@ -29,7 +29,10 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
             PeriodicWorkRequestBuilder<SyncWorker>(SYNC_PERIODIC_INTERVAL_HOURS, TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .setInputData(
-                    Data.Builder().putBoolean(SyncWorker.KEY_NOTIFY_ON_CHANGE, true).build()
+                    Data.Builder()
+                        .putBoolean(SyncWorker.KEY_NOTIFY_ON_CHANGE, true)
+                        .putBoolean(SyncWorker.KEY_BACKGROUND, true)
+                        .build()
                 )
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
@@ -53,6 +56,7 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
                     TimeUnit.MINUTES,
                 )
                 .setConstraints(constraints)
+                .setInputData(Data.Builder().putBoolean(SyncWorker.KEY_BACKGROUND, true).build())
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
                     BACKOFF_DELAY_MINUTES,
@@ -61,7 +65,8 @@ class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
                 .build()
         workManager.enqueueUniquePeriodicWork(
             REPLAY_PERIODIC_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            // UPDATE so installs that already had this request get the background flag.
+            ExistingPeriodicWorkPolicy.UPDATE,
             replayRequest,
         )
     }

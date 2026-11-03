@@ -16,6 +16,7 @@ internal fun refreshFeedbackResource(state: RefreshState): Int? =
                 else -> null
             }
         RefreshState.Offline -> R.string.refresh_offline
+        RefreshState.ServerUnreachable -> R.string.refresh_server_unreachable
         RefreshState.Error -> R.string.refresh_error
         RefreshState.Idle,
         is RefreshState.Refreshing -> null
@@ -38,7 +39,7 @@ fun RefreshFeedbackEffect(
     LaunchedEffect(state) {
         if (state is RefreshState.Idle || state is RefreshState.Refreshing) return@LaunchedEffect
         if (problemsShownInline) {
-            if (state is RefreshState.Offline || state is RefreshState.Error) return@LaunchedEffect
+            if (state.isProblem()) return@LaunchedEffect
             onConsumed()
             return@LaunchedEffect
         }
@@ -47,7 +48,8 @@ fun RefreshFeedbackEffect(
             val kind =
                 when (state) {
                     RefreshState.Offline -> FeedbackKind.Offline
-                    RefreshState.Error -> FeedbackKind.Error
+                    RefreshState.Error,
+                    RefreshState.ServerUnreachable -> FeedbackKind.Error
                     is RefreshState.Finished ->
                         if (state.changed) FeedbackKind.Success else FeedbackKind.Info
                     else -> FeedbackKind.Info
@@ -59,3 +61,9 @@ fun RefreshFeedbackEffect(
         onConsumed()
     }
 }
+
+/** A refresh that could not check for news: offline, server unreachable or failed. */
+fun RefreshState.isProblem(): Boolean =
+    this is RefreshState.Offline ||
+        this is RefreshState.ServerUnreachable ||
+        this is RefreshState.Error

@@ -56,7 +56,9 @@ internal fun categoriesContentState(
             CategoriesContentState.Loading
         !initialSyncComplete && refreshState is RefreshState.Offline ->
             CategoriesContentState.Offline
-        !initialSyncComplete && refreshState is RefreshState.Error -> CategoriesContentState.Error
+        !initialSyncComplete &&
+            (refreshState is RefreshState.Error ||
+                refreshState is RefreshState.ServerUnreachable) -> CategoriesContentState.Error
         !initialSyncComplete -> CategoriesContentState.Loading
         else -> CategoriesContentState.Empty
     }

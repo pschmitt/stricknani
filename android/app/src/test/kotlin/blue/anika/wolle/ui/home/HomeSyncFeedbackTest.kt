@@ -101,4 +101,12 @@ class HomeSyncFeedbackTest {
     fun `signed out never shows the problem card`() {
         assertEquals(null, problemAfter(SyncProblem.Failed, RefreshState.Error, signedOut = true))
     }
+
+    @Test
+    fun `an unreachable server is its own problem, not offline`() {
+        assertEquals(
+            SyncProblem.ServerUnreachable,
+            problemAfter(null, RefreshState.ServerUnreachable, signedOut = false),
+        )
+    }
 }

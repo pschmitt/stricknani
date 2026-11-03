@@ -43,6 +43,14 @@ constructor(
         // An expired OIDC sign-in would only 401 every step. Nothing is lost: the user signs in
         // again from the card in the app, which queues a fresh sync.
         if (settingsRepository.sessionExpired.value) return Result.success()
+        if (
+            shouldSkipBackgroundWork(
+                background = inputData.getBoolean(KEY_BACKGROUND, false),
+                powerSaveMode = applicationContext.isPowerSaveMode(),
+            )
+        ) {
+            return Result.success()
+        }
 
         var hasChanges = false
         val failure =
@@ -79,6 +87,9 @@ constructor(
 
     companion object {
         const val KEY_NOTIFY_ON_CHANGE = "notify_on_change"
+
+        /** Set on the periodic request: skipped while the battery saver is on. */
+        const val KEY_BACKGROUND = "background"
         private const val MAX_RETRY_ATTEMPTS = 3
     }
 }

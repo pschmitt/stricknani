@@ -91,6 +91,7 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SyncIssueBanner
 import blue.anika.wolle.ui.common.animationsDisabled
+import blue.anika.wolle.ui.common.isProblem
 import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
 import blue.anika.wolle.ui.common.stitchedBorder
@@ -156,8 +157,7 @@ fun HomeScreen(
                 outcomeId++
                 cue = MascotCue(MascotCueKind.Happy)
             }
-            refreshState == RefreshState.Offline || refreshState == RefreshState.Error ->
-                cue = MascotCue(MascotCueKind.Sad)
+            refreshState.isProblem() -> cue = MascotCue(MascotCueKind.Sad)
         }
     }
     // A cue plays once; clearing it keeps a greeting that scrolls back in from replaying it.

@@ -494,12 +494,14 @@
     <!-- Home sync status card -->
     <string name="sync_status_refresh_failed">Konnte nicht nach Neuem schauen</string>
     <string name="sync_status_offline">Du bist offline</string>
+    <string name="sync_status_server_unreachable">Server nicht erreichbar</string>
     <string name="sync_status_showing_saved">Hier ist, was auf diesem Gerät liegt.</string>
 
     <!-- Foreground refresh feedback -->
     <string name="refresh_success">Frisch aktualisiert</string>
     <string name="refresh_no_changes">Noch nichts Neues</string>
     <string name="refresh_offline">Du bist offline - hier ist, was auf diesem Gerät liegt.</string>
+    <string name="refresh_server_unreachable">Server nicht erreichbar - hier ist, was auf diesem Gerät liegt.</string>
     <string name="refresh_error">Konnte nicht nach Neuem schauen - hier ist, was auf diesem Gerät liegt.</string>
 
     <!-- Background sync notification -->

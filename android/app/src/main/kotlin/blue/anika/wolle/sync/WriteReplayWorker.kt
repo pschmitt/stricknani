@@ -64,6 +64,14 @@ constructor(
         // An expired OIDC sign-in would only 401 each write. They stay queued untouched (not
         // failed, not dropped) and replay after the user signs in again.
         if (settingsRepository.sessionExpired.value) return Result.success()
+        if (
+            shouldSkipBackgroundWork(
+                background = inputData.getBoolean(SyncWorker.KEY_BACKGROUND, false),
+                powerSaveMode = applicationContext.isPowerSaveMode(),
+            )
+        ) {
+            return Result.success()
+        }
         var anyFailure = false
         // Re-read each row after the previous mutation. A CREATE can reassign the local temp id on
         // all later mutations, so replaying the initial snapshot would still target the old id.

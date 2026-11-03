@@ -7,6 +7,7 @@ import blue.anika.wolle.crash.CrashReportInstaller
 import blue.anika.wolle.di.MediaClient
 import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.NetworkStatus
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -52,6 +53,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        NetworkStatus.start(this)
         syncNotifier.ensureChannel()
         // Both no-op quickly (WorkManager dedupes the periodic request; SyncWorker itself no-ops
         // pre-onboarding) so it's safe to call unconditionally on every process start.

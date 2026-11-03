@@ -55,8 +55,11 @@ fun SyncProblemCard(problem: SyncProblem, onRetry: () -> Unit, modifier: Modifie
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     stringResource(
-                        if (problem == SyncProblem.Offline) R.string.sync_status_offline
-                        else R.string.sync_status_refresh_failed
+                        when (problem) {
+                            SyncProblem.Offline -> R.string.sync_status_offline
+                            SyncProblem.ServerUnreachable -> R.string.sync_status_server_unreachable
+                            SyncProblem.Failed -> R.string.sync_status_refresh_failed
+                        }
                     ),
                     style = MaterialTheme.typography.titleMedium,
                 )

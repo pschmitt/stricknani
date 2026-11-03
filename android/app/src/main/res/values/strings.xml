@@ -494,12 +494,14 @@
     <!-- Home sync status card -->
     <string name="sync_status_refresh_failed">Couldn’t check for news</string>
     <string name="sync_status_offline">You’re offline</string>
+    <string name="sync_status_server_unreachable">Can’t reach the server</string>
     <string name="sync_status_showing_saved">Here’s what’s on this phone.</string>
 
     <!-- Foreground refresh feedback -->
     <string name="refresh_success">Fresh as a daisy</string>
     <string name="refresh_no_changes">Nothing new yet</string>
     <string name="refresh_offline">You’re offline - here’s what’s on this phone.</string>
+    <string name="refresh_server_unreachable">Can’t reach the server - here’s what’s on this phone.</string>
     <string name="refresh_error">Couldn’t check for news - here’s what’s on this phone.</string>
 
     <!-- Background sync notification -->

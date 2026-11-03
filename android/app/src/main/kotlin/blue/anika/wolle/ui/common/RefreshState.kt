@@ -20,7 +20,11 @@ sealed interface RefreshState {
         val trigger: RefreshTrigger = RefreshTrigger.UserInitiated,
     ) : RefreshState
 
+    /** The device has no working internet connection. */
     data object Offline : RefreshState
+
+    /** The internet works, but the server could not be reached (down, or a TLS/DNS problem). */
+    data object ServerUnreachable : RefreshState
 
     data object Error : RefreshState
 }
@@ -64,7 +68,12 @@ class RefreshController(
                 throw cancellation
             } catch (failure: Exception) {
                 _state.value =
-                    if (failure.causedByIoFailure()) RefreshState.Offline else RefreshState.Error
+                    when {
+                        !failure.causedByIoFailure() -> RefreshState.Error
+                        ioFailureIsOffline(NetworkStatus.hasValidatedInternet) ->
+                            RefreshState.Offline
+                        else -> RefreshState.ServerUnreachable
+                    }
             } finally {
                 refreshInProgress.set(false)
             }
