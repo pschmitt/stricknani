@@ -179,6 +179,27 @@
       {/if}
     </section>
 
+    <!-- The way to the yarn list, matching the stash card on the Android Home screen (the app no longer has a
+         Yarns tab by default). -->
+    <a
+      class="stash-card"
+      href={resolve("/yarns")}
+      data-testid="home-stash-card"
+    >
+      <span class="stash-card__icon" aria-hidden="true"
+        ><NavIcon name="yarns" /></span
+      >
+      <span class="stash-card__copy">
+        <span class="stash-card__title">{t("Your yarn stash", locale)}</span>
+        <span class="stash-card__hint"
+          >{t("Browse, add and find your yarns", locale)}</span
+        >
+      </span>
+      <span class="stash-card__go" aria-hidden="true"
+        ><NavIcon name="next" /></span
+      >
+    </a>
+
     <!-- 2. Favourites as photo tiles, or one hint while there are none. -->
     {#if favoritesLoaded && !hasFavorites && favoriteProjects.status === "ready" && favoriteYarns.status === "ready"}
       <p class="home-hint">
@@ -378,6 +399,75 @@
   .home-continue {
     display: grid;
     gap: 0.7rem;
+  }
+  .stash-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1.1rem;
+    color: var(--ink);
+    background: var(--tone-yarns-wash);
+    text-decoration: none;
+    transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  .stash-card:hover {
+    transform: translateY(-2px);
+  }
+  .stash-card:active {
+    transform: scale(0.98);
+  }
+  .stash-card:focus-visible {
+    outline: 3px solid var(--tone-yarns);
+    outline-offset: 3px;
+  }
+  .stash-card__icon,
+  .stash-card__go {
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--tone-yarns);
+    background: color-mix(in srgb, var(--tone-yarns) 16%, transparent);
+  }
+  .stash-card__icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .stash-card__go {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  .stash-card__icon :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+  .stash-card__go :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+  .stash-card__copy {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  .stash-card__title {
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    font-weight: 650;
+  }
+  .stash-card__hint {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stash-card {
+      transition: none;
+    }
+    .stash-card:hover,
+    .stash-card:active {
+      transform: none;
+    }
   }
   .continue-card {
     position: relative;

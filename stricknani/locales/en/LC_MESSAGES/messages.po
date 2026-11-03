@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 13:27+0100\n"
+"POT-Creation-Date: 2026-11-03 14:31+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -784,8 +784,8 @@ msgid "Gauge Calculator"
 msgstr ""
 
 #: stricknani/templates/gauge/calculator.html:19
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:192
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:208
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:193
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:209
 msgid ""
 "Calculate how many stitches to cast on and rows to knit based on your "
 "gauge and the pattern's gauge."
@@ -794,76 +794,76 @@ msgstr ""
 "gauge and the pattern's gauge."
 
 #: stricknani/templates/gauge/calculator.html:26
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:206
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:207
 msgid "How to use this calculator"
 msgstr "How to use this calculator"
 
 #: stricknani/templates/gauge/calculator.html:28
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:215
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:216
 msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
 msgstr "Enter the gauge from your pattern (stitches and rows per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:29
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:221
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:222
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:30
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:227
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:228
 msgid "Enter the stitch count from your pattern (cast-on stitches)"
 msgstr "Enter the stitch count from your pattern (cast-on stitches)"
 
 #: stricknani/templates/gauge/calculator.html:31
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:233
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:234
 msgid "Click Calculate to see how many stitches and rows you need"
 msgstr "Click Calculate to see how many stitches and rows you need"
 
 #: stricknani/templates/gauge/calculator.html:43
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:243
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:244
 msgid "Pattern Gauge (per 10cm)"
 msgstr "Pattern Gauge (per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:51
 #: stricknani/templates/gauge/calculator.html:81
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:246
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:307
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:252
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:321
 msgid "Stitches"
 msgstr "Stitches"
 
 #: stricknani/templates/gauge/calculator.html:62
 #: stricknani/templates/gauge/calculator.html:92
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:275
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:336
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:281
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:350
 msgid "Rows"
 msgstr "Rows"
 
 #: stricknani/templates/gauge/calculator.html:73
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:304
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:313
 msgid "Your Gauge (per 10cm)"
 msgstr "Your Gauge (per 10cm)"
 
 #: stricknani/templates/gauge/calculator.html:103
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:365
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:380
 msgid "Pattern Counts"
 msgstr "Pattern Counts"
 
 #: stricknani/templates/gauge/calculator.html:111
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:368
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
 msgid "Stitches to cast on"
 msgstr "Stitches to cast on"
 
 #: stricknani/templates/gauge/calculator.html:122
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:398
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:413
 msgid "Rows to knit"
 msgstr "Rows to knit"
 
 #: stricknani/templates/gauge/calculator.html:122
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:399
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:414
 msgid "optional"
 msgstr "optional"
 
 #: stricknani/templates/gauge/calculator.html:132
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:439
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:454
 msgid "Calculate"
 msgstr "Calculate"
 
@@ -2563,8 +2563,8 @@ msgstr "Login"
 
 #: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:152
 #: web/src/lib/features/auth/SignupForm.svelte:275
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:189
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:203
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:190
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:204
 #: web/src/routes/+layout.svelte:66 web/src/routes/more/+page.svelte:31
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
@@ -2965,11 +2965,11 @@ msgstr "Add tag"
 msgid "Add yarn"
 msgstr "Add yarn"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:464
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:479
 msgid "Adjusted Rows"
 msgstr "Adjusted Rows"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:460
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:475
 msgid "Adjusted Stitches"
 msgstr "Adjusted Stitches"
 
@@ -3100,7 +3100,7 @@ msgstr "Audit pages"
 msgid "Back to sign in"
 msgstr "Back to sign in"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:470
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:485
 msgid "Based on a pattern cast-on of"
 msgstr "Based on a pattern cast-on of"
 
@@ -3116,15 +3116,19 @@ msgstr "Browse and find your knitting projects."
 msgid "Browse the yarns connected to your projects."
 msgstr "Browse the yarns connected to your projects."
 
+#: web/src/lib/features/home/HomeDashboard.svelte:195
+msgid "Browse, add and find your yarns"
+msgstr "Browse, add and find your yarns"
+
 #: web/src/lib/features/admin/AdminAudit.svelte:398
 msgid "By"
 msgstr "By"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:439
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:454
 msgid "Calculating…"
 msgstr "Calculating…"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:457
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:472
 msgid "Calculation Results"
 msgstr "Calculation Results"
 
@@ -3182,8 +3186,8 @@ msgstr "Check archive status again"
 #: web/src/lib/features/auth/SignupForm.svelte:61
 #: web/src/lib/features/auth/SignupForm.svelte:63
 #: web/src/lib/features/auth/SignupForm.svelte:125
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:139
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:167
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:140
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:168
 #: web/src/lib/features/projects/ProjectEditor.svelte:633
 #: web/src/lib/features/yarns/YarnForm.svelte:329
 msgid "Check the highlighted fields and try again."
@@ -3253,7 +3257,7 @@ msgstr "Choose an image smaller than 25 MiB."
 msgid "Choose image"
 msgstr "Choose image"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:450
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:465
 msgid "Clear"
 msgstr "Clear"
 
@@ -3466,9 +3470,9 @@ msgstr "Enter a category name."
 msgid "Enter a complete http or https URL."
 msgstr "Enter a complete http or https URL."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:75
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:87
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:164
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:76
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:88
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:165
 msgid "Enter a positive whole number."
 msgstr "Enter a positive whole number."
 
@@ -3525,19 +3529,19 @@ msgstr ""
 "External images are disabled. Links will be kept in notes and never "
 "attached."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:189
+#: web/src/lib/features/home/HomeDashboard.svelte:210
 msgid "Favorite projects"
 msgstr "Favorite projects"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:189
+#: web/src/lib/features/home/HomeDashboard.svelte:210
 msgid "Favorite projects could not be loaded."
 msgstr "Favorite projects could not be loaded."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:189
+#: web/src/lib/features/home/HomeDashboard.svelte:210
 msgid "Favorite yarns"
 msgstr "Favorite yarns"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:189
+#: web/src/lib/features/home/HomeDashboard.svelte:210
 msgid "Favorite yarns could not be loaded."
 msgstr "Favorite yarns could not be loaded."
 
@@ -3863,7 +3867,7 @@ msgstr "More project details"
 msgid "More yarn details"
 msgstr "More yarn details"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:465
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:480
 msgid "N/A"
 msgstr "N/A"
 
@@ -4333,8 +4337,8 @@ msgstr "Read-only view"
 msgid "Reading the source and preparing a draft…"
 msgstr "Reading the source and preparing a draft…"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:248
-#: web/src/lib/features/home/HomeDashboard.svelte:254
+#: web/src/lib/features/home/HomeDashboard.svelte:269
+#: web/src/lib/features/home/HomeDashboard.svelte:275
 msgid "Recent projects"
 msgstr "Recent projects"
 
@@ -4593,8 +4597,8 @@ msgstr "Search your projects"
 msgid "Search your yarn"
 msgstr "Search your yarn"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:210
-#: web/src/lib/features/home/HomeDashboard.svelte:251
+#: web/src/lib/features/home/HomeDashboard.svelte:231
+#: web/src/lib/features/home/HomeDashboard.svelte:272
 msgid "See all"
 msgstr "See all"
 
@@ -4767,7 +4771,7 @@ msgstr "Suggested step images"
 msgid "Tap a photo to see it larger."
 msgstr "Tap a photo to see it larger."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:186
+#: web/src/lib/features/home/HomeDashboard.svelte:207
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr "Tap ♥ on a project or yarn to keep it here."
 
@@ -4850,11 +4854,11 @@ msgstr "The archive request is waiting to start."
 msgid "The archive service is working on this source."
 msgstr "The archive service is working on this source."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:177
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:178
 msgid "The calculation could not be completed."
 msgstr "The calculation could not be completed."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:169
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:170
 msgid "The calculation request is too large. Reduce the values and try again."
 msgstr "The calculation request is too large. Reduce the values and try again."
 
@@ -5259,7 +5263,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/admin/DiffPanel.svelte:265
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/home/HomeDashboard.svelte:133
-#: web/src/lib/features/home/HomeDashboard.svelte:194
+#: web/src/lib/features/home/HomeDashboard.svelte:215
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:665
@@ -5600,7 +5604,11 @@ msgstr "Your workspace is taking a moment."
 msgid "Your workspace is waiting online."
 msgstr "Your workspace is waiting online."
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:474
+#: web/src/lib/features/home/HomeDashboard.svelte:193
+msgid "Your yarn stash"
+msgstr "Your yarn stash"
+
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:489
 msgid "and"
 msgstr "and"
 
@@ -5624,11 +5632,11 @@ msgstr "of"
 msgid "pixels"
 msgstr "pixels"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:476
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:491
 msgid "rows"
 msgstr "rows"
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:472
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:487
 msgid "stitches"
 msgstr "stitches"
 
