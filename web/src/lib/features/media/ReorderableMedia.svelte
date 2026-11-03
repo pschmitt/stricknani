@@ -71,7 +71,9 @@
   let announcement = $state("");
   let moving = $state(false);
   let gesture: Gesture | null = null;
+  // The click that follows a drag or an armed long press must not open the photo.
   let suppressClick = false;
+  let suppressTimer: ReturnType<typeof setTimeout> | null = null;
 
   const locked = $derived(disabled || moving);
   const sortable = $derived(reorderable && items.length > 1);
@@ -96,6 +98,7 @@
     return () => {
       listElement?.removeEventListener("touchmove", block);
       if (editTimer) clearTimeout(editTimer);
+      clearSuppress();
     };
   });
 
@@ -172,7 +175,15 @@
     void move(index, keyboardTarget(index, delta, items.length));
   }
 
+  function clearSuppress(): void {
+    if (suppressTimer) clearTimeout(suppressTimer);
+    suppressTimer = null;
+    suppressClick = false;
+  }
+
   function onPointerDown(event: PointerEvent, index: number): void {
+    // A new press never inherits the suppression of the previous one.
+    clearSuppress();
     if (locked) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if ((event.target as Element).closest("[data-no-drag]")) return;
@@ -240,8 +251,14 @@
     if (!current || event.pointerId !== current.pointerId) return;
     const from = dragFrom;
     const to = dropTo;
-    // A finished drag must not also open the photo.
-    suppressClick = from !== null;
+    // A finished drag or an armed long press must not also open the photo: the
+    // browser still fires a click on lift. If none arrives, drop the flag so the
+    // next real tap is not swallowed.
+    clearSuppress();
+    if (from !== null || current.armed) {
+      suppressClick = true;
+      suppressTimer = setTimeout(clearSuppress, 600);
+    }
     cancelGesture();
     if (from !== null && to !== null && from !== to) void move(from, to);
   }
@@ -269,7 +286,7 @@
 
   function onClickCapture(event: MouseEvent): void {
     if (!suppressClick) return;
-    suppressClick = false;
+    clearSuppress();
     event.preventDefault();
     event.stopPropagation();
   }
