@@ -41,6 +41,27 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-84: A cute, playful look for non-technical knitters
+
+- [x] Own "hand-dyed skein" palette (raspberry, lagoon teal, marigold on lilac; midnight plum in
+      dark mode) instead of wallpaper colours by default. Material You stays available as an
+      opt-in switch in Settings -> Appearance (Android 12+).
+- [x] Bundled variable fonts (SIL OFL, licence texts in `assets/licenses`): Fraunces with its soft
+      and "wonky" axes for headings, Nunito for body text and labels. Rounder shapes throughout.
+- [x] Home: the yarn-ball mascot greets by time of day ("What are we knitting today?"), a
+      "Continue knitting" card with a stitched border for the most recent project, a shelf of
+      tinted tiles for the rest, and a cozy empty state. Motion respects the system's animation
+      setting.
+- [x] Plain-language copy for sync, offline, import and stuck-change messages in English and
+      German ("All caught up", "Saved on this phone", "Some changes are stuck" instead of
+      "Synced", "Changes pending", "Sync needs attention"); instrumentation tests updated.
+- [ ] Mascot empty states and the yarn-ball loader on the list and detail screens.
+- [ ] Friendlier onboarding (sign in with email and password first, token and QR under "other
+      ways") and coloured bottom-bar destinations.
+
+Status: in progress, 2026-11-03 - remote `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed; installed on the user's phone.
+
 ## SNA-82: Edit one section or step straight from the detail page
 
 - [x] Long-pressing a section's content on project or yarn detail opens a small menu at the

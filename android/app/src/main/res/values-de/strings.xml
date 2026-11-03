@@ -51,16 +51,22 @@
 
     <!-- Home -->
     <string name="home_gauge_calculator_description">Maschenprobenrechner</string>
-    <string name="home_welcome_title">Willkommen bei Stricknani</string>
-    <string name="home_welcome_subtitle">Zum Aktualisieren ziehen, um deine Projekte und deinen Wollvorrat zu synchronisieren.</string>
+    <string name="home_welcome_title">Deine Strickecke ist bereit</string>
+    <string name="home_welcome_subtitle">Zieh nach unten, um deine Projekte und deine Wolle zu holen.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>
     <string name="home_favorite_yarns_title">Lieblingswolle</string>
-    <string name="home_recent_projects_title">Zuletzt aktualisierte Projekte</string>
+    <string name="home_recent_projects_title">Weitere Projekte</string>
+    <string name="home_greeting_morning">Guten Morgen!</string>
+    <string name="home_greeting_day">Hallo!</string>
+    <string name="home_greeting_evening">Guten Abend!</string>
+    <string name="home_greeting_night">Noch am Stricken?</string>
+    <string name="home_greeting_question">Was stricken wir heute?</string>
+    <string name="home_continue_title">Weiterstricken</string>
 
     <!-- Search -->
     <string name="search_placeholder">Projekte und Wolle durchsuchen</string>
     <string name="search_empty_title">Durchsuche deinen Vorrat</string>
-    <string name="search_empty_subtitle">Finde Projekte und Wolle, die bereits auf dieses Gerät synchronisiert wurden.</string>
+    <string name="search_empty_subtitle">Durchsuche deine Projekte und Garne nach Namen.</string>
     <string name="search_no_matches_title">Keine Treffer</string>
     <string name="search_no_matches_subtitle">Versuche einen anderen Suchbegriff.</string>
 
@@ -115,16 +121,16 @@
     <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
     <string name="projects_list_more_actions_description">Weitere Optionen</string>
     <string name="projects_list_empty_title">Noch keine Projekte</string>
-    <string name="projects_list_empty_subtitle">Zum Aktualisieren ziehen oder Filter anpassen.</string>
+    <string name="projects_list_empty_subtitle">Zum Nachschauen nach unten ziehen oder Filter lockern.</string>
     <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
     <string name="projects_list_add_category_name_placeholder">z. B. Pullover</string>
 
     <!-- Kategorien -->
     <string name="categories_title">Kategorien</string>
     <string name="categories_empty_title">Noch keine Kategorien</string>
-    <string name="categories_empty_subtitle">Kategorien von deinem Stricknani-Server erscheinen hier.</string>
-    <string name="categories_offline_title">Kategorien offline nicht verfügbar</string>
-    <string name="categories_offline_subtitle">Verbinde dich mit deinem Server, um Kategorien zu laden.</string>
+    <string name="categories_empty_subtitle">Deine Kategorien erscheinen hier.</string>
+    <string name="categories_offline_title">Kategorien brauchen Internet</string>
+    <string name="categories_offline_subtitle">Verbinde dich mit dem Internet, um deine Kategorien zu sehen.</string>
     <string name="categories_error_title">Kategorien konnten nicht geladen werden</string>
     <string name="categories_error_subtitle">Beim Laden der Kategorien ist ein Fehler aufgetreten. Versuche es erneut.</string>
     <string name="categories_retry">Erneut versuchen</string>
@@ -137,28 +143,28 @@
 
     <!-- Project import -->
     <string name="project_import_dialog_title">Projekt importieren</string>
-    <string name="project_import_url_label">Anleitungs-URL</string>
+    <string name="project_import_url_label">Link zur Anleitung</string>
     <string name="project_import_url_placeholder">https://example.com/meine-anleitung</string>
     <string name="project_import_start">Importieren</string>
     <string name="project_import_cancel">Import abbrechen</string>
     <string name="project_import_progress">Projekt wird importiert</string>
-    <string name="project_import_progress_description">Anleitungsdaten werden vom Server abgerufen…</string>
-    <string name="project_import_saving_description">Importiertes Projekt wird lokal gespeichert…</string>
-    <string name="project_import_confirmation_title">Importiertes Projekt prüfen</string>
-    <string name="project_import_confirmation_text">„%1$s“ zu deinen Projekten hinzufügen? Es wird lokal gespeichert und zur Synchronisierung vorgemerkt.</string>
+    <string name="project_import_progress_description">Anleitung wird gelesen…</string>
+    <string name="project_import_saving_description">Wird zu deinen Projekten gelegt…</string>
+    <string name="project_import_confirmation_title">Sieht das richtig aus?</string>
+    <string name="project_import_confirmation_text">„%1$s“ zu deinen Projekten hinzufügen? Es wird sofort gespeichert, auch ohne Internet.</string>
     <string name="project_import_steps_summary">%1$d Schritte gefunden</string>
-    <string name="project_import_images_summary">%1$d Bild-URLs gefunden</string>
-    <string name="project_import_images_not_supported">Die aktuelle API liefert Bild-URLs, fügt sie aber noch nicht automatisch zu einem neuen Offline-Projekt hinzu. Text und Schritte werden gespeichert; Bilder können später ergänzt werden.</string>
+    <string name="project_import_images_summary">%1$d Fotos gefunden</string>
+    <string name="project_import_images_not_supported">Fotos von der Seite können noch nicht mitkommen. Text und Schritte werden gespeichert, Fotos kannst du später ergänzen.</string>
     <string name="project_import_ai_fallback">Die KI-Extraktion war nicht verfügbar; die einfache Anleitungserkennung wurde verwendet.</string>
     <string name="project_import_confirm_save">Projekt hinzufügen</string>
-    <string name="project_import_success_title">Projekt importiert</string>
-    <string name="project_import_success_text">„%1$s“ wurde lokal gespeichert und zur Synchronisierung vorgemerkt.</string>
+    <string name="project_import_success_title">Ist drin!</string>
+    <string name="project_import_success_text">„%1$s“ ist jetzt bei deinen Projekten.</string>
     <string name="project_import_done">Fertig</string>
     <string name="project_import_retry">Erneut versuchen</string>
-    <string name="project_import_error_title">Import fehlgeschlagen</string>
-    <string name="project_import_error_invalid_url">Gib eine vollständige HTTP- oder HTTPS-URL der Anleitung ein.</string>
-    <string name="project_import_error_offline">Der Server konnte nicht erreicht werden. Prüfe deine Verbindung und versuche es erneut.</string>
-    <string name="project_import_error_server">Der Server hat den Import abgelehnt. Prüfe, ob dieser Stricknani-Server Projektimporte mit API-Token unterstützt.</string>
+    <string name="project_import_error_title">Das hat nicht geklappt</string>
+    <string name="project_import_error_invalid_url">Füge den vollständigen Link zur Anleitung ein, beginnend mit https://</string>
+    <string name="project_import_error_offline">Stricknani ist nicht erreichbar. Prüfe dein Internet und versuche es erneut.</string>
+    <string name="project_import_error_server">Stricknani konnte diese Anleitung nicht lesen. Versuche einen anderen Link oder lege das Projekt selbst an.</string>
     <string name="project_import_error_unknown">Das Projekt konnte nicht importiert werden. Bitte versuche es erneut.</string>
 
     <!-- Yarns -->
@@ -197,8 +203,8 @@
     <string name="settings_category_categories_subtitle">Projekt- und Wollkategorien verwalten</string>
     <string name="settings_category_detail_cards_title">Detailkarten</string>
     <string name="settings_category_detail_cards_subtitle">Reihenfolge der Projekt- und Wollbereiche wählen</string>
-    <string name="settings_category_sync_title">Synchronisierung</string>
-    <string name="settings_category_sync_subtitle">Status der Hintergrundaktualisierung</string>
+    <string name="settings_category_sync_title">Auf dem Laufenden</string>
+    <string name="settings_category_sync_subtitle">Wann deine Projekte zuletzt aktualisiert wurden</string>
     <string name="settings_category_backup_title">Backup</string>
     <string name="settings_category_backup_subtitle">Exportieren, wiederherstellen und geplante Backups</string>
     <string name="settings_category_about_title">Über</string>
@@ -228,29 +234,29 @@
     <string name="print_preparing">Wird vorbereitet…</string>
     <string name="detail_card_reorder_title_description">Kartentitel: %1$s</string>
     <string name="detail_card_reorder_long_press_description">Lange drücken und zum Sortieren ziehen</string>
-    <string name="settings_sync_group_title">Hintergrundsynchronisierung</string>
-    <string name="settings_sync_last_synced_label">Zuletzt synchronisiert</string>
-    <string name="settings_sync_policy_label">Synchronisierungsrichtlinie</string>
+    <string name="settings_sync_group_title">Abgleich</string>
+    <string name="settings_sync_last_synced_label">Zuletzt aktualisiert</string>
+    <string name="settings_sync_policy_label">Wie oft</string>
     <string name="settings_sync_policy_description">Automatisch alle 6 Stunden, beim Start und direkt nach jeder Änderung</string>
     <string name="settings_sync_never">Nie</string>
-    <string name="sync_issue_settings_title">Ausstehende Änderungen</string>
-    <string name="sync_issue_banner_title">Synchronisierung benötigt Aufmerksamkeit</string>
+    <string name="sync_issue_settings_title">Hängende Änderungen</string>
+    <string name="sync_issue_banner_title">Ein paar Änderungen hängen fest</string>
     <string name="sync_issue_view_details">Details anzeigen</string>
     <string name="sync_issue_retry">Erneut versuchen</string>
     <string name="sync_issue_dismiss">Ausblenden</string>
-    <string name="sync_issue_retry_title">Fehlgeschlagene Änderungen erneut versuchen</string>
-    <string name="sync_issue_retry_description">Ausstehende Änderungen jetzt erneut senden.</string>
+    <string name="sync_issue_retry_title">Jetzt nochmal versuchen</string>
+    <string name="sync_issue_retry_description">Schicke deine hängenden Änderungen noch einmal an Stricknani.</string>
     <string name="sync_issue_project_create">Projekt erstellen</string>
     <string name="sync_issue_project_update">Projekt aktualisieren</string>
     <string name="sync_issue_project_delete">Projekt löschen</string>
     <string name="sync_issue_yarn_create">Wolle erstellen</string>
     <string name="sync_issue_yarn_update">Wolle aktualisieren</string>
     <string name="sync_issue_yarn_delete">Wolle löschen</string>
-    <string name="sync_issue_unknown_change">Ausstehende Änderung</string>
-    <string name="sync_issue_conflict_headline">Konflikt gelöst</string>
-    <string name="sync_issue_conflict_detail">Die Serverversion bleibt erhalten; diese Änderung wurde nicht angewendet.</string>
-    <string name="sync_issue_failure_headline">Synchronisierung fehlgeschlagen</string>
-    <string name="sync_issue_failure_detail">Diese Änderung bleibt ausstehend und wird automatisch erneut versucht.</string>
+    <string name="sync_issue_unknown_change">Eine Änderung</string>
+    <string name="sync_issue_conflict_headline">Woanders geändert</string>
+    <string name="sync_issue_conflict_detail">Das wurde inzwischen auf einem anderen Gerät bearbeitet, deshalb bleibt die neuere Version.</string>
+    <string name="sync_issue_failure_headline">Noch nicht in deinem Konto gespeichert</string>
+    <string name="sync_issue_failure_detail">Es ist auf diesem Gerät sicher, und die App versucht es von selbst weiter.</string>
     <string name="settings_sign_out">Abmelden</string>
     <string name="settings_sign_out_description">Entfernt die gespeicherte Server-URL und das API-Token von diesem Gerät.</string>
 
@@ -262,6 +268,9 @@
 
     <!-- Settings: Appearance -->
     <string name="appearance_settings_theme_title">Design</string>
+    <string name="appearance_settings_colors_title">Farben</string>
+    <string name="appearance_settings_dynamic_color">Farben vom Hintergrundbild</string>
+    <string name="appearance_settings_dynamic_color_description">Die Farben deines Hintergrundbilds statt der eigenen Stricknani-Farben verwenden.</string>
     <string name="appearance_settings_theme_system_description">Der Erscheinungsbild-Einstellung des Geräts folgen</string>
     <string name="appearance_settings_theme_system_label">System folgen</string>
     <string name="appearance_settings_theme_light_label">Hell</string>
@@ -335,28 +344,28 @@
     <string name="gauge_calculator_summary_without_rows">Basierend auf %1$d angeschlagenen Maschen der Anleitung.</string>
 
     <!-- Home sync status card -->
-    <string name="sync_status_syncing">Synchronisiere…</string>
-    <string name="sync_status_issue">Synchronisierungsproblem</string>
-    <string name="sync_status_changes_pending">Änderungen ausstehend</string>
-    <string name="sync_status_synced">Synchronisiert</string>
-    <string name="sync_status_pulling_latest">Neueste Projekte und Wolle werden abgerufen.</string>
-    <string name="sync_status_not_synced_yet">Noch nicht synchronisiert</string>
-    <string name="sync_status_last_synced_just_now">Gerade eben synchronisiert</string>
-    <string name="sync_status_last_synced_minutes">Vor %1$d Min. synchronisiert</string>
-    <string name="sync_status_last_synced_hours">Vor %1$d Std. synchronisiert</string>
-    <string name="sync_status_last_synced_days">Vor %1$d Tagen synchronisiert</string>
-    <string name="sync_status_last_synced_date">Zuletzt synchronisiert am %1$s</string>
+    <string name="sync_status_syncing">Wird aktualisiert…</string>
+    <string name="sync_status_issue">Etwas hängt fest</string>
+    <string name="sync_status_changes_pending">Auf diesem Gerät gespeichert</string>
+    <string name="sync_status_synced">Alles aktuell</string>
+    <string name="sync_status_pulling_latest">Deine neuesten Projekte und Garne werden geholt.</string>
+    <string name="sync_status_not_synced_yet">Noch nicht aktualisiert</string>
+    <string name="sync_status_last_synced_just_now">Gerade eben nachgeschaut</string>
+    <string name="sync_status_last_synced_minutes">Vor %1$d Min. nachgeschaut</string>
+    <string name="sync_status_last_synced_hours">Vor %1$d Std. nachgeschaut</string>
+    <string name="sync_status_last_synced_days">Vor %1$d T. nachgeschaut</string>
+    <string name="sync_status_last_synced_date">Zuletzt nachgeschaut am %1$s</string>
 
     <!-- Foreground refresh feedback -->
-    <string name="refresh_success">Aktualisiert</string>
-    <string name="refresh_no_changes">Bereits aktuell</string>
-    <string name="refresh_offline">Du bist offline - zwischengespeicherte Daten werden angezeigt.</string>
-    <string name="refresh_error">Aktualisierung fehlgeschlagen - zwischengespeicherte Daten werden angezeigt.</string>
+    <string name="refresh_success">Frisch aktualisiert</string>
+    <string name="refresh_no_changes">Noch nichts Neues</string>
+    <string name="refresh_offline">Du bist offline - hier ist, was auf diesem Gerät liegt.</string>
+    <string name="refresh_error">Konnte nicht nach Neuem schauen - hier ist, was auf diesem Gerät liegt.</string>
 
     <!-- Background sync notification -->
-    <string name="sync_notification_channel_name">Synchronisierungsupdates</string>
-    <string name="sync_notification_channel_description">Neue Änderungen bei einer Hintergrundsynchronisierung gefunden</string>
-    <string name="sync_notification_content">Neue Änderungen vom Server synchronisiert</string>
+    <string name="sync_notification_channel_name">Neues von Stricknani</string>
+    <string name="sync_notification_channel_description">Wenn etwas Neues von einem anderen Gerät ankommt</string>
+    <string name="sync_notification_content">Es gibt Neues von deinen anderen Geräten</string>
 
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>
@@ -377,7 +386,7 @@
     <string name="search_field_clear">Suche leeren</string>
 
     <!-- Shared ViewModel error messages -->
-    <string name="error_sync_failed">Synchronisierung fehlgeschlagen - zeige zwischengespeicherte Daten.</string>
+    <string name="error_sync_failed">Konnte nicht nach Neuem schauen - hier ist, was auf diesem Gerät liegt.</string>
     <string name="error_favorite_failed">Favorit konnte nicht aktualisiert werden - versuche es erneut.</string>
     <string name="error_save_failed">Speichern fehlgeschlagen - versuche es erneut.</string>
     <string name="error_delete_failed">Löschen fehlgeschlagen - versuche es erneut.</string>
@@ -390,7 +399,7 @@
     <!-- Mutation feedback -->
     <string name="mutation_favorite_added">Zu Favoriten hinzugefügt.</string>
     <string name="mutation_favorite_removed">Aus Favoriten entfernt.</string>
-    <string name="mutation_favorite_offline">Du bist offline - der Favorit konnte nicht aktualisiert werden.</string>
+    <string name="mutation_favorite_offline">Du bist offline - versuch es gleich nochmal.</string>
     <string name="mutation_category_created">Kategorie „%1$s“ erstellt.</string>
     <string name="mutation_category_renamed">Kategorie „%1$s“ in „%2$s“ umbenannt.</string>
     <string name="mutation_category_deleted">Kategorie „%1$s“ gelöscht.</string>
@@ -425,7 +434,7 @@
     <string name="backup_error_open_file_read">Die ausgewählte Datei konnte nicht zum Lesen geöffnet werden</string>
     <string name="backup_success_exported">Backup exportiert</string>
     <string name="backup_error_export_failed">Export fehlgeschlagen</string>
-    <string name="backup_success_restored">Backup wiederhergestellt - synchronisiere aktuelle Daten</string>
+    <string name="backup_success_restored">Backup wiederhergestellt - deine neuesten Projekte werden geholt</string>
     <string name="backup_error_restore_failed">Wiederherstellung fehlgeschlagen</string>
 
     <!-- Settings: Appearance language picker -->

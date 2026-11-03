@@ -75,7 +75,9 @@ class MainActivity : ComponentActivity() {
                     ThemeMode.LIGHT -> false
                     ThemeMode.DARK -> true
                 }
-            StricknaniTheme(darkTheme = darkTheme) {
+            val dynamicColor by
+                appPreferencesRepository.dynamicColor.collectAsStateWithLifecycle(false)
+            StricknaniTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
                 StricknaniNavHost(
                     startDestination = if (isConfigured) Route.Home else Route.Onboarding,
                     // Deferred (not consumed) until onboarding is done - there's nothing to

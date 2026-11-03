@@ -101,6 +101,13 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_DISMISSED_UPDATE] = version }
     }
 
+    /** Use the wallpaper's Material You colours instead of Stricknani's own palette. */
+    val dynamicColor = dataStore.data.map { prefs -> prefs[KEY_DYNAMIC_COLOR] ?: false }
+
+    suspend fun setDynamicColor(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_DYNAMIC_COLOR] = enabled }
+    }
+
     /**
      * The print dialog's last choices, so it opens the way it was used. [printContent] is the
      * `PrintContent` name (null = never printed); the UI maps it and falls back to "everything".
@@ -116,6 +123,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
     }
 
     private companion object {
+        val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val KEY_PRINT_CONTENT = stringPreferencesKey("print_content")
         val KEY_PRINT_IMAGES = booleanPreferencesKey("print_include_images")
         val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")

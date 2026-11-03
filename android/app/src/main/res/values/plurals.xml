@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <plurals name="sync_issue_count">
-        <item quantity="one">1 queued change needs attention.</item>
-        <item quantity="other">%1$d queued changes need attention.</item>
+        <item quantity="one">1 change isn’t in your account yet.</item>
+        <item quantity="other">%1$d changes aren’t in your account yet.</item>
     </plurals>
     <plurals name="sync_status_changes_waiting">
         <item quantity="one">%1$d change waiting to sync.</item>

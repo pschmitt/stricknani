@@ -104,6 +104,17 @@ constructor(
         viewModelScope.launch { appPreferencesRepository.setThemeMode(mode) }
     }
 
+    val dynamicColor: StateFlow<Boolean> =
+        appPreferencesRepository.dynamicColor.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            false,
+        )
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch { appPreferencesRepository.setDynamicColor(enabled) }
+    }
+
     fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
 
     /** Removes a conflict notice after the replay worker has already adopted the server version. */

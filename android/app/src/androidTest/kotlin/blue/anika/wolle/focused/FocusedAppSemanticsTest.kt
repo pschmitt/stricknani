@@ -138,7 +138,7 @@ class FocusedAppSemanticsTest {
                 device.displayHeight * 3 / 4,
                 20,
             )
-            waitForText("You’re offline - showing cached data.")
+            waitForText("You’re offline - here’s what’s on this phone.")
             composeRule.onNodeWithText("Heirloom Baby Blanket").assertIsDisplayed()
         } finally {
             setAirplaneMode(device, enabled = false)

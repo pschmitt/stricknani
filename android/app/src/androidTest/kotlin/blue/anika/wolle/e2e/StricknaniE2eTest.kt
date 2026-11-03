@@ -236,7 +236,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
                 .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
             waitForText("Heirloom Baby Blanket")
             composeRule.onNodeWithText("Home").performClick()
-            waitForText("Changes pending")
+            waitForText("Saved on this phone")
             captureE2eScreenshot("full-04-offline-queued-edit")
         } finally {
             setAirplaneMode(device, enabled = false)
@@ -330,7 +330,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 }
 
             composeRule.onNodeWithText("Home").performClick()
-            waitForText("Changes pending")
+            waitForText("Saved on this phone")
         } finally {
             setAirplaneMode(device, enabled = false)
         }

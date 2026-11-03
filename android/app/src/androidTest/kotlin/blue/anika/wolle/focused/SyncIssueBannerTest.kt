@@ -41,7 +41,7 @@ class SyncIssueBannerTest {
             }
         }
 
-        composeRule.onNodeWithText("Sync needs attention").assertIsDisplayed()
+        composeRule.onNodeWithText("Some changes are stuck").assertIsDisplayed()
         composeRule.onNodeWithText("2 queued changes need attention.").assertIsDisplayed()
         composeRule.onNodeWithText("Update project: Conflict resolved").assertIsDisplayed()
         composeRule.onNodeWithText("View details").performClick()
@@ -70,7 +70,7 @@ class SyncIssueBannerTest {
             }
         }
 
-        composeRule.onNodeWithText("Sync needs attention").assertIsDisplayed()
+        composeRule.onNodeWithText("Some changes are stuck").assertIsDisplayed()
         composeRule.onNodeWithText("View details").assertIsDisplayed()
         composeRule.onAllNodesWithText("Retry").assertCountEquals(0)
     }

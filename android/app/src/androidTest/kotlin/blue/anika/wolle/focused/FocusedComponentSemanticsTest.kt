@@ -48,7 +48,7 @@ class FocusedComponentSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("Syncing…").assertIsDisplayed()
+        composeRule.onNodeWithText("Catching up…").assertIsDisplayed()
         composeRule.onNodeWithText("Pulling the latest projects and yarns.").assertIsDisplayed()
         // SNA-60: nothing to act on while a refresh is already in flight - the card stays a plain
         // status display in that state.
@@ -73,7 +73,7 @@ class FocusedComponentSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("Sync issue").assertIsDisplayed()
+        composeRule.onNodeWithText("Something’s stuck").assertIsDisplayed()
         composeRule.onNodeWithText("1 queued change needs attention.").assertIsDisplayed()
         composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
     }
@@ -96,7 +96,7 @@ class FocusedComponentSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("Sync issue").assertIsDisplayed()
+        composeRule.onNodeWithText("Something’s stuck").assertIsDisplayed()
         composeRule.onNodeWithText("1 queued change needs attention.").assertIsDisplayed()
         composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
     }
@@ -166,7 +166,9 @@ class FocusedComponentSemanticsTest {
         }
 
         composeRule.onNodeWithText("No projects yet").assertIsDisplayed()
-        composeRule.onNodeWithText("Pull to refresh, or adjust your filters.").assertIsDisplayed()
+        composeRule
+            .onNodeWithText("Pull down to look for new ones, or loosen your filters.")
+            .assertIsDisplayed()
     }
 
     @Test

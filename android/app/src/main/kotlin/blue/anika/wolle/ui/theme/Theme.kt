@@ -5,73 +5,103 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 internal val LightColors =
     lightColorScheme(
-        primary = StricknaniBerry40,
-        secondary = StricknaniSage40,
-        tertiary = StricknaniMustard40,
-        error = StricknaniError40,
-        background = StricknaniLightBackground,
-        surface = StricknaniLightSurface,
-        surfaceContainer = StricknaniLightSurfaceContainer,
+        primary = Raspberry,
+        onPrimary = Color.White,
+        primaryContainer = RaspberryContainer,
+        onPrimaryContainer = OnRaspberryContainer,
+        secondary = Lagoon,
+        onSecondary = Color.White,
+        secondaryContainer = LagoonContainer,
+        onSecondaryContainer = OnLagoonContainer,
+        tertiary = Marigold,
+        onTertiary = Color.White,
+        tertiaryContainer = MarigoldContainer,
+        onTertiaryContainer = OnMarigoldContainer,
+        error = BerryError,
+        errorContainer = BerryErrorContainer,
+        background = LilacMist,
+        onBackground = PlumInk,
+        surface = LilacMist,
+        onSurface = PlumInk,
+        onSurfaceVariant = PlumInkMuted,
+        surfaceVariant = LilacContainerHigh,
+        surfaceContainerLowest = LilacContainerLowest,
+        surfaceContainerLow = LilacContainerLow,
+        surfaceContainer = LilacContainer,
+        surfaceContainerHigh = LilacContainerHigh,
+        surfaceContainerHighest = LilacContainerHighest,
+        outline = LilacOutline,
+        outlineVariant = LilacOutlineVariant,
     )
 
 internal val DarkColors =
     darkColorScheme(
-        primary = StricknaniBerry80,
-        secondary = StricknaniSage80,
-        tertiary = StricknaniMustard80,
-        error = StricknaniError80,
-        background = StricknaniDarkBackground,
-        surface = StricknaniDarkSurface,
-        surfaceContainer = StricknaniDarkSurfaceContainer,
+        primary = RaspberryNight,
+        onPrimary = OnRaspberryContainer,
+        primaryContainer = RaspberryNightContainer,
+        onPrimaryContainer = OnRaspberryNightContainer,
+        secondary = LagoonNight,
+        onSecondary = OnLagoonContainer,
+        secondaryContainer = LagoonNightContainer,
+        onSecondaryContainer = OnLagoonNightContainer,
+        tertiary = MarigoldNight,
+        onTertiary = OnMarigoldContainer,
+        tertiaryContainer = MarigoldNightContainer,
+        onTertiaryContainer = OnMarigoldNightContainer,
+        error = BerryErrorNight,
+        errorContainer = BerryErrorNightContainer,
+        background = MidnightPlum,
+        onBackground = MoonInk,
+        surface = MidnightPlum,
+        onSurface = MoonInk,
+        onSurfaceVariant = MoonInkMuted,
+        surfaceVariant = PlumContainerHigh,
+        surfaceContainerLowest = PlumContainerLowest,
+        surfaceContainerLow = PlumContainerLow,
+        surfaceContainer = PlumContainer,
+        surfaceContainerHigh = PlumContainerHigh,
+        surfaceContainerHighest = PlumContainerHighest,
+        outline = PlumOutline,
+        outlineVariant = PlumOutlineVariant,
     )
 
-/** A deliberately varied shape scale: expressive cards are soft, while controls stay compact. */
-internal val ExpressiveShapes =
+/** Soft, pillowy shapes: cards are generously round, controls rounder still. */
+internal val StricknaniShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(10.dp),
-        small = RoundedCornerShape(14.dp),
-        medium = RoundedCornerShape(20.dp),
+        extraSmall = RoundedCornerShape(12.dp),
+        small = RoundedCornerShape(16.dp),
+        medium = RoundedCornerShape(22.dp),
         large = RoundedCornerShape(28.dp),
         extraLarge = RoundedCornerShape(36.dp),
     )
 
-internal val ExpressiveTypography =
-    Typography()
-        .copy(
-            displayLarge = Typography().displayLarge.copy(fontWeight = FontWeight.Bold),
-            headlineLarge = Typography().headlineLarge.copy(fontWeight = FontWeight.Bold),
-            headlineMedium = Typography().headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-            titleLarge = Typography().titleLarge.copy(fontWeight = FontWeight.SemiBold),
-            titleMedium = Typography().titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            labelLarge = Typography().labelLarge.copy(letterSpacing = 0.1.sp),
-        )
-
 /**
- * Full Material You theming: dynamic, wallpaper-derived color on Android 12+, falling back to a
- * warm, yarn/craft-inspired hand-picked palette on older devices (see Color.kt). `darkTheme`
- * defaults to following the system setting; `MainActivity` overrides it from
- * `AppPreferencesRepository.themeMode` (SNA-18's light/dark/auto toggle) when the user picked
- * something other than "system".
+ * Stricknani's own look - the hand-dyed palette in Color.kt, Fraunces and Nunito (Type.kt) and soft
+ * shapes. [dynamicColor] switches to the wallpaper-derived Material You palette instead (an opt-in
+ * in Settings -> Appearance, Android 12+ only). `darkTheme` follows the system unless the user
+ * picked light or dark (SNA-18).
  */
 @Composable
-fun StricknaniTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun StricknaniTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit,
+) {
     val context = LocalContext.current
     val colorScheme =
         when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
                 if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             darkTheme -> DarkColors
             else -> LightColors
@@ -79,8 +109,8 @@ fun StricknaniTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Compos
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = ExpressiveTypography,
-        shapes = ExpressiveShapes,
+        typography = StricknaniTypography,
+        shapes = StricknaniShapes,
         content = content,
     )
 }

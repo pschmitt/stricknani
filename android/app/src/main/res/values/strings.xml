@@ -51,16 +51,22 @@
 
     <!-- Home -->
     <string name="home_gauge_calculator_description">Gauge calculator</string>
-    <string name="home_welcome_title">Welcome to Stricknani</string>
-    <string name="home_welcome_subtitle">Pull to refresh to sync your projects and yarn stash.</string>
+    <string name="home_welcome_title">Your knitting nook is ready</string>
+    <string name="home_welcome_subtitle">Pull down to fetch your projects and yarn.</string>
     <string name="home_favorite_projects_title">Favorite projects</string>
     <string name="home_favorite_yarns_title">Favorite yarns</string>
-    <string name="home_recent_projects_title">Recently updated projects</string>
+    <string name="home_recent_projects_title">More recent projects</string>
+    <string name="home_greeting_morning">Good morning!</string>
+    <string name="home_greeting_day">Hello there!</string>
+    <string name="home_greeting_evening">Good evening!</string>
+    <string name="home_greeting_night">Still knitting?</string>
+    <string name="home_greeting_question">What are we knitting today?</string>
+    <string name="home_continue_title">Continue knitting</string>
 
     <!-- Search -->
     <string name="search_placeholder">Search projects and yarns</string>
     <string name="search_empty_title">Search your stash</string>
-    <string name="search_empty_subtitle">Find projects and yarns already synced to this device.</string>
+    <string name="search_empty_subtitle">Search your projects and yarns by name.</string>
     <string name="search_no_matches_title">No matches</string>
     <string name="search_no_matches_subtitle">Try a different search term.</string>
 
@@ -115,16 +121,16 @@
     <string name="projects_list_add_category_description">Add category</string>
     <string name="projects_list_more_actions_description">More options</string>
     <string name="projects_list_empty_title">No projects yet</string>
-    <string name="projects_list_empty_subtitle">Pull to refresh, or adjust your filters.</string>
+    <string name="projects_list_empty_subtitle">Pull down to look for new ones, or loosen your filters.</string>
     <string name="projects_list_add_category_dialog_title">New category</string>
     <string name="projects_list_add_category_name_placeholder">e.g. Sweaters</string>
 
     <!-- Categories -->
     <string name="categories_title">Categories</string>
     <string name="categories_empty_title">No categories yet</string>
-    <string name="categories_empty_subtitle">Categories from your Stricknani server will appear here.</string>
-    <string name="categories_offline_title">Categories unavailable offline</string>
-    <string name="categories_offline_subtitle">Connect to your server to load categories.</string>
+    <string name="categories_empty_subtitle">Your categories will show up here.</string>
+    <string name="categories_offline_title">Categories need internet</string>
+    <string name="categories_offline_subtitle">Connect to the internet to see your categories.</string>
     <string name="categories_error_title">Couldn’t load categories</string>
     <string name="categories_error_subtitle">Something went wrong while loading categories. Try again.</string>
     <string name="categories_retry">Retry</string>
@@ -137,28 +143,28 @@
 
     <!-- Project import -->
     <string name="project_import_dialog_title">Import project</string>
-    <string name="project_import_url_label">Pattern URL</string>
+    <string name="project_import_url_label">Link to the pattern</string>
     <string name="project_import_url_placeholder">https://example.com/my-pattern</string>
     <string name="project_import_start">Import</string>
     <string name="project_import_cancel">Cancel import</string>
     <string name="project_import_progress">Importing project</string>
-    <string name="project_import_progress_description">Fetching pattern details from the server…</string>
-    <string name="project_import_saving_description">Saving the imported project locally…</string>
-    <string name="project_import_confirmation_title">Review imported project</string>
-    <string name="project_import_confirmation_text">Add “%1$s” to your projects? It will be saved locally and queued for synchronization.</string>
+    <string name="project_import_progress_description">Reading the pattern…</string>
+    <string name="project_import_saving_description">Tucking it into your projects…</string>
+    <string name="project_import_confirmation_title">Does this look right?</string>
+    <string name="project_import_confirmation_text">Add “%1$s” to your projects? It’s saved right away, even without internet.</string>
     <string name="project_import_steps_summary">%1$d steps found</string>
-    <string name="project_import_images_summary">%1$d image URLs found</string>
-    <string name="project_import_images_not_supported">The current API returns image URLs but does not attach them to a new offline project yet. The text and steps will be saved; you can add images later.</string>
+    <string name="project_import_images_summary">%1$d photos found</string>
+    <string name="project_import_images_not_supported">Photos from the page can’t come along yet. The text and steps are saved, and you can add photos later.</string>
     <string name="project_import_ai_fallback">AI extraction was unavailable; basic pattern extraction was used.</string>
     <string name="project_import_confirm_save">Add project</string>
-    <string name="project_import_success_title">Project imported</string>
-    <string name="project_import_success_text">“%1$s” was saved locally and queued for synchronization.</string>
+    <string name="project_import_success_title">It’s in!</string>
+    <string name="project_import_success_text">“%1$s” is now in your projects.</string>
     <string name="project_import_done">Done</string>
     <string name="project_import_retry">Retry</string>
-    <string name="project_import_error_title">Import failed</string>
-    <string name="project_import_error_invalid_url">Enter a complete HTTP or HTTPS pattern URL.</string>
-    <string name="project_import_error_offline">The server could not be reached. Check your connection and try again.</string>
-    <string name="project_import_error_server">The server rejected the import. Check that this Stricknani server supports API-token project imports.</string>
+    <string name="project_import_error_title">That didn’t work</string>
+    <string name="project_import_error_invalid_url">Paste the full link to the pattern, starting with https://</string>
+    <string name="project_import_error_offline">Couldn’t reach Stricknani. Check your internet and try again.</string>
+    <string name="project_import_error_server">Stricknani couldn’t read that pattern. Try another link, or add the project by hand.</string>
     <string name="project_import_error_unknown">The project could not be imported. Please try again.</string>
 
     <!-- Yarns -->
@@ -197,8 +203,8 @@
     <string name="settings_category_categories_subtitle">Manage project and yarn categories</string>
     <string name="settings_category_detail_cards_title">Detail cards</string>
     <string name="settings_category_detail_cards_subtitle">Choose the order of project and yarn sections</string>
-    <string name="settings_category_sync_title">Sync</string>
-    <string name="settings_category_sync_subtitle">Background refresh status</string>
+    <string name="settings_category_sync_title">Keeping up to date</string>
+    <string name="settings_category_sync_subtitle">When your projects were last refreshed</string>
     <string name="settings_category_backup_title">Backup</string>
     <string name="settings_category_backup_subtitle">Export, restore, and scheduled backups</string>
     <string name="settings_category_about_title">About</string>
@@ -228,29 +234,29 @@
     <string name="print_preparing">Preparing…</string>
     <string name="detail_card_reorder_title_description">%1$s card title</string>
     <string name="detail_card_reorder_long_press_description">Long-press and drag to reorder</string>
-    <string name="settings_sync_group_title">Background sync</string>
-    <string name="settings_sync_last_synced_label">Last synced</string>
-    <string name="settings_sync_policy_label">Sync policy</string>
+    <string name="settings_sync_group_title">Staying in sync</string>
+    <string name="settings_sync_last_synced_label">Last refreshed</string>
+    <string name="settings_sync_policy_label">How often</string>
     <string name="settings_sync_policy_description">Automatically every 6 hours, on launch, and right after each edit</string>
     <string name="settings_sync_never">Never</string>
-    <string name="sync_issue_settings_title">Queued changes</string>
-    <string name="sync_issue_banner_title">Sync needs attention</string>
+    <string name="sync_issue_settings_title">Stuck changes</string>
+    <string name="sync_issue_banner_title">Some changes are stuck</string>
     <string name="sync_issue_view_details">View details</string>
     <string name="sync_issue_retry">Retry</string>
     <string name="sync_issue_dismiss">Dismiss</string>
-    <string name="sync_issue_retry_title">Retry failed changes</string>
-    <string name="sync_issue_retry_description">Try sending queued changes again now.</string>
+    <string name="sync_issue_retry_title">Try again now</string>
+    <string name="sync_issue_retry_description">Send your stuck changes to Stricknani once more.</string>
     <string name="sync_issue_project_create">Create project</string>
     <string name="sync_issue_project_update">Update project</string>
     <string name="sync_issue_project_delete">Delete project</string>
     <string name="sync_issue_yarn_create">Create yarn</string>
     <string name="sync_issue_yarn_update">Update yarn</string>
     <string name="sync_issue_yarn_delete">Delete yarn</string>
-    <string name="sync_issue_unknown_change">Queued change</string>
-    <string name="sync_issue_conflict_headline">Conflict resolved</string>
-    <string name="sync_issue_conflict_detail">The server kept the latest version; this change was not applied.</string>
-    <string name="sync_issue_failure_headline">Sync failed</string>
-    <string name="sync_issue_failure_detail">This change is still queued and will be retried automatically.</string>
+    <string name="sync_issue_unknown_change">A change</string>
+    <string name="sync_issue_conflict_headline">Changed somewhere else</string>
+    <string name="sync_issue_conflict_detail">This was edited on another device in the meantime, so the newer version was kept.</string>
+    <string name="sync_issue_failure_headline">Not saved to your account yet</string>
+    <string name="sync_issue_failure_detail">It’s safe on this phone, and the app keeps trying on its own.</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_description">Removes the saved server URL and API token from this device.</string>
 
@@ -262,6 +268,9 @@
 
     <!-- Settings: Appearance -->
     <string name="appearance_settings_theme_title">Theme</string>
+    <string name="appearance_settings_colors_title">Colours</string>
+    <string name="appearance_settings_dynamic_color">Match my wallpaper</string>
+    <string name="appearance_settings_dynamic_color_description">Use your wallpaper\'s colours instead of Stricknani\'s own.</string>
     <string name="appearance_settings_theme_system_description">Follow the device appearance setting</string>
     <string name="appearance_settings_theme_system_label">Follow system</string>
     <string name="appearance_settings_theme_light_label">Light</string>
@@ -335,28 +344,28 @@
     <string name="gauge_calculator_summary_without_rows">Based on a pattern cast-on of %1$d stitches.</string>
 
     <!-- Home sync status card -->
-    <string name="sync_status_syncing">Syncing…</string>
-    <string name="sync_status_issue">Sync issue</string>
-    <string name="sync_status_changes_pending">Changes pending</string>
-    <string name="sync_status_synced">Synced</string>
-    <string name="sync_status_pulling_latest">Pulling the latest projects and yarns.</string>
-    <string name="sync_status_not_synced_yet">Not synced yet</string>
-    <string name="sync_status_last_synced_just_now">Last synced just now</string>
-    <string name="sync_status_last_synced_minutes">Last synced %1$dm ago</string>
-    <string name="sync_status_last_synced_hours">Last synced %1$dh ago</string>
-    <string name="sync_status_last_synced_days">Last synced %1$dd ago</string>
-    <string name="sync_status_last_synced_date">Last synced on %1$s</string>
+    <string name="sync_status_syncing">Catching up…</string>
+    <string name="sync_status_issue">Something’s stuck</string>
+    <string name="sync_status_changes_pending">Saved on this phone</string>
+    <string name="sync_status_synced">All caught up</string>
+    <string name="sync_status_pulling_latest">Fetching your newest projects and yarns.</string>
+    <string name="sync_status_not_synced_yet">Not caught up yet</string>
+    <string name="sync_status_last_synced_just_now">Checked just now</string>
+    <string name="sync_status_last_synced_minutes">Checked %1$d min ago</string>
+    <string name="sync_status_last_synced_hours">Checked %1$d h ago</string>
+    <string name="sync_status_last_synced_days">Checked %1$d d ago</string>
+    <string name="sync_status_last_synced_date">Last checked on %1$s</string>
 
     <!-- Foreground refresh feedback -->
-    <string name="refresh_success">Updated</string>
-    <string name="refresh_no_changes">Already up to date</string>
-    <string name="refresh_offline">You’re offline - showing cached data.</string>
-    <string name="refresh_error">Couldn’t refresh - showing cached data.</string>
+    <string name="refresh_success">Fresh as a daisy</string>
+    <string name="refresh_no_changes">Nothing new yet</string>
+    <string name="refresh_offline">You’re offline - here’s what’s on this phone.</string>
+    <string name="refresh_error">Couldn’t check for news - here’s what’s on this phone.</string>
 
     <!-- Background sync notification -->
-    <string name="sync_notification_channel_name">Sync updates</string>
-    <string name="sync_notification_channel_description">New changes found during a background sync</string>
-    <string name="sync_notification_content">New changes synced from your server</string>
+    <string name="sync_notification_channel_name">Updates from Stricknani</string>
+    <string name="sync_notification_channel_description">When something new arrives from another device</string>
+    <string name="sync_notification_content">Something new arrived from your other devices</string>
 
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">The app recovered from a crash</string>
@@ -377,7 +386,7 @@
     <string name="search_field_clear">Clear search</string>
 
     <!-- Shared ViewModel error messages -->
-    <string name="error_sync_failed">Couldn\'t sync - showing cached data.</string>
+    <string name="error_sync_failed">Couldn’t check for news - here’s what’s on this phone.</string>
     <string name="error_favorite_failed">Couldn\'t update favorite - try again.</string>
     <string name="error_save_failed">Couldn\'t save - try again.</string>
     <string name="error_delete_failed">Couldn\'t delete - try again.</string>
@@ -390,7 +399,7 @@
     <!-- Mutation feedback -->
     <string name="mutation_favorite_added">Added to favorites.</string>
     <string name="mutation_favorite_removed">Removed from favorites.</string>
-    <string name="mutation_favorite_offline">You’re offline - the favorite could not be updated.</string>
+    <string name="mutation_favorite_offline">You’re offline - try favouriting again in a moment.</string>
     <string name="mutation_category_created">Category “%1$s” created.</string>
     <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
     <string name="mutation_category_deleted">Category “%1$s” deleted.</string>
@@ -425,7 +434,7 @@
     <string name="backup_error_open_file_read">Could not open the selected file for reading</string>
     <string name="backup_success_exported">Backup exported</string>
     <string name="backup_error_export_failed">Export failed</string>
-    <string name="backup_success_restored">Backup restored - syncing latest data now</string>
+    <string name="backup_success_restored">Backup restored - fetching your latest projects now</string>
     <string name="backup_error_restore_failed">Restore failed</string>
 
     <!-- Settings: Appearance language picker -->

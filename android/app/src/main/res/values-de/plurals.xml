@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <plurals name="sync_issue_count">
-        <item quantity="one">1 ausstehende Änderung braucht Aufmerksamkeit.</item>
-        <item quantity="other">%1$d ausstehende Änderungen brauchen Aufmerksamkeit.</item>
+        <item quantity="one">1 Änderung ist noch nicht in deinem Konto.</item>
+        <item quantity="other">%1$d Änderungen sind noch nicht in deinem Konto.</item>
     </plurals>
     <plurals name="sync_status_changes_waiting">
         <item quantity="one">%1$d Änderung wartet auf Synchronisierung.</item>
