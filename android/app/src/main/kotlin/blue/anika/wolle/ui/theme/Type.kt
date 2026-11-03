@@ -6,6 +6,8 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import blue.anika.wolle.R
@@ -58,21 +60,32 @@ private fun TextStyle.title(weight: Int) =
 private fun TextStyle.body(weight: Int = 400) =
     copy(fontFamily = Nunito, fontWeight = FontWeight(weight))
 
+/**
+ * German titles are full of long compound words ("Rollkragenpulli"): hyphenate instead of breaking
+ * mid-word. Headings also balance their lines; body and label styles keep the simple line breaker,
+ * because text fields use them while typing.
+ */
+private fun TextStyle.wraps(balanced: Boolean = false) =
+    copy(
+        hyphens = Hyphens.Auto,
+        lineBreak = if (balanced) LineBreak.Heading else LineBreak.Simple,
+    )
+
 internal val StricknaniTypography =
     Typography(
-        displayLarge = base.displayLarge.display(700, -0.02f),
-        displayMedium = base.displayMedium.display(700, -0.02f),
-        displaySmall = base.displaySmall.display(700),
-        headlineLarge = base.headlineLarge.display(700),
-        headlineMedium = base.headlineMedium.display(650),
-        headlineSmall = base.headlineSmall.title(650),
-        titleLarge = base.titleLarge.title(650),
-        titleMedium = base.titleMedium.title(600).copy(fontSize = 17.sp),
-        titleSmall = base.titleSmall.body(800),
-        bodyLarge = base.bodyLarge.body().copy(lineHeight = 25.sp),
-        bodyMedium = base.bodyMedium.body().copy(lineHeight = 21.sp),
-        bodySmall = base.bodySmall.body(500),
-        labelLarge = base.labelLarge.body(800).copy(letterSpacing = 0.02.em),
-        labelMedium = base.labelMedium.body(700),
-        labelSmall = base.labelSmall.body(700),
+        displayLarge = base.displayLarge.display(700, -0.02f).wraps(balanced = true),
+        displayMedium = base.displayMedium.display(700, -0.02f).wraps(balanced = true),
+        displaySmall = base.displaySmall.display(700).wraps(balanced = true),
+        headlineLarge = base.headlineLarge.display(700).wraps(balanced = true),
+        headlineMedium = base.headlineMedium.display(650).wraps(balanced = true),
+        headlineSmall = base.headlineSmall.title(650).wraps(balanced = true),
+        titleLarge = base.titleLarge.title(650).wraps(balanced = true),
+        titleMedium = base.titleMedium.title(600).copy(fontSize = 17.sp).wraps(balanced = true),
+        titleSmall = base.titleSmall.body(800).wraps(),
+        bodyLarge = base.bodyLarge.body().copy(lineHeight = 25.sp).wraps(),
+        bodyMedium = base.bodyMedium.body().copy(lineHeight = 21.sp).wraps(),
+        bodySmall = base.bodySmall.body(500).wraps(),
+        labelLarge = base.labelLarge.body(800).copy(letterSpacing = 0.02.em).wraps(),
+        labelMedium = base.labelMedium.body(700).wraps(),
+        labelSmall = base.labelSmall.body(700).wraps(),
     )

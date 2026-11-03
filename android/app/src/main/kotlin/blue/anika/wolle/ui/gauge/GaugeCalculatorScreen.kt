@@ -264,7 +264,7 @@ private fun SwatchCard(
                         stitches = stitches.toIntOrNull() ?: 0,
                         rows = rows.toIntOrNull() ?: 0,
                         yarn = yarn,
-                        background = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        background = yarn.copy(alpha = 0.16f),
                         size = 92.dp,
                     )
                     Text(
