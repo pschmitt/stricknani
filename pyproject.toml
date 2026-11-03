@@ -1,6 +1,6 @@
 [project]
 name = "stricknani"
-version = "0.1.0"
+version = "1.0.0"
 description = "A self-hosted web app for managing knitting projects"
 readme = "README.md"
 license = { text = "GPL-3.0-only" }

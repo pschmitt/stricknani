@@ -6,10 +6,10 @@
 
 buildNpmPackage {
   pname = "stricknani-web";
-  version = "0.1.0";
+  version = "1.0.0";
   src = ../web;
   nodejs = nodejs_22;
-  npmDepsHash = "sha256-wxRSes1lujXm1alpThFmHlYIdGc7PgCsqGe1Mw7ErVI=";
+  npmDepsHash = "sha256-cOY8DTD2ZMik8lfQqfdOEgBD8cBlZeaJd0QHS8/rT+U=";
   npmBuildScript = "build";
   doCheck = true;
   checkPhase = ''

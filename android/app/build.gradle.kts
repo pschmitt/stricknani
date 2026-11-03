@@ -30,7 +30,7 @@ val selfUpdateEnabled =
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
-    providers.gradleProperty("versionName").orElse(inferredVersionName ?: "0.1.0").get().also { name
+    providers.gradleProperty("versionName").orElse(inferredVersionName ?: "1.0.0").get().also { name
         ->
         require(name.isNotBlank()) { "versionName must not be blank" }
     }

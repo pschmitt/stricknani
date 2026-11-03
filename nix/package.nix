@@ -47,7 +47,7 @@ let
 in
 python.pkgs.buildPythonApplication {
   pname = "stricknani";
-  version = "0.1.0";
+  version = "1.0.0";
   format = "pyproject";
 
   src = lib.cleanSource ./..;
