@@ -133,17 +133,6 @@
     gap: 0.3rem;
     font-weight: 620;
   }
-  input {
-    min-height: 48px;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    padding: 0.55rem 0.7rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-  }
-  input[aria-invalid="true"] {
-    border-color: var(--danger);
-  }
   .field-error {
     color: var(--danger);
     font-weight: 500;
