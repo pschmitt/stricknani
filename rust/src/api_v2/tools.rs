@@ -11,7 +11,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::domain::gauge::GaugeInput;
+use crate::domain::gauge::{GaugeInput, SwatchLength, SwatchSizes};
 
 use super::Envelope;
 
@@ -30,6 +30,10 @@ struct GaugeRequest {
     user_gauge_rows: Option<serde_json::Value>,
     pattern_cast_on_stitches: Option<serde_json::Value>,
     pattern_row_count: Option<serde_json::Value>,
+    pattern_swatch_width_cm: Option<serde_json::Value>,
+    pattern_swatch_height_cm: Option<serde_json::Value>,
+    user_swatch_width_cm: Option<serde_json::Value>,
+    user_swatch_height_cm: Option<serde_json::Value>,
 }
 
 #[derive(Serialize)]
@@ -99,6 +103,29 @@ async fn calculate_gauge(request: Result<Json<GaugeRequest>, JsonRejection>) -> 
         .pattern_row_count
         .and_then(|value| positive(Some(value), "pattern_row_count", &mut fields));
 
+    let sizes = SwatchSizes {
+        pattern_width: swatch_length(
+            request.pattern_swatch_width_cm,
+            "pattern_swatch_width_cm",
+            &mut fields,
+        ),
+        pattern_height: swatch_length(
+            request.pattern_swatch_height_cm,
+            "pattern_swatch_height_cm",
+            &mut fields,
+        ),
+        user_width: swatch_length(
+            request.user_swatch_width_cm,
+            "user_swatch_width_cm",
+            &mut fields,
+        ),
+        user_height: swatch_length(
+            request.user_swatch_height_cm,
+            "user_swatch_height_cm",
+            &mut fields,
+        ),
+    };
+
     if !fields.is_empty() {
         return error_response(
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -138,7 +165,7 @@ async fn calculate_gauge(request: Result<Json<GaugeRequest>, JsonRejection>) -> 
         pattern_cast_on_stitches,
         pattern_row_count,
     }
-    .calculate();
+    .calculate_with_swatches(sizes);
 
     Json(Envelope {
         data: GaugeResponse {
@@ -162,6 +189,29 @@ fn positive(
     count.or_else(|| {
         fields.insert(field, "Must be a positive integer");
         None
+    })
+}
+
+/// An omitted (or null) size is the default 10 cm; otherwise it must be a JSON
+/// number above 0 and at most 100 with at most three decimals.
+fn swatch_length(
+    value: Option<serde_json::Value>,
+    field: &'static str,
+    fields: &mut BTreeMap<&'static str, &'static str>,
+) -> SwatchLength {
+    let Some(value) = value else {
+        return SwatchLength::default();
+    };
+    let length = match &value {
+        serde_json::Value::Number(number) => SwatchLength::parse_decimal(&number.to_string()),
+        _ => None,
+    };
+    length.unwrap_or_else(|| {
+        fields.insert(
+            field,
+            "Must be a number above 0 and at most 100 with up to 3 decimals",
+        );
+        SwatchLength::default()
     })
 }
 
