@@ -905,4 +905,27 @@
     <string name="library_card_updated">Aktualisiert %1$s</string>
     <string name="library_card_details_to_add">Details ergänzen</string>
     <string name="mascot_say_hi">Dem Wollknäuel Hallo sagen</string>
+
+    <!-- Home: recent activity -->
+    <string name="activity_title">Letzte Aktivität</string>
+    <string name="activity_actor_you">Du hast</string>
+    <string name="activity_actor_named">%1$s hat</string>
+    <string name="activity_actor_someone">Jemand hat</string>
+    <string name="activity_created">%1$s %2$s angelegt</string>
+    <string name="activity_updated">%1$s %2$s aktualisiert</string>
+    <string name="activity_deleted">%1$s %2$s gelöscht</string>
+    <string name="activity_uploaded">%1$s eine Datei zu %2$s hinzugefügt</string>
+    <string name="activity_removed">%1$s etwas aus %2$s entfernt</string>
+    <string name="activity_changed">%1$s %2$s geändert</string>
+    <string name="activity_unnamed_project">ein Projekt</string>
+    <string name="activity_unnamed_yarn">ein Garn</string>
+    <plurals name="activity_changes_count">
+        <item quantity="one">%1$d Änderung</item>
+        <item quantity="other">%1$d Änderungen</item>
+    </plurals>
+    <string name="activity_deleted_label">gelöscht</string>
+    <string name="activity_show_more">Mehr anzeigen</string>
+    <string name="activity_unavailable">Aktivität braucht eine Verbindung</string>
+    <string name="activity_empty">Noch nichts los. Änderungen an deinen Projekten und Garnen erscheinen hier.</string>
+    <string name="activity_more_failed">Weitere Aktivität konnte nicht geladen werden.</string>
 </resources>

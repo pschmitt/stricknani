@@ -123,6 +123,8 @@ fun HomeScreen(
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
     val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
     val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
+    val activity by viewModel.activity.collectAsStateWithLifecycle()
+    LaunchedEffect(signedOut) { viewModel.onSignedOutChanged(signedOut) }
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -360,6 +362,17 @@ fun HomeScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+                    if (activity.phase != ActivityPhase.Hidden) {
+                        spacedItem {
+                            ActivitySection(
+                                state = activity,
+                                previewUrl = viewModel::previewUrl,
+                                onProjectClick = onProjectClick,
+                                onYarnClick = onYarnClick,
+                                onShowMore = viewModel::loadMoreActivity,
+                            )
                         }
                     }
                 }
@@ -696,7 +709,7 @@ private fun StashCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SectionTitle(
+internal fun SectionTitle(
     title: String,
     icon: ImageVector,
     accent: Color,

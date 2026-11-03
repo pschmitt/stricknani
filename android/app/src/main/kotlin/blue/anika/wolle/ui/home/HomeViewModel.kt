@@ -9,6 +9,7 @@ import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
+import blue.anika.wolle.data.repository.ActivityRepository
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
@@ -52,7 +53,30 @@ constructor(
     private val updateChecker: UpdateChecker,
     private val appPreferences: AppPreferencesRepository,
     private val settingsRepository: SettingsRepository,
+    activityRepository: ActivityRepository,
 ) : ViewModel() {
+
+    private val activityController = ActivityController(viewModelScope, activityRepository::page)
+
+    /** Home's online-only "Recent activity" (see [ActivitySection]). */
+    val activity: StateFlow<ActivityUiState> = activityController.state
+
+    private var lastSignedOut: Boolean? = null
+
+    /**
+     * The feed needs a session: clear it on sign-out, and load it again when the user comes back.
+     * The first report only records the state, [refresh] already loads on start.
+     */
+    fun onSignedOutChanged(signedOut: Boolean) {
+        val previous = lastSignedOut
+        lastSignedOut = signedOut
+        when {
+            signedOut -> activityController.hide()
+            previous == true -> activityController.reload()
+        }
+    }
+
+    fun loadMoreActivity() = activityController.loadMore()
 
     private val foundUpdate = MutableStateFlow<AppUpdate?>(null)
 
@@ -151,6 +175,7 @@ constructor(
 
     fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
         checkForUpdate()
+        if (!settingsRepository.sessionExpired.value) activityController.reload()
         refreshController.refresh(trigger = trigger) {
             categoryRepository.sync()
             val projectsChanged = projectRepository.sync()

@@ -61,6 +61,9 @@ private val fieldNouns: Map<String, Int> =
         "category.name" to R.string.history_noun_name,
     )
 
+/** The string resource of the noun for a change-field key such as `project.name`, or null. */
+fun fieldNounRes(field: String): Int? = fieldNouns[field]
+
 private val countFields: Map<String, HistoryCountKind> =
     mapOf(
         "project.image_count" to HistoryCountKind.Photo,
