@@ -29,8 +29,10 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okhttp3.FormBody
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -84,11 +86,11 @@ class RustBackendReplayIntegrationTest {
 
         try {
             browserSession = loginForRevocableSession(http, baseUrl, email, password)
-            settings.save(baseUrl, browserSession.token)
+            settings.save(baseUrl, browserSession.apiToken)
 
             // Repository mutations are local-only. Pointing the app at an unreachable URL during
             // this phase makes any accidental eager network write fail immediately.
-            settings.save(OFFLINE_URL, browserSession.token)
+            settings.save(OFFLINE_URL, browserSession.apiToken)
             val yarnRepository = graph.yarnRepository()
             val projectRepository = graph.projectRepository()
             val pendingDao = graph.pendingMutationDao()
@@ -129,7 +131,7 @@ class RustBackendReplayIntegrationTest {
             assertTrue(queuedBeforeReplay.any { it.entityType == MutationEntityType.YARN })
             assertTrue(queuedBeforeReplay.any { it.entityType == MutationEntityType.PROJECT })
 
-            settings.save(baseUrl, browserSession.token)
+            settings.save(baseUrl, browserSession.apiToken)
             assertEquals(WorkInfo.State.SUCCEEDED, runReplay(context))
 
             assertNull(projectDao.getById(tempProjectId))
@@ -213,7 +215,7 @@ class RustBackendReplayIntegrationTest {
             try {
                 if (browserSession != null) {
                     try {
-                        settings.save(baseUrl, browserSession.token)
+                        settings.save(baseUrl, browserSession.apiToken)
                         cleanupRemote(
                             graph.projectsApi(),
                             graph.yarnsApi(),
@@ -336,7 +338,38 @@ class RustBackendReplayIntegrationTest {
                         ?.substringBefore(';') ?: error("Rust login omitted its session cookie")
                 }
         val token = sessionCookie.substringAfter('=')
-        return BrowserSession(sessionCookie, token, csrfFor(token))
+        return BrowserSession(
+            sessionCookie,
+            csrfFor(token),
+            mintApiToken(client, baseUrl, email, password),
+        )
+    }
+
+    /**
+     * The app authenticates with an API PAT. `/api/v2` rejects a browser session token used as a
+     * Bearer (401), and the capability probe no longer falls back to v1 on a 401, so the fixture
+     * login must mint a real API token the way the app's password login does.
+     */
+    private fun mintApiToken(
+        client: OkHttpClient,
+        baseUrl: String,
+        email: String,
+        password: String,
+    ): String {
+        val body =
+            JSONObject()
+                .put("email", email)
+                .put("password", password)
+                .put("token_name", "Rust replay test")
+                .toString()
+                .toRequestBody("application/json".toMediaType())
+        client
+            .newCall(Request.Builder().url("$baseUrl/api/v2/auth/token").post(body).build())
+            .execute()
+            .use { response ->
+                assertEquals(200, response.code)
+                return JSONObject(response.body!!.string()).getJSONObject("data").getString("token")
+            }
     }
 
     private fun logout(client: OkHttpClient, baseUrl: String, session: BrowserSession) {
@@ -481,7 +514,7 @@ class RustBackendReplayIntegrationTest {
             failure
         }
 
-    private data class BrowserSession(val cookie: String, val token: String, val csrf: String)
+    private data class BrowserSession(val cookie: String, val csrf: String, val apiToken: String)
 
     private companion object {
         const val FIXTURE_FILENAME = "rust-replay-fixture.json"
