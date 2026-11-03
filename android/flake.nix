@@ -19,11 +19,11 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       android-nixpkgs,
       git-hooks,
       ci-workflows,
+      ...
     }:
     let
       system = "x86_64-linux";

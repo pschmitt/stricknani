@@ -1,28 +1,23 @@
-name: Nix Lint
+name: Nix lint
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - '**/*.nix'
+    branches: [main]
+    paths: &paths
+      - "**.nix"
+      - "flake.lock"
+      - ".github/workflows/nix-lint.yaml"
   pull_request:
-    branches: [ main ]
-    paths:
-      - '**/*.nix'
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  statix:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-
-      - name: Run statix
-        run: nix develop --command just lint-nix
+  nix:
+    uses: pschmitt/ci-workflows/.github/workflows/nix-lint.yaml@main
