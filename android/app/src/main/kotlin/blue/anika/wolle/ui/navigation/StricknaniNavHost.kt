@@ -1,13 +1,9 @@
 package blue.anika.wolle.ui.navigation
 
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -27,9 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,6 +40,7 @@ import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
+import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -66,8 +65,6 @@ internal fun shouldOpenFreshTopLevelRoot(didPopToRoot: Boolean): Boolean = !didP
  * already in the back stack, popping is enough. If a detail route was reached directly (for example
  * from Home) and no root exists yet, clear that nested stack before opening a fresh root.
  */
-private const val SCREEN_TRANSITION_MILLIS = 220
-
 /** The list a deep-linked project or yarn belongs to, or null for any other route. */
 internal fun deepLinkParent(route: Route): Route? =
     when (route) {
@@ -128,6 +125,8 @@ fun StricknaniNavHost(
 ) {
     val navController = rememberNavController()
     val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+    val motion = androidx.compose.runtime.remember { ScreenMotion() }
+    val reduceMotion = animationsDisabled()
 
     MutationFeedbackEffect(mutationFeedback, snackbarHostState)
 
@@ -189,6 +188,7 @@ fun StricknaniNavHost(
                                 ) {
                                     return@NavigationBarItem
                                 }
+                                motion.markTabSwitch()
                                 navigateToTopLevelRoot(navController, destination)
                             },
                             icon = {
@@ -226,27 +226,21 @@ fun StricknaniNavHost(
             // Consuming the bar's padding lets screens use imePadding() without lifting their
             // content twice (keyboard height on top of the tab bar they already sit above).
             modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
-            // Opening a screen slides it in a little from the side it comes from and fades; going
-            // back reverses that. Short and small so it orients without slowing anyone down; the
-            // system "Remove animations" setting scales it to nothing.
-            enterTransition = {
-                fadeIn(tween(SCREEN_TRANSITION_MILLIS)) +
-                    slideInHorizontally(tween(SCREEN_TRANSITION_MILLIS)) { it / 12 }
-            },
-            exitTransition = { fadeOut(tween(SCREEN_TRANSITION_MILLIS / 2)) },
-            popEnterTransition = { fadeIn(tween(SCREEN_TRANSITION_MILLIS)) },
-            popExitTransition = {
-                fadeOut(tween(SCREEN_TRANSITION_MILLIS / 2)) +
-                    slideOutHorizontally(tween(SCREEN_TRANSITION_MILLIS)) { it / 12 }
-            },
+            // Drilling down stacks a card on top of the screen below, back unstacks it (and the
+            // predictive-back gesture peels it); editors rise as a sheet; tab switches cross-fade.
+            // See ScreenMotion.kt. Animations switched off in system settings means no motion.
+            enterTransition = { motion.enter(this, isPop = false, reduceMotion) },
+            exitTransition = { motion.exit(this, isPop = false, reduceMotion) },
+            popEnterTransition = { motion.enter(this, isPop = true, reduceMotion) },
+            popExitTransition = { motion.exit(this, isPop = true, reduceMotion) },
         ) {
-            composable<Route.Onboarding> {
+            screen<Route.Onboarding>(motion) {
                 OnboardingScreen(
                     pendingScannedText = pendingSetupUri,
                     onScannedTextConsumed = onSetupUriConsumed,
                 )
             }
-            composable<Route.Home> {
+            screen<Route.Home>(motion) {
                 HomeScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
@@ -259,14 +253,14 @@ fun StricknaniNavHost(
                     },
                 )
             }
-            composable<Route.Projects> {
+            screen<Route.Projects>(motion) {
                 ProjectsListScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
                 )
             }
-            composable<Route.Categories> { CategoriesScreen() }
-            composable<Route.Yarns> {
+            screen<Route.Categories>(motion) { CategoriesScreen() }
+            screen<Route.Yarns>(motion) {
                 val tabs by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
                 YarnsListScreen(
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
@@ -277,20 +271,20 @@ fun StricknaniNavHost(
                         else ({ navController.popBackStack() }),
                 )
             }
-            composable<Route.Search> {
+            screen<Route.Search>(motion) {
                 SearchScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                 )
             }
-            composable<Route.Settings> {
+            screen<Route.Settings>(motion) {
                 SettingsScreen(
                     onCategoryClick = { category ->
                         navController.navigate(Route.SettingsCategoryRoute(category.name))
                     }
                 )
             }
-            composable<Route.SettingsCategoryRoute> { backStackEntry ->
+            screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->
                 val route: Route.SettingsCategoryRoute = backStackEntry.toRoute()
                 SettingsCategoryScreen(
                     category = SettingsCategory.valueOf(route.categoryName),
@@ -300,14 +294,16 @@ fun StricknaniNavHost(
                     onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
                 )
             }
-            composable<Route.AdminAudit> {
+            screen<Route.AdminAudit>(motion) {
                 AdminAuditScreen(onBack = { navController.navigateUp() })
             }
-            composable<Route.AdminAccounts> {
+            screen<Route.AdminAccounts>(motion) {
                 AdminAccountsScreen(onBack = { navController.navigateUp() })
             }
-            composable<Route.Libraries> { LibrariesScreen(onBack = { navController.navigateUp() }) }
-            composable<Route.ProjectDetail> {
+            screen<Route.Libraries>(motion) {
+                LibrariesScreen(onBack = { navController.navigateUp() })
+            }
+            screen<Route.ProjectDetail>(motion) {
                 ProjectDetailScreen(
                     onBack = { navController.navigateUp() },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
@@ -322,7 +318,7 @@ fun StricknaniNavHost(
                     },
                 )
             }
-            composable<Route.YarnDetail> {
+            screen<Route.YarnDetail>(motion) {
                 YarnDetailScreen(
                     onBack = { navController.navigateUp() },
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
@@ -337,7 +333,7 @@ fun StricknaniNavHost(
                     },
                 )
             }
-            composable<Route.ProjectEditor> {
+            screen<Route.ProjectEditor>(motion) {
                 ProjectEditorScreen(
                     onSaved = { navController.navigateUp() },
                     onDeleted = {
@@ -348,7 +344,7 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                 )
             }
-            composable<Route.YarnEditor> {
+            screen<Route.YarnEditor>(motion) {
                 YarnEditorScreen(
                     onSaved = { navController.navigateUp() },
                     onDeleted = {
@@ -359,11 +355,19 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                 )
             }
-            composable<Route.Gauge> {
+            screen<Route.Gauge>(motion) {
                 GaugeCalculatorScreen(onBack = { navController.navigateUp() })
             }
         }
     }
+}
+
+/** `composable<T>` whose content also gets the stack/unstack card visuals ([MotionLayer]). */
+private inline fun <reified T : Route> NavGraphBuilder.screen(
+    motion: ScreenMotion,
+    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
+) {
+    composable<T> { entry -> MotionLayer(motion, entry.id) { content(entry) } }
 }
 
 /** Each tab has its own yarn colour, like the web sidebar's tinted icons. */
