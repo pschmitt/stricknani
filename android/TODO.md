@@ -41,6 +41,17 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-78: One filter row on the project list
+
+- [x] Tags share the chip row with categories (marked with a tag icon) instead of a "Tags" label
+      and a second chip row; the list starts about 60dp higher when tags exist.
+- [x] "Add category" moves from a "+" chip at the end of the filter row into a "More options"
+      menu in the project list's title bar - managing categories is not a filter.
+- [ ] Visual check in the screenshot workflow.
+
+Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug assembleDebug` passed on
+the remote build host.
+
 ## SNA-77: Bring the website redesign's UX fixes to the Android app
 
 - [x] Up from a shared project or yarn link goes to its list (Projects or Yarns), not Home: the

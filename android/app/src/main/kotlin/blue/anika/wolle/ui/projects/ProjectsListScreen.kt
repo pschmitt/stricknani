@@ -22,11 +22,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -100,6 +105,33 @@ fun ProjectsListScreen(
                                 stringResource(R.string.projects_list_import_description),
                         )
                     }
+                    // Managing categories is not a filter, so it lives here instead of as a "+"
+                    // chip at the end of the filter row.
+                    var menuExpanded by remember { mutableStateOf(false) }
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription =
+                                stringResource(R.string.projects_list_more_actions_description),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.projects_list_add_category_description)
+                                )
+                            },
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                showAddCategoryDialog = true
+                            },
+                        )
+                    }
                 },
             )
         },
@@ -150,41 +182,21 @@ fun ProjectsListScreen(
                             label = { Text(category.name) },
                         )
                     }
-                    item {
+                    // Tags share the row with categories instead of a labelled second row; the
+                    // tag icon tells them apart.
+                    items(tags, key = { "tag:$it" }) { tag ->
                         FilterChip(
-                            selected = false,
-                            onClick = { showAddCategoryDialog = true },
-                            label = {
+                            selected = selectedTag == tag,
+                            onClick = { viewModel.onTagSelected(tag) },
+                            label = { Text(tag) },
+                            leadingIcon = {
                                 Icon(
-                                    Icons.Filled.Add,
-                                    contentDescription =
-                                        stringResource(
-                                            R.string.projects_list_add_category_description
-                                        ),
+                                    Icons.Filled.Tag,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
                                 )
                             },
                         )
-                    }
-                }
-                if (tags.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.projects_list_tags_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-                    )
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        modifier = Modifier.testTag("projects-list-tag-filters"),
-                    ) {
-                        items(tags, key = { it }) { tag ->
-                            FilterChip(
-                                selected = selectedTag == tag,
-                                onClick = { viewModel.onTagSelected(tag) },
-                                label = { Text(tag) },
-                            )
-                        }
                     }
                 }
                 Spacer(Modifier.height(8.dp))

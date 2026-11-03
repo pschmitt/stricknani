@@ -112,8 +112,8 @@
     <string name="project_attachment_delete_dialog_text">This can\'t be undone.</string>
     <string name="projects_list_search_placeholder">Search projects</string>
     <string name="projects_list_category_all">All</string>
-    <string name="projects_list_tags_label">Tags</string>
     <string name="projects_list_add_category_description">Add category</string>
+    <string name="projects_list_more_actions_description">More options</string>
     <string name="projects_list_empty_title">No projects yet</string>
     <string name="projects_list_empty_subtitle">Pull to refresh, or adjust your filters.</string>
     <string name="projects_list_add_category_dialog_title">New category</string>
