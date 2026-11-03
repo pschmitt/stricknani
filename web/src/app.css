@@ -37,6 +37,7 @@
   --ui-action-icon-size-md: 20px;
   --ui-action-icon-size-sm: 18px;
   --ui-navigation-icon-size: 24px;
+  --app-mobile-nav-height: 57px;
 
   font-optical-sizing: auto;
   font-weight: 400;
@@ -649,7 +650,9 @@ textarea::placeholder {
   .app-shell {
     --app-header-height: max(3.5rem, calc(45px + env(safe-area-inset-top)));
     display: block;
-    padding-bottom: calc(57px + env(safe-area-inset-bottom));
+    padding-bottom: calc(
+      var(--app-mobile-nav-height) + env(safe-area-inset-bottom)
+    );
   }
 
   .desktop-rail {

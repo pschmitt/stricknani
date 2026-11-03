@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 from playwright.sync_api import (
     Page,
     Response,
+    Route,
     sync_playwright,
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -220,6 +221,7 @@ def run_acceptance(
             raise AcceptanceFailure("configured Chromium executable is unavailable")
 
     observed: list[tuple[str, int, str]] = []
+    observed_mutation_requests: list[tuple[str, str]] = []
     csp_errors: list[bool] = []
     console_errors: list[str] = []
     page_errors: list[bool] = []
@@ -262,6 +264,17 @@ def run_acceptance(
             resource_failures.append(
                 f"HTTP {response.status} {resource_category(path)}"
             )
+
+    def observe_request(request: object) -> None:
+        path = urlsplit(getattr(request, "url", "")).path
+        method = getattr(request, "method", "")
+        if path.startswith("/api/v2/yarns") and method in {
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+        }:
+            observed_mutation_requests.append((method, path))
 
     def observe_console(message: object) -> None:
         if getattr(message, "type", "") != "error":
@@ -312,6 +325,7 @@ def run_acceptance(
             )
             page = context.new_page()
             page.on("response", observe_response)
+            page.on("request", observe_request)
             page.on("console", observe_console)
             page.on("pageerror", observe_page_error)
 
@@ -629,16 +643,17 @@ def run_acceptance(
             brand = page.get_by_label("Brand")
             mark_stage("entering dirty yarn draft")
             brand.fill("Draft brand")
-            yarn_parent = page.locator(".app-header .shell-back-button")
+            yarn_parent = page.locator(".app-header .brand-lockup.parent-link")
             parent_bounds = (
                 yarn_parent.bounding_box() if yarn_parent.count() == 1 else None
             )
             _require(
                 yarn_parent.count() == 1
+                and yarn_parent.get_attribute("aria-label") == "Back"
                 and yarn_parent.get_attribute("href") == f"/app/yarns/{yarn_id}"
                 and parent_bounds is not None
-                and parent_bounds["width"] == 44
-                and parent_bounds["height"] == 44,
+                and parent_bounds["width"] >= 44
+                and parent_bounds["height"] >= 44,
                 "the yarn editor header parent link has the wrong route or size",
             )
             mark_stage("requesting cancellation of dirty yarn navigation")
@@ -667,6 +682,38 @@ def run_acceptance(
             mark_stage("waiting for CAS editor brand field")
             page.get_by_label("Brand").wait_for(state="visible")
             brand = page.get_by_label("Brand")
+            mark_stage("checking one keyboard shortcut save on the yarn editor")
+            brand.fill("Shortcut saved draft")
+            yarn_write_count = len(observed_mutation_requests)
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == f"/api/v2/yarns/{yarn_id}"
+                    and response.request.method == "PUT"
+                )
+            ) as shortcut_save_response_info:
+                page.keyboard.press("Control+s")
+            _require(
+                shortcut_save_response_info.value.status == 200,
+                "Ctrl+S did not save the yarn through API v2",
+            )
+            _require(
+                len(observed_mutation_requests) == yarn_write_count + 1,
+                "Ctrl+S submitted more than one yarn save request",
+            )
+            page.wait_for_url(f"**/app/yarns/{yarn_id}")
+            page.locator(".action-feedback[role='status']").filter(
+                has_text="Yarn changes saved."
+            ).wait_for(state="visible")
+            page.get_by_role("link", name="Edit yarn", exact=True).click()
+            page.wait_for_url(f"**/app/yarns/{yarn_id}/edit")
+            page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
+                state="visible"
+            )
+            brand = page.get_by_label("Brand")
+            _require(
+                brand.input_value() == "Shortcut saved draft",
+                "the post-save detail/editor round-trip lost the keyboard-saved yarn",
+            )
             mark_stage("entering draft for CAS conflict")
             brand.fill("Draft brand")
             mark_stage("applying concurrent yarn update")
@@ -691,9 +738,16 @@ def run_acceptance(
                 "CAS conflict lost the local draft",
             )
             page.get_by_role("button", name="Save my draft over latest").click()
-            page.get_by_role("status").filter(has_text="Yarn changes saved.").wait_for(
+            page.wait_for_url(f"**/app/yarns/{yarn_id}")
+            page.locator(".action-feedback[role='status']").filter(
+                has_text="Yarn changes saved."
+            ).wait_for(state="visible")
+            page.get_by_role("link", name="Edit yarn", exact=True).click()
+            page.wait_for_url(f"**/app/yarns/{yarn_id}/edit")
+            page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
                 state="visible"
             )
+            brand = page.get_by_label("Brand")
             _require(
                 brand.input_value() == "Draft brand",
                 "successful CAS retry changed the draft",
@@ -703,10 +757,22 @@ def run_acceptance(
             page.goto(f"{origin}/app/yarns/new", wait_until="networkidle")
             name_field = page.get_by_label("Yarn name")
             name_field.wait_for(state="visible")
+            yarn_optional_details = page.locator(".optional-details")
+            _require(
+                yarn_optional_details.count() == 1
+                and yarn_optional_details.get_attribute("open") is None,
+                "new yarn details should start collapsed",
+            )
+            web_ui_browser._assert_sticky_save_cancel_geometry(page, "Save yarn")
             page.get_by_role("button", name="Save yarn").click()
             page.get_by_text("Enter a yarn name.", exact=True).wait_for(state="visible")
             name_field.fill("New browser yarn")
             page.get_by_label("Brand").fill("North Shore Fibers")
+            yarn_optional_details.locator("summary").click()
+            _require(
+                yarn_optional_details.get_attribute("open") is not None,
+                "More yarn details did not open when needed",
+            )
             page.get_by_label("Fiber content").fill("80% wool, 20% nylon")
             page.get_by_label("Yarn weight").fill("Sport")
             page.get_by_label("Skein weight in grams").fill("-4")
@@ -728,6 +794,9 @@ def run_acceptance(
             page.get_by_role("heading", name="New browser yarn", exact=True).wait_for(
                 state="visible"
             )
+            page.locator(".action-feedback[role='status']").filter(
+                has_text="Yarn created."
+            ).wait_for(state="visible")
             created_id_path = urlsplit(page.url).path.removeprefix("/app/yarns/")
             _require(
                 created_id_path.isdigit(), "created yarn did not open its detail route"
@@ -744,6 +813,12 @@ def run_acceptance(
             page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
                 state="visible"
             )
+            yarn_optional_details = page.locator(".optional-details")
+            _require(
+                yarn_optional_details.count() == 1
+                and yarn_optional_details.get_attribute("open") is not None,
+                "More yarn details should be expanded while editing",
+            )
             delete_button = page.get_by_role("button", name="Delete yarn", exact=True)
             delete_button.click()
             delete_dialog = page.get_by_role("dialog", name="Delete yarn?")
@@ -753,6 +828,70 @@ def run_acceptance(
             delete_button.click()
             delete_dialog.wait_for(state="visible")
             delete_dialog.get_by_role("button", name="Keep yarn").click()
+            delete_dialog.wait_for(state="hidden")
+            delete_button.click()
+            delete_dialog.wait_for(state="visible")
+
+            yarn_delete_url = f"**/api/v2/yarns/{created_id_path}"
+            held_yarn_deletes: list[Route] = []
+
+            def hold_yarn_delete(route: Route) -> None:
+                if route.request.method == "DELETE":
+                    held_yarn_deletes.append(route)
+                else:
+                    route.continue_()
+
+            page.route(yarn_delete_url, hold_yarn_delete)
+            delete_request_count = len(observed_mutation_requests)
+            delete_action = delete_dialog.get_by_role(
+                "button", name="Delete yarn", exact=True
+            )
+            keep_action = delete_dialog.get_by_role(
+                "button", name="Keep yarn", exact=True
+            )
+            delete_action.click()
+            web_ui_browser.expect(delete_action).to_be_disabled()
+            web_ui_browser.expect(keep_action).to_be_disabled()
+            _require(
+                len(held_yarn_deletes) == 1
+                and len(observed_mutation_requests) == delete_request_count + 1
+                and observed_mutation_requests[-1]
+                == ("DELETE", f"/api/v2/yarns/{created_id_path}")
+                and delete_dialog.is_visible()
+                and delete_action.is_disabled()
+                and keep_action.is_disabled(),
+                "yarn confirmation did not disable both actions for one pending delete",
+            )
+            page.keyboard.press("Escape")
+            delete_dialog.wait_for(state="visible")
+            page.keyboard.press("Enter")
+            web_ui_browser._wait_two_animation_frames(page)
+            _require(
+                len(observed_mutation_requests) == delete_request_count + 1,
+                "a busy yarn confirmation closed or sent a duplicate delete",
+            )
+            held_yarn_deletes[0].fulfill(
+                status=503,
+                content_type="application/json",
+                body=(
+                    '{"error":{"code":"internal_error",'
+                    '"message":"The server could not complete this request. '
+                    'Try again."}}'
+                ),
+            )
+            page.unroute(yarn_delete_url, hold_yarn_delete)
+            page.get_by_role("alert").filter(
+                has_text="The server could not complete this request. Try again."
+            ).first.wait_for(state="visible")
+            _require(
+                delete_dialog.is_visible()
+                and not delete_action.is_disabled()
+                and not keep_action.is_disabled()
+                and page.get_by_label("Yarn name", exact=True).input_value()
+                == "New browser yarn",
+                "failed yarn deletion lost the draft or left confirmation busy",
+            )
+            keep_action.click()
             delete_dialog.wait_for(state="hidden")
             delete_button.click()
             delete_dialog.wait_for(state="visible")

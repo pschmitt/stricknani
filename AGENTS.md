@@ -182,9 +182,11 @@ Use this file as the operational source of truth for working in Stricknani.
   distinct from upload and mutation endpoints.
 - The header chevron follows the logical parent route through one shared route
   map. This supersedes the earlier history-based requirement. Hide the control
-  on top-level sections while reserving its slot so the logo does not shift.
-  Preserve dirty-form guards, keep the logo and chevron targets separate, and
-  remove duplicate in-page back links. A deep link must stay inside the app.
+  on top-level sections while keeping the logo aligned. The coordinated header
+  revision combines the chevron, logo and name in one link: it targets the
+  logical parent on nested pages and home on top-level pages. Keep a minimum
+  44px target, preserve dirty-form guards and reduced motion, and remove
+  duplicate in-page back links. A deep link must stay inside the app.
 - Use shared, bounded decorative icons alongside action labels. Preserve
   accessible names, keyboard behavior and compact phone layouts; existing
   icon-only controls do not need a second icon.
@@ -194,6 +196,10 @@ Use this file as the operational source of truth for working in Stricknani.
 - Browser Back and its confirmation dialog are asynchronous. Await the dialog
   event and navigation result explicitly. Exercise in-app history through real
   app links; hard document navigation exercises browser unload protection.
+  Keep confirmation handlers registered until the expected event arrives;
+  a click can finish before SvelteKit's navigation guard opens its dialog.
+  Prove this against an actual app link, since a synchronous synthetic
+  `window.confirm()` does not exercise that race.
 - Before triggering a preview host upgrade, copy the reviewed, realized system
   closure from the build host to the deployment target and verify its presence.
   Keep compilation on the designated build hosts.

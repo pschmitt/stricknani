@@ -11,6 +11,7 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
@@ -37,11 +38,17 @@
 
   interface Props {
     id: number;
+    adminData?: {
+      project: ProjectDetail;
+      yarns: ProjectYarn[];
+      owner: { id: number; email: string; avatar_url: string | null } | null;
+      yarnWarning?: boolean;
+    };
   }
 
   type LoadState = "loading" | "ready" | "not-found" | "error";
 
-  let { id }: Props = $props();
+  let { id, adminData }: Props = $props();
   let loadState = $state<LoadState>("loading");
   let project = $state<ProjectDetail | null>(null);
   let currentStepId = $state<number | null>(null);
@@ -107,6 +114,8 @@
 
   $effect(() => {
     const currentUserId = userId;
+    const currentUserIsAdmin = session.data?.user?.is_admin === true;
+    const currentAdminData = adminData;
     const generation = ++resourceGeneration;
     reload;
     archiveRefreshGeneration += 1;
@@ -128,6 +137,48 @@
     yarnWarning = false;
     errorMessage = "";
     loadState = "loading";
+    if (currentAdminData) {
+      if (currentUserId === null || !currentUserIsAdmin) {
+        loadState = "error";
+        errorMessage = t("Administrator access is required.", locale);
+        return () => {
+          if (resourceGeneration === generation) resourceGeneration += 1;
+        };
+      }
+      if (
+        !Number.isSafeInteger(id) ||
+        id <= 0 ||
+        currentAdminData.project.id !== id
+      ) {
+        loadState = "not-found";
+        return () => {
+          if (resourceGeneration === generation) resourceGeneration += 1;
+        };
+      }
+      project = currentAdminData.project;
+      yarns = currentAdminData.yarns;
+      yarnWarning = currentAdminData.yarnWarning ?? false;
+      const stepIds = [...currentAdminData.project.steps]
+        .sort((left, right) => left.step_number - right.step_number)
+        .map((step) => step.id);
+      currentStepId =
+        stepIdFromHash(page.url.hash, stepIds) ?? stepIds[0] ?? null;
+      if (currentStepId !== null) {
+        const hash = stepHash(currentStepId);
+        if (page.url.hash !== hash) {
+          void goto(`${page.url.pathname}${page.url.search}${hash}`, {
+            replaceState: true,
+          });
+        }
+      }
+      loadState = "ready";
+      return () => {
+        if (resourceGeneration === generation) resourceGeneration += 1;
+        archiveRefreshGeneration += 1;
+        archiveRefreshController?.abort();
+        archiveRefreshController = null;
+      };
+    }
     if (currentUserId === null) {
       loadState = "error";
       errorMessage = t("Sign in to open this project.", locale);
@@ -207,13 +258,16 @@
     );
     if (stepId === null) return;
     currentStepId = stepId;
-    rememberReadingStep(currentUserId, currentProject.id, stepId);
+    if (!adminData) {
+      rememberReadingStep(currentUserId, currentProject.id, stepId);
+    }
   });
 
   async function toggleFavorite() {
     const currentProject = project;
     const currentSession = session.data;
-    if (!currentProject || !currentSession?.user || favoriteBusy) return;
+    if (adminData || !currentProject || !currentSession?.user || favoriteBusy)
+      return;
     const currentUserId = currentSession.user.id;
     const favorite = !currentProject.is_favorite;
     const generation = ++favoriteGeneration;
@@ -247,6 +301,7 @@
   ): boolean {
     return (
       generation === favoriteGeneration &&
+      !adminData &&
       project?.id === projectId &&
       session.data?.user?.id === currentUserId
     );
@@ -507,6 +562,7 @@
   });
 
   async function refreshAfterArchive(marker: string) {
+    if (adminData) return;
     if (marker === lastArchiveRefreshMarker) return;
     const currentProject = project;
     const currentUserId = userId;
@@ -525,6 +581,7 @@
       controller.signal.aborted ||
       generation !== archiveRefreshGeneration ||
       currentResourceGeneration !== resourceGeneration ||
+      adminData !== undefined ||
       project?.id !== currentProject.id ||
       userId !== currentUserId
     )
@@ -630,26 +687,45 @@
               {/each}
             </ul>
           {/if}
+          {#if adminData}
+            <div class="reader-admin-context">
+              <span>{t("Read-only view", locale)}</span>
+              {#if adminData.owner}
+                <span
+                  class="reader-admin-owner"
+                  aria-label={`${t("Owner", locale)}: ${adminData.owner.email}`}
+                >
+                  <UserAvatar
+                    avatarUrl={adminData.owner.avatar_url}
+                    name={adminData.owner.email}
+                  />
+                  <span>{adminData.owner.email}</span>
+                </span>
+              {/if}
+            </div>
+          {/if}
         </div>
       {/snippet}
       {#snippet actions()}
         <div class="reader-heading-actions">
-          <FavoriteButton
-            favorite={currentProject.is_favorite}
-            busy={favoriteBusy}
-            {locale}
-            onclick={() => void toggleFavorite()}
-          />
-          <a
-            class="reader-edit-link ui-button ui-button--primary ui-button--md"
-            href={resolve("/projects/[id]/edit", {
-              id: String(currentProject.id),
-            })}
-          >
-            <ActionLabel icon="action-update"
-              >{t("Edit project", locale)}</ActionLabel
+          {#if !adminData}
+            <FavoriteButton
+              favorite={currentProject.is_favorite}
+              busy={favoriteBusy}
+              {locale}
+              onclick={() => void toggleFavorite()}
+            />
+            <a
+              class="reader-edit-link ui-button ui-button--primary ui-button--md"
+              href={resolve("/projects/[id]/edit", {
+                id: String(currentProject.id),
+              })}
             >
-          </a>
+              <ActionLabel icon="action-update"
+                >{t("Edit project", locale)}</ActionLabel
+              >
+            </a>
+          {/if}
           <ActionOverflow label={t("More actions", locale)}>
             {#snippet children(close)}
               <nav
@@ -749,13 +825,15 @@
               </span>
             {/if}
           </Button>
-          <OcrControl
-            src={coverImage.url}
-            label={t("Recognized text from project photo", locale)}
-            ownerId={userId}
-            {locale}
-            enabled={canUseOcr}
-          />
+          {#if !adminData}
+            <OcrControl
+              src={coverImage.url}
+              label={t("Recognized text from project photo", locale)}
+              ownerId={userId}
+              {locale}
+              enabled={canUseOcr}
+            />
+          {/if}
         </figure>
       {/if}
       <dl class="reader-keyfacts">
@@ -802,7 +880,12 @@
               <dd>
                 <ResourceCard
                   kind="yarn"
-                  href={`${resolve("/yarns")}/${yarn.id}`}
+                  href={adminData
+                    ? resolve("/admin/resources/[kind]/[id]", {
+                        kind: "yarn",
+                        id: String(yarn.id),
+                      })
+                    : `${resolve("/yarns")}/${yarn.id}`}
                   imageUrl={yarn.preview_url}
                   name={yarn.name}
                   subtitle={[yarn.brand, yarn.colorway]
@@ -843,6 +926,23 @@
             <dt>{t("Yarn", locale)}</dt>
             <dd>{t("Not recorded", locale)}</dd>
           </div>
+        {/if}
+        {#if adminData && yarnWarning}
+          {#each project.yarn_ids.filter((yarnId) => !yarns.some((yarn) => yarn.id === yarnId)) as yarnId (yarnId)}
+            <div>
+              <dt>{t("Yarn", locale)}</dt>
+              <dd>
+                <ResourceCard
+                  kind="yarn"
+                  href={null}
+                  imageUrl={null}
+                  name={`${t("Yarn", locale)} #${yarnId}`}
+                  subtitle={null}
+                  titleTag="h3"
+                />
+              </dd>
+            </div>
+          {/each}
         {/if}
         {#if yarnWarning}
           <p class="muted-copy">
@@ -998,16 +1098,18 @@
                                 onerror={handlePrintImageError}
                               />
                             </Button>
-                            <OcrControl
-                              src={image.url}
-                              label={t(
-                                "Recognized text from step photo",
-                                locale,
-                              )}
-                              ownerId={userId}
-                              {locale}
-                              enabled={canUseOcr}
-                            />
+                            {#if !adminData}
+                              <OcrControl
+                                src={image.url}
+                                label={t(
+                                  "Recognized text from step photo",
+                                  locale,
+                                )}
+                                ownerId={userId}
+                                {locale}
+                                enabled={canUseOcr}
+                              />
+                            {/if}
                           </div>
                         {/each}
                       </div>
@@ -1049,7 +1151,7 @@
               {t("Open archived copy", locale)} ↗
             </a>
           {/if}
-          {#if safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
+          {#if !adminData && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
             <ArchiveControl
               entity="projects"
               id={project.id}
@@ -1140,13 +1242,15 @@
                   >
                 {/if}
               </Button>
-              <OcrControl
-                src={image.url}
-                label={t("Recognized text from project photo", locale)}
-                ownerId={userId}
-                {locale}
-                enabled={canUseOcr}
-              />
+              {#if !adminData}
+                <OcrControl
+                  src={image.url}
+                  label={t("Recognized text from project photo", locale)}
+                  ownerId={userId}
+                  {locale}
+                  enabled={canUseOcr}
+                />
+              {/if}
             </div>
           {/each}
         </div>
@@ -1336,6 +1440,22 @@
     gap: 0.7rem;
     color: var(--ink-muted);
     font-size: 0.88rem;
+  }
+
+  .reader-admin-context,
+  .reader-admin-owner {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .reader-admin-context {
+    flex-wrap: wrap;
+  }
+
+  .reader-admin-owner > span:last-child {
+    overflow-wrap: anywhere;
   }
 
   .reader-tags {

@@ -70,7 +70,9 @@
   @media (max-width: 760px) {
     .action-feedback {
       right: max(0.75rem, env(safe-area-inset-right));
-      bottom: calc(56px + env(safe-area-inset-bottom) + 6rem);
+      bottom: calc(
+        var(--app-mobile-nav-height, 57px) + env(safe-area-inset-bottom) + 6rem
+      );
       width: min(32rem, calc(100vw - 1.5rem));
     }
   }

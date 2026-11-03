@@ -438,6 +438,20 @@ color badges. Audit entries reserve the diff action slot and use equal row
 heights with consistent spacing. Source and translation checks pass; rendered
 geometry, contrast and browser journeys remain rollout gates.
 
+The coordinated header review replaces the separate chevron target with one
+animated brand link (`328fce7`). The mark stays aligned while the chevron appears
+within the unit. Nested pages retain the logical parent destination; top-level
+pages link home. Minimum target size, dirty guards and reduced motion remain
+acceptance gates. Browser checks must use this revised unit rather than the
+superseded 44px empty parent slot.
+
+T120.27 replaces the separate administrator project presentation with the normal
+project reader. A read-only data adapter retains administrator resource/media
+URLs and owner metadata, while suppressing editing, favorites, archive writes,
+OCR and saved reading progress. Normal user routes keep their existing owner
+checks. Source checks pass; cross-owner browser, media and layout verification
+remain required before rollout.
+
 Use the `ui-audit` inventory and motion scripts after each step on representative
 synthetic fixtures. Compare header positions, role/size button signatures,
 wrapping, hover feedback and layout shifts. Keep import/data repairs separate.

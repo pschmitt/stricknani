@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
+from ci.stricknani import rust_fixture, seed_rust
 from playwright.sync_api import (
     Browser,
     BrowserContext,
@@ -27,8 +28,6 @@ from playwright.sync_api import (
     sync_playwright,
 )
 from playwright.sync_api import Error as PlaywrightError
-
-from ci.stricknani import rust_fixture, seed_rust
 
 SAMPLE_COUNT = 5
 JS_BUDGET = 150 * 1024
@@ -863,16 +862,18 @@ def _one_sample(
     name_field.press("Control+z")
     if name_field.input_value() != original_name:
         raise PerformanceFailure("project editor draft could not be undone")
-    project_parent = page.locator(".app-header .shell-back-button")
+    project_parent = page.locator(".app-header .brand-lockup.parent-link")
     parent_bounds = (
         project_parent.bounding_box() if project_parent.count() == 1 else None
     )
     if (
         project_parent.count() != 1
         or project_parent.get_attribute("href") != reader_href
+        or project_parent.get_attribute("aria-label") != "Back"
+        or project_parent.locator(".brand-mark-wrap").count() != 1
         or parent_bounds is None
-        or parent_bounds["width"] != 44
-        or parent_bounds["height"] != 44
+        or parent_bounds["width"] < 44
+        or parent_bounds["height"] < 44
     ):
         raise PerformanceFailure(
             "project editor header parent link has the wrong route or target size"

@@ -53,6 +53,7 @@ Execution-oriented backlog for Stricknani.
 | T120.24 | P1 | done | web-rewrite/android | feat | Prepare the native Android client for new web URLs and API contracts; SNA-74/75 plan and link compatibility verified |
 | T120.25 | P1 | wip | web-rewrite/density | refactor | Put content first: compact chrome, live search/filter disclosure, dense lists and detail overflow actions |
 | T120.26 | P1 | wip | web-rewrite/review | fix | Align gauge fields, move Imports into Create, and give audit entries semantic colors and even spacing |
+| T120.27 | P1 | wip | web-rewrite/admin-reader | refactor | Render read-only admin projects through the regular project reader while preserving admin data and media authorization |
 | T52 | P0 | done | security | bug | Add SSRF guard to import fetch layer (block private/loopback/link-local, re-validate redirects) |
 | T54 | P0 | done | import | bug | Return friendly 4xx/502 on import fetch failures instead of 500 with raw error text |
 | T99 | P3 | done | web/ux | refactor | Overhaul the web UI look and feel further (scope needs user input on specifics beyond T88's M3 migration) |

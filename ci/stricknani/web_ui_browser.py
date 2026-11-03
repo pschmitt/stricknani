@@ -25,6 +25,7 @@ from playwright.sync_api import (
     Request,
     Response,
     Route,
+    expect,
     sync_playwright,
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -59,11 +60,7 @@ def _require(condition: bool, message: str) -> None:
 
 
 def _click_and_handle_dialog(page: Page, locator: Locator, *, accept: bool) -> Dialog:
-    dialogs: list[Dialog] = []
-
     def handle_dialog(dialog: Dialog) -> None:
-        page.remove_listener("dialog", handle_dialog)
-        dialogs.append(dialog)
         if accept and dialog.type == "confirm":
             dialog.accept()
         else:
@@ -71,15 +68,71 @@ def _click_and_handle_dialog(page: Page, locator: Locator, *, accept: bool) -> D
 
     page.on("dialog", handle_dialog)
     try:
-        locator.click()
+        with page.expect_event("dialog", timeout=8_000) as dialog_info:
+            locator.click()
     finally:
         page.remove_listener("dialog", handle_dialog)
 
+    dialog = dialog_info.value
     _require(
-        len(dialogs) == 1 and dialogs[0].type == "confirm",
-        "dirty project Cancel did not show exactly one confirmation dialog",
+        dialog.type == "confirm",
+        "dirty project Cancel did not show the expected confirmation dialog",
     )
-    return dialogs[0]
+    return dialog
+
+
+def _assert_sticky_save_cancel_geometry(page: Page, save_name: str) -> None:
+    bar = page.locator(".sticky-action-bar")
+    save = page.get_by_role("button", name=save_name, exact=True)
+    cancel = page.get_by_role("link", name="Cancel", exact=True)
+    navigation = page.locator(".mobile-navigation")
+
+    for width in (320, 390):
+        page.set_viewport_size({"width": width, "height": 844})
+        page.evaluate("() => window.scrollTo(0, document.documentElement.scrollHeight)")
+        bar.wait_for(state="visible")
+        _assert_no_horizontal_overflow(page, width)
+        bar_box = bar.bounding_box()
+        save_box = save.bounding_box()
+        cancel_box = cancel.bounding_box()
+        navigation_box = navigation.bounding_box()
+        _require(
+            bar_box is not None
+            and save_box is not None
+            and cancel_box is not None
+            and navigation_box is not None,
+            "sticky Save/Cancel or mobile navigation has no visible geometry",
+        )
+        controls = (save_box, cancel_box)
+        _require(
+            all(
+                box["width"] >= 44
+                and box["height"] >= 44
+                and box["x"] >= 0
+                and box["x"] + box["width"] <= width
+                for box in controls
+            )
+            and max(box["y"] + box["height"] for box in controls) <= navigation_box["y"]
+            and bar_box["y"] + bar_box["height"] <= navigation_box["y"]
+            and not (
+                save_box["x"] < cancel_box["x"] + cancel_box["width"]
+                and save_box["x"] + save_box["width"] > cancel_box["x"]
+                and save_box["y"] < cancel_box["y"] + cancel_box["height"]
+                and save_box["y"] + save_box["height"] > cancel_box["y"]
+            ),
+            f"sticky Save/Cancel targets overlap mobile navigation at {width}px",
+        )
+        sizes = page.evaluate(
+            "() => ({document: document.documentElement.scrollWidth, "
+            "body: document.body.scrollWidth})"
+        )
+        _require(
+            sizes["document"] <= width and sizes["body"] <= width,
+            f"editor layout overflows horizontally at {width}px",
+        )
+
+    page.set_viewport_size({"width": 1280, "height": 844})
+    _assert_no_horizontal_overflow(page, 1280)
 
 
 def _open_reader_actions(page: Page) -> Locator:
@@ -534,11 +587,15 @@ def _save_remote_project_version(page: Page, project_id: int, name: str) -> None
     )
 
 
-def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
+def _wait_two_animation_frames(page: Page) -> None:
     page.evaluate(
         "() => new Promise(resolve => requestAnimationFrame(() => "
         "requestAnimationFrame(resolve)))"
     )
+
+
+def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
+    _wait_two_animation_frames(page)
     dimensions = page.evaluate(
         """() => ({
           viewport: window.innerWidth,
@@ -655,14 +712,15 @@ def _close_library_filters(dialog: Locator) -> None:
 
 
 def _assert_header_parent_link(page: Page, href: str, description: str) -> Locator:
-    link = page.locator(".app-header .shell-back-button")
+    link = page.locator(".app-header .brand-lockup.parent-link")
     bounds = link.bounding_box() if link.count() == 1 else None
     _require(
         link.count() == 1
+        and link.get_attribute("aria-label") == "Back"
         and link.get_attribute("href") == href
         and bounds is not None
-        and bounds["width"] == 44
-        and bounds["height"] == 44,
+        and bounds["width"] >= 44
+        and bounds["height"] >= 44,
         f"{description} header parent link has the wrong route or target size",
     )
     return link
@@ -2031,6 +2089,7 @@ def run_acceptance(
     csrf_requests: list[tuple[str, bool]] = []
     auth_responses: list[tuple[str, int]] = []
     project_responses: list[tuple[str, int]] = []
+    project_mutation_requests: list[tuple[str, str]] = []
     project_list_sizes: list[int | None] = []
     project_list_queries: list[dict[str, list[str]]] = []
     yarn_responses: list[tuple[str, int]] = []
@@ -2057,6 +2116,11 @@ def run_acceptance(
         url = getattr(request, "url", "")
         request_url = urlsplit(url)
         path = request_url.path
+        method = getattr(request, "method", "")
+        if (
+            path == "/api/v2/projects" or path.startswith("/api/v2/projects/")
+        ) and method in {"POST", "PUT", "PATCH", "DELETE"}:
+            project_mutation_requests.append((method, path))
         if path.startswith("/media/projects/"):
             original_project_image_requests.append(path)
         if path == "/api/v2/projects":
@@ -3874,11 +3938,24 @@ def run_acceptance(
                 page.get_by_role("heading", name=heading).wait_for(state="visible")
                 if route == "/app/more":
                     more_links = page.locator(".more-links")
-                    more_cards = (
-                        ("Imports", "/imports"),
+                    more_cards = [
                         ("Categories", "/categories"),
                         ("Gauge calculator", "/gauge"),
+                    ]
+                    admin_cards = (
+                        ("Admin", "/admin/users"),
+                        ("Audit log", "/admin/audit"),
                     )
+                    admin_card_counts = [
+                        more_links.locator(f"a[href$='{href}']").count()
+                        for _, href in admin_cards
+                    ]
+                    _require(
+                        admin_card_counts in ([0, 0], [1, 1]),
+                        "More has only one of its paired Admin and Audit tiles",
+                    )
+                    if admin_card_counts == [1, 1]:
+                        more_cards.extend(admin_cards)
                     icon_failures = 0
                     for label, href in more_cards:
                         card = more_links.locator(f"a[href$='{href}']")
@@ -3962,6 +4039,21 @@ def run_acceptance(
                         "the create page showed stale preview copy or "
                         "missing creation links",
                     )
+                    imports_link = page.get_by_role(
+                        "link", name=re.compile(r"^Imports(?:\s|$)")
+                    )
+                    _require(
+                        imports_link.count() == 1
+                        and imports_link.is_visible()
+                        and imports_link.get_attribute("href") == "/app/imports",
+                        "Create does not expose one visible Imports destination",
+                    )
+                    mark_stage("opening Imports from Create navigation")
+                    imports_link.click()
+                    page.wait_for_url("**/app/imports")
+                    page.get_by_role(
+                        "heading", name="Import a project", exact=True
+                    ).wait_for(state="visible")
             mark_stage("checking signed-in gauge calculator and exact API result")
             _exercise_gauge_calculator(
                 page,
@@ -4011,6 +4103,13 @@ def run_acceptance(
             page.get_by_role("heading", name="New project", exact=True).wait_for(
                 state="visible"
             )
+            project_optional_details = page.locator(".optional-details")
+            _require(
+                project_optional_details.count() == 1
+                and project_optional_details.get_attribute("open") is None,
+                "new project details should start collapsed",
+            )
+            _assert_sticky_save_cancel_geometry(page, "Create project")
             mark_stage("filling the new project form")
             mark_stage("filling the project name")
             page.get_by_label("Project name", exact=True).fill("Soft winter throw")
@@ -4028,6 +4127,11 @@ def run_acceptance(
             page.locator("#project-tag-entry").fill("winter")
             page.get_by_role("button", name="Add tag", exact=True).click()
             mark_stage("filling the project pattern")
+            project_optional_details.locator("summary").click()
+            _require(
+                project_optional_details.get_attribute("open") is not None,
+                "More project details did not open when needed",
+            )
             page.get_by_label("Pattern", exact=True).fill(
                 "Work an even textured panel."
             )
@@ -4110,11 +4214,27 @@ def run_acceptance(
                     "project creation did not return a numeric resource ID"
                 )
             editor_project_id = created_id
+            mark_stage("waiting for the newly created project detail route")
+            page.wait_for_url(f"**/app/projects/{editor_project_id}")
+            page.get_by_role("heading", name="Soft winter throw", exact=True).wait_for(
+                state="visible"
+            )
+            page.locator(".action-feedback[role='status']").filter(
+                has_text="Project created."
+            ).wait_for(state="visible")
             mark_stage("opening the saved project editor")
+            page.get_by_role("link", name="Edit project", exact=True).click()
+            page.wait_for_url(f"**/app/projects/{editor_project_id}/edit")
             page.get_by_role("heading", name="Edit project", exact=True).wait_for(
                 state="visible"
             )
             page.get_by_label("Project name").wait_for(state="visible")
+            project_optional_details = page.locator(".optional-details")
+            _require(
+                project_optional_details.count() == 1
+                and project_optional_details.get_attribute("open") is not None,
+                "More project details should be expanded while editing",
+            )
             page.locator("#project-image-file").wait_for(state="visible")
             _require(
                 page.locator("#project-image-file").is_enabled(),
@@ -4151,6 +4271,62 @@ def run_acceptance(
 
             mark_stage("preserving comma-containing tags during an unrelated edit")
             page.get_by_label("Needles", exact=True).fill("5 mm circular needles")
+            project_save_url = f"**/api/v2/projects/{editor_project_id}"
+            held_project_saves: list[Route] = []
+
+            def hold_project_save(route: Route) -> None:
+                if route.request.method == "PUT":
+                    held_project_saves.append(route)
+                else:
+                    route.continue_()
+
+            page.route(project_save_url, hold_project_save)
+            save_request_count = len(project_mutation_requests)
+            mark_stage(
+                "holding a shortcut save to verify busy state and draft retention"
+            )
+            page.keyboard.press("Control+s")
+            save_button = page.locator(".sticky-action-bar .ui-button").filter(
+                has_text="Saving"
+            )
+            save_button.wait_for(state="visible")
+            _require(
+                len(held_project_saves) == 1
+                and len(project_mutation_requests) == save_request_count + 1
+                and project_mutation_requests[-1]
+                == ("PUT", f"/api/v2/projects/{editor_project_id}")
+                and save_button.count() == 1
+                and save_button.is_disabled()
+                and page.get_by_label("Needles", exact=True).input_value()
+                == "5 mm circular needles",
+                "Ctrl+S did not start one disabled, draft-preserving project save",
+            )
+            page.keyboard.press("Control+s")
+            _wait_two_animation_frames(page)
+            _require(
+                len(project_mutation_requests) == save_request_count + 1,
+                "a second Ctrl+S submitted a duplicate while project save was pending",
+            )
+            held_project_saves[0].fulfill(
+                status=503,
+                content_type="application/json",
+                body=(
+                    '{"error":{"code":"internal_error",'
+                    '"message":"The server could not complete this request. '
+                    'Try again."}}'
+                ),
+            )
+            page.unroute(project_save_url, hold_project_save)
+            page.get_by_role("alert").filter(
+                has_text="The server could not complete this request. Try again."
+            ).first.wait_for(state="visible")
+            _require(
+                page.get_by_label("Needles", exact=True).input_value()
+                == "5 mm circular needles"
+                and not page.locator(".sticky-action-bar .ui-button").is_disabled(),
+                "a failed project save lost its draft or remained busy",
+            )
+            save_request_count = len(project_mutation_requests)
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path == f"/api/v2/projects/{created_id}"
@@ -4163,6 +4339,10 @@ def run_acceptance(
                 tag_preservation_response.status == 200,
                 "an unrelated project edit did not save",
             )
+            _require(
+                len(project_mutation_requests) == save_request_count + 1,
+                "project save retry produced more than one mutation request",
+            )
             tag_preservation_payload = tag_preservation_response.json()
             tag_preserved_project = (
                 tag_preservation_payload.get("data")
@@ -4173,6 +4353,23 @@ def run_acceptance(
                 isinstance(tag_preserved_project, dict)
                 and tag_preserved_project.get("tags") == expected_tags,
                 "an unrelated edit split or otherwise changed an existing tag label",
+            )
+            page.wait_for_url(f"**/app/projects/{editor_project_id}")
+            page.get_by_role("heading", name="Soft winter throw", exact=True).wait_for(
+                state="visible"
+            )
+            page.locator(".action-feedback[role='status']").filter(
+                has_text="Project changes saved."
+            ).wait_for(state="visible")
+            page.get_by_role("link", name="Edit project", exact=True).click()
+            page.wait_for_url(f"**/app/projects/{editor_project_id}/edit")
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+                state="visible"
+            )
+            project_optional_details = page.locator(".optional-details")
+            _require(
+                project_optional_details.get_attribute("open") is not None,
+                "More project details closed after returning to Edit project",
             )
 
             mark_stage("preserving editor drafts through dirty navigation and conflict")
@@ -4276,9 +4473,16 @@ def run_acceptance(
                 keep_draft_response_info.value.status == 200,
                 "explicitly saving the project draft over latest did not succeed",
             )
-            page.get_by_text("Project changes saved.", exact=True).wait_for(
+            page.wait_for_url(f"**/app/projects/{editor_project_id}")
+            page.locator(".action-feedback[role='status']").filter(
+                has_text="Project changes saved."
+            ).wait_for(state="visible")
+            page.get_by_role("link", name="Edit project", exact=True).click()
+            page.wait_for_url(f"**/app/projects/{editor_project_id}/edit")
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
                 state="visible"
             )
+            project_name = page.get_by_label("Project name", exact=True)
             _require(
                 project_name.input_value() == "Chosen local draft",
                 "saving the editor draft over latest changed its contents",
@@ -4346,6 +4550,12 @@ def run_acceptance(
                 == ["Finish the border", "Cast on"],
                 "the Rust API did not persist the reordered project steps",
             )
+            page.wait_for_url(f"**/app/projects/{editor_project_id}")
+            page.get_by_role("link", name="Edit project", exact=True).click()
+            page.wait_for_url(f"**/app/projects/{editor_project_id}/edit")
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+                state="visible"
+            )
 
             image_asset = seed_rust.REPO_ROOT / "demo_assets" / "demo_image_3.jpg"
             with page.expect_response(
@@ -4369,8 +4579,94 @@ def run_acceptance(
                 "the project media list did not refresh after upload",
             )
 
+            mark_stage("checking project photo removal confirmation while busy")
+            project_photo_remove = page.get_by_role(
+                "button", name="Remove photo", exact=True
+            )
+            _require(
+                project_photo_remove.count() == 1,
+                "the uploaded project photo has no unique removal action",
+            )
+            project_photo_remove.click()
+            image_dialog = page.get_by_role(
+                "dialog", name="Remove this project photo?", exact=True
+            )
+            image_dialog.wait_for(state="visible")
+            image_dialog.get_by_role("button", name="Cancel", exact=True).click()
+            image_dialog.wait_for(state="hidden")
+            project_photo_remove.click()
+            image_dialog.wait_for(state="visible")
+
+            project_image_delete_url = (
+                f"**/api/v2/projects/{editor_project_id}/images/*"
+            )
+            held_project_image_deletes: list[Route] = []
+
+            def hold_project_image_delete(route: Route) -> None:
+                if route.request.method == "DELETE":
+                    held_project_image_deletes.append(route)
+                else:
+                    route.continue_()
+
+            page.route(project_image_delete_url, hold_project_image_delete)
+            image_delete_count = len(project_mutation_requests)
+            image_dialog.get_by_role("button", name="Remove", exact=True).click()
+            image_remove_button = image_dialog.get_by_role(
+                "button", name="Remove", exact=True
+            )
+            image_cancel_button = image_dialog.get_by_role(
+                "button", name="Cancel", exact=True
+            )
+            expect(image_remove_button).to_be_disabled()
+            expect(image_cancel_button).to_be_disabled()
+            _require(
+                len(held_project_image_deletes) == 1
+                and len(project_mutation_requests) == image_delete_count + 1
+                and project_mutation_requests[-1][0] == "DELETE"
+                and image_dialog.is_visible()
+                and image_remove_button.is_disabled()
+                and image_cancel_button.is_disabled(),
+                "project photo removal did not hold one request with disabled actions",
+            )
+            page.keyboard.press("Escape")
+            image_dialog.wait_for(state="visible")
+            page.keyboard.press("Enter")
+            _wait_two_animation_frames(page)
+            _require(
+                len(project_mutation_requests) == image_delete_count + 1,
+                "busy project photo confirmation allowed a duplicate request",
+            )
+            held_project_image_deletes[0].fulfill(status=204, body="")
+            page.unroute(project_image_delete_url, hold_project_image_delete)
+            page.locator(".media-list img").wait_for(state="detached")
+            _require(
+                page.get_by_text("No project photos yet.", exact=True).is_visible()
+                and any(
+                    path.startswith(f"/api/v2/projects/{editor_project_id}/images/")
+                    and status == 204
+                    for path, status in project_responses
+                ),
+                "the confirmed photo removal did not refresh the editor",
+            )
+
             mark_stage("confirming project deletion through the editor")
-            page.once("dialog", lambda dialog: dialog.accept())
+            page.get_by_role("button", name="Delete project", exact=True).click()
+            project_delete_dialog = page.get_by_role(
+                "dialog",
+                name="Delete this project? This cannot be undone.",
+                exact=True,
+            )
+            project_delete_dialog.wait_for(state="visible")
+            page.keyboard.press("Escape")
+            project_delete_dialog.wait_for(state="hidden")
+            page.get_by_role("button", name="Delete project", exact=True).click()
+            project_delete_dialog.wait_for(state="visible")
+            project_delete_dialog.get_by_role(
+                "button", name="Cancel", exact=True
+            ).click()
+            project_delete_dialog.wait_for(state="hidden")
+            page.get_by_role("button", name="Delete project", exact=True).click()
+            project_delete_dialog.wait_for(state="visible")
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path
@@ -4378,7 +4674,9 @@ def run_acceptance(
                     and response.request.method == "DELETE"
                 )
             ) as editor_delete_response_info:
-                page.get_by_role("button", name="Delete project", exact=True).click()
+                project_delete_dialog.get_by_role(
+                    "button", name="Delete project", exact=True
+                ).click()
             _require(
                 editor_delete_response_info.value.status == 204,
                 "project deletion did not complete with 204",
@@ -4434,16 +4732,20 @@ def run_acceptance(
             ).wait_for(state="visible")
             create_options = page.locator(".create-options > a")
             _require(
-                create_options.count() == 2
+                create_options.count() == 3
                 and page.locator(
                     ".create-options .ui-navigation-tile__icon svg[aria-hidden='true']"
                 ).count()
-                == 2,
-                "Create choices are missing their decorative icons",
+                == 3,
+                "Create choices are missing the Imports tile or decorative icons",
             )
             _require(
                 create_options.nth(0).get_attribute("href") == "/app/projects/new"
                 and create_options.nth(1).get_attribute("href") == "/app/yarns/new"
+                and page.get_by_role(
+                    "link", name=re.compile(r"^Imports(?:\s|$)")
+                ).get_attribute("href")
+                == "/app/imports"
                 and all(
                     height >= 44
                     for height in _visible_heights(page, ".create-options > a")

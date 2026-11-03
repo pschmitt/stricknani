@@ -17,6 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from ci.stricknani import rust_fixture, seed_rust
 from playwright.sync_api import (
     Dialog,
     Locator,
@@ -27,8 +28,6 @@ from playwright.sync_api import (
     sync_playwright,
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-
-from ci.stricknani import rust_fixture, seed_rust
 
 
 class AcceptanceFailure(RuntimeError):
@@ -751,18 +750,144 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         )
 
 
+def _assert_audit_visual_measurements(page: Page) -> None:
+    viewport = page.viewport_size
+    if viewport is None:
+        raise AcceptanceFailure("audit viewport dimensions were unavailable")
+    original_width = viewport["width"]
+    try:
+        for width in (320, 390, 1280):
+            page.set_viewport_size({"width": width, "height": viewport["height"]})
+            page.evaluate(
+                "() => new Promise(resolve => requestAnimationFrame("
+                "() => requestAnimationFrame(resolve)))"
+            )
+            measurements: object = page.evaluate(
+                """() => {
+          const rows = [...document.querySelectorAll('.event-row')];
+          const badges = [...document.querySelectorAll('.audit-action-badge')];
+          const linear = (value) => {
+            const numbers = value.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+            if (!numbers || numbers.length !== 3) return null;
+            const scale = Math.max(...numbers) <= 1 ? 255 : 1;
+            const channels = numbers.map((number) => number * scale / 255);
+            return channels.map((channel) => channel <= 0.04045
+              ? channel / 12.92
+              : ((channel + 0.055) / 1.055) ** 2.4);
+          };
+          const luminance = (color) => {
+            const channels = linear(color);
+            return channels && channels[0] * 0.2126
+              + channels[1] * 0.7152 + channels[2] * 0.0722;
+          };
+          const contrast = (foreground, background) => {
+            const first = luminance(foreground);
+            const second = luminance(background);
+            if (first === null || second === null) return 0;
+            return (Math.max(first, second) + 0.05)
+              / (Math.min(first, second) + 0.05);
+          };
+          const rowMetrics = rows.map((row) => {
+            const rowRect = row.getBoundingClientRect();
+            const slot = row.querySelector('.event-diff-slot');
+            const date = row.querySelector('.event-meta time');
+            const slotRect = slot?.getBoundingClientRect();
+            const dateRect = date?.getBoundingClientRect();
+            const diff = row.querySelector('.show-diff');
+            const diffRect = diff?.getBoundingClientRect();
+            return {
+              height: rowRect.height,
+              slotOffset: slotRect ? slotRect.top - rowRect.top : null,
+              slotLeft: slotRect ? slotRect.left - rowRect.left : null,
+              slotHeight: slotRect?.height ?? 0,
+              dateOffset: dateRect ? dateRect.top - rowRect.top : null,
+              dateLeft: dateRect ? dateRect.left - rowRect.left : null,
+              hasDiff: Boolean(diff),
+              diffTargetOk: !diff || Boolean(diffRect
+                && diffRect.width >= 44 && diffRect.height >= 44),
+            };
+          });
+          const colorsByTone = new Map();
+          const badgeMetrics = badges.map((badge) => {
+            const style = getComputedStyle(badge);
+            const tone = [...badge.classList].find((name) =>
+              name.startsWith('action-badge--')) ?? 'unknown';
+            if (tone !== 'action-badge--unknown')
+              colorsByTone.set(tone, style.color);
+            return {
+              tone,
+              contrast: contrast(style.color, style.backgroundColor),
+              unclipped: badge.scrollWidth <= badge.clientWidth + 1,
+            };
+          });
+          const spread = (values) => values.every(Number.isFinite)
+            && Math.max(...values) - Math.min(...values) <= 1;
+          const heights = rowMetrics.map((row) => row.height);
+          const slotOffsets = rowMetrics.map((row) => row.slotOffset);
+          const dateOffsets = rowMetrics.map((row) => row.dateOffset);
+          const slotLefts = rowMetrics.map((row) => row.slotLeft);
+          const dateLefts = rowMetrics.map((row) => row.dateLeft);
+          return {
+            rowCount: rows.length,
+            badgeCount: badges.length,
+            equalRowHeights: heights.length > 0 && spread(heights),
+            stableSlotOffset: slotOffsets.length > 0 && spread(slotOffsets),
+            stableSlotLeft: slotLefts.length > 0 && spread(slotLefts),
+            stableDateOffset: dateOffsets.length > 0 && spread(dateOffsets),
+            stableDateLeft: dateLefts.length > 0 && spread(dateLefts),
+            hasDiffCount: rowMetrics.filter((row) => row.hasDiff).length,
+            withoutDiffCount: rowMetrics.filter((row) => !row.hasDiff).length,
+            allDiffTargetsAtLeast44: rowMetrics.every((row) => row.diffTargetOk),
+            slotsAtLeast44: rowMetrics.every((row) => row.slotHeight >= 44),
+            textContrastAtLeast45: badgeMetrics.length > 0
+              && badgeMetrics.every((badge) => badge.contrast >= 4.5),
+            badgeTextUnclipped: badgeMetrics.every((badge) => badge.unclipped),
+            distinctKnownToneColors: colorsByTone.size >= 2
+              && new Set(colorsByTone.values()).size === colorsByTone.size,
+          };
+                }"""
+            )
+            if not isinstance(measurements, dict):
+                raise AcceptanceFailure("audit visual measurements were unavailable")
+            _require(
+                measurements.get("rowCount", 0) >= 2
+                and measurements.get("badgeCount", 0) >= 2
+                and measurements.get("equalRowHeights") is True
+                and measurements.get("stableSlotOffset") is True
+                and measurements.get("stableSlotLeft") is True
+                and measurements.get("stableDateOffset") is True
+                and measurements.get("stableDateLeft") is True
+                and measurements.get("allDiffTargetsAtLeast44") is True
+                and measurements.get("slotsAtLeast44") is True
+                and measurements.get("textContrastAtLeast45") is True
+                and measurements.get("badgeTextUnclipped") is True
+                and measurements.get("distinctKnownToneColors") is True,
+                f"audit action colors, contrast, or row alignment failed at {width}px",
+            )
+    finally:
+        page.set_viewport_size({"width": original_width, "height": viewport["height"]})
+
+
 def _assert_mobile_header_alignment(
     page: Page, expected_parent_href: str | None = None
 ) -> None:
+    expected_parent = expected_parent_href is not None
+    page.wait_for_function(
+        "() => { const chevron = document.querySelector("
+        "'.app-header .brand-chevron'); return chevron "
+        "&& getComputedStyle(chevron).opacity === "
+        + ("'1'; }" if expected_parent else "'0'; }"),
+        timeout=5_000,
+    )
     alignment = page.evaluate(
         """() => {
           const header = document.querySelector('.app-header');
-          const slot = document.querySelector('.app-header .parent-slot');
-          const back = slot?.querySelector('.shell-back-button');
-          const icon = back?.querySelector('svg');
-          const logo = document.querySelector('.app-header .brand-lockup');
+          const brand = document.querySelector('.app-header .brand-lockup');
+          const mark = brand?.querySelector('.brand-mark-wrap');
+          const chevron = brand?.querySelector('.brand-chevron');
+          const icon = chevron?.querySelector('svg');
           const account = document.querySelector('.app-header .header-account');
-          if (!header || !slot || !logo || !account) return null;
+          if (!header || !brand || !mark || !chevron || !account) return null;
           const rect = (element) => {
             const box = element.getBoundingClientRect();
             return {
@@ -774,42 +899,46 @@ def _assert_mobile_header_alignment(
           };
           return {
             header: rect(header),
-            slot: rect(slot),
-            back: back ? rect(back) : null,
+            brand: rect(brand),
+            mark: rect(mark),
+            chevron: rect(chevron),
             icon: icon ? rect(icon) : null,
-            parentHref: back?.getAttribute('href') ?? null,
-            logo: rect(logo),
+            parentHref: brand.classList.contains('parent-link')
+              ? brand.getAttribute('href') : null,
+            parentLabel: brand.getAttribute('aria-label'),
+            chevronOpacity: getComputedStyle(chevron).opacity,
             account: rect(account),
           };
         }"""
     )
-    expected_back = expected_parent_href is not None
-    back = alignment.get("back") if isinstance(alignment, dict) else None
+    brand = alignment.get("brand") if isinstance(alignment, dict) else None
     icon = alignment.get("icon") if isinstance(alignment, dict) else None
-    parent_href = alignment.get("parentHref") if isinstance(alignment, dict) else None
     _require(
         isinstance(alignment, dict)
-        and alignment["slot"]["width"] == 44
-        and alignment["slot"]["height"] == 44
-        and alignment["logo"]["left"] >= alignment["slot"]["right"]
-        and (back is not None) is expected_back
+        and isinstance(brand, dict)
+        and brand["width"] >= 44
+        and brand["height"] >= 44
+        and (alignment["parentHref"] is not None) is expected_parent
         and (
-            not expected_back
+            not expected_parent
             or (
-                isinstance(back, dict)
+                alignment["parentHref"] == expected_parent_href
+                and alignment["parentLabel"] == "Back"
+                and alignment["chevronOpacity"] == "1"
                 and isinstance(icon, dict)
-                and back["width"] == 44
-                and back["height"] == 44
-                and back["left"] >= alignment["slot"]["left"]
-                and back["right"] <= alignment["slot"]["right"]
-                and 4 <= alignment["logo"]["left"] - icon["right"] <= 6
-                and parent_href == expected_parent_href
             )
         )
-        and alignment["logo"]["right"] <= alignment["account"]["left"] + 1
+        and (
+            expected_parent
+            or (
+                alignment["parentLabel"] == "Stricknani"
+                and alignment["chevronOpacity"] == "0"
+            )
+        )
+        and alignment["mark"]["left"] >= alignment["header"]["left"] - 1
+        and alignment["mark"]["right"] <= alignment["account"]["left"] + 1
         and alignment["account"]["right"] <= alignment["header"]["right"] + 1,
-        "mobile header parent slot, optional link, brand, and account controls "
-        "are misaligned",
+        "mobile parent-link brand and account controls are misaligned",
     )
 
 
@@ -869,7 +998,7 @@ def _assert_no_horizontal_overflow(page: Page, route: str) -> None:
             "audit-filters",
             "change-values",
             "diff-page",
-            "event-action",
+            "audit-action-badge",
             "event-row",
             "page-button",
             "page-controls",
@@ -967,22 +1096,28 @@ def run_acceptance(
             project_name_field.fill("Unsaved header back fixture")
             parent_probe: object = page.evaluate(
                 """() => {
-                  const slot = document.querySelector(
-                    '.app-header .parent-slot');
-                  const link = slot?.querySelector('.shell-back-button');
+                  const link = document.querySelector(
+                    '.app-header .brand-lockup.parent-link');
                   const rect = link?.getBoundingClientRect();
-                  const icon = link?.querySelector('svg')?.getBoundingClientRect();
-                  const logo = document.querySelector(
-                    '.app-header .brand-lockup')?.getBoundingClientRect();
+                  const icon = link?.querySelector('.brand-chevron svg')
+                    ?.getBoundingClientRect();
+                  const logo = link?.querySelector('.brand-mark-wrap')
+                    ?.getBoundingClientRect();
                   return {
                     route: location.pathname === '/app/projects/new',
                     parentHref: link?.getAttribute('href') ?? null,
-                    slotWidth: slot?.getBoundingClientRect().width ?? null,
-                    count: slot?.querySelectorAll('.shell-back-button').length ?? 0,
+                    parentLabel: link?.getAttribute('aria-label') ?? null,
+                    count: document.querySelectorAll(
+                      '.app-header .brand-lockup.parent-link').length,
                     visible: Boolean(link && rect && rect.width > 0
                       && rect.height > 0 && getComputedStyle(link).visibility
                       === 'visible'),
-                    visualGap: icon && logo ? logo.left - icon.right : null,
+                    targetSize: Boolean(rect && rect.width >= 44
+                      && rect.height >= 44),
+                    iconInsideTarget: Boolean(rect && icon
+                      && icon.left >= rect.left && icon.right <= rect.right
+                      && icon.top >= rect.top && icon.bottom <= rect.bottom),
+                    markX: logo?.left ?? null,
                     viewport: Boolean(rect && rect.left >= 0
                       && rect.right <= innerWidth && rect.top >= 0
                       && rect.bottom <= innerHeight)
@@ -996,11 +1131,12 @@ def run_acceptance(
             _require(
                 parent_probe.get("route") is True
                 and parent_probe.get("parentHref") == "/app/projects"
-                and parent_probe.get("slotWidth") == 44
+                and parent_probe.get("parentLabel") == "Back"
                 and parent_probe.get("count") == 1
                 and parent_probe.get("visible") is True
-                and isinstance(parent_probe.get("visualGap"), (float, int))
-                and 4 <= parent_probe.get("visualGap", 0) <= 6
+                and parent_probe.get("targetSize") is True
+                and parent_probe.get("iconInsideTarget") is True
+                and isinstance(parent_probe.get("markX"), (float, int))
                 and parent_probe.get("viewport") is True,
                 "header parent link was not an aligned same-app target",
             )
@@ -1037,6 +1173,26 @@ def run_acceptance(
                 "accepting header back did not show the dirty-navigation confirmation",
             )
             page.wait_for_url("**/app/projects")
+            page.get_by_role("heading", name="Projects", exact=True).wait_for(
+                state="visible"
+            )
+            page.mouse.move(200, 500)
+            page.evaluate(
+                "() => new Promise(resolve => requestAnimationFrame("
+                "() => requestAnimationFrame(resolve)))"
+            )
+            parent_mark_x = (
+                parent_probe.get("markX") if isinstance(parent_probe, dict) else None
+            )
+            top_level_mark_x: object = page.locator(
+                ".app-header .brand-mark-wrap"
+            ).evaluate("element => element.getBoundingClientRect().left")
+            _require(
+                isinstance(top_level_mark_x, (float, int))
+                and isinstance(parent_mark_x, (float, int))
+                and abs(float(top_level_mark_x) - float(parent_mark_x)) <= 1,
+                "brand mark shifted when the chevron changed route state at 390px",
+            )
             # The following icon parity check measures the desktop rail SVGs.
             # Restore desktop width after the mobile dirty-navigation check.
             page.set_viewport_size({"width": 1280, "height": 900})
@@ -1230,14 +1386,23 @@ def run_acceptance(
             page.on("response", record_admin_image_response)
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             page.get_by_role("heading", name="Audit log").wait_for(state="visible")
-            parent_slot = page.locator(".app-header .parent-slot")
-            parent_slot_bounds = parent_slot.bounding_box()
+            page.wait_for_function(
+                "() => { const chevron = document.querySelector("
+                "'.app-header .brand-chevron'); return chevron "
+                "&& getComputedStyle(chevron).opacity === '0'; }",
+                timeout=5_000,
+            )
+            top_level_brand = page.locator(".app-header .brand-lockup")
             _require(
-                parent_slot.is_visible()
-                and parent_slot_bounds is not None
-                and parent_slot_bounds["width"] == 44
-                and page.locator(".app-header .shell-back-button").count() == 0,
-                "top-level Audit did not reserve the parent slot without a chevron",
+                top_level_brand.count() == 1
+                and top_level_brand.is_visible()
+                and top_level_brand.get_attribute("href") == "/app/"
+                and top_level_brand.get_attribute("aria-label") == "Stricknani"
+                and page.locator(".app-header .brand-lockup.parent-link").count() == 0
+                and top_level_brand.locator(".brand-chevron").evaluate(
+                    "element => getComputedStyle(element).opacity === '0'"
+                ),
+                "top-level Audit brand showed a parent link or visible chevron",
             )
             page.locator(".event-row").first.wait_for(state="visible")
             mark("check cross-owner audit resource card and protected image")
@@ -1336,11 +1501,16 @@ def run_acceptance(
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
             mark("read-only cross-owner resource and lazy audit diff")
             audit_detail_requests: list[str] = []
+            owner_resource_requests: list[str] = []
 
             def record_audit_detail_request(request: object) -> None:
                 request_url = urlsplit(getattr(request, "url", ""))
                 if re.fullmatch(r"/api/v2/admin/audit/\d+", request_url.path):
                     audit_detail_requests.append(request_url.path)
+                if re.fullmatch(r"/api/v2/(?:projects|yarns)/\d+", request_url.path):
+                    owner_resource_requests.append(
+                        f"{getattr(request, 'method', '')} {request_url.path}"
+                    )
 
             page.on("request", record_audit_detail_request)
             mark("open cross-owner resource route")
@@ -1386,7 +1556,9 @@ def run_acceptance(
                 )
             except PlaywrightTimeoutError:
                 detail_page_response = None
-            page.wait_for_timeout(1000)
+            page.locator(".reader.page-container--standard").wait_for(
+                state="visible", timeout=10_000
+            )
             resource_heading_visible = page.get_by_role(
                 "heading", name=cross_owner_name, exact=True
             ).is_visible()
@@ -1400,10 +1572,10 @@ def run_acceptance(
                 api_code = (
                     detail_api_error_codes[-1] if detail_api_error_codes else "none"
                 )
-                content_visible = page.locator(".resource-content").is_visible()
-                error_visible = page.locator(".resource-page [role=alert]").is_visible()
+                content_visible = page.locator(".reader").is_visible()
+                error_visible = page.locator(".reader-state [role=alert]").is_visible()
                 loading_visible = page.locator(
-                    ".resource-page [aria-live=polite]"
+                    ".reader-loading[aria-live=polite]"
                 ).is_visible()
                 shell_visible = page.locator(".app-shell").is_visible()
                 auth_form_visible = page.locator(".auth-form").is_visible()
@@ -1422,10 +1594,11 @@ def run_acceptance(
                     False,
                     diagnostic,
                 )
-            resource_parent = page.locator(".app-header .shell-back-button")
+            resource_parent = page.locator(".app-header .brand-lockup.parent-link")
             _require(
                 resource_parent.count() == 1
-                and resource_parent.get_attribute("href") == "/app/admin/audit",
+                and resource_parent.get_attribute("href") == "/app/admin/audit"
+                and resource_parent.get_attribute("aria-label") == "Back",
                 "a direct admin resource entry did not point its header parent "
                 "to Audit",
             )
@@ -1434,15 +1607,15 @@ def run_acceptance(
                 parent_bounds = resource_parent.bounding_box()
                 _require(
                     parent_bounds is not None
-                    and parent_bounds["width"] == 44
-                    and parent_bounds["height"] == 44,
-                    "the admin resource parent link is not a separate 44px target",
+                    and parent_bounds["width"] >= 44
+                    and parent_bounds["height"] >= 44,
+                    "the admin resource parent link target is smaller than 44px",
                 )
                 if width == 390:
                     _assert_mobile_header_alignment(page, "/app/admin/audit")
                 _require(
-                    page.locator(".resource-page .resource-back-link").count() == 0,
-                    "admin resource rendered a duplicate body Back link",
+                    page.locator(".reader .back-link").count() == 0,
+                    "admin project reader rendered a duplicate body Back link",
                 )
             page.set_viewport_size({"width": 390, "height": 900})
             mark("return from direct resource to audit")
@@ -1463,26 +1636,28 @@ def run_acceptance(
                 "resource view eagerly fetched audit history",
             )
             _require(
-                page.locator(
-                    ".resource-content button, .resource-content input, "
-                    ".resource-content textarea, .resource-content select"
-                ).count()
-                == 0,
-                "read-only resource view exposed editing controls",
+                owner_resource_requests == [],
+                "admin project reader fetched owner-scoped project or yarn data",
             )
             _require(
-                page.locator(".owner-strip")
+                page.locator(".reader form, .reader input, .reader textarea, .reader select")
+                .count()
+                == 0,
+                "admin project reader exposed editable form fields",
+            )
+            _require(
+                page.locator(".reader-admin-owner")
                 .get_by_text(member_email, exact=True)
                 .count()
                 == 1,
                 "read-only resource view did not identify its owner",
             )
             _assert_user_avatar(
-                page.locator(".owner-strip .user-avatar"),
+                page.locator(".reader-admin-owner .user-avatar"),
                 initial=member_email[0].upper(),
                 image_expected=True,
             )
-            related_yarn_card = page.locator(".linked-resources .resource-card").filter(
+            related_yarn_card = page.locator(".materials-card .resource-card").filter(
                 has_text=cross_owner_yarn_name
             )
             related_yarn_card.wait_for(state="visible")
@@ -1504,11 +1679,40 @@ def run_acceptance(
                 is not None,
                 "admin related-yarn card did not use scoped resource routes",
             )
-            mark("load cross-owner step image")
-            step_media = page.locator(".media-grid li").filter(
-                has_text="Nested fixture step image"
+            _require(
+                page.locator(".reader-heading-actions .favorite-button").count() == 0
+                and page.locator(".reader-edit-link").count() == 0
+                and page.locator(".archive-control").count() == 0
+                and page.locator(".ocr-control").count() == 0,
+                "admin project reader exposed owner-only mutation controls",
             )
-            step_image = step_media.locator("img")
+            utility_overflow = page.locator(
+                ".reader-heading-actions details.action-overflow"
+            )
+            _require(
+                utility_overflow.count() == 1
+                and utility_overflow.get_attribute("open") is None
+                and utility_overflow.locator(".print-button").count() == 1
+                and utility_overflow.locator(".text-size-controls button").count() == 2,
+                "admin project reader did not keep print and text-size utilities "
+                "in the collapsed overflow",
+            )
+            for width in (320, 390, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                reader = page.locator(".reader.page-container--standard")
+                reader_bounds = reader.bounding_box()
+                _require(
+                    reader_bounds is not None
+                    and reader_bounds["x"] >= 0
+                    and reader_bounds["x"] + reader_bounds["width"] <= width + 1,
+                    f"admin project reader exceeded the viewport at {width}px",
+                )
+                _assert_no_horizontal_overflow(page, "admin project reader")
+            mark("load cross-owner step image")
+            step_media = page.locator(".step-photo-card").filter(
+                has=page.locator('img[alt="Nested fixture step image"]')
+            )
+            step_image = step_media.locator("img.screen-reference-image")
             image_count = step_image.count()
             image_visible = image_count == 1 and step_image.is_visible()
             image_url_is_admin = image_count == 1 and bool(
@@ -1535,8 +1739,10 @@ def run_acceptance(
                 f"admin_route={image_url_is_admin}, decoded={image_decoded}, "
                 f"statuses={admin_image_response_statuses})",
             )
+            step = page.locator(".steps-list > li").filter(has=step_media)
             _require(
-                image_count == 1 and "Step 1" in step_media.inner_text(),
+                step.count() == 1
+                and step.locator(":scope > .step-number").inner_text().strip() == "1",
                 "read-only resource view did not identify the image's step",
             )
             mark("download cross-owner attachment")
@@ -1671,10 +1877,11 @@ def run_acceptance(
                     f"screenshot={'saved' if screenshot_dir else 'disabled'})",
                 )
             page.remove_listener("response", record_no_snapshot_detail)
-            audit_parent = page.locator(".app-header .shell-back-button")
+            audit_parent = page.locator(".app-header .brand-lockup.parent-link")
             _require(
                 audit_parent.count() == 1
-                and audit_parent.get_attribute("href") == "/app/admin/audit",
+                and audit_parent.get_attribute("href") == "/app/admin/audit"
+                and audit_parent.get_attribute("aria-label") == "Back",
                 "an audit detail entry did not point its header parent to Audit",
             )
             for width, suffix in ((390, "390"), (1280, "desktop")):
@@ -1682,9 +1889,9 @@ def run_acceptance(
                 audit_parent_bounds = audit_parent.bounding_box()
                 _require(
                     audit_parent_bounds is not None
-                    and audit_parent_bounds["width"] == 44
-                    and audit_parent_bounds["height"] == 44,
-                    "the audit detail parent link is not a separate 44px target",
+                    and audit_parent_bounds["width"] >= 44
+                    and audit_parent_bounds["height"] >= 44,
+                    "the audit detail parent link target is smaller than 44px",
                 )
                 if width == 390:
                     _assert_mobile_header_alignment(page, "/app/admin/audit")
@@ -1797,7 +2004,9 @@ def run_acceptance(
                 image_expected=True,
             )
             mark("inspect known audit action icons")
-            visible_actions = page.locator(".event-action strong").all_inner_texts()
+            visible_actions = page.locator(
+                ".audit-action-badge > span"
+            ).all_inner_texts()
             known_action_shapes: dict[str, str] = {}
             for label in ("Created", "Updated", "Deleted", "Uploaded", "Removed"):
                 if label not in visible_actions:
@@ -1809,7 +2018,7 @@ def run_acceptance(
                     .first
                 )
                 icon = event.locator(
-                    ".event-action svg[aria-hidden='true'][focusable='false']"
+                    ".audit-action-badge svg[aria-hidden='true'][focusable='false']"
                 )
                 _require(
                     icon.count() == 1,
@@ -1876,7 +2085,7 @@ def run_acceptance(
                 )
             rendered_rows = [
                 (
-                    row.locator(".event-action strong").inner_text().strip(),
+                    row.locator(".audit-action-badge > span").inner_text().strip(),
                     row.locator(".resource-card__name").inner_text().strip(),
                 )
                 for row in rows
@@ -1960,6 +2169,7 @@ def run_acceptance(
                             + 1
                         )
                         unknown["action"] = "unrecognized_fixture_action"
+                        unknown["has_changes"] = False
                         data.insert(0, unknown)
                         injected_unknown_action = True
                 route.fulfill(response=response, json=payload)
@@ -1970,14 +2180,28 @@ def run_acceptance(
                 has=page.get_by_text("unrecognized_fixture_action", exact=True)
             )
             unknown_row.wait_for(state="visible")
-            unknown_action_label = unknown_row.locator(".event-action strong")
+            mark("measure audit action colors, contrast, and row geometry")
+            _assert_audit_visual_measurements(page)
+            unknown_action_label = unknown_row.locator(".audit-action-badge > span")
+            unknown_badge = unknown_row.locator(".audit-action-badge")
             unknown_icon = unknown_row.locator(
-                ".event-action svg[aria-hidden='true'][focusable='false']"
+                ".audit-action-badge svg[aria-hidden='true'][focusable='false']"
             )
             _require(
                 injected_unknown_action
                 and unknown_action_label.inner_text().strip()
                 == "unrecognized_fixture_action"
+                and "action-badge--unknown"
+                in (unknown_badge.get_attribute("class") or "")
+                and not any(
+                    tone in (unknown_badge.get_attribute("class") or "")
+                    for tone in (
+                        "action-badge--create",
+                        "action-badge--update",
+                        "action-badge--upload",
+                        "action-badge--delete",
+                    )
+                )
                 and unknown_icon.count() == 1
                 and bool(_svg_shape_signature(unknown_icon)),
                 "an unknown audit action lost its raw label or generic SVG",
@@ -2170,14 +2394,24 @@ def run_acceptance(
             fresh_page.get_by_role("heading", name="Audit log", exact=True).wait_for(
                 state="visible"
             )
-            fresh_parent_slot = fresh_page.locator(".app-header .parent-slot")
-            fresh_parent_slot_bounds = fresh_parent_slot.bounding_box()
+            fresh_page.wait_for_function(
+                "() => { const chevron = document.querySelector("
+                "'.app-header .brand-chevron'); return chevron "
+                "&& getComputedStyle(chevron).opacity === '0'; }",
+                timeout=5_000,
+            )
+            fresh_top_level_brand = fresh_page.locator(".app-header .brand-lockup")
             _require(
                 fresh_page.evaluate("() => history.length") == 1
-                and fresh_parent_slot_bounds is not None
-                and fresh_parent_slot_bounds["width"] == 44
-                and fresh_page.locator(".app-header .shell-back-button").count() == 0,
-                "top-level direct audit entry did not reserve an empty parent slot",
+                and fresh_top_level_brand.count() == 1
+                and fresh_top_level_brand.get_attribute("href") == "/app/"
+                and fresh_top_level_brand.get_attribute("aria-label") == "Stricknani"
+                and fresh_page.locator(".app-header .brand-lockup.parent-link").count()
+                == 0
+                and fresh_top_level_brand.locator(".brand-chevron").evaluate(
+                    "element => getComputedStyle(element).opacity === '0'"
+                ),
+                "top-level direct audit entry showed a parent link or chevron",
             )
             fresh_page.close()
             context.close()
