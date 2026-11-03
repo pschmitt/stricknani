@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -84,6 +85,7 @@ import blue.anika.wolle.ui.common.stitchedBorder
 import coil3.compose.AsyncImage
 import java.util.Calendar
 import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlinx.coroutines.delay
 
 @Composable
@@ -348,14 +350,18 @@ private fun LazyListScope.spacedItem(content: @Composable () -> Unit) {
 @Composable
 private fun Greeting(onGaugeClick: () -> Unit) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
-    val greeting =
-        stringResource(
-            when (hour) {
-                in 5..11 -> R.string.home_greeting_morning
-                in 12..17 -> R.string.home_greeting_day
-                in 18..22 -> R.string.home_greeting_evening
-                else -> R.string.home_greeting_night
-            }
+    // One pick per screen entry: it survives recomposition, theme switches and rotation.
+    val pick = rememberSaveable { Random.nextInt(GREETING_POOL_SIZE) }
+    val greeting = stringResource(greetingRes(hour, pick))
+    // A small pop when the greeting appears; skipped when animations are off.
+    val reduceMotion = animationsDisabled()
+    var popped by rememberSaveable { mutableStateOf(reduceMotion) }
+    LaunchedEffect(Unit) { popped = true }
+    val pop by
+        animateFloatAsState(
+            targetValue = if (popped) 1f else 0.92f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+            label = "greetingPop",
         )
     Row(
         modifier =
@@ -369,7 +375,14 @@ private fun Greeting(onGaugeClick: () -> Unit) {
             Text(
                 greeting,
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.semantics { heading() },
+                modifier =
+                    Modifier.graphicsLayer {
+                            scaleX = pop
+                            scaleY = pop
+                            alpha = ((pop - 0.92f) / 0.08f).coerceIn(0f, 1f)
+                            transformOrigin = TransformOrigin(0f, 0.5f)
+                        }
+                        .semantics { heading() },
             )
             Text(
                 stringResource(R.string.home_greeting_question),
