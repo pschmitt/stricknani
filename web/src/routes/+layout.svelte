@@ -17,7 +17,7 @@
   import { routeParent } from "#lib/route-parent.ts";
   import SignInForm from "#lib/components/SignInForm.svelte";
   import SharedButton from "#lib/components/Button.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import AccountMenu from "#lib/components/AccountMenu.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import "../app.css";
@@ -214,13 +214,13 @@
         parentLabel={t("Back", locale)}
         reserveParentSlot={true}
       />
-      <a
-        class="header-account"
-        href={linkTo("/account")}
-        aria-label={t("Account", locale)}
-      >
-        <UserAvatar {avatarUrl} name={user.email} />
-      </a>
+      <AccountMenu
+        email={user.email}
+        {avatarUrl}
+        isAdmin={user.is_admin === true}
+        {canManageAdmin}
+        {locale}
+      />
     </header>
 
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>

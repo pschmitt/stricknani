@@ -36,6 +36,7 @@ class AcceptanceFailure(RuntimeError):
 
 
 ACCOUNT_HEADING_NAME = re.compile(r"^(?:Account|Konto)$")
+ACCOUNT_SETTINGS_ITEM_NAME = re.compile(r"^(?:Account settings|Kontoeinstellungen)$")
 SIGN_OUT_BUTTON_NAME = re.compile(r"^(?:Sign out|Abmelden)$")
 UPLOAD_PICTURE_BUTTON_NAME = re.compile(r"^(?:Upload picture|Bild hochladen)$")
 
@@ -172,6 +173,7 @@ def _open_account(page: Page) -> None:
     profile = page.locator(".app-header .header-account")
     profile.wait_for(state="visible")
     profile.click()
+    page.get_by_role("menuitem", name=ACCOUNT_SETTINGS_ITEM_NAME).click()
     page.wait_for_url("**/app/account")
     page.get_by_role("heading", name=ACCOUNT_HEADING_NAME).wait_for(state="visible")
 
@@ -759,7 +761,10 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         "More or Workspace contains a duplicate Account link",
     )
     _require(
-        page.locator(".app-header .header-account[href$='/account']").count() == 1,
+        page.locator(
+            ".app-header button.header-account[aria-haspopup='dialog']"
+        ).count()
+        == 1,
         "Account is unavailable from the profile links",
     )
     for label, href in expected_cards:

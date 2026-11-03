@@ -38,6 +38,7 @@ class AcceptanceFailure(RuntimeError):
 
 
 ACCOUNT_HEADING_NAME = re.compile(r"^(?:Account|Konto)$")
+ACCOUNT_SETTINGS_ITEM_NAME = re.compile(r"^(?:Account settings|Kontoeinstellungen)$")
 SIGN_OUT_BUTTON_NAME = re.compile(r"^(?:Sign out|Abmelden)$")
 UPLOAD_PICTURE_BUTTON_NAME = re.compile(r"^(?:Upload picture|Bild hochladen)$")
 REMOVE_PICTURE_BUTTON_NAME = re.compile(r"^(?:Remove picture|Bild entfernen)$")
@@ -57,6 +58,42 @@ def _playwright_error_category(error: Exception) -> str:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AcceptanceFailure(message)
+
+
+def _account_menu_trigger(page: Page) -> Locator:
+    return page.locator(".app-header .header-account")
+
+
+def _assert_account_menu_trigger(page: Page, context: str) -> Locator:
+    trigger = _account_menu_trigger(page)
+    _require(
+        trigger.is_visible()
+        and trigger.evaluate("element => element.tagName === 'BUTTON'")
+        and ACCOUNT_HEADING_NAME.fullmatch(trigger.get_attribute("aria-label") or "")
+        is not None
+        and trigger.get_attribute("aria-haspopup") == "dialog"
+        and trigger.get_attribute("aria-expanded") == "false",
+        f"the {context} profile control is not an accessible account menu button",
+    )
+    return trigger
+
+
+def _open_account_menu(page: Page) -> Locator:
+    """Open the header account menu and return its Account settings item."""
+    trigger = _account_menu_trigger(page)
+    trigger.click()
+    _require(
+        trigger.get_attribute("aria-expanded") == "true",
+        "the profile button did not open the account menu",
+    )
+    item = page.get_by_role("menuitem", name=ACCOUNT_SETTINGS_ITEM_NAME)
+    item.wait_for(state="visible", timeout=10_000)
+    return item
+
+
+def _open_account_settings(page: Page) -> None:
+    _open_account_menu(page).click()
+    page.wait_for_url("**/app/account", timeout=10_000)
 
 
 def _click_and_handle_dialog(page: Page, locator: Locator, *, accept: bool) -> Dialog:
@@ -792,16 +829,7 @@ def _assert_mobile_app_header(page: Page) -> None:
         page.locator(".app-header .locale-switcher").count() == 0,
         "the compact mobile header still reserves space for language controls",
     )
-    account_target = page.locator(".app-header .header-account")
-    _require(
-        account_target.is_visible()
-        and ACCOUNT_HEADING_NAME.fullmatch(
-            account_target.get_attribute("aria-label") or ""
-        )
-        is not None
-        and urlsplit(account_target.get_attribute("href") or "").path == "/app/account",
-        "the mobile profile link does not open Account",
-    )
+    account_target = _assert_account_menu_trigger(page, "mobile")
     dimensions: object = account_target.evaluate(
         "node => { const rect = node.getBoundingClientRect(); "
         "const wordmark = document.querySelector('.app-header .brand-lockup'); "
@@ -822,16 +850,7 @@ def _assert_mobile_app_header(page: Page) -> None:
 
 
 def _assert_desktop_account_target(page: Page) -> None:
-    account_target = page.locator(".app-header .header-account")
-    _require(
-        account_target.is_visible()
-        and ACCOUNT_HEADING_NAME.fullmatch(
-            account_target.get_attribute("aria-label") or ""
-        )
-        is not None
-        and urlsplit(account_target.get_attribute("href") or "").path == "/app/account",
-        "the desktop profile link does not open Account",
-    )
+    account_target = _assert_account_menu_trigger(page, "desktop")
     dimensions: object = account_target.evaluate(
         "node => ({width: node.getBoundingClientRect().width, "
         "height: node.getBoundingClientRect().height})"
@@ -928,20 +947,7 @@ def _open_account_from_profile(page: Page, *, mobile: bool = False) -> None:
         _assert_mobile_app_header(page)
     else:
         _assert_desktop_account_target(page)
-    selector = ".app-header .header-account"
-    account_link = page.locator(selector)
-    _require(account_link.is_visible(), "the Account profile link is unavailable")
-    _require(
-        account_link.evaluate("element => element.tagName === 'A'")
-        and ACCOUNT_HEADING_NAME.fullmatch(
-            account_link.get_attribute("aria-label") or ""
-        )
-        is not None
-        and urlsplit(account_link.get_attribute("href") or "").path == "/app/account",
-        "the profile control is not an accessible Account link",
-    )
-    account_link.click()
-    page.wait_for_url("**/app/account", timeout=10_000)
+    _open_account_settings(page)
     page.get_by_role("heading", name=ACCOUNT_HEADING_NAME).wait_for(
         state="visible", timeout=10_000
     )
@@ -1415,7 +1421,7 @@ def _exercise_gauge_calculator(
         state="visible"
     )
     if signed_in:
-        page.locator(".app-header .header-account").click()
+        _open_account_settings(page)
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
@@ -1442,7 +1448,7 @@ def _exercise_gauge_calculator(
         state="visible"
     )
     if signed_in:
-        page.locator(".app-header .header-account").click()
+        _open_account_settings(page)
         page.get_by_role("heading", name="Account", exact=True).wait_for(
             state="visible"
         )
@@ -1477,7 +1483,7 @@ def _exercise_gauge_calculator(
         state="visible"
     )
     if signed_in:
-        page.locator(".app-header .header-account").click()
+        _open_account_settings(page)
         page.get_by_role("heading", name="Konto", exact=True).wait_for(state="visible")
         page.locator(".account-language .locale-switcher button").nth(0).click()
         page.goto(f"{origin}/app/gauge", wait_until="networkidle")
@@ -1998,7 +2004,7 @@ def _check_mobile_language_and_screenshots(
         page.locator(".app-header .locale-switcher").count() == 0,
         "the mobile header still reserves space for language controls",
     )
-    page.locator(".app-header .header-account").click()
+    _open_account_settings(page)
     page.get_by_role("heading", name="Account", exact=True).wait_for(state="visible")
     page.locator(".account-language .locale-switcher").wait_for(state="visible")
     _require(
@@ -4119,7 +4125,7 @@ def run_acceptance(
                     )
                     profile_links = (
                         page.locator(
-                            ".app-header .header-account[href$='/account']"
+                            ".app-header button.header-account[aria-haspopup='dialog']"
                         ).count()
                         == 1
                     )
@@ -4530,16 +4536,8 @@ def run_acceptance(
             )
             page.set_viewport_size({"width": 1280, "height": 844})
             project_name.fill("Account navigation draft")
-            account_link = page.locator(".app-header .header-account")
-            _require(
-                account_link.is_visible()
-                and ACCOUNT_HEADING_NAME.fullmatch(
-                    account_link.get_attribute("aria-label") or ""
-                )
-                is not None
-                and account_link.get_attribute("href") == "/app/account",
-                "the desktop profile link does not target Account",
-            )
+            _assert_account_menu_trigger(page, "desktop")
+            account_link = _open_account_menu(page)
             mark_stage("checking the dirty-editor guard on Account navigation")
             _click_and_handle_dialog(page, account_link, accept=False)
             _require(
