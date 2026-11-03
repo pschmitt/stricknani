@@ -1693,6 +1693,16 @@
     gap: 1rem;
   }
 
+  /* Longer (German) labels must wrap under the heading instead of pushing the page wider than
+     the phone, which also drags the fixed bottom bar off-screen in Chrome. */
+  .section-title-row {
+    flex-wrap: wrap;
+  }
+
+  .section-title-row > div {
+    min-width: 0;
+  }
+
   h2,
   h3,
   p {
