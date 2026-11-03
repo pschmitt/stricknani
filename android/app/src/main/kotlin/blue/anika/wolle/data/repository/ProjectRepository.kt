@@ -8,6 +8,9 @@ import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepDto
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.api.v2.SyncV2Api
+import blue.anika.wolle.data.api.v2.runV2Sync
+import blue.anika.wolle.data.api.v2.staleAfterFullResync
 import blue.anika.wolle.data.api.v2.toV1
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
@@ -38,7 +41,10 @@ private const val ENTITY_TYPE = "project"
 
 data class ProjectRefreshResult(val detail: ProjectDto, val changed: Boolean)
 
-/** Cache-first access to projects, delta-synced against `/api/v1/sync/projects`. */
+/**
+ * Cache-first access to projects, delta-synced against `/api/v2/sync/projects` (v1 on servers
+ * without v2).
+ */
 @Singleton
 class ProjectRepository
 @Inject
@@ -47,6 +53,7 @@ constructor(
     private val projectDao: ProjectDao,
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
+    private val syncV2Api: SyncV2Api,
     private val projectsApi: ProjectsApi,
     private val projectsV2Api: ProjectsV2Api,
     private val capabilities: ApiCapabilities,
@@ -104,30 +111,73 @@ constructor(
     /**
      * Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14).
      */
-    suspend fun sync(): Boolean {
+    suspend fun sync(): Boolean = if (capabilities.useV2()) syncV2() else syncV1()
+
+    private suspend fun syncV1(): Boolean {
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncProjects(since = cursor)
+        val changed = applyDelta(response.updated, response.deletedIds)
+        syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
+        return changed
+    }
+
+    /**
+     * `GET /api/v2/sync/projects` with cursor paging and `full_resync_required` handling (see
+     * [runV2Sync]). The delta semantics are those of [syncV1]: pending local writes win, tombstones
+     * delete, and the new cursor is stored only after every page was applied.
+     */
+    private suspend fun syncV2(): Boolean {
+        var changed = false
+        val outcome =
+            runV2Sync(
+                since = syncStateDao.getCursor(ENTITY_TYPE),
+                idOf = { it.id },
+                fetch = { since, cursor ->
+                    syncV2Api.syncProjects(since = since, cursor = cursor).data
+                },
+                onPage = { updated, deletedIds ->
+                    if (applyDelta(updated.map { it.toV1() }, deletedIds)) changed = true
+                },
+            )
+        if (outcome.fullResync) {
+            val localIds = projectDao.getServerIds()
+            val pending =
+                localIds
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
+                    ?: emptySet()
+            val stale = staleAfterFullResync(localIds, outcome.seenIds, pending)
+            if (stale.isNotEmpty()) {
+                projectDao.deleteByIds(stale)
+                changed = true
+            }
+        }
+        syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, outcome.serverTime))
+        return changed
+    }
+
+    /** Applies one batch of server changes to Room; returns whether it carried any change. */
+    private suspend fun applyDelta(updated: List<ProjectDto>, deletedIds: List<Int>): Boolean {
         val pendingUpdatedIds =
-            response.updated
+            updated
                 .map { it.id }
                 .takeIf { it.isNotEmpty() }
                 ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
                 ?: emptySet()
         val pendingDeletedIds =
-            response.deletedIds
+            deletedIds
                 .takeIf { it.isNotEmpty() }
                 ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
                 ?: emptySet()
-        response.updated
+        updated
             .filterNot { it.id in pendingUpdatedIds }
             .takeIf { it.isNotEmpty() }
-            ?.let { projectDao.upsertAll(it.map { project -> project.toEntity(json) }) }
-        response.deletedIds
+            ?.let { projectDao.upsertAll(it.map { item -> item.toEntity(json) }) }
+        deletedIds
             .filterNot { it in pendingDeletedIds }
             .takeIf { it.isNotEmpty() }
             ?.let { projectDao.deleteByIds(it) }
-        syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, response.serverTime))
-        return response.updated.isNotEmpty() || response.deletedIds.isNotEmpty()
+        return updated.isNotEmpty() || deletedIds.isNotEmpty()
     }
 
     /**

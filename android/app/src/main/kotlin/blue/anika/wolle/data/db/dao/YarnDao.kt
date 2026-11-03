@@ -19,5 +19,8 @@ interface YarnDao {
 
     @Upsert suspend fun upsertAll(yarns: List<YarnEntity>)
 
+    /** Ids of rows the server knows (positive); negative ids are offline placeholders. */
+    @Query("SELECT id FROM yarns WHERE id > 0") suspend fun getServerIds(): List<Int>
+
     @Query("DELETE FROM yarns WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Int>)
 }

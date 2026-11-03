@@ -20,5 +20,8 @@ interface ProjectDao {
 
     @Upsert suspend fun upsertAll(projects: List<ProjectEntity>)
 
+    /** Ids of rows the server knows (positive); negative ids are offline placeholders. */
+    @Query("SELECT id FROM projects WHERE id > 0") suspend fun getServerIds(): List<Int>
+
     @Query("DELETE FROM projects WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Int>)
 }

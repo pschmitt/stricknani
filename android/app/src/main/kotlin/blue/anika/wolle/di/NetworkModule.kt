@@ -14,6 +14,7 @@ import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.repository.ApiProjectImporter
 import blue.anika.wolle.data.repository.ProjectImporter
@@ -163,6 +164,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideSyncApi(retrofit: Retrofit): SyncApi = retrofit.create(SyncApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSyncV2Api(retrofit: Retrofit): SyncV2Api = retrofit.create(SyncV2Api::class.java)
 
     // SNA-87: v2 clients. Repositories pick v1 or v2 through ApiCapabilities
     // (docs/v2-migration.md).
