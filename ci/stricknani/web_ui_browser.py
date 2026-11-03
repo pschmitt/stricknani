@@ -576,12 +576,32 @@ def _measure_library_density(
 
 def _open_library_filters(page: Page) -> Locator:
     trigger = page.locator(".filter-trigger")
-    _require(trigger.count() == 1, "library filter trigger is ambiguous")
-    if trigger.get_attribute("aria-expanded") != "true":
+    dialog = page.locator("dialog.filter-panel")
+    _require(
+        trigger.count() == 1 and dialog.count() == 1,
+        "library filter controls are ambiguous",
+    )
+    if not dialog.evaluate("element => element.open"):
         trigger.click()
-    dialog = page.get_by_role("dialog")
-    dialog.wait_for(state="visible")
+    page.get_by_role("dialog").wait_for(state="visible")
+    _require(
+        dialog.evaluate("element => element.open"),
+        "the native filter dialog did not open",
+    )
     return dialog
+
+
+def _wait_for_library_filters_closed(dialog: Locator) -> None:
+    dialog.wait_for(state="hidden")
+    _require(
+        not dialog.evaluate("element => element.open"),
+        "the native filter dialog did not close",
+    )
+
+
+def _close_library_filters(dialog: Locator) -> None:
+    dialog.get_by_role("button", name="Close filters", exact=True).click()
+    _wait_for_library_filters_closed(dialog)
 
 
 def _assert_header_parent_link(page: Page, href: str, description: str) -> Locator:
@@ -2949,9 +2969,7 @@ def run_acceptance(
                 category_filter_response_info.value.status == 200,
                 "category filtering did not succeed against the Rust API",
             )
-            filter_dialog.get_by_role(
-                "button", name="Close filters", exact=True
-            ).click()
+            _close_library_filters(filter_dialog)
             page.locator(".project-card").wait_for(state="visible")
             _require(
                 any(
@@ -2976,9 +2994,7 @@ def run_acceptance(
                 tag_filter_response_info.value.status == 200,
                 "tag filtering did not succeed against the Rust API",
             )
-            filter_dialog.get_by_role(
-                "button", name="Close filters", exact=True
-            ).click()
+            _close_library_filters(filter_dialog)
             page.locator(".project-card").wait_for(state="visible")
             search_box = page.get_by_role("searchbox", name="Search your projects")
             mark_stage("checking the project no-match state")
@@ -3008,9 +3024,11 @@ def run_acceptance(
                     and not urlsplit(response.url).query
                 )
             ) as clear_filters_response_info:
-                _open_library_filters(page).get_by_role(
+                filter_dialog = _open_library_filters(page)
+                filter_dialog.get_by_role(
                     "button", name="Clear filters", exact=True
                 ).click()
+            _wait_for_library_filters_closed(filter_dialog)
             _require(
                 clear_filters_response_info.value.status == 200,
                 "clearing filters did not reload the project list",
@@ -3069,9 +3087,7 @@ def run_acceptance(
                 favorite_filter_response_info.value.status == 200,
                 "favorite filtering did not succeed against the Rust API",
             )
-            filter_dialog.get_by_role(
-                "button", name="Close filters", exact=True
-            ).click()
+            _close_library_filters(filter_dialog)
             page.locator(".project-card").wait_for(state="visible")
             _require(
                 page.locator(".project-card").count() == 1,
