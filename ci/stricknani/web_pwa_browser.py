@@ -819,10 +819,19 @@ def run_acceptance(
             initial_caches = _cache_snapshot(page)
             _require(len(initial_caches) == 1, "initial app cache count is unexpected")
             initial_paths = set(next(iter(initial_caches.values())))
+            # Once the worker claims the page, lazily loaded route chunks are
+            # promoted into the cache at runtime, so anything beyond the
+            # recovery assets must be an immutable hashed asset.
+            unexpected_paths = sorted(
+                path
+                for path in initial_paths - REQUIRED_OFFLINE_ASSETS
+                if not path.startswith(IMMUTABLE_ASSET_PREFIX)
+            )
             _require(
-                initial_paths == REQUIRED_OFFLINE_ASSETS,
+                REQUIRED_OFFLINE_ASSETS.issubset(initial_paths)
+                and not unexpected_paths,
                 "cold worker install cached something beyond the offline "
-                "recovery assets",
+                f"recovery assets: {unexpected_paths}",
             )
             cold_install_requests = set(service_worker_asset_requests)
             _require(
