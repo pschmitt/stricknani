@@ -3,6 +3,7 @@
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import KnittedSwatch from "./KnittedSwatch.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -239,125 +240,139 @@
   </details>
 
   <form class="gauge-form" onsubmit={submit}>
-    <fieldset>
+    <fieldset class="swatch-fieldset swatch-fieldset--pattern">
       <legend>{t("Pattern Gauge (per 10cm)", locale)}</legend>
-      <div class="field-grid">
-        <label for="pattern-gauge-stitches">
-          <span class="field-caption">{t("Stitches", locale)}</span>
-          <span class="field-control">
-            <input
-              bind:value={values.pattern_gauge_stitches}
-              id="pattern-gauge-stitches"
-              name="pattern_gauge_stitches"
-              type="number"
-              min="1"
-              max="4294967295"
-              step="1"
-              inputmode="numeric"
-              required
-              aria-invalid={fieldErrors.pattern_gauge_stitches
-                ? "true"
-                : undefined}
-              aria-describedby={fieldErrors.pattern_gauge_stitches
-                ? "pattern-gauge-stitches-error"
-                : undefined}
-              oninput={valueChanged}
-            />
-            {#if fieldErrors.pattern_gauge_stitches}
-              <small id="pattern-gauge-stitches-error" class="field-error">
-                {fieldErrors.pattern_gauge_stitches}
-              </small>
-            {/if}
-          </span>
-        </label>
+      <div class="swatch-row">
+        <KnittedSwatch
+          stitches={values.pattern_gauge_stitches}
+          rows={values.pattern_gauge_rows}
+        />
+        <div class="field-grid">
+          <label for="pattern-gauge-stitches">
+            <span class="field-caption">{t("Stitches", locale)}</span>
+            <span class="field-control">
+              <input
+                bind:value={values.pattern_gauge_stitches}
+                id="pattern-gauge-stitches"
+                name="pattern_gauge_stitches"
+                type="number"
+                min="1"
+                max="4294967295"
+                step="1"
+                inputmode="numeric"
+                required
+                aria-invalid={fieldErrors.pattern_gauge_stitches
+                  ? "true"
+                  : undefined}
+                aria-describedby={fieldErrors.pattern_gauge_stitches
+                  ? "pattern-gauge-stitches-error"
+                  : undefined}
+                oninput={valueChanged}
+              />
+              {#if fieldErrors.pattern_gauge_stitches}
+                <small id="pattern-gauge-stitches-error" class="field-error">
+                  {fieldErrors.pattern_gauge_stitches}
+                </small>
+              {/if}
+            </span>
+          </label>
 
-        <label for="pattern-gauge-rows">
-          <span class="field-caption">{t("Rows", locale)}</span>
-          <span class="field-control">
-            <input
-              bind:value={values.pattern_gauge_rows}
-              id="pattern-gauge-rows"
-              name="pattern_gauge_rows"
-              type="number"
-              min="1"
-              max="4294967295"
-              step="1"
-              inputmode="numeric"
-              required
-              aria-invalid={fieldErrors.pattern_gauge_rows ? "true" : undefined}
-              aria-describedby={fieldErrors.pattern_gauge_rows
-                ? "pattern-gauge-rows-error"
-                : undefined}
-              oninput={valueChanged}
-            />
-            {#if fieldErrors.pattern_gauge_rows}
-              <small id="pattern-gauge-rows-error" class="field-error">
-                {fieldErrors.pattern_gauge_rows}
-              </small>
-            {/if}
-          </span>
-        </label>
+          <label for="pattern-gauge-rows">
+            <span class="field-caption">{t("Rows", locale)}</span>
+            <span class="field-control">
+              <input
+                bind:value={values.pattern_gauge_rows}
+                id="pattern-gauge-rows"
+                name="pattern_gauge_rows"
+                type="number"
+                min="1"
+                max="4294967295"
+                step="1"
+                inputmode="numeric"
+                required
+                aria-invalid={fieldErrors.pattern_gauge_rows
+                  ? "true"
+                  : undefined}
+                aria-describedby={fieldErrors.pattern_gauge_rows
+                  ? "pattern-gauge-rows-error"
+                  : undefined}
+                oninput={valueChanged}
+              />
+              {#if fieldErrors.pattern_gauge_rows}
+                <small id="pattern-gauge-rows-error" class="field-error">
+                  {fieldErrors.pattern_gauge_rows}
+                </small>
+              {/if}
+            </span>
+          </label>
+        </div>
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset class="swatch-fieldset swatch-fieldset--yours">
       <legend>{t("Your Gauge (per 10cm)", locale)}</legend>
-      <div class="field-grid">
-        <label for="user-gauge-stitches">
-          <span class="field-caption">{t("Stitches", locale)}</span>
-          <span class="field-control">
-            <input
-              bind:value={values.user_gauge_stitches}
-              id="user-gauge-stitches"
-              name="user_gauge_stitches"
-              type="number"
-              min="1"
-              max="4294967295"
-              step="1"
-              inputmode="numeric"
-              required
-              aria-invalid={fieldErrors.user_gauge_stitches
-                ? "true"
-                : undefined}
-              aria-describedby={fieldErrors.user_gauge_stitches
-                ? "user-gauge-stitches-error"
-                : undefined}
-              oninput={valueChanged}
-            />
-            {#if fieldErrors.user_gauge_stitches}
-              <small id="user-gauge-stitches-error" class="field-error">
-                {fieldErrors.user_gauge_stitches}
-              </small>
-            {/if}
-          </span>
-        </label>
+      <div class="swatch-row">
+        <KnittedSwatch
+          stitches={values.user_gauge_stitches}
+          rows={values.user_gauge_rows}
+        />
+        <div class="field-grid">
+          <label for="user-gauge-stitches">
+            <span class="field-caption">{t("Stitches", locale)}</span>
+            <span class="field-control">
+              <input
+                bind:value={values.user_gauge_stitches}
+                id="user-gauge-stitches"
+                name="user_gauge_stitches"
+                type="number"
+                min="1"
+                max="4294967295"
+                step="1"
+                inputmode="numeric"
+                required
+                aria-invalid={fieldErrors.user_gauge_stitches
+                  ? "true"
+                  : undefined}
+                aria-describedby={fieldErrors.user_gauge_stitches
+                  ? "user-gauge-stitches-error"
+                  : undefined}
+                oninput={valueChanged}
+              />
+              {#if fieldErrors.user_gauge_stitches}
+                <small id="user-gauge-stitches-error" class="field-error">
+                  {fieldErrors.user_gauge_stitches}
+                </small>
+              {/if}
+            </span>
+          </label>
 
-        <label for="user-gauge-rows">
-          <span class="field-caption">{t("Rows", locale)}</span>
-          <span class="field-control">
-            <input
-              bind:value={values.user_gauge_rows}
-              id="user-gauge-rows"
-              name="user_gauge_rows"
-              type="number"
-              min="1"
-              max="4294967295"
-              step="1"
-              inputmode="numeric"
-              required
-              aria-invalid={fieldErrors.user_gauge_rows ? "true" : undefined}
-              aria-describedby={fieldErrors.user_gauge_rows
-                ? "user-gauge-rows-error"
-                : undefined}
-              oninput={valueChanged}
-            />
-            {#if fieldErrors.user_gauge_rows}
-              <small id="user-gauge-rows-error" class="field-error">
-                {fieldErrors.user_gauge_rows}
-              </small>
-            {/if}
-          </span>
-        </label>
+          <label for="user-gauge-rows">
+            <span class="field-caption">{t("Rows", locale)}</span>
+            <span class="field-control">
+              <input
+                bind:value={values.user_gauge_rows}
+                id="user-gauge-rows"
+                name="user_gauge_rows"
+                type="number"
+                min="1"
+                max="4294967295"
+                step="1"
+                inputmode="numeric"
+                required
+                aria-invalid={fieldErrors.user_gauge_rows ? "true" : undefined}
+                aria-describedby={fieldErrors.user_gauge_rows
+                  ? "user-gauge-rows-error"
+                  : undefined}
+                oninput={valueChanged}
+              />
+              {#if fieldErrors.user_gauge_rows}
+                <small id="user-gauge-rows-error" class="field-error">
+                  {fieldErrors.user_gauge_rows}
+                </small>
+              {/if}
+            </span>
+          </label>
+        </div>
       </div>
     </fieldset>
 
@@ -537,6 +552,38 @@
     padding-inline: 0.35rem;
     color: var(--ink);
     font-weight: 680;
+  }
+
+  /* The two gauge fieldsets are swatch cards like on Android: the pattern's in marigold,
+     yours in lagoon, each with a little knitted square that follows the numbers. */
+  .swatch-fieldset {
+    --swatch-tone: var(--tone-projects);
+    border: 1.5px dashed color-mix(in srgb, var(--swatch-tone) 45%, transparent);
+    border-radius: var(--radius-lg, 28px);
+    padding: 1rem 1.1rem 1.15rem;
+    background: color-mix(in srgb, var(--swatch-tone) 12%, var(--surface));
+  }
+  .swatch-fieldset--yours {
+    --swatch-tone: var(--tone-yarns);
+  }
+  .swatch-fieldset legend {
+    color: var(--swatch-tone);
+    font-family: var(--font-display);
+    font-size: 1.08rem;
+  }
+  .swatch-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+  }
+  .swatch-row :global(.knitted-swatch) {
+    color: var(--swatch-tone);
+  }
+  @media (max-width: 26rem) {
+    .swatch-row {
+      grid-template-columns: 1fr;
+    }
   }
 
   .field-grid {
