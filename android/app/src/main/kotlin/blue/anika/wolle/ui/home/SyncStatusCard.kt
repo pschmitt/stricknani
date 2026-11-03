@@ -31,9 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -49,6 +51,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,6 +83,10 @@ fun HomeSyncStatusCard(
     onRetrySync: () -> Unit,
     modifier: Modifier = Modifier,
     leaving: Boolean = false,
+    // Raw PullToRefreshState.distanceFraction, read lazily (layout/draw phase only).
+    pullFraction: () -> Float = { 0f },
+    // True while the card exists only because the user is dragging: it is revealed by the pull.
+    peeking: Boolean = false,
 ) {
     // The failed count includes conflicts, which the pending count leaves out; the
     // failure text must use it so the card agrees with SyncIssueBanner below it.
@@ -92,10 +99,10 @@ fun HomeSyncStatusCard(
     val mood = syncBadgeMood(isRefreshing, pendingChangesCount, hasSyncFailures)
     val density = LocalDensity.current
     // Enter: drop in from slightly above with a squash-and-stretch spring.
-    val enter = remember { Animatable(if (still) 1f else 0f) }
+    val enter = remember { Animatable(if (still || peeking) 1f else 0f) }
     val exit = remember { Animatable(0f) }
     // The badge pops in a beat after the card.
-    val badgePop = remember { Animatable(if (still) 1f else 0f) }
+    val badgePop = remember { Animatable(if (still || peeking) 1f else 0f) }
     val hop = remember { Animatable(1f) }
     val wiggle = remember { Animatable(0f) }
     val bob = remember { Animatable(0f) }
@@ -103,8 +110,23 @@ fun HomeSyncStatusCard(
     val particles = remember { burstParticles(count = 6, nearRadius = 20f, farRadius = 28f) }
     var previousMood by remember { mutableStateOf<SyncBadgeMood?>(null) }
 
+    var wasPeeking by remember { mutableStateOf(peeking) }
+    // Released past the threshold: settle from wherever the drag left the card with a spring.
+    LaunchedEffect(peeking) {
+        if (wasPeeking && !peeking && !still) {
+            enter.snapTo(syncPullReveal(pullFraction()))
+            enter.animateTo(
+                1f,
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
+        }
+        wasPeeking = peeking
+    }
     LaunchedEffect(still) {
-        if (still) return@LaunchedEffect
+        if (still || peeking) return@LaunchedEffect
         launch {
             enter.animateTo(
                 1f,
@@ -173,14 +195,24 @@ fun HomeSyncStatusCard(
         modifier =
             modifier
                 .fillMaxWidth()
+                .layout { measurable, constraints ->
+                    // While dragging, the card's height grows with the pull.
+                    val placeable = measurable.measure(constraints)
+                    val shown = if (peeking) syncPullReveal(pullFraction()).coerceIn(0f, 1f) else 1f
+                    layout(placeable.width, (placeable.height * shown).roundToInt()) {
+                        placeable.place(0, 0)
+                    }
+                }
+                .then(if (peeking) Modifier.clipToBounds() else Modifier)
                 .graphicsLayer {
-                    val appear = enter.value
+                    val appear = if (peeking) syncPullReveal(pullFraction()) else enter.value
+                    val nudge = if (peeking || isRefreshing) 0f else syncPullNudge(pullFraction())
                     val gone = exit.value
                     val scale = (0.85f + 0.15f * appear) * (1f - 0.1f * gone)
                     scaleX = scale
                     // Squash and stretch: a touch taller on the way down, a touch flatter on
                     // landing.
-                    scaleY = scale * (1f + 0.04f * (1f - appear).coerceAtLeast(0f))
+                    scaleY = scale * (1f + 0.04f * (1f - appear).coerceAtLeast(0f) + nudge)
                     translationY = with(density) { (-16.dp * (1f - appear) - 12.dp * gone).toPx() }
                     alpha = (appear.coerceIn(0f, 1f)) * (1f - gone)
                 }
@@ -239,7 +271,9 @@ fun HomeSyncStatusCard(
                             }
                         }
                         .graphicsLayer {
-                            val pop = badgePop.value * hop.value
+                            val reveal =
+                                if (peeking) syncPullReveal(pullFraction()).coerceIn(0f, 1f) else 1f
+                            val pop = badgePop.value * hop.value * reveal * reveal
                             scaleX = pop
                             scaleY = pop
                             rotationZ = wiggle.value

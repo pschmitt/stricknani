@@ -43,8 +43,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -140,6 +143,12 @@ fun HomeScreen(
             pendingChangesCount > 0 ||
             lastSyncedMillis == null
 
+    // The card is the pull indicator: it grows with the drag (see HomeSyncStatusCard).
+    val pullState = rememberPullToRefreshState()
+    val pullFraction = remember(pullState) { { pullState.distanceFraction } }
+    val dragging by remember(pullState) { derivedStateOf { pullState.distanceFraction > 0f } }
+    val peekSyncCard = !reduceMotion && !showSyncStatus && !isRefreshing && dragging
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         // The greeting below replaces the title bar, so the list draws under the status bar
@@ -148,6 +157,16 @@ fun HomeScreen(
     ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
+            state = pullState,
+            indicator = {
+                // With motion off the card does not follow the drag, so keep the stock indicator.
+                if (reduceMotion)
+                    PullToRefreshDefaults.Indicator(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        isRefreshing = isRefreshing,
+                        state = pullState,
+                    )
+            },
             onRefresh = {
                 pulledToRefresh = true
                 viewModel.refresh()
@@ -174,7 +193,7 @@ fun HomeScreen(
                         )
                     }
                 }
-                if (showSyncStatus)
+                if (showSyncStatus || peekSyncCard)
                     item(key = "sync-status") {
                         HomeSyncStatusCard(
                             isRefreshing = isRefreshing,
@@ -184,12 +203,14 @@ fun HomeScreen(
                             onOpenSyncIssues = onOpenSyncIssues,
                             onRetrySync = viewModel::retryFailedMutations,
                             leaving = leavingSyncCard,
+                            pullFraction = pullFraction,
+                            peeking = peekSyncCard,
                             // Fades in/out while the cards below slide into place (and nothing when
                             // animations
                             // are off - animateItem follows the system animator scale).
                             modifier =
                                 Modifier.animateItem(
-                                        fadeInSpec = tween(220),
+                                        fadeInSpec = null,
                                         fadeOutSpec = tween(160),
                                         placementSpec =
                                             spring(

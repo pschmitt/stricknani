@@ -45,4 +45,19 @@ class SyncCardMotionTest {
         assertTrue(SYNC_SHAKE_ANGLES.last() == 0f)
         assertTrue(SYNC_HOP_WIGGLE_ANGLES.last() == 0f)
     }
+
+    @Test
+    fun pullRevealIsLinearThenRubberBands() {
+        assertEquals(0f, syncPullReveal(-0.3f), 0f)
+        assertEquals(0.4f, syncPullReveal(0.4f), 0f)
+        assertEquals(1f, syncPullReveal(1f), 0f)
+        assertEquals(1.05f, syncPullReveal(1.2f), 0.0001f)
+        assertEquals(1.2f, syncPullReveal(10f), 0.0001f)
+    }
+
+    @Test
+    fun nudgeIsSmallAndClamped() {
+        assertEquals(0f, syncPullNudge(0f), 0f)
+        assertEquals(0.05f, syncPullNudge(3f), 0f)
+    }
 }

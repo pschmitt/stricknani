@@ -48,3 +48,17 @@ val SYNC_HOP_WIGGLE_ANGLES = listOf(-8f, 6f, -3f, 0f)
 
 /** How long the card's exit animation runs before it is removed from the list. */
 const val SYNC_CARD_EXIT_MILLIS = 300
+
+/**
+ * Maps the raw pull-to-refresh fraction to how far the card is revealed. Linear up to the
+ * threshold, then a light rubber band: a long pull only adds a little extra.
+ */
+fun syncPullReveal(fraction: Float): Float =
+    when {
+        fraction <= 0f -> 0f
+        fraction <= 1f -> fraction
+        else -> 1f + ((fraction - 1f) * 0.25f).coerceAtMost(0.2f)
+    }
+
+/** How much a card that is already on screen stretches while the user pulls (0 to 0.05). */
+fun syncPullNudge(fraction: Float): Float = 0.05f * fraction.coerceIn(0f, 1f)
