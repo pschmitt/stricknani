@@ -20,6 +20,10 @@ Use this file as the operational source of truth for working in Stricknani.
   build/deploy waits, and before reporting status; do not rely only on live hooks.
   Reply in the original thread with a concrete interface, commit, or next action.
   Check receipts when a peer appears blocked; queued messages are not delivery.
+  After a peer restarts, resolve its current session identity from Concord
+  presence or its new message before sending another handoff. Re-address
+  pending coordination to the current session and obtain an acknowledgment;
+  a queued message to the previous session is not a successful handoff.
 
 ## Critical Requirements
 
