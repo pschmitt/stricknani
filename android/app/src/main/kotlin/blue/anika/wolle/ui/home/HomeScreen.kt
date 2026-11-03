@@ -114,7 +114,11 @@ fun HomeScreen(
     var pulledToRefresh by rememberSaveable { mutableStateOf(false) }
     // After a pull, the card says "All caught up" for a moment and then gets out of the way -
     // but only when nothing went wrong and nothing is waiting; problems stay visible.
+    // The card plays a short "poof" before it leaves the list, so the item is only removed after.
+    var leavingSyncCard by remember { mutableStateOf(false) }
+    val reduceMotion = animationsDisabled()
     LaunchedEffect(pulledToRefresh, isRefreshing, failedMutations.isEmpty(), pendingChangesCount) {
+        leavingSyncCard = false
         if (
             pulledToRefresh &&
                 !isRefreshing &&
@@ -122,7 +126,12 @@ fun HomeScreen(
                 pendingChangesCount == 0
         ) {
             delay(SYNC_CARD_LINGER_MILLIS)
+            if (!reduceMotion) {
+                leavingSyncCard = true
+                delay(SYNC_CARD_EXIT_MILLIS.toLong())
+            }
             pulledToRefresh = false
+            leavingSyncCard = false
         }
     }
     val showSyncStatus =
@@ -174,6 +183,7 @@ fun HomeScreen(
                             failedChangesCount = failedMutations.size,
                             onOpenSyncIssues = onOpenSyncIssues,
                             onRetrySync = viewModel::retryFailedMutations,
+                            leaving = leavingSyncCard,
                             // Fades in/out while the cards below slide into place (and nothing when
                             // animations
                             // are off - animateItem follows the system animator scale).

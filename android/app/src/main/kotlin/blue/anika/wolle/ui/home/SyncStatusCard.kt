@@ -1,5 +1,11 @@
 package blue.anika.wolle.ui.home
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -17,9 +23,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -27,11 +42,16 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.animationsDisabled
+import blue.anika.wolle.ui.common.burstParticles
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Persistent Home feedback for the background sync/write-queue (user-requested, 2026-08-18, "like
@@ -59,6 +79,7 @@ fun HomeSyncStatusCard(
     onOpenSyncIssues: () -> Unit,
     onRetrySync: () -> Unit,
     modifier: Modifier = Modifier,
+    leaving: Boolean = false,
 ) {
     // The failed count includes conflicts, which the pending count leaves out; the
     // failure text must use it so the card agrees with SyncIssueBanner below it.
@@ -67,19 +88,114 @@ fun HomeSyncStatusCard(
     val actionLabel =
         if (hasSyncFailures) stringResource(R.string.sync_issue_view_details)
         else stringResource(R.string.sync_issue_retry)
+    val still = animationsDisabled()
+    val mood = syncBadgeMood(isRefreshing, pendingChangesCount, hasSyncFailures)
+    val density = LocalDensity.current
+    // Enter: drop in from slightly above with a squash-and-stretch spring.
+    val enter = remember { Animatable(if (still) 1f else 0f) }
+    val exit = remember { Animatable(0f) }
+    // The badge pops in a beat after the card.
+    val badgePop = remember { Animatable(if (still) 1f else 0f) }
+    val hop = remember { Animatable(1f) }
+    val wiggle = remember { Animatable(0f) }
+    val bob = remember { Animatable(0f) }
+    val sparkles = remember { Animatable(0f) }
+    val particles = remember { burstParticles(count = 6, nearRadius = 20f, farRadius = 28f) }
+    var previousMood by remember { mutableStateOf<SyncBadgeMood?>(null) }
+
+    LaunchedEffect(still) {
+        if (still) return@LaunchedEffect
+        launch {
+            enter.animateTo(
+                1f,
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
+        }
+        delay(80)
+        badgePop.animateTo(
+            1f,
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        )
+    }
+    LaunchedEffect(leaving, still) {
+        if (leaving && !still)
+            exit.animateTo(1f, tween(SYNC_CARD_EXIT_MILLIS, easing = FastOutSlowInEasing))
+        else if (!leaving) exit.snapTo(0f)
+    }
+    LaunchedEffect(mood, still) {
+        val cue = syncBadgeCue(previousMood, mood)
+        previousMood = mood
+        if (still) return@LaunchedEffect
+        coroutineScope {
+            when (cue) {
+                SyncBadgeCue.Hop -> {
+                    launch {
+                        sparkles.snapTo(0f)
+                        sparkles.animateTo(1f, tween(550, easing = LinearEasing))
+                    }
+                    launch {
+                        for (angle in SYNC_HOP_WIGGLE_ANGLES) wiggle.animateTo(angle, tween(90))
+                    }
+                    hop.animateTo(1.25f, tween(130, easing = FastOutSlowInEasing))
+                    hop.animateTo(
+                        1f,
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium,
+                        ),
+                    )
+                }
+                SyncBadgeCue.Shake ->
+                    for (angle in SYNC_SHAKE_ANGLES) wiggle.animateTo(angle, tween(70))
+                SyncBadgeCue.None -> Unit
+            }
+        }
+    }
+    // While busy the badge floats up and down; it settles back when the refresh ends.
+    LaunchedEffect(mood == SyncBadgeMood.Busy, still) {
+        if (mood != SyncBadgeMood.Busy || still) {
+            bob.animateTo(0f, tween(150))
+            return@LaunchedEffect
+        }
+        while (true) {
+            bob.animateTo(-1f, tween(520, easing = FastOutSlowInEasing))
+            bob.animateTo(0.4f, tween(520, easing = FastOutSlowInEasing))
+        }
+    }
+
     Card(
         modifier =
-            modifier.fillMaxWidth().testTag("home-sync-status-card").let {
-                if (isActionable) {
-                    it.clickable(
-                        onClickLabel = actionLabel,
-                        role = Role.Button,
-                        onClick = if (hasSyncFailures) onOpenSyncIssues else onRetrySync,
-                    )
-                } else {
-                    it
+            modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    val appear = enter.value
+                    val gone = exit.value
+                    val scale = (0.85f + 0.15f * appear) * (1f - 0.1f * gone)
+                    scaleX = scale
+                    // Squash and stretch: a touch taller on the way down, a touch flatter on
+                    // landing.
+                    scaleY = scale * (1f + 0.04f * (1f - appear).coerceAtLeast(0f))
+                    translationY = with(density) { (-16.dp * (1f - appear) - 12.dp * gone).toPx() }
+                    alpha = (appear.coerceIn(0f, 1f)) * (1f - gone)
                 }
-            }
+                .testTag("home-sync-status-card")
+                .let {
+                    if (isActionable) {
+                        it.clickable(
+                            onClickLabel = actionLabel,
+                            role = Role.Button,
+                            onClick = if (hasSyncFailures) onOpenSyncIssues else onRetrySync,
+                        )
+                    } else {
+                        it
+                    }
+                }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -99,7 +215,38 @@ fun HomeSyncStatusCard(
                             MaterialTheme.colorScheme.onSecondaryContainer
                 }
             Box(
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(badgeTint),
+                modifier =
+                    Modifier.size(44.dp)
+                        .drawBehind {
+                            val progress = sparkles.value
+                            if (progress <= 0f || progress >= 1f) return@drawBehind
+                            particles.forEach { particle ->
+                                val local =
+                                    ((progress - particle.delayFraction) /
+                                            (1f - particle.delayFraction))
+                                        .coerceIn(0f, 1f)
+                                if (local <= 0f) return@forEach
+                                val radius = particle.size.dp.toPx() / 2 * (0.4f + 0.6f * local)
+                                drawCircle(
+                                    color = badgeOn.copy(alpha = 1f - local),
+                                    radius = radius,
+                                    center =
+                                        Offset(
+                                            center.x + particle.dx.dp.toPx() * local,
+                                            center.y + particle.dy.dp.toPx() * local,
+                                        ),
+                                )
+                            }
+                        }
+                        .graphicsLayer {
+                            val pop = badgePop.value * hop.value
+                            scaleX = pop
+                            scaleY = pop
+                            rotationZ = wiggle.value
+                            translationY = bob.value * 3.dp.toPx()
+                        }
+                        .clip(CircleShape)
+                        .background(badgeTint),
                 contentAlignment = Alignment.Center,
             ) {
                 when {
