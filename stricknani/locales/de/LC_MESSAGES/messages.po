@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 16:55+0100\n"
+"POT-Creation-Date: 2026-11-03 17:00+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -944,7 +944,7 @@ msgstr ""
 #: stricknani/templates/legal/privacy.html:33
 #: stricknani/templates/legal/privacy.html:80
 #: web/src/routes/privacy/+page.svelte:59
-#: web/src/routes/privacy/+page.svelte:194
+#: web/src/routes/privacy/+page.svelte:224
 msgid "GitHub issue tracker"
 msgstr "GitHub-Issue-Tracker"
 
@@ -1064,7 +1064,7 @@ msgstr ""
 "gehen an den von dir konfigurierten Server."
 
 #: stricknani/templates/legal/privacy.html:59
-#: web/src/routes/privacy/+page.svelte:127
+#: web/src/routes/privacy/+page.svelte:157
 msgid "Optional external services"
 msgstr "Optionale externe Dienste"
 
@@ -1084,7 +1084,7 @@ msgstr ""
 "wenn es von der Betreiberin oder dem Betreiber konfiguriert wurde."
 
 #: stricknani/templates/legal/privacy.html:61
-#: web/src/routes/privacy/+page.svelte:135
+#: web/src/routes/privacy/+page.svelte:165
 msgid ""
 "These integrations are optional and controlled by the instance operator. "
 "Their providers process information under their own terms and privacy "
@@ -1098,7 +1098,7 @@ msgstr ""
 "oder verwendest."
 
 #: stricknani/templates/legal/privacy.html:62
-#: web/src/routes/privacy/+page.svelte:141
+#: web/src/routes/privacy/+page.svelte:171
 msgid ""
 "The web interface itself uses locally served assets and does not require "
 "an analytics or advertising network."
@@ -1107,12 +1107,12 @@ msgstr ""
 "benötigt kein Analyse- oder Werbenetzwerk."
 
 #: stricknani/templates/legal/privacy.html:66
-#: web/src/routes/privacy/+page.svelte:149
+#: web/src/routes/privacy/+page.svelte:179
 msgid "Storage, retention, and deletion"
 msgstr "Speicherung, Aufbewahrung und Löschung"
 
 #: stricknani/templates/legal/privacy.html:67
-#: web/src/routes/privacy/+page.svelte:151
+#: web/src/routes/privacy/+page.svelte:181
 msgid ""
 "The instance stores account data and content in its configured database "
 "and media storage. There is no universal retention period: the operator "
@@ -1126,7 +1126,7 @@ msgstr ""
 "Zeit lang in Sicherungen verbleiben."
 
 #: stricknani/templates/legal/privacy.html:68
-#: web/src/routes/privacy/+page.svelte:157
+#: web/src/routes/privacy/+page.svelte:187
 msgid ""
 "You can manage your content and revoke personal access tokens through the"
 " available features. To request deletion or an export of account data, "
@@ -1142,12 +1142,12 @@ msgstr ""
 "Diensten aufbewahrt werden."
 
 #: stricknani/templates/legal/privacy.html:72
-#: web/src/routes/privacy/+page.svelte:165
+#: web/src/routes/privacy/+page.svelte:195
 msgid "Security"
 msgstr "Sicherheit"
 
 #: stricknani/templates/legal/privacy.html:73
-#: web/src/routes/privacy/+page.svelte:167
+#: web/src/routes/privacy/+page.svelte:197
 msgid ""
 "Stricknani uses password hashing, access checks, CSRF protection, upload "
 "validation, and security response headers. Operators should use HTTPS, "
@@ -1162,7 +1162,7 @@ msgstr ""
 "aktuell halten und Sicherungen sicher konfigurieren."
 
 #: stricknani/templates/legal/privacy.html:74
-#: web/src/routes/privacy/+page.svelte:173
+#: web/src/routes/privacy/+page.svelte:203
 msgid ""
 "No software can guarantee absolute security. The security and "
 "confidentiality of a self-hosted installation also depend on the "
@@ -1175,12 +1175,12 @@ msgstr ""
 "Integrationen und den für den Zugriff verwendeten Geräten ab."
 
 #: stricknani/templates/legal/privacy.html:78
-#: web/src/routes/privacy/+page.svelte:181
+#: web/src/routes/privacy/+page.svelte:211
 msgid "Your choices and contact"
 msgstr "Deine Wahlmöglichkeiten und Kontakt"
 
 #: stricknani/templates/legal/privacy.html:79
-#: web/src/routes/privacy/+page.svelte:183
+#: web/src/routes/privacy/+page.svelte:213
 msgid ""
 "You may choose what to enter, upload, synchronize, or send to optional "
 "integrations. You may stop using the Android app, clear its local data, "
@@ -1194,7 +1194,7 @@ msgstr ""
 "Betreiberin oder den zuständigen Betreiber der Instanz wenden."
 
 #: stricknani/templates/legal/privacy.html:80
-#: web/src/routes/privacy/+page.svelte:189
+#: web/src/routes/privacy/+page.svelte:219
 msgid ""
 "For software questions or privacy concerns that relate to the project, "
 "use the"
@@ -1203,12 +1203,12 @@ msgstr ""
 "nutze den"
 
 #: stricknani/templates/legal/privacy.html:84
-#: web/src/routes/privacy/+page.svelte:200
+#: web/src/routes/privacy/+page.svelte:230
 msgid "Changes to this policy"
 msgstr "Änderungen an dieser Richtlinie"
 
 #: stricknani/templates/legal/privacy.html:85
-#: web/src/routes/privacy/+page.svelte:202
+#: web/src/routes/privacy/+page.svelte:232
 msgid ""
 "This policy may be updated when Stricknani behavior or integrations "
 "change. The current version is published at this URL. Check the effective"
@@ -2969,7 +2969,7 @@ msgstr "Konto erstellen"
 msgid "A category with this name already exists."
 msgstr "Eine Kategorie mit diesem Namen gibt es bereits."
 
-#: web/src/routes/privacy/+page.svelte:129
+#: web/src/routes/privacy/+page.svelte:159
 msgid ""
 "A deployment may enable integrations that send limited information "
 "outside the Stricknani instance. For example, an AI provider may receive "
@@ -3319,6 +3319,17 @@ msgstr "Sieh dir die Garne an, die mit deinen Projekten verknüpft sind."
 #: web/src/lib/features/home/HomeDashboard.svelte:195
 msgid "Browse, add and find your yarns"
 msgstr "Garne ansehen, hinzufügen und finden"
+
+#: web/src/routes/privacy/+page.svelte:149
+msgid ""
+"Builds installed from GitHub rather than Google Play check GitHub "
+"Releases for a newer version. That request does not include your access "
+"token and is subject to GitHub's privacy policy."
+msgstr ""
+"Aus GitHub statt aus Google Play installierte Versionen prüfen auf GitHub"
+" Releases, ob eine neuere Version verfügbar ist. Diese Anfrage enthält "
+"dein Zugriffstoken nicht und unterliegt der Datenschutzerklärung von "
+"GitHub."
 
 #: web/src/lib/features/admin/AdminAudit.svelte:398
 msgid "By"
@@ -3883,6 +3894,19 @@ msgstr ""
 "Falls die Erkennung fehlschlägt, probiere jeweils eine Sprache. Auf "
 "diesem Server sind möglicherweise nicht beide Sprachpakete installiert."
 
+#: web/src/routes/privacy/+page.svelte:143
+msgid ""
+"If the app crashes, it saves a diagnostic report on the device (time, app"
+" version, device model, Android version, and a stack trace, with access "
+"tokens redacted) and shows it at the next launch. The report is not sent "
+"anywhere unless you copy and share it yourself."
+msgstr ""
+"Wenn die App abstürzt, speichert sie einen Diagnosebericht auf dem Gerät "
+"(Zeitpunkt, App-Version, Gerätemodell, Android-Version und einen "
+"Stacktrace, Zugriffstoken werden entfernt) und zeigt ihn beim nächsten "
+"Start an. Der Bericht wird nirgendwohin gesendet, es sei denn, du "
+"kopierst und teilst ihn selbst."
+
 #: web/src/lib/features/imports/ImportWorkbench.svelte:74
 msgid "Image"
 msgstr "Bild"
@@ -4308,6 +4332,17 @@ msgstr "Nicht angegeben"
 #: web/src/lib/features/projects/ProjectLibrary.svelte:287
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
+
+#: web/src/routes/privacy/+page.svelte:137
+msgid ""
+"On Android 13 and later, the app may ask for permission to show a "
+"notification when a background sync finds changes. The notification is "
+"created on the device, and syncing does not depend on it."
+msgstr ""
+"Ab Android 13 kann die App um die Erlaubnis bitten, eine Benachrichtigung"
+" anzuzeigen, wenn eine Hintergrundsynchronisierung Änderungen findet. Die"
+" Benachrichtigung wird auf dem Gerät erzeugt, und die Synchronisierung "
+"hängt nicht von ihr ab."
 
 #: web/src/lib/components/SignInForm.svelte:167
 msgid "One row at a time."
@@ -5196,6 +5231,21 @@ msgstr "Das API-Token konnte nicht erstellt werden."
 msgid "The API token could not be revoked."
 msgstr "Das API-Token konnte nicht widerrufen werden."
 
+#: web/src/routes/privacy/+page.svelte:125
+msgid ""
+"The Android app does not use Android cloud backup. You can export a "
+"backup of the server connection and app settings, including your personal"
+" access token, to a file or folder that you choose, either manually or on"
+" a schedule. A backup can be protected with a password; without one, the "
+"file is readable by anyone who can open it."
+msgstr ""
+"Die Android-App nutzt die Android-Cloud-Sicherung nicht. Du kannst eine "
+"Sicherung der Serververbindung und der App-Einstellungen, einschließlich "
+"deines persönlichen Zugriffstokens, manuell oder nach Zeitplan in eine "
+"Datei oder einen Ordner deiner Wahl exportieren. Eine Sicherung kann mit "
+"einem Passwort geschützt werden; ohne Passwort kann jeder die Datei "
+"lesen, der sie öffnen kann."
+
 #: web/src/lib/features/auth/SignupForm.svelte:69
 #: web/src/lib/features/auth/SignupForm.svelte:78
 msgid "The account could not be created. Try again."
@@ -5204,6 +5254,14 @@ msgstr "Das Konto konnte nicht erstellt werden. Bitte versuche es erneut."
 #: web/src/lib/features/admin/AdminUsers.svelte:448
 msgid "The account status could not be changed."
 msgstr "Der Kontostatus konnte nicht geändert werden."
+
+#: web/src/routes/privacy/+page.svelte:131
+msgid ""
+"The app uses the camera only when you choose to scan a setup QR code. The"
+" camera image is processed on the device."
+msgstr ""
+"Die App verwendet die Kamera nur, wenn du einen Einrichtungs-QR-Code "
+"scannen möchtest. Das Kamerabild wird auf dem Gerät verarbeitet."
 
 #: web/src/lib/features/media/ArchiveControl.svelte:344
 msgid "The archive completed, but the updated details could not be loaded."

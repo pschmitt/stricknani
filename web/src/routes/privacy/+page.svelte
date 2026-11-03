@@ -121,6 +121,36 @@
         locale,
       )}
     </p>
+    <p>
+      {t(
+        "The Android app does not use Android cloud backup. You can export a backup of the server connection and app settings, including your personal access token, to a file or folder that you choose, either manually or on a schedule. A backup can be protected with a password; without one, the file is readable by anyone who can open it.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "The app uses the camera only when you choose to scan a setup QR code. The camera image is processed on the device.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "On Android 13 and later, the app may ask for permission to show a notification when a background sync finds changes. The notification is created on the device, and syncing does not depend on it.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "If the app crashes, it saves a diagnostic report on the device (time, app version, device model, Android version, and a stack trace, with access tokens redacted) and shows it at the next launch. The report is not sent anywhere unless you copy and share it yourself.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "Builds installed from GitHub rather than Google Play check GitHub Releases for a newer version. That request does not include your access token and is subject to GitHub's privacy policy.",
+        locale,
+      )}
+    </p>
   </section>
 
   <section>

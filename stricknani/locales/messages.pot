@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 16:55+0100\n"
+"POT-Creation-Date: 2026-11-03 17:00+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -904,7 +904,7 @@ msgstr ""
 #: stricknani/templates/legal/privacy.html:33
 #: stricknani/templates/legal/privacy.html:80
 #: web/src/routes/privacy/+page.svelte:59
-#: web/src/routes/privacy/+page.svelte:194
+#: web/src/routes/privacy/+page.svelte:224
 msgid "GitHub issue tracker"
 msgstr ""
 
@@ -992,7 +992,7 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:59
-#: web/src/routes/privacy/+page.svelte:127
+#: web/src/routes/privacy/+page.svelte:157
 msgid "Optional external services"
 msgstr ""
 
@@ -1006,7 +1006,7 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:61
-#: web/src/routes/privacy/+page.svelte:135
+#: web/src/routes/privacy/+page.svelte:165
 msgid ""
 "These integrations are optional and controlled by the instance operator. "
 "Their providers process information under their own terms and privacy "
@@ -1015,19 +1015,19 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:62
-#: web/src/routes/privacy/+page.svelte:141
+#: web/src/routes/privacy/+page.svelte:171
 msgid ""
 "The web interface itself uses locally served assets and does not require "
 "an analytics or advertising network."
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:66
-#: web/src/routes/privacy/+page.svelte:149
+#: web/src/routes/privacy/+page.svelte:179
 msgid "Storage, retention, and deletion"
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:67
-#: web/src/routes/privacy/+page.svelte:151
+#: web/src/routes/privacy/+page.svelte:181
 msgid ""
 "The instance stores account data and content in its configured database "
 "and media storage. There is no universal retention period: the operator "
@@ -1036,7 +1036,7 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:68
-#: web/src/routes/privacy/+page.svelte:157
+#: web/src/routes/privacy/+page.svelte:187
 msgid ""
 "You can manage your content and revoke personal access tokens through the"
 " available features. To request deletion or an export of account data, "
@@ -1046,12 +1046,12 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:72
-#: web/src/routes/privacy/+page.svelte:165
+#: web/src/routes/privacy/+page.svelte:195
 msgid "Security"
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:73
-#: web/src/routes/privacy/+page.svelte:167
+#: web/src/routes/privacy/+page.svelte:197
 msgid ""
 "Stricknani uses password hashing, access checks, CSRF protection, upload "
 "validation, and security response headers. Operators should use HTTPS, "
@@ -1061,7 +1061,7 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:74
-#: web/src/routes/privacy/+page.svelte:173
+#: web/src/routes/privacy/+page.svelte:203
 msgid ""
 "No software can guarantee absolute security. The security and "
 "confidentiality of a self-hosted installation also depend on the "
@@ -1070,12 +1070,12 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:78
-#: web/src/routes/privacy/+page.svelte:181
+#: web/src/routes/privacy/+page.svelte:211
 msgid "Your choices and contact"
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:79
-#: web/src/routes/privacy/+page.svelte:183
+#: web/src/routes/privacy/+page.svelte:213
 msgid ""
 "You may choose what to enter, upload, synchronize, or send to optional "
 "integrations. You may stop using the Android app, clear its local data, "
@@ -1084,19 +1084,19 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:80
-#: web/src/routes/privacy/+page.svelte:189
+#: web/src/routes/privacy/+page.svelte:219
 msgid ""
 "For software questions or privacy concerns that relate to the project, "
 "use the"
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:84
-#: web/src/routes/privacy/+page.svelte:200
+#: web/src/routes/privacy/+page.svelte:230
 msgid "Changes to this policy"
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:85
-#: web/src/routes/privacy/+page.svelte:202
+#: web/src/routes/privacy/+page.svelte:232
 msgid ""
 "This policy may be updated when Stricknani behavior or integrations "
 "change. The current version is published at this URL. Check the effective"
@@ -2829,7 +2829,7 @@ msgstr ""
 msgid "A category with this name already exists."
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:129
+#: web/src/routes/privacy/+page.svelte:159
 msgid ""
 "A deployment may enable integrations that send limited information "
 "outside the Stricknani instance. For example, an AI provider may receive "
@@ -3159,6 +3159,13 @@ msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:195
 msgid "Browse, add and find your yarns"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:149
+msgid ""
+"Builds installed from GitHub rather than Google Play check GitHub "
+"Releases for a newer version. That request does not include your access "
+"token and is subject to GitHub's privacy policy."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:398
@@ -3708,6 +3715,14 @@ msgid ""
 "have both language packs."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:143
+msgid ""
+"If the app crashes, it saves a diagnostic report on the device (time, app"
+" version, device model, Android version, and a stack trace, with access "
+"tokens redacted) and shows it at the next launch. The report is not sent "
+"anywhere unless you copy and share it yourself."
+msgstr ""
+
 #: web/src/lib/features/imports/ImportWorkbench.svelte:74
 msgid "Image"
 msgstr ""
@@ -4126,6 +4141,13 @@ msgstr ""
 #: web/src/lib/features/home/HomeDashboard.svelte:167
 #: web/src/lib/features/projects/ProjectLibrary.svelte:287
 msgid "Nothing on the needles yet"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:137
+msgid ""
+"On Android 13 and later, the app may ask for permission to show a "
+"notification when a background sync finds changes. The notification is "
+"created on the device, and syncing does not depend on it."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:167
@@ -4999,6 +5021,15 @@ msgstr ""
 msgid "The API token could not be revoked."
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:125
+msgid ""
+"The Android app does not use Android cloud backup. You can export a "
+"backup of the server connection and app settings, including your personal"
+" access token, to a file or folder that you choose, either manually or on"
+" a schedule. A backup can be protected with a password; without one, the "
+"file is readable by anyone who can open it."
+msgstr ""
+
 #: web/src/lib/features/auth/SignupForm.svelte:69
 #: web/src/lib/features/auth/SignupForm.svelte:78
 msgid "The account could not be created. Try again."
@@ -5006,6 +5037,12 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:448
 msgid "The account status could not be changed."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:131
+msgid ""
+"The app uses the camera only when you choose to scan a setup QR code. The"
+" camera image is processed on the device."
 msgstr ""
 
 #: web/src/lib/features/media/ArchiveControl.svelte:344
