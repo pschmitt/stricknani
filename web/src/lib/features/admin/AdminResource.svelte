@@ -55,6 +55,7 @@
     const projectResource = current.resource;
     const project: ProjectDetail = {
       ...projectResource,
+      stitch_sample_html: null,
       preview_url:
         projectResource.images.find((image) => image.is_title_image)
           ?.thumbnail_url ??

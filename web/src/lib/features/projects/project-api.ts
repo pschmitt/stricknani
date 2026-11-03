@@ -63,6 +63,8 @@ export interface ProjectDetail extends ProjectSummary {
   yarn: string | null;
   needles: string | null;
   stitch_sample: string | null;
+  /** Sanitized HTML for stitch_sample; null until the server provides it. */
+  stitch_sample_html: string | null;
   description: string | null;
   description_html: string | null;
   notes: string | null;
@@ -456,6 +458,10 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     !nullableString(value.yarn) ||
     !nullableString(value.needles) ||
     !nullableString(value.stitch_sample) ||
+    !(
+      value.stitch_sample_html === undefined ||
+      nullableString(value.stitch_sample_html)
+    ) ||
     !nullableString(value.description) ||
     !nullableString(value.description_html) ||
     !nullableString(value.notes) ||
@@ -475,10 +481,15 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
   const steps = value.steps.map(parseStep);
   const images = value.images.map(parseImage);
   const attachments = value.attachments.map(parseAttachment);
+  // The server's canonical cover wins; derive one only for older payloads.
   const preview =
-    images.find((image) => image.is_title_image)?.thumbnail_url ??
-    images[0]?.thumbnail_url ??
-    null;
+    typeof value.preview_url === "string"
+      ? value.preview_url
+      : value.preview_url === null
+        ? null
+        : (images.find((image) => image.is_title_image)?.thumbnail_url ??
+          images[0]?.thumbnail_url ??
+          null);
   return {
     id: value.id,
     name: value.name,
@@ -490,6 +501,7 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     yarn: value.yarn,
     needles: value.needles,
     stitch_sample: value.stitch_sample,
+    stitch_sample_html: value.stitch_sample_html ?? null,
     description: value.description,
     description_html: value.description_html,
     notes: value.notes,

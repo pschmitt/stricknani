@@ -75,6 +75,8 @@
     ),
   );
   const gaugeText = $derived(plainTextSummary(project?.stitch_sample));
+  // Sanitized server HTML wins; null falls back to the plain-text rendering.
+  const gaugeHtml = $derived(project?.stitch_sample_html ?? null);
   const yarnText = $derived(plainTextSummary(project?.yarn));
   const moreYarns = $derived(extraCount(yarns.length));
   let materialsDetailsElement = $state<HTMLDetailsElement | null>(null);
@@ -945,10 +947,14 @@
             <dd>{needlesText}</dd>
           </div>
         {/if}
-        {#if gaugeText}
+        {#if gaugeHtml || gaugeText}
           <div>
             <dt>{t("Gauge", locale)}</dt>
-            <dd>{gaugeText}</dd>
+            <dd>
+              {#if gaugeHtml}<div class="rich-text">
+                  {@html gaugeHtml}
+                </div>{:else}{gaugeText}{/if}
+            </dd>
           </div>
         {/if}
       </dl>
@@ -1043,10 +1049,14 @@
             <dd>{needlesText}</dd>
           </div>
         {/if}
-        {#if gaugeText}
+        {#if gaugeHtml || gaugeText}
           <div>
             <dt>{t("Gauge", locale)}</dt>
-            <dd>{gaugeText}</dd>
+            <dd>
+              {#if gaugeHtml}<div class="rich-text">
+                  {@html gaugeHtml}
+                </div>{:else}{gaugeText}{/if}
+            </dd>
           </div>
         {/if}
       </dl>

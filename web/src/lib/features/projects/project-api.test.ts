@@ -261,6 +261,34 @@ describe("project URL state and API DTOs", () => {
     expect(project.images[0]?.thumbnail_url).toContain("/media/thumbnails/");
   });
 
+  it("reads stitch_sample_html and the canonical cover preview_url", async () => {
+    const payload = (extra: Record<string, unknown>) =>
+      Response.json({ data: { ...detail, ...extra } });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          payload({
+            stitch_sample_html: "<p>24 <em>stitches</em></p>",
+            preview_url: "/media/thumbnails/projects/42/canonical.jpg",
+          }),
+        )
+        .mockResolvedValueOnce(payload({ stitch_sample_html: null }))
+        .mockResolvedValueOnce(payload({ stitch_sample_html: 7 })),
+    );
+
+    const signal = new AbortController().signal;
+    const html = await getProject(42, signal);
+    expect(html.stitch_sample_html).toBe("<p>24 <em>stitches</em></p>");
+    expect(html.preview_url).toBe(
+      "/media/thumbnails/projects/42/canonical.jpg",
+    );
+    const nothing = await getProject(42, signal);
+    expect(nothing.stitch_sample_html).toBeNull();
+    await expect(getProject(42, signal)).rejects.toThrow();
+  });
+
   it("sends CSRF on the real favorite route without a body", async () => {
     const fetchMock = vi
       .fn()

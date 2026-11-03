@@ -18,6 +18,7 @@ const project: ProjectDetail = {
   yarn: "Legacy wool note",
   needles: "3.5 mm",
   stitch_sample: "24 stitches over 10 cm",
+  stitch_sample_html: null,
   description: "**Knit in the round.**",
   description_html: "<p><strong>Knit in the round.</strong></p>\n",
   notes: "Check the cuff length.",

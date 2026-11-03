@@ -7,11 +7,18 @@
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { publishFeedback } from "#lib/feedback.ts";
+  import ReorderableMedia from "../media/ReorderableMedia.svelte";
+  import {
+    applyOptimisticReorder,
+    putOrder,
+    yarnPhotoOrderPath,
+  } from "../media/media-reorder";
   import { deleteYarnPhoto, uploadYarnPhoto, type YarnPhoto } from "./yarn-api";
 
   let {
     yarnId,
-    photos,
+    photos: serverPhotos,
     locale,
     ownerId = null,
     ocrEnabled = false,
@@ -35,6 +42,10 @@
     ) => void;
   } = $props();
 
+  // Optimistic order shown until the server copy arrives through the photos prop.
+  let optimisticPhotos = $state<YarnPhoto[] | null>(null);
+  const photos = $derived(optimisticPhotos ?? serverPhotos);
+  let reordering = $state(false);
   let uploading = $state(false);
   let uploadMessage = $state("");
   let errorMessage = $state("");
@@ -49,6 +60,14 @@
   let deleteDialogOpen = $state(false);
   let deleteGeneration = 0;
 
+  const reorderAvailable = $derived(
+    !readOnly &&
+      canEdit &&
+      !uploading &&
+      !deleting &&
+      session.data?.user !== null &&
+      session.data?.user !== undefined,
+  );
   const mediaUploadAvailable = $derived(
     !readOnly && canEdit && session.data?.capabilities.media_upload === true,
   );
@@ -241,6 +260,49 @@
     }
   }
 
+  async function reorderPhotos(from: number, to: number): Promise<boolean> {
+    const currentSession = session.data;
+    if (!currentSession?.user || !reorderAvailable || reordering) return false;
+    const resourceId = yarnId;
+    const ownerId = currentSession.user.id;
+    const updateResource = onResourceUpdated;
+    const notifyMediaBusy = onMediaBusyChange;
+    reordering = true;
+    errorMessage = "";
+    notifyMediaBusy?.(true, resourceId, ownerId);
+    try {
+      const ok = await applyOptimisticReorder({
+        items: photos,
+        from,
+        to,
+        setItems: (next) => (optimisticPhotos = next),
+        send: (ids) =>
+          putOrder(yarnPhotoOrderPath(resourceId), ids, currentSession),
+        refetch: () => updateResource(resourceId, ownerId),
+        onError: (error) => {
+          if (!isCurrentOperation(resourceId, ownerId)) return;
+          publishFeedback({
+            ownerId,
+            kind: "error",
+            message:
+              error instanceof Error
+                ? error.message
+                : t("The photo order could not be saved.", locale),
+          });
+        },
+      });
+      // Reorder bumps the yarn timestamp; reload so the editor stays in sync.
+      if (ok) await updateResource(resourceId, ownerId);
+      return ok;
+    } finally {
+      optimisticPhotos = null;
+      if (isCurrentOperation(resourceId, ownerId)) {
+        reordering = false;
+        notifyMediaBusy?.(false, resourceId, ownerId);
+      }
+    }
+  }
+
   async function showPhoto(photo: YarnPhoto) {
     const requestedYarnId = yarnId;
     const requestedUserId = session.data?.user?.id ?? null;
@@ -333,51 +395,44 @@
   {/if}
 
   {#if photos.length > 0}
-    <ul class="photo-list">
-      {#each photos as photo (photo.id)}
-        <li class="photo-item">
+    <ReorderableMedia
+      items={photos}
+      {locale}
+      label={t("Photos", locale)}
+      fallbackAlt={t("Yarn photo", locale)}
+      showCover
+      reorderable={reorderAvailable}
+      disabled={reordering}
+      onMove={reorderPhotos}
+      onOpen={(photo) => void showPhoto(photo)}
+    >
+      {#snippet actions(photo)}
+        {#if canEdit && !readOnly}
           <Button
-            class="photo-open"
-            variant="ghost"
+            class="remove-photo"
+            variant="danger"
+            size="sm"
+            icon="action-delete"
             type="button"
-            aria-label={photo.alt_text
-              ? `${t("Open photo", locale)}: ${photo.alt_text}`
-              : t("Open yarn photo", locale)}
-            onclick={() => showPhoto(photo)}
+            disabled={!mediaDeleteAvailable ||
+              uploading ||
+              deleting ||
+              reordering}
+            aria-label={t("Remove photo", locale)}
+            onclick={() => confirmDelete(photo)}
           >
-            <img
-              src={photo.thumbnail_url}
-              alt={photo.alt_text ?? ""}
-              loading="lazy"
-            />
+            {t("Remove", locale)}
           </Button>
-          <div class="photo-caption">
-            {#if photo.is_primary}<span>{t("Cover photo", locale)}</span>{/if}
-            {#if canEdit && !readOnly}
-              <Button
-                class="remove-photo"
-                variant="danger"
-                size="sm"
-                icon="action-delete"
-                type="button"
-                disabled={!mediaDeleteAvailable || uploading || deleting}
-                aria-label={t("Remove photo", locale)}
-                onclick={() => confirmDelete(photo)}
-              >
-                {t("Remove", locale)}
-              </Button>
-            {/if}
-          </div>
-          <OcrControl
-            src={photo.url}
-            label={t("Recognized text from yarn photo", locale)}
-            ownerId={ownerId ?? null}
-            {locale}
-            enabled={ocrEnabled}
-          />
-        </li>
-      {/each}
-    </ul>
+        {/if}
+        <OcrControl
+          src={photo.url}
+          label={t("Recognized text from yarn photo", locale)}
+          ownerId={ownerId ?? null}
+          {locale}
+          enabled={ocrEnabled}
+        />
+      {/snippet}
+    </ReorderableMedia>
   {:else}
     <p class="no-photos">
       {t("No photos yet. Add one to recognize this yarn.", locale)}
@@ -465,8 +520,7 @@
     gap: 0.8rem;
   }
 
-  .photo-heading,
-  .photo-caption {
+  .photo-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -511,50 +565,6 @@
   .error-message {
     margin: 0;
     color: var(--danger);
-  }
-
-  .photo-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
-    gap: 0.65rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .photo-item {
-    display: grid;
-    min-width: 0;
-    gap: 0.35rem;
-  }
-
-  :global(.photo-open) {
-    display: block;
-    width: 100%;
-    aspect-ratio: 1;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0;
-    background: var(--surface-raised);
-    cursor: zoom-in;
-  }
-
-  :global(.photo-open:active) {
-    transform: none;
-  }
-
-  :global(.photo-open) img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .photo-caption {
-    min-height: 44px;
-    flex-wrap: wrap;
-    color: var(--ink-muted);
-    font-size: 0.8rem;
   }
 
   :global(.remove-photo) {

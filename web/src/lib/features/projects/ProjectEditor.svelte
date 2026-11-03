@@ -16,6 +16,14 @@
   import { listCategories } from "../categories/category-api";
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
   import YarnPicker from "./YarnPicker.svelte";
+  import ReorderableMedia from "../media/ReorderableMedia.svelte";
+  import {
+    applyOptimisticReorder,
+    projectStepOrderPath,
+    projectTitleOrderPath,
+    putOrder,
+    replaceGroup,
+  } from "../media/media-reorder";
   import {
     createProject,
     deleteProject,
@@ -28,6 +36,7 @@
     uploadProjectImage,
     type ProjectCategory,
     type ProjectDetail,
+    type ProjectImage,
     type ProjectWrite,
   } from "./project-api";
   import {
@@ -108,6 +117,30 @@
   );
   const mediaDeleteAvailable = $derived(
     mediaAvailable && session.data?.capabilities.media_delete === true,
+  );
+  const titleImages = $derived(
+    project?.images.filter(
+      (image) => image.step_id === null && image.is_title_image,
+    ) ?? [],
+  );
+  const stepImageGroups = $derived(
+    (project?.steps ?? [])
+      .map((step) => ({
+        step,
+        images:
+          project?.images.filter((image) => image.step_id === step.id) ?? [],
+      }))
+      .filter((group) => group.images.length > 0),
+  );
+  const otherImages = $derived(
+    project?.images.filter(
+      (image) =>
+        !(image.step_id === null && image.is_title_image) &&
+        !(
+          image.step_id !== null &&
+          project?.steps.some((step) => step.id === image.step_id)
+        ),
+    ) ?? [],
   );
   const saveDisabled = $derived(
     saving || deleting || (!isCreating && !isDirty) || conflictProject !== null,
@@ -957,6 +990,82 @@
     }
   }
 
+  /** Reorder one image group (title images or one step) optimistically. */
+  async function reorderImages(
+    stepId: number | null,
+    from: number,
+    to: number,
+  ): Promise<boolean> {
+    const currentSession = session.data;
+    const id = projectId;
+    if (!currentSession?.user || id === null || !mediaAvailable || !project)
+      return false;
+    const group =
+      stepId === null
+        ? titleImages
+        : (stepImageGroups.find((entry) => entry.step.id === stepId)?.images ??
+          []);
+    const ownerId = currentSession.user.id;
+    const generation = routeGeneration;
+    const controller = new AbortController();
+    operationControllers.add(controller);
+    mediaBusy = true;
+    mediaError = "";
+    const reloadProject = async (): Promise<void> => {
+      const latest = await getProject(id, controller.signal);
+      if (isCurrentRoute(id, ownerId, generation)) applyLoadedProject(latest);
+    };
+    try {
+      const ok = await applyOptimisticReorder({
+        items: group,
+        from,
+        to,
+        setItems: (next) => {
+          if (project && isCurrentRoute(id, ownerId, generation))
+            project = {
+              ...project,
+              images: replaceGroup(project.images, group, next),
+            };
+        },
+        send: (ids) =>
+          putOrder(
+            stepId === null
+              ? projectTitleOrderPath(id)
+              : projectStepOrderPath(id, stepId),
+            ids,
+            currentSession,
+            controller.signal,
+          ),
+        refetch: reloadProject,
+        onError: (error) => {
+          if (
+            controller.signal.aborted ||
+            !isCurrentRoute(id, ownerId, generation)
+          )
+            return;
+          mediaError = safeError(
+            error,
+            t("The photo order could not be saved.", locale),
+          );
+          publishFeedback({ ownerId, kind: "error", message: mediaError });
+        },
+      });
+      // Reordering bumps updated_at and the canonical cover; reload both.
+      if (ok) await reloadProject();
+      return ok;
+    } catch (error) {
+      if (!controller.signal.aborted && isCurrentRoute(id, ownerId, generation))
+        mediaError = safeError(
+          error,
+          t("The project media could not be updated.", locale),
+        );
+      return false;
+    } finally {
+      operationControllers.delete(controller);
+      if (isCurrentRoute(id, ownerId, generation)) mediaBusy = false;
+    }
+  }
+
   function safeError(error: unknown, fallback: string): string {
     return error instanceof Error ? error.message : fallback;
   }
@@ -1431,36 +1540,63 @@
                 {mediaError}
               </p>{/if}
             {#if project.images.length}
-              <ul class="media-list">
-                {#each project.images as image (image.id)}
-                  <li>
-                    <img
-                      src={image.thumbnail_url}
-                      alt={image.alt_text ?? t("Project photo", locale)}
-                      loading="lazy"
-                    />
-                    <span>
-                      {#if image.step_id}
-                        {t("Step photo", locale)}
-                      {:else if image.is_title_image}
-                        {t("Cover photo", locale)}
-                      {:else}
-                        {t("Project photo", locale)}
-                      {/if}
-                    </span>
-                    <Button
-                      type="button"
-                      class="remove-button"
-                      variant="ghost"
-                      icon="action-delete"
-                      disabled={!mediaDeleteAvailable}
-                      onclick={() => void removeImage(image.id)}
-                    >
-                      {t("Remove photo", locale)}
-                    </Button>
-                  </li>
-                {/each}
-              </ul>
+              {#snippet removeAction(image: ProjectImage)}
+                <Button
+                  type="button"
+                  class="remove-button"
+                  variant="ghost"
+                  icon="action-delete"
+                  disabled={!mediaDeleteAvailable}
+                  onclick={() => void removeImage(image.id)}
+                >
+                  {t("Remove photo", locale)}
+                </Button>
+              {/snippet}
+              {#if titleImages.length}
+                <h3>{t("Project cover", locale)}</h3>
+                <ReorderableMedia
+                  items={titleImages}
+                  {locale}
+                  label={t("Project cover", locale)}
+                  fallbackAlt={t("Project photo", locale)}
+                  showCover
+                  disabled={!mediaAvailable}
+                  onMove={(from, to) => reorderImages(null, from, to)}
+                  actions={removeAction}
+                />
+              {/if}
+              {#each stepImageGroups as group (group.step.id)}
+                {@const stepLabel = `${t("Step", locale)} ${group.step.step_number}: ${group.step.title}`}
+                <h3>{stepLabel}</h3>
+                <ReorderableMedia
+                  items={group.images}
+                  {locale}
+                  label={stepLabel}
+                  fallbackAlt={t("Step photo", locale)}
+                  disabled={!mediaAvailable}
+                  onMove={(from, to) => reorderImages(group.step.id, from, to)}
+                  actions={removeAction}
+                />
+              {/each}
+              {#if otherImages.length}
+                <h3>{t("Project photo", locale)}</h3>
+                <ReorderableMedia
+                  items={otherImages}
+                  {locale}
+                  label={t("Project photo", locale)}
+                  fallbackAlt={t("Project photo", locale)}
+                  reorderable={false}
+                  onMove={async () => false}
+                  actions={removeAction}
+                >
+                  {#snippet badge(image)}
+                    {#if image.is_stitch_sample}{t(
+                        "Stitch sample",
+                        locale,
+                      )}{/if}
+                  {/snippet}
+                </ReorderableMedia>
+              {/if}
             {:else}
               <p class="field-hint">{t("No project photos yet.", locale)}</p>
             {/if}
@@ -1841,7 +1977,6 @@
   }
 
   .tag-list,
-  .media-list,
   .attachment-list {
     display: grid;
     gap: 0.5rem;
@@ -1930,25 +2065,6 @@
     gap: 0.8rem;
   }
 
-  .media-list li {
-    display: grid;
-    grid-template-columns: 5rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.7rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0.5rem;
-    background: var(--surface-raised);
-  }
-
-  .media-list img {
-    display: block;
-    width: 5rem;
-    height: 4rem;
-    border-radius: 0.45rem;
-    object-fit: cover;
-  }
-
   .media-upload-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2013,20 +2129,6 @@
     .step-editor-heading {
       align-items: flex-start;
       flex-direction: column;
-    }
-
-    .media-list li {
-      grid-template-columns: 4rem minmax(0, 1fr);
-    }
-
-    .media-list img {
-      width: 4rem;
-      height: 3.25rem;
-    }
-
-    .media-list :global(.remove-button) {
-      grid-column: 1 / -1;
-      justify-self: start;
     }
 
     .attachment-list li {
