@@ -408,6 +408,16 @@ wraps. The separate narrow
 YarnForm conflict-button layout belongs to the T120.20 form work and remains
 unresolved.
 
+T120.19 is in progress with separate Luna ownership for pure controls, feature
+pages and shipping browser checks. Favorite controls share rendering only;
+their pages retain resource/user/generation checks. Yarn detail photos become
+read-only while the editor keeps uploads and removals. Project Cancel uses the
+existing navigation guard. Yarn deletion moves to its editor to match project
+deletion, preserving confirmation and busy/resource checks; the separate danger
+zone follows in T120.20. Project print/text-size controls move into a native
+disclosure. Detail overflow access to destructive actions remains a T120.25
+follow-up and must preserve those same guards.
+
 Use the `ui-audit` inventory and motion scripts after each step on representative
 synthetic fixtures. Compare header positions, role/size button signatures,
 wrapping, hover feedback and layout shifts. Keep import/data repairs separate.

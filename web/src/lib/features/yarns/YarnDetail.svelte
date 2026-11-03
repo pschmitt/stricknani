@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
@@ -11,7 +11,6 @@
   import { session } from "#lib/session.svelte.ts";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
   import {
-    deleteYarn,
     getLinkedProject,
     getYarn,
     setYarnFavorite,
@@ -31,8 +30,6 @@
   let errorMessage = $state("");
   let actionError = $state("");
   let busyFavorite = $state(false);
-  let deleting = $state(false);
-  let deleteDialog = $state<HTMLDialogElement | null>(null);
   let reload = $state(0);
   let routeGeneration = 0;
 
@@ -51,7 +48,6 @@
     reload;
     const generation = ++routeGeneration;
     busyFavorite = false;
-    deleting = false;
     actionError = "";
     const controller = new AbortController();
     yarn = null;
@@ -180,30 +176,6 @@
     }
   }
 
-  async function removeYarn() {
-    const currentSession = session.data;
-    if (!yarn || !currentSession?.user || deleting) return;
-    const id = yarn.id;
-    const ownerId = currentSession.user.id;
-    const generation = routeGeneration;
-    deleting = true;
-    actionError = "";
-    try {
-      await deleteYarn(id, currentSession);
-      if (!isCurrentResource(id, ownerId, generation)) return;
-      deleteDialog?.close();
-      await goto(resolve("/yarns"));
-    } catch (error) {
-      if (!isCurrentResource(id, ownerId, generation)) return;
-      actionError =
-        error instanceof Error
-          ? error.message
-          : t("The yarn could not be deleted.", locale);
-    } finally {
-      if (isCurrentResource(id, ownerId, generation)) deleting = false;
-    }
-  }
-
   function safeExternalHref(value: string | null): string | null {
     if (!value) return null;
     try {
@@ -278,20 +250,12 @@
       {/snippet}
       {#snippet actions()}
         <div class="heading-actions">
-          <Button
-            class="favorite-button"
-            variant="secondary"
-            type="button"
-            aria-pressed={currentYarn.is_favorite}
-            disabled={busyFavorite}
+          <FavoriteButton
+            favorite={currentYarn.is_favorite}
+            busy={busyFavorite}
+            {locale}
             onclick={() => void toggleFavorite()}
-          >
-            <span aria-hidden="true">{currentYarn.is_favorite ? "★" : "☆"}</span
-            >
-            {currentYarn.is_favorite
-              ? t("Favorited", locale)
-              : t("Add to favorites", locale)}
-          </Button>
+          />
           <a
             class="primary-action ui-button ui-button--primary ui-button--md"
             href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
@@ -299,15 +263,6 @@
               >{t("Edit yarn", locale)}</ActionLabel
             ></a
           >
-          <Button
-            class="quiet-button"
-            variant="danger"
-            icon="action-delete"
-            type="button"
-            onclick={() => deleteDialog?.showModal()}
-          >
-            {t("Delete", locale)}
-          </Button>
         </div>
       {/snippet}
     </PageHeader>
@@ -328,6 +283,7 @@
             {locale}
             ownerId={userId}
             ocrEnabled={canUseOcr}
+            readOnly={true}
             onResourceUpdated={refreshYarn}
           />
         </section>
@@ -459,43 +415,6 @@
   </main>
 {/if}
 
-<dialog
-  bind:this={deleteDialog}
-  class="confirm-dialog"
-  aria-labelledby="delete-yarn-title"
->
-  <h2 id="delete-yarn-title">{t("Delete yarn?", locale)}</h2>
-  {#if yarn}<p>
-      {t("Delete", locale)} <strong>{yarn.name}</strong>? {t(
-        "This cannot be undone.",
-        locale,
-      )}
-    </p>{/if}
-  {#if actionError}<p class="error-text" role="alert">{actionError}</p>{/if}
-  <div class="dialog-actions">
-    <Button
-      class="quiet-button"
-      variant="secondary"
-      icon="cancel"
-      type="button"
-      disabled={deleting}
-      onclick={() => deleteDialog?.close()}
-    >
-      {t("Keep yarn", locale)}
-    </Button>
-    <Button
-      class="danger-button"
-      variant="danger"
-      icon="action-delete"
-      type="button"
-      disabled={deleting}
-      onclick={() => void removeYarn()}
-    >
-      {deleting ? t("Deleting…", locale) : t("Delete yarn", locale)}
-    </Button>
-  </div>
-</dialog>
-
 <style>
   .yarn-detail,
   .detail-error {
@@ -510,16 +429,11 @@
   }
 
   .heading-actions,
-  .error-actions,
-  .dialog-actions {
+  .error-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  :global(.favorite-button) span {
-    font-size: var(--ui-action-icon-size-md);
   }
 
   .detail-layout {
@@ -660,31 +574,6 @@
     margin: 0;
   }
 
-  .confirm-dialog {
-    max-width: min(92vw, 32rem);
-    border: 1px solid var(--line);
-    border-radius: 1rem;
-    padding: 1.2rem;
-    color: var(--ink);
-    background: var(--surface);
-  }
-
-  .confirm-dialog::backdrop {
-    background: rgb(15 28 27 / 72%);
-  }
-
-  .confirm-dialog h2 {
-    margin-top: 0;
-  }
-
-  .confirm-dialog p {
-    color: var(--ink-muted);
-  }
-
-  .error-text {
-    color: var(--danger) !important;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .loading-mark {
       animation: none;
@@ -700,6 +589,10 @@
       flex: 1;
     }
 
+    .heading-actions > :global(.favorite-button) {
+      flex: 0 0 44px;
+    }
+
     .detail-layout {
       grid-template-columns: 1fr;
     }
@@ -712,20 +605,11 @@
   @media (max-width: 480px) {
     .heading-actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-    }
-
-    :global(.favorite-button) {
-      grid-column: 1 / -1;
+      grid-template-columns: 44px minmax(0, 1fr);
     }
 
     .heading-actions > * {
       min-width: 0;
-    }
-
-    .dialog-actions {
-      align-items: stretch;
-      flex-direction: column-reverse;
     }
   }
 </style>

@@ -1381,7 +1381,7 @@ msgstr "Back to projects"
 #: stricknani/templates/projects/detail.html:21
 #: stricknani/templates/yarn/detail.html:21
 msgid "More actions"
-msgstr ""
+msgstr "More actions"
 
 #: stricknani/templates/projects/detail.html:97
 #: stricknani/templates/projects/form.html:178

@@ -217,6 +217,10 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Translations (UI text)
 
+- Keep message IDs literal in each `t()` call. Branch between calls instead of
+  passing a conditional key: the web extractor does not discover conditional
+  first arguments. When moving labels into shared components, inspect the
+  generated catalog delta so active accessible labels are not removed.
 - Add new strings to both:
   - `stricknani/locales/en/LC_MESSAGES/messages.po`
   - `stricknani/locales/de/LC_MESSAGES/messages.po`

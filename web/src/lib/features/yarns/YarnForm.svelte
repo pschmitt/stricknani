@@ -1,7 +1,7 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
@@ -12,6 +12,7 @@
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
   import {
     createYarn,
+    deleteYarn,
     getYarn,
     parseYarnDetail,
     updateYarn,
@@ -65,8 +66,11 @@
   let serverError = $state("");
   let statusMessage = $state("");
   let loadError = $state("");
+  let deleteError = $state("");
   let saving = $state(false);
   let mediaBusy = $state(false);
+  let deleting = $state(false);
+  let deleteDialog = $state<HTMLDialogElement | null>(null);
   let reload = $state(0);
   let routeGeneration = 0;
 
@@ -74,7 +78,7 @@
   const userId = $derived(session.data?.user?.id ?? null);
   const isDirty = $derived(savedSnapshot !== JSON.stringify(draft));
   const canManagePhotos = $derived(
-    loadedYarn !== null && !isDirty && !saving && !mediaBusy,
+    loadedYarn !== null && !isDirty && !saving && !mediaBusy && !deleting,
   );
   const saveLabel = $derived(
     saving
@@ -87,7 +91,7 @@
   onMount(() =>
     registerPwaUpdateGuard(() => ({
       dirty: isDirty,
-      busy: loadState === "loading" || saving || mediaBusy,
+      busy: loadState === "loading" || saving || mediaBusy || deleting,
     })),
   );
 
@@ -98,6 +102,9 @@
     const generation = ++routeGeneration;
     saving = false;
     mediaBusy = false;
+    deleting = false;
+    deleteError = "";
+    untrack(() => deleteDialog?.close());
     if (id === null) {
       loadedYarn = null;
       loadState = "ready";
@@ -247,13 +254,14 @@
     event.preventDefault();
     const value = makeWrite();
     const currentSession = session.data;
-    if (!value || !currentSession?.user || saving) return;
+    if (!value || !currentSession?.user || saving || mediaBusy || deleting)
+      return;
     await save(value, expectedUpdatedAt);
   }
 
   async function save(value: YarnWrite, version: string) {
     const currentSession = session.data;
-    if (!currentSession?.user || saving) return;
+    if (!currentSession?.user || saving || mediaBusy || deleting) return;
     const id = yarnId;
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
@@ -307,6 +315,62 @@
     } finally {
       if (isCurrentRoute(id, ownerId, generation)) saving = false;
     }
+  }
+
+  function openDeleteDialog() {
+    const currentSession = session.data;
+    const currentYarn = loadedYarn;
+    if (
+      !currentSession?.user ||
+      !currentYarn ||
+      yarnId !== currentYarn.id ||
+      isDirty ||
+      saving ||
+      mediaBusy ||
+      deleting
+    )
+      return;
+    deleteError = "";
+    deleteDialog?.showModal();
+  }
+
+  async function removeYarn() {
+    const currentSession = session.data;
+    const currentYarn = loadedYarn;
+    const id = yarnId;
+    if (
+      !currentSession?.user ||
+      !currentYarn ||
+      id === null ||
+      currentYarn.id !== id ||
+      isDirty ||
+      saving ||
+      mediaBusy ||
+      deleting
+    )
+      return;
+    const ownerId = currentSession.user.id;
+    const generation = routeGeneration;
+    deleting = true;
+    deleteError = "";
+    try {
+      await deleteYarn(id, currentSession);
+      if (!isCurrentRoute(id, ownerId, generation)) return;
+      deleteDialog?.close();
+      await goto(resolve("/yarns"));
+    } catch (error) {
+      if (!isCurrentRoute(id, ownerId, generation)) return;
+      deleteError =
+        error instanceof Error
+          ? error.message
+          : t("The yarn could not be deleted.", locale);
+    } finally {
+      if (isCurrentRoute(id, ownerId, generation)) deleting = false;
+    }
+  }
+
+  function preventDeleteCancel(event: Event) {
+    if (deleting) event.preventDefault();
   }
 
   function isCurrentRoute(
@@ -687,7 +751,7 @@
           variant="primary"
           icon={yarnId === null ? "create" : "save"}
           type="submit"
-          disabled={saving || mediaBusy}
+          disabled={saving || mediaBusy || deleting}
         >
           {saveLabel}
         </Button>
@@ -698,12 +762,63 @@
             : `${resolve("/yarns")}/${yarnId}`}
           ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
         >
+        {#if loadedYarn}
+          <Button
+            class="danger-button"
+            variant="danger"
+            icon="action-delete"
+            type="button"
+            disabled={isDirty || saving || mediaBusy || deleting}
+            onclick={openDeleteDialog}
+          >
+            {t("Delete yarn", locale)}
+          </Button>
+        {/if}
         {#if isDirty}<span class="draft-note"
             >{t("Your edits stay here if saving fails.", locale)}</span
           >{/if}
       </div>
     </form>
   </main>
+  {#if loadedYarn}
+    <dialog
+      bind:this={deleteDialog}
+      class="confirm-dialog"
+      aria-labelledby="delete-yarn-title"
+      oncancel={preventDeleteCancel}
+    >
+      <h2 id="delete-yarn-title">{t("Delete yarn?", locale)}</h2>
+      <p>
+        {t("Delete", locale)} <strong>{loadedYarn.name}</strong>? {t(
+          "This cannot be undone.",
+          locale,
+        )}
+      </p>
+      {#if deleteError}<p class="error-text" role="alert">{deleteError}</p>{/if}
+      <div class="dialog-actions">
+        <Button
+          class="quiet-button"
+          variant="secondary"
+          icon="cancel"
+          type="button"
+          disabled={deleting}
+          onclick={() => deleteDialog?.close()}
+        >
+          {t("Keep yarn", locale)}
+        </Button>
+        <Button
+          class="danger-button"
+          variant="danger"
+          icon="action-delete"
+          type="button"
+          disabled={isDirty || saving || mediaBusy || deleting}
+          onclick={() => void removeYarn()}
+        >
+          {deleting ? t("Deleting…", locale) : t("Delete yarn", locale)}
+        </Button>
+      </div>
+    </dialog>
+  {/if}
 {/if}
 
 <style>
@@ -823,6 +938,38 @@
     gap: 0.6rem;
   }
 
+  .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .confirm-dialog {
+    max-width: min(92vw, 32rem);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    padding: 1.2rem;
+    color: var(--ink);
+    background: var(--surface);
+  }
+
+  .confirm-dialog::backdrop {
+    background: rgb(15 28 27 / 72%);
+  }
+
+  .confirm-dialog h2 {
+    margin-top: 0;
+  }
+
+  .confirm-dialog p {
+    color: var(--ink-muted);
+  }
+
+  .error-text {
+    color: var(--danger) !important;
+  }
+
   .draft-note {
     flex: 1 1 100%;
     font-size: 0.88rem;
@@ -905,6 +1052,13 @@
 
     .draft-note {
       grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .dialog-actions {
+      align-items: stretch;
+      flex-direction: column-reverse;
     }
   }
 </style>

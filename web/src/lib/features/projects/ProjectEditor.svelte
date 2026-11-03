@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -611,7 +612,15 @@
   async function confirmDelete(): Promise<void> {
     const currentSession = session.data;
     const id = projectId;
-    if (!currentSession?.user || id === null || !project || isDirty || deleting)
+    if (
+      !currentSession?.user ||
+      id === null ||
+      !project ||
+      isDirty ||
+      saving ||
+      mediaBusy ||
+      deleting
+    )
       return;
     if (
       !window.confirm(t("Delete this project? This cannot be undone.", locale))
@@ -1404,6 +1413,13 @@
                 ? t("Create project", locale)
                 : t("Save changes", locale)}
           </Button>
+          <a
+            class="quiet-button ui-button ui-button--secondary ui-button--md"
+            href={projectId === null
+              ? resolve("/projects")
+              : resolve("/projects/[id]", { id: String(projectId) })}
+            ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
+          >
           {#if project}
             <Button
               class="danger-button"

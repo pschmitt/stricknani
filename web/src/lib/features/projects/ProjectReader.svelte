@@ -4,8 +4,10 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { ApiError } from "#lib/api.ts";
+  import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
@@ -632,8 +634,14 @@
       {/snippet}
       {#snippet actions()}
         <div class="reader-heading-actions">
+          <FavoriteButton
+            favorite={currentProject.is_favorite}
+            busy={favoriteBusy}
+            {locale}
+            onclick={() => void toggleFavorite()}
+          />
           <a
-            class="reader-edit-link ui-button ui-button--secondary ui-button--md"
+            class="reader-edit-link ui-button ui-button--primary ui-button--md"
             href={resolve("/projects/[id]/edit", {
               id: String(currentProject.id),
             })}
@@ -642,67 +650,69 @@
               >{t("Edit project", locale)}</ActionLabel
             >
           </a>
-          <Button
-            class="reader-favorite"
-            variant="secondary"
-            type="button"
-            disabled={favoriteBusy}
-            aria-pressed={currentProject.is_favorite}
-            aria-label={currentProject.is_favorite
-              ? t("Remove from favorites", locale)
-              : t("Add to favorites", locale)}
-            onclick={toggleFavorite}
-          >
-            <span aria-hidden="true"
-              >{currentProject.is_favorite ? "★" : "☆"}</span
-            >
-            {currentProject.is_favorite
-              ? t("Favorite", locale)
-              : t("Add to favorites", locale)}
-          </Button>
+          <ActionOverflow label={t("More actions", locale)}>
+            {#snippet children(close)}
+              <nav
+                class="reader-topline"
+                aria-label={t("Project actions", locale)}
+              >
+                <div class="reader-actions">
+                  <div
+                    class="text-size-controls"
+                    aria-label={t("Pattern text size", locale)}
+                  >
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      aria-label={t("Decrease text size", locale)}
+                      disabled={textSize === 0}
+                      onclick={() => {
+                        textSize = Math.max(0, textSize - 1);
+                        close();
+                      }}>A−</Button
+                    >
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      aria-label={t("Increase text size", locale)}
+                      disabled={textSize === 2}
+                      onclick={() => {
+                        textSize = Math.min(2, textSize + 1);
+                        close();
+                      }}>A+</Button
+                    >
+                  </div>
+                  <Button
+                    class="print-button"
+                    variant="secondary"
+                    size="sm"
+                    icon="print"
+                    type="button"
+                    disabled={printPreparing}
+                    aria-busy={printPreparing}
+                    onclick={() => {
+                      close();
+                      void printPattern();
+                    }}
+                  >
+                    {printPreparing
+                      ? t("Preparing full-resolution photos…", locale)
+                      : t("Print pattern", locale)}
+                  </Button>
+                </div>
+              </nav>
+            {/snippet}
+          </ActionOverflow>
+          {#if printPreparing}
+            <span class="print-preparing-status" role="status">
+              {t("Preparing full-resolution photos…", locale)}
+            </span>
+          {/if}
         </div>
       {/snippet}
     </PageHeader>
-
-    <nav class="reader-topline" aria-label={t("Project actions", locale)}>
-      <div class="reader-actions">
-        <div
-          class="text-size-controls"
-          aria-label={t("Pattern text size", locale)}
-        >
-          <Button
-            variant="secondary"
-            size="sm"
-            type="button"
-            aria-label={t("Decrease text size", locale)}
-            disabled={textSize === 0}
-            onclick={() => (textSize = Math.max(0, textSize - 1))}>A−</Button
-          >
-          <Button
-            variant="secondary"
-            size="sm"
-            type="button"
-            aria-label={t("Increase text size", locale)}
-            disabled={textSize === 2}
-            onclick={() => (textSize = Math.min(2, textSize + 1))}>A+</Button
-          >
-        </div>
-        <Button
-          class="print-button"
-          variant="secondary"
-          size="sm"
-          icon="print"
-          type="button"
-          disabled={printPreparing}
-          aria-busy={printPreparing}
-          onclick={() => void printPattern()}
-        >
-          {printPreparing
-            ? t("Preparing full-resolution photos…", locale)
-            : t("Print pattern", locale)}
-        </Button>
-      </div>
-    </nav>
     {#if printError}
       <p class="print-error" role="alert">{printError}</p>
     {/if}
@@ -1223,23 +1233,23 @@
     gap: 1.5rem;
   }
 
-  .reader-topline,
-  .reader-actions,
-  .text-size-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .reader-topline {
+    display: block;
   }
 
   .reader-actions {
-    flex-wrap: wrap;
+    display: grid;
+    gap: 0.5rem;
   }
 
-  .reader-topline {
-    justify-content: space-between;
-    gap: 1rem;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.6rem;
+  .text-size-controls {
+    display: flex;
+    align-items: center;
+  }
+
+  .reader-actions .text-size-controls :global(.ui-button) {
+    width: 44px;
+    justify-content: center;
   }
 
   .text-size-controls {
@@ -1262,6 +1272,11 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .print-preparing-status {
+    color: var(--ink-muted);
+    font-size: 0.875rem;
   }
 
   .reader-overview {
@@ -1337,16 +1352,6 @@
     border-radius: 999px;
     padding: 0.1rem 0.55rem;
     color: var(--ink-muted);
-  }
-
-  :global(.reader-favorite) {
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 0.35rem;
-  }
-
-  :global(.reader-favorite) span {
-    font-size: var(--ui-action-icon-size-md);
   }
 
   .inline-error {
@@ -1808,15 +1813,6 @@
       gap: 1rem;
     }
 
-    .reader-topline {
-      align-items: flex-start;
-    }
-
-    .reader-actions {
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
     .step-navigation {
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       gap: 0.35rem;
@@ -1874,8 +1870,8 @@
     }
 
     .reader-topline,
+    .print-preparing-status,
     :global(.page-header__actions),
-    :global(.reader-favorite),
     .lightbox {
       display: none !important;
     }

@@ -257,6 +257,22 @@ def _settle(page: Page) -> None:
     )
 
 
+def _open_reader_actions(page: Page) -> None:
+    disclosure = page.locator("details.action-overflow")
+    disclosure.wait_for(state="attached", timeout=10_000)
+    if disclosure.count() != 1:
+        raise PerformanceFailure("reader actions disclosure was ambiguous")
+    summary = disclosure.locator("summary")
+    if summary.get_attribute("aria-label") != "More actions":
+        raise PerformanceFailure("reader actions disclosure label changed")
+    if disclosure.get_attribute("open") is None:
+        summary.click()
+    page.wait_for_function(
+        "() => document.querySelector('details.action-overflow')?.open === true",
+        timeout=5_000,
+    )
+
+
 def _observer_metrics(page: Page) -> dict[str, Any]:
     value: object = page.evaluate(
         """() => {
@@ -817,6 +833,7 @@ def _one_sample(
     _CURRENT_STAGE = f"sample {sample_number}: reader text-size controls"
     reading_copy = page.locator(".pattern-section .reading-copy").first
     initial_text_size = reading_copy.get_attribute("class")
+    _open_reader_actions(page)
     page.get_by_role("button", name="Increase text size", exact=True).click()
     increased_text_size = reading_copy.get_attribute("class")
     if increased_text_size == initial_text_size:

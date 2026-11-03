@@ -15,6 +15,7 @@
     | "user-disable"
     | "key"
     | "filter"
+    | "favorite"
     | "refresh"
     | "previous"
     | "next"
@@ -110,6 +111,10 @@
     <path d="m11 12.5 8-8 2 2-2 2 1.5 1.5-2 2-1.5-1.5-3.5 3.5" />
   {:else if name === "filter"}
     <path d="M4 5h16l-6.2 7.2v5.2l-3.6 1.8v-7z" />
+  {:else if name === "favorite"}
+    <path
+      d="M20.8 8.8c0 5.7-8.8 10.3-8.8 10.3S3.2 14.5 3.2 8.8a4.6 4.6 0 0 1 8.8-2.1 4.6 4.6 0 0 1 8.8 2.1Z"
+    />
   {:else if name === "refresh"}
     <path
       d="M20 11a8 8 0 0 0-14.2-4L4 9m0-5v5h5M4 13a8 8 0 0 0 14.2 4L20 15m0 5v-5h-5"

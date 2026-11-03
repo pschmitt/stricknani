@@ -376,6 +376,13 @@ def run_acceptance(
             mark_stage("opening seeded yarn details")
             yarn_card.locator("a.resource-card__link").click()
             page.wait_for_url(f"**{yarn_detail_href}")
+            favorite_button = page.get_by_role(
+                "button", name="Add to favorites", exact=True
+            )
+            _require(
+                favorite_button.get_attribute("aria-pressed") == "false",
+                "the yarn favorite control did not start unpressed",
+            )
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path.endswith("/favorite")
@@ -383,12 +390,14 @@ def run_acceptance(
                 )
             ) as favorite_response:
                 mark_stage("saving yarn favorite")
-                page.get_by_role("button", name="Add to favorites").click()
+                favorite_button.click()
             _require(
                 favorite_response.value.status == 200,
                 "saving the yarn favorite failed against API v2",
             )
-            favorited_button = page.get_by_role("button", name="Favorited")
+            favorited_button = page.get_by_role(
+                "button", name="Remove from favorites", exact=True
+            )
             favorited_button.wait_for(state="visible")
             _require(
                 favorited_button.get_attribute("aria-pressed") == "true",
@@ -504,6 +513,25 @@ def run_acceptance(
             zoom_dialog.wait_for(state="visible")
             page.keyboard.press("Escape")
             zoom_dialog.wait_for(state="hidden")
+            detail_remove_controls = page.locator(
+                ".photo-item button[aria-label='Remove photo']"
+            )
+            _require(
+                page.get_by_label("Choose a yarn photo", exact=True).count() == 0
+                and detail_remove_controls.count() == 0,
+                "yarn detail exposed photo mutation controls outside Edit yarn",
+            )
+
+            mark_stage("opening yarn editor for photo management")
+            page.get_by_role("link", name="Edit yarn", exact=True).click()
+            page.wait_for_url(f"**/app/yarns/{yarn_id}/edit")
+            page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
+                state="visible"
+            )
+            _require(
+                page.get_by_label("Choose a yarn photo", exact=True).is_enabled(),
+                "the clean yarn editor did not enable photo management",
+            )
 
             mark_stage("testing yarn photo upload and delete")
             previous_photo_urls = page.locator(".photo-item img").evaluate_all(
@@ -595,9 +623,7 @@ def run_acceptance(
                 "yarn photo upload or removal did not reach API v2",
             )
 
-            mark_stage("checking yarn edit, dirty-navigation guard, and CAS conflict")
-            mark_stage("opening yarn editor")
-            page.get_by_role("link", name="Edit yarn").click()
+            mark_stage("checking yarn dirty-navigation guard and CAS conflict")
             mark_stage("waiting for yarn editor brand field")
             page.get_by_label("Brand").wait_for(state="visible")
             brand = page.get_by_label("Brand")
@@ -713,18 +739,36 @@ def run_acceptance(
             )
 
             mark_stage("checking yarn deletion confirmation and deletion")
-            page.get_by_role("button", name="Delete", exact=True).click()
+            page.get_by_role("link", name="Edit yarn", exact=True).click()
+            page.wait_for_url(f"**/app/yarns/{created_id_path}/edit")
+            page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
+                state="visible"
+            )
+            delete_button = page.get_by_role("button", name="Delete yarn", exact=True)
+            delete_button.click()
             delete_dialog = page.get_by_role("dialog", name="Delete yarn?")
             delete_dialog.wait_for(state="visible")
             page.keyboard.press("Escape")
             delete_dialog.wait_for(state="hidden")
-            page.get_by_role("button", name="Delete", exact=True).click()
+            delete_button.click()
             delete_dialog.wait_for(state="visible")
             delete_dialog.get_by_role("button", name="Keep yarn").click()
             delete_dialog.wait_for(state="hidden")
-            page.get_by_role("button", name="Delete", exact=True).click()
+            delete_button.click()
             delete_dialog.wait_for(state="visible")
-            delete_dialog.get_by_role("button", name="Delete yarn").click()
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path == f"/api/v2/yarns/{created_id_path}"
+                    and response.request.method == "DELETE"
+                )
+            ) as delete_response_info:
+                delete_dialog.get_by_role(
+                    "button", name="Delete yarn", exact=True
+                ).click()
+            _require(
+                delete_response_info.value.status == 204,
+                "yarn deletion did not complete with 204 from API v2",
+            )
             page.wait_for_url("**/app/yarns")
             page.get_by_role("searchbox", name="Search your yarn").wait_for(
                 state="visible"

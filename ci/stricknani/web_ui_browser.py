@@ -57,6 +57,22 @@ def _require(condition: bool, message: str) -> None:
         raise AcceptanceFailure(message)
 
 
+def _open_reader_actions(page: Page) -> Locator:
+    disclosure = page.locator("details.action-overflow")
+    disclosure.wait_for(state="attached")
+    _require(disclosure.count() == 1, "reader actions disclosure is ambiguous")
+    _require(
+        disclosure.locator("summary").get_attribute("aria-label") == "More actions",
+        "reader actions disclosure has the wrong accessible label",
+    )
+    if disclosure.get_attribute("open") is None:
+        disclosure.locator("summary").click()
+    page.wait_for_function(
+        "() => document.querySelector('details.action-overflow')?.open === true"
+    )
+    return disclosure
+
+
 def _tiny_png_fixture() -> bytes:
     def chunk(kind: bytes, data: bytes) -> bytes:
         checksum = zlib.crc32(kind + data) & 0xFFFFFFFF
@@ -366,7 +382,9 @@ def _check_print_image_failure_and_retry(
 
         page.route("**/media/projects/**", abort_project_image)
         mark_stage("waiting for aborted print image error")
-        page.get_by_role("button", name="Print pattern", exact=True).click()
+        _open_reader_actions(page).get_by_role(
+            "button", name="Print pattern", exact=True
+        ).click()
         alert = page.get_by_role("alert").filter(
             has_text=(
                 "A reference photo could not be prepared for printing. Try again."
@@ -414,7 +432,9 @@ def _check_print_image_failure_and_retry(
             "() => { window.__printFailureProbe.calls = 0; "
             "window.__printFailureProbe.atPrint = []; }"
         )
-        page.get_by_role("button", name="Print pattern", exact=True).click()
+        _open_reader_actions(page).get_by_role(
+            "button", name="Print pattern", exact=True
+        ).click()
         page.wait_for_function(
             "() => Number(window.__printFailureProbe?.calls ?? 0) > 0",
             timeout=15_000,
@@ -3054,19 +3074,31 @@ def run_acceptance(
             _require(project_detail_href is not None, "project detail link is missing")
             project_card.locator("a.resource-card__link").click()
             page.wait_for_url(f"**{project_detail_href}")
+            favorite_button = page.get_by_role(
+                "button", name="Add to favorites", exact=True
+            )
+            _require(
+                favorite_button.get_attribute("aria-pressed") == "false",
+                "the project favorite control did not start unpressed",
+            )
             with page.expect_response(
                 lambda response: (
                     urlsplit(response.url).path.endswith("/favorite")
                     and response.request.method == "PUT"
                 )
             ) as favorite_response_info:
-                page.get_by_role("button", name="Add to favorites").click()
+                favorite_button.click()
             _require(
                 favorite_response_info.value.status == 200,
                 "saving the project favorite failed against the Rust API",
             )
-            page.get_by_role("button", name="Remove from favorites").wait_for(
-                state="visible"
+            favorite_button = page.get_by_role(
+                "button", name="Remove from favorites", exact=True
+            )
+            favorite_button.wait_for(state="visible")
+            _require(
+                favorite_button.get_attribute("aria-pressed") == "true",
+                "the project favorite control did not enter its pressed state",
             )
             page.go_back(wait_until="domcontentloaded")
             page.wait_for_url("**/app/projects")
@@ -3509,7 +3541,8 @@ def run_acceptance(
                     "element => getComputedStyle(element).fontSize"
                 ).removesuffix("px")
             )
-            page.get_by_role("button", name="Increase text size").click()
+            reader_actions = _open_reader_actions(page)
+            reader_actions.get_by_role("button", name="Increase text size").click()
             try:
                 page.wait_for_function(
                     "initial => {"
@@ -3569,7 +3602,9 @@ def run_acceptance(
                 "window.__printImageExpectedUrls[index] })); }; }"
             )
             mark_stage("clicking successful print action")
-            page.get_by_role("button", name="Print pattern", exact=True).click()
+            _open_reader_actions(page).get_by_role(
+                "button", name="Print pattern", exact=True
+            ).click()
             mark_stage("waiting for successful print call")
             print_wait_error_type: str | None = None
             try:
@@ -3750,9 +3785,28 @@ def run_acceptance(
                 "afterprint did not restore the previously closed Materials disclosure",
             )
             page.emulate_media(media="screen")
-            page.get_by_role("button", name="Remove from favorites").click()
-            page.get_by_role("button", name="Add to favorites").wait_for(
-                state="visible"
+            favorite_button = page.get_by_role(
+                "button", name="Remove from favorites", exact=True
+            )
+            with page.expect_response(
+                lambda response: (
+                    urlsplit(response.url).path
+                    == f"/api/v2/projects/{project_id}/favorite"
+                    and response.request.method == "PUT"
+                )
+            ) as unfavorite_response:
+                favorite_button.click()
+            _require(
+                unfavorite_response.value.status == 200,
+                "removing the project favorite failed against the Rust API",
+            )
+            favorite_button = page.get_by_role(
+                "button", name="Add to favorites", exact=True
+            )
+            favorite_button.wait_for(state="visible")
+            _require(
+                favorite_button.get_attribute("aria-pressed") == "false",
+                "the project favorite control did not return to its unpressed state",
             )
             _mask_fixture_identity(page)
             _prepare_screenshot(page)
@@ -4040,6 +4094,36 @@ def run_acceptance(
             _require(
                 page.locator("#project-image-file").is_enabled(),
                 "clean saved projects did not enable media management",
+            )
+
+            mark_stage("checking project editor Cancel dirty guard")
+            project_name = page.get_by_label("Project name", exact=True)
+            cancel_link = page.get_by_role("link", name="Cancel", exact=True)
+            _require(
+                cancel_link.get_attribute("href")
+                == f"/app/projects/{editor_project_id}",
+                "project editor Cancel does not target the saved project",
+            )
+            project_name.fill("Canceled project draft")
+            page.once("dialog", lambda dialog: dialog.dismiss())
+            cancel_link.click()
+            _require(
+                urlsplit(page.url).path.endswith(
+                    f"/app/projects/{editor_project_id}/edit"
+                )
+                and project_name.input_value() == "Canceled project draft",
+                "canceling dirty ProjectEditor navigation did not retain the draft",
+            )
+            page.once("dialog", lambda dialog: dialog.accept())
+            cancel_link.click()
+            page.wait_for_url(f"**/app/projects/{editor_project_id}")
+            page.get_by_role("heading", name="Soft winter throw", exact=True).wait_for(
+                state="visible"
+            )
+            page.get_by_role("link", name="Edit project", exact=True).click()
+            page.wait_for_url(f"**/app/projects/{editor_project_id}/edit")
+            page.get_by_role("heading", name="Edit project", exact=True).wait_for(
+                state="visible"
             )
 
             mark_stage("preserving comma-containing tags during an unrelated edit")

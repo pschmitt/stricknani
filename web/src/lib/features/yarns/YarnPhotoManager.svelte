@@ -15,6 +15,7 @@
     ownerId = null,
     ocrEnabled = false,
     canEdit = true,
+    readOnly = false,
     onResourceUpdated,
     onMediaBusyChange,
   }: {
@@ -24,6 +25,7 @@
     ownerId?: number | null;
     ocrEnabled?: boolean;
     canEdit?: boolean;
+    readOnly?: boolean;
     onResourceUpdated: (yarnId: number, ownerId: number) => Promise<void>;
     onMediaBusyChange?: (
       busy: boolean,
@@ -43,10 +45,10 @@
   let deleteDialog = $state<HTMLDialogElement | null>(null);
 
   const mediaUploadAvailable = $derived(
-    canEdit && session.data?.capabilities.media_upload === true,
+    !readOnly && canEdit && session.data?.capabilities.media_upload === true,
   );
   const mediaDeleteAvailable = $derived(
-    canEdit && session.data?.capabilities.media_delete === true,
+    !readOnly && canEdit && session.data?.capabilities.media_delete === true,
   );
 
   function isCurrentOperation(resourceId: number, ownerId: number): boolean {
@@ -188,31 +190,35 @@
       <h2 id="photo-manager-title">{t("Photos", locale)}</h2>
       <p>{t("Tap a photo to see it larger.", locale)}</p>
     </div>
-    <label
-      class="ui-button ui-button--secondary ui-button--md upload-action"
-      class:disabled={!mediaUploadAvailable || uploading}
-    >
-      <ActionLabel icon="upload">
-        {uploading ? t("Uploading…", locale) : t("Add photo", locale)}
-      </ActionLabel>
-      <input
-        type="file"
-        accept="image/*"
-        aria-label={t("Choose a yarn photo", locale)}
-        disabled={!mediaUploadAvailable || uploading}
-        onchange={(event) => void upload(event)}
-      />
-    </label>
+    {#if !readOnly}
+      <label
+        class="ui-button ui-button--secondary ui-button--md upload-action"
+        class:disabled={!mediaUploadAvailable || uploading}
+      >
+        <ActionLabel icon="upload">
+          {uploading ? t("Uploading…", locale) : t("Add photo", locale)}
+        </ActionLabel>
+        <input
+          type="file"
+          accept="image/*"
+          aria-label={t("Choose a yarn photo", locale)}
+          disabled={!mediaUploadAvailable || uploading}
+          onchange={(event) => void upload(event)}
+        />
+      </label>
+    {/if}
   </header>
 
-  {#if !canEdit}
-    <p class="upload-hint">
-      {t("Save your yarn changes before editing photos.", locale)}
-    </p>
-  {:else if !mediaUploadAvailable || !mediaDeleteAvailable}
-    <p class="upload-hint">
-      {t("Media storage is unavailable. Try again later.", locale)}
-    </p>
+  {#if !readOnly}
+    {#if !canEdit}
+      <p class="upload-hint">
+        {t("Save your yarn changes before editing photos.", locale)}
+      </p>
+    {:else if !mediaUploadAvailable || !mediaDeleteAvailable}
+      <p class="upload-hint">
+        {t("Media storage is unavailable. Try again later.", locale)}
+      </p>
+    {/if}
   {/if}
   {#if uploading}
     <div class="upload-state" role="status" aria-live="polite">
@@ -247,7 +253,7 @@
           </Button>
           <div class="photo-caption">
             {#if photo.is_primary}<span>{t("Cover photo", locale)}</span>{/if}
-            {#if canEdit}
+            {#if canEdit && !readOnly}
               <Button
                 class="remove-photo"
                 variant="danger"
