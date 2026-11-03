@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 16:42+0100\n"
+"POT-Creation-Date: 2026-11-03 16:55+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -274,8 +274,12 @@ msgstr "You are offline. Some features may be unavailable."
 #: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
 #: stricknani/templates/legal/privacy.html:3
 #: stricknani/templates/legal/privacy.html:17
+#: web/src/lib/components/SignInForm.svelte:149
+#: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:40
+#: web/src/routes/privacy/+page.svelte:12
+#: web/src/routes/privacy/+page.svelte:25
 msgid "Privacy Policy"
-msgstr ""
+msgstr "Privacy Policy"
 
 #: stricknani/templates/base.html:141
 msgid "Get the Android app"
@@ -422,7 +426,7 @@ msgstr ""
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/routes/+layout.svelte:262 web/src/routes/more/+page.svelte:41
+#: web/src/routes/+layout.svelte:269 web/src/routes/more/+page.svelte:47
 msgid "Admin"
 msgstr "Admin"
 
@@ -642,7 +646,7 @@ msgstr "Please sign in below"
 #: web/src/lib/features/auth/SignupForm.svelte:267
 #: web/src/lib/features/home/HomeDashboard.svelte:104
 #: web/src/lib/features/projects/ProjectEditor.svelte:1005
-#: web/src/routes/+layout.svelte:150 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:157 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -695,8 +699,9 @@ msgid "Already have an account? Sign in"
 msgstr "Already have an account? Sign in"
 
 #: stricknani/templates/auth/login.html:137
+#: web/src/lib/components/SignInForm.svelte:148
 msgid "Learn how Stricknani handles your data in the"
-msgstr ""
+msgstr "Learn how Stricknani handles your data in the"
 
 #: stricknani/templates/errors/401.html:3
 msgid "Unauthorized"
@@ -867,57 +872,80 @@ msgid "Calculate"
 msgstr "Calculate"
 
 #: stricknani/templates/legal/privacy.html:15
+#: web/src/routes/privacy/+page.svelte:24
 msgid "Privacy"
-msgstr ""
+msgstr "Privacy"
 
 #: stricknani/templates/legal/privacy.html:19
+#: web/src/routes/privacy/+page.svelte:26
 msgid "Effective date: 19 August 2026"
-msgstr ""
+msgstr "Effective date: 19 August 2026"
 
 #: stricknani/templates/legal/privacy.html:25
+#: web/src/routes/privacy/+page.svelte:30
 msgid "About this policy"
-msgstr ""
+msgstr "About this policy"
 
 #: stricknani/templates/legal/privacy.html:26
+#: web/src/routes/privacy/+page.svelte:32
 msgid ""
 "This policy explains how Stricknani handles information when you use a "
 "Stricknani web instance or the companion Android app."
 msgstr ""
+"This policy explains how Stricknani handles information when you use a "
+"Stricknani web instance or the companion Android app."
 
 #: stricknani/templates/legal/privacy.html:27
+#: web/src/routes/privacy/+page.svelte:38
 msgid ""
 "Stricknani is self-hosted software. The operator of the instance you use "
 "is responsible for its deployment, configuration, backups, and legal "
 "obligations. This page describes the default behavior of the software and"
 " is not a promise about every deployment."
 msgstr ""
+"Stricknani is self-hosted software. The operator of the instance you use "
+"is responsible for its deployment, configuration, backups, and legal "
+"obligations. This page describes the default behavior of the software and"
+" is not a promise about every deployment."
 
 #: stricknani/templates/legal/privacy.html:31
+#: web/src/routes/privacy/+page.svelte:46
 msgid "Who is responsible for your data?"
-msgstr ""
+msgstr "Who is responsible for your data?"
 
 #: stricknani/templates/legal/privacy.html:32
+#: web/src/routes/privacy/+page.svelte:48
 msgid ""
 "For a self-hosted installation, the person or organization operating that"
 " installation is the controller of the data stored there. The Stricknani "
 "project does not receive data from independent self-hosted instances."
 msgstr ""
+"For a self-hosted installation, the person or organization operating that"
+" installation is the controller of the data stored there. The Stricknani "
+"project does not receive data from independent self-hosted instances."
 
 #: stricknani/templates/legal/privacy.html:33
+#: web/src/routes/privacy/+page.svelte:54
 msgid ""
 "If you use an instance operated by somebody else, contact that operator "
 "about access, deletion, retention, or other privacy requests. Questions "
 "about the Stricknani software can be reported through the"
 msgstr ""
+"If you use an instance operated by somebody else, contact that operator "
+"about access, deletion, retention, or other privacy requests. Questions "
+"about the Stricknani software can be reported through the"
 
 #: stricknani/templates/legal/privacy.html:33
 #: stricknani/templates/legal/privacy.html:80
+#: web/src/routes/privacy/+page.svelte:59
+#: web/src/routes/privacy/+page.svelte:194
 msgid "GitHub issue tracker"
-msgstr ""
+msgstr "GitHub issue tracker"
 
 #: stricknani/templates/legal/privacy.html:37
+#: web/src/routes/privacy/+page.svelte:65
 msgid "Information handled by the web app"
-msgstr ""
+msgstr "Information handled by the web app"
 
 #: stricknani/templates/legal/privacy.html:39
 msgid ""
@@ -926,53 +954,80 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:40
+#: web/src/routes/privacy/+page.svelte:74
 msgid ""
 "Knitting content: projects, yarn entries, notes, instructions, "
 "categories, steps, attachments, profile images, and other information you"
 " choose to store."
 msgstr ""
+"Knitting content: projects, yarn entries, notes, instructions, "
+"categories, steps, attachments, profile images, and other information you"
+" choose to store."
 
 #: stricknani/templates/legal/privacy.html:41
+#: web/src/routes/privacy/+page.svelte:80
 msgid ""
 "Authentication information: a session cookie for browser login and "
 "personal access tokens for API or Android access. Token values are shown "
 "only when they are created; the server stores a hash for later "
 "verification."
 msgstr ""
+"Authentication information: a session cookie for browser login and "
+"personal access tokens for API or Android access. Token values are shown "
+"only when they are created; the server stores a hash for later "
+"verification."
 
 #: stricknani/templates/legal/privacy.html:42
+#: web/src/routes/privacy/+page.svelte:86
 msgid ""
 "Operational information: application and import logs may contain "
 "timestamps, routes, status information, error details, and identifiers "
 "needed to operate and troubleshoot the instance. The operator chooses log"
 " destinations and retention."
 msgstr ""
+"Operational information: application and import logs may contain "
+"timestamps, routes, status information, error details, and identifiers "
+"needed to operate and troubleshoot the instance. The operator chooses log"
+" destinations and retention."
 
 #: stricknani/templates/legal/privacy.html:47
+#: web/src/routes/privacy/+page.svelte:95
 msgid "Why this information is used"
-msgstr ""
+msgstr "Why this information is used"
 
 #: stricknani/templates/legal/privacy.html:48
+#: web/src/routes/privacy/+page.svelte:97
 msgid ""
 "The web app uses this information to authenticate you, provide project "
 "and yarn management, synchronize API clients, serve your authorized "
 "media, process imports, protect the service, and diagnose failures. It "
 "does not sell your information or use it for advertising."
 msgstr ""
+"The web app uses this information to authenticate you, provide project "
+"and yarn management, synchronize API clients, serve your authorized "
+"media, process imports, protect the service, and diagnose failures. It "
+"does not sell your information or use it for advertising."
 
 #: stricknani/templates/legal/privacy.html:52
+#: web/src/routes/privacy/+page.svelte:105
 msgid "Android app and offline data"
-msgstr ""
+msgstr "Android app and offline data"
 
 #: stricknani/templates/legal/privacy.html:53
+#: web/src/routes/privacy/+page.svelte:107
 msgid ""
 "The Android app connects only to the Stricknani server URL that you "
 "configure. It stores that URL and your personal access token locally, "
 "encrypted at rest, and does not ask for or store your Stricknani account "
 "password."
 msgstr ""
+"The Android app connects only to the Stricknani server URL that you "
+"configure. It stores that URL and your personal access token locally, "
+"encrypted at rest, and does not ask for or store your Stricknani account "
+"password."
 
 #: stricknani/templates/legal/privacy.html:54
+#: web/src/routes/privacy/+page.svelte:113
 msgid ""
 "Projects, yarn entries, and their photos are cached on the device so the "
 "app can work offline. Offline edits may be queued locally and are sent to"
@@ -980,17 +1035,27 @@ msgid ""
 " clearing its application data removes the local cache according to "
 "Android behavior."
 msgstr ""
+"Projects, yarn entries, and their photos are cached on the device so the "
+"app can work offline. Offline edits may be queued locally and are sent to"
+" your configured server when synchronization resumes. Removing the app or"
+" clearing its application data removes the local cache according to "
+"Android behavior."
 
 #: stricknani/templates/legal/privacy.html:55
+#: web/src/routes/privacy/+page.svelte:119
 msgid ""
 "The Android app has no analytics, advertising, tracking, or crash-"
 "reporting service of its own. Data sent during synchronization goes to "
 "the server you configured."
 msgstr ""
+"The Android app has no analytics, advertising, tracking, or crash-"
+"reporting service of its own. Data sent during synchronization goes to "
+"the server you configured."
 
 #: stricknani/templates/legal/privacy.html:59
+#: web/src/routes/privacy/+page.svelte:127
 msgid "Optional external services"
-msgstr ""
+msgstr "Optional external services"
 
 #: stricknani/templates/legal/privacy.html:60
 msgid ""
@@ -1002,32 +1067,47 @@ msgid ""
 msgstr ""
 
 #: stricknani/templates/legal/privacy.html:61
+#: web/src/routes/privacy/+page.svelte:135
 msgid ""
 "These integrations are optional and controlled by the instance operator. "
 "Their providers process information under their own terms and privacy "
 "policies; review those policies before enabling or using the related "
 "feature."
 msgstr ""
+"These integrations are optional and controlled by the instance operator. "
+"Their providers process information under their own terms and privacy "
+"policies; review those policies before enabling or using the related "
+"feature."
 
 #: stricknani/templates/legal/privacy.html:62
+#: web/src/routes/privacy/+page.svelte:141
 msgid ""
 "The web interface itself uses locally served assets and does not require "
 "an analytics or advertising network."
 msgstr ""
+"The web interface itself uses locally served assets and does not require "
+"an analytics or advertising network."
 
 #: stricknani/templates/legal/privacy.html:66
+#: web/src/routes/privacy/+page.svelte:149
 msgid "Storage, retention, and deletion"
-msgstr ""
+msgstr "Storage, retention, and deletion"
 
 #: stricknani/templates/legal/privacy.html:67
+#: web/src/routes/privacy/+page.svelte:151
 msgid ""
 "The instance stores account data and content in its configured database "
 "and media storage. There is no universal retention period: the operator "
 "determines retention, backups, log rotation, and whether deleted data "
 "remains in backups for a time."
 msgstr ""
+"The instance stores account data and content in its configured database "
+"and media storage. There is no universal retention period: the operator "
+"determines retention, backups, log rotation, and whether deleted data "
+"remains in backups for a time."
 
 #: stricknani/templates/legal/privacy.html:68
+#: web/src/routes/privacy/+page.svelte:157
 msgid ""
 "You can manage your content and revoke personal access tokens through the"
 " available features. To request deletion or an export of account data, "
@@ -1035,12 +1115,19 @@ msgid ""
 "necessarily remove copies already retained in backups, logs, or external "
 "services."
 msgstr ""
+"You can manage your content and revoke personal access tokens through the"
+" available features. To request deletion or an export of account data, "
+"contact the instance operator. Deleting content or an account does not "
+"necessarily remove copies already retained in backups, logs, or external "
+"services."
 
 #: stricknani/templates/legal/privacy.html:72
+#: web/src/routes/privacy/+page.svelte:165
 msgid "Security"
-msgstr ""
+msgstr "Security"
 
 #: stricknani/templates/legal/privacy.html:73
+#: web/src/routes/privacy/+page.svelte:167
 msgid ""
 "Stricknani uses password hashing, access checks, CSRF protection, upload "
 "validation, and security response headers. Operators should use HTTPS, "
@@ -1048,47 +1135,71 @@ msgid ""
 "volume, keep the software and host updated, and configure backups "
 "securely."
 msgstr ""
+"Stricknani uses password hashing, access checks, CSRF protection, upload "
+"validation, and security response headers. Operators should use HTTPS, "
+"protect application secrets, restrict access to the database and media "
+"volume, keep the software and host updated, and configure backups "
+"securely."
 
 #: stricknani/templates/legal/privacy.html:74
+#: web/src/routes/privacy/+page.svelte:173
 msgid ""
 "No software can guarantee absolute security. The security and "
 "confidentiality of a self-hosted installation also depend on the "
 "operator, hosting environment, network, integrations, and devices used to"
 " access it."
 msgstr ""
+"No software can guarantee absolute security. The security and "
+"confidentiality of a self-hosted installation also depend on the "
+"operator, hosting environment, network, integrations, and devices used to"
+" access it."
 
 #: stricknani/templates/legal/privacy.html:78
+#: web/src/routes/privacy/+page.svelte:181
 msgid "Your choices and contact"
-msgstr ""
+msgstr "Your choices and contact"
 
 #: stricknani/templates/legal/privacy.html:79
+#: web/src/routes/privacy/+page.svelte:183
 msgid ""
 "You may choose what to enter, upload, synchronize, or send to optional "
 "integrations. You may stop using the Android app, clear its local data, "
 "revoke API tokens, and contact the relevant instance operator about your "
 "rights under applicable law."
 msgstr ""
+"You may choose what to enter, upload, synchronize, or send to optional "
+"integrations. You may stop using the Android app, clear its local data, "
+"revoke API tokens, and contact the relevant instance operator about your "
+"rights under applicable law."
 
 #: stricknani/templates/legal/privacy.html:80
+#: web/src/routes/privacy/+page.svelte:189
 msgid ""
 "For software questions or privacy concerns that relate to the project, "
 "use the"
 msgstr ""
+"For software questions or privacy concerns that relate to the project, "
+"use the"
 
 #: stricknani/templates/legal/privacy.html:84
+#: web/src/routes/privacy/+page.svelte:200
 msgid "Changes to this policy"
-msgstr ""
+msgstr "Changes to this policy"
 
 #: stricknani/templates/legal/privacy.html:85
+#: web/src/routes/privacy/+page.svelte:202
 msgid ""
 "This policy may be updated when Stricknani behavior or integrations "
 "change. The current version is published at this URL. Check the effective"
 " date above for the latest revision."
 msgstr ""
+"This policy may be updated when Stricknani behavior or integrations "
+"change. The current version is published at this URL. Check the effective"
+" date above for the latest revision."
 
 #: stricknani/templates/macros/buttons.html:77
 #: stricknani/templates/shared/unified_navbar.html:25
-#: web/src/routes/+layout.svelte:207
+#: web/src/routes/+layout.svelte:214
 msgid "Back"
 msgstr "Back"
 
@@ -1317,7 +1428,7 @@ msgstr ""
 
 #: rust/src/web.rs:2181 rust/src/web_accounts.rs:851
 #: stricknani/templates/projects/categories.html:44
-#: web/src/routes/+layout.svelte:56 web/src/routes/create/+page.svelte:10
+#: web/src/routes/+layout.svelte:61 web/src/routes/create/+page.svelte:10
 msgid "Create"
 msgstr "Create"
 
@@ -1380,7 +1491,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:636
 #: web/src/lib/features/projects/ProjectReader.svelte:644
 #: web/src/lib/features/projects/ProjectReader.svelte:660
-#: web/src/routes/+layout.svelte:289
+#: web/src/routes/+layout.svelte:296
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -1923,7 +2034,7 @@ msgstr ""
 #: stricknani/templates/shared/unified_navbar.html:125
 #: web/src/lib/features/projects/ProjectLibrary.svelte:183
 #: web/src/lib/features/projects/ProjectLibrary.svelte:194
-#: web/src/routes/+layout.svelte:54
+#: web/src/routes/+layout.svelte:59
 msgid "Projects"
 msgstr "Projects"
 
@@ -2025,7 +2136,7 @@ msgstr ""
 
 #: rust/src/import_service.rs:422 rust/src/web_accounts.rs:829
 #: stricknani/templates/shared/unified_navbar.html:16
-#: web/src/routes/+layout.svelte:219 web/src/routes/+layout.svelte:299
+#: web/src/routes/+layout.svelte:226 web/src/routes/+layout.svelte:306
 msgid "Main navigation"
 msgstr "Main navigation"
 
@@ -2037,13 +2148,13 @@ msgstr "Main navigation"
 #: web/src/lib/features/yarns/YarnDetail.svelte:212
 #: web/src/lib/features/yarns/YarnLibrary.svelte:129
 #: web/src/lib/features/yarns/YarnLibrary.svelte:140
-#: web/src/routes/+layout.svelte:55
+#: web/src/routes/+layout.svelte:60
 msgid "Yarns"
 msgstr "Yarns"
 
 #: stricknani/templates/shared/unified_navbar.html:97
 #: web/src/lib/features/home/HomeDashboard.svelte:73
-#: web/src/routes/+layout.svelte:53
+#: web/src/routes/+layout.svelte:58
 msgid "Home"
 msgstr "Home"
 
@@ -2581,11 +2692,11 @@ msgstr "Other materials"
 msgid "Link"
 msgstr "Login"
 
-#: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:152
+#: rust/src/web.rs:2159 web/src/lib/components/SignInForm.svelte:156
 #: web/src/lib/features/auth/SignupForm.svelte:275
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/routes/+layout.svelte:66 web/src/routes/more/+page.svelte:31
+#: web/src/routes/+layout.svelte:71 web/src/routes/more/+page.svelte:31
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
 
@@ -2692,7 +2803,7 @@ msgstr "Clear filters"
 #: rust/src/web.rs:2210 rust/src/web_accounts.rs:832 rust/src/web_audit.rs:124
 #: web/src/lib/features/account/AccountSettings.svelte:623
 #: web/src/lib/features/account/AccountSettings.svelte:634
-#: web/src/routes/+layout.svelte:213
+#: web/src/routes/+layout.svelte:220
 msgid "Account"
 msgstr "Account"
 
@@ -2870,6 +2981,18 @@ msgstr "Create account"
 msgid "A category with this name already exists."
 msgstr "A category with this name already exists."
 
+#: web/src/routes/privacy/+page.svelte:129
+msgid ""
+"A deployment may enable integrations that send limited information "
+"outside the Stricknani instance. For example, an AI provider may receive "
+"material submitted for AI-assisted pattern import, and an archive service"
+" may receive a URL when you request an archive snapshot."
+msgstr ""
+"A deployment may enable integrations that send limited information "
+"outside the Stricknani instance. For example, an AI provider may receive "
+"material submitted for AI-assisted pattern import, and an archive service"
+" may receive a URL when you request an archive snapshot."
+
 #: web/src/lib/features/yarns/YarnForm.svelte:616
 msgid "A newer version was saved"
 msgstr "A newer version was saved"
@@ -2878,7 +3001,7 @@ msgstr "A newer version was saved"
 msgid "A place for your projects and yarn."
 msgstr "A place for your projects and yarn."
 
-#: web/src/routes/+layout.svelte:130
+#: web/src/routes/+layout.svelte:137
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "A quiet place to keep your knitting projects and yarn close."
 
@@ -2921,9 +3044,17 @@ msgstr "API access"
 msgid "API token revoked."
 msgstr "API token revoked."
 
-#: web/src/routes/+layout.svelte:283
+#: web/src/routes/+layout.svelte:290
 msgid "Account access"
 msgstr "Account access"
+
+#: web/src/routes/privacy/+page.svelte:68
+msgid ""
+"Account information: your email address, a password hash, and account "
+"state such as your role and whether the account is active."
+msgstr ""
+"Account information: your email address, a password hash, and account "
+"state such as your role and whether the account is active."
 
 #: web/src/lib/features/auth/SignupForm.svelte:150
 msgid "Account registration"
@@ -3112,7 +3243,7 @@ msgstr "Archiving is unavailable right now."
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
-#: web/src/routes/+layout.svelte:287
+#: web/src/routes/+layout.svelte:294
 msgid "Ask an administrator if you need access."
 msgstr "Ask an administrator if you need access."
 
@@ -3151,7 +3282,7 @@ msgstr "Audit events could not be loaded."
 
 #: web/src/lib/features/admin/AdminAudit.svelte:306
 #: web/src/lib/features/admin/AdminAudit.svelte:313
-#: web/src/routes/+layout.svelte:273 web/src/routes/more/+page.svelte:47
+#: web/src/routes/+layout.svelte:280 web/src/routes/more/+page.svelte:53
 msgid "Audit log"
 msgstr "Audit log"
 
@@ -3163,7 +3294,12 @@ msgstr "Audit pages"
 msgid "Back to 10 × 10 cm"
 msgstr "Back to 10 × 10 cm"
 
+#: web/src/routes/privacy/+page.svelte:20
+msgid "Back to More"
+msgstr "Back to More"
+
 #: web/src/lib/features/auth/SignupForm.svelte:166
+#: web/src/routes/privacy/+page.svelte:20
 msgid "Back to sign in"
 msgstr "Back to sign in"
 
@@ -3201,7 +3337,7 @@ msgstr "Calculation Results"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/routes/+layout.svelte:65 web/src/routes/more/+page.svelte:22
+#: web/src/routes/+layout.svelte:70 web/src/routes/more/+page.svelte:22
 msgid "Categories"
 msgstr "Categories"
 
@@ -3722,6 +3858,10 @@ msgstr "Hello, knitter!"
 msgid "Hide token"
 msgstr "Hide token"
 
+#: web/src/routes/more/+page.svelte:41
+msgid "How Stricknani handles your data."
+msgstr "How Stricknani handles your data."
+
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:67
 msgid "How big was the area you counted? Patterns usually use 10 × 10 cm."
 msgstr "How big was the area you counted? Patterns usually use 10 × 10 cm."
@@ -3939,7 +4079,7 @@ msgstr "Loading yarn options…"
 msgid "Loading your home…"
 msgstr "Loading your home…"
 
-#: web/src/routes/more/+page.svelte:42
+#: web/src/routes/more/+page.svelte:48
 msgid "Manage accounts, sign-in access, and roles."
 msgstr "Manage accounts, sign-in access, and roles."
 
@@ -3962,7 +4102,7 @@ msgstr "Materials"
 msgid "Media storage is unavailable. Try again later."
 msgstr "Media storage is unavailable. Try again later."
 
-#: web/src/routes/+layout.svelte:57 web/src/routes/more/+page.svelte:11
+#: web/src/routes/+layout.svelte:62 web/src/routes/more/+page.svelte:11
 #: web/src/routes/more/+page.svelte:17
 msgid "More"
 msgstr "More"
@@ -4158,7 +4298,7 @@ msgstr "Not recorded"
 msgid "Nothing on the needles yet"
 msgstr "Nothing on the needles yet"
 
-#: web/src/lib/components/SignInForm.svelte:163
+#: web/src/lib/components/SignInForm.svelte:167
 msgid "One row at a time."
 msgstr "One row at a time."
 
@@ -4210,7 +4350,7 @@ msgstr "Open your project library to continue."
 msgid "Opening your pattern…"
 msgstr "Opening your pattern…"
 
-#: web/src/routes/+layout.svelte:166
+#: web/src/routes/+layout.svelte:173
 msgid "Opening your workspace…"
 msgstr "Opening your workspace…"
 
@@ -4674,7 +4814,7 @@ msgstr "Review and correct"
 msgid "Review and edit these details; they will be kept in project notes."
 msgstr "Review and edit these details; they will be kept in project notes."
 
-#: web/src/routes/more/+page.svelte:48
+#: web/src/routes/more/+page.svelte:54
 msgid "Review recent changes to projects, yarn, and categories."
 msgstr "Review recent changes to projects, yarn, and categories."
 
@@ -4863,7 +5003,7 @@ msgstr "Skein weight"
 msgid "Skein weight in grams"
 msgstr "Skein weight in grams"
 
-#: web/src/routes/+layout.svelte:138
+#: web/src/routes/+layout.svelte:145
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -5220,7 +5360,7 @@ msgstr "The server returned an unexpected import response."
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
-#: web/src/lib/session.svelte.ts:139 web/src/routes/+layout.svelte:179
+#: web/src/lib/session.svelte.ts:139 web/src/routes/+layout.svelte:186
 msgid "The session could not be loaded."
 msgstr "The session could not be loaded."
 
@@ -5486,7 +5626,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/yarns/YarnDetail.svelte:235
 #: web/src/lib/features/yarns/YarnForm.svelte:590
 #: web/src/lib/features/yarns/YarnLibrary.svelte:182
-#: web/src/routes/+layout.svelte:187
+#: web/src/routes/+layout.svelte:194
 msgid "Try again"
 msgstr "Try again"
 
@@ -5635,11 +5775,11 @@ msgstr "Width"
 msgid "Working…"
 msgstr "Working…"
 
-#: web/src/routes/+layout.svelte:237
+#: web/src/routes/+layout.svelte:244
 msgid "Workspace"
 msgstr "Workspace"
 
-#: web/src/routes/+layout.svelte:238
+#: web/src/routes/+layout.svelte:245
 msgid "Workspace navigation"
 msgstr "Workspace navigation"
 
@@ -5726,7 +5866,7 @@ msgstr "Yesterday"
 msgid "You are already signed in."
 msgstr "You are already signed in."
 
-#: web/src/routes/+layout.svelte:285
+#: web/src/routes/+layout.svelte:292
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
@@ -5776,7 +5916,7 @@ msgstr "Your edits stay here if saving fails."
 msgid "Your favorite projects and yarns, together."
 msgstr "Your favorite projects and yarns, together."
 
-#: web/src/routes/+layout.svelte:220
+#: web/src/routes/+layout.svelte:227
 msgid "Your library"
 msgstr "Your library"
 
@@ -5821,7 +5961,7 @@ msgstr "Your sign-up session expired. Refresh and try again."
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 
-#: web/src/routes/+layout.svelte:175
+#: web/src/routes/+layout.svelte:182
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
 

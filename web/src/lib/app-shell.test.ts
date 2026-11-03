@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { shouldRedirectExpiredSession, showPublicGauge } from "./app-shell";
+import {
+  shouldRedirectExpiredSession,
+  showPublicGauge,
+  showPublicPage,
+} from "./app-shell";
 
 describe("anonymous public gauge shell", () => {
   const pathname = "/app/gauge";
@@ -98,5 +102,30 @@ describe("anonymous public gauge shell", () => {
         "/app/signup",
       ),
     ).toBe(true);
+  });
+});
+
+describe("public pages", () => {
+  const publicPaths = ["/app/gauge", "/app/privacy"];
+
+  it("serves the privacy policy to anonymous visitors once the session is ready", () => {
+    expect(showPublicPage("/app/privacy", publicPaths, "ready", false)).toBe(
+      true,
+    );
+    expect(showPublicPage("/app/privacy/", publicPaths, "ready", false)).toBe(
+      true,
+    );
+    expect(showPublicPage("/app/privacy", publicPaths, "loading", false)).toBe(
+      false,
+    );
+  });
+
+  it("leaves signed-in users and other routes in their normal shell", () => {
+    expect(showPublicPage("/app/privacy", publicPaths, "ready", true)).toBe(
+      false,
+    );
+    expect(showPublicPage("/app/projects", publicPaths, "ready", false)).toBe(
+      false,
+    );
   });
 });

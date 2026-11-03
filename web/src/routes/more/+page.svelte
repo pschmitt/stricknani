@@ -34,6 +34,12 @@
         locale,
       )}
     />
+    <NavigationTile
+      href={resolve("/privacy")}
+      icon="help"
+      title={t("Privacy Policy", locale)}
+      description={t("How Stricknani handles your data.", locale)}
+    />
     {#if session.data?.user?.is_admin}
       <NavigationTile
         href={resolve("/admin/users")}

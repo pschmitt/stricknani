@@ -144,6 +144,10 @@
         <a href={resolve("/signup")}>{t("Create an account", locale)}</a>
       </p>
     {/if}
+    <p class="auth-privacy">
+      {t("Learn how Stricknani handles your data in the", locale)}
+      <a href={resolve("/privacy")}>{t("Privacy Policy", locale)}</a>.
+    </p>
     <footer class="auth-footer">
       <LocaleSwitcher />
       <a
@@ -306,6 +310,20 @@
   }
 
   .auth-signup-link a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    color: var(--accent-strong);
+    font-weight: 650;
+  }
+
+  .auth-privacy {
+    margin: 0.5rem 0 0;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .auth-privacy a {
     display: inline-flex;
     min-height: 44px;
     align-items: center;

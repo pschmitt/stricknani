@@ -5,7 +5,7 @@
   import { page } from "$app/state";
   import {
     shouldRedirectExpiredSession,
-    showPublicGauge,
+    showPublicPage,
   } from "#lib/app-shell.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ActionFeedback from "#lib/components/ActionFeedback.svelte";
@@ -36,7 +36,12 @@
     });
   });
   const publicGauge = $derived(
-    showPublicGauge(pathname, linkTo("/gauge"), session.status, user !== null),
+    showPublicPage(
+      pathname,
+      [linkTo("/gauge"), linkTo("/privacy")],
+      session.status,
+      user !== null,
+    ),
   );
   const adminRoute = $derived(
     pathname.startsWith(resolve("/admin/users")) ||
@@ -64,6 +69,7 @@
   const secondaryNavigation = [
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
+    { href: "/privacy", label: msg("Privacy Policy"), icon: "help" },
   ] as const;
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
@@ -103,6 +109,7 @@
     | "/imports"
     | "/categories"
     | "/gauge"
+    | "/privacy"
     | "/account"
     | "/admin/users"
     | "/admin/audit";

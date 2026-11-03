@@ -22,7 +22,9 @@ export function routeParent(pathname: string, basePath: string): string | null {
     base === "" ? currentPath : currentPath.slice(base.length) || "/";
   let parent: string | null = null;
 
-  if (route === "/imports") {
+  if (route === "/privacy") {
+    parent = "/more";
+  } else if (route === "/imports") {
     parent = "/create";
   } else if (route.startsWith("/imports/")) {
     parent = "/imports";

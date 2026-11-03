@@ -9,6 +9,20 @@ export function showPublicGauge(
   return pathname === gaugePath && sessionStatus === "ready" && !hasUser;
 }
 
+/** Stateless pages that anonymous visitors may open without signing in. */
+export function showPublicPage(
+  pathname: string,
+  publicPaths: readonly string[],
+  sessionStatus: ShellSessionStatus,
+  hasUser: boolean,
+): boolean {
+  return (
+    publicPaths.includes(pathname.replace(/\/+$/, "")) &&
+    sessionStatus === "ready" &&
+    !hasUser
+  );
+}
+
 export function shouldRedirectExpiredSession(
   expired: boolean,
   sessionStatus: ShellSessionStatus,
