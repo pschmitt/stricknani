@@ -98,7 +98,7 @@
     <string name="editor_section_yarn_specs">Yarn specifications</string>
     <string name="editor_section_gallery">Gallery</string>
     <string name="editor_section_photos">Photos</string>
-    <string name="project_editor_tags_label">Tags (comma-separated)</string>
+    <string name="project_editor_tags_label">Tags</string>
     <string name="project_editor_link_label">Link</string>
     <string name="project_editor_delete_dialog_title">Delete project “%1$s”?</string>
     <string name="project_editor_delete_dialog_text">This can\'t be undone.</string>
@@ -444,4 +444,26 @@
     <string name="update_available_message">A newer version of Stricknani (%1$s) is ready to download.</string>
     <string name="update_available_download">Download</string>
     <string name="update_available_later">Later</string>
+    <!-- Editors (SNA-85) -->
+    <string name="common_undo">Undo</string>
+    <string name="common_done">Done</string>
+    <string name="editor_discard_title">Discard your changes?</string>
+    <string name="editor_discard_text">You’ve changed things that aren’t saved yet.</string>
+    <string name="editor_discard_keep">Keep editing</string>
+    <string name="editor_discard_confirm">Discard</string>
+    <string name="editor_add_photo_short">Add photo</string>
+    <string name="project_editor_step_removed">Step removed</string>
+    <string name="project_editor_tags_hint">Separate tags with commas</string>
+    <string name="project_editor_needles_hint">e.g. 4 mm circular, 80 cm</string>
+    <string name="project_editor_stitch_sample_hint">e.g. 22 stitches and 30 rows = 10 cm</string>
+    <string name="project_editor_unlink_yarn">Unlink yarn</string>
+    <string name="project_editor_no_yarns_yet">Add yarns to your stash to link them here.</string>
+    <string name="project_editor_link_yarns">Link yarns</string>
+    <string name="project_editor_change_yarns">Add or remove yarns</string>
+    <string name="project_editor_pick_yarns_title">Which yarns are you using?</string>
+    <string name="project_editor_pick_yarns_search">Search your stash</string>
+    <string name="project_editor_pick_yarns_none">No yarn matches that.</string>
+    <string name="project_editor_step_number">Step %1$d</string>
+    <string name="project_editor_step_actions">More for step %1$d</string>
+    <string name="yarn_editor_fiber_content_hint" formatted="false">e.g. 80% merino, 20% nylon</string>
 </resources>

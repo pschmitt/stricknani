@@ -8,4 +8,8 @@
         <item quantity="one">%1$d Änderung wartet auf Synchronisierung.</item>
         <item quantity="other">%1$d Änderungen warten auf Synchronisierung.</item>
     </plurals>
+    <plurals name="project_editor_pick_yarns_done">
+        <item quantity="one">Fertig - 1 Garn</item>
+        <item quantity="other">Fertig - %1$d Garne</item>
+    </plurals>
 </resources>

@@ -20,15 +20,15 @@ class ProjectEditorFocusTest {
         assertEquals(3, projectEditorItemIndex(ProjectEditorFocus.STITCH_SAMPLE, null))
         assertEquals(4, projectEditorItemIndex(ProjectEditorFocus.DESCRIPTION, null))
         assertEquals(4, projectEditorItemIndex(ProjectEditorFocus.NOTES, null))
-        assertEquals(5, projectEditorItemIndex(ProjectEditorFocus.LINKED_YARNS, null))
+        assertEquals(3, projectEditorItemIndex(ProjectEditorFocus.LINKED_YARNS, null))
         assertNull(projectEditorItemIndex("unknown", null))
     }
 
     @Test
-    fun `steps land on their own item, unknown steps on the steps label`() {
-        assertEquals(7, projectEditorItemIndex(ProjectEditorFocus.step(9), 0))
-        assertEquals(9, projectEditorItemIndex(ProjectEditorFocus.step(9), 2))
-        assertEquals(6, projectEditorItemIndex(ProjectEditorFocus.step(9), -1))
-        assertEquals(6, projectEditorItemIndex(ProjectEditorFocus.step(9), null))
+    fun `steps land on their own item, unknown steps on the steps header`() {
+        assertEquals(6, projectEditorItemIndex(ProjectEditorFocus.step(9), 0))
+        assertEquals(8, projectEditorItemIndex(ProjectEditorFocus.step(9), 2))
+        assertEquals(5, projectEditorItemIndex(ProjectEditorFocus.step(9), -1))
+        assertEquals(5, projectEditorItemIndex(ProjectEditorFocus.step(9), null))
     }
 }

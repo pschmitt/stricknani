@@ -9,8 +9,8 @@ class YarnEditorFocusTest {
     @Test
     fun `sections map to their fixed editor positions`() {
         assertEquals(0, yarnEditorItemIndex(YarnEditorFocus.DETAILS))
-        assertEquals(2, yarnEditorItemIndex(YarnEditorFocus.DESCRIPTION))
-        assertEquals(2, yarnEditorItemIndex(YarnEditorFocus.NOTES))
+        assertEquals(3, yarnEditorItemIndex(YarnEditorFocus.DESCRIPTION))
+        assertEquals(3, yarnEditorItemIndex(YarnEditorFocus.NOTES))
         assertNull(yarnEditorItemIndex("used_in"))
     }
 }

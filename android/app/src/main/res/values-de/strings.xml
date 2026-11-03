@@ -98,7 +98,7 @@
     <string name="editor_section_yarn_specs">Garn-Eigenschaften</string>
     <string name="editor_section_gallery">Galerie</string>
     <string name="editor_section_photos">Fotos</string>
-    <string name="project_editor_tags_label">Tags (kommagetrennt)</string>
+    <string name="project_editor_tags_label">Tags</string>
     <string name="project_editor_link_label">Link</string>
     <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>
     <string name="project_editor_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
@@ -444,4 +444,26 @@
     <string name="update_available_message">Eine neuere Version von Stricknani (%1$s) steht zum Download bereit.</string>
     <string name="update_available_download">Herunterladen</string>
     <string name="update_available_later">Später</string>
+    <!-- Editors (SNA-85) -->
+    <string name="common_undo">Rückgängig</string>
+    <string name="common_done">Fertig</string>
+    <string name="editor_discard_title">Änderungen verwerfen?</string>
+    <string name="editor_discard_text">Du hast etwas geändert, das noch nicht gespeichert ist.</string>
+    <string name="editor_discard_keep">Weiter bearbeiten</string>
+    <string name="editor_discard_confirm">Verwerfen</string>
+    <string name="editor_add_photo_short">Foto hinzufügen</string>
+    <string name="project_editor_step_removed">Schritt entfernt</string>
+    <string name="project_editor_tags_hint">Tags mit Kommas trennen</string>
+    <string name="project_editor_needles_hint">z. B. 4 mm Rundnadel, 80 cm</string>
+    <string name="project_editor_stitch_sample_hint">z. B. 22 Maschen und 30 Reihen = 10 cm</string>
+    <string name="project_editor_unlink_yarn">Garn entfernen</string>
+    <string name="project_editor_no_yarns_yet">Lege Garne in deinem Vorrat an, um sie hier zu verknüpfen.</string>
+    <string name="project_editor_link_yarns">Garne verknüpfen</string>
+    <string name="project_editor_change_yarns">Garne hinzufügen oder entfernen</string>
+    <string name="project_editor_pick_yarns_title">Welche Garne verwendest du?</string>
+    <string name="project_editor_pick_yarns_search">Durchsuche deinen Vorrat</string>
+    <string name="project_editor_pick_yarns_none">Kein Garn passt dazu.</string>
+    <string name="project_editor_step_number">Schritt %1$d</string>
+    <string name="project_editor_step_actions">Mehr zu Schritt %1$d</string>
+    <string name="yarn_editor_fiber_content_hint" formatted="false">z. B. 80 % Merino, 20 % Polyamid</string>
 </resources>

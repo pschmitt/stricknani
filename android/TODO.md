@@ -41,6 +41,32 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-85: More ergonomic project and yarn editors
+
+- [x] Save is a full-width button pinned to the bottom, in thumb reach and above the keyboard;
+      the tabs hide while editing so Back is the one way out.
+- [x] Leaving with unsaved changes asks "Discard your changes?" (Back and the arrow); removing a
+      step no longer happens silently - it shows "Step removed" with Undo.
+- [x] Linked yarns show only the chosen ones (thumbnail, name, brand and colourway, remove);
+      "Link yarns" opens a searchable bottom sheet with checkboxes, chosen first - instead of
+      one chip per yarn in the stash.
+- [x] Category and yarn weight are text fields with suggestions (existing categories; Craft Yarn
+      Council weights) instead of a chip per category.
+- [x] Photos are thumbnail strips with a remove badge and an "Add photo" tile, also for new
+      photos (previously only a file name) and per step.
+- [x] Stitch sample, other materials and step text grow with their content (the stitch sample
+      was single-line); example placeholders for needles, stitch sample and fibre content;
+      sentence capitalisation, Next on the keyboard, URL keyboard for links, g/m suffixes.
+- [x] Grouping: project details (name, category, tags, link), photos, attachments, materials
+      (yarns, needles, stitch sample, other materials), description and notes, then one card
+      per step with a number badge and a menu for move up/down and remove; a new step scrolls
+      into view with the cursor in its title. Yarn: label details (colourway and dye lot side by
+      side), photos, specifications, description/notes/link.
+- [x] Unit tests: `YarnPickerTest`, updated `ProjectEditorFocusTest`/`YarnEditorFocusTest`.
+
+Status: **done**, 2026-11-03 - remote `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed; checked on the user's phone.
+
 ## SNA-84: A cute, playful look for non-technical knitters
 
 - [x] Own "hand-dyed skein" palette (raspberry, lagoon teal, marigold on lilac; midnight plum in

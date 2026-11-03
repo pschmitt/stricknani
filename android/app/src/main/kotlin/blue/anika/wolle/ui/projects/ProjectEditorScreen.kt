@@ -1,13 +1,14 @@
 package blue.anika.wolle.ui.projects
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,54 +16,86 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
+import blue.anika.wolle.ui.common.DiscardChangesDialog
+import blue.anika.wolle.ui.common.EditorListRow
+import blue.anika.wolle.ui.common.EditorPhoto
+import blue.anika.wolle.ui.common.EditorPhotoStrip
+import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
-import blue.anika.wolle.ui.common.MdiIcons
-import coil3.compose.AsyncImage
+import blue.anika.wolle.ui.common.SuggestionTextField
+import java.io.File
+import kotlinx.coroutines.launch
 
+/**
+ * First LazyColumn position of the steps (after details, photos, attachments, materials,
+ * description and the steps header).
+ */
+private const val FIRST_STEP_ITEM = 6
+
+/**
+ * The project form, arranged so related things sit together and the common path needs no scrolling
+ * back up: details, photos, attachments, materials (linked yarns, needles, stitch sample),
+ * description and notes, then one card per step. Save is pinned to the bottom above the keyboard;
+ * leaving with unsaved changes asks first; removing a step can be undone.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectEditorScreen(
@@ -77,16 +110,29 @@ fun ProjectEditorScreen(
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
+    var showYarnPicker by rememberSaveable { mutableStateOf(false) }
     val isLoaded by viewModel.isLoaded.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val detailsFocus = remember { FocusRequester() }
     val stitchSampleFocus = remember { FocusRequester() }
     val descriptionFocus = remember { FocusRequester() }
     val notesFocus = remember { FocusRequester() }
     val stepFocus = remember { FocusRequester() }
+    val newStepFocus = remember { FocusRequester() }
+    var newStepIndex by remember { mutableStateOf<Int?>(null) }
     val focusedStepId = viewModel.initialFocus?.let(ProjectEditorFocus::stepId)
     var initialFocusApplied by rememberSaveable { mutableStateOf(false) }
+    val stepRemovedMessage = stringResource(R.string.project_editor_step_removed)
+    val undoLabel = stringResource(R.string.common_undo)
+
+    val leave = { if (isDirty && !saved) showDiscardDialog = true else onBack() }
+    BackHandler(enabled = isDirty && !saved && !deleted) { showDiscardDialog = true }
+
     // Opened from a long-press on one detail section or step: scroll there once the project is
     // loaded and put the cursor in its first field.
     LaunchedEffect(isLoaded) {
@@ -108,6 +154,15 @@ fun ProjectEditorScreen(
             }
         requester?.let { runCatching { it.requestFocus() } }
     }
+    // A freshly added step scrolls into view with the cursor in its title.
+    LaunchedEffect(newStepIndex, form.steps.size) {
+        val index = newStepIndex ?: return@LaunchedEffect
+        if (index > form.steps.lastIndex) return@LaunchedEffect
+        listState.animateScrollToItem(FIRST_STEP_ITEM + index)
+        withFrameNanos {}
+        runCatching { newStepFocus.requestFocus() }
+        newStepIndex = null
+    }
     var pickingStepIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     val titleImagePicker =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
@@ -127,6 +182,8 @@ fun ProjectEditorScreen(
     LaunchedEffect(saved) { if (saved) onSaved() }
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -138,7 +195,7 @@ fun ProjectEditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = leave) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back),
@@ -146,37 +203,27 @@ fun ProjectEditorScreen(
                     }
                 },
                 actions = {
-                    if (isSaving) {
-                        CircularProgressIndicator(modifier = Modifier.padding(12.dp))
-                    } else {
-                        if (viewModel.isEditing) {
-                            IconButton(onClick = { showDeleteDialog = true }) {
-                                DestructiveDeleteIcon(
-                                    contentDescription =
-                                        stringResource(R.string.project_editor_delete_description)
-                                )
-                            }
-                        }
-                        // A labelled Save reads as the primary action; a bare check icon
-                        // next to the red Delete icon did not.
-                        TextButton(onClick = viewModel::save) {
-                            Text(
-                                stringResource(R.string.common_save),
-                                style = MaterialTheme.typography.labelLarge,
+                    if (viewModel.isEditing) {
+                        IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
+                            DestructiveDeleteIcon(
+                                contentDescription =
+                                    stringResource(R.string.project_editor_delete_description)
                             )
                         }
                     }
                 },
             )
-        }
+        },
+        bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },
     ) { innerPadding ->
         LazyColumn(
             modifier =
                 Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-project-editor-form"),
             state = listState,
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            // 0: what it is - name, category, tags, link.
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_project_details),
@@ -194,29 +241,164 @@ fun ProjectEditorScreen(
                                     .focusRequester(detailsFocus)
                                     .testTag("e2e-project-editor-name"),
                             singleLine = true,
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Sentences,
+                                    imeAction = ImeAction.Next,
+                                ),
                         )
-                        OutlinedTextField(
+                        SuggestionTextField(
                             value = form.category,
                             onValueChange = { value ->
                                 viewModel.updateForm { it.copy(category = value) }
                             },
-                            label = { Text(stringResource(R.string.common_field_category)) },
+                            label = stringResource(R.string.common_field_category),
+                            suggestions = categories.map { it.name },
+                        )
+                        OutlinedTextField(
+                            value = form.tags,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(tags = value) }
+                            },
+                            label = { Text(stringResource(R.string.project_editor_tags_label)) },
+                            supportingText = {
+                                Text(stringResource(R.string.project_editor_tags_hint))
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         )
-                        if (categories.isNotEmpty()) {
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                categories.forEach { category ->
-                                    FilterChip(
-                                        selected = form.category == category.name,
-                                        onClick = {
-                                            viewModel.updateForm {
-                                                it.copy(category = category.name)
-                                            }
-                                        },
-                                        label = { Text(category.name) },
+                        OutlinedTextField(
+                            value = form.link,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(link = value) }
+                            },
+                            label = { Text(stringResource(R.string.project_editor_link_label)) },
+                            placeholder = { Text("https://") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    keyboardType = KeyboardType.Uri,
+                                    imeAction = ImeAction.Next,
+                                ),
+                        )
+                    }
+                }
+            }
+            // 1: photos as thumbnails, add tile last.
+            item {
+                EditorSectionCard(
+                    title = stringResource(R.string.editor_section_gallery),
+                    icon = Icons.Filled.PhotoLibrary,
+                ) {
+                    val removeLabel = stringResource(R.string.project_editor_remove_image)
+                    EditorPhotoStrip(
+                        photos =
+                            form.existingTitleImages.map { image ->
+                                EditorPhoto(
+                                    key = "existing-${image.id}",
+                                    model = viewModel.imageUrl(image.thumbnailUrl),
+                                    description = image.altText,
+                                    onRemove = { viewModel.removeExistingTitleImage(image.id) },
+                                )
+                            } +
+                                form.titleImages.mapIndexed { index, upload ->
+                                    EditorPhoto(
+                                        key = "new-${upload.path}",
+                                        model = File(upload.path),
+                                        description = upload.fileName,
+                                        onRemove = { viewModel.removeTitleImage(index) },
                                     )
-                                }
+                                },
+                        addLabel = stringResource(R.string.editor_add_photo_short),
+                        removeLabel = removeLabel,
+                        onAdd = { titleImagePicker.launch("image/*") },
+                    )
+                }
+            }
+            // 2: pattern PDFs and other files, close to the photos (SNA-81).
+            item {
+                EditorSectionCard(
+                    title = stringResource(R.string.project_editor_attachments_label),
+                    icon = Icons.Filled.AttachFile,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val removeLabel = stringResource(R.string.project_editor_remove_attachment)
+                        form.attachments.forEachIndexed { index, attachment ->
+                            EditorListRow(
+                                leading = {
+                                    Icon(
+                                        Icons.Filled.InsertDriveFile,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                },
+                                title = attachment.fileName,
+                                subtitle = null,
+                                removeLabel = removeLabel,
+                                onRemove = { viewModel.removeAttachment(index) },
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { attachmentPicker.launch("*/*") },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            Text(stringResource(R.string.project_editor_add_attachment))
+                        }
+                    }
+                }
+            }
+            // 3: what you knit it with.
+            item {
+                EditorSectionCard(
+                    title = stringResource(R.string.editor_section_materials),
+                    icon = blue.anika.wolle.ui.common.MdiIcons.Sheep,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            stringResource(R.string.project_detail_linked_yarns_title),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        val linked = yarns.filter { it.id in form.selectedYarnIds }
+                        val unlinkLabel = stringResource(R.string.project_editor_unlink_yarn)
+                        linked.forEach { yarn ->
+                            EditorListRow(
+                                leading = { YarnThumbnail(viewModel.previewUrl(yarn), size = 40) },
+                                title = yarn.name,
+                                subtitle = yarnSubtitle(yarn),
+                                removeLabel = unlinkLabel,
+                                onRemove = { viewModel.toggleYarnSelected(yarn.id) },
+                            )
+                        }
+                        if (yarns.isEmpty()) {
+                            Text(
+                                stringResource(R.string.project_editor_no_yarns_yet),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            OutlinedButton(
+                                onClick = { showYarnPicker = true },
+                                modifier =
+                                    Modifier.fillMaxWidth().testTag("project-editor-pick-yarns"),
+                            ) {
+                                Icon(
+                                    Icons.Filled.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 8.dp),
+                                )
+                                Text(
+                                    stringResource(
+                                        if (linked.isEmpty()) R.string.project_editor_link_yarns
+                                        else R.string.project_editor_change_yarns
+                                    )
+                                )
                             }
                         }
                         OutlinedTextField(
@@ -225,110 +407,28 @@ fun ProjectEditorScreen(
                                 viewModel.updateForm { it.copy(needles = value) }
                             },
                             label = { Text(stringResource(R.string.common_field_needles)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(stringResource(R.string.project_editor_needles_hint))
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         )
-                    }
-                }
-            }
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.editor_section_gallery),
-                    icon = Icons.Filled.PhotoLibrary,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { titleImagePicker.launch("image/*") }) {
-                            Text(stringResource(R.string.project_editor_add_title_image))
-                        }
-                        form.existingTitleImages.forEach { image ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(
-                                    model = viewModel.imageUrl(image.thumbnailUrl),
-                                    contentDescription = image.altText,
-                                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop,
-                                )
-                                Text(
-                                    image.altText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.weight(1f).padding(start = 8.dp),
-                                )
-                                IconButton(
-                                    onClick = { viewModel.removeExistingTitleImage(image.id) }
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Delete,
-                                        contentDescription =
-                                            stringResource(R.string.project_editor_remove_image),
-                                    )
-                                }
-                            }
-                        }
-                        form.titleImages.forEachIndexed { index, image ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    image.fileName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                IconButton(onClick = { viewModel.removeTitleImage(index) }) {
-                                    Icon(
-                                        Icons.Filled.Delete,
-                                        contentDescription =
-                                            stringResource(R.string.project_editor_remove_image),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // Attachments (pattern PDFs and the like) sit with the gallery, right after the
-            // details, instead of below every instruction step at the very end of the form.
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.project_editor_attachments_label),
-                    icon = Icons.Filled.AttachFile,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { attachmentPicker.launch("*/*") }) {
-                            Text(stringResource(R.string.project_editor_add_attachment))
-                        }
-                        form.attachments.forEachIndexed { index, attachment ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    attachment.fileName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                IconButton(onClick = { viewModel.removeAttachment(index) }) {
-                                    Icon(
-                                        Icons.Filled.Delete,
-                                        contentDescription =
-                                            stringResource(
-                                                R.string.project_editor_remove_attachment
-                                            ),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            item {
-                EditorSectionCard(
-                    title = stringResource(R.string.editor_section_materials),
-                    icon = Icons.Filled.Tune,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Stitch samples are often several lines (stitches, rows, needle,
+                        // washed or not), so the field grows instead of scrolling sideways.
                         OutlinedTextField(
                             value = form.stitchSample,
                             onValueChange = { value ->
                                 viewModel.updateForm { it.copy(stitchSample = value) }
                             },
                             label = { Text(stringResource(R.string.common_field_stitch_sample)) },
+                            placeholder = {
+                                Text(stringResource(R.string.project_editor_stitch_sample_hint))
+                            },
                             modifier = Modifier.fillMaxWidth().focusRequester(stitchSampleFocus),
-                            singleLine = true,
+                            minLines = 2,
+                            keyboardOptions =
+                                KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         )
                         OutlinedTextField(
                             value = form.otherMaterials,
@@ -337,28 +437,14 @@ fun ProjectEditorScreen(
                             },
                             label = { Text(stringResource(R.string.common_field_other_materials)) },
                             modifier = Modifier.fillMaxWidth(),
-                        )
-                        OutlinedTextField(
-                            value = form.tags,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(tags = value) }
-                            },
-                            label = { Text(stringResource(R.string.project_editor_tags_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                        )
-                        OutlinedTextField(
-                            value = form.link,
-                            onValueChange = { value ->
-                                viewModel.updateForm { it.copy(link = value) }
-                            },
-                            label = { Text(stringResource(R.string.project_editor_link_label)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
+                            minLines = 2,
+                            keyboardOptions =
+                                KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         )
                     }
                 }
             }
+            // 4: free text.
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_content),
@@ -377,7 +463,9 @@ fun ProjectEditorScreen(
                                 Modifier.fillMaxWidth()
                                     .focusRequester(descriptionFocus)
                                     .testTag("e2e-project-editor-description"),
-                            minLines = 3,
+                            minLines = 4,
+                            keyboardOptions =
+                                KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         )
                         OutlinedTextField(
                             value = form.notes,
@@ -387,175 +475,118 @@ fun ProjectEditorScreen(
                             label = { Text(stringResource(R.string.project_detail_notes_title)) },
                             modifier = Modifier.fillMaxWidth().focusRequester(notesFocus),
                             minLines = 3,
+                            keyboardOptions =
+                                KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                         )
                     }
                 }
             }
-            // Always one item (empty without yarns), so the positions below stay fixed for
-            // projectEditorItemIndex while the yarn list is still loading.
+            // 5: steps header.
             item {
-                if (yarns.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(R.string.project_detail_linked_yarns_title),
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            yarns.forEach { yarn ->
-                                FilterChip(
-                                    selected = yarn.id in form.selectedYarnIds,
-                                    onClick = { viewModel.toggleYarnSelected(yarn.id) },
-                                    leadingIcon = {
-                                        val previewUrl = viewModel.previewUrl(yarn)
-                                        if (previewUrl != null) {
-                                            AsyncImage(
-                                                model = previewUrl,
-                                                contentDescription = yarn.name,
-                                                contentScale = ContentScale.Crop,
-                                                modifier =
-                                                    Modifier.size(28.dp)
-                                                        .clip(RoundedCornerShape(8.dp)),
-                                            )
-                                        } else {
-                                            Icon(MdiIcons.Sheep, contentDescription = null)
-                                        }
-                                    },
-                                    label = { Text(yarn.name) },
-                                )
-                            }
-                        }
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.FormatListNumbered,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        stringResource(R.string.editor_section_steps),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
                 }
             }
-            item {
-                Text(
-                    stringResource(R.string.project_editor_steps_label),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-            }
-            itemsIndexed(
-                form.steps,
-                key = { index, step -> step.id ?: "new-step-$index" },
-            ) { index, step ->
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "${index + 1}",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(
-                            onClick = { viewModel.moveStep(index, -1) },
-                            enabled = index > 0,
-                        ) {
-                            Icon(
-                                Icons.Filled.ArrowUpward,
-                                contentDescription =
-                                    stringResource(R.string.project_editor_move_step_up),
-                            )
-                        }
-                        IconButton(
-                            onClick = { viewModel.moveStep(index, 1) },
-                            enabled = index < form.steps.lastIndex,
-                        ) {
-                            Icon(
-                                Icons.Filled.ArrowDownward,
-                                contentDescription =
-                                    stringResource(R.string.project_editor_move_step_down),
-                            )
-                        }
-                        IconButton(onClick = { viewModel.removeStep(index) }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription =
-                                    stringResource(R.string.project_editor_remove_step),
-                            )
-                        }
-                    }
-                    OutlinedTextField(
-                        value = step.title,
-                        onValueChange = { value ->
-                            viewModel.updateStep(index) { it.copy(title = value) }
-                        },
-                        label = { Text(stringResource(R.string.project_editor_step_title_label)) },
-                        modifier =
-                            Modifier.fillMaxWidth().let {
+            itemsIndexed(form.steps, key = { index, step -> step.id ?: "new-step-$index" }) {
+                index,
+                step ->
+                StepEditorCard(
+                    number = index + 1,
+                    step = step,
+                    canMoveUp = index > 0,
+                    canMoveDown = index < form.steps.lastIndex,
+                    titleModifier =
+                        Modifier.let {
                                 if (step.id != null && step.id == focusedStepId) {
                                     it.focusRequester(stepFocus)
-                                } else {
-                                    it
-                                }
+                                } else it
+                            }
+                            .let {
+                                if (index == newStepIndex) it.focusRequester(newStepFocus) else it
                             },
-                        singleLine = true,
-                    )
-                    Spacer(Modifier.size(8.dp))
-                    OutlinedTextField(
-                        value = step.description,
-                        onValueChange = { value ->
-                            viewModel.updateStep(index) { it.copy(description = value) }
-                        },
-                        label = {
-                            Text(stringResource(R.string.project_editor_step_description_label))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2,
-                    )
-                    TextButton(
-                        onClick = {
-                            pickingStepIndex = index
-                            stepImagePicker.launch("image/*")
-                        }
-                    ) {
-                        Text(stringResource(R.string.project_editor_add_step_image))
-                    }
-                    step.existingImages.forEach { image ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage(
-                                model = viewModel.imageUrl(image.thumbnailUrl),
-                                contentDescription = image.altText,
-                                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop,
-                            )
-                            Text(
-                                image.altText,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f).padding(start = 8.dp),
-                            )
-                            IconButton(
-                                onClick = { viewModel.removeExistingStepImage(index, image.id) }
-                            ) {
-                                Icon(
-                                    Icons.Filled.Delete,
-                                    contentDescription =
-                                        stringResource(R.string.project_editor_remove_image),
+                    imageUrl = viewModel::imageUrl,
+                    onTitleChange = { value ->
+                        viewModel.updateStep(index) { it.copy(title = value) }
+                    },
+                    onDescriptionChange = { value ->
+                        viewModel.updateStep(index) { it.copy(description = value) }
+                    },
+                    onMove = { direction -> viewModel.moveStep(index, direction) },
+                    onRemove = {
+                        viewModel.removeStep(index)
+                        scope.launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            val result =
+                                snackbarHostState.showSnackbar(
+                                    message = stepRemovedMessage,
+                                    actionLabel = undoLabel,
+                                    duration = SnackbarDuration.Long,
                                 )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.insertStep(index, step)
                             }
                         }
-                    }
-                    step.images.forEachIndexed { imageIndex, image ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                image.fileName,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f),
-                            )
-                            IconButton(onClick = { viewModel.removeStepImage(index, imageIndex) }) {
-                                Icon(
-                                    Icons.Filled.Delete,
-                                    contentDescription =
-                                        stringResource(R.string.project_editor_remove_image),
-                                )
-                            }
-                        }
-                    }
-                }
+                    },
+                    onAddImage = {
+                        pickingStepIndex = index
+                        stepImagePicker.launch("image/*")
+                    },
+                    onRemoveExistingImage = { id -> viewModel.removeExistingStepImage(index, id) },
+                    onRemoveNewImage = { imageIndex ->
+                        viewModel.removeStepImage(index, imageIndex)
+                    },
+                )
             }
             item {
-                TextButton(onClick = viewModel::addStep) {
+                FilledTonalButton(
+                    onClick = {
+                        viewModel.addStep()
+                        newStepIndex = form.steps.size
+                    },
+                    contentPadding = PaddingValues(vertical = 14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
                     Text(stringResource(R.string.project_editor_add_step))
                 }
             }
         }
+    }
+
+    if (showYarnPicker) {
+        YarnPickerSheet(
+            yarns = yarns,
+            selected = form.selectedYarnIds,
+            previewUrl = viewModel::previewUrl,
+            onToggle = viewModel::toggleYarnSelected,
+            onDismiss = { showYarnPicker = false },
+        )
+    }
+
+    if (showDiscardDialog) {
+        DiscardChangesDialog(
+            onKeepEditing = { showDiscardDialog = false },
+            onDiscard = {
+                showDiscardDialog = false
+                onBack()
+            },
+        )
     }
 
     if (showDeleteDialog) {
@@ -568,6 +599,152 @@ fun ProjectEditorScreen(
             },
             onDismiss = { showDeleteDialog = false },
         )
+    }
+}
+
+/** One instruction step: number badge, title, text, photos; reorder and remove in a menu. */
+@Composable
+private fun StepEditorCard(
+    number: Int,
+    step: ProjectEditorStep,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    titleModifier: Modifier,
+    imageUrl: (String) -> String?,
+    onTitleChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onMove: (Int) -> Unit,
+    onRemove: () -> Unit,
+    onAddImage: () -> Unit,
+    onRemoveExistingImage: (Int) -> Unit,
+    onRemoveNewImage: (Int) -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Card(
+        shape = MaterialTheme.shapes.large,
+        colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(34.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("$number", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                Text(
+                    stringResource(R.string.project_editor_step_number, number),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).padding(start = 12.dp),
+                )
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription =
+                                stringResource(R.string.project_editor_step_actions, number),
+                        )
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.project_editor_move_step_up)) },
+                            leadingIcon = { Icon(Icons.Filled.ArrowUpward, null) },
+                            enabled = canMoveUp,
+                            onClick = {
+                                menuOpen = false
+                                onMove(-1)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.project_editor_move_step_down)) },
+                            leadingIcon = { Icon(Icons.Filled.ArrowDownward, null) },
+                            enabled = canMoveDown,
+                            onClick = {
+                                menuOpen = false
+                                onMove(1)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.project_editor_remove_step),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onRemove()
+                            },
+                        )
+                    }
+                }
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(end = 12.dp, top = 6.dp),
+            ) {
+                OutlinedTextField(
+                    value = step.title,
+                    onValueChange = onTitleChange,
+                    label = { Text(stringResource(R.string.project_editor_step_title_label)) },
+                    modifier = titleModifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Next,
+                        ),
+                )
+                OutlinedTextField(
+                    value = step.description,
+                    onValueChange = onDescriptionChange,
+                    label = {
+                        Text(stringResource(R.string.project_editor_step_description_label))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    keyboardOptions =
+                        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                )
+                EditorPhotoStrip(
+                    photos =
+                        step.existingImages.map { image ->
+                            EditorPhoto(
+                                key = "existing-${image.id}",
+                                model = imageUrl(image.thumbnailUrl),
+                                description = image.altText,
+                                onRemove = { onRemoveExistingImage(image.id) },
+                            )
+                        } +
+                            step.images.mapIndexed { imageIndex, upload ->
+                                EditorPhoto(
+                                    key = "new-${upload.path}",
+                                    model = File(upload.path),
+                                    description = upload.fileName,
+                                    onRemove = { onRemoveNewImage(imageIndex) },
+                                )
+                            },
+                    addLabel = stringResource(R.string.editor_add_photo_short),
+                    removeLabel = stringResource(R.string.project_editor_remove_image),
+                    onAdd = onAddImage,
+                    thumbnailSize = 84,
+                )
+            }
+        }
     }
 }
 
@@ -588,18 +765,19 @@ internal object ProjectEditorFocus {
 
 /**
  * LazyColumn position of a focus target in [ProjectEditorScreen]. Keep in sync with the items
- * there: details 0, gallery 1, attachments 2, materials 3, content 4, linked yarns 5, steps label
- * 6, then one item per step. [stepIndex] is the step's index in the form, or null/-1 when the step
- * is unknown (the steps label is used then).
+ * there: details 0, photos 1, attachments 2, materials (linked yarns, needles, stitch sample) 3,
+ * description and notes 4, steps header 5, then one item per step from [FIRST_STEP_ITEM].
+ * [stepIndex] is the step's index in the form, or null/-1 when the step is unknown (the steps
+ * header is used then).
  */
 internal fun projectEditorItemIndex(focus: String, stepIndex: Int?): Int? =
     when {
         ProjectEditorFocus.stepId(focus) != null ->
-            if (stepIndex != null && stepIndex >= 0) 7 + stepIndex else 6
+            if (stepIndex != null && stepIndex >= 0) FIRST_STEP_ITEM + stepIndex
+            else FIRST_STEP_ITEM - 1
         focus == ProjectEditorFocus.DETAILS -> 0
         focus == ProjectEditorFocus.ATTACHMENTS -> 2
-        focus == ProjectEditorFocus.STITCH_SAMPLE -> 3
+        focus == ProjectEditorFocus.STITCH_SAMPLE || focus == ProjectEditorFocus.LINKED_YARNS -> 3
         focus == ProjectEditorFocus.DESCRIPTION || focus == ProjectEditorFocus.NOTES -> 4
-        focus == ProjectEditorFocus.LINKED_YARNS -> 5
         else -> null
     }

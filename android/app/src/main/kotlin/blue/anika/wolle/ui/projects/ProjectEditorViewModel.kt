@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -83,6 +84,14 @@ constructor(
 
     private val _form = MutableStateFlow(ProjectEditorFormState())
     val form: StateFlow<ProjectEditorFormState> = _form.asStateFlow()
+
+    /** The form as loaded (or empty for a new record); [isDirty] compares against it. */
+    private val _initialForm = MutableStateFlow(ProjectEditorFormState())
+
+    /** True once anything differs from what was loaded - leaving then asks before discarding. */
+    val isDirty: StateFlow<Boolean> =
+        combine(_form, _initialForm) { current, initial -> current != initial }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
@@ -151,6 +160,7 @@ constructor(
                                 },
                         )
                 }
+                _initialForm.value = _form.value
                 _isLoaded.value = true
             }
         }
@@ -190,6 +200,15 @@ constructor(
 
     fun removeStep(index: Int) {
         updateForm { it.copy(steps = it.steps.filterIndexed { position, _ -> position != index }) }
+    }
+
+    /** Puts a removed step back where it was (the Undo of [removeStep]). */
+    fun insertStep(index: Int, step: ProjectEditorStep) {
+        updateForm {
+            val steps = it.steps.toMutableList()
+            steps.add(index.coerceIn(0, steps.size), step)
+            it.copy(steps = steps)
+        }
     }
 
     fun moveStep(index: Int, direction: Int) {

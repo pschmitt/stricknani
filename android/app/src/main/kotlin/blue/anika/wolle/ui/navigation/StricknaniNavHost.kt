@@ -151,9 +151,14 @@ fun StricknaniNavHost(
         // content padding below - matches syncwich's `SyncwichNavHost` pattern.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (startDestination != Route.Onboarding) {
-                val backStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = backStackEntry?.destination
+            val backStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = backStackEntry?.destination
+            // Editors are a focused task with their own Save bar at the bottom: hide the tabs so
+            // there is one clear way out (Back, which asks before discarding) and no mis-taps.
+            val inEditor =
+                currentDestination?.hasRoute(Route.ProjectEditor::class) == true ||
+                    currentDestination?.hasRoute(Route.YarnEditor::class) == true
+            if (startDestination != Route.Onboarding && !inEditor) {
                 val visibleDestinations by
                     navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
 
