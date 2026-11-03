@@ -62,6 +62,7 @@ package, and development setup are in [`docs/install.md`](docs/install.md).
 | Web app | [`web/README.md`](web/README.md), [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) |
 | Android app | [`android/AGENTS.md`](android/AGENTS.md) |
 | All documents | [`docs/README.md`](docs/README.md) |
+| Releases, deploys, translations, vendoring | [`docs/maintaining.md`](docs/maintaining.md) |
 | Contributor instructions | [`AGENTS.md`](AGENTS.md) |
 | Work queue | [`TODO.md`](TODO.md) |
 
