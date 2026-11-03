@@ -80,6 +80,10 @@
     <string name="home_greeting_night_4">Just one more row?</string>
     <string name="home_greeting_night_5">Shh, everyone is asleep!</string>
     <string name="home_greeting_question">What are we knitting today?</string>
+    <string name="home_greeting_checking">Checking for news…</string>
+    <string name="home_greeting_caught_up">All caught up!</string>
+    <string name="home_greeting_updated">Fresh updates!</string>
+    <string name="home_scroll_to_top">Scroll to top</string>
     <string name="home_continue_title">Continue knitting</string>
     <string name="home_stash_title">Your yarn stash</string>
     <string name="home_stash_subtitle">Browse, add and find your yarns</string>
@@ -488,20 +492,9 @@
     <string name="gauge_calculator_swatch_size_reset">Back to 10 × 10 cm</string>
 
     <!-- Home sync status card -->
-    <string name="sync_status_syncing">Catching up…</string>
-    <string name="sync_status_issue">Something’s stuck</string>
-    <string name="sync_status_changes_pending">Saved on this phone</string>
-    <string name="sync_status_synced">All caught up</string>
-    <string name="sync_status_pulling_latest">Fetching your newest projects and yarns.</string>
     <string name="sync_status_refresh_failed">Couldn’t check for news</string>
     <string name="sync_status_offline">You’re offline</string>
     <string name="sync_status_showing_saved">Here’s what’s on this phone.</string>
-    <string name="sync_status_not_synced_yet">Not caught up yet</string>
-    <string name="sync_status_last_synced_just_now">Checked just now</string>
-    <string name="sync_status_last_synced_minutes">Checked %1$d min ago</string>
-    <string name="sync_status_last_synced_hours">Checked %1$d h ago</string>
-    <string name="sync_status_last_synced_days">Checked %1$d d ago</string>
-    <string name="sync_status_last_synced_date">Last checked on %1$s</string>
 
     <!-- Foreground refresh feedback -->
     <string name="refresh_success">Fresh as a daisy</string>
@@ -880,8 +873,6 @@
     <string name="signed_out_button">Sign in again</string>
     <string name="signed_out_banner">Signed out - sync is paused</string>
     <string name="signed_out_banner_action">Sign in</string>
-    <string name="sync_status_paused">Sync is paused</string>
-    <string name="sync_status_paused_detail">Sign in again to carry on.</string>
     <string name="sign_in_again_title">Sign in again</string>
     <string name="sign_in_again_text">Sign in to %1$s to carry on syncing. Everything on this phone stays where it is.</string>
     <string name="sign_in_again_button">Sign in</string>

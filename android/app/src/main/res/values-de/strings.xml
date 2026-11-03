@@ -80,6 +80,10 @@
     <string name="home_greeting_night_4">Eine Reihe geht noch?</string>
     <string name="home_greeting_night_5">Psst, alle schlafen!</string>
     <string name="home_greeting_question">Was stricken wir heute?</string>
+    <string name="home_greeting_checking">Schaue nach Neuigkeiten…</string>
+    <string name="home_greeting_caught_up">Alles aktuell!</string>
+    <string name="home_greeting_updated">Neuigkeiten!</string>
+    <string name="home_scroll_to_top">Nach oben</string>
     <string name="home_continue_title">Weiterstricken</string>
     <string name="home_stash_title">Dein Garnvorrat</string>
     <string name="home_stash_subtitle">Garne ansehen, hinzufügen und finden</string>
@@ -488,20 +492,9 @@
     <string name="gauge_calculator_swatch_size_reset">Zurück zu 10 × 10 cm</string>
 
     <!-- Home sync status card -->
-    <string name="sync_status_syncing">Wird aktualisiert…</string>
-    <string name="sync_status_issue">Etwas hängt fest</string>
-    <string name="sync_status_changes_pending">Auf diesem Gerät gespeichert</string>
-    <string name="sync_status_synced">Alles aktuell</string>
-    <string name="sync_status_pulling_latest">Deine neuesten Projekte und Garne werden geholt.</string>
     <string name="sync_status_refresh_failed">Konnte nicht nach Neuem schauen</string>
     <string name="sync_status_offline">Du bist offline</string>
     <string name="sync_status_showing_saved">Hier ist, was auf diesem Gerät liegt.</string>
-    <string name="sync_status_not_synced_yet">Noch nicht aktualisiert</string>
-    <string name="sync_status_last_synced_just_now">Gerade eben nachgeschaut</string>
-    <string name="sync_status_last_synced_minutes">Vor %1$d Min. nachgeschaut</string>
-    <string name="sync_status_last_synced_hours">Vor %1$d Std. nachgeschaut</string>
-    <string name="sync_status_last_synced_days">Vor %1$d T. nachgeschaut</string>
-    <string name="sync_status_last_synced_date">Zuletzt nachgeschaut am %1$s</string>
 
     <!-- Foreground refresh feedback -->
     <string name="refresh_success">Frisch aktualisiert</string>
@@ -880,8 +873,6 @@
     <string name="signed_out_button">Erneut anmelden</string>
     <string name="signed_out_banner">Abgemeldet - Sync pausiert</string>
     <string name="signed_out_banner_action">Anmelden</string>
-    <string name="sync_status_paused">Sync pausiert</string>
-    <string name="sync_status_paused_detail">Melde dich erneut an, um weiterzumachen.</string>
     <string name="sign_in_again_title">Erneut anmelden</string>
     <string name="sign_in_again_text">Melde dich bei %1$s an, um weiter zu synchronisieren. Alles auf diesem Gerät bleibt, wie es ist.</string>
     <string name="sign_in_again_button">Anmelden</string>

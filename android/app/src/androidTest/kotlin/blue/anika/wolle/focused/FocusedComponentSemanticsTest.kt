@@ -4,8 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -19,7 +17,8 @@ import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_ICON_TAG
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.StickyNoteCard
-import blue.anika.wolle.ui.home.HomeSyncStatusCard
+import blue.anika.wolle.ui.home.SyncProblem
+import blue.anika.wolle.ui.home.SyncProblemCard
 import blue.anika.wolle.ui.theme.StricknaniTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,119 +33,27 @@ class FocusedComponentSemanticsTest {
     @get:Rule val composeRule = createComposeRule()
 
     @Test
-    fun syncStatusExposesLoadingFeedbackAndStaysNonInteractiveWithNothingToActOn() {
+    fun syncProblemCardOffersRetryAndSaysWhatHappened() {
+        var retried = false
         composeRule.setContent {
             StricknaniTheme {
-                HomeSyncStatusCard(
-                    isRefreshing = true,
-                    lastSyncedMillis = null,
-                    pendingChangesCount = 0,
-                    failedChangesCount = 0,
-                    onOpenSyncIssues = {},
-                    onRetrySync = {},
-                )
+                SyncProblemCard(problem = SyncProblem.Offline, onRetry = { retried = true })
             }
         }
 
-        composeRule.onNodeWithText("Catching up…").assertIsDisplayed()
-        composeRule.onNodeWithText("Pulling the latest projects and yarns.").assertIsDisplayed()
-        // SNA-60: nothing to act on while a refresh is already in flight - the card stays a plain
-        // status display in that state.
-        composeRule.onNodeWithTag("home-sync-status-card").assertHasNoClickAction()
+        composeRule.onNodeWithText("You’re offline").assertIsDisplayed()
+        composeRule.onNodeWithText("Here’s what’s on this phone.").assertIsDisplayed()
+        composeRule.onNodeWithTag("home-sync-retry").performClick()
+        assertTrue(retried)
     }
 
     @Test
-    fun syncStatusExposesErrorFeedbackAndAClickAction() {
-        // SNA-60 regression: the card used to be a permanent, unresolvable-looking dead end
-        // (uiautomator confirmed clickable="false" on both the card and its text). It must now
-        // expose a real onClick/semantics action for a genuine sync failure.
+    fun syncProblemCardNamesAFailedRefresh() {
         composeRule.setContent {
-            StricknaniTheme {
-                HomeSyncStatusCard(
-                    isRefreshing = false,
-                    lastSyncedMillis = null,
-                    pendingChangesCount = 1,
-                    failedChangesCount = 1,
-                    onOpenSyncIssues = {},
-                    onRetrySync = {},
-                )
-            }
+            StricknaniTheme { SyncProblemCard(problem = SyncProblem.Failed, onRetry = {}) }
         }
 
-        composeRule.onNodeWithText("Something’s stuck").assertIsDisplayed()
-        composeRule.onNodeWithText("1 queued change needs attention.").assertIsDisplayed()
-        composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
-    }
-
-    @Test
-    fun syncStatusCountsConflictsLikeTheSyncIssueBanner() {
-        // A conflicted change is not pending any more (observeCount skips it) but still needs
-        // attention (observeFailed keeps it). The card used to print the pending count here:
-        // "0 changes couldn't reach the server yet." right above the banner's "1 queued change".
-        composeRule.setContent {
-            StricknaniTheme {
-                HomeSyncStatusCard(
-                    isRefreshing = false,
-                    lastSyncedMillis = null,
-                    pendingChangesCount = 0,
-                    failedChangesCount = 1,
-                    onOpenSyncIssues = {},
-                    onRetrySync = {},
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Something’s stuck").assertIsDisplayed()
-        composeRule.onNodeWithText("1 queued change needs attention.").assertIsDisplayed()
-        composeRule.onNodeWithTag("home-sync-status-card").assertHasClickAction()
-    }
-
-    @Test
-    fun syncStatusCardTapOpensSyncIssuesWhenThereIsAnActualFailure() {
-        // SNA-60: tapping a genuine sync-failure state must route to the same detail screen
-        // SyncIssueBanner's "View details" does (per-change retry/discard) - not a bare retry,
-        // since a plain re-sync can't fix a failure that already needs the user's attention.
-        var openedSyncIssues = false
-        var retriedSync = false
-        composeRule.setContent {
-            StricknaniTheme {
-                HomeSyncStatusCard(
-                    isRefreshing = false,
-                    lastSyncedMillis = null,
-                    pendingChangesCount = 1,
-                    failedChangesCount = 1,
-                    onOpenSyncIssues = { openedSyncIssues = true },
-                    onRetrySync = { retriedSync = true },
-                )
-            }
-        }
-        composeRule.onNodeWithTag("home-sync-status-card").performClick()
-        assertTrue(openedSyncIssues)
-        assertFalse(retriedSync)
-    }
-
-    @Test
-    fun syncStatusCardTapRetriesSyncWhenChangesAreOnlyQueuedNotFailedYet() {
-        // SNA-60: changes still queued but not yet marked failed get an immediate retry instead -
-        // there's nothing to "view details" about yet, just a queue worth flushing now rather than
-        // waiting for the next periodic run.
-        var openedSyncIssues = false
-        var retriedSync = false
-        composeRule.setContent {
-            StricknaniTheme {
-                HomeSyncStatusCard(
-                    isRefreshing = false,
-                    lastSyncedMillis = null,
-                    pendingChangesCount = 1,
-                    failedChangesCount = 0,
-                    onOpenSyncIssues = { openedSyncIssues = true },
-                    onRetrySync = { retriedSync = true },
-                )
-            }
-        }
-        composeRule.onNodeWithTag("home-sync-status-card").performClick()
-        assertTrue(retriedSync)
-        assertFalse(openedSyncIssues)
+        composeRule.onNodeWithText("Couldn’t check for news").assertIsDisplayed()
     }
 
     @Test

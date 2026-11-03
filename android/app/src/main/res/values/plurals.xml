@@ -4,12 +4,12 @@
         <item quantity="one">1 change isn’t in your account yet.</item>
         <item quantity="other">%1$d changes aren’t in your account yet.</item>
     </plurals>
-    <plurals name="sync_status_changes_waiting">
-        <item quantity="one">%1$d change waiting to sync.</item>
-        <item quantity="other">%1$d changes waiting to sync.</item>
-    </plurals>
     <plurals name="project_editor_pick_yarns_done">
         <item quantity="one">Done - 1 yarn</item>
         <item quantity="other">Done - %1$d yarns</item>
+    </plurals>
+    <plurals name="home_greeting_updates">
+        <item quantity="one">%d update</item>
+        <item quantity="other">%d updates</item>
     </plurals>
 </resources>

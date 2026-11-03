@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.data.db.dao.PendingMutationDao
-import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
@@ -17,7 +16,6 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.UpdateChecker
-import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
@@ -49,7 +47,6 @@ constructor(
     private val yarnRepository: YarnRepository,
     private val categoryRepository: CategoryRepository,
     private val mediaUrlResolver: MediaUrlResolver,
-    syncStateDao: SyncStateDao,
     pendingMutationDao: PendingMutationDao,
     private val syncScheduler: SyncScheduler,
     private val updateChecker: UpdateChecker,
@@ -76,13 +73,6 @@ constructor(
         refreshState
             .map { it.isUserInitiatedRefresh() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
-
-    /** Most recent of the per-entity-type sync cursors, or null if nothing has synced yet. */
-    val lastSyncedMillis: StateFlow<Long?> =
-        syncStateDao
-            .observeAll()
-            .map { states -> states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     /** Local edits (SNA-8) not yet replayed to the server. */
     val pendingChangesCount: StateFlow<Int> =

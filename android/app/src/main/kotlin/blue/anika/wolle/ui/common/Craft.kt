@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.mascot.MascotCanvas
+import blue.anika.wolle.ui.common.mascot.MascotCue
 
 /**
  * A dashed "running stitch" just inside the edge, like a patch sewn onto fabric - the app's
@@ -82,6 +83,10 @@ fun Mascot(
     reactive: Boolean = true,
     exposeSemantics: Boolean = true,
     onReact: (() -> Unit)? = null,
+    // Loops a gentle "working" roll while true.
+    busy: Boolean = false,
+    // A one-off emotion; each new instance plays once.
+    cue: MascotCue? = null,
 ) {
     val reduced = animationsDisabled()
     val transition = rememberInfiniteTransition(label = "mascot")
@@ -101,6 +106,8 @@ fun Mascot(
         onReact = onReact,
         reduced = reduced,
         sway = { sway },
+        busy = busy,
+        cue = cue,
     )
 }
 

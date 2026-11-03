@@ -2180,3 +2180,10 @@ Execution-oriented backlog for Stricknani.
 - **Design**: Modern, fast and restrained. Opaque surfaces, readable content and accessible controls; subtle motion only when it explains a state change. No glass/transparency effects or ornamental animation.
 - **Execution**: Implementation started with scoped Luna foundation, API/auth, and packaging work. Delegate scoped implementation to GPT-6 Luna agents; coordinator integrates and reviews shared contracts, security, accessibility, performance and deployment. Start with T120.1, then follow the waves in the brief.
 - **Acceptance**: Complete workflows on phone and desktop, English/German coverage, meaningful browser/API tests, explicit performance and accessibility checks, reproducible static assets in the Rust package/container, and rollout to the isolated Rust preview. Production cutover remains separate.
+
+## T-121: Web Home reports sync through the greeting like Android
+
+- **Priority**: P3
+- **Status**: not started
+- **Category**: feat
+- **Scope**: Android Home dropped its sync status card: the greeting subtitle shows "Checking for news…" while refreshing and "All caught up!" for about 3 seconds afterwards, the mascot plays a busy loop and a happy or sad reaction, and only a failed refresh adds an error card with Retry. Web Home has no sync card, so mirror the subtitle and mascot states there (parity rule in AGENTS.md).

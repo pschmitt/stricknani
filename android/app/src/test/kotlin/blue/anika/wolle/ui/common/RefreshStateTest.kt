@@ -1,10 +1,8 @@
 package blue.anika.wolle.ui.common
 
 import blue.anika.wolle.R
-import blue.anika.wolle.ui.home.SyncBadgeMood
-import blue.anika.wolle.ui.home.SyncCardProblem
-import blue.anika.wolle.ui.home.syncBadgeMood
-import blue.anika.wolle.ui.home.syncCardProblem
+import blue.anika.wolle.ui.home.SyncProblem
+import blue.anika.wolle.ui.home.problemAfter
 import java.io.IOException
 import java.net.UnknownHostException
 import kotlinx.coroutines.CompletableDeferred
@@ -140,7 +138,7 @@ class RefreshStateTest {
 
         assertEquals(null, update)
         assertEquals(RefreshState.Finished(changed = true), controller.state.value)
-        assertEquals(null, syncCardProblem(controller.state.value))
+        assertEquals(null, problemAfter(null, controller.state.value, false))
     }
 
     @Test
@@ -150,23 +148,18 @@ class RefreshStateTest {
         assertTrue(controller.refresh { throw IllegalStateException("401 session_expired") })
         advanceUntilIdle()
 
-        assertEquals(SyncCardProblem.Failed, syncCardProblem(controller.state.value))
-        assertEquals(
-            SyncBadgeMood.Failed,
-            syncBadgeMood(false, 0, false, syncCardProblem(controller.state.value)),
-        )
+        assertEquals(SyncProblem.Failed, problemAfter(null, controller.state.value, false))
     }
 
     @Test
     fun `offline is a card problem of its own and success or idle is none`() = runTest {
-        assertEquals(SyncCardProblem.Offline, syncCardProblem(RefreshState.Offline))
-        assertEquals(null, syncCardProblem(RefreshState.Idle))
-        assertEquals(null, syncCardProblem(RefreshState.Finished(changed = false)))
+        assertEquals(SyncProblem.Offline, problemAfter(null, RefreshState.Offline, false))
+        assertEquals(null, problemAfter(null, RefreshState.Idle, false))
+        assertEquals(null, problemAfter(null, RefreshState.Finished(changed = false), false))
         assertEquals(
             null,
-            syncCardProblem(RefreshState.Refreshing(RefreshTrigger.UserInitiated)),
+            problemAfter(null, RefreshState.Refreshing(RefreshTrigger.UserInitiated), false),
         )
-        assertEquals(SyncBadgeMood.Done, syncBadgeMood(false, 0, false, null))
     }
 
     @Test

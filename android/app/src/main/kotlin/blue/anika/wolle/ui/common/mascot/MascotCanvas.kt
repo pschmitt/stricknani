@@ -1,6 +1,10 @@
 package blue.anika.wolle.ui.common.mascot
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -21,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -43,6 +48,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -235,6 +241,20 @@ private class MascotAnim(private val rand: () -> Float) {
     }
 }
 
+/** A one-off emotion an outside event asks the mascot to play. */
+enum class MascotCueKind {
+    /** A happy hop with hearts: something went well. */
+    Happy,
+    /** A small sad droop: something went wrong. */
+    Sad,
+}
+
+/**
+ * Plays [kind] once. A plain class on purpose: every new instance is a new cue, even for the same
+ * kind, so a second success plays again.
+ */
+class MascotCue(val kind: MascotCueKind)
+
 /**
  * The yarn-ball mascot drawn as a Canvas in the launcher's 108-unit geometry, so the face can
  * animate. [size] is the box; the ball is about 60% of it. [bob] adds a slow sway. With [reactive]
@@ -253,6 +273,8 @@ internal fun MascotCanvas(
     onReact: (() -> Unit)?,
     reduced: Boolean,
     sway: () -> Float,
+    busy: Boolean = false,
+    cue: MascotCue? = null,
 ) {
     val rand = remember { Random.Default.let { r -> { r.nextFloat() } } }
     val anim = remember { MascotAnim(rand) }
@@ -290,6 +312,49 @@ internal fun MascotCanvas(
                     anim.startFidget(pickFidget(rand))
                     wake.trySend(Unit)
                 }
+            }
+        }
+    }
+
+    // Outside-driven moods: a looping "working" rock while busy, and one-off hop / droop cues.
+    // Reduced motion plays none of them.
+    val busyPhase = remember { Animatable(0f) }
+    val hop = remember { Animatable(0f) }
+    val droop = remember { Animatable(0f) }
+    LaunchedEffect(busy, reduced) {
+        if (!busy || reduced) {
+            if (busyPhase.value != 0f) {
+                busyPhase.animateTo(busyPhase.value.roundToInt().toFloat(), tween(200))
+                busyPhase.snapTo(0f)
+            }
+            return@LaunchedEffect
+        }
+        while (isActive) {
+            busyPhase.snapTo(0f)
+            busyPhase.animateTo(1f, tween(BUSY_LOOP_MILLIS, easing = LinearEasing))
+        }
+    }
+    LaunchedEffect(cue, reduced) {
+        val current = cue ?: return@LaunchedEffect
+        if (reduced) return@LaunchedEffect
+        when (current.kind) {
+            MascotCueKind.Happy -> {
+                anim.start(MascotReaction.Hearts)
+                wake.trySend(Unit)
+                hop.snapTo(0f)
+                hop.animateTo(1f, tween(170, easing = FastOutSlowInEasing))
+                hop.animateTo(
+                    0f,
+                    spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium,
+                    ),
+                )
+            }
+            MascotCueKind.Sad -> {
+                droop.animateTo(1f, tween(380, easing = FastOutSlowInEasing))
+                delay(650)
+                droop.animateTo(0f, tween(450))
             }
         }
     }
@@ -389,17 +454,36 @@ internal fun MascotCanvas(
             modifier
                 .size(size)
                 .graphicsLayer {
+                    var rotate = 0f
+                    var lift = 0f
                     if (!still) {
                         val s = sway()
-                        rotationZ = s
-                        translationY = s * 0.6f
+                        rotate = s
+                        lift = s * 0.6f
                     }
+                    // Busy: a gentle roll to and fro with a little bob.
+                    val phase = busyPhase.value
+                    if (phase != 0f) {
+                        val wave = sin(2f * PI.toFloat() * phase)
+                        rotate += 12f * wave
+                        lift -= 3.dp.toPx() * (1f - cos(4f * PI.toFloat() * phase)) / 2f
+                    }
+                    val sad = droop.value
+                    rotate -= 7f * sad
+                    lift += 4.dp.toPx() * sad - 14.dp.toPx() * hop.value
+                    rotationZ = rotate
+                    translationY = lift
+                    transformOrigin = TransformOrigin(0.5f, 0.85f)
+                    scaleY = 1f - 0.1f * sad
+                    scaleX = 1f + 0.05f * sad
                 }
                 .then(interaction)
     ) {
         drawMascot(anim, density.density, size.toPx() / 108f, 1f - 0.4f * flash.value)
     }
 }
+
+private const val BUSY_LOOP_MILLIS = 1100
 
 private fun HapticFeedback.tick() = performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
