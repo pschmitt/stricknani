@@ -320,6 +320,7 @@
   .signup-route-main {
     display: flex;
     width: 100%;
+    min-width: 0;
     justify-content: center;
   }
 

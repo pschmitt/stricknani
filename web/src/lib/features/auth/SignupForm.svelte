@@ -382,6 +382,16 @@
     margin-top: 0.9rem;
   }
 
+  .signup-footer > a {
+    flex-shrink: 1;
+    white-space: normal;
+  }
+
+  .signup-footer > a :global(.action-label__text) {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
   .signup-spinner {
     width: 1rem;
     aspect-ratio: 1;
