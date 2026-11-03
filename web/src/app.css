@@ -109,8 +109,18 @@
   background: var(--canvas);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Dark palette: chosen by the OS unless the user picked Light, or forced by picking Dark.
+   The two blocks must stay identical. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --canvas: #1a1421;
     --surface: #271f30;
     --surface-raised: #32293b;
@@ -163,6 +173,60 @@
     --focus: #ffc768;
     --shadow: 0 16px 42px rgb(0 0 0 / 32%);
   }
+}
+
+:root[data-theme="dark"] {
+  --canvas: #1a1421;
+  --surface: #271f30;
+  --surface-raised: #32293b;
+  --ink: #ede4f4;
+  --ink-muted: #c9bdd3;
+  --line: #473d51;
+  --control-border: #94889e;
+  --accent: #ffb0cb;
+  --accent-strong: #ffb0cb;
+  --on-accent: #3f0020;
+  --accent-wash: #44253d;
+  --primary-container: #7d1d49;
+  --on-primary-container: #ffd9e5;
+  --lagoon-container: #004f54;
+  --on-lagoon-container: #c6efee;
+  --marigold-container: #654300;
+  --on-marigold-container: #ffe2ae;
+  --stitch: rgb(255 217 229 / 40%);
+  --sticky-paper: #4a4430;
+  --sticky-fold: #38331f;
+  --sticky-ink: #f4edda;
+  --sticky-link: #ffb0cb;
+  --sticky-tape: #ffb0cb;
+  --sticky-shadow: 0 0 0;
+  --tone-home: #ffb0cb;
+  --tone-home-wash: #7d1d49;
+  --tone-projects: #ffc768;
+  --tone-projects-wash: #654300;
+  --tone-yarns: #82d6d7;
+  --tone-yarns-wash: #004f54;
+  --tone-create: #ffb0cb;
+  --tone-create-wash: #7d1d49;
+  --tone-categories: #82d6d7;
+  --tone-categories-wash: #004f54;
+  --tone-gauge: #ffc768;
+  --tone-gauge-wash: #654300;
+  --tone-admin: #ffb4ab;
+  --tone-admin-wash: #8c1d18;
+  --tone-audit: #dcc6ff;
+  --tone-audit-wash: #4d2f78;
+  --tone-more: #c9bdd3;
+  --tone-more-wash: #3d3446;
+  --danger: #ffb4ab;
+  --on-danger: #410e0b;
+  --info: #a8c8ff;
+  --success: #9be2ae;
+  --success-surface: #173b2b;
+  --warning: #ffc768;
+  --warning-surface: #4a3410;
+  --focus: #ffc768;
+  --shadow: 0 16px 42px rgb(0 0 0 / 32%);
 }
 
 h1,
@@ -344,9 +408,13 @@ button {
 }
 
 @media (prefers-color-scheme: dark) {
-  .ui-button--primary:hover:not(:disabled) {
+  :root:not([data-theme="light"]) .ui-button--primary:hover:not(:disabled) {
     background: color-mix(in srgb, var(--accent) 85%, white);
   }
+}
+
+:root[data-theme="dark"] .ui-button--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, white);
 }
 
 .ui-button[aria-pressed="true"] {

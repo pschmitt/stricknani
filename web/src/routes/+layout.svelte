@@ -20,6 +20,7 @@
   import AccountMenu from "#lib/components/AccountMenu.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
+  import { initTheme } from "#lib/theme.svelte.ts";
   import "../app.css";
 
   let { children }: { children: Snippet } = $props();
@@ -77,6 +78,7 @@
   onMount(() => {
     void loadCatalog();
     void refreshSession();
+    return initTheme();
   });
 
   $effect(() => {

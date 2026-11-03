@@ -53,7 +53,6 @@
 
 <svelte:head>
   <title>{t("Sign in", locale)} · Stricknani</title>
-  <meta name="theme-color" content="#f7f3fc" />
 </svelte:head>
 
 <main id="main-content" class="auth-page">

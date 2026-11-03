@@ -7,6 +7,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import ThemeSwitcher from "#lib/components/ThemeSwitcher.svelte";
   import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -638,6 +639,11 @@
     <LocaleSwitcher />
   </section>
 
+  <section class="account-appearance" aria-labelledby="appearance-title">
+    <h2 id="appearance-title">{t("Appearance", locale)}</h2>
+    <ThemeSwitcher {locale} showLabels />
+  </section>
+
   {#if pageStatus}
     <p class="page-status" role="status" aria-live="polite">{pageStatus}</p>
   {/if}
@@ -1174,6 +1180,20 @@
     min-height: 44px;
     align-items: center;
     margin-bottom: 0.5rem;
+  }
+
+  .account-appearance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .account-appearance h2 {
+    margin: 0;
+    font-size: 1rem;
   }
 
   .file-picker {

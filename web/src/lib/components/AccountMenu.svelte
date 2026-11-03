@@ -11,6 +11,7 @@
   } from "#lib/account-menu.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import ThemeSwitcher from "#lib/components/ThemeSwitcher.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import { androidAction } from "#lib/app-links.ts";
@@ -261,9 +262,15 @@
         </div>
       </div>
 
-      <div class="account-menu-language">
-        <span class="account-menu-label">{t("Language", locale)}</span>
-        <LocaleSwitcher />
+      <div class="account-menu-prefs">
+        <div class="account-menu-pref">
+          <span class="account-menu-label">{t("Language", locale)}</span>
+          <LocaleSwitcher />
+        </div>
+        <div class="account-menu-pref">
+          <span class="account-menu-label">{t("Theme", locale)}</span>
+          <ThemeSwitcher {locale} />
+        </div>
       </div>
 
       <div
@@ -469,13 +476,18 @@
     text-transform: uppercase;
   }
 
-  .account-menu-language {
+  .account-menu-prefs {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.5rem 0.25rem;
+    border-block: 1px solid var(--line);
+  }
+
+  .account-menu-pref {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.5rem 0.25rem;
-    border-block: 1px solid var(--line);
   }
 
   .account-menu-label {

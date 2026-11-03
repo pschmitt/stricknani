@@ -8,6 +8,13 @@
     />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#2f75b5" />
+    <script>
+      try {
+        var theme = localStorage.getItem("stricknani.theme");
+        if (theme === "light" || theme === "dark")
+          document.documentElement.setAttribute("data-theme", theme);
+      } catch (error) {}
+    </script>
     <title>__PWA_MSG_TITLE_EN__ · Stricknani</title>
     <link rel="icon" href="/app/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/app/offline.css" />

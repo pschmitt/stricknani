@@ -129,7 +129,7 @@ h2 {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --canvas: #111b28;
     --surface: #1a2736;
     --ink: #e6edf3;
@@ -140,6 +140,23 @@ h2 {
     --focus: #a9d5fa;
     --on-accent: #10243a;
   }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #111b28;
+  --surface: #1a2736;
+  --ink: #e6edf3;
+  --ink-muted: #b2c0cf;
+  --line: #3b4d60;
+  --accent: #8dc5ef;
+  --accent-strong: #b8daf3;
+  --focus: #a9d5fa;
+  --on-accent: #10243a;
 }
 
 @media (prefers-reduced-motion: reduce) {
