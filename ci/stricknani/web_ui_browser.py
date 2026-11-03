@@ -3792,7 +3792,7 @@ def run_acceptance(
                 lambda response: (
                     urlsplit(response.url).path
                     == f"/api/v2/projects/{project_id}/favorite"
-                    and response.request.method == "PUT"
+                    and response.request.method == "DELETE"
                 )
             ) as unfavorite_response:
                 favorite_button.click()
