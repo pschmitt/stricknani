@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.projects
 
+import android.util.Base64
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrderRepository
+import blue.anika.wolle.di.MediaClient
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
@@ -19,8 +21,12 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.navigation.Route
+import blue.anika.wolle.ui.projects.print.PrintLabels
+import blue.anika.wolle.ui.projects.print.PrintOptions
+import blue.anika.wolle.ui.projects.print.ProjectPrintDocument
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +37,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 data class LinkedYarn(val id: Int, val name: String, val previewUrl: String?)
 
@@ -57,6 +66,7 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val detailCardOrderRepository: DetailCardOrderRepository,
+    @MediaClient private val mediaClient: OkHttpClient,
 ) : ViewModel() {
 
     private val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
@@ -109,6 +119,41 @@ constructor(
             )
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
+
+    /**
+     * The printable HTML for the loaded project, or null while it is not loaded. Images are
+     * downloaded with the app's credentials and embedded; one that cannot be fetched (offline,
+     * deleted) is left out instead of failing the printout.
+     */
+    suspend fun printHtml(options: PrintOptions, labels: PrintLabels): String? {
+        val state = uiState.value as? ProjectDetailUiState.Loaded ?: return null
+        val project = state.detail
+        val embedded =
+            withContext(Dispatchers.IO) {
+                ProjectPrintDocument.imageUrls(project, options, ::resolveMediaUrl)
+                    .mapNotNull { url -> downloadAsDataUri(url)?.let { url to it } }
+                    .toMap()
+            }
+        return ProjectPrintDocument.html(
+            project = project,
+            linkedYarnNames = state.linkedYarns.map { it.name },
+            options = options,
+            labels = labels,
+            resolve = ::resolveMediaUrl,
+            embeddedImages = embedded,
+        )
+    }
+
+    private fun downloadAsDataUri(url: String): String? =
+        runCatching {
+                mediaClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                    val body = response.body
+                    val type = body.contentType()?.toString().orEmpty()
+                    if (!response.isSuccessful || !type.startsWith("image/")) return null
+                    "data:$type;base64," + Base64.encodeToString(body.bytes(), Base64.NO_WRAP)
+                }
+            }
+            .getOrNull()
 
     /** Refreshes this project and only the yarns currently linked from its latest detail. */
     fun refresh() {

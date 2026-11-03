@@ -216,6 +216,13 @@
     <string name="detail_card_reorder_active">Drag the card titles into place.</string>
     <string name="detail_card_reorder_done">Done</string>
     <string name="detail_long_press_edit_action">Edit %1$s</string>
+    <string name="print_action">Print</string>
+    <string name="print_dialog_title">Print project</string>
+    <string name="print_content_everything">Everything</string>
+    <string name="print_content_instructions">Instructions only</string>
+    <string name="print_include_images">Include images</string>
+    <string name="print_confirm">Print</string>
+    <string name="print_preparing">Preparing…</string>
     <string name="detail_card_reorder_title_description">%1$s card title</string>
     <string name="detail_card_reorder_long_press_description">Long-press and drag to reorder</string>
     <string name="settings_sync_group_title">Background sync</string>

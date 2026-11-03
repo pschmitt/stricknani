@@ -60,10 +60,20 @@ compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host.
 
 ## SNA-83: Print projects (all, steps only, with or without images)
 
-- [ ] Print action on project detail with a choice of content (everything / instructions only)
-      and images (with / without), rendered through Android's print framework.
+- [x] "Print" in project detail's "More actions" menu opens a dialog: Everything or Instructions
+      only, with or without images. The system print dialog then offers printers and Save as PDF.
+- [x] `ProjectPrintDocument` builds self-contained HTML (pure, unit-tested): Markdown rendered
+      with the renderer's own JetBrains parser (now declared explicitly), steps in step order,
+      title, stitch-sample and step images plus Markdown images embedded as data URIs.
+- [x] Images are downloaded with the app's authenticated media client in the ViewModel; one that
+      can't be fetched is left out instead of failing the printout. `HtmlPrinter` lays the page
+      out in an off-screen WebView with JavaScript off.
+- [ ] On-device check of the print preview (installed on the user's phone).
+- [ ] Possible follow-ups: print a yarn; remember the last print choices.
 
-Status: **in progress**, 2026-11-03.
+Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host, including
+`ProjectPrintDocumentTest`.
 
 ## SNA-81: Attachments near the top of the project editor
 

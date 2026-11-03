@@ -216,6 +216,13 @@
     <string name="detail_card_reorder_active">Kartentitel an die gewünschte Stelle ziehen.</string>
     <string name="detail_card_reorder_done">Fertig</string>
     <string name="detail_long_press_edit_action">%1$s bearbeiten</string>
+    <string name="print_action">Drucken</string>
+    <string name="print_dialog_title">Projekt drucken</string>
+    <string name="print_content_everything">Alles</string>
+    <string name="print_content_instructions">Nur die Anleitung</string>
+    <string name="print_include_images">Bilder einbeziehen</string>
+    <string name="print_confirm">Drucken</string>
+    <string name="print_preparing">Wird vorbereitet…</string>
     <string name="detail_card_reorder_title_description">Kartentitel: %1$s</string>
     <string name="detail_card_reorder_long_press_description">Lange drücken und zum Sortieren ziehen</string>
     <string name="settings_sync_group_title">Hintergrundsynchronisierung</string>

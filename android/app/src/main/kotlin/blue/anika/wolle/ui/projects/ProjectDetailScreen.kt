@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +67,7 @@ import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
 import blue.anika.wolle.ui.common.FavoriteToggleButton
+import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
@@ -76,9 +79,12 @@ import blue.anika.wolle.ui.common.longPressToEdit
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
+import blue.anika.wolle.ui.projects.print.PrintLabels
+import blue.anika.wolle.ui.projects.print.ProjectPrintDialog
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,6 +106,24 @@ fun ProjectDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var attachmentToDelete by remember { mutableStateOf<AttachmentDto?>(null) }
+    var showPrintDialog by remember { mutableStateOf(false) }
+    var isPreparingPrint by remember { mutableStateOf(false) }
+    val printScope = rememberCoroutineScope()
+    val activityContext = LocalContext.current
+    val printLabels =
+        PrintLabels(
+            details = stringResource(R.string.project_detail_details_title),
+            category = stringResource(R.string.common_field_category),
+            needles = stringResource(R.string.common_field_needles),
+            yarn = stringResource(R.string.project_detail_field_yarn),
+            otherMaterials = stringResource(R.string.common_field_other_materials),
+            tags = stringResource(R.string.project_editor_tags_label),
+            stitchSample = stringResource(R.string.common_field_stitch_sample),
+            linkedYarns = stringResource(R.string.project_detail_linked_yarns_title),
+            description = stringResource(R.string.project_detail_description_title),
+            steps = stringResource(R.string.project_detail_steps_title),
+            notes = stringResource(R.string.project_detail_notes_title),
+        )
 
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -150,6 +174,16 @@ fun ProjectDetailScreen(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.print_action)) },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Print, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    showPrintDialog = true
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {
@@ -223,6 +257,22 @@ fun ProjectDetailScreen(
                     )
             }
         }
+    }
+
+    if (showPrintDialog && state is ProjectDetailUiState.Loaded) {
+        ProjectPrintDialog(
+            isPreparing = isPreparingPrint,
+            onPrint = { options ->
+                isPreparingPrint = true
+                printScope.launch {
+                    val html = viewModel.printHtml(options, printLabels)
+                    isPreparingPrint = false
+                    showPrintDialog = false
+                    if (html != null) HtmlPrinter.print(activityContext, state.entity.name, html)
+                }
+            },
+            onDismiss = { if (!isPreparingPrint) showPrintDialog = false },
+        )
     }
 
     if (showDeleteDialog && state is ProjectDetailUiState.Loaded) {

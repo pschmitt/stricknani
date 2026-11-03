@@ -149,6 +149,7 @@ dependencies {
     // inline images through the same SingletonImageLoader (StricknaniApp.kt) every other image in
     // the app already uses, so it picks up the authenticated @MediaClient loader automatically.
     implementation(libs.markdown.renderer)
+    implementation(libs.jetbrains.markdown)
     implementation(libs.markdown.renderer.m3)
     implementation(libs.markdown.renderer.coil3)
 
