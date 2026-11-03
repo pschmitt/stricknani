@@ -50,4 +50,21 @@ describe("PhotoStrip", () => {
       ),
     ).toHaveLength(2);
   });
+
+  it("shows the thumbnail on screen and keeps the original for print", () => {
+    const items = [
+      {
+        id: 1,
+        url: "/media/images/1.jpg",
+        thumbnail_url: "/media/thumbnails/1.jpg",
+        alt: "Photo 1",
+      },
+    ];
+    const { body } = render(PhotoStrip, {
+      props: props(1, { items, printable: true }),
+    });
+    expect(body).toContain(' src="/media/thumbnails/1.jpg"');
+    expect(body).not.toContain(' src="/media/images/1.jpg"');
+    expect(body).toContain('data-print-src="/media/images/1.jpg"');
+  });
 });

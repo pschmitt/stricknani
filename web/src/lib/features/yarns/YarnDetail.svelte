@@ -56,6 +56,7 @@
     (yarn?.photos ?? []).map((photo) => ({
       id: photo.id,
       url: photo.url,
+      thumbnail_url: photo.thumbnail_url,
       alt: photo.alt_text || yarn?.name || "",
     })),
   );

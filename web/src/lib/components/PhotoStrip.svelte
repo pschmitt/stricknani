@@ -1,7 +1,10 @@
 <script module lang="ts">
   export interface PhotoStripItem {
     id: number;
+    /** Full-resolution original: lightbox and print only. */
     url: string;
+    /** What the strip itself shows; falls back to `url` when absent. */
+    thumbnail_url?: string;
     alt: string;
   }
 </script>
@@ -106,7 +109,7 @@
             >
               <img
                 class="screen-reference-image"
-                src={item.url}
+                src={item.thumbnail_url ?? item.url}
                 alt={item.alt}
                 width="400"
                 height="300"

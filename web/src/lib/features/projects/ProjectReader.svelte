@@ -132,6 +132,7 @@
     stripImages.map((image) => ({
       id: image.id,
       url: image.url,
+      thumbnail_url: image.thumbnail_url,
       alt: image.alt_text || project?.name || "",
     })),
   );
