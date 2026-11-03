@@ -96,13 +96,15 @@ def _assert_sticky_save_cancel_geometry(page: Page, save_name: str) -> None:
         save_box = save.bounding_box()
         cancel_box = cancel.bounding_box()
         navigation_box = navigation.bounding_box()
-        _require(
-            bar_box is not None
-            and save_box is not None
-            and cancel_box is not None
-            and navigation_box is not None,
-            "sticky Save/Cancel or mobile navigation has no visible geometry",
-        )
+        if (
+            bar_box is None
+            or save_box is None
+            or cancel_box is None
+            or navigation_box is None
+        ):
+            raise AcceptanceFailure(
+                "sticky Save/Cancel or mobile navigation has no visible geometry"
+            )
         controls = (save_box, cancel_box)
         _require(
             all(

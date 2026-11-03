@@ -15,6 +15,7 @@ from playwright.sync_api import (
     Page,
     Response,
     Route,
+    expect,
     sync_playwright,
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -851,8 +852,8 @@ def run_acceptance(
                 "button", name="Keep yarn", exact=True
             )
             delete_action.click()
-            web_ui_browser.expect(delete_action).to_be_disabled()
-            web_ui_browser.expect(keep_action).to_be_disabled()
+            expect(delete_action).to_be_disabled()
+            expect(keep_action).to_be_disabled()
             _require(
                 len(held_yarn_deletes) == 1
                 and len(observed_mutation_requests) == delete_request_count + 1
