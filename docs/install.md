@@ -1,9 +1,9 @@
 # Install and run
 
-The Rust server is the default runtime on the `rust` branch. It needs its own
-SQLite database and media directory. It does not fall back to the Python
-`DATABASE_URL` or `MEDIA_ROOT` and does not migrate Python data. The snapshot
-importer is described in the [migration plan](rust-migration-plan.md).
+The Rust server is the only runtime on the `rust` branch. It needs its own
+SQLite database and media directory. It does not fall back to the legacy
+`DATABASE_URL` or `MEDIA_ROOT` and does not migrate legacy data on its own. The
+snapshot importer is described in the [migration plan](rust-migration-plan.md).
 
 ## Container
 
@@ -72,19 +72,13 @@ just test
 just check
 ```
 
-`just check` runs lint, strict Clippy, native tests, shipping-harness tests,
-web checks, and translation checks. The web app has its own commands in
-[`web/README.md`](../web/README.md).
+`just check` runs the tooling lint (Ruff, MyPy, Biome on the Rust server's
+CSS), Nix lint, strict Clippy, native tests, the tooling tests, web checks and
+translation checks. The web app has its own commands in
+[`web/README.md`](../web/README.md). `just run` starts the Rust dev server.
 
-The Python implementation stays available for reference work:
-
-```sh
-nix develop '.#python'
-just setup
-just run-python
-```
-
-Use `just test-python` for the Python suite and its coverage gate, or
-`just check-python` for its lint, tests, and translation checks. The root
-`Dockerfile` builds the Rust runtime; `Dockerfile.python` keeps the Python
-image recipe used by the Android end-to-end workflow.
+The Python in this repository is tooling only: `scripts/` holds the i18n
+catalog generators and `ci/stricknani/` the Playwright browser and fixture
+harnesses. `uv` installs it from `pyproject.toml` (`just setup`). The legacy
+Python application is the signed tag `v0.1.0` on `main`. The root
+`Dockerfile` builds the Rust runtime.

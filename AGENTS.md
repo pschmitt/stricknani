@@ -64,7 +64,7 @@ Use this file as the operational source of truth for working in Stricknani.
   target path is not a frozen artifact, even without an explicit build command.
 - Prioritize a usable, styled Rust preview. Pixel-perfect matching and the planned full UI redesign are out of scope.
 - The Rust preview uses its own application login. Do not add Authelia or another extra login layer unless the user requests it; keep public signup disabled when serving copied data.
-- Keep Python production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
+- Keep legacy (Python `v0.1.0`) production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
 - Investigate credential-scanner alerts before recording an incident; distinguish intentional public test fixtures, validation blacklists, and source identifiers from actual credential values.
 - Delegated agents report scanner alerts to the coordinator without opening
   incident queues. The coordinator handles triage and any required targeted
@@ -266,41 +266,49 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Vendored Web Dependencies
 
-- The new web UI is planned in [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md), tracked
-  under T120. This is a fresh frontend; the previous vanilla-JS preference does
-  not constrain it. Use the chosen framework and build tool with a committed
-  npm lockfile, reproducible installs, and locally bundled assets. These bundled
-  dependencies do not need separate `vendir.yml` entries. The rules below still
-  apply to standalone dependencies added to the legacy frontend.
-
-- All new frontend dependencies (JS/CSS) must be vendored via `vendir.yml` (no new CDN links).
-- After changing `vendir.yml`, run `just vendor-sync` and commit `vendir.lock.yml` and `stricknani/static/vendor/**`.
-- Prefer vanilla JS for new UI behavior. Add JS dependencies only when HTMX/browser APIs are insufficient.
-- Exception: `stricknani/static/vendor-tiptap/` (TipTap). Its npm packages pull in ~30 transitive modules (prosemirror-*, etc.) resolved via bare specifiers, which `vendir` can't vendor as browser-loadable files without an unmaintainable hand-written import map. It's instead bundled with esbuild into one self-contained file (`just vendor-tiptap`) — see that directory's `package.json`/`entry.js`. It deliberately lives outside `stricknani/static/vendor/` (not `.../vendor/tiptap/`), since that directory is exclusively managed by `vendir sync`, which deletes anything under it not declared in `vendir.yml`. Commit the regenerated `tiptap-bundle.min.js` and `package-lock.json` together after bumping pinned versions there.
+- The web app (`web/`) is a SvelteKit project tracked under T120 in
+  [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md). Use npm packages with the committed
+  `web/package-lock.json`, reproducible installs and locally bundled assets.
+  These bundled dependencies do not need `vendir.yml` entries. After changing
+  `web/package.json` or its lockfile, update `npmDepsHash` in
+  `nix/web-package.nix`.
+- The Rust server's own pages (`rust/static/`, `rust/templates/`) are the only
+  other browser code. Any third-party JS/CSS/font file they need is vendored
+  via `vendir.yml` into `rust/static/vendor/` (no new CDN links). After
+  changing `vendir.yml`, run `just vendor-sync` and commit `vendir.lock.yml`
+  and `rust/static/vendor/**`.
+- Do not add new dependencies to the legacy Rust pages when the same feature
+  can live in `web/`.
 
 ### Translations (UI text)
 
-- Keep message IDs literal in each `t()` call. Branch between calls instead of
-  passing a conditional key: the web extractor does not discover conditional
-  first arguments. When moving labels into shared components, inspect the
-  generated catalog delta so active accessible labels are not removed.
-- Add new strings to both:
-  - `stricknani/locales/en/LC_MESSAGES/messages.po`
-  - `stricknani/locales/de/LC_MESSAGES/messages.po`
-- Avoid multiline strings in templates (`{% trans %}` / `{{ _(...) }}`) to prevent brittle `msgid`s.
-- After template text changes:
+- The source catalogs are `stricknani/locales/{en,de}/LC_MESSAGES/messages.po`
+  and `messages.pot`. The path is historical: the Python application is gone
+  and nothing else lives in `stricknani/`. Moving the catalogs is a planned
+  follow-up; do not move them as a drive-by.
+- Add new strings to both the `en` and `de` catalogs.
+- Rust UI text is `tr("English", "Deutsch")` calls in `rust/src/`; web UI text
+  is `t()`/`msg()` calls in `web/src/`. Keep message IDs literal in each call.
+  Branch between calls instead of passing a conditional key: the web extractor
+  does not discover conditional first arguments. When moving labels into shared
+  components, inspect the generated catalog delta so active accessible labels
+  are not removed.
+- After changing UI text:
   - `just i18n-update`
   - `just i18n-compile`
   - `just i18n-check`
+- `just i18n-*` run the Python (Babel) generators under `scripts/` through
+  `uv`; they produce `rust/locales/messages.json` and
+  `web/static/messages.json`, which are committed with the `.po` files.
 
 ### Database Migrations
 
-- Always create a migration when SQLAlchemy models change.
-- Create migration:
-  - `uv run alembic -c stricknani/alembic.ini revision -m "description_of_change"`
-- Verify migration runs:
-  - `uv run alembic -c stricknani/alembic.ini upgrade head`
-- Migrations live in `stricknani/alembic/versions/` and must be committed.
+- The Rust server owns its SQLite schema in `rust/migrations/`. Add a numbered
+  SQL migration for every schema change and cover it with a test in
+  `rust/tests/`.
+- The legacy Python schema (Alembic, tag `v0.1.0`) only matters to the
+  snapshot importer (`stricknani-server import-snapshot`); keep the importer and
+  its fixtures working until the cutover is complete.
 
 ### Code Quality
 
@@ -308,17 +316,22 @@ Use this file as the operational source of truth for working in Stricknani.
 - TODO management:
   - When starting a task from `TODO.md`, mark it `wip` immediately.
   - If asked to "clean up", remove all `done` tasks from `TODO.md`.
-- Required checks:
-  - Lint: `uv run ruff check .`
-  - Type check: `uv run mypy .`
+- Required checks (these are what CI runs; run them on the remote build host):
+  - Rust: `just rust-lint` (`cargo fmt --check`, strict Clippy) and
+    `just rust-test` (`cargo test --all-targets`)
+  - Web: `just web-check` (`svelte-check`, Prettier), `just web-test`
+    (Vitest) and `just web-build`
+  - Python tooling (`scripts/`, `ci/`, `tests/`): `just lint-ruff`,
+    `just lint-mypy`, `just test-harness` (pytest)
+  - Rust server CSS: `just lint-css` (Biome)
+  - Nix: `just lint-nix` (`statix check`); format Nix with `nixfmt`
+  - i18n: `just i18n-check`
   - Format: `just fmt`
-  - Native Rust and shipping-harness tests: `just test`
-  - Rust-first full check: `just check`
-  - Full Python reference suite with its 80% coverage gate: `just test-python`
-  - Python reference lint, coverage, and translation gate: `just check-python`
-  - Nix lint: `statix check`
-- Mandatory after any code change:
-  - `uv run pytest tests/test_health.py`
+  - Everything at once: `just check`
+- Android has its own checks, see `android/AGENTS.md`.
+- Mandatory after any code change: the checks of the area you changed.
+  There is no repository-wide smoke test; a Rust change needs at least
+  `just rust-lint` and the affected `cargo test` targets.
 - Trim trailing whitespace in edited files.
 
 ### UI Consistency (Projects & Yarns)
@@ -352,42 +365,39 @@ Use this file as the operational source of truth for working in Stricknani.
   workflow/action interface before editing callers. Use
   `pschmitt/ci-workflows/...@main`, preserving caller triggers, permissions,
   checks, artifacts and publish gates. Keep application-specific checks here.
-- `just check` runs lint, Nix lint, strict Rust checks, the Rust suite,
-  shipping-harness Python tests, and i18n checks. It does not run the full
-  Python reference suite.
-- `just check-python` preserves the full Python reference lint, coverage, and
-  translation gate; `just test-python` keeps its 80% coverage threshold.
+- `just check` runs the Python tooling lint (Ruff, MyPy), Biome on the Rust
+  server CSS, Nix lint, strict Rust checks, the Rust suite, the Python tooling
+  tests, i18n checks and the web checks and build. CI runs it as
+  `test.yaml`; `web-ui.yaml` adds the packaged-web browser acceptance and
+  `android-*.yaml` the Android lanes.
 - When touching build/deploy/release paths, also run:
   - `nix flake check`
+  - `nix build .#stricknani-rust .#stricknani-web`
   - `just build-image`
 
 ## Handy Commands
 
-- Setup: `just setup`
+- Setup of the Python tooling: `just setup`
 - Dev server: `just run`
-- Lint: `just lint`
+- Lint: `just lint` (tooling), `just rust-lint`, `just web-check`, `just lint-nix`
 - Format: `just fmt`
-- Native tests: `just test`
-- Python reference suite: `just test-python`
-- Python reference gate: `just check-python`
+- Tests: `just test` (Rust plus Python tooling), `just web-test`
 - i18n Update: `just i18n-update`
 - i18n Compile: `just i18n-compile`
 - Full checks: `just check`
 
-## Rust-first checks and Python reference lane
+## Python tooling lane
 
-The Rust dev shell is the default runtime and provides Rust and repository
-check tools. For Python helper tests or the reference app suite inside that
-shell, set `UV_PYTHON=python3.13` before `uv sync` or `uv run`; this selects the
-supported Nix Python and its available wheels.
+The product is Rust, `web/` and `android/`. The Python left in the repository
+is development tooling: `scripts/` (i18n generators, `check_translations`,
+`todo.sh` and friends) and `ci/stricknani/` (Playwright browser harnesses,
+fixture runner, importer verifier), with their tests in `tests/`. It is
+installed from `pyproject.toml`/`uv.lock` (dependency group `dev`, no package).
+The legacy Python application is gone from this branch; its last release is
+the signed tag `v0.1.0` on `main`, which is also the cutover rollback.
 
-The primary Python coverage job uses Python 3.15 and retains the existing 80%
-coverage threshold. The most recent Python 3.13 reference run passed its tests
-but reported 74.23% coverage, below that threshold. The Nix Python 3.13 lane
-therefore runs the same full reference tests without coverage because
-coverage.py reports different line data under that interpreter. This does not
-weaken the Python 3.15 gate. Both reference commands remain available
-independently of the Rust-first `just test` and `just check` recipes.
+Inside the Rust dev shell, set `UV_PYTHON=python3.13` before `uv sync` or
+`uv run`; this selects the supported Nix Python and its available wheels.
 
 For remote Nix evaluation, create a small filtered snapshot from the current
 source and evaluate the dev shell there; run checks from a separate cached
@@ -401,8 +411,8 @@ expensive. Keep `UV_PYTHON=python3.13` in the dev-shell command environment so
 - Operational rules: `AGENTS.md`
 - Work queue: `TODO.md`
 - New web UI brief and implementation checklist: `WEB-UI-REWRITE.md` (T120)
-- User/developer runbook: `README.md`
-- Product spec + implementation snapshot: `docs/spec-and-implementation.md`
+- User/developer runbook: `README.md`, `docs/install.md`, `docs/maintaining.md`
+- Product spec: `docs/spec-and-implementation.md` (its implementation snapshot describes the legacy Python app, tag `v0.1.0`)
 - Android app (offline-first native client, `android/`, package `blue.anika.wolle`): its own
   `AGENTS.md`/`TODO.md` (`SNA-N` prefix) - read `android/AGENTS.md` before working in `android/`,
-  it is the operational source of truth there the same way this file is for `stricknani/`
+  it is the operational source of truth there the same way this file is for the rest of the repository

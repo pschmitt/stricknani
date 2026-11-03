@@ -46,6 +46,7 @@ Use the `port-to-rust` and `port-from-python` skills, together with `rust-testin
 5. **Prove parity:** send the same recorded requests and fixtures to the Python and Rust implementations using isolated databases and media directories. Compare status, relevant headers, response JSON/HTML semantics, database state, and files. Explain each intentional difference and its approval source.
 6. **Prepare cutover:** document how an existing Alembic-managed database is recognized, how future Rust migrations are tracked, how the old server can be restored, and how a backup is made. Do not run against production data or deploy/cut over production as part of this task without the user's explicit go-ahead.
 7. **Remove Python runtime:** only after parity is demonstrated, remove Python from the runtime package and image. Keep the existing Android client and web assets unless separately requested.
+   *Done on the `rust` branch:* the Python application, its tests, packages, image and CI are gone. The last Python release is the signed tag `v0.1.0` on `main` (the cutover rollback). The remaining Python is development tooling only (`scripts/` i18n generators, `ci/` browser harnesses).
 
 ## Database and migration guardrails
 

@@ -12,8 +12,8 @@ input and any cutover remain gated on acceptance and explicit approval. See
 [NixOS module guide](rust-nixos.md).
 
 The root [Dockerfile](../Dockerfile) builds the Rust default package into a
-`scratch` image. [Dockerfile.python](../Dockerfile.python) retains the Python
-image recipe used by the existing Android end-to-end workflow. The Rust
+`scratch` image. The former Python image recipe was removed with the legacy
+application (tag `v0.1.0` on `main`). The Rust
 candidate image runs as UID/GID `65532:65532`, uses a dedicated working
 directory, and expects staging to supply isolated persistent storage.
 

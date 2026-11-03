@@ -13,15 +13,14 @@ approved production cutover remain pending.
 | --- | --- |
 | `.#default`, `.#stricknani`, `nix run` | Rust server |
 | `.#stricknani-rust` | Rust compatibility alias |
-| `.#stricknani-python` | Python development package |
 | `.#stricknani-docker` | Rust container image using the stable image name |
 | `.#stricknani-rust-docker` | Rust candidate image |
-| `.#stricknani-python-docker` | Optional legacy Python image |
 
 The repository's root `Dockerfile` builds `.#stricknani` from the pinned flake
 and copies its Nix runtime closure into a `scratch` image. The final image has
-no Python runtime. `Dockerfile.python` retains the Python image recipe used by
-the existing Android end-to-end workflow.
+no Python runtime. The Python image recipe and `.#stricknani-python*` outputs
+were removed with the legacy application; the last Python release is the signed
+tag `v0.1.0` on `main`.
 
 For source checkouts, build the default Rust image with:
 

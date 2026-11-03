@@ -1,6 +1,6 @@
-# Stricknani backends in the NixOS module
+# Stricknani in the NixOS module
 
-The NixOS module defaults to Rust on this branch:
+The NixOS module runs the Rust server:
 
 ```nix
 services.stricknani = {
@@ -10,16 +10,19 @@ services.stricknani = {
 };
 ```
 
-To select the Python reference implementation explicitly, set
-`services.stricknani.backend = "python"`.
+The Python backend was removed from the module together with the legacy
+application. Rust is the only implementation; `services.stricknani.backend`
+remains as an option that accepts only `"rust"`, so existing configurations
+keep evaluating. The legacy Python release is the signed tag `v0.1.0` on
+`main`, and its module revision is the rollback.
 
-With `backend = "rust"`, the module selects the Rust package by default and
-uses `/var/lib/stricknani-rust` as its data directory. Its default database is
+The module selects the Rust package by default and uses
+`/var/lib/stricknani-rust` as its data directory. Its default database is
 `rust.sqlite3` and its default media directory is `media` under that data
-directory. With `backend = "python"`, the module selects the Python package
-and uses `/var/lib/stricknani`, `stricknani.db`, and `media`. If overriding
-`dataDir` or `mediaRoot`, keep Rust paths separate from the Python database
-and media tree. Do not configure Rust with the Python data paths.
+directory. The legacy Python service used `/var/lib/stricknani`; the module
+rejects that directory as `dataDir`, so keep Rust paths separate from the
+legacy database and media tree. Do not configure Rust with the legacy data
+paths.
 
 This branch's module default does not change a deployed service whose
 production configuration still imports a separately pinned older module
@@ -71,6 +74,6 @@ stricknani-cli create-admin admin@example.invalid < /secure/path/admin-password
 ```
 
 The Rust module backup archives the configured SQLite database and media root.
-PostgreSQL backup behavior remains available in Python mode and is rejected in
-Rust mode. Changing the backend does not convert an existing backup or make
-Python data usable in the Rust schema.
+PostgreSQL URLs are rejected (the legacy module's PostgreSQL backup went away
+with the Python backend). A backup does not make legacy Python data usable in
+the Rust schema.

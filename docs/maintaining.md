@@ -27,7 +27,7 @@ branch.
 | --- | --- | --- |
 | Android APKs | Push to `main`, or a `v*` / `X.Y.Z` tag | A push moves the rolling `latest` prerelease (debug and release APKs). A tag publishes a permanent GitHub release with signed release APKs, `SHA256SUMS` and build provenance. |
 | Play Store bundle | A `vX.Y.Z` tag | A signed bundle goes to the internal and closed testing tracks. See [`android/docs/play-store-release.md`](../android/docs/play-store-release.md). |
-| Container image | Push to `main` that touches `stricknani/`, `rust/`, `nix/`, the flake or the `Dockerfile` | The image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
+| Container image | Push to `main` that touches `rust/`, `web/`, `nix/`, the flake or the `Dockerfile` | The image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
 
 To cut a release:
 
@@ -51,7 +51,7 @@ APKs are not signed with the release key and upgrades over an installed app
 fail. The Play workflow also needs `PLAY_SERVICE_ACCOUNT_JSON` and the
 repository variable `PLAY_PUBLISH_ENABLED=true`.
 
-Production stays on the Python release until the cutover in
+Production stays on the legacy Python release (tag `v0.1.0` on `main`) until the cutover in
 [production-cutover-checklist.md](production-cutover-checklist.md) is approved.
 Do not move production to the Rust runtime as part of a release.
 
@@ -83,36 +83,32 @@ UI text lives in gettext catalogs for English and German:
 - `stricknani/locales/en/LC_MESSAGES/messages.po`
 - `stricknani/locales/de/LC_MESSAGES/messages.po`
 
-Add every new string to both. Keep message IDs literal in each `t()` call in
-`web/`, because the extractor does not follow computed keys. Avoid apostrophes
+The catalogs still live under `stricknani/locales/` for historical reasons;
+nothing else remains in that directory. Add every new string to both. Rust UI
+labels are `tr("English", "Deutsch")` calls in `rust/src/`; the web UI uses
+`t()` and `msg()` calls in `web/src/`. Keep message IDs literal there, because
+the extractor does not follow computed keys. Avoid apostrophes
 inside HTML comments; the extractor reads them as quotes. After a change, run
 the steps in order, then fix German strings and clear `fuzzy` flags in the
 `.po` files:
 
 ```sh
-just i18n-update     # extract and merge Python, Rust and web strings
+just i18n-update     # extract and merge Rust and web strings
 just i18n-compile    # compile .mo files, regenerate Rust and web catalogs
 just i18n-check      # fail on missing, fuzzy or stale catalogs
 ```
 
-`web/static/messages.json` is generated; commit it with the `.po` files.
+`web/static/messages.json` and `rust/locales/messages.json` are generated;
+commit them with the `.po` files. The generators are Python (Babel), run with
+`uv`; see `pyproject.toml`.
 
 ## Dependencies and vendoring
 
-Legacy Python frontend: every JS or CSS dependency is vendored with `vendir`.
-Add it to `vendir.yml`, run `just vendor-sync`, and commit `vendir.lock.yml`
-together with `stricknani/static/vendor/**`. CI runs `just vendor-check` and
-fails when the vendored files differ from the lock. No CDN links.
-
-TipTap is bundled separately, because its transitive modules cannot be vendored
-as browser files:
-
-```sh
-just vendor-tiptap   # rebuilds stricknani/static/vendor-tiptap/tiptap-bundle.min.js
-```
-
-Commit the bundle and its `package-lock.json` together after changing a pinned
-version.
+Rust server pages (`rust/static/`): the few third-party browser assets they
+need (currently the Space Grotesk font files) are vendored with `vendir`. Add
+it to `vendir.yml`, run `just vendor-sync`, and commit `vendir.lock.yml`
+together with `rust/static/vendor/**`. CI runs `just vendor-check` and fails
+when the vendored files differ from the lock. No CDN links.
 
 Svelte web app (`web/`): dependencies are npm packages with a committed
 `package-lock.json`, bundled by Vite. They do not need `vendir.yml` entries.
@@ -129,7 +125,6 @@ requests for all of the above.
 ## Database migrations
 
 The Rust server owns its SQLite schema in `rust/migrations/`; add a numbered
-SQL file for every schema change and cover it with a test. The Python
-reference app uses Alembic (`stricknani/alembic/versions/`). Rust and Python
-databases stay separate; the snapshot importer is described in the
-[migration plan](rust-migration-plan.md).
+SQL file for every schema change and cover it with a test. The legacy Python
+app (tag `v0.1.0`) used Alembic; its schema only matters to the snapshot
+importer, which is described in the [migration plan](rust-migration-plan.md).

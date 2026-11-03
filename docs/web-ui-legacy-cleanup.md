@@ -65,10 +65,11 @@ reference files:
 
 The legacy page templates reference `/static/css/app.css`, `material.css`, and
 `rust.css`, plus `/static/rust-utilities.js` where used. Migrate or remove those
-references with the pages that consume them. The Rust static mount exposes the
-shared `stricknani/static` tree, which also belongs to the Python reference app;
-do not remove that shared tree as part of Rust UI cleanup without auditing the
-Python templates separately.
+references with the pages that consume them. The Rust static mount serves `rust/static`
+(moved there from the removed Python `stricknani/static` tree, trimmed to the
+files these pages use: the three stylesheets, `rust-utilities.js`, the icons,
+the favicon and the Space Grotesk fonts). Remove files from it together with
+the pages that reference them.
 
 The new [frontend router](../rust/src/frontend.rs) independently serves the
 generated `/app` shell/catalog/immutable assets, and its

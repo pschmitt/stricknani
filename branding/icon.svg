@@ -1,7 +1,7 @@
 <!--
   Stricknani brand mark (SNA-19, redesigned SNA-30-era "Tiny Flicks" pass) - single source of
-  truth shared by the web app's favicon/PWA icons (stricknani/static/favicon.svg,
-  stricknani/static/icons/icon-*.png) and the Android adaptive launcher icon
+  truth shared by the web app's favicon/PWA icons (rust/static/favicon.svg,
+  rust/static/icons/icon-*.png) and the Android adaptive launcher icon
   (android/app/src/main/res/drawable/ic_launcher_*.xml). If this design changes, regenerate both
   derivatives from this file so the two surfaces don't drift apart.
 -->

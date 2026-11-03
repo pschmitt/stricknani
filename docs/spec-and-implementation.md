@@ -2,6 +2,11 @@
 
 > “A Mealie for knitting.”
 
+> **Status:** the implementation sections below describe the legacy Python/FastAPI
+> application (signed tag `v0.1.0` on `main`), which no longer exists on the
+> `rust` branch. The product is now the Rust server, `web/` and `android/`.
+> Treat the product spec as current and the implementation details as history.
+
 Stricknani is a self-hosted web app for managing knitting projects — think **Mealie**, but for knitters.
 It lets users organize projects with photos, gauge calculations, and notes in a clean, modern interface.
 
