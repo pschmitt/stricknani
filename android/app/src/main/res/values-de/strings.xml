@@ -86,6 +86,7 @@
     <string name="project_detail_description_title">Beschreibung</string>
     <string name="project_detail_steps_title">Schritte</string>
     <string name="project_detail_notes_title">Notizen</string>
+    <string name="notes_add_empty">Notiz hinzufügen</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
     <string name="project_editor_title_edit">Projekt bearbeiten</string>

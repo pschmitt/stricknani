@@ -71,6 +71,7 @@ import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
+import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
@@ -536,8 +537,7 @@ private fun YarnDetailContent(
                         itemIndexOffset = itemIndexOffset,
                         reorderState = reorderState,
                         onMove = moveCard,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        sticky = true,
                     ) {
                         YarnMarkdown(
                             value = detail.notes.orEmpty(),
@@ -545,6 +545,14 @@ private fun YarnDetailContent(
                             onImageClick = openViewerImage,
                         )
                     }
+            }
+        }
+        if (detail.notes == null) {
+            item(key = "notes-empty") {
+                StickyNoteEmpty(
+                    label = stringResource(R.string.notes_add_empty),
+                    onClick = { onEditSection(YarnEditorFocus.NOTES) },
+                )
             }
         }
         // Fixed last section (not reorderable); hidden entirely on servers without history.

@@ -146,6 +146,7 @@ internal fun ReorderableDetailCard(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onEdit: (() -> Unit)? = null,
     copyText: String? = null,
+    sticky: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val titleDescription = stringResource(R.string.detail_card_reorder_title_description, title)
@@ -180,50 +181,57 @@ internal fun ReorderableDetailCard(
                 }
             }
 
-    Card(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .offset { reorderState.offsetFor(cardKey) }
-                .zIndex(if (reorderState.offsetFor(cardKey) != IntOffset.Zero) 1f else 0f),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = containerColor,
-                contentColor = contentColor,
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+    val cardModifier =
+        modifier
+            .fillMaxWidth()
+            .offset { reorderState.offsetFor(cardKey) }
+            .zIndex(if (reorderState.offsetFor(cardKey) != IntOffset.Zero) 1f else 0f)
+    val body: @Composable ColumnScope.() -> Unit = {
+        Row(modifier = titleModifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            if (reorderState.isReordering) {
+                Icon(
+                    Icons.Filled.DragHandle,
+                    contentDescription = reorderDescription,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        if (onEdit == null) {
+            content()
+        } else {
+            // Long-pressing the title reorders the cards; long-pressing the content opens the
+            // Edit / Copy text menu for this section.
+            SectionActions(
+                what = title,
+                copyText = copyText,
+                onEdit = onEdit,
+                content = content,
+            )
+        }
+    }
+    if (sticky) {
+        StickyNoteSurface(modifier = cardModifier, content = body)
+    } else {
+        Card(
+            modifier = cardModifier,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         ) {
-            Row(modifier = titleModifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                if (reorderState.isReordering) {
-                    Icon(
-                        Icons.Filled.DragHandle,
-                        contentDescription = reorderDescription,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-            if (onEdit == null) {
-                content()
-            } else {
-                // Long-pressing the title reorders the cards; long-pressing the content opens the
-                // Edit / Copy text menu for this section.
-                SectionActions(
-                    what = title,
-                    copyText = copyText,
-                    onEdit = onEdit,
-                    content = content,
-                )
-            }
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                content = body,
+            )
         }
     }
 }

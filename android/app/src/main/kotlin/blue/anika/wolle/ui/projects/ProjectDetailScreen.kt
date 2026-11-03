@@ -73,6 +73,7 @@ import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.SectionActions
+import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
@@ -619,8 +620,7 @@ private fun ProjectDetailContent(
                         itemIndexOffset = itemIndexOffset,
                         reorderState = reorderState,
                         onMove = moveCard,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        sticky = true,
                     ) {
                         ProjectMarkdown(
                             value = detail.notes.orEmpty(),
@@ -628,6 +628,14 @@ private fun ProjectDetailContent(
                             onImageClick = openViewerImage,
                         )
                     }
+            }
+        }
+        if (detail.notes == null) {
+            item(key = "notes-empty") {
+                StickyNoteEmpty(
+                    label = stringResource(R.string.notes_add_empty),
+                    onClick = { onEditSection(ProjectEditorFocus.NOTES) },
+                )
             }
         }
         // Fixed last section (not reorderable); hidden entirely on servers without history.

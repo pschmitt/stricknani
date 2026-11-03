@@ -51,3 +51,13 @@ internal val PlumContainerHigh = Color(0xFF32293B)
 internal val PlumContainerHighest = Color(0xFF3D3446)
 internal val BerryErrorNight = Color(0xFFFFB4AB)
 internal val BerryErrorNightContainer = Color(0xFF8C1D18)
+
+// Sticky notes: warm butter paper with a darker folded corner. The dark pair is a muted,
+// desaturated
+// parchment rather than a glaring yellow; both inks clear 4.5:1 (about 15:1 light, 10:1 dark).
+internal val StickyPaperLight = Color(0xFFFFF1B0)
+internal val StickyPaperFoldLight = Color(0xFFEBD27A)
+internal val StickyPaperInkLight = Color(0xFF2A2033)
+internal val StickyPaperDark = Color(0xFF4A4430)
+internal val StickyPaperFoldDark = Color(0xFF38331F)
+internal val StickyPaperInkDark = Color(0xFFF4EDDA)

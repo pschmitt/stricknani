@@ -18,7 +18,7 @@ import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_DIALOG_TAG
 import blue.anika.wolle.ui.common.DESTRUCTIVE_DELETE_ICON_TAG
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
-import blue.anika.wolle.ui.common.NotesCard
+import blue.anika.wolle.ui.common.StickyNoteCard
 import blue.anika.wolle.ui.home.HomeSyncStatusCard
 import blue.anika.wolle.ui.theme.StricknaniTheme
 import org.junit.Assert.assertEquals
@@ -268,7 +268,7 @@ class FocusedComponentSemanticsTest {
     fun notesCardKeepsItsTitleAndContentAccessibleInLightTheme() {
         composeRule.setContent {
             StricknaniTheme(darkTheme = false) {
-                NotesCard(title = "Notes") { Text("Add a sewn label after blocking.") }
+                StickyNoteCard(title = "Notes") { Text("Add a sewn label after blocking.") }
             }
         }
         composeRule.onNodeWithTag("notes-card").assertIsDisplayed()
@@ -280,7 +280,7 @@ class FocusedComponentSemanticsTest {
     fun notesCardKeepsItsContentAccessibleInDarkTheme() {
         composeRule.setContent {
             StricknaniTheme(darkTheme = true) {
-                NotesCard(title = "Notes") { Text("Add a sewn label after blocking.") }
+                StickyNoteCard(title = "Notes") { Text("Add a sewn label after blocking.") }
             }
         }
         composeRule.onNodeWithTag("notes-card").assertIsDisplayed()
