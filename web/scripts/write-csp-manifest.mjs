@@ -157,15 +157,9 @@ async function collectPwaAssets(directory) {
       files.push(`/app/${relative(directory, path).replaceAll("\\", "/")}`);
     }
   }
-  files.push(
-    "/app/manifest.webmanifest",
-    "/app/offline.html",
-    "/app/offline.css",
-    "/app/offline-theme.js",
-    "/app/favicon.svg",
-    "/app/icons/icon-192.png",
-    "/app/icons/icon-512.png",
-  );
+  // The worker refuses to install unless every REQUIRED_OFFLINE_ASSETS entry is
+  // in this list, so read them from the worker itself instead of repeating them.
+  files.push(...(await requiredOfflineAssets()));
   const assets = [...new Set(files)].sort();
   if (assets.length > 512) {
     throw new Error(`App offline asset count exceeds 512: ${assets.length}`);
@@ -207,4 +201,22 @@ async function listFiles(directory) {
 /** @param {string} content @returns {string} */
 function hash(content) {
   return `sha256-${createHash("sha256").update(content, "utf8").digest("base64")}`;
+}
+
+async function requiredOfflineAssets() {
+  const worker = await readFile(
+    new URL("../static/service-worker.js", import.meta.url),
+    "utf8",
+  );
+  const block = worker.match(/const REQUIRED_OFFLINE_ASSETS = \[([\s\S]*?)\];/);
+  if (!block) {
+    throw new Error("service-worker.js has no REQUIRED_OFFLINE_ASSETS list");
+  }
+  const paths = [...block[1].matchAll(/`\$\{APP_PREFIX\}([^`]+)`/g)].map(
+    (match) => `/app/${match[1]}`,
+  );
+  if (paths.length === 0) {
+    throw new Error("service-worker.js REQUIRED_OFFLINE_ASSETS is empty");
+  }
+  return paths;
 }
