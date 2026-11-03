@@ -3030,9 +3030,10 @@ def run_acceptance(
             )
             mobile_links = page.locator(".mobile-navigation a")
             _require(
-                mobile_links.count() == 4, "signed-in mobile navigation is incomplete"
+                mobile_links.count() == 5, "signed-in mobile navigation is incomplete"
             )
             expected_links = {
+                "Home": "/app",
                 "Projects": "/app/projects",
                 "Yarns": "/app/yarns",
                 "Create": "/app/create",
@@ -3041,7 +3042,8 @@ def run_acceptance(
             for label, href in expected_links.items():
                 link = page.locator(".mobile-navigation a").filter(has_text=label)
                 _require(
-                    link.count() == 1 and link.get_attribute("href") == href,
+                    link.count() == 1
+                    and (link.get_attribute("href") or "").rstrip("/") == href,
                     "a mobile navigation link has the wrong destination",
                 )
             mark_stage("project library search and URL filters")
@@ -3976,7 +3978,9 @@ def run_acceptance(
 
             mark_stage("direct routes and explicit unfinished states")
             route_headings = {
-                "/app/": "Projects",
+                "/app/": re.compile(
+                    r"^(Good morning!|Hello there!|Good evening!|Still knitting\?)$"
+                ),
                 "/app/login": "You are already signed in.",
                 "/app/more": "More",
                 "/app/create": "What would you like to add?",
@@ -4575,6 +4579,16 @@ def run_acceptance(
             )
             mark_stage("loading latest project values by explicit choice")
             page.get_by_role("button", name="Load latest values", exact=True).click()
+            load_latest_dialog = page.get_by_role(
+                "dialog",
+                name="Replace your unsaved edits with the latest saved version?",
+                exact=True,
+            )
+            load_latest_dialog.wait_for(state="visible")
+            load_latest_dialog.get_by_role(
+                "button", name="Load latest values", exact=True
+            ).click()
+            load_latest_dialog.wait_for(state="hidden")
             _require(
                 project_name.input_value() == "Latest server version",
                 "explicitly loading latest values did not replace the saved draft",
@@ -4633,9 +4647,9 @@ def run_acceptance(
                 editor_media_response_info.value.status == 201,
                 "the clean project editor could not upload a project photo",
             )
-            page.get_by_text("Project media updated.", exact=True).wait_for(
-                state="visible"
-            )
+            page.locator("#main-content .action-status").filter(
+                has_text="Project media updated."
+            ).wait_for(state="visible")
             page.locator(".media-list img").wait_for(state="visible")
             _require(
                 page.locator(".media-list img").count() == 1,
