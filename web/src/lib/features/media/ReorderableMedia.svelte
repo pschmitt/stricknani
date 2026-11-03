@@ -2,10 +2,15 @@
   lang="ts"
   generics="T extends { id: number; thumbnail_url: string; alt_text: string | null }"
 >
-  import { tick, type Snippet } from "svelte";
-  import Button from "#lib/components/Button.svelte";
+  import { onMount, tick, type Snippet } from "svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { deltaForKey, keyboardTarget, nearestIndex } from "./media-reorder";
+
+  /** Touch press time before a tile arms for drag and delete. */
+  const LONG_PRESS_MS = 400;
+  /** Pointer travel in px that cancels a pending long press or starts a mouse drag. */
+  const MOVE_SLOP = 8;
 
   let {
     items,
@@ -17,6 +22,8 @@
     reorderable = true,
     onMove,
     onOpen,
+    onDelete,
+    deleteDisabled = false,
     badge,
     actions,
   }: {
@@ -33,15 +40,34 @@
     /** Resolve true when the server accepted the new order. */
     onMove: (from: number, to: number) => Promise<boolean>;
     onOpen?: (item: T) => void;
+    /** Opens the caller's delete confirmation; omit to hide delete. */
+    onDelete?: (item: T) => void;
+    deleteDisabled?: boolean;
     badge?: Snippet<[T, number]>;
     actions?: Snippet<[T]>;
   } = $props();
 
+  interface Gesture {
+    id: number;
+    index: number;
+    pointerId: number;
+    pointerType: string;
+    startX: number;
+    startY: number;
+    timer: ReturnType<typeof setTimeout> | null;
+    armed: boolean;
+    tile: HTMLElement;
+  }
+
+  const hintId = $props.id();
   let listElement = $state<HTMLUListElement | null>(null);
   let dragFrom = $state<number | null>(null);
   let dropTo = $state<number | null>(null);
+  let armedId = $state<number | null>(null);
   let announcement = $state("");
   let moving = $state(false);
+  let gesture: Gesture | null = null;
+  let suppressClick = false;
 
   const locked = $derived(disabled || moving);
   const sortable = $derived(reorderable && items.length > 1);
@@ -50,6 +76,26 @@
     return t(template, locale)
       .replace("{position}", String(position))
       .replace("{total}", String(items.length));
+  }
+
+  function tileLabel(item: T, index: number): string {
+    const position = fill(msg("Photo {position} of {total}"), index + 1);
+    return `${item.alt_text ?? fallbackAlt}: ${position}`;
+  }
+
+  onMount(() => {
+    // Once armed, stop the browser from scrolling so the drag can follow the finger.
+    const block = (event: TouchEvent) => {
+      if (gesture?.armed || dragFrom !== null) event.preventDefault();
+    };
+    listElement?.addEventListener("touchmove", block, { passive: false });
+    return () => listElement?.removeEventListener("touchmove", block);
+  });
+
+  function focusTile(id: number): void {
+    listElement
+      ?.querySelector<HTMLElement>(`[data-tile="${id}"]`)
+      ?.focus({ preventScroll: true });
   }
 
   async function move(from: number, to: number): Promise<void> {
@@ -69,17 +115,34 @@
           locale,
         );
     await tick();
-    listElement
-      ?.querySelector<HTMLElement>(`[data-handle="${id}"]`)
-      ?.focus({ preventScroll: true });
+    focusTile(id);
   }
 
-  function onKeydown(event: KeyboardEvent, index: number): void {
-    if (event.key === "Escape" && dragFrom !== null) {
-      cancelDrag();
+  function canDelete(): boolean {
+    return onDelete !== undefined && !deleteDisabled && !locked;
+  }
+
+  function onTileKeydown(event: KeyboardEvent, index: number): void {
+    // Only the tile itself; inner buttons keep their own keys.
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Escape") {
+      cancelGesture();
+      armedId = null;
       return;
     }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if ((event.key === "Enter" || event.key === " ") && onOpen) {
+      event.preventDefault();
+      onOpen(items[index]);
+      return;
+    }
+    if (event.key === "Delete" || event.key === "Backspace") {
+      if (!onDelete) return;
+      event.preventDefault();
+      if (canDelete()) onDelete(items[index]);
+      return;
+    }
+    if (!sortable) return;
     const delta = deltaForKey(
       event.key,
       getComputedStyle(event.currentTarget as HTMLElement).direction === "rtl",
@@ -89,54 +152,120 @@
     void move(index, keyboardTarget(index, delta, items.length));
   }
 
-  function startDrag(event: PointerEvent, index: number): void {
-    if (locked || !sortable) return;
+  function onPointerDown(event: PointerEvent, index: number): void {
+    if (locked) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    event.preventDefault();
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    dragFrom = index;
-    dropTo = index;
+    if ((event.target as Element).closest("[data-no-drag]")) return;
+    cancelGesture();
+    const tile = event.currentTarget as HTMLElement;
+    const current: Gesture = {
+      id: items[index].id,
+      index,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      startX: event.clientX,
+      startY: event.clientY,
+      timer: null,
+      armed: false,
+      tile,
+    };
+    gesture = current;
+    if (event.pointerType !== "mouse") {
+      current.timer = setTimeout(() => {
+        current.timer = null;
+        if (gesture !== current) return;
+        current.armed = true;
+        armedId = onDelete ? current.id : null;
+        tile.setPointerCapture(current.pointerId);
+      }, LONG_PRESS_MS);
+    }
   }
 
-  function dragOver(event: PointerEvent): void {
-    if (dragFrom === null || !listElement) return;
+  function onPointerMove(event: PointerEvent): void {
+    const current = gesture;
+    if (!current || event.pointerId !== current.pointerId) return;
+    const travelled = Math.hypot(
+      event.clientX - current.startX,
+      event.clientY - current.startY,
+    );
+    if (dragFrom === null) {
+      if (travelled <= MOVE_SLOP) return;
+      if (current.pointerType === "mouse") {
+        if (!sortable) return;
+        current.tile.setPointerCapture(current.pointerId);
+      } else if (!current.armed || !sortable) {
+        // Moving before the long press means the user is scrolling.
+        if (!current.armed) cancelGesture();
+        return;
+      }
+      armedId = null;
+      dragFrom = current.index;
+    }
+    if (!listElement) return;
     const tiles = Array.from(listElement.children) as HTMLElement[];
-    const centers = tiles.map((tile) => {
-      const rect = tile.getBoundingClientRect();
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    });
-    dropTo = nearestIndex(centers, event.clientX, event.clientY);
+    dropTo = nearestIndex(
+      tiles.map((tile) => {
+        const rect = tile.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      }),
+      event.clientX,
+      event.clientY,
+    );
   }
 
-  function endDrag(event: PointerEvent): void {
-    const target = event.currentTarget as HTMLElement;
-    if (target.hasPointerCapture(event.pointerId))
-      target.releasePointerCapture(event.pointerId);
+  function onPointerUp(event: PointerEvent): void {
+    const current = gesture;
+    if (!current || event.pointerId !== current.pointerId) return;
     const from = dragFrom;
     const to = dropTo;
-    dragFrom = null;
-    dropTo = null;
+    // A finished drag must not also open the photo.
+    suppressClick = from !== null;
+    cancelGesture();
     if (from !== null && to !== null && from !== to) void move(from, to);
   }
 
-  function cancelDrag(): void {
+  function cancelGesture(): void {
+    const current = gesture;
+    if (current?.timer) clearTimeout(current.timer);
+    if (current?.tile.hasPointerCapture(current.pointerId))
+      current.tile.releasePointerCapture(current.pointerId);
+    gesture = null;
     dragFrom = null;
     dropTo = null;
   }
+
+  function onWindowPointerDown(event: PointerEvent): void {
+    if (armedId === null) return;
+    const tile = (event.target as Element | null)?.closest<HTMLElement>(
+      "[data-tile]",
+    );
+    if (tile?.dataset.tile !== String(armedId)) armedId = null;
+  }
+
+  function onClickCapture(event: MouseEvent): void {
+    if (!suppressClick) return;
+    suppressClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function onContextMenu(event: MouseEvent): void {
+    // The long press must not open the browser image menu on touch.
+    if (gesture && gesture.pointerType !== "mouse") event.preventDefault();
+  }
 </script>
+
+<svelte:window onpointerdown={onWindowPointerDown} />
 
 <div class="reorderable">
   {#if sortable}
-    <p class="reorder-hint">
+    <p class="reorder-hint" id={hintId}>
       {showCover
         ? t(
-            "The first photo is the cover. Drag the handle or use the arrow keys to change the order.",
+            "The first photo is the cover. Drag a photo or use the arrow keys to change the order.",
             locale,
           )
-        : t(
-            "Drag the handle or use the arrow keys to change the order.",
-            locale,
-          )}
+        : t("Drag a photo or use the arrow keys to change the order.", locale)}
     </p>
   {/if}
   <ul
@@ -146,23 +275,40 @@
     aria-label={label}
   >
     {#each items as item, index (item.id)}
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <li
         class="reorder-item"
         class:drag-source={dragFrom === index}
+        class:armed={armedId === item.id}
         class:drop-target={dragFrom !== null &&
           dropTo === index &&
           dropTo !== dragFrom}
+        data-tile={item.id}
+        tabindex="0"
+        aria-label={tileLabel(item, index)}
+        aria-describedby={sortable ? hintId : undefined}
+        aria-keyshortcuts={sortable
+          ? "ArrowUp ArrowDown ArrowLeft ArrowRight"
+          : undefined}
+        onpointerdown={(event) => onPointerDown(event, index)}
+        onpointermove={onPointerMove}
+        onpointerup={onPointerUp}
+        onpointercancel={cancelGesture}
+        onclickcapture={onClickCapture}
+        oncontextmenu={onContextMenu}
+        onkeydown={(event) => onTileKeydown(event, index)}
       >
         {#if onOpen}
           <button
             type="button"
             class="thumb thumb-button"
+            tabindex="-1"
             aria-label={item.alt_text ?? fallbackAlt}
             onclick={() => onOpen(item)}
           >
             <img
               src={item.thumbnail_url}
-              alt={item.alt_text ?? fallbackAlt}
+              alt=""
               loading="lazy"
               draggable="false"
             />
@@ -171,82 +317,52 @@
           <div class="thumb">
             <img
               src={item.thumbnail_url}
-              alt={item.alt_text ?? fallbackAlt}
+              alt=""
               loading="lazy"
               draggable="false"
             />
           </div>
         {/if}
-        <div class="reorder-meta">
-          {#if showCover && index === 0}
-            <span class="cover-badge">{t("Cover photo", locale)}</span>
-          {:else if badge}
-            {@render badge(item, index)}
-          {/if}
-        </div>
+        {#if showCover && index === 0}
+          <span class="cover-badge">{t("Cover photo", locale)}</span>
+        {:else if badge}
+          <span class="cover-badge">{@render badge(item, index)}</span>
+        {/if}
+        {#if onDelete}
+          <button
+            type="button"
+            class="delete-button"
+            data-no-drag
+            disabled={deleteDisabled || locked}
+            aria-label={t("Remove photo", locale)}
+            onclick={() => onDelete(item)}
+          >
+            <NavIcon name="action-delete" />
+          </button>
+        {/if}
         {#if sortable}
-          <div class="reorder-controls">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              icon="previous"
-              disabled={locked || index === 0}
-              aria-label={fill(msg("Move photo {position} earlier"), index + 1)}
-              onclick={() => void move(index, index - 1)}
-            />
+          <!-- Visually hidden, but reachable for keyboard and screen readers. -->
+          <div class="visually-hidden-controls" data-no-drag>
             <button
               type="button"
-              class="drag-handle"
-              data-handle={item.id}
-              disabled={locked}
-              aria-label={fill(
-                msg("Reorder photo {position} of {total}"),
-                index + 1,
-              )}
-              aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
-              onpointerdown={(event) => startDrag(event, index)}
-              onpointermove={dragOver}
-              onpointerup={endDrag}
-              onpointercancel={cancelDrag}
-              onkeydown={(event) => onKeydown(event, index)}
+              disabled={locked || index === 0}
+              onclick={() => void move(index, index - 1)}
             >
-              <svg
-                viewBox="0 0 16 16"
-                width="18"
-                height="18"
-                aria-hidden="true"
-              >
-                <circle cx="5" cy="3" r="1.4" /><circle
-                  cx="11"
-                  cy="3"
-                  r="1.4"
-                />
-                <circle cx="5" cy="8" r="1.4" /><circle
-                  cx="11"
-                  cy="8"
-                  r="1.4"
-                />
-                <circle cx="5" cy="13" r="1.4" /><circle
-                  cx="11"
-                  cy="13"
-                  r="1.4"
-                />
-              </svg>
+              {fill(msg("Move photo {position} earlier"), index + 1)}
             </button>
-            <Button
+            <button
               type="button"
-              size="sm"
-              variant="ghost"
-              icon="next"
               disabled={locked || index === items.length - 1}
-              aria-label={fill(msg("Move photo {position} later"), index + 1)}
               onclick={() => void move(index, index + 1)}
-            />
+            >
+              {fill(msg("Move photo {position} later"), index + 1)}
+            </button>
           </div>
         {/if}
         {#if actions}
-          <div class="reorder-actions">{@render actions(item)}</div>
+          <div class="reorder-actions" data-no-drag>
+            {@render actions(item)}
+          </div>
         {/if}
       </li>
     {/each}
@@ -278,14 +394,19 @@
   }
 
   .reorder-item {
+    position: relative;
     display: grid;
     min-width: 0;
     align-content: start;
     gap: 0.35rem;
-    border: 1px solid var(--line);
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  .reorder-item:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
     border-radius: var(--radius-xs);
-    padding: 0.35rem;
-    background: var(--surface-raised);
   }
 
   .thumb {
@@ -293,10 +414,10 @@
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
-    border: 0;
+    border: 1px solid var(--line);
     border-radius: var(--radius-xs);
     padding: 0;
-    background: var(--surface);
+    background: var(--surface-raised);
   }
 
   .thumb-button {
@@ -308,30 +429,76 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
   }
 
-  .reorder-meta {
-    min-height: 1.2rem;
-    color: var(--ink-muted);
-    font-size: 0.8rem;
-  }
-
   .cover-badge {
-    display: inline-block;
+    position: absolute;
+    bottom: 0.4rem;
+    left: 0.4rem;
+    max-width: calc(100% - 0.8rem);
     border-radius: 999px;
     padding: 0.05rem 0.5rem;
     color: var(--accent-strong);
     background: var(--surface);
+    font-size: 0.8rem;
     font-weight: 650;
+    pointer-events: none;
   }
 
-  .reorder-controls {
-    display: flex;
+  .delete-button {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.25rem;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    padding: 0;
+    color: var(--on-danger);
+    background: var(--danger);
+    font-size: 1.3rem;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .delete-button:disabled {
+    opacity: 0;
+    cursor: not-allowed;
+  }
+
+  .reorder-item.armed .delete-button:not(:disabled),
+  .reorder-item:focus-visible .delete-button:not(:disabled),
+  .reorder-item:has(:focus-visible) .delete-button:not(:disabled) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (hover: hover) {
+    .reorder-item:hover .delete-button:not(:disabled) {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .reorder-item {
+      cursor: grab;
+    }
+  }
+
+  .delete-button:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .dragging,
+  .dragging .reorder-item {
+    cursor: grabbing;
   }
 
   .reorder-actions {
@@ -341,50 +508,17 @@
     gap: 0.35rem;
   }
 
-  .drag-handle {
-    display: inline-flex;
-    min-width: 44px;
-    min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0;
-    color: var(--ink-muted);
-    background: var(--surface);
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-  }
-
-  .drag-handle svg {
-    fill: currentColor;
-  }
-
-  .drag-handle:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .drag-handle:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  .dragging .drag-handle {
-    cursor: grabbing;
-  }
-
   .drag-source {
     opacity: 0.55;
   }
 
-  .drop-target {
+  .drop-target .thumb {
     outline: 3px solid var(--accent-strong);
     outline-offset: 1px;
   }
 
-  .visually-hidden {
+  .visually-hidden,
+  .visually-hidden-controls {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -395,7 +529,8 @@
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .reorder-item {
+    .reorder-item,
+    .delete-button {
       transition:
         opacity 120ms ease,
         outline-color 120ms ease;

@@ -405,25 +405,13 @@
       disabled={reordering}
       onMove={reorderPhotos}
       onOpen={(photo) => void showPhoto(photo)}
+      onDelete={canEdit && !readOnly ? confirmDelete : undefined}
+      deleteDisabled={!mediaDeleteAvailable ||
+        uploading ||
+        deleting ||
+        reordering}
     >
       {#snippet actions(photo)}
-        {#if canEdit && !readOnly}
-          <Button
-            class="remove-photo"
-            variant="danger"
-            size="sm"
-            icon="action-delete"
-            type="button"
-            disabled={!mediaDeleteAvailable ||
-              uploading ||
-              deleting ||
-              reordering}
-            aria-label={t("Remove photo", locale)}
-            onclick={() => confirmDelete(photo)}
-          >
-            {t("Remove", locale)}
-          </Button>
-        {/if}
         <OcrControl
           src={photo.url}
           label={t("Recognized text from yarn photo", locale)}
@@ -565,11 +553,6 @@
   .error-message {
     margin: 0;
     color: var(--danger);
-  }
-
-  :global(.remove-photo) {
-    flex: 0 0 auto;
-    max-width: 100%;
   }
 
   .zoom-dialog {

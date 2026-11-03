@@ -36,7 +36,6 @@
     uploadProjectImage,
     type ProjectCategory,
     type ProjectDetail,
-    type ProjectImage,
     type ProjectWrite,
   } from "./project-api";
   import {
@@ -1540,18 +1539,6 @@
                 {mediaError}
               </p>{/if}
             {#if project.images.length}
-              {#snippet removeAction(image: ProjectImage)}
-                <Button
-                  type="button"
-                  class="remove-button"
-                  variant="ghost"
-                  icon="action-delete"
-                  disabled={!mediaDeleteAvailable}
-                  onclick={() => void removeImage(image.id)}
-                >
-                  {t("Remove photo", locale)}
-                </Button>
-              {/snippet}
               {#if titleImages.length}
                 <h3>{t("Project cover", locale)}</h3>
                 <ReorderableMedia
@@ -1562,7 +1549,8 @@
                   showCover
                   disabled={!mediaAvailable}
                   onMove={(from, to) => reorderImages(null, from, to)}
-                  actions={removeAction}
+                  onDelete={(image) => void removeImage(image.id)}
+                  deleteDisabled={!mediaDeleteAvailable}
                 />
               {/if}
               {#each stepImageGroups as group (group.step.id)}
@@ -1575,7 +1563,8 @@
                   fallbackAlt={t("Step photo", locale)}
                   disabled={!mediaAvailable}
                   onMove={(from, to) => reorderImages(group.step.id, from, to)}
-                  actions={removeAction}
+                  onDelete={(image) => void removeImage(image.id)}
+                  deleteDisabled={!mediaDeleteAvailable}
                 />
               {/each}
               {#if otherImages.length}
@@ -1587,7 +1576,8 @@
                   fallbackAlt={t("Project photo", locale)}
                   reorderable={false}
                   onMove={async () => false}
-                  actions={removeAction}
+                  onDelete={(image) => void removeImage(image.id)}
+                  deleteDisabled={!mediaDeleteAvailable}
                 >
                   {#snippet badge(image)}
                     {#if image.is_stitch_sample}{t(
