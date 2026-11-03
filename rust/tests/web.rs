@@ -21,7 +21,7 @@ async fn real_app() -> (axum::Router, SqlitePool) {
     db::create_user(&pool, EMAIL, PASSWORD.to_owned())
         .await
         .expect("test account should be created");
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     (
         app_with_state(
             static_root,
@@ -39,7 +39,7 @@ async fn real_app_with_media() -> (axum::Router, SqlitePool, tempfile::TempDir) 
         .await
         .expect("test account should be created");
     let root = tempfile::tempdir().expect("media directory should be created");
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     let app = app_with_state(
         static_root,
         db::AppState::new(pool.clone())

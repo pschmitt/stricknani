@@ -5,7 +5,6 @@ WORKDIR /src
 COPY flake.nix flake.lock ./
 COPY nix/ ./nix/
 COPY rust/ ./rust/
-COPY stricknani/static/ ./stricknani/static/
 COPY web/ ./web/
 
 RUN nix --extra-experimental-features "nix-command flakes" build \

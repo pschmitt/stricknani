@@ -81,7 +81,7 @@ async fn fixture(ocr_enabled: bool, archive_enabled: bool) -> Fixture {
     let state = db::AppState::new(pool.clone())
         .with_ocr_enabled(ocr_enabled)
         .with_archive_enabled(archive_enabled);
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     Fixture {
         app: app_with_state(static_root, state),
         pool,
@@ -166,9 +166,7 @@ async fn disabled_controls_are_hidden_and_untrusted_archive_links_are_not_render
 fn utility_script_uses_text_sinks_and_never_html_injection() {
     let static_root = std::env::var_os("STATIC_ROOT")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| {
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static")
-        });
+        .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static"));
     let script = std::fs::read_to_string(static_root.join("rust-utilities.js")).unwrap();
     assert!(script.contains("X-CSRF-Token"));
     assert!(script.contains("status.textContent"));

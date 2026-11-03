@@ -388,7 +388,7 @@ fn resolved_path(path: &std::path::Path) -> PathBuf {
 }
 
 fn default_static_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static")
 }
 
 #[cfg(test)]
@@ -496,7 +496,7 @@ mod tests {
         );
         assert_eq!(
             config.static_root,
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static")
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static")
         );
 
         let config = parse(&[

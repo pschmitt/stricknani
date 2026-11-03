@@ -17,7 +17,7 @@ async fn app() -> (axum::Router, SqlitePool, i64, i64) {
         .expect("in-memory database should migrate");
     let owner_id = seed_user(&pool, "owner@example.test", OWNER_TOKEN).await;
     let other_id = seed_user(&pool, "other@example.test", OTHER_TOKEN).await;
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     (
         app_with_state(static_root, db::AppState::new(pool.clone())),
         pool,

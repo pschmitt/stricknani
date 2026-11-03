@@ -60,7 +60,7 @@ use crate::domain::gauge::{GaugeInput, GaugeResult};
 pub fn app() -> Router {
     let static_root = std::env::var_os("STATIC_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"));
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static"));
     app_with_static_root(static_root).layer(axum::middleware::from_fn(security::security_headers))
 }
 
@@ -270,7 +270,7 @@ mod frontend_landing_tests {
             .expect("test user should be created");
         let state = db::AppState::new(pool).with_secure_cookies(false);
         let app = app_with_services_and_web_root(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"),
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static"),
             state.clone(),
             PathBuf::new(),
             false,

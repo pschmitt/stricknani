@@ -16,7 +16,7 @@ async fn app() -> (axum::Router, SqlitePool) {
         .await
         .expect("disposable database should migrate");
     let app = app_with_state(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"),
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static"),
         db::AppState::new(pool.clone())
             .with_secure_cookies(true)
             .with_signup_enabled(true),
@@ -269,7 +269,7 @@ async fn signup_attempts_are_also_limited_per_ip() {
 async fn public_signup_is_disabled_by_default() {
     let pool = db::connect("sqlite::memory:").await.unwrap();
     let app = app_with_state(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static"),
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static"),
         db::AppState::new(pool.clone()),
     );
     for method in ["GET", "POST"] {

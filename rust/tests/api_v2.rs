@@ -488,8 +488,7 @@ async fn api_v1_still_rejects_browser_cookie_and_accepts_bearer_token() {
         .execute(&pool)
         .await
         .expect("v1 token should insert");
-    let static_root =
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     let app = app_with_state(
         static_root,
         db::AppState::new(pool).with_secure_cookies(true),

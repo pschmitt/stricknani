@@ -21,13 +21,6 @@
           pkgs = nixpkgs.legacyPackages.${system};
           python = pkgs.python313;
 
-          fastapi-csrf-protect = python.pkgs.callPackage ./nix/fastapi-csrf-protect.nix { };
-
-          stricknaniPython = pkgs.callPackage ./nix/package.nix {
-            python3 = python;
-            inherit fastapi-csrf-protect;
-          };
-
           stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { };
           stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix { };
           stricknaniRust = pkgs.callPackage ./nix/rust-package.nix {
@@ -71,7 +64,7 @@
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
-              # Python
+              # Python tooling (scripts/, ci/, tests/)
               ruff.enable = true;
               ruff-format.enable = true;
 
@@ -93,7 +86,6 @@
           packages = {
             default = stricknaniRust;
             stricknani = stricknaniRust;
-            stricknani-python = stricknaniPython;
             stricknani-rust = stricknaniRust;
             stricknani-web = stricknaniWeb;
 
@@ -120,18 +112,6 @@
               '';
               config = rustContainerConfig;
             };
-
-            stricknani-python-docker = pkgs.dockerTools.buildLayeredImage {
-              name = "ghcr.io/pschmitt/stricknani-python";
-              tag = "latest";
-              config = {
-                Cmd = [ "${stricknaniPython}/bin/stricknani" ];
-                ExposedPorts = {
-                  "7674/tcp" = { };
-                };
-                Env = [ "BIND_HOST=0.0.0.0" ];
-              };
-            };
           };
 
           apps = {
@@ -144,8 +124,8 @@
             stricknani-rust = self.apps.${system}.default;
           };
 
-          # These shells keep Android lint, Rust work, and the existing app
-          # development environments separate.
+          # These shells keep Android lint and the Rust/web/tooling development
+          # environment separate.
           devShells = {
             # `nix develop .#ktfmt` supplies the binary used by Android lint.
             ktfmt = pkgs.mkShell { packages = [ pkgs.ktfmt ]; };
@@ -178,8 +158,8 @@
               shellHook = ''
                 ${pre-commit-check.shellHook}
 
-                # Python tooling and legacy tests may load binary wheels linked
-                # against libstdc++.so.6 from the Nix C++ standard library.
+                # The Python tooling (Playwright's greenlet, ...) loads binary
+                # wheels linked against libstdc++.so.6 from the Nix C++ stdlib.
                 export LD_LIBRARY_PATH="${
                   pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
                 }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
@@ -187,43 +167,10 @@
             };
 
             default = self.devShells.${system}.rust;
-
-            # Keep the former Python development environment available by name
-            # for legacy implementation work and its remaining checks.
-            python = pkgs.mkShell {
-              buildInputs = with pkgs; [
-                python
-                uv
-                just
-                ruff
-                mypy
-                statix
-                ktfmt
-                poppler-utils
-                tesseract
-                vendir
-                biome
-                # Only needed to regenerate stricknani/static/vendor-tiptap/
-                # (`just vendor-tiptap`) when bumping TipTap's pinned version;
-                # the committed bundle is what actually ships at runtime.
-                nodejs
-              ];
-
-              shellHook = ''
-                ${pre-commit-check.shellHook}
-
-                # Ensure prebuilt binary wheels (greenlet, numpy, ...) in the uv
-                # venv can load libstdc++.so.6 from the Nix C++ stdlib.
-                export LD_LIBRARY_PATH="${
-                  pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
-                }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-              '';
-            };
           };
 
           checks = {
             build = stricknaniRust;
-            python-build = stricknaniPython;
             rust-build = stricknaniRust;
             inherit pre-commit-check;
           };

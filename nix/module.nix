@@ -8,11 +8,10 @@ let
   cfg = config.services.stricknani;
   user = "stricknani";
   group = user;
-  rustBackend = cfg.backend == "rust";
   oidcEnabledEnvironmentFile = pkgs.writeText "stricknani-oidc-enabled.env" ''
     RUST_OIDC_ENABLED=${lib.boolToString cfg.oidc.enable}
   '';
-  oidcEnvironment = lib.optionalAttrs (rustBackend && cfg.oidc.enable) (
+  oidcEnvironment = lib.optionalAttrs cfg.oidc.enable (
     lib.optionalAttrs (cfg.oidc.issuer != null) {
       RUST_OIDC_ISSUER = cfg.oidc.issuer;
     }
@@ -61,57 +60,31 @@ let
 
     trap cleanup EXIT
 
-    ${
-      if rustBackend then
-        ''
-          if [[ "$DB_URL" == sqlite:/* ]]
-          then
-            DB_PATH="''${DB_URL#sqlite:}"
-            while [[ "$DB_PATH" == //* ]]
-            do
-              DB_PATH="''${DB_PATH#/}"
-            done
-            if [[ "$DB_URL" == *\?* || "$DB_URL" == *#* || "$DB_PATH" != /* ]]
-            then
-              echo "stricknani-backup: unsupported Rust SQLite URL" >&2
-              exit 2
-            fi
-          else
-            echo "stricknani-backup: Rust backend requires file-backed SQLite" >&2
-            exit 2
-          fi
-        ''
-      else
-        ''
-          if [[ "$DB_URL" == sqlite:///* ]]
-          then
-            DB_PATH="''${DB_URL#sqlite:///}"
-        ''
-    }
-
-      if [[ ! -f "$DB_PATH" ]]
+    if [[ "$DB_URL" == sqlite:/* ]]
+    then
+      DB_PATH="''${DB_URL#sqlite:}"
+      while [[ "$DB_PATH" == //* ]]
+      do
+        DB_PATH="''${DB_PATH#/}"
+      done
+      if [[ "$DB_URL" == *\?* || "$DB_URL" == *#* || "$DB_PATH" != /* ]]
       then
-        echo "stricknani-backup: sqlite database not found at '$DB_PATH'" >&2
+        echo "stricknani-backup: unsupported SQLite URL" >&2
         exit 2
       fi
+    else
+      echo "stricknani-backup: requires file-backed SQLite" >&2
+      exit 2
+    fi
 
-      DB_SNAPSHOT="database.sqlite3"
-      sqlite3 "$DB_PATH" ".backup $TMP_DIR/$DB_SNAPSHOT"
-    ${
-      if rustBackend then
-        ""
-      else
-        ''
-          elif [[ "$DB_URL" == postgresql://* || "$DB_URL" == postgres://* ]]
-          then
-            DB_SNAPSHOT="database.sql"
-            pg_dump "$DB_URL" > "$TMP_DIR/$DB_SNAPSHOT"
-          else
-            echo "stricknani-backup: unsupported DATABASE_URL scheme in '$DB_URL'" >&2
-            exit 2
-          fi
-        ''
-    }
+    if [[ ! -f "$DB_PATH" ]]
+    then
+      echo "stricknani-backup: sqlite database not found at '$DB_PATH'" >&2
+      exit 2
+    fi
+
+    DB_SNAPSHOT="database.sqlite3"
+    sqlite3 "$DB_PATH" ".backup $TMP_DIR/$DB_SNAPSHOT"
 
     if [[ -d "$MEDIA_DIR" ]]
     then
@@ -141,23 +114,12 @@ let
 
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
     exec sudo -u "${user}" -- env \
-      ${lib.optionalString rustBackend "-u DATABASE_URL -u MEDIA_ROOT \\"}
-      ${
-        if rustBackend then
-          ''
-            RUST_DATABASE_URL="${cfg.databaseUrl}" \
-            RUST_MEDIA_ROOT="${cfg.mediaRoot}" \
-          ''
-        else
-          ''
-            DATABASE_URL="${cfg.databaseUrl}" \
-          ''
-      }
+      -u DATABASE_URL -u MEDIA_ROOT \
+      RUST_DATABASE_URL="${cfg.databaseUrl}" \
+      RUST_MEDIA_ROOT="${cfg.mediaRoot}" \
       ${pkgs.runtimeShell} -c '
         cd "${cfg.dataDir}";
-        exec "${cfg.package}/bin/${
-          if rustBackend then "stricknani-server" else "stricknani-cli"
-        }" "$@" \
+        exec "${cfg.package}/bin/stricknani-server" "$@" \
       ' -- "$@"
   '';
 in
@@ -166,33 +128,23 @@ in
     enable = lib.mkEnableOption "Stricknani knitting project manager";
 
     backend = lib.mkOption {
-      type = lib.types.enum [
-        "python"
-        "rust"
-      ];
+      type = lib.types.enum [ "rust" ];
       default = "rust";
-      description = "Implementation used by the Stricknani service.";
+      description = "Implementation used by the Stricknani service. Rust is the only implementation; the option remains so existing configurations keep evaluating.";
     };
 
     package = lib.mkOption {
       type = lib.types.package;
-      default =
-        if cfg.backend == "rust" then
-          pkgs.callPackage ./rust-package.nix {
-            corePackage = pkgs.callPackage ./rust-core-package.nix { };
-            webPackage = pkgs.callPackage ./web-package.nix { };
-          }
-        else
-          pkgs.callPackage ./package.nix {
-            python3 = pkgs.python313;
-            fastapi-csrf-protect = pkgs.python313.pkgs.callPackage ./fastapi-csrf-protect.nix { };
-          };
-      description = "The Stricknani package to use; defaults to the selected backend.";
+      default = pkgs.callPackage ./rust-package.nix {
+        corePackage = pkgs.callPackage ./rust-core-package.nix { };
+        webPackage = pkgs.callPackage ./web-package.nix { };
+      };
+      description = "The Stricknani package to use.";
     };
 
     dataDir = lib.mkOption {
       type = lib.types.path;
-      default = if cfg.backend == "rust" then "/var/lib/stricknani-rust" else "/var/lib/stricknani";
+      default = "/var/lib/stricknani-rust";
       description = "The directory where stricknani stores its data.";
     };
 
@@ -267,11 +219,7 @@ in
 
     databaseUrl = lib.mkOption {
       type = lib.types.str;
-      default =
-        if cfg.backend == "rust" then
-          "sqlite:${cfg.dataDir}/rust.sqlite3"
-        else
-          "sqlite:///${cfg.dataDir}/stricknani.db";
+      default = "sqlite:${cfg.dataDir}/rust.sqlite3";
       description = "The database connection string.";
     };
 
@@ -338,38 +286,30 @@ in
     assertions = [
       {
         assertion =
-          !rustBackend
-          || (
-            lib.hasPrefix "sqlite:/" cfg.databaseUrl
-            && !(lib.hasInfix "?" cfg.databaseUrl)
-            && !(lib.hasInfix "#" cfg.databaseUrl)
-          );
-        message = "services.stricknani Rust backend requires a file-backed SQLite databaseUrl without query or fragment.";
+          lib.hasPrefix "sqlite:/" cfg.databaseUrl
+          && !(lib.hasInfix "?" cfg.databaseUrl)
+          && !(lib.hasInfix "#" cfg.databaseUrl);
+        message = "services.stricknani requires a file-backed SQLite databaseUrl without query or fragment.";
       }
       {
-        assertion = !rustBackend || lib.hasPrefix "/" (toString cfg.mediaRoot);
-        message = "services.stricknani Rust backend requires an absolute mediaRoot.";
+        assertion = lib.hasPrefix "/" (toString cfg.mediaRoot);
+        message = "services.stricknani requires an absolute mediaRoot.";
       }
       {
-        assertion = !rustBackend || toString cfg.dataDir != "/var/lib/stricknani";
-        message = "services.stricknani Rust backend requires a dataDir separate from the Python default.";
+        assertion = toString cfg.dataDir != "/var/lib/stricknani";
+        message = "services.stricknani requires a dataDir separate from the legacy Python data directory (/var/lib/stricknani), which holds the pre-cutover snapshot source.";
       }
       {
-        assertion = !rustBackend || loopbackBind || cfg.sessionCookieSecure;
-        message = "services.stricknani Rust backend requires secure session cookies for non-loopback listeners.";
+        assertion = loopbackBind || cfg.sessionCookieSecure;
+        message = "services.stricknani requires secure session cookies for non-loopback listeners.";
       }
       {
-        assertion = !rustBackend || loopbackBind || cfg.hostName != null || cfg.serverAliases != [ ];
-        message = "services.stricknani Rust backend requires a hostname or server alias for non-loopback listeners.";
+        assertion = loopbackBind || cfg.hostName != null || cfg.serverAliases != [ ];
+        message = "services.stricknani requires a hostname or server alias for non-loopback listeners.";
       }
       {
-        assertion =
-          !rustBackend || (!(cfg.extraConfig ? RUST_DATABASE_URL) && !(cfg.extraConfig ? RUST_MEDIA_ROOT));
+        assertion = !(cfg.extraConfig ? RUST_DATABASE_URL) && !(cfg.extraConfig ? RUST_MEDIA_ROOT);
         message = "Set Rust database and media paths with databaseUrl and mediaRoot, not extraConfig.";
-      }
-      {
-        assertion = !cfg.oidc.enable || rustBackend;
-        message = "services.stricknani.oidc requires the Rust backend.";
       }
       {
         assertion =
@@ -388,9 +328,9 @@ in
         message = "services.stricknani.oidc requires secure session cookies.";
       }
       {
-        assertion =
-          !rustBackend
-          || builtins.all (name: !(lib.hasPrefix "RUST_OIDC_" name)) (builtins.attrNames cfg.extraConfig);
+        assertion = builtins.all (name: !(lib.hasPrefix "RUST_OIDC_" name)) (
+          builtins.attrNames cfg.extraConfig
+        );
         message = "Set RUST_OIDC_* values with services.stricknani.oidc.environmentFile, not extraConfig.";
       }
       {
@@ -420,33 +360,21 @@ in
         # actually restarting the service.
         restartTriggers = [ cfg.package ];
 
-        environment =
-          (
-            if rustBackend then
-              {
-                BIND_HOST = cfg.bindHost;
-                BIND_PORT = toString cfg.port;
-                RUST_DATABASE_URL = cfg.databaseUrl;
-                RUST_MEDIA_ROOT = toString cfg.mediaRoot;
-                TRUSTED_HOSTS = trustedHosts;
-                SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
-              }
-            else
-              {
-                PORT = toString cfg.port;
-                BIND_HOST = cfg.bindHost;
-                DATABASE_URL = cfg.databaseUrl;
-                MEDIA_ROOT = toString cfg.mediaRoot;
-                ALLOWED_HOSTS = trustedHosts;
-              }
-          )
-          // oidcEnvironment
-          // cfg.extraConfig;
+        environment = {
+          BIND_HOST = cfg.bindHost;
+          BIND_PORT = toString cfg.port;
+          RUST_DATABASE_URL = cfg.databaseUrl;
+          RUST_MEDIA_ROOT = toString cfg.mediaRoot;
+          TRUSTED_HOSTS = trustedHosts;
+          SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
+        }
+        // oidcEnvironment
+        // cfg.extraConfig;
 
         serviceConfig = {
           ExecStart = lib.getExe cfg.package;
           WorkingDirectory = cfg.dataDir;
-          StateDirectory = if rustBackend then "stricknani-rust" else "stricknani";
+          StateDirectory = "stricknani-rust";
           StateDirectoryMode = "0750";
           User = user;
           Group = group;
@@ -470,16 +398,16 @@ in
                 cfg.dataDir
                 cfg.mediaRoot
               ];
-          UnsetEnvironment = lib.optionals rustBackend [
+          UnsetEnvironment = [
             "DATABASE_URL"
             "MEDIA_ROOT"
           ];
           EnvironmentFile =
             lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile
-            ++ lib.optionals (rustBackend && cfg.oidc.enable && cfg.oidc.environmentFile != null) [
+            ++ lib.optionals (cfg.oidc.enable && cfg.oidc.environmentFile != null) [
               cfg.oidc.environmentFile
             ]
-            ++ lib.optional rustBackend oidcEnabledEnvironmentFile;
+            ++ [ oidcEnabledEnvironmentFile ];
         };
       };
 
@@ -493,8 +421,7 @@ in
           pkgs.gzip
           pkgs.gnutar
           pkgs.sqlite
-        ]
-        ++ lib.optional (!rustBackend) pkgs.postgresql;
+        ];
 
         serviceConfig = {
           Type = "oneshot";
@@ -520,12 +447,11 @@ in
         };
       };
 
-      tmpfiles.rules =
-        lib.optionals rustBackend [
-          "d ${cfg.dataDir} 0750 ${user} ${group} -"
-          "d ${cfg.mediaRoot} 0750 ${user} ${group} -"
-        ]
-        ++ lib.optional cfg.backup.enable "d ${cfg.backup.dir} 0750 ${user} ${group} -";
+      tmpfiles.rules = [
+        "d ${cfg.dataDir} 0750 ${user} ${group} -"
+        "d ${cfg.mediaRoot} 0750 ${user} ${group} -"
+      ]
+      ++ lib.optional cfg.backup.enable "d ${cfg.backup.dir} 0750 ${user} ${group} -";
     };
 
     services.nginx.virtualHosts = lib.mkIf (cfg.nginx.enable && cfg.hostName != null) {
@@ -539,7 +465,7 @@ in
             proxyWebsockets = true;
           };
         }
-        // lib.optionalAttrs (rustBackend && cfg.oidc.enable) {
+        // lib.optionalAttrs cfg.oidc.enable {
           "/api/v2/auth/oidc/callback/" = {
             proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
             recommendedProxySettings = true;
@@ -555,8 +481,7 @@ in
         check host "stricknani" with address "${cfg.hostName}"
           group services
           restart program = "${pkgs.systemd}/bin/systemctl restart stricknani"
-          # Startup takes ~15-25s (scikit-image/pymupdf/weasyprint imports), so a
-          # deploy-triggered restart routinely fails one healthcheck cycle before
+          # A deploy-triggered restart can fail one healthcheck cycle before
           # the app is ready. Requiring 2 consecutive failed cycles (~2 minutes)
           # avoids monit firing its own concurrent `systemctl restart stricknani`
           # while nixos-rebuild switch's restart of the same unit is still in

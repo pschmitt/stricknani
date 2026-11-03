@@ -37,7 +37,7 @@ async fn fixture() -> Fixture {
         .execute(&pool)
         .await
         .unwrap();
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     Fixture {
         app: app_with_state(
             static_root,

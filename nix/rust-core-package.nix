@@ -16,11 +16,6 @@ let
       ../web/static/service-worker.js
     ];
   };
-
-  legacyStaticSource = lib.fileset.toSource {
-    root = ../stricknani/static;
-    fileset = ../stricknani/static;
-  };
 in
 rustPlatform.buildRustPackage {
   pname = "stricknani-server-core";
@@ -28,7 +23,7 @@ rustPlatform.buildRustPackage {
   src = rustSource;
   sourceRoot = "source/rust";
   cargoLock.lockFile = "${rustSource}/rust/Cargo.lock";
-  STATIC_ROOT = legacyStaticSource;
+  STATIC_ROOT = "${rustSource}/rust/static";
 
   nativeCheckInputs = [
     rustfmt

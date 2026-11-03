@@ -9,9 +9,9 @@
 }:
 
 let
-  legacyStaticSource = lib.fileset.toSource {
-    root = ../stricknani/static;
-    fileset = ../stricknani/static;
+  staticSource = lib.fileset.toSource {
+    root = ../rust/static;
+    fileset = ../rust/static;
   };
 
   ocrEngine = tesseract.override {
@@ -36,15 +36,10 @@ stdenvNoCC.mkDerivation {
 
     install -m 0555 ${corePackage}/bin/stricknani-server \
       "$out/bin/.stricknani-server-wrapped"
-    cp -a --no-preserve=mode ${legacyStaticSource}/. \
+    cp -a --no-preserve=mode ${staticSource}/. \
       "$out/share/stricknani/static/"
     cp -a --no-preserve=mode ${webPackage}/. \
       "$out/share/stricknani/web/"
-
-    # The Rust pages use their own forms, OCR script, and service worker.
-    rm -rf "$out/share/stricknani/static/js" \
-      "$out/share/stricknani/static/vendor/htmx" \
-      "$out/share/stricknani/static/vendor-tiptap"
 
     makeWrapper "$out/bin/.stricknani-server-wrapped" \
       "$out/bin/stricknani-server" \

@@ -43,7 +43,7 @@ async fn test_app() -> TestApp {
     add_session(&pool, admin_id, ADMIN_SESSION).await;
     add_session(&pool, member_id, MEMBER_SESSION).await;
     add_api_token(&pool, admin_id, ADMIN_PAT).await;
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     let router = app_with_state(
         static_root,
         db::AppState::new(pool.clone()).with_secure_cookies(true),

@@ -43,7 +43,7 @@ async fn test_app() -> TestApp {
         .expect("admin role should be set");
     add_session(&pool, user_id, USER_TOKEN).await;
     add_session(&pool, admin_id, ADMIN_TOKEN).await;
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     let router = app_with_state(
         static_root,
         db::AppState::new(pool.clone()).with_secure_cookies(true),
@@ -60,7 +60,7 @@ async fn test_app() -> TestApp {
 async fn test_app_with_media() -> TestApp {
     let mut app = test_app().await;
     let root = tempfile::tempdir().expect("media root should be created");
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stricknani/static");
+    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     app.router = app_with_state(
         static_root,
         db::AppState::new(app.pool.clone())
