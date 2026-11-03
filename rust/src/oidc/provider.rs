@@ -661,12 +661,16 @@ struct SafeHttpClient {
 
 impl SafeHttpClient {
     fn new(allow_http: bool) -> Result<Self, ProviderError> {
-        let client = reqwest::Client::builder()
+        let mut builder = reqwest::Client::builder()
             .redirect(Policy::none())
             .timeout(HTTP_TIMEOUT)
-            .https_only(!allow_http)
-            .build()
-            .map_err(|_| ProviderError::Unavailable)?;
+            .https_only(!allow_http);
+        if allow_http {
+            // Plain-HTTP mode (tests only) never negotiates TLS, so do not
+            // require system CA certificates, which a build sandbox lacks.
+            builder = builder.tls_certs_only(Vec::new());
+        }
+        let client = builder.build().map_err(|_| ProviderError::Unavailable)?;
         Ok(Self { client })
     }
 
