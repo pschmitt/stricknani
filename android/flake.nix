@@ -11,7 +11,7 @@
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    android-app-ci = {
+    ci-workflows = {
       url = "github:pschmitt/ci-workflows";
       flake = false;
     };
@@ -23,7 +23,7 @@
       nixpkgs,
       android-nixpkgs,
       git-hooks,
-      android-app-ci,
+      ci-workflows,
     }:
     let
       system = "x86_64-linux";
@@ -78,7 +78,7 @@
         ) android-nixpkgs.sdk;
       };
 
-      androidEnv = import "${android-app-ci}/nix/devshells.nix" {
+      androidEnv = import "${ci-workflows}/nix/devshells.nix" {
         inherit pkgs system;
         android-nixpkgs = androidNixpkgsPatched;
         appName = "Stricknani";

@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "android-app-ci": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1793536981,
-        "narHash": "sha256-yBOrHsMBF7tyw/vtblxOqhK5uITser1Yh941+Y2sxls=",
-        "owner": "pschmitt",
-        "repo": "ci-workflows",
-        "rev": "817565709a7acb9cdac6221e24b0009d1ec70c34",
-        "type": "github"
-      },
-      "original": {
-        "owner": "pschmitt",
-        "repo": "ci-workflows",
-        "type": "github"
-      }
-    },
     "android-nixpkgs": {
       "inputs": {
         "devshell": "devshell",
@@ -35,6 +19,22 @@
       "original": {
         "owner": "tadfisher",
         "repo": "android-nixpkgs",
+        "type": "github"
+      }
+    },
+    "ci-workflows": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793716082,
+        "narHash": "sha256-w8Ufey0+n5xgf9j+GiSh3gl/Y4Kr0fJAL7RtqTiax8o=",
+        "owner": "pschmitt",
+        "repo": "ci-workflows",
+        "rev": "76182af264455657c94efe53359a8fa647db3e1d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pschmitt",
+        "repo": "ci-workflows",
         "type": "github"
       }
     },
@@ -132,8 +132,8 @@
     },
     "root": {
       "inputs": {
-        "android-app-ci": "android-app-ci",
         "android-nixpkgs": "android-nixpkgs",
+        "ci-workflows": "ci-workflows",
         "git-hooks": "git-hooks",
         "nixpkgs": "nixpkgs"
       }
