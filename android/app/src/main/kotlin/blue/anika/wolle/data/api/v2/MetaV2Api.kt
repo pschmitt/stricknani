@@ -26,4 +26,6 @@ data class MetaV2UserDto(
     val id: Long,
     val email: String,
     @SerialName("is_admin") val isAdmin: Boolean = false,
+    /** A `/media/thumbnails/users/...` path; absent on servers that do not report it yet. */
+    @SerialName("avatar_url") val avatarUrl: String? = null,
 )

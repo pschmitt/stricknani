@@ -48,6 +48,28 @@ class ApiCapabilitiesTest {
     }
 
     @Test
+    fun `the avatar path from meta is carried and optional`() = runTest {
+        val withAvatar =
+            capabilities(
+                FakeMeta {
+                    MetaV2Dto(
+                        user =
+                            MetaV2UserDto(
+                                id = 3,
+                                email = "me@example.org",
+                                avatarUrl = "/media/thumbnails/users/3/a.webp",
+                            )
+                    )
+                }
+            )
+        assertEquals(
+            "/media/thumbnails/users/3/a.webp",
+            withAvatar.resolve().user?.avatarUrl,
+        )
+        assertNull(capabilities(FakeMeta { admin }).resolve().user?.avatarUrl)
+    }
+
+    @Test
     fun `the probe runs once per credentials`() = runTest {
         val meta = FakeMeta { admin }
         val caps = capabilities(meta)

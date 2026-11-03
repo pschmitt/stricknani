@@ -57,6 +57,17 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         _accountEmail.value = cleaned
     }
 
+    /** Last avatar path the server reported (`/media/...`), so the avatar can show offline. */
+    private val _accountAvatarUrl = MutableStateFlow(prefs.getString(KEY_ACCOUNT_AVATAR, null))
+    val accountAvatarUrl: StateFlow<String?> = _accountAvatarUrl.asStateFlow()
+
+    fun setAccountAvatarUrl(path: String?) {
+        val cleaned = path?.trim()?.ifBlank { null }
+        if (cleaned == null) prefs.edit().remove(KEY_ACCOUNT_AVATAR).apply()
+        else prefs.edit().putString(KEY_ACCOUNT_AVATAR, cleaned).apply()
+        _accountAvatarUrl.value = cleaned
+    }
+
     private val _isConfigured = MutableStateFlow(_credentials.value.isValid)
     val isConfigured: StateFlow<Boolean> = _isConfigured.asStateFlow()
 
@@ -92,16 +103,25 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .putString(KEY_SERVER_URL, normalizedUrl)
             .putString(KEY_API_TOKEN, trimmedToken)
             .remove(KEY_ACCOUNT_EMAIL)
+            .remove(KEY_ACCOUNT_AVATAR)
             .apply()
         _accountEmail.value = null
+        _accountAvatarUrl.value = null
         _credentials.value = StricknaniCredentials(normalizedUrl, trimmedToken)
         _isConfigured.value = _credentials.value.isValid
     }
 
     /** Wipes credentials. The Room cache (SNA-7) is wiped by the caller alongside this. */
     fun signOut() {
-        prefs.edit().remove(KEY_SERVER_URL).remove(KEY_API_TOKEN).remove(KEY_ACCOUNT_EMAIL).apply()
+        prefs
+            .edit()
+            .remove(KEY_SERVER_URL)
+            .remove(KEY_API_TOKEN)
+            .remove(KEY_ACCOUNT_EMAIL)
+            .remove(KEY_ACCOUNT_AVATAR)
+            .apply()
         _accountEmail.value = null
+        _accountAvatarUrl.value = null
         _credentials.value = StricknaniCredentials("", "")
         _isConfigured.value = false
     }
@@ -116,6 +136,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         const val KEY_SERVER_URL = "server_url"
         const val KEY_API_TOKEN = "api_token"
         const val KEY_ACCOUNT_EMAIL = "account_email"
+        const val KEY_ACCOUNT_AVATAR = "account_avatar_url"
         const val KEY_BACKUP_PASSWORD = "scheduled_backup_password"
     }
 }

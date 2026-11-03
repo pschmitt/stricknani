@@ -19,7 +19,12 @@ enum class ApiGeneration {
 }
 
 /** The signed-in account as reported by `GET /api/v2/meta`. */
-data class CurrentUser(val id: Long, val email: String, val isAdmin: Boolean)
+data class CurrentUser(
+    val id: Long,
+    val email: String,
+    val isAdmin: Boolean,
+    val avatarUrl: String? = null,
+)
 
 /** [user] is only known when [generation] is [ApiGeneration.V2]. */
 data class ApiCapabilitiesState(
@@ -110,7 +115,7 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
                 else
                     ApiCapabilitiesState(
                         ApiGeneration.V2,
-                        CurrentUser(user.id, user.email, user.isAdmin),
+                        CurrentUser(user.id, user.email, user.isAdmin, user.avatarUrl),
                     ),
             )
         } catch (failure: HttpException) {

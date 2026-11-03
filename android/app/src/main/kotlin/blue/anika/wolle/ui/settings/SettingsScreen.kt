@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.repository.AccountProfile
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
+import blue.anika.wolle.ui.common.AccountAvatar
 
 /**
  * Settings hub (SNA-21): a card of category rows, each navigating to its own dedicated screen
@@ -40,7 +42,9 @@ import blue.anika.wolle.ui.admin.AdminAccessViewModel
 fun SettingsScreen(
     onCategoryClick: (SettingsCategory) -> Unit,
     adminAccess: AdminAccessViewModel = hiltViewModel(),
+    accountAvatar: AccountAvatarViewModel = hiltViewModel(),
 ) {
+    val profile by accountAvatar.profile.collectAsStateWithLifecycle()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
     val categories = SettingsCategory.entries.filter { it != SettingsCategory.Admin || isAdmin }
     Scaffold(
@@ -54,7 +58,7 @@ fun SettingsScreen(
             item {
                 SettingsSingleItemCard {
                     categories.forEach { category ->
-                        SettingsCategoryRow(category, onCategoryClick)
+                        SettingsCategoryRow(category, profile, onCategoryClick)
                     }
                 }
             }
@@ -63,7 +67,11 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsCategoryRow(category: SettingsCategory, onClick: (SettingsCategory) -> Unit) {
+private fun SettingsCategoryRow(
+    category: SettingsCategory,
+    profile: AccountProfile,
+    onClick: (SettingsCategory) -> Unit,
+) {
     val title = category.title()
     val subtitle = category.subtitle()
     SettingsListItem(
@@ -73,7 +81,13 @@ private fun SettingsCategoryRow(category: SettingsCategory, onClick: (SettingsCa
                     contentDescription = "$title: $subtitle"
                     role = Role.Button
                 },
-        leadingContent = { Icon(category.icon, contentDescription = null) },
+        leadingContent = {
+            if (category == SettingsCategory.Account) {
+                AccountAvatar(profile.avatarUrl, profile.email, size = 24.dp)
+            } else {
+                Icon(category.icon, contentDescription = null)
+            }
+        },
         headlineContent = { Text(title) },
         supportingContent = { Text(subtitle) },
         trailingContent = {
