@@ -298,48 +298,50 @@
         oncontextmenu={onContextMenu}
         onkeydown={(event) => onTileKeydown(event, index)}
       >
-        {#if onOpen}
-          <button
-            type="button"
-            class="thumb thumb-button"
-            tabindex="-1"
-            aria-label={item.alt_text ?? fallbackAlt}
-            onclick={() => onOpen(item)}
-          >
-            <img
-              src={item.thumbnail_url}
-              alt=""
-              loading="lazy"
-              draggable="false"
-            />
-          </button>
-        {:else}
-          <div class="thumb">
-            <img
-              src={item.thumbnail_url}
-              alt=""
-              loading="lazy"
-              draggable="false"
-            />
-          </div>
-        {/if}
-        {#if showCover && index === 0}
-          <span class="cover-badge">{t("Cover photo", locale)}</span>
-        {:else if badge}
-          <span class="cover-badge">{@render badge(item, index)}</span>
-        {/if}
-        {#if onDelete}
-          <button
-            type="button"
-            class="delete-button"
-            data-no-drag
-            disabled={deleteDisabled || locked}
-            aria-label={t("Remove photo", locale)}
-            onclick={() => onDelete(item)}
-          >
-            <NavIcon name="action-delete" />
-          </button>
-        {/if}
+        <div class="tile-media">
+          {#if onOpen}
+            <button
+              type="button"
+              class="thumb thumb-button"
+              tabindex="-1"
+              aria-label={item.alt_text ?? fallbackAlt}
+              onclick={() => onOpen(item)}
+            >
+              <img
+                src={item.thumbnail_url}
+                alt=""
+                loading="lazy"
+                draggable="false"
+              />
+            </button>
+          {:else}
+            <div class="thumb">
+              <img
+                src={item.thumbnail_url}
+                alt=""
+                loading="lazy"
+                draggable="false"
+              />
+            </div>
+          {/if}
+          {#if showCover && index === 0}
+            <span class="cover-badge">{t("Cover photo", locale)}</span>
+          {:else if badge}
+            <span class="cover-badge">{@render badge(item, index)}</span>
+          {/if}
+          {#if onDelete}
+            <button
+              type="button"
+              class="delete-button"
+              data-no-drag
+              disabled={deleteDisabled || locked}
+              aria-label={t("Remove photo", locale)}
+              onclick={() => onDelete(item)}
+            >
+              <NavIcon name="action-delete" />
+            </button>
+          {/if}
+        </div>
         {#if sortable}
           <!-- Visually hidden, but reachable for keyboard and screen readers. -->
           <div class="visually-hidden-controls" data-no-drag>
@@ -409,6 +411,10 @@
     border-radius: var(--radius-xs);
   }
 
+  .tile-media {
+    position: relative;
+  }
+
   .thumb {
     display: block;
     width: 100%;
@@ -436,9 +442,9 @@
 
   .cover-badge {
     position: absolute;
-    bottom: 0.4rem;
-    left: 0.4rem;
-    max-width: calc(100% - 0.8rem);
+    inset-block-end: 8px;
+    inset-inline-start: 8px;
+    max-width: calc(100% - 16px);
     border-radius: 999px;
     padding: 0.05rem 0.5rem;
     color: var(--accent-strong);
@@ -450,8 +456,8 @@
 
   .delete-button {
     position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
+    inset-block-start: 8px;
+    inset-inline-end: 8px;
     display: inline-flex;
     width: 2.75rem;
     height: 2.75rem;
