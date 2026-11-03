@@ -15,6 +15,7 @@
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { listCategories } from "../categories/category-api";
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
+  import UrlField from "#lib/components/UrlField.svelte";
   import YarnPicker from "./YarnPicker.svelte";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
   import {
@@ -1286,14 +1287,12 @@
                 <label for="project-link"
                   >{t("Pattern source URL", locale)}</label
                 >
-                <input
+                <UrlField
                   id="project-link"
                   bind:value={draft.link}
-                  type="url"
-                  inputmode="url"
-                  autocomplete="url"
-                  aria-invalid={fieldErrors.link ? "true" : undefined}
-                  aria-describedby={fieldErrors.link
+                  {locale}
+                  invalid={Boolean(fieldErrors.link)}
+                  describedby={fieldErrors.link
                     ? "project-link-error"
                     : undefined}
                 />

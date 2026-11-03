@@ -1,5 +1,6 @@
 <script lang="ts">
   import { focusOnHash } from "#lib/components/focus-on-hash.ts";
+  import UrlField from "#lib/components/UrlField.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onMount, tick, untrack } from "svelte";
@@ -825,25 +826,25 @@
                   setDraft("notes", event.currentTarget.value)}
               ></textarea>
             </label>
-            <label class="field wide" for={fieldId("link")}>
-              <span>{t("Yarn source URL", locale)}</span>
-              <input
+            <div class="field wide">
+              <label for={fieldId("link")}>{t("Yarn source URL", locale)}</label
+              >
+              <UrlField
                 id={fieldId("link")}
-                type="url"
-                inputmode="url"
-                placeholder="https://"
                 value={draft.link}
-                aria-invalid={Boolean(fieldErrors.link)}
-                aria-describedby={fieldErrors.link
+                {locale}
+                placeholder="https://"
+                invalid={Boolean(fieldErrors.link)}
+                describedby={fieldErrors.link
                   ? `${fieldId("link")}-error`
                   : undefined}
-                oninput={(event) => setDraft("link", event.currentTarget.value)}
+                oninput={(value) => setDraft("link", value)}
               />
               {#if fieldErrors.link}<small
                   id={`${fieldId("link")}-error`}
                   class="field-error">{fieldErrors.link}</small
                 >{/if}
-            </label>
+            </div>
           </div>
         </details>
       </fieldset>
