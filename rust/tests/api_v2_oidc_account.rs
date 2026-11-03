@@ -608,7 +608,7 @@ async fn native_link_start_validates_but_does_not_consume_its_reauth_proof() {
             .clone()
             .oneshot(pat_request(
                 "POST",
-                "/account/identities",
+                "/account/identities/link",
                 "native-link-pat",
                 Some(&proof),
                 Some(start_body.clone()),
@@ -677,7 +677,7 @@ async fn native_link_callback_verifies_signed_identity_and_exchanges_bound_grant
         .clone()
         .oneshot(pat_request(
             "POST",
-            "/account/identities",
+            "/account/identities/link",
             "signed-link-pat",
             Some(&proof),
             Some(

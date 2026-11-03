@@ -41,7 +41,8 @@ const MAX_BODY_BYTES: usize = 8 * 1024;
 
 pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
-        .route("/account/identities", get(list_identities).post(start_link))
+        .route("/account/identities", get(list_identities))
+        .route("/account/identities/link", post(start_link))
         .route("/account/identities/link/exchange", post(exchange_link))
         .route("/account/identities/{identity_id}", delete(unlink_identity))
         .route("/account/reauth", post(password_reauth))
