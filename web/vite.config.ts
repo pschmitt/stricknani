@@ -17,7 +17,12 @@ export default defineConfig({
       paths: {
         base: "/app",
       },
-      version: pwaTestVersion ? { name: pwaTestVersion } : {},
+      version: {
+        ...(pwaTestVersion ? { name: pwaTestVersion } : {}),
+        // Tabs look for a new deployment every 10 minutes, and SvelteKit also
+        // checks when a tab regains focus or becomes visible.
+        pollInterval: 10 * 60 * 1000,
+      },
       csp: {
         mode: "hash",
         directives: {
