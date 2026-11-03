@@ -35,8 +35,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +66,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +75,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiGeneration
+import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.animationsDisabled
@@ -81,6 +88,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.delay
 
+private const val PLAY_URL = "https://play.google.com/store/apps/details?id=blue.anika.wolle"
 private const val GITHUB_URL = "https://github.com/pschmitt/stricknani"
 private const val SPONSOR_URL = "https://github.com/sponsors/pschmitt"
 private const val LICENSE_URL = "https://github.com/pschmitt/stricknani/blob/main/LICENSE"
@@ -119,6 +127,8 @@ internal fun AboutSettingsScreen(
             }
         }
     }
+    val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { viewModel.checkForUpdate() }
     LaunchedEffect(mascotCue) {
         if (mascotCue != null) {
             delay(4_000)
@@ -169,6 +179,12 @@ internal fun AboutSettingsScreen(
                             Text(stringResource(R.string.about_settings_app_version_label))
                         },
                         supportingContent = { Text(appVersion) },
+                    )
+                    AboutUpdateRow(
+                        state = updateState,
+                        onDownload = { uriHandler.openUri(it.downloadUrl) },
+                        onRetry = viewModel::checkForUpdate,
+                        onOpenPlay = { uriHandler.openUri(PLAY_URL) },
                     )
                     val buildHint = stringResource(R.string.about_settings_build_hint)
                     SettingsListItem(
@@ -364,6 +380,81 @@ private fun AboutHero(cue: MascotCue?) {
             modifier = Modifier.padding(top = 4.dp),
         )
     }
+}
+
+/**
+ * Update status right under the app version. The download button opens the same URL as the Home
+ * update card; nothing is claimed for builds that cannot be compared against a release.
+ */
+@Composable
+private fun AboutUpdateRow(
+    state: AboutUpdateState,
+    onDownload: (AppUpdate) -> Unit,
+    onRetry: () -> Unit,
+    onOpenPlay: () -> Unit,
+) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    SettingsListItem(
+        modifier = Modifier.testTag("about-update-row"),
+        leadingContent = {
+            when (state) {
+                AboutUpdateState.Checking ->
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                AboutUpdateState.UpToDate ->
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                is AboutUpdateState.Available ->
+                    Icon(
+                        Icons.Filled.SystemUpdate,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                AboutUpdateState.Failed ->
+                    Icon(Icons.Filled.CloudOff, contentDescription = null, tint = muted)
+                AboutUpdateState.DevBuild,
+                AboutUpdateState.Play ->
+                    Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = muted)
+            }
+        },
+        headlineContent = {
+            Text(
+                when (state) {
+                    AboutUpdateState.Checking -> stringResource(R.string.about_update_checking)
+                    AboutUpdateState.UpToDate -> stringResource(R.string.about_update_up_to_date)
+                    is AboutUpdateState.Available ->
+                        stringResource(R.string.about_update_available, state.update.version)
+                    AboutUpdateState.Failed -> stringResource(R.string.about_update_failed)
+                    AboutUpdateState.DevBuild -> stringResource(R.string.about_update_dev_build)
+                    AboutUpdateState.Play -> stringResource(R.string.about_update_play)
+                }
+            )
+        },
+        trailingContent = {
+            when (state) {
+                is AboutUpdateState.Available ->
+                    Button(onClick = { onDownload(state.update) }) {
+                        Text(stringResource(R.string.about_update_button))
+                    }
+                AboutUpdateState.UpToDate ->
+                    TextButton(onClick = onRetry) {
+                        Text(stringResource(R.string.about_update_check))
+                    }
+                AboutUpdateState.Failed ->
+                    TextButton(onClick = onRetry) {
+                        Text(stringResource(R.string.about_update_check_again))
+                    }
+                AboutUpdateState.Play ->
+                    TextButton(onClick = onOpenPlay) {
+                        Text(stringResource(R.string.about_update_open_play))
+                    }
+                AboutUpdateState.Checking,
+                AboutUpdateState.DevBuild -> Unit
+            }
+        },
+    )
 }
 
 /** A link row: icon chip, label and a short description; opens in the browser. */

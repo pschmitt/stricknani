@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiCapabilitiesState
@@ -29,6 +30,9 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
+import blue.anika.wolle.data.update.UpdateCheckResult
+import blue.anika.wolle.data.update.UpdateChecker
+import blue.anika.wolle.data.update.checkCurrentBuild
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.ReadingTextSize
@@ -37,6 +41,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +49,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -63,6 +69,7 @@ constructor(
     private val backupScheduler: BackupScheduler,
     private val syncScheduler: SyncScheduler,
     private val capabilities: ApiCapabilities,
+    private val updateChecker: UpdateChecker,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -99,6 +106,35 @@ constructor(
 
     private val _serverMeta = MutableStateFlow<MetaDto?>(null)
     val serverMeta: StateFlow<MetaDto?> = _serverMeta.asStateFlow()
+
+    private val updateResult = MutableStateFlow<UpdateCheckResult?>(null)
+    private val updateChecking = MutableStateFlow(BuildConfig.SELF_UPDATE_ENABLED)
+
+    /** Update row of the About screen; the check starts with the screen and can be repeated. */
+    val updateState: StateFlow<AboutUpdateState> =
+        combine(updateResult, updateChecking) { result, checking ->
+                aboutUpdateState(BuildConfig.SELF_UPDATE_ENABLED, checking, result)
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                aboutUpdateState(BuildConfig.SELF_UPDATE_ENABLED, true, null),
+            )
+
+    private var updateCheckJob: Job? = null
+
+    /** Runs a GitHub Releases check unless one is already in flight (or Play handles updates). */
+    fun checkForUpdate() {
+        if (!BuildConfig.SELF_UPDATE_ENABLED || updateCheckJob?.isActive == true) return
+        updateChecking.value = true
+        updateCheckJob = viewModelScope.launch {
+            try {
+                updateResult.value = updateChecker.checkCurrentBuild()
+            } finally {
+                updateChecking.value = false
+            }
+        }
+    }
 
     init {
         viewModelScope.launch { _serverMeta.value = runCatching { metaApi.getMeta() }.getOrNull() }

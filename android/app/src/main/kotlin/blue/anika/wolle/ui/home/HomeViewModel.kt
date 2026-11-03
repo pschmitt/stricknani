@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.home
 
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.BuildConfig
@@ -16,7 +15,9 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.update.AppUpdate
+import blue.anika.wolle.data.update.UpdateCheckResult
 import blue.anika.wolle.data.update.UpdateChecker
+import blue.anika.wolle.data.update.checkCurrentBuild
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
@@ -155,14 +156,9 @@ constructor(
         if (updateCheckJob?.isActive == true) return
         updateCheckJob = viewModelScope.launch {
             // A failed or offline check yields null - keep any update already found.
-            updateChecker
-                .check(
-                    gitRevision = BuildConfig.GIT_REVISION,
-                    versionName = BuildConfig.VERSION_NAME,
-                    isDebugBuild = BuildConfig.DEBUG,
-                    supportedAbis = Build.SUPPORTED_ABIS.toList(),
-                )
-                ?.let { foundUpdate.value = it }
+            (updateChecker.checkCurrentBuild() as? UpdateCheckResult.Available)?.let {
+                foundUpdate.value = it.update
+            }
         }
     }
 

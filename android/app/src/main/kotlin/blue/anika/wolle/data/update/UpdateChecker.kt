@@ -19,6 +19,19 @@ import okhttp3.Request
  */
 data class AppUpdate(val version: String, val downloadUrl: String)
 
+/** Outcome of one update check; [check] collapses it to "an update or nothing". */
+sealed interface UpdateCheckResult {
+    data object UpToDate : UpdateCheckResult
+
+    data class Available(val update: AppUpdate) : UpdateCheckResult
+
+    /** A local, dirty or otherwise unrecognised build: no release to compare against. */
+    data object NotEligible : UpdateCheckResult
+
+    /** Offline, rate-limited or an unreadable response. */
+    data object Failed : UpdateCheckResult
+}
+
 @Serializable
 internal data class GithubRelease(
     @SerialName("tag_name") val tagName: String,
@@ -57,19 +70,33 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
         isDebugBuild: Boolean,
         supportedAbis: List<String>,
     ): AppUpdate? =
+        (checkDetailed(gitRevision, versionName, isDebugBuild, supportedAbis)
+                as? UpdateCheckResult.Available)
+            ?.update
+
+    /** Like [check], but says why there is no update (see [UpdateCheckResult]). */
+    suspend fun checkDetailed(
+        gitRevision: String,
+        versionName: String,
+        isDebugBuild: Boolean,
+        supportedAbis: List<String>,
+    ): UpdateCheckResult =
         withContext(Dispatchers.IO) {
             try {
-                when {
-                    SEMVER.matches(gitRevision) ->
-                        checkStable(versionName, isDebugBuild, supportedAbis)
-                    COMMIT_HASH.matches(gitRevision) ->
-                        checkRolling(gitRevision, isDebugBuild, supportedAbis)
-                    else -> null
-                }
+                val update =
+                    when {
+                        SEMVER.matches(gitRevision) ->
+                            checkStable(versionName, isDebugBuild, supportedAbis)
+                        COMMIT_HASH.matches(gitRevision) ->
+                            checkRolling(gitRevision, isDebugBuild, supportedAbis)
+                        else -> return@withContext UpdateCheckResult.NotEligible
+                    }
+                if (update == null) UpdateCheckResult.UpToDate
+                else UpdateCheckResult.Available(update)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                null
+                UpdateCheckResult.Failed
             }
         }
 
@@ -90,7 +117,9 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
         supportedAbis: List<String>,
     ): AppUpdate? {
         val release = fetch("$apiBaseUrl/releases/tags/latest")
-        val remoteCommit = FULL_COMMIT_HASH.find(release.body.orEmpty())?.value ?: return null
+        val remoteCommit =
+            FULL_COMMIT_HASH.find(release.body.orEmpty())?.value
+                ?: error("latest release names no commit")
         if (remoteCommit.startsWith(gitRevision.lowercase())) return null
         return AppUpdate(
             remoteCommit.take(SHORT_HASH_LENGTH),

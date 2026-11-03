@@ -118,4 +118,18 @@ class UpdateCheckerTest {
 
         assertNull(check(revision = "v1.0.0", version = "1.0.0"))
     }
+
+    @Test
+    fun `detailed result tells up to date, ineligible and failed apart`() {
+        server.enqueue(MockResponse().setBody(releaseJson("v1.1.0")))
+        val abis = listOf("arm64-v8a")
+        fun detailed(rev: String, ver: String) = runBlocking {
+            checker.checkDetailed(rev, ver, false, abis)
+        }
+
+        assertEquals(UpdateCheckResult.UpToDate, detailed("v1.1.0", "1.1.0"))
+        assertEquals(UpdateCheckResult.NotEligible, detailed("unknown", "1.1.0"))
+        server.enqueue(MockResponse().setResponseCode(500))
+        assertEquals(UpdateCheckResult.Failed, detailed("v1.1.0", "1.1.0"))
+    }
 }
