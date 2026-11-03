@@ -115,20 +115,17 @@ pub(crate) fn recent_auth<'a>(
     }
 }
 
-/// Verify an account password and either stamp the current browser session or
-/// issue a one-time proof bound to the current API token and exact action.
-pub(crate) async fn password_stepup(
+/// Verify the account password for a sensitive action without revealing
+/// whether the account has a password enabled (the dummy hash still runs).
+pub(crate) async fn verify_current_password(
     pool: &SqlitePool,
-    credential: CurrentCredential,
+    user_id: i64,
     password: Zeroizing<String>,
-    action: RecentAction<'_>,
-    target_user_id: i64,
-    now: i64,
-) -> Result<Option<String>, StepupError> {
+) -> Result<(), StepupError> {
     let row: Option<(String, i64)> = sqlx::query_as(
         "SELECT password_hash, password_enabled FROM users WHERE id = ? AND active = 1",
     )
-    .bind(credential.user_id)
+    .bind(user_id)
     .fetch_optional(pool)
     .await?;
     let candidate_hash = row
@@ -141,6 +138,21 @@ pub(crate) async fn password_stepup(
     {
         return Err(StepupError::InvalidCredentials);
     }
+
+    Ok(())
+}
+
+/// Verify an account password and either stamp the current browser session or
+/// issue a one-time proof bound to the current API token and exact action.
+pub(crate) async fn password_stepup(
+    pool: &SqlitePool,
+    credential: CurrentCredential,
+    password: Zeroizing<String>,
+    action: RecentAction<'_>,
+    target_user_id: i64,
+    now: i64,
+) -> Result<Option<String>, StepupError> {
+    verify_current_password(pool, credential.user_id, password).await?;
 
     match credential.kind {
         CredentialKind::Browser => {

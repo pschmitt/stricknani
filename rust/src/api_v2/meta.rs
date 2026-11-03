@@ -21,6 +21,10 @@ struct MetaData {
     build_id: String,
     is_admin: bool,
     user: Option<MetaUser>,
+    /// Id of the bearer PAT making this request; absent for browser sessions
+    /// and anonymous callers. Never the token value or hash.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    current_token_id: Option<i64>,
     auth: AuthDiscovery,
 }
 
@@ -72,6 +76,23 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
         },
         None => None,
     };
+    let current_token_id = match (
+        user_id,
+        headers.contains_key(axum::http::header::AUTHORIZATION),
+    ) {
+        (Some(user_id), true) => match crate::auth_stepup_service::current_credential(
+            &state.app.pool,
+            &headers,
+            user_id,
+            state.app.secure_cookies,
+        )
+        .await
+        {
+            Ok(credential) => Some(credential.token_id),
+            Err(_) => None,
+        },
+        _ => None,
+    };
     let is_admin = user.as_ref().is_some_and(|user| user.is_admin);
     let oidc = state
         .app
@@ -90,6 +111,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
             build_id: state.app.build_id,
             is_admin,
             user,
+            current_token_id,
             auth: AuthDiscovery {
                 password: true,
                 oidc,

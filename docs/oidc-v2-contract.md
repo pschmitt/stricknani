@@ -39,7 +39,9 @@ nullable display information and is not an identity key. `can_unlink` is a UI
 hint; the server rechecks the last usable method inside the write transaction.
 `current_credential` is true only when this identity issued the caller's
 current OIDC credential; use it to warn before unlinking that identity.
-This endpoint does not make the existing cookie-only `/account` API PAT-capable.
+The `/account` routes are PAT-capable separately, see
+[web-v2-contract.md](web-v2-contract.md#bearer-pat-access-to-the-account-routes);
+token creation there reuses the `create_api_token` step-up above.
 
 ## Login
 

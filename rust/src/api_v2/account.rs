@@ -1,14 +1,18 @@
-//! Browser self-service account routes.
+//! Account self-service routes for browser sessions and bearer PATs.
+//!
+//! A request carrying an `Authorization` header is authenticated only as an
+//! API-purpose PAT (no cookie fallback, no CSRF). Otherwise it needs a browser
+//! session and, for mutations, Origin/CSRF.
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, net::SocketAddr};
 
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     extract::{
-        DefaultBodyLimit, Multipart, Path, State, multipart::MultipartRejection,
+        ConnectInfo, DefaultBodyLimit, Multipart, Path, State, multipart::MultipartRejection,
         rejection::JsonRejection,
     },
-    http::{HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode, header::AUTHORIZATION},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
@@ -16,13 +20,15 @@ use serde::Deserialize;
 use zeroize::Zeroizing;
 
 use crate::{
-    account_service::{self, AccountError},
-    auth, media,
+    account_service::{self, AccountError, BearerCaller, BearerStepUp, CreateTokenOptions},
+    auth,
+    auth_stepup_service::{self, StepupError},
+    media,
 };
 
 use super::{
     ApiV2State, Envelope,
-    access::{browser_user, mutation_user, rate_limited},
+    access::{rate_limited, resource_mutation_user, resource_user},
 };
 
 const MAX_AVATAR_REQUEST_BYTES: usize = 26 * 1024 * 1024;
@@ -44,7 +50,7 @@ pub(super) fn router() -> Router<ApiV2State> {
 }
 
 async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -55,7 +61,7 @@ async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
 }
 
 async fn list_tokens(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -68,22 +74,79 @@ async fn list_tokens(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
 #[derive(Deserialize)]
 struct CreateTokenRequest {
     name: Option<String>,
+    /// Optional requested expiry (RFC 3339). Bearer-created tokens are clamped
+    /// to the calling token's own expiry.
+    expires_at: Option<String>,
+    /// Step-up for bearer callers (alternative: `X-Reauth-Token`).
+    current_password: Option<String>,
 }
 
 async fn create_token(
     State(state): State<ApiV2State>,
     headers: HeaderMap,
+    peer: Option<Extension<ConnectInfo<SocketAddr>>>,
     request: Result<Json<CreateTokenRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    let Json(request) = match request {
+    let Json(mut request) = match request {
         Ok(request) => request,
         Err(error) => return json_rejection(error),
     };
-    match account_service::create_token(&state.app.pool, user_id, request.name).await {
+    let requested_expires_at = match request.expires_at.as_deref().map(parse_expiry) {
+        None => None,
+        Some(Some(at)) => Some(at),
+        Some(None) => return field_error("expires_at", "Expiry must be an RFC 3339 timestamp"),
+    };
+    let mut options = CreateTokenOptions {
+        requested_expires_at,
+        bearer: None,
+    };
+    if is_bearer(&headers) {
+        let credential = match auth_stepup_service::current_credential(
+            &state.app.pool,
+            &headers,
+            user_id,
+            state.app.secure_cookies,
+        )
+        .await
+        {
+            Ok(credential) => credential,
+            Err(error) => return stepup_error(error),
+        };
+        let stepup = if headers.contains_key("x-reauth-token") {
+            match auth_stepup_service::native_proof_hash(&headers) {
+                Ok(hash) => BearerStepUp::Proof(hash),
+                Err(error) => return stepup_error(error),
+            }
+        } else {
+            let password = Zeroizing::new(request.current_password.take().unwrap_or_default());
+            if password.is_empty() {
+                return reauth_required();
+            }
+            if password.len() > account_service::MAX_PASSWORD_BYTES {
+                return field_error("current_password", "Current password is invalid");
+            }
+            if let Some(response) = reserve_password_attempt(&state, peer) {
+                return response;
+            }
+            if let Err(error) =
+                auth_stepup_service::verify_current_password(&state.app.pool, user_id, password)
+                    .await
+            {
+                return stepup_error(error);
+            }
+            BearerStepUp::PasswordVerified
+        };
+        options.bearer = Some(BearerCaller {
+            token_id: credential.token_id,
+            stepup,
+        });
+    }
+    match account_service::create_token_with(&state.app.pool, user_id, request.name, options).await
+    {
         Ok(token) => (
             StatusCode::CREATED,
             Json(Envelope {
@@ -91,6 +154,7 @@ async fn create_token(
                     id: token.id,
                     name: token.name,
                     created_at: token.created_at,
+                    expires_at: token.expires_at,
                     token: token.token.to_string(),
                 },
             }),
@@ -100,11 +164,69 @@ async fn create_token(
     }
 }
 
+fn is_bearer(headers: &HeaderMap) -> bool {
+    headers.contains_key(AUTHORIZATION)
+}
+
+fn parse_expiry(value: &str) -> Option<i64> {
+    chrono::DateTime::parse_from_rfc3339(value)
+        .ok()
+        .map(|at| at.timestamp())
+}
+
+/// Bearer password checks share the reauthentication attempt budget.
+fn reserve_password_attempt(
+    state: &ApiV2State,
+    peer: Option<Extension<ConnectInfo<SocketAddr>>>,
+) -> Option<Response> {
+    let key = format!(
+        "reauth:{}",
+        peer.map(|Extension(ConnectInfo(address))| address.ip().to_string())
+            .unwrap_or_else(|| "unknown".to_owned())
+    );
+    state.app.auth_limiter.reserve(&[key]).is_none().then(|| {
+        rate_limited(
+            auth::RATE_LIMIT_WINDOW.as_secs(),
+            "Too many password attempts",
+        )
+    })
+}
+
+fn reauth_required() -> Response {
+    super::api_error(
+        StatusCode::FORBIDDEN,
+        "reauth_required",
+        "Reauthentication is required",
+    )
+}
+
+fn stepup_error(error: StepupError) -> Response {
+    match error {
+        StepupError::Unauthorized => super::api_error(
+            StatusCode::UNAUTHORIZED,
+            "session_expired",
+            "Sign in to continue",
+        ),
+        StepupError::InvalidCredentials => super::api_error(
+            StatusCode::UNAUTHORIZED,
+            "invalid_credentials",
+            "Password is incorrect",
+        ),
+        StepupError::Identity(_) => reauth_required(),
+        StepupError::Verification | StepupError::Database(_) => super::api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Request failed",
+        ),
+    }
+}
+
 #[derive(serde::Serialize)]
 struct CreatedTokenDto {
     id: i64,
     name: String,
     created_at: String,
+    expires_at: Option<String>,
     token: String,
 }
 
@@ -113,15 +235,51 @@ async fn revoke_token(
     headers: HeaderMap,
     Path(id): Path<i64>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
+    // Resolve the caller's own token before revoking so the response can say
+    // whether this call signed the caller out.
+    let current_token_id = if is_bearer(&headers) {
+        match auth_stepup_service::current_credential(
+            &state.app.pool,
+            &headers,
+            user_id,
+            state.app.secure_cookies,
+        )
+        .await
+        {
+            Ok(credential) => Some(credential.token_id),
+            Err(error) => return stepup_error(error),
+        }
+    } else {
+        None
+    };
     match account_service::revoke_token(&state.app.pool, user_id, id).await {
-        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(true) => match current_token_id {
+            Some(current) => Json(Envelope {
+                data: RevokedTokenDto {
+                    id,
+                    revoked: true,
+                    current_token: current == id,
+                },
+            })
+            .into_response(),
+            None => StatusCode::NO_CONTENT.into_response(),
+        },
         Ok(false) => super::api_error(StatusCode::NOT_FOUND, "not_found", "API token not found"),
         Err(error) => account_error(error),
     }
+}
+
+/// Bearer revoke result. `current_token` true means the caller revoked its
+/// own token and every further request with it gets `401 session_expired`.
+#[derive(serde::Serialize)]
+struct RevokedTokenDto {
+    id: i64,
+    revoked: bool,
+    current_token: bool,
 }
 
 #[derive(Deserialize)]
@@ -133,9 +291,10 @@ struct ChangePasswordRequest {
 async fn change_password(
     State(state): State<ApiV2State>,
     headers: HeaderMap,
+    peer: Option<Extension<ConnectInfo<SocketAddr>>>,
     request: Result<Json<ChangePasswordRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -148,10 +307,17 @@ async fn change_password(
     if current_password.is_empty() || current_password.len() > account_service::MAX_PASSWORD_BYTES {
         return field_error("current_password", "Current password is invalid");
     }
+    if is_bearer(&headers)
+        && let Some(response) = reserve_password_attempt(&state, peer)
+    {
+        return response;
+    }
     match account_service::change_password(&state.app.pool, user_id, current_password, new_password)
         .await
     {
         Ok(()) => {
+            // Every browser session and PAT of the account is revoked,
+            // including the bearer token that made this request.
             let mut response = StatusCode::NO_CONTENT.into_response();
             super::append_set_cookie(
                 &mut response,
@@ -171,7 +337,7 @@ async fn upload_avatar(
     headers: HeaderMap,
     multipart: Result<Multipart, MultipartRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -200,7 +366,7 @@ async fn upload_avatar(
 }
 
 async fn delete_avatar(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -260,6 +426,13 @@ fn account_error(error: AccountError) -> Response {
             "conflict",
             "Account credentials changed; sign in again",
         ),
+        AccountError::InvalidExpiry => field_error("expires_at", "Expiry must be in the future"),
+        AccountError::CallerTokenInvalid => super::api_error(
+            StatusCode::UNAUTHORIZED,
+            "session_expired",
+            "Sign in to continue",
+        ),
+        AccountError::ReauthRequired => reauth_required(),
         AccountError::InvalidAvatar(media::UploadError::TooLarge) => super::api_error(
             StatusCode::PAYLOAD_TOO_LARGE,
             "payload_too_large",

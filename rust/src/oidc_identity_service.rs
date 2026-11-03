@@ -64,6 +64,7 @@ enum AuthAuditAction {
     IdentityAdminUnlinked,
     OidcLoginSucceeded,
     OidcTokenMinted,
+    ApiTokenCreated,
 }
 
 impl AuthAuditAction {
@@ -74,6 +75,7 @@ impl AuthAuditAction {
             Self::IdentityAdminUnlinked => "identity_admin_unlinked",
             Self::OidcLoginSucceeded => "oidc_login_succeeded",
             Self::OidcTokenMinted => "oidc_token_minted",
+            Self::ApiTokenCreated => "api_token_created",
         }
     }
 }
@@ -255,8 +257,7 @@ pub(crate) async fn validate_recent_auth(
 
 /// Consume a validated proof inside a caller's serialized mutation transaction.
 /// Generic password/token services use this for the other frozen reauth actions.
-#[cfg(test)]
-async fn consume_recent_auth_tx(
+pub(crate) async fn consume_recent_auth_tx(
     tx: &mut Transaction<'_, Sqlite>,
     reauth: RecentAuth<'_>,
     actor_user_id: i64,
@@ -971,6 +972,25 @@ async fn revoke_identity_tokens_tx(
     )
     .bind(now)
     .bind(identity_id)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+/// Record an API token creation by `user_id` in the caller's transaction.
+pub(crate) async fn record_api_token_created_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    user_id: i64,
+    now: i64,
+) -> Result<(), OidcIdentityError> {
+    sqlx::query(
+        "INSERT INTO auth_audit_events (action, actor_user_id, target_user_id, created_at) \
+         VALUES (?, ?, ?, ?)",
+    )
+    .bind(AuthAuditAction::ApiTokenCreated.as_str())
+    .bind(user_id)
+    .bind(user_id)
+    .bind(now)
     .execute(&mut **tx)
     .await?;
     Ok(())

@@ -133,8 +133,11 @@ bearer-only and keeps its response contract.
 
 ## Account API slice
 
-Account routes use the current browser-purpose session. Every mutation requires
-same-origin `Origin` and the matching `X-CSRF-Token`. Token secrets are returned
+Account routes accept the current browser-purpose session or a strict
+API-purpose bearer PAT. Browser mutations require same-origin `Origin` and the
+matching `X-CSRF-Token`. A request with an `Authorization` header is
+authenticated only as a PAT: an invalid bearer gives `401 session_expired` and
+never falls back to a cookie, and a valid PAT needs no `Origin`/CSRF. Token secrets are returned
 only in the successful create response; list responses never include token
 hashes or secret values. The token quota is five API-token creations per hour
 per owner, counting revoked API tokens as issued; browser-session tokens do not
@@ -144,9 +147,9 @@ consume that quota.
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
 | `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url}}`                                      |
 | `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at}]}`                                   |
-| `POST /account/api-tokens`        | JSON `{name?: string}`                  | `201 {data: {id, name, created_at, token}}`                                      |
-| `DELETE /account/api-tokens/{id}` | —                                       | `204`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
-| `PUT /account/password`           | JSON `{current_password, new_password}` | `204`; revokes browser sessions and clears the current cookie after commit       |
+| `POST /account/api-tokens`        | JSON `{name?, expires_at?, current_password?}` | `201 {data: {id, name, created_at, expires_at, token}}`                   |
+| `DELETE /account/api-tokens/{id}` | —                                       | browser: `204`; bearer: `200 {data: {id, revoked: true, current_token}}`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
+| `PUT /account/password`           | JSON `{current_password, new_password}` | `204`; revokes every browser session and PAT and clears the current cookie after commit |
 | `POST /account/avatar`            | Multipart `file`                        | `{data: {avatar_url}}`                                                           |
 | `DELETE /account/avatar`          | —                                       | `204`                                                                            |
 
@@ -161,6 +164,53 @@ one `file` field, caps the file at 25 MiB and the request at 26 MiB, and returns
 the same thumbnail URL used by the browser pages. All account reads and writes
 are owner-scoped by the authenticated account; token IDs owned by another user
 or belonging to browser sessions return `404`.
+
+### Bearer PAT access to the account routes
+
+All seven routes above accept a bearer PAT with these rules (T121.8):
+
+- **Read.** `GET /account` and `GET /account/api-tokens` work as for a browser.
+- **Which token am I.** For a bearer request `GET /api/v2/meta` adds
+  `data.current_token_id` (the numeric id of the PAT that made the request, as
+  listed by `GET /account/api-tokens`). It is absent for browser sessions and
+  anonymous callers. Neither the token value nor its hash is ever returned.
+- **Revoke.** A bearer PAT may revoke any of the owner's API tokens, including
+  its own. The response is `200 {data: {id, revoked: true, current_token}}`.
+  `current_token: true` means the caller just signed itself out: its next
+  request returns `401 session_expired` and the client must discard the token.
+  Revoking another token leaves the caller signed in.
+- **Avatar.** `POST`/`DELETE /account/avatar` behave as for the browser, with the
+  same 25 MiB file / 26 MiB request caps and image validation.
+- **Change password.** `PUT /account/password` needs `current_password` in the
+  body exactly as in the browser. On success `204` is returned and the existing
+  policy applies: every browser session and every PAT of the account, including
+  the calling one, is revoked, and nothing is minted. The app must treat `204`
+  as a sign-out and sign in again with the new password.
+- **Create a token (step-up).** A bearer PAT must prove recent authentication or
+  the request is refused and nothing is created. Either send
+  `current_password` in the JSON body, or send an `X-Reauth-Token` proof for
+  action `create_api_token` obtained from `POST /account/reauth` (password) or
+  `POST /account/reauth/oidc/start` + `/exchange` (the path for accounts with
+  `password_enabled = false`); see [the OIDC contract](oidc-v2-contract.md#recent-authentication).
+  A proof is single-use and bound to the calling PAT; if the header is present it
+  is used and the password is ignored. Errors: `403 reauth_required` (no or
+  invalid/replayed proof, or neither field sent), `401 invalid_credentials`
+  (wrong password, or the account has no usable password), `401 session_expired`
+  (calling PAT no longer valid), `429 rate_limited` (shared password-attempt
+  budget with `/account/reauth`, plus the five-per-hour creation quota).
+- **Expiry clamp.** `expires_at` is an optional RFC3339 timestamp in the future
+  (`422 validation_error` on `fields.expires_at` otherwise). A token created via
+  bearer never outlives the calling token: its expiry is the earlier of the
+  requested expiry and the caller's expiry, and equals the caller's when none is
+  requested and the caller expires. The response carries the effective
+  `expires_at` (`null` for a non-expiring token).
+- **Audit.** Every token creation (browser or bearer) is recorded as
+  `api_token_created` in the authentication audit (actor and target only, no
+  token material).
+- **Unchanged.** Browser CSRF/Origin checks and behaviour (including `204` on
+  revoke and the cookie clear on password change) are unchanged. Servers
+  without these changes answer a bearer call on these routes with `401`; Android
+  hides the account features then.
 
 ## Gauge tool
 
@@ -577,11 +627,13 @@ PAT requests do not require
 `Origin` or `X-CSRF-Token`. Without `Authorization`, browser mutations retain
 both same-origin and CSRF checks. Response shapes, audit behavior, media
 authorization, and `Cache-Control: no-store` are shared between both paths.
-Session/login/signup and self-service account routes retain their existing
-browser authentication.
+Session/login/signup routes retain their existing browser authentication; the
+self-service account routes additionally accept a PAT, see
+[Bearer PAT access to the account routes](#bearer-pat-access-to-the-account-routes).
 
 Android can discover server metadata and its current user through
-`GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, user}}`.
+`GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, user, current_token_id}}`.
+`current_token_id` is the id of the calling PAT, or absent for browser sessions.
 `user` is `{id, email, is_admin, avatar_url}` for a valid session or PAT; anonymous or
 invalid-cookie requests return `user: null` and `is_admin: false`.
 Explicit invalid Bearer credentials return the v2 `401 session_expired`

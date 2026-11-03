@@ -3,7 +3,10 @@
 use sqlx::SqlitePool;
 use zeroize::Zeroizing;
 
-use crate::{auth, media};
+use crate::{
+    auth, media,
+    oidc_identity_service::{self, RecentAction, RecentAuth},
+};
 
 pub(crate) const MAX_PASSWORD_BYTES: usize = 1024;
 pub(crate) const MAX_TOKEN_NAME_BYTES: usize = 255;
@@ -20,12 +23,39 @@ pub(crate) enum AccountError {
     CurrentPasswordIncorrect,
     PasswordConflict,
     InvalidAvatar(media::UploadError),
+    InvalidExpiry,
+    /// The bearer token that made the request is no longer valid.
+    CallerTokenInvalid,
+    /// A sensitive action lacks a valid, unconsumed step-up proof.
+    ReauthRequired,
+}
+
+/// How a bearer caller proved recent authentication for token creation.
+pub(crate) enum BearerStepUp {
+    /// The handler already verified the current password.
+    PasswordVerified,
+    /// SHA-256 of an `X-Reauth-Token` proof, consumed with the insert.
+    Proof(String),
+}
+
+pub(crate) struct BearerCaller {
+    pub(crate) token_id: i64,
+    pub(crate) stepup: BearerStepUp,
+}
+
+#[derive(Default)]
+pub(crate) struct CreateTokenOptions {
+    /// Requested expiry as a Unix timestamp.
+    pub(crate) requested_expires_at: Option<i64>,
+    /// Set when a bearer PAT (not a browser session) makes the request.
+    pub(crate) bearer: Option<BearerCaller>,
 }
 
 pub(crate) struct CreatedToken {
     pub(crate) id: i64,
     pub(crate) name: String,
     pub(crate) created_at: String,
+    pub(crate) expires_at: Option<String>,
     pub(crate) token: Zeroizing<String>,
 }
 
@@ -69,6 +99,21 @@ pub(crate) async fn create_token(
     user_id: i64,
     requested_name: Option<String>,
 ) -> Result<CreatedToken, AccountError> {
+    create_token_with(pool, user_id, requested_name, CreateTokenOptions::default()).await
+}
+
+/// Create an API token. A token created by a bearer caller is stepped up
+/// inside the insert transaction and never outlives the caller's own token.
+pub(crate) async fn create_token_with(
+    pool: &SqlitePool,
+    user_id: i64,
+    requested_name: Option<String>,
+    options: CreateTokenOptions,
+) -> Result<CreatedToken, AccountError> {
+    let now = chrono::Utc::now().timestamp();
+    if options.requested_expires_at.is_some_and(|at| at <= now) {
+        return Err(AccountError::InvalidExpiry);
+    }
     let name = requested_name.unwrap_or_default().trim().to_owned();
     let name = if name.is_empty() {
         "API token".to_owned()
@@ -89,6 +134,42 @@ pub(crate) async fn create_token(
         .map_err(|_| AccountError::Database)?;
     if active.rows_affected() != 1 {
         return Err(AccountError::TokenNotFound);
+    }
+    let mut expires_at = options.requested_expires_at;
+    if let Some(caller) = &options.bearer {
+        let caller_expiry: Option<Option<i64>> = sqlx::query_scalar(
+            "SELECT expires_at FROM api_tokens WHERE id = ? AND user_id = ? \
+             AND purpose = 'api' AND revoked_at IS NULL \
+             AND (expires_at IS NULL OR expires_at > ?)",
+        )
+        .bind(caller.token_id)
+        .bind(user_id)
+        .bind(now)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+        let Some(caller_expiry) = caller_expiry else {
+            return Err(AccountError::CallerTokenInvalid);
+        };
+        expires_at = match (expires_at, caller_expiry) {
+            (Some(requested), Some(caller)) => Some(requested.min(caller)),
+            (requested, caller) => requested.or(caller),
+        };
+        if let BearerStepUp::Proof(proof_hash) = &caller.stepup {
+            oidc_identity_service::consume_recent_auth_tx(
+                &mut tx,
+                RecentAuth::NativeProof {
+                    token_id: caller.token_id,
+                    proof_hash,
+                },
+                user_id,
+                user_id,
+                RecentAction::CreateApiToken,
+                now,
+            )
+            .await
+            .map_err(|_| AccountError::ReauthRequired)?;
+        }
     }
     let oldest_recent: Option<i64> = sqlx::query_scalar(
         "SELECT min(created_at) FROM api_tokens WHERE user_id = ? AND purpose = 'api' \
@@ -115,12 +196,13 @@ pub(crate) async fn create_token(
     let token = auth::generate_token().map_err(|_| AccountError::Database)?;
     let token_hash = auth::token_hash(token.as_bytes());
     let result = sqlx::query(
-        "INSERT INTO api_tokens (user_id, name, token_hash, created_at) \
-         VALUES (?, ?, ?, unixepoch())",
+        "INSERT INTO api_tokens (user_id, name, token_hash, created_at, expires_at) \
+         VALUES (?, ?, ?, unixepoch(), ?)",
     )
     .bind(user_id)
     .bind(&name)
     .bind(token_hash)
+    .bind(expires_at)
     .execute(&mut *tx)
     .await
     .map_err(|_| AccountError::Database)?;
@@ -129,11 +211,15 @@ pub(crate) async fn create_token(
         .fetch_one(&mut *tx)
         .await
         .map_err(|_| AccountError::Database)?;
+    oidc_identity_service::record_api_token_created_tx(&mut tx, user_id, now)
+        .await
+        .map_err(|_| AccountError::Database)?;
     tx.commit().await.map_err(|_| AccountError::Database)?;
     Ok(CreatedToken {
         id: result.last_insert_rowid(),
         name,
         created_at: format_timestamp(created_at),
+        expires_at: expires_at.map(format_timestamp),
         token: Zeroizing::new(token),
     })
 }
