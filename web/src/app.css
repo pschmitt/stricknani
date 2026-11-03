@@ -1,62 +1,93 @@
+/* "Hand-dyed skein": the palette, type and shapes of the Android app. Raspberry leads, lagoon
+   teal and marigold are the accents, ink is a deep plum rather than black. Dark mode is the same
+   yarn at night. Values mirror android/.../ui/theme/Color.kt. */
+@font-face {
+  font-family: "Fraunces";
+  src: url("/app/fonts/fraunces.woff2") format("woff2");
+  font-weight: 500 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("/app/fonts/nunito.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light dark;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  --font-body:
+    "Nunito", ui-rounded, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display:
+    "Fraunces", ui-serif, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-family: var(--font-body);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --canvas: #f3f6fb;
+  --radius-xs: 12px;
+  --radius-sm: 16px;
+  --radius-md: 22px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+
+  --canvas: #f7f3fc;
   --surface: #ffffff;
-  --surface-raised: #f8fafd;
-  --ink: #1f2d3d;
-  --ink-muted: #52657a;
-  --line: #d2dce8;
-  --control-border: #6b7f96;
-  --accent: #2f75b5;
-  --accent-strong: #185b96;
+  --surface-raised: #f1ebf8;
+  --ink: #2a2033;
+  --ink-muted: #5e5268;
+  --line: #ddd3e8;
+  --control-border: #8e8299;
+  --accent: #c23a6e;
+  --accent-strong: #a82c5b;
   --on-accent: #ffffff;
-  --accent-wash: #e4eff9;
+  --accent-wash: #ffe3ec;
+  --primary-container: #ffd9e5;
+  --on-primary-container: #3f0020;
+  --lagoon-container: #c6efee;
+  --on-lagoon-container: #002022;
+  --marigold-container: #ffe2ae;
+  --on-marigold-container: #2b1a00;
+  --stitch: rgb(63 0 32 / 35%);
   /* Navigation tile tones: glyph colour and tile background per destination. */
-  --tone-home: #4338ca;
-  --tone-home-wash: #e8e7fb;
-  --tone-projects: #185b96;
-  --tone-projects-wash: #e1edf9;
-  --tone-yarns: #0f6d66;
-  --tone-yarns-wash: #dbf2ee;
-  --tone-create: #166534;
-  --tone-create-wash: #e1f3e6;
-  --tone-categories: #845500;
-  --tone-categories-wash: #fcefcf;
-  --tone-gauge: #a8420c;
-  --tone-gauge-wash: #fde6d8;
-  --tone-admin: #a4333b;
-  --tone-admin-wash: #fae1e3;
-  --tone-audit: #6427c9;
-  --tone-audit-wash: #eee5fd;
-  --tone-more: #52657a;
-  --tone-more-wash: #e8edf3;
-  --danger: #a4333b;
+  --tone-home: #a82c5b;
+  --tone-home-wash: #ffd9e5;
+  --tone-projects: #875a00;
+  --tone-projects-wash: #ffe2ae;
+  --tone-yarns: #17666c;
+  --tone-yarns-wash: #c6efee;
+  --tone-create: #a82c5b;
+  --tone-create-wash: #ffd9e5;
+  --tone-categories: #17666c;
+  --tone-categories-wash: #c6efee;
+  --tone-gauge: #875a00;
+  --tone-gauge-wash: #ffe2ae;
+  --tone-admin: #b3261e;
+  --tone-admin-wash: #f9dedc;
+  --tone-audit: #6b3fa0;
+  --tone-audit-wash: #eadcfb;
+  --tone-more: #5e5268;
+  --tone-more-wash: #ebe3f4;
+  --danger: #b3261e;
   --on-danger: #ffffff;
   --success: #166534;
-  --success-surface: #e7f5eb;
-  --warning: #815900;
-  --warning-surface: #fff4d6;
-  --focus: #286fba;
-  --shadow: 0 14px 38px rgb(31 45 61 / 8%);
+  --success-surface: #e2f4e8;
+  --warning: #7a5200;
+  --warning-surface: #fff1cf;
+  --focus: #a82c5b;
+  --shadow: 0 14px 38px rgb(63 20 80 / 10%);
   --page-width-compact: 48rem;
   --page-width-standard: 58rem;
   --page-width-wide: 76rem;
   --ui-action-icon-size-md: 20px;
   --ui-action-icon-size-sm: 18px;
   --ui-navigation-icon-size: 24px;
-  --app-mobile-nav-height: 57px;
+  --app-mobile-nav-height: 64px;
   --app-mobile-nav-bottom-inset: max(4px, env(safe-area-inset-bottom, 0px));
 
   font-optical-sizing: auto;
@@ -69,44 +100,62 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: #111b28;
-    --surface: #1a2736;
-    --surface-raised: #223448;
-    --ink: #e6edf3;
-    --ink-muted: #b2c0cf;
-    --line: #3b4d60;
-    --control-border: #718ba5;
-    --accent: #8dc5ef;
-    --accent-strong: #b8daf3;
-    --on-accent: #10243a;
-    --accent-wash: #263d54;
-    --tone-home: #c9c6ff;
-    --tone-home-wash: #2c2b55;
-    --tone-projects: #b8daf3;
-    --tone-projects-wash: #233a52;
-    --tone-yarns: #93e2d6;
-    --tone-yarns-wash: #17403c;
-    --tone-create: #9be2ae;
-    --tone-create-wash: #173b2b;
-    --tone-categories: #f4d27a;
-    --tone-categories-wash: #463919;
-    --tone-gauge: #ffb991;
-    --tone-gauge-wash: #4b2a19;
-    --tone-admin: #ffb0b5;
-    --tone-admin-wash: #4b2329;
-    --tone-audit: #d6bcff;
-    --tone-audit-wash: #37264f;
-    --tone-more: #b2c0cf;
-    --tone-more-wash: #2a3a4c;
-    --danger: #ffabb0;
-    --on-danger: #381319;
+    --canvas: #1a1421;
+    --surface: #271f30;
+    --surface-raised: #32293b;
+    --ink: #ede4f4;
+    --ink-muted: #c9bdd3;
+    --line: #473d51;
+    --control-border: #94889e;
+    --accent: #ffb0cb;
+    --accent-strong: #ffb0cb;
+    --on-accent: #3f0020;
+    --accent-wash: #44253d;
+    --primary-container: #7d1d49;
+    --on-primary-container: #ffd9e5;
+    --lagoon-container: #004f54;
+    --on-lagoon-container: #c6efee;
+    --marigold-container: #654300;
+    --on-marigold-container: #ffe2ae;
+    --stitch: rgb(255 217 229 / 40%);
+    --tone-home: #ffb0cb;
+    --tone-home-wash: #7d1d49;
+    --tone-projects: #ffc768;
+    --tone-projects-wash: #654300;
+    --tone-yarns: #82d6d7;
+    --tone-yarns-wash: #004f54;
+    --tone-create: #ffb0cb;
+    --tone-create-wash: #7d1d49;
+    --tone-categories: #82d6d7;
+    --tone-categories-wash: #004f54;
+    --tone-gauge: #ffc768;
+    --tone-gauge-wash: #654300;
+    --tone-admin: #ffb4ab;
+    --tone-admin-wash: #8c1d18;
+    --tone-audit: #dcc6ff;
+    --tone-audit-wash: #4d2f78;
+    --tone-more: #c9bdd3;
+    --tone-more-wash: #3d3446;
+    --danger: #ffb4ab;
+    --on-danger: #410e0b;
     --success: #9be2ae;
     --success-surface: #173b2b;
-    --warning: #f4d27a;
-    --warning-surface: #463919;
-    --focus: #a9d5fa;
-    --shadow: 0 16px 42px rgb(0 0 0 / 24%);
+    --warning: #ffc768;
+    --warning-surface: #4a3410;
+    --focus: #ffc768;
+    --shadow: 0 16px 42px rgb(0 0 0 / 32%);
   }
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-variation-settings:
+    "SOFT" 100,
+    "WONK" 1;
 }
 
 *,
@@ -158,11 +207,12 @@ button {
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid transparent;
-  border-radius: 0.7rem;
-  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
   font: inherit;
   font-size: 0.96rem;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
@@ -172,12 +222,13 @@ button {
     background-color 120ms ease,
     border-color 120ms ease,
     color 120ms ease,
-    transform 120ms ease;
+    box-shadow 120ms ease,
+    transform 160ms cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
 .ui-button--md {
   min-height: 44px;
-  padding-inline: 0.9rem;
+  padding-inline: 1.1rem;
 }
 
 .ui-button--sm {
@@ -188,11 +239,11 @@ button {
 
 .ui-button--primary {
   color: var(--on-accent);
-  background: var(--accent-strong);
+  background: var(--accent);
 }
 
 .ui-button--secondary {
-  border-color: var(--line);
+  border-color: var(--control-border);
   color: var(--accent-strong);
   background: var(--surface);
 }
@@ -219,7 +270,17 @@ button {
 
 .ui-button--primary:hover:not(:disabled),
 .ui-button--danger:hover:not(:disabled) {
-  box-shadow: 0 0 0 2px var(--accent-wash);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.ui-button--primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+  .ui-button--primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 85%, white);
+  }
 }
 
 .ui-button[aria-pressed="true"] {
@@ -229,7 +290,7 @@ button {
 }
 
 .ui-button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.96);
 }
 
 .ui-button:disabled {
@@ -265,15 +326,15 @@ button {
   align-items: start;
   gap: 0.85rem;
   border: 1px solid var(--line);
-  border-radius: 0.9rem;
-  padding: 1rem;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.1rem;
   color: var(--ink);
   background: var(--surface);
   text-decoration: none;
   transition:
     background-color 120ms ease,
     border-color 120ms ease,
-    transform 120ms ease;
+    transform 160ms cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
 .ui-navigation-tile:hover {
@@ -282,7 +343,7 @@ button {
 }
 
 .ui-navigation-tile:active {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .ui-navigation-tile__icon {
@@ -301,6 +362,7 @@ button {
 }
 
 .ui-navigation-tile__title {
+  font-family: var(--font-display);
   font-weight: 650;
 }
 
@@ -365,13 +427,12 @@ button:disabled {
   gap: 1rem;
 }
 
+/* The rolling yarn ball: the mascot spinning, like the Android loader. */
 .spinner {
-  width: 1.25rem;
+  width: 4.5rem;
   aspect-ratio: 1;
-  border: 2px solid var(--line);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: turn 900ms linear infinite;
+  background: url("/app/favicon.svg") center / contain no-repeat;
+  animation: turn 1400ms linear infinite;
 }
 
 @keyframes turn {
@@ -416,8 +477,9 @@ button:disabled {
   padding: max(0.4rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right)) 0.4rem
     max(1rem, env(safe-area-inset-left));
-  background: var(--surface);
-  box-shadow: 0 1px 10px rgb(34 67 104 / 4%);
+  background: color-mix(in srgb, var(--canvas) 88%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: none;
 }
 
 .header-account {
@@ -441,7 +503,7 @@ button:disabled {
   flex-direction: column;
   border-right: 1px solid var(--line);
   padding: 1rem;
-  background: var(--surface);
+  background: var(--canvas);
 }
 
 .shell-back-button {
@@ -485,12 +547,12 @@ button:disabled {
   min-height: 44px;
   align-items: center;
   gap: 0.8rem;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-sm);
   /* Whole pixels so the icon tiles start on a pixel and look centred. */
   padding: 8px 12px;
   color: var(--ink-muted);
-  font-size: 0.94rem;
-  font-weight: 570;
+  font-size: 0.98rem;
+  font-weight: 700;
   text-decoration: none;
   transition:
     color 150ms ease,
@@ -503,10 +565,35 @@ button:disabled {
   background: var(--surface-raised);
 }
 
+/* Each destination has its own yarn colour: the current one fills with it. */
 .primary-nav a.active,
 .secondary-nav a.active {
-  color: var(--accent-strong);
-  background: var(--accent-wash);
+  color: var(--tone, var(--accent-strong));
+  background: var(--tone-wash, var(--accent-wash));
+}
+
+.primary-nav a.active .nav-icon,
+.secondary-nav a.active .nav-icon {
+  background: color-mix(in srgb, var(--tone) 16%, var(--surface));
+}
+
+/* A small happy hop when a destination becomes the current one. */
+.primary-nav a.active .nav-icon,
+.secondary-nav a.active .nav-icon,
+.mobile-navigation a.active .nav-icon {
+  animation: nav-hop 460ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes nav-hop {
+  0% {
+    transform: translateY(0) scale(0.85);
+  }
+  45% {
+    transform: translateY(-4px) scale(1.12);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* A tinted tile per destination (data-tone), 28px with an 18px glyph: a whole-pixel 5px inset
@@ -519,7 +606,7 @@ button:disabled {
   height: 28px;
   flex: 0 0 28px;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--tone);
   background: var(--tone-wash);
 }
@@ -529,39 +616,48 @@ button:disabled {
   height: 18px;
 }
 
-.nav-icon[data-tone="home"] {
+.nav-icon[data-tone="home"],
+a[data-tone="home"] {
   --tone: var(--tone-home);
   --tone-wash: var(--tone-home-wash);
 }
-.nav-icon[data-tone="projects"] {
+.nav-icon[data-tone="projects"],
+a[data-tone="projects"] {
   --tone: var(--tone-projects);
   --tone-wash: var(--tone-projects-wash);
 }
-.nav-icon[data-tone="yarns"] {
+.nav-icon[data-tone="yarns"],
+a[data-tone="yarns"] {
   --tone: var(--tone-yarns);
   --tone-wash: var(--tone-yarns-wash);
 }
-.nav-icon[data-tone="create"] {
+.nav-icon[data-tone="create"],
+a[data-tone="create"] {
   --tone: var(--tone-create);
   --tone-wash: var(--tone-create-wash);
 }
-.nav-icon[data-tone="categories"] {
+.nav-icon[data-tone="categories"],
+a[data-tone="categories"] {
   --tone: var(--tone-categories);
   --tone-wash: var(--tone-categories-wash);
 }
-.nav-icon[data-tone="gauge"] {
+.nav-icon[data-tone="gauge"],
+a[data-tone="gauge"] {
   --tone: var(--tone-gauge);
   --tone-wash: var(--tone-gauge-wash);
 }
-.nav-icon[data-tone="admin"] {
+.nav-icon[data-tone="admin"],
+a[data-tone="admin"] {
   --tone: var(--tone-admin);
   --tone-wash: var(--tone-admin-wash);
 }
-.nav-icon[data-tone="audit"] {
+.nav-icon[data-tone="audit"],
+a[data-tone="audit"] {
   --tone: var(--tone-audit);
   --tone-wash: var(--tone-audit-wash);
 }
-.nav-icon[data-tone="more"] {
+.nav-icon[data-tone="more"],
+a[data-tone="more"] {
   --tone: var(--tone-more);
   --tone-wash: var(--tone-more-wash);
 }
@@ -761,9 +857,11 @@ textarea::placeholder {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     border-top: 1px solid var(--line);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
     padding: 0 max(0.35rem, env(safe-area-inset-right))
       var(--app-mobile-nav-bottom-inset) max(0.35rem, env(safe-area-inset-left));
     background: var(--surface);
+    box-shadow: 0 -6px 24px rgb(63 20 80 / 8%);
   }
 
   .mobile-navigation a {
@@ -773,15 +871,22 @@ textarea::placeholder {
     justify-items: center;
     align-content: center;
     gap: 0.12rem;
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     color: var(--ink-muted);
-    font-size: 0.72rem;
-    font-weight: 590;
+    font-size: 0.74rem;
+    font-weight: 700;
     text-decoration: none;
   }
 
   .mobile-navigation a.active {
-    color: var(--accent-strong);
+    color: var(--tone);
+  }
+
+  .mobile-navigation .nav-icon {
+    width: 3.5rem;
+    height: 1.9rem;
+    flex-basis: auto;
+    border-radius: 999px;
   }
 
   /* Phones: the bar stays calm - plain glyphs, and only the current destination shows its

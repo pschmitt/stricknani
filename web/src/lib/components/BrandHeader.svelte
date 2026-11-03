@@ -66,7 +66,7 @@
     align-items: center;
     gap: 0.6rem;
     margin-left: calc(var(--brand-align) - var(--brand-pad));
-    border-radius: 0.75rem;
+    border-radius: var(--radius-sm);
     padding: 0 0.65rem 0 var(--brand-pad);
     color: var(--ink);
     text-decoration: none;
@@ -175,16 +175,20 @@
   }
 
   .brand-title {
-    font-size: 1rem;
-    font-weight: 680;
-    letter-spacing: -0.025em;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 1;
   }
 
   .brand-version {
     margin-top: 0.12rem;
     color: var(--ink-muted);
     font-size: 0.7rem;
-    font-weight: 450;
+    font-weight: 600;
     letter-spacing: 0.01em;
   }
 

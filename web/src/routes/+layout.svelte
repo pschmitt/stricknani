@@ -221,6 +221,7 @@
           <a
             class:active={isActive(item.href)}
             aria-current={isActive(item.href) ? "page" : undefined}
+            data-tone={item.icon}
             href={linkTo(item.href)}
           >
             <span class="nav-icon" data-tone={item.icon}
@@ -238,6 +239,7 @@
           <a
             class:active={isActive(item.href)}
             aria-current={isActive(item.href) ? "page" : undefined}
+            data-tone={item.icon}
             href={linkTo(item.href)}
           >
             <span class="nav-icon" data-tone={item.icon}
@@ -250,6 +252,7 @@
           <a
             class:active={isActive("/admin/users")}
             aria-current={isActive("/admin/users") ? "page" : undefined}
+            data-tone="admin"
             href={linkTo("/admin/users")}
           >
             <span class="nav-icon" data-tone="admin"
@@ -260,6 +263,7 @@
           <a
             class:active={isActive("/admin/audit")}
             aria-current={isActive("/admin/audit") ? "page" : undefined}
+            data-tone="audit"
             href={linkTo("/admin/audit")}
           >
             <span class="nav-icon" data-tone="audit"
@@ -296,6 +300,7 @@
           <a
             class:active={isActive(item.href)}
             aria-current={isActive(item.href) ? "page" : undefined}
+            data-tone={item.icon}
             href={linkTo(item.href)}
           >
             <span class="nav-icon" data-tone={item.icon}
