@@ -293,6 +293,33 @@ Example create response:
 }
 ```
 
+## Project preview API slice
+
+`POST /projects/preview` renders Markdown for unsaved project descriptions and
+notes. It creates or changes no project data.
+
+| Method and path          | Request                                                                    | Result                                       |
+| ------------------------ | -------------------------------------------------------------------------- | -------------------------------------------- |
+| `POST /projects/preview` | JSON object with optional nullable string fields `description` and `notes` | `200 {data: {description_html, notes_html}}` |
+
+Missing or `null` input fields produce `null` HTML fields; empty strings
+produce empty strings. The response contains only the HTML fields. Markdown is
+rendered through the shared sanitizer, which removes unsafe HTML and URL
+schemes. Unknown fields, values other than strings or null, and invalid JSON return
+`422 validation_error`. The aggregate JSON body is limited to 2 MiB; larger
+bodies return `413 payload_too_large`.
+
+The endpoint requires a browser-purpose session, a matching same-origin
+`Origin`, and `X-CSRF-Token`. These checks run before the request body is read.
+It returns `401 session_expired` for an absent or invalid session and
+`403 csrf_failed` for a missing or invalid origin/CSRF check. Responses use
+`Cache-Control: no-store`.
+
+Previews are limited to 20 requests per authenticated owner per 60 seconds,
+with a bounded 4096-owner limiter. At most four renders run concurrently;
+excess requests return `429 rate_limited` with `Retry-After`. Render failures
+return `500 internal_error`.
+
 ## Yarn API slice
 
 Yarn routes use the browser session and same-origin CSRF checks for mutations:
