@@ -9,6 +9,8 @@
 
   /** Touch press time before a tile arms for drag and delete. */
   const LONG_PRESS_MS = 400;
+  /** Idle time before touch edit mode ends by itself. */
+  const EDIT_IDLE_MS = 5000;
   /** Pointer travel in px that cancels a pending long press or starts a mouse drag. */
   const MOVE_SLOP = 8;
 
@@ -63,7 +65,9 @@
   let listElement = $state<HTMLUListElement | null>(null);
   let dragFrom = $state<number | null>(null);
   let dropTo = $state<number | null>(null);
-  let armedId = $state<number | null>(null);
+  // Touch edit mode: every tile jiggles and shows its trash button.
+  let editing = $state(false);
+  let editTimer: ReturnType<typeof setTimeout> | null = null;
   let announcement = $state("");
   let moving = $state(false);
   let gesture: Gesture | null = null;
@@ -89,8 +93,24 @@
       if (gesture?.armed || dragFrom !== null) event.preventDefault();
     };
     listElement?.addEventListener("touchmove", block, { passive: false });
-    return () => listElement?.removeEventListener("touchmove", block);
+    return () => {
+      listElement?.removeEventListener("touchmove", block);
+      if (editTimer) clearTimeout(editTimer);
+    };
   });
+
+  function endEdit(): void {
+    if (editTimer) clearTimeout(editTimer);
+    editTimer = null;
+    editing = false;
+  }
+
+  /** Enter edit mode, or restart the idle countdown while in it. */
+  function bumpEdit(): void {
+    if (editTimer) clearTimeout(editTimer);
+    editTimer = setTimeout(endEdit, EDIT_IDLE_MS);
+    editing = true;
+  }
 
   function focusTile(id: number): void {
     listElement
@@ -127,7 +147,7 @@
     if (event.target !== event.currentTarget) return;
     if (event.key === "Escape") {
       cancelGesture();
-      armedId = null;
+      endEdit();
       return;
     }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -157,6 +177,7 @@
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if ((event.target as Element).closest("[data-no-drag]")) return;
     cancelGesture();
+    if (editing) bumpEdit();
     const tile = event.currentTarget as HTMLElement;
     const current: Gesture = {
       id: items[index].id,
@@ -166,16 +187,17 @@
       startX: event.clientX,
       startY: event.clientY,
       timer: null,
-      armed: false,
+      armed: editing && event.pointerType !== "mouse",
       tile,
     };
     gesture = current;
-    if (event.pointerType !== "mouse") {
+    // In edit mode a touch can drag straight away; otherwise a long press arms it.
+    if (event.pointerType !== "mouse" && !current.armed) {
       current.timer = setTimeout(() => {
         current.timer = null;
         if (gesture !== current) return;
         current.armed = true;
-        armedId = onDelete ? current.id : null;
+        if (onDelete || sortable) bumpEdit();
         tile.setPointerCapture(current.pointerId);
       }, LONG_PRESS_MS);
     }
@@ -198,9 +220,9 @@
         if (!current.armed) cancelGesture();
         return;
       }
-      armedId = null;
       dragFrom = current.index;
     }
+    if (editing) bumpEdit();
     if (!listElement) return;
     const tiles = Array.from(listElement.children) as HTMLElement[];
     dropTo = nearestIndex(
@@ -235,11 +257,14 @@
   }
 
   function onWindowPointerDown(event: PointerEvent): void {
-    if (armedId === null) return;
-    const tile = (event.target as Element | null)?.closest<HTMLElement>(
-      "[data-tile]",
-    );
-    if (tile?.dataset.tile !== String(armedId)) armedId = null;
+    if (!editing) return;
+    // Tapping outside the group ends edit mode; taps inside keep it alive.
+    if (listElement?.contains(event.target as Node)) bumpEdit();
+    else endEdit();
+  }
+
+  function onWindowKeydown(event: KeyboardEvent): void {
+    if (editing && event.key === "Escape") endEdit();
   }
 
   function onClickCapture(event: MouseEvent): void {
@@ -255,7 +280,10 @@
   }
 </script>
 
-<svelte:window onpointerdown={onWindowPointerDown} />
+<svelte:window
+  onpointerdown={onWindowPointerDown}
+  onkeydown={onWindowKeydown}
+/>
 
 <div class="reorderable">
   {#if sortable}
@@ -271,6 +299,7 @@
   <ul
     class="reorder-list"
     class:dragging={dragFrom !== null}
+    class:editing
     bind:this={listElement}
     aria-label={label}
   >
@@ -279,7 +308,7 @@
       <li
         class="reorder-item"
         class:drag-source={dragFrom === index}
-        class:armed={armedId === item.id}
+        style:animation-delay={`-${(index * 53) % 140}ms`}
         class:drop-target={dragFrom !== null &&
           dropTo === index &&
           dropTo !== dragFrom}
@@ -305,7 +334,7 @@
               class="thumb thumb-button"
               tabindex="-1"
               aria-label={item.alt_text ?? fallbackAlt}
-              onclick={() => onOpen(item)}
+              onclick={() => !editing && onOpen(item)}
             >
               <img
                 src={item.thumbnail_url}
@@ -479,7 +508,7 @@
     cursor: not-allowed;
   }
 
-  .reorder-item.armed .delete-button:not(:disabled),
+  .editing .delete-button:not(:disabled),
   .reorder-item:focus-visible .delete-button:not(:disabled),
   .reorder-item:has(:focus-visible) .delete-button:not(:disabled) {
     opacity: 1;
@@ -534,7 +563,22 @@
     white-space: nowrap;
   }
 
+  @keyframes jiggle {
+    from {
+      transform: rotate(-1.75deg);
+    }
+
+    to {
+      transform: rotate(1.75deg);
+    }
+  }
+
   @media (prefers-reduced-motion: no-preference) {
+    /* Two 140ms alternating halves give a ~280ms period; transform only. */
+    .editing .reorder-item:not(.drag-source) {
+      animation: jiggle 140ms ease-in-out infinite alternate;
+    }
+
     .reorder-item,
     .delete-button {
       transition:
