@@ -18,6 +18,7 @@
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { textSize } from "#lib/text-size.svelte.ts";
   import {
     getProject,
     getYarn,
@@ -61,7 +62,6 @@
   let selectedImageId = $state<number | null>(null);
   let readerElement = $state<HTMLElement | null>(null);
   let materialsDetailsElement = $state<HTMLDetailsElement | null>(null);
-  let textSize = $state(1);
   let printPreparing = $state(false);
   let printError = $state("");
   let reload = $state(0);
@@ -83,11 +83,7 @@
   const canReadArchiveState = $derived(
     session.data?.capabilities.archive_state === true,
   );
-  const textSizeLabels = ["90%", "100%", "115%"];
-  const textSizeClass = $derived(
-    ["reading-small", "reading-medium", "reading-large"][textSize] ??
-      "reading-medium",
-  );
+  const textSizeClass = $derived(textSize.cssClass);
   const orderedSteps = $derived(
     project
       ? [...project.steps].sort(
@@ -744,27 +740,25 @@
                     class="action-overflow__segment"
                     type="button"
                     aria-label={t("Decrease text size", locale)}
-                    disabled={textSize === 0}
-                    onclick={() => (textSize = Math.max(0, textSize - 1))}
-                    >A−</button
+                    disabled={textSize.isMin}
+                    onclick={() => textSize.down()}>A−</button
                   >
                   <span class="action-overflow__segment action-overflow__value"
-                    >{textSizeLabels[textSize] ?? "100%"}</span
+                    >{textSize.label}</span
                   >
                   <button
                     class="action-overflow__segment"
                     type="button"
                     aria-label={t("Increase text size", locale)}
-                    disabled={textSize === 2}
-                    onclick={() => (textSize = Math.min(2, textSize + 1))}
-                    >A+</button
+                    disabled={textSize.isMax}
+                    onclick={() => textSize.up()}>A+</button
                   >
                 </div>
-                {#if textSize !== 1}
+                {#if !textSize.isDefault}
                   <button
                     class="text-size-reset"
                     type="button"
-                    onclick={() => (textSize = 1)}
+                    onclick={() => textSize.reset()}
                   >
                     {t("Reset text size", locale)}
                   </button>
