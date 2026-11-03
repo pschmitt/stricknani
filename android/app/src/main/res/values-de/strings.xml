@@ -66,6 +66,7 @@
 
     <!-- Projects -->
     <string name="projects_list_title">Projekte</string>
+    <string name="yarns_list_title">Wolle</string>
     <string name="project_new_label">Neues Projekt</string>
     <string name="projects_list_import_description">Projekt importieren</string>
     <string name="project_detail_field_yarn">Wolle</string>
@@ -383,14 +384,14 @@
     <string name="mutation_category_created">Kategorie „%1$s“ erstellt.</string>
     <string name="mutation_category_renamed">Kategorie „%1$s“ in „%2$s“ umbenannt.</string>
     <string name="mutation_category_deleted">Kategorie „%1$s“ gelöscht.</string>
-    <string name="mutation_project_created_queued">Projekt lokal erstellt und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_project_updated_queued">Projekt lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_project_deleted_queued">Projekt lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_project_attachment_deleted_queued">Anhang lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_project_imported_queued">Projekt „%1$s“ lokal importiert und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_yarn_created_queued">Wolle lokal erstellt und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_yarn_updated_queued">Wolle lokal aktualisiert und zur Synchronisierung vorgemerkt.</string>
-    <string name="mutation_yarn_deleted_queued">Wolle lokal gelöscht und zur Synchronisierung vorgemerkt.</string>
+    <string name="mutation_project_created_queued">Projekt erstellt.</string>
+    <string name="mutation_project_updated_queued">Projekt gespeichert.</string>
+    <string name="mutation_project_deleted_queued">Projekt gelöscht.</string>
+    <string name="mutation_project_attachment_deleted_queued">Anhang gelöscht.</string>
+    <string name="mutation_project_imported_queued">Projekt „%1$s“ importiert.</string>
+    <string name="mutation_yarn_created_queued">Wolle angelegt.</string>
+    <string name="mutation_yarn_updated_queued">Wolle gespeichert.</string>
+    <string name="mutation_yarn_deleted_queued">Wolle gelöscht.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Gib sowohl die Server-URL als auch das API-Token ein</string>

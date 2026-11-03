@@ -66,6 +66,7 @@
 
     <!-- Projects -->
     <string name="projects_list_title">Projects</string>
+    <string name="yarns_list_title">Yarns</string>
     <string name="project_new_label">New project</string>
     <string name="projects_list_import_description">Import project</string>
     <string name="project_detail_field_yarn">Yarn</string>
@@ -383,14 +384,14 @@
     <string name="mutation_category_created">Category “%1$s” created.</string>
     <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
     <string name="mutation_category_deleted">Category “%1$s” deleted.</string>
-    <string name="mutation_project_created_queued">Project created locally and queued to sync.</string>
-    <string name="mutation_project_updated_queued">Project updated locally and queued to sync.</string>
-    <string name="mutation_project_deleted_queued">Project deleted locally and queued to sync.</string>
-    <string name="mutation_project_attachment_deleted_queued">Attachment deleted locally and queued to sync.</string>
-    <string name="mutation_project_imported_queued">Project “%1$s” imported locally and queued to sync.</string>
-    <string name="mutation_yarn_created_queued">Yarn created locally and queued to sync.</string>
-    <string name="mutation_yarn_updated_queued">Yarn updated locally and queued to sync.</string>
-    <string name="mutation_yarn_deleted_queued">Yarn deleted locally and queued to sync.</string>
+    <string name="mutation_project_created_queued">Project created.</string>
+    <string name="mutation_project_updated_queued">Project saved.</string>
+    <string name="mutation_project_deleted_queued">Project deleted.</string>
+    <string name="mutation_project_attachment_deleted_queued">Attachment deleted.</string>
+    <string name="mutation_project_imported_queued">Project “%1$s” imported.</string>
+    <string name="mutation_yarn_created_queued">Yarn created.</string>
+    <string name="mutation_yarn_updated_queued">Yarn saved.</string>
+    <string name="mutation_yarn_deleted_queued">Yarn deleted.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Enter both the server URL and the API token</string>

@@ -19,19 +19,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,6 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
@@ -72,6 +71,8 @@ fun YarnsListScreen(
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     Scaffold(
+        // Same title bar as the project list, so both libraries start the same way.
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.yarns_list_title)) }) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -183,20 +184,7 @@ private fun YarnListCard(
                     )
                 }
             }
-            IconButton(onClick = onFavoriteClick) {
-                Icon(
-                    imageVector =
-                        if (yarn.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription =
-                        stringResource(
-                            if (yarn.isFavorite) R.string.common_unfavorite
-                            else R.string.common_favorite
-                        ),
-                    tint =
-                        if (yarn.isFavorite) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            FavoriteToggleButton(isFavorite = yarn.isFavorite, onClick = onFavoriteClick)
         }
     }
 }

@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
@@ -122,10 +121,12 @@ fun ProjectEditorScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = viewModel::save) {
-                            Icon(
-                                Icons.Filled.Check,
-                                contentDescription = stringResource(R.string.common_save),
+                        // A labelled Save reads as the primary action; a bare check icon
+                        // next to the red Delete icon did not.
+                        TextButton(onClick = viewModel::save) {
+                            Text(
+                                stringResource(R.string.common_save),
+                                style = MaterialTheme.typography.labelLarge,
                             )
                         }
                     }

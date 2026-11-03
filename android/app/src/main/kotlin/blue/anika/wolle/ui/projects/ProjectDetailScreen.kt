@@ -180,7 +180,12 @@ fun ProjectDetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.common_delete)) },
+                                text = {
+                                    Text(
+                                        stringResource(R.string.common_delete),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                },
                                 leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false

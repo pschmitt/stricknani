@@ -20,8 +20,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.AlertDialog
@@ -59,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
@@ -290,21 +289,7 @@ private fun ProjectListCard(
                     )
                 }
             }
-            IconButton(onClick = onFavoriteClick) {
-                Icon(
-                    imageVector =
-                        if (project.isFavorite) Icons.Filled.Favorite
-                        else Icons.Filled.FavoriteBorder,
-                    contentDescription =
-                        stringResource(
-                            if (project.isFavorite) R.string.common_unfavorite
-                            else R.string.common_favorite
-                        ),
-                    tint =
-                        if (project.isFavorite) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            FavoriteToggleButton(isFavorite = project.isFavorite, onClick = onFavoriteClick)
         }
     }
 }

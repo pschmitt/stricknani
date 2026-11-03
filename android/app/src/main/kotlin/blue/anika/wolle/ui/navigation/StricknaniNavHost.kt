@@ -1,5 +1,10 @@
 package blue.anika.wolle.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -51,6 +56,18 @@ internal fun shouldOpenFreshTopLevelRoot(didPopToRoot: Boolean): Boolean = !didP
  * already in the back stack, popping is enough. If a detail route was reached directly (for example
  * from Home) and no root exists yet, clear that nested stack before opening a fresh root.
  */
+private const val SCREEN_TRANSITION_MILLIS = 220
+
+/** The list a deep-linked project or yarn belongs to, or null for any other route. */
+internal fun deepLinkParent(route: Route): Route? =
+    when (route) {
+        is Route.ProjectDetail,
+        is Route.ProjectEditor -> Route.Projects
+        is Route.YarnDetail,
+        is Route.YarnEditor -> Route.Yarns
+        else -> null
+    }
+
 internal fun navigateToTopLevelRoot(
     navController: NavHostController,
     destination: TopLevelDestination,
@@ -106,6 +123,11 @@ fun StricknaniNavHost(
 
     LaunchedEffect(pendingDeepLinkRoute) {
         pendingDeepLinkRoute?.let { route ->
+            // Put the logical parent list underneath, so Up from a shared project or yarn goes
+            // to that list instead of Home - the same rule as the website's header chevron.
+            deepLinkParent(route)?.let { parent ->
+                navController.navigate(parent) { launchSingleTop = true }
+            }
             navController.navigate(route)
             onDeepLinkConsumed()
         }
@@ -161,6 +183,19 @@ fun StricknaniNavHost(
             navController = navController,
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding),
+            // Opening a screen slides it in a little from the side it comes from and fades; going
+            // back reverses that. Short and small so it orients without slowing anyone down; the
+            // system "Remove animations" setting scales it to nothing.
+            enterTransition = {
+                fadeIn(tween(SCREEN_TRANSITION_MILLIS)) +
+                    slideInHorizontally(tween(SCREEN_TRANSITION_MILLIS)) { it / 12 }
+            },
+            exitTransition = { fadeOut(tween(SCREEN_TRANSITION_MILLIS / 2)) },
+            popEnterTransition = { fadeIn(tween(SCREEN_TRANSITION_MILLIS)) },
+            popExitTransition = {
+                fadeOut(tween(SCREEN_TRANSITION_MILLIS / 2)) +
+                    slideOutHorizontally(tween(SCREEN_TRANSITION_MILLIS)) { it / 12 }
+            },
         ) {
             composable<Route.Onboarding> {
                 OnboardingScreen(

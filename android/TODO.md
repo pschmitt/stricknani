@@ -41,6 +41,26 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-77: Bring the website redesign's UX fixes to the Android app
+
+- [x] Up from a shared project or yarn link goes to its list (Projects or Yarns), not Home: the
+      deep-link handler now puts the parent list underneath (`deepLinkParent`), the same rule as
+      the website's header chevron.
+- [x] Save feedback says what happened in a few words ("Project saved.", "Yarn created.") instead
+      of "updated locally and queued to sync"; the Home sync card already shows queued changes.
+- [x] The yarn-ball mascot greets first-time users on onboarding (about 100dp) and sits next to
+      the app name on Home, as on the website's sign-in page and header.
+- [x] Editors show a labelled "Save" action instead of a bare check icon next to the red Delete
+      icon; "Delete" in the detail screens' overflow menus is red like its icon.
+- [x] The yarn list gets the same title bar as the project list.
+- [x] Motion: short fade-and-slide screen transitions in the NavHost, and one shared
+      `FavoriteToggleButton` for both lists with a colour fade and a small pop when marking a
+      favourite. Both follow the system animator scale.
+- [ ] Visual check of every changed screen in the screenshot workflow after the commit is pushed.
+
+Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host; screenshots pending.
+
 ## SNA-76: Home sync card and sync banner report the same count
 
 - [x] The grey Home sync card counted pending changes (`observeCount()`, conflicts excluded) while
