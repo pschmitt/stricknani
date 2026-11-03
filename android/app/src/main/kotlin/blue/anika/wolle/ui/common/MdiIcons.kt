@@ -1,9 +1,8 @@
 package blue.anika.wolle.ui.common
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
@@ -54,34 +53,38 @@ object MdiIcons {
     }
 
     /**
-     * Ball of yarn: circle, wound strands and a loose tail. Same path data as the web `NavIcon`
-     * "yarns" glyph (24 viewport, 1.8 round stroke).
+     * Ball of yarn: Phosphor Icons "yarn" (regular, MIT, see `assets/licenses`), the same path as
+     * the web `NavIcon` "yarns" glyph. Padded to a 288 viewport so it sits like the other icons.
      */
     val YarnBall: ImageVector by lazy {
         ImageVector.Builder(
-                name = "YarnBall",
+                name = "PhosphorYarn",
                 defaultWidth = 24.dp,
                 defaultHeight = 24.dp,
-                viewportWidth = 24f,
-                viewportHeight = 24f,
+                viewportWidth = 288f,
+                viewportHeight = 288f,
             )
             .apply {
-                for (d in
-                    listOf(
-                        "M3,11A8,8 0 1,0 19,11A8,8 0 1,0 3,11Z",
-                        "M5.2,5.6C9.6,6.6 14,10.6 15.2,18M3.4,12.4C6.4,12.8 9,14.6 " +
-                            "10.8,18.8M8.6,3.4c4,1.4 7.6,5 9.2,9.2",
-                        "M4.4,15.4C9,13.6 14.6,8.6 15.8,4.6",
-                        "M15.6,17.4c1.2,2.8 3.6,3.4 5.2,1.6",
-                    )) {
-                    addPath(
-                        pathData = PathParser().parsePathString(d).toNodes(),
-                        stroke = SolidColor(Color.Black),
-                        strokeLineWidth = 1.8f,
-                        strokeLineCap = StrokeCap.Round,
-                        strokeLineJoin = StrokeJoin.Round,
-                    )
-                }
+                addPath(
+                    pathData =
+                        PathParser()
+                            .parsePathString(
+                                "M232,216H183.39A103.95,103.95,0,1,0,128,232l104,0a8,8,0,1,0,0-16ZM128,40a87.51,8" +
+                                    "7.51,0,0,1,43.93,11.77,222.06,222.06,0,0,0-27.88,15.09,222.23,222.23,0,0,0-45-22" +
+                                    "A87.52,87.52,0,0,1,128,40ZM78.56,55.24a206,206,0,0,1,51.11,21.57A225.76,225.76,0" +
+                                    ",0,0,110.1,93.36,181.54,181.54,0,0,0,57.73,75.09,88.67,88.67,0,0,1,78.56,55.24ZM" +
+                                    "48.72,89.82a165.82,165.82,0,0,1,49.67,15.51A228,228,0,0,0,82.76,124.5,142.65,142" +
+                                    ".65,0,0,0,41.28,113,87.5,87.5,0,0,1,48.72,89.82ZM40,129a126.07,126.07,0,0,1,33.6" +
+                                    "3,9,222.36,222.36,0,0,0-19.07,38.45A87.51,87.51,0,0,1,40,129Zm26.42,61.81A209.36" +
+                                    ",209.36,0,0,1,187,62.74a89,89,0,0,1,16.22,19.57A183.89,183.89,0,0,0,87,205.82,88" +
+                                    ".56,88.56,0,0,1,66.43,190.81ZM125.66,216A87.66,87.66,0,0,1,101.83,212,167.84,167" +
+                                    ".84,0,0,1,210.28,96.79a87.35,87.35,0,0,1,5.38,23.55A144.59,144.59,0,0,0,125.66,2" +
+                                    "16Zm89.82-78.44a88.19,88.19,0,0,1-72.67,77.22A128.64,128.64,0,0,1,215.48,137.53Z"
+                            )
+                            .toNodes(),
+                    fill = SolidColor(Color.Black),
+                    pathFillType = PathFillType.NonZero,
+                )
             }
             .build()
     }
