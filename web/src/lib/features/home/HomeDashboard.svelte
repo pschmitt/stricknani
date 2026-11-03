@@ -21,11 +21,7 @@
     loadFavoriteYarns,
     loadRecentProjects,
   } from "./home-api";
-  import {
-    setHero,
-    setHeroRatio,
-    HERO_VISIBLE_THRESHOLD,
-  } from "#lib/components/brand-handoff.svelte.ts";
+  import { setHero } from "#lib/components/brand-handoff.svelte.ts";
   import { greetingFor, visitGreetingIndex } from "./greeting";
   import { homeSection } from "./home-section.svelte";
 
@@ -57,35 +53,13 @@
     });
   });
 
-  // The header brand mark stays hidden while this mascot is the hero and flies
-  // in once it has mostly scrolled away (see BrandHeader).
+  // The header brand morphs this mascot into its logo slot as the page
+  // scrolls (see BrandHeader).
   let heroEl = $state<HTMLElement>();
   onMount(() => {
-    if (!heroEl || !("IntersectionObserver" in window)) return;
+    if (!heroEl) return;
     setHero(heroEl);
-    // The sticky header covers the top of the viewport.
-    const header = document.querySelector<HTMLElement>(".app-header");
-    const cover = Math.round(header?.getBoundingClientRect().bottom ?? 0);
-    let first = true;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[entries.length - 1];
-        setHeroRatio(
-          entry.isIntersecting ? entry.intersectionRatio : 0,
-          !first,
-        );
-        first = false;
-      },
-      {
-        rootMargin: `-${cover}px 0px 0px 0px`,
-        threshold: [0, 0.1, HERO_VISIBLE_THRESHOLD, 0.5, 1],
-      },
-    );
-    observer.observe(heroEl);
-    return () => {
-      observer.disconnect();
-      setHero(null);
-    };
+    return () => setHero(null);
   });
 
   function dismissAppCard() {

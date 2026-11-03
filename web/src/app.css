@@ -600,7 +600,13 @@ button:disabled {
   --app-header-height: calc(4.25rem + env(safe-area-inset-top));
 }
 
+/* The header is two parts. Over the rail (::before) it is the rail's own
+   surface and holds the brand. Over the content (::after) it is frosted
+   glass that fades in once content scrolls under it (--header-glass, 0 to 1,
+   set by the layout). The bar itself ignores the pointer so the transparent
+   part never blocks the content below; its controls opt back in. */
 .app-header {
+  --header-rail-width: 16rem;
   position: sticky;
   z-index: 4;
   top: 0;
@@ -609,13 +615,48 @@ button:disabled {
   grid-column: 1 / -1;
   align-items: center;
   gap: 0.25rem;
-  border-bottom: 1px solid var(--line);
   padding: max(0.4rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right)) 0.4rem
     max(1rem, env(safe-area-inset-left));
-  background: color-mix(in srgb, var(--canvas) 88%, transparent);
-  backdrop-filter: blur(10px);
-  box-shadow: none;
+  background: none;
+  pointer-events: none;
+}
+
+.app-header > * {
+  pointer-events: auto;
+}
+
+.app-header::before,
+.app-header::after {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.app-header::before {
+  left: 0;
+  width: var(--header-rail-width);
+  border-right: 1px solid var(--line);
+  background: var(--canvas);
+}
+
+.app-header::after {
+  right: 0;
+  left: var(--header-rail-width);
+  border-bottom: 1px solid var(--line);
+  background: var(--canvas);
+  box-shadow: 0 6px 18px -12px rgb(40 20 60 / 35%);
+  opacity: var(--header-glass, 0);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .app-header::after {
+    background: color-mix(in srgb, var(--canvas) 78%, transparent);
+    backdrop-filter: blur(14px) saturate(1.5);
+  }
 }
 
 .header-account {
@@ -817,15 +858,27 @@ a[data-tone="more"] {
 }
 
 .content-column {
+  /* Content starts up in the header band: only the brand (over the rail) and
+     the avatar (right) live there, and content scrolls under the glass. */
   grid-column: 2;
   grid-row: 2;
   min-width: 0;
+  margin-top: calc(-1 * var(--app-header-height));
 }
 
 .content-main {
   width: min(100%, 76rem);
   margin-inline: auto;
   padding: clamp(1.25rem, 4vw, 3rem);
+  padding-top: 2rem;
+}
+
+/* The avatar floats over the content column's top-right corner: keep the
+   page's right edge clear of it unless the page is centred away from it. */
+@media (min-width: 761px) and (max-width: 100rem) {
+  .content-main {
+    padding-right: max(clamp(1.25rem, 4vw, 3rem), 4.5rem);
+  }
 }
 
 .page-container {
@@ -969,6 +1022,19 @@ textarea::placeholder {
 
   .desktop-rail {
     display: none;
+  }
+
+  /* No rail: the whole bar is the glass, and content keeps below it. */
+  .content-column {
+    margin-top: 0;
+  }
+
+  .app-header::before {
+    display: none;
+  }
+
+  .app-header::after {
+    left: 0;
   }
 
   .app-header {

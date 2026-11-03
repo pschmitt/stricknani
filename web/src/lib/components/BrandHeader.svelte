@@ -3,10 +3,13 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { appVersion } from "#lib/app-version.ts";
   import {
-    brandMarkShown,
-    flipBetween,
+    ease,
     handoff,
-    type HeroRect,
+    morphDistance,
+    morphTransform,
+    scrollProgress,
+    slotProgress,
+    type Rect,
   } from "#lib/components/brand-handoff.svelte.ts";
 
   let {
@@ -26,104 +29,120 @@
   // chevron lives in a fixed column left of the mark, so the mark never moves.
   const parent = $derived(reserveParentSlot && parentHref ? parentHref : null);
 
-  // On Home the greeting mascot is the hero, so the mark in the slot below
-  // stays empty until the hero has scrolled away. The hand-off is a mascot
-  // clone that flies between the hero and the slot; with reduced motion the
-  // mark just crossfades.
-  const FLIGHT_MS = 280;
-  const FLIGHT_EASING = "cubic-bezier(0.34, 1.45, 0.5, 1)";
-  const shown = $derived(brandMarkShown(handoff.heroActive, handoff.heroRatio));
-
+  // On Home the greeting mascot is the hero. While it is on screen the logo
+  // slot is collapsed (the wordmark sits flush left). Scrolling morphs the
+  // hero into the slot: a fixed clone of the mascot shrinks and travels to the
+  // slot while the slot grows and pushes the wordmark right. Only one mascot
+  // is visible at a time: the hero hides while the clone is out, the clone
+  // hides once the real mark is shown. With reduced motion there is no
+  // morph: the mark just fades in once the hero has scrolled away.
+  let headerEl: HTMLElement | undefined = $state();
   let markEl: HTMLElement | undefined = $state();
-  let flying = $state(false);
-  let overlay: HTMLElement | null = null;
-  let lastShown: boolean | null = null;
-
-  function rectOf(el: Element): HeroRect {
-    const box = el.getBoundingClientRect();
-    return { left: box.left, top: box.top, size: box.width };
-  }
-
-  function endFlight() {
-    overlay?.remove();
-    overlay = null;
-    flying = false;
-  }
-
-  function fly(from: HTMLElement, to: HTMLElement, arriving: boolean) {
-    const art = from.querySelector("svg");
-    if (!art) return;
-    endFlight();
-    const small = rectOf(arriving ? to : from);
-    const big = rectOf(arriving ? from : to);
-    // The clone is laid out at the destination and animated from the source.
-    const dest = arriving ? small : big;
-    const source = arriving ? big : small;
-    const flip = flipBetween(source, dest);
-    const clone = document.createElement("div");
-    const svg = art.cloneNode(true) as SVGElement;
-    svg.removeAttribute("width");
-    svg.removeAttribute("height");
-    svg.style.cssText = "display:block;width:100%;height:100%";
-    clone.append(svg);
-    clone.setAttribute("aria-hidden", "true");
-    clone.style.cssText =
-      `position:fixed;z-index:60;left:${dest.left}px;top:${dest.top}px;` +
-      `width:${dest.size}px;height:${dest.size}px;pointer-events:none;` +
-      "transform-origin:0 0;will-change:transform";
-    document.body.append(clone);
-    overlay = clone;
-    flying = true;
-    const motion = clone.animate(
-      [
-        {
-          transform: `translate(${flip.dx}px, ${flip.dy}px) scale(${flip.scale})`,
-        },
-        { transform: "none" },
-      ],
-      { duration: FLIGHT_MS, easing: FLIGHT_EASING, fill: "both" },
-    );
-    const done = () => {
-      if (overlay !== clone) return;
-      endFlight();
-      // A tiny pop as the mark lands in the slot.
-      if (arriving) {
-        markEl?.animate(
-          [
-            { transform: "scale(1)" },
-            { transform: "scale(1.16)", offset: 0.4 },
-            { transform: "scale(1)" },
-          ],
-          { duration: 200, easing: "ease-out" },
-        );
-      }
-    };
-    motion.finished.then(done, () => {});
-  }
+  let markShown = $state(true);
 
   $effect(() => {
-    const now = shown;
     const hero = handoff.hero;
-    const animate = handoff.animate;
-    if (lastShown === null || lastShown === now) {
-      lastShown = now;
+    const header = headerEl;
+    const slot = markEl;
+    if (!hero || !header || !slot) {
+      markShown = true;
       return;
     }
-    lastShown = now;
-    if (!animate || !hero || !markEl) {
-      endFlight();
-      return;
-    }
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) return;
-    if (now) fly(hero, markEl, true);
-    else fly(markEl, hero, false);
-  });
+    const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let clone: HTMLElement | null = null;
+    let frame = 0;
+    let lastProgress = -1;
 
-  $effect(() => () => endFlight());
+    function ensureClone(): HTMLElement | null {
+      const art = hero?.querySelector("svg");
+      if (!art) return null;
+      clone?.remove();
+      const svg = art.cloneNode(true) as SVGElement;
+      svg.removeAttribute("width");
+      svg.removeAttribute("height");
+      svg.style.cssText = "display:block;width:100%;height:100%";
+      const el = document.createElement("div");
+      el.append(svg);
+      el.setAttribute("aria-hidden", "true");
+      el.style.cssText =
+        "position:fixed;z-index:60;left:0;top:0;pointer-events:none;" +
+        "transform-origin:0 0;will-change:transform;display:none";
+      document.body.append(el);
+      return el;
+    }
+
+    function update() {
+      frame = 0;
+      if (!hero || !header || !slot) return;
+      const reduced = reducedQuery.matches;
+      const slotBox = slot.getBoundingClientRect();
+      const heroBox = hero.getBoundingClientRect();
+      const scrollY = window.scrollY;
+      const distance = morphDistance(heroBox.top + scrollY, slotBox.top);
+      const progress = scrollProgress(scrollY, distance);
+      const eased = reduced ? slotProgress(progress, true) : ease(progress);
+      header.style.setProperty("--brand-p", String(eased));
+      markShown = eased >= 1;
+
+      // The clone is only out while the morph is under way.
+      const morphing = !reduced && progress > 0 && progress < 1;
+      hero.style.visibility = !reduced && progress > 0 ? "hidden" : "";
+      if (!morphing) {
+        if (clone) clone.style.display = "none";
+        lastProgress = progress;
+        return;
+      }
+      if (!clone || lastProgress <= 0 || lastProgress >= 1) {
+        clone = ensureClone();
+      }
+      lastProgress = progress;
+      if (!clone) {
+        hero.style.visibility = "";
+        return;
+      }
+      const from: Rect = {
+        left: heroBox.left,
+        top: heroBox.top,
+        size: heroBox.width,
+      };
+      const to: Rect = {
+        left: slotBox.left,
+        top: slotBox.top,
+        size: slotBox.height,
+      };
+      const t = morphTransform(from, to, eased, from.size);
+      clone.style.width = `${from.size}px`;
+      clone.style.height = `${from.size}px`;
+      clone.style.transform = `translate(${t.x}px, ${t.y}px) scale(${t.scale})`;
+      clone.style.display = "block";
+    }
+
+    function schedule() {
+      if (!frame) frame = requestAnimationFrame(update);
+    }
+
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    reducedQuery.addEventListener("change", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      reducedQuery.removeEventListener("change", schedule);
+      if (frame) cancelAnimationFrame(frame);
+      clone?.remove();
+      hero.style.visibility = "";
+      header.style.removeProperty("--brand-p");
+      markShown = true;
+    };
+  });
 </script>
 
-<div class="brand-header" class:with-parent-column={reserveParentSlot}>
+<div
+  class="brand-header"
+  class:with-parent-column={reserveParentSlot}
+  bind:this={headerEl}
+>
   <a
     class="brand-lockup"
     class:parent-link={parent !== null}
@@ -137,7 +156,7 @@
     {/if}
     <span
       class="brand-mark-wrap"
-      class:mark-hidden={!shown || flying}
+      class:mark-hidden={!markShown}
       bind:this={markEl}><BrandMark /></span
     >
     <span class="brand-copy">
@@ -170,7 +189,6 @@
     min-width: 0;
     min-height: 44px;
     align-items: center;
-    gap: 0.6rem;
     margin-left: calc(var(--brand-align) - var(--brand-pad));
     border-radius: var(--radius-sm);
     padding: 0 0.65rem 0 var(--brand-pad);
@@ -181,7 +199,6 @@
   }
 
   .with-parent-column .brand-lockup {
-    gap: 0;
     margin-left: calc(
       var(--brand-align) - var(--brand-pad) - var(--brand-chevron)
     );
@@ -253,20 +270,21 @@
     transform: translateX(-2px);
   }
 
+  /* The slot grows with --brand-p (0 collapsed, 1 full; unset means full) and
+     pushes the wordmark with it. */
   .brand-mark-wrap {
     display: block;
+    width: calc(2rem * var(--brand-p, 1));
     flex: 0 0 auto;
+    margin-right: calc(0.6rem * var(--brand-p, 1));
     transition: transform 420ms var(--brand-ease);
   }
 
-  /* Waiting for (or flying to) the hero: the slot keeps its size. */
+  /* While the hero is the mascot (or on its way into the slot) the mark
+     itself stays invisible. */
   .brand-mark-wrap.mark-hidden {
     opacity: 0;
     pointer-events: none;
-  }
-
-  .with-parent-column .brand-mark-wrap {
-    margin-right: 0.6rem;
   }
 
   /* The yarn ball rolls a little towards where the link goes. */
@@ -324,9 +342,12 @@
       transition: none;
     }
 
-    /* No flight: the mark crossfades. */
+    /* No morph: the slot opens and the mark fades in once. */
     .brand-mark-wrap {
-      transition: opacity 120ms ease;
+      transition:
+        opacity 160ms ease,
+        width 160ms ease,
+        margin-right 160ms ease;
     }
 
     .brand-lockup:active,

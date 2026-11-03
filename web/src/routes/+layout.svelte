@@ -78,7 +78,27 @@
   onMount(() => {
     void loadCatalog();
     void refreshSession();
-    return initTheme();
+    const stopTheme = initTheme();
+    // The glass part of the header fades in as content scrolls under it.
+    const root = document.documentElement;
+    let frame = 0;
+    const GLASS_RAMP_PX = 40;
+    const syncGlass = () => {
+      frame = 0;
+      const glass = Math.min(1, Math.max(0, window.scrollY / GLASS_RAMP_PX));
+      root.style.setProperty("--header-glass", String(glass));
+    };
+    const scheduleGlass = () => {
+      if (!frame) frame = requestAnimationFrame(syncGlass);
+    };
+    syncGlass();
+    window.addEventListener("scroll", scheduleGlass, { passive: true });
+    return () => {
+      stopTheme();
+      window.removeEventListener("scroll", scheduleGlass);
+      if (frame) cancelAnimationFrame(frame);
+      root.style.removeProperty("--header-glass");
+    };
   });
 
   $effect(() => {
