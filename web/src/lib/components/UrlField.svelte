@@ -129,8 +129,15 @@
       {/if}
     </div>
   </div>
-  {#if showDomain}
-    <small class="url-domain" id={domainId}>{domain}</small>
+  <!-- Reserve the line while the field has focus, so blurring it (a click on Save
+       starts with a blur) never shifts the controls below it out from under the
+       pointer. -->
+  {#if url}
+    <small
+      class="url-domain"
+      class:url-domain--hidden={!showDomain}
+      id={domainId}>{domain}</small
+    >
   {/if}
 </div>
 
@@ -200,5 +207,9 @@
     color: var(--ink-muted);
     font-size: 0.84rem;
     font-weight: 500;
+  }
+
+  .url-domain--hidden {
+    visibility: hidden;
   }
 </style>
