@@ -254,13 +254,19 @@ fun HomeScreen(
                         )
                     }
                     availableUpdate?.let { update ->
-                        spacedItem {
-                            UpdateAvailableCard(
-                                update = update,
-                                onDownload = { uriHandler.openUri(update.downloadUrl) },
-                                onDismiss = viewModel::dismissUpdate,
+                        // Swipe it away or tap Later: the card leaves with an animation and only
+                        // then is the dismissal remembered (which drops the item).
+                        item(key = "update-card") {
+                            DismissibleCard(
+                                onDismissed = viewModel::dismissUpdate,
                                 modifier = Modifier.padding(horizontal = 16.dp),
-                            )
+                            ) { requestDismiss ->
+                                UpdateAvailableCard(
+                                    update = update,
+                                    onDownload = { uriHandler.openUri(update.downloadUrl) },
+                                    onDismiss = requestDismiss,
+                                )
+                            }
                         }
                     }
                     problem?.let { shown ->
