@@ -1,0 +1,272 @@
+package blue.anika.wolle.ui.admin
+
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.ChangeStep
+import blue.anika.wolle.data.api.dto.ChangeValue
+import blue.anika.wolle.data.util.DateTimeUtils
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+
+/*
+ * Pure presentation rules for the audit log, mirroring `web/src/lib/features/admin/audit-action.ts`
+ * and `DiffPanel.svelte`. Kept free of Compose state so they can be unit tested.
+ */
+
+/** The five visual kinds of audit action (the web's `action-*` icons) plus "anything else". */
+enum class AuditActionKind {
+    Create,
+    Update,
+    Delete,
+    Upload,
+    Remove,
+    Other,
+}
+
+/** The colour family of an action. Resolved to real colours in the UI (see `toneColor`). */
+enum class AuditTone {
+    Green,
+    Blue,
+    Red,
+    Marigold,
+    Muted,
+}
+
+data class AuditActionPresentation(
+    val kind: AuditActionKind,
+    /** Known actions have a translated label; unknown ones use [fallbackLabel]. */
+    @StringRes val labelRes: Int?,
+    val fallbackLabel: String,
+)
+
+private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
+    mapOf(
+        "created" to (AuditActionKind.Create to R.string.admin_action_created),
+        "updated" to (AuditActionKind.Update to R.string.admin_action_updated),
+        "deleted" to (AuditActionKind.Delete to R.string.admin_action_deleted),
+        "uploaded" to (AuditActionKind.Upload to R.string.admin_action_uploaded),
+        "removed" to (AuditActionKind.Remove to R.string.admin_action_removed),
+        "step_created" to (AuditActionKind.Create to R.string.admin_action_step_created),
+        "step_updated" to (AuditActionKind.Update to R.string.admin_action_step_updated),
+        "step_deleted" to (AuditActionKind.Delete to R.string.admin_action_step_deleted),
+        "title_image_uploaded" to
+            (AuditActionKind.Upload to R.string.admin_action_title_image_uploaded),
+        "stitch_sample_image_uploaded" to
+            (AuditActionKind.Upload to R.string.admin_action_stitch_sample_image_uploaded),
+        "step_image_uploaded" to
+            (AuditActionKind.Upload to R.string.admin_action_step_image_uploaded),
+        "attachment_uploaded" to
+            (AuditActionKind.Upload to R.string.admin_action_attachment_uploaded),
+        "attachment_deleted" to
+            (AuditActionKind.Delete to R.string.admin_action_attachment_deleted),
+        "image_deleted" to (AuditActionKind.Delete to R.string.admin_action_image_deleted),
+        "photo_uploaded" to (AuditActionKind.Upload to R.string.admin_action_photo_uploaded),
+        "photo_deleted" to (AuditActionKind.Delete to R.string.admin_action_photo_deleted),
+        "photo_promoted" to (AuditActionKind.Update to R.string.admin_action_photo_promoted),
+        "title_image_promoted" to
+            (AuditActionKind.Update to R.string.admin_action_title_image_promoted),
+    )
+
+/** Action names the filter offers as suggestions (the server filters on the exact name). */
+val knownAuditActionNames: List<String> = knownActions.keys.toList()
+
+fun auditActionPresentation(action: String): AuditActionPresentation {
+    val known = knownActions[action]
+    return if (known != null) {
+        AuditActionPresentation(known.first, known.second, action)
+    } else {
+        AuditActionPresentation(AuditActionKind.Other, null, prettifyAction(action))
+    }
+}
+
+/** `some_new_action` -> `Some new action`, for actions this app version has no label for. */
+internal fun prettifyAction(action: String): String =
+    action.replace('_', ' ').trim().replaceFirstChar { it.uppercase() }
+
+fun AuditActionKind.icon(): ImageVector =
+    when (this) {
+        AuditActionKind.Create -> Icons.Filled.Add
+        AuditActionKind.Update -> Icons.Filled.Edit
+        AuditActionKind.Delete -> Icons.Filled.Delete
+        AuditActionKind.Upload -> Icons.Filled.CloudUpload
+        AuditActionKind.Remove -> Icons.Filled.RemoveCircle
+        AuditActionKind.Other -> Icons.Filled.History
+    }
+
+/** create: green, update: blue, delete/remove: red, upload: marigold, anything else: muted. */
+fun AuditActionKind.tone(): AuditTone =
+    when (this) {
+        AuditActionKind.Create -> AuditTone.Green
+        AuditActionKind.Update -> AuditTone.Blue
+        AuditActionKind.Delete,
+        AuditActionKind.Remove -> AuditTone.Red
+        AuditActionKind.Upload -> AuditTone.Marigold
+        AuditActionKind.Other -> AuditTone.Muted
+    }
+
+/** Updates are blue, not red-ish, so they never read like deletions. */
+val UpdateBlueLight = Color(0xFF1D5FB8)
+val UpdateBlueDark = Color(0xFFA8C8FF)
+val AddedGreenLight = Color(0xFF1B6E3A)
+val AddedGreenDark = Color(0xFF8FD9A6)
+
+/** The entity filter values the API accepts besides "all". */
+val auditEntityTypes: List<String> = listOf("project", "yarn", "category")
+
+@StringRes
+fun entityTypeLabelRes(entityType: String): Int? =
+    when (entityType) {
+        "project" -> R.string.admin_entity_project
+        "yarn" -> R.string.admin_entity_yarn
+        "category" -> R.string.admin_entity_category
+        else -> null
+    }
+
+/** What an event was about: the resource name the server resolved, if any. */
+fun AuditEventDto.resourceName(): String? = resource.name?.trim()?.ifBlank { null }
+
+/** Two-letter-free initial for an avatar fallback: first letter of the email, or "?". */
+fun initialOf(email: String?): String =
+    email?.trim()?.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "?"
+
+// --- Day grouping ----------------------------------------------------------------------------
+
+sealed interface DayLabel {
+    data object Today : DayLabel
+
+    data object Yesterday : DayLabel
+
+    data class On(val date: LocalDate) : DayLabel
+
+    /** Timestamp the app could not parse. */
+    data object Unknown : DayLabel
+}
+
+data class AuditDayGroup(val label: DayLabel, val events: List<AuditEventDto>)
+
+fun auditEventInstant(event: AuditEventDto): Instant? =
+    runCatching { Instant.ofEpochMilli(DateTimeUtils.parseToEpochMillis(event.createdAt)) }
+        .getOrNull()
+
+/**
+ * Groups events, in the order given (the server sends newest first), into consecutive days in
+ * [zone]. Events from the same day that are not adjacent start a new group rather than being
+ * reordered.
+ */
+fun groupEventsByDay(
+    events: List<AuditEventDto>,
+    today: LocalDate,
+    zone: ZoneId,
+): List<AuditDayGroup> {
+    val groups = mutableListOf<AuditDayGroup>()
+    var currentLabel: DayLabel? = null
+    var bucket = mutableListOf<AuditEventDto>()
+    for (event in events) {
+        val label = dayLabelFor(auditEventInstant(event), today, zone)
+        if (label != currentLabel && bucket.isNotEmpty()) {
+            groups += AuditDayGroup(currentLabel!!, bucket)
+            bucket = mutableListOf()
+        }
+        currentLabel = label
+        bucket += event
+    }
+    if (bucket.isNotEmpty()) groups += AuditDayGroup(currentLabel!!, bucket)
+    return groups
+}
+
+fun dayLabelFor(instant: Instant?, today: LocalDate, zone: ZoneId): DayLabel {
+    if (instant == null) return DayLabel.Unknown
+    val date = instant.atZone(zone).toLocalDate()
+    return when (date) {
+        today -> DayLabel.Today
+        today.minusDays(1) -> DayLabel.Yesterday
+        else -> DayLabel.On(date)
+    }
+}
+
+// --- Change fields and values ----------------------------------------------------------------
+
+private val fieldLabels: Map<String, Int> =
+    mapOf(
+        "project.name" to R.string.admin_field_project_name,
+        "project.category" to R.string.admin_field_category,
+        "project.yarn" to R.string.admin_field_yarn,
+        "project.yarns" to R.string.admin_field_linked_yarns,
+        "project.needles" to R.string.admin_field_needles,
+        "project.stitch_sample" to R.string.admin_field_stitch_sample,
+        "project.description" to R.string.admin_field_description,
+        "project.notes" to R.string.admin_field_notes,
+        "project.other_materials" to R.string.admin_field_other_materials,
+        "project.tags" to R.string.admin_field_tags,
+        "project.steps" to R.string.admin_field_steps,
+        "project.step_count" to R.string.admin_field_step_count,
+        "project.image_count" to R.string.admin_field_image_count,
+        "project.attachment_count" to R.string.admin_field_attachment_count,
+        "project.is_ai_enhanced" to R.string.admin_field_ai_enhanced,
+        "project.link" to R.string.admin_field_link,
+        "yarn.name" to R.string.admin_field_yarn_name,
+        "yarn.description" to R.string.admin_field_description,
+        "yarn.brand" to R.string.admin_field_brand,
+        "yarn.colorway" to R.string.admin_field_colorway,
+        "yarn.dye_lot" to R.string.admin_field_dye_lot,
+        "yarn.fiber_content" to R.string.admin_field_fiber_content,
+        "yarn.weight_category" to R.string.admin_field_weight_category,
+        "yarn.recommended_needles" to R.string.admin_field_recommended_needles,
+        "yarn.weight_grams" to R.string.admin_field_weight,
+        "yarn.length_meters" to R.string.admin_field_length,
+        "yarn.notes" to R.string.admin_field_notes,
+        "yarn.photo_count" to R.string.admin_field_photo_count,
+        "yarn.is_ai_enhanced" to R.string.admin_field_ai_enhanced,
+        "yarn.link" to R.string.admin_field_link,
+        "category.name" to R.string.admin_field_category_name,
+    )
+
+/** Translated label for a change field, or null when this app version does not know it. */
+@StringRes fun changeFieldLabelRes(field: String): Int? = fieldLabels[field]
+
+/** How one side of a change is shown, as lines of plain text. */
+fun ChangeValue.displayText(string: (Int) -> String): String =
+    when (this) {
+        is ChangeValue.Text -> value?.ifBlank { null } ?: string(R.string.admin_value_not_provided)
+        is ChangeValue.TextList ->
+            if (values.isEmpty()) string(R.string.admin_value_empty_list)
+            else values.joinToString("\n")
+        is ChangeValue.Yarns ->
+            if (names.isEmpty()) string(R.string.admin_value_empty_list)
+            else names.joinToString("\n")
+        is ChangeValue.Integer -> value?.toString() ?: string(R.string.admin_value_not_provided)
+        is ChangeValue.Flag ->
+            string(if (value) R.string.admin_value_yes else R.string.admin_value_no)
+        is ChangeValue.Steps ->
+            if (steps.isEmpty()) string(R.string.admin_value_empty_list)
+            else steps.joinToString("\n\n") { it.asLine() }
+        is ChangeValue.LinkChanged ->
+            string(
+                if (present) R.string.admin_value_link_present else R.string.admin_value_link_absent
+            )
+        is ChangeValue.LegacyText -> value
+        ChangeValue.Unknown -> string(R.string.admin_value_unknown)
+    }
+
+private fun ChangeStep.asLine(): String = "$number. $title" + (description?.let { "\n$it" } ?: "")
+
+/** `unavailable_reason` -> message. */
+@StringRes
+fun unavailableReasonRes(reason: String?): Int =
+    when (reason) {
+        "not_recorded" -> R.string.admin_changes_not_recorded
+        "malformed" -> R.string.admin_changes_malformed
+        "too_large" -> R.string.admin_changes_too_large
+        else -> R.string.admin_changes_unavailable
+    }

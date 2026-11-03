@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -22,7 +23,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.admin.AdminAccessViewModel
 
 /**
  * Settings hub (SNA-21): a card of category rows, each navigating to its own dedicated screen
@@ -33,7 +37,12 @@ import blue.anika.wolle.R
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onCategoryClick: (SettingsCategory) -> Unit) {
+fun SettingsScreen(
+    onCategoryClick: (SettingsCategory) -> Unit,
+    adminAccess: AdminAccessViewModel = hiltViewModel(),
+) {
+    val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
+    val categories = SettingsCategory.entries.filter { it != SettingsCategory.Admin || isAdmin }
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_root_title)) }) }
     ) { innerPadding ->
@@ -44,7 +53,7 @@ fun SettingsScreen(onCategoryClick: (SettingsCategory) -> Unit) {
         ) {
             item {
                 SettingsSingleItemCard {
-                    SettingsCategory.entries.forEach { category ->
+                    categories.forEach { category ->
                         SettingsCategoryRow(category, onCategoryClick)
                     }
                 }

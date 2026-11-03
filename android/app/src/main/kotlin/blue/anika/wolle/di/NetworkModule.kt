@@ -1,6 +1,7 @@
 package blue.anika.wolle.di
 
 import blue.anika.wolle.BuildConfig
+import blue.anika.wolle.data.api.AdminApi
 import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
@@ -108,6 +109,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideMetaApi(retrofit: Retrofit): MetaApi = retrofit.create(MetaApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminApi(retrofit: Retrofit): AdminApi = retrofit.create(AdminApi::class.java)
 
     @Provides
     @Singleton

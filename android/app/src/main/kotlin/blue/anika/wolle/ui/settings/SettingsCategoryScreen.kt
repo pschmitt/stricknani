@@ -13,6 +13,8 @@ fun SettingsCategoryScreen(
     category: SettingsCategory,
     onBack: () -> Unit,
     onShowLibraries: () -> Unit = {},
+    onOpenAdminActivity: () -> Unit = {},
+    onOpenAdminAccounts: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     when (category) {
@@ -25,6 +27,12 @@ fun SettingsCategoryScreen(
         SettingsCategory.DetailCards -> DetailCardOrderSettingsScreen(onBack = onBack)
         SettingsCategory.Sync -> SyncSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Backup -> BackupSettingsScreen(onBack = onBack, viewModel = viewModel)
+        SettingsCategory.Admin ->
+            AdminSettingsScreen(
+                onBack = onBack,
+                onOpenActivity = onOpenAdminActivity,
+                onOpenAccounts = onOpenAdminAccounts,
+            )
         SettingsCategory.About ->
             AboutSettingsScreen(
                 onBack = onBack,

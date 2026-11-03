@@ -52,6 +52,12 @@ sealed interface Route {
     /** Open-source libraries used (SNA-34) - reachable from Settings' About category. */
     @Serializable data object Libraries : Route
 
+    /** Administrator audit log (SNA-86) - reachable from Settings -> Admin. */
+    @Serializable data object AdminAudit : Route
+
+    /** Administrator account list (SNA-86) - reachable from Settings -> Admin. */
+    @Serializable data object AdminAccounts : Route
+
     /**
      * A Settings sub-screen (SNA-21). [categoryName] is `SettingsCategory.name` (a plain `String`
      * rather than the enum itself, to sidestep any Navigation Compose enum-as-route-arg quirks).
@@ -119,7 +125,13 @@ enum class TopLevelDestination(
         Route.Settings,
         R.string.settings_root_title,
         Icons.Filled.Settings,
-        setOf(Route.Settings::class, Route.SettingsCategoryRoute::class, Route.Libraries::class),
+        setOf(
+            Route.Settings::class,
+            Route.SettingsCategoryRoute::class,
+            Route.Libraries::class,
+            Route.AdminAudit::class,
+            Route.AdminAccounts::class,
+        ),
     ),
 }
 

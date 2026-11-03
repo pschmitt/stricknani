@@ -36,6 +36,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import blue.anika.wolle.ui.admin.AdminAccountsScreen
+import blue.anika.wolle.ui.admin.AdminAuditScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
@@ -285,7 +287,15 @@ fun StricknaniNavHost(
                     category = SettingsCategory.valueOf(route.categoryName),
                     onBack = { navController.navigateUp() },
                     onShowLibraries = { navController.navigate(Route.Libraries) },
+                    onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
+                    onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
                 )
+            }
+            composable<Route.AdminAudit> {
+                AdminAuditScreen(onBack = { navController.navigateUp() })
+            }
+            composable<Route.AdminAccounts> {
+                AdminAccountsScreen(onBack = { navController.navigateUp() })
             }
             composable<Route.Libraries> { LibrariesScreen(onBack = { navController.navigateUp() }) }
             composable<Route.ProjectDetail> {

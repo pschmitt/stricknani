@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.settings
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dns
@@ -58,6 +59,12 @@ enum class SettingsCategory(
         R.string.settings_category_backup_title,
         R.string.settings_category_backup_subtitle,
         Icons.Filled.Backup,
+    ),
+    /** Only shown to administrators (see `AdminAccessViewModel`). */
+    Admin(
+        R.string.settings_category_admin_title,
+        R.string.settings_category_admin_subtitle,
+        Icons.Filled.AdminPanelSettings,
     ),
     About(
         R.string.settings_category_about_title,

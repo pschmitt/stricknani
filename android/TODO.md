@@ -41,6 +41,41 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-86: Admin screens - activity log and accounts
+
+- [x] Settings -> Admin (administrators only) with two items, "Activity" and "Accounts". Admin
+      visibility comes from one probe, `AdminRepository.probeAdmin()`: `GET
+      /api/v2/admin/users?page=1` once per app start and token (cached in memory) - 200 shows the
+      entry, 401/403 hides it, a network error leaves it hidden and asks again next time. Switch
+      to a server `is_admin` flag by changing that one function.
+- [x] Activity: day-grouped list (Today, Yesterday, dates) of compact rows - action badge with
+      icon and colour (create green, update blue, delete/remove red, upload marigold, other muted;
+      same action mapping as the web `audit-action.ts`), entity name or type, actor avatar and
+      time. Filter chips for entity type and action (the API's `entity`/`action` params), pull to
+      refresh, paging on scroll (`has_more`). Tapping a row opens a bottom sheet with who, what
+      and when and the field-by-field before -> after changes (removed red with strikethrough,
+      added green, like the web `DiffPanel`), or the `unavailable_reason` message.
+- [x] Accounts: avatar, email, "Admin"/"You"/"Disabled" badges, disabled accounts dimmed; a menu
+      per account with Disable/Enable (not for yourself) and Reset password, each confirmed with
+      a dialog; the reset sets a new password (the API takes one, it does not generate one) -
+      type it or "Make one for me" - and afterwards shows it with a Copy button (copied as a
+      sensitive clip). Extended "Add account" button opens a sheet with email, password and an
+      admin switch. Snackbar after every action; friendly messages for offline, not allowed, last
+      admin, email in use and password rules. Online-only: nothing is stored in Room.
+- [x] "You" needs to know the signed-in email; the app only learns it from a password sign-in
+      (stored encrypted, cleared on sign-out or a token/QR sign-in). Without it no account is
+      marked "You" and Disable is offered for all of them (the server still refuses to remove the
+      last admin).
+- [x] English and German strings (informal "du"), content descriptions, 48dp touch targets.
+- [x] Unit tests: `AdminDtoTest` (JSON shaped like the Rust structs), `AuditPresentationTest`
+      (action -> icon/colour, day grouping, value display, password generator),
+      `AdminRepositoryTest` (error mapping).
+- [ ] Depends on the server accepting Bearer personal access tokens on `/api/v2/admin/*` (until
+      then those routes answer 401 and the Admin entry stays hidden).
+
+Status: **in progress**, 2026-11-03 - built and unit-tested on the remote host; not yet checked
+against a server with the Bearer admin routes.
+
 ## SNA-85: More ergonomic project and yarn editors
 
 - [x] Save is a full-width button pinned to the bottom, in thumb reach and above the keyboard;

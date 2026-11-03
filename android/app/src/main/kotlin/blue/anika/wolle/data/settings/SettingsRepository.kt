@@ -43,6 +43,20 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private val _credentials = MutableStateFlow(loadCredentials())
     val credentials: StateFlow<StricknaniCredentials> = _credentials.asStateFlow()
 
+    /**
+     * Email of the account, remembered only when the user signed in with a password (a pasted token
+     * or QR code does not say who it belongs to). Used to mark "You" in the admin account list.
+     */
+    private val _accountEmail = MutableStateFlow(prefs.getString(KEY_ACCOUNT_EMAIL, null))
+    val accountEmail: StateFlow<String?> = _accountEmail.asStateFlow()
+
+    fun setAccountEmail(email: String?) {
+        val cleaned = email?.trim()?.ifBlank { null }
+        if (cleaned == null) prefs.edit().remove(KEY_ACCOUNT_EMAIL).apply()
+        else prefs.edit().putString(KEY_ACCOUNT_EMAIL, cleaned).apply()
+        _accountEmail.value = cleaned
+    }
+
     private val _isConfigured = MutableStateFlow(_credentials.value.isValid)
     val isConfigured: StateFlow<Boolean> = _isConfigured.asStateFlow()
 
@@ -77,14 +91,17 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .edit()
             .putString(KEY_SERVER_URL, normalizedUrl)
             .putString(KEY_API_TOKEN, trimmedToken)
+            .remove(KEY_ACCOUNT_EMAIL)
             .apply()
+        _accountEmail.value = null
         _credentials.value = StricknaniCredentials(normalizedUrl, trimmedToken)
         _isConfigured.value = _credentials.value.isValid
     }
 
     /** Wipes credentials. The Room cache (SNA-7) is wiped by the caller alongside this. */
     fun signOut() {
-        prefs.edit().remove(KEY_SERVER_URL).remove(KEY_API_TOKEN).apply()
+        prefs.edit().remove(KEY_SERVER_URL).remove(KEY_API_TOKEN).remove(KEY_ACCOUNT_EMAIL).apply()
+        _accountEmail.value = null
         _credentials.value = StricknaniCredentials("", "")
         _isConfigured.value = false
     }
@@ -98,6 +115,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private companion object {
         const val KEY_SERVER_URL = "server_url"
         const val KEY_API_TOKEN = "api_token"
+        const val KEY_ACCOUNT_EMAIL = "account_email"
         const val KEY_BACKUP_PASSWORD = "scheduled_backup_password"
     }
 }

@@ -81,7 +81,10 @@ constructor(
         viewModelScope.launch {
             passwordTokenMinter
                 .mintToken(serverUrl, email, password, tokenName = "Android (password login)")
-                .onSuccess { apiToken -> persistAndSucceed(serverUrl, apiToken) }
+                .onSuccess { apiToken ->
+                    persistAndSucceed(serverUrl, apiToken)
+                    settingsRepository.setAccountEmail(email)
+                }
                 .onFailure { error ->
                     _uiState.value = OnboardingUiState.Error(error.toUserMessage())
                 }
