@@ -153,14 +153,44 @@ def round_svg(tmp: Path) -> Path:
     return out
 
 
+LAUNCHER_BG = "#8cb8ff"
+
+
+def launcher_svgs(tmp: Path) -> tuple[Path, Path]:
+    """The Android launcher icon as PWA icons: the scaled ball on its own blue.
+
+    Returns (round, maskable). `round` is what the launcher's circle mask shows
+    (the 72 unit visible circle of the 108 unit canvas), for the "any" icons;
+    `maskable` is the full-bleed canvas the OS masks itself.
+    """
+    src = (BRANDING / "icon-foreground.svg").read_text()
+    inner = src.split("<svg", 1)[1].split(">", 1)[1].rsplit("</svg>", 1)[0]
+    round_icon = tmp / "launcher-round.svg"
+    round_icon.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72">'
+        '<clipPath id="mask"><circle cx="54" cy="54" r="36"/></clipPath>'
+        f'<g clip-path="url(#mask)"><rect width="108" height="108" fill="{LAUNCHER_BG}"/>'
+        f"{inner}</g></svg>"
+    )
+    maskable = tmp / "launcher-maskable.svg"
+    maskable.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">'
+        f'<rect width="108" height="108" fill="{LAUNCHER_BG}"/>{inner}</svg>'
+    )
+    return round_icon, maskable
+
+
 def rasters() -> None:
     icon = BRANDING / "icon.svg"
     square = BRANDING / "icon-square.svg"
-    for web in (ROOT / "web/static", ROOT / "rust/static"):
-        shutil.copy(icon, web / "favicon.svg")
-        resvg(icon, web / "icons/icon-192.png", 192)
-        resvg(icon, web / "icons/icon-512.png", 512)
-    resvg(square, ROOT / "web/static/icons/icon-maskable-512.png", 512)
+    with tempfile.TemporaryDirectory() as t:
+        # PWA icons match the Android launcher icon (no padding, blue ground).
+        launcher_round, launcher_maskable = launcher_svgs(Path(t))
+        for web in (ROOT / "web/static", ROOT / "rust/static"):
+            shutil.copy(icon, web / "favicon.svg")
+            resvg(launcher_round, web / "icons/icon-192.png", 192)
+            resvg(launcher_round, web / "icons/icon-512.png", 512)
+        resvg(launcher_maskable, ROOT / "web/static/icons/icon-maskable-512.png", 512)
     shutil.copy(BRANDING / "mascot.svg", ROOT / "web/static/mascot.svg")
 
     resvg(square, BRANDING / "playstore/icon-512.png", 512)

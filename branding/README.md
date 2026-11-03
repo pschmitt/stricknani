@@ -23,6 +23,7 @@ just branding
 which runs `branding/build.py` (resvg and shapely come from nix). It rewrites:
 
 - `web/static/favicon.svg`, `web/static/mascot.svg`, `web/static/icons/icon-{192,512,maskable-512}.png`
+  (the PWA icons are the Android launcher icon: `icon-foreground.svg` on the launcher blue)
 - `rust/static/favicon.svg`, `rust/static/icons/icon-{192,512}.png`
 - `branding/playstore/icon-512.png` and `feature-graphic.png`
 - `android/app/src/main/res/mipmap-*dpi/ic_launcher{,_round}.png`
