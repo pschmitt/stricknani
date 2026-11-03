@@ -58,7 +58,10 @@ pub fn router_with_web_root(web_root: Option<PathBuf>) -> Router {
         .route("/app/offline-theme.js", get(app_offline_theme_js))
         .route("/app/icons/icon-192.png", get(app_icon_192))
         .route("/app/icons/icon-512.png", get(app_icon_512))
-        .route("/app/icons/icon-maskable-512.png", get(app_icon_maskable_512))
+        .route(
+            "/app/icons/icon-maskable-512.png",
+            get(app_icon_maskable_512),
+        )
         .with_state(state)
 }
 
