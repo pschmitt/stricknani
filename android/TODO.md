@@ -49,6 +49,10 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
       versions get a toast). TalkBack offers both as named actions. Long-pressing a section's
       title still reorders. (First version jumped straight into the editor; the user asked for a
       menu with feedback.)
+- [x] Long-press also works on tappable content inside a section (Markdown images that open the
+      viewer, linked yarn/project rows, attachments): `longPressAboveChildren` watches the
+      gesture before the children and only consumes it once the long-press fires, so taps and
+      scrolling still reach them.
 - [x] Each instruction step has its own long-press: the editor opens at that step with its title
       field focused (addressed by step ID, since the detail sorts steps by number).
 - [x] `Route.ProjectEditor`/`YarnEditor` take an optional `focus`; the editors wait until the

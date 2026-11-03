@@ -7,8 +7,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,8 +39,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -299,17 +302,13 @@ fun SectionActions(
         Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onLongPress = { position ->
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                // DropdownMenu offsets are measured from the anchor's bottom edge.
-                                menuOffset =
-                                    with(density) {
-                                        DpOffset(position.x.toDp(), (position.y - height).toDp())
-                                    }
+                    .longPressAboveChildren { position ->
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        // DropdownMenu offsets are measured from the anchor's bottom edge.
+                        menuOffset =
+                            with(density) {
+                                DpOffset(position.x.toDp(), (position.y - height).toDp())
                             }
-                        )
                     }
                     .semantics {
                         customActions =
@@ -361,3 +360,35 @@ internal fun copyLines(vararg fields: Pair<String, String?>): String =
     fields
         .filter { (_, value) -> !value.isNullOrBlank() }
         .joinToString("\n") { (label, value) -> "$label: $value" }
+
+/**
+ * Long-press detection that also works on top of tappable content (Markdown images that open the
+ * viewer, linked yarn or project rows, attachments). A plain `detectTapGestures` never sees those
+ * presses, because the child's click handler claims the touch first. This watches the gesture in
+ * the Initial pass, before the children, without consuming anything: taps and scrolls reach them as
+ * usual. Only once the long-press fires is the rest of that gesture consumed, so the child does not
+ * also treat its release as a tap.
+ */
+internal fun Modifier.longPressAboveChildren(onLongPress: (Offset) -> Unit): Modifier =
+    pointerInput(Unit) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            val ended =
+                withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        val moved = (change.position - down.position).getDistance()
+                        if (!change.pressed || moved > viewConfiguration.touchSlop) break
+                    }
+                }
+            // null means the timeout passed with the finger still down and in place.
+            if (ended == null) {
+                onLongPress(down.position)
+                do {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    event.changes.forEach { it.consume() }
+                } while (event.changes.any { it.pressed })
+            }
+        }
+    }
