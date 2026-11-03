@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -422,7 +423,9 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
     }
 
     private fun openYarns() {
-        composeRule.onNodeWithText("Yarns").performClick()
+        // Yarns is no longer a default tab; Home's stash card opens the list.
+        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithTag("home-stash-card").performScrollTo().performClick()
         waitForText("Search yarns")
         // A freshly (re)created Yarns screen kicks off its own server sync; a fresh CI run showed
         // the list transiently rendering as few as 2 (non-scrollable) rows while that sync

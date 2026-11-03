@@ -308,6 +308,21 @@ Use this file as the operational source of truth for working in Stricknani.
   Use compact variants in audit and related-resource lists. Cross-owner audit
   cards must use the separate read-only administrator links and media routes.
 
+### UI Parity (Web & Android)
+
+- The web app (`web/`) and the Android app (`android/`) are one product: keep
+  their layout, structure, wording and visual language in sync.
+- A UI change on one side (a new card or section, a reordered form, renamed
+  copy, a new interaction) needs the matching change on the other side in the
+  same task. If that isn't possible yet, for example because it needs an API
+  change first, add a follow-up entry to the other side's TODO and mention it
+  in the commit message and the hand-off.
+- Use the same English and German wording on both sides (`web` catalogs and
+  `android/app/src/main/res/values{,-de}/strings.xml`).
+- Platform conventions may differ (bottom bar vs. sidebar, sheets vs.
+  dialogs), but the order of sections and what each screen offers should
+  match.
+
 ### Release/CI Parity
 
 - For shared GitHub Actions components, load the `ci-workflows` skill and read

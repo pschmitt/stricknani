@@ -250,6 +250,7 @@ fun StricknaniNavHost(
                 HomeScreen(
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                    onYarnsClick = { navController.navigate(Route.Yarns) },
                     onGaugeClick = { navController.navigate(Route.Gauge) },
                     onOpenSyncIssues = {
                         navController.navigate(
@@ -266,9 +267,14 @@ fun StricknaniNavHost(
             }
             composable<Route.Categories> { CategoriesScreen() }
             composable<Route.Yarns> {
+                val tabs by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
                 YarnsListScreen(
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                     onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
+                    // Without a Yarns tab the list is opened from Home, so offer a way back.
+                    onBack =
+                        if (TopLevelDestination.YARNS in tabs) null
+                        else ({ navController.popBackStack() }),
                 )
             }
             composable<Route.Search> {

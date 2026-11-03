@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
@@ -78,6 +79,7 @@ import java.util.Calendar
 fun HomeScreen(
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
+    onYarnsClick: () -> Unit,
     onGaugeClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -159,6 +161,12 @@ fun HomeScreen(
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     }
+                }
+                item {
+                    StashCard(
+                        onClick = onYarnsClick,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
                 }
                 if (favoriteProjects.isNotEmpty()) {
                     item {
@@ -388,6 +396,47 @@ private fun relativeDay(millis: Long): String =
             DateUtils.FORMAT_ABBREV_RELATIVE,
         )
         .toString()
+
+/**
+ * The way into the yarn list now that Yarns is not a default tab: a lagoon card with the sheep,
+ * right under "Continue knitting".
+ */
+@Composable
+private fun StashCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = modifier.fillMaxWidth().testTag("home-stash-card"),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Box(
+                Modifier.size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(MdiIcons.Sheep, contentDescription = null, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.home_stash_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    stringResource(R.string.home_stash_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        }
+    }
+}
 
 @Composable
 private fun SectionTitle(

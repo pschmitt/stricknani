@@ -18,12 +18,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -58,6 +60,8 @@ import coil3.compose.AsyncImage
 fun YarnsListScreen(
     onYarnClick: (Int) -> Unit,
     onAddYarnClick: () -> Unit,
+    /** Shown as a back arrow when Yarns is not a visible tab (opened from Home's stash card). */
+    onBack: (() -> Unit)? = null,
     viewModel: YarnsListViewModel = hiltViewModel(),
 ) {
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
@@ -72,7 +76,21 @@ fun YarnsListScreen(
 
     Scaffold(
         // Same title bar as the project list, so both libraries start the same way.
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.yarns_list_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.yarns_list_title)) },
+                navigationIcon = {
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.common_back),
+                            )
+                        }
+                    }
+                },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(

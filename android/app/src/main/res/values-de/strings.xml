@@ -63,6 +63,8 @@
     <string name="home_greeting_night">Noch am Stricken?</string>
     <string name="home_greeting_question">Was stricken wir heute?</string>
     <string name="home_continue_title">Weiterstricken</string>
+    <string name="home_stash_title">Dein Garnvorrat</string>
+    <string name="home_stash_subtitle">Garne ansehen, hinzufügen und finden</string>
 
     <!-- Search -->
     <string name="search_placeholder">Projekte und Wolle durchsuchen</string>

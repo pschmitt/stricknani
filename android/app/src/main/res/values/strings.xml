@@ -63,6 +63,8 @@
     <string name="home_greeting_night">Still knitting?</string>
     <string name="home_greeting_question">What are we knitting today?</string>
     <string name="home_continue_title">Continue knitting</string>
+    <string name="home_stash_title">Your yarn stash</string>
+    <string name="home_stash_subtitle">Browse, add and find your yarns</string>
 
     <!-- Search -->
     <string name="search_placeholder">Search projects and yarns</string>

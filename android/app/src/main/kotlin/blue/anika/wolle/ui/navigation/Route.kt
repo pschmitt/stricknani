@@ -105,6 +105,9 @@ enum class TopLevelDestination(
         R.string.destination_label_yarns,
         MdiIcons.Sheep,
         setOf(Route.Yarns::class, Route.YarnDetail::class, Route.YarnEditor::class),
+        // Hidden by default: Home's "Your yarn stash" card opens the list, and Settings ->
+        // Navigation can bring the tab back.
+        defaultVisible = false,
     ),
     SEARCH(
         Route.Search,
