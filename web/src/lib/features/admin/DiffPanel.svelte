@@ -5,9 +5,9 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import AuditActionBadge from "./AuditActionBadge.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
-  import { auditActionPresentation } from "./audit-action";
   import {
     getAuditEventDetail,
     type AuditEventDetail,
@@ -153,13 +153,6 @@
     return t(labels[field] ?? "Recorded field", locale);
   }
 
-  function actionLabel(action: string): string {
-    const presentation = auditActionPresentation(action);
-    return presentation.known
-      ? t(presentation.messageKey, locale)
-      : t("Recorded event", locale);
-  }
-
   function entityLabel(entity: string): string {
     return entity === "project"
       ? t("Project", locale)
@@ -221,7 +214,7 @@
           >{dateLabel(detail.event.created_at)}</time
         >
       </div>
-      <p>{actionLabel(detail.event.action)}</p>
+      <AuditActionBadge action={detail.event.action} {locale} />
       <ResourceCard
         kind={resourceKind}
         name={detail.event.resource.name ??

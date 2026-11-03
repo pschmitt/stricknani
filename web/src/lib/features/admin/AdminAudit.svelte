@@ -9,9 +9,9 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import AuditActionBadge from "./AuditActionBadge.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
-  import { auditActionPresentation } from "./audit-action";
   import {
     auditFiltersFromSearch,
     auditSearchFromFilters,
@@ -307,17 +307,11 @@
     <ol class="event-list" aria-label={t("Audit events", locale)}>
       {#each events as event (event.id)}
         {@const actor = actorLabel(event)}
-        {@const action = auditActionPresentation(event.action)}
         {@const resourceKind = event.resource.kind ?? "resource"}
         <li class="event-row">
           <div class="event-main">
             <div class="event-summary">
-              <span class="event-action">
-                <NavIcon name={action.icon} />
-                <strong>
-                  {action.known ? t(action.messageKey, locale) : action.label}
-                </strong>
-              </span>
+              <AuditActionBadge action={event.action} {locale} />
             </div>
             <ResourceCard
               kind={resourceKind}
@@ -335,16 +329,18 @@
             </p>
           </div>
           <div class="event-meta">
-            {#if event.has_changes}
-              <a
-                class="ui-button ui-button--secondary ui-button--md show-diff"
-                href={`/app/admin/audit/${event.id}`}
-              >
-                <ActionLabel icon="preview"
-                  >{t("Show diff", locale)}</ActionLabel
+            <div class="event-diff-slot" aria-hidden={!event.has_changes}>
+              {#if event.has_changes}
+                <a
+                  class="ui-button ui-button--secondary ui-button--md show-diff"
+                  href={`/app/admin/audit/${event.id}`}
                 >
-              </a>
-            {/if}
+                  <ActionLabel icon="preview"
+                    >{t("Show diff", locale)}</ActionLabel
+                  >
+                </a>
+              {/if}
+            </div>
             <time datetime={event.created_at}
               >{eventDate(event.created_at)}</time
             >
@@ -427,13 +423,14 @@
     justify-content: center;
     gap: 0.45rem;
   }
-  .button-content :global(svg),
-  .event-action :global(svg) {
+  .button-content :global(svg) {
     flex: 0 0 1rem;
     width: 1rem;
     height: 1rem;
   }
   .event-list {
+    display: grid;
+    grid-auto-rows: 1fr;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -455,13 +452,15 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 0.7rem;
-    align-items: baseline;
-    overflow-wrap: anywhere;
-  }
-  .event-action {
-    display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    overflow-wrap: anywhere;
+    margin-bottom: 0.15rem;
+  }
+  .event-main {
+    display: grid;
+    min-width: 0;
+    align-content: start;
+    gap: 0.65rem;
   }
   .event-main p,
   .event-row time {
@@ -470,22 +469,27 @@
   }
   .show-diff {
     overflow-wrap: anywhere;
-  }
-  .show-diff,
-  .event-meta {
-    justify-self: start;
+    min-height: 44px;
   }
   .event-meta {
     display: grid;
+    grid-template-rows: minmax(44px, auto) auto;
+    justify-self: end;
     justify-items: end;
-    gap: 0.2rem;
+    align-content: start;
+    gap: 0.4rem;
+  }
+  .event-diff-slot {
+    display: flex;
+    min-height: 44px;
+    align-items: start;
   }
   .event-main p {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.3rem 0.45rem;
-    margin: 0.3rem 0 0;
+    margin: 0;
     overflow-wrap: anywhere;
   }
   .actor-identity {
@@ -535,11 +539,17 @@
       grid-template-columns: minmax(0, 1fr);
     }
     .event-meta {
-      justify-items: start;
+      width: 100%;
+      grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+      grid-template-rows: auto;
+      justify-self: stretch;
+      align-items: center;
+      justify-items: stretch;
+      gap: 0.75rem;
     }
     .event-row time {
-      grid-column: 1;
-      text-align: left;
+      grid-column: 2;
+      text-align: right;
     }
     .page-controls {
       gap: 0.4rem;

@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -40,9 +41,13 @@
   let deleting = $state(false);
   let selectedPhoto = $state<YarnPhoto | null>(null);
   let deleteTarget = $state<YarnPhoto | null>(null);
+  let deleteOwnerId = $state<number | null>(null);
+  let deleteYarnId = $state<number | null>(null);
   let zoomDialog = $state<HTMLDialogElement | null>(null);
   let zoomTitle = $state<HTMLHeadingElement | null>(null);
-  let deleteDialog = $state<HTMLDialogElement | null>(null);
+  let deleteDialog = $state<ConfirmDialog | undefined>(undefined);
+  let deleteDialogOpen = $state(false);
+  let deleteGeneration = 0;
 
   const mediaUploadAvailable = $derived(
     !readOnly && canEdit && session.data?.capabilities.media_upload === true,
@@ -50,6 +55,42 @@
   const mediaDeleteAvailable = $derived(
     !readOnly && canEdit && session.data?.capabilities.media_delete === true,
   );
+
+  $effect(() => {
+    const currentYarnId = yarnId;
+    const currentOwnerId = session.data?.user?.id ?? null;
+    untrack(() => {
+      if (
+        deleteTarget &&
+        (deleteYarnId !== currentYarnId || deleteOwnerId !== currentOwnerId)
+      ) {
+        deleteGeneration += 1;
+        untrack(() => deleteDialog?.close());
+        deleteDialogOpen = false;
+        deleteTarget = null;
+        deleteOwnerId = null;
+        deleteYarnId = null;
+        deleting = false;
+        errorMessage = "";
+      }
+    });
+  });
+
+  onMount(() => {
+    const onKeydown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.key !== "Escape" ||
+        !deleteDialogOpen ||
+        deleting
+      )
+        return;
+      event.preventDefault();
+      closeDeleteDialog();
+    };
+    window.addEventListener("keydown", onKeydown);
+    return () => window.removeEventListener("keydown", onKeydown);
+  });
 
   function isCurrentOperation(resourceId: number, ownerId: number): boolean {
     return yarnId === resourceId && session.data?.user?.id === ownerId;
@@ -101,9 +142,46 @@
   }
 
   function confirmDelete(photo: YarnPhoto) {
-    if (!mediaDeleteAvailable || uploading || deleting) return;
+    const currentSession = session.data;
+    if (
+      !currentSession?.user ||
+      !mediaDeleteAvailable ||
+      uploading ||
+      deleting ||
+      !photos.some((candidate) => candidate.id === photo.id)
+    )
+      return;
+    deleteGeneration += 1;
+    deleteOwnerId = currentSession.user.id;
+    deleteYarnId = yarnId;
     deleteTarget = photo;
+    errorMessage = "";
     deleteDialog?.showModal();
+    deleteDialogOpen = true;
+  }
+
+  function closeDeleteDialog(invalidate = true): void {
+    if (invalidate) deleteGeneration += 1;
+    untrack(() => deleteDialog?.close());
+    deleteDialogOpen = false;
+    deleteTarget = null;
+    deleteOwnerId = null;
+    deleteYarnId = null;
+  }
+
+  function isCurrentDelete(
+    resourceId: number,
+    ownerId: number,
+    photoId: number,
+    generation: number,
+  ): boolean {
+    return (
+      deleteGeneration === generation &&
+      deleteYarnId === resourceId &&
+      deleteOwnerId === ownerId &&
+      deleteTarget?.id === photoId &&
+      isCurrentOperation(resourceId, ownerId)
+    );
   }
 
   async function removePhoto() {
@@ -113,20 +191,39 @@
       return;
     const resourceId = yarnId;
     const ownerId = currentSession.user.id;
+    const photoId = photo.id;
+    const generation = deleteGeneration;
+    if (
+      deleteYarnId !== resourceId ||
+      deleteOwnerId !== ownerId ||
+      deleteTarget?.id !== photoId ||
+      !photos.some((candidate) => candidate.id === photoId)
+    )
+      return;
     const updateResource = onResourceUpdated;
     const notifyMediaBusy = onMediaBusyChange;
+    let deleteSucceeded = false;
     deleting = true;
     errorMessage = "";
     notifyMediaBusy?.(true, resourceId, ownerId);
     try {
-      await deleteYarnPhoto(resourceId, photo.id, currentSession);
-      deleteDialog?.close();
-      deleteTarget = null;
+      await deleteYarnPhoto(resourceId, photoId, currentSession);
+      if (!isCurrentDelete(resourceId, ownerId, photoId, generation)) return;
+      deleteSucceeded = true;
+      closeDeleteDialog(false);
       await updateResource(resourceId, ownerId);
-      if (isCurrentOperation(resourceId, ownerId))
+      if (
+        deleteGeneration === generation &&
+        isCurrentOperation(resourceId, ownerId)
+      )
         uploadMessage = t("Photo removed.", locale);
     } catch (error) {
-      if (isCurrentOperation(resourceId, ownerId))
+      if (
+        deleteSucceeded
+          ? deleteGeneration === generation &&
+            isCurrentOperation(resourceId, ownerId)
+          : isCurrentDelete(resourceId, ownerId, photoId, generation)
+      )
         errorMessage =
           error instanceof ApiError && error.status === 404
             ? t("This photo is no longer available.", locale)
@@ -134,7 +231,10 @@
               ? error.message
               : t("The photo could not be removed.", locale);
     } finally {
-      if (isCurrentOperation(resourceId, ownerId)) {
+      if (
+        deleteGeneration === generation &&
+        isCurrentOperation(resourceId, ownerId)
+      ) {
         deleting = false;
         notifyMediaBusy?.(false, resourceId, ownerId);
       }
@@ -190,24 +290,24 @@
       <h2 id="photo-manager-title">{t("Photos", locale)}</h2>
       <p>{t("Tap a photo to see it larger.", locale)}</p>
     </div>
-    {#if !readOnly}
-      <label
-        class="ui-button ui-button--secondary ui-button--md upload-action"
-        class:disabled={!mediaUploadAvailable || uploading}
-      >
-        <ActionLabel icon="upload">
-          {uploading ? t("Uploading…", locale) : t("Add photo", locale)}
-        </ActionLabel>
-        <input
-          type="file"
-          accept="image/*"
-          aria-label={t("Choose a yarn photo", locale)}
-          disabled={!mediaUploadAvailable || uploading}
-          onchange={(event) => void upload(event)}
-        />
-      </label>
-    {/if}
   </header>
+
+  {#if !readOnly}
+    <div class="field upload-field">
+      <label for={`yarn-photo-file-${yarnId}`}>
+        <ActionLabel icon="upload">{t("Add photo", locale)}</ActionLabel>
+      </label>
+      <input
+        id={`yarn-photo-file-${yarnId}`}
+        class="shared-file-input"
+        type="file"
+        accept="image/*"
+        aria-label={t("Choose a yarn photo", locale)}
+        disabled={!mediaUploadAvailable || uploading}
+        onchange={(event) => void upload(event)}
+      />
+    </div>
+  {/if}
 
   {#if !readOnly}
     {#if !canEdit}
@@ -228,7 +328,7 @@
   {:else if uploadMessage}
     <p class="upload-state" role="status" aria-live="polite">{uploadMessage}</p>
   {/if}
-  {#if errorMessage}
+  {#if errorMessage && !deleteTarget}
     <p class="error-message" role="alert">{errorMessage}</p>
   {/if}
 
@@ -318,20 +418,30 @@
     {/if}
   </dialog>
 
-  <dialog
+  <ConfirmDialog
     bind:this={deleteDialog}
-    class="confirm-dialog"
-    aria-labelledby="remove-photo-title"
+    titleId="remove-photo-title"
+    title={t("Remove this photo?", locale)}
+    busy={deleting}
   >
-    <h2 id="remove-photo-title">{t("Remove this photo?", locale)}</h2>
-    <p>{t("The photo will be removed from this yarn.", locale)}</p>
-    <div class="dialog-actions">
+    {#snippet children()}
+      {#if deleteTarget}
+        <p>
+          {t("The photo will be removed from this yarn.", locale)}
+        </p>
+      {/if}
+      {#if deleteTarget && errorMessage}
+        <p class="error-message" role="alert">{errorMessage}</p>
+      {/if}
+    {/snippet}
+    {#snippet actions()}
       <Button
         type="button"
         class="quiet-button"
         variant="secondary"
         icon="cancel"
-        onclick={() => deleteDialog?.close()}
+        onclick={() => closeDeleteDialog()}
+        disabled={deleting}
       >
         {t("Keep photo", locale)}
       </Button>
@@ -345,8 +455,8 @@
       >
         {deleting ? t("Removing…", locale) : t("Remove photo", locale)}
       </Button>
-    </div>
-  </dialog>
+    {/snippet}
+  </ConfirmDialog>
 </section>
 
 <style>
@@ -356,8 +466,7 @@
   }
 
   .photo-heading,
-  .photo-caption,
-  .dialog-actions {
+  .photo-caption {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -376,24 +485,13 @@
     font-size: 0.9rem;
   }
 
-  .upload-action input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .upload-action:focus-within {
-    outline: 3px solid var(--focus);
-    outline-offset: 3px;
-  }
-
-  .upload-action.disabled {
+  .upload-field {
+    display: grid;
+    max-width: 32rem;
+    gap: 0.35rem;
     color: var(--ink-muted);
-    cursor: not-allowed;
+    font-size: 0.86rem;
+    font-weight: 620;
   }
 
   .upload-state {
@@ -464,8 +562,7 @@
     max-width: 100%;
   }
 
-  .zoom-dialog,
-  .confirm-dialog {
+  .zoom-dialog {
     max-width: min(94vw, 48rem);
     max-height: 90svh;
     border: 1px solid var(--line);
@@ -475,8 +572,7 @@
     background: var(--surface);
   }
 
-  .zoom-dialog::backdrop,
-  .confirm-dialog::backdrop {
+  .zoom-dialog::backdrop {
     background: rgb(15 28 27 / 72%);
   }
 
@@ -528,28 +624,10 @@
     color: var(--ink-muted);
   }
 
-  .confirm-dialog h2 {
-    margin-top: 0;
-  }
-
-  .confirm-dialog p {
-    max-width: 28rem;
-    color: var(--ink-muted);
-  }
-
   @media (max-width: 420px) {
     .photo-heading {
       align-items: start;
       flex-direction: column;
-    }
-
-    .upload-action {
-      width: 100%;
-    }
-
-    .dialog-actions {
-      align-items: stretch;
-      flex-direction: column-reverse;
     }
   }
 </style>

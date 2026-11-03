@@ -402,14 +402,19 @@ editing, conflicts and media also passed. The full core journey passes with
 the `d8ed929` helper: its density failure was a reproduced resize/layout race,
 fixed by waiting for two animation frames without changing the budgets.
 T120.18's scoped attachment-name wrapping rule passes the 320/390/1280px
-browser trial and source checks; its package rollout follows this checkpoint.
+browser trial and source checks; it is deployed with T120.19 below.
 Fixed action targets remain 44px; linked-yarn, tag and category text already
 wraps. The separate narrow
 YarnForm conflict-button layout belongs to the T120.20 form work and remains
 unresolved.
 
-T120.19 is in progress with separate Luna ownership for pure controls, feature
-pages and shipping browser checks. Favorite controls share rendering only;
+T120.19 is implemented and deployed in the canonical package selected by
+`23c2e03` (preview configuration `e7c5a9c86`). Core and yarn journeys, the EN/DE
+component probe at 320/390/1280px, long attachment names, dirty Cancel behavior,
+read-only detail photos/OCR, and deletion busy/error/retry checks passed against
+the packaged UI. A later CI run exposed a native-dialog handling race in the
+Cancel test; its deterministic harness correction is tracked separately and
+must pass before the next rollout. Favorite controls share rendering only;
 their pages retain resource/user/generation checks. Yarn detail photos become
 read-only while the editor keeps uploads and removals. Project Cancel uses the
 existing navigation guard. Yarn deletion moves to its editor to match project
@@ -417,6 +422,21 @@ deletion, preserving confirmation and busy/resource checks; the separate danger
 zone follows in T120.20. Project print/text-size controls move into a native
 disclosure. Detail overflow access to destructive actions remains a T120.25
 follow-up and must preserve those same guards.
+
+T120.20 is in progress. Luna scopes separate pure shared controls, the project
+editor/picker, and the yarn editor. The coordinator owns shell feedback wiring,
+translations and integration. Shared controls own presentation and native dialog
+mechanics; pages retain authorization, resource/request identity, dirty drafts,
+conflict resolution and all mutations. Browser Back/Forward and unload retain
+their native dirty-draft confirmation behavior. Save/Cancel stays inside each
+form, deletion moves to a separate danger zone, and feedback remains scoped to
+the signed-in owner. No API, authentication or database migration is included.
+
+The latest review fixes (T120.26) align the gauge calculator's optional count
+caption, place Imports under Create, and give audit actions shared semantic
+color badges. Audit entries reserve the diff action slot and use equal row
+heights with consistent spacing. Source and translation checks pass; rendered
+geometry, contrast and browser journeys remain rollout gates.
 
 Use the `ui-audit` inventory and motion scripts after each step on representative
 synthetic fixtures. Compare header positions, role/size button signatures,

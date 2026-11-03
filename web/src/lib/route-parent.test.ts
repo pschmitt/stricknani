@@ -3,6 +3,9 @@ import { routeParent } from "./route-parent";
 
 describe("routeParent", () => {
   it.each([
+    ["/app/imports", "/app", "/app/create"],
+    ["/app/imports/preview", "/app", "/app/imports"],
+    ["/app/imports/preview/42", "/app", "/app/imports"],
     ["/app/projects/new", "/app", "/app/projects"],
     ["/app/projects/42", "/app", "/app/projects"],
     ["/app/projects/42/edit", "/app", "/app/projects/42"],

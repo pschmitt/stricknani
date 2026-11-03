@@ -5,7 +5,10 @@
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import StickyActionBar from "#lib/components/StickyActionBar.svelte";
+  import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -50,6 +53,18 @@
     link: "",
   });
 
+  const optionalDraftFields: (keyof Draft)[] = [
+    "dye_lot",
+    "fiber_content",
+    "weight_category",
+    "recommended_needles",
+    "weight_grams",
+    "length_meters",
+    "description",
+    "notes",
+    "link",
+  ];
+
   let {
     yarnId,
   }: {
@@ -70,7 +85,9 @@
   let saving = $state(false);
   let mediaBusy = $state(false);
   let deleting = $state(false);
-  let deleteDialog = $state<HTMLDialogElement | null>(null);
+  let deleteDialog = $state<ConfirmDialog | undefined>(undefined);
+  let yarnForm = $state<HTMLFormElement | undefined>(undefined);
+  let optionalDetailsOpen = $state(false);
   let reload = $state(0);
   let routeGeneration = 0;
 
@@ -87,19 +104,47 @@
         ? t("Save yarn", locale)
         : t("Save changes", locale),
   );
+  const saveDisabled = $derived(
+    !isDirty || saving || mediaBusy || deleting || conflictYarn !== null,
+  );
 
-  onMount(() =>
-    registerPwaUpdateGuard(() => ({
+  onMount(() => {
+    const unregister = registerPwaUpdateGuard(() => ({
       dirty: isDirty,
       busy: loadState === "loading" || saving || mediaBusy || deleting,
-    })),
-  );
+    }));
+    const onKeydown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.repeat ||
+        !(event.ctrlKey || event.metaKey) ||
+        event.altKey ||
+        event.shiftKey ||
+        event.key.toLowerCase() !== "s" ||
+        !yarnForm ||
+        loadState !== "ready" ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      event.preventDefault();
+      if (!isDirty || saving || mediaBusy || deleting || conflictYarn !== null)
+        return;
+      yarnForm.requestSubmit();
+    };
+    window.addEventListener("keydown", onKeydown);
+    return () => {
+      unregister();
+      window.removeEventListener("keydown", onKeydown);
+    };
+  });
 
   $effect(() => {
     const id = yarnId;
     const currentUserId = userId;
     reload;
     const generation = ++routeGeneration;
+    optionalDetailsOpen = id !== null;
     saving = false;
     mediaBusy = false;
     deleting = false;
@@ -232,6 +277,7 @@
         fieldErrors.link = t("Enter a complete http or https URL.", locale);
       }
     }
+    revealErroredOptionalFields();
     if (Object.keys(fieldErrors).length > 0) return null;
     return {
       name,
@@ -252,10 +298,24 @@
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
-    const value = makeWrite();
     const currentSession = session.data;
-    if (!value || !currentSession?.user || saving || mediaBusy || deleting)
+    if (
+      !currentSession?.user ||
+      saving ||
+      mediaBusy ||
+      deleting ||
+      conflictYarn !== null
+    )
       return;
+    const value = makeWrite();
+    if (!value) {
+      publishFeedback({
+        ownerId: currentSession.user.id,
+        kind: "error",
+        message: t("Check the highlighted fields and try again.", locale),
+      });
+      return;
+    }
     await save(value, expectedUpdatedAt);
   }
 
@@ -274,13 +334,17 @@
           ? await createYarn(value, currentSession)
           : await updateYarn(id, value, version, currentSession);
       if (!isCurrentRoute(id, ownerId, generation)) return;
-      if (id === null) {
-        savedSnapshot = JSON.stringify(draft);
-        await goto(`${resolve("/yarns")}/${result.id}`);
-        return;
-      }
       applyLoadedYarn(result);
-      statusMessage = t("Yarn changes saved.", locale);
+      const successMessage =
+        id === null
+          ? t("Yarn created.", locale)
+          : t("Yarn changes saved.", locale);
+      publishFeedback({
+        ownerId,
+        kind: "success",
+        message: successMessage,
+      });
+      await goto(`${resolve("/yarns")}/${result.id}`);
     } catch (error) {
       if (!isCurrentRoute(id, ownerId, generation)) return;
       if (error instanceof ApiError && error.code === "conflict") {
@@ -305,6 +369,7 @@
                 ? t("Enter a whole number of zero or more.", locale)
                 : message;
         }
+        revealErroredOptionalFields();
         serverError = error.message;
       } else {
         serverError =
@@ -312,6 +377,8 @@
             ? error.message
             : t("The yarn could not be saved.", locale);
       }
+      if (serverError && userId === ownerId)
+        publishFeedback({ ownerId, kind: "error", message: serverError });
     } finally {
       if (isCurrentRoute(id, ownerId, generation)) saving = false;
     }
@@ -356,7 +423,12 @@
     try {
       await deleteYarn(id, currentSession);
       if (!isCurrentRoute(id, ownerId, generation)) return;
-      deleteDialog?.close();
+      publishFeedback({
+        ownerId,
+        kind: "success",
+        message: t("Yarn deleted.", locale),
+      });
+      untrack(() => deleteDialog?.close());
       await goto(resolve("/yarns"));
     } catch (error) {
       if (!isCurrentRoute(id, ownerId, generation)) return;
@@ -367,10 +439,6 @@
     } finally {
       if (isCurrentRoute(id, ownerId, generation)) deleting = false;
     }
-  }
-
-  function preventDeleteCancel(event: Event) {
-    if (deleting) event.preventDefault();
   }
 
   function isCurrentRoute(
@@ -426,6 +494,11 @@
     statusMessage = "";
   }
 
+  function revealErroredOptionalFields(): void {
+    if (optionalDraftFields.some((field) => fieldErrors[field]))
+      optionalDetailsOpen = true;
+  }
+
   function fieldId(field: keyof Draft): string {
     return `yarn-${field}`;
   }
@@ -478,7 +551,7 @@
       {/snippet}
     </PageHeader>
 
-    {#if serverError}<div class="notice-error" role="alert">
+    {#if serverError}<div class="notice-error">
         {serverError}
       </div>{/if}
     {#if statusMessage}<p
@@ -523,7 +596,7 @@
             variant="secondary"
             icon="refresh"
             type="button"
-            disabled={saving}
+            disabled={saving || mediaBusy || deleting}
             onclick={useLatestValues}
           >
             {t("Load latest values", locale)}
@@ -533,7 +606,7 @@
             variant="primary"
             icon="save"
             type="button"
-            disabled={saving}
+            disabled={saving || mediaBusy || deleting}
             onclick={() => {
               const value = makeWrite();
               if (value && conflictYarn)
@@ -548,8 +621,13 @@
       </section>
     {/if}
 
-    <form class="yarn-form" novalidate onsubmit={(event) => void submit(event)}>
-      <fieldset disabled={saving || mediaBusy}>
+    <form
+      bind:this={yarnForm}
+      class="yarn-form"
+      novalidate
+      onsubmit={(event) => void submit(event)}
+    >
+      <fieldset disabled={saving || mediaBusy || deleting}>
         <legend>{t("Yarn information", locale)}</legend>
         <div class="field-grid">
           <label class="field wide" for={fieldId("name")}>
@@ -590,128 +668,134 @@
                 setDraft("colorway", event.currentTarget.value)}
             />
           </label>
-          <label class="field" for={fieldId("dye_lot")}>
-            <span>{t("Dye lot", locale)}</span>
-            <input
-              id={fieldId("dye_lot")}
-              value={draft.dye_lot}
-              autocomplete="off"
-              oninput={(event) =>
-                setDraft("dye_lot", event.currentTarget.value)}
-            />
-          </label>
-          <label class="field" for={fieldId("fiber_content")}>
-            <span>{t("Fiber content", locale)}</span>
-            <input
-              id={fieldId("fiber_content")}
-              value={draft.fiber_content}
-              placeholder={t("For example, 80% wool, 20% nylon", locale)}
-              oninput={(event) =>
-                setDraft("fiber_content", event.currentTarget.value)}
-            />
-          </label>
-          <label class="field" for={fieldId("weight_category")}>
-            <span>{t("Yarn weight", locale)}</span>
-            <input
-              id={fieldId("weight_category")}
-              value={draft.weight_category}
-              placeholder={t("For example, DK or fingering", locale)}
-              oninput={(event) =>
-                setDraft("weight_category", event.currentTarget.value)}
-            />
-          </label>
-          <label class="field" for={fieldId("recommended_needles")}>
-            <span>{t("Recommended needles", locale)}</span>
-            <input
-              id={fieldId("recommended_needles")}
-              value={draft.recommended_needles}
-              oninput={(event) =>
-                setDraft("recommended_needles", event.currentTarget.value)}
-            />
-          </label>
-          <label class="field" for={fieldId("weight_grams")}>
-            <span>{t("Skein weight in grams", locale)}</span>
-            <input
-              id={fieldId("weight_grams")}
-              type="number"
-              min="0"
-              step="1"
-              inputmode="numeric"
-              value={draft.weight_grams}
-              aria-invalid={Boolean(fieldErrors.weight_grams)}
-              aria-describedby={fieldErrors.weight_grams
-                ? `${fieldId("weight_grams")}-error`
-                : undefined}
-              oninput={(event) =>
-                setDraft("weight_grams", event.currentTarget.value)}
-            />
-            {#if fieldErrors.weight_grams}<small
-                id={`${fieldId("weight_grams")}-error`}
-                class="field-error">{fieldErrors.weight_grams}</small
-              >{/if}
-          </label>
-          <label class="field" for={fieldId("length_meters")}>
-            <span>{t("Skein length in meters", locale)}</span>
-            <input
-              id={fieldId("length_meters")}
-              type="number"
-              min="0"
-              step="1"
-              inputmode="numeric"
-              value={draft.length_meters}
-              aria-invalid={Boolean(fieldErrors.length_meters)}
-              aria-describedby={fieldErrors.length_meters
-                ? `${fieldId("length_meters")}-error`
-                : undefined}
-              oninput={(event) =>
-                setDraft("length_meters", event.currentTarget.value)}
-            />
-            {#if fieldErrors.length_meters}<small
-                id={`${fieldId("length_meters")}-error`}
-                class="field-error">{fieldErrors.length_meters}</small
-              >{/if}
-          </label>
-          <label class="field wide" for={fieldId("description")}>
-            <span>{t("Description", locale)}</span>
-            <textarea
-              id={fieldId("description")}
-              rows="4"
-              maxlength="20000"
-              value={draft.description}
-              oninput={(event) =>
-                setDraft("description", event.currentTarget.value)}
-            ></textarea>
-          </label>
-          <label class="field wide" for={fieldId("notes")}>
-            <span>{t("Notes", locale)}</span>
-            <textarea
-              id={fieldId("notes")}
-              rows="4"
-              maxlength="20000"
-              value={draft.notes}
-              oninput={(event) => setDraft("notes", event.currentTarget.value)}
-            ></textarea>
-          </label>
-          <label class="field wide" for={fieldId("link")}>
-            <span>{t("Yarn source URL", locale)}</span>
-            <input
-              id={fieldId("link")}
-              type="url"
-              inputmode="url"
-              placeholder="https://"
-              value={draft.link}
-              aria-invalid={Boolean(fieldErrors.link)}
-              aria-describedby={fieldErrors.link
-                ? `${fieldId("link")}-error`
-                : undefined}
-              oninput={(event) => setDraft("link", event.currentTarget.value)}
-            />
-            {#if fieldErrors.link}<small
-                id={`${fieldId("link")}-error`}
-                class="field-error">{fieldErrors.link}</small
-              >{/if}
-          </label>
         </div>
+        <details class="optional-details" bind:open={optionalDetailsOpen}>
+          <summary>{t("More yarn details", locale)}</summary>
+          <div class="field-grid">
+            <label class="field" for={fieldId("dye_lot")}>
+              <span>{t("Dye lot", locale)}</span>
+              <input
+                id={fieldId("dye_lot")}
+                value={draft.dye_lot}
+                autocomplete="off"
+                oninput={(event) =>
+                  setDraft("dye_lot", event.currentTarget.value)}
+              />
+            </label>
+            <label class="field" for={fieldId("fiber_content")}>
+              <span>{t("Fiber content", locale)}</span>
+              <input
+                id={fieldId("fiber_content")}
+                value={draft.fiber_content}
+                placeholder={t("For example, 80% wool, 20% nylon", locale)}
+                oninput={(event) =>
+                  setDraft("fiber_content", event.currentTarget.value)}
+              />
+            </label>
+            <label class="field" for={fieldId("weight_category")}>
+              <span>{t("Yarn weight", locale)}</span>
+              <input
+                id={fieldId("weight_category")}
+                value={draft.weight_category}
+                placeholder={t("For example, DK or fingering", locale)}
+                oninput={(event) =>
+                  setDraft("weight_category", event.currentTarget.value)}
+              />
+            </label>
+            <label class="field" for={fieldId("recommended_needles")}>
+              <span>{t("Recommended needles", locale)}</span>
+              <input
+                id={fieldId("recommended_needles")}
+                value={draft.recommended_needles}
+                oninput={(event) =>
+                  setDraft("recommended_needles", event.currentTarget.value)}
+              />
+            </label>
+            <label class="field" for={fieldId("weight_grams")}>
+              <span>{t("Skein weight in grams", locale)}</span>
+              <input
+                id={fieldId("weight_grams")}
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                value={draft.weight_grams}
+                aria-invalid={Boolean(fieldErrors.weight_grams)}
+                aria-describedby={fieldErrors.weight_grams
+                  ? `${fieldId("weight_grams")}-error`
+                  : undefined}
+                oninput={(event) =>
+                  setDraft("weight_grams", event.currentTarget.value)}
+              />
+              {#if fieldErrors.weight_grams}<small
+                  id={`${fieldId("weight_grams")}-error`}
+                  class="field-error">{fieldErrors.weight_grams}</small
+                >{/if}
+            </label>
+            <label class="field" for={fieldId("length_meters")}>
+              <span>{t("Skein length in meters", locale)}</span>
+              <input
+                id={fieldId("length_meters")}
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                value={draft.length_meters}
+                aria-invalid={Boolean(fieldErrors.length_meters)}
+                aria-describedby={fieldErrors.length_meters
+                  ? `${fieldId("length_meters")}-error`
+                  : undefined}
+                oninput={(event) =>
+                  setDraft("length_meters", event.currentTarget.value)}
+              />
+              {#if fieldErrors.length_meters}<small
+                  id={`${fieldId("length_meters")}-error`}
+                  class="field-error">{fieldErrors.length_meters}</small
+                >{/if}
+            </label>
+            <label class="field wide" for={fieldId("description")}>
+              <span>{t("Description", locale)}</span>
+              <textarea
+                id={fieldId("description")}
+                rows="4"
+                maxlength="20000"
+                value={draft.description}
+                oninput={(event) =>
+                  setDraft("description", event.currentTarget.value)}
+              ></textarea>
+            </label>
+            <label class="field wide" for={fieldId("notes")}>
+              <span>{t("Notes", locale)}</span>
+              <textarea
+                id={fieldId("notes")}
+                rows="4"
+                maxlength="20000"
+                value={draft.notes}
+                oninput={(event) =>
+                  setDraft("notes", event.currentTarget.value)}
+              ></textarea>
+            </label>
+            <label class="field wide" for={fieldId("link")}>
+              <span>{t("Yarn source URL", locale)}</span>
+              <input
+                id={fieldId("link")}
+                type="url"
+                inputmode="url"
+                placeholder="https://"
+                value={draft.link}
+                aria-invalid={Boolean(fieldErrors.link)}
+                aria-describedby={fieldErrors.link
+                  ? `${fieldId("link")}-error`
+                  : undefined}
+                oninput={(event) => setDraft("link", event.currentTarget.value)}
+              />
+              {#if fieldErrors.link}<small
+                  id={`${fieldId("link")}-error`}
+                  class="field-error">{fieldErrors.link}</small
+                >{/if}
+            </label>
+          </div>
+        </details>
       </fieldset>
 
       {#if loadedYarn}
@@ -745,64 +829,85 @@
         </p>
       {/if}
 
-      <div class="form-actions">
-        <Button
-          class="primary-action"
-          variant="primary"
-          icon={yarnId === null ? "create" : "save"}
-          type="submit"
-          disabled={saving || mediaBusy || deleting}
-        >
-          {saveLabel}
-        </Button>
-        <a
-          class="quiet-button ui-button ui-button--secondary ui-button--md"
-          href={yarnId === null
-            ? resolve("/yarns")
-            : `${resolve("/yarns")}/${yarnId}`}
-          ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
-        >
-        {#if loadedYarn}
+      <StickyActionBar>
+        {#snippet save()}
           <Button
-            class="danger-button"
-            variant="danger"
-            icon="action-delete"
-            type="button"
-            disabled={isDirty || saving || mediaBusy || deleting}
-            onclick={openDeleteDialog}
+            class="primary-action"
+            variant="primary"
+            icon={yarnId === null ? "create" : "save"}
+            type="submit"
+            disabled={saveDisabled}
           >
-            {t("Delete yarn", locale)}
+            {saveLabel}
           </Button>
-        {/if}
-        {#if isDirty}<span class="draft-note"
-            >{t("Your edits stay here if saving fails.", locale)}</span
-          >{/if}
-      </div>
+        {/snippet}
+        {#snippet cancel()}
+          <a
+            class="quiet-button ui-button ui-button--secondary ui-button--md"
+            href={yarnId === null
+              ? resolve("/yarns")
+              : `${resolve("/yarns")}/${yarnId}`}
+            ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
+          >
+        {/snippet}
+        {#snippet status()}
+          {#if isDirty}
+            <span class="draft-note">
+              {t("Your edits stay here if saving fails.", locale)}
+            </span>
+          {/if}
+        {/snippet}
+      </StickyActionBar>
     </form>
+    {#if loadedYarn}
+      <section class="danger-zone" aria-labelledby="yarn-danger-zone-title">
+        <div>
+          <h2 id="yarn-danger-zone-title">{t("Delete yarn", locale)}</h2>
+          <p>{t("This cannot be undone.", locale)}</p>
+        </div>
+        <Button
+          class="danger-button"
+          variant="danger"
+          icon="action-delete"
+          type="button"
+          disabled={isDirty || saving || mediaBusy || deleting}
+          onclick={openDeleteDialog}
+        >
+          {t("Delete yarn", locale)}
+        </Button>
+      </section>
+    {/if}
   </main>
   {#if loadedYarn}
-    <dialog
+    {@const yarnToDelete = loadedYarn}
+    <ConfirmDialog
       bind:this={deleteDialog}
-      class="confirm-dialog"
-      aria-labelledby="delete-yarn-title"
-      oncancel={preventDeleteCancel}
+      titleId="delete-yarn-title"
+      title={t("Delete yarn?", locale)}
+      busy={deleting}
     >
-      <h2 id="delete-yarn-title">{t("Delete yarn?", locale)}</h2>
-      <p>
-        {t("Delete", locale)} <strong>{loadedYarn.name}</strong>? {t(
-          "This cannot be undone.",
-          locale,
-        )}
-      </p>
-      {#if deleteError}<p class="error-text" role="alert">{deleteError}</p>{/if}
-      <div class="dialog-actions">
+      {#snippet children()}
+        <p>
+          {t("Delete", locale)} <strong>{yarnToDelete.name}</strong>? {t(
+            "This cannot be undone.",
+            locale,
+          )}
+        </p>
+        {#if deleteError}<p class="error-text" role="alert">
+            {deleteError}
+          </p>{/if}
+      {/snippet}
+      {#snippet actions()}
         <Button
           class="quiet-button"
           variant="secondary"
           icon="cancel"
           type="button"
           disabled={deleting}
-          onclick={() => deleteDialog?.close()}
+          onclick={() => {
+            deleteError = "";
+            untrack(() => deleteDialog?.close());
+          }}
         >
           {t("Keep yarn", locale)}
         </Button>
@@ -816,8 +921,8 @@
         >
           {deleting ? t("Deleting…", locale) : t("Delete yarn", locale)}
         </Button>
-      </div>
-    </dialog>
+      {/snippet}
+    </ConfirmDialog>
   {/if}
 {/if}
 
@@ -938,40 +1043,52 @@
     gap: 0.6rem;
   }
 
-  .dialog-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
+  .optional-details {
+    min-width: 0;
+    margin-top: 0.75rem;
   }
 
-  .confirm-dialog {
-    max-width: min(92vw, 32rem);
-    border: 1px solid var(--line);
-    border-radius: 1rem;
-    padding: 1.2rem;
-    color: var(--ink);
+  .optional-details > summary {
+    min-height: 44px;
+    align-content: center;
+    color: var(--accent-strong);
+    cursor: pointer;
+    font-weight: 650;
+  }
+
+  .optional-details .field-grid {
+    padding-top: 0.75rem;
+  }
+
+  .danger-zone {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+    border-radius: 0.9rem;
+    padding: 1rem;
     background: var(--surface);
   }
 
-  .confirm-dialog::backdrop {
-    background: rgb(15 28 27 / 72%);
+  .danger-zone h2,
+  .danger-zone p {
+    margin: 0;
   }
 
-  .confirm-dialog h2 {
-    margin-top: 0;
-  }
-
-  .confirm-dialog p {
+  .danger-zone p {
+    margin-top: 0.35rem;
     color: var(--ink-muted);
   }
 
   .error-text {
-    color: var(--danger) !important;
+    color: var(--danger);
   }
 
   .draft-note {
-    flex: 1 1 100%;
+    color: var(--ink-muted);
     font-size: 0.88rem;
   }
 
@@ -1039,26 +1156,27 @@
       grid-column: auto;
     }
 
-    .form-actions,
     .conflict-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
     }
 
-    .form-actions > :global(.ui-button),
     .conflict-actions > :global(.ui-button) {
       width: 100%;
     }
 
-    .draft-note {
-      grid-column: 1 / -1;
+    .danger-zone {
+      align-items: stretch;
+    }
+
+    .danger-zone > :global(.ui-button) {
+      width: 100%;
     }
   }
 
-  @media (max-width: 480px) {
-    .dialog-actions {
-      align-items: stretch;
-      flex-direction: column-reverse;
+  @media (max-width: 420px) {
+    .conflict-actions {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

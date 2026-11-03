@@ -22,7 +22,11 @@ export function routeParent(pathname: string, basePath: string): string | null {
     base === "" ? currentPath : currentPath.slice(base.length) || "/";
   let parent: string | null = null;
 
-  if (route === "/projects/new" || /^\/projects\/[^/]+$/.test(route)) {
+  if (route === "/imports") {
+    parent = "/create";
+  } else if (route.startsWith("/imports/")) {
+    parent = "/imports";
+  } else if (route === "/projects/new" || /^\/projects\/[^/]+$/.test(route)) {
     parent = "/projects";
   } else {
     const projectEdit = route.match(/^\/projects\/([^/]+)\/edit$/);

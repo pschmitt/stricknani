@@ -1,16 +1,20 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import StickyActionBar from "#lib/components/StickyActionBar.svelte";
+  import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { listCategories } from "../categories/category-api";
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
+  import YarnPicker from "./YarnPicker.svelte";
   import {
     createProject,
     deleteProject,
@@ -35,6 +39,10 @@
 
   type LoadState = "loading" | "ready" | "not-found" | "error" | "signed-out";
   type DraftField = keyof ProjectDraft;
+  type ConfirmedAction =
+    | { kind: "project" }
+    | { kind: "image"; imageId: number }
+    | { kind: "attachment"; attachmentId: number };
 
   let { projectId }: { projectId: number | null } = $props();
   let loadState = $state<LoadState>("loading");
@@ -52,6 +60,7 @@
   let fieldErrors = $state<Partial<Record<DraftField | "steps", string>>>({});
   let loadError = $state("");
   let serverError = $state("");
+  let serverErrorAnnounced = $state(false);
   let mediaError = $state("");
   let statusMessage = $state("");
   let saving = $state(false);
@@ -61,6 +70,13 @@
   let yarnLoading = $state(false);
   let mediaAltText = $state("");
   let mediaStepId = $state("");
+  let confirmationDialog = $state<ConfirmDialog | undefined>(undefined);
+  let confirmedAction = $state<ConfirmedAction | null>(null);
+  let confirmationOwnerId = 0;
+  let confirmationProjectId = 0;
+  let confirmationGeneration = 0;
+  let editorForm = $state<HTMLFormElement | undefined>(undefined);
+  let optionalDetails = $state<HTMLDetailsElement | undefined>(undefined);
   let tagInput = $state("");
   let stepKey = 0;
   let routeGeneration = 0;
@@ -99,9 +115,19 @@
       name: selectedYarnNames[id] ?? t("Selected yarn is unavailable.", locale),
     })),
   );
+  const confirmationTitle = $derived(
+    confirmedAction?.kind === "project"
+      ? t("Delete this project? This cannot be undone.", locale)
+      : confirmedAction?.kind === "image"
+        ? t("Remove this project photo?", locale)
+        : t("Remove this attachment?", locale),
+  );
+  const confirmationBusy = $derived(
+    confirmedAction?.kind === "project" ? deleting : mediaBusy,
+  );
 
-  onMount(() =>
-    registerPwaUpdateGuard(() => ({
+  onMount(() => {
+    const unregister = registerPwaUpdateGuard(() => ({
       dirty: isDirty,
       busy:
         loadState === "loading" ||
@@ -110,19 +136,61 @@
         mediaBusy ||
         categoryLoading ||
         yarnLoading,
-    })),
-  );
+    }));
+    const onKeydown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.repeat ||
+        !(event.ctrlKey || event.metaKey) ||
+        event.shiftKey ||
+        event.altKey ||
+        event.key.toLowerCase() !== "s" ||
+        !editorForm ||
+        loadState !== "ready" ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      event.preventDefault();
+      if (
+        saving ||
+        deleting ||
+        mediaBusy ||
+        conflictProject !== null ||
+        !isDirty
+      )
+        return;
+      if (Object.keys(validateProjectDraft(draft)).length === 0) {
+        editorForm.requestSubmit();
+      } else {
+        showLocalErrors();
+        const ownerId = userId;
+        if (ownerId !== null)
+          void focusFirstValidationError(projectId, ownerId, routeGeneration);
+      }
+    };
+    window.addEventListener("keydown", onKeydown);
+    return () => {
+      unregister();
+      window.removeEventListener("keydown", onKeydown);
+    };
+  });
 
   $effect(() => {
     const id = projectId;
     const ownerId = userId;
     const generation = ++routeGeneration;
     const controller = new AbortController();
+    untrack(() => {
+      confirmationDialog?.close();
+      confirmedAction = null;
+    });
     project = null;
     conflictProject = null;
     clearPrivateDraft();
     loadError = "";
     serverError = "";
+    serverErrorAnnounced = false;
     statusMessage = "";
     mediaError = "";
     saving = false;
@@ -203,11 +271,16 @@
       yarnLoading = false;
       return;
     }
+    if (!query.trim()) {
+      yarnResults = [];
+      yarnSearchError = "";
+      yarnLoading = false;
+      return;
+    }
     const controller = new AbortController();
     yarnLoading = true;
     yarnSearchError = "";
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
+    const params = new URLSearchParams({ q: query.trim() });
     void listYarns(params.toString(), controller.signal)
       .then((result) => {
         if (
@@ -271,6 +344,8 @@
     savedSnapshot = JSON.stringify(empty);
     tagInput = "";
     selectedYarnNames = {};
+    yarnQuery = "";
+    yarnSearchInput = "";
   }
 
   function cleanupRoute(generation: number, controller: AbortController): void {
@@ -403,13 +478,20 @@
     ownerId: number,
     generation: number,
   ): Promise<void> {
-    await tick();
-    if (!isCurrentRoute(id, ownerId, generation)) return;
-
     const invalidStep = draft.steps.find((step) => {
       const title = step.title.trim();
       return !title || title.length > 256;
     });
+    if (
+      optionalDetails &&
+      (invalidStep ||
+        Object.entries(fieldErrors).some(
+          ([key, value]) => key !== "name" && Boolean(value),
+        ))
+    )
+      optionalDetails.open = true;
+    await tick();
+    if (!isCurrentRoute(id, ownerId, generation)) return;
     const targetId = fieldErrors.name
       ? "project-name"
       : fieldErrors.link
@@ -424,7 +506,8 @@
 
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (conflictProject !== null) return;
+    if (saving || deleting || mediaBusy || conflictProject !== null || !isDirty)
+      return;
     const id = projectId;
     const ownerId = session.data?.user?.id;
     const generation = routeGeneration;
@@ -459,7 +542,7 @@
     expectedUpdatedAt: string | null,
   ): Promise<void> {
     const currentSession = session.data;
-    if (!currentSession?.user || saving || deleting) return;
+    if (!currentSession?.user || saving || deleting || mediaBusy) return;
     const id = projectId;
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
@@ -467,6 +550,7 @@
     operationControllers.add(controller);
     saving = true;
     serverError = "";
+    serverErrorAnnounced = false;
     statusMessage = "";
     fieldErrors = {};
     try {
@@ -488,14 +572,17 @@
           "The project version is missing. Reload the page and try again.",
           locale,
         );
+        publishFeedback({ ownerId, kind: "error", message: serverError });
+        serverErrorAnnounced = true;
         return;
       }
       applyLoadedProject(result);
-      if (id === null) {
-        await goto(resolve("/projects/[id]/edit", { id: String(result.id) }));
-        return;
-      }
-      statusMessage = t("Project changes saved.", locale);
+      statusMessage =
+        id === null
+          ? t("Project created.", locale)
+          : t("Project changes saved.", locale);
+      publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      await goto(resolve("/projects/[id]", { id: String(result.id) }));
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
         return;
@@ -521,6 +608,10 @@
           error,
           t("The project could not be saved.", locale),
         );
+      }
+      if (serverError && userId === ownerId) {
+        publishFeedback({ ownerId, kind: "error", message: serverError });
+        serverErrorAnnounced = true;
       }
     } finally {
       operationControllers.delete(controller);
@@ -572,6 +663,7 @@
       applyLoadedProject(conflictProject);
       statusMessage = t("Latest saved version loaded.", locale);
       serverError = "";
+      serverErrorAnnounced = false;
       return;
     }
     void reloadLatestProject();
@@ -591,12 +683,15 @@
     const generation = routeGeneration;
     const controller = new AbortController();
     operationControllers.add(controller);
+    serverError = "";
+    serverErrorAnnounced = false;
     try {
       const latest = await getProject(id, controller.signal);
       if (!isCurrentRoute(id, ownerId, generation)) return;
       applyLoadedProject(latest);
       statusMessage = t("Latest saved version loaded.", locale);
       serverError = "";
+      serverErrorAnnounced = false;
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
         return;
@@ -609,29 +704,98 @@
     }
   }
 
-  async function confirmDelete(): Promise<void> {
+  function openConfirmation(action: ConfirmedAction): void {
     const currentSession = session.data;
     const id = projectId;
     if (
       !currentSession?.user ||
       id === null ||
       !project ||
-      isDirty ||
-      saving ||
-      mediaBusy ||
-      deleting
+      project.id !== id ||
+      (action.kind === "project" &&
+        (isDirty || saving || mediaBusy || deleting)) ||
+      (action.kind !== "project" && !mediaDeleteAvailable)
+    )
+      return;
+    confirmedAction = action;
+    mediaError = "";
+    confirmationOwnerId = currentSession.user.id;
+    confirmationProjectId = id;
+    confirmationGeneration = routeGeneration;
+    confirmationDialog?.showModal();
+  }
+
+  async function confirmAction(): Promise<void> {
+    const currentSession = session.data;
+    const id = projectId;
+    const action = confirmedAction;
+    const ownerId = confirmationOwnerId;
+    const generation = confirmationGeneration;
+    if (
+      !action ||
+      !currentSession?.user ||
+      currentSession.user.id !== ownerId ||
+      id === null ||
+      id !== confirmationProjectId ||
+      !isCurrentRoute(id, ownerId, generation) ||
+      !project ||
+      project.id !== id
+    )
+      return;
+    const isProjectDelete = action.kind === "project";
+    if (
+      isProjectDelete
+        ? isDirty || saving || mediaBusy || deleting
+        : !mediaDeleteAvailable || mediaBusy
     )
       return;
     if (
-      !window.confirm(t("Delete this project? This cannot be undone.", locale))
+      action.kind === "image" &&
+      !project.images.some((image) => image.id === action.imageId)
     )
       return;
-    const ownerId = currentSession.user.id;
-    const generation = routeGeneration;
+    if (
+      action.kind === "attachment" &&
+      !project.attachments.some(
+        (attachment) => attachment.id === action.attachmentId,
+      )
+    )
+      return;
+    if (!isProjectDelete) {
+      const mutation =
+        action.kind === "image"
+          ? (
+              key: number,
+              current: NonNullable<typeof session.data>,
+              signal: AbortSignal,
+            ) => deleteProjectImage(key, action.imageId, current, signal)
+          : (
+              key: number,
+              current: NonNullable<typeof session.data>,
+              signal: AbortSignal,
+            ) =>
+              deleteProjectAttachment(
+                key,
+                action.attachmentId,
+                current,
+                signal,
+              );
+      const succeeded = await performMediaMutation(mutation, "media_delete");
+      if (
+        succeeded &&
+        isCurrentRoute(id, ownerId, generation) &&
+        confirmedAction === action
+      ) {
+        untrack(() => confirmationDialog?.close());
+        confirmedAction = null;
+      }
+      return;
+    }
     const controller = new AbortController();
     operationControllers.add(controller);
     deleting = true;
     serverError = "";
+    serverErrorAnnounced = false;
     try {
       await deleteProject(id, currentSession, controller.signal);
       if (!isCurrentRoute(id, ownerId, generation)) return;
@@ -643,9 +807,17 @@
         error,
         t("The project could not be deleted.", locale),
       );
+      publishFeedback({ ownerId, kind: "error", message: serverError });
+      serverErrorAnnounced = true;
     } finally {
       operationControllers.delete(controller);
-      if (isCurrentRoute(id, ownerId, generation)) deleting = false;
+      if (isCurrentRoute(id, ownerId, generation)) {
+        deleting = false;
+        if (confirmedAction === action) {
+          untrack(() => confirmationDialog?.close());
+          confirmedAction = null;
+        }
+      }
     }
   }
 
@@ -693,27 +865,11 @@
   }
 
   async function removeImage(imageId: number): Promise<void> {
-    const currentSession = session.data;
-    const id = projectId;
-    if (!currentSession?.user || id === null || !mediaDeleteAvailable) return;
-    if (!window.confirm(t("Remove this project photo?", locale))) return;
-    await performMediaMutation(
-      (projectKey, userSession, signal) =>
-        deleteProjectImage(projectKey, imageId, userSession, signal),
-      "media_delete",
-    );
+    openConfirmation({ kind: "image", imageId });
   }
 
   async function removeAttachment(attachmentId: number): Promise<void> {
-    const currentSession = session.data;
-    const id = projectId;
-    if (!currentSession?.user || id === null || !mediaDeleteAvailable) return;
-    if (!window.confirm(t("Remove this attachment?", locale))) return;
-    await performMediaMutation(
-      (projectKey, userSession, signal) =>
-        deleteProjectAttachment(projectKey, attachmentId, userSession, signal),
-      "media_delete",
-    );
+    openConfirmation({ kind: "attachment", attachmentId });
   }
 
   async function performMediaMutation(
@@ -723,7 +879,7 @@
       signal: AbortSignal,
     ) => Promise<unknown>,
     capability: "media_upload" | "media_delete",
-  ): Promise<void> {
+  ): Promise<boolean> {
     const currentSession = session.data;
     const id = projectId;
     if (
@@ -733,7 +889,7 @@
       currentSession.capabilities[capability] !== true ||
       mediaBusy
     )
-      return;
+      return false;
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
     const controller = new AbortController();
@@ -743,18 +899,20 @@
     statusMessage = "";
     try {
       await mutation(id, currentSession, controller.signal);
-      if (!isCurrentRoute(id, ownerId, generation)) return;
+      if (!isCurrentRoute(id, ownerId, generation)) return false;
       const latest = await getProject(id, controller.signal);
-      if (!isCurrentRoute(id, ownerId, generation)) return;
+      if (!isCurrentRoute(id, ownerId, generation)) return false;
       applyLoadedProject(latest);
       statusMessage = t("Project media updated.", locale);
+      return true;
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
-        return;
+        return false;
       mediaError = safeError(
         error,
         t("The project media could not be updated.", locale),
       );
+      return false;
     } finally {
       operationControllers.delete(controller);
       if (isCurrentRoute(id, ownerId, generation)) mediaBusy = false;
@@ -824,7 +982,12 @@
     </div>
   {:else}
     {#if serverError && !conflictProject}
-      <div class="notice notice-error" role="alert"><p>{serverError}</p></div>
+      <div
+        class="notice notice-error"
+        role={serverErrorAnnounced ? undefined : "alert"}
+      >
+        <p>{serverError}</p>
+      </div>
     {/if}
     {#if statusMessage}
       <p class="status-message" role="status">{statusMessage}</p>
@@ -866,7 +1029,12 @@
         <p>{t("This project could not be loaded.", locale)}</p>
       </div>
     {:else}
-      <form class="editor-form" novalidate onsubmit={submit}>
+      <form
+        bind:this={editorForm}
+        class="editor-form"
+        novalidate
+        onsubmit={submit}
+      >
         <fieldset
           class="form-fields"
           disabled={saving || deleting || mediaBusy}
@@ -1023,243 +1191,197 @@
             {/if}
           </section>
 
-          <section class="form-card" aria-labelledby="writing-heading">
-            <h2 id="writing-heading">{t("Pattern and notes", locale)}</h2>
-            <p class="section-hint">
-              {t(
-                "Use plain text or Markdown. The reader formats it safely for you.",
-                locale,
-              )}
-            </p>
-            <div class="field-grid">
-              <div class="field field-wide">
-                <label for="project-description">{t("Pattern", locale)}</label>
-                <textarea
-                  id="project-description"
-                  bind:value={draft.description}
-                  rows="10"
-                ></textarea>
-              </div>
-              <div class="field field-wide">
-                <label for="project-notes">{t("Notes", locale)}</label>
-                <textarea id="project-notes" bind:value={draft.notes} rows="5"
-                ></textarea>
-              </div>
-              <div class="field field-wide">
-                <label for="project-materials"
-                  >{t("Other materials", locale)}</label
-                >
-                <textarea
-                  id="project-materials"
-                  bind:value={draft.otherMaterials}
-                  rows="4"
-                ></textarea>
-              </div>
-            </div>
-          </section>
-
-          <section class="form-card" aria-labelledby="yarn-heading">
-            <h2 id="yarn-heading">{t("Yarn for this project", locale)}</h2>
-            <div
-              class="yarn-search"
-              role="search"
-              aria-label={t("Search yarn", locale)}
-            >
-              <label for="project-yarn-search">{t("Find yarn", locale)}</label>
-              <div class="search-row">
-                <input
-                  id="project-yarn-search"
-                  bind:value={yarnSearchInput}
-                  autocomplete="off"
-                  onkeydown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      beginSearch();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  class="secondary-button"
-                  variant="secondary"
-                  icon="search"
-                  onclick={beginSearch}
-                >
-                  {t("Search", locale)}
-                </Button>
-              </div>
-            </div>
-            {#if yarnSearchError}<p class="field-error" role="alert">
-                {yarnSearchError}
-              </p>{/if}
-            {#if yarnLoading}<p class="field-hint" aria-live="polite">
-                {t("Loading yarn options…", locale)}
-              </p>{/if}
-            {#if yarnResults.length}
-              <ul class="yarn-results" aria-label={t("Available yarn", locale)}>
-                {#each yarnResults as yarn (yarn.id)}
-                  <li>
-                    <span>
-                      <strong>{yarn.name}</strong>
-                      {#if yarn.brand}<small>{yarn.brand}</small>{/if}
-                      {#if yarn.colorway}<small>{yarn.colorway}</small>{/if}
-                    </span>
-                    <Button
-                      type="button"
-                      class="secondary-button"
-                      variant="secondary"
-                      icon={draft.yarnIds.includes(yarn.id)
-                        ? "check"
-                        : "create"}
-                      disabled={draft.yarnIds.includes(yarn.id)}
-                      onclick={() => addYarn(yarn)}
-                    >
-                      {draft.yarnIds.includes(yarn.id)
-                        ? t("Added", locale)
-                        : t("Add yarn", locale)}
-                    </Button>
-                  </li>
-                {/each}
-              </ul>
-            {:else if !yarnLoading && yarnQuery}
-              <p class="field-hint">
-                {t("No yarn matches that search.", locale)}
-              </p>
-            {/if}
-            {#if selectedYarns.length}
-              <div class="selected-yarns">
-                <h3>{t("Selected yarn", locale)}</h3>
-                <ul>
-                  {#each selectedYarns as yarn (yarn.id)}
-                    <li>
-                      <span>{yarn.name}</span>
-                      <Button
-                        type="button"
-                        class="remove-button"
-                        variant="ghost"
-                        icon="action-delete"
-                        aria-label={`${t("Remove", locale)} ${yarn.name}`}
-                        onclick={() => removeYarn(yarn.id)}
-                      >
-                        {t("Remove", locale)}
-                      </Button>
-                    </li>
-                  {/each}
-                </ul>
-              </div>
-            {:else}
-              <p class="field-hint">
-                {t("No yarn is linked to this project yet.", locale)}
-              </p>
-            {/if}
-          </section>
-
-          <section class="form-card" aria-labelledby="steps-heading">
-            <div class="section-title-row">
-              <div>
-                <h2 id="steps-heading">{t("Pattern steps", locale)}</h2>
+          <details
+            bind:this={optionalDetails}
+            class="optional-details"
+            open={projectId !== null}
+          >
+            <summary>{t("More project details", locale)}</summary>
+            <div class="optional-details__content">
+              <section class="form-card" aria-labelledby="writing-heading">
+                <h2 id="writing-heading">{t("Pattern and notes", locale)}</h2>
                 <p class="section-hint">
-                  {t("Steps stay in the order shown here.", locale)}
+                  {t(
+                    "Use plain text or Markdown. The reader formats it safely for you.",
+                    locale,
+                  )}
                 </p>
-              </div>
-              <Button
-                type="button"
-                class="secondary-button"
-                variant="secondary"
-                icon="create"
-                onclick={addStep}
-              >
-                {t("Add step", locale)}
-              </Button>
+                <div class="field-grid">
+                  <div class="field field-wide">
+                    <label for="project-description"
+                      >{t("Pattern", locale)}</label
+                    >
+                    <textarea
+                      id="project-description"
+                      bind:value={draft.description}
+                      rows="10"
+                    ></textarea>
+                  </div>
+                  <div class="field field-wide">
+                    <label for="project-notes">{t("Notes", locale)}</label>
+                    <textarea
+                      id="project-notes"
+                      bind:value={draft.notes}
+                      rows="5"
+                    ></textarea>
+                  </div>
+                  <div class="field field-wide">
+                    <label for="project-materials"
+                      >{t("Other materials", locale)}</label
+                    >
+                    <textarea
+                      id="project-materials"
+                      bind:value={draft.otherMaterials}
+                      rows="4"
+                    ></textarea>
+                  </div>
+                </div>
+              </section>
+
+              <section class="form-card" aria-labelledby="yarn-heading">
+                <h2 id="yarn-heading">{t("Yarn for this project", locale)}</h2>
+                <YarnPicker
+                  {locale}
+                  query={yarnSearchInput}
+                  results={yarnResults}
+                  selected={selectedYarns}
+                  loading={yarnLoading}
+                  error={yarnSearchError}
+                  onQueryChange={(value) => (yarnSearchInput = value)}
+                  onSearch={beginSearch}
+                  onAdd={addYarn}
+                  onRemove={removeYarn}
+                />
+              </section>
+
+              <section class="form-card" aria-labelledby="steps-heading">
+                <div class="section-title-row">
+                  <div>
+                    <h2 id="steps-heading">{t("Pattern steps", locale)}</h2>
+                    <p class="section-hint">
+                      {t("Steps stay in the order shown here.", locale)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    class="secondary-button"
+                    variant="secondary"
+                    icon="create"
+                    onclick={addStep}
+                  >
+                    {t("Add step", locale)}
+                  </Button>
+                </div>
+                {#if fieldErrors.steps}<p
+                    id="project-steps-error"
+                    class="field-error"
+                    role="alert"
+                  >
+                    {fieldErrors.steps}
+                  </p>{/if}
+                {#if draft.steps.length}
+                  <ol class="step-editor-list">
+                    {#each draft.steps as step, index (step.key)}
+                      <li class="step-editor-card">
+                        <div class="step-editor-heading">
+                          <h3>{t("Step", locale)} {index + 1}</h3>
+                          <div class="step-actions">
+                            <Button
+                              type="button"
+                              class="icon-button"
+                              variant="ghost"
+                              size="sm"
+                              icon="move-up"
+                              aria-label={`${t("Move up", locale)} ${t("Step", locale)} ${index + 1}`}
+                              disabled={index === 0}
+                              onclick={() => moveStep(index, -1)}
+                            />
+                            <Button
+                              type="button"
+                              class="icon-button"
+                              variant="ghost"
+                              size="sm"
+                              icon="move-down"
+                              aria-label={`${t("Move down", locale)} ${t("Step", locale)} ${index + 1}`}
+                              disabled={index === draft.steps.length - 1}
+                              onclick={() => moveStep(index, 1)}
+                            />
+                            <Button
+                              type="button"
+                              class="remove-button"
+                              variant="ghost"
+                              icon="action-delete"
+                              aria-label={`${t("Remove", locale)} ${t("Step", locale)} ${index + 1}`}
+                              onclick={() =>
+                                (draft.steps = draft.steps.filter(
+                                  (item) => item.key !== step.key,
+                                ))}
+                            >
+                              {t("Remove", locale)}
+                            </Button>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label for={`step-title-${step.key}`}
+                            >{t("Step title", locale)}</label
+                          >
+                          <input
+                            id={`step-title-${step.key}`}
+                            bind:value={step.title}
+                            maxlength="256"
+                            required
+                            aria-invalid={fieldErrors.steps &&
+                            (!step.title.trim() ||
+                              step.title.trim().length > 256)
+                              ? "true"
+                              : undefined}
+                            aria-describedby={fieldErrors.steps &&
+                            (!step.title.trim() ||
+                              step.title.trim().length > 256)
+                              ? "project-steps-error"
+                              : undefined}
+                          />
+                        </div>
+                        <div class="field">
+                          <label for={`step-description-${step.key}`}
+                            >{t("Step instructions", locale)}</label
+                          >
+                          <textarea
+                            id={`step-description-${step.key}`}
+                            bind:value={step.description}
+                            rows="4"
+                          ></textarea>
+                        </div>
+                      </li>
+                    {/each}
+                  </ol>
+                {:else}
+                  <p class="field-hint">
+                    {t("No steps have been added yet.", locale)}
+                  </p>
+                {/if}
+              </section>
             </div>
-            {#if fieldErrors.steps}<p
-                id="project-steps-error"
-                class="field-error"
-                role="alert"
-              >
-                {fieldErrors.steps}
-              </p>{/if}
-            {#if draft.steps.length}
-              <ol class="step-editor-list">
-                {#each draft.steps as step, index (step.key)}
-                  <li class="step-editor-card">
-                    <div class="step-editor-heading">
-                      <h3>{t("Step", locale)} {index + 1}</h3>
-                      <div class="step-actions">
-                        <Button
-                          type="button"
-                          class="icon-button"
-                          variant="ghost"
-                          size="sm"
-                          icon="move-up"
-                          aria-label={`${t("Move up", locale)} ${t("Step", locale)} ${index + 1}`}
-                          disabled={index === 0}
-                          onclick={() => moveStep(index, -1)}
-                        />
-                        <Button
-                          type="button"
-                          class="icon-button"
-                          variant="ghost"
-                          size="sm"
-                          icon="move-down"
-                          aria-label={`${t("Move down", locale)} ${t("Step", locale)} ${index + 1}`}
-                          disabled={index === draft.steps.length - 1}
-                          onclick={() => moveStep(index, 1)}
-                        />
-                        <Button
-                          type="button"
-                          class="remove-button"
-                          variant="ghost"
-                          icon="action-delete"
-                          aria-label={`${t("Remove", locale)} ${t("Step", locale)} ${index + 1}`}
-                          onclick={() =>
-                            (draft.steps = draft.steps.filter(
-                              (item) => item.key !== step.key,
-                            ))}
-                        >
-                          {t("Remove", locale)}
-                        </Button>
-                      </div>
-                    </div>
-                    <div class="field">
-                      <label for={`step-title-${step.key}`}
-                        >{t("Step title", locale)}</label
-                      >
-                      <input
-                        id={`step-title-${step.key}`}
-                        bind:value={step.title}
-                        maxlength="256"
-                        required
-                        aria-invalid={fieldErrors.steps &&
-                        (!step.title.trim() || step.title.trim().length > 256)
-                          ? "true"
-                          : undefined}
-                        aria-describedby={fieldErrors.steps &&
-                        (!step.title.trim() || step.title.trim().length > 256)
-                          ? "project-steps-error"
-                          : undefined}
-                      />
-                    </div>
-                    <div class="field">
-                      <label for={`step-description-${step.key}`}
-                        >{t("Step instructions", locale)}</label
-                      >
-                      <textarea
-                        id={`step-description-${step.key}`}
-                        bind:value={step.description}
-                        rows="4"
-                      ></textarea>
-                    </div>
-                  </li>
-                {/each}
-              </ol>
-            {:else}
-              <p class="field-hint">
-                {t("No steps have been added yet.", locale)}
-              </p>
-            {/if}
-          </section>
+          </details>
         </fieldset>
+
+        {#if project}
+          <section class="danger-zone" aria-labelledby="danger-zone-heading">
+            <div>
+              <h2 id="danger-zone-heading">{t("Danger zone", locale)}</h2>
+            </div>
+            <Button
+              class="danger-button"
+              variant="danger"
+              icon="action-delete"
+              type="button"
+              disabled={isDirty || saving || deleting || mediaBusy}
+              onclick={() => openConfirmation({ kind: "project" })}
+            >
+              {deleting ? t("Deleting…", locale) : t("Delete project", locale)}
+            </Button>
+          </section>
+        {/if}
 
         {#if project}
           <section
@@ -1277,7 +1399,10 @@
                 {t("Media storage is unavailable. Try again later.", locale)}
               </p>
             {/if}
-            {#if mediaError}<p class="field-error" role="alert">
+            {#if mediaError && confirmedAction?.kind !== "image" && confirmedAction?.kind !== "attachment"}<p
+                class="field-error"
+                role="alert"
+              >
                 {mediaError}
               </p>{/if}
             {#if project.images.length}
@@ -1345,11 +1470,14 @@
               </div>
               <div class="field">
                 <label for="project-image-file"
-                  >{t("Add project photo", locale)}</label
+                  ><ActionLabel icon="upload" size="sm"
+                    >{t("Add project photo", locale)}</ActionLabel
+                  ></label
                 >
                 <input
                   id="project-image-file"
                   type="file"
+                  class="shared-file-input"
                   accept="image/*"
                   disabled={!mediaUploadAvailable}
                   onchange={uploadImage}
@@ -1387,11 +1515,14 @@
             {/if}
             <div class="field">
               <label for="project-attachment-file"
-                >{t("Add attachment", locale)}</label
+                ><ActionLabel icon="upload" size="sm"
+                  >{t("Add attachment", locale)}</ActionLabel
+                ></label
               >
               <input
                 id="project-attachment-file"
                 type="file"
+                class="shared-file-input"
                 disabled={!mediaUploadAvailable}
                 onchange={uploadAttachment}
               />
@@ -1399,44 +1530,80 @@
           </section>
         {/if}
 
-        <div class="form-actions">
-          <Button
-            class="primary-button"
-            variant="primary"
-            icon={isCreating ? "create" : "save"}
-            type="submit"
-            disabled={saveDisabled}
-          >
-            {saving
-              ? t("Saving…", locale)
-              : isCreating
-                ? t("Create project", locale)
-                : t("Save changes", locale)}
-          </Button>
-          <a
-            class="quiet-button ui-button ui-button--secondary ui-button--md"
-            href={projectId === null
-              ? resolve("/projects")
-              : resolve("/projects/[id]", { id: String(projectId) })}
-            ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
-          >
-          {#if project}
+        <StickyActionBar>
+          {#snippet save()}
             <Button
-              class="danger-button"
-              variant="danger"
-              icon="action-delete"
-              type="button"
-              disabled={isDirty || saving || deleting || mediaBusy}
-              onclick={() => void confirmDelete()}
+              class="primary-button"
+              variant="primary"
+              icon={isCreating ? "create" : "save"}
+              type="submit"
+              disabled={saveDisabled}
             >
-              {deleting ? t("Deleting…", locale) : t("Delete project", locale)}
+              {saving
+                ? t("Saving…", locale)
+                : isCreating
+                  ? t("Create project", locale)
+                  : t("Save changes", locale)}
             </Button>
-          {/if}
-          {#if isDirty}<span class="dirty-note" role="status"
-              >{t("Unsaved changes", locale)}</span
-            >{/if}
-        </div>
+          {/snippet}
+          {#snippet cancel()}
+            <a
+              class="quiet-button ui-button ui-button--secondary ui-button--md"
+              href={projectId === null
+                ? resolve("/projects")
+                : resolve("/projects/[id]", { id: String(projectId) })}
+              ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
+            >
+          {/snippet}
+          {#snippet status()}
+            {#if isDirty}
+              <span class="dirty-note" role="status"
+                >{t("Unsaved changes", locale)}</span
+              >
+            {/if}
+          {/snippet}
+        </StickyActionBar>
       </form>
+      <ConfirmDialog
+        bind:this={confirmationDialog}
+        titleId="project-confirmation-title"
+        title={confirmationTitle}
+        busy={confirmationBusy}
+      >
+        {#snippet children()}
+          {#if confirmedAction?.kind === "project"}
+            <p>{t("This cannot be undone.", locale)}</p>
+          {:else if mediaError}
+            <p class="field-error" role="alert">{mediaError}</p>
+          {/if}
+        {/snippet}
+        {#snippet actions()}
+          <Button
+            type="button"
+            variant="secondary"
+            icon="cancel"
+            disabled={confirmationBusy}
+            onclick={() => {
+              untrack(() => confirmationDialog?.close());
+              if (confirmedAction?.kind !== "project") mediaError = "";
+              confirmedAction = null;
+            }}
+          >
+            {t("Cancel", locale)}
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            icon="action-delete"
+            disabled={confirmationBusy}
+            onclick={() => void confirmAction()}
+          >
+            {confirmedAction?.kind === "project"
+              ? t("Delete project", locale)
+              : t("Remove", locale)}
+          </Button>
+        {/snippet}
+      </ConfirmDialog>
     {/if}
   {/if}
 </section>
@@ -1449,7 +1616,6 @@
 
   .section-title-row,
   .step-editor-heading,
-  .form-actions,
   .button-row {
     display: flex;
     align-items: center;
@@ -1597,20 +1763,7 @@
     justify-content: flex-start;
   }
 
-  .yarn-search {
-    display: grid;
-    gap: 0.4rem;
-  }
-
-  .search-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.5rem;
-  }
-
-  .yarn-results,
   .tag-list,
-  .selected-yarns ul,
   .media-list,
   .attachment-list {
     display: grid;
@@ -1620,9 +1773,7 @@
     list-style: none;
   }
 
-  .yarn-results li,
   .tag-list li,
-  .selected-yarns li,
   .attachment-list li {
     display: flex;
     align-items: center;
@@ -1635,19 +1786,11 @@
     background: var(--surface-raised);
   }
 
-  .yarn-results li > span,
-  .selected-yarns li > span {
-    display: grid;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
   .attachment-list li > a {
     min-width: 0;
     overflow-wrap: anywhere;
   }
 
-  .yarn-results small,
   .attachment-list span {
     color: var(--ink-muted);
   }
@@ -1663,7 +1806,6 @@
     overflow-wrap: anywhere;
   }
 
-  .selected-yarns h3,
   .media-manager h3 {
     margin: 1rem 0 0.45rem;
     font-size: 1rem;
@@ -1740,10 +1882,40 @@
     grid-column: 1 / -1;
   }
 
-  .form-actions {
-    justify-content: flex-start;
+  .optional-details {
+    min-width: 0;
+  }
+
+  .optional-details > summary {
+    min-height: 44px;
+    padding: 0.7rem 0;
+    color: var(--accent-strong);
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .optional-details__content {
+    display: grid;
+    min-width: 0;
+    gap: 1rem;
+    padding-top: 0.5rem;
+  }
+
+  .danger-zone {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    padding-bottom: 2rem;
+    gap: 0.75rem;
+    border: 1px solid var(--danger);
+    border-radius: 0.9rem;
+    padding: 1rem;
+  }
+
+  .danger-zone h2 {
+    margin: 0;
+    font-size: 1rem;
   }
 
   .dirty-note {
@@ -1780,8 +1952,6 @@
       justify-self: start;
     }
 
-    .yarn-results li,
-    .selected-yarns li,
     .attachment-list li {
       align-items: flex-start;
       flex-direction: column;

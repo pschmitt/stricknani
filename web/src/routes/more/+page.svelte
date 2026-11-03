@@ -17,15 +17,6 @@
   <PageHeader title={t("More", locale)} titleId="more-title" />
   <nav class="more-links" aria-label={t("More pages", locale)}>
     <NavigationTile
-      href={resolve("/imports")}
-      icon="imports"
-      title={t("Imports", locale)}
-      description={t(
-        "Create a project draft from text, a file, or a pattern link.",
-        locale,
-      )}
-    />
-    <NavigationTile
       href={resolve("/categories")}
       icon="categories"
       title={t("Categories", locale)}

@@ -382,8 +382,10 @@
         </label>
 
         <label for="pattern-row-count">
-          {t("Rows to knit", locale)}
-          <span class="optional">({t("optional", locale)})</span>
+          <span class="field-caption">
+            {t("Rows to knit", locale)}
+            <span class="optional">({t("optional", locale)})</span>
+          </span>
           <input
             bind:value={values.pattern_row_count}
             id="pattern-row-count"
@@ -538,6 +540,14 @@
     font-weight: 620;
   }
 
+  .field-caption {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 0.3rem;
+  }
+
   input {
     width: 100%;
     min-width: 0;
@@ -619,7 +629,7 @@
     color: var(--ink-muted);
   }
 
-  @media (max-width: 30rem) {
+  @media (max-width: 36rem) {
     .field-grid,
     .result-grid {
       grid-template-columns: 1fr;

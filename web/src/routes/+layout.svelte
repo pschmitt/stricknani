@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, type Snippet } from "svelte";
+  import { onMount, untrack, type Snippet } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -8,6 +8,8 @@
     showPublicGauge,
   } from "#lib/app-shell.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import ActionFeedback from "#lib/components/ActionFeedback.svelte";
+  import { clearFeedback, feedback } from "#lib/feedback.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
@@ -27,6 +29,12 @@
   const parentHref = $derived(routeParent(pathname, resolve("/")));
   const signupRoute = $derived(pathname === linkTo("/signup"));
   const user = $derived(session.data?.user ?? null);
+  $effect(() => {
+    const ownerId = user?.id ?? null;
+    untrack(() => {
+      if ($feedback && $feedback.ownerId !== ownerId) clearFeedback();
+    });
+  });
   const publicGauge = $derived(
     showPublicGauge(pathname, linkTo("/gauge"), session.status, user !== null),
   );
@@ -53,7 +61,6 @@
   );
 
   const secondaryNavigation = [
-    { href: "/imports", label: msg("Imports"), icon: "imports" },
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
   ] as const;
@@ -128,6 +135,7 @@
 
 <a class="skip-link" href="#main-content">{t("Skip to content", locale)}</a>
 <PwaUpdate />
+<ActionFeedback ownerId={user?.id ?? null} {locale} />
 
 {#if publicGauge}
   <div class="public-tool-shell">

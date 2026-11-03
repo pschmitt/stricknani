@@ -30,6 +30,15 @@
       title={t("New yarn", locale)}
       description={t("Keep a note of a yarn you own.", locale)}
     />
+    <NavigationTile
+      href={resolve("/imports")}
+      icon="imports"
+      title={t("Imports", locale)}
+      description={t(
+        "Create a project draft from text, a file, or a pattern link.",
+        locale,
+      )}
+    />
   </div>
 </section>
 

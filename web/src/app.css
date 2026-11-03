@@ -611,6 +611,40 @@ textarea::placeholder {
   font-weight: 650;
 }
 
+.shared-file-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  max-width: 100%;
+  color: var(--ink);
+  font: inherit;
+}
+
+.shared-file-input::file-selector-button {
+  min-height: 2.75rem;
+  margin-inline-end: 0.75rem;
+  border: 1px solid var(--control-border);
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.85rem;
+  color: var(--accent-strong);
+  background: var(--surface-raised);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.shared-file-input:not(:disabled)::file-selector-button:hover {
+  background: var(--accent-wash);
+}
+
+.shared-file-input:disabled {
+  opacity: 0.55;
+}
+
+.shared-file-input:disabled::file-selector-button {
+  cursor: not-allowed;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     --app-header-height: max(3.5rem, calc(45px + env(safe-area-inset-top)));
