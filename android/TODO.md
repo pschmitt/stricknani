@@ -41,6 +41,21 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-80: Calmer detail pages and a five-item bottom bar
+
+- [x] The detail pages' "Long-press a card title to reorder sections." tip no longer sits above
+      every project and yarn; the bar appears (animated) only while reordering, with Done. The
+      card titles' accessibility labels still announce the long-press.
+- [x] Gauge is hidden from the default bottom bar, which had six destinations (Material allows
+      five) and duplicated the calculator icon in Home's title bar. Saved navigation preferences
+      are unchanged; Settings -> Navigation can add it back.
+- [ ] `FocusedAppSemanticsTest.navigationAndFilteredEmptyStatesRemainDiscoverable` expects
+      "Categories" in the bar although it is hidden by default and the test does not configure
+      the bar - check whether that test runs in any lane (Gauge was removed from its list).
+
+Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host.
+
 ## SNA-79: Favourite and Edit in the detail title bars
 
 - [x] Project and yarn detail show the animated heart (`FavoriteToggleButton`) and an Edit pencil

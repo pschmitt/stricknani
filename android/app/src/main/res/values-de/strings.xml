@@ -213,7 +213,6 @@
     <string name="settings_detail_cards_yarn_title">Woll-Detailkarten</string>
     <string name="settings_detail_cards_description">Mit den Pfeilen die Standardreihenfolge wählen. Optionale Bereiche erscheinen, wenn sie Inhalte haben.</string>
     <string name="settings_detail_cards_reset">Auf Standardreihenfolge zurücksetzen</string>
-    <string name="detail_card_reorder_hint">Einen Kartentitel lange drücken, um Bereiche zu sortieren.</string>
     <string name="detail_card_reorder_active">Kartentitel an die gewünschte Stelle ziehen.</string>
     <string name="detail_card_reorder_done">Fertig</string>
     <string name="detail_card_reorder_title_description">Kartentitel: %1$s</string>

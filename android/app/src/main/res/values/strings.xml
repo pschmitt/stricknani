@@ -213,7 +213,6 @@
     <string name="settings_detail_cards_yarn_title">Yarn detail cards</string>
     <string name="settings_detail_cards_description">Use the arrows to choose the default order. Optional sections appear when they have content.</string>
     <string name="settings_detail_cards_reset">Reset to default order</string>
-    <string name="detail_card_reorder_hint">Long-press a card title to reorder sections.</string>
     <string name="detail_card_reorder_active">Drag the card titles into place.</string>
     <string name="detail_card_reorder_done">Done</string>
     <string name="detail_card_reorder_title_description">%1$s card title</string>

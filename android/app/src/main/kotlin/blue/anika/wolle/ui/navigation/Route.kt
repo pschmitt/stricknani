@@ -107,6 +107,9 @@ enum class TopLevelDestination(
         R.string.destination_label_gauge,
         Icons.Filled.Calculate,
         setOf(Route.Gauge::class),
+        // Hidden by default to keep the bar at five destinations; Home's title bar opens the
+        // calculator, and Settings -> Navigation can add it back.
+        defaultVisible = false,
     ),
     SETTINGS(
         Route.Settings,

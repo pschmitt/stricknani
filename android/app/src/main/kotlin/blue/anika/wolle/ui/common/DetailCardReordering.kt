@@ -1,5 +1,10 @@
 package blue.anika.wolle.ui.common
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -194,6 +199,19 @@ internal fun DetailCardReorderHint(
     reorderState: DetailCardReorderState,
     onDone: () -> Unit,
 ) {
+    // Shown only while reordering. A permanent "long-press to reorder" tip sat above every detail
+    // page's content; the card titles' accessibility labels still announce the long-press.
+    AnimatedVisibility(
+        visible = reorderState.isReordering,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically(),
+    ) {
+        DetailCardReorderBar(onDone)
+    }
+}
+
+@Composable
+private fun DetailCardReorderBar(onDone: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
@@ -205,18 +223,12 @@ internal fun DetailCardReorderHint(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text =
-                    stringResource(
-                        if (reorderState.isReordering) R.string.detail_card_reorder_active
-                        else R.string.detail_card_reorder_hint
-                    ),
+                text = stringResource(R.string.detail_card_reorder_active),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
-            if (reorderState.isReordering) {
-                androidx.compose.material3.TextButton(onClick = onDone) {
-                    Text(stringResource(R.string.detail_card_reorder_done))
-                }
+            androidx.compose.material3.TextButton(onClick = onDone) {
+                Text(stringResource(R.string.detail_card_reorder_done))
             }
         }
     }

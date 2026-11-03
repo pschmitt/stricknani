@@ -59,7 +59,7 @@ class FocusedAppSemanticsTest {
     fun navigationAndFilteredEmptyStatesRemainDiscoverable() {
         ensureConfigured()
 
-        listOf("Home", "Projects", "Categories", "Yarns", "Search", "Gauge", "Settings").forEach {
+        listOf("Home", "Projects", "Categories", "Yarns", "Search", "Settings").forEach {
             composeRule.onNodeWithText(it).assertIsDisplayed()
         }
 

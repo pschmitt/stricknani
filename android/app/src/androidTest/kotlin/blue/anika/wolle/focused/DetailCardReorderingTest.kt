@@ -9,10 +9,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import blue.anika.wolle.data.settings.ProjectDetailCard
 import blue.anika.wolle.ui.common.DetailCardReorderHint
+import blue.anika.wolle.ui.common.DetailCardReorderState
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.theme.StricknaniTheme
@@ -60,10 +62,11 @@ class DetailCardReorderingTest {
     }
 
     @Test
-    fun reorderHintRemainsReachableWithACompactCardList() {
+    fun reorderBarAppearsOnlyWhileReordering() {
+        lateinit var reorderState: DetailCardReorderState
         composeRule.setContent {
             StricknaniTheme {
-                val reorderState = rememberDetailCardReorderState()
+                reorderState = rememberDetailCardReorderState()
                 LazyColumn {
                     item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
                     item { Text("A card") }
@@ -71,9 +74,14 @@ class DetailCardReorderingTest {
             }
         }
 
-        composeRule
-            .onNodeWithText("Long-press a card title to reorder sections.")
-            .assertIsDisplayed()
+        composeRule.onNodeWithText("Drag the card titles into place.").assertDoesNotExist()
         composeRule.onNodeWithText("A card").assertIsDisplayed()
+
+        composeRule.runOnIdle { reorderState.begin("notes") }
+        composeRule.onNodeWithText("Drag the card titles into place.").assertIsDisplayed()
+        composeRule.onNodeWithText("A card").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Done").performClick()
+        composeRule.onNodeWithText("Drag the card titles into place.").assertDoesNotExist()
     }
 }
