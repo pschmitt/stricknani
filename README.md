@@ -1,29 +1,37 @@
 <p align="center">
-
-[![nixbot](https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=main)](https://nixbot.brkn.lol/repos/github/pschmitt/stricknani)
-  <img src="branding/icon.svg" alt="Stricknani icon" width="128">
+  <img src="branding/icon.svg" alt="Stricknani" width="128">
 </p>
 
 <h1 align="center">Stricknani</h1>
 
-🧶 **A Mealie for knitting** — a self-hosted web app for managing knitting projects and yarns.
+<p align="center">A private, self-hosted place to plan knitting projects, track yarn, and calculate gauge.</p>
+
+<p align="center">
+  <a href="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani"><img src="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=rust" alt="nixbot"></a>
+  <a href="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml"><img src="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml/badge.svg?branch=rust" alt="Rust branch checks"></a>
+</p>
+
+This `rust` branch runs the Rust server and a static Svelte web app. It is an
+acceptance and preview branch; it does not mean production has switched from
+the Python runtime. Keep Rust and Python databases and media separate. The
+Rust service does not migrate or reuse Python storage automatically.
 
 ## Features
 
-- Organize knitting projects, steps, photos, notes, and metadata
-- Track yarns and link them to projects
-- Built-in gauge calculator
-- Private, self-hosted, mobile-friendly web UI
-- Offline-first Android app using the versioned API v1
+- Organize knitting projects, steps, notes, photos, and yarn.
+- Manage yarn and categories, with links between yarn and projects.
+- Calculate stitch and row counts from pattern and personal gauge.
+- Use the browser app with the Rust API v2, while Android continues to use the
+  compatible API v1.
+- Install the web app as a PWA. Offline support caches the public app shell and
+  static assets; it does not cache signed-in pages or user data.
 
-The Rust server is the default package and container runtime on this branch.
-The rewrite is still in acceptance; this branch change does not mean production
-has been switched. See [the runtime transition guide](docs/rust-runtime-transition.md)
-for the output mapping and rollout boundary.
+## Install and quick start
 
-## Quick start
+### Run the Rust container locally
 
-Build the Rust container from this checkout and start it with persistent storage:
+Requirements: Docker and a checkout of this branch. Build the image from the
+repository root and start it with a persistent data volume:
 
 ```bash
 docker build -t stricknani:rust .
@@ -38,15 +46,10 @@ docker run -d \
   stricknani:rust
 ```
 
-The local-only `SESSION_COOKIE_SECURE=false` override permits sign-in over
-plain HTTP on localhost. For a public deployment, use HTTPS through a trusted
-reverse proxy, set `SESSION_COOKIE_SECURE=true`, and set `TRUSTED_HOSTS` to the
-exact public host authority. Do not expose the app directly to the Internet.
-
-Registration is off by default, so create the first administrator by piping a
-password from a protected file to the CLI. The password is read from standard
-input and must be at least 12 Unicode characters and no more than 1024 UTF-8
-bytes:
+This example binds to loopback for local HTTP use. The container stores its
+Rust-owned SQLite database and uploads under `/var/lib/stricknani`; keep that
+volume across restarts. Check `http://localhost:7674/healthz`, then create the
+first administrator by supplying a password through standard input:
 
 ```bash
 docker exec -i stricknani \
@@ -54,70 +57,39 @@ docker exec -i stricknani \
   < /path/to/protected-admin-password
 ```
 
-The image listens on port `7674`, runs as UID/GID `65532`, stores the SQLite
-database and uploaded media beneath `/var/lib/stricknani`, and includes a
-bounded `health-check` command for `/healthz`. Keep that data directory on
-persistent storage. Container and Nix output details are in the
-[runtime transition guide](docs/rust-runtime-transition.md).
+The protected file must contain a password of at least 12 characters.
 
-## Rust runtime configuration
+For a public deployment, terminate HTTPS at a trusted reverse proxy, set
+`SESSION_COOKIE_SECURE=true`, and configure `TRUSTED_HOSTS` with the exact host
+authority clients use. Do not expose the app directly to the Internet.
+Registration, external imports, AI, OCR, and Wayback features are disabled by
+default. See the [runtime guide](docs/rust-runtime-transition.md) before
+changing runtime settings or storage.
 
-The server requires an isolated SQLite database URL and an absolute media
-directory. It does not use the legacy Python `DATABASE_URL` or `MEDIA_ROOT` as
-fallbacks. The container sets these paths to its persistent data directory;
-direct package users must configure them explicitly.
+### Run the package directly
 
-| Variable | Purpose | Default / requirement |
-| --- | --- | --- |
-| `RUST_DATABASE_URL` | Rust SQLite database | Required; use a Rust-owned database |
-| `RUST_MEDIA_ROOT` | Uploaded file directory | Required; absolute path |
-| `BIND_HOST` | Listener IP address | `127.0.0.1`; container sets `0.0.0.0` |
-| `BIND_PORT` | Listener port | `PORT`, then `7674` |
-| `TRUSTED_HOSTS` | Comma-separated exact host authorities | Loopback defaults only on a loopback listener; required otherwise |
-| `SESSION_COOKIE_SECURE` | Mark session cookies secure | `false`; required `true` off loopback |
-| `RUST_SIGNUP_ENABLED` | Public account registration | `false` |
-| `RUST_EXTERNAL_IMPORTS_ENABLED` | Fetch external project sources | `false` |
-| `RUST_AI_ENABLED` | Configure the optional AI provider | `false`; requires provider settings and a per-import opt-in |
-| `RUST_OCR_ENABLED` | Enable authenticated local OCR | `false` |
-| `RUST_WAYBACK_ENABLED` | Enable archive lookup jobs | `false` |
-| `STATIC_ROOT` | Override packaged static assets | Packaged asset path |
-
-All optional service flags default to disabled. Keep them disabled unless the
-deployment needs the feature. AI credentials and the user opt-in are documented
-in [AI provider settings](docs/rust-ai.md); OCR behavior is described in the
-[OCR guide](docs/rust-ocr.md). The Wayback and external-import guides describe
-their respective network behavior: [Wayback](docs/rust-wayback.md) and
-[imports](docs/rust-import-design.md).
-
-For command-line use, build and run the Rust package with:
+The default flake package is Rust. For a local run, configure a Rust-owned
+SQLite database and media directory before starting the server:
 
 ```bash
+export STRICKNANI_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/stricknani-rust"
+mkdir -p "$STRICKNANI_DATA_DIR/media"
+export RUST_DATABASE_URL="sqlite:$STRICKNANI_DATA_DIR/stricknani.sqlite3"
+export RUST_MEDIA_ROOT="$STRICKNANI_DATA_DIR/media"
+export SESSION_COOKIE_SECURE=false
 nix build '.#stricknani'
+nix run '.#stricknani' -- create-admin admin@example.invalid < /path/to/protected-admin-password
 nix run '.#stricknani'
 ```
 
-Supply the required Rust database and media variables first. The
-`health-check` command probes only the local
-`/healthz` endpoint, has a three-second timeout, and returns fixed errors.
-Account commands such as `create-admin EMAIL` also read passwords from stdin;
-never put passwords in command arguments or shell history. See
-the [CLI and startup notes](docs/rust-candidate.md#storage-and-startup) and the
-[transition guide](docs/rust-runtime-transition.md).
-
-## Android and API
-
-The Android app is an offline-first client: Room is the local source of truth,
-and synchronization replays queued writes against the server API. Setup,
-recovery, emulator testing, and client changes are documented in
-[`android/AGENTS.md`](android/AGENTS.md). The API v1 compatibility inventory
-records its authentication, CRUD, media, and sync contract in
-[`docs/rust-android-inventory.md`](docs/rust-android-inventory.md).
+The container configures its own database and media paths. Set `BIND_HOST`,
+`BIND_PORT`, and `TRUSTED_HOSTS` for a different listener. See the
+[runtime guide](docs/rust-runtime-transition.md) for all settings and
+[CLI notes](docs/rust-candidate.md#storage-and-startup) for startup behavior.
 
 ## Development
 
-Rust formatting, tests, Nix evaluation, and builds belong on the designated
-remote build host; see [`AGENTS.md`](AGENTS.md). From that host, the Rust
-development shell and native checks are available as:
+Enter the Rust development shell to run the native and repository checks:
 
 ```bash
 nix develop '.#rust'
@@ -127,23 +99,9 @@ just test
 just check
 ```
 
-`just test` runs the Rust suite and a focused set of Python shipping-harness
-tests without applying the legacy app's coverage threshold. `just check` adds
-lint, strict Clippy, Nix lint, and translation checks. Build the package
-separately with `nix build '.#stricknani'`.
-
-The Python implementation remains available for legacy development and
-reference work as `.#stricknani-python`. `just test-python` runs its full suite
-with the existing 80% coverage gate, and `just check-python` adds Python lint
-and translation checks. Primary Python CI runs this gate under Python 3.15.
-The most recent Python 3.13 reference run passed its tests but reported 74.23%
-coverage, below the unchanged threshold. The Nix Python 3.13 reference lane
-therefore runs the same tests without coverage because coverage.py produces
-different line data under that interpreter. Its workflow sets
-`UV_PYTHON=python3.13` so `uv` selects the Nix dev-shell interpreter; this does
-not weaken the Python 3.15 gate.
-
-The legacy local development workflow still uses `uv` and `just`:
+`just check` includes lint, strict Clippy, native tests, shipping-harness
+tests, web checks, and translation checks. The Python implementation remains
+available for legacy development and reference work:
 
 ```bash
 nix develop '.#python'
@@ -151,20 +109,34 @@ just setup
 just run-python
 ```
 
-The root `Dockerfile` builds the Rust runtime. `Dockerfile.python` and
-`.#stricknani-python-docker` retain the Python image artifacts, including the
-image used by the existing Android end-to-end workflow. These are compatibility
-and development paths; they do not indicate a production cutover.
+Use `just test-python` for the Python reference suite and its coverage gate,
+or `just check-python` for its lint, tests, and translation checks. The root
+`Dockerfile` builds the Rust runtime; `Dockerfile.python` retains the Python
+image recipe used by the existing Android end-to-end workflow.
+
+## Storage and rollout boundary
+
+The Rust runtime requires an isolated SQLite database and media directory. It
+does not fall back to the Python `DATABASE_URL` or `MEDIA_ROOT` and does not
+automatically migrate Python data. The snapshot importer and its verification
+steps are documented in the [migration plan](docs/rust-migration-plan.md).
+Production remains on its separately pinned Python module until Rust
+acceptance, a production input update, and a separately approved cutover are
+complete.
 
 ## Documentation
 
-- [Documentation index](docs/README.md)
-- [Product specification and implementation status](docs/spec-and-implementation.md)
-- [Migration, verification, and rollback plan](docs/rust-migration-plan.md)
-- [Current acceptance checkpoint](docs/rust-rewrite-checkpoint.md)
-- [Runtime outputs and rollout boundary](docs/rust-runtime-transition.md)
-- [Operational instructions for contributors](AGENTS.md)
-- [Active work queue](TODO.md)
+| Topic | Guide |
+| --- | --- |
+| Documentation index | [`docs/README.md`](docs/README.md) |
+| Runtime outputs and rollout boundary | [`docs/rust-runtime-transition.md`](docs/rust-runtime-transition.md) |
+| Migration, verification, and rollback | [`docs/rust-migration-plan.md`](docs/rust-migration-plan.md) |
+| Current acceptance checkpoint | [`docs/rust-rewrite-checkpoint.md`](docs/rust-rewrite-checkpoint.md) |
+| Native API v1 contract | [`docs/rust-android-inventory.md`](docs/rust-android-inventory.md) |
+| PWA cache scope | [`docs/rust-pwa.md`](docs/rust-pwa.md) |
+| Web UI plan and T120 queue | [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) |
+| Contributor instructions | [`AGENTS.md`](AGENTS.md) |
+| Current work queue | [`TODO.md`](TODO.md) |
 
 ## License
 
@@ -172,4 +144,4 @@ GPL-3.0-only
 
 ## Maintainer
 
-Philipp Schmitt (GitHub: @pschmitt)
+Philipp Schmitt ([`@pschmitt`](https://github.com/pschmitt))
