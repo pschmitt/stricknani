@@ -170,7 +170,9 @@ enum AuditAudience {
     Owner { owner_id: i64 },
 }
 
-const RESOURCE_EVENT_SELECT: &str = "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
+macro_rules! resource_event_columns {
+    () => {
+        "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
         u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
         e.entity_type, e.entity_id, e.action, e.created_at, \
         e.resource_name_snapshot, e.change_version, \
@@ -203,10 +205,17 @@ const RESOURCE_EVENT_SELECT: &str = "SELECT e.id, e.actor_user_id, e.legacy_acto
             WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
             ORDER BY m.position, m.id LIMIT 1) \
         END AS current_preview_filename \
- FROM audit_events AS e \
+ "
+    };
+}
+
+const RESOURCE_EVENT_SELECT: &str = concat!(
+    resource_event_columns!(),
+    "FROM audit_events AS e \
  LEFT JOIN users AS u ON u.id = e.actor_user_id \
  LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
- WHERE e.entity_type = ? AND e.entity_id = ?";
+ WHERE e.entity_type = ? AND e.entity_id = ?"
+);
 
 pub(crate) async fn list_events(
     pool: &SqlitePool,
@@ -468,6 +477,251 @@ pub(crate) async fn get_resource_event_detail(
         changes,
         unavailable_reason,
     }))
+}
+
+/// Window within which repeated identical events collapse into one feed item.
+const ACTIVITY_COALESCE_SECONDS: i64 = 10 * 60;
+const ACTIVITY_BATCH: i64 = 100;
+pub(crate) const ACTIVITY_DEFAULT_LIMIT: u32 = 10;
+pub(crate) const ACTIVITY_MAX_LIMIT: u32 = 50;
+
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct ActivityActor {
+    pub(crate) name: Option<String>,
+    pub(crate) is_self: bool,
+    pub(crate) avatar_url: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct ActivityItem {
+    /// Newest audit event folded into this item.
+    pub(crate) id: i64,
+    /// Oldest audit event folded into this item (equals `id` when `count` is 1).
+    pub(crate) first_event_id: i64,
+    pub(crate) created_at: String,
+    pub(crate) first_created_at: String,
+    pub(crate) action: String,
+    pub(crate) entity_type: String,
+    pub(crate) entity_id: i64,
+    pub(crate) entity_name: Option<String>,
+    pub(crate) exists: bool,
+    pub(crate) href: Option<String>,
+    pub(crate) thumbnail_url: Option<String>,
+    pub(crate) actor: ActivityActor,
+    pub(crate) changed_fields: Vec<String>,
+    pub(crate) count: u32,
+    #[serde(skip)]
+    actor_user_id: Option<i64>,
+    #[serde(skip)]
+    oldest_seconds: Option<i64>,
+}
+
+pub(crate) struct ActivityPage {
+    pub(crate) items: Vec<ActivityItem>,
+    pub(crate) next_before: Option<i64>,
+    pub(crate) has_more: bool,
+}
+
+fn parse_event_seconds(value: &str) -> Option<i64> {
+    chrono::DateTime::parse_from_rfc3339(value)
+        .map(|time| time.timestamp())
+        .ok()
+        .or_else(|| {
+            chrono::NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S%.f")
+                .ok()
+                .map(|time| time.and_utc().timestamp())
+        })
+}
+
+fn activity_item(
+    row: &sqlx::sqlite::SqliteRow,
+    user_id: i64,
+    gravatar_enabled: bool,
+) -> ActivityItem {
+    let event = make_event(
+        row,
+        AuditAudience::Owner { owner_id: user_id },
+        gravatar_enabled,
+    );
+    let snapshot: Option<String> = row.get("resource_name_snapshot");
+    let current: Option<String> = row.get("current_name");
+    let actor_user_id: Option<i64> = row.get("actor_user_id");
+    let is_self = actor_user_id == Some(user_id);
+    let name = is_self.then(|| {
+        let email = event.actor_email.clone().unwrap_or_default();
+        email.split('@').next().unwrap_or_default().to_owned()
+    });
+    let mut changed_fields = Vec::new();
+    if let (Some(changes), _) = project_changes(row) {
+        for item in &changes.items {
+            if let Ok(serde_json::Value::String(field)) = serde_json::to_value(item.field) {
+                changed_fields.push(field);
+            }
+        }
+    }
+    ActivityItem {
+        id: event.id,
+        first_event_id: event.id,
+        oldest_seconds: parse_event_seconds(&event.created_at),
+        first_created_at: event.created_at.clone(),
+        created_at: event.created_at,
+        action: event.action,
+        entity_type: event.entity_type,
+        entity_id: event.entity_id,
+        entity_name: current.or(snapshot),
+        exists: event.resource.exists,
+        href: event.resource.href,
+        thumbnail_url: event.resource.preview_url,
+        actor: ActivityActor {
+            name: name.filter(|name| !name.is_empty()),
+            is_self,
+            avatar_url: event.actor_avatar_url,
+        },
+        changed_fields,
+        count: 1,
+        actor_user_id,
+    }
+}
+
+impl ActivityItem {
+    /// Repeated edits by one actor to one resource collapse; creation and
+    /// deletion are always their own item.
+    fn absorbs(&self, older: &Self) -> bool {
+        if self.entity_type != older.entity_type
+            || self.entity_id != older.entity_id
+            || self.action != older.action
+            || self.actor_user_id != older.actor_user_id
+            || matches!(self.action.as_str(), "created" | "deleted")
+        {
+            return false;
+        }
+        match (self.oldest_seconds, older.oldest_seconds) {
+            (Some(newer), Some(older)) => newer - older <= ACTIVITY_COALESCE_SECONDS,
+            _ => false,
+        }
+    }
+
+    fn absorb(&mut self, older: Self) {
+        self.count = self.count.saturating_add(older.count);
+        self.first_event_id = older.first_event_id;
+        self.first_created_at = older.first_created_at;
+        self.oldest_seconds = older.oldest_seconds;
+        for field in older.changed_fields {
+            if !self.changed_fields.contains(&field) {
+                self.changed_fields.push(field);
+            }
+        }
+    }
+}
+
+/// The user's own recent project and yarn events, newest first, with runs of
+/// identical edits coalesced. `before` is an audit event id; only events older
+/// than it are returned.
+///
+/// Visible events are those on resources the user currently owns (whoever
+/// acted), plus events on resources that no longer exist when the user was the
+/// actor, since a deleted resource has no owner left to check.
+pub(crate) async fn list_activity(
+    pool: &SqlitePool,
+    user_id: i64,
+    limit: u32,
+    before: Option<i64>,
+    gravatar_enabled: bool,
+) -> Result<ActivityPage, AuditError> {
+    let limit = limit.clamp(1, ACTIVITY_MAX_LIMIT) as usize;
+    let mut cursor: Option<(String, i64)> = match before {
+        Some(id) => {
+            let row = sqlx::query("SELECT created_at, id FROM audit_events WHERE id = ?")
+                .bind(id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|_| AuditError::Database)?;
+            match row {
+                Some(row) => Some((row.get("created_at"), row.get("id"))),
+                None => {
+                    return Ok(ActivityPage {
+                        items: Vec::new(),
+                        next_before: None,
+                        has_more: false,
+                    });
+                }
+            }
+        }
+        None => None,
+    };
+    let branch = |entity: &str, table: &str| {
+        format!(
+            "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM {table} AS r \
+               JOIN audit_events AS e ON e.entity_type = '{entity}' AND e.entity_id = r.id \
+               WHERE r.owner_id = ?1 AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
+               ORDER BY e.created_at DESC, e.id DESC LIMIT ?4)"
+        )
+    };
+    let deleted_branch = |entity: &str, table: &str| {
+        format!(
+            "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM audit_events AS e \
+               WHERE e.actor_user_id = ?1 AND e.entity_type = '{entity}' \
+                 AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
+                 AND NOT EXISTS (SELECT 1 FROM {table} AS r WHERE r.id = e.entity_id) \
+               ORDER BY e.created_at DESC, e.id DESC LIMIT ?4)"
+        )
+    };
+    let sql = format!(
+        "{columns} FROM (\
+           {a} UNION ALL {b} UNION ALL {c} UNION ALL {d} \
+           ORDER BY created_at DESC, id DESC LIMIT ?4) AS v \
+         JOIN audit_events AS e ON e.id = v.id \
+         LEFT JOIN users AS u ON u.id = e.actor_user_id \
+         LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
+         ORDER BY e.created_at DESC, e.id DESC",
+        columns = resource_event_columns!(),
+        a = branch("project", "projects"),
+        b = branch("yarn", "yarns"),
+        c = deleted_branch("project", "projects"),
+        d = deleted_branch("yarn", "yarns"),
+    );
+
+    let mut items: Vec<ActivityItem> = Vec::new();
+    let mut has_more = false;
+    'batches: loop {
+        let rows = sqlx::query(&sql)
+            .bind(user_id)
+            .bind(cursor.as_ref().map(|(created_at, _)| created_at.clone()))
+            .bind(cursor.as_ref().map(|(_, id)| *id))
+            .bind(ACTIVITY_BATCH)
+            .fetch_all(pool)
+            .await
+            .map_err(|_| AuditError::Database)?;
+        let fetched = rows.len() as i64;
+        for row in rows {
+            cursor = Some((row.get("created_at"), row.get("id")));
+            let item = activity_item(&row, user_id, gravatar_enabled);
+            if let Some(last) = items.last_mut()
+                && last.absorbs(&item)
+            {
+                last.absorb(item);
+                continue;
+            }
+            if items.len() == limit {
+                has_more = true;
+                break 'batches;
+            }
+            items.push(item);
+        }
+        if fetched < ACTIVITY_BATCH {
+            break;
+        }
+    }
+    let next_before = if has_more {
+        items.last().map(|item| item.first_event_id)
+    } else {
+        None
+    };
+    Ok(ActivityPage {
+        items,
+        next_before,
+        has_more,
+    })
 }
 
 async fn resource_belongs_to(

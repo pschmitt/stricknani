@@ -28,6 +28,7 @@ use crate::{auth, db::AppState, import_service::ImportContext};
 
 mod access;
 mod account;
+mod activity;
 mod admin;
 mod admin_resources;
 mod archive;
@@ -125,6 +126,7 @@ fn router_with_context(
         .merge(oidc_login::router())
         .merge(projects::router())
         .merge(resource_history::router())
+        .merge(activity::router())
         .merge(sync::router())
         .merge(project_preview::router())
         .merge(yarns::router())

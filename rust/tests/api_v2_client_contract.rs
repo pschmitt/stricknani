@@ -674,6 +674,7 @@ const ANDROID_ROUTES: &[(&str, &str)] = &[
     ("GET", "/api/v2/projects/1/history/1"),
     ("GET", "/api/v2/yarns/1/history?page=1"),
     ("GET", "/api/v2/yarns/1/history/1"),
+    ("GET", "/api/v2/activity?limit=10"),
     ("GET", "/api/v2/sync/projects"),
     ("GET", "/api/v2/sync/yarns"),
     ("GET", "/api/v2/admin/users?page=1"),

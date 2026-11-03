@@ -140,6 +140,7 @@ unchanged. `server_time` is passed back verbatim as `since`. Pinned by
 | Route | Android | Server | Status |
 | --- | --- | --- | --- |
 | `GET /api/v2/projects/{id}/history[?page]`, `GET /api/v2/projects/{id}/history/{eventId}`, same for `/yarns/{id}/...` | `HistoryApi`, `HistoryRepository` | `resource_history.rs` (`a85e4b5`): PAT or cookie read, owner-scoped, 20 events per page, `page` of 0 or above 10000 is 400 `invalid_query`, foreign or mismatched event is 404 `not_found` | **match** (served since `a85e4b5`; its contract is in `api_v2_resource_history.rs`, the Bearer requirement is pinned here) |
+| `GET /api/v2/activity[?limit&before]` | not yet (Home "Recent activity" to come) | `activity.rs`: PAT or cookie read, owner-scoped feed of project and yarn events, coalesced server side; `limit` 1-50 (default 10), `before` is an event id, bad query is 400 `invalid_query`; contract in `api_v2_activity.rs` and `web-v2-contract.md` | **server ready** |
 
 ### Server routes Android does not use
 

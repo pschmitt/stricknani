@@ -782,6 +782,84 @@ uses the protected self-avatar path. Other actors' avatar URLs are null rather
 than exposing an administrator-only or globally readable avatar endpoint.
 Responses retain the v2 `no-store` policy.
 
+## Recent activity feed
+
+`GET /api/v2/activity?limit=N&before=EVENT_ID` returns the signed-in user's
+recent project and yarn audit events for the Home page, newest first:
+`{data: ActivityItem[], meta: {limit, has_more, next_before}}`. `limit`
+defaults to 10 and must be 1 through 50. `before` is optional: an audit event
+ID (use `meta.next_before` from the previous response) and returns only events
+older than it, for "load more". Any invalid, unknown or duplicate query
+parameter returns `400 invalid_query`. Requires a strict API-purpose PAT or a
+browser session (`401 session_expired` otherwise); the response is `no-store`.
+
+Scope: events on projects and yarns the user currently owns (whoever acted,
+so an administrator's edit shows up), plus events on resources that have since
+been deleted when the user was the actor (a deleted resource has no owner row
+left to check). Nothing about other users' resources is returned. Category
+events are not included. Actions are the existing audit vocabulary
+(`created`, `updated`, `deleted`, `uploaded`, `removed`, and the legacy
+imported ones such as `step_updated`).
+
+Coalescing happens server side: consecutive feed entries for the same
+resource, with the same action and the same actor, where each event is at most
+10 minutes after the previous older one, collapse into one item with
+`count` > 1 (autosave bursts). `created` and `deleted` never collapse. The
+item carries the newest event in `id`/`created_at`, the oldest in
+`first_event_id`/`first_created_at`, and the union of `changed_fields`. A run is
+never split across pages, so a page can hold slightly more events than
+`limit`; `next_before` is the oldest event of the last item.
+
+```json
+{
+  "data": [
+    {
+      "id": 412,
+      "first_event_id": 409,
+      "created_at": "2026-11-03T10:09:12.000000Z",
+      "first_created_at": "2026-11-03T10:00:03.000000Z",
+      "action": "updated",
+      "entity_type": "project",
+      "entity_id": 17,
+      "entity_name": "Winter socks",
+      "exists": true,
+      "href": "/app/projects/17",
+      "thumbnail_url": "/media/thumbnails/projects/17/thumb_cover.jpg",
+      "actor": {"name": "philipp", "is_self": true, "avatar_url": "/media/thumbnails/users/1/thumb_a.jpg"},
+      "changed_fields": ["project.name", "project.needles"],
+      "count": 4
+    },
+    {
+      "id": 405,
+      "first_event_id": 405,
+      "created_at": "2026-11-02T18:30:00.000000Z",
+      "first_created_at": "2026-11-02T18:30:00.000000Z",
+      "action": "deleted",
+      "entity_type": "yarn",
+      "entity_id": 3,
+      "entity_name": "Old merino",
+      "exists": false,
+      "href": null,
+      "thumbnail_url": null,
+      "actor": {"name": "philipp", "is_self": true, "avatar_url": null},
+      "changed_fields": [],
+      "count": 1
+    }
+  ],
+  "meta": {"limit": 10, "has_more": true, "next_before": 405}
+}
+```
+
+`entity_name` is the current name while the resource exists and the name
+recorded at the event otherwise (nullable for very old events without a
+snapshot). `href` and `thumbnail_url` are null once the resource is gone;
+`thumbnail_url` is also null without a cover photo, and is an ordinary
+owner-readable media path. `actor.name` is the local part of the actor's
+email for the current user and null for anyone else (for example an
+administrator); `actor.avatar_url` is likewise only set for the current user.
+`changed_fields` lists the safe change-field keys (such as `project.name`)
+when the event recorded a typed diff, otherwise it is empty.
+
 ## Administrator audit API slice
 
 The audit endpoint is read-only and requires an active administrator through a
