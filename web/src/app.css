@@ -38,6 +38,7 @@
   --ui-action-icon-size-sm: 18px;
   --ui-navigation-icon-size: 24px;
   --app-mobile-nav-height: 57px;
+  --app-mobile-nav-bottom-inset: max(4px, env(safe-area-inset-bottom, 0px));
 
   font-optical-sizing: auto;
   font-weight: 400;
@@ -651,7 +652,7 @@ textarea::placeholder {
     --app-header-height: max(3.5rem, calc(45px + env(safe-area-inset-top)));
     display: block;
     padding-bottom: calc(
-      var(--app-mobile-nav-height) + env(safe-area-inset-bottom)
+      var(--app-mobile-nav-height) + var(--app-mobile-nav-bottom-inset)
     );
   }
 
@@ -682,7 +683,7 @@ textarea::placeholder {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     border-top: 1px solid var(--line);
     padding: 0 max(0.35rem, env(safe-area-inset-right))
-      env(safe-area-inset-bottom) max(0.35rem, env(safe-area-inset-left));
+      var(--app-mobile-nav-bottom-inset) max(0.35rem, env(safe-area-inset-left));
     background: var(--surface);
   }
 

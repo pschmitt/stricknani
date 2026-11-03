@@ -455,6 +455,22 @@ OCR and saved reading progress. Normal user routes keep their existing owner
 checks. Source checks pass; cross-owner browser, media and layout verification
 remain required before rollout.
 
+T120.28 addresses the reported Firefox Android bottom-bar clipping. Keep a small
+minimum bottom inset while respecting larger device safe areas, and use that
+same clearance for navigation, content and sticky editor actions. Verify phone
+geometry before rollout; desktop emulation does not establish an Android-device
+result.
+
+T120.29 adds Home at `/app/`, following Android's favorite-project, favorite-yarn
+and recent-project sections. Keep Projects at `/app/projects`, and provide a
+dedicated Home navigation item and icon. Reuse resource cards and existing
+owner-scoped v2 list endpoints with bounded requests and independent loading,
+empty and error states. Clear private results when the signed-in owner changes.
+Label server-ordered recency accurately; do not imply reading history or native
+offline synchronization. Keep the page compact, with useful library/create links
+and gauge access, and omit the redundant welcome label. Integrate the additional
+mobile item after the bottom-inset fix, checking all five targets at phone widths.
+
 Use the `ui-audit` inventory and motion scripts after each step on representative
 synthetic fixtures. Compare header positions, role/size button signatures,
 wrapping, hover feedback and layout shifts. Keep import/data repairs separate.

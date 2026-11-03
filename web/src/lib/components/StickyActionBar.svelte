@@ -63,7 +63,11 @@
   @media (max-width: 760px) {
     .sticky-action-bar {
       bottom: calc(
-        var(--app-mobile-nav-height, 57px) + env(safe-area-inset-bottom)
+        var(--app-mobile-nav-height, 57px) +
+          var(
+            --app-mobile-nav-bottom-inset,
+            max(4px, env(safe-area-inset-bottom, 0px))
+          )
       );
       padding-top: 0.65rem;
       padding-bottom: 0.65rem;
