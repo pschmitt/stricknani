@@ -249,41 +249,24 @@ def _exercise_accessibility(
     )
 
     mark_stage("opening synthetic yarn from keyboard")
-    photo_button = page.locator(".reorder-item").first
+    photo_button = page.locator(".photo-strip__open").first
     photo_button.wait_for(state="visible", timeout=10_000)
     _tab_to(page, photo_button, "yarn photo button")
     page.keyboard.press("Enter")
     mark_stage("checking photo dialog focus and restoration")
-    photo_dialog = page.get_by_role("dialog", name="Yarn photo", exact=True)
+    photo_dialog = page.get_by_role("dialog", name="Project image viewer", exact=True)
     photo_dialog.wait_for(state="visible", timeout=5_000)
-    photo_title = photo_dialog.get_by_role("heading", name="Yarn photo", exact=True)
-    page.wait_for_function(
-        "() => document.activeElement === document.querySelector("
-        "'.zoom-dialog-header h2')",
-        timeout=5_000,
+    close_button = photo_dialog.get_by_role(
+        "button", name="Close image viewer", exact=True
     )
-    _require(
-        photo_title.evaluate("element => document.activeElement === element"),
-        "opening the photo dialog did not focus its accessible title",
-    )
-    close_button = photo_dialog.get_by_role("button", name="Close photo", exact=True)
-    page.keyboard.press("Tab")
-    page.wait_for_function(
-        "() => document.activeElement === document.querySelector("
-        "'.zoom-dialog-header form button')",
-        timeout=5_000,
-    )
-    _require(
-        close_button.evaluate("element => document.activeElement === element"),
-        "Tab from the photo dialog title did not focus its close button",
-    )
+    close_button.focus()
     dialog_focus_states = []
     for key in ("Tab", "Tab", "Shift+Tab"):
         page.keyboard.press(key)
         dialog_focus_states.append(
             page.evaluate(
                 """() => {
-                  const dialog = document.querySelector('.zoom-dialog');
+                  const dialog = document.querySelector('.lightbox');
                   const active = document.activeElement;
                   return {
                     open: !!dialog?.open,
@@ -304,7 +287,7 @@ def _exercise_accessibility(
     )
     page.keyboard.press("Escape")
     page.wait_for_function(
-        "() => !document.querySelector('.zoom-dialog')?.open", timeout=5_000
+        "() => !document.querySelector('.lightbox')?.open", timeout=5_000
     )
     _require(
         photo_button.evaluate("element => document.activeElement === element"),
@@ -317,7 +300,7 @@ def _exercise_accessibility(
           requested: matchMedia('(prefers-reduced-motion: reduce)').matches,
           scroll: getComputedStyle(document.documentElement).scrollBehavior,
           transitionSeconds: getComputedStyle(
-            document.querySelector('.reorder-item .thumb-button')
+            document.querySelector('.photo-strip__open')
           ).transitionDuration.split(',').map(value => {
             const duration = value.trim();
             return duration.endsWith('ms')

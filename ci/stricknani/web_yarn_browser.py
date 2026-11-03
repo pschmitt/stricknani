@@ -425,9 +425,9 @@ def run_acceptance(
                 has=page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True)
             )
             mark_stage("checking favorite indicator")
-            yarn_card.get_by_role("img", name="Favorite", exact=True).wait_for(
-                state="visible"
-            )
+            yarn_card.get_by_role(
+                "button", name="Remove from favorites", exact=True
+            ).wait_for(state="visible")
             filter_trigger = page.locator(".filter-trigger")
             mark_stage("opening yarn filters")
             filter_trigger.click()

@@ -559,7 +559,8 @@ def _find_existing_no_snapshot_event(page: Page, origin: str) -> int:
 
 
 def _assert_decoded_card_image(card: Locator, *, message: str) -> str:
-    image = card.locator(".resource-card__image img")
+    image = card.locator(".library-card__media img, .resource-card__image img")
+    image.scroll_into_view_if_needed()
     image.wait_for(state="visible")
     source = image.get_attribute("src") or ""
     decoded = image.evaluate(
@@ -615,9 +616,7 @@ def _assert_owner_resource_cards(
     page.get_by_role("heading", name=yarn_name, exact=True).wait_for(state="visible")
 
     page.goto(f"{origin}/app/projects", wait_until="networkidle")
-    project_card = page.locator(".project-card .resource-card").filter(
-        has_text=project_name
-    )
+    project_card = page.locator(".project-card").filter(has_text=project_name)
     project_card.wait_for(state="visible")
     _require(
         urlsplit(
@@ -643,7 +642,7 @@ def _assert_owner_resource_cards(
     page.get_by_role("heading", name=project_name, exact=True).wait_for(state="visible")
 
     page.goto(f"{origin}/app/yarns", wait_until="networkidle")
-    yarn_card = page.locator(".yarn-card .resource-card").filter(has_text=yarn_name)
+    yarn_card = page.locator(".yarn-card").filter(has_text=yarn_name)
     yarn_card.wait_for(state="visible")
     _require(
         urlsplit(

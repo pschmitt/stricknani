@@ -849,7 +849,7 @@ def _one_sample(
     page.get_by_role("button", name="Decrease text size", exact=True).wait_for(
         state="hidden", timeout=5_000
     )
-    page.locator(".gallery-image").first.click()
+    page.locator(".photo-strip__open").first.click()
     dialog = page.get_by_role("dialog", name="Project image viewer", exact=True)
     dialog.wait_for(state="visible", timeout=10_000)
     page.keyboard.press("Escape")

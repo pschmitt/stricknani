@@ -721,8 +721,8 @@ def _measure_library_density(
         "const visible = rows.filter(row => { const r = row.getBoundingClientRect(); "
         "return r.top < innerHeight && r.bottom > 0; }); "
         "const row = rows[0]; "
-        "const title = row?.querySelector('.resource-card__name'); "
-        "const image = row?.querySelector('.resource-card__image'); "
+        "const title = row?.querySelector('.library-card__title'); "
+        "const image = row?.querySelector('.library-card__media'); "
         "const rect = row?.getBoundingClientRect(); "
         "const titleRect = title?.getBoundingClientRect(); "
         "const targets = [...document.querySelectorAll("
@@ -3170,7 +3170,8 @@ def run_acceptance(
                 )
             )
             _require(project_card.count() == 1, "the seeded project card is missing")
-            project_photo = project_card.locator(".resource-card__image img")
+            project_photo = project_card.locator(".library-card__media img")
+            project_photo.scroll_into_view_if_needed()
             _require(
                 project_photo.count() == 1
                 and project_photo.evaluate("image => image.src.includes('/media/')"),
@@ -3370,9 +3371,9 @@ def run_acceptance(
                     "heading", name="Heirloom Baby Blanket", exact=True
                 )
             )
-            project_card.get_by_role("img", name="Favorite", exact=True).wait_for(
-                state="visible"
-            )
+            project_card.get_by_role(
+                "button", name="Remove from favorites", exact=True
+            ).wait_for(state="visible")
             mark_stage("filtering project library by favorites")
             filter_dialog = _open_library_filters(page)
             with page.expect_response(
@@ -3733,16 +3734,9 @@ def run_acceptance(
                 for image in reader_images
                 if isinstance(image, dict) and image.get("step_id") is None
             ]
-            cover_image = next(
-                (image for image in gallery_images if image.get("is_title_image")),
-                gallery_images[0] if gallery_images else None,
-            )
-            expected_gallery_count = len(gallery_images) - int(cover_image is not None)
             _require(
-                page.locator(".reader-overview .reader-cover-image").count()
-                == int(cover_image is not None)
-                and page.locator(".image-gallery .gallery-image").count()
-                == expected_gallery_count,
+                page.locator(".reader-overview .photo-strip__tile").count()
+                == len(gallery_images),
                 "the cover or remaining project photos no longer match "
                 "the API image collection",
             )
@@ -3754,8 +3748,8 @@ def run_acceptance(
             )
             page.set_viewport_size({"width": 320, "height": 844})
             mark_stage("opening the single seeded project photo at 320px")
-            page.locator(".gallery-image").first.scroll_into_view_if_needed()
-            page.locator(".gallery-image").first.click()
+            page.locator(".photo-strip__open").first.scroll_into_view_if_needed()
+            page.locator(".photo-strip__open").first.click()
             dialog = page.get_by_role("dialog", name="Project image viewer")
             dialog.wait_for(state="visible")
             lightbox_image = dialog.locator("img")
@@ -3792,7 +3786,7 @@ def run_acceptance(
             _require(
                 page.evaluate(
                     "document.activeElement === "
-                    "document.querySelector('.gallery-image')"
+                    "document.querySelector('.photo-strip__open')"
                 ),
                 "closing the image viewer did not restore focus",
             )
@@ -3987,8 +3981,7 @@ def run_acceptance(
             )
             page.emulate_media(media="print")
             print_reference_state = page.locator(
-                ".reader-overview .print-reference-image, "
-                ".image-gallery .print-reference-image, "
+                ".photo-strip .print-reference-image, "
                 ".steps-list .print-reference-image"
             ).evaluate_all(
                 "nodes => nodes.map((node, index) => ({visible: "
@@ -4001,14 +3994,12 @@ def run_acceptance(
                 "window.__printImageExpectedUrls[index]}))"
             )
             print_interactive_image_state = page.locator(
-                ".reader-overview .reader-cover-image, "
-                ".image-gallery .gallery-image, .steps-list .step-image"
+                ".photo-strip .photo-strip__open, .steps-list .step-image"
             ).evaluate_all(
                 "nodes => nodes.map(node => getComputedStyle(node).display !== 'none')"
             )
             screen_image_state = page.locator(
-                ".reader-overview .screen-reference-image, "
-                ".image-gallery .screen-reference-image, "
+                ".photo-strip .screen-reference-image, "
                 ".steps-list .screen-reference-image"
             ).evaluate_all(
                 "nodes => nodes.map(node => getComputedStyle(node).display !== 'none')"
@@ -4030,11 +4021,7 @@ def run_acceptance(
                 )
                 and len(screen_image_state) == 2
                 and not any(screen_image_state)
-                and page.locator(".reader-overview .reader-cover-image").is_visible()
-                and (
-                    expected_gallery_count == 0
-                    or page.locator(".image-gallery").is_visible()
-                ),
+                and page.locator(".photo-strip").is_visible(),
                 "print layout omitted instructions or full-resolution reference photos",
             )
             materials_restored_closed = page.evaluate(
