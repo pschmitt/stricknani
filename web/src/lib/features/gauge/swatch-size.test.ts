@@ -13,6 +13,7 @@ describe("swatch size", () => {
     expect(parseCm("12.5")).toBe(12.5);
     expect(parseCm("12,5")).toBe(12.5);
     expect(parseCm("100")).toBe(100);
+    expect(parseCm("4.12345")).toBe(4.123);
     for (const bad of ["", "0", "-1", "100.5", "abc", "1e2", "1.2.3"]) {
       expect(parseCm(bad)).toBeNull();
     }

@@ -8,18 +8,12 @@ export interface GaugeInput {
   user_gauge_rows: number;
   pattern_cast_on_stitches: number;
   pattern_row_count?: number;
-  /** Measured swatch size in cm; the server defaults each to 10. */
+  /** Measured swatch size in cm; the server defaults each to 10, accepts 0 < x <= 100 with up to 3 decimals. */
   pattern_swatch_width_cm?: number;
   pattern_swatch_height_cm?: number;
   user_swatch_width_cm?: number;
   user_swatch_height_cm?: number;
 }
-
-/**
- * The swatch-size fields exist in the request types, but the server does not accept them
- * yet; flip this once `POST /api/v2/tools/gauge` handles the four `*_swatch_*_cm` fields.
- */
-export const SWATCH_SIZE_SUPPORTED = false;
 
 export interface GaugeResult {
   adjusted_stitches: string;

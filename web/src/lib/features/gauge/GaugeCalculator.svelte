@@ -16,7 +16,6 @@
   import { session } from "#lib/session.svelte.ts";
   import {
     calculateGauge,
-    SWATCH_SIZE_SUPPORTED,
     type GaugeInput,
     type GaugeResult,
   } from "./gauge-api";
@@ -55,7 +54,6 @@
 
   /** Swatch sizes are only sent when they differ from the server's 10 x 10 cm default. */
   function withSizes(input: GaugeInput): GaugeInput {
-    if (!SWATCH_SIZE_SUPPORTED) return input;
     const next = { ...input };
     if (!isDefaultSize(sizes.pattern)) {
       next.pattern_swatch_width_cm = sizes.pattern.width;
@@ -282,9 +280,7 @@
           rows={values.pattern_gauge_rows ?? undefined}
           size={sizes.pattern}
           changeLabel={t("Change swatch size", locale)}
-          onchange={SWATCH_SIZE_SUPPORTED
-            ? () => patternSizeDialog?.open(sizes.pattern)
-            : undefined}
+          onchange={() => patternSizeDialog?.open(sizes.pattern)}
         />
         <div class="field-grid">
           <label for="pattern-gauge-stitches">
@@ -423,9 +419,7 @@
           rows={values.user_gauge_rows ?? undefined}
           size={sizes.user}
           changeLabel={t("Change swatch size", locale)}
-          onchange={SWATCH_SIZE_SUPPORTED
-            ? () => userSizeDialog?.open(sizes.user)
-            : undefined}
+          onchange={() => userSizeDialog?.open(sizes.user)}
         />
         <div class="field-grid">
           <label for="user-gauge-stitches">
@@ -511,20 +505,18 @@
     </div>
   </form>
 
-  {#if SWATCH_SIZE_SUPPORTED}
-    <SwatchSizeDialog
-      bind:this={patternSizeDialog}
-      id="pattern-swatch-size"
-      {locale}
-      onsave={(size) => sizeChanged("pattern", size)}
-    />
-    <SwatchSizeDialog
-      bind:this={userSizeDialog}
-      id="user-swatch-size"
-      {locale}
-      onsave={(size) => sizeChanged("user", size)}
-    />
-  {/if}
+  <SwatchSizeDialog
+    bind:this={patternSizeDialog}
+    id="pattern-swatch-size"
+    {locale}
+    onsave={(size) => sizeChanged("pattern", size)}
+  />
+  <SwatchSizeDialog
+    bind:this={userSizeDialog}
+    id="user-swatch-size"
+    {locale}
+    onsave={(size) => sizeChanged("user", size)}
+  />
 
   {#if result}
     <section

@@ -11,11 +11,11 @@ export const defaultSwatchSize = (): SwatchSize => ({
   height: DEFAULT_SWATCH_CM,
 });
 
-/** A centimetre value with 0 < x <= 100; accepts a decimal comma. */
+/** A centimetre value with 0 < x <= 100, rounded to the server's 3 decimals; accepts a decimal comma. */
 export function parseCm(text: string): number | null {
   const trimmed = text.trim().replace(",", ".");
   if (!/^\d*\.?\d+$|^\d+\.$/.test(trimmed)) return null;
-  const value = Number(trimmed);
+  const value = Math.round(Number(trimmed) * 1000) / 1000;
   return Number.isFinite(value) && value > 0 && value <= MAX_SWATCH_CM
     ? value
     : null;

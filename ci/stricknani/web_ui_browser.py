@@ -1533,8 +1533,8 @@ def _exercise_gauge_calculator(
     )
     help_summary.click()
     _require(
-        page.locator(".size-button").count() == 0,
-        "the swatch size button is shown although the server does not support it",
+        page.locator(".size-button").count() == 2,
+        "the pattern and user swatch size buttons are missing from the gauge page",
     )
 
     page.set_viewport_size({"width": 390, "height": 844})
@@ -1825,6 +1825,63 @@ def _exercise_gauge_calculator(
     _require(
         len(gauge_requests) == 3,
         "an invalid gauge value still triggered a request",
+    )
+
+    mark_stage(f"checking {account_state} gauge swatch size change")
+    # With the stitches still invalid no request can fire until they are restored, so
+    # the size and the rows are set first and the stitches last: one request in total.
+    page.locator(".size-button").nth(1).click()
+    page.locator("#user-swatch-size-width").fill("5")
+    page.locator("#user-swatch-size-height").fill("5")
+    page.get_by_role("button", name="Done", exact=True).click()
+    page.locator("#user-swatch-size-width").wait_for(state="hidden")
+    page.locator("[name='user_gauge_rows']").fill("12")
+    page.wait_for_timeout(700)
+    _require(
+        len(gauge_requests) == 3,
+        "changing the swatch size or rows of an invalid gauge sent a request",
+    )
+    with page.expect_response(
+        lambda response: (
+            urlsplit(response.url).path == "/api/v2/tools/gauge"
+            and response.request.method == "POST"
+        ),
+        timeout=10_000,
+    ) as sized_response_info:
+        stitch_input.fill("9")
+    sized_response = sized_response_info.value
+    _require(
+        sized_response.status == 200,
+        "the gauge API rejected a measured swatch size",
+    )
+    _require(
+        json.loads(sized_response.request.post_data or "")
+        == {
+            **expected_input,
+            "user_gauge_stitches": 9,
+            "user_gauge_rows": 12,
+            "user_swatch_width_cm": 5,
+            "user_swatch_height_cm": 5,
+        },
+        "the browser did not send the measured user swatch size",
+    )
+    # 9 x 12 over 5 x 5 cm is 18 x 24 per 10 cm: 80 * 18 / 20 and 100 * 24 / 28.
+    sized_data = sized_response.json().get("data")
+    _require(
+        sized_data == {"adjusted_stitches": "72", "adjusted_rows": "86"},
+        f"a 5 x 5 cm swatch did not match the per-10 cm result ({sized_data})",
+    )
+    page.wait_for_function(
+        "() => !document.querySelector('.results.stale')", timeout=5_000
+    )
+    _require(
+        page.locator(".result-grid strong").all_inner_texts() == ["72", "86"],
+        "the page did not show the swatch-size-adjusted result",
+    )
+    page.wait_for_timeout(700)
+    _require(
+        len(gauge_requests) == 4,
+        f"the swatch size scenario sent {len(gauge_requests)} requests, not 4",
     )
     page.remove_listener("request", observe_gauge_request)
     page.remove_listener("response", observe_gauge_response)
