@@ -54,6 +54,12 @@
   --marigold-container: #ffe2ae;
   --on-marigold-container: #2b1a00;
   --stitch: rgb(63 0 32 / 35%);
+  --sticky-paper: #fff1b0;
+  --sticky-fold: #ebd27a;
+  --sticky-ink: #2a2033;
+  --sticky-link: #a82c5b;
+  --sticky-tape: #c23a6e;
+  --sticky-shadow: 63 40 20;
   /* Navigation tile tones: glyph colour and tile background per destination. */
   --tone-home: #a82c5b;
   --tone-home-wash: #ffd9e5;
@@ -122,6 +128,12 @@
     --marigold-container: #654300;
     --on-marigold-container: #ffe2ae;
     --stitch: rgb(255 217 229 / 40%);
+    --sticky-paper: #4a4430;
+    --sticky-fold: #38331f;
+    --sticky-ink: #f4edda;
+    --sticky-link: #ffb0cb;
+    --sticky-tape: #ffb0cb;
+    --sticky-shadow: 0 0 0;
     --tone-home: #ffb0cb;
     --tone-home-wash: #7d1d49;
     --tone-projects: #ffc768;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import StickyNote from "#lib/components/StickyNote.svelte";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
@@ -362,10 +363,16 @@
           </section>
         {/if}
         {#if yarn.notes_html}
-          <section class="detail-section">
-            <h2>{t("Notes", locale)}</h2>
+          <StickyNote title={t("Notes", locale)} headingId="yarn-notes-heading">
             <div class="rich-text {textSizeClass}">{@html yarn.notes_html}</div>
-          </section>
+          </StickyNote>
+        {:else}
+          <StickyNote
+            title={t("Notes", locale)}
+            headingId="yarn-notes-heading"
+            emptyLabel={t("Add a note", locale)}
+            emptyHref={`${resolve("/yarns")}/${yarn.id}/edit#yarn-notes`}
+          />
         {/if}
         {#if yarn.project_ids.length > 0}
           <section class="detail-section" aria-labelledby="used-in-title">

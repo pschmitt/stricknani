@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusOnHash } from "#lib/components/focus-on-hash.ts";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onMount, tick, untrack } from "svelte";
@@ -1244,6 +1245,7 @@
                     <label for="project-notes">{t("Notes", locale)}</label>
                     <textarea
                       id="project-notes"
+                      use:focusOnHash
                       bind:value={draft.notes}
                       rows="5"
                     ></textarea>
