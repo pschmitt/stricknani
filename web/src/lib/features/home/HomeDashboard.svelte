@@ -2,6 +2,8 @@
   import { resolve } from "$app/paths";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
+  import EmptyState from "#lib/components/EmptyState.svelte";
+  import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -30,6 +32,15 @@
   const hasFavorites = $derived(
     favoriteProjects.items.length > 0 || favoriteYarns.items.length > 0,
   );
+
+  // A greeting that follows the time of day, then the question that starts the session.
+  const greeting = $derived.by(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return t("Good morning!", locale);
+    if (hour >= 12 && hour < 18) return t("Hello there!", locale);
+    if (hour >= 18 && hour < 23) return t("Good evening!", locale);
+    return t("Still knitting?", locale);
+  });
 
   const relative = $derived(
     new Intl.RelativeTimeFormat(locale, { numeric: "auto" }),
@@ -70,8 +81,13 @@
   class="home-dashboard page-container page-container--wide"
   aria-labelledby="home-title"
 >
-  <!-- The navigation already says where we are; the heading stays for screen readers. -->
-  <h1 id="home-title" class="visually-hidden">{t("Home", locale)}</h1>
+  <header class="home-greeting">
+    <Mascot size={88} bob={true} />
+    <div class="home-greeting__copy">
+      <h1 id="home-title">{greeting}</h1>
+      <p>{t("What are we knitting today?", locale)}</p>
+    </div>
+  </header>
 
   {#if session.status === "loading"}
     <p class="home-status" role="status" aria-live="polite">
@@ -91,7 +107,9 @@
     <!-- 1. Pick up the project worked on last. -->
     <section class="home-continue" aria-labelledby="home-continue-title">
       <h2 id="home-continue-title" class="home-heading">
-        {t("Continue knitting", locale)}
+        <span class="heading-badge" data-tone="home"
+          ><NavIcon name="projects" /></span
+        >{t("Continue knitting", locale)}
       </h2>
       {#if recentProjects.status === "loading"}
         <div
@@ -123,14 +141,15 @@
             {#if current.preview_url}
               <img src={current.preview_url} alt="" loading="eager" />
             {:else}
-              <NavIcon name="projects" />
+              <Mascot size={72} />
             {/if}
           </span>
           <span class="continue-card__copy">
             <span class="continue-card__name">{current.name}</span>
             <span class="continue-card__meta">
-              {#if current.category}<span>{current.category}</span>{/if}
-              <span
+              {#if current.category}<span class="pill">{current.category}</span
+                >{/if}
+              <span class="pill"
                 >{t("Updated", locale)} {updatedAgo(current.updated_at)}</span
               >
             </span>
@@ -140,8 +159,13 @@
           </span>
         </a>
       {:else}
-        <div class="home-first-run">
-          <p>{t("No projects yet.", locale)}</p>
+        <EmptyState
+          icon="projects"
+          tone="projects"
+          headingTag="p"
+          title={t("Nothing on the needles yet", locale)}
+          hint={t("No projects yet.", locale)}
+        >
           <a
             class="ui-button ui-button--primary ui-button--md"
             href={resolve("/create")}
@@ -150,7 +174,7 @@
               >{t("Create your first project", locale)}</ActionLabel
             >
           </a>
-        </div>
+        </EmptyState>
       {/if}
     </section>
 
@@ -172,16 +196,25 @@
       {:else if group.section.items.length > 0}
         <section class="home-section" aria-labelledby={`${group.id}-title`}>
           <div class="home-section__heading">
-            <h2 id={`${group.id}-title`} class="home-heading">{group.title}</h2>
+            <h2 id={`${group.id}-title`} class="home-heading">
+              <span
+                class="heading-badge"
+                data-tone={group.kind === "project" ? "home" : "yarns"}
+                ><NavIcon
+                  name={group.kind === "project" ? "favorite" : "yarns"}
+                /></span
+              >{group.title}
+            </h2>
             <a class="see-all" href={group.href}
               >{t("See all", locale)}<NavIcon name="next" /></a
             >
           </div>
           <ul class="tile-grid" aria-label={group.title}>
-            {#each group.section.items as item (item.id)}
+            {#each group.section.items as item, index (item.id)}
               <li>
                 <a
                   class="tile"
+                  data-tint={(index + (group.kind === "yarn" ? 1 : 0)) % 3}
                   href={group.kind === "project"
                     ? resolve("/projects/[id]", { id: String(item.id) })
                     : resolve("/yarns/[id]", { id: String(item.id) })}
@@ -209,7 +242,9 @@
       <section class="home-section" aria-labelledby="recent-projects-title">
         <div class="home-section__heading">
           <h2 id="recent-projects-title" class="home-heading">
-            {t("Recent projects", locale)}
+            <span class="heading-badge" data-tone="projects"
+              ><NavIcon name="projects" /></span
+            >{t("Recent projects", locale)}
           </h2>
           <a class="see-all" href={resolve("/projects")}
             >{t("See all", locale)}<NavIcon name="next" /></a
@@ -253,10 +288,54 @@
     white-space: nowrap;
   }
 
-  .home-heading {
+  .home-greeting {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .home-greeting__copy h1 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: clamp(1.9rem, 1.4rem + 2vw, 2.7rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .home-greeting__copy p {
+    margin: 0.15rem 0 0;
+    color: var(--ink-muted);
+    font-size: 1.1rem;
+  }
+
+  .home-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-size: 1.35rem;
     line-height: 1.3;
+  }
+  .heading-badge {
+    --tone: var(--tone-home);
+    --tone-wash: var(--tone-home-wash);
+    display: grid;
+    width: 1.9rem;
+    height: 1.9rem;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--tone);
+    background: var(--tone-wash);
+  }
+  .heading-badge[data-tone="yarns"] {
+    --tone: var(--tone-yarns);
+    --tone-wash: var(--tone-yarns-wash);
+  }
+  .heading-badge[data-tone="projects"] {
+    --tone: var(--tone-projects);
+    --tone-wash: var(--tone-projects-wash);
+  }
+  .heading-badge :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
   }
 
   .home-section {
@@ -279,8 +358,9 @@
     gap: 0.15rem;
     min-height: 44px;
     color: var(--accent-strong);
-    font-size: 0.92rem;
-    font-weight: 620;
+    padding-inline: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 800;
     text-decoration: none;
   }
   .see-all:hover,
@@ -299,34 +379,50 @@
     gap: 0.7rem;
   }
   .continue-card {
+    position: relative;
     display: grid;
-    grid-template-columns: 9rem minmax(0, 1fr) auto;
+    grid-template-columns: 8.5rem minmax(0, 1fr) auto;
     align-items: center;
-    gap: 1.1rem;
-    border: 1px solid var(--line);
-    border-radius: 1.1rem;
-    padding: 0.75rem 1rem 0.75rem 0.75rem;
-    color: var(--ink);
-    background: var(--surface);
+    gap: 1.4rem;
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem 1.25rem 1.25rem;
+    color: var(--on-primary-container);
+    background: var(--primary-container);
     text-decoration: none;
-    transition:
-      border-color 140ms ease,
-      transform 140ms ease;
+    transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  /* The running stitch: a dashed line sewn just inside the edge. */
+  .continue-card::after {
+    position: absolute;
+    inset: 7px;
+    border: 1.6px dashed var(--stitch);
+    border-radius: 21px;
+    content: "";
+    pointer-events: none;
   }
   a.continue-card:hover {
-    border-color: var(--accent-strong);
+    transform: translateY(-2px);
+  }
+  a.continue-card:hover .continue-card__image {
+    transform: rotate(-1deg) scale(1.03);
   }
   a.continue-card:active {
-    transform: scale(0.99);
+    transform: scale(0.97);
+  }
+  a.continue-card:focus-visible {
+    outline-offset: 4px;
   }
   .continue-card__image {
     display: grid;
     aspect-ratio: 1;
     place-items: center;
     overflow: hidden;
-    border-radius: 0.8rem;
+    border-radius: 18px;
     color: var(--accent-strong);
-    background: var(--accent-wash);
+    background: var(--surface);
+    box-shadow: 0 6px 16px rgb(63 20 80 / 18%);
+    transform: rotate(-4deg);
+    transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
   }
   .continue-card__image img {
     width: 100%;
@@ -343,18 +439,27 @@
     gap: 0.4rem;
   }
   .continue-card__name {
-    font-size: clamp(1.25rem, 1rem + 1vw, 1.6rem);
-    font-weight: 750;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem);
+    font-weight: 700;
+    line-height: 1.15;
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 1;
     overflow-wrap: anywhere;
   }
   .continue-card__meta {
     display: flex;
     flex-wrap: wrap;
     gap: 0.2rem 0.8rem;
-    color: var(--ink-muted);
-    font-size: 0.92rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+  .pill {
+    border-radius: 999px;
+    padding: 0.15rem 0.7rem;
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    color: var(--ink);
   }
   .continue-card__go {
     display: grid;
@@ -362,8 +467,8 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 999px;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
+    color: var(--on-accent);
+    background: var(--accent);
   }
   .continue-card__go :global(svg) {
     width: 1.2rem;
@@ -371,7 +476,7 @@
   }
   .continue-card--placeholder .continue-card__image,
   .placeholder-line {
-    background: var(--surface-raised);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
   }
   .placeholder-line {
     display: block;
@@ -403,13 +508,24 @@
     aspect-ratio: 1;
     place-items: center;
     overflow: hidden;
-    border-radius: 0.85rem;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
-    transition: transform 140ms ease;
+    border-radius: var(--radius-md);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
+    transition: transform 200ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  .tile[data-tint="1"] .tile__image {
+    color: var(--on-lagoon-container);
+    background: var(--lagoon-container);
+  }
+  .tile[data-tint="2"] .tile__image {
+    color: var(--on-marigold-container);
+    background: var(--marigold-container);
   }
   .tile:hover .tile__image {
-    transform: translateY(-2px);
+    transform: translateY(-3px) rotate(-1.5deg);
+  }
+  .tile:active .tile__image {
+    transform: scale(0.96);
   }
   .tile__image img {
     width: 100%;
@@ -422,8 +538,8 @@
   }
   .tile__name {
     overflow: hidden;
-    font-size: 0.92rem;
-    font-weight: 650;
+    font-size: 0.95rem;
+    font-weight: 800;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -442,7 +558,7 @@
     gap: 0.55rem;
     margin: 0;
     border-radius: 0.8rem;
-    padding: 0.75rem 0.9rem;
+    padding: 0.75rem 1rem;
     color: var(--ink-muted);
     background: var(--surface);
     font-size: 0.92rem;
@@ -459,8 +575,7 @@
     color: var(--ink-muted);
   }
   .home-error,
-  .home-signed-out,
-  .home-first-run {
+  .home-signed-out {
     display: flex;
     min-width: 0;
     align-items: center;
@@ -468,9 +583,22 @@
     gap: 0.7rem;
   }
   .home-error p,
-  .home-signed-out p,
-  .home-first-run p {
+  .home-signed-out p {
     margin: 0;
+  }
+
+  @media (max-width: 560px) {
+    .continue-card {
+      grid-template-columns: 6rem minmax(0, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .continue-card__go {
+      display: none;
+    }
+    .home-greeting :global(.mascot) {
+      --mascot-size: 4.5rem;
+    }
   }
 
   @media (min-width: 900px) {
