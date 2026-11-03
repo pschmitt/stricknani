@@ -23,7 +23,9 @@ as confidential-client redirects at Authelia.
 This is an additive fragment: retain version, build ID, user and role fields,
 including the user's nullable avatar URL. OIDC is an empty array when disabled;
 never advertise a provider whose server flow is not configured. Password login
-remains available globally.
+remains available globally. `auth.password` describes global availability; the
+identity list's `meta.password_enabled` describes this local user and can be
+false. Password reauthentication is unavailable for that user when false.
 
 `GET /account/identities` accepts a valid browser session or strict API-purpose
 PAT and returns:
@@ -112,11 +114,15 @@ only the applicable `provider`, `identity_id` and administrative `user_id`.
 Unrelated action/target combinations are rejected.
 
 OIDC reauthentication uses `POST /account/reauth/oidc/start` with
-`{provider, action, target?, client, ...native start fields when applicable}`.
+`{provider, action, target?, client, return_to?, ...native start fields when applicable}`.
+Return the same `200 {data: {authorization_url, expires_at}}` start envelope.
 It requires the current authenticated principal, plus CSRF for cookies. Request
 fresh provider authentication and verify `auth_time`; the returned identity must
 already belong to that same local user. Browser callback updates that session's
-stamp and returns to a clean Account page. Native callback uses `flow=reauth`;
+stamp and returns to the validated same-origin `/app/` `return_to` path
+(default `/app/account`), appending `oidc=reauthed&action=<action>`. The action
+is the stored allowlisted value, never arbitrary provider input. This also
+supports admin provider step-up; retain the pending operation in client memory. Native callback uses `flow=reauth`;
 `POST /account/reauth/oidc/exchange` with authenticated PAT and
 `{code, code_verifier, redirect_uri}` returns the purpose-bound proof envelope.
 Login, link and reauthentication grants cannot be exchanged at each other's
@@ -132,7 +138,11 @@ start and completion, binding the flow to its initiating account and principal.
 For PAT flows, validate the proof at start and consume it only with the actual
 link transaction, not twice.
 
-Browser callback links and returns to `/app/account?oidc=linked`. Android gets
+Browser callback links and returns to `/app/account?oidc=linked`. Link failure
+returns `/app/account?oidc_error=failed`; an authenticated identity-conflict
+result may use `oidc_error=already_linked`. Do not expose provider errors or
+another local account identifier. Failed reauthentication likewise returns to
+its validated local return path with `oidc_error=failed` and no success marker. Android gets
 `flow=link`; `POST /account/identities/link/exchange` requires the initiating
 PAT, its matching `X-Reauth-Token`, and `{code, code_verifier, redirect_uri}`.
 Return `{data: {identity}}`, with the identity projection above; never issue a
