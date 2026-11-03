@@ -12,6 +12,8 @@ import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.api.ApiCapabilitiesState
 import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.dto.MetaDto
 import blue.anika.wolle.data.backup.BackupFrequency
@@ -60,6 +62,7 @@ constructor(
     private val backupManager: BackupManager,
     private val backupScheduler: BackupScheduler,
     private val syncScheduler: SyncScheduler,
+    private val capabilities: ApiCapabilities,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -186,25 +189,28 @@ constructor(
 
     // --- SNA-34: developer mode easter egg ------------------------------------------------
 
-    private val developerMode: StateFlow<Boolean> =
+    val developerMode: StateFlow<Boolean> =
         appPreferencesRepository.developerMode.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
             false,
         )
 
-    private val _developerModeToast =
-        MutableSharedFlow<String>(
-            extraBufferCapacity = 1,
+    /** A toast for the About screen; [unlocked] also asks for the celebration (mascot, haptic). */
+    data class DeveloperModeEvent(val message: String, val unlocked: Boolean = false)
+
+    private val _developerModeEvents =
+        MutableSharedFlow<DeveloperModeEvent>(
+            extraBufferCapacity = 4,
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
-    val developerModeToast = _developerModeToast.asSharedFlow()
+    val developerModeEvents = _developerModeEvents.asSharedFlow()
 
     private val developerModeTapState = DeveloperModeTapState()
     private var developerModeUnlocked = false
     private var developerModeUnlockInProgress = false
 
-    /** Tap target is the "Build" row on the About screen, matching syncwich's easter egg. */
+    /** Tap target is the "Build" row on the About screen. */
     fun onBuildRowTap() {
         if (developerModeUnlockInProgress) return
         when (
@@ -214,15 +220,19 @@ constructor(
                     developerMode.value || developerModeUnlocked,
                 )
         ) {
+            DeveloperModeTapAction.Silent -> Unit
             DeveloperModeTapAction.AlreadyDeveloper ->
-                _developerModeToast.tryEmit(
-                    context.getString(R.string.settings_dev_mode_already_developer)
+                _developerModeEvents.tryEmit(
+                    DeveloperModeEvent(context.getString(R.string.settings_dev_mode_already))
                 )
-            is DeveloperModeTapAction.Progress ->
-                _developerModeToast.tryEmit(
-                    context.getString(
-                        R.string.settings_dev_mode_taps_remaining,
-                        action.remainingTaps,
+            is DeveloperModeTapAction.Countdown ->
+                _developerModeEvents.tryEmit(
+                    DeveloperModeEvent(
+                        context.resources.getQuantityString(
+                            R.plurals.settings_dev_mode_steps_remaining,
+                            action.stepsLeft,
+                            action.stepsLeft,
+                        )
                     )
                 )
             DeveloperModeTapAction.Unlock -> {
@@ -232,8 +242,11 @@ constructor(
                     try {
                         appPreferencesRepository.setDeveloperMode(true)
                         enabled = true
-                        _developerModeToast.tryEmit(
-                            context.getString(R.string.settings_dev_mode_enabled)
+                        _developerModeEvents.tryEmit(
+                            DeveloperModeEvent(
+                                context.getString(R.string.settings_dev_mode_enabled),
+                                unlocked = true,
+                            )
                         )
                     } finally {
                         if (enabled) developerModeUnlocked = true
@@ -241,6 +254,36 @@ constructor(
                     }
                 }
             }
+        }
+    }
+
+    /** The "Developer mode" switch in the Developer card. */
+    fun setDeveloperMode(enabled: Boolean) {
+        developerModeUnlocked = enabled
+        developerModeTapState.reset()
+        viewModelScope.launch {
+            appPreferencesRepository.setDeveloperMode(enabled)
+            if (!enabled) {
+                _developerModeEvents.tryEmit(
+                    DeveloperModeEvent(context.getString(R.string.settings_dev_mode_turned_off))
+                )
+            }
+        }
+    }
+
+    /** Queued writes that have not reached the server yet. */
+    val pendingWrites: StateFlow<Int> =
+        pendingMutationDao
+            .observeCount()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
+
+    /** The API generation and token id the app resolved for this server; null until known. */
+    private val _apiState = MutableStateFlow<ApiCapabilitiesState?>(null)
+    val apiState: StateFlow<ApiCapabilitiesState?> = _apiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _apiState.value = runCatching { capabilities.resolve() }.getOrNull()
         }
     }
 
@@ -408,35 +451,5 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
-    }
-}
-
-internal sealed interface DeveloperModeTapAction {
-    data object AlreadyDeveloper : DeveloperModeTapAction
-
-    data object Unlock : DeveloperModeTapAction
-
-    data class Progress(val remainingTaps: Int) : DeveloperModeTapAction
-}
-
-/** 7 taps within a 2s rolling window unlocks developer mode - matches syncwich's easter egg. */
-internal class DeveloperModeTapState(
-    private val requiredTaps: Int = 7,
-    private val tapWindowMillis: Long = 2_000L,
-) {
-    private var tapCount = 0
-    private var lastTapAt = 0L
-
-    fun onTap(now: Long, developerModeEnabled: Boolean): DeveloperModeTapAction {
-        if (developerModeEnabled) return DeveloperModeTapAction.AlreadyDeveloper
-        if (now - lastTapAt > tapWindowMillis) tapCount = 0
-        lastTapAt = now
-        tapCount++
-        return if (tapCount >= requiredTaps) {
-            tapCount = 0
-            DeveloperModeTapAction.Unlock
-        } else {
-            DeveloperModeTapAction.Progress(requiredTaps - tapCount)
-        }
     }
 }

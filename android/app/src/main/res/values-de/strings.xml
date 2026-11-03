@@ -565,10 +565,32 @@
     <string name="onboarding_error_server_error">Der Server hat mit einem Fehler geantwortet (HTTP %1$d).</string>
     <string name="onboarding_error_generic">Verbindung zum Server nicht möglich.</string>
 
-    <!-- Settings: developer mode toasts -->
-    <string name="settings_dev_mode_already_developer">Du bist bereits Entwickler</string>
-    <string name="settings_dev_mode_taps_remaining">Noch %1$d Tipps bis zum Entwicklermodus</string>
-    <string name="settings_dev_mode_enabled">Entwicklermodus aktiviert</string>
+    <!-- Settings: developer mode -->
+    <string name="settings_dev_mode_already">Nicht nötig, du bist bereits Entwickler.</string>
+    <plurals name="settings_dev_mode_steps_remaining">
+        <item quantity="one">Noch %1$d Schritt, dann bist du Entwickler.</item>
+        <item quantity="other">Noch %1$d Schritte, dann bist du Entwickler.</item>
+    </plurals>
+    <string name="settings_dev_mode_enabled">Du bist jetzt Entwickler!</string>
+    <string name="settings_dev_mode_turned_off">Entwicklermodus ausgeschaltet</string>
+    <string name="about_settings_build_hint">Build-Nummer</string>
+    <string name="about_settings_build_unknown">Unbekannt</string>
+    <string name="about_open_commit">Commit auf GitHub öffnen</string>
+    <string name="developer_card_title">Entwickler</string>
+    <string name="developer_card_switch">Entwicklermodus</string>
+    <string name="developer_card_server_url">Server-URL</string>
+    <string name="developer_card_server_version">Serverversion</string>
+    <string name="developer_card_server_build">Server-Build-ID</string>
+    <string name="developer_card_api_v2">API v2</string>
+    <string name="developer_card_yes">Ja</string>
+    <string name="developer_card_no">Nein</string>
+    <string name="developer_card_unknown">Unbekannt</string>
+    <string name="developer_card_last_sync">Letzte erfolgreiche Synchronisierung</string>
+    <string name="developer_card_pending">Wartende Änderungen</string>
+    <string name="developer_card_token">Token-ID</string>
+    <string name="developer_card_token_this_device">Dieses Gerät (#%1$d)</string>
+    <string name="developer_card_app_version">App-Version</string>
+    <string name="developer_card_revision">Git-Revision</string>
 
     <!-- Settings: backup export/import messages -->
     <string name="backup_error_open_file_write">Die ausgewählte Datei konnte nicht zum Schreiben geöffnet werden</string>

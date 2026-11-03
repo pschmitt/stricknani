@@ -20,7 +20,12 @@ val configuredVersionCode =
                 ?: error("versionCode must be a positive integer")
         }
         .get()
-val gitRevision = System.getenv("GIT_REVISION") ?: "unknown"
+// CI and release builds export GIT_REVISION. Remote builds from `just` (the synced tree has no
+// .git) pass the revision of the machine running `just` as -PgitRevision=<sha>[-dirty].
+val gitRevision =
+    (System.getenv("GIT_REVISION") ?: providers.gradleProperty("gitRevision").orNull)
+        ?.trim()
+        ?.takeIf { it.matches(Regex("[A-Za-z0-9._+-]+")) } ?: "unknown"
 // The Play bundle must not ship the GitHub-APK self-update card (Play apps update through Play), so
 // it is compiled out when building a bundle; every APK build keeps it. `-PselfUpdate=true|false`
 // overrides the detection.

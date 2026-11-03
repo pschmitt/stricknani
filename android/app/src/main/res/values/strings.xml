@@ -565,10 +565,32 @@
     <string name="onboarding_error_server_error">The server responded with an error (HTTP %1$d).</string>
     <string name="onboarding_error_generic">Couldn\'t connect to that server.</string>
 
-    <!-- Settings: developer mode toasts -->
-    <string name="settings_dev_mode_already_developer">You are already a developer</string>
-    <string name="settings_dev_mode_taps_remaining">%1$d more taps to become a developer</string>
-    <string name="settings_dev_mode_enabled">Developer mode enabled</string>
+    <!-- Settings: developer mode -->
+    <string name="settings_dev_mode_already">No need, you are already a developer.</string>
+    <plurals name="settings_dev_mode_steps_remaining">
+        <item quantity="one">You are now %1$d step away from being a developer.</item>
+        <item quantity="other">You are now %1$d steps away from being a developer.</item>
+    </plurals>
+    <string name="settings_dev_mode_enabled">You are now a developer!</string>
+    <string name="settings_dev_mode_turned_off">Developer mode turned off</string>
+    <string name="about_settings_build_hint">Build number</string>
+    <string name="about_settings_build_unknown">Unknown</string>
+    <string name="about_open_commit">Open commit on GitHub</string>
+    <string name="developer_card_title">Developer</string>
+    <string name="developer_card_switch">Developer mode</string>
+    <string name="developer_card_server_url">Server URL</string>
+    <string name="developer_card_server_version">Server version</string>
+    <string name="developer_card_server_build">Server build ID</string>
+    <string name="developer_card_api_v2">API v2</string>
+    <string name="developer_card_yes">Yes</string>
+    <string name="developer_card_no">No</string>
+    <string name="developer_card_unknown">Unknown</string>
+    <string name="developer_card_last_sync">Last successful sync</string>
+    <string name="developer_card_pending">Queued writes</string>
+    <string name="developer_card_token">Token ID</string>
+    <string name="developer_card_token_this_device">This device (#%1$d)</string>
+    <string name="developer_card_app_version">App version</string>
+    <string name="developer_card_revision">Git revision</string>
 
     <!-- Settings: backup export/import messages -->
     <string name="backup_error_open_file_write">Could not open the selected file for writing</string>
