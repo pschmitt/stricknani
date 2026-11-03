@@ -141,7 +141,15 @@ internal constructor(
             return null
         }
         if (probedToken == token && _isAdmin.value != null) return _isAdmin.value
-        val user = capabilities.resolve().user
+        val user =
+            try {
+                capabilities.resolve().user
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                // Offline, an expired token or a server hiccup: stay hidden and ask again.
+                return null
+            }
         if (user != null) {
             if (user.email != savedEmail()) saveEmail(user.email)
             return remember(token, user.isAdmin)

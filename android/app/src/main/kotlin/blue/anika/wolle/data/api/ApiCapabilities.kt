@@ -4,7 +4,6 @@ import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.settings.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,14 +30,15 @@ data class ApiCapabilitiesState(
 /**
  * Decides, per server and token, whether resource calls go to `/api/v2` or `/api/v1`.
  *
- * One probe of `GET /api/v2/meta` with the Bearer token, cached for the rest of the process (and
- * re-run when the server URL or token changes):
+ * One probe of `GET /api/v2/meta` with the Bearer token, cached for the rest of the process and
+ * keyed by server URL + token (a sign-out or token change clears it):
  * - 200 with a `user` -> V2, and the body also tells us the user's id, email and admin flag;
- * - 404/405 (an older server), or 200 without a user -> V1, cached;
- * - 401/403, a network error or a 5xx -> V1 for this call only, not cached, so the next call asks
- *   again. v1 stays a safe fallback because the old routes still exist on every server that has v2.
+ * - 404/405 (a server without v2), or 200 without a user -> V1, cached.
  *
- * Never defaults to V2 when unknown.
+ * Only a server that lacks v2 selects v1. Any other failure (401 `session_expired`, 403, 5xx, no
+ * connection) is thrown to the caller as that call's normal failure, so offline handling, the
+ * outbox and the expired-token handling behave as before, and it is not cached: the next call
+ * probes again.
  */
 @Singleton
 class ApiCapabilities
@@ -65,7 +65,10 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
     val current: ApiCapabilitiesState
         get() = if (probedKey == credentialKey()) _state.value else ApiCapabilitiesState()
 
-    /** The generation to use for the next resource call. Probes at most once per credentials. */
+    /**
+     * The generation to use for the next resource call. Probes at most once per credentials; throws
+     * the probe's failure (offline, 401, 5xx) instead of guessing v1.
+     */
     suspend fun generation(): ApiGeneration = resolve().generation
 
     suspend fun useV2(): Boolean = generation() == ApiGeneration.V2
@@ -98,30 +101,25 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
         _state.value = ApiCapabilitiesState()
     }
 
-    private suspend fun probe(key: String): ApiCapabilitiesState {
-        return try {
-            val meta = metaApi.getMeta().data
-            val user = meta.user
-            val result =
+    private suspend fun probe(key: String): ApiCapabilitiesState =
+        try {
+            val user = metaApi.getMeta().data.user
+            remember(
+                key,
                 if (user == null) ApiCapabilitiesState()
                 else
                     ApiCapabilitiesState(
                         ApiGeneration.V2,
                         CurrentUser(user.id, user.email, user.isAdmin),
-                    )
-            remember(key, result)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
+                    ),
+            )
         } catch (failure: HttpException) {
-            when (failure.code()) {
-                404,
-                405 -> remember(key, ApiCapabilitiesState())
-                else -> unknown(failure)
-            }
+            if (failure.code() == 404 || failure.code() == 405)
+                remember(key, ApiCapabilitiesState())
+            else throw undecided(failure)
         } catch (failure: Exception) {
-            unknown(failure)
+            throw undecided(failure)
         }
-    }
 
     private fun remember(key: String, result: ApiCapabilitiesState): ApiCapabilitiesState {
         probedKey = key
@@ -130,11 +128,10 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
         return result
     }
 
-    /** The probe could not decide: use v1 now and ask again next time. */
-    private fun unknown(failure: Exception): ApiCapabilitiesState {
-        Timber.d(failure, "API capability probe failed; using v1 for now")
+    /** The probe could not decide: forget any stale answer and let the caller see the failure. */
+    private fun undecided(failure: Exception): Exception {
         probedKey = null
         _state.value = ApiCapabilitiesState()
-        return _state.value
+        return failure
     }
 }

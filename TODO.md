@@ -36,6 +36,7 @@ Execution-oriented backlog for Stricknani.
 | T121.5 | P1 | todo | native-api-v2/acceptance | test | Verify Android offline/account isolation and inventory v1 retirement blockers; keep v1 available |
 | T121.6 | P1 | wip | native-api-v2/media-order | feat | Persist and backfill media positions; add exact-set reorder endpoints with primary selection, audit and parent sync updates |
 | T121.7 | P1 | wip | native-api-v2/android | feat | Android client: resources, favourites and media on v2 behind a meta capability probe (done), then sync/login/media order as the server slices land (owner: Claude, SNA-87) |
+| T121.7 | P1 | wip | native-api-v2/android | feat | Android client: resources, favourites and media on v2 behind a meta capability probe (done), then sync/login/media order as the server slices land (owner: Claude, SNA-87) |
 | T122 | P2 | todo | tools/gauge | feat | Add optional 10 cm swatch dimensions, bounded decimal validation and density-based half-even rounding |
 | T120 | P1 | wip | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
 | T120.1 | P1 | done | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |

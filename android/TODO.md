@@ -53,14 +53,14 @@ differences, Room decision and the `ApiCapabilities` design: `android/docs/v2-mi
       in DI but unused. Unit-tested against sample JSON from the Rust serializers
       (`V2DtoTest`). Room is unchanged: v2 is mapped into the v1-shaped `detailJson` (no migration).
 - [x] Phase (a) (code): `ApiCapabilities` probes `GET /api/v2/meta` with the Bearer token once per
-      app start and credentials (200 + `user` = v2; 404/405 = v1 cached; 401/5xx/offline = v1 for
-      that call, re-probed next time). Project/yarn/category reads, create/update/delete,
+      app start and credentials (200 + `user` = v2; only 404/405 = v1, cached; 401/403/5xx/offline are
+      thrown as that call's failure and re-probed next time, never a v1 fallback). Project/yarn/category reads, create/update/delete,
       favourites (PUT/DELETE), media uploads and deletes go to v2 when supported, else v1. The
       replay worker parses v2 `{error:{current}}` and v1 `{detail}` 409s. Admin visibility and the
       Accounts "You" marker use the meta user (`is_admin`, id, email); the user-list probe is the
       fallback. Tags are split on commas client side (`parseTagInput`). Left: verify on a device
       signed in to a v2 server (create/edit/delete, favourite, uploads, 409), persist the probe
-      result for offline starts, re-probe on a v2 401.
+      result for offline starts.
 - [ ] Phase (b) sync. Needs: `GET /api/v2/sync/{projects,yarns,categories}` (Codex).
 - [ ] Phase (c) auth/token + meta/me and `ApiCapabilities` probe (v2 where supported, v1
       fallback for old servers). Needs: v2 token login and a Bearer `GET /api/v2/me` with

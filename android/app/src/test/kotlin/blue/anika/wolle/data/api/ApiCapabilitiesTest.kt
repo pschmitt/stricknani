@@ -78,23 +78,51 @@ class ApiCapabilitiesTest {
     }
 
     @Test
-    fun `401, 5xx and network errors use v1 but ask again next time`() = runTest {
-        val failures =
-            listOf<() -> MetaV2Dto>(
-                { throw http(401) },
-                { throw http(503) },
-                { throw IOException("off") },
-            )
-        for (failure in failures) {
-            val meta = FakeMeta(failure)
-            val caps = capabilities(meta)
-            assertEquals(ApiGeneration.V1, caps.generation())
-            assertEquals(ApiGeneration.V1, caps.generation())
-            assertEquals(2, meta.calls)
+    fun `401, 403, 5xx and network errors are thrown, not turned into v1, and re-probed`() =
+        runTest {
+            val failures =
+                listOf<() -> MetaV2Dto>(
+                    { throw http(401) },
+                    { throw http(403) },
+                    { throw http(503) },
+                    { throw IOException("off") },
+                )
+            for (failure in failures) {
+                val meta = FakeMeta(failure)
+                val caps = capabilities(meta)
+                val thrown = runCatching { caps.generation() }.exceptionOrNull()
+                assertTrue("expected the probe failure, got $thrown", thrown != null)
+                assertTrue(runCatching { caps.useV2() }.isFailure)
+                assertEquals(2, meta.calls)
 
-            meta.respond = { admin }
-            assertEquals(ApiGeneration.V2, caps.generation())
+                meta.respond = { admin }
+                assertEquals(ApiGeneration.V2, caps.generation())
+            }
         }
+
+    @Test
+    fun `a failure after a good probe for other credentials does not leak the old answer`() =
+        runTest {
+            val meta = FakeMeta { admin }
+            val caps = capabilities(meta)
+            caps.generation()
+
+            key = "https://other\ntoken"
+            meta.respond = { throw http(401) }
+            assertTrue(runCatching { caps.generation() }.isFailure)
+            assertNull(caps.current.user)
+        }
+
+    @Test
+    fun `the answer is kept per server url and token`() = runTest {
+        val meta = FakeMeta { throw http(404) }
+        val caps = capabilities(meta)
+        assertEquals(ApiGeneration.V1, caps.generation())
+
+        key = "https://other\ntoken-a"
+        meta.respond = { admin }
+        assertEquals(ApiGeneration.V2, caps.generation())
+        assertEquals(2, meta.calls)
     }
 
     @Test

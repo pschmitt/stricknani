@@ -230,8 +230,9 @@ categories, project image/attachment and yarn photo upload/delete.
   {id,email,is_admin}|null}}`; 200 for anonymous callers too (`user` null), 401 `session_expired` for
   an invalid Bearer. v2 resource and admin routes accept the PAT without Origin/CSRF.
 - `data/api/ApiCapabilities.kt` (probe, cache per server+token, `useV2()`); repositories branch per
-  call. Only 404/405 and a user-less 200 are cached as v1; 401, 5xx and offline use v1 for that call
-  and probe again. The probe result is not persisted yet.
+  call. Only 404/405 (and a user-less 200) select v1, cached per server URL + token. 401, 403, 5xx
+  and offline are thrown as the call's own failure (offline outbox, expired-token handling) and the
+  next call probes again. The probe result is not persisted yet.
 - Still v1: all `sync/*`, `auth/token`, `meta` in onboarding, URL import.
 - v2 409: `WriteReplayWorker` uses `parseProjectConflict`/`parseYarnConflict` (v2 `error.current`,
   then v1 `detail`). Queued outbox payloads are version-agnostic.

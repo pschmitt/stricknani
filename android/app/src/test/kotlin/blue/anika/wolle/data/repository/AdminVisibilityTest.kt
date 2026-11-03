@@ -128,6 +128,17 @@ class AdminVisibilityTest {
     }
 
     @Test
+    fun `an expired token on the meta probe hides the entry without asking the user list`() =
+        runTest {
+            val api = FakeAdminApi { error("must not be called") }
+            val repository = repo({ throw http(401) }, api)
+
+            assertNull(repository.probeAdmin())
+            assertNull(repository.isAdmin.value)
+            assertEquals(0, api.listUsersCalls)
+        }
+
+    @Test
     fun `You is matched by id when known, otherwise by email`() {
         val user = AdminUserDto(id = 5, email = "Other@Example.org", active = true, isAdmin = false)
         assertTrue(isCurrentUser(user, "x@y.z", currentUserId = 5))
