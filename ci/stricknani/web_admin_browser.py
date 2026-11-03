@@ -1709,7 +1709,11 @@ def run_acceptance(
                 initial=member_email[0].upper(),
                 image_expected=True,
             )
-            related_yarn_card = page.locator(".materials-card .resource-card").filter(
+            materials = page.locator("details.materials-card")
+            materials.wait_for(state="visible")
+            if materials.get_attribute("open") is None:
+                materials.locator("summary").click()
+            related_yarn_card = materials.locator(".resource-card").filter(
                 has_text=cross_owner_yarn_name
             )
             related_yarn_card.wait_for(state="visible")
