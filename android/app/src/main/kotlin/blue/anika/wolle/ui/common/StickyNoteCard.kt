@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -81,8 +82,8 @@ private class FoldedCornerShape(private val fold: Float, private val radius: Flo
 }
 
 /**
- * The shell of a sticky note: warm paper, a slight tilt, a soft lifted shadow, a washi-tape strip
- * on the top edge and a folded bottom-right corner. Pressing it gives a small squish, skipped when
+ * The shell of a sticky note: warm paper, a slight tilt, a soft lifted shadow, a push pin through
+ * the top edge and a folded bottom-right corner. Pressing it gives a small squish, skipped when
  * animations are off; the tilt itself is static. The press is only observed, never consumed, so
  * long-press menus and scrolling on the content keep working.
  */
@@ -155,31 +156,59 @@ internal fun StickyNoteSurface(
                 content = content,
             )
         }
-        // Washi tape across the top edge: translucent, a hair off-level, with a stitched seam.
+        // A push pin through the top edge: a glossy round head in the accent colour with a soft
+        // drop shadow. It sits in the tilted box, so it turns with the paper.
         Box(
-            Modifier.align(Alignment.TopCenter)
-                .size(width = 76.dp, height = 22.dp)
-                .graphicsLayer { rotationZ = 2.5f }
-                .drawBehind {
-                    drawRoundRect(
-                        tape.copy(alpha = 0.55f),
-                        cornerRadius =
-                            androidx.compose.ui.geometry.CornerRadius(3.dp.toPx(), 3.dp.toPx()),
-                    )
-                    val dash = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))
-                    for (y in listOf(5.dp.toPx(), size.height - 5.dp.toPx())) {
-                        drawLine(
-                            Color.White.copy(alpha = 0.6f),
-                            Offset(4.dp.toPx(), y),
-                            Offset(size.width - 4.dp.toPx(), y),
-                            strokeWidth = 1.dp.toPx(),
-                            pathEffect = dash,
-                        )
-                    }
-                }
+            Modifier.align(Alignment.TopCenter).padding(top = 1.dp).size(PinSize).drawBehind {
+                val r = size.width / 2f
+                val center = Offset(r, r)
+                val shadow = Color.Black
+                // Tight contact shadow, then a softer one further down and right.
+                drawCircle(shadow.copy(alpha = 0.35f), r, center + Offset(1.dp.toPx(), 1.dp.toPx()))
+                val soft = center + Offset(3.dp.toPx(), 5.dp.toPx())
+                drawCircle(
+                    brush =
+                        Brush.radialGradient(
+                            listOf(shadow.copy(alpha = 0.28f), shadow.copy(alpha = 0f)),
+                            soft,
+                            r * 1.5f,
+                        ),
+                    radius = r * 1.5f,
+                    center = soft,
+                )
+                drawCircle(
+                    brush =
+                        Brush.radialGradient(
+                            listOf(tape, tape.darkened(0.65f)),
+                            center,
+                            r,
+                        ),
+                    radius = r,
+                    center = center,
+                )
+                val glint = Offset(size.width * 0.34f, size.height * 0.30f)
+                drawCircle(
+                    brush =
+                        Brush.radialGradient(
+                            0f to Color.White.copy(alpha = 0.75f),
+                            0.32f to Color.Transparent,
+                            1f to Color.Transparent,
+                            center = glint,
+                            radius = r,
+                        ),
+                    radius = r,
+                    center = center,
+                )
+            }
         )
     }
 }
+
+private val PinSize = 21.dp
+
+/** [this] with its colour channels scaled by [factor] (alpha kept). */
+private fun Color.darkened(factor: Float) =
+    Color(red * factor, green * factor, blue * factor, alpha)
 
 /** A titled sticky note; the title is a heading in the display face. */
 @Composable
