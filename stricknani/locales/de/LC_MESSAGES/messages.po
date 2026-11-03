@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 20:50+0100\n"
+"POT-Creation-Date: 2026-11-03 20:55+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -245,7 +245,7 @@ msgstr "Maschenprobe berechnen"
 #: web/src/lib/components/SignInForm.svelte:67
 #: web/src/lib/components/SignInForm.svelte:136
 #: web/src/lib/features/auth/SignupForm.svelte:267
-#: web/src/lib/features/home/HomeDashboard.svelte:127
+#: web/src/lib/features/home/HomeDashboard.svelte:125
 #: web/src/lib/features/projects/ProjectEditor.svelte:1114
 #: web/src/routes/+layout.svelte:161 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
@@ -1098,7 +1098,7 @@ msgstr "Durchsuche deine Strickprojekte."
 msgid "Browse the yarns connected to your projects."
 msgstr "Sieh dir die Garne an, die mit deinen Projekten verknüpft sind."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:218
+#: web/src/lib/features/home/HomeDashboard.svelte:216
 msgid "Browse, add and find your yarns"
 msgstr "Garne ansehen, hinzufügen und finden"
 
@@ -1357,7 +1357,7 @@ msgstr "Wird bestätigt…"
 msgid "Connect the app"
 msgstr "App verbinden"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:136
+#: web/src/lib/features/home/HomeDashboard.svelte:134
 msgid "Continue knitting"
 msgstr "Weiterstricken"
 
@@ -1401,6 +1401,10 @@ msgstr "Das Kopieren wurde blockiert. Markiere und kopiere das Token manuell."
 msgid "Copy was blocked. Select the version and copy it manually."
 msgstr "Kopieren wurde blockiert. Markiere die Version und kopiere sie manuell."
 
+#: web/src/lib/features/home/greeting.ts:27
+msgid "Cosy evening?"
+msgstr "Abendle!"
+
 #: web/src/lib/components/AccountMenu.svelte:187
 #: web/src/lib/features/account/AccountSettings.svelte:270
 #: web/src/lib/features/account/AccountSettings.svelte:277
@@ -1442,7 +1446,7 @@ msgstr ""
 "Lege Garn separat an. Es wird erst nach dem Speichern mit diesem Projekt "
 "verknüpft."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:198
+#: web/src/lib/features/home/HomeDashboard.svelte:196
 msgid "Create your first project"
 msgstr "Lege dein erstes Projekt an"
 
@@ -1690,6 +1694,14 @@ msgstr ""
 msgid "Enter your current password."
 msgstr "Gib dein aktuelles Passwort ein."
 
+#: web/src/lib/features/home/greeting.ts:29
+msgid "Evening!"
+msgstr "Schönen Abend!"
+
+#: web/src/lib/features/home/greeting.ts:26
+msgid "Evening, knitter!"
+msgstr "Nabend!"
+
 #: web/src/lib/features/account/AccountSettings.svelte:1135
 msgid "Expires"
 msgstr "Läuft ab"
@@ -1713,19 +1725,19 @@ msgstr ""
 msgid "Favorite"
 msgstr "Favorisieren"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite projects"
 msgstr "Favorisierte Projekte"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite projects could not be loaded."
 msgstr "Favorisierte Projekte konnten nicht geladen werden."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite yarns"
 msgstr "Favorisierte Garne"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite yarns could not be loaded."
 msgstr "Favorisierte Garne konnten nicht geladen werden."
 
@@ -1829,11 +1841,11 @@ msgstr "Android-App holen"
 msgid "GitHub issue tracker"
 msgstr "GitHub-Issue-Tracker"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:64
+#: web/src/lib/features/home/greeting.ts:25
 msgid "Good evening!"
 msgstr "Guten Abend!"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:62
+#: web/src/lib/features/home/greeting.ts:11
 msgid "Good morning!"
 msgstr "Guten Morgen!"
 
@@ -1849,19 +1861,35 @@ msgstr "HTML, Text, Markdown, PDF oder Bild · bis zu 5 MiB"
 msgid "Height"
 msgstr "Höhe"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:63
+#: web/src/lib/features/home/greeting.ts:18
 msgid "Hello there!"
-msgstr "Hallo!"
+msgstr "Halöööööle!"
 
 #: web/src/lib/components/SignInForm.svelte:65
 msgid "Hello, knitter!"
 msgstr "Hallo, Strickfreund!"
 
+#: web/src/lib/features/home/greeting.ts:33
+msgid "Hello, night owl!"
+msgstr "Na, Nachteule?"
+
+#: web/src/lib/features/home/greeting.ts:19
+msgid "Hellooo!"
+msgstr "Hahahallo!"
+
+#: web/src/lib/features/home/greeting.ts:20
+msgid "Hey hey!"
+msgstr "Hallöchen!"
+
+#: web/src/lib/features/home/greeting.ts:28
+msgid "Hey, night is near!"
+msgstr "Na, Feierabend?"
+
 #: web/src/lib/features/account/AccountSettings.svelte:1237
 msgid "Hide token"
 msgstr "Token ausblenden"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:96
+#: web/src/lib/features/home/HomeDashboard.svelte:94
 #: web/src/routes/+layout.svelte:59
 msgid "Home"
 msgstr "Start"
@@ -1879,6 +1907,10 @@ msgstr ""
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:237
 msgid "How to use this calculator"
 msgstr "Wie man diesen Rechner benutzt"
+
+#: web/src/lib/features/home/greeting.ts:21
+msgid "Howdy, knitter!"
+msgstr "Hallihallo!"
 
 #: web/src/lib/features/account/AccountSettings.svelte:1227
 msgid "I saved this token somewhere safe."
@@ -1975,6 +2007,10 @@ msgstr "Von der Web-App verarbeitete Informationen"
 #: web/src/lib/features/imports/ImportWorkbench.svelte:631
 msgid "Instructions"
 msgstr "Anleitungen"
+
+#: web/src/lib/features/home/greeting.ts:35
+msgid "Just one more row?"
+msgstr "Eine Reihe geht noch?"
 
 #: web/src/routes/create/+page.svelte:31
 msgid "Keep a note of a yarn you own."
@@ -2180,7 +2216,7 @@ msgstr "Projektdetails werden geladen …"
 msgid "Loading recent changes…"
 msgstr "Letzte Änderungen werden geladen…"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:150
+#: web/src/lib/features/home/HomeDashboard.svelte:148
 msgid "Loading recent projects…"
 msgstr "Zuletzt aktualisierte Projekte werden geladen…"
 
@@ -2206,7 +2242,7 @@ msgstr "Garndetails werden geladen …"
 msgid "Loading yarn options…"
 msgstr "Garnoptionen werden geladen …"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:118
+#: web/src/lib/features/home/HomeDashboard.svelte:116
 msgid "Loading your home…"
 msgstr "Startseite wird geladen…"
 
@@ -2248,6 +2284,10 @@ msgstr ""
 "Der Medienspeicher ist derzeit nicht verfügbar. Bitte später erneut "
 "versuchen."
 
+#: web/src/lib/features/home/greeting.ts:14
+msgid "Mooorning!"
+msgstr "Guten Morgen, Sonnenschein!"
+
 #: web/src/routes/+layout.svelte:63 web/src/routes/more/+page.svelte:13
 #: web/src/routes/more/+page.svelte:19
 msgid "More"
@@ -2273,6 +2313,10 @@ msgstr "Weitere Projektdetails"
 #: web/src/lib/features/yarns/YarnForm.svelte:723
 msgid "More yarn details"
 msgstr "Weitere Garndetails"
+
+#: web/src/lib/features/home/greeting.ts:12
+msgid "Morning, sunshine!"
+msgstr "Moooin!"
 
 #: web/src/lib/features/media/ReorderableMedia.svelte:382
 #, python-brace-format
@@ -2434,7 +2478,7 @@ msgstr "Keine Projekte passen zu diesen Filtern."
 msgid "No projects use this yarn yet."
 msgstr "Noch keine Projekte verwenden dieses Garn."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:191
+#: web/src/lib/features/home/HomeDashboard.svelte:189
 msgid "No projects yet."
 msgstr "Noch keine Projekte."
 
@@ -2516,7 +2560,7 @@ msgstr "Notizen nach rechts verschoben"
 msgid "Notes moved up"
 msgstr "Notizen nach oben verschoben"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:190
+#: web/src/lib/features/home/HomeDashboard.svelte:188
 #: web/src/lib/features/projects/ProjectLibrary.svelte:287
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
@@ -2943,12 +2987,12 @@ msgstr "Letzte Änderungen"
 msgid "Recent changes could not be loaded."
 msgstr "Letzte Änderungen konnten nicht geladen werden."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:292
-#: web/src/lib/features/home/HomeDashboard.svelte:298
+#: web/src/lib/features/home/HomeDashboard.svelte:290
+#: web/src/lib/features/home/HomeDashboard.svelte:296
 msgid "Recent projects"
 msgstr "Zuletzt bearbeitet"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:154
+#: web/src/lib/features/home/HomeDashboard.svelte:152
 msgid "Recently updated projects could not be loaded."
 msgstr "Zuletzt aktualisierte Projekte konnten nicht geladen werden."
 
@@ -3182,6 +3226,10 @@ msgstr "Token widerrufen"
 msgid "Revoking…"
 msgstr "Wird widerrufen …"
 
+#: web/src/lib/features/home/greeting.ts:13
+msgid "Rise and knit!"
+msgstr "Morgähn!"
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:316
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:455
 msgid "Rows"
@@ -3281,8 +3329,8 @@ msgstr "Garne durchsuchen"
 msgid "Security"
 msgstr "Sicherheit"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:254
-#: web/src/lib/features/home/HomeDashboard.svelte:295
+#: web/src/lib/features/home/HomeDashboard.svelte:252
+#: web/src/lib/features/home/HomeDashboard.svelte:293
 msgid "See all"
 msgstr "Alle anzeigen"
 
@@ -3293,6 +3341,10 @@ msgstr "Das ausgewählte Garn ist nicht verfügbar."
 #: web/src/lib/components/ShareMenuItem.svelte:46
 msgid "Share"
 msgstr "Teilen"
+
+#: web/src/lib/features/home/greeting.ts:36
+msgid "Shh, everyone is asleep!"
+msgstr "Psst, alle schlafen!"
 
 #: web/src/lib/features/history/HistorySection.svelte:383
 msgid "Show all changes"
@@ -3335,7 +3387,7 @@ msgstr "Melde dich an, um deine Projekte zu verwalten."
 msgid "Sign in to open this project."
 msgstr "Melde dich an, um dieses Projekt zu öffnen."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:122
+#: web/src/lib/features/home/HomeDashboard.svelte:120
 msgid "Sign in to see your favorite projects and yarns."
 msgstr "Melde dich an, um deine favorisierten Projekte und Garne zu sehen."
 
@@ -3491,7 +3543,11 @@ msgstr "Schritt {number}"
 msgid "Steps stay in the order shown here."
 msgstr "Die Schritte bleiben in der hier gezeigten Reihenfolge."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:65
+#: web/src/lib/features/home/greeting.ts:34
+msgid "Still awake?"
+msgstr "Noch wach?"
+
+#: web/src/lib/features/home/greeting.ts:32
 msgid "Still knitting?"
 msgstr "Noch am Stricken?"
 
@@ -3574,7 +3630,7 @@ msgstr "Tags"
 msgid "Tap a photo to see it larger."
 msgstr "Tippe auf ein Foto, um es zu vergrößern."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:230
+#: web/src/lib/features/home/HomeDashboard.svelte:228
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr "Tippe bei einem Projekt oder Garn auf ♥, um es hier zu behalten."
 
@@ -4323,8 +4379,8 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/HomeDashboard.svelte:156
-#: web/src/lib/features/home/HomeDashboard.svelte:238
+#: web/src/lib/features/home/HomeDashboard.svelte:154
+#: web/src/lib/features/home/HomeDashboard.svelte:236
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:715
@@ -4374,11 +4430,15 @@ msgstr "{name} trennen?"
 msgid "Unsaved changes"
 msgstr "Ungespeicherte Änderungen"
 
+#: web/src/lib/features/home/greeting.ts:15
+msgid "Up already?"
+msgstr "Na, schon wach?"
+
 #: web/src/lib/features/admin/AdminResource.svelte:394
 #: web/src/lib/features/admin/AdminResource.svelte:453
 #: web/src/lib/features/admin/AdminResource.svelte:654
 #: web/src/lib/features/admin/audit-action.ts:27
-#: web/src/lib/features/home/HomeDashboard.svelte:177
+#: web/src/lib/features/home/HomeDashboard.svelte:175
 #: web/src/lib/features/projects/ProjectReader.svelte:731
 #: web/src/lib/features/yarns/YarnDetail.svelte:528
 msgid "Updated"
@@ -4501,7 +4561,11 @@ msgstr ""
 msgid "Web app"
 msgstr "Web-App"
 
-#: web/src/lib/features/home/HomeDashboard.svelte:111
+#: web/src/lib/features/home/greeting.ts:22
+msgid "Well, hi!"
+msgstr "Na, du?"
+
+#: web/src/lib/features/home/HomeDashboard.svelte:109
 msgid "What are we knitting today?"
 msgstr "Was stricken wir heute?"
 
@@ -4727,7 +4791,7 @@ msgstr ""
 msgid "Your edits stay here if saving fails."
 msgstr "Deine Änderungen bleiben erhalten, falls das Speichern fehlschlägt."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:99
+#: web/src/lib/features/home/HomeDashboard.svelte:97
 msgid "Your favorite projects and yarns, together."
 msgstr "Deine favorisierten Projekte und Garne an einem Ort."
 
@@ -4796,7 +4860,7 @@ msgstr "Dein Arbeitsbereich braucht noch einen Moment."
 msgid "Your workspace is waiting online."
 msgstr "Dein Arbeitsbereich ist online wieder da."
 
-#: web/src/lib/features/home/HomeDashboard.svelte:216
+#: web/src/lib/features/home/HomeDashboard.svelte:214
 msgid "Your yarn stash"
 msgstr "Dein Garnvorrat"
 

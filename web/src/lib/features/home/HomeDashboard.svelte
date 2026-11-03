@@ -21,6 +21,7 @@
     loadFavoriteYarns,
     loadRecentProjects,
   } from "./home-api";
+  import { greetingFor, visitGreetingIndex } from "./greeting";
   import { homeSection } from "./home-section.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -56,14 +57,11 @@
     appCard = "hidden";
   }
 
-  // A greeting that follows the time of day, then the question that starts the session.
-  const greeting = $derived.by(() => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return t("Good morning!", locale);
-    if (hour >= 12 && hour < 18) return t("Hello there!", locale);
-    if (hour >= 18 && hour < 23) return t("Good evening!", locale);
-    return t("Still knitting?", locale);
-  });
+  // A playful greeting for the time of day; the pick is made once per visit, so
+  // re-renders and theme switches keep it.
+  const greeting = $derived(
+    t(greetingFor(new Date().getHours(), visitGreetingIndex()), locale),
+  );
 
   const relative = $derived(
     new Intl.RelativeTimeFormat(locale, { numeric: "auto" }),
@@ -107,7 +105,7 @@
   <header class="home-greeting">
     <Mascot size={88} bob={true} />
     <div class="home-greeting__copy">
-      <h1 id="home-title">{greeting}</h1>
+      <h1 id="home-title" class="home-greeting__title">{greeting}</h1>
       <p>{t("What are we knitting today?", locale)}</p>
     </div>
   </header>
@@ -347,6 +345,20 @@
     font-size: clamp(1.9rem, 1.4rem + 2vw, 2.7rem);
     line-height: 1.1;
     letter-spacing: -0.01em;
+  }
+  .home-greeting__title {
+    animation: greeting-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    transform-origin: left center;
+  }
+  @keyframes greeting-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.92) rotate(-1.5deg);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
   .home-greeting__copy p {
     margin: 0.15rem 0 0;
@@ -740,6 +752,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .home-greeting__title {
+      animation: none;
+    }
     .continue-card,
     .tile__image {
       transition: none;

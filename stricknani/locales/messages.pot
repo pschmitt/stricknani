@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 20:50+0100\n"
+"POT-Creation-Date: 2026-11-03 20:55+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -245,7 +245,7 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:67
 #: web/src/lib/components/SignInForm.svelte:136
 #: web/src/lib/features/auth/SignupForm.svelte:267
-#: web/src/lib/features/home/HomeDashboard.svelte:127
+#: web/src/lib/features/home/HomeDashboard.svelte:125
 #: web/src/lib/features/projects/ProjectEditor.svelte:1114
 #: web/src/routes/+layout.svelte:161 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
@@ -1075,7 +1075,7 @@ msgstr ""
 msgid "Browse the yarns connected to your projects."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:218
+#: web/src/lib/features/home/HomeDashboard.svelte:216
 msgid "Browse, add and find your yarns"
 msgstr ""
 
@@ -1323,7 +1323,7 @@ msgstr ""
 msgid "Connect the app"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:136
+#: web/src/lib/features/home/HomeDashboard.svelte:134
 msgid "Continue knitting"
 msgstr ""
 
@@ -1365,6 +1365,10 @@ msgstr ""
 msgid "Copy was blocked. Select the version and copy it manually."
 msgstr ""
 
+#: web/src/lib/features/home/greeting.ts:27
+msgid "Cosy evening?"
+msgstr ""
+
 #: web/src/lib/components/AccountMenu.svelte:187
 #: web/src/lib/features/account/AccountSettings.svelte:270
 #: web/src/lib/features/account/AccountSettings.svelte:277
@@ -1404,7 +1408,7 @@ msgid ""
 "is saved."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:198
+#: web/src/lib/features/home/HomeDashboard.svelte:196
 msgid "Create your first project"
 msgstr ""
 
@@ -1646,6 +1650,14 @@ msgstr ""
 msgid "Enter your current password."
 msgstr ""
 
+#: web/src/lib/features/home/greeting.ts:29
+msgid "Evening!"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:26
+msgid "Evening, knitter!"
+msgstr ""
+
 #: web/src/lib/features/account/AccountSettings.svelte:1135
 msgid "Expires"
 msgstr ""
@@ -1667,19 +1679,19 @@ msgstr ""
 msgid "Favorite"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite projects"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite projects could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite yarns"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:233
+#: web/src/lib/features/home/HomeDashboard.svelte:231
 msgid "Favorite yarns could not be loaded."
 msgstr ""
 
@@ -1775,11 +1787,11 @@ msgstr ""
 msgid "GitHub issue tracker"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:64
+#: web/src/lib/features/home/greeting.ts:25
 msgid "Good evening!"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:62
+#: web/src/lib/features/home/greeting.ts:11
 msgid "Good morning!"
 msgstr ""
 
@@ -1795,7 +1807,7 @@ msgstr ""
 msgid "Height"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:63
+#: web/src/lib/features/home/greeting.ts:18
 msgid "Hello there!"
 msgstr ""
 
@@ -1803,11 +1815,27 @@ msgstr ""
 msgid "Hello, knitter!"
 msgstr ""
 
+#: web/src/lib/features/home/greeting.ts:33
+msgid "Hello, night owl!"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:19
+msgid "Hellooo!"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:20
+msgid "Hey hey!"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:28
+msgid "Hey, night is near!"
+msgstr ""
+
 #: web/src/lib/features/account/AccountSettings.svelte:1237
 msgid "Hide token"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:96
+#: web/src/lib/features/home/HomeDashboard.svelte:94
 #: web/src/routes/+layout.svelte:59
 msgid "Home"
 msgstr ""
@@ -1822,6 +1850,10 @@ msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:237
 msgid "How to use this calculator"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:21
+msgid "Howdy, knitter!"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1227
@@ -1905,6 +1937,10 @@ msgstr ""
 #: web/src/lib/features/imports/ImportWorkbench.svelte:616
 #: web/src/lib/features/imports/ImportWorkbench.svelte:631
 msgid "Instructions"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:35
+msgid "Just one more row?"
 msgstr ""
 
 #: web/src/routes/create/+page.svelte:31
@@ -2108,7 +2144,7 @@ msgstr ""
 msgid "Loading recent changes…"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:150
+#: web/src/lib/features/home/HomeDashboard.svelte:148
 msgid "Loading recent projects…"
 msgstr ""
 
@@ -2134,7 +2170,7 @@ msgstr ""
 msgid "Loading yarn options…"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:118
+#: web/src/lib/features/home/HomeDashboard.svelte:116
 msgid "Loading your home…"
 msgstr ""
 
@@ -2174,6 +2210,10 @@ msgstr ""
 msgid "Media storage is unavailable. Try again later."
 msgstr ""
 
+#: web/src/lib/features/home/greeting.ts:14
+msgid "Mooorning!"
+msgstr ""
+
 #: web/src/routes/+layout.svelte:63 web/src/routes/more/+page.svelte:13
 #: web/src/routes/more/+page.svelte:19
 msgid "More"
@@ -2198,6 +2238,10 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:723
 msgid "More yarn details"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:12
+msgid "Morning, sunshine!"
 msgstr ""
 
 #: web/src/lib/features/media/ReorderableMedia.svelte:382
@@ -2352,7 +2396,7 @@ msgstr ""
 msgid "No projects use this yarn yet."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:191
+#: web/src/lib/features/home/HomeDashboard.svelte:189
 msgid "No projects yet."
 msgstr ""
 
@@ -2430,7 +2474,7 @@ msgstr ""
 msgid "Notes moved up"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:190
+#: web/src/lib/features/home/HomeDashboard.svelte:188
 #: web/src/lib/features/projects/ProjectLibrary.svelte:287
 msgid "Nothing on the needles yet"
 msgstr ""
@@ -2842,12 +2886,12 @@ msgstr ""
 msgid "Recent changes could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:292
-#: web/src/lib/features/home/HomeDashboard.svelte:298
+#: web/src/lib/features/home/HomeDashboard.svelte:290
+#: web/src/lib/features/home/HomeDashboard.svelte:296
 msgid "Recent projects"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:154
+#: web/src/lib/features/home/HomeDashboard.svelte:152
 msgid "Recently updated projects could not be loaded."
 msgstr ""
 
@@ -3075,6 +3119,10 @@ msgstr ""
 msgid "Revoking…"
 msgstr ""
 
+#: web/src/lib/features/home/greeting.ts:13
+msgid "Rise and knit!"
+msgstr ""
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:316
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:455
 msgid "Rows"
@@ -3174,8 +3222,8 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:254
-#: web/src/lib/features/home/HomeDashboard.svelte:295
+#: web/src/lib/features/home/HomeDashboard.svelte:252
+#: web/src/lib/features/home/HomeDashboard.svelte:293
 msgid "See all"
 msgstr ""
 
@@ -3185,6 +3233,10 @@ msgstr ""
 
 #: web/src/lib/components/ShareMenuItem.svelte:46
 msgid "Share"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:36
+msgid "Shh, everyone is asleep!"
 msgstr ""
 
 #: web/src/lib/features/history/HistorySection.svelte:383
@@ -3228,7 +3280,7 @@ msgstr ""
 msgid "Sign in to open this project."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:122
+#: web/src/lib/features/home/HomeDashboard.svelte:120
 msgid "Sign in to see your favorite projects and yarns."
 msgstr ""
 
@@ -3382,7 +3434,11 @@ msgstr ""
 msgid "Steps stay in the order shown here."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:65
+#: web/src/lib/features/home/greeting.ts:34
+msgid "Still awake?"
+msgstr ""
+
+#: web/src/lib/features/home/greeting.ts:32
 msgid "Still knitting?"
 msgstr ""
 
@@ -3455,7 +3511,7 @@ msgstr ""
 msgid "Tap a photo to see it larger."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:230
+#: web/src/lib/features/home/HomeDashboard.svelte:228
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr ""
 
@@ -4110,8 +4166,8 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/HomeDashboard.svelte:156
-#: web/src/lib/features/home/HomeDashboard.svelte:238
+#: web/src/lib/features/home/HomeDashboard.svelte:154
+#: web/src/lib/features/home/HomeDashboard.svelte:236
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:264
 #: web/src/lib/features/projects/ProjectReader.svelte:715
@@ -4161,11 +4217,15 @@ msgstr ""
 msgid "Unsaved changes"
 msgstr ""
 
+#: web/src/lib/features/home/greeting.ts:15
+msgid "Up already?"
+msgstr ""
+
 #: web/src/lib/features/admin/AdminResource.svelte:394
 #: web/src/lib/features/admin/AdminResource.svelte:453
 #: web/src/lib/features/admin/AdminResource.svelte:654
 #: web/src/lib/features/admin/audit-action.ts:27
-#: web/src/lib/features/home/HomeDashboard.svelte:177
+#: web/src/lib/features/home/HomeDashboard.svelte:175
 #: web/src/lib/features/projects/ProjectReader.svelte:731
 #: web/src/lib/features/yarns/YarnDetail.svelte:528
 msgid "Updated"
@@ -4282,7 +4342,11 @@ msgstr ""
 msgid "Web app"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:111
+#: web/src/lib/features/home/greeting.ts:22
+msgid "Well, hi!"
+msgstr ""
+
+#: web/src/lib/features/home/HomeDashboard.svelte:109
 msgid "What are we knitting today?"
 msgstr ""
 
@@ -4484,7 +4548,7 @@ msgstr ""
 msgid "Your edits stay here if saving fails."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:99
+#: web/src/lib/features/home/HomeDashboard.svelte:97
 msgid "Your favorite projects and yarns, together."
 msgstr ""
 
@@ -4549,7 +4613,7 @@ msgstr ""
 msgid "Your workspace is waiting online."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:216
+#: web/src/lib/features/home/HomeDashboard.svelte:214
 msgid "Your yarn stash"
 msgstr ""
 
