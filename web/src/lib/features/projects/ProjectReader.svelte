@@ -82,6 +82,7 @@
   const canReadArchiveState = $derived(
     session.data?.capabilities.archive_state === true,
   );
+  const textSizeLabels = ["90%", "100%", "115%"];
   const textSizeClass = $derived(
     ["reading-small", "reading-medium", "reading-large"][textSize] ??
       "reading-medium",
@@ -729,57 +730,70 @@
           {/if}
           <ActionOverflow label={t("More actions", locale)}>
             {#snippet children(close)}
-              <nav
-                class="reader-topline"
+              <div class="action-overflow__section">
+                <p class="action-overflow__heading" id="reader-text-size-label">
+                  {t("Text size", locale)}
+                </p>
+                <div
+                  class="action-overflow__segmented text-size-controls"
+                  role="group"
+                  aria-labelledby="reader-text-size-label"
+                >
+                  <button
+                    class="action-overflow__segment"
+                    type="button"
+                    aria-label={t("Decrease text size", locale)}
+                    disabled={textSize === 0}
+                    onclick={() => (textSize = Math.max(0, textSize - 1))}
+                    >A−</button
+                  >
+                  <span class="action-overflow__segment action-overflow__value"
+                    >{textSizeLabels[textSize] ?? "100%"}</span
+                  >
+                  <button
+                    class="action-overflow__segment"
+                    type="button"
+                    aria-label={t("Increase text size", locale)}
+                    disabled={textSize === 2}
+                    onclick={() => (textSize = Math.min(2, textSize + 1))}
+                    >A+</button
+                  >
+                </div>
+                {#if textSize !== 1}
+                  <button
+                    class="text-size-reset"
+                    type="button"
+                    onclick={() => (textSize = 1)}
+                  >
+                    {t("Reset text size", locale)}
+                  </button>
+                {/if}
+              </div>
+              <hr class="action-overflow__divider" />
+              <div
+                class="action-overflow__menu"
+                role="menu"
                 aria-label={t("Project actions", locale)}
               >
-                <div class="reader-actions">
-                  <div
-                    class="text-size-controls"
-                    aria-label={t("Pattern text size", locale)}
-                  >
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      type="button"
-                      aria-label={t("Decrease text size", locale)}
-                      disabled={textSize === 0}
-                      onclick={() => {
-                        textSize = Math.max(0, textSize - 1);
-                        close();
-                      }}>A−</Button
-                    >
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      type="button"
-                      aria-label={t("Increase text size", locale)}
-                      disabled={textSize === 2}
-                      onclick={() => {
-                        textSize = Math.min(2, textSize + 1);
-                        close();
-                      }}>A+</Button
-                    >
-                  </div>
-                  <Button
-                    class="print-button"
-                    variant="secondary"
-                    size="sm"
-                    icon="print"
-                    type="button"
-                    disabled={printPreparing}
-                    aria-busy={printPreparing}
-                    onclick={() => {
-                      close();
-                      void printPattern();
-                    }}
-                  >
-                    {printPreparing
+                <button
+                  class="action-overflow__item print-button"
+                  role="menuitem"
+                  type="button"
+                  disabled={printPreparing}
+                  aria-busy={printPreparing}
+                  onclick={() => {
+                    close();
+                    void printPattern();
+                  }}
+                >
+                  <NavIcon name="print" />
+                  <span
+                    >{printPreparing
                       ? t("Preparing full-resolution photos…", locale)
-                      : t("Print pattern", locale)}
-                  </Button>
-                </div>
-              </nav>
+                      : t("Print pattern", locale)}</span
+                  >
+                </button>
+              </div>
             {/snippet}
           </ActionOverflow>
           {#if printPreparing}
@@ -1338,31 +1352,23 @@
     gap: 1.5rem;
   }
 
-  .reader-topline {
-    display: block;
-  }
-
-  .reader-actions {
-    display: grid;
-    gap: 0.5rem;
-  }
-
-  .text-size-controls {
-    display: flex;
-    align-items: center;
-  }
-
-  .reader-actions .text-size-controls :global(.ui-button) {
-    width: 44px;
-    justify-content: center;
-  }
-
-  .text-size-controls {
-    gap: 0.3rem;
-    border: 1px solid var(--line);
+  .text-size-reset {
+    justify-self: start;
+    min-height: 32px;
+    padding: 0 0.4rem;
+    border: 0;
     border-radius: var(--radius-xs);
-    padding: 0.2rem;
-    background: var(--surface);
+    color: var(--accent-strong);
+    background: transparent;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .text-size-reset:focus-visible {
+    outline: 2px solid var(--focus);
   }
 
   .print-error {

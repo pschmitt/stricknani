@@ -463,7 +463,7 @@ def _check_print_image_failure_and_retry(
         page.route("**/media/projects/**", abort_project_image)
         mark_stage("waiting for aborted print image error")
         _open_reader_actions(page).get_by_role(
-            "button", name="Print pattern", exact=True
+            "menuitem", name="Print pattern", exact=True
         ).click()
         alert = page.get_by_role("alert").filter(
             has_text=(
@@ -513,7 +513,7 @@ def _check_print_image_failure_and_retry(
             "window.__printFailureProbe.atPrint = []; }"
         )
         _open_reader_actions(page).get_by_role(
-            "button", name="Print pattern", exact=True
+            "menuitem", name="Print pattern", exact=True
         ).click()
         page.wait_for_function(
             "() => Number(window.__printFailureProbe?.calls ?? 0) > 0",
@@ -3694,7 +3694,7 @@ def run_acceptance(
             )
             mark_stage("clicking successful print action")
             _open_reader_actions(page).get_by_role(
-                "button", name="Print pattern", exact=True
+                "menuitem", name="Print pattern", exact=True
             ).click()
             mark_stage("waiting for successful print call")
             print_wait_error_type: str | None = None

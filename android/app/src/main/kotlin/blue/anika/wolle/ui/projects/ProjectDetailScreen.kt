@@ -195,6 +195,7 @@ fun ProjectDetailScreen(
                                     viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
                                 },
                             )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = {
                                     Text(

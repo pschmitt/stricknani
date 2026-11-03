@@ -192,6 +192,7 @@ fun YarnDetailScreen(
                                     viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
                                 },
                             )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = {
                                     Text(
