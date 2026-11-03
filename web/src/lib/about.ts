@@ -7,6 +7,37 @@ export const sourceUrl = "https://github.com/pschmitt/stricknani";
 export const sponsorUrl = "https://github.com/sponsors/pschmitt";
 export const issuesUrl = "https://github.com/pschmitt/stricknani/issues";
 
+export const commitUrlBase = "https://github.com/pschmitt/stricknani/commit/";
+
+/** Git commit of the web bundle as injected at build time ("" when unknown). */
+export const bundleRevision: string =
+  typeof __STRICKNANI_GIT_REVISION__ === "string"
+    ? __STRICKNANI_GIT_REVISION__
+    : "";
+
+export interface Commit {
+  /** What to show: `9a7bfc70` or `9a7bfc70-dirty`. */
+  display: string;
+  /** Commit page on GitHub, never carrying the `-dirty` suffix. */
+  url: string;
+  /** The revision as given, for the Developer card and bug reports. */
+  full: string;
+}
+
+/** Parse a build-time revision (a SHA, optionally `-dirty`); null when blank or unknown. */
+export function parseCommit(raw: string | null | undefined): Commit | null {
+  const full = raw?.trim() ?? "";
+  if (!full || full === "unknown") return null;
+  const dirty = full.endsWith("-dirty");
+  const sha = dirty ? full.slice(0, -"-dirty".length) : full;
+  if (!/^[0-9a-f]{7,40}$/i.test(sha)) return null;
+  return {
+    display: `${sha.slice(0, 8)}${dirty ? "-dirty" : ""}`,
+    url: `${commitUrlBase}${sha}`,
+    full,
+  };
+}
+
 export interface ServerBuild {
   /** Server version without a leading "v", or null when the server did not report one. */
   version: string | null;
@@ -63,11 +94,13 @@ export function displayVersion(
 export function versionReport(
   server: ServerBuild,
   web: string = appVersion,
+  commit: Commit | null = null,
 ): string {
   const lines = [`Stricknani ${displayVersion(server, web)}`];
   const build = shortBuildId(server.buildId);
   if (build) lines.push(`Build: ${build}`);
   lines.push(`Web: ${web}`);
+  if (commit) lines.push(`Commit: ${commit.display}`);
   return lines.join("\n");
 }
 

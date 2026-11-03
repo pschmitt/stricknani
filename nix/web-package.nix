@@ -2,6 +2,8 @@
   buildNpmPackage,
   lib,
   nodejs_22,
+  # Short commit (plus -dirty) shown on the About page; the Nix source has no .git.
+  gitRevision ? "",
 }:
 
 buildNpmPackage {
@@ -11,6 +13,7 @@ buildNpmPackage {
   nodejs = nodejs_22;
   npmDepsHash = "sha256-cOY8DTD2ZMik8lfQqfdOEgBD8cBlZeaJd0QHS8/rT+U=";
   npmBuildScript = "build";
+  env.STRICKNANI_GIT_REVISION = gitRevision;
   doCheck = true;
   checkPhase = ''
     runHook preCheck

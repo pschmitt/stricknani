@@ -3,6 +3,7 @@ import {
   credits,
   displayVersion,
   emptyServerBuild,
+  parseCommit,
   parseServerBuild,
   shortBuildId,
   versionReport,
@@ -55,5 +56,42 @@ describe("about helpers", () => {
       "Fraunces",
       "Nunito",
     ]);
+  });
+});
+
+describe("commit helpers", () => {
+  it("formats a short SHA and builds the GitHub URL", () => {
+    expect(parseCommit("9a7bfc70")).toEqual({
+      display: "9a7bfc70",
+      url: "https://github.com/pschmitt/stricknani/commit/9a7bfc70",
+      full: "9a7bfc70",
+    });
+  });
+
+  it("keeps -dirty in the label but not in the URL", () => {
+    const commit = parseCommit("9a7bfc70-dirty");
+    expect(commit?.display).toBe("9a7bfc70-dirty");
+    expect(commit?.url).toBe(
+      "https://github.com/pschmitt/stricknani/commit/9a7bfc70",
+    );
+  });
+
+  it("cuts a long SHA to eight characters", () => {
+    const sha = "9a7bfc70abcdef0123456789abcdef0123456789";
+    expect(parseCommit(sha)?.display).toBe("9a7bfc70");
+    expect(parseCommit(sha)?.url.endsWith(sha)).toBe(true);
+  });
+
+  it("has no commit for blank, unknown or malformed input", () => {
+    expect(parseCommit("")).toBeNull();
+    expect(parseCommit(null)).toBeNull();
+    expect(parseCommit("unknown")).toBeNull();
+    expect(parseCommit("not a sha")).toBeNull();
+  });
+
+  it("adds the commit to the bug report", () => {
+    expect(
+      versionReport(emptyServerBuild, "v1.0.0", parseCommit("9a7bfc70")),
+    ).toContain("Commit: 9a7bfc70");
   });
 });

@@ -21,7 +21,16 @@
           pkgs = nixpkgs.legacyPackages.${system};
           python = pkgs.python313;
 
-          stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { };
+          # Commit of this flake for the About page; empty when the revision is unknown.
+          gitRevision =
+            if self ? rev then
+              builtins.substring 0 8 self.rev
+            else if self ? dirtyRev then
+              "${builtins.substring 0 8 self.dirtyRev}-dirty"
+            else
+              "";
+
+          stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { inherit gitRevision; };
           stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix { };
           stricknaniRust = pkgs.callPackage ./nix/rust-package.nix {
             corePackage = stricknaniRustCore;

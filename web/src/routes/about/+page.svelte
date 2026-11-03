@@ -1,15 +1,19 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { slide } from "svelte/transition";
+  import { version as appCodeVersion } from "$app/env";
   import { resolve } from "$app/paths";
   import { androidAction } from "#lib/app-links.ts";
   import { appVersion } from "#lib/app-version.ts";
   import {
     appLicence,
+    bundleRevision,
     credits,
     displayVersion,
     emptyServerBuild,
     fetchServerBuild,
     issuesUrl,
+    parseCommit,
     shortBuildId,
     sourceUrl,
     sponsorUrl,
@@ -19,7 +23,14 @@
   import Button from "#lib/components/Button.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
-  import { t } from "#lib/i18n.svelte.ts";
+  import {
+    TapCounter,
+    readDeveloperMode,
+    tapMessage,
+    writeDeveloperMode,
+  } from "#lib/developer-mode.ts";
+  import { publishFeedback } from "#lib/feedback.ts";
+  import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -32,8 +43,79 @@
 
   const version = $derived(displayVersion(server));
   const buildId = $derived(shortBuildId(server.buildId));
+  const commit = parseCommit(bundleRevision);
+
+  const taps = new TapCounter();
+  let developer = $state(false);
+  let liveMessage = $state("");
+  let workerState = $state<string | null>(null);
+
+  // Keep the toast text in the generated catalogue; lookups go through tapMessage.
+  void [
+    msg("You are now 4 steps away from being a developer."),
+    msg("You are now 3 steps away from being a developer."),
+    msg("You are now 2 steps away from being a developer."),
+    msg("You are now 1 step away from being a developer."),
+    msg("No need, you are already a developer."),
+    msg("You are now a developer!"),
+  ];
+
+  const motionMs = (ms: number): number =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? 0
+      : ms;
+
+  /** Toast for signed-in users; a polite live region on this page otherwise. */
+  function announce(message: string) {
+    const ownerId = session.data?.user?.id;
+    if (ownerId != null) {
+      publishFeedback({ kind: "success", ownerId, message });
+    } else {
+      liveMessage = message;
+    }
+  }
+
+  function pressCommit() {
+    const result = taps.tap(performance.now(), developer);
+    const message = tapMessage(result);
+    if (message) announce(t(message, locale));
+    if (result.kind === "unlock") {
+      developer = true;
+      writeDeveloperMode(true);
+      void loadWorkerState();
+    }
+  }
+
+  function setDeveloper(enabled: boolean) {
+    developer = enabled;
+    writeDeveloperMode(enabled);
+    taps.reset();
+    if (!enabled) announce(t("Developer mode turned off", locale));
+  }
+
+  async function loadWorkerState() {
+    try {
+      if (!("serviceWorker" in navigator)) {
+        workerState = "unsupported";
+        return;
+      }
+      const registration = await navigator.serviceWorker.getRegistration(
+        resolve("/"),
+      );
+      workerState = registration?.active
+        ? `active (${registration.active.state})`
+        : registration?.installing || registration?.waiting
+          ? "registered (not active yet)"
+          : "not registered";
+    } catch {
+      workerState = "unavailable";
+    }
+  }
 
   onMount(() => {
+    developer = readDeveloperMode();
+    if (developer) void loadWorkerState();
     const controller = new AbortController();
     fetchServerBuild(controller.signal).then(
       (build) => (server = build),
@@ -47,7 +129,9 @@
 
   async function copyVersion() {
     try {
-      await navigator.clipboard.writeText(versionReport(server));
+      await navigator.clipboard.writeText(
+        versionReport(server, undefined, commit),
+      );
       copyStatus = "copied";
     } catch {
       copyStatus = "blocked";
@@ -153,6 +237,31 @@
         <dt>{t("Web app", locale)}</dt>
         <dd>{appVersion}</dd>
       </div>
+      {#if commit}
+        <div class="fact fact--commit">
+          <button
+            type="button"
+            class="commit-press"
+            aria-label={`${t("Commit", locale)}: ${commit.display}. ${t("Build number", locale)}`}
+            onclick={pressCommit}
+          >
+            <span class="commit-press__label">{t("Commit", locale)}</span>
+            <span class="commit-press__value">{commit.display}</span>
+          </button>
+          <a
+            class="commit-link"
+            href={commit.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("Open commit on GitHub", locale)}
+          >
+            <NavIcon name="github" />
+            <span class="visually-hidden"
+              >{t("(opens in a new tab)", locale)}</span
+            >
+          </a>
+        </div>
+      {/if}
     </dl>
     <div class="copy-row">
       <Button
@@ -174,6 +283,57 @@
       </p>
     </div>
   </section>
+
+  <p class="visually-hidden" role="status" aria-live="polite">
+    {liveMessage}
+  </p>
+
+  {#if developer}
+    <section
+      class="card"
+      aria-labelledby="developer-title"
+      transition:slide={{ duration: motionMs(220) }}
+    >
+      <header class="card__header">
+        <span class="card__icon card__icon--version" aria-hidden="true"
+          ><NavIcon name="code" /></span
+        >
+        <h2 id="developer-title">{t("Developer", locale)}</h2>
+      </header>
+      <label class="switch-row">
+        <span>{t("Developer mode", locale)}</span>
+        <input
+          type="checkbox"
+          role="switch"
+          class="switch"
+          checked={developer}
+          onchange={(event) => setDeveloper(event.currentTarget.checked)}
+        />
+      </label>
+      <dl class="facts">
+        <div class="fact">
+          <dt>{t("Server version", locale)}</dt>
+          <dd>{server.version ?? t("Unknown", locale)}</dd>
+        </div>
+        <div class="fact">
+          <dt>{t("Server build ID", locale)}</dt>
+          <dd>{server.buildId ?? t("Unknown", locale)}</dd>
+        </div>
+        <div class="fact">
+          <dt>{t("Commit", locale)}</dt>
+          <dd>{commit?.full ?? t("Unknown", locale)}</dd>
+        </div>
+        <div class="fact">
+          <dt>{t("Web app", locale)}</dt>
+          <dd>{appVersion} ({appCodeVersion})</dd>
+        </div>
+        <div class="fact">
+          <dt>{t("Service worker", locale)}</dt>
+          <dd>{workerState ?? t("Unknown", locale)}</dd>
+        </div>
+      </dl>
+    </section>
+  {/if}
 
   <section class="card" aria-labelledby="links-title">
     <h2 id="links-title" class="visually-hidden">
@@ -380,6 +540,117 @@
     font-weight: 700;
     overflow-wrap: anywhere;
     user-select: all;
+  }
+
+  .fact--commit {
+    align-items: center;
+  }
+
+  .commit-press {
+    display: flex;
+    min-height: 44px;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .commit-press__label {
+    color: var(--ink-muted);
+  }
+
+  .commit-press__value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .commit-link {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--ink-muted);
+  }
+
+  .commit-link:hover {
+    background: var(--surface-raised);
+    color: var(--ink);
+  }
+
+  .commit-link :global(svg) {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .switch-row {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-weight: 700;
+  }
+
+  .switch {
+    appearance: none;
+    position: relative;
+    width: 3rem;
+    height: 1.75rem;
+    flex: none;
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-raised);
+    cursor: pointer;
+  }
+
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    transform: translateY(-50%);
+    transition: left 0.15s;
+  }
+
+  .switch:checked {
+    border-color: var(--tone-categories);
+    background: var(--tone-categories-wash);
+  }
+
+  .switch:checked::after {
+    left: 1.5rem;
+    background: var(--tone-categories);
+  }
+
+  .switch:focus-visible,
+  .commit-press:focus-visible,
+  .commit-link:focus-visible {
+    outline: 2px solid var(--tone-categories);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .switch::after {
+      transition: none;
+    }
   }
 
   .copy-row {
