@@ -31,12 +31,14 @@ false. Password reauthentication is unavailable for that user when false.
 PAT and returns:
 
 ```json
-{"data":[{"id":1,"provider":"authelia","subject_hint":"id:abcd1234","email":null,"linked_at":"2026-11-03T12:00:00.000000Z","can_unlink":true}],"meta":{"password_enabled":true}}
+{"data":[{"id":1,"provider":"authelia","subject_hint":"id:abcd1234","email":null,"linked_at":"2026-11-03T12:00:00.000000Z","can_unlink":true,"current_credential":false}],"meta":{"password_enabled":true}}
 ```
 
 The hint is a non-reversible display identifier, not the raw subject. Email is
 nullable display information and is not an identity key. `can_unlink` is a UI
 hint; the server rechecks the last usable method inside the write transaction.
+`current_credential` is true only when this identity issued the caller's
+current OIDC credential; use it to warn before unlinking that identity.
 This endpoint does not make the existing cookie-only `/account` API PAT-capable.
 
 ## Login
@@ -68,7 +70,8 @@ Callback responses use `Referrer-Policy: no-referrer` and no-store; proxy and
 application logs redact callback query strings.
 
 Android success redirects to the exact configured app URI with `code`,
-`state` (the original `app_state`) and `flow=login`. Failure uses the same
+`state` (the original `app_state`) and `flow=login`. Failure includes the
+stored flow kind (`login`, `link`, or `reauth`) and uses the same
 pending state with `error=oidc_failed`; invalid/unrecognized flows receive a
 same-origin error rather than an arbitrary redirect. The app rejects callbacks
 without its own pending in-memory state/verifier before doing any exchange.
@@ -76,7 +79,11 @@ without its own pending in-memory state/verifier before doing any exchange.
 `POST /auth/oidc/exchange` accepts
 `{code, code_verifier, redirect_uri, token_name?}` and returns
 `200 {data: {token, expires_at, auth_origin: "oidc"}}`. It accepts login-purpose
-grants only and sets no browser cookie. State/grants are single-use; codes
+grants only and sets no browser cookie. `expires_at` must be valid RFC3339;
+clients reject a missing or malformed OIDC expiry rather than treating it as
+non-expiring, while preserving offline work. With multiple providers, retain
+the account's last successful provider or offer selection; do not silently
+choose an unrelated provider from the list. State/grants are single-use; codes
 expire after at most 60 seconds and are consumed on the first exchange attempt,
 including invalid proofs. S256 verifier length is 43–128 characters. Redirect
 comparison is exact. For the self-hosted Android client, the explicitly
@@ -111,12 +118,18 @@ session plus Origin/CSRF, or explicit PAT. Valid password verification returns:
 Actions are `link_identity`, `unlink_identity`, `admin_unlink_identity`,
 `change_password`, `create_api_token` and `revoke_api_token`. Targets contain
 only the applicable `provider`, `identity_id` and administrative `user_id`.
-Unrelated action/target combinations are rejected.
+Exact target shapes are `{provider}` for `link_identity`, `{identity_id}` for
+`unlink_identity`, `{user_id, identity_id}` for `admin_unlink_identity`, and
+`{token_id}` for `revoke_api_token`. Password changes and token creation take
+no target. Unrelated action/target combinations are rejected.
 
 OIDC reauthentication uses `POST /account/reauth/oidc/start` with
 `{provider, action, target?, client, return_to?, ...native start fields when applicable}`.
 Return the same `200 {data: {authorization_url, expires_at}}` start envelope.
-It requires the current authenticated principal, plus CSRF for cookies. Request
+It requires the current authenticated principal (including a current PAT for
+native requests), plus CSRF for cookies. Administrative step-up authenticates
+the administrator's own linked identity, with the target account separately
+bound to the authorized action. Request
 fresh provider authentication and verify `auth_time`; the returned identity must
 already belong to that same local user. Browser callback updates that session's
 stamp and returns to the validated same-origin `/app/` `return_to` path
@@ -152,7 +165,10 @@ replacement PAT from a link grant.
 and recent-auth evidence; cookie mutations retain CSRF. Return 204. Refuse to
 remove the final usable login method. Revoke tokens tied to that identity;
 if this includes the current credential, the client signs in again on its next
-protected request while retaining drafts/offline writes.
+protected request while retaining drafts/offline writes. Warn first when
+`current_credential` is true. Recovery uses an enabled local password or another
+still-linked identity; the removed identity cannot log in until explicitly
+linked again from an authenticated account.
 
 Administrators use `GET /admin/users/{user_id}/identities` (same list envelope)
 and `DELETE /admin/users/{user_id}/identities/{identity_id}` (204). Both require

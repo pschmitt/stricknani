@@ -7,11 +7,22 @@
 for `rsa 0.9.10`, and an unmaintained notice for `basic-toml 0.1.10`
 (RUSTSEC-2026-0374). This is not a clean audit result.
 
-`cargo tree --invert rsa` has no active dependency path. RSA is present in
-the lockfile through optional SQLx drivers; this application enables SQLite
-only and does not compile or execute RSA. Decision: retain SQLite-only
-features; do not enable MySQL or RSA functionality without reassessing the
-advisory. Review by 2026-12-01 or before changing database features.
+At the original SQLite-only checkpoint, `cargo tree --invert rsa` had no
+active dependency path: RSA appeared only through optional SQLx drivers.
+The OIDC candidate changes that assessment. `openidconnect 4.0.1` uses
+`rsa 0.9.10` at runtime to verify RS256/PS256 ID-token signatures. The direct
+RSA dependency is test-only and signs mock tokens using ephemeral keys on a
+loopback mock issuer; the production server has no private-key signing or
+decryption path in this integration.
+
+The [RustSec advisory](https://rustsec.org/advisories/RUSTSEC-2023-0071.html)
+still lists no patched release. Its key-recovery exposure concerns observable
+private-key operations; the reviewed server path performs verification with
+public keys. Decision: retain this verification-only dependency path for the
+OIDC candidate, review by **2026-12-01**, and reassess immediately before any
+private-key operation or provider-library change. This is a scoped source-path
+assessment, not a clean audit result or a global suppression. A fresh audit of
+the final combined lockfile is still required before release.
 
 `cargo tree --invert basic-toml` leads through Askama's procedural macros.
 It parses repository-owned template configuration during compilation rather
