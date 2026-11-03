@@ -9,6 +9,26 @@ let
   user = "stricknani";
   group = user;
   rustBackend = cfg.backend == "rust";
+  oidcEnabledEnvironmentFile = pkgs.writeText "stricknani-oidc-enabled.env" ''
+    RUST_OIDC_ENABLED=${lib.boolToString cfg.oidc.enable}
+  '';
+  oidcEnvironment = lib.optionalAttrs (rustBackend && cfg.oidc.enable) (
+    lib.optionalAttrs (cfg.oidc.issuer != null) {
+      RUST_OIDC_ISSUER = cfg.oidc.issuer;
+    }
+    // lib.optionalAttrs (cfg.oidc.clientId != null) {
+      RUST_OIDC_CLIENT_ID = cfg.oidc.clientId;
+    }
+    // lib.optionalAttrs (cfg.oidc.clientSecretFile != null) {
+      RUST_OIDC_CLIENT_SECRET_FILE = cfg.oidc.clientSecretFile;
+    }
+    // lib.optionalAttrs (cfg.oidc.callbackUri != null) {
+      RUST_OIDC_CALLBACK_URI = cfg.oidc.callbackUri;
+    }
+    // lib.optionalAttrs (cfg.oidc.nativeRedirectUris != null) {
+      RUST_OIDC_NATIVE_REDIRECT_URIS = lib.concatStringsSep "," cfg.oidc.nativeRedirectUris;
+    }
+  );
   loopbackBind = lib.hasPrefix "127." cfg.bindHost || cfg.bindHost == "::1";
   trustedHosts = lib.concatStringsSep "," (
     lib.optional (cfg.hostName != null) cfg.hostName
@@ -206,6 +226,45 @@ in
       description = "Path to a file containing environment variables (e.g. SECRET_KEY, OPENAI_API_KEY).";
     };
 
+    oidc = {
+      enable = lib.mkEnableOption "OIDC sign-in for the Rust backend";
+      providerId = lib.mkOption {
+        type = lib.types.enum [ "authelia" ];
+        default = "authelia";
+        description = "Configured OIDC provider identifier.";
+      };
+      issuer = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "OIDC issuer URL. Prefer environmentFile for deployment-specific values.";
+      };
+      clientId = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "OIDC client ID. Prefer environmentFile for deployment-specific values.";
+      };
+      clientSecretFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Absolute runtime path to the OIDC client secret file; never the secret value.";
+      };
+      callbackUri = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Exact HTTPS OIDC callback URI, including authority and port.";
+      };
+      nativeRedirectUris = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = null;
+        description = "Exact native OIDC redirect URI allowlist; null uses the Rust backend default.";
+      };
+      environmentFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Protected runtime environment file containing OIDC provider settings and client secret file path.";
+      };
+    };
+
     databaseUrl = lib.mkOption {
       type = lib.types.str;
       default =
@@ -308,6 +367,40 @@ in
           !rustBackend || (!(cfg.extraConfig ? RUST_DATABASE_URL) && !(cfg.extraConfig ? RUST_MEDIA_ROOT));
         message = "Set Rust database and media paths with databaseUrl and mediaRoot, not extraConfig.";
       }
+      {
+        assertion = !cfg.oidc.enable || rustBackend;
+        message = "services.stricknani.oidc requires the Rust backend.";
+      }
+      {
+        assertion =
+          !cfg.oidc.enable
+          || cfg.oidc.environmentFile != null
+          || (
+            cfg.oidc.issuer != null
+            && cfg.oidc.clientId != null
+            && cfg.oidc.clientSecretFile != null
+            && cfg.oidc.callbackUri != null
+          );
+        message = "services.stricknani.oidc requires oidc.environmentFile or all provider values.";
+      }
+      {
+        assertion = !cfg.oidc.enable || cfg.sessionCookieSecure;
+        message = "services.stricknani.oidc requires secure session cookies.";
+      }
+      {
+        assertion =
+          !rustBackend
+          || builtins.all (name: !(lib.hasPrefix "RUST_OIDC_" name)) (builtins.attrNames cfg.extraConfig);
+        message = "Set RUST_OIDC_* values with services.stricknani.oidc.environmentFile, not extraConfig.";
+      }
+      {
+        assertion = cfg.oidc.clientSecretFile == null || lib.hasPrefix "/" cfg.oidc.clientSecretFile;
+        message = "services.stricknani.oidc.clientSecretFile must be an absolute runtime path.";
+      }
+      {
+        assertion = !cfg.oidc.enable || cfg.oidc.providerId == "authelia";
+        message = "services.stricknani.oidc.providerId must be authelia.";
+      }
     ];
 
     systemd = {
@@ -347,6 +440,7 @@ in
                 ALLOWED_HOSTS = trustedHosts;
               }
           )
+          // oidcEnvironment
           // cfg.extraConfig;
 
         serviceConfig = {
@@ -380,7 +474,12 @@ in
             "DATABASE_URL"
             "MEDIA_ROOT"
           ];
-          EnvironmentFile = lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile;
+          EnvironmentFile =
+            lib.optional (cfg.secretKeyFile != null) cfg.secretKeyFile
+            ++ lib.optionals (rustBackend && cfg.oidc.enable && cfg.oidc.environmentFile != null) [
+              cfg.oidc.environmentFile
+            ]
+            ++ lib.optional rustBackend oidcEnabledEnvironmentFile;
         };
       };
 
@@ -433,10 +532,20 @@ in
       "${cfg.hostName}" = {
         inherit (cfg.nginx) forceSSL enableACME;
         inherit (cfg) serverAliases;
-        locations."/" = {
-          proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
-          recommendedProxySettings = true;
-          proxyWebsockets = true;
+        locations = {
+          "/" = {
+            proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
+            recommendedProxySettings = true;
+            proxyWebsockets = true;
+          };
+        }
+        // lib.optionalAttrs (rustBackend && cfg.oidc.enable) {
+          "/api/v2/auth/oidc/callback/" = {
+            proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
+            recommendedProxySettings = true;
+            proxyWebsockets = true;
+            extraConfig = "access_log off;";
+          };
         };
       };
     };
