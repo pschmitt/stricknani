@@ -1509,7 +1509,11 @@
     width: 100%;
     height: 100%;
     margin: 0;
+    /* WebKit sizes the native file button from the font and lets it spill past
+       the box, where it would swallow clicks meant for neighbouring controls. */
+    overflow: hidden;
     cursor: inherit;
+    font-size: 0;
     opacity: 0;
   }
 
