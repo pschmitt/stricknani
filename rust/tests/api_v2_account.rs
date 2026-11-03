@@ -412,12 +412,21 @@ async fn account_mutations_reject_cross_origin_and_token_quota_counts_revoked_ap
 }
 
 #[tokio::test]
-async fn password_change_commits_session_revocation_before_clearing_cookie() {
+async fn password_change_commits_all_credential_revocations_before_clearing_cookie() {
     let (app, pool) = fixture().await;
     let owner_id = db::create_user(&pool, "password@example.test", PASSWORD.to_owned())
         .await
         .unwrap();
     let (session, csrf) = signed_in(&app, "password@example.test", PASSWORD).await;
+    let pat_id = sqlx::query(
+        "INSERT INTO api_tokens(user_id, name, token_hash, created_at, purpose) \
+         VALUES (?, 'password change fixture', 'password-change-test-hash', unixepoch(), 'api')",
+    )
+    .bind(owner_id)
+    .execute(&pool)
+    .await
+    .unwrap()
+    .last_insert_rowid();
     let changed = app
         .clone()
         .oneshot(request(
@@ -458,6 +467,13 @@ async fn password_change_commits_session_revocation_before_clearing_cookie() {
     .await
     .unwrap();
     assert!(revoked >= 1);
+    let api_revoked: bool =
+        sqlx::query_scalar("SELECT revoked_at IS NOT NULL FROM api_tokens WHERE id = ?")
+            .bind(pat_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert!(api_revoked);
 }
 
 #[tokio::test]

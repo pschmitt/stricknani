@@ -199,7 +199,12 @@ async fn token_user(
            AND api_tokens.revoked_at IS NULL \
            AND (api_tokens.expires_at IS NULL OR api_tokens.expires_at > unixepoch()) \
            AND (? = 0 OR api_tokens.purpose = ?) \
-           AND users.active = 1",
+           AND users.active = 1 \
+           AND (api_tokens.auth_origin = 'local' OR EXISTS ( \
+             SELECT 1 FROM oidc_identities identity \
+             WHERE identity.id = api_tokens.oidc_identity_id \
+               AND identity.user_id = api_tokens.user_id \
+               AND identity.provider_id = api_tokens.oidc_provider_id))",
     )
     .bind(hash)
     .bind(purpose.is_some())
@@ -362,8 +367,8 @@ async fn mint_password_token(
         return Err(PasswordTokenError::RateLimited);
     };
 
-    let user = match sqlx::query_as::<_, (i64, String, i64)>(
-        "SELECT id, password_hash, active FROM users WHERE email = ?",
+    let user = match sqlx::query_as::<_, (i64, String, i64, i64)>(
+        "SELECT id, password_hash, active, password_enabled FROM users WHERE email = ?",
     )
     .bind(&email)
     .fetch_optional(&state.pool)
@@ -378,8 +383,8 @@ async fn mint_password_token(
 
     let password_hash = user
         .as_ref()
-        .filter(|(_, _, active)| *active != 0)
-        .map(|(_, password_hash, _)| password_hash.as_str())
+        .filter(|(_, _, active, password_enabled)| *active != 0 && *password_enabled != 0)
+        .map(|(_, password_hash, _, _)| password_hash.as_str())
         .unwrap_or(DUMMY_PASSWORD_HASH);
     let verification = match verify_password(password, password_hash.to_owned()).await {
         Ok(verification) => verification,
@@ -389,9 +394,9 @@ async fn mint_password_token(
         }
     };
 
-    let Some((user_id, current_hash, _)) =
-        user.filter(|(_, _, active)| *active != 0 && verification.valid)
-    else {
+    let Some((user_id, current_hash, _, _)) = user.filter(|(_, _, active, password_enabled)| {
+        *active != 0 && *password_enabled != 0 && verification.valid
+    }) else {
         return Err(PasswordTokenError::InvalidCredentials);
     };
     let token = match generate_token() {
@@ -450,7 +455,7 @@ async fn persist_verified_token(
     let mut transaction = pool.begin().await?;
     let current = sqlx::query(
         "UPDATE users SET password_hash = coalesce(?, password_hash) \
-         WHERE id = ? AND active = 1 AND password_hash = ?",
+         WHERE id = ? AND active = 1 AND password_enabled = 1 AND password_hash = ?",
     )
     .bind(account.upgraded_hash)
     .bind(account.user_id)
@@ -569,6 +574,19 @@ pub(crate) async fn verify_password_for_account(
         .map(|verification| verification.valid)
 }
 
+/// Verify a step-up password without revealing whether the account has a
+/// password enabled. Missing or disabled passwords still run the dummy hash.
+pub(crate) async fn verify_password_for_stepup(
+    password: zeroize::Zeroizing<String>,
+    hash: Option<String>,
+) -> Result<bool, ()> {
+    let enabled = hash.is_some();
+    let candidate = hash.unwrap_or_else(|| DUMMY_PASSWORD_HASH.to_owned());
+    verify_password(password, candidate)
+        .await
+        .map(|verification| enabled && verification.valid)
+}
+
 /// Hash a replacement password under the same bounded blocking-work budget as login checks.
 pub(crate) async fn hash_password_for_account(
     password: zeroize::Zeroizing<String>,
@@ -662,7 +680,7 @@ mod tests {
 
     #[tokio::test]
     async fn stale_verified_account_state_cannot_mint_or_upgrade_a_token() {
-        for stale_state in ["disabled", "password-reset"] {
+        for stale_state in ["disabled", "password-reset", "password-disabled"] {
             let pool = crate::db::connect("sqlite::memory:")
                 .await
                 .expect("in-memory database should migrate");
@@ -685,6 +703,12 @@ mod tests {
                     .execute(&pool)
                     .await
                     .expect("account should be disabled");
+            } else if stale_state == "password-disabled" {
+                sqlx::query("UPDATE users SET password_enabled = 0 WHERE id = ?")
+                    .bind(user_id)
+                    .execute(&pool)
+                    .await
+                    .expect("password login disabled");
             } else {
                 sqlx::query("UPDATE users SET password_hash = 'reset-password-hash' WHERE id = ?")
                     .bind(user_id)

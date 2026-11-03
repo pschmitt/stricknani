@@ -1,14 +1,23 @@
 use std::env;
 use std::error::Error;
 use std::fmt;
+use std::fs::File;
+use std::io::Read;
 use std::net::{IpAddr, SocketAddr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::ai::AiConfig;
+use crate::oidc::ProviderConfig;
 use crate::security::TrustedHosts;
+use zeroize::Zeroizing;
 
 const DEFAULT_BIND_HOST: &str = "127.0.0.1";
 const DEFAULT_BIND_PORT: u16 = 7674;
+const DEFAULT_TRUSTED_HOSTS: &str = "localhost,127.0.0.1,[::1]";
+const DEFAULT_OIDC_PAT_TTL_SECONDS: u64 = 7 * 24 * 60 * 60;
+const MAX_OIDC_SECRET_BYTES: usize = 4096;
+const MAX_OIDC_NATIVE_REDIRECTS: usize = 16;
+const MAX_OIDC_NATIVE_REDIRECTS_BYTES: usize = 16 * 2048;
 
 pub struct Config {
     pub database_url: String,
@@ -22,6 +31,10 @@ pub struct Config {
     pub archive_enabled: bool,
     /// Validated provider configuration, absent unless `RUST_AI_ENABLED=true`.
     pub ai: Option<AiConfig>,
+    /// Validated OIDC provider configuration, absent unless explicitly enabled.
+    pub oidc: Option<ProviderConfig>,
+    /// Maximum lifetime for PATs minted from OIDC login.
+    pub oidc_pat_ttl_seconds: u64,
     pub trusted_hosts: TrustedHosts,
 }
 
@@ -90,8 +103,9 @@ impl Config {
             .parse::<IpAddr>()
             .map_err(|_| ConfigError("BIND_HOST must be an IP address"))?;
 
-        let trusted_hosts = match get("TRUSTED_HOSTS") {
-            Some(value) => TrustedHosts::parse(&value).map_err(|_| {
+        let trusted_hosts_raw = get("TRUSTED_HOSTS");
+        let trusted_hosts = match trusted_hosts_raw.as_deref() {
+            Some(value) => TrustedHosts::parse(value).map_err(|_| {
                 ConfigError(
                     "TRUSTED_HOSTS must be a comma-separated list of valid host authorities",
                 )
@@ -150,6 +164,27 @@ impl Config {
         };
         let ai = AiConfig::from_lookup(ai_enabled, &mut get)
             .map_err(|_| ConfigError("AI provider configuration is invalid"))?;
+        let oidc_enabled = match get("RUST_OIDC_ENABLED").as_deref() {
+            None | Some("false" | "0") => false,
+            Some("true" | "1") => true,
+            _ => return Err(ConfigError("RUST_OIDC_ENABLED must be true or false")),
+        };
+        let (oidc, oidc_pat_ttl_seconds) = if oidc_enabled {
+            if !secure_cookies {
+                return Err(ConfigError(
+                    "SESSION_COOKIE_SECURE must be true when OIDC is enabled",
+                ));
+            }
+            let trusted_hosts_raw = trusted_hosts_raw
+                .as_deref()
+                .unwrap_or(DEFAULT_TRUSTED_HOSTS);
+            let oidc = oidc_from_lookup(&mut get, trusted_hosts_raw)?;
+            (Some(oidc.0), oidc.1)
+        } else {
+            // Disabled OIDC deliberately does not inspect provider environment
+            // variables or open any provider files.
+            (None, DEFAULT_OIDC_PAT_TTL_SECONDS)
+        };
         if !bind_ip.is_loopback() && !secure_cookies {
             return Err(ConfigError(
                 "SESSION_COOKIE_SECURE must be true when BIND_HOST is not loopback",
@@ -170,9 +205,153 @@ impl Config {
             signup_enabled,
             archive_enabled,
             ai,
+            oidc,
+            oidc_pat_ttl_seconds,
             trusted_hosts,
         })
     }
+}
+
+fn oidc_from_lookup(
+    get: &mut impl FnMut(&str) -> Option<String>,
+    trusted_hosts: &str,
+) -> Result<(ProviderConfig, u64), ConfigError> {
+    let issuer = required_oidc_value(get, "RUST_OIDC_ISSUER")?;
+    let client_id = oidc_client_id_from_lookup(get)?;
+    if client_id.is_empty() || client_id.len() > 256 || client_id.chars().any(char::is_control) {
+        return Err(ConfigError("OIDC client ID is invalid"));
+    }
+    let callback_uri = required_oidc_value(get, "RUST_OIDC_CALLBACK_URI")?;
+    let secret_file = required_oidc_value(get, "RUST_OIDC_CLIENT_SECRET_FILE")?;
+    let client_secret = read_oidc_client_secret(&secret_file)?;
+    let native_redirect_uris = parse_native_redirects(get("RUST_OIDC_NATIVE_REDIRECT_URIS"))?;
+    let pat_ttl_seconds = get("RUST_OIDC_PAT_TTL_SECONDS")
+        .map(|value| {
+            value
+                .parse::<u64>()
+                .ok()
+                .filter(|seconds| (1..=DEFAULT_OIDC_PAT_TTL_SECONDS).contains(seconds))
+                .ok_or(ConfigError(
+                    "RUST_OIDC_PAT_TTL_SECONDS must be from 1 to 604800",
+                ))
+        })
+        .transpose()?
+        .unwrap_or(DEFAULT_OIDC_PAT_TTL_SECONDS);
+    let provider = ProviderConfig {
+        id: "authelia".to_owned(),
+        issuer,
+        client_id,
+        client_secret,
+        callback_uri,
+        allowed_endpoint_origins: Vec::new(),
+        native_redirect_uris,
+        allow_http_for_tests: false,
+    };
+    provider
+        .validate()
+        .map_err(|_| ConfigError("OIDC provider configuration is invalid"))?;
+    if !callback_authority_is_trusted(&provider.callback_uri, trusted_hosts) {
+        return Err(ConfigError(
+            "OIDC callback authority must exactly match TRUSTED_HOSTS",
+        ));
+    }
+    Ok((provider, pat_ttl_seconds))
+}
+
+fn oidc_client_id_from_lookup(
+    get: &mut impl FnMut(&str) -> Option<String>,
+) -> Result<String, ConfigError> {
+    let client_id = get("RUST_OIDC_CLIENT_ID");
+    let client_id_file = get("RUST_OIDC_CLIENT_ID_FILE");
+    match (client_id, client_id_file) {
+        (Some(value), None) => Ok(value.trim().to_owned()),
+        (None, Some(path)) => {
+            let value = read_oidc_value_file(&path)?;
+            Ok(value.trim().to_owned())
+        }
+        _ => Err(ConfigError(
+            "configure exactly one of RUST_OIDC_CLIENT_ID or RUST_OIDC_CLIENT_ID_FILE",
+        )),
+    }
+}
+
+fn required_oidc_value(
+    get: &mut impl FnMut(&str) -> Option<String>,
+    key: &'static str,
+) -> Result<String, ConfigError> {
+    get(key)
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+        .ok_or(ConfigError("required OIDC configuration is missing"))
+}
+
+fn read_oidc_client_secret(path: &str) -> Result<Zeroizing<String>, ConfigError> {
+    let value = read_oidc_value_file(path)?;
+    let value = Zeroizing::new(value.trim_end_matches(['\r', '\n']).to_owned());
+    if value.is_empty() || value.chars().any(char::is_control) {
+        return Err(ConfigError("OIDC client secret file is invalid"));
+    }
+    Ok(value)
+}
+
+fn read_oidc_value_file(path: &str) -> Result<Zeroizing<String>, ConfigError> {
+    if path.len() > 4096 || !Path::new(path).is_absolute() {
+        return Err(ConfigError("OIDC runtime file must use an absolute path"));
+    }
+    let file = File::open(path).map_err(|_| ConfigError("cannot read OIDC runtime file"))?;
+    let mut value = Zeroizing::new(String::new());
+    file.take((MAX_OIDC_SECRET_BYTES + 1) as u64)
+        .read_to_string(&mut value)
+        .map_err(|_| ConfigError("cannot read OIDC runtime file"))?;
+    if value.len() > MAX_OIDC_SECRET_BYTES {
+        return Err(ConfigError("OIDC runtime file is too large"));
+    }
+    Ok(value)
+}
+
+fn parse_native_redirects(value: Option<String>) -> Result<Vec<String>, ConfigError> {
+    let value = value.unwrap_or_else(|| "stricknani://oidc-callback".to_owned());
+    if value.len() > MAX_OIDC_NATIVE_REDIRECTS_BYTES {
+        return Err(ConfigError("OIDC native redirect allowlist is too large"));
+    }
+    let redirects: Vec<String> = value.split(',').map(str::trim).map(str::to_owned).collect();
+    if redirects.is_empty()
+        || redirects.len() > MAX_OIDC_NATIVE_REDIRECTS
+        || redirects.iter().any(String::is_empty)
+        || redirects.iter().enumerate().any(|(index, redirect)| {
+            redirects[..index]
+                .iter()
+                .any(|previous| previous == redirect)
+        })
+    {
+        return Err(ConfigError("OIDC native redirect allowlist is invalid"));
+    }
+    Ok(redirects)
+}
+
+fn callback_authority_is_trusted(callback_uri: &str, trusted_hosts: &str) -> bool {
+    let Ok(callback) = url::Url::parse(callback_uri) else {
+        return false;
+    };
+    let Some(callback_host) = callback.host_str() else {
+        return false;
+    };
+    let Some(callback_port) = callback.port_or_known_default() else {
+        return false;
+    };
+    trusted_hosts.split(',').any(|configured| {
+        let configured = configured.trim();
+        let Ok(configured) = url::Url::parse(&format!("https://{configured}/")) else {
+            return false;
+        };
+        configured.path() == "/"
+            && configured.query().is_none()
+            && configured.fragment().is_none()
+            && configured.username().is_empty()
+            && configured.password().is_none()
+            && configured.host_str() == Some(callback_host)
+            && configured.port_or_known_default() == Some(callback_port)
+    })
 }
 
 fn database_path(url: &str) -> Option<PathBuf> {
@@ -215,10 +394,35 @@ fn default_static_root() -> PathBuf {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::fs;
     use std::net::SocketAddr;
     use std::path::PathBuf;
 
-    use super::Config;
+    use super::{Config, DEFAULT_OIDC_PAT_TTL_SECONDS};
+
+    fn oidc_secret(contents: &[u8]) -> (tempfile::NamedTempFile, String) {
+        let file = tempfile::NamedTempFile::new().expect("secret fixture file");
+        fs::write(file.path(), contents).expect("write synthetic secret fixture");
+        let path = file.path().display().to_string();
+        (file, path)
+    }
+
+    fn oidc_values(secret_path: &str) -> Vec<(&'static str, String)> {
+        vec![
+            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db".to_owned()),
+            ("RUST_MEDIA_ROOT", "/tmp/rust-media".to_owned()),
+            ("SESSION_COOKIE_SECURE", "true".to_owned()),
+            ("TRUSTED_HOSTS", "app.example.test".to_owned()),
+            ("RUST_OIDC_ENABLED", "true".to_owned()),
+            ("RUST_OIDC_ISSUER", "https://id.example.test".to_owned()),
+            ("RUST_OIDC_CLIENT_ID", "synthetic-client".to_owned()),
+            (
+                "RUST_OIDC_CALLBACK_URI",
+                "https://app.example.test/api/v2/auth/oidc/callback/authelia".to_owned(),
+            ),
+            ("RUST_OIDC_CLIENT_SECRET_FILE", secret_path.to_owned()),
+        ]
+    }
 
     fn parse(values: &[(&str, &str)]) -> Result<Config, super::ConfigError> {
         let values: HashMap<_, _> = values
@@ -403,5 +607,197 @@ mod tests {
         ])
         .expect_err("invalid feature flag must fail closed");
         assert_eq!(error.to_string(), "RUST_AI_ENABLED must be true or false");
+    }
+
+    #[test]
+    fn oidc_is_opt_in_and_disabled_mode_does_not_read_provider_environment() {
+        let mut reads = Vec::new();
+        let config = Config::from_lookup(|key| {
+            if key == "RUST_OIDC_ENABLED" {
+                None
+            } else if key.starts_with("RUST_OIDC_") {
+                reads.push(key.to_owned());
+                Some("invalid and deliberately ignored".to_owned())
+            } else {
+                match key {
+                    "RUST_DATABASE_URL" => Some("sqlite:/tmp/rust.db".to_owned()),
+                    "RUST_MEDIA_ROOT" => Some("/tmp/rust-media".to_owned()),
+                    _ => None,
+                }
+            }
+        })
+        .expect("OIDC-disabled configuration remains valid");
+
+        assert!(config.oidc.is_none());
+        assert_eq!(config.oidc_pat_ttl_seconds, DEFAULT_OIDC_PAT_TTL_SECONDS);
+        assert!(reads.is_empty());
+    }
+
+    #[test]
+    fn oidc_accepts_valid_static_config_and_keeps_secrets_out_of_debug() {
+        let (_file, path) = oidc_secret(b"synthetic-client-secret\n");
+        let values = oidc_values(&path);
+        let config = Config::from_lookup(|key| {
+            values
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| value.clone())
+        })
+        .expect("valid OIDC configuration");
+
+        assert_eq!(
+            config.oidc.as_ref().map(|provider| provider.id.as_str()),
+            Some("authelia")
+        );
+        assert_eq!(config.oidc_pat_ttl_seconds, DEFAULT_OIDC_PAT_TTL_SECONDS);
+        assert!(!format!("{config:?}").contains("synthetic-client-secret"));
+    }
+
+    #[test]
+    fn oidc_accepts_client_id_file_and_requires_exactly_one_source() {
+        let (_secret_file, secret_path) = oidc_secret(b"synthetic-client-secret");
+        let (_client_id_file, client_id_path) = oidc_secret(b"synthetic-client\n");
+        let mut values = oidc_values(&secret_path);
+        values.retain(|(name, _)| *name != "RUST_OIDC_CLIENT_ID");
+        values.push(("RUST_OIDC_CLIENT_ID_FILE", client_id_path));
+
+        let config = Config::from_lookup(|key| {
+            values
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| value.clone())
+        })
+        .expect("client ID can be read from its runtime file");
+        assert_eq!(config.oidc.as_ref().unwrap().client_id, "synthetic-client");
+
+        values.push(("RUST_OIDC_CLIENT_ID", "synthetic-client".to_owned()));
+        let error = Config::from_lookup(|key| {
+            values
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| value.clone())
+        })
+        .expect_err("inline and file client IDs cannot be combined");
+        assert_eq!(
+            error.to_string(),
+            "configure exactly one of RUST_OIDC_CLIENT_ID or RUST_OIDC_CLIENT_ID_FILE"
+        );
+
+        values.retain(|(name, _)| *name != "RUST_OIDC_CLIENT_ID_FILE");
+        if let Some((_, value)) = values
+            .iter_mut()
+            .find(|(name, _)| *name == "RUST_OIDC_CLIENT_ID")
+        {
+            *value = "synthetic\nclient".to_owned();
+        }
+        let error = Config::from_lookup(|key| {
+            values
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| value.clone())
+        })
+        .expect_err("control characters are not accepted in client IDs");
+        assert_eq!(error.to_string(), "OIDC client ID is invalid");
+    }
+
+    #[test]
+    fn oidc_requires_secure_cookies_and_exact_callback_authority() {
+        let (_file, path) = oidc_secret(b"fixture-secret");
+        let mut values = oidc_values(&path);
+        values.retain(|(name, _)| *name != "SESSION_COOKIE_SECURE");
+        assert!(
+            Config::from_lookup(|key| {
+                values
+                    .iter()
+                    .find(|(name, _)| *name == key)
+                    .map(|(_, value)| value.clone())
+            })
+            .is_err()
+        );
+
+        let mut values = oidc_values(&path);
+        if let Some((_, callback)) = values
+            .iter_mut()
+            .find(|(name, _)| *name == "RUST_OIDC_CALLBACK_URI")
+        {
+            *callback =
+                "https://app.example.test:8443/api/v2/auth/oidc/callback/authelia".to_owned();
+        }
+        let error = Config::from_lookup(|key| {
+            values
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| value.clone())
+        })
+        .expect_err("callback port must match trusted authority exactly");
+        assert_eq!(
+            error.to_string(),
+            "OIDC callback authority must exactly match TRUSTED_HOSTS"
+        );
+    }
+
+    #[test]
+    fn oidc_rejects_http_callback_and_invalid_pat_lifetimes() {
+        let (_file, path) = oidc_secret(b"fixture-secret");
+        for (key, value) in [
+            (
+                "RUST_OIDC_CALLBACK_URI",
+                "http://app.example.test/api/v2/auth/oidc/callback/authelia",
+            ),
+            ("RUST_OIDC_ISSUER", "http://id.example.test"),
+            (
+                "RUST_OIDC_CALLBACK_URI",
+                "https://app.example.test/redirect?next=https://evil.example.test",
+            ),
+            ("RUST_OIDC_PAT_TTL_SECONDS", "0"),
+            ("RUST_OIDC_PAT_TTL_SECONDS", "604801"),
+        ] {
+            let mut values = oidc_values(&path);
+            values.retain(|(entry, _)| *entry != key);
+            values.push((key, value.to_owned()));
+            assert!(
+                Config::from_lookup(|name| {
+                    values
+                        .iter()
+                        .find(|(entry, _)| *entry == name)
+                        .map(|(_, value)| value.clone())
+                })
+                .is_err(),
+                "expected {key}={value} to be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn oidc_secret_file_is_bounded_and_requires_nonempty_secret() {
+        let (_file, path) = oidc_secret(&vec![b'x'; super::MAX_OIDC_SECRET_BYTES]);
+        assert_eq!(super::read_oidc_client_secret(&path).unwrap().len(), 4096);
+        let (_file, path) = oidc_secret(&vec![b'x'; super::MAX_OIDC_SECRET_BYTES + 1]);
+        assert!(super::read_oidc_client_secret(&path).is_err());
+        let (_file, path) = oidc_secret(b"\n\r");
+        assert!(super::read_oidc_client_secret(&path).is_err());
+        assert!(super::read_oidc_client_secret("relative-path").is_err());
+    }
+
+    #[test]
+    fn oidc_native_redirects_reject_untrusted_schemes_and_duplicates() {
+        let (_file, path) = oidc_secret(b"fixture-secret");
+        for redirects in [
+            "http://app.example.test/native-callback",
+            "stricknani://oidc-callback,stricknani://oidc-callback",
+        ] {
+            let mut values = oidc_values(&path);
+            values.push(("RUST_OIDC_NATIVE_REDIRECT_URIS", redirects.to_owned()));
+            assert!(
+                Config::from_lookup(|name| {
+                    values
+                        .iter()
+                        .find(|(entry, _)| *entry == name)
+                        .map(|(_, value)| value.clone())
+                })
+                .is_err(),
+                "expected native redirects {redirects:?} to be rejected"
+            );
+        }
     }
 }

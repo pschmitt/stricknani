@@ -2,6 +2,7 @@ use std::io::{self, Read};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::Duration;
@@ -217,12 +218,31 @@ async fn serve() -> Result<(), &'static str> {
     let pool = db::connect(&config.database_url)
         .await
         .map_err(|_| "cannot initialize Rust database")?;
+    let enabled_oidc_providers = if config.oidc.is_some() {
+        vec!["authelia".to_owned()]
+    } else {
+        Vec::new()
+    };
+    stricknani_server::oidc_configuration_service::reconcile(&pool, &enabled_oidc_providers)
+        .await
+        .map_err(|_| "cannot reconcile OIDC provider configuration")?;
     let state = db::AppState::new(pool)
         .with_media_root(config.media_root)
         .with_secure_cookies(config.secure_cookies)
         .with_signup_enabled(config.signup_enabled)
         .with_archive_enabled(config.archive_enabled)
         .with_ocr_enabled(config.ocr_enabled);
+    let state = match config.oidc {
+        Some(provider_config) => {
+            let runtime =
+                stricknani_server::oidc_http_state::OidcRuntime::from_config(provider_config)
+                    .map_err(|_| "cannot initialize OIDC provider configuration")?
+                    .with_pat_lifetime_seconds(config.oidc_pat_ttl_seconds)
+                    .map_err(|_| "invalid OIDC PAT lifetime")?;
+            state.with_oidc(Arc::new(runtime))
+        }
+        None => state,
+    };
 
     let listener = tokio::net::TcpListener::bind(config.bind_address)
         .await

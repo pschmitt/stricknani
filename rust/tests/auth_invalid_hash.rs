@@ -162,3 +162,26 @@ async fn malformed_bcrypt_hash_is_rejected_without_refunding_the_attempt() {
         StatusCode::TOO_MANY_REQUESTS
     );
 }
+
+#[tokio::test]
+async fn disabled_password_capability_cannot_mint_native_tokens_with_the_correct_password() {
+    let pool = pool().await;
+    let user_id = db::create_user(&pool, EMAIL, PASSWORD.to_owned())
+        .await
+        .unwrap();
+    sqlx::query("UPDATE users SET password_enabled = 0 WHERE id = ?")
+        .bind(user_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    for app in [v1_app(pool.clone()), v2_app(pool.clone())] {
+        let response = app.oneshot(token_request(EMAIL)).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM api_tokens WHERE user_id = ?")
+        .bind(user_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 0);
+}

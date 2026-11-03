@@ -38,6 +38,8 @@ mod media;
 mod meta;
 mod native_auth;
 mod ocr;
+mod oidc_account;
+mod oidc_login;
 mod project_preview;
 mod projects;
 mod resource_history;
@@ -119,6 +121,8 @@ fn router_with_context(
         .route("/auth/logout", post(logout))
         .layer(DefaultBodyLimit::max(8 * 1024))
         .merge(native_auth::router())
+        .merge(oidc_account::router())
+        .merge(oidc_login::router())
         .merge(projects::router())
         .merge(resource_history::router())
         .merge(sync::router())

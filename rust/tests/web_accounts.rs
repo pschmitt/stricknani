@@ -477,7 +477,7 @@ async fn password_change_checks_current_password_and_revokes_sessions() {
             .fetch_one(&app.pool)
             .await
             .unwrap();
-    assert_eq!(api_pat_revoked, None);
+    assert!(api_pat_revoked.is_some());
 
     let new_login = app
         .router
