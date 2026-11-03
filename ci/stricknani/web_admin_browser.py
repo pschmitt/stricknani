@@ -1640,8 +1640,9 @@ def run_acceptance(
                 "admin project reader fetched owner-scoped project or yarn data",
             )
             _require(
-                page.locator(".reader form, .reader input, .reader textarea, .reader select")
-                .count()
+                page.locator(
+                    ".reader form, .reader input, .reader textarea, .reader select"
+                ).count()
                 == 0,
                 "admin project reader exposed editable form fields",
             )
