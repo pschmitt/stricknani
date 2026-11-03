@@ -1,7 +1,7 @@
 <script lang="ts">
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { onMount, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
@@ -105,7 +105,11 @@
         : t("Save changes", locale),
   );
   const saveDisabled = $derived(
-    !isDirty || saving || mediaBusy || deleting || conflictYarn !== null,
+    (yarnId !== null && !isDirty) ||
+      saving ||
+      mediaBusy ||
+      deleting ||
+      conflictYarn !== null,
   );
 
   onMount(() => {
@@ -307,8 +311,12 @@
       conflictYarn !== null
     )
       return;
+    const id = yarnId;
+    const generation = routeGeneration;
     const value = makeWrite();
     if (!value) {
+      await focusFirstValidationError(id, currentSession.user.id, generation);
+      if (!isCurrentRoute(id, currentSession.user.id, generation)) return;
       publishFeedback({
         ownerId: currentSession.user.id,
         kind: "error",
@@ -325,6 +333,7 @@
     const id = yarnId;
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
+    let focusServerErrors = false;
     saving = true;
     serverError = "";
     statusMessage = "";
@@ -370,6 +379,7 @@
                 : message;
         }
         revealErroredOptionalFields();
+        focusServerErrors = true;
         serverError = error.message;
       } else {
         serverError =
@@ -382,6 +392,8 @@
     } finally {
       if (isCurrentRoute(id, ownerId, generation)) saving = false;
     }
+    if (focusServerErrors && isCurrentRoute(id, ownerId, generation))
+      await focusFirstValidationError(id, ownerId, generation);
   }
 
   function openDeleteDialog() {
@@ -497,6 +509,20 @@
   function revealErroredOptionalFields(): void {
     if (optionalDraftFields.some((field) => fieldErrors[field]))
       optionalDetailsOpen = true;
+  }
+
+  async function focusFirstValidationError(
+    id: number | null,
+    ownerId: number,
+    generation: number,
+  ): Promise<void> {
+    revealErroredOptionalFields();
+    await tick();
+    if (!isCurrentRoute(id, ownerId, generation)) return;
+    const target = yarnForm?.querySelector<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >('[aria-invalid="true"]');
+    if (target?.isConnected) target.focus();
   }
 
   function fieldId(field: keyof Draft): string {

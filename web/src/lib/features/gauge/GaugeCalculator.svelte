@@ -243,55 +243,59 @@
       <legend>{t("Pattern Gauge (per 10cm)", locale)}</legend>
       <div class="field-grid">
         <label for="pattern-gauge-stitches">
-          {t("Stitches", locale)}
-          <input
-            bind:value={values.pattern_gauge_stitches}
-            id="pattern-gauge-stitches"
-            name="pattern_gauge_stitches"
-            type="number"
-            min="1"
-            max="4294967295"
-            step="1"
-            inputmode="numeric"
-            required
-            aria-invalid={fieldErrors.pattern_gauge_stitches
-              ? "true"
-              : undefined}
-            aria-describedby={fieldErrors.pattern_gauge_stitches
-              ? "pattern-gauge-stitches-error"
-              : undefined}
-            oninput={valueChanged}
-          />
-          {#if fieldErrors.pattern_gauge_stitches}
-            <small id="pattern-gauge-stitches-error" class="field-error">
-              {fieldErrors.pattern_gauge_stitches}
-            </small>
-          {/if}
+          <span class="field-caption">{t("Stitches", locale)}</span>
+          <span class="field-control">
+            <input
+              bind:value={values.pattern_gauge_stitches}
+              id="pattern-gauge-stitches"
+              name="pattern_gauge_stitches"
+              type="number"
+              min="1"
+              max="4294967295"
+              step="1"
+              inputmode="numeric"
+              required
+              aria-invalid={fieldErrors.pattern_gauge_stitches
+                ? "true"
+                : undefined}
+              aria-describedby={fieldErrors.pattern_gauge_stitches
+                ? "pattern-gauge-stitches-error"
+                : undefined}
+              oninput={valueChanged}
+            />
+            {#if fieldErrors.pattern_gauge_stitches}
+              <small id="pattern-gauge-stitches-error" class="field-error">
+                {fieldErrors.pattern_gauge_stitches}
+              </small>
+            {/if}
+          </span>
         </label>
 
         <label for="pattern-gauge-rows">
-          {t("Rows", locale)}
-          <input
-            bind:value={values.pattern_gauge_rows}
-            id="pattern-gauge-rows"
-            name="pattern_gauge_rows"
-            type="number"
-            min="1"
-            max="4294967295"
-            step="1"
-            inputmode="numeric"
-            required
-            aria-invalid={fieldErrors.pattern_gauge_rows ? "true" : undefined}
-            aria-describedby={fieldErrors.pattern_gauge_rows
-              ? "pattern-gauge-rows-error"
-              : undefined}
-            oninput={valueChanged}
-          />
-          {#if fieldErrors.pattern_gauge_rows}
-            <small id="pattern-gauge-rows-error" class="field-error">
-              {fieldErrors.pattern_gauge_rows}
-            </small>
-          {/if}
+          <span class="field-caption">{t("Rows", locale)}</span>
+          <span class="field-control">
+            <input
+              bind:value={values.pattern_gauge_rows}
+              id="pattern-gauge-rows"
+              name="pattern_gauge_rows"
+              type="number"
+              min="1"
+              max="4294967295"
+              step="1"
+              inputmode="numeric"
+              required
+              aria-invalid={fieldErrors.pattern_gauge_rows ? "true" : undefined}
+              aria-describedby={fieldErrors.pattern_gauge_rows
+                ? "pattern-gauge-rows-error"
+                : undefined}
+              oninput={valueChanged}
+            />
+            {#if fieldErrors.pattern_gauge_rows}
+              <small id="pattern-gauge-rows-error" class="field-error">
+                {fieldErrors.pattern_gauge_rows}
+              </small>
+            {/if}
+          </span>
         </label>
       </div>
     </fieldset>
@@ -300,53 +304,59 @@
       <legend>{t("Your Gauge (per 10cm)", locale)}</legend>
       <div class="field-grid">
         <label for="user-gauge-stitches">
-          {t("Stitches", locale)}
-          <input
-            bind:value={values.user_gauge_stitches}
-            id="user-gauge-stitches"
-            name="user_gauge_stitches"
-            type="number"
-            min="1"
-            max="4294967295"
-            step="1"
-            inputmode="numeric"
-            required
-            aria-invalid={fieldErrors.user_gauge_stitches ? "true" : undefined}
-            aria-describedby={fieldErrors.user_gauge_stitches
-              ? "user-gauge-stitches-error"
-              : undefined}
-            oninput={valueChanged}
-          />
-          {#if fieldErrors.user_gauge_stitches}
-            <small id="user-gauge-stitches-error" class="field-error">
-              {fieldErrors.user_gauge_stitches}
-            </small>
-          {/if}
+          <span class="field-caption">{t("Stitches", locale)}</span>
+          <span class="field-control">
+            <input
+              bind:value={values.user_gauge_stitches}
+              id="user-gauge-stitches"
+              name="user_gauge_stitches"
+              type="number"
+              min="1"
+              max="4294967295"
+              step="1"
+              inputmode="numeric"
+              required
+              aria-invalid={fieldErrors.user_gauge_stitches
+                ? "true"
+                : undefined}
+              aria-describedby={fieldErrors.user_gauge_stitches
+                ? "user-gauge-stitches-error"
+                : undefined}
+              oninput={valueChanged}
+            />
+            {#if fieldErrors.user_gauge_stitches}
+              <small id="user-gauge-stitches-error" class="field-error">
+                {fieldErrors.user_gauge_stitches}
+              </small>
+            {/if}
+          </span>
         </label>
 
         <label for="user-gauge-rows">
-          {t("Rows", locale)}
-          <input
-            bind:value={values.user_gauge_rows}
-            id="user-gauge-rows"
-            name="user_gauge_rows"
-            type="number"
-            min="1"
-            max="4294967295"
-            step="1"
-            inputmode="numeric"
-            required
-            aria-invalid={fieldErrors.user_gauge_rows ? "true" : undefined}
-            aria-describedby={fieldErrors.user_gauge_rows
-              ? "user-gauge-rows-error"
-              : undefined}
-            oninput={valueChanged}
-          />
-          {#if fieldErrors.user_gauge_rows}
-            <small id="user-gauge-rows-error" class="field-error">
-              {fieldErrors.user_gauge_rows}
-            </small>
-          {/if}
+          <span class="field-caption">{t("Rows", locale)}</span>
+          <span class="field-control">
+            <input
+              bind:value={values.user_gauge_rows}
+              id="user-gauge-rows"
+              name="user_gauge_rows"
+              type="number"
+              min="1"
+              max="4294967295"
+              step="1"
+              inputmode="numeric"
+              required
+              aria-invalid={fieldErrors.user_gauge_rows ? "true" : undefined}
+              aria-describedby={fieldErrors.user_gauge_rows
+                ? "user-gauge-rows-error"
+                : undefined}
+              oninput={valueChanged}
+            />
+            {#if fieldErrors.user_gauge_rows}
+              <small id="user-gauge-rows-error" class="field-error">
+                {fieldErrors.user_gauge_rows}
+              </small>
+            {/if}
+          </span>
         </label>
       </div>
     </fieldset>
@@ -355,30 +365,32 @@
       <legend>{t("Pattern Counts", locale)}</legend>
       <div class="field-grid">
         <label for="pattern-cast-on-stitches">
-          {t("Stitches to cast on", locale)}
-          <input
-            bind:value={values.pattern_cast_on_stitches}
-            id="pattern-cast-on-stitches"
-            name="pattern_cast_on_stitches"
-            type="number"
-            min="1"
-            max="4294967295"
-            step="1"
-            inputmode="numeric"
-            required
-            aria-invalid={fieldErrors.pattern_cast_on_stitches
-              ? "true"
-              : undefined}
-            aria-describedby={fieldErrors.pattern_cast_on_stitches
-              ? "pattern-cast-on-stitches-error"
-              : undefined}
-            oninput={valueChanged}
-          />
-          {#if fieldErrors.pattern_cast_on_stitches}
-            <small id="pattern-cast-on-stitches-error" class="field-error">
-              {fieldErrors.pattern_cast_on_stitches}
-            </small>
-          {/if}
+          <span class="field-caption">{t("Stitches to cast on", locale)}</span>
+          <span class="field-control">
+            <input
+              bind:value={values.pattern_cast_on_stitches}
+              id="pattern-cast-on-stitches"
+              name="pattern_cast_on_stitches"
+              type="number"
+              min="1"
+              max="4294967295"
+              step="1"
+              inputmode="numeric"
+              required
+              aria-invalid={fieldErrors.pattern_cast_on_stitches
+                ? "true"
+                : undefined}
+              aria-describedby={fieldErrors.pattern_cast_on_stitches
+                ? "pattern-cast-on-stitches-error"
+                : undefined}
+              oninput={valueChanged}
+            />
+            {#if fieldErrors.pattern_cast_on_stitches}
+              <small id="pattern-cast-on-stitches-error" class="field-error">
+                {fieldErrors.pattern_cast_on_stitches}
+              </small>
+            {/if}
+          </span>
         </label>
 
         <label for="pattern-row-count">
@@ -386,26 +398,28 @@
             {t("Rows to knit", locale)}
             <span class="optional">({t("optional", locale)})</span>
           </span>
-          <input
-            bind:value={values.pattern_row_count}
-            id="pattern-row-count"
-            name="pattern_row_count"
-            type="number"
-            min="1"
-            max="4294967295"
-            step="1"
-            inputmode="numeric"
-            aria-invalid={fieldErrors.pattern_row_count ? "true" : undefined}
-            aria-describedby={fieldErrors.pattern_row_count
-              ? "pattern-row-count-error"
-              : undefined}
-            oninput={valueChanged}
-          />
-          {#if fieldErrors.pattern_row_count}
-            <small id="pattern-row-count-error" class="field-error">
-              {fieldErrors.pattern_row_count}
-            </small>
-          {/if}
+          <span class="field-control">
+            <input
+              bind:value={values.pattern_row_count}
+              id="pattern-row-count"
+              name="pattern_row_count"
+              type="number"
+              min="1"
+              max="4294967295"
+              step="1"
+              inputmode="numeric"
+              aria-invalid={fieldErrors.pattern_row_count ? "true" : undefined}
+              aria-describedby={fieldErrors.pattern_row_count
+                ? "pattern-row-count-error"
+                : undefined}
+              oninput={valueChanged}
+            />
+            {#if fieldErrors.pattern_row_count}
+              <small id="pattern-row-count-error" class="field-error">
+                {fieldErrors.pattern_row_count}
+              </small>
+            {/if}
+          </span>
         </label>
       </div>
     </fieldset>
@@ -528,13 +542,15 @@
   .field-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.8rem;
+    grid-template-rows: auto auto;
+    column-gap: 0.8rem;
+    row-gap: 0.35rem;
   }
 
   label {
     display: grid;
-    align-content: start;
-    gap: 0.35rem;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
     min-width: 0;
     color: var(--ink);
     font-weight: 620;
@@ -546,6 +562,19 @@
     align-items: baseline;
     flex-wrap: wrap;
     column-gap: 0.3rem;
+  }
+
+  .field-control {
+    display: grid;
+    align-content: start;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .optional {
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    font-weight: 450;
   }
 
   input {
@@ -561,12 +590,6 @@
 
   input[aria-invalid="true"] {
     border-color: var(--danger);
-  }
-
-  .optional {
-    color: var(--ink-muted);
-    font-size: 0.82rem;
-    font-weight: 450;
   }
 
   .field-error,
@@ -630,7 +653,18 @@
   }
 
   @media (max-width: 36rem) {
-    .field-grid,
+    .field-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      gap: 0.8rem;
+    }
+
+    label {
+      grid-row: auto;
+      grid-template-rows: auto auto;
+      row-gap: 0.35rem;
+    }
+
     .result-grid {
       grid-template-columns: 1fr;
     }

@@ -76,7 +76,7 @@
   let confirmationProjectId = 0;
   let confirmationGeneration = 0;
   let editorForm = $state<HTMLFormElement | undefined>(undefined);
-  let optionalDetails = $state<HTMLDetailsElement | undefined>(undefined);
+  let optionalDetailsOpen = $state(false);
   let tagInput = $state("");
   let stepKey = 0;
   let routeGeneration = 0;
@@ -107,7 +107,7 @@
     mediaAvailable && session.data?.capabilities.media_delete === true,
   );
   const saveDisabled = $derived(
-    saving || deleting || !isDirty || conflictProject !== null,
+    saving || deleting || (!isCreating && !isDirty) || conflictProject !== null,
   );
   const selectedYarns = $derived(
     draft.yarnIds.map((id) => ({
@@ -157,7 +157,7 @@
         deleting ||
         mediaBusy ||
         conflictProject !== null ||
-        !isDirty
+        (!isCreating && !isDirty)
       )
         return;
       if (Object.keys(validateProjectDraft(draft)).length === 0) {
@@ -185,6 +185,7 @@
       confirmationDialog?.close();
       confirmedAction = null;
     });
+    optionalDetailsOpen = id !== null;
     project = null;
     conflictProject = null;
     clearPrivateDraft();
@@ -483,13 +484,12 @@
       return !title || title.length > 256;
     });
     if (
-      optionalDetails &&
-      (invalidStep ||
-        Object.entries(fieldErrors).some(
-          ([key, value]) => key !== "name" && Boolean(value),
-        ))
+      invalidStep ||
+      Object.entries(fieldErrors).some(
+        ([key, value]) => key !== "name" && Boolean(value),
+      )
     )
-      optionalDetails.open = true;
+      optionalDetailsOpen = true;
     await tick();
     if (!isCurrentRoute(id, ownerId, generation)) return;
     const targetId = fieldErrors.name
@@ -506,7 +506,13 @@
 
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (saving || deleting || mediaBusy || conflictProject !== null || !isDirty)
+    if (
+      saving ||
+      deleting ||
+      mediaBusy ||
+      conflictProject !== null ||
+      (!isCreating && !isDirty)
+    )
       return;
     const id = projectId;
     const ownerId = session.data?.user?.id;
@@ -1191,11 +1197,7 @@
             {/if}
           </section>
 
-          <details
-            bind:this={optionalDetails}
-            class="optional-details"
-            open={projectId !== null}
-          >
+          <details bind:open={optionalDetailsOpen} class="optional-details">
             <summary>{t("More project details", locale)}</summary>
             <div class="optional-details__content">
               <section class="form-card" aria-labelledby="writing-heading">
