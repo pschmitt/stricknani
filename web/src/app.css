@@ -3,7 +3,7 @@
    yarn at night. Values mirror android/.../ui/theme/Color.kt. */
 @font-face {
   font-family: "Fraunces";
-  src: url("/app/fonts/fraunces.woff2") format("woff2");
+  src: url("./lib/fonts/fraunces.woff2") format("woff2");
   font-weight: 500 800;
   font-style: normal;
   font-display: swap;
@@ -11,7 +11,7 @@
 
 @font-face {
   font-family: "Nunito";
-  src: url("/app/fonts/nunito.woff2") format("woff2");
+  src: url("./lib/fonts/nunito.woff2") format("woff2");
   font-weight: 400 900;
   font-style: normal;
   font-display: swap;
