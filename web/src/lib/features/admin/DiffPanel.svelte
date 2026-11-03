@@ -11,8 +11,10 @@
   import {
     getAuditEventDetail,
     type AuditEventDetail,
+    type ChangeItemV1,
     type ChangeValue,
   } from "./admin-api";
+  import { wordDiff, type DiffSegment } from "./word-diff";
 
   let { eventId }: { eventId: number } = $props();
   let detail = $state<AuditEventDetail | null>(null);
@@ -114,6 +116,70 @@
           ? t("Link present", locale)
           : t("Link not present", locale);
     }
+  }
+
+  type ChangeKind = "added" | "removed" | "changed";
+
+  function isEmptyValue(value: ChangeValue): boolean {
+    switch (value.type) {
+      case "text":
+      case "integer":
+        return value.value === null;
+      case "legacy_text":
+        return value.value === "";
+      case "text_list":
+      case "yarns":
+      case "steps":
+        return value.value.length === 0;
+      default:
+        return false;
+    }
+  }
+
+  function changeKind(item: ChangeItemV1): ChangeKind {
+    if (isEmptyValue(item.before) && !isEmptyValue(item.after)) return "added";
+    if (!isEmptyValue(item.before) && isEmptyValue(item.after))
+      return "removed";
+    return "changed";
+  }
+
+  function kindLabel(kind: ChangeKind): string {
+    return kind === "added"
+      ? t("Added", locale)
+      : kind === "removed"
+        ? t("Removed", locale)
+        : t("Changed", locale);
+  }
+
+  /** Word-level highlights for both sides, or null when there is nothing to compare. */
+  function segments(item: ChangeItemV1): {
+    before: DiffSegment[];
+    after: DiffSegment[];
+  } {
+    const before = displayValue(item.before);
+    const after = displayValue(item.after);
+    const comparable =
+      !isEmptyValue(item.before) &&
+      !isEmptyValue(item.after) &&
+      item.before.type !== "boolean" &&
+      item.before.type !== "link_changed";
+    if (!comparable) {
+      return {
+        before: [{ text: before, changed: false }],
+        after: [{ text: after, changed: false }],
+      };
+    }
+    return wordDiff(before, after);
+  }
+
+  /** "+2" / "−3" for counts and other numbers. */
+  function delta(item: ChangeItemV1): string | null {
+    if (item.before.type !== "integer" || item.after.type !== "integer")
+      return null;
+    if (item.before.value === null || item.after.value === null) return null;
+    const difference = item.after.value - item.before.value;
+    if (difference === 0) return null;
+    return difference > 0 ? `+${difference}` : `\u2212${-difference}`;
   }
 
   function fieldLabel(field: string): string {
@@ -233,16 +299,45 @@
     {#if detail.changes}
       <ol class="change-list" aria-label={t("Recorded changes", locale)}>
         {#each detail.changes.items as item, index (`${index}:${item.field}`)}
-          <li>
-            <h2>{fieldLabel(item.field)}</h2>
+          {@const kind = changeKind(item)}
+          {@const parts = segments(item)}
+          {@const change = delta(item)}
+          <li class="change" data-kind={kind}>
+            <header class="change-head">
+              <h2>{fieldLabel(item.field)}</h2>
+              <span class="change-kind">{kindLabel(kind)}</span>
+              {#if change}
+                <span class="change-delta">{change}</span>
+              {/if}
+            </header>
             <div class="change-values">
-              <section>
-                <h3>{t("Before", locale)}</h3>
-                <pre>{displayValue(item.before)}</pre>
+              <section class="side side--before">
+                <h3>
+                  <span class="sign" aria-hidden="true">&minus;</span>
+                  {t("Before", locale)}
+                </h3>
+                <!-- prettier-ignore -->
+                <p class="value" class:value--empty={isEmptyValue(item.before)}>{#each parts.before as part, partIndex (partIndex)}{#if part.changed}<del>{part.text}</del>{:else}{part.text}{/if}{/each}</p>
               </section>
-              <section>
-                <h3>{t("After", locale)}</h3>
-                <pre>{displayValue(item.after)}</pre>
+              <span class="change-arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path
+                    d="M5 12h12m-5-5 5 5-5 5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <section class="side side--after">
+                <h3>
+                  <span class="sign" aria-hidden="true">+</span>
+                  {t("After", locale)}
+                </h3>
+                <!-- prettier-ignore -->
+                <p class="value" class:value--empty={isEmptyValue(item.after)}>{#each parts.after as part, partIndex (partIndex)}{#if part.changed}<ins>{part.text}</ins>{:else}{part.text}{/if}{/each}</p>
               </section>
             </div>
           </li>
@@ -271,7 +366,7 @@
     padding-bottom: 3rem;
   }
   .event-card,
-  .change-list li {
+  .change-list .change {
     padding: 1rem;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
@@ -293,42 +388,141 @@
   }
   .change-list {
     display: grid;
-    gap: 0.8rem;
+    gap: 0.9rem;
     padding: 0;
     margin: 0;
     list-style: none;
+    counter-reset: change;
   }
-  .change-list h2 {
-    margin: 0 0 0.7rem;
-    font-size: 1rem;
+  .change-list .change {
+    --change-tone: var(--info);
+    position: relative;
+    padding: 1rem 1.1rem 1.1rem;
+    border-radius: var(--radius-lg, 1.4rem);
+    border-color: color-mix(in srgb, var(--change-tone) 22%, var(--line));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--change-tone) 7%, var(--surface)),
+      var(--surface) 70%
+    );
+  }
+  .change[data-kind="added"] {
+    --change-tone: var(--success);
+  }
+  .change[data-kind="removed"] {
+    --change-tone: var(--danger);
+  }
+  .change-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+  }
+  .change-head h2 {
+    margin: 0;
+    font-size: 1.08rem;
     overflow-wrap: anywhere;
+  }
+  .change-kind,
+  .change-delta {
+    border-radius: 999px;
+    padding: 0.12rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--change-tone);
+    background: color-mix(in srgb, var(--change-tone) 14%, var(--surface));
+  }
+  .change-delta {
+    font-variant-numeric: tabular-nums;
   }
   .change-values {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.6rem;
   }
-  .change-values section {
+  .side {
+    --side-tone: var(--danger);
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md, 1rem);
+    border: 1px dashed color-mix(in srgb, var(--side-tone) 40%, transparent);
+    background: color-mix(in srgb, var(--side-tone) 7%, var(--surface));
+    padding: 0.55rem 0.8rem 0.75rem;
   }
-  .change-values h3 {
+  .side--after {
+    --side-tone: var(--success);
+  }
+  .side h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     margin: 0 0 0.35rem;
-    font-size: 0.9rem;
-    color: var(--muted);
+    font-size: 0.82rem;
+    color: var(--side-tone);
   }
-  pre {
+  .sign {
+    display: inline-grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--surface);
+    background: var(--side-tone);
+  }
+  .value {
+    margin: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    font: inherit;
-    padding: 0.7rem;
-    margin: 0;
-    min-height: 2.5rem;
-    border-radius: 0.55rem;
-    background: var(--surface-raised);
+    line-height: 1.55;
+  }
+  .value--empty {
+    color: var(--muted);
+    font-style: italic;
+  }
+  .value del,
+  .value ins {
+    border-radius: 0.35rem;
+    padding: 0.05rem 0.2rem;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .value del {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 18%, transparent);
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    text-decoration-color: color-mix(in srgb, var(--danger) 70%, transparent);
+  }
+  .value ins {
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .change-arrow {
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    color: var(--change-tone);
+    background: color-mix(in srgb, var(--change-tone) 14%, var(--surface));
   }
   @media (max-width: 38rem) {
     .change-values {
       grid-template-columns: 1fr;
+    }
+    .change-arrow {
+      justify-self: center;
+      transform: rotate(90deg);
+      width: 1.6rem;
+      height: 1.6rem;
     }
   }
 </style>

@@ -1840,7 +1840,7 @@ def run_acceptance(
             _require(
                 bool(audit_detail_requests)
                 and name_change.count() == 1
-                and name_change.locator(".change-values pre").last.inner_text()
+                and name_change.locator(".change-values .value").last.inner_text()
                 == cross_owner_name
                 and page.locator(".change-values img").count() == 0,
                 "lazy audit diff did not render escaped, human-readable changes",
