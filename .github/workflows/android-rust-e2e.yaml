@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     env:
-      E2E_LANE: ${{ github.event_name == 'push' && 'smoke' || inputs.lane }}
+      E2E_LANE: ${{ github.event_name == 'workflow_dispatch' && inputs.lane || 'smoke' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
