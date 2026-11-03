@@ -909,7 +909,7 @@
   .user-ledger {
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     background: var(--surface);
   }
   .ledger-head,
@@ -1044,7 +1044,7 @@
     color: var(--ink-muted);
   }
   .notice {
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.75rem 0.9rem;
   }
   .notice-success {
@@ -1059,7 +1059,7 @@
     width: min(100% - 2rem, 34rem);
     max-height: min(90dvh, 48rem);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: 0;
     color: var(--ink);
     background: var(--surface);

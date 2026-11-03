@@ -379,7 +379,7 @@
     min-width: 0;
     min-height: 44px;
     border: 1px solid var(--control-border);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.55rem 0.7rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -407,7 +407,7 @@
     justify-content: space-between;
     gap: 0.8rem;
     border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     padding: 0.75rem 0.9rem;
     color: var(--danger);
     background: color-mix(in srgb, var(--danger) 7%, var(--surface));

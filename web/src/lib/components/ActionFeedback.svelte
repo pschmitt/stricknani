@@ -65,7 +65,7 @@
     gap: 0.75rem;
     box-sizing: border-box;
     border: 1px solid var(--control-border);
-    border-radius: 0.85rem;
+    border-radius: var(--radius-sm);
     padding: 0.55rem 0.65rem 0.55rem 0.9rem;
     color: var(--ink);
     background: var(--surface-raised);

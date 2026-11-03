@@ -71,7 +71,7 @@
     align-items: center;
     gap: 0.15rem;
     border: 1px solid var(--line);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.15rem;
     background: var(--surface);
   }

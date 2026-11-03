@@ -283,7 +283,7 @@
     width: min(100%, 31rem);
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 1.25rem;
+    border-radius: var(--radius-md);
     padding: clamp(1.25rem, 5vw, 2.5rem);
     background: var(--surface);
     box-shadow: var(--shadow);
@@ -324,7 +324,7 @@
     width: 100%;
     min-height: 3rem;
     border: 1px solid var(--control-border);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.65rem 0.8rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -348,7 +348,7 @@
   .signup-error {
     margin-top: 1.25rem;
     border: 1px solid color-mix(in srgb, var(--danger) 38%, transparent);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.75rem 0.85rem;
     background: color-mix(in srgb, var(--danger) 7%, var(--surface));
   }

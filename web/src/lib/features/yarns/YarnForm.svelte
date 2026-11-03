@@ -1056,7 +1056,7 @@
   .conflict-panel {
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 0.95rem;
+    border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.35rem);
     background: var(--surface);
   }
@@ -1097,7 +1097,7 @@
     min-width: 0;
     min-height: 44px;
     border: 1px solid var(--control-border);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.6rem 0.7rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -1161,7 +1161,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     padding: 1rem;
     background: var(--surface);
   }
@@ -1195,7 +1195,7 @@
 
   .conflict-panel {
     border: 1px solid var(--line);
-    border-radius: 0.85rem;
+    border-radius: var(--radius-sm);
     padding: 0.9rem 1rem;
     background: var(--surface);
   }

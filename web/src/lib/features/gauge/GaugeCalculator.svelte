@@ -491,7 +491,7 @@
   .gauge-form,
   .results {
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.5rem);
     background: var(--surface);
   }
@@ -529,7 +529,7 @@
     min-width: 0;
     margin: 0;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0.9rem;
   }
 
@@ -582,7 +582,7 @@
     min-width: 0;
     min-height: 48px;
     border: 1px solid var(--control-border);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.55rem 0.7rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -629,7 +629,7 @@
   .result-grid > div {
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0.8rem;
     background: var(--surface-raised);
   }

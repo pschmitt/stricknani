@@ -132,7 +132,7 @@
     grid-template-columns: 3.25rem minmax(0, 1fr);
     align-items: center;
     gap: 0.7rem;
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     color: inherit;
     text-decoration: none;
   }
@@ -156,9 +156,9 @@
     flex: none;
     place-items: center;
     overflow: hidden;
-    border-radius: 0.55rem;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
+    border-radius: var(--radius-xs);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
   }
 
   .resource-card__image :global(svg) {
@@ -185,7 +185,7 @@
     margin: 0;
     overflow-wrap: anywhere;
     font: inherit;
-    font-weight: 680;
+    font-weight: 800;
   }
 
   .resource-card__subtitle,
@@ -209,7 +209,14 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
     overflow: hidden;
-    border-radius: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    transition: transform 200ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+
+  .library .resource-card__link[href]:hover {
+    transform: translateY(-3px);
   }
 
   .library .resource-card__image {
@@ -217,8 +224,8 @@
     min-height: 9.5rem;
     aspect-ratio: 1.4;
     border-radius: 0;
-    color: color-mix(in srgb, var(--accent) 60%, transparent);
-    background: var(--accent-wash);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
   }
 
   .library .resource-card__image :global(svg) {
@@ -233,8 +240,9 @@
 
   .library .resource-card__name {
     overflow: hidden;
-    font-size: 1.08rem;
-    letter-spacing: -0.025em;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -250,7 +258,7 @@
     align-items: center;
     gap: 0.75rem;
     overflow: visible;
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
   }
 
   .library-row .resource-card__image {
@@ -258,7 +266,7 @@
     height: 56px;
     min-height: 56px;
     aspect-ratio: 1;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-xs);
   }
 
   .library-row .resource-card__image :global(svg) {

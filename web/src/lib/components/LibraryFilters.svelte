@@ -368,7 +368,7 @@
     align-items: center;
     gap: 0.65rem;
     border: 1px solid var(--control-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0 0.55rem 0 0.8rem;
     color: var(--ink-muted);
     background: var(--surface);
@@ -483,7 +483,7 @@
     overflow: auto;
     overscroll-behavior: contain;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: 1rem;
     color: var(--ink);
     background: var(--surface);
@@ -558,7 +558,7 @@
       width: 100%;
       max-height: min(82dvh, 42rem);
       border: 0;
-      border-radius: 1.1rem 1.1rem 0 0;
+      border-radius: var(--radius-md) 1.1rem 0 0;
       padding: 1rem max(1rem, env(safe-area-inset-right))
         calc(1rem + env(safe-area-inset-bottom))
         max(1rem, env(safe-area-inset-left));

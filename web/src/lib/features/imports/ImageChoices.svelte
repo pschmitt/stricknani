@@ -39,7 +39,7 @@
     margin: 0.75rem 0;
     padding: 0.8rem;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
   }
   .image-choices legend {
     padding: 0 0.3rem;

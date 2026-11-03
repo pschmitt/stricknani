@@ -1729,7 +1729,7 @@
   .notice {
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
     background: var(--surface);
   }
@@ -1767,7 +1767,7 @@
     width: 100%;
     min-height: 44px;
     border: 1px solid var(--control-border);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.65rem 0.75rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -1855,7 +1855,7 @@
     gap: 0.75rem;
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0.6rem;
     background: var(--surface-raised);
   }
@@ -1896,7 +1896,7 @@
     display: grid;
     gap: 0.8rem;
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     padding: 0.8rem;
     background: var(--surface-raised);
   }
@@ -1933,7 +1933,7 @@
     align-items: center;
     gap: 0.7rem;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0.5rem;
     background: var(--surface-raised);
   }
@@ -1983,7 +1983,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     border: 1px solid var(--danger);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     padding: 1rem;
   }
 

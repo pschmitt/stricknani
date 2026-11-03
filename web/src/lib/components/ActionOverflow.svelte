@@ -141,7 +141,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--line);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     color: var(--accent-strong);
     background: var(--surface);
     cursor: pointer;
@@ -186,7 +186,7 @@
     overscroll-behavior: contain;
     padding: 0.4rem;
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     background: var(--surface-raised);
     box-shadow: var(--shadow);
     visibility: hidden;

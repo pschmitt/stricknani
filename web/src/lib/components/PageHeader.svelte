@@ -48,8 +48,8 @@
     min-width: 0;
     margin: 0;
     font-size: 2.5rem;
-    font-weight: 680;
-    letter-spacing: -0.05em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     line-height: 1.1;
     text-align: left;
     overflow-wrap: anywhere;

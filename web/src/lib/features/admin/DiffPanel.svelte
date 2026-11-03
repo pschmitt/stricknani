@@ -274,7 +274,7 @@
   .change-list li {
     padding: 1rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     background: var(--surface);
   }
   .event-actor {

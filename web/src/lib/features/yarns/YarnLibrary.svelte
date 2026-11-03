@@ -307,7 +307,7 @@
     justify-content: space-between;
     gap: 0.8rem;
     border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--surface));
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     padding: 0.75rem 0.9rem;
     color: var(--danger);
     background: var(--surface);

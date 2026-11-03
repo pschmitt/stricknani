@@ -272,7 +272,7 @@
   .form-error {
     margin-top: 1.4rem;
     border: 1px solid color-mix(in srgb, var(--danger) 38%, transparent);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.8rem 0.9rem;
     color: var(--danger);
     background: color-mix(in srgb, var(--danger) 7%, var(--surface));
@@ -281,7 +281,7 @@
   .form-success {
     margin-top: 1.4rem;
     border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.8rem 0.9rem;
     color: var(--success);
     background: var(--success-surface);

@@ -453,7 +453,7 @@
   .spec-panel {
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 0.95rem;
+    border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
     background: var(--surface);
   }
@@ -540,7 +540,7 @@
   .notice-error,
   .detail-error {
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     padding: 1rem;
     color: var(--danger);
     background: var(--surface);

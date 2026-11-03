@@ -1292,7 +1292,7 @@
   .loading-mark {
     width: 100%;
     height: 13rem;
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     background: linear-gradient(135deg, var(--surface), var(--accent-wash));
   }
 
@@ -1306,7 +1306,7 @@
     justify-items: start;
     gap: 0.5rem;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: clamp(1.4rem, 5vw, 2.4rem);
     background: var(--surface);
   }
@@ -1316,7 +1316,7 @@
     width: 3rem;
     aspect-ratio: 1;
     place-items: center;
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     color: var(--accent-strong);
     background: var(--accent-wash);
     font-size: 1.5rem;
@@ -1360,7 +1360,7 @@
   .text-size-controls {
     gap: 0.3rem;
     border: 1px solid var(--line);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.2rem;
     background: var(--surface);
   }
@@ -1486,7 +1486,7 @@
   .details-card {
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
     background: var(--surface);
   }
@@ -1538,7 +1538,7 @@
     min-height: 44px;
     align-content: center;
     border: 1px solid var(--line);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.35rem 0.6rem;
     color: var(--accent-strong);
     background: var(--surface-raised);
@@ -1590,7 +1590,7 @@
     min-width: 0;
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0;
     background: var(--surface-raised);
     cursor: zoom-in;
@@ -1689,7 +1689,7 @@
   .rich-text :global(pre) {
     overflow-x: auto;
     border: 1px solid var(--line);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.8rem;
     background: var(--surface-raised);
   }
@@ -1735,7 +1735,7 @@
   }
 
   .steps-list > li.current-step {
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     background: var(--surface-raised);
   }
 
@@ -1857,7 +1857,7 @@
     align-items: center;
     gap: 0.6rem;
     border: 1px solid var(--line);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.45rem 0.55rem;
     color: var(--ink);
     text-decoration: none;

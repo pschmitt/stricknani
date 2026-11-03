@@ -558,7 +558,7 @@
     align-items: center;
     gap: 0.55rem;
     margin: 0;
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     padding: 0.75rem 1rem;
     color: var(--ink-muted);
     background: var(--surface);

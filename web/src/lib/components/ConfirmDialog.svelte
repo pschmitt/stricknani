@@ -50,7 +50,7 @@
     max-height: calc(100dvh - 2rem);
     overflow: auto;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: 1.2rem;
     color: var(--ink);
     background: var(--surface);

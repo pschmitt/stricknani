@@ -431,7 +431,7 @@
   .create-form {
     align-items: end;
     border: 1px solid var(--line);
-    border-radius: 0.95rem;
+    border-radius: var(--radius-sm);
     padding: 0.9rem;
     background: var(--surface);
   }
@@ -450,7 +450,7 @@
     min-width: 0;
     min-height: 44px;
     border: 1px solid var(--control-border);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.55rem 0.7rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -468,7 +468,7 @@
     justify-content: space-between;
     gap: 0.7rem;
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-xs);
     padding: 0.75rem 0.9rem;
     margin: 0;
     background: var(--surface);
@@ -542,7 +542,7 @@
   .confirm-dialog {
     max-width: min(92vw, 32rem);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: 1.2rem;
     color: var(--ink);
     background: var(--surface);

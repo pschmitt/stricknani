@@ -21,7 +21,7 @@
   .preview-section {
     max-width: 48rem;
     border: 1px solid var(--line);
-    border-radius: 1.1rem;
+    border-radius: var(--radius-md);
     padding: clamp(1.4rem, 4vw, 2.6rem);
     background: var(--surface);
   }

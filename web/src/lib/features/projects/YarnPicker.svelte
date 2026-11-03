@@ -138,7 +138,7 @@
     min-width: 0;
     min-height: 44px;
     border: 1px solid var(--control-border);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     padding: 0.65rem 0.75rem;
     color: var(--ink);
     background: var(--surface-raised);
@@ -162,7 +162,7 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0.6rem;
     background: var(--surface-raised);
   }

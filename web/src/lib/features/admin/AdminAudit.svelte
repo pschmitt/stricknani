@@ -519,7 +519,7 @@
     padding: 0;
     list-style: none;
     border: 1px solid var(--line);
-    border-radius: 0.85rem;
+    border-radius: var(--radius-sm);
     background: var(--surface);
     overflow: hidden;
   }

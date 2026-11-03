@@ -164,7 +164,7 @@
       right: max(0.75rem, env(safe-area-inset-right));
       left: max(0.75rem, env(safe-area-inset-left));
       max-width: none;
-      border-radius: 0.85rem;
+      border-radius: var(--radius-sm);
     }
 
     p {

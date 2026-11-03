@@ -1150,7 +1150,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--line);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     padding: 0.55rem 0.85rem;
     color: var(--accent-strong);
     background: var(--surface);
@@ -1341,7 +1341,7 @@
     width: min(34rem, calc(100vw - 2rem));
     max-height: min(90svh, 48rem);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: 0;
     color: var(--ink);
     background: var(--surface);

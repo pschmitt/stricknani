@@ -534,7 +534,7 @@
     aspect-ratio: 1;
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     padding: 0;
     background: var(--surface-raised);
     cursor: zoom-in;
@@ -566,7 +566,7 @@
     max-width: min(94vw, 48rem);
     max-height: 90svh;
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-sm);
     padding: 1rem;
     color: var(--ink);
     background: var(--surface);

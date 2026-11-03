@@ -829,7 +829,7 @@
     margin: 1rem 0;
     padding: clamp(1rem, 4vw, 1.5rem);
     border: 1px solid var(--line);
-    border-radius: 1.1rem;
+    border-radius: var(--radius-md);
     background: var(--surface);
     box-shadow: var(--shadow);
   }
@@ -847,7 +847,7 @@
     gap: 0.55rem;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--line);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-xs);
     font-size: 0.9rem;
   }
   input[type="checkbox"] {
@@ -878,7 +878,7 @@
     min-height: 2.75rem;
     padding: 0.7rem 0.75rem;
     border: 1px solid var(--control-border);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     color: var(--ink);
     background: var(--surface);
     font-weight: 400;
@@ -899,7 +899,7 @@
     align-content: center;
     gap: 0.35rem;
     border: 1px dashed var(--accent);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     background: var(--surface-raised);
     text-align: center;
     cursor: pointer;
@@ -930,7 +930,7 @@
   .notice,
   .feedback {
     padding: 0.75rem 0.9rem;
-    border-radius: 0.7rem;
+    border-radius: var(--radius-xs);
     background: var(--surface-raised);
   }
   .notice {
@@ -976,7 +976,7 @@
     margin: 0.8rem 0;
     padding: 1rem;
     border: 1px solid var(--line);
-    border-radius: 0.85rem;
+    border-radius: var(--radius-sm);
   }
   .step-card legend {
     padding: 0 0.4rem;

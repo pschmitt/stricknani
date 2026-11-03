@@ -107,7 +107,7 @@
     max-height: min(92svh, 56rem);
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 1.1rem;
+    border-radius: var(--radius-md);
     padding: 0;
     color: var(--ink);
     background: var(--surface);
@@ -203,7 +203,7 @@
     :global(.lightbox-step) {
       width: 44px;
       height: 44px;
-      border-radius: 0.6rem;
+      border-radius: var(--radius-xs);
     }
   }
 </style>

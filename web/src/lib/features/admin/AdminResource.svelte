@@ -801,7 +801,7 @@
     gap: 0.75rem;
     padding: 0.9rem 1rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     background: var(--surface);
   }
   .owner-strip p {
@@ -837,7 +837,7 @@
     gap: 0.85rem;
     padding: 1rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius-sm);
     background: var(--surface);
   }
   .resource-section h2,
@@ -916,7 +916,7 @@
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: 0.65rem;
+    border-radius: var(--radius-xs);
     background: var(--surface-raised);
   }
   .media-grid span {
