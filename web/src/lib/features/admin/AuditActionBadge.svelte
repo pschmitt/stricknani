@@ -22,7 +22,7 @@
   class:action-badge--unknown={!presentation.known}
 >
   <NavIcon name={presentation.icon} />
-  <span>{label}</span>
+  <span title={label}>{label}</span>
 </span>
 
 <style>

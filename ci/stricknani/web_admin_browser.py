@@ -913,7 +913,8 @@ def _assert_audit_visual_measurements(page: Page) -> None:
                 and measurements.get("textContrastAtLeast45") is True
                 and measurements.get("badgeTextUnclipped") is True
                 and measurements.get("distinctKnownToneColors") is True,
-                f"audit action colors, contrast, or row alignment failed at {width}px",
+                f"audit action colors, contrast, or row alignment failed at {width}px "
+                f"({ {k: v for k, v in measurements.items() if v is not True} })",
             )
     finally:
         page.set_viewport_size({"width": original_width, "height": viewport["height"]})
@@ -1763,7 +1764,7 @@ def run_acceptance(
                     and reader_bounds["x"] + reader_bounds["width"] <= width + 1,
                     f"admin project reader exceeded the viewport at {width}px",
                 )
-                _assert_no_horizontal_overflow(page, "admin project reader")
+                _assert_no_horizontal_overflow(page, "project-reader")
             mark("load cross-owner step image")
             step_media = page.locator(".step-photo-card").filter(
                 has=page.locator('img[alt="Nested fixture step image"]')
@@ -1802,8 +1803,13 @@ def run_acceptance(
                 "read-only resource view did not identify the image's step",
             )
             mark("download cross-owner attachment")
-            attachment_link = page.get_by_role(
-                "link", name="synthetic-pattern.txt", exact=True
+            # The link's accessible name also carries its type and size.
+            attachment_link = page.locator(".attachments-card a").filter(
+                has=page.locator("strong", has_text="synthetic-pattern.txt")
+            )
+            _require(
+                attachment_link.count() == 1,
+                "admin project reader did not list the synthetic attachment once",
             )
             attachment_link.wait_for(state="visible")
             attachment_url = attachment_link.get_attribute("href") or ""
@@ -2106,11 +2112,21 @@ def run_acceptance(
                 filtered_audit_response["events"] = data
 
             page.on("response", record_filtered_audit_response)
+            mark("filter audit events by entity")
             page.get_by_label("Entity").select_option("project")
+            # Choosing an entity filters at once and reloads the list, which
+            # resets the action draft; let that settle before typing one.
+            page.wait_for_url("**/app/admin/audit?entity=project")
+            page.wait_for_load_state("networkidle")
+            page.locator(".event-row").first.wait_for(state="visible")
+            mark("filter audit events by action")
             page.get_by_label("Action").fill("created")
             page.get_by_role("button", name="Filter").click()
+            mark("wait for the filtered audit URL")
             page.wait_for_url("**/app/admin/audit?entity=project&action=created")
+            mark("wait for filtered audit rows")
             page.locator(".event-row").first.wait_for(state="visible")
+            mark("read filtered audit rows")
             api_events_value = filtered_audit_response.get("events")
             api_events = api_events_value if isinstance(api_events_value, list) else []
             rows = page.locator(".event-row").all()
@@ -2173,6 +2189,7 @@ def run_acceptance(
                 )
 
             page.on("response", check_audit_response)
+            mark("clamp an out-of-range audit page")
             await_page = page
             await_page.goto(
                 f"{origin}/app/admin/audit?page=9999&entity=project&action=created",
@@ -2181,7 +2198,12 @@ def run_acceptance(
             await_page.get_by_role("heading", name="Audit log").wait_for(
                 state="visible"
             )
-            await_page.get_by_text("Page 1", exact=True).wait_for(state="visible")
+            # Page controls only render when there is more than one page, so
+            # a clamped, short filtered list shows its rows and no pager.
+            await_page.locator(".event-row").first.wait_for(state="visible")
+            await_page.wait_for_function(
+                "() => !new URLSearchParams(location.search).has('page')"
+            )
             _require(
                 "page=" not in urlsplit(await_page.url).query,
                 "out-of-range audit page did not clamp to the filtered last page",

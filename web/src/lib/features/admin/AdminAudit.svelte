@@ -546,8 +546,14 @@
     grid-area: action;
     min-width: 0;
   }
+  /* A long action name is cut with an ellipsis (its full text is the tooltip) so every row
+     keeps the same height. */
   .event-action :global(.audit-action-badge) {
     white-space: nowrap;
+  }
+  .event-action :global(.audit-action-badge > span) {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .event-resource {
     grid-area: resource;
@@ -693,8 +699,10 @@
       gap: 0.4rem 0.75rem;
       padding: 0.6rem 0.75rem;
     }
+    /* Fixed columns keep the time and the diff link at the same spot in every row, with or
+       without a diff. */
     .event-meta {
-      grid-template-columns: auto auto;
+      grid-template-columns: 4.5rem 6.5rem;
       justify-self: end;
     }
     .event-actor {
