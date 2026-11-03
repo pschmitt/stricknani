@@ -14,12 +14,14 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
+  import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
+  import OcrControl from "#lib/features/media/OcrControl.svelte";
+  import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
-  import YarnPhotoManager from "./YarnPhotoManager.svelte";
   import {
     deleteYarn,
     getLinkedProject,
@@ -49,6 +51,26 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  let selectedPhotoId = $state<number | null>(null);
+  const stripItems = $derived(
+    (yarn?.photos ?? []).map((photo) => ({
+      id: photo.id,
+      url: photo.url,
+      alt: photo.alt_text || yarn?.name || "",
+    })),
+  );
+  const lightboxImages = $derived(
+    (yarn?.photos ?? []).map((photo) => ({
+      id: photo.id,
+      url: photo.url,
+      thumbnail_url: photo.thumbnail_url,
+      alt_text: photo.alt_text,
+      image_type: "yarn",
+      is_title_image: photo.is_primary,
+      is_stitch_sample: false,
+      step_id: null,
+    })),
+  );
   const canUseOcr = $derived(session.data?.capabilities.ocr === true);
   const canArchive = $derived(session.data?.capabilities.archive === true);
   const canReadArchiveState = $derived(
@@ -404,23 +426,30 @@
         {actionError}
       </div>{/if}
 
+    {#if stripItems.length}
+      <div class="photo-strip-wrap">
+        <PhotoStrip
+          items={stripItems}
+          label={t("Photos", locale)}
+          openLabel={t("Yarn photo", locale)}
+          {locale}
+          onopen={(item) => (selectedPhotoId = item.id)}
+        >
+          {#snippet tile(item)}
+            <OcrControl
+              src={item.url}
+              label={t("Recognized text from yarn photo", locale)}
+              ownerId={userId}
+              {locale}
+              enabled={canUseOcr}
+            />
+          {/snippet}
+        </PhotoStrip>
+      </div>
+    {/if}
+
     <div class="detail-layout">
       <div class="detail-main">
-        <section
-          class="detail-section photos-section"
-          aria-label={t("Photos", locale)}
-        >
-          <YarnPhotoManager
-            yarnId={yarn.id}
-            photos={yarn.photos}
-            {locale}
-            ownerId={userId}
-            ocrEnabled={canUseOcr}
-            readOnly={true}
-            onResourceUpdated={refreshYarn}
-          />
-        </section>
-
         {#if yarn.description_html}
           <section class="detail-section">
             <h2>{t("Description", locale)}</h2>
@@ -572,6 +601,14 @@
       currentEmail={session.data?.user?.email ?? null}
     />
   </main>
+  <ProjectLightbox
+    images={lightboxImages}
+    selectedId={selectedPhotoId}
+    title={currentYarn.name}
+    {locale}
+    onClose={() => (selectedPhotoId = null)}
+    onSelect={(image) => (selectedPhotoId = image.id)}
+  />
   <ConfirmDialog
     bind:this={deleteDialog}
     titleId="delete-yarn-title"
@@ -664,8 +701,8 @@
     font-size: 1.1rem;
   }
 
-  .photos-section {
-    padding: 1rem;
+  .photo-strip-wrap {
+    margin-bottom: 1rem;
   }
 
   .reading-small {

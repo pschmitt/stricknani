@@ -17,6 +17,7 @@
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
+  import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
@@ -123,6 +124,16 @@
     project?.images.filter(
       (image) => image.step_id === null && image.id !== coverImage?.id,
     ) ?? [],
+  );
+  const stripImages = $derived(
+    coverImage ? [coverImage, ...galleryImages] : [],
+  );
+  const stripItems = $derived(
+    stripImages.map((image) => ({
+      id: image.id,
+      url: image.url,
+      alt: image.alt_text || project?.name || "",
+    })),
   );
   const selectedImage = $derived(
     project?.images.find((image) => image.id === selectedImageId) ?? null,
@@ -878,86 +889,70 @@
       <p class="print-error" role="alert">{printError}</p>
     {/if}
 
-    <div class="reader-overview" class:has-cover={coverImage !== null}>
-      {#if coverImage}
-        <figure class="reader-cover">
-          <Button
-            class="gallery-image reader-cover-image"
-            variant="ghost"
-            type="button"
-            aria-label={t("Open project photo", locale) +
-              `: ${coverImage.alt_text || project.name}`}
-            onclick={() => openImage(coverImage)}
-          >
-            <img
-              class="screen-reference-image"
-              src={coverImage.thumbnail_url}
-              alt={coverImage.alt_text || project.name}
-              loading="lazy"
-            />
-            <img
-              class="print-reference-image"
-              data-print-src={coverImage.url}
-              alt={coverImage.alt_text || project.name}
-              loading="lazy"
-              onerror={handlePrintImageError}
-            />
-            {#if coverImage.is_title_image}
-              <span class="title-image-label">{t("Cover photo", locale)}</span>
-            {:else if coverImage.is_stitch_sample}
-              <span class="title-image-label">
-                {t("Stitch sample", locale)}
-              </span>
+    <div class="reader-overview">
+      {#if stripImages.length}
+        <PhotoStrip
+          items={stripItems}
+          label={t("Photos", locale)}
+          openLabel={t("Open project photo", locale)}
+          {locale}
+          printable
+          onprinterror={handlePrintImageError}
+          onopen={(item) => (selectedImageId = item.id)}
+        >
+          {#snippet tile(item)}
+            {#if !adminData}
+              <OcrControl
+                src={item.url}
+                label={t("Recognized text from project photo", locale)}
+                ownerId={userId}
+                {locale}
+                enabled={canUseOcr}
+              />
             {/if}
-          </Button>
-          {#if !adminData}
-            <OcrControl
-              src={coverImage.url}
-              label={t("Recognized text from project photo", locale)}
-              ownerId={userId}
-              {locale}
-              enabled={canUseOcr}
-            />
-          {/if}
-        </figure>
+          {/snippet}
+        </PhotoStrip>
       {/if}
-      <dl class="reader-keyfacts">
-        <div>
-          <dt>{t("Yarn", locale)}</dt>
-          <dd>
-            {#if yarns.length}
-              {yarns[0].name}{#if moreYarns > 0}
-                <span
-                  class="more-pill"
-                  title={`${moreYarns} ${t("more yarns", locale)}`}
-                >
-                  <span aria-hidden="true">+{moreYarns}</span>
-                  <span class="visually-hidden"
-                    >{moreYarns} {t("more yarns", locale)}</span
-                  ></span
-                >{/if}
-            {:else}
-              {yarnText || t("Not recorded", locale)}
-            {/if}
-          </dd>
-        </div>
-        {#if needlesText}
+      <section class="reader-facts-card" aria-labelledby="reader-facts-title">
+        <h2 id="reader-facts-title">{t("Project details", locale)}</h2>
+        <dl class="reader-keyfacts">
           <div>
-            <dt>{t("Needles", locale)}</dt>
-            <dd>{needlesText}</dd>
-          </div>
-        {/if}
-        {#if gaugeHtml || gaugeText}
-          <div>
-            <dt>{t("Gauge", locale)}</dt>
+            <dt>{t("Yarn", locale)}</dt>
             <dd>
-              {#if gaugeHtml}<div class="rich-text">
-                  {@html gaugeHtml}
-                </div>{:else}{gaugeText}{/if}
+              {#if yarns.length}
+                {yarns[0].name}{#if moreYarns > 0}
+                  <span
+                    class="more-pill"
+                    title={`${moreYarns} ${t("more yarns", locale)}`}
+                  >
+                    <span aria-hidden="true">+{moreYarns}</span>
+                    <span class="visually-hidden"
+                      >{moreYarns} {t("more yarns", locale)}</span
+                    ></span
+                  >{/if}
+              {:else}
+                {yarnText || t("Not recorded", locale)}
+              {/if}
             </dd>
           </div>
-        {/if}
-      </dl>
+          {#if needlesText}
+            <div>
+              <dt>{t("Needles", locale)}</dt>
+              <dd>{needlesText}</dd>
+            </div>
+          {/if}
+          {#if gaugeHtml || gaugeText}
+            <div>
+              <dt>{t("Gauge", locale)}</dt>
+              <dd>
+                {#if gaugeHtml}<div class="rich-text">
+                    {@html gaugeHtml}
+                  </div>{:else}{gaugeText}{/if}
+              </dd>
+            </div>
+          {/if}
+        </dl>
+      </section>
     </div>
 
     <Disclosure
@@ -1317,61 +1312,6 @@
       </aside>
     </div>
 
-    {#if galleryImages.length}
-      <section class="image-gallery" aria-labelledby="gallery-heading">
-        <div class="section-heading-row">
-          <h2 id="gallery-heading">{t("Project photos", locale)}</h2>
-          <span>{galleryImages.length}</span>
-        </div>
-        <div class="gallery-grid">
-          {#each galleryImages as image (image.id)}
-            <div class="gallery-photo-card">
-              <Button
-                class="gallery-image"
-                variant="ghost"
-                type="button"
-                aria-label={t("Open project photo", locale) +
-                  `: ${image.alt_text || project.name}`}
-                onclick={() => openImage(image)}
-              >
-                <img
-                  class="screen-reference-image"
-                  src={image.thumbnail_url}
-                  alt={image.alt_text || project.name}
-                  loading="lazy"
-                />
-                <img
-                  class="print-reference-image"
-                  data-print-src={image.url}
-                  alt={image.alt_text || project.name}
-                  loading="lazy"
-                  onerror={handlePrintImageError}
-                />
-                {#if image.is_title_image}
-                  <span class="title-image-label"
-                    >{t("Cover photo", locale)}</span
-                  >
-                {:else if image.is_stitch_sample}
-                  <span class="title-image-label"
-                    >{t("Stitch sample", locale)}</span
-                  >
-                {/if}
-              </Button>
-              {#if !adminData}
-                <OcrControl
-                  src={image.url}
-                  label={t("Recognized text from project photo", locale)}
-                  ownerId={userId}
-                  {locale}
-                  enabled={canUseOcr}
-                />
-              {/if}
-            </div>
-          {/each}
-        </div>
-      </section>
-    {/if}
-
     {#if !adminData}
       <HistorySection
         kind="projects"
@@ -1541,20 +1481,21 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
-  }
-
-  .reader-overview.has-cover {
-    grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
     gap: 1rem;
-  }
-
-  .reader-cover {
     min-width: 0;
-    margin: 0;
   }
 
-  .reader-cover-image {
-    width: 100%;
+  .reader-facts-card {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: clamp(1rem, 3vw, 1.4rem);
+    background: var(--surface);
+  }
+
+  .reader-facts-card h2 {
+    margin: 0 0 0.8rem;
+    font-size: 1.1rem;
   }
 
   .reader-keyfacts {
@@ -1633,7 +1574,6 @@
     color: var(--danger);
   }
 
-  .image-gallery,
   .pattern-section,
   .steps-section,
   .details-card {
@@ -1738,18 +1678,6 @@
     white-space: nowrap;
   }
 
-  .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
-    gap: 0.65rem;
-  }
-
-  .gallery-photo-card {
-    display: grid;
-    min-width: 0;
-    align-content: start;
-  }
-
   :global(.gallery-image),
   :global(.step-image) {
     position: relative;
@@ -1788,22 +1716,6 @@
   :global(.gallery-image) img {
     position: absolute;
     inset: 0;
-  }
-
-  .title-image-label {
-    position: absolute;
-    right: 0.4rem;
-    bottom: 0.4rem;
-    left: 0.4rem;
-    overflow: hidden;
-    border-radius: 0.4rem;
-    padding: 0.2rem 0.45rem;
-    color: #18302d;
-    background: rgb(255 255 255 / 88%);
-    font-size: 0.72rem;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .reader-columns {
@@ -2077,11 +1989,6 @@
   }
 
   @media (max-width: 600px) {
-    .reader-overview.has-cover {
-      grid-template-columns: minmax(0, 8rem) minmax(0, 1fr);
-      gap: 0.75rem;
-    }
-
     .reader-keyfacts {
       gap: 0.5rem 0.75rem;
     }
@@ -2155,7 +2062,7 @@
       display: block;
     }
 
-    .reader-keyfacts {
+    .reader-facts-card {
       display: none;
     }
 
@@ -2164,16 +2071,6 @@
     :global(.page-header__actions),
     .lightbox {
       display: none !important;
-    }
-
-    .image-gallery {
-      display: block;
-      break-inside: auto;
-    }
-
-    .gallery-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.16in;
     }
 
     .step-images {
@@ -2217,10 +2114,6 @@
 
     .print-error {
       display: block;
-    }
-
-    .title-image-label {
-      display: none !important;
     }
 
     :global(.materials-card > summary) {
