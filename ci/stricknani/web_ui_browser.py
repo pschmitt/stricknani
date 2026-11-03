@@ -19,6 +19,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from playwright.sync_api import (
     Browser,
+    Dialog,
     Locator,
     Page,
     Request,
@@ -55,6 +56,30 @@ def _playwright_error_category(error: Exception) -> str:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AcceptanceFailure(message)
+
+
+def _click_and_handle_dialog(page: Page, locator: Locator, *, accept: bool) -> Dialog:
+    dialogs: list[Dialog] = []
+
+    def handle_dialog(dialog: Dialog) -> None:
+        page.remove_listener("dialog", handle_dialog)
+        dialogs.append(dialog)
+        if accept and dialog.type == "confirm":
+            dialog.accept()
+        else:
+            dialog.dismiss()
+
+    page.on("dialog", handle_dialog)
+    try:
+        locator.click()
+    finally:
+        page.remove_listener("dialog", handle_dialog)
+
+    _require(
+        len(dialogs) == 1 and dialogs[0].type == "confirm",
+        "dirty project Cancel did not show exactly one confirmation dialog",
+    )
+    return dialogs[0]
 
 
 def _open_reader_actions(page: Page) -> Locator:
@@ -4105,8 +4130,7 @@ def run_acceptance(
                 "project editor Cancel does not target the saved project",
             )
             project_name.fill("Canceled project draft")
-            page.once("dialog", lambda dialog: dialog.dismiss())
-            cancel_link.click()
+            _click_and_handle_dialog(page, cancel_link, accept=False)
             _require(
                 urlsplit(page.url).path.endswith(
                     f"/app/projects/{editor_project_id}/edit"
@@ -4114,8 +4138,7 @@ def run_acceptance(
                 and project_name.input_value() == "Canceled project draft",
                 "canceling dirty ProjectEditor navigation did not retain the draft",
             )
-            page.once("dialog", lambda dialog: dialog.accept())
-            cancel_link.click()
+            _click_and_handle_dialog(page, cancel_link, accept=True)
             page.wait_for_url(f"**/app/projects/{editor_project_id}")
             page.get_by_role("heading", name="Soft winter throw", exact=True).wait_for(
                 state="visible"
