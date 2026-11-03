@@ -26,12 +26,14 @@ private data class TokenMintRequest(
 
 @Serializable private data class TokenMintResponse(val token: String)
 
+@Serializable private data class TokenMintResponseV2(val data: TokenMintResponse)
+
 /**
  * The password-login onboarding path (SNA-13, matches syncwich's `PasswordTokenMinter`): trades an
- * email/password for a freshly minted PAT via `/api/v1/auth/token`, so the user never has to
- * manually visit the web Settings page first. Unlike syncwich's Mealie-backed two-step
- * password-then-mint dance, Stricknani's own backend does both in one request since it controls
- * both ends.
+ * email/password for a freshly minted PAT via `/api/v2/auth/token` (`/api/v1/auth/token` on a
+ * server without v2, SNA-87), so the user never has to manually visit the web Settings page first.
+ * Unlike syncwich's Mealie-backed two-step password-then-mint dance, Stricknani's own backend does
+ * both in one request since it controls both ends.
  *
  * Uses [ValidationClient] (a plain, unauthenticated OkHttpClient against a caller-supplied base
  * URL) rather than the app's normal Retrofit stack, for the same reason [OnboardingValidator] does:
@@ -58,33 +60,59 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
                         OnboardingValidationException(OnboardingError.MalformedUrl)
                     )
 
+            val v2 =
+                try {
+                    when (val probe = probeV2(client, json, baseUrl)) {
+                        V2Probe.Supported -> true
+                        V2Probe.Unsupported -> false
+                        is V2Probe.Failed ->
+                            return@withContext Result.failure(
+                                OnboardingValidationException(
+                                    OnboardingError.ServerError(probe.code)
+                                )
+                            )
+                    }
+                } catch (e: IOException) {
+                    return@withContext Result.failure(
+                        OnboardingValidationException(OnboardingError.Unreachable, e)
+                    )
+                }
+
             val body =
                 json
                     .encodeToString(TokenMintRequest(email.trim(), password, tokenName))
                     .toRequestBody("application/json".toMediaType())
+            val path = if (v2) "api/v2/auth/token" else "api/v1/auth/token"
             val request =
                 Request.Builder()
-                    .url(baseUrl.newBuilder().addPathSegments("api/v1/auth/token").build())
+                    .url(baseUrl.newBuilder().addPathSegments(path).build())
                     .post(body)
                     .build()
 
             try {
                 client.newCall(request).execute().use { response ->
+                    val code = response.code
                     when {
                         response.isSuccessful -> {
-                            val decoded =
-                                json.decodeFromString<TokenMintResponse>(response.body.string())
-                            Result.success(decoded.token)
+                            val text = response.body.string()
+                            val token =
+                                if (v2) json.decodeFromString<TokenMintResponseV2>(text).data.token
+                                else json.decodeFromString<TokenMintResponse>(text).token
+                            Result.success(token)
                         }
-                        response.code == 401 || response.code == 403 ->
+                        // v2: 401 invalid_credentials, 422 validation_error (unusable email or
+                        // password); v1: 401/403.
+                        code == 401 || code == 403 || (v2 && code == 422) ->
                             Result.failure(
                                 OnboardingValidationException(OnboardingError.InvalidCredentials)
                             )
+                        code == 429 ->
+                            Result.failure(
+                                OnboardingValidationException(OnboardingError.RateLimited)
+                            )
                         else ->
                             Result.failure(
-                                OnboardingValidationException(
-                                    OnboardingError.ServerError(response.code)
-                                )
+                                OnboardingValidationException(OnboardingError.ServerError(code))
                             )
                     }
                 }

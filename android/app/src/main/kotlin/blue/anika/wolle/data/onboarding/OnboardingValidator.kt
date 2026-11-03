@@ -1,11 +1,13 @@
 package blue.anika.wolle.data.onboarding
 
+import blue.anika.wolle.data.api.v2.V2Envelope
 import blue.anika.wolle.di.ValidationClient
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
@@ -16,7 +18,10 @@ sealed interface OnboardingError {
     /** The entered server URL isn't a valid absolute HTTP(S) URL. */
     data object MalformedUrl : OnboardingError
 
-    /** The server was reachable, but `/api/v1/meta` didn't respond like a Stricknani server. */
+    /**
+     * The server was reachable, but `/api/v2/meta` (or, on older servers, `/api/v1/meta`) didn't
+     * respond like a Stricknani server.
+     */
     data class NotAStricknaniServer(val code: Int) : OnboardingError
 
     /** The server was reachable and is Stricknani, but rejected the token (HTTP 401/403). */
@@ -24,6 +29,9 @@ sealed interface OnboardingError {
 
     /** Password-login onboarding (SNA-13): the server rejected the email/password. */
     data object InvalidCredentials : OnboardingError
+
+    /** Too many login attempts (HTTP 429); try again later. */
+    data object RateLimited : OnboardingError
 
     /** The server was unreachable (DNS/connect/timeout failure). */
     data object Unreachable : OnboardingError
@@ -47,7 +55,9 @@ class OnboardingValidationException(val error: OnboardingError, cause: Throwable
  * `require_api_token` endpoint is needed to actually validate the token.
  */
 @Singleton
-class OnboardingValidator @Inject constructor(@ValidationClient private val client: OkHttpClient) {
+class OnboardingValidator
+@Inject
+constructor(@ValidationClient private val client: OkHttpClient, private val json: Json) {
 
     suspend fun validate(serverUrl: String, apiToken: String): Result<Unit> =
         withContext(Dispatchers.IO) {
@@ -57,12 +67,74 @@ class OnboardingValidator @Inject constructor(@ValidationClient private val clie
                         OnboardingValidationException(OnboardingError.MalformedUrl)
                     )
 
-            val serverCheck = checkIsStricknaniServer(baseUrl)
-            if (serverCheck.isFailure) {
-                return@withContext Result.failure(serverCheck.exceptionOrNull()!!)
+            val probe =
+                try {
+                    probeV2(client, json, baseUrl)
+                } catch (e: IOException) {
+                    return@withContext Result.failure(
+                        OnboardingValidationException(OnboardingError.Unreachable, e)
+                    )
+                }
+            when (probe) {
+                V2Probe.Supported -> checkTokenAuthorizesV2(baseUrl, apiToken)
+                is V2Probe.Failed ->
+                    Result.failure(
+                        OnboardingValidationException(
+                            if (probe.code >= 500) OnboardingError.ServerError(probe.code)
+                            else OnboardingError.NotAStricknaniServer(probe.code)
+                        )
+                    )
+                V2Probe.Unsupported -> {
+                    val serverCheck = checkIsStricknaniServer(baseUrl)
+                    if (serverCheck.isFailure) {
+                        return@withContext Result.failure(serverCheck.exceptionOrNull()!!)
+                    }
+                    checkTokenAuthorizes(baseUrl, apiToken)
+                }
             }
-            checkTokenAuthorizes(baseUrl, apiToken)
         }
+
+    /** v2: `GET /api/v2/meta` with the Bearer: 200 with a user is valid, 401/403 is not. */
+    private fun checkTokenAuthorizesV2(baseUrl: HttpUrl, apiToken: String): Result<Unit> {
+        val request =
+            Request.Builder()
+                .url(baseUrl.newBuilder().addPathSegments("api/v2/meta").build())
+                .header("Authorization", "Bearer ${apiToken.trim()}")
+                .build()
+        return try {
+            client.newCall(request).execute().use { response ->
+                when {
+                    response.isSuccessful -> {
+                        val user =
+                            runCatching {
+                                    json
+                                        .decodeFromString<V2Envelope<MetaProbeBody>>(
+                                            response.body.string()
+                                        )
+                                        .data
+                                        .user
+                                }
+                                .getOrNull()
+                        if (user != null) Result.success(Unit)
+                        else
+                            Result.failure(
+                                OnboardingValidationException(OnboardingError.Unauthorized)
+                            )
+                    }
+                    response.code == 401 || response.code == 403 ->
+                        Result.failure(OnboardingValidationException(OnboardingError.Unauthorized))
+                    else ->
+                        Result.failure(
+                            OnboardingValidationException(
+                                OnboardingError.ServerError(response.code)
+                            )
+                        )
+                }
+            }
+        } catch (e: IOException) {
+            Result.failure(OnboardingValidationException(OnboardingError.Unreachable, e))
+        }
+    }
 
     private fun checkIsStricknaniServer(baseUrl: HttpUrl): Result<Unit> {
         val request =

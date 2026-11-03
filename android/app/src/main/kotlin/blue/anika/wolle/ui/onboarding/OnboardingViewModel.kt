@@ -128,6 +128,8 @@ constructor(
                         context.getString(R.string.onboarding_error_unauthorized)
                     OnboardingError.InvalidCredentials ->
                         context.getString(R.string.onboarding_error_invalid_credentials)
+                    OnboardingError.RateLimited ->
+                        context.getString(R.string.onboarding_error_rate_limited)
                     OnboardingError.Unreachable ->
                         context.getString(R.string.onboarding_error_unreachable)
                     is OnboardingError.ServerError ->

@@ -429,6 +429,7 @@
     <string name="onboarding_error_not_a_server">Das sieht nicht wie ein Stricknani-Server aus (HTTP %1$d).</string>
     <string name="onboarding_error_unauthorized">Der Server hat das API-Token abgelehnt. Erstelle in Stricknani unter deinem Kontomenü → API-Token ein neues und versuche es erneut.</string>
     <string name="onboarding_error_invalid_credentials">Falsche E-Mail-Adresse oder falsches Passwort.</string>
+    <string name="onboarding_error_rate_limited">Zu viele Versuche. Versuch es in einer Weile erneut.</string>
     <string name="onboarding_error_unreachable">Diese Adresse ist nicht erreichbar. Prüfe sie und deine Internetverbindung.</string>
     <string name="onboarding_error_server_error">Der Server hat mit einem Fehler geantwortet (HTTP %1$d).</string>
     <string name="onboarding_error_generic">Verbindung zum Server nicht möglich.</string>
