@@ -6,14 +6,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.repository.movedItem
+import blue.anika.wolle.data.repository.photosSortedByPosition
+import blue.anika.wolle.data.repository.reorderedIdsOrNull
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.PhotoRemoval
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -23,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -55,6 +62,7 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
+    capabilities: ApiCapabilities,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.YarnEditor>()
@@ -87,6 +95,16 @@ constructor(
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
 
+    /** Reordering photos needs the v2 API; the controls stay hidden on a server without it. */
+    val reorderAvailable: StateFlow<Boolean> =
+        capabilities.state
+            .map { it.generation == ApiGeneration.V2 }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                capabilities.current.generation == ApiGeneration.V2,
+            )
+
     init {
         val id = route.yarnId
         if (id != null) {
@@ -109,7 +127,7 @@ constructor(
                             notes = detail.notes ?: "",
                             link = detail.link ?: "",
                             isAiEnhanced = detail.isAiEnhanced,
-                            existingPhotos = detail.photos,
+                            existingPhotos = detail.photos.photosSortedByPosition(),
                         )
                 }
                 _initialForm.value = _form.value
@@ -134,21 +152,42 @@ constructor(
         }
     }
 
-    fun removePhoto(index: Int) {
-        val upload = _form.value.photos.getOrNull(index) ?: return
+    fun removePhoto(index: Int): PhotoRemoval? {
+        val upload = _form.value.photos.getOrNull(index) ?: return null
         updateForm {
             it.copy(photos = it.photos.filterIndexed { position, _ -> position != index })
         }
-        viewModelScope.launch { pendingUploadStore.delete(upload) }
+        return PhotoRemoval(
+            undo = { updateForm { it.copy(photos = it.photos.inserted(index, upload)) } },
+            finalize = { viewModelScope.launch { pendingUploadStore.delete(upload) } },
+        )
     }
 
-    fun removeExistingPhoto(photoId: Int) {
+    /** Moves a server photo to another place; the first one is the yarn's main photo. */
+    fun moveExistingPhoto(from: Int, to: Int) {
+        updateForm { it.copy(existingPhotos = it.existingPhotos.movedItem(from, to)) }
+    }
+
+    fun removeExistingPhoto(photoId: Int): PhotoRemoval? {
+        val index = _form.value.existingPhotos.indexOfFirst { it.id == photoId }
+        if (index < 0) return null
+        val photo = _form.value.existingPhotos[index]
         updateForm {
             it.copy(
-                existingPhotos = it.existingPhotos.filterNot { photo -> photo.id == photoId },
+                existingPhotos = it.existingPhotos.filterNot { existing -> existing.id == photoId },
                 removedPhotoIds = it.removedPhotoIds + photoId,
             )
         }
+        return PhotoRemoval(
+            undo = {
+                updateForm {
+                    it.copy(
+                        existingPhotos = it.existingPhotos.inserted(index, photo),
+                        removedPhotoIds = it.removedPhotoIds - photoId,
+                    )
+                }
+            }
+        )
     }
 
     fun save() {
@@ -187,6 +226,16 @@ constructor(
                 current.removedPhotoIds.distinct().forEach { photoId ->
                     yarnRepository.queuePhotoDelete(yarnId, photoId)
                 }
+                // The order goes before the uploads: a new photo has no server id yet, so an order
+                // queued after it would be rejected as incomplete.
+                if (id != null) {
+                    reorderedIdsOrNull(
+                            _initialForm.value.existingPhotos.map { it.id },
+                            current.existingPhotos.map { it.id },
+                            current.removedPhotoIds.toSet(),
+                        )
+                        ?.let { yarnRepository.queuePhotoOrder(yarnId, it) }
+                }
                 current.photos.forEach { upload -> yarnRepository.queuePhotoUpload(yarnId, upload) }
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(
@@ -218,4 +267,11 @@ constructor(
             }
         }
     }
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
 }
+
+private fun <T> List<T>.inserted(index: Int, item: T): List<T> =
+    toMutableList().apply { add(index.coerceIn(0, size), item) }

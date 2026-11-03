@@ -6,6 +6,7 @@ import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import blue.anika.wolle.data.api.v2.MediaOrderRequest
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.api.v2.runV2Sync
@@ -21,6 +22,7 @@ import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
+import blue.anika.wolle.data.uploads.PendingMediaOrder
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
@@ -32,6 +34,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
+import timber.log.Timber
 
 private const val ENTITY_TYPE = "yarn"
 
@@ -267,6 +270,53 @@ constructor(
                 )
             )
         }
+    }
+
+    /**
+     * Applies a new photo order to the cached detail at once and queues it for replay. A second
+     * reorder before the first replayed replaces it, so only the latest order is sent.
+     */
+    suspend fun queuePhotoOrder(yarnId: Int, ids: List<Int>) {
+        database.withTransaction {
+            yarnDao.getById(yarnId)?.let { existing ->
+                val current = json.decodeFromString<YarnDto>(existing.detailJson)
+                val updated = current.withPhotoOrder(ids)
+                if (updated != current) yarnDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.YARN, yarnId)
+            val queued =
+                pendingMutationDao.getReplayable(
+                    MutationEntityType.YARN,
+                    MutationOperation.YARN_PHOTO_ORDER,
+                    yarnId,
+                )
+            val payload = json.encodeToString(PendingMediaOrder(ids))
+            if (queued == null) {
+                pendingMutationDao.insert(
+                    PendingMutationEntity(
+                        entityType = MutationEntityType.YARN,
+                        operation = MutationOperation.YARN_PHOTO_ORDER,
+                        localId = yarnId,
+                        payloadJson = payload,
+                        createdAt = System.currentTimeMillis(),
+                    )
+                )
+            } else {
+                pendingMutationDao.replacePayload(queued.id, payload)
+            }
+        }
+    }
+
+    /**
+     * Called only by [blue.anika.wolle.sync.WriteReplayWorker]. 404, 405 and 422 mean the order can
+     * never apply (the yarn or its photos changed elsewhere, or the server has no such route): the
+     * action is dropped by returning normally and the yarn is re-read. Other failures stay queued.
+     */
+    suspend fun replayPhotoOrder(id: Int, order: PendingMediaOrder) {
+        if (!sendMediaOrder { yarnsV2Api.reorderPhotos(id, MediaOrderRequest(order.ids)) }) {
+            Timber.i("Dropped queued photo order for yarn $id")
+        }
+        runCatching { refreshOne(id) }
     }
 
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */

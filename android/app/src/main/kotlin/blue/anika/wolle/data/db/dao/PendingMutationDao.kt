@@ -36,6 +36,23 @@ interface PendingMutationDao {
         localId: Int,
     ): PendingMutationEntity?
 
+    /** All replayable mutations of one kind for an entity, oldest first. */
+    @Query(
+        """
+        SELECT * FROM pending_mutations
+        WHERE entityType = :entityType
+          AND operation = :operation
+          AND localId = :localId
+          AND isConflict = 0
+        ORDER BY id ASC
+        """
+    )
+    suspend fun getAllReplayable(
+        entityType: String,
+        operation: String,
+        localId: Int,
+    ): List<PendingMutationEntity>
+
     /** IDs with a non-resolved local mutation that must not be overwritten by delta sync. */
     @Query(
         """

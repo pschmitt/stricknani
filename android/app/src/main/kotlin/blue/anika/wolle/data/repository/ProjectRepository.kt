@@ -7,6 +7,7 @@ import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepDto
+import blue.anika.wolle.data.api.v2.MediaOrderRequest
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.runV2Sync
@@ -23,6 +24,7 @@ import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.uploads.PendingAttachmentDelete
 import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
+import blue.anika.wolle.data.uploads.PendingMediaOrder
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
@@ -36,6 +38,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
+import timber.log.Timber
 
 private const val ENTITY_TYPE = "project"
 
@@ -347,6 +350,94 @@ constructor(
                 )
             )
         }
+    }
+
+    /**
+     * Applies a new title-image order to the cached detail at once and queues it for replay. A
+     * second reorder before the first replayed replaces it, so only the latest order is sent.
+     */
+    suspend fun queueTitleImageOrder(projectId: Int, ids: List<Int>) {
+        queueMediaOrder(
+            projectId,
+            MutationOperation.PROJECT_TITLE_IMAGE_ORDER,
+            PendingMediaOrder(ids),
+        ) {
+            it.withTitleImageOrder(ids)
+        }
+    }
+
+    /** Same as [queueTitleImageOrder] for one step's images. */
+    suspend fun queueStepImageOrder(projectId: Int, stepId: Int, ids: List<Int>) {
+        queueMediaOrder(
+            projectId,
+            MutationOperation.PROJECT_STEP_IMAGE_ORDER,
+            PendingMediaOrder(ids, stepId),
+        ) {
+            it.withStepImageOrder(stepId, ids)
+        }
+    }
+
+    private suspend fun queueMediaOrder(
+        projectId: Int,
+        operation: String,
+        order: PendingMediaOrder,
+        apply: (ProjectDto) -> ProjectDto,
+    ) {
+        database.withTransaction {
+            projectDao.getById(projectId)?.let { existing ->
+                val current = json.decodeFromString<ProjectDto>(existing.detailJson)
+                val updated = apply(current)
+                if (updated != current) projectDao.upsertAll(listOf(updated.toEntity(json)))
+            }
+            pendingMutationDao.deleteResolvedConflicts(MutationEntityType.PROJECT, projectId)
+            val queued =
+                findQueuedOrder(
+                    pendingMutationDao.getAllReplayable(
+                        MutationEntityType.PROJECT,
+                        operation,
+                        projectId,
+                    ),
+                    order.stepId,
+                    json,
+                )
+            val payload = json.encodeToString(order)
+            if (queued == null) {
+                pendingMutationDao.insert(
+                    PendingMutationEntity(
+                        entityType = MutationEntityType.PROJECT,
+                        operation = operation,
+                        localId = projectId,
+                        payloadJson = payload,
+                        createdAt = System.currentTimeMillis(),
+                    )
+                )
+            } else {
+                pendingMutationDao.replacePayload(queued.id, payload)
+            }
+        }
+    }
+
+    /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. See [replayMediaOrder]. */
+    suspend fun replayTitleImageOrder(id: Int, order: PendingMediaOrder) =
+        replayMediaOrder(id) { projectsV2Api.reorderTitleImages(id, MediaOrderRequest(order.ids)) }
+
+    /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. See [replayMediaOrder]. */
+    suspend fun replayStepImageOrder(id: Int, order: PendingMediaOrder) {
+        val stepId = requireNotNull(order.stepId) { "A step image order needs its step id" }
+        replayMediaOrder(id) {
+            projectsV2Api.reorderStepImages(id, stepId, MediaOrderRequest(order.ids))
+        }
+    }
+
+    /**
+     * Sends a queued order. 404 (gone or wrong step), 405 (a server without the route) and 422 (the
+     * group changed elsewhere, so the order no longer matches) are not worth retrying: the action
+     * is dropped by returning normally, and the project is re-read so the cache shows the server's
+     * order. Any other failure propagates and stays queued.
+     */
+    private suspend fun replayMediaOrder(id: Int, send: suspend () -> Unit) {
+        if (!sendMediaOrder(send)) Timber.i("Dropped queued media order for project $id")
+        runCatching { refreshOne(id) }
     }
 
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */

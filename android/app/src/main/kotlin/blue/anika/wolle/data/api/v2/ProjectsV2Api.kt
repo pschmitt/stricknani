@@ -86,4 +86,19 @@ interface ProjectsV2Api {
 
     @DELETE("api/v2/projects/{projectId}/images/{imageId}")
     suspend fun deleteImage(@Path("projectId") projectId: Int, @Path("imageId") imageId: Int)
+
+    /** Title images only; `ids` is the complete desired order. 422: not exactly the group's ids. */
+    @PUT("api/v2/projects/{projectId}/images/order")
+    suspend fun reorderTitleImages(
+        @Path("projectId") projectId: Int,
+        @Body request: MediaOrderRequest,
+    ): V2Envelope<MediaOrderDto>
+
+    /** One step's images; 404 when the step is not the project's. */
+    @PUT("api/v2/projects/{projectId}/steps/{stepId}/images/order")
+    suspend fun reorderStepImages(
+        @Path("projectId") projectId: Int,
+        @Path("stepId") stepId: Int,
+        @Body request: MediaOrderRequest,
+    ): V2Envelope<MediaOrderDto>
 }

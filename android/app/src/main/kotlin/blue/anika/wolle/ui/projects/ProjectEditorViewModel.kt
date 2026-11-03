@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
@@ -15,10 +17,15 @@ import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.repository.movedItem
+import blue.anika.wolle.data.repository.reorderedIdsOrNull
+import blue.anika.wolle.data.repository.stepImages
+import blue.anika.wolle.data.repository.titleImages
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.PhotoRemoval
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -28,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -70,6 +78,7 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
+    capabilities: ApiCapabilities,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
@@ -101,6 +110,16 @@ constructor(
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
+
+    /** Reordering images needs the v2 API; the controls stay hidden on a server without it. */
+    val reorderAvailable: StateFlow<Boolean> =
+        capabilities.state
+            .map { it.generation == ApiGeneration.V2 }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                capabilities.current.generation == ApiGeneration.V2,
+            )
 
     val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository
@@ -148,16 +167,10 @@ constructor(
                                         id = step.id,
                                         title = step.title,
                                         description = step.description ?: "",
-                                        existingImages =
-                                            detail.images.filter { image ->
-                                                image.stepId == step.id
-                                            },
+                                        existingImages = detail.stepImages(step.id),
                                     )
                                 },
-                            existingTitleImages =
-                                detail.images.filter { image ->
-                                    image.stepId == null && !image.isStitchSample
-                                },
+                            existingTitleImages = detail.titleImages(),
                         )
                 }
                 _initialForm.value = _form.value
@@ -225,22 +238,53 @@ constructor(
         }
     }
 
-    fun removeTitleImage(index: Int) {
-        val upload = _form.value.titleImages.getOrNull(index) ?: return
+    fun removeTitleImage(index: Int): PhotoRemoval? {
+        val upload = _form.value.titleImages.getOrNull(index) ?: return null
         updateForm {
             it.copy(titleImages = it.titleImages.filterIndexed { position, _ -> position != index })
         }
-        viewModelScope.launch { pendingUploadStore.delete(upload) }
+        return PhotoRemoval(
+            undo = {
+                updateForm {
+                    it.copy(titleImages = it.titleImages.inserted(index, upload))
+                }
+            },
+            finalize = { viewModelScope.launch { pendingUploadStore.delete(upload) } },
+        )
     }
 
-    fun removeExistingTitleImage(imageId: Int) {
+    fun removeExistingTitleImage(imageId: Int): PhotoRemoval? {
+        val index = _form.value.existingTitleImages.indexOfFirst { it.id == imageId }
+        if (index < 0) return null
+        val image = _form.value.existingTitleImages[index]
         updateForm {
             it.copy(
                 existingTitleImages =
-                    it.existingTitleImages.filterNot { image -> image.id == imageId },
+                    it.existingTitleImages.filterNot { existing -> existing.id == imageId },
                 removedImageIds = it.removedImageIds + imageId,
             )
         }
+        return PhotoRemoval(
+            undo = {
+                updateForm {
+                    it.copy(
+                        existingTitleImages = it.existingTitleImages.inserted(index, image),
+                        removedImageIds = it.removedImageIds - imageId,
+                    )
+                }
+            }
+        )
+    }
+
+    /** Moves a server title image to another place; the first one is the project cover. */
+    fun moveTitleImage(from: Int, to: Int) {
+        updateForm {
+            it.copy(existingTitleImages = it.existingTitleImages.movedItem(from, to))
+        }
+    }
+
+    fun moveStepImage(stepIndex: Int, from: Int, to: Int) {
+        updateStep(stepIndex) { it.copy(existingImages = it.existingImages.movedItem(from, to)) }
     }
 
     fun addAttachment(uri: Uri) {
@@ -269,21 +313,42 @@ constructor(
         }
     }
 
-    fun removeStepImage(stepIndex: Int, imageIndex: Int) {
-        val upload = _form.value.steps.getOrNull(stepIndex)?.images?.getOrNull(imageIndex) ?: return
+    fun removeStepImage(stepIndex: Int, imageIndex: Int): PhotoRemoval? {
+        val upload =
+            _form.value.steps.getOrNull(stepIndex)?.images?.getOrNull(imageIndex) ?: return null
         updateStep(stepIndex) {
             it.copy(images = it.images.filterIndexed { position, _ -> position != imageIndex })
         }
-        viewModelScope.launch { pendingUploadStore.delete(upload) }
+        return PhotoRemoval(
+            undo = {
+                updateStep(stepIndex) { it.copy(images = it.images.inserted(imageIndex, upload)) }
+            },
+            finalize = { viewModelScope.launch { pendingUploadStore.delete(upload) } },
+        )
     }
 
-    fun removeExistingStepImage(stepIndex: Int, imageId: Int) {
+    fun removeExistingStepImage(stepIndex: Int, imageId: Int): PhotoRemoval? {
+        val index =
+            _form.value.steps.getOrNull(stepIndex)?.existingImages?.indexOfFirst {
+                it.id == imageId
+            } ?: -1
+        if (index < 0) return null
+        val image = _form.value.steps[stepIndex].existingImages[index]
         updateStep(stepIndex) { step ->
             step.copy(
-                existingImages = step.existingImages.filterNot { image -> image.id == imageId }
+                existingImages =
+                    step.existingImages.filterNot { existing -> existing.id == imageId }
             )
         }
         updateForm { it.copy(removedImageIds = it.removedImageIds + imageId) }
+        return PhotoRemoval(
+            undo = {
+                updateStep(stepIndex) {
+                    it.copy(existingImages = it.existingImages.inserted(index, image))
+                }
+                updateForm { it.copy(removedImageIds = it.removedImageIds - imageId) }
+            }
+        )
     }
 
     fun save() {
@@ -329,6 +394,9 @@ constructor(
                 current.removedImageIds.distinct().forEach { imageId ->
                     projectRepository.queueImageDelete(projectId, imageId)
                 }
+                // Orders go before the uploads: a new image has no server id yet, so an order
+                // queued after it would be rejected as incomplete.
+                if (id != null) queueImageOrders(id, current)
                 current.titleImages.forEach { upload ->
                     projectRepository.queueTitleImageUpload(projectId, upload)
                 }
@@ -354,6 +422,27 @@ constructor(
             } finally {
                 _isSaving.value = false
             }
+        }
+    }
+
+    private suspend fun queueImageOrders(projectId: Int, current: ProjectEditorFormState) {
+        val initial = _initialForm.value
+        val removed = current.removedImageIds.toSet()
+        reorderedIdsOrNull(
+                initial.existingTitleImages.map { it.id },
+                current.existingTitleImages.map { it.id },
+                removed,
+            )
+            ?.let { projectRepository.queueTitleImageOrder(projectId, it) }
+        current.steps.forEach { step ->
+            val stepId = step.id ?: return@forEach
+            val initialStep = initial.steps.firstOrNull { it.id == stepId } ?: return@forEach
+            reorderedIdsOrNull(
+                    initialStep.existingImages.map { it.id },
+                    step.existingImages.map { it.id },
+                    removed,
+                )
+                ?.let { projectRepository.queueStepImageOrder(projectId, stepId, it) }
         }
     }
 
@@ -387,3 +476,6 @@ constructor(
  */
 internal fun parseTagInput(input: String): List<String> =
     input.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+
+private fun <T> List<T>.inserted(index: Int, item: T): List<T> =
+    toMutableList().apply { add(index.coerceIn(0, size), item) }

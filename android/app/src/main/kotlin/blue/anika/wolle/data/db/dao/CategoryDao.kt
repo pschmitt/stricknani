@@ -18,7 +18,9 @@ interface CategoryDao {
 
     @Upsert suspend fun upsertAll(categories: List<CategoryEntity>)
 
-    /** Categories always sync as a full list - replace the table's whole contents atomically. */
+    @Query("DELETE FROM categories WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Int>)
+
+    /** v1 syncs categories as a full list - replace the table's whole contents atomically. */
     @Transaction
     suspend fun replaceAll(categories: List<CategoryEntity>) {
         deleteAll()

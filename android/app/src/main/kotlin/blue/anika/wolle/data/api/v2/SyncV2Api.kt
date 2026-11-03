@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.api.v2
 
+import blue.anika.wolle.data.api.dto.CategoryDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
@@ -8,7 +9,8 @@ import retrofit2.http.Query
 /**
  * `rust/src/api_v2/sync.rs`. Query: `since` (a previous `server_time`, verbatim) or `cursor` (a
  * previous `next_cursor`), never both; `limit` 1..50 (default 50, and part of the cursor).
- * Categories have no v2 sync route yet and stay on [blue.anika.wolle.data.api.SyncApi].
+ * Categories sync the same way; servers without that route fall back to
+ * [blue.anika.wolle.data.api.SyncApi].
  */
 interface SyncV2Api {
     @GET("api/v2/sync/projects")
@@ -24,6 +26,13 @@ interface SyncV2Api {
         @Query("cursor") cursor: String? = null,
         @Query("limit") limit: Int? = null,
     ): V2Envelope<V2SyncPageDto<YarnV2Dto>>
+
+    @GET("api/v2/sync/categories")
+    suspend fun syncCategories(
+        @Query("since") since: String? = null,
+        @Query("cursor") cursor: String? = null,
+        @Query("limit") limit: Int? = null,
+    ): V2Envelope<V2SyncPageDto<CategoryDto>>
 }
 
 /** `{data:{updated, deleted_ids, server_time, full_resync_required, has_more, next_cursor}}`. */

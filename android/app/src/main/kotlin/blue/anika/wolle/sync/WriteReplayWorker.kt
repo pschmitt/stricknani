@@ -21,6 +21,7 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingAttachmentDelete
 import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
+import blue.anika.wolle.data.uploads.PendingMediaOrder
 import blue.anika.wolle.data.uploads.PendingUpload
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -157,6 +158,14 @@ constructor(
                     json.decodeFromString<PendingGalleryImageDelete>(mutation.payloadJson!!)
                 projectRepository.replayImageDelete(mutation.localId, deletion.imageId)
             }
+            MutationOperation.PROJECT_TITLE_IMAGE_ORDER -> {
+                val order = json.decodeFromString<PendingMediaOrder>(mutation.payloadJson!!)
+                projectRepository.replayTitleImageOrder(mutation.localId, order)
+            }
+            MutationOperation.PROJECT_STEP_IMAGE_ORDER -> {
+                val order = json.decodeFromString<PendingMediaOrder>(mutation.payloadJson!!)
+                projectRepository.replayStepImageOrder(mutation.localId, order)
+            }
             else -> error("Unknown project mutation operation: ${mutation.operation}")
         }
     }
@@ -200,6 +209,10 @@ constructor(
                 val deletion =
                     json.decodeFromString<PendingGalleryImageDelete>(mutation.payloadJson!!)
                 yarnRepository.replayPhotoDelete(mutation.localId, deletion.imageId)
+            }
+            MutationOperation.YARN_PHOTO_ORDER -> {
+                val order = json.decodeFromString<PendingMediaOrder>(mutation.payloadJson!!)
+                yarnRepository.replayPhotoOrder(mutation.localId, order)
             }
             else -> error("Unknown yarn mutation operation: ${mutation.operation}")
         }

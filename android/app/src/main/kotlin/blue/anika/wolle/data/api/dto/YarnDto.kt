@@ -11,11 +11,17 @@ data class YarnPhotoDto(
     @SerialName("thumbnail_url") val thumbnailUrl: String,
     @SerialName("alt_text") val altText: String,
     @SerialName("is_primary") val isPrimary: Boolean,
+    /** Zero-based position in the yarn's photo list; v2 only. */
+    val position: Int? = null,
 )
 
 /** Keeps the server-designated main photo first everywhere a yarn photo list is displayed. */
 internal fun List<YarnPhotoDto>.primaryFirst(): List<YarnPhotoDto> =
-    sortedWith(compareByDescending<YarnPhotoDto> { it.isPrimary }.thenBy { it.id })
+    sortedWith(
+        compareBy<YarnPhotoDto> { it.position ?: Int.MAX_VALUE }
+            .thenByDescending { it.isPrimary }
+            .thenBy { it.id }
+    )
 
 /**
  * `stricknani/routes/api/schemas.py`'s `YarnResponse`. All timestamp fields are the raw wire string

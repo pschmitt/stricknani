@@ -79,3 +79,10 @@ data class YarnV2Dto(
     @SerialName("project_ids") val projectIds: List<Int> = emptyList(),
     val photos: List<YarnPhotoDto> = emptyList(),
 )
+
+/** Body of the three media-order routes: the complete desired order, no version or If-Match. */
+@Serializable data class MediaOrderRequest(val ids: List<Int>)
+
+/** `{data:{ids, updated_at}}` of a successful reorder; `updated_at` is the parent's new stamp. */
+@Serializable
+data class MediaOrderDto(val ids: List<Int>, @SerialName("updated_at") val updatedAt: String)

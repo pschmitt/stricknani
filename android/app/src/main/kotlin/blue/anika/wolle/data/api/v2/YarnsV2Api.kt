@@ -53,4 +53,10 @@ interface YarnsV2Api {
 
     @DELETE("api/v2/yarns/{yarnId}/photos/{photoId}")
     suspend fun deletePhoto(@Path("yarnId") yarnId: Int, @Path("photoId") photoId: Int)
+
+    @PUT("api/v2/yarns/{yarnId}/photos/order")
+    suspend fun reorderPhotos(
+        @Path("yarnId") yarnId: Int,
+        @Body request: MediaOrderRequest,
+    ): V2Envelope<MediaOrderDto>
 }

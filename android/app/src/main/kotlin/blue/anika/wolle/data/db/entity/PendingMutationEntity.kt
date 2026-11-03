@@ -21,6 +21,9 @@ object MutationOperation {
     const val PROJECT_IMAGE_DELETE = "project_image_delete"
     const val YARN_PHOTO_UPLOAD = "yarn_photo_upload"
     const val YARN_PHOTO_DELETE = "yarn_photo_delete"
+    const val PROJECT_TITLE_IMAGE_ORDER = "project_title_image_order"
+    const val PROJECT_STEP_IMAGE_ORDER = "project_step_image_order"
+    const val YARN_PHOTO_ORDER = "yarn_photo_order"
 }
 
 /**

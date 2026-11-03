@@ -34,6 +34,10 @@ data class ImageDto(
     @SerialName("is_title_image") val isTitleImage: Boolean,
     @SerialName("is_stitch_sample") val isStitchSample: Boolean,
     @SerialName("step_id") val stepId: Int? = null,
+    /** Zero-based position inside the image's group (title images, or one step); v2 only. */
+    val position: Int? = null,
+    /** True for the project cover; v2 only. */
+    @SerialName("is_primary") val isPrimary: Boolean? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `AttachmentResponse`. */

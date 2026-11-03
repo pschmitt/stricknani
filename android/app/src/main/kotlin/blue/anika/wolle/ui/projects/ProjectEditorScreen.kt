@@ -74,8 +74,10 @@ import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
+import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import blue.anika.wolle.ui.common.showFeedback
 import java.io.File
 import kotlinx.coroutines.launch
@@ -101,6 +103,7 @@ fun ProjectEditorScreen(
     viewModel: ProjectEditorViewModel = hiltViewModel(),
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
+    val reorderAvailable by viewModel.reorderAvailable.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -125,6 +128,7 @@ fun ProjectEditorScreen(
     var initialFocusApplied by rememberSaveable { mutableStateOf(false) }
     val stepRemovedMessage = stringResource(R.string.project_editor_step_removed)
     val undoLabel = stringResource(R.string.common_undo)
+    val announceRemoval = rememberPhotoRemovalAnnouncer(snackbarHostState)
 
     val leave = { if (isDirty && !saved) showDiscardDialog = true else onBack() }
     BackHandler(enabled = isDirty && !saved && !deleted) { showDiscardDialog = true }
@@ -296,7 +300,11 @@ fun ProjectEditorScreen(
                                     key = "existing-${image.id}",
                                     model = viewModel.imageUrl(image.thumbnailUrl),
                                     description = image.altText,
-                                    onRemove = { viewModel.removeExistingTitleImage(image.id) },
+                                    onRemove = {
+                                        viewModel
+                                            .removeExistingTitleImage(image.id)
+                                            ?.let(announceRemoval)
+                                    },
                                 )
                             } +
                                 form.titleImages.mapIndexed { index, upload ->
@@ -304,12 +312,20 @@ fun ProjectEditorScreen(
                                         key = "new-${upload.path}",
                                         model = File(upload.path),
                                         description = upload.fileName,
-                                        onRemove = { viewModel.removeTitleImage(index) },
+                                        onRemove = {
+                                            viewModel.removeTitleImage(index)?.let(announceRemoval)
+                                        },
                                     )
                                 },
                         addLabel = stringResource(R.string.editor_add_photo_short),
                         removeLabel = removeLabel,
                         onAdd = { titleImagePicker.launch("image/*") },
+                        reorder =
+                            if (reorderAvailable) {
+                                PhotoReorder(form.existingTitleImages.size) { from, to ->
+                                    viewModel.moveTitleImage(from, to)
+                                }
+                            } else null,
                     )
                 }
             }
@@ -539,9 +555,17 @@ fun ProjectEditorScreen(
                         pickingStepIndex = index
                         stepImagePicker.launch("image/*")
                     },
-                    onRemoveExistingImage = { id -> viewModel.removeExistingStepImage(index, id) },
+                    reorder =
+                        if (reorderAvailable) {
+                            PhotoReorder(step.existingImages.size) { from, to ->
+                                viewModel.moveStepImage(index, from, to)
+                            }
+                        } else null,
+                    onRemoveExistingImage = { id ->
+                        viewModel.removeExistingStepImage(index, id)?.let(announceRemoval)
+                    },
                     onRemoveNewImage = { imageIndex ->
-                        viewModel.removeStepImage(index, imageIndex)
+                        viewModel.removeStepImage(index, imageIndex)?.let(announceRemoval)
                     },
                 )
             }
@@ -612,6 +636,7 @@ private fun StepEditorCard(
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
     onAddImage: () -> Unit,
+    reorder: PhotoReorder?,
     onRemoveExistingImage: (Int) -> Unit,
     onRemoveNewImage: (Int) -> Unit,
 ) {
@@ -738,6 +763,7 @@ private fun StepEditorCard(
                     removeLabel = stringResource(R.string.project_editor_remove_image),
                     onAdd = onAddImage,
                     thumbnailSize = 84,
+                    reorder = reorder,
                 )
             }
         }

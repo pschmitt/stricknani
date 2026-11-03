@@ -467,7 +467,12 @@
     <string name="editor_discard_keep">Keep editing</string>
     <string name="editor_discard_confirm">Discard</string>
     <string name="editor_add_photo_short">Add photo</string>
+    <string name="editor_photo_cover">Cover</string>
+    <string name="editor_photo_move_earlier">Move earlier</string>
+    <string name="editor_photo_move_later">Move later</string>
+    <string name="editor_photo_position">Photo %1$d of %2$d</string>
     <string name="project_editor_step_removed">Step removed</string>
+    <string name="editor_photo_removed">Photo removed</string>
     <string name="project_editor_tags_hint">Separate tags with commas</string>
     <string name="project_editor_needles_hint">e.g. 4 mm circular, 80 cm</string>
     <string name="project_editor_stitch_sample_hint">e.g. 22 stitches and 30 rows = 10 cm</string>

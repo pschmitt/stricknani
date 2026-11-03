@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -51,7 +52,10 @@ import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.PhotoReorder
+import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
+import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import java.io.File
 
 /**
@@ -85,6 +89,7 @@ fun YarnEditorScreen(
     viewModel: YarnEditorViewModel = hiltViewModel(),
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
+    val reorderAvailable by viewModel.reorderAvailable.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
@@ -93,6 +98,8 @@ fun YarnEditorScreen(
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     val isLoaded by viewModel.isLoaded.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val announceRemoval = rememberPhotoRemovalAnnouncer(snackbarHostState)
     val detailsFocus = remember { FocusRequester() }
     val descriptionFocus = remember { FocusRequester() }
     val notesFocus = remember { FocusRequester() }
@@ -133,6 +140,7 @@ fun YarnEditorScreen(
         )
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -247,7 +255,11 @@ fun YarnEditorScreen(
                                     key = "existing-${photo.id}",
                                     model = viewModel.imageUrl(photo.thumbnailUrl),
                                     description = photo.altText,
-                                    onRemove = { viewModel.removeExistingPhoto(photo.id) },
+                                    onRemove = {
+                                        viewModel
+                                            .removeExistingPhoto(photo.id)
+                                            ?.let(announceRemoval)
+                                    },
                                 )
                             } +
                                 form.photos.mapIndexed { index, upload ->
@@ -255,12 +267,20 @@ fun YarnEditorScreen(
                                         key = "new-${upload.path}",
                                         model = File(upload.path),
                                         description = upload.fileName,
-                                        onRemove = { viewModel.removePhoto(index) },
+                                        onRemove = {
+                                            viewModel.removePhoto(index)?.let(announceRemoval)
+                                        },
                                     )
                                 },
                         addLabel = stringResource(R.string.editor_add_photo_short),
                         removeLabel = stringResource(R.string.yarn_editor_remove_photo),
                         onAdd = { photoPicker.launch("image/*") },
+                        reorder =
+                            if (reorderAvailable) {
+                                PhotoReorder(form.existingPhotos.size) { from, to ->
+                                    viewModel.moveExistingPhoto(from, to)
+                                }
+                            } else null,
                     )
                 }
             }
