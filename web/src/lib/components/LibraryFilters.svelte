@@ -532,10 +532,39 @@
   }
 
   @media (max-width: 47.999rem) {
+    /* The Android search field: a filled 56px pill with no outline, and the filter button as
+       a matching filled disk. */
+    .search-field {
+      min-height: 56px;
+      gap: 0.85rem;
+      border-color: transparent;
+      border-radius: 28px;
+      padding: 0 0.55rem 0 1.1rem;
+      background: var(--surface-highest);
+    }
+
+    .search-field input {
+      min-height: 54px;
+    }
+
+    .search-field :global(svg) {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
     :global(.filter-trigger.ui-button) {
-      width: 44px;
-      min-width: 44px;
+      width: 56px;
+      min-width: 56px;
+      height: 56px;
+      border-color: transparent;
       padding-inline: 0;
+      background: var(--surface-highest);
+    }
+
+    /* The visually hidden label is still a flex item of the action label, so
+       its gap would push the icon off-centre inside the round button. */
+    :global(.filter-trigger .action-label) {
+      gap: 0;
     }
 
     .filter-trigger__label {

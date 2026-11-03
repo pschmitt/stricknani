@@ -30,9 +30,9 @@
 
 <style>
   .disclosure {
-    border: 1px solid var(--line);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
-    background: var(--surface);
+    background: var(--card-fill);
     overflow: hidden;
   }
 

@@ -1407,10 +1407,10 @@
     max-width: 46rem;
     justify-items: start;
     gap: 0.5rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     padding: clamp(1.4rem, 5vw, 2.4rem);
-    background: var(--surface);
+    background: var(--card-fill);
   }
 
   .state-mark {
@@ -1488,10 +1488,10 @@
 
   .reader-facts-card {
     min-width: 0;
-    border: 1px solid var(--line);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
-    background: var(--surface);
+    background: var(--card-fill);
   }
 
   .reader-facts-card h2 {
@@ -1579,10 +1579,10 @@
   .steps-section,
   .details-card {
     min-width: 0;
-    border: 1px solid var(--line);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
-    background: var(--surface);
+    background: var(--card-fill);
   }
 
   .section-heading-row {

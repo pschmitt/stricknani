@@ -690,10 +690,10 @@
   .detail-section,
   .spec-panel {
     min-width: 0;
-    border: 1px solid var(--line);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
-    background: var(--surface);
+    background: var(--card-fill);
   }
 
   .detail-section h2,
@@ -808,11 +808,11 @@
 
   .notice-error,
   .detail-error {
-    border: 1px solid var(--line);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius-sm);
     padding: 1rem;
     color: var(--danger);
-    background: var(--surface);
+    background: var(--card-fill);
   }
 
   .detail-loading {

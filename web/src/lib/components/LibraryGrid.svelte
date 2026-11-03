@@ -32,6 +32,12 @@
     gap: 0;
   }
 
+  @media (max-width: 47.999rem) {
+    .library-grid__items {
+      gap: 12px;
+    }
+  }
+
   @container library-grid (min-width: 720px) {
     .library-grid__items {
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

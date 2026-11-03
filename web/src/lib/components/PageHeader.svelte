@@ -97,7 +97,7 @@
     }
 
     h1 {
-      font-size: 1.75rem;
+      font-size: 1.5rem;
       overflow-wrap: break-word;
     }
 

@@ -200,6 +200,31 @@
     display: inline-flex;
   }
 
+  /* Phones: the Android row - a bordered 16px card on the canvas, 14px padding all round, a 112x84
+     thumbnail and a bare heart. */
+  @media (max-width: 47.999rem) {
+    .library-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .library-card__link {
+      min-height: 0;
+      gap: 14px;
+      border-radius: 16px;
+      padding: 14px 3.6rem 14px 14px;
+    }
+
+    .library-card__favorite {
+      inset-inline-end: 0.4rem;
+    }
+
+    .library-card__favorite :global(.favorite-button.ui-button) {
+      border-color: transparent;
+      background: transparent;
+    }
+  }
+
   @container library-grid (min-width: 720px) {
     .library-card {
       border: 1px solid var(--line);

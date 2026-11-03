@@ -39,6 +39,10 @@
   --canvas: #f7f3fc;
   --surface: #ffffff;
   --surface-raised: #f1ebf8;
+  --surface-highest: #e4dbef;
+  --surface-container: #f1ebf8;
+  --card-fill: var(--surface);
+  --card-border: var(--line);
   --ink: #2a2033;
   --ink-muted: #5e5268;
   --line: #ddd3e8;
@@ -97,8 +101,8 @@
   --ui-input-height: 44px;
   --ui-input-radius: var(--radius-xs);
   --ui-input-font-size: 16px;
-  /* 3.5rem link row plus the 1px top border: the sticky action bars sit flush on this. */
-  --app-mobile-nav-height: 57px;
+  /* The phone bar is Material's 80dp navigation bar (no border): the sticky action bars sit flush on it. */
+  --app-mobile-nav-height: 80px;
   --app-mobile-nav-bottom-inset: max(4px, env(safe-area-inset-bottom, 0px));
 
   font-optical-sizing: auto;
@@ -124,6 +128,8 @@
     --canvas: #1a1421;
     --surface: #271f30;
     --surface-raised: #32293b;
+    --surface-highest: #3d3446;
+    --surface-container: #271f30;
     --ink: #ede4f4;
     --ink-muted: #c9bdd3;
     --line: #473d51;
@@ -179,6 +185,8 @@
   --canvas: #1a1421;
   --surface: #271f30;
   --surface-raised: #32293b;
+  --surface-highest: #3d3446;
+  --surface-container: #271f30;
   --ink: #ede4f4;
   --ink-muted: #c9bdd3;
   --line: #473d51;
@@ -461,11 +469,11 @@ button {
   grid-template-columns: var(--ui-navigation-icon-size) minmax(0, 1fr);
   align-items: start;
   gap: 0.85rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
   padding: 1rem 1.1rem;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--card-fill);
   text-decoration: none;
   transition:
     background-color 120ms ease,
@@ -1011,6 +1019,14 @@ textarea::placeholder {
   cursor: not-allowed;
 }
 
+/* Phones: cards are the Android tonal containers - a filled surface, no outline. */
+@media (max-width: 760px) {
+  :root {
+    --card-fill: var(--surface-container);
+    --card-border: transparent;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
     --app-header-height: max(3.5rem, calc(45px + env(safe-area-inset-top)));
@@ -1056,6 +1072,8 @@ textarea::placeholder {
     padding-bottom: 5.5rem;
   }
 
+  /* Same bar as the Android app: a flat, full-width surface container with no border, radius or
+     shadow, an 80px row, a 56x32 indicator pill around a 24px glyph and a 12px medium label. */
   .mobile-navigation {
     position: fixed;
     z-index: 5;
@@ -1064,25 +1082,24 @@ textarea::placeholder {
     left: 0;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    border-top: 1px solid var(--line);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
     padding: 0 max(0.35rem, env(safe-area-inset-right))
       var(--app-mobile-nav-bottom-inset) max(0.35rem, env(safe-area-inset-left));
-    background: var(--surface);
-    box-shadow: 0 -6px 24px rgb(63 20 80 / 8%);
+    background: var(--surface-container);
   }
 
   .mobile-navigation a {
     display: grid;
     min-width: 0;
-    min-height: 3.5rem;
+    min-height: var(--app-mobile-nav-height);
     justify-items: center;
     align-content: center;
-    gap: 0.12rem;
+    gap: 4px;
     border-radius: var(--radius-xs);
     color: var(--ink-muted);
-    font-size: 0.74rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1rem;
     text-decoration: none;
   }
 
@@ -1092,13 +1109,18 @@ textarea::placeholder {
 
   .mobile-navigation .nav-icon {
     width: 3.5rem;
-    height: 1.9rem;
+    height: 2rem;
     flex-basis: auto;
     border-radius: 999px;
   }
 
+  .mobile-navigation .nav-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
   /* Phones: the bar stays calm - plain glyphs, and only the current destination shows its
-     coloured tile. */
+     coloured pill. */
   .mobile-navigation .nav-icon {
     color: var(--ink-muted);
     background: transparent;
