@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
-  import Mascot from "#lib/components/Mascot.svelte";
+  import KnittingBasket from "#lib/components/KnittingBasket.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   const locale = $derived(session.data?.locale ?? "en");
@@ -49,7 +49,7 @@
   aria-labelledby="create-title"
 >
   <header class="create-hero">
-    <Mascot size={96} bob={true} />
+    <KnittingBasket size={132} />
     <div class="create-hero__copy">
       <h1 id="create-title">{t("What would you like to add?", locale)}</h1>
       <p>
