@@ -16,7 +16,7 @@ use category_service::{CategoryError, CategoryWriteRequest};
 
 use super::{
     ApiV2State, Envelope,
-    access::{browser_user, mutation_user},
+    access::{resource_mutation_user, resource_user},
 };
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -83,7 +83,7 @@ fn category_error(error: CategoryError) -> Response {
 }
 
 async fn list_categories(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -98,7 +98,7 @@ async fn create_category(
     headers: HeaderMap,
     payload: Result<Json<CategoryWriteRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -121,7 +121,7 @@ async fn update_category(
     Path(category_id): Path<i64>,
     payload: Result<Json<CategoryWriteRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -143,7 +143,7 @@ async fn delete_category(
     headers: HeaderMap,
     Path(category_id): Path<i64>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };

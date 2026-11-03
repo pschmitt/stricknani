@@ -32,7 +32,7 @@ struct ProjectPreview {
 }
 
 async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Response {
-    let owner_id = match access::mutation_user(&state.app, request.headers()).await {
+    let owner_id = match access::resource_mutation_user(&state.app, request.headers()).await {
         Ok(owner_id) => owner_id,
         Err(response) => return *response,
     };

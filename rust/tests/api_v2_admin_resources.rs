@@ -10,6 +10,7 @@ use stricknani_server::{api_v2, db};
 use tower::ServiceExt;
 
 const ADMIN_SESSION: &str = "synthetic-admin-session";
+const ADMIN_PAT: &str = "synthetic-admin-purpose-api-pat";
 const MEMBER_SESSION: &str = "synthetic-member-session";
 
 struct Fixture {
@@ -44,6 +45,7 @@ async fn fixture() -> Fixture {
     .await
     .expect("synthetic member should be created");
     add_session(&pool, admin_id, ADMIN_SESSION).await;
+    add_api_pat(&pool, admin_id, ADMIN_PAT).await;
     add_session(&pool, member_id, MEMBER_SESSION).await;
     let media_root = tempfile::tempdir().expect("media root should be created");
     let state = db::AppState::new(pool.clone())
@@ -69,6 +71,18 @@ async fn add_session(pool: &SqlitePool, user_id: i64, session: &str) {
     .execute(pool)
     .await
     .expect("synthetic browser session should be stored");
+}
+
+async fn add_api_pat(pool: &SqlitePool, user_id: i64, token: &str) {
+    sqlx::query(
+        "INSERT INTO api_tokens (user_id, name, token_hash, created_at, expires_at, purpose) \
+         VALUES (?, 'synthetic admin PAT', ?, unixepoch(), unixepoch() + 86400, 'api')",
+    )
+    .bind(user_id)
+    .bind(hex::encode(Sha256::digest(token.as_bytes())))
+    .execute(pool)
+    .await
+    .expect("synthetic PAT should be stored");
 }
 
 async fn insert_project(pool: &SqlitePool, owner_id: i64) -> i64 {
@@ -205,6 +219,20 @@ async fn admin_resource_reads_require_an_active_browser_admin_and_do_not_mutate_
         assert_eq!(body["data"]["read_only"], true);
         assert_eq!(body["data"]["resource"]["id"], id);
     }
+
+    let pat_resource = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!("/admin/resources/project/{project_id}"))
+                .header("authorization", format!("Bearer {ADMIN_PAT}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .expect("router should answer");
+    assert_eq!(pat_resource.status(), StatusCode::OK);
+    assert_eq!(json(pat_resource).await["data"]["read_only"], true);
 
     let anonymous = fixture
         .app
@@ -480,6 +508,25 @@ async fn admin_resource_media_is_parent_scoped_and_preserves_safe_download_heade
         "project image"
     );
 
+    let pat_image = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!(
+                "/admin/resources/project/{project_id}/media/image/9001"
+            ))
+            .header("authorization", format!("Bearer {ADMIN_PAT}"))
+            .body(Body::empty())
+            .unwrap(),
+        )
+        .await
+        .expect("router should answer");
+    assert_eq!(pat_image.status(), StatusCode::OK);
+    assert_eq!(
+        pat_image.into_body().collect().await.unwrap().to_bytes(),
+        "project image"
+    );
+
     let thumbnail = fixture
         .app
         .clone()
@@ -492,6 +539,30 @@ async fn admin_resource_media_is_parent_scoped_and_preserves_safe_download_heade
     assert_eq!(thumbnail.status(), StatusCode::OK);
     assert_eq!(
         thumbnail.into_body().collect().await.unwrap().to_bytes(),
+        "project thumb"
+    );
+
+    let pat_thumbnail = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!(
+                "/admin/resources/project/{project_id}/media/image/9001/thumbnail"
+            ))
+            .header("authorization", format!("Bearer {ADMIN_PAT}"))
+            .body(Body::empty())
+            .unwrap(),
+        )
+        .await
+        .expect("router should answer");
+    assert_eq!(pat_thumbnail.status(), StatusCode::OK);
+    assert_eq!(
+        pat_thumbnail
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes(),
         "project thumb"
     );
 
@@ -514,6 +585,36 @@ async fn admin_resource_media_is_parent_scoped_and_preserves_safe_download_heade
     assert_eq!(attachment.headers()["content-type"], "application/pdf");
     assert_eq!(
         attachment.into_body().collect().await.unwrap().to_bytes(),
+        "pdf bytes"
+    );
+
+    let pat_attachment = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!(
+                "/admin/resources/project/{project_id}/media/attachment/9001"
+            ))
+            .header("authorization", format!("Bearer {ADMIN_PAT}"))
+            .body(Body::empty())
+            .unwrap(),
+        )
+        .await
+        .expect("router should answer");
+    assert_eq!(pat_attachment.status(), StatusCode::OK);
+    assert!(
+        pat_attachment.headers()["content-disposition"]
+            .to_str()
+            .unwrap()
+            .starts_with("attachment;")
+    );
+    assert_eq!(
+        pat_attachment
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes(),
         "pdf bytes"
     );
 

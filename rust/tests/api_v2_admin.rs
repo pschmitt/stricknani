@@ -133,6 +133,24 @@ async fn admin_avatar_thumbnail_is_private_and_bounded_to_registered_files() {
         "synthetic thumbnail"
     );
 
+    let pat = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(&path)
+                .header("authorization", format!("Bearer {API_TOKEN}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(pat.status(), StatusCode::OK);
+    assert_eq!(pat.headers()["cache-control"], "no-store");
+    assert_eq!(
+        pat.into_body().collect().await.unwrap().to_bytes(),
+        "synthetic thumbnail"
+    );
+
     let wrong_name = fixture
         .app
         .clone()
@@ -319,7 +337,7 @@ async fn admin_crud_uses_typed_roles_and_revokes_sessions_atomically() {
 }
 
 #[tokio::test]
-async fn admin_list_is_paged_and_rejects_non_admin_or_bearer_only_access() {
+async fn admin_list_is_paged_and_accepts_admin_api_pat_but_rejects_members() {
     let fixture = fixture().await;
     for index in 0..49 {
         sqlx::query(
@@ -375,7 +393,8 @@ async fn admin_list_is_paged_and_rejects_non_admin_or_bearer_only_access() {
         )
         .await
         .unwrap();
-    assert_eq!(bearer.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(bearer.status(), StatusCode::OK);
+    assert_eq!(bearer.headers()["cache-control"], "no-store");
 
     let invalid = fixture
         .app

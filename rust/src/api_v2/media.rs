@@ -13,7 +13,7 @@ use axum::{
     routing::post,
 };
 
-use super::{ApiV2State, Envelope, access::mutation_user};
+use super::{ApiV2State, Envelope, access::resource_mutation_user};
 
 const MAX_MULTIPART_BODY_BYTES: usize = 26 * 1024 * 1024;
 
@@ -102,7 +102,7 @@ async fn upload_title_image(
     Path(project_id): Path<i64>,
     multipart: Result<axum::extract::Multipart, MultipartRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -124,7 +124,7 @@ async fn upload_step_image(
     Path((project_id, step_id)): Path<(i64, i64)>,
     multipart: Result<axum::extract::Multipart, MultipartRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -153,7 +153,7 @@ async fn upload_attachment(
     Path(project_id): Path<i64>,
     multipart: Result<axum::extract::Multipart, MultipartRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -173,7 +173,7 @@ async fn upload_yarn_photo(
     Path(yarn_id): Path<i64>,
     multipart: Result<axum::extract::Multipart, MultipartRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -217,7 +217,7 @@ async fn delete_project_media(
     media_id: i64,
     namespace: Namespace,
 ) -> Response {
-    let user_id = match mutation_user(&state, &headers).await {
+    let user_id = match resource_mutation_user(&state, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -232,7 +232,7 @@ async fn delete_yarn_photo(
     headers: HeaderMap,
     Path((yarn_id, photo_id)): Path<(i64, i64)>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };

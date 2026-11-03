@@ -119,6 +119,28 @@ impl IntoResponse for AuthError {
 
 /// Resolve a valid bearer PAT to its active user ID.
 pub async fn bearer_user(pool: &SqlitePool, headers: &HeaderMap) -> Result<i64, AuthError> {
+    let token = bearer_token(headers)?;
+    token_user(pool, token, None).await
+}
+
+/// Resolve a valid API-purpose bearer PAT, rejecting duplicate authorization headers.
+pub(crate) async fn bearer_pat_user(
+    pool: &SqlitePool,
+    headers: &HeaderMap,
+) -> Result<i64, AuthError> {
+    if headers
+        .get_all(axum::http::header::AUTHORIZATION)
+        .iter()
+        .count()
+        != 1
+    {
+        return Err(AuthError::Unauthorized);
+    }
+    let token = bearer_token(headers)?;
+    token_user(pool, token, Some("api")).await
+}
+
+fn bearer_token(headers: &HeaderMap) -> Result<&str, AuthError> {
     let Some(token) = headers
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
@@ -133,7 +155,7 @@ pub async fn bearer_user(pool: &SqlitePool, headers: &HeaderMap) -> Result<i64, 
         return Err(AuthError::Unauthorized);
     };
 
-    token_user(pool, token, None).await
+    Ok(token)
 }
 
 /// Browser cookies are accepted only by browser/media handlers, never by API v1.

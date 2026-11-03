@@ -40,7 +40,7 @@ async fn event_detail(
     headers: axum::http::HeaderMap,
     Path(event_id): Path<i64>,
 ) -> Response {
-    let actor_id = match access::browser_user(&state.app, &headers).await {
+    let actor_id = match access::admin_user(&state.app, &headers).await {
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };
@@ -65,7 +65,7 @@ async fn list_events(
     headers: axum::http::HeaderMap,
     RawQuery(raw_query): RawQuery,
 ) -> Response {
-    let actor_id = match access::browser_user(&state.app, &headers).await {
+    let actor_id = match access::admin_user(&state.app, &headers).await {
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };

@@ -33,7 +33,7 @@ async fn user_avatar_thumbnail(
     headers: axum::http::HeaderMap,
     Path((id, filename)): Path<(i64, String)>,
 ) -> Response {
-    let actor = match access::browser_user(&state.app, &headers).await {
+    let actor = match access::admin_user(&state.app, &headers).await {
         Ok(actor) => actor,
         Err(response) => return *response,
     };
@@ -76,7 +76,7 @@ async fn list_users(
     headers: axum::http::HeaderMap,
     query: Result<Query<PageQuery>, axum::extract::rejection::QueryRejection>,
 ) -> Response {
-    let actor = match access::browser_user(&state.app, &headers).await {
+    let actor = match access::admin_user(&state.app, &headers).await {
         Ok(actor) => actor,
         Err(response) => return *response,
     };
@@ -115,7 +115,7 @@ async fn create_user(
     headers: axum::http::HeaderMap,
     request: Result<Json<CreateUserRequest>, JsonRejection>,
 ) -> Response {
-    let actor = match access::mutation_user(&state.app, &headers).await {
+    let actor = match access::admin_mutation_user(&state.app, &headers).await {
         Ok(actor) => actor,
         Err(response) => return *response,
     };
@@ -149,7 +149,7 @@ async fn set_active(
     Path(id): Path<i64>,
     request: Result<Json<SetActiveRequest>, JsonRejection>,
 ) -> Response {
-    let actor = match access::mutation_user(&state.app, &headers).await {
+    let actor = match access::admin_mutation_user(&state.app, &headers).await {
         Ok(actor) => actor,
         Err(response) => return *response,
     };
@@ -181,7 +181,7 @@ async fn reset_password(
     Path(id): Path<i64>,
     request: Result<Json<ResetPasswordRequest>, JsonRejection>,
 ) -> Response {
-    let actor = match access::mutation_user(&state.app, &headers).await {
+    let actor = match access::admin_mutation_user(&state.app, &headers).await {
         Ok(actor) => actor,
         Err(response) => return *response,
     };

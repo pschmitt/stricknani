@@ -18,7 +18,7 @@ use yarn_service::{ListQuery, YarnError, YarnResponse, YarnWriteRequest};
 
 use super::{
     ApiV2State, Envelope,
-    access::{browser_user, mutation_user},
+    access::{resource_mutation_user, resource_user},
 };
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -185,7 +185,7 @@ async fn list_yarns(
     headers: HeaderMap,
     query: Result<Query<YarnPageQuery>, QueryRejection>,
 ) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -222,7 +222,7 @@ async fn get_yarn(
     headers: HeaderMap,
     Path(yarn_id): Path<i64>,
 ) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -241,7 +241,7 @@ async fn create_yarn(
     headers: HeaderMap,
     payload: Result<Json<YarnWriteRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -270,7 +270,7 @@ async fn update_yarn(
     Path(yarn_id): Path<i64>,
     payload: Result<Json<YarnWriteRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -295,7 +295,7 @@ async fn delete_yarn(
     headers: HeaderMap,
     Path(yarn_id): Path<i64>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
@@ -327,7 +327,7 @@ async fn set_favorite(
     yarn_id: i64,
     favorite: bool,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };

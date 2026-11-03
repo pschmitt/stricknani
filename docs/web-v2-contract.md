@@ -1,7 +1,9 @@
 # Browser API v2 contract
 
 The browser API is same-origin and uses the app's browser-purpose session
-cookie. Android continues to use the bearer-token `/api/v1/` contract. V2
+cookie. Native clients are migrating to the PAT-enabled resource and
+administrator routes described below; v1 remains available during that
+migration. V2
 handlers must not accept API tokens from the cookie, return browser session
 secrets in JSON, or call the v1 router internally.
 
@@ -14,8 +16,8 @@ availability hint is true. Composed applications pass the actual worker and
 configured AI client, so the capability reflects a usable service.
 
 All `/api/v2` responses use `Cache-Control: no-store`. The browser API does not
-enable cross-origin access. State-changing requests require a matching CSRF
-token and a same-origin `Origin`; when `Sec-Fetch-Site` is present, its value
+enable cross-origin access. Cookie-authenticated state-changing requests require
+a matching CSRF token and a same-origin `Origin`; when `Sec-Fetch-Site` is present, its value
 must be `same-origin`.
 
 ## Authentication slice
@@ -205,7 +207,7 @@ that carries the latest resource representation:
 }
 ```
 
-Authentication uses `401` for missing, invalid, or expired browser sessions;
+Authentication uses `401` for missing, invalid, or expired session/PAT credentials;
 `403` for missing, invalid, expired, or cross-origin CSRF checks; `422` for
 well-formed requests with invalid field values; `429` for rate limits (with
 `Retry-After`); and `500` with a generic message for internal failures. A
@@ -214,18 +216,18 @@ bootstrap rather than `401`.
 
 ## Projects API slice
 
-The first resource slice implements browser projects on the same cookie and
-CSRF model as authentication:
+Project routes accept a session or PAT. Cookie-authenticated writes require
+same-origin and CSRF checks:
 
 | Method and path                                                 | Authentication           | Result                                                       |
 | --------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------ |
-| `GET /projects?page=1&category=...&tag=...&favorite=true&q=...` | Browser session          | `{data: ProjectSummary[], meta: {page, per_page, has_more}}` |
-| `POST /projects`                                                | Browser session and CSRF | `201 {data: Project}`                                        |
-| `GET /projects/{id}`                                            | Browser session          | `{data: Project}`                                            |
-| `PUT /projects/{id}`                                            | Browser session and CSRF | `{data: Project}`                                            |
-| `DELETE /projects/{id}`                                         | Browser session and CSRF | `204`                                                        |
-| `PUT /projects/{id}/favorite`                                   | Browser session and CSRF | `{data: Project}`                                            |
-| `DELETE /projects/{id}/favorite`                                | Browser session and CSRF | `{data: Project}`                                            |
+| `GET /projects?page=1&category=...&tag=...&favorite=true&q=...` | Session or PAT          | `{data: ProjectSummary[], meta: {page, per_page, has_more}}` |
+| `POST /projects`                                                | Session or PAT | `201 {data: Project}`                                        |
+| `GET /projects/{id}`                                            | Session or PAT          | `{data: Project}`                                            |
+| `PUT /projects/{id}`                                            | Session or PAT | `{data: Project}`                                            |
+| `DELETE /projects/{id}`                                         | Session or PAT | `204`                                                        |
+| `PUT /projects/{id}/favorite`                                   | Session or PAT | `{data: Project}`                                            |
+| `DELETE /projects/{id}/favorite`                                | Session or PAT | `{data: Project}`                                            |
 
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,
@@ -248,8 +250,8 @@ media API slice is available. Existing image and attachment metadata is
 returned by detail and write responses.
 
 Every project lookup is owner-scoped; missing and foreign-owned IDs both
-return `404`. Mutations require a same-origin `Origin`, a browser-purpose
-session, and the matching `X-CSRF-Token`. Updates may send
+return `404`. Cookie-authenticated mutations require a same-origin `Origin`
+and matching `X-CSRF-Token`; PAT mutations use the explicit credential. Updates may send
 `expected_updated_at`; stale writes return `409` with `error.code: "conflict"`
 and the current DTO under `error.current`.
 
@@ -309,9 +311,9 @@ schemes. Unknown fields, values other than strings or null, and invalid JSON ret
 `422 validation_error`. The aggregate JSON body is limited to 2 MiB; larger
 bodies return `413 payload_too_large`.
 
-The endpoint requires a browser-purpose session, a matching same-origin
-`Origin`, and `X-CSRF-Token`. These checks run before the request body is read.
-It returns `401 session_expired` for an absent or invalid session and
+The endpoint requires a valid PAT or a browser-purpose session with matching
+same-origin `Origin` and `X-CSRF-Token`. Authentication checks run before the
+request body is read. It returns `401 session_expired` for invalid credentials and
 `403 csrf_failed` for a missing or invalid origin/CSRF check. Responses use
 `Cache-Control: no-store`.
 
@@ -322,7 +324,8 @@ return `500 internal_error`.
 
 ## Yarn API slice
 
-Yarn routes use the browser session and same-origin CSRF checks for mutations:
+Yarn routes accept a session or PAT; cookie mutations retain same-origin and
+CSRF checks:
 
 | Method and path                         | Result                                                    |
 | --------------------------------------- | --------------------------------------------------------- |
@@ -343,7 +346,8 @@ stale write returns `409` and the latest DTO in `error.current`.
 
 ## Category API slice
 
-Category routes also use browser-session auth and CSRF for writes:
+Category routes accept a session or PAT; cookie writes require same-origin and
+CSRF checks:
 
 | Method and path           | Result                   |
 | ------------------------- | ------------------------ |
@@ -359,10 +363,9 @@ as `404`.
 
 ## Media API slice
 
-Media uploads and deletes use the same browser session and same-origin CSRF
-checks as other v2 writes. These routes mirror existing v1 operations and call
-the same typed storage functions, so Android's bearer-token routes and wire
-shapes stay unchanged:
+Media uploads and deletes accept a session or PAT, with same-origin and CSRF
+checks for cookie writes. They call the same typed storage functions as v1;
+existing v1 routes and wire shapes stay unchanged:
 
 | Method and path                                             | Multipart fields / result                           |
 | ----------------------------------------------------------- | --------------------------------------------------- |
@@ -418,7 +421,8 @@ authenticated `/media/...` routes.
 
 ## Import preview API slice
 
-Import previews use the browser session and same-origin CSRF checks. They run
+Import previews accept a session or PAT, with same-origin and CSRF checks for
+cookie writes. They run
 synchronously through the existing bounded document worker; no import draft is
 stored server-side and no new background job is created.
 
@@ -459,7 +463,8 @@ attempt accounting.
 
 `POST /utils/ocr` accepts `{ "src": "/media/projects/42/image.png", "lang":
 "deu+eng", "force": false }` and returns `{ "data": { "text": "..." } }`.
-The route requires a browser session and same-origin CSRF. It accepts only
+The route accepts a session or PAT and requires same-origin and CSRF checks
+for cookie requests. It accepts only
 canonical project title/step images or yarn photos owned by the current active
 user, verifies the stored media type and canonical path, and reads at most 25
 MiB. Attachments and foreign or missing media return `404`. The existing OCR
@@ -482,7 +487,8 @@ process output.
 `POST /projects/{id}/archive` and `POST /yarns/{id}/archive` enqueue the
 current source link using the existing durable, idempotent archive service and
 return `202 { "data": { "state": "pending" } }`. These writes require the
-browser session and same-origin CSRF. `GET` on either path returns
+session or PAT, with same-origin and CSRF checks for cookie requests. `GET`
+on either path returns
 `{ "data": { "state": "pending", "updated_at": 1793558400 } }` for the
 current source link, or `{ "data": { "state": null, "updated_at": null } }`
 when the owned entity has no link or has no archive job yet. State is one of
@@ -493,11 +499,55 @@ archive_unavailable`. The owner-scoped status response excludes source URLs,
 worker errors, leases, and job identifiers. Clients can poll this durable
 status; no streaming connection is needed.
 
+## Native resource and administrator authentication
+
+Project, yarn, category, media, import, OCR, archive and draft-preview routes
+accept a browser session or `Authorization: Bearer <PAT>`. Administrator
+routes use the same authentication and additionally require an active
+administrator. The bearer credential must be an unrevoked,
+unexpired API-purpose token belonging to an active user. Browser-purpose tokens
+are rejected when sent as bearer credentials. The server checks administrator
+status on every request and retains the shared service's transaction-time
+authorization checks.
+
+Any `Authorization` header selects the PAT path, including when a cookie is
+also present. Malformed, duplicate, invalid, revoked, expired, or disabled-user
+credentials return `401 session_expired`; they never fall back to a cookie.
+A valid member PAT on an administrator route returns `403 admin_required`.
+PAT requests do not require
+`Origin` or `X-CSRF-Token`. Without `Authorization`, browser mutations retain
+both same-origin and CSRF checks. Response shapes, audit behavior, media
+authorization, and `Cache-Control: no-store` are shared between both paths.
+Session/login/signup and self-service account routes retain their existing
+browser authentication.
+
+Android can discover server metadata and its current user through
+`GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, user}}`.
+`user` is `{id, email, is_admin}` for a valid session or PAT; anonymous or
+invalid-cookie requests return `user: null` and `is_admin: false`.
+Explicit invalid Bearer credentials return the v2 `401 session_expired`
+envelope. Metadata responses are not cacheable. The public v1 metadata
+contract stays unchanged. See [the migration plan](android-v2-migration.md).
+
+Read-only administrator resources use the same authentication:
+
+| Method and path | Result |
+| --- | --- |
+| `GET /admin/resources/{kind}/{id}` | `{data: {kind, id, name, owner, resource, read_only: true}}` |
+| `GET /admin/resources/{kind}/{id}/media/{media_kind}/{media_id}` | Protected original media or attachment download |
+| `GET /admin/resources/{kind}/{id}/media/{media_kind}/{media_id}/thumbnail` | Protected thumbnail |
+
+`kind` is `project`, `yarn`, or `category`. Resource views retain
+`read_only: true` and return administrator media URLs for their nested media.
+Clients send their PAT when loading those URLs. The resource/media association
+and active-administrator checks apply to every download.
+
 ## Administrator user API slice
 
-Administrator routes require an active browser session whose user is an active
-administrator. Mutations also require same-origin `Origin` and the matching
-`X-CSRF-Token`. Request JSON is limited to 8 KiB and rejects unknown fields.
+Administrator routes use the browser-session or PAT authentication described
+above. Cookie-authenticated mutations require same-origin `Origin` and the
+matching `X-CSRF-Token`. Request JSON is limited to 8 KiB and rejects unknown
+fields.
 User creation hashes the validated password before opening a serialized write
 transaction, then rechecks that the actor is still an active administrator
 inside that transaction. Account creation, role assignment, active-state
@@ -514,7 +564,7 @@ creates a member.
 
 `UserSummary` is `{id, email, active, is_admin, avatar_url}`. IDs are JSON numbers.
 `avatar_url` is null when no registered avatar exists; otherwise it points to
-`GET /admin/users/{id}/avatar/{filename}` under `/api/v2`. This browser-only
+`GET /admin/users/{id}/avatar/{filename}` under `/api/v2`. This
 endpoint independently requires an active administrator and serves only the
 registered JPEG thumbnail with `nosniff` and `Cache-Control: no-store`.
 Anonymous or inactive sessions receive `401`, members receive `403`, and
@@ -539,14 +589,15 @@ hashes or other credential material.
 
 ## Administrator audit API slice
 
-The audit endpoint is read-only and requires an active browser session for an
-active administrator. API bearer tokens do not authenticate it; no CSRF token
-is needed for this GET request. The v1 HTML audit page and this endpoint use the
+The audit endpoint is read-only and requires an active administrator through a
+browser session or PAT; no CSRF token is needed for this GET request.
+The v1 HTML audit page and this endpoint use the
 same query parser and typed safe projection.
 
 | Method and path    | Query parameters                    | Result                                                       |
 | ------------------ | ----------------------------------- | ------------------------------------------------------------ |
 | `GET /admin/audit` | Optional `page`, `entity`, `action` | `{data: AuditEvent[], meta: {page, per_page: 50, has_more}}` |
+| `GET /admin/audit/{event_id}` | — | `{data: AuditDetail}` with recorded, safe field changes |
 
 `AuditEvent` contains only `{id, actor_email, actor_avatar_url,
 legacy_actor_user_id, entity_type, entity_id, action, created_at}`.

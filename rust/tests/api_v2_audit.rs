@@ -86,7 +86,7 @@ async fn json(response: axum::response::Response) -> serde_json::Value {
 }
 
 #[tokio::test]
-async fn audit_api_is_active_admin_only_and_bearer_tokens_do_not_authenticate() {
+async fn audit_api_is_active_admin_only_and_accepts_admin_api_pats() {
     let fixture = fixture().await;
     let anonymous = fixture
         .app
@@ -117,7 +117,8 @@ async fn audit_api_is_active_admin_only_and_bearer_tokens_do_not_authenticate() 
         )
         .await
         .unwrap();
-    assert_eq!(bearer.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(bearer.status(), StatusCode::OK);
+    assert_eq!(bearer.headers()["cache-control"], "no-store");
 
     let admin = fixture
         .app
@@ -162,6 +163,7 @@ async fn audit_api_returns_only_the_safe_projection_and_preserves_legacy_actor_f
 
     let response = fixture
         .app
+        .clone()
         .oneshot(request(
             "/admin/audit?entity=project&action=custom-historical-action",
             Some(ADMIN_TOKEN),
@@ -560,6 +562,7 @@ async fn audit_detail_projects_only_allowlisted_legacy_changes_for_admins() {
 
     let response = fixture
         .app
+        .clone()
         .oneshot(request(
             &format!("/admin/audit/{event_id}"),
             Some(ADMIN_TOKEN),
@@ -582,6 +585,20 @@ async fn audit_detail_projects_only_allowlisted_legacy_changes_for_admins() {
         2
     );
     assert_eq!(body["data"]["unavailable_reason"], serde_json::Value::Null);
+    let pat_detail = fixture
+        .app
+        .clone()
+        .oneshot(
+            Request::get(format!("/admin/audit/{event_id}"))
+                .header("authorization", format!("Bearer {API_TOKEN}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(pat_detail.status(), StatusCode::OK);
+    assert_eq!(pat_detail.headers()["cache-control"], "no-store");
+    assert_eq!(json(pat_detail).await["data"]["event"]["id"], event_id);
     let serialized = serde_json::to_string(&body).unwrap();
     assert!(!serialized.contains("password_hash"));
     assert!(!serialized.contains("private2"));

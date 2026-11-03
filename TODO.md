@@ -28,6 +28,14 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
+| T121 | P1 | wip | native-api-v2 | feat | Move Android to API v2 in tested server/client slices; follow `docs/android-v2-migration.md` |
+| T121.1 | P1 | done | native-api-v2/auth | feat | Accept strict PATs on existing resource/admin routes and expose v2 metadata with current-user identity |
+| T121.2 | P1 | todo | native-api-v2/sync | feat | Add project, yarn and category delta sync with stable cursors and tombstones |
+| T121.3 | P1 | todo | native-api-v2/login | feat | Add native token login using shared password policy, quotas and PAT minting |
+| T121.4 | P1 | todo | native-api-v2/parity | test | Verify mutation/import/media parity and document v2 method, payload, pagination and error differences |
+| T121.5 | P1 | todo | native-api-v2/acceptance | test | Verify Android offline/account isolation and inventory v1 retirement blockers; keep v1 available |
+| T121.6 | P1 | todo | native-api-v2/media-order | feat | Persist and backfill media positions; add exact-set reorder endpoints with primary selection, audit and parent sync updates |
+| T122 | P2 | todo | tools/gauge | feat | Add optional 10 cm swatch dimensions, bounded decimal validation and density-based half-even rounding |
 | T120 | P1 | wip | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
 | T120.1 | P1 | done | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |
 | T120.2 | P1 | done | web-rewrite/foundation | feat | Add the SvelteKit/TypeScript static build, shared shell and session-aware frontend foundation |

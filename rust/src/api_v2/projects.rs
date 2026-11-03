@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     ApiV2State, Envelope,
-    access::{browser_user, mutation_user},
+    access::{resource_mutation_user, resource_user},
 };
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -217,7 +217,7 @@ async fn list_projects(
     headers: HeaderMap,
     query: Result<Query<ProjectPageQuery>, QueryRejection>,
 ) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
@@ -259,7 +259,7 @@ async fn get_project(
     headers: HeaderMap,
     Path(project_id): Path<i64>,
 ) -> Response {
-    let user_id = match browser_user(&state.app, &headers).await {
+    let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
@@ -285,7 +285,7 @@ async fn create_project(
     headers: HeaderMap,
     payload: Result<Json<ProjectWriteRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
@@ -321,7 +321,7 @@ async fn update_project(
     Path(project_id): Path<i64>,
     payload: Result<Json<ProjectWriteRequest>, JsonRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
@@ -362,7 +362,7 @@ async fn delete_project(
     headers: HeaderMap,
     Path(project_id): Path<i64>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
@@ -394,7 +394,7 @@ async fn set_favorite(
     project_id: i64,
     favorite: bool,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };

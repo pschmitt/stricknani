@@ -48,6 +48,9 @@ Use this file as the operational source of truth for working in Stricknani.
 - The Rust preview uses its own application login. Do not add Authelia or another extra login layer unless the user requests it; keep public signup disabled when serving copied data.
 - Keep Python production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
 - Investigate credential-scanner alerts before recording an incident; distinguish intentional public test fixtures, validation blacklists, and source identifiers from actual credential values.
+- Delegated agents report scanner alerts to the coordinator without opening
+  incident queues. The coordinator handles triage and any required targeted
+  record; never read unrelated incident entries to confirm a write.
 
 ### Web UI rewrite workflow
 
@@ -57,10 +60,11 @@ Use this file as the operational source of truth for working in Stricknani.
   preferences in Account settings instead of a dedicated global toolbar; retain
   compact signed-out language access. Use blue accents and neutral surfaces in
   both themes, with readable button foregrounds and restrained motion.
-- Use scoped GPT-6 Luna agents for implementation. The coordinator owns the
-  shared contracts, integration, and review of authentication, API changes,
-  accessibility, performance, and packaging. Freeze shared interfaces before
-  parallel feature work; give each agent non-overlapping files.
+- Claude Code owns all web and Android UI implementation, UI helper fixes, and
+  UI preview deployments. Codex coordinates backend/API/data work, operations,
+  and independent acceptance review; delegate scoped non-UI work to GPT-6 Luna.
+  Freeze shared interfaces before parallel work and give each writer
+  non-overlapping files.
 - Prepare the Android companion alongside the web rewrite under `android/`'s
   own instructions and SNA task queue. Review actual PAT/API contracts and new
   website links before changing native calls; preserve offline caches, queued
@@ -68,9 +72,10 @@ Use this file as the operational source of truth for working in Stricknani.
   authentication replacement. Coordinate shared backend changes explicitly.
 - Planning does not start implementation or authorize production cutover.
   Keep the existing preview usable while building and reviewing the new UI.
-- Deploy verified UI milestones to the authorized isolated Rust preview so
-  progress is visible. Delegate deployment work to a scoped Luna agent and
-  review the exact candidate pin, checks and isolation before switching it.
+- The UI owner deploys verified UI milestones to the authorized isolated Rust
+  preview so progress is visible. Review the exact candidate pin, checks and
+  isolation before switching it. Coordinate backend checkpoints with that owner
+  so neither deployment rolls back the other's changes.
   Do not wait for the entire UI rewrite to deploy useful increments. Production
   cutover remains a separate decision.
 - The user explicitly requests a Signal notification after every successful
@@ -78,6 +83,21 @@ Use this file as the operational source of truth for working in Stricknani.
   the deployed version and HTTPS route, then sends a short change summary with
   the working clickable preview link. Send one notification per deployed
   version; do not announce a deployment before it is verified.
+
+### Native API v2 migration
+
+- Follow T121 in `TODO.md` and [`docs/android-v2-migration.md`](docs/android-v2-migration.md).
+  Codex owns server changes and API/data review; Claude owns Android migration
+  and all UI work. Send the client owner each tested server checkpoint.
+- Keep API v1 available and unchanged until a separate retirement decision.
+  Inventory installed clients and internal callers, including legacy HTML
+  handlers, before proposing removal. Production cutover stays separately gated.
+- Explicit Bearer credentials select strict API-purpose PAT authentication;
+  invalid credentials never fall back to a cookie. Cookie mutations retain
+  same-origin and CSRF checks. Preserve owner/admin checks in shared services.
+- Prove delta cursors, tombstones, queued writes, retries and account isolation
+  against the exact client/server revisions. Matching route names alone do not
+  establish offline parity.
 
 ### Frontend integration checks
 

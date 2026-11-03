@@ -39,7 +39,7 @@ async fn get_resource(
     headers: axum::http::HeaderMap,
     Path((kind, id)): Path<(String, i64)>,
 ) -> Response {
-    let actor_id = match access::browser_user(&state.app, &headers).await {
+    let actor_id = match access::admin_user(&state.app, &headers).await {
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };
@@ -108,7 +108,7 @@ async fn serve_resource_media(
     media_id: i64,
     thumbnail: bool,
 ) -> Response {
-    let actor_id = match access::browser_user(&state.app, headers).await {
+    let actor_id = match access::admin_user(&state.app, headers).await {
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };

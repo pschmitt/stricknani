@@ -25,7 +25,7 @@ use crate::{
 
 use super::{
     ApiV2State, Envelope,
-    access::{self, OwnerRequestLimiter, mutation_user},
+    access::{self, OwnerRequestLimiter, resource_mutation_user},
 };
 
 const MAX_PREVIEW_JSON_BYTES: usize = 32 * 1024 * 1024;
@@ -103,7 +103,7 @@ struct ImportApiError {
 }
 
 async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Response {
-    let user_id = match mutation_user(&state.app, request.headers()).await {
+    let user_id = match resource_mutation_user(&state.app, request.headers()).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
@@ -180,7 +180,7 @@ async fn preview_file(
     headers: HeaderMap,
     multipart: Result<Multipart, MultipartRejection>,
 ) -> Response {
-    let user_id = match mutation_user(&state.app, &headers).await {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };

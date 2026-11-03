@@ -127,3 +127,98 @@ pub(super) async fn mutation_user(
     }
     Ok(user_id)
 }
+
+pub(super) async fn resource_user(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<i64, Box<Response>> {
+    match pat_user_if_authorization(state, headers).await? {
+        Some(user_id) => Ok(user_id),
+        None => browser_user(state, headers).await,
+    }
+}
+
+pub(super) async fn resource_mutation_user(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<i64, Box<Response>> {
+    match pat_user_if_authorization(state, headers).await? {
+        Some(user_id) => Ok(user_id),
+        None => mutation_user(state, headers).await,
+    }
+}
+
+pub(super) async fn optional_resource_user(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<Option<i64>, Box<Response>> {
+    if let Some(user_id) = pat_user_if_authorization(state, headers).await? {
+        return Ok(Some(user_id));
+    }
+
+    match auth::browser_user(&state.pool, headers, state.secure_cookies).await {
+        Ok(user_id) => Ok(Some(user_id)),
+        Err(auth::AuthError::Unauthorized) => Ok(None),
+        Err(auth::AuthError::Database(_)) => Err(Box::new(auth_error(AuthFailure::Internal))),
+    }
+}
+
+async fn pat_user_if_authorization(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<Option<i64>, Box<Response>> {
+    if !headers.contains_key(axum::http::header::AUTHORIZATION) {
+        return Ok(None);
+    }
+
+    match auth::bearer_pat_user(&state.pool, headers).await {
+        Ok(user_id) => Ok(Some(user_id)),
+        Err(auth::AuthError::Unauthorized) => Err(Box::new(auth_error(AuthFailure::Unauthorized))),
+        Err(auth::AuthError::Database(_)) => Err(Box::new(auth_error(AuthFailure::Internal))),
+    }
+}
+
+pub(super) async fn admin_user(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<i64, Box<Response>> {
+    authenticated_admin_user(state, headers, AdminAuthMode::Read).await
+}
+
+pub(super) async fn admin_mutation_user(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<i64, Box<Response>> {
+    authenticated_admin_user(state, headers, AdminAuthMode::Mutation).await
+}
+
+#[derive(Clone, Copy)]
+enum AdminAuthMode {
+    Read,
+    Mutation,
+}
+
+async fn authenticated_admin_user(
+    state: &AppState,
+    headers: &HeaderMap,
+    mode: AdminAuthMode,
+) -> Result<i64, Box<Response>> {
+    let user_id = match mode {
+        AdminAuthMode::Read => resource_user(state, headers).await?,
+        AdminAuthMode::Mutation => resource_mutation_user(state, headers).await?,
+    };
+
+    match crate::admin_service::require_active_admin(&state.pool, user_id).await {
+        Ok(()) => Ok(user_id),
+        Err(crate::admin_service::AdminError::Forbidden) => Err(Box::new(api_error(
+            StatusCode::FORBIDDEN,
+            "admin_required",
+            "Administrator access is required",
+        ))),
+        Err(_) => Err(Box::new(api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Request failed",
+        ))),
+    }
+}

@@ -13,7 +13,7 @@ use crate::archive_jobs::{self, ArchiveEntityKind, ArchiveJobState, ArchiveJobSt
 
 use super::{
     ApiV2State, Envelope,
-    access::{browser_user, mutation_user},
+    access::{resource_mutation_user, resource_user},
 };
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -67,7 +67,7 @@ async fn status(
     kind: ArchiveEntityKind,
     id: i64,
 ) -> Response {
-    let owner_id = match browser_user(&state.app, headers).await {
+    let owner_id = match resource_user(&state.app, headers).await {
         Ok(owner_id) => owner_id,
         Err(response) => return *response,
     };
@@ -106,7 +106,7 @@ async fn enqueue(
     kind: ArchiveEntityKind,
     id: i64,
 ) -> Response {
-    let owner_id = match mutation_user(&state.app, headers).await {
+    let owner_id = match resource_mutation_user(&state.app, headers).await {
         Ok(owner_id) => owner_id,
         Err(response) => return *response,
     };

@@ -17,7 +17,7 @@ use crate::{
 
 use super::{
     ApiV2State, Envelope,
-    access::{self, mutation_user},
+    access::{self, resource_mutation_user},
 };
 
 const MAX_OCR_REQUEST_BYTES: usize = 8 * 1024;
@@ -43,7 +43,7 @@ struct OcrData {
 }
 
 async fn ocr(State(state): State<ApiV2State>, request: Request<Body>) -> Response {
-    let owner_id = match mutation_user(&state.app, request.headers()).await {
+    let owner_id = match resource_mutation_user(&state.app, request.headers()).await {
         Ok(owner_id) => owner_id,
         Err(response) => return *response,
     };

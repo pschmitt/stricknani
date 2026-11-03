@@ -35,6 +35,7 @@ mod audit;
 mod categories;
 mod imports;
 mod media;
+mod meta;
 mod ocr;
 mod project_preview;
 mod projects;
@@ -120,6 +121,7 @@ fn router_with_context(
         .merge(imports::router())
         .merge(ocr::router())
         .merge(archive::router())
+        .merge(meta::router())
         .merge(tools::router())
         .merge(account::router())
         .merge(admin::router())
