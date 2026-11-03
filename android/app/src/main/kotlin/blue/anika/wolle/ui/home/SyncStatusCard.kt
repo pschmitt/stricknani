@@ -1,6 +1,8 @@
 package blue.anika.wolle.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -16,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -81,32 +85,54 @@ fun HomeSyncStatusCard(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            when {
-                isRefreshing ->
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                hasSyncFailures ->
-                    Icon(
-                        PhosphorIcons.CloudSlash,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(24.dp),
-                    )
-                pendingChangesCount > 0 ->
-                    Icon(
-                        PhosphorIcons.CloudArrowUp,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                else ->
-                    Icon(
-                        PhosphorIcons.CloudCheck,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
+            // A calm, larger status badge: teal when all is well (raspberry read like an error),
+            // marigold while changes wait, red only for real failures.
+            val (badgeTint, badgeOn) =
+                when {
+                    hasSyncFailures ->
+                        MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+                    pendingChangesCount > 0 && !isRefreshing ->
+                        MaterialTheme.colorScheme.tertiaryContainer to
+                            MaterialTheme.colorScheme.onTertiaryContainer
+                    else ->
+                        MaterialTheme.colorScheme.secondaryContainer to
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                }
+            Box(
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(badgeTint),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    isRefreshing ->
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.5.dp,
+                            color = badgeOn,
+                        )
+                    hasSyncFailures ->
+                        Icon(
+                            PhosphorIcons.CloudSlash,
+                            contentDescription = null,
+                            tint = badgeOn,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    pendingChangesCount > 0 ->
+                        Icon(
+                            PhosphorIcons.CloudArrowUp,
+                            contentDescription = null,
+                            tint = badgeOn,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    else ->
+                        Icon(
+                            PhosphorIcons.CloudCheck,
+                            contentDescription = null,
+                            tint = badgeOn,
+                            modifier = Modifier.size(28.dp),
+                        )
+                }
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
             Column {
                 Text(
                     syncStatusHeadline(isRefreshing, pendingChangesCount, hasSyncFailures),
