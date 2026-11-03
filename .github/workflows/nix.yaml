@@ -92,3 +92,19 @@ jobs:
           printf 'Timed out waiting for %s after 60 seconds.\n' "$health_url" >&2
           docker logs "$container_name" >&2 || true
           exit 1
+
+  # aarch64-linux packages and checks, built natively on GitHub's arm runners
+  # (nixbot on x86_64 would have to emulate them) and pushed to the niks3 S3
+  # cache from main and pull requests (the server only trusts those refs); see
+  # pschmitt/ci-workflows. Nothing here needs KVM.
+  nix-aarch64:
+    permissions:
+      contents: read
+      id-token: write
+    uses: pschmitt/ci-workflows/.github/workflows/nix-aarch64.yaml@main
+    with:
+      pin-prefix: gh-stricknani-main
+    secrets:
+      s3_store: ${{ secrets.NIKS3_S3_STORE }}
+      s3_access_key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+      s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
