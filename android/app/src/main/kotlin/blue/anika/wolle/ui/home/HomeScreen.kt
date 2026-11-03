@@ -38,7 +38,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -77,11 +77,13 @@ import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
+import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SyncIssueBanner
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.common.stitchedBorder
 import coil3.compose.AsyncImage
 import java.util.Calendar
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 @Composable
@@ -150,7 +152,7 @@ fun HomeScreen(
     val peekSyncCard = !reduceMotion && !showSyncStatus && !isRefreshing && dragging
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         // The greeting below replaces the title bar, so the list draws under the status bar
         // itself and pads for it.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -179,12 +181,13 @@ fun HomeScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                // Each item brings its own 16dp bottom gap (see spacedItem) so the sync card's gap
+                // can grow with the pull; the last item's gap makes up part of the old 24dp.
+                contentPadding = PaddingValues(bottom = 8.dp),
             ) {
-                item { Greeting(onGaugeClick = onGaugeClick) }
+                spacedItem { Greeting(onGaugeClick = onGaugeClick) }
                 availableUpdate?.let { update ->
-                    item {
+                    spacedItem {
                         UpdateAvailableCard(
                             update = update,
                             onDownload = { uriHandler.openUri(update.downloadUrl) },
@@ -195,21 +198,15 @@ fun HomeScreen(
                 }
                 if (showSyncStatus || peekSyncCard)
                     item(key = "sync-status") {
-                        HomeSyncStatusCard(
-                            isRefreshing = isRefreshing,
-                            lastSyncedMillis = lastSyncedMillis,
-                            pendingChangesCount = pendingChangesCount,
-                            failedChangesCount = failedMutations.size,
-                            onOpenSyncIssues = onOpenSyncIssues,
-                            onRetrySync = viewModel::retryFailedMutations,
-                            leaving = leavingSyncCard,
-                            pullFraction = pullFraction,
-                            peeking = peekSyncCard,
-                            // Fades in/out while the cards below slide into place (and nothing when
-                            // animations
-                            // are off - animateItem follows the system animator scale).
+                        // The 16dp gap below the card is part of its revealed height, so while the
+                        // user pulls, everything below moves down smoothly instead of jumping.
+                        Box(
                             modifier =
-                                Modifier.animateItem(
+                                Modifier
+                                    // Fades out while the cards below slide into place (nothing
+                                    // when animations are off - animateItem follows the system
+                                    // animator scale). The enter is driven by the card itself.
+                                    .animateItem(
                                         fadeInSpec = null,
                                         fadeOutSpec = tween(160),
                                         placementSpec =
@@ -219,10 +216,33 @@ fun HomeScreen(
                                                 visibilityThreshold = IntOffset.VisibilityThreshold,
                                             ),
                                     )
-                                    .padding(horizontal = 16.dp),
-                        )
+                                    .layout { measurable, constraints ->
+                                        val placeable = measurable.measure(constraints)
+                                        val reveal =
+                                            if (peekSyncCard) {
+                                                syncPullReveal(pullFraction()).coerceIn(0f, 1f)
+                                            } else 1f
+                                        val gap = (16.dp.toPx() * reveal).roundToInt()
+                                        layout(placeable.width, placeable.height + gap) {
+                                            placeable.place(0, 0)
+                                        }
+                                    }
+                        ) {
+                            HomeSyncStatusCard(
+                                isRefreshing = isRefreshing,
+                                lastSyncedMillis = lastSyncedMillis,
+                                pendingChangesCount = pendingChangesCount,
+                                failedChangesCount = failedMutations.size,
+                                onOpenSyncIssues = onOpenSyncIssues,
+                                onRetrySync = viewModel::retryFailedMutations,
+                                leaving = leavingSyncCard,
+                                pullFraction = pullFraction,
+                                peeking = peekSyncCard,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
                     }
-                item {
+                spacedItem {
                     SyncIssueBanner(
                         issues = failedMutations,
                         onRetry = viewModel::retryFailedMutations,
@@ -231,10 +251,12 @@ fun HomeScreen(
                     )
                 }
                 if (isEmpty) {
-                    item { CozyEmptyHome(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) }
+                    spacedItem {
+                        CozyEmptyHome(Modifier.padding(horizontal = 24.dp, vertical = 24.dp))
+                    }
                 }
                 current?.let { project ->
-                    item {
+                    spacedItem {
                         ContinueKnittingCard(
                             project = project,
                             previewUrl = viewModel.previewUrl(project.previewUrl),
@@ -243,14 +265,14 @@ fun HomeScreen(
                         )
                     }
                 }
-                item {
+                spacedItem {
                     StashCard(
                         onClick = onYarnsClick,
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
                 if (favoriteProjects.isNotEmpty()) {
-                    item {
+                    spacedItem {
                         HomeShelf(
                             title = stringResource(R.string.home_favorite_projects_title),
                             icon = PhosphorIcons.Heart,
@@ -271,7 +293,7 @@ fun HomeScreen(
                     }
                 }
                 if (favoriteYarns.isNotEmpty()) {
-                    item {
+                    spacedItem {
                         HomeShelf(
                             title = stringResource(R.string.home_favorite_yarns_title),
                             icon = MdiIcons.YarnBall,
@@ -292,7 +314,7 @@ fun HomeScreen(
                     }
                 }
                 if (otherRecent.isNotEmpty()) {
-                    item {
+                    spacedItem {
                         HomeShelf(
                             title = stringResource(R.string.home_recent_projects_title),
                             icon = PhosphorIcons.ClockCounterClockwise,
@@ -315,6 +337,11 @@ fun HomeScreen(
             }
         }
     }
+}
+
+/** A list item followed by the 16dp gap the list used to get from `spacedBy`. */
+private fun LazyListScope.spacedItem(content: @Composable () -> Unit) {
+    item { Column(Modifier.padding(bottom = 16.dp)) { content() } }
 }
 
 /** A friendly hello with the mascot, instead of a title bar. */
