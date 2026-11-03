@@ -2341,6 +2341,16 @@ def run_acceptance(
         ):
             console_errors.append("expected_project_conflict_409")
         elif (
+            source_path.startswith("/api/v2/projects/")
+            and "failed to load resource" in text
+            and "503" in text
+            and any(
+                response_path == source_path and status == 503
+                for response_path, status in project_responses
+            )
+        ):
+            console_errors.append("expected_project_save_failure_503")
+        elif (
             expected_signup_conflict_pending[0]
             and source_path == "/api/v2/auth/signup"
             and "failed to load resource" in text
@@ -4969,6 +4979,7 @@ def run_acceptance(
                     in {
                         "expected_unknown_route_404",
                         "expected_project_conflict_409",
+                        "expected_project_save_failure_503",
                         "expected_signup_conflict_409",
                         "expected_ocr_failure_5xx",
                         "expected_print_image_abort",

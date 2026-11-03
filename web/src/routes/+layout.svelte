@@ -83,6 +83,7 @@
         pathname,
         linkTo("/login"),
         publicGauge,
+        linkTo("/signup"),
       )
     ) {
       void goto(linkTo("/login"), { replaceState: true });
@@ -341,6 +342,13 @@
     text-decoration: none;
   }
 
+  /* The lockup may shrink, but never paint over the language switch. */
+  .public-tool-header > :global(.brand-header) {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
   .signup-route-main {
     display: flex;
     width: 100%;
@@ -354,7 +362,7 @@
     padding: clamp(1rem, 4vw, 2.5rem);
   }
 
-  @media (max-width: 380px) {
+  @media (max-width: 480px) {
     .public-tool-header {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto auto;

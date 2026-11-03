@@ -15,11 +15,13 @@ export function shouldRedirectExpiredSession(
   pathname: string,
   loginPath: string,
   isPublicGauge: boolean,
+  signupPath?: string,
 ): boolean {
   return (
     expired &&
     sessionStatus === "ready" &&
     pathname !== loginPath &&
+    pathname !== signupPath &&
     !isPublicGauge
   );
 }
