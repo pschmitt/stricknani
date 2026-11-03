@@ -202,6 +202,18 @@ def _create_admin_audit_project(
         state="visible"
     )
     mark("fill admin audit project")
+    project_optional_details = page.locator("details.optional-details")
+    _require(
+        project_optional_details.count() == 1,
+        "project details disclosure is missing from the create form",
+    )
+    if project_optional_details.get_attribute("open") is None:
+        project_optional_details.locator("summary").click()
+    _require(
+        project_optional_details.count() == 1
+        and project_optional_details.get_attribute("open") is not None,
+        "More project details could not be expanded for the audit fixture",
+    )
     page.get_by_label("Project name", exact=True).fill("Admin audit fixture")
     page.get_by_label("Category", exact=True).fill("Blankets")
     page.get_by_label("Needles", exact=True).fill("4 mm circular needles")
@@ -226,8 +238,25 @@ def _create_admin_audit_project(
         create_response_info.value.status == 201,
         "synthetic administrator audit project creation failed",
     )
+    project_id_path = urlsplit(page.url).path.removeprefix("/app/projects/")
+    _require(
+        project_id_path.isdigit(),
+        "created administrator project did not open its detail route",
+    )
+    page.get_by_role("heading", name="Admin audit fixture", exact=True).wait_for(
+        state="visible"
+    )
+    mark("open admin audit project editor from detail")
+    page.get_by_role("link", name="Edit project", exact=True).click()
+    page.wait_for_url(f"**/app/projects/{project_id_path}/edit")
     page.get_by_role("heading", name="Edit project", exact=True).wait_for(
         state="visible"
+    )
+    project_optional_details = page.locator("details.optional-details")
+    _require(
+        project_optional_details.count() == 1
+        and project_optional_details.get_attribute("open") is not None,
+        "More project details should be expanded after project creation",
     )
     mark("update admin audit project")
     with page.expect_response(
@@ -690,11 +719,25 @@ def _assert_user_avatar(avatar: Locator, *, initial: str, image_expected: bool) 
 
 
 def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
-    page.goto(f"{urlsplit(page.url).scheme}://{urlsplit(page.url).netloc}/app/more")
+    origin = f"{urlsplit(page.url).scheme}://{urlsplit(page.url).netloc}"
+    page.goto(f"{origin}/app/create")
+    page.get_by_role(
+        "heading", name="What would you like to add?", exact=True
+    ).wait_for(state="visible")
+    create_import = page.locator(".create-options a[href$='/imports']")
+    _require(
+        create_import.count() == 1,
+        "Create does not contain exactly one Imports link",
+    )
+    _require(
+        page.locator(".secondary-nav a[href$='/imports']").count() == 0,
+        "Imports is duplicated in Workspace navigation",
+    )
+
+    page.goto(f"{origin}/app/more")
     page.get_by_role("heading", name="More", exact=True).wait_for(state="visible")
     cards = page.locator(".more-links")
     expected_cards = [
-        ("Imports", "/imports"),
         ("Categories", "/categories"),
         ("Gauge calculator", "/gauge"),
     ]
@@ -704,9 +747,14 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         )
     _require(
         cards.locator("a").count() == len(expected_cards)
-        and cards.get_by_role("link", name="Account", exact=True).count() == 0
+        and cards.locator("a[href$='/imports']").count() == 0
+        and page.locator(".secondary-nav a[href$='/imports']").count() == 0,
+        "More or Workspace contains unexpected links",
+    )
+    _require(
+        cards.get_by_role("link", name="Account", exact=True).count() == 0
         and page.locator(".secondary-nav a[href$='/account']").count() == 0,
-        "More or secondary navigation contains a duplicate Account entry",
+        "More or Workspace contains a duplicate Account link",
     )
     _require(
         page.locator(".app-header .header-account[href$='/account']").count() == 1,

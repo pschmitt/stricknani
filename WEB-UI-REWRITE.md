@@ -309,14 +309,17 @@ The overall rewrite remains open until T120.9 acceptance is complete.
   active Android, Rust HTML and root-worker consumers, so asset removal is
   conditional on their retirement rather than a safe cleanup for this preview.
 
-- [x] **T120.10 — Requested update activation.** Replace the close-all-tabs
-  notice with a working reload-to-update action. Activation follows an explicit
-  click and a bounded readiness handshake across open app tabs. Protect dirty
-  forms and in-flight mutations before activation; cancel or time out cleanly
-  when another tab cannot prepare. Prepared tabs may reload for that request;
-  finding a new worker alone must not reload a tab. Keep cache contents public
-  and retain the assets needed by older clients until their transition is
-  confirmed. Cover clean, dirty, busy, multiple-tab, timeout and retry cases.
+- [ ] **T120.10 — Independent tab updates.** The reviewed revision replaces
+  the cross-tab readiness handshake with independent tab updates. A worker may
+  activate after precaching without reloading any page. An available update
+  appears as a quiet Reload chip; only that tab's dirty drafts and pending
+  actions block its reload. A clean same-origin link/goto may full-load the new
+  version. Preserve native history, hash-only, external and unload behavior.
+  Frozen or unresponsive tabs must not block other tabs. Cache public assets
+  only and retain the newest three versions; do not promise indefinite support
+  for arbitrarily old chunks. Unit checks and the two-version source-build
+  journey pass for `017c2ad`; packaged parity, navigation boundaries and notice
+  integration remain in progress.
 - [x] **T120.11 — Audit resource history.** Display project, yarn and category
   names with useful links. The user explicitly approved a separate read-only
   administrator view for resources belonging to other users; ordinary resource

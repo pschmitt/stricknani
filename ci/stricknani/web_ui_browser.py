@@ -4271,6 +4271,11 @@ def run_acceptance(
 
             mark_stage("preserving comma-containing tags during an unrelated edit")
             page.get_by_label("Needles", exact=True).fill("5 mm circular needles")
+            save_changes_button = page.get_by_role(
+                "button", name="Save changes", exact=True
+            )
+            expect(save_changes_button).to_be_enabled()
+            _wait_two_animation_frames(page)
             project_save_url = f"**/api/v2/projects/{editor_project_id}"
             held_project_saves: list[Route] = []
 
@@ -4320,11 +4325,12 @@ def run_acceptance(
             page.get_by_role("alert").filter(
                 has_text="The server could not complete this request. Try again."
             ).first.wait_for(state="visible")
+            expect(save_changes_button).to_be_enabled()
             _require(
                 page.get_by_label("Needles", exact=True).input_value()
                 == "5 mm circular needles"
-                and not page.locator(".sticky-action-bar .ui-button").is_disabled(),
-                "a failed project save lost its draft or remained busy",
+                and save_changes_button.is_enabled(),
+                "a failed project save lost its draft or kept Save changes disabled",
             )
             save_request_count = len(project_mutation_requests)
             with page.expect_response(

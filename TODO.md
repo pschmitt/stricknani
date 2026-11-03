@@ -38,7 +38,7 @@ Execution-oriented backlog for Stricknani.
 | T120.7 | P1 | done | web-rewrite/imports | feat | Build import review, optional OCR/archive controls and bounded job progress feedback |
 | T120.8 | P1 | done | web-rewrite/settings | feat | Build account/security, gauge and responsive admin workflows |
 | T120.9 | P1 | wip | web-rewrite/acceptance | test | Verify mobile usability, accessibility, performance, packaging and isolated preview rollout |
-| T120.10 | P1 | done | web-rewrite/updates | feat | Reload into an available app update on request while protecting drafts in every open tab |
+| T120.10 | P1 | wip | web-rewrite/updates | feat | Let each tab update independently while protecting its dirty drafts and pending actions |
 | T120.11 | P1 | done | web-rewrite/audit | feat | Link audit resource names to read-only admin views and show recorded field changes |
 | T120.12 | P1 | done | web-rewrite/resource-cards | feat | Reuse compact linked resource cards with images in audit, libraries and related resources |
 | T120.15 | P1 | wip | web-rewrite/reader | feat | Apply the reviewed single-column reader, compact materials summary and mobile filter refinements |

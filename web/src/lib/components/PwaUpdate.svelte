@@ -1,13 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fly } from "svelte/transition";
   import { beforeNavigate } from "$app/navigation";
   import { version as appVersion } from "$app/env";
   import { resolve } from "$app/paths";
   import { updated } from "$app/state";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import SharedButton from "#lib/components/Button.svelte";
-  import { publishFeedback } from "#lib/feedback.ts";
+  import { feedback, publishFeedback } from "#lib/feedback.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { updateReadiness } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -30,6 +29,9 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const ownerFeedbackVisible = $derived(
+    userId !== null && $feedback?.ownerId === userId,
+  );
   let dismissed = $state(false);
   let blocked = $state<"dirty" | "busy" | null>(null);
   let announced = false;
@@ -104,13 +106,8 @@
   });
 </script>
 
-{#if updated.current && !dismissed}
-  <aside
-    class="update-chip"
-    aria-labelledby="update-title"
-    role="status"
-    transition:fly={{ y: -12, duration: 220 }}
-  >
+{#if updated.current && !dismissed && !ownerFeedbackVisible}
+  <aside class="update-chip" aria-labelledby="update-title" role="status">
     <p id="update-title">
       {#if blocked === "dirty"}
         {t("Save your changes first, then reload.", locale)}

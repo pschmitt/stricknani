@@ -39,15 +39,29 @@
 
 <style>
   .action-feedback {
+    --action-feedback-header-height: calc(4.25rem + env(safe-area-inset-top));
+    --action-feedback-inline-start: max(1rem, env(safe-area-inset-left));
+    --action-feedback-inline-end: max(1rem, env(safe-area-inset-right));
+    --action-feedback-max-height: min(
+      9rem,
+      calc(100dvh - var(--action-feedback-header-height) - 1.5rem)
+    );
     position: fixed;
     z-index: 20;
-    right: max(1rem, env(safe-area-inset-right));
-    bottom: 6rem;
-    display: flex;
-    width: min(32rem, calc(100vw - 2rem));
+    top: calc(var(--action-feedback-header-height) + 0.75rem);
+    right: var(--action-feedback-inline-end);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: min(
+      32rem,
+      calc(
+        100% - var(--action-feedback-inline-start) -
+          var(--action-feedback-inline-end)
+      )
+    );
+    max-height: var(--action-feedback-max-height);
     min-height: 44px;
-    align-items: center;
-    justify-content: space-between;
+    align-items: start;
     gap: 0.75rem;
     box-sizing: border-box;
     border: 1px solid var(--control-border);
@@ -56,6 +70,7 @@
     color: var(--ink);
     background: var(--surface-raised);
     box-shadow: var(--shadow);
+    overflow: hidden;
   }
 
   .action-feedback--error {
@@ -64,16 +79,27 @@
 
   .action-feedback > span {
     min-width: 0;
+    max-height: calc(var(--action-feedback-max-height) - 1.2rem);
+    overflow-y: auto;
     overflow-wrap: anywhere;
   }
 
   @media (max-width: 760px) {
     .action-feedback {
-      right: max(0.75rem, env(safe-area-inset-right));
-      bottom: calc(
-        var(--app-mobile-nav-height, 57px) + env(safe-area-inset-bottom) + 6rem
+      --action-feedback-header-height: max(
+        3.5rem,
+        calc(45px + env(safe-area-inset-top))
       );
-      width: min(32rem, calc(100vw - 1.5rem));
+      --action-feedback-inline-start: max(0.75rem, env(safe-area-inset-left));
+      --action-feedback-inline-end: max(0.75rem, env(safe-area-inset-right));
+      --action-feedback-max-height: min(
+        9rem,
+        calc(
+          100dvh - var(--action-feedback-header-height) -
+            var(--app-mobile-nav-height, 57px) - env(safe-area-inset-bottom) -
+            1.5rem
+        )
+      );
     }
   }
 </style>

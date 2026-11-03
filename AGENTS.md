@@ -190,6 +190,12 @@ Use this file as the operational source of truth for working in Stricknani.
 - Use shared, bounded decorative icons alongside action labels. Preserve
   accessible names, keyboard behavior and compact phone layouts; existing
   icon-only controls do not need a second icon.
+- App updates are independent per tab. Worker activation must not reload a
+  page or depend on other tabs replying. Keep each tab's dirty/busy guards;
+  automatic full loads apply only to clean same-origin link/goto navigation,
+  never popstate, hash-only, external or unload navigation. Cache only public
+  assets and retain the newest three versions. Keep the update chip separate
+  from owner-scoped action feedback and respect reduced motion.
 - When changing shared chrome or avatars, inventory selectors across all
   shipping browser runners, including signup and optional-service branches.
   Verify account identity through the session and Account page.

@@ -657,10 +657,7 @@ def run_acceptance(
                 "the yarn editor header parent link has the wrong route or size",
             )
             mark_stage("requesting cancellation of dirty yarn navigation")
-            with page.expect_event("dialog") as dirty_dialog_info:
-                yarn_parent.click()
-            mark_stage("cancelling dirty yarn navigation")
-            dirty_dialog_info.value.dismiss()
+            web_ui_browser._click_and_handle_dialog(page, yarn_parent, accept=False)
             mark_stage("checking retained yarn draft after cancellation")
             page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
                 state="visible"
@@ -670,9 +667,7 @@ def run_acceptance(
                 "dirty navigation discarded the yarn draft",
             )
             mark_stage("accepting dirty yarn navigation")
-            with page.expect_event("dialog") as leave_dialog_info:
-                yarn_parent.click()
-            leave_dialog_info.value.accept()
+            web_ui_browser._click_and_handle_dialog(page, yarn_parent, accept=True)
             mark_stage("waiting for yarn details after accepted navigation")
             page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True).wait_for(
                 state="visible"
@@ -831,6 +826,15 @@ def run_acceptance(
             delete_dialog.wait_for(state="hidden")
             delete_button.click()
             delete_dialog.wait_for(state="visible")
+            delete_action = delete_dialog.locator("button.ui-button--danger")
+            _require(
+                delete_action.count() == 1
+                and delete_dialog.get_by_role(
+                    "button", name="Delete yarn", exact=True
+                ).count()
+                == 1,
+                "yarn confirmation does not have one named delete action",
+            )
 
             yarn_delete_url = f"**/api/v2/yarns/{created_id_path}"
             held_yarn_deletes: list[Route] = []
@@ -843,9 +847,6 @@ def run_acceptance(
 
             page.route(yarn_delete_url, hold_yarn_delete)
             delete_request_count = len(observed_mutation_requests)
-            delete_action = delete_dialog.get_by_role(
-                "button", name="Delete yarn", exact=True
-            )
             keep_action = delete_dialog.get_by_role(
                 "button", name="Keep yarn", exact=True
             )
@@ -887,8 +888,7 @@ def run_acceptance(
                 delete_dialog.is_visible()
                 and not delete_action.is_disabled()
                 and not keep_action.is_disabled()
-                and page.get_by_label("Yarn name", exact=True).input_value()
-                == "New browser yarn",
+                and page.locator("#yarn-name").input_value() == "New browser yarn",
                 "failed yarn deletion lost the draft or left confirmation busy",
             )
             keep_action.click()
@@ -901,9 +901,7 @@ def run_acceptance(
                     and response.request.method == "DELETE"
                 )
             ) as delete_response_info:
-                delete_dialog.get_by_role(
-                    "button", name="Delete yarn", exact=True
-                ).click()
+                delete_action.click()
             _require(
                 delete_response_info.value.status == 204,
                 "yarn deletion did not complete with 204 from API v2",
