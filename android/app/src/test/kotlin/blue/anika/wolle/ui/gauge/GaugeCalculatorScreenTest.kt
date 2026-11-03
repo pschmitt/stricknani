@@ -46,7 +46,14 @@ class GaugeCalculatorScreenTest {
     }
 
     @Test
+    fun `ties round half up like the server`() {
+        // 121 cast-on stitches at a 19/22 ratio is 104.5, which becomes 105.
+        assertEquals(105, gaugeResultOrNull("22", "28", "19", "25", "121", "")!!.adjustedStitches)
+    }
+
+    @Test
     fun `swatch size parsing and formatting`() {
+        assertEquals(4.123, SwatchSize.parseCm("4,12345")!!, 0.0)
         assertEquals(7.5, SwatchSize.parseCm("7,5")!!, 0.0)
         assertEquals(null, SwatchSize.parseCm("0"))
         assertEquals(null, SwatchSize.parseCm("101"))
