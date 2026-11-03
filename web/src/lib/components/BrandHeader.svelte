@@ -46,7 +46,7 @@
     /* Geometry of the lockup. --brand-align is where the mark's left edge
        sits relative to the header's content box; on desktop it lines the
        mark up with the rail's nav icons. */
-    --brand-pad: 0.3rem;
+    --brand-pad: 0.25rem;
     --brand-chevron: 0.75rem;
     --brand-align: 0.5rem;
     --brand-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
