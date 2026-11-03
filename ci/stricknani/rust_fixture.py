@@ -163,6 +163,9 @@ def _server_environment(
         "RUST_OCR_ENABLED": "false",
         "RUST_EXTERNAL_IMPORTS_ENABLED": "false",
         "RUST_WAYBACK_ENABLED": "false",
+        # The fixture must not call gravatar.com; with no network the fallback
+        # route 404s and the browser logs it as a console error.
+        "RUST_GRAVATAR_ENABLED": "false",
     }
     if browser_authority is not None:
         environment["TRUSTED_HOSTS"] = ",".join(
