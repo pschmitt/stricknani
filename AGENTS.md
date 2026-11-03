@@ -176,6 +176,11 @@ Use this file as the operational source of truth for working in Stricknani.
   matches its source template and manifest substitutions. Record these hashes
   with the receipt so stale runners or builds cannot be mistaken for failures
   of newer source.
+- Keep diagnostic runner overlays in the same repository-relative directory
+  structure as the frozen source. Runners derive fixture assets from their own
+  file location; copy or link the required asset directories and verify them
+  before launching. Keep private diagnostic logs and exit receipts outside the
+  fixture's cleanup-owned directory; report only sanitized failure details.
 - When shared cards place subtitle or metadata text inside a link, scope browser
   locators to the card, assert the expected title as part of its accessible
   name, and verify the destination separately. Keep owner-scoped thumbnail URLs

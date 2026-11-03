@@ -4388,11 +4388,14 @@ def run_acceptance(
                 page.locator("#project-image-file").is_disabled(),
                 "media management stayed enabled with an unsaved project draft",
             )
-            page.once("dialog", lambda dialog: dialog.dismiss())
             mark_stage("checking the dirty navigation confirmation")
-            _assert_header_parent_link(
-                page, f"/app/projects/{editor_project_id}", "project editor"
-            ).click()
+            _click_and_handle_dialog(
+                page,
+                _assert_header_parent_link(
+                    page, f"/app/projects/{editor_project_id}", "project editor"
+                ),
+                accept=False,
+            )
             mark_stage("checking that a canceled navigation preserves the draft")
             _require(
                 urlsplit(page.url).path.endswith(
@@ -4413,9 +4416,8 @@ def run_acceptance(
                 and account_link.get_attribute("href") == "/app/account",
                 "the desktop profile link does not target Account",
             )
-            page.once("dialog", lambda dialog: dialog.dismiss())
             mark_stage("checking the dirty-editor guard on Account navigation")
-            account_link.click()
+            _click_and_handle_dialog(page, account_link, accept=False)
             _require(
                 urlsplit(page.url).path.endswith(
                     f"/app/projects/{editor_project_id}/edit"

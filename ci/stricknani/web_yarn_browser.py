@@ -1143,13 +1143,26 @@ def run_acceptance(
 
             _require(not csp_errors, "browser reported a CSP violation")
             _require(not page_errors, "browser reported a page error")
-            expected_conflict_console = (
-                console_errors == ["http-conflict", "http-conflict"]
+            expected_test_error_console = (
+                sorted(console_errors)
+                == ["http-conflict", "http-conflict", "resource-load"]
                 and len([error for error in observed_api_errors if error[1] == 409])
                 == 2
+                and [
+                    (method, path, code)
+                    for method, status, path, code in observed_api_errors
+                    if status == 503
+                ]
+                == [("DELETE", f"/api/v2/yarns/{created_id_path}", "internal_error")]
+                and sorted(resource_failures)
+                == [
+                    "HTTP 409 category-api",
+                    "HTTP 409 yarn-api",
+                    "HTTP 503 yarn-api",
+                ]
             )
             unexpected_console_errors = (
-                [] if expected_conflict_console else console_errors
+                [] if expected_test_error_console else console_errors
             )
             _require(
                 not unexpected_console_errors,
