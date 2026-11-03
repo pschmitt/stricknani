@@ -30,7 +30,7 @@ Execution-oriented backlog for Stricknani.
 | -- | -------- | ------ | ---- | -------- | ------- |
 | T121 | P1 | wip | native-api-v2 | feat | Move Android to API v2 in tested server/client slices; follow `docs/android-v2-migration.md` |
 | T121.1 | P1 | done | native-api-v2/auth | feat | Accept strict PATs on existing resource/admin routes and expose v2 metadata with current-user identity |
-| T121.2 | P1 | wip | native-api-v2/sync | feat | Add project, yarn and category delta sync with stable cursors and tombstones |
+| T121.2 | P1 | wip | native-api-v2/sync | feat | Add project, yarn and category delta sync with stable cursors and tombstones Evidence 2026-11-03: server-side category sync landed (migration 0016, GET /api/v2/sync/categories with per-owner logical clock, tombstones and owner-transfer deletes); 10 integration tests incl. 0015-to-0016 upgrade, fmt/clippy -D warnings and the full suite green on the build host. Android categories still need switching to v2. |
 | T121.3 | P1 | done | native-api-v2/login | feat | Add native token login using shared password policy, quotas and PAT minting |
 | T121.4 | P1 | wip (contracts: Claude) | native-api-v2/parity | test | Verify mutation/import/media parity and document v2 method, payload, pagination and error differences |
 | T121.5 | P1 | todo | native-api-v2/acceptance | test | Verify Android offline/account isolation and inventory v1 retirement blockers; keep v1 available |
