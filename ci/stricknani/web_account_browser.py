@@ -119,6 +119,14 @@ def _assert_navigation_stays(page: Page, expected_path: str = "/app/account") ->
     )
 
 
+def _open_token_form(page: Page) -> None:
+    """The token form sits in a collapsed disclosure behind "New token"."""
+    toggle = page.get_by_role("button", name="New token", exact=True)
+    if toggle.get_attribute("aria-expanded") != "true":
+        toggle.click()
+    page.get_by_label("Token name").wait_for(state="visible")
+
+
 def _assert_unload_is_guarded(page: Page) -> None:
     blocked: bool = page.evaluate(
         """() => {
@@ -198,19 +206,20 @@ def run_acceptance(
             _mark_stage(stage_file, "wait for profile heading")
             page.get_by_role("heading", name="Profile").wait_for(state="visible")
             _mark_stage(stage_file, "load profile data")
-            page.locator(".profile-email, .profile-copy .notice-error").first.wait_for(
+            page.locator(".profile__email, .notice-error").first.wait_for(
                 state="visible"
             )
             _require(
-                page.locator(".profile-email").count() == 1,
+                page.locator(".profile__email").count() == 1,
                 "the account profile request failed",
             )
             _require(
-                page.locator(".profile-email").inner_text().strip() == email,
+                page.locator(".profile__email").inner_text().strip() == email,
                 "the profile email did not match the signed-in fixture",
             )
 
             _mark_stage(stage_file, "protect token-name draft during navigation")
+            _open_token_form(page)
             page.get_by_label("Token name").fill("Browser acceptance token")
             _assert_unload_is_guarded(page)
             _assert_navigation_stays(page)
@@ -254,12 +263,12 @@ def run_acceptance(
             token_dialog = page.locator("dialog").first
             page.wait_for_function(
                 "() => document.querySelector('[data-secret-value]') !== null "
-                + "|| document.querySelector('.token-section [role=alert]') !== null",
+                + "|| document.querySelector('section[aria-labelledby=tokens-title] [role=alert]') !== null",
                 timeout=5000,
             )
             dialog_open = token_dialog.evaluate("(dialog) => dialog.open")
             if not dialog_open:
-                error_visible = page.locator(".token-section [role=alert]").is_visible()
+                error_visible = page.locator("section[aria-labelledby=tokens-title] [role=alert]").is_visible()
                 _mark_stage(
                     stage_file,
                     f"token dialog did not open; token error visible={error_visible}",
@@ -370,11 +379,17 @@ def run_acceptance(
             _mark_stage(stage_file, "verify revoked token removal")
             row.wait_for(state="detached")
             _mark_stage(stage_file, "verify revoke focus target")
+            # The form collapses after a token is created, so focus returns to the
+            # "New token" toggle; with the form open it would be the name field.
             _require(
-                page.get_by_label("Token name").evaluate(
-                    "(element) => element === document.activeElement"
+                page.evaluate(
+                    """() => {
+                      const active = document.activeElement;
+                      return active?.id === 'token-name'
+                        || (active?.getAttribute('aria-controls') === 'token-panel');
+                    }"""
                 ),
-                "focus did not move to the token-name field after revocation",
+                "focus did not return to the token controls after revocation",
             )
 
             _mark_stage(stage_file, "upload and remove avatar")
@@ -394,7 +409,7 @@ def run_acceptance(
                 "navigation discarded the selected avatar",
             )
             page.get_by_role("button", name="Upload picture").click()
-            avatar = page.locator(".profile-portrait img")
+            avatar = page.locator(".avatar__portrait img")
             avatar.wait_for(state="visible")
             _require(
                 bool(
@@ -407,11 +422,17 @@ def run_acceptance(
             page.get_by_role("button", name="Remove picture").click()
             avatar.wait_for(state="detached")
             _require(
-                page.locator(".profile-portrait").inner_text().strip() == "R",
+                page.locator(".avatar__portrait").inner_text().strip() == "R",
                 "the profile placeholder did not return after removal",
             )
 
             _mark_stage(stage_file, "reject incorrect current password")
+            password_toggle = page.get_by_role(
+                "button", name="Change password", exact=True
+            )
+            if password_toggle.get_attribute("aria-expanded") != "true":
+                password_toggle.click()
+            page.locator("#current-password").wait_for(state="visible")
             page.locator("#current-password").fill("wrong synthetic password")
             page.locator("#new-password").fill("New synthetic account password 2026")
             page.locator("#confirm-password").fill(

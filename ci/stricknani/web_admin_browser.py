@@ -751,10 +751,11 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         expected_cards.extend(
             (("Admin", "/admin/users"), ("Audit log", "/admin/audit"))
         )
-    # Privacy Policy and the external Android app link are workspace-less tiles.
+    # Privacy Policy, About and the external Android app link are workspace-less tiles.
     _require(
-        cards.locator("a").count() == len(expected_cards) + 2
+        cards.locator("a").count() == len(expected_cards) + 3
         and cards.locator("a[href$='/privacy']").count() == 1
+        and cards.locator("a[href$='/about']").count() == 1
         and cards.locator("a[target='_blank']").count() == 1
         and cards.locator("a[href$='/imports']").count() == 0
         and page.locator(".secondary-nav a[href$='/imports']").count() == 0,

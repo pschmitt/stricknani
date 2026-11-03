@@ -1910,7 +1910,7 @@ def _exercise_gauge_calculator(
 
 def _mask_fixture_identity(page: Page) -> None:
     """Mask disposable account identifiers before screenshot capture."""
-    page.locator(".profile-email").evaluate_all(
+    page.locator(".profile__email").evaluate_all(
         "nodes => nodes.forEach(node => node.textContent = 'Demo account')"
     )
     page.locator(".user-avatar").evaluate_all(
@@ -2911,7 +2911,7 @@ def run_acceptance(
                 mark_stage("returning to anonymous sign-in after signup check")
                 _open_account_from_profile(page)
                 _require(
-                    page.locator(".profile-email").inner_text() == signup_email,
+                    page.locator(".profile__email").inner_text() == signup_email,
                     "the profile did not show the signed-in account identity",
                 )
                 _account_sign_out_button(page).click()

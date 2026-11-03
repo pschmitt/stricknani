@@ -271,7 +271,7 @@ def _check_route(
         "reader": ".reader h1",
         "editor": ".project-editor form.editor-form",
         "yarn-editor": ".yarn-form",
-        "account": ".account-page .profile-email",
+        "account": ".account-page .profile__email",
         "gauge": ".gauge-page form.gauge-form",
     }[label]
     page.locator(loaded_selector).first.wait_for(state="visible", timeout=10_000)
