@@ -36,6 +36,7 @@ mod categories;
 mod imports;
 mod media;
 mod ocr;
+mod project_preview;
 mod projects;
 mod signup;
 mod tools;
@@ -58,6 +59,8 @@ struct ApiV2State {
     ocr_service: Option<crate::ocr::OcrService>,
     import_preview_limiter: PreviewLimiter,
     ocr_limiter: OwnerRequestLimiter,
+    project_preview_limiter: OwnerRequestLimiter,
+    project_preview_slots: Arc<tokio::sync::Semaphore>,
 }
 
 /// Build API v2 routes without optional import services.
@@ -101,6 +104,8 @@ fn router_with_context(
         ocr_service,
         import_preview_limiter: PreviewLimiter::default(),
         ocr_limiter: OwnerRequestLimiter::new(5, Duration::from_secs(5 * 60), 4096),
+        project_preview_limiter: OwnerRequestLimiter::new(20, Duration::from_secs(60), 4096),
+        project_preview_slots: Arc::new(tokio::sync::Semaphore::new(4)),
     };
     Router::new()
         .route("/session", get(session))
@@ -108,6 +113,7 @@ fn router_with_context(
         .route("/auth/logout", post(logout))
         .layer(DefaultBodyLimit::max(8 * 1024))
         .merge(projects::router())
+        .merge(project_preview::router())
         .merge(yarns::router())
         .merge(categories::router())
         .merge(media::router())
