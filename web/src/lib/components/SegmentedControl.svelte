@@ -48,7 +48,7 @@
   .segmented__option {
     display: inline-flex;
     min-width: 2.75rem;
-    min-height: 40px;
+    min-height: 44px;
     flex: 1 1 auto;
     align-items: center;
     justify-content: center;
