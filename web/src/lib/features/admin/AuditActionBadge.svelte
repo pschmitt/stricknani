@@ -59,7 +59,7 @@
   }
 
   .action-badge--update {
-    --action-color: var(--accent-strong);
+    --action-color: var(--info);
   }
 
   .action-badge--upload {
