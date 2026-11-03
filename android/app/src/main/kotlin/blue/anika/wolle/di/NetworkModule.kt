@@ -1,6 +1,9 @@
 package blue.anika.wolle.di
 
 import blue.anika.wolle.BuildConfig
+import blue.anika.wolle.data.account.AccountGateway
+import blue.anika.wolle.data.account.AccountRepository
+import blue.anika.wolle.data.account.AccountV2Api
 import blue.anika.wolle.data.api.AdminApi
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.AuthInterceptor
@@ -197,6 +200,15 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideMetaV2Api(retrofit: Retrofit): MetaV2Api = retrofit.create(MetaV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAccountV2Api(retrofit: Retrofit): AccountV2Api =
+        retrofit.create(AccountV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAccountGateway(repository: AccountRepository): AccountGateway = repository
 
     @Provides
     @Singleton

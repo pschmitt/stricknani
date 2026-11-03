@@ -19,6 +19,8 @@ data class MetaV2Dto(
     @SerialName("build_id") val buildId: String? = null,
     @SerialName("is_admin") val isAdmin: Boolean = false,
     val user: MetaV2UserDto? = null,
+    /** Id of the calling PAT; only sent to bearer callers by servers with bearer account access. */
+    @SerialName("current_token_id") val currentTokenId: Long? = null,
 )
 
 @Serializable

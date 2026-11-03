@@ -54,6 +54,7 @@ internal fun SettingsListItem(
 internal fun SettingsGroupCard(
     title: String,
     icon: ImageVector,
+    headerAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
@@ -64,7 +65,7 @@ internal fun SettingsGroupCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
-            SettingsCardHeader(title = title, icon = icon)
+            SettingsCardHeader(title = title, icon = icon, action = headerAction)
             content()
         }
     }
@@ -92,6 +93,7 @@ internal fun SettingsCardHeader(
     icon: ImageVector,
     chipColor: Color = MaterialTheme.colorScheme.primaryContainer,
     iconColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    action: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier =
@@ -109,7 +111,8 @@ internal fun SettingsCardHeader(
             title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.semantics { heading() },
+            modifier = Modifier.weight(1f).semantics { heading() },
         )
+        action?.invoke()
     }
 }

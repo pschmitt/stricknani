@@ -30,6 +30,8 @@ data class CurrentUser(
 data class ApiCapabilitiesState(
     val generation: ApiGeneration = ApiGeneration.V1,
     val user: CurrentUser? = null,
+    /** The id of the token this app signs in with (`meta.current_token_id`), when reported. */
+    val currentTokenId: Long? = null,
 )
 
 /**
@@ -108,7 +110,8 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
 
     private suspend fun probe(key: String): ApiCapabilitiesState =
         try {
-            val user = metaApi.getMeta().data.user
+            val meta = metaApi.getMeta().data
+            val user = meta.user
             remember(
                 key,
                 if (user == null) ApiCapabilitiesState()
@@ -116,6 +119,7 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
                     ApiCapabilitiesState(
                         ApiGeneration.V2,
                         CurrentUser(user.id, user.email, user.isAdmin, user.avatarUrl),
+                        meta.currentTokenId,
                     ),
             )
         } catch (failure: HttpException) {

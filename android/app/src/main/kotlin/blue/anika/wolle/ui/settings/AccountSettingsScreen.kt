@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -55,7 +56,6 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
-import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.oidc.LinkedLoginsCard
 import blue.anika.wolle.ui.oidc.LinkedLoginsPhase
@@ -80,6 +80,8 @@ internal fun AccountSettingsScreen(
     val adminAccess: AdminAccessViewModel = hiltViewModel()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
+    val securityModel: AccountSecurityViewModel = hiltViewModel()
+    val security by securityModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -101,20 +103,20 @@ internal fun AccountSettingsScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Profile: the picture, the email and the role. Changing or removing the picture is a
-            // browser-session-only server route, so it is not offered here.
+            // Profile: the picture (change/remove need a server with bearer account access), the
+            // email and the role.
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.account_profile_title),
                     icon = PhosphorIcons.UserCircle,
                 ) {
-                    Row(
-                        modifier =
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ProfilePicture(
+                        avatarUrl = profile.avatarUrl,
+                        email = profile.email,
+                        editable = security.available,
+                        busy = security.avatarBusy,
+                        onPicked = securityModel::uploadAvatar,
                     ) {
-                        AccountAvatar(profile.avatarUrl, profile.email, size = 80.dp)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 profile.email
@@ -137,6 +139,12 @@ internal fun AccountSettingsScreen(
                                 )
                             }
                         }
+                    }
+                    if (security.available && profile.avatarUrl != null) {
+                        RemovePictureButton(
+                            enabled = !security.avatarBusy,
+                            onClick = securityModel::askRemoveAvatar,
+                        )
                     }
                 }
             }
@@ -183,6 +191,76 @@ internal fun AccountSettingsScreen(
             // Only when the server lists a sign-in provider (OIDC); hidden otherwise.
             if (linkedLoginsState.phase != LinkedLoginsPhase.Hidden) {
                 item { LinkedLoginsCard(linkedLogins) }
+            }
+            if (security.available) {
+                item {
+                    SettingsGroupCard(
+                        title = stringResource(R.string.account_security_title),
+                        icon = PhosphorIcons.ShieldCheck,
+                    ) {
+                        PasswordRow(
+                            open = security.passwordOpen,
+                            busy = security.passwordBusy,
+                            errors = security.passwordErrors,
+                            onOpenChange = securityModel::setPasswordOpen,
+                            onSubmit = securityModel::changePassword,
+                        )
+                    }
+                }
+                item {
+                    SettingsGroupCard(
+                        title = stringResource(R.string.account_tokens_title),
+                        icon = Icons.Filled.Smartphone,
+                        headerAction = {
+                            NewTokenAction(
+                                visible = !security.createOpen,
+                                onClick = { securityModel.setCreateOpen(true) },
+                            )
+                        },
+                    ) {
+                        NewTokenForm(
+                            open = security.createOpen,
+                            busy = security.createBusy,
+                            passwordLogin = linkedLoginsState.passwordEnabled,
+                            errors = security.createErrors,
+                            onCancel = { securityModel.setCreateOpen(false) },
+                            onCreate = securityModel::createToken,
+                        )
+                        when {
+                            security.tokenLoad == TokenLoad.Failed -> {
+                                Text(
+                                    stringResource(R.string.account_tokens_load_failed),
+                                    modifier =
+                                        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                TextButton(
+                                    onClick = securityModel::load,
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                ) {
+                                    Text(stringResource(R.string.account_tokens_retry))
+                                }
+                            }
+                            security.tokens.isEmpty() && security.tokenLoad == TokenLoad.Loaded ->
+                                Text(
+                                    stringResource(R.string.account_tokens_empty),
+                                    modifier =
+                                        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            else ->
+                                security.tokens.forEach { token ->
+                                    TokenRow(
+                                        token = token,
+                                        isThisDevice = token.id == security.currentTokenId,
+                                        revoking = security.revokingId == token.id,
+                                        onRevoke = { securityModel.askRevoke(token) },
+                                    )
+                                }
+                        }
+                    }
+                }
             }
             item {
                 SettingsGroupCard(
@@ -244,6 +322,31 @@ internal fun AccountSettingsScreen(
                 }
             }
         }
+    }
+
+    if (security.confirmRemoveAvatar) {
+        RemoveAvatarDialog(
+            onConfirm = securityModel::confirmRemoveAvatar,
+            onDismiss = securityModel::dismissRemoveAvatar,
+        )
+    }
+    security.confirmRevoke?.let { token ->
+        RevokeTokenDialog(
+            token = token,
+            isThisDevice = token.id == security.currentTokenId,
+            onConfirm = securityModel::confirmRevoke,
+            onDismiss = securityModel::dismissRevoke,
+        )
+    }
+    security.revealed?.let { created ->
+        RevealedTokenDialog(
+            name = created.name,
+            token = created.token,
+            onDone = securityModel::dismissRevealed,
+        )
+    }
+    security.signOutNotice?.let { notice ->
+        SignedOutDialog(notice) { securityModel.confirmSignOut(viewModel::signOut) }
     }
 
     if (showSignOutDialog) {
