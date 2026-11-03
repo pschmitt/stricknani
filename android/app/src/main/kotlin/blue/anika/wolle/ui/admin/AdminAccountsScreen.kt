@@ -86,8 +86,13 @@ import blue.anika.wolle.ui.common.YarnLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminAccountsScreen(onBack: () -> Unit, viewModel: AdminAccountsViewModel = hiltViewModel()) {
+fun AdminAccountsScreen(
+    onBack: () -> Unit,
+    viewModel: AdminAccountsViewModel = hiltViewModel(),
+    identitiesViewModel: AdminIdentitiesViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val identitiesState by identitiesViewModel.state.collectAsStateWithLifecycle()
     val form by viewModel.form.collectAsStateWithLifecycle()
     var toToggle by remember { mutableStateOf<AdminUserDto?>(null) }
     var toReset by remember { mutableStateOf<AdminUserDto?>(null) }
@@ -170,6 +175,11 @@ fun AdminAccountsScreen(onBack: () -> Unit, viewModel: AdminAccountsViewModel = 
                                         busy = state.busyUserId == user.id,
                                         avatarUrl = viewModel.avatarUrl(user.avatarUrl),
                                         onToggleActive = { toToggle = user },
+                                        // Only when the server lists a sign-in provider (OIDC).
+                                        onShowLogins =
+                                            if (identitiesState.available) {
+                                                { identitiesViewModel.open(user) }
+                                            } else null,
                                         onResetPassword = {
                                             viewModel.clearForm()
                                             toReset = user
@@ -257,6 +267,8 @@ fun AdminAccountsScreen(onBack: () -> Unit, viewModel: AdminAccountsViewModel = 
         )
     }
 
+    AdminIdentitiesSheet(identitiesViewModel)
+
     if (showAdd) {
         AddAccountSheet(
             form = form,
@@ -279,6 +291,7 @@ private fun AccountRow(
     busy: Boolean,
     avatarUrl: String?,
     onToggleActive: () -> Unit,
+    onShowLogins: (() -> Unit)?,
     onResetPassword: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
@@ -374,6 +387,18 @@ private fun AccountRow(
                             onClick = {
                                 menuOpen = false
                                 onToggleActive()
+                            },
+                        )
+                    }
+                    if (onShowLogins != null) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.oidc_admin_menu)) },
+                            leadingIcon = {
+                                Icon(PhosphorIcons.LockKey, contentDescription = null)
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onShowLogins()
                             },
                         )
                     }

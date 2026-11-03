@@ -1,15 +1,18 @@
 package blue.anika.wolle
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Color as AndroidColor
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -17,8 +20,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.getSystemService
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.crash.CrashReportStore
+import blue.anika.wolle.data.oidc.OidcCoordinator
+import blue.anika.wolle.data.oidc.OidcFailure
 import blue.anika.wolle.data.onboarding.QrConfigCodec
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
@@ -29,9 +37,12 @@ import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import blue.anika.wolle.ui.navigation.DeepLinkParser
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
+import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
+import blue.anika.wolle.ui.oidc.showOidcFailure
 import blue.anika.wolle.ui.theme.StricknaniTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 /**
  * Single-activity host. The start destination reactively follows [SettingsRepository.isConfigured]:
@@ -48,6 +59,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
     @Inject lateinit var mutationFeedback: MutationFeedback
+    @Inject lateinit var oidcCoordinator: OidcCoordinator
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
@@ -67,6 +79,14 @@ class MainActivity : ComponentActivity() {
         pendingDeepLink = DeepLinkParser.parse(intent?.dataString)
         pendingSetupUri = intent?.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
         pendingCrashReport = CrashReportStore(applicationContext).takePending()
+        // A recreated activity (rotation) still holds the original intent: only a fresh launch may
+        // process an OIDC callback, a one-time link that must not run twice.
+        if (savedInstanceState == null) handleOidcCallback(intent)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                oidcCoordinator.browserRequests.collect(::openAuthorizationPage)
+            }
+        }
 
         setContent {
             val isConfigured by settingsRepository.isConfigured.collectAsStateWithLifecycle()
@@ -131,6 +151,37 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         pendingDeepLink = DeepLinkParser.parse(intent.dataString)
         pendingSetupUri = intent.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
+        handleOidcCallback(intent)
+    }
+
+    /**
+     * `stricknani://oidc-callback?...` is the return from the browser sign-in. It is handled once
+     * and then dropped from the intent; one that matches no pending in-app flow (stale, replayed or
+     * injected) is ignored with a friendly note.
+     */
+    private fun handleOidcCallback(intent: Intent?) {
+        val data = intent?.dataString ?: return
+        when (oidcCoordinator.onCallback(data)) {
+            OidcCoordinator.CallbackResult.NotACallback -> return
+            OidcCoordinator.CallbackResult.Rejected ->
+                mutationFeedback.showOidcFailure(OidcFailure.Expired, DEFAULT_PROVIDER_NAME)
+            OidcCoordinator.CallbackResult.Accepted -> Unit
+        }
+        intent.data = null
+    }
+
+    /** Opens the provider's authorization page in a Custom Tab (RFC 8252: not a WebView). */
+    private fun openAuthorizationPage(url: String) {
+        val uri = Uri.parse(url)
+        if (uri.scheme != "https" && uri.scheme != "http") {
+            mutationFeedback.showOidcFailure(OidcFailure.Other(null), DEFAULT_PROVIDER_NAME)
+            return
+        }
+        try {
+            CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(this, uri)
+        } catch (_: ActivityNotFoundException) {
+            mutationFeedback.showOidcFailure(OidcFailure.Other(null), DEFAULT_PROVIDER_NAME)
+        }
     }
 
     private fun copyCrashReport(report: String) {

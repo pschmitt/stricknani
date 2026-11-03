@@ -18,6 +18,7 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingAttachmentDelete
 import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
 import blue.anika.wolle.data.uploads.PendingUpload
@@ -55,9 +56,13 @@ constructor(
     private val projectRepository: ProjectRepository,
     private val yarnRepository: YarnRepository,
     private val json: Json,
+    private val settingsRepository: SettingsRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        // An expired OIDC sign-in would only 401 each write. They stay queued untouched (not
+        // failed, not dropped) and replay after the user signs in again.
+        if (settingsRepository.sessionExpired.value) return Result.success()
         var anyFailure = false
         // Re-read each row after the previous mutation. A CREATE can reassign the local temp id on
         // all later mutations, so replaying the initial snapshot would still target the old id.

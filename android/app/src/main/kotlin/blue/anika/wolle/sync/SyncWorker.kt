@@ -40,6 +40,9 @@ constructor(
 
     override suspend fun doWork(): Result {
         if (!settingsRepository.isConfigured.value) return Result.success()
+        // An expired OIDC sign-in would only 401 every step. Nothing is lost: the user signs in
+        // again from the card in the app, which queues a fresh sync.
+        if (settingsRepository.sessionExpired.value) return Result.success()
 
         var hasChanges = false
         val failure =

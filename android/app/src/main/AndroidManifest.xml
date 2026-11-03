@@ -89,6 +89,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="stricknani" android:host="setup" />
             </intent-filter>
+            <!-- Return from the browser sign-in with the identity provider (OIDC): exactly
+                 stricknani://oidc-callback. A custom scheme because App Links cannot be verified
+                 for arbitrary self-hosted domains; the app accepts a callback only for a pending
+                 in-memory flow, and the PKCE verifier proves the code is ours. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="stricknani" android:host="oidc-callback" />
+            </intent-filter>
         </activity>
 
         <!-- Per-app language picker (SNA-37): opts into AppCompat's own SharedPreferences-backed

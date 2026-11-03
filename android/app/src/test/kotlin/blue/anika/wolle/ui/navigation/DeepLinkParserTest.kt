@@ -97,4 +97,11 @@ class DeepLinkParserTest {
         // into `OnboardingViewModel.connectFromScannedText` instead of relying on this parser.
         assertNull(DeepLinkParser.parse("stricknani://setup?p=eyJhIjoxfQ"))
     }
+
+    @Test
+    fun `ignores the app's own custom scheme links`() {
+        assertNull(DeepLinkParser.parse("stricknani://oidc-callback?code=c&state=s&flow=login"))
+        assertNull(DeepLinkParser.parse("stricknani://oidc-callback/projects/5"))
+        assertNull(DeepLinkParser.parse("stricknani://setup?p=abc"))
+    }
 }

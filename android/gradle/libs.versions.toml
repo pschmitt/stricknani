@@ -4,6 +4,8 @@ androidx-activity = "1.13.0"
 # Per-app language picker (SNA-37) - AppCompatDelegate.setApplicationLocales works with a plain
 # ComponentActivity (no AppCompatActivity needed) and auto-persists the choice across API levels.
 androidx-appcompat = "1.8.0"
+# Custom Tabs for the OIDC sign-in (SNA-OIDC).
+androidx-browser = "1.9.0"
 # QR scanning for SNA-13's onboarding flow - same versions as the sibling apps' scanners
 # (nyetbox/jollyfin), so the fleet stays on one known-good CameraX/ZXing combination.
 androidx-camera = "1.6.2"
@@ -63,6 +65,7 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "androidx-compose" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "androidx-compose" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "androidx-compose" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "androidx-browser" }
 androidx-core = { group = "androidx.core", name = "core", version.ref = "androidx-core" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidx-core-splashscreen" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidx-datastore" }

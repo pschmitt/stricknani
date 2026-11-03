@@ -54,8 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.oidc.OidcProvider
 import blue.anika.wolle.ui.common.DEFAULT_PRIVACY_POLICY_URL
 import blue.anika.wolle.ui.common.Mascot
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.stitchedBorder
 
@@ -103,6 +105,7 @@ fun OnboardingScreen(
     onScannedTextConsumed: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val oidcProviders by viewModel.oidcProviders.collectAsStateWithLifecycle()
     var mode by remember { mutableStateOf(OnboardingMode.PASSWORD) }
     var serverUrl by remember { mutableStateOf("") }
     var apiToken by remember { mutableStateOf("") }
@@ -113,6 +116,9 @@ fun OnboardingScreen(
     var showScanner by remember { mutableStateOf(false) }
     val isValidating = uiState is OnboardingUiState.Validating
     val uriHandler = LocalUriHandler.current
+
+    // Look for sign-in providers (Authelia) once the address settles; none are listed today.
+    LaunchedEffect(serverUrl) { viewModel.onServerUrlChanged(serverUrl) }
 
     // SNA-61: a stricknani://setup URI delivered by the OS (not the in-app scanner) goes through
     // the exact same connectFromScannedText path a real scan result does - switching to QR mode
@@ -206,6 +212,10 @@ fun OnboardingScreen(
                                     passwordVisible = passwordVisible,
                                     onPasswordVisibleChange = { passwordVisible = it },
                                     enabled = !isValidating,
+                                    oidcProviders = oidcProviders,
+                                    onOidcSignIn = { provider ->
+                                        viewModel.signInWithOidc(serverUrl, provider)
+                                    },
                                 )
                         }
                     }
@@ -371,6 +381,8 @@ private fun PasswordOnboardingFields(
     passwordVisible: Boolean,
     onPasswordVisibleChange: (Boolean) -> Unit,
     enabled: Boolean,
+    oidcProviders: List<OidcProvider>,
+    onOidcSignIn: (OidcProvider) -> Unit,
 ) {
     OutlinedTextField(
         value = serverUrl,
@@ -382,6 +394,38 @@ private fun PasswordOnboardingFields(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         modifier = Modifier.fillMaxWidth().testTag("e2e-onboarding-server-url"),
     )
+
+    // Only when the server's meta lists providers. Above the email and password form, since it
+    // is the way most people on such a server will sign in.
+    if (oidcProviders.isNotEmpty()) {
+        oidcProviders.forEach { provider ->
+            Button(
+                onClick = { onOidcSignIn(provider) },
+                enabled = enabled,
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .testTag("onboarding-oidc-${provider.id}"),
+            ) {
+                Icon(
+                    PhosphorIcons.LockKey,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Text(
+                    stringResource(R.string.onboarding_oidc_button, provider.name),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.onboarding_oidc_or),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
 
     OutlinedTextField(
         value = email,

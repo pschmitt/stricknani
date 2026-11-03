@@ -18,7 +18,11 @@ object DeepLinkParser {
     private val YARN_PATH = Regex("""^/(?:yarn|app/yarns)/(\d+)(?:/.*)?$""")
 
     fun parse(uriString: String?): Route? {
-        val path = uriString?.let { runCatching { URI(it).rawPath }.getOrNull() } ?: return null
+        val uri = uriString?.let { runCatching { URI(it) }.getOrNull() } ?: return null
+        // `stricknani://` links are the app's own (setup QR, OIDC callback), never web links:
+        // `stricknani://oidc-callback/projects/1` must not open a project.
+        if ("stricknani".equals(uri.scheme, ignoreCase = true)) return null
+        val path = uri.rawPath ?: return null
         projectId(path)?.let {
             return Route.ProjectDetail(it)
         }

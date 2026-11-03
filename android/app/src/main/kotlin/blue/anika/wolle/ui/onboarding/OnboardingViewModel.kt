@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.oidc.OidcCoordinator
+import blue.anika.wolle.data.oidc.OidcEvent
+import blue.anika.wolle.data.oidc.OidcFlowType
+import blue.anika.wolle.data.oidc.OidcProvider
 import blue.anika.wolle.data.onboarding.OnboardingError
 import blue.anika.wolle.data.onboarding.OnboardingValidationException
 import blue.anika.wolle.data.onboarding.OnboardingValidator
@@ -11,13 +15,21 @@ import blue.anika.wolle.data.onboarding.PasswordTokenMinter
 import blue.anika.wolle.data.onboarding.QrConfigCodec
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
+import blue.anika.wolle.ui.oidc.message
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 sealed interface OnboardingUiState {
     data object Idle : OnboardingUiState
@@ -37,11 +49,81 @@ constructor(
     private val passwordTokenMinter: PasswordTokenMinter,
     private val settingsRepository: SettingsRepository,
     private val syncScheduler: SyncScheduler,
+    private val oidc: OidcCoordinator,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+
+    private val serverUrlInput = MutableStateFlow("")
+    private val _oidcProviders = MutableStateFlow<List<OidcProvider>>(emptyList())
+
+    /**
+     * Sign-in providers the entered server lists in `GET /api/v2/meta`. Empty (so the button stays
+     * hidden) until a reachable server says otherwise; today's servers list none.
+     */
+    val oidcProviders: StateFlow<List<OidcProvider>> = _oidcProviders.asStateFlow()
+
+    private var oidcProviderName = DEFAULT_PROVIDER_NAME
+
+    init {
+        viewModelScope.launch { observeServerUrl() }
+        viewModelScope.launch { observeOidcResults() }
+        viewModelScope.launch {
+            oidc.busy.collect { busy ->
+                if (busy) _uiState.value = OnboardingUiState.Validating
+            }
+        }
+    }
+
+    /** Called as the server URL field changes; looks for OIDC providers once typing settles. */
+    fun onServerUrlChanged(url: String) {
+        serverUrlInput.value = url.trim()
+    }
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    private suspend fun observeServerUrl() {
+        serverUrlInput.debounce(SERVER_URL_SETTLE_MILLIS).distinctUntilChanged().collectLatest { url
+            ->
+            _oidcProviders.value =
+                if (url.trimEnd('/').toHttpUrlOrNull() == null) emptyList() else oidc.providers(url)
+        }
+    }
+
+    private suspend fun observeOidcResults() {
+        oidc.events.collect { event ->
+            when (event) {
+                is OidcEvent.SignedIn -> oidc.consume(event)
+                is OidcEvent.Failed ->
+                    if (event.flow == OidcFlowType.LOGIN) {
+                        _uiState.value =
+                            OnboardingUiState.Error(
+                                event.failure.message(context, oidcProviderName)
+                            )
+                        oidc.consume(event)
+                    }
+                else -> Unit
+            }
+        }
+    }
+
+    /** Starts the provider sign-in; the browser opens through [OidcCoordinator.browserRequests]. */
+    fun signInWithOidc(serverUrl: String, provider: OidcProvider) {
+        if (serverUrl.isBlank()) {
+            _uiState.value =
+                OnboardingUiState.Error(context.getString(R.string.onboarding_error_missing_url))
+            return
+        }
+        oidcProviderName = provider.name
+        _uiState.value = OnboardingUiState.Validating
+        viewModelScope.launch {
+            val failure = oidc.startLogin(serverUrl.trim().trimEnd('/'), provider.id)
+            _uiState.value =
+                if (failure == null) OnboardingUiState.Idle
+                else OnboardingUiState.Error(failure.message(context, provider.name))
+        }
+    }
 
     fun connect(serverUrl: String, apiToken: String) {
         if (serverUrl.isBlank() || apiToken.isBlank()) {
@@ -114,6 +196,10 @@ constructor(
         // So the first sync doesn't wait for the periodic schedule.
         syncScheduler.syncNow()
         _uiState.value = OnboardingUiState.Success
+    }
+
+    private companion object {
+        const val SERVER_URL_SETTLE_MILLIS = 600L
     }
 
     private fun Throwable.toUserMessage(): String =

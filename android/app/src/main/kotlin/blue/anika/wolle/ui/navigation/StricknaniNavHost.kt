@@ -4,8 +4,10 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -43,6 +46,7 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
+import blue.anika.wolle.ui.oidc.SessionExpiredBanner
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
 import blue.anika.wolle.ui.projects.ProjectDetailScreen
 import blue.anika.wolle.ui.projects.ProjectEditorScreen
@@ -357,6 +361,20 @@ fun StricknaniNavHost(
             }
             screen<Route.Gauge>(motion) {
                 GaugeCalculatorScreen(onBack = { navController.navigateUp() })
+            }
+        }
+        // An expired OIDC sign-in: a gentle card above the tab bar (nothing is shown otherwise).
+        // Not over an editor's own Save bar.
+        val currentEntry by navController.currentBackStackEntryAsState()
+        val inEditorScreen =
+            currentEntry?.destination?.hasRoute(Route.ProjectEditor::class) == true ||
+                currentEntry?.destination?.hasRoute(Route.YarnEditor::class) == true
+        if (startDestination != Route.Onboarding && !inEditorScreen) {
+            Box(
+                Modifier.fillMaxSize().padding(innerPadding),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                SessionExpiredBanner()
             }
         }
     }

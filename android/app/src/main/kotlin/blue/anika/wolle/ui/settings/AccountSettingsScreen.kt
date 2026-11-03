@@ -28,15 +28,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.oidc.LinkedLoginsCard
+import blue.anika.wolle.ui.oidc.LinkedLoginsPhase
+import blue.anika.wolle.ui.oidc.LinkedLoginsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel) {
     val serverUrl by viewModel.serverUrl.collectAsStateWithLifecycle()
     var showSignOutDialog by remember { mutableStateOf(false) }
+    val linkedLogins: LinkedLoginsViewModel = hiltViewModel()
+    val linkedLoginsState by linkedLogins.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -76,6 +82,10 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
                         },
                     )
                 }
+            }
+            // Only when the server lists a sign-in provider (OIDC); hidden otherwise.
+            if (linkedLoginsState.phase != LinkedLoginsPhase.Hidden) {
+                item { LinkedLoginsCard(linkedLogins) }
             }
             item {
                 SettingsSingleItemCard {

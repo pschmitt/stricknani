@@ -10,6 +10,7 @@ import blue.anika.wolle.data.api.HistoryApi
 import blue.anika.wolle.data.api.MetaApi
 import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.ProjectsApi
+import blue.anika.wolle.data.api.SessionExpiryInterceptor
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
@@ -79,12 +80,15 @@ object NetworkModule {
     fun provideOkHttpClient(
         dynamicBaseUrlInterceptor: DynamicBaseUrlInterceptor,
         authInterceptor: AuthInterceptor,
+        sessionExpiryInterceptor: SessionExpiryInterceptor,
     ): OkHttpClient =
         OkHttpClient.Builder()
             // Rewrites scheme/host/path to the configured instance - added first so auth/logging
             // see the real request.
             .addInterceptor(dynamicBaseUrlInterceptor)
             .addInterceptor(authInterceptor)
+            // After auth, so it sees which token a request carried.
+            .addInterceptor(sessionExpiryInterceptor)
             .addInterceptor(loggingInterceptor())
             .build()
 
