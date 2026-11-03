@@ -53,6 +53,7 @@ pub fn router(web_root: PathBuf) -> Router {
     };
 
     Router::new()
+        .route("/privacy", get(public_privacy_redirect))
         .route("/app", get(app_root_without_slash))
         .route("/app/", get(app_root))
         .route_service(
@@ -63,6 +64,10 @@ pub fn router(web_root: PathBuf) -> Router {
         .route("/app/{*path}", get(app_path))
         .nest_service("/app/_app", ServeDir::new(web_root.join("_app")))
         .with_state(state)
+}
+
+async fn public_privacy_redirect() -> Redirect {
+    Redirect::permanent("/app/privacy")
 }
 
 async fn app_root_without_slash() -> Redirect {
@@ -132,6 +137,7 @@ fn is_known_route(path: &str) -> bool {
         | ["yarns", "new"]
         | ["categories"]
         | ["imports"]
+        | ["privacy"]
         | ["account"]
         | ["more"]
         | ["create"]

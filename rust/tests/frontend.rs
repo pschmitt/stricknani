@@ -65,6 +65,7 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
 
     for path in [
         "/app/",
+        "/app/privacy",
         "/app/projects",
         "/app/projects/42/edit",
         "/app/create",
@@ -90,6 +91,27 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         assert!(String::from_utf8_lossy(&body).contains("id=\"svelte\""));
     }
+}
+
+#[tokio::test]
+async fn public_privacy_route_redirects_to_the_anonymous_app_shell() {
+    let fixture = BuildFixture::new();
+    let app = fixture.router();
+
+    let redirect = request(app.clone(), "/privacy").await;
+    assert_eq!(
+        redirect.status(),
+        axum::http::StatusCode::PERMANENT_REDIRECT
+    );
+    assert_eq!(redirect.headers()["location"], "/app/privacy");
+    assert_eq!(redirect.headers()["cache-control"], "private, no-store");
+
+    let page = request(app, "/app/privacy").await;
+    assert_eq!(page.status(), axum::http::StatusCode::OK);
+    assert_eq!(page.headers()["cache-control"], "private, no-store");
+    assert_eq!(page.headers()["content-type"], "text/html; charset=utf-8");
+    assert!(page.headers().contains_key("content-security-policy"));
+    assert!(!page.headers().contains_key("location"));
 }
 
 #[tokio::test]

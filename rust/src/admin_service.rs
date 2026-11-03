@@ -210,7 +210,7 @@ pub(crate) async fn set_user_active(
         .await
         .map_err(|_| AdminError::Database)?;
     if !active {
-        revoke_browser_sessions(&mut tx, target_id).await?;
+        revoke_all_tokens(&mut tx, target_id).await?;
     }
     let user = get_user_tx(&mut tx, target_id).await?;
     tx.commit().await.map_err(|_| AdminError::Database)?;
@@ -251,13 +251,13 @@ async fn reset_password_with_hash(
     if !exists {
         return Err(AdminError::NotFound);
     }
-    sqlx::query("UPDATE users SET password_hash = ?, active = 1 WHERE id = ?")
+    sqlx::query("UPDATE users SET password_hash = ? WHERE id = ?")
         .bind(password_hash)
         .bind(target_id)
         .execute(&mut *tx)
         .await
         .map_err(|_| AdminError::Database)?;
-    revoke_browser_sessions(&mut tx, target_id).await?;
+    revoke_all_tokens(&mut tx, target_id).await?;
     tx.commit().await.map_err(|_| AdminError::Database)
 }
 
@@ -296,13 +296,13 @@ async fn get_user_tx(
     .ok_or(AdminError::NotFound)
 }
 
-async fn revoke_browser_sessions(
+async fn revoke_all_tokens(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     user_id: i64,
 ) -> Result<(), AdminError> {
     sqlx::query(
         "UPDATE api_tokens SET revoked_at = unixepoch() \
-         WHERE user_id = ? AND purpose = 'browser' AND revoked_at IS NULL",
+         WHERE user_id = ? AND revoked_at IS NULL",
     )
     .bind(user_id)
     .execute(&mut **tx)

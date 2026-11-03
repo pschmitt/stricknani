@@ -587,7 +587,7 @@ async fn admin_can_create_disable_and_reset_accounts() {
             .fetch_one(&app.pool)
             .await
             .unwrap();
-    assert_eq!(pat_revoked, None);
+    assert!(pat_revoked.is_some());
 }
 
 #[tokio::test]

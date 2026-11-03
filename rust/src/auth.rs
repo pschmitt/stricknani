@@ -394,24 +394,6 @@ async fn mint_password_token(
     else {
         return Err(PasswordTokenError::InvalidCredentials);
     };
-    if let Some(upgraded_hash) = verification.upgraded_hash {
-        let upgrade =
-            sqlx::query("UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?")
-                .bind(upgraded_hash)
-                .bind(user_id)
-                .bind(current_hash)
-                .execute(&state.pool)
-                .await;
-        match upgrade {
-            Ok(result) if result.rows_affected() == 1 => {}
-            Ok(_) => return Err(PasswordTokenError::InvalidCredentials),
-            Err(_) => {
-                state.auth_limiter.refund(&keys, attempt_id);
-                return Err(PasswordTokenError::Database);
-            }
-        }
-    }
-
     let token = match generate_token() {
         Ok(token) => token,
         Err(()) => {
@@ -419,28 +401,81 @@ async fn mint_password_token(
             return Err(PasswordTokenError::Internal);
         }
     };
-    let result = sqlx::query(
-        "INSERT INTO api_tokens (user_id, name, token_hash, created_at, purpose, expires_at) \
-         VALUES (?, ?, ?, unixepoch(), ?, CASE WHEN ? IS NULL THEN NULL ELSE unixepoch() + ? END)",
+    match persist_verified_token(
+        &state.pool,
+        VerifiedAccount {
+            user_id,
+            password_hash: current_hash,
+            upgraded_hash: verification.upgraded_hash,
+        },
+        TokenToPersist {
+            name,
+            purpose,
+            expires_in,
+            token: &token,
+        },
     )
-    .bind(user_id)
-    .bind(name)
-    .bind(token_hash(token.as_bytes()))
-    .bind(purpose)
-    .bind(expires_in)
-    .bind(expires_in)
-    .execute(&state.pool)
-    .await;
-    match result {
-        Ok(_) => {
+    .await
+    {
+        Ok(true) => {
             state.auth_limiter.refund(&keys, attempt_id);
             Ok(MintedToken { user_id, token })
         }
+        Ok(false) => Err(PasswordTokenError::InvalidCredentials),
         Err(_) => {
             state.auth_limiter.refund(&keys, attempt_id);
             Err(PasswordTokenError::Database)
         }
     }
+}
+
+struct VerifiedAccount {
+    user_id: i64,
+    password_hash: String,
+    upgraded_hash: Option<String>,
+}
+
+struct TokenToPersist<'a> {
+    name: &'a str,
+    purpose: &'a str,
+    expires_in: Option<i64>,
+    token: &'a str,
+}
+
+async fn persist_verified_token(
+    pool: &SqlitePool,
+    account: VerifiedAccount,
+    token: TokenToPersist<'_>,
+) -> Result<bool, sqlx::Error> {
+    let mut transaction = pool.begin().await?;
+    let current = sqlx::query(
+        "UPDATE users SET password_hash = coalesce(?, password_hash) \
+         WHERE id = ? AND active = 1 AND password_hash = ?",
+    )
+    .bind(account.upgraded_hash)
+    .bind(account.user_id)
+    .bind(account.password_hash)
+    .execute(&mut *transaction)
+    .await?;
+    if current.rows_affected() != 1 {
+        transaction.rollback().await?;
+        return Ok(false);
+    }
+
+    sqlx::query(
+        "INSERT INTO api_tokens (user_id, name, token_hash, created_at, purpose, expires_at) \
+         VALUES (?, ?, ?, unixepoch(), ?, CASE WHEN ? IS NULL THEN NULL ELSE unixepoch() + ? END)",
+    )
+    .bind(account.user_id)
+    .bind(token.name)
+    .bind(token_hash(token.token.as_bytes()))
+    .bind(token.purpose)
+    .bind(token.expires_in)
+    .bind(token.expires_in)
+    .execute(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(true)
 }
 
 struct PasswordVerification {
@@ -457,7 +492,16 @@ async fn verify_password(
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         if is_bcrypt_hash(&hash) {
-            let valid = bcrypt::verify(password.as_bytes(), &hash).map_err(|_| ())?;
+            let valid = match bcrypt::verify(password.as_bytes(), &hash) {
+                Ok(valid) => valid,
+                Err(_) => {
+                    verify_dummy_password(password.as_bytes())?;
+                    return Ok(PasswordVerification {
+                        valid: false,
+                        upgraded_hash: None,
+                    });
+                }
+            };
             let upgraded_hash = valid.then(|| {
                 let salt = SaltString::generate(&mut OsRng);
                 Argon2::default()
@@ -471,16 +515,42 @@ async fn verify_password(
             });
         }
 
-        let parsed = PasswordHash::new(&hash).map_err(|_| ())?;
-        Ok(PasswordVerification {
-            valid: Argon2::default()
-                .verify_password(password.as_bytes(), &parsed)
-                .is_ok(),
-            upgraded_hash: None,
-        })
+        let Ok(parsed) = PasswordHash::new(&hash) else {
+            verify_dummy_password(password.as_bytes())?;
+            return Ok(PasswordVerification {
+                valid: false,
+                upgraded_hash: None,
+            });
+        };
+        match Argon2::default().verify_password(password.as_bytes(), &parsed) {
+            Ok(()) => Ok(PasswordVerification {
+                valid: true,
+                upgraded_hash: None,
+            }),
+            Err(argon2::password_hash::Error::Password) => Ok(PasswordVerification {
+                valid: false,
+                upgraded_hash: None,
+            }),
+            Err(argon2::password_hash::Error::Crypto) => Err(()),
+            Err(_) => {
+                verify_dummy_password(password.as_bytes())?;
+                Ok(PasswordVerification {
+                    valid: false,
+                    upgraded_hash: None,
+                })
+            }
+        }
     })
     .await
     .map_err(|_| ())?
+}
+
+fn verify_dummy_password(password: &[u8]) -> Result<(), ()> {
+    let parsed = PasswordHash::new(DUMMY_PASSWORD_HASH).map_err(|_| ())?;
+    match Argon2::default().verify_password(password, &parsed) {
+        Ok(()) | Err(argon2::password_hash::Error::Password) => Ok(()),
+        Err(_) => Err(()),
+    }
 }
 
 fn password_semaphore() -> Arc<Semaphore> {
@@ -585,7 +655,78 @@ pub(crate) fn validate_new_password(password: &str) -> Result<(), NewPasswordErr
 
 #[cfg(test)]
 mod tests {
-    use super::{NewPasswordError, RateLimiter, hash_password_for_account, validate_new_password};
+    use super::{
+        NewPasswordError, RateLimiter, TokenToPersist, VerifiedAccount, hash_password_for_account,
+        persist_verified_token, validate_new_password,
+    };
+
+    #[tokio::test]
+    async fn stale_verified_account_state_cannot_mint_or_upgrade_a_token() {
+        for stale_state in ["disabled", "password-reset"] {
+            let pool = crate::db::connect("sqlite::memory:")
+                .await
+                .expect("in-memory database should migrate");
+            let user_id = crate::db::create_user(
+                &pool,
+                "stale-auth@example.test",
+                "a-long-test-password".to_owned(),
+            )
+            .await
+            .expect("test user should be created");
+            let verified_hash: String =
+                sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
+                    .bind(user_id)
+                    .fetch_one(&pool)
+                    .await
+                    .expect("password hash should be readable");
+            if stale_state == "disabled" {
+                sqlx::query("UPDATE users SET active = 0 WHERE id = ?")
+                    .bind(user_id)
+                    .execute(&pool)
+                    .await
+                    .expect("account should be disabled");
+            } else {
+                sqlx::query("UPDATE users SET password_hash = 'reset-password-hash' WHERE id = ?")
+                    .bind(user_id)
+                    .execute(&pool)
+                    .await
+                    .expect("password should be reset");
+            }
+
+            assert!(
+                !persist_verified_token(
+                    &pool,
+                    VerifiedAccount {
+                        user_id,
+                        password_hash: verified_hash,
+                        upgraded_hash: Some("would-be-upgraded-hash".to_owned()),
+                    },
+                    TokenToPersist {
+                        name: "test token",
+                        purpose: "api",
+                        expires_in: None,
+                        token: "sna_stale-auth-fixture",
+                    },
+                )
+                .await
+                .expect("stale credentials should be a normal rejection")
+            );
+            let tokens: i64 =
+                sqlx::query_scalar("SELECT count(*) FROM api_tokens WHERE user_id = ?")
+                    .bind(user_id)
+                    .fetch_one(&pool)
+                    .await
+                    .expect("token count should be readable");
+            assert_eq!(tokens, 0, "stale state: {stale_state}");
+            let current_hash: String =
+                sqlx::query_scalar("SELECT password_hash FROM users WHERE id = ?")
+                    .bind(user_id)
+                    .fetch_one(&pool)
+                    .await
+                    .expect("password hash should remain readable");
+            assert_ne!(current_hash, "would-be-upgraded-hash");
+        }
+    }
 
     #[test]
     fn new_password_policy_rejects_trimmed_case_insensitive_common_passwords() {

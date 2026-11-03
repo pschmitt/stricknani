@@ -358,6 +358,26 @@ async fn admin_pat_mutations_need_no_browser_csrf_and_keep_admin_action_constrai
         .unwrap();
     assert_eq!(active, 0);
 
+    let member_pat_write = fixture
+        .app
+        .clone()
+        .oneshot(request(
+            "POST",
+            "/api/v2/admin/users",
+            Some(MEMBER_PAT),
+            Some(ADMIN_SESSION),
+            false,
+            None,
+            r#"{"email":"must-not-exist@example.test","password":"long-enough-password"}"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(member_pat_write.status(), StatusCode::FORBIDDEN);
+    assert_eq!(
+        json(member_pat_write).await["error"]["code"],
+        "admin_required"
+    );
+
     let reset = fixture
         .app
         .clone()
@@ -384,7 +404,7 @@ async fn admin_pat_mutations_need_no_browser_csrf_and_keep_admin_action_constrai
     .unwrap();
     assert!(revoked_session.is_some());
 
-    let member_pat_write = fixture
+    let revoked_member_pat = fixture
         .app
         .clone()
         .oneshot(request(
@@ -398,10 +418,10 @@ async fn admin_pat_mutations_need_no_browser_csrf_and_keep_admin_action_constrai
         ))
         .await
         .unwrap();
-    assert_eq!(member_pat_write.status(), StatusCode::FORBIDDEN);
+    assert_eq!(revoked_member_pat.status(), StatusCode::UNAUTHORIZED);
     assert_eq!(
-        json(member_pat_write).await["error"]["code"],
-        "admin_required"
+        json(revoked_member_pat).await["error"]["code"],
+        "session_expired"
     );
     let unexpected_users: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM users WHERE email = 'must-not-exist@example.test'",
