@@ -6,7 +6,7 @@ on:
     paths:
       - "vendir.yml"
       - "vendir.lock.yml"
-      - "stricknani/static/vendor/**"
+      - "rust/static/vendor/**"
       - "justfile"
       - ".github/workflows/vendor.yaml"
   pull_request:
@@ -14,7 +14,7 @@ on:
     paths:
       - "vendir.yml"
       - "vendir.lock.yml"
-      - "stricknani/static/vendor/**"
+      - "rust/static/vendor/**"
       - "justfile"
       - ".github/workflows/vendor.yaml"
 
@@ -62,7 +62,7 @@ jobs:
 
       - name: Commit and push if needed
         run: |
-          if git diff --quiet -- vendir.lock.yml stricknani/static/vendor
+          if git diff --quiet -- vendir.lock.yml rust/static/vendor
           then
             exit 0
           fi
@@ -70,6 +70,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add vendir.lock.yml stricknani/static/vendor
+          git add vendir.lock.yml rust/static/vendor
           git commit -m "chore(vendor): vendir sync"
           git push

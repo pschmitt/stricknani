@@ -4,8 +4,10 @@ on:
   push:
     branches: [ main ]
     paths:
-      - "stricknani/**"
+      - "ci/**"
+      - "scripts/**"
       - "tests/**"
+      - "rust/static/**"
       - "pyproject.toml"
       - "uv.lock"
       - "justfile"
@@ -14,8 +16,10 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - "stricknani/**"
+      - "ci/**"
+      - "scripts/**"
       - "tests/**"
+      - "rust/static/**"
       - "pyproject.toml"
       - "uv.lock"
       - "justfile"
@@ -23,7 +27,9 @@ on:
       - ".github/workflows/lint.yaml"
 
 jobs:
-  ruff:
+  # The Python in this repository is development tooling only (i18n
+  # generators and browser/CI harnesses).
+  python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -48,79 +54,8 @@ jobs:
       - name: Run Ruff
         run: just lint-ruff
 
-  mypy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          version: "0.13.6"
-          enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.15"
-
-      - name: Install dependencies
-        run: just ci-setup-py
-
       - name: Run MyPy
         run: just lint-mypy
-
-  template-js:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          version: "0.13.6"
-          enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.15"
-
-      - name: Install dependencies
-        run: just ci-setup-py
-
-      - name: Set up Biome
-        uses: biomejs/setup-biome@v2
-        with:
-          version: "2.6.4"
-
-      - name: Lint template JS syntax
-        run: just lint-template-js
-
-      - name: Check template JS formatting
-        run: just lint-template-js-format
-
-  javascript:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Set up Biome
-        uses: biomejs/setup-biome@v2
-        with:
-          version: "2.6.4"
-
-      - name: Run JavaScript lint
-        run: just lint-js
 
   css:
     runs-on: ubuntu-latest

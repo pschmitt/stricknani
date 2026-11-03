@@ -4,10 +4,13 @@ on:
   push:
     branches: [ main, rust ]
     paths:
-      - "stricknani/**"
+      - "stricknani/locales/**"
+      - "rust/src/**"
+      - "rust/locales/**"
       - "web/**"
-      - "scripts/generate_web_i18n.py"
+      - "scripts/**"
       - "tests/test_web_i18n.py"
+      - "tests/test_rust_i18n.py"
       - "babel.cfg"
       - "pyproject.toml"
       - "justfile"
@@ -15,10 +18,13 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - "stricknani/**"
+      - "stricknani/locales/**"
+      - "rust/src/**"
+      - "rust/locales/**"
       - "web/**"
-      - "scripts/generate_web_i18n.py"
+      - "scripts/**"
       - "tests/test_web_i18n.py"
+      - "tests/test_rust_i18n.py"
       - "babel.cfg"
       - "pyproject.toml"
       - "justfile"

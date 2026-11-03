@@ -4,26 +4,22 @@ on:
   push:
     branches: [ main, rust ]
     paths:
-      - "stricknani/**"
+      - "web/**"
       - "rust/**"
       - "nix/**"
       - "flake.nix"
       - "flake.lock"
-      - "pyproject.toml"
-      - "uv.lock"
       - "Dockerfile"
       - "justfile"
       - ".github/workflows/nix.yaml"
   pull_request:
     branches: [ main ]
     paths:
-      - "stricknani/**"
+      - "web/**"
       - "rust/**"
       - "nix/**"
       - "flake.nix"
       - "flake.lock"
-      - "pyproject.toml"
-      - "uv.lock"
       - "Dockerfile"
       - "justfile"
       - ".github/workflows/nix.yaml"

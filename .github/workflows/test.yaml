@@ -4,93 +4,41 @@ on:
   push:
     branches: [ main, rust ]
     paths:
-      - "stricknani/**"
       - "rust/**"
+      - "web/**"
       - "nix/**"
-      - "ci/stricknani/**"
+      - "ci/**"
+      - "scripts/**"
       - "tests/**"
+      - "stricknani/locales/**"
       - "pyproject.toml"
       - "uv.lock"
       - "justfile"
+      - "biome.json"
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/test.yaml"
   pull_request:
     branches: [ main ]
     paths:
-      - "stricknani/**"
       - "rust/**"
+      - "web/**"
       - "nix/**"
-      - "ci/stricknani/**"
+      - "ci/**"
+      - "scripts/**"
       - "tests/**"
+      - "stricknani/locales/**"
       - "pyproject.toml"
       - "uv.lock"
       - "justfile"
+      - "biome.json"
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/test.yaml"
 
 jobs:
-  test:
-    if: github.event_name == 'pull_request' || github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          version: "0.13.6"
-          enable-cache: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.15"
-
-      - name: Install dependencies
-        run: just ci-setup-py
-
-      - name: Run Python 3.15 reference tests with coverage
-        run: just test-python
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: coverage-xml
-          path: coverage.xml
-          if-no-files-found: ignore
-
-  test-nix:
-    if: github.event_name == 'pull_request' || github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-
-      # Runs the suite inside the Nix devShell so the shellHook's
-      # libstdc++ LD_LIBRARY_PATH export is exercised (prebuilt binary
-      # wheels such as numpy/greenlet fail to load without it). Keep this as
-      # a test-only parity lane: the primary Python 3.15 job above owns the
-      # 80% coverage gate. The last Nix Python 3.13 run passed its tests but
-      # reported 74.23% coverage; coverage.py records different line data there.
-      # Keep this lane coverage-free without weakening the primary gate.
-      - name: Run tests in Nix devShell
-        run: nix develop '.#rust' --command env UV_PYTHON=python3.13 bash -c 'just ci-setup-py && uv run pytest -v'
-
   test-rust:
-    name: Rust-first checks and shipping harness
+    name: Rust, web and tooling checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

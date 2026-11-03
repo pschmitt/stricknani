@@ -11,7 +11,6 @@ on:
       - "ci/stricknani/**"
       - "stricknani/locales/**"
       - "scripts/generate_web_i18n.py"
-      - "tests/test_health.py"
       - "tests/test_rust_e2e_seed.py"
       - "tests/test_rust_fixture.py"
       - "tests/test_web_i18n.py"
@@ -33,7 +32,6 @@ on:
       - "ci/stricknani/**"
       - "stricknani/locales/**"
       - "scripts/generate_web_i18n.py"
-      - "tests/test_health.py"
       - "tests/test_rust_e2e_seed.py"
       - "tests/test_rust_fixture.py"
       - "tests/test_web_i18n.py"
@@ -135,7 +133,7 @@ jobs:
           enable-cache: true
 
       - name: Install browser runner dependencies
-        run: uv sync --extra dev --locked
+        run: uv sync --locked
 
       - name: Install Playwright Chromium
         run: uv run playwright install --with-deps chromium

@@ -4,8 +4,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - "stricknani/**"
       - "rust/**"
+      - "web/**"
       - "nix/**"
       - "flake.nix"
       - "flake.lock"
@@ -15,8 +15,8 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - "stricknani/**"
       - "rust/**"
+      - "web/**"
       - "nix/**"
       - "flake.nix"
       - "flake.lock"
