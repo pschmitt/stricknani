@@ -1,4 +1,4 @@
-//! Bounded cookie/PAT-authenticated project, yarn and category synchronization.
+//! Bounded cookie/PAT-authenticated project and yarn synchronization.
 
 use std::collections::BTreeMap;
 
@@ -13,7 +13,7 @@ use chrono::DateTime;
 use serde::Serialize;
 use url::form_urlencoded;
 
-use crate::{categories, projects, sync as sync_service, yarns};
+use crate::{projects, sync as sync_service, yarns};
 
 use super::{ApiV2State, access::resource_user};
 
@@ -23,7 +23,6 @@ pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
         .route("/sync/projects", get(sync_projects))
         .route("/sync/yarns", get(sync_yarns))
-        .route("/sync/categories", get(sync_categories))
 }
 
 #[derive(Serialize)]
@@ -155,62 +154,6 @@ async fn sync_yarns(
         Ok(updated) => updated,
         Err(ProjectionError::Internal) => return internal_error(),
     };
-    Json(SyncEnvelope {
-        data: SyncData {
-            updated,
-            deleted_ids: page.deleted_ids,
-            server_time: page.server_time,
-            full_resync_required: false,
-            has_more: page.has_more,
-            next_cursor: page.next_cursor,
-        },
-    })
-    .into_response()
-}
-
-async fn sync_categories(
-    State(state): State<ApiV2State>,
-    headers: HeaderMap,
-    RawQuery(raw_query): RawQuery,
-) -> Response {
-    let owner_id = match resource_user(&state.app, &headers).await {
-        Ok(owner_id) => owner_id,
-        Err(response) => return *response,
-    };
-    let query = match parse_query(raw_query.as_deref()) {
-        Ok(query) => query,
-        Err(error) => return query_error(error),
-    };
-    if query
-        .cursor
-        .as_ref()
-        .is_some_and(|cursor| cursor.len() > sync_service::MAX_CURSOR_BYTES)
-    {
-        return cursor_error();
-    }
-    let page = match sync_service::sync_category_page(
-        &state.app,
-        owner_id,
-        query.since.as_deref(),
-        query.limit,
-        query.cursor.as_deref(),
-    )
-    .await
-    {
-        Ok(page) => page,
-        Err(sync_service::SyncPageError::MutuallyExclusive) => return invalid_query(),
-        Err(sync_service::SyncPageError::InvalidCursor) => return cursor_error(),
-        Err(sync_service::SyncPageError::Internal) => return internal_error(),
-    };
-
-    let mut updated = Vec::with_capacity(page.updated_ids.len());
-    for id in &page.updated_ids {
-        match categories::sync_value(&state.app, owner_id, *id).await {
-            Ok(Some(category)) => updated.push(category),
-            Ok(None) => {}
-            Err(_) => return internal_error(),
-        }
-    }
     Json(SyncEnvelope {
         data: SyncData {
             updated,
