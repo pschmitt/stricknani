@@ -1,18 +1,12 @@
 package blue.anika.wolle.ui.navigation
 
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 import kotlin.reflect.KClass
 import kotlinx.serialization.Serializable
 
@@ -84,19 +78,19 @@ enum class TopLevelDestination(
     HOME(
         Route.Home,
         R.string.destination_label_home,
-        Icons.Filled.Home,
+        PhosphorIcons.HouseLine,
         setOf(Route.Home::class),
     ),
     PROJECTS(
         Route.Projects,
         R.string.destination_label_projects,
-        Icons.Filled.Folder,
+        PhosphorIcons.Hoodie,
         setOf(Route.Projects::class, Route.ProjectDetail::class, Route.ProjectEditor::class),
     ),
     CATEGORIES(
         Route.Categories,
         R.string.destination_label_categories,
-        Icons.Filled.Category,
+        PhosphorIcons.Tag,
         setOf(Route.Categories::class),
         defaultVisible = false,
     ),
@@ -112,13 +106,13 @@ enum class TopLevelDestination(
     SEARCH(
         Route.Search,
         R.string.destination_label_search,
-        Icons.Filled.Search,
+        PhosphorIcons.MagnifyingGlass,
         setOf(Route.Search::class),
     ),
     GAUGE(
         Route.Gauge,
         R.string.destination_label_gauge,
-        Icons.Filled.Calculate,
+        PhosphorIcons.Ruler,
         setOf(Route.Gauge::class),
         // Hidden by default to keep the bar at five destinations; Home's title bar opens the
         // calculator, and Settings -> Navigation can add it back.
@@ -127,7 +121,7 @@ enum class TopLevelDestination(
     SETTINGS(
         Route.Settings,
         R.string.settings_root_title,
-        Icons.Filled.Settings,
+        PhosphorIcons.GearSix,
         setOf(
             Route.Settings::class,
             Route.SettingsCategoryRoute::class,

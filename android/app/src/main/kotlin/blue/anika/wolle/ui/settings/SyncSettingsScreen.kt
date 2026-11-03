@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.hasRetryableSyncIssues
 import blue.anika.wolle.ui.common.syncIssuePresentation
 import java.time.Instant
@@ -63,7 +63,7 @@ internal fun SyncSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.settings_sync_group_title),
-                    icon = Icons.Filled.Sync,
+                    icon = PhosphorIcons.CloudCheck,
                 ) {
                     SettingsListItem(
                         headlineContent = {

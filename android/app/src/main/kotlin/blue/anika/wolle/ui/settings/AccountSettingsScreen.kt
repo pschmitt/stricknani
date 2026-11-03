@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.PhosphorIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +61,7 @@ internal fun AccountSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMo
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.account_settings_server_title),
-                    icon = Icons.Filled.Dns,
+                    icon = PhosphorIcons.HardDrives,
                 ) {
                     SettingsListItem(
                         headlineContent = {

@@ -20,10 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -63,6 +60,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.FavoriteToggleButton
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
@@ -100,7 +98,7 @@ fun ProjectsListScreen(
                         onClick = { showImportDialog = true },
                     ) {
                         Icon(
-                            Icons.Filled.FileDownload,
+                            PhosphorIcons.DownloadSimple,
                             contentDescription =
                                 stringResource(R.string.projects_list_import_description),
                         )
@@ -191,7 +189,7 @@ fun ProjectsListScreen(
                             label = { Text(tag) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Filled.Tag,
+                                    PhosphorIcons.Tag,
                                     contentDescription = null,
                                     modifier = Modifier.size(FilterChipDefaults.IconSize),
                                 )
@@ -208,7 +206,7 @@ fun ProjectsListScreen(
                     ) {
                         item {
                             EmptyState(
-                                icon = Icons.Filled.Folder,
+                                icon = PhosphorIcons.Hoodie,
                                 title = stringResource(R.string.projects_list_empty_title),
                                 subtitle = stringResource(R.string.projects_list_empty_subtitle),
                                 modifier = Modifier.fillMaxWidth().height(400.dp),
@@ -281,7 +279,7 @@ private fun ProjectListCard(
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.Folder, contentDescription = null)
+                        Icon(PhosphorIcons.Hoodie, contentDescription = null)
                     }
                 }
             }

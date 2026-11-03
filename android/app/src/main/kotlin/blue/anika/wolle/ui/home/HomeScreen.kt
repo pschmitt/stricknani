@@ -31,10 +31,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -68,6 +64,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SyncIssueBanner
 import blue.anika.wolle.ui.common.animationsDisabled
@@ -172,7 +169,7 @@ fun HomeScreen(
                     item {
                         HomeShelf(
                             title = stringResource(R.string.home_favorite_projects_title),
-                            icon = Icons.Filled.Favorite,
+                            icon = PhosphorIcons.Heart,
                             accent = MaterialTheme.colorScheme.primary,
                         ) {
                             itemsIndexed(favoriteProjects, key = { _, it -> "fp-${it.id}" }) {
@@ -181,7 +178,7 @@ fun HomeScreen(
                                 ShelfTile(
                                     title = project.name,
                                     previewUrl = viewModel.previewUrl(project.previewUrl),
-                                    fallbackIcon = Icons.Filled.Folder,
+                                    fallbackIcon = PhosphorIcons.Hoodie,
                                     tint = tileTint(index),
                                     onClick = { onProjectClick(project.id) },
                                 )
@@ -214,7 +211,7 @@ fun HomeScreen(
                     item {
                         HomeShelf(
                             title = stringResource(R.string.home_recent_projects_title),
-                            icon = Icons.Filled.History,
+                            icon = PhosphorIcons.ClockCounterClockwise,
                             accent = MaterialTheme.colorScheme.tertiary,
                         ) {
                             itemsIndexed(otherRecent, key = { _, it -> "rp-${it.id}" }) {
@@ -223,7 +220,7 @@ fun HomeScreen(
                                 ShelfTile(
                                     title = project.name,
                                     previewUrl = viewModel.previewUrl(project.previewUrl),
-                                    fallbackIcon = Icons.Filled.Folder,
+                                    fallbackIcon = PhosphorIcons.Hoodie,
                                     tint = tileTint(index + 2),
                                     onClick = { onProjectClick(project.id) },
                                 )
@@ -271,7 +268,7 @@ private fun Greeting(onGaugeClick: () -> Unit) {
         }
         FilledTonalIconButton(onClick = onGaugeClick) {
             Icon(
-                Icons.Filled.Calculate,
+                PhosphorIcons.Ruler,
                 contentDescription = stringResource(R.string.home_gauge_calculator_description),
             )
         }

@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
@@ -82,6 +81,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AdminUserDto
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,7 +139,7 @@ fun AdminAccountsScreen(onBack: () -> Unit, viewModel: AdminAccountsViewModel = 
                         if (state.users.isEmpty()) {
                             Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                 EmptyState(
-                                    icon = Icons.Filled.Group,
+                                    icon = PhosphorIcons.UsersThree,
                                     title = stringResource(R.string.admin_accounts_empty_title),
                                     subtitle =
                                         stringResource(R.string.admin_accounts_empty_subtitle),

@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 import coil3.compose.AsyncImage
 
 /** "Brand, colorway" - the second line that tells two yarns with the same name apart. */
@@ -121,7 +120,7 @@ internal fun YarnPickerSheet(
                 value = query,
                 onValueChange = { query = it },
                 placeholder = { Text(stringResource(R.string.project_editor_pick_yarns_search)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                leadingIcon = { Icon(PhosphorIcons.MagnifyingGlass, contentDescription = null) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.extraLarge,
                 modifier =

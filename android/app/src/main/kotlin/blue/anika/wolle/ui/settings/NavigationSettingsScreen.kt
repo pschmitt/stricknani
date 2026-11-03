@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.settings.NavbarItemPreference
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.navigation.NavbarCustomization
 import blue.anika.wolle.ui.navigation.TopLevelDestination
 import blue.anika.wolle.ui.navigation.label
@@ -62,7 +62,7 @@ internal fun NavigationSettingsScreen(onBack: () -> Unit, viewModel: SettingsVie
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.settings_navigation_bottom_bar_title),
-                    icon = Icons.Filled.ViewCarousel,
+                    icon = PhosphorIcons.Compass,
                 ) {
                     Text(
                         text = stringResource(R.string.settings_navigation_bottom_bar_description),

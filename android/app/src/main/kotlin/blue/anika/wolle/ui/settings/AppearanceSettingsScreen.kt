@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.ThemeMode
+import blue.anika.wolle.ui.common.PhosphorIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +63,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit, viewModel: SettingsVie
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.appearance_settings_theme_title),
-                    icon = Icons.Filled.Palette,
+                    icon = PhosphorIcons.Palette,
                 ) {
                     ThemeMode.entries.forEach { mode ->
                         SettingsListItem(

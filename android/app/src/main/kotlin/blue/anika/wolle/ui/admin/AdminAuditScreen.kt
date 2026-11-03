@@ -24,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -73,6 +72,7 @@ import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.parseChangeValue
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
 import java.time.LocalDate
 import java.time.ZoneId
@@ -123,7 +123,7 @@ fun AdminAuditScreen(onBack: () -> Unit, viewModel: AdminAuditViewModel = hiltVi
                         if (state.events.isEmpty()) {
                             Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                 EmptyState(
-                                    icon = Icons.Filled.History,
+                                    icon = PhosphorIcons.ClockCounterClockwise,
                                     title = stringResource(R.string.admin_activity_empty_title),
                                     subtitle =
                                         stringResource(
@@ -580,7 +580,7 @@ private fun DetailLine(label: String, content: @Composable () -> Unit) {
  * strikethrough, the new value in green.
  */
 @Composable
-private fun ChangeCard(item: ChangeItemDto) {
+internal fun ChangeCard(item: ChangeItemDto) {
     val resources = LocalResources.current
     val string: (Int) -> String = { resources.getString(it) }
     val before = parseChangeValue(item.before).displayText(string)

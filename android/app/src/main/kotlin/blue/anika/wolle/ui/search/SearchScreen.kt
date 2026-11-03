@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SearchField
 import coil3.compose.AsyncImage
 
@@ -60,13 +58,13 @@ fun SearchScreen(
             when {
                 query.isBlank() ->
                     EmptyState(
-                        icon = Icons.Filled.Search,
+                        icon = PhosphorIcons.MagnifyingGlass,
                         title = stringResource(R.string.search_empty_title),
                         subtitle = stringResource(R.string.search_empty_subtitle),
                     )
                 results.isEmpty() ->
                     EmptyState(
-                        icon = Icons.Filled.Search,
+                        icon = PhosphorIcons.MagnifyingGlass,
                         title = stringResource(R.string.search_no_matches_title),
                         subtitle = stringResource(R.string.search_no_matches_subtitle),
                     )
@@ -89,7 +87,7 @@ fun SearchScreen(
                                         title = result.entity.name,
                                         subtitle = result.entity.category,
                                         previewUrl = viewModel.previewUrl(result.entity.previewUrl),
-                                        fallbackIcon = Icons.Filled.Folder,
+                                        fallbackIcon = PhosphorIcons.Hoodie,
                                         onClick = { onProjectClick(result.entity.id) },
                                     )
                                 is SearchResult.YarnResult ->

@@ -4,9 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -15,6 +13,7 @@ import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.ChangeStep
 import blue.anika.wolle.data.api.dto.ChangeValue
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.ui.common.PhosphorIcons
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -98,10 +97,10 @@ fun AuditActionKind.icon(): ImageVector =
     when (this) {
         AuditActionKind.Create -> Icons.Filled.Add
         AuditActionKind.Update -> Icons.Filled.Edit
-        AuditActionKind.Delete -> Icons.Filled.Delete
+        AuditActionKind.Delete -> PhosphorIcons.Trash
         AuditActionKind.Upload -> Icons.Filled.CloudUpload
         AuditActionKind.Remove -> Icons.Filled.RemoveCircle
-        AuditActionKind.Other -> Icons.Filled.History
+        AuditActionKind.Other -> PhosphorIcons.ClockCounterClockwise
     }
 
 /** create: green, update: blue, delete/remove: red, upload: marigold, anything else: muted. */

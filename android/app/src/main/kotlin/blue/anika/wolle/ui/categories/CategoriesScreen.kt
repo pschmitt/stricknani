@@ -12,10 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -49,6 +46,7 @@ import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.YarnLoader
 
@@ -163,7 +161,7 @@ fun CategoriesContent(
                 contentAlignment = Alignment.Center,
             ) {
                 EmptyState(
-                    icon = Icons.Filled.Category,
+                    icon = PhosphorIcons.Tag,
                     title = stringResource(R.string.categories_empty_title),
                     subtitle = stringResource(R.string.categories_empty_subtitle),
                 )
@@ -171,7 +169,7 @@ fun CategoriesContent(
         }
         CategoriesContentState.Offline -> {
             CategoriesStatus(
-                icon = Icons.Filled.CloudOff,
+                icon = PhosphorIcons.CloudSlash,
                 title = stringResource(R.string.categories_offline_title),
                 message = stringResource(R.string.categories_offline_subtitle),
                 retryLabel = stringResource(R.string.categories_retry),
@@ -181,7 +179,7 @@ fun CategoriesContent(
         }
         CategoriesContentState.Error -> {
             CategoriesStatus(
-                icon = Icons.Filled.Label,
+                icon = PhosphorIcons.Tag,
                 title = stringResource(R.string.categories_error_title),
                 message = stringResource(R.string.categories_error_subtitle),
                 retryLabel = stringResource(R.string.categories_retry),
@@ -204,7 +202,7 @@ private fun CategoryCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Filled.Label,
+                imageVector = PhosphorIcons.Tag,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )

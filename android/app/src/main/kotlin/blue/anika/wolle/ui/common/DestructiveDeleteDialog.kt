@@ -1,7 +1,5 @@
 package blue.anika.wolle.ui.common
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -20,7 +18,7 @@ const val DESTRUCTIVE_DELETE_ICON_TAG = "destructive-delete-icon"
 @Composable
 fun DestructiveDeleteIcon(contentDescription: String?, modifier: Modifier = Modifier) {
     Icon(
-        imageVector = Icons.Filled.Delete,
+        imageVector = PhosphorIcons.Trash,
         contentDescription = contentDescription,
         tint = MaterialTheme.colorScheme.error,
         modifier = modifier.testTag(DESTRUCTIVE_DELETE_ICON_TAG),

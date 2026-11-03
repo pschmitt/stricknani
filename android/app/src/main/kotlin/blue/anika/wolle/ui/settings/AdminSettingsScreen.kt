@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +26,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.PhosphorIcons
 
 /** Settings -> Admin: the two administrator tools. Only reachable when the server says admin. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,14 +59,14 @@ internal fun AdminSettingsScreen(
             item {
                 SettingsSingleItemCard {
                     AdminRow(
-                        icon = Icons.Filled.History,
+                        icon = PhosphorIcons.ClockCounterClockwise,
                         title = stringResource(R.string.admin_activity_title),
                         subtitle = stringResource(R.string.admin_activity_subtitle),
                         tag = "admin-open-activity",
                         onClick = onOpenActivity,
                     )
                     AdminRow(
-                        icon = Icons.Filled.ManageAccounts,
+                        icon = PhosphorIcons.UsersThree,
                         title = stringResource(R.string.admin_accounts_title),
                         subtitle = stringResource(R.string.admin_accounts_subtitle),
                         tag = "admin-open-accounts",

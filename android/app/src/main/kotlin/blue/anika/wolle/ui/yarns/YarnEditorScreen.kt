@@ -16,10 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,6 +50,7 @@ import blue.anika.wolle.ui.common.EditorPhoto
 import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SuggestionTextField
 import java.io.File
 
@@ -178,7 +175,7 @@ fun YarnEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_yarn_details),
-                    icon = Icons.Filled.Info,
+                    icon = PhosphorIcons.Info,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
@@ -241,7 +238,7 @@ fun YarnEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_photos),
-                    icon = Icons.Filled.PhotoLibrary,
+                    icon = PhosphorIcons.Images,
                 ) {
                     EditorPhotoStrip(
                         photos =
@@ -271,7 +268,7 @@ fun YarnEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_yarn_specs),
-                    icon = Icons.Filled.Tune,
+                    icon = PhosphorIcons.SlidersHorizontal,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
@@ -359,7 +356,7 @@ fun YarnEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_content),
-                    icon = Icons.Filled.Description,
+                    icon = PhosphorIcons.NotePencil,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(

@@ -23,14 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -80,6 +74,7 @@ import blue.anika.wolle.ui.common.EditorPhoto
 import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SuggestionTextField
 import java.io.File
 import kotlinx.coroutines.launch
@@ -227,7 +222,7 @@ fun ProjectEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_project_details),
-                    icon = Icons.Filled.Info,
+                    icon = PhosphorIcons.Info,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
@@ -290,7 +285,7 @@ fun ProjectEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_gallery),
-                    icon = Icons.Filled.PhotoLibrary,
+                    icon = PhosphorIcons.Images,
                 ) {
                     val removeLabel = stringResource(R.string.project_editor_remove_image)
                     EditorPhotoStrip(
@@ -321,7 +316,7 @@ fun ProjectEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.project_editor_attachments_label),
-                    icon = Icons.Filled.AttachFile,
+                    icon = PhosphorIcons.Paperclip,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         val removeLabel = stringResource(R.string.project_editor_remove_attachment)
@@ -358,7 +353,7 @@ fun ProjectEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_materials),
-                    icon = blue.anika.wolle.ui.common.MdiIcons.YarnBall,
+                    icon = PhosphorIcons.Needle,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
@@ -448,7 +443,7 @@ fun ProjectEditorScreen(
             item {
                 EditorSectionCard(
                     title = stringResource(R.string.editor_section_content),
-                    icon = Icons.Filled.Description,
+                    icon = PhosphorIcons.NotePencil,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
@@ -488,7 +483,7 @@ fun ProjectEditorScreen(
                     modifier = Modifier.padding(top = 8.dp, start = 4.dp),
                 ) {
                     Icon(
-                        Icons.Filled.FormatListNumbered,
+                        PhosphorIcons.ListNumbers,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                     )
@@ -680,7 +675,7 @@ private fun StepEditorCard(
                             },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Filled.Delete,
+                                    PhosphorIcons.Trash,
                                     null,
                                     tint = MaterialTheme.colorScheme.error,
                                 )

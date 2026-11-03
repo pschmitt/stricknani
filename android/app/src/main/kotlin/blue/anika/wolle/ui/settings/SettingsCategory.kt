@@ -1,19 +1,11 @@
 package blue.anika.wolle.ui.settings
 
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AdminPanelSettings
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.PhosphorIcons
 
 /**
  * The groups shown by the Settings hub screen (SNA-21) - matches syncwich's
@@ -28,48 +20,48 @@ enum class SettingsCategory(
     Account(
         R.string.settings_category_account_title,
         R.string.settings_category_account_subtitle,
-        Icons.Filled.Dns,
+        PhosphorIcons.HardDrives,
     ),
     Appearance(
         R.string.settings_category_appearance_title,
         R.string.settings_category_appearance_subtitle,
-        Icons.Filled.Palette,
+        PhosphorIcons.Palette,
     ),
     Navigation(
         R.string.settings_category_navigation_title,
         R.string.settings_category_navigation_subtitle,
-        Icons.Filled.ViewCarousel,
+        PhosphorIcons.Compass,
     ),
     Categories(
         R.string.settings_category_categories_title,
         R.string.settings_category_categories_subtitle,
-        Icons.Filled.Category,
+        PhosphorIcons.Tag,
     ),
     DetailCards(
         R.string.settings_category_detail_cards_title,
         R.string.settings_category_detail_cards_subtitle,
-        Icons.Filled.ViewCarousel,
+        PhosphorIcons.SquaresFour,
     ),
     Sync(
         R.string.settings_category_sync_title,
         R.string.settings_category_sync_subtitle,
-        Icons.Filled.Sync,
+        PhosphorIcons.CloudCheck,
     ),
     Backup(
         R.string.settings_category_backup_title,
         R.string.settings_category_backup_subtitle,
-        Icons.Filled.Backup,
+        PhosphorIcons.FloppyDisk,
     ),
     /** Only shown to administrators (see `AdminAccessViewModel`). */
     Admin(
         R.string.settings_category_admin_title,
         R.string.settings_category_admin_subtitle,
-        Icons.Filled.AdminPanelSettings,
+        PhosphorIcons.ShieldCheck,
     ),
     About(
         R.string.settings_category_about_title,
         R.string.settings_category_about_subtitle,
-        Icons.Filled.Info,
+        PhosphorIcons.Info,
     ),
 }
 

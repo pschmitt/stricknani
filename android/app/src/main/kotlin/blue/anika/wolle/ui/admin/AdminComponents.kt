@@ -9,10 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.repository.AdminFailure
+import blue.anika.wolle.ui.common.PhosphorIcons
 import coil3.compose.SubcomposeAsyncImage
 
 @StringRes
@@ -52,9 +49,9 @@ fun AdminFailure.messageRes(): Int =
 
 fun AdminFailure.icon(): ImageVector =
     when (this) {
-        AdminFailure.Offline -> Icons.Filled.CloudOff
-        AdminFailure.NotAllowed -> Icons.Filled.Lock
-        else -> Icons.Filled.SentimentDissatisfied
+        AdminFailure.Offline -> PhosphorIcons.CloudSlash
+        AdminFailure.NotAllowed -> PhosphorIcons.LockKey
+        else -> PhosphorIcons.SmileySad
     }
 
 /** The colour an [AuditTone] resolves to in the current (light or dark) theme. */

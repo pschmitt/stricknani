@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Warning
@@ -53,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.backup.BackupFrequency
+import blue.anika.wolle.ui.common.PhosphorIcons
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
@@ -183,7 +183,7 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.backup_settings_scheduled_title),
-                    icon = Icons.Filled.History,
+                    icon = PhosphorIcons.ClockCounterClockwise,
                 ) {
                     SettingsListItem(
                         headlineContent = {

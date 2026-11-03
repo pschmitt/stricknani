@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -49,7 +48,7 @@ fun SyncIssueBanner(
             verticalAlignment = Alignment.Top,
         ) {
             Icon(
-                if (firstIssue.isConflict) Icons.Filled.ErrorOutline else Icons.Filled.CloudOff,
+                if (firstIssue.isConflict) Icons.Filled.ErrorOutline else PhosphorIcons.CloudSlash,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.size(24.dp),
