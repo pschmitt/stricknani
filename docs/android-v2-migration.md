@@ -77,6 +77,20 @@ browser authentication until a separately specified native use requires a
 change. See the [v2 contract](web-v2-contract.md) for supported routes and
 error envelopes.
 
+Native password login uses `POST /api/v2/auth/token` with
+`{email, password, token_name?}` and returns `200 {data: {token}}`. The token
+has API purpose; this endpoint sets no browser cookie and requires no CSRF
+bootstrap. Missing or blank token names use the existing native-login default.
+The v1 and v2 endpoints share password verification, hash upgrades and login
+attempt quotas. Do not retry rejected credentials through v1 to bypass a quota.
+
+Invalid, unknown and disabled accounts share `401 invalid_credentials`.
+Throttling returns `429 rate_limited` with `Retry-After`. Malformed JSON or
+wrong field types return `400 invalid_json`, oversized bodies return
+`413 payload_too_large`, and excessive field lengths return
+`422 validation_error` with field errors. Internal failures return a generic
+`500 internal_error`. All responses use `no-store`.
+
 `GET /api/v2/meta` returns:
 
 ```json

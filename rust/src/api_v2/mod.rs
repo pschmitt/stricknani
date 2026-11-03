@@ -36,6 +36,7 @@ mod categories;
 mod imports;
 mod media;
 mod meta;
+mod native_auth;
 mod ocr;
 mod project_preview;
 mod projects;
@@ -116,6 +117,7 @@ fn router_with_context(
         .route("/auth/login", post(login))
         .route("/auth/logout", post(logout))
         .layer(DefaultBodyLimit::max(8 * 1024))
+        .merge(native_auth::router())
         .merge(projects::router())
         .merge(sync::router())
         .merge(project_preview::router())

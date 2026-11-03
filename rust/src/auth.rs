@@ -23,9 +23,9 @@ const RATE_LIMIT_ATTEMPTS: usize = 5;
 pub(crate) const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(5 * 60);
 const MAX_RATE_LIMIT_KEYS: usize = 4096;
 const MAX_PARALLEL_PASSWORD_CHECKS: usize = 4;
-const MAX_EMAIL_BYTES: usize = 320;
-const MAX_PASSWORD_BYTES: usize = 1024;
-const MAX_TOKEN_NAME_BYTES: usize = 255;
+pub(crate) const MAX_EMAIL_BYTES: usize = 320;
+pub(crate) const MAX_PASSWORD_BYTES: usize = 1024;
+pub(crate) const MAX_TOKEN_NAME_BYTES: usize = 255;
 const TOKEN_PREFIX: &str = "sna_";
 const DUMMY_PASSWORD_HASH: &str =
     "$argon2id$v=19$m=19456,t=2,p=1$c29tZXNhbHRzYWx0$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -328,6 +328,17 @@ pub(crate) async fn mint_browser_token(
         Some(expires_in),
     )
     .await
+}
+
+/// Verify a password and mint an API-purpose PAT without creating a browser session.
+pub(crate) async fn mint_api_token(
+    state: &AppState,
+    ip: &str,
+    email: &str,
+    password: zeroize::Zeroizing<String>,
+    name: &str,
+) -> Result<MintedToken, PasswordTokenError> {
+    mint_password_token(state, ip, email, password, name, "api", None).await
 }
 
 async fn mint_password_token(

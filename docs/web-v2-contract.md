@@ -532,6 +532,21 @@ category list is a full snapshot, and must not be treated as a delta feed.
 
 ## Native resource and administrator authentication
 
+Native clients can mint an API-purpose PAT with `POST /api/v2/auth/token`,
+sending `{email, password, token_name?}` and receiving `200 {data: {token}}`.
+This password exchange sets no browser cookie and does not require CSRF.
+Missing or blank token names use `Android (password login)`. The shared
+password verifier, hash-upgrade policy and attempt quotas also serve v1.
+
+Unknown, disabled and invalid credentials all return `401 invalid_credentials`.
+Throttling returns `429 rate_limited` with `Retry-After`; malformed JSON or
+incorrect field types return `400 invalid_json`; bodies over 8 KiB return
+`413 payload_too_large`. Field length limits are 320 bytes for the normalized
+email, 1024 bytes for the password, and 255 bytes for the supplied token name;
+exceeding them returns `422 validation_error` with `error.fields`.
+Internal failures return generic `500 internal_error`. Success and failure
+responses retain `no-store`.
+
 Project, yarn, category, media, import, OCR, archive and draft-preview routes
 accept a browser session or `Authorization: Bearer <PAT>`. Administrator
 routes use the same authentication and additionally require an active
