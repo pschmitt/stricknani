@@ -633,6 +633,33 @@ resetting oneself clears that cookie after the database commit. API-purpose
 tokens are not revoked by password reset. The server does not return password
 hashes or other credential material.
 
+## Owner resource history
+
+`GET /api/v2/projects/{id}/history?page=N` and
+`GET /api/v2/yarns/{id}/history?page=N` return
+`{data: AuditEvent[], meta: {page, per_page: 20, has_more}}`, newest first by
+creation time and event ID. Page defaults to 1 and must be an integer from
+1 through 10000; invalid, unknown or duplicate query parameters return
+`400 invalid_query`. Events include all recorded actions attributed to that
+parent, including image/photo, attachment and step changes.
+
+`GET /api/v2/projects/{id}/history/{event_id}` and the corresponding yarn
+route return `{data: {event, changes, unavailable_reason}}`, using the same
+safe `ChangeSetV1` projection and legacy-detail allowlist as administrator
+audit details. Changes are nullable; raw legacy details are never returned.
+
+Both routes require a strict API-purpose PAT or browser session. The resource
+must still exist and belong to that authenticated user. Foreign resources,
+including requests by an administrator, and events belonging to another
+resource return `404 not_found`; cross-owner administrator access retains its
+separate routes. Explicit invalid Bearer credentials never fall back to a cookie.
+
+The event shape matches administrator audit events, but resource links and
+thumbnails use ordinary owner-readable paths. The current user's actor avatar
+uses the protected self-avatar path. Other actors' avatar URLs are null rather
+than exposing an administrator-only or globally readable avatar endpoint.
+Responses retain the v2 `no-store` policy.
+
 ## Administrator audit API slice
 
 The audit endpoint is read-only and requires an active administrator through a

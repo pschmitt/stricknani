@@ -40,6 +40,7 @@ mod native_auth;
 mod ocr;
 mod project_preview;
 mod projects;
+mod resource_history;
 mod signup;
 mod sync;
 mod tools;
@@ -119,6 +120,7 @@ fn router_with_context(
         .layer(DefaultBodyLimit::max(8 * 1024))
         .merge(native_auth::router())
         .merge(projects::router())
+        .merge(resource_history::router())
         .merge(sync::router())
         .merge(project_preview::router())
         .merge(yarns::router())

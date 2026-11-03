@@ -164,6 +164,54 @@ pub(crate) struct AuditPage {
     pub(crate) has_more: bool,
 }
 
+#[derive(Clone, Copy)]
+enum AuditAudience {
+    Administrator,
+    Owner { owner_id: i64 },
+}
+
+const RESOURCE_EVENT_SELECT: &str = "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
+        u.email AS actor_email, avatar.filename AS actor_avatar_filename, \
+        e.entity_type, e.entity_id, e.action, e.created_at, \
+        e.resource_name_snapshot, e.change_version, \
+        CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
+        CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
+        COALESCE(length(e.safe_changes) > 262144, 0) AS safe_changes_too_large, \
+        COALESCE(length(e.details) > 262144, 0) AS legacy_details_too_large, \
+        (e.safe_changes IS NOT NULL) AS safe_changes_present, \
+        (e.details IS NOT NULL) AS legacy_details_present, \
+        CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
+          WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
+          WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
+        CASE e.entity_type \
+          WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
+            JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
+            WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
+            ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
+              CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
+              THEN 0 ELSE 1 END, m.id LIMIT 1) \
+          WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
+            JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
+            WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
+            ORDER BY m.id DESC LIMIT 1) \
+        END AS current_preview_media_id, \
+        CASE e.entity_type \
+          WHEN 'project' THEN (SELECT m.filename FROM media_files AS m \
+            JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
+            WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
+            ORDER BY CASE WHEN COALESCE(m.legacy_is_title_image, \
+              CASE WHEN m.kind = 'title' AND m.is_primary = 1 THEN 1 ELSE 0 END) = 1 \
+              THEN 0 ELSE 1 END, m.id LIMIT 1) \
+          WHEN 'yarn' THEN (SELECT m.filename FROM media_files AS m \
+            JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
+            WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
+            ORDER BY m.id DESC LIMIT 1) \
+        END AS current_preview_filename \
+ FROM audit_events AS e \
+ LEFT JOIN users AS u ON u.id = e.actor_user_id \
+ LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
+ WHERE e.entity_type = ? AND e.entity_id = ?";
+
 pub(crate) async fn list_events(
     pool: &SqlitePool,
     actor_id: i64,
@@ -233,7 +281,10 @@ pub(crate) async fn list_events(
     .fetch_all(pool)
     .await
     .map_err(|_| AuditError::Database)?;
-    let events = rows.into_iter().map(|row| make_event(&row)).collect();
+    let events = rows
+        .into_iter()
+        .map(|row| make_event(&row, AuditAudience::Administrator))
+        .collect();
     Ok(AuditPage {
         events,
         page,
@@ -292,7 +343,7 @@ pub(crate) async fn get_event_detail(
     let Some(row) = row else {
         return Ok(None);
     };
-    let event = make_event(&row);
+    let event = make_event(&row, AuditAudience::Administrator);
     let (changes, unavailable_reason) = project_changes(&row);
     Ok(Some(AuditDetail {
         event,
@@ -301,7 +352,150 @@ pub(crate) async fn get_event_detail(
     }))
 }
 
-fn make_event(row: &sqlx::sqlite::SqliteRow) -> AuditEvent {
+pub(crate) async fn list_resource_events(
+    pool: &SqlitePool,
+    owner_id: i64,
+    entity: AuditEntity,
+    resource_id: i64,
+    page: u32,
+) -> Result<Option<AuditPage>, AuditError> {
+    if page == 0 || page > MAX_PAGE || !matches!(entity, AuditEntity::Project | AuditEntity::Yarn) {
+        return Err(AuditError::InvalidQuery);
+    }
+    let mut transaction = pool.begin().await.map_err(|_| AuditError::Database)?;
+    if !resource_belongs_to(&mut transaction, owner_id, entity, resource_id).await? {
+        return Ok(None);
+    }
+    let entity_type = entity.sql_value().expect("resource entity has a SQL name");
+    let (table, owner_column) = match entity {
+        AuditEntity::Project => ("projects", "owner_id"),
+        AuditEntity::Yarn => ("yarns", "owner_id"),
+        _ => unreachable!("resource entity checked above"),
+    };
+    let count_sql = format!(
+        "SELECT count(*) FROM audit_events AS e \
+         WHERE e.entity_type = ? AND e.entity_id = ? \
+           AND EXISTS (SELECT 1 FROM {table} AS resource \
+                       WHERE resource.id = e.entity_id AND resource.{owner_column} = ?)"
+    );
+    let total: i64 = sqlx::query_scalar(&count_sql)
+        .bind(entity_type)
+        .bind(resource_id)
+        .bind(owner_id)
+        .fetch_one(&mut *transaction)
+        .await
+        .map_err(|_| AuditError::Database)?;
+    let page_size = 20_i64;
+    let page_count = total
+        .saturating_add(page_size - 1)
+        .checked_div(page_size)
+        .unwrap_or(1)
+        .max(1)
+        .min(i64::from(MAX_PAGE)) as u32;
+    let offset = i64::from(page - 1) * page_size;
+    let list_sql = format!(
+        "{RESOURCE_EVENT_SELECT} \
+           AND EXISTS (SELECT 1 FROM {table} AS resource \
+                       WHERE resource.id = e.entity_id AND resource.{owner_column} = ?) \
+         ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?"
+    );
+    let rows = sqlx::query(&list_sql)
+        .bind(entity_type)
+        .bind(resource_id)
+        .bind(owner_id)
+        .bind(page_size)
+        .bind(offset)
+        .fetch_all(&mut *transaction)
+        .await
+        .map_err(|_| AuditError::Database)?;
+    let events = rows
+        .into_iter()
+        .map(|row| make_event(&row, AuditAudience::Owner { owner_id }))
+        .collect();
+    transaction
+        .commit()
+        .await
+        .map_err(|_| AuditError::Database)?;
+    Ok(Some(AuditPage {
+        events,
+        page,
+        page_count,
+        per_page: page_size as u32,
+        has_more: page < page_count,
+    }))
+}
+
+pub(crate) async fn get_resource_event_detail(
+    pool: &SqlitePool,
+    owner_id: i64,
+    entity: AuditEntity,
+    resource_id: i64,
+    event_id: i64,
+) -> Result<Option<AuditDetail>, AuditError> {
+    if !matches!(entity, AuditEntity::Project | AuditEntity::Yarn) {
+        return Err(AuditError::InvalidQuery);
+    }
+    let mut transaction = pool.begin().await.map_err(|_| AuditError::Database)?;
+    if !resource_belongs_to(&mut transaction, owner_id, entity, resource_id).await? {
+        return Ok(None);
+    }
+    let entity_type = entity.sql_value().expect("resource entity has a SQL name");
+    let (table, owner_column) = match entity {
+        AuditEntity::Project => ("projects", "owner_id"),
+        AuditEntity::Yarn => ("yarns", "owner_id"),
+        _ => unreachable!("resource entity checked above"),
+    };
+    let query = format!(
+        "{RESOURCE_EVENT_SELECT} AND e.id = ? \
+           AND EXISTS (SELECT 1 FROM {table} AS resource \
+                       WHERE resource.id = e.entity_id AND resource.{owner_column} = ?)"
+    );
+    let row = sqlx::query(&query)
+        .bind(entity_type)
+        .bind(resource_id)
+        .bind(event_id)
+        .bind(owner_id)
+        .fetch_optional(&mut *transaction)
+        .await
+        .map_err(|_| AuditError::Database)?;
+    let Some(row) = row else {
+        return Ok(None);
+    };
+    let event = make_event(&row, AuditAudience::Owner { owner_id });
+    let (changes, unavailable_reason) = project_changes(&row);
+    transaction
+        .commit()
+        .await
+        .map_err(|_| AuditError::Database)?;
+    Ok(Some(AuditDetail {
+        event,
+        changes,
+        unavailable_reason,
+    }))
+}
+
+async fn resource_belongs_to(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    owner_id: i64,
+    entity: AuditEntity,
+    resource_id: i64,
+) -> Result<bool, AuditError> {
+    let query = match entity {
+        AuditEntity::Project => {
+            "SELECT EXISTS(SELECT 1 FROM projects WHERE id = ? AND owner_id = ?)"
+        }
+        AuditEntity::Yarn => "SELECT EXISTS(SELECT 1 FROM yarns WHERE id = ? AND owner_id = ?)",
+        _ => return Ok(false),
+    };
+    sqlx::query_scalar(query)
+        .bind(resource_id)
+        .bind(owner_id)
+        .fetch_one(&mut **transaction)
+        .await
+        .map_err(|_| AuditError::Database)
+}
+
+fn make_event(row: &sqlx::sqlite::SqliteRow, audience: AuditAudience) -> AuditEvent {
     let entity_type: String = row.get("entity_type");
     let entity_id: i64 = row.get("entity_id");
     let snapshot: Option<String> = row.get("resource_name_snapshot");
@@ -321,14 +515,20 @@ fn make_event(row: &sqlx::sqlite::SqliteRow) -> AuditEvent {
         id: entity_id,
         name,
         name_source,
-        href: kind.and_then(|kind| {
-            (entity_id > 0).then(|| {
+        href: kind.and_then(|kind| match audience {
+            AuditAudience::Administrator => (entity_id > 0).then(|| {
                 if exists {
                     format!("/app/admin/resources/{}/{entity_id}", kind.as_str())
                 } else {
                     format!("/app/admin/audit/{}", row.get::<i64, _>("id"))
                 }
-            })
+            }),
+            AuditAudience::Owner { .. } if exists => match kind {
+                Entity::Project => Some(format!("/app/projects/{entity_id}")),
+                Entity::Yarn => Some(format!("/app/yarns/{entity_id}")),
+                Entity::Category => None,
+            },
+            AuditAudience::Owner { .. } => None,
         }),
         preview_url: if exists {
             kind.and_then(|kind| {
@@ -337,15 +537,31 @@ fn make_event(row: &sqlx::sqlite::SqliteRow) -> AuditEvent {
                     Entity::Yarn => "photo",
                     Entity::Category => return None,
                 };
-                preview_media_id.and_then(|media_id| {
-                    crate::media::admin_resource_media_url(
-                        kind.as_str(),
-                        entity_id,
-                        media_kind,
-                        media_id,
-                        true,
-                    )
-                })
+                match audience {
+                    AuditAudience::Administrator => preview_media_id.and_then(|media_id| {
+                        crate::media::admin_resource_media_url(
+                            kind.as_str(),
+                            entity_id,
+                            media_kind,
+                            media_id,
+                            true,
+                        )
+                    }),
+                    AuditAudience::Owner { .. } => row
+                        .get::<Option<String>, _>("current_preview_filename")
+                        .map(|filename| {
+                            let parent = match kind {
+                                Entity::Project => "projects",
+                                Entity::Yarn => "yarns",
+                                Entity::Category => return String::new(),
+                            };
+                            format!(
+                                "/media/thumbnails/{parent}/{entity_id}/{}",
+                                crate::media::avatar_thumbnail_name(&filename)
+                            )
+                        })
+                        .filter(|url| !url.is_empty()),
+                }
             })
         } else {
             None
@@ -360,11 +576,21 @@ fn make_event(row: &sqlx::sqlite::SqliteRow) -> AuditEvent {
         actor_email: row.get("actor_email"),
         actor_avatar_url: row
             .get::<Option<String>, _>("actor_avatar_filename")
-            .and_then(|filename| {
-                row.get::<Option<i64>, _>("actor_user_id")
+            .and_then(|filename| match audience {
+                AuditAudience::Administrator => row
+                    .get::<Option<i64>, _>("actor_user_id")
                     .and_then(|actor_id| {
                         crate::media::admin_avatar_thumbnail_url(actor_id, &filename)
-                    })
+                    }),
+                AuditAudience::Owner { owner_id }
+                    if row.get::<Option<i64>, _>("actor_user_id") == Some(owner_id) =>
+                {
+                    Some(format!(
+                        "/media/thumbnails/users/{owner_id}/{}",
+                        crate::media::avatar_thumbnail_name(&filename)
+                    ))
+                }
+                AuditAudience::Owner { .. } => None,
             }),
         legacy_actor_user_id: row.get("legacy_actor_user_id"),
         entity_type,
