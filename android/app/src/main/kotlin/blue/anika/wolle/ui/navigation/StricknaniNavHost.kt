@@ -255,6 +255,9 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                     onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                     onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
+                    onEditSection = { id, focus ->
+                        navController.navigate(Route.ProjectEditor(id, focus))
+                    },
                     onDeleted = {
                         navController.navigate(Route.Projects) {
                             popUpTo(Route.Projects) { inclusive = true }
@@ -267,6 +270,9 @@ fun StricknaniNavHost(
                     onBack = { navController.navigateUp() },
                     onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
+                    onEditSection = { id, focus ->
+                        navController.navigate(Route.YarnEditor(id, focus))
+                    },
                     onDeleted = {
                         navController.navigate(Route.Yarns) {
                             popUpTo(Route.Yarns) { inclusive = true }

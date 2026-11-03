@@ -85,6 +85,7 @@ fun YarnDetailScreen(
     onProjectClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onDeleted: () -> Unit,
+    onEditSection: (yarnId: Int, focus: String) -> Unit = { id, _ -> onEditClick(id) },
     viewModel: YarnDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -212,6 +213,7 @@ fun YarnDetailScreen(
                         onCardOrderChanged = viewModel::saveCardOrder,
                         resolveMediaUrl = viewModel::resolveMediaUrl,
                         onProjectClick = onProjectClick,
+                        onEditSection = { focus -> onEditSection(state.entity.id, focus) },
                     )
             }
         }
@@ -238,6 +240,7 @@ private fun YarnDetailContent(
     onCardOrderChanged: (List<String>) -> Unit,
     resolveMediaUrl: (String?) -> String?,
     onProjectClick: (Int) -> Unit,
+    onEditSection: (focus: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
@@ -322,6 +325,7 @@ private fun YarnDetailContent(
                 YarnDetailCard.DETAILS ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.yarn_detail_details_title),
+                        onEdit = { onEditSection(YarnEditorFocus.DETAILS) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -367,6 +371,7 @@ private fun YarnDetailContent(
                 YarnDetailCard.DESCRIPTION ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_description_title),
+                        onEdit = { onEditSection(YarnEditorFocus.DESCRIPTION) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -437,6 +442,7 @@ private fun YarnDetailContent(
                 YarnDetailCard.NOTES ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_notes_title),
+                        onEdit = { onEditSection(YarnEditorFocus.NOTES) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,

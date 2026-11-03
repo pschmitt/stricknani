@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -71,6 +72,7 @@ import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
+import blue.anika.wolle.ui.common.longPressToEdit
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
@@ -85,6 +87,7 @@ fun ProjectDetailScreen(
     onYarnClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onDeleted: () -> Unit,
+    onEditSection: (projectId: Int, focus: String) -> Unit = { id, _ -> onEditClick(id) },
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -216,6 +219,7 @@ fun ProjectDetailScreen(
                         resolveMediaUrl = viewModel::resolveMediaUrl,
                         onYarnClick = onYarnClick,
                         onDeleteAttachment = { attachmentToDelete = it },
+                        onEditSection = { focus -> onEditSection(state.entity.id, focus) },
                     )
             }
         }
@@ -259,6 +263,7 @@ private fun ProjectDetailContent(
     resolveMediaUrl: (String?) -> String?,
     onYarnClick: (Int) -> Unit,
     onDeleteAttachment: (AttachmentDto) -> Unit,
+    onEditSection: (focus: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
@@ -335,6 +340,7 @@ private fun ProjectDetailContent(
                 ProjectDetailCard.ATTACHMENTS ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_attachments_title),
+                        onEdit = { onEditSection(ProjectEditorFocus.ATTACHMENTS) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -366,6 +372,7 @@ private fun ProjectDetailContent(
                 ProjectDetailCard.DETAILS ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_details_title),
+                        onEdit = { onEditSection(ProjectEditorFocus.DETAILS) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -400,6 +407,7 @@ private fun ProjectDetailContent(
                 ProjectDetailCard.STITCH_SAMPLE ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.common_field_stitch_sample),
+                        onEdit = { onEditSection(ProjectEditorFocus.STITCH_SAMPLE) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -439,6 +447,7 @@ private fun ProjectDetailContent(
                 ProjectDetailCard.LINKED_YARNS ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_linked_yarns_title),
+                        onEdit = { onEditSection(ProjectEditorFocus.LINKED_YARNS) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -460,6 +469,7 @@ private fun ProjectDetailContent(
                 ProjectDetailCard.DESCRIPTION ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_description_title),
+                        onEdit = { onEditSection(ProjectEditorFocus.DESCRIPTION) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -489,23 +499,33 @@ private fun ProjectDetailContent(
                             remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
                         sortedSteps.forEachIndexed { index, step ->
                             if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                            Text(
-                                "${step.stepNumber}. ${step.title}",
-                                style = MaterialTheme.typography.titleSmall,
-                            )
-                            step.description?.let {
-                                ProjectMarkdown(
-                                    value = it,
-                                    resolveMediaUrl = resolveMediaUrl,
-                                    onImageClick = openViewerImage,
-                                    modifier = Modifier.padding(top = 4.dp),
+                            // Each step opens the editor at that step, not at the top.
+                            Column(
+                                Modifier.fillMaxWidth().longPressToEdit(
+                                    "${step.stepNumber}. ${step.title}"
+                                ) {
+                                    onEditSection(ProjectEditorFocus.step(step.id))
+                                }
+                            ) {
+                                Text(
+                                    "${step.stepNumber}. ${step.title}",
+                                    style = MaterialTheme.typography.titleSmall,
                                 )
+                                step.description?.let {
+                                    ProjectMarkdown(
+                                        value = it,
+                                        resolveMediaUrl = resolveMediaUrl,
+                                        onImageClick = openViewerImage,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
                             }
                         }
                     }
                 ProjectDetailCard.NOTES ->
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_notes_title),
+                        onEdit = { onEditSection(ProjectEditorFocus.NOTES) },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,

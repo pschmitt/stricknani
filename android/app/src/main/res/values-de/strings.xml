@@ -215,6 +215,7 @@
     <string name="settings_detail_cards_reset">Auf Standardreihenfolge zurücksetzen</string>
     <string name="detail_card_reorder_active">Kartentitel an die gewünschte Stelle ziehen.</string>
     <string name="detail_card_reorder_done">Fertig</string>
+    <string name="detail_long_press_edit_action">%1$s bearbeiten</string>
     <string name="detail_card_reorder_title_description">Kartentitel: %1$s</string>
     <string name="detail_card_reorder_long_press_description">Lange drücken und zum Sortieren ziehen</string>
     <string name="settings_sync_group_title">Hintergrundsynchronisierung</string>

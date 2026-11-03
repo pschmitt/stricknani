@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -40,11 +41,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -73,6 +78,36 @@ fun ProjectEditorScreen(
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    val isLoaded by viewModel.isLoaded.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    val detailsFocus = remember { FocusRequester() }
+    val stitchSampleFocus = remember { FocusRequester() }
+    val descriptionFocus = remember { FocusRequester() }
+    val notesFocus = remember { FocusRequester() }
+    val stepFocus = remember { FocusRequester() }
+    val focusedStepId = viewModel.initialFocus?.let(ProjectEditorFocus::stepId)
+    var initialFocusApplied by rememberSaveable { mutableStateOf(false) }
+    // Opened from a long-press on one detail section or step: scroll there once the project is
+    // loaded and put the cursor in its first field.
+    LaunchedEffect(isLoaded) {
+        val focus = viewModel.initialFocus
+        if (!isLoaded || initialFocusApplied || focus == null) return@LaunchedEffect
+        initialFocusApplied = true
+        val stepIndex = focusedStepId?.let { id -> form.steps.indexOfFirst { it.id == id } }
+        val index = projectEditorItemIndex(focus, stepIndex) ?: return@LaunchedEffect
+        listState.scrollToItem(index)
+        withFrameNanos {}
+        val requester =
+            when {
+                focusedStepId != null -> stepFocus
+                focus == ProjectEditorFocus.STITCH_SAMPLE -> stitchSampleFocus
+                focus == ProjectEditorFocus.DESCRIPTION -> descriptionFocus
+                focus == ProjectEditorFocus.NOTES -> notesFocus
+                focus == ProjectEditorFocus.DETAILS -> detailsFocus
+                else -> null
+            }
+        requester?.let { runCatching { it.requestFocus() } }
+    }
     var pickingStepIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     val titleImagePicker =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
@@ -138,6 +173,7 @@ fun ProjectEditorScreen(
         LazyColumn(
             modifier =
                 Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-project-editor-form"),
+            state = listState,
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -153,7 +189,10 @@ fun ProjectEditorScreen(
                                 viewModel.updateForm { it.copy(name = value) }
                             },
                             label = { Text(stringResource(R.string.project_editor_name_label)) },
-                            modifier = Modifier.fillMaxWidth().testTag("e2e-project-editor-name"),
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .focusRequester(detailsFocus)
+                                    .testTag("e2e-project-editor-name"),
                             singleLine = true,
                         )
                         OutlinedTextField(
@@ -288,7 +327,7 @@ fun ProjectEditorScreen(
                                 viewModel.updateForm { it.copy(stitchSample = value) }
                             },
                             label = { Text(stringResource(R.string.common_field_stitch_sample)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(stitchSampleFocus),
                             singleLine = true,
                         )
                         OutlinedTextField(
@@ -335,7 +374,9 @@ fun ProjectEditorScreen(
                                 Text(stringResource(R.string.project_detail_description_title))
                             },
                             modifier =
-                                Modifier.fillMaxWidth().testTag("e2e-project-editor-description"),
+                                Modifier.fillMaxWidth()
+                                    .focusRequester(descriptionFocus)
+                                    .testTag("e2e-project-editor-description"),
                             minLines = 3,
                         )
                         OutlinedTextField(
@@ -344,41 +385,44 @@ fun ProjectEditorScreen(
                                 viewModel.updateForm { it.copy(notes = value) }
                             },
                             label = { Text(stringResource(R.string.project_detail_notes_title)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(notesFocus),
                             minLines = 3,
                         )
                     }
                 }
             }
-            if (yarns.isNotEmpty()) {
-                item {
-                    Text(
-                        stringResource(R.string.project_detail_linked_yarns_title),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                }
-                item {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        yarns.forEach { yarn ->
-                            FilterChip(
-                                selected = yarn.id in form.selectedYarnIds,
-                                onClick = { viewModel.toggleYarnSelected(yarn.id) },
-                                leadingIcon = {
-                                    val previewUrl = viewModel.previewUrl(yarn)
-                                    if (previewUrl != null) {
-                                        AsyncImage(
-                                            model = previewUrl,
-                                            contentDescription = yarn.name,
-                                            contentScale = ContentScale.Crop,
-                                            modifier =
-                                                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)),
-                                        )
-                                    } else {
-                                        Icon(MdiIcons.Sheep, contentDescription = null)
-                                    }
-                                },
-                                label = { Text(yarn.name) },
-                            )
+            // Always one item (empty without yarns), so the positions below stay fixed for
+            // projectEditorItemIndex while the yarn list is still loading.
+            item {
+                if (yarns.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.project_detail_linked_yarns_title),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            yarns.forEach { yarn ->
+                                FilterChip(
+                                    selected = yarn.id in form.selectedYarnIds,
+                                    onClick = { viewModel.toggleYarnSelected(yarn.id) },
+                                    leadingIcon = {
+                                        val previewUrl = viewModel.previewUrl(yarn)
+                                        if (previewUrl != null) {
+                                            AsyncImage(
+                                                model = previewUrl,
+                                                contentDescription = yarn.name,
+                                                contentScale = ContentScale.Crop,
+                                                modifier =
+                                                    Modifier.size(28.dp)
+                                                        .clip(RoundedCornerShape(8.dp)),
+                                            )
+                                        } else {
+                                            Icon(MdiIcons.Sheep, contentDescription = null)
+                                        }
+                                    },
+                                    label = { Text(yarn.name) },
+                                )
+                            }
                         }
                     }
                 }
@@ -434,7 +478,14 @@ fun ProjectEditorScreen(
                             viewModel.updateStep(index) { it.copy(title = value) }
                         },
                         label = { Text(stringResource(R.string.project_editor_step_title_label)) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier.fillMaxWidth().let {
+                                if (step.id != null && step.id == focusedStepId) {
+                                    it.focusRequester(stepFocus)
+                                } else {
+                                    it
+                                }
+                            },
                         singleLine = true,
                     )
                     Spacer(Modifier.size(8.dp))
@@ -519,3 +570,36 @@ fun ProjectEditorScreen(
         )
     }
 }
+
+/** Editor sections a detail long-press can open; steps are addressed by their server ID. */
+internal object ProjectEditorFocus {
+    const val DETAILS = "details"
+    const val ATTACHMENTS = "attachments"
+    const val STITCH_SAMPLE = "stitch_sample"
+    const val LINKED_YARNS = "linked_yarns"
+    const val DESCRIPTION = "description"
+    const val NOTES = "notes"
+
+    fun step(id: Int): String = "step:$id"
+
+    fun stepId(focus: String): Int? =
+        if (focus.startsWith("step:")) focus.removePrefix("step:").toIntOrNull() else null
+}
+
+/**
+ * LazyColumn position of a focus target in [ProjectEditorScreen]. Keep in sync with the items
+ * there: details 0, gallery 1, attachments 2, materials 3, content 4, linked yarns 5, steps label
+ * 6, then one item per step. [stepIndex] is the step's index in the form, or null/-1 when the step
+ * is unknown (the steps label is used then).
+ */
+internal fun projectEditorItemIndex(focus: String, stepIndex: Int?): Int? =
+    when {
+        ProjectEditorFocus.stepId(focus) != null ->
+            if (stepIndex != null && stepIndex >= 0) 7 + stepIndex else 6
+        focus == ProjectEditorFocus.DETAILS -> 0
+        focus == ProjectEditorFocus.ATTACHMENTS -> 2
+        focus == ProjectEditorFocus.STITCH_SAMPLE -> 3
+        focus == ProjectEditorFocus.DESCRIPTION || focus == ProjectEditorFocus.NOTES -> 4
+        focus == ProjectEditorFocus.LINKED_YARNS -> 5
+        else -> null
+    }

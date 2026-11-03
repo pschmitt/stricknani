@@ -36,11 +36,15 @@ sealed interface Route {
 
     @Serializable data class YarnDetail(val yarnId: Int) : Route
 
-    /** `projectId == null` is create; a value is edit. */
-    @Serializable data class ProjectEditor(val projectId: Int? = null) : Route
+    /**
+     * `projectId == null` is create; a value is edit. `focus` opens the editor at one section or
+     * step (see `ProjectEditorFocus`) - used when a detail section is long-pressed.
+     */
+    @Serializable
+    data class ProjectEditor(val projectId: Int? = null, val focus: String? = null) : Route
 
-    /** `yarnId == null` is create; a value is edit. */
-    @Serializable data class YarnEditor(val yarnId: Int? = null) : Route
+    /** `yarnId == null` is create; a value is edit. `focus` works as for projects. */
+    @Serializable data class YarnEditor(val yarnId: Int? = null, val focus: String? = null) : Route
 
     /** Gauge calculator (SNA-11) - pure math, reachable from `HomeScreen`'s top bar. */
     @Serializable data object Gauge : Route

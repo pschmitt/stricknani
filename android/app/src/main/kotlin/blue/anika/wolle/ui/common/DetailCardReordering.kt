@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -27,10 +28,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -122,6 +126,7 @@ internal fun ReorderableDetailCard(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    onEdit: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val titleDescription = stringResource(R.string.detail_card_reorder_title_description, title)
@@ -188,7 +193,17 @@ internal fun ReorderableDetailCard(
                     )
                 }
             }
-            content()
+            if (onEdit == null) {
+                content()
+            } else {
+                // Long-pressing the title reorders the cards; long-pressing the content opens the
+                // editor right at this section.
+                Column(
+                    modifier = Modifier.fillMaxWidth().longPressToEdit(title, onEdit),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    content = content,
+                )
+            }
         }
     }
 }
@@ -232,4 +247,29 @@ private fun DetailCardReorderBar(onDone: () -> Unit) {
             }
         }
     }
+}
+
+/**
+ * Long-press opens the editor for [what] (a section or step): a haptic tick, then [onEdit].
+ * TalkBack offers the same action as a named long-press action.
+ */
+@Composable
+fun Modifier.longPressToEdit(what: String, onEdit: () -> Unit): Modifier {
+    val haptics = LocalHapticFeedback.current
+    val label = stringResource(R.string.detail_long_press_edit_action, what)
+    val currentOnEdit by rememberUpdatedState(onEdit)
+    return this.pointerInput(Unit) {
+            detectTapGestures(
+                onLongPress = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    currentOnEdit()
+                }
+            )
+        }
+        .semantics {
+            onLongClick(label = label) {
+                currentOnEdit()
+                true
+            }
+        }
 }

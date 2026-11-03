@@ -74,6 +74,13 @@ constructor(
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
     val isEditing: Boolean = route.projectId != null
 
+    /** Section or step to open the editor at, from a long-press on the detail page. */
+    val initialFocus: String? = route.focus
+
+    private val _isLoaded = MutableStateFlow(!isEditing)
+    /** True once an edited project's fields are in the form (immediately for a new one). */
+    val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
+
     private val _form = MutableStateFlow(ProjectEditorFormState())
     val form: StateFlow<ProjectEditorFormState> = _form.asStateFlow()
 
@@ -144,6 +151,7 @@ constructor(
                                 },
                         )
                 }
+                _isLoaded.value = true
             }
         }
     }

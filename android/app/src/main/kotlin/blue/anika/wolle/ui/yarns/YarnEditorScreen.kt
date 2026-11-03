@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -34,11 +35,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -65,6 +70,30 @@ fun YarnEditorScreen(
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    val isLoaded by viewModel.isLoaded.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    val detailsFocus = remember { FocusRequester() }
+    val descriptionFocus = remember { FocusRequester() }
+    val notesFocus = remember { FocusRequester() }
+    var initialFocusApplied by rememberSaveable { mutableStateOf(false) }
+    // Opened from a long-press on a yarn detail section: scroll there once loaded and put the
+    // cursor in its first field.
+    LaunchedEffect(isLoaded) {
+        val focus = viewModel.initialFocus
+        if (!isLoaded || initialFocusApplied || focus == null) return@LaunchedEffect
+        initialFocusApplied = true
+        val index = yarnEditorItemIndex(focus) ?: return@LaunchedEffect
+        listState.scrollToItem(index)
+        withFrameNanos {}
+        val requester =
+            when (focus) {
+                YarnEditorFocus.DETAILS -> detailsFocus
+                YarnEditorFocus.DESCRIPTION -> descriptionFocus
+                YarnEditorFocus.NOTES -> notesFocus
+                else -> null
+            }
+        requester?.let { runCatching { it.requestFocus() } }
+    }
     val photoPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             viewModel.addPhotos(uris)
@@ -118,6 +147,7 @@ fun YarnEditorScreen(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
+            state = listState,
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -133,7 +163,10 @@ fun YarnEditorScreen(
                                 viewModel.updateForm { it.copy(name = value) }
                             },
                             label = { Text(stringResource(R.string.project_editor_name_label)) },
-                            modifier = Modifier.fillMaxWidth().testTag("e2e-yarn-editor-name"),
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .focusRequester(detailsFocus)
+                                    .testTag("e2e-yarn-editor-name"),
                             singleLine = true,
                         )
                         OutlinedTextField(
@@ -263,7 +296,7 @@ fun YarnEditorScreen(
                             label = {
                                 Text(stringResource(R.string.project_detail_description_title))
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(descriptionFocus),
                             minLines = 3,
                         )
                         OutlinedTextField(
@@ -272,7 +305,7 @@ fun YarnEditorScreen(
                                 viewModel.updateForm { it.copy(notes = value) }
                             },
                             label = { Text(stringResource(R.string.project_detail_notes_title)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(notesFocus),
                             minLines = 3,
                         )
                     }
@@ -345,3 +378,22 @@ fun YarnEditorScreen(
         )
     }
 }
+
+/** Yarn editor sections a detail long-press can open. */
+internal object YarnEditorFocus {
+    const val DETAILS = "details"
+    const val DESCRIPTION = "description"
+    const val NOTES = "notes"
+}
+
+/**
+ * LazyColumn position of a focus target in [YarnEditorScreen]. Keep in sync with the items there:
+ * details 0, specifications 1, link/description/notes 2, photos 3.
+ */
+internal fun yarnEditorItemIndex(focus: String): Int? =
+    when (focus) {
+        YarnEditorFocus.DETAILS -> 0
+        YarnEditorFocus.DESCRIPTION,
+        YarnEditorFocus.NOTES -> 2
+        else -> null
+    }

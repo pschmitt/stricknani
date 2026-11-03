@@ -41,6 +41,30 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-82: Edit one section or step straight from the detail page
+
+- [x] Long-pressing a section's content on project or yarn detail opens the editor scrolled to
+      that section with the cursor in its first field (haptic tick; TalkBack offers it as a named
+      "Edit <section>" long-press action). Long-pressing a section's title still reorders.
+- [x] Each instruction step has its own long-press: the editor opens at that step with its title
+      field focused (addressed by step ID, since the detail sorts steps by number).
+- [x] `Route.ProjectEditor`/`YarnEditor` take an optional `focus`; the editors wait until the
+      record is loaded, scroll once, then focus. The project editor's linked-yarn chips are one
+      always-present item so section positions don't shift while yarns load.
+- [x] Unit tests for the section-to-position mapping (`ProjectEditorFocusTest`,
+      `YarnEditorFocusTest`).
+- [ ] On-device check by the user (installed on the phone).
+
+Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host.
+
+## SNA-83: Print projects (all, steps only, with or without images)
+
+- [ ] Print action on project detail with a choice of content (everything / instructions only)
+      and images (with / without), rendered through Android's print framework.
+
+Status: **in progress**, 2026-11-03.
+
 ## SNA-81: Attachments near the top of the project editor
 
 - [x] The project editor listed Attachments last, below every instruction step; it now follows

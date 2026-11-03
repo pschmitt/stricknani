@@ -57,6 +57,13 @@ constructor(
     private val route = savedStateHandle.toRoute<Route.YarnEditor>()
     val isEditing: Boolean = route.yarnId != null
 
+    /** Section to open the editor at, from a long-press on the yarn detail page. */
+    val initialFocus: String? = route.focus
+
+    private val _isLoaded = MutableStateFlow(!isEditing)
+    /** True once an edited yarn's fields are in the form (immediately for a new one). */
+    val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
+
     private val _form = MutableStateFlow(YarnEditorFormState())
     val form: StateFlow<YarnEditorFormState> = _form.asStateFlow()
 
@@ -94,6 +101,7 @@ constructor(
                             existingPhotos = detail.photos,
                         )
                 }
+                _isLoaded.value = true
             }
         }
     }

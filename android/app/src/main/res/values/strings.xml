@@ -215,6 +215,7 @@
     <string name="settings_detail_cards_reset">Reset to default order</string>
     <string name="detail_card_reorder_active">Drag the card titles into place.</string>
     <string name="detail_card_reorder_done">Done</string>
+    <string name="detail_long_press_edit_action">Edit %1$s</string>
     <string name="detail_card_reorder_title_description">%1$s card title</string>
     <string name="detail_card_reorder_long_press_description">Long-press and drag to reorder</string>
     <string name="settings_sync_group_title">Background sync</string>
