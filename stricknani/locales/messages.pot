@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-03 23:35+0100\n"
+"POT-Creation-Date: 2026-11-03 23:56+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -330,7 +330,7 @@ msgid "Original source"
 msgstr ""
 
 #: rust/src/web.rs:2181 rust/src/web_accounts.rs:865
-#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:10
+#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:45
 msgid "Create"
 msgstr ""
 
@@ -1992,7 +1992,7 @@ msgstr ""
 msgid "Just one more row?"
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:31
+#: web/src/routes/create/+page.svelte:30
 msgid "Keep a note of a yarn you own."
 msgstr ""
 
@@ -2193,7 +2193,7 @@ msgstr ""
 msgid "Loading project details…"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:94
+#: web/src/lib/features/home/ActivityFeed.svelte:98
 msgid "Loading recent activity…"
 msgstr ""
 
@@ -2342,7 +2342,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1097
 #: web/src/lib/features/projects/ProjectEditor.svelte:1107
 #: web/src/lib/features/projects/ProjectLibrary.svelte:224
-#: web/src/routes/create/+page.svelte:24
+#: web/src/routes/create/+page.svelte:22
 msgid "New project"
 msgstr ""
 
@@ -2363,7 +2363,7 @@ msgid "New version ready"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:571
-#: web/src/routes/create/+page.svelte:30
+#: web/src/routes/create/+page.svelte:29
 msgid "New yarn"
 msgstr ""
 
@@ -2544,7 +2544,7 @@ msgstr ""
 msgid "Nothing on the needles yet"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:105
+#: web/src/lib/features/home/ActivityFeed.svelte:109
 msgid "Nothing yet - your changes will show up here."
 msgstr ""
 
@@ -2785,7 +2785,7 @@ msgstr ""
 msgid "Plain text"
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:25
+#: web/src/routes/create/+page.svelte:23
 msgid "Plan the next thing you want to knit."
 msgstr ""
 
@@ -2973,8 +2973,8 @@ msgstr ""
 msgid "Recent activity"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:98
-#: web/src/lib/features/home/ActivityFeed.svelte:154
+#: web/src/lib/features/home/ActivityFeed.svelte:102
+#: web/src/lib/features/home/ActivityFeed.svelte:158
 msgid "Recent activity could not be loaded."
 msgstr ""
 
@@ -3372,7 +3372,7 @@ msgstr ""
 msgid "Show fewer"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:162
+#: web/src/lib/features/home/ActivityFeed.svelte:166
 msgid "Show more"
 msgstr ""
 
@@ -3487,6 +3487,10 @@ msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:774
 msgid "Start another import"
+msgstr ""
+
+#: web/src/routes/create/+page.svelte:56
+msgid "Start something new, or bring in a pattern you already have."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:313
@@ -4306,8 +4310,8 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/ActivityFeed.svelte:100
-#: web/src/lib/features/home/ActivityFeed.svelte:156
+#: web/src/lib/features/home/ActivityFeed.svelte:104
+#: web/src/lib/features/home/ActivityFeed.svelte:160
 #: web/src/lib/features/home/HomeDashboard.svelte:167
 #: web/src/lib/features/home/HomeDashboard.svelte:249
 #: web/src/lib/features/media/ArchiveControl.svelte:445
@@ -4501,7 +4505,7 @@ msgstr ""
 msgid "What are we knitting today?"
 msgstr ""
 
-#: web/src/routes/create/+page.svelte:17
+#: web/src/routes/create/+page.svelte:54
 msgid "What would you like to add?"
 msgstr ""
 
@@ -4857,7 +4861,7 @@ msgstr ""
 msgid "colorway"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:132
+#: web/src/lib/features/home/ActivityFeed.svelte:136
 msgid "deleted"
 msgstr ""
 

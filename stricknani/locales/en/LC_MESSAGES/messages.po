@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 23:35+0100\n"
+"POT-Creation-Date: 2026-11-03 23:56+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -334,7 +334,7 @@ msgid "Original source"
 msgstr "Original source"
 
 #: rust/src/web.rs:2181 rust/src/web_accounts.rs:865
-#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:10
+#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:45
 msgid "Create"
 msgstr "Create"
 
@@ -2053,7 +2053,7 @@ msgstr "Instructions"
 msgid "Just one more row?"
 msgstr "Just one more row?"
 
-#: web/src/routes/create/+page.svelte:31
+#: web/src/routes/create/+page.svelte:30
 msgid "Keep a note of a yarn you own."
 msgstr "Keep a note of a yarn you own."
 
@@ -2257,7 +2257,7 @@ msgstr "Loading linked projects…"
 msgid "Loading project details…"
 msgstr "Loading project details…"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:94
+#: web/src/lib/features/home/ActivityFeed.svelte:98
 msgid "Loading recent activity…"
 msgstr "Loading recent activity…"
 
@@ -2406,7 +2406,7 @@ msgstr "New category"
 #: web/src/lib/features/projects/ProjectEditor.svelte:1097
 #: web/src/lib/features/projects/ProjectEditor.svelte:1107
 #: web/src/lib/features/projects/ProjectLibrary.svelte:224
-#: web/src/routes/create/+page.svelte:24
+#: web/src/routes/create/+page.svelte:22
 msgid "New project"
 msgstr "New project"
 
@@ -2427,7 +2427,7 @@ msgid "New version ready"
 msgstr "New version ready"
 
 #: web/src/lib/features/yarns/YarnForm.svelte:571
-#: web/src/routes/create/+page.svelte:30
+#: web/src/routes/create/+page.svelte:29
 msgid "New yarn"
 msgstr "New yarn"
 
@@ -2616,7 +2616,7 @@ msgstr "Notes moved up"
 msgid "Nothing on the needles yet"
 msgstr "Nothing on the needles yet"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:105
+#: web/src/lib/features/home/ActivityFeed.svelte:109
 msgid "Nothing yet - your changes will show up here."
 msgstr "Nothing yet - your changes will show up here."
 
@@ -2864,7 +2864,7 @@ msgstr "Pick up where you left off."
 msgid "Plain text"
 msgstr "Plain text"
 
-#: web/src/routes/create/+page.svelte:25
+#: web/src/routes/create/+page.svelte:23
 msgid "Plan the next thing you want to knit."
 msgstr "Plan the next thing you want to knit."
 
@@ -3065,8 +3065,8 @@ msgstr "Reading the source and preparing a draft…"
 msgid "Recent activity"
 msgstr "Recent activity"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:98
-#: web/src/lib/features/home/ActivityFeed.svelte:154
+#: web/src/lib/features/home/ActivityFeed.svelte:102
+#: web/src/lib/features/home/ActivityFeed.svelte:158
 msgid "Recent activity could not be loaded."
 msgstr "Recent activity could not be loaded."
 
@@ -3466,7 +3466,7 @@ msgstr "Show diff"
 msgid "Show fewer"
 msgstr "Show fewer"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:162
+#: web/src/lib/features/home/ActivityFeed.svelte:166
 msgid "Show more"
 msgstr "Show more"
 
@@ -3582,6 +3582,10 @@ msgstr "Sponsor on GitHub"
 #: web/src/lib/features/imports/ImportWorkbench.svelte:774
 msgid "Start another import"
 msgstr "Start another import"
+
+#: web/src/routes/create/+page.svelte:56
+msgid "Start something new, or bring in a pattern you already have."
+msgstr "Start something new, or bring in a pattern you already have."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:313
 msgid "Start with one project to keep its pattern and progress together."
@@ -4454,8 +4458,8 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/ActivityFeed.svelte:100
-#: web/src/lib/features/home/ActivityFeed.svelte:156
+#: web/src/lib/features/home/ActivityFeed.svelte:104
+#: web/src/lib/features/home/ActivityFeed.svelte:160
 #: web/src/lib/features/home/HomeDashboard.svelte:167
 #: web/src/lib/features/home/HomeDashboard.svelte:249
 #: web/src/lib/features/media/ArchiveControl.svelte:445
@@ -4653,7 +4657,7 @@ msgstr "Well, hi!"
 msgid "What are we knitting today?"
 msgstr "What are we knitting today?"
 
-#: web/src/routes/create/+page.svelte:17
+#: web/src/routes/create/+page.svelte:54
 msgid "What would you like to add?"
 msgstr "What would you like to add?"
 
@@ -5022,7 +5026,7 @@ msgstr "category"
 msgid "colorway"
 msgstr "colorway"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:132
+#: web/src/lib/features/home/ActivityFeed.svelte:136
 msgid "deleted"
 msgstr "deleted"
 
