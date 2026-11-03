@@ -633,6 +633,20 @@ def _wait_two_animation_frames(page: Page) -> None:
     )
 
 
+def _click_tile_delete(page: Page, tile: Locator) -> None:
+    """Reveal a photo tile's hover-only trash button and press it with the mouse."""
+    tile.evaluate("element => element.scrollIntoView({ block: 'center' })")
+    tile.hover()
+    button = tile.get_by_role("button", name="Remove photo", exact=True)
+    expect(button).to_have_css("opacity", "1")
+    box = button.bounding_box()
+    _require(box is not None, "the photo tile has no visible delete button")
+    assert box is not None
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.down()
+    page.mouse.up()
+
+
 def _assert_no_horizontal_overflow(page: Page, viewport_width: int) -> None:
     _wait_two_animation_frames(page)
     dimensions = page.evaluate(
@@ -1270,7 +1284,7 @@ def _exercise_yarn_service_tools(
         return
 
     mark_stage("opening OCR controls for a stored yarn photo")
-    ocr = page.locator(".photo-item .ocr-control").first
+    ocr = page.locator(".reorder-item .ocr-control").first
     ocr.wait_for(state="visible", timeout=5_000)
     ocr.locator("summary").click()
     if ocr_mode == "failure":
@@ -2477,6 +2491,11 @@ def run_acceptance(
                 reduced_motion="reduce",
                 color_scheme="light",
                 locale="en-US",
+                # Playwright cannot hold or fail requests that a controlling
+                # service worker handles in WebKit (the Ctrl+S save hold needs
+                # that), so the WebKit journey runs without one; the worker is
+                # covered by web_pwa_browser on Chromium.
+                service_workers="block" if browser_name == "webkit" else "allow",
             )
             page = context.new_page()
             if browser_name == "webkit":
@@ -4724,9 +4743,9 @@ def run_acceptance(
             page.locator("#main-content .action-status").filter(
                 has_text="Project media updated."
             ).wait_for(state="visible")
-            page.locator(".media-list img").wait_for(state="visible")
+            page.locator(".reorder-item img").wait_for(state="visible")
             _require(
-                page.locator(".media-list img").count() == 1,
+                page.locator(".reorder-item img").count() == 1,
                 "the project media list did not refresh after upload",
             )
 
@@ -4738,14 +4757,14 @@ def run_acceptance(
                 project_photo_remove.count() == 1,
                 "the uploaded project photo has no unique removal action",
             )
-            project_photo_remove.click()
+            _click_tile_delete(page, page.locator(".reorder-item").first)
             image_dialog = page.get_by_role(
                 "dialog", name="Remove this project photo?", exact=True
             )
             image_dialog.wait_for(state="visible")
             image_dialog.get_by_role("button", name="Cancel", exact=True).click()
             image_dialog.wait_for(state="hidden")
-            project_photo_remove.click()
+            _click_tile_delete(page, page.locator(".reorder-item").first)
             image_dialog.wait_for(state="visible")
 
             project_image_delete_url = (
@@ -4789,7 +4808,7 @@ def run_acceptance(
             )
             held_project_image_deletes[0].continue_()
             page.unroute(project_image_delete_url, hold_project_image_delete)
-            page.locator(".media-list img").wait_for(state="detached")
+            page.locator(".reorder-item img").wait_for(state="detached")
             _require(
                 page.get_by_text("No project photos yet.", exact=True).is_visible()
                 and any(

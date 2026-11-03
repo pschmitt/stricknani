@@ -590,7 +590,7 @@ def _assert_owner_resource_cards(
     materials.locator("summary").focus()
     page.keyboard.press("Enter")
     expect(materials).to_have_attribute("open", "")
-    embedded_card = page.locator(".details-card .resource-card").filter(
+    embedded_card = page.locator(".materials-card .resource-card").filter(
         has_text=yarn_name
     )
     embedded_card.wait_for(state="visible")
@@ -639,6 +639,7 @@ def _assert_owner_resource_cards(
         _assert_no_horizontal_overflow(page, "project-library")
         _save_screenshot(page, screenshot_dir, f"project-library-{suffix}.png")
     project_card.locator("a.resource-card__link").click()
+    page.wait_for_url(f"**/app/projects/{project_id}")
     page.get_by_role("heading", name=project_name, exact=True).wait_for(state="visible")
 
     page.goto(f"{origin}/app/yarns", wait_until="networkidle")
@@ -663,6 +664,7 @@ def _assert_owner_resource_cards(
         _save_screenshot(page, screenshot_dir, f"yarn-library-{suffix}.png")
 
     yarn_card.locator("a.resource-card__link").click()
+    page.wait_for_url(f"**/app/yarns/{yarn_id}")
     page.get_by_role("heading", name=yarn_name, exact=True).wait_for(state="visible")
 
 
@@ -749,8 +751,11 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         expected_cards.extend(
             (("Admin", "/admin/users"), ("Audit log", "/admin/audit"))
         )
+    # Privacy Policy and the external Android app link are workspace-less tiles.
     _require(
-        cards.locator("a").count() == len(expected_cards)
+        cards.locator("a").count() == len(expected_cards) + 2
+        and cards.locator("a[href$='/privacy']").count() == 1
+        and cards.locator("a[target='_blank']").count() == 1
         and cards.locator("a[href$='/imports']").count() == 0
         and page.locator(".secondary-nav a[href$='/imports']").count() == 0,
         "More or Workspace contains unexpected links",
@@ -1241,6 +1246,19 @@ def run_acceptance(
             parent_mark_x = (
                 parent_probe.get("markX") if isinstance(parent_probe, dict) else None
             )
+            if isinstance(parent_mark_x, (float, int)):
+                # The chevron slot eases in; wait for the settled position
+                # rather than sampling mid-transition after two frames.
+                try:
+                    page.wait_for_function(
+                        "expected => Math.abs(document.querySelector("
+                        "'.app-header .brand-mark-wrap').getBoundingClientRect()"
+                        ".left - expected) <= 1",
+                        arg=float(parent_mark_x),
+                        timeout=2_000,
+                    )
+                except PlaywrightTimeoutError:
+                    pass
             top_level_mark_x: object = page.locator(
                 ".app-header .brand-mark-wrap"
             ).evaluate("element => element.getBoundingClientRect().left")
@@ -1396,12 +1414,18 @@ def run_acceptance(
             ).click()
             mark("wait for member password reset completion")
             reset_dialog.wait_for(state="hidden")
-            mark("wait for reactivated member status")
-            expect(member_row.locator(".status-pill")).to_contain_text("Active")
+            mark("reset keeps the disabled member disabled")
+            expect(member_row.locator(".status-pill")).to_contain_text("Disabled")
             mark("wait for member reset confirmation")
             page.get_by_role("status").filter(
                 has_text="Password reset. The user must sign in again."
             ).wait_for(state="visible")
+            mark("re-enable member")
+            member_row.get_by_role("button", name="Enable", exact=True).click()
+            page.get_by_role("dialog", name="Enable this account?").get_by_role(
+                "button", name="Enable account"
+            ).click()
+            expect(member_row.locator(".status-pill")).to_contain_text("Active")
 
             mark("last active admin guard")
             own_row = page.locator(".user-row").filter(has_text=admin_email)

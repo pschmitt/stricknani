@@ -249,7 +249,7 @@ def _exercise_accessibility(
     )
 
     mark_stage("opening synthetic yarn from keyboard")
-    photo_button = page.locator(".photo-open").first
+    photo_button = page.locator(".reorder-item").first
     photo_button.wait_for(state="visible", timeout=10_000)
     _tab_to(page, photo_button, "yarn photo button")
     page.keyboard.press("Enter")
@@ -317,7 +317,7 @@ def _exercise_accessibility(
           requested: matchMedia('(prefers-reduced-motion: reduce)').matches,
           scroll: getComputedStyle(document.documentElement).scrollBehavior,
           transitionSeconds: getComputedStyle(
-            document.querySelector('.photo-open')
+            document.querySelector('.reorder-item .thumb-button')
           ).transitionDuration.split(',').map(value => {
             const duration = value.trim();
             return duration.endsWith('ms')

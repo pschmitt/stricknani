@@ -511,9 +511,6 @@
       resetPasswordValue = "";
       resetDialog?.close();
       resetTarget = null;
-      users = users.map((user) =>
-        user.id === targetId ? { ...user, active: true } : user,
-      );
       pageStatus = t("Password reset. The user must sign in again.", locale);
       if (targetId === ownerId) {
         await refreshSession();

@@ -522,14 +522,14 @@ def run_acceptance(
                 page.set_viewport_size({"width": width, "height": 844})
                 _assert_no_overflow(page, width)
             page.set_viewport_size({"width": 320, "height": 844})
-            page.locator(".photo-open").first.wait_for(state="visible")
-            page.locator(".photo-open").first.click()
+            page.locator(".reorder-item .thumb-button").first.wait_for(state="visible")
+            page.locator(".reorder-item .thumb-button").first.click()
             zoom_dialog = page.get_by_role("dialog", name="Yarn photo")
             zoom_dialog.wait_for(state="visible")
             page.keyboard.press("Escape")
             zoom_dialog.wait_for(state="hidden")
             detail_remove_controls = page.locator(
-                ".photo-item button[aria-label='Remove photo']"
+                ".reorder-item button[aria-label='Remove photo']"
             )
             _require(
                 page.get_by_label("Choose a yarn photo", exact=True).count() == 0
@@ -549,7 +549,7 @@ def run_acceptance(
             )
 
             mark_stage("testing yarn photo upload and delete")
-            previous_photo_urls = page.locator(".photo-item img").evaluate_all(
+            previous_photo_urls = page.locator(".reorder-item img").evaluate_all(
                 "images => images.map(image => image.currentSrc)"
             )
             before_photo_count = len(previous_photo_urls)
@@ -575,7 +575,7 @@ def run_acceptance(
                     None,
                 )
                 upload_error_visible = page.locator(".error-message").is_visible()
-                photo_count = page.locator(".photo-item").count()
+                photo_count = page.locator(".reorder-item").count()
                 raise AcceptanceFailure(
                     "yarn photo upload did not complete "
                     f"(API status {upload_status or 'not observed'}; "
@@ -584,11 +584,11 @@ def run_acceptance(
                 ) from None
             mark_stage("waiting for uploaded photo in the gallery")
             page.wait_for_function(
-                "previous => document.querySelectorAll('.photo-item').length "
+                "previous => document.querySelectorAll('.reorder-item').length "
                 "> previous",
                 arg=before_photo_count,
             )
-            new_photo_index = page.locator(".photo-item img").evaluate_all(
+            new_photo_index = page.locator(".reorder-item img").evaluate_all(
                 "(images, previous) => images.findIndex(image => "
                 "!previous.includes(image.currentSrc))",
                 previous_photo_urls,
@@ -597,8 +597,9 @@ def run_acceptance(
                 isinstance(new_photo_index, int) and new_photo_index >= 0,
                 "uploaded photo did not appear in the yarn gallery",
             )
-            new_photo = page.locator(".photo-item").nth(new_photo_index)
+            new_photo = page.locator(".reorder-item").nth(new_photo_index)
             mark_stage("opening photo removal confirmation")
+            new_photo.hover()
             new_photo.get_by_role("button", name="Remove photo").click()
             photo_dialog = page.get_by_role("dialog", name="Remove this photo?")
             mark_stage("waiting for photo removal confirmation")
@@ -629,7 +630,7 @@ def run_acceptance(
                     "yarn photo removal did not complete "
                     f"(API status {remove_status or 'not observed'})"
                 ) from None
-            page.locator(".photo-item").wait_for(state="visible")
+            page.locator(".reorder-item").wait_for(state="visible")
             _require(
                 any(
                     "/photos" in path and status in {200, 201, 204}
