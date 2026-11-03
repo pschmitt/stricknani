@@ -207,10 +207,12 @@
   }
 
   .welcome-line {
+    min-width: 0;
     margin: 0;
     color: var(--ink);
     font-family: var(--font-display);
-    font-size: clamp(1.7rem, 6vw, 2.2rem);
+    font-size: clamp(1.45rem, 5.4vw, 2.2rem);
+    overflow-wrap: anywhere;
     font-weight: 700;
     line-height: 1.1;
     font-variation-settings:
@@ -251,6 +253,7 @@
   }
 
   :global(.auth-submit) {
+    width: 100%;
     margin-top: 1rem;
   }
 

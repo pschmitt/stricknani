@@ -97,7 +97,8 @@
   --ui-input-height: 44px;
   --ui-input-radius: var(--radius-xs);
   --ui-input-font-size: 16px;
-  --app-mobile-nav-height: 64px;
+  /* 3.5rem link row plus the 1px top border: the sticky action bars sit flush on this. */
+  --app-mobile-nav-height: 57px;
   --app-mobile-nav-bottom-inset: max(4px, env(safe-area-inset-bottom, 0px));
 
   font-optical-sizing: auto;
