@@ -39,6 +39,15 @@ Use this file as the operational source of truth for working in Stricknani.
   own directory as well as its log. A successful-looking log tail does not
   prove that the complete command passed. Keep the process or tool handle
   until the exit status has been collected.
+- Run formatting, focused checks and strict Clippy before the full suite.
+  Stop at the first failing gate, fix it, and preserve the failed receipt.
+  Mirror every remote fix into the authoritative local source before reporting
+  a checkpoint; compare all executed Rust files against that source.
+- Keep Cargo's execution directory and owned dependency target stable across
+  retries. Use separate immutable Nix source snapshots and receipt directories;
+  changing the Cargo source path can rebuild otherwise unchanged crates.
+  Other agents' builds on the same host do not require stopping or waiting
+  when caches are isolated and the host has capacity.
 - When syncing source into cached remote Cargo builds, use checksums and refresh changed Rust source timestamps. Preserved older mtimes can leave a stale executable even after a successful Cargo command; verify a new CLI command actually exists in the built artifact.
 - Before sharing a browser-fixture executable, copy it into a versioned artifact
   directory outside Cargo's target directory and record its source revision and
