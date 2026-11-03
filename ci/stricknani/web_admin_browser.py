@@ -26,9 +26,7 @@ from playwright.sync_api import (
     expect,
     sync_playwright,
 )
-from playwright.sync_api import (
-    TimeoutError as PlaywrightTimeoutError,
-)
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ci.stricknani import rust_fixture, seed_rust
 
@@ -60,11 +58,17 @@ def _svg_shape_signature(icon: Locator) -> str:
             'path, circle, rect, line, polyline, polygon'
           )
         ].map((shape) => {
-            const bounds = shape.getBBox();
-            const metrics = [bounds.x, bounds.y, bounds.width, bounds.height]
-              .map((value) => Math.round(value * 10) / 10);
-            return `${shape.tagName.toLowerCase()}:${metrics.join(',')}`;
+            const attributes = [
+              'd', 'cx', 'cy', 'r', 'x', 'y', 'width', 'height',
+              'x1', 'x2', 'y1', 'y2', 'points'
+            ];
+            const drawing = attributes
+              .filter((name) => shape.hasAttribute(name))
+              .map((name) => `${name}=${shape.getAttribute(name)}`)
+              .join(';');
+            return `${shape.tagName.toLowerCase()}:${drawing}`;
           })
+          .sort()
           .join('|')"""
     )
     return signature if isinstance(signature, str) else ""
@@ -700,7 +704,7 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         )
     _require(
         cards.locator("a").count() == len(expected_cards)
-        and cards.get_by_role("link", name="Account", exact=False).count() == 0
+        and cards.get_by_role("link", name="Account", exact=True).count() == 0
         and page.locator(".secondary-nav a[href$='/account']").count() == 0,
         "More or secondary navigation contains a duplicate Account entry",
     )
@@ -709,20 +713,41 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         "Account is unavailable from the profile links",
     )
     for label, href in expected_cards:
-        card = cards.get_by_role("link", name=label, exact=False)
+        card = cards.locator(f"a[href$='{href}']")
+        title = card.locator(".ui-navigation-tile__title")
+        description = card.locator(".ui-navigation-tile__description")
         more_icon = card.locator(
             ".ui-navigation-tile__icon svg[aria-hidden='true'][focusable='false']"
         )
         sidebar_icon = page.locator(f".secondary-nav a[href$='{href}'] .nav-icon svg")
+        more_signature = (
+            _svg_shape_signature(more_icon) if more_icon.count() == 1 else ""
+        )
+        sidebar_signature = (
+            _svg_shape_signature(sidebar_icon) if sidebar_icon.count() == 1 else ""
+        )
+        card_ok = card.count() == 1
+        title_ok = title.count() == 1 and title.inner_text().strip() == label
+        description_ok = description.count() == 1 and bool(
+            description.inner_text().strip()
+        )
+        href_ok = (card.get_attribute("href") or "").endswith(href)
+        more_icon_ok = more_icon.count() == 1
+        sidebar_icon_ok = sidebar_icon.count() == 1
+        path_parity = bool(more_signature) and more_signature == sidebar_signature
         _require(
-            card.count() == 1
-            and card.get_by_text("Available now", exact=True).count() == 1
-            and (card.get_attribute("href") or "").endswith(href)
-            and more_icon.count() == 1
-            and sidebar_icon.count() == 1
-            and bool(_svg_shape_signature(more_icon))
-            and _svg_shape_signature(more_icon) == _svg_shape_signature(sidebar_icon),
-            "a More card does not reuse its matching decorative navigation icon",
+            card_ok
+            and title_ok
+            and description_ok
+            and href_ok
+            and more_icon_ok
+            and sidebar_icon_ok
+            and path_parity,
+            "a More card failed its link/description/icon parity check "
+            f"(label={label}, card={card_ok}, title={title_ok}, "
+            f"description={description_ok}, "
+            f"href={href_ok}, more_icon={more_icon_ok}, "
+            f"sidebar_icon={sidebar_icon_ok}, path_parity={path_parity})",
         )
 
 
@@ -931,7 +956,9 @@ def run_acceptance(
             page.set_viewport_size({"width": 390, "height": 900})
             page.locator('a[href="/app/projects"]:visible').first.click()
             page.wait_for_url("**/app/projects")
-            page.locator(".new-project").click()
+            page.locator('.mobile-navigation a[href="/app/create"]').click()
+            page.wait_for_url("**/app/create")
+            page.locator('.create-options a[href="/app/projects/new"]').click()
             page.wait_for_url("**/app/projects/new")
             page.get_by_role("heading", name="New project", exact=True).wait_for(
                 state="visible"

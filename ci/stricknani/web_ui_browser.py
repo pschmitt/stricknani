@@ -3781,7 +3781,8 @@ def run_acceptance(
                     )
                     icon_failures = 0
                     for label, href in more_cards:
-                        card = more_links.get_by_role("link", name=label, exact=False)
+                        card = more_links.locator(f"a[href$='{href}']")
+                        title = card.locator(".ui-navigation-tile__title")
                         icon = card.locator(
                             ".ui-navigation-tile__icon svg[aria-hidden='true']"
                             "[focusable='false']"
@@ -3791,8 +3792,13 @@ def run_acceptance(
                         )
                         if (
                             card.count() != 1
-                            or card.get_by_text("Available now", exact=True).count()
+                            or title.count() != 1
+                            or title.inner_text().strip() != label
+                            or card.locator(".ui-navigation-tile__description").count()
                             != 1
+                            or not card.locator(".ui-navigation-tile__description")
+                            .inner_text()
+                            .strip()
                             or card.get_attribute("href") is None
                             or not card.get_attribute("href").endswith(href)
                             or icon.count() != 1

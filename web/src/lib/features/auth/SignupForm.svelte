@@ -281,6 +281,7 @@
 <style>
   .signup-panel {
     width: min(100%, 31rem);
+    min-width: 0;
     border: 1px solid var(--line);
     border-radius: 1.25rem;
     padding: clamp(1.25rem, 5vw, 2.5rem);

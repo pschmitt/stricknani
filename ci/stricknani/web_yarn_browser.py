@@ -11,7 +11,11 @@ import sys
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from playwright.sync_api import Page, Response, sync_playwright
+from playwright.sync_api import (
+    Page,
+    Response,
+    sync_playwright,
+)
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ci.stricknani import rust_fixture, seed_rust, web_ui_browser
@@ -345,17 +349,21 @@ def run_acceptance(
 
             mark_stage("checking yarn library search and favorite filtering")
             page.goto(f"{origin}/app/yarns", wait_until="networkidle")
+            mark_stage("locating seeded yarn row")
             yarn_card = page.locator(".yarn-card").filter(
                 has=page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True)
             )
             yarn_card.wait_for(state="visible")
+            mark_stage("typing yarn search")
             page.get_by_role("searchbox", name="Search your yarn").fill("Riverbend")
+            mark_stage("waiting for debounced yarn query")
             page.wait_for_url(
                 lambda url: (
                     urlsplit(url).path == "/app/yarns"
                     and parse_qs(urlsplit(url).query).get("q") == ["Riverbend"]
                 )
             )
+            mark_stage("checking filtered yarn result")
             yarn_card.wait_for(state="visible")
             _require(
                 page.locator(".yarn-card").count() == 1,
@@ -365,6 +373,7 @@ def run_acceptance(
                 "href"
             )
             _require(yarn_detail_href is not None, "yarn detail link is missing")
+            mark_stage("opening seeded yarn details")
             yarn_card.locator("a.resource-card__link").click()
             page.wait_for_url(f"**{yarn_detail_href}")
             with page.expect_response(
@@ -373,30 +382,39 @@ def run_acceptance(
                     and response.request.method == "PUT"
                 )
             ) as favorite_response:
+                mark_stage("saving yarn favorite")
                 page.get_by_role("button", name="Add to favorites").click()
             _require(
                 favorite_response.value.status == 200,
                 "saving the yarn favorite failed against API v2",
             )
-            page.get_by_role("button", name="Remove from favorites").wait_for(
-                state="visible"
+            favorited_button = page.get_by_role("button", name="Favorited")
+            favorited_button.wait_for(state="visible")
+            _require(
+                favorited_button.get_attribute("aria-pressed") == "true",
+                "the yarn detail favorite control did not enter its pressed state",
             )
+            mark_stage("returning to searched yarn library")
             page.go_back(wait_until="domcontentloaded")
             page.wait_for_url("**/app/yarns?q=Riverbend")
             yarn_card = page.locator(".yarn-card").filter(
                 has=page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True)
             )
+            mark_stage("checking favorite indicator")
             yarn_card.get_by_role("img", name="Favorite", exact=True).wait_for(
                 state="visible"
             )
             filter_trigger = page.locator(".filter-trigger")
+            mark_stage("opening yarn filters")
             filter_trigger.click()
             filter_dialog = page.get_by_role("dialog")
             filter_dialog.wait_for(state="visible")
             favorite_filter = filter_dialog.get_by_role(
                 "checkbox", name="Favorites only"
             )
+            mark_stage("selecting favorites only")
             favorite_filter.check()
+            mark_stage("waiting for favorite query")
             page.wait_for_url(
                 lambda url: (
                     urlsplit(url).path == "/app/yarns"
@@ -404,7 +422,9 @@ def run_acceptance(
                     == {"q": ["Riverbend"], "favorite": ["true"]}
                 )
             )
+            mark_stage("closing yarn filters")
             filter_dialog.get_by_role("button", name="Close filters").click()
+            mark_stage("checking favorite-filtered result")
             yarn_card.wait_for(state="visible")
             _require(
                 any(
@@ -576,9 +596,12 @@ def run_acceptance(
             )
 
             mark_stage("checking yarn edit, dirty-navigation guard, and CAS conflict")
+            mark_stage("opening yarn editor")
             page.get_by_role("link", name="Edit yarn").click()
+            mark_stage("waiting for yarn editor brand field")
             page.get_by_label("Brand").wait_for(state="visible")
             brand = page.get_by_label("Brand")
+            mark_stage("entering dirty yarn draft")
             brand.fill("Draft brand")
             yarn_parent = page.locator(".app-header .shell-back-button")
             parent_bounds = (
@@ -592,9 +615,12 @@ def run_acceptance(
                 and parent_bounds["height"] == 44,
                 "the yarn editor header parent link has the wrong route or size",
             )
+            mark_stage("requesting cancellation of dirty yarn navigation")
             with page.expect_event("dialog") as dirty_dialog_info:
                 yarn_parent.click()
+            mark_stage("cancelling dirty yarn navigation")
             dirty_dialog_info.value.dismiss()
+            mark_stage("checking retained yarn draft after cancellation")
             page.get_by_role("heading", name="Edit yarn", exact=True).wait_for(
                 state="visible"
             )
@@ -602,21 +628,29 @@ def run_acceptance(
                 brand.input_value() == "Draft brand",
                 "dirty navigation discarded the yarn draft",
             )
+            mark_stage("accepting dirty yarn navigation")
             with page.expect_event("dialog") as leave_dialog_info:
                 yarn_parent.click()
             leave_dialog_info.value.accept()
+            mark_stage("waiting for yarn details after accepted navigation")
             page.get_by_role("heading", name=seed_rust.YARN_NAME, exact=True).wait_for(
                 state="visible"
             )
+            mark_stage("reopening yarn editor for CAS conflict")
             page.get_by_role("link", name="Edit yarn").click()
+            mark_stage("waiting for CAS editor brand field")
             page.get_by_label("Brand").wait_for(state="visible")
             brand = page.get_by_label("Brand")
+            mark_stage("entering draft for CAS conflict")
             brand.fill("Draft brand")
+            mark_stage("applying concurrent yarn update")
             _require(
                 _observe_fixture_update(page, yarn_id) == 200,
                 "concurrent yarn update failed",
             )
+            mark_stage("submitting stale yarn version")
             page.get_by_role("button", name="Save changes").click()
+            mark_stage("waiting for yarn CAS conflict dialog")
             page.get_by_role("heading", name="A newer version was saved").wait_for(
                 state="visible"
             )

@@ -4,7 +4,10 @@
 links to the native parser and intent filters. Remote unit tests/debug assembly and the Rust E2E
 and offline-replay CI suites pass on
 [ad9878089](https://github.com/pschmitt/stricknani/commit/ad9878089d7ea60e97f01614ef8cb135051d5b7d).
-Explicit Android Build/Lint workflow verification is pending after a full-Nix formatting correction.
+[Android Build](https://github.com/pschmitt/stricknani/actions/runs/41546837801) and
+[Android Lint](https://github.com/pschmitt/stricknani/actions/runs/41546833282) also pass on
+[c3904b4](https://github.com/pschmitt/stricknani/commit/c3904b489ca0dddeeaa62cd60997f71d74a6f601),
+which corrects the Kotlin layout caught by the full Nix formatter.
 Rust APIs, authentication, Room storage and installed devices are unchanged.
 
 ## Decision for the current release

@@ -57,11 +57,13 @@ server URLs and keeps the existing single-server-per-device behavior.
 **How to apply:** no account switching or credential changes; links continue to use the configured
 server already associated with the installed app.
 
-Status: **mostly done**, 2026-11-03 - focused/full unit tests and debug assembly passed remotely;
+Status: **done**, 2026-11-03 - focused/full unit tests and debug assembly passed remotely;
 [Rust E2E](https://github.com/pschmitt/stricknani/actions/runs/41538878603) and
 [offline replay](https://github.com/pschmitt/stricknani/actions/runs/41538878987) passed on ad9878089.
-The full Nix formatter caught a Kotlin layout difference, now corrected; explicit Android Build/Lint
-workflow verification is pending. No device installation or data migration.
+The full Nix formatter caught a Kotlin layout difference, corrected in c3904b4;
+[Android Build](https://github.com/pschmitt/stricknani/actions/runs/41546837801) and
+[Android Lint](https://github.com/pschmitt/stricknani/actions/runs/41546833282) both passed on that exact
+revision. No device installation or data migration.
 
 ## SNA-74: Prepare Android compatibility plan for the Rust API and website
 

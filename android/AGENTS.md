@@ -67,6 +67,10 @@ scoped to this directory, not mixed into the root one.
   shared screenshot-PR tail, JDK/Gradle setup, keystore decoding, KVM setup, and emulator wait
   helper are reused directly. All callers remain path-filtered to `android/**` (plus their fixture
   inputs where applicable) so backend/web-only changes don't trigger an Android CI run and vice versa.
+- Android Build and Android Lint push triggers currently target `main`. On the Rust rewrite branch,
+  dispatch both workflows explicitly for the exact candidate revision before marking native work
+  verified. Successful Rust E2E and offline-replay runs cover different checks and do not establish
+  that Android Build or Android Lint passed. Record each workflow's revision and result separately.
 
 ## Physical test devices
 

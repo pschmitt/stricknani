@@ -124,6 +124,24 @@
     debounceTimer = setTimeout(() => commitQuery(value, revision), 200);
   }
 
+  function positionDesktopDialog() {
+    if (!dialog?.open) return;
+    const trigger = filterButtonHost
+      ?.querySelector("button")
+      ?.getBoundingClientRect();
+    if (!trigger) return;
+
+    const panel = dialog.getBoundingClientRect();
+    const left = Math.max(
+      16,
+      Math.min(trigger.left, window.innerWidth - panel.width - 16),
+    );
+    const maxTop = Math.max(16, window.innerHeight - panel.height - 16);
+    const top = Math.max(16, Math.min(trigger.bottom + 8, maxTop));
+    dialog.style.left = `${left}px`;
+    dialog.style.top = `${top}px`;
+  }
+
   function openFilters() {
     if (!dialog) return;
     if (dialog.open) {
@@ -141,20 +159,8 @@
     }
 
     openedAsModal = false;
-    const trigger = filterButtonHost
-      ?.querySelector("button")
-      ?.getBoundingClientRect();
-    if (trigger) {
-      const panelWidth = Math.min(448, window.innerWidth - 32);
-      const left = Math.max(
-        16,
-        Math.min(trigger.left, window.innerWidth - panelWidth - 16),
-      );
-      const top = Math.min(trigger.bottom + 8, window.innerHeight - 160);
-      dialog.style.left = `${left}px`;
-      dialog.style.top = `${Math.max(16, top)}px`;
-    }
     dialog.show();
+    positionDesktopDialog();
     filtersOpen = true;
     document.addEventListener("pointerdown", onOutsidePointerDown, true);
     document.addEventListener("keydown", onDesktopKeydown, true);
@@ -202,19 +208,7 @@
       dialog.style.removeProperty("left");
       dialog.style.removeProperty("top");
     } else if (!isMobile) {
-      const trigger = filterButtonHost
-        ?.querySelector("button")
-        ?.getBoundingClientRect();
-      if (trigger) {
-        const panelWidth = Math.min(448, window.innerWidth - 32);
-        const left = Math.max(
-          16,
-          Math.min(trigger.left, window.innerWidth - panelWidth - 16),
-        );
-        const top = Math.min(trigger.bottom + 8, window.innerHeight - 160);
-        dialog.style.left = `${left}px`;
-        dialog.style.top = `${Math.max(16, top)}px`;
-      }
+      positionDesktopDialog();
     }
   }
 
@@ -478,14 +472,16 @@
   }
 
   .filter-panel {
+    box-sizing: border-box;
     position: fixed;
     z-index: 30;
     inset: auto;
     width: min(28rem, calc(100vw - 2rem));
     max-width: none;
-    max-height: min(75vh, 38rem);
+    max-height: min(75dvh, calc(100dvh - 2rem), 38rem);
     margin: 0;
     overflow: auto;
+    overscroll-behavior: contain;
     border: 1px solid var(--line);
     border-radius: 1rem;
     padding: 1rem;
