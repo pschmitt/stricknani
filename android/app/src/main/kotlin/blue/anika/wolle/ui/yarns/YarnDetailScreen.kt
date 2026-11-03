@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,18 +67,23 @@ import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
 import blue.anika.wolle.ui.common.FavoriteToggleButton
+import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
+import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
+import blue.anika.wolle.ui.print.PrintDialog
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
+import blue.anika.wolle.ui.yarns.print.YarnPrintLabels
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,6 +104,26 @@ fun YarnDetailScreen(
         )
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showPrintDialog by remember { mutableStateOf(false) }
+    var isPreparingPrint by remember { mutableStateOf(false) }
+    val printOptions by viewModel.printOptions.collectAsStateWithLifecycle()
+    val printScope = rememberCoroutineScope()
+    val activityContext = LocalContext.current
+    val printLabels =
+        YarnPrintLabels(
+            details = stringResource(R.string.yarn_detail_details_title),
+            brand = stringResource(R.string.yarn_detail_field_brand),
+            colorway = stringResource(R.string.yarn_detail_field_colorway),
+            dyeLot = stringResource(R.string.yarn_detail_field_dye_lot),
+            fiberContent = stringResource(R.string.yarn_detail_field_fiber_content),
+            weightCategory = stringResource(R.string.yarn_detail_field_weight_category),
+            recommendedNeedles = stringResource(R.string.yarn_detail_field_recommended_needles),
+            amount = stringResource(R.string.yarn_detail_field_amount),
+            link = stringResource(R.string.project_editor_link_label),
+            description = stringResource(R.string.project_detail_description_title),
+            notes = stringResource(R.string.project_detail_notes_title),
+            usedIn = stringResource(R.string.yarn_detail_used_in_title),
+        )
 
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -145,6 +172,16 @@ fun YarnDetailScreen(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.print_action)) },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Print, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    showPrintDialog = true
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_share)) },
                                 leadingIcon = {
@@ -217,6 +254,25 @@ fun YarnDetailScreen(
                     )
             }
         }
+    }
+
+    if (showPrintDialog && state is YarnDetailUiState.Loaded) {
+        PrintDialog(
+            title = stringResource(R.string.print_yarn_dialog_title),
+            initial = printOptions,
+            offerContentChoice = false,
+            isPreparing = isPreparingPrint,
+            onPrint = { options ->
+                isPreparingPrint = true
+                printScope.launch {
+                    val html = viewModel.printHtml(options, printLabels)
+                    isPreparingPrint = false
+                    showPrintDialog = false
+                    if (html != null) HtmlPrinter.print(activityContext, state.entity.name, html)
+                }
+            },
+            onDismiss = { if (!isPreparingPrint) showPrintDialog = false },
+        )
     }
 
     if (showDeleteDialog && state is YarnDetailUiState.Loaded) {
@@ -326,6 +382,19 @@ private fun YarnDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.yarn_detail_details_title),
                         onEdit = { onEditSection(YarnEditorFocus.DETAILS) },
+                        copyText =
+                            copyLines(
+                                stringResource(R.string.yarn_detail_field_brand) to detail.brand,
+                                stringResource(R.string.yarn_detail_field_colorway) to
+                                    detail.colorway,
+                                stringResource(R.string.yarn_detail_field_dye_lot) to detail.dyeLot,
+                                stringResource(R.string.yarn_detail_field_fiber_content) to
+                                    detail.fiberContent,
+                                stringResource(R.string.yarn_detail_field_weight_category) to
+                                    detail.weightCategory,
+                                stringResource(R.string.yarn_detail_field_recommended_needles) to
+                                    detail.recommendedNeedles,
+                            ),
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -372,6 +441,7 @@ private fun YarnDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_description_title),
                         onEdit = { onEditSection(YarnEditorFocus.DESCRIPTION) },
+                        copyText = detail.description,
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -443,6 +513,7 @@ private fun YarnDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_notes_title),
                         onEdit = { onEditSection(YarnEditorFocus.NOTES) },
+                        copyText = detail.notes,
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,

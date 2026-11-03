@@ -3,6 +3,8 @@ package blue.anika.wolle.ui.projects.print
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.StepDto
+import blue.anika.wolle.ui.print.PrintContent
+import blue.anika.wolle.ui.print.PrintOptions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -101,7 +101,23 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_DISMISSED_UPDATE] = version }
     }
 
+    /**
+     * The print dialog's last choices, so it opens the way it was used. [printContent] is the
+     * `PrintContent` name (null = never printed); the UI maps it and falls back to "everything".
+     */
+    val printContent = dataStore.data.map { prefs -> prefs[KEY_PRINT_CONTENT] }
+    val printIncludeImages = dataStore.data.map { prefs -> prefs[KEY_PRINT_IMAGES] ?: true }
+
+    suspend fun setPrintChoices(content: String?, includeImages: Boolean) {
+        dataStore.edit { prefs ->
+            if (content != null) prefs[KEY_PRINT_CONTENT] = content
+            prefs[KEY_PRINT_IMAGES] = includeImages
+        }
+    }
+
     private companion object {
+        val KEY_PRINT_CONTENT = stringPreferencesKey("print_content")
+        val KEY_PRINT_IMAGES = booleanPreferencesKey("print_include_images")
         val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")

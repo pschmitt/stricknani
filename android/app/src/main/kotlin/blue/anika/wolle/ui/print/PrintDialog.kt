@@ -1,4 +1,4 @@
-package blue.anika.wolle.ui.projects.print
+package blue.anika.wolle.ui.print
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,47 +29,52 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 
 /**
- * Print choices for a project: everything or only the instructions, with or without images.
- * [isPreparing] shows progress on the Print button while images download.
+ * Print choices: for projects everything or only the instructions ([offerContentChoice]), and with
+ * or without images. It opens with [initial] - the choices used last time. [isPreparing] shows
+ * progress on the Print button while images download.
  */
 @Composable
-fun ProjectPrintDialog(
+fun PrintDialog(
+    title: String,
+    initial: PrintOptions,
+    offerContentChoice: Boolean,
     isPreparing: Boolean,
     onPrint: (PrintOptions) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var content by rememberSaveable { mutableStateOf(PrintContent.EVERYTHING) }
-    var includeImages by rememberSaveable { mutableStateOf(true) }
+    var content by rememberSaveable(initial) { mutableStateOf(initial.content) }
+    var includeImages by rememberSaveable(initial) { mutableStateOf(initial.includeImages) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.print_dialog_title)) },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Column(Modifier.selectableGroup()) {
-                    listOf(
-                            PrintContent.EVERYTHING to R.string.print_content_everything,
-                            PrintContent.INSTRUCTIONS to R.string.print_content_instructions,
-                        )
-                        .forEach { (option, label) ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .selectable(
-                                            selected = content == option,
-                                            onClick = { content = option },
-                                            role = Role.RadioButton,
-                                        )
-                                        .padding(vertical = 4.dp),
-                            ) {
-                                RadioButton(selected = content == option, onClick = null)
-                                Text(
-                                    stringResource(label),
-                                    modifier = Modifier.padding(start = 12.dp),
-                                )
+                if (offerContentChoice)
+                    Column(Modifier.selectableGroup()) {
+                        listOf(
+                                PrintContent.EVERYTHING to R.string.print_content_everything,
+                                PrintContent.INSTRUCTIONS to R.string.print_content_instructions,
+                            )
+                            .forEach { (option, label) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier =
+                                        Modifier.fillMaxWidth()
+                                            .selectable(
+                                                selected = content == option,
+                                                onClick = { content = option },
+                                                role = Role.RadioButton,
+                                            )
+                                            .padding(vertical = 4.dp),
+                                ) {
+                                    RadioButton(selected = content == option, onClick = null)
+                                    Text(
+                                        stringResource(label),
+                                        modifier = Modifier.padding(start = 12.dp),
+                                    )
+                                }
                             }
-                        }
-                }
+                    }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =

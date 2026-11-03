@@ -43,9 +43,12 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## SNA-82: Edit one section or step straight from the detail page
 
-- [x] Long-pressing a section's content on project or yarn detail opens the editor scrolled to
-      that section with the cursor in its first field (haptic tick; TalkBack offers it as a named
-      "Edit <section>" long-press action). Long-pressing a section's title still reorders.
+- [x] Long-pressing a section's content on project or yarn detail opens a small menu at the
+      press point (haptic tick): Edit opens the editor scrolled to that section with the cursor in
+      its first field; Copy text copies the section (Android 13+ confirms on its own, older
+      versions get a toast). TalkBack offers both as named actions. Long-pressing a section's
+      title still reorders. (First version jumped straight into the editor; the user asked for a
+      menu with feedback.)
 - [x] Each instruction step has its own long-press: the editor opens at that step with its title
       field focused (addressed by step ID, since the detail sorts steps by number).
 - [x] `Route.ProjectEditor`/`YarnEditor` take an optional `focus`; the editors wait until the
@@ -53,10 +56,10 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
       always-present item so section positions don't shift while yarns load.
 - [x] Unit tests for the section-to-position mapping (`ProjectEditorFocusTest`,
       `YarnEditorFocusTest`).
-- [ ] On-device check by the user (installed on the phone).
+- [x] On-device check by the user.
 
-Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
-compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host.
+Status: **done**, 2026-11-03 - remote `:app:testDebugUnitTest lintDebug
+compileDebugAndroidTestKotlin assembleDebug` passed; confirmed on the user's phone.
 
 ## SNA-83: Print projects (all, steps only, with or without images)
 
@@ -68,8 +71,12 @@ compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host.
 - [x] Images are downloaded with the app's authenticated media client in the ViewModel; one that
       can't be fetched is left out instead of failing the printout. `HtmlPrinter` lays the page
       out in an off-screen WebView with JavaScript off.
-- [ ] On-device check of the print preview (installed on the user's phone).
-- [ ] Possible follow-ups: print a yarn; remember the last print choices.
+- [x] On-device check: the user confirmed printing works.
+- [x] Print a yarn too (details, amount, link, description, notes, the projects using it, photos
+      primary first); the dialog then only asks about images.
+- [x] The dialog opens with the last choices (`AppPreferencesRepository.printContent` /
+      `printIncludeImages`). Shared pieces live in `ui/print` (`PrintHtml`, `PrintImageLoader`,
+      `PrintDialog`).
 
 Status: **mostly done**, 2026-11-03 - `:app:testDebugUnitTest lintDebug
 compileDebugAndroidTestKotlin assembleDebug` passed on the remote build host, including

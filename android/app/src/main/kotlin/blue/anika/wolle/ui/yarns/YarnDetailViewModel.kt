@@ -10,6 +10,7 @@ import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrderRepository
 import blue.anika.wolle.sync.SyncScheduler
@@ -19,6 +20,10 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.navigation.Route
+import blue.anika.wolle.ui.print.PrintImageLoader
+import blue.anika.wolle.ui.print.PrintOptions
+import blue.anika.wolle.ui.yarns.print.YarnPrintDocument
+import blue.anika.wolle.ui.yarns.print.YarnPrintLabels
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -57,6 +62,8 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val detailCardOrderRepository: DetailCardOrderRepository,
+    private val printImageLoader: PrintImageLoader,
+    private val appPreferences: AppPreferencesRepository,
 ) : ViewModel() {
 
     private val yarnId = savedStateHandle.toRoute<Route.YarnDetail>().yarnId
@@ -104,6 +111,31 @@ constructor(
             )
 
     fun resolveMediaUrl(path: String?): String? = mediaUrlResolver.resolve(path)
+
+    /** The print dialog's last choices (yarns only use the image choice). */
+    val printOptions: StateFlow<PrintOptions> =
+        appPreferences.printIncludeImages
+            .map { images -> PrintOptions(includeImages = images) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PrintOptions())
+
+    /** The printable HTML for the loaded yarn, or null while it is not loaded. */
+    suspend fun printHtml(options: PrintOptions, labels: YarnPrintLabels): String? {
+        val state = uiState.value as? YarnDetailUiState.Loaded ?: return null
+        appPreferences.setPrintChoices(content = null, includeImages = options.includeImages)
+        val yarn = state.detail
+        val embedded =
+            printImageLoader.embed(
+                YarnPrintDocument.imageUrls(yarn, options.includeImages, ::resolveMediaUrl)
+            )
+        return YarnPrintDocument.html(
+            yarn = yarn,
+            usedInProjectNames = state.linkedProjects.map { it.name },
+            includeImages = options.includeImages,
+            labels = labels,
+            resolve = ::resolveMediaUrl,
+            embeddedImages = embedded,
+        )
+    }
 
     /** Refreshes this yarn and only the projects currently linked from its latest detail. */
     fun refresh() {

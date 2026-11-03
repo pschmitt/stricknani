@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -74,13 +73,14 @@ import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
+import blue.anika.wolle.ui.common.SectionActions
+import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
-import blue.anika.wolle.ui.common.longPressToEdit
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.shareUrl
+import blue.anika.wolle.ui.print.PrintDialog
 import blue.anika.wolle.ui.projects.print.PrintLabels
-import blue.anika.wolle.ui.projects.print.ProjectPrintDialog
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
@@ -107,6 +107,7 @@ fun ProjectDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var attachmentToDelete by remember { mutableStateOf<AttachmentDto?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
+    val printOptions by viewModel.printOptions.collectAsStateWithLifecycle()
     var isPreparingPrint by remember { mutableStateOf(false) }
     val printScope = rememberCoroutineScope()
     val activityContext = LocalContext.current
@@ -260,7 +261,10 @@ fun ProjectDetailScreen(
     }
 
     if (showPrintDialog && state is ProjectDetailUiState.Loaded) {
-        ProjectPrintDialog(
+        PrintDialog(
+            title = stringResource(R.string.print_dialog_title),
+            initial = printOptions,
+            offerContentChoice = true,
             isPreparing = isPreparingPrint,
             onPrint = { options ->
                 isPreparingPrint = true
@@ -391,6 +395,7 @@ private fun ProjectDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_attachments_title),
                         onEdit = { onEditSection(ProjectEditorFocus.ATTACHMENTS) },
+                        copyText = detail.attachments.joinToString("\n") { it.originalFilename },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -423,6 +428,16 @@ private fun ProjectDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_details_title),
                         onEdit = { onEditSection(ProjectEditorFocus.DETAILS) },
+                        copyText =
+                            copyLines(
+                                stringResource(R.string.common_field_category) to detail.category,
+                                stringResource(R.string.common_field_needles) to detail.needles,
+                                stringResource(R.string.project_detail_field_yarn) to detail.yarn,
+                                stringResource(R.string.common_field_other_materials) to
+                                    detail.otherMaterials,
+                                stringResource(R.string.project_editor_tags_label) to
+                                    detail.tags.joinToString(", "),
+                            ),
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -458,6 +473,7 @@ private fun ProjectDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.common_field_stitch_sample),
                         onEdit = { onEditSection(ProjectEditorFocus.STITCH_SAMPLE) },
+                        copyText = detail.stitchSample,
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -498,6 +514,7 @@ private fun ProjectDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_linked_yarns_title),
                         onEdit = { onEditSection(ProjectEditorFocus.LINKED_YARNS) },
+                        copyText = linkedYarns.joinToString("\n") { it.name },
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -520,6 +537,7 @@ private fun ProjectDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_description_title),
                         onEdit = { onEditSection(ProjectEditorFocus.DESCRIPTION) },
+                        copyText = detail.description,
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
@@ -549,13 +567,14 @@ private fun ProjectDetailContent(
                             remember(detail.steps) { detail.steps.sortedBy { it.stepNumber } }
                         sortedSteps.forEachIndexed { index, step ->
                             if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                            // Each step opens the editor at that step, not at the top.
-                            Column(
-                                Modifier.fillMaxWidth().longPressToEdit(
-                                    "${step.stepNumber}. ${step.title}"
-                                ) {
-                                    onEditSection(ProjectEditorFocus.step(step.id))
-                                }
+                            // Each step has its own Edit / Copy text menu; Edit opens that step.
+                            val stepHeading = "${step.stepNumber}. ${step.title}"
+                            SectionActions(
+                                what = stepHeading,
+                                copyText =
+                                    listOfNotNull(stepHeading, step.description)
+                                        .joinToString("\n\n"),
+                                onEdit = { onEditSection(ProjectEditorFocus.step(step.id)) },
                             ) {
                                 Text(
                                     "${step.stepNumber}. ${step.title}",
@@ -576,6 +595,7 @@ private fun ProjectDetailContent(
                     ReorderableDetailCard(
                         title = stringResource(R.string.project_detail_notes_title),
                         onEdit = { onEditSection(ProjectEditorFocus.NOTES) },
+                        copyText = detail.notes,
                         cardKey = cardKey,
                         cardIndex = cardIndex,
                         listState = listState,
