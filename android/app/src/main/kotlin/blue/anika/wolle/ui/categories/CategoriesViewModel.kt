@@ -3,8 +3,6 @@ package blue.anika.wolle.ui.categories
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.CategoriesApi
-import blue.anika.wolle.data.api.dto.CategoryUpdateRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -67,7 +65,6 @@ class CategoriesViewModel
 @Inject
 constructor(
     private val categoryRepository: CategoryRepository,
-    private val categoriesApi: CategoriesApi,
     private val mutationFeedback: MutationFeedback,
 ) : ViewModel() {
     private val initialSyncComplete = MutableStateFlow(false)
@@ -127,7 +124,7 @@ constructor(
         }
         viewModelScope.launch {
             try {
-                categoriesApi.updateCategory(category.id, CategoryUpdateRequest(cleaned))
+                categoryRepository.rename(category.id, cleaned)
                 categoryRepository.sync()
                 mutationFeedback.show(R.string.mutation_category_renamed, category.name, cleaned)
             } catch (_: Exception) {
@@ -139,7 +136,7 @@ constructor(
     fun deleteCategory(category: CategoryEntity) {
         viewModelScope.launch {
             try {
-                categoriesApi.deleteCategory(category.id)
+                categoryRepository.delete(category.id)
                 categoryRepository.sync()
                 mutationFeedback.show(R.string.mutation_category_deleted, category.name)
             } catch (_: Exception) {

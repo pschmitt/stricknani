@@ -41,3 +41,62 @@ class WriteReplayWorkerTest {
         assertNull(parseConflictDetail<ProjectDto>(json, "not json at all"))
     }
 }
+
+/** v2 error envelope handling (SNA-87): `{error:{code, message, fields, current}}`. */
+class WriteReplayWorkerV2ConflictTest {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    private val projectV2 =
+        """
+        {"id": 7, "name": "Edited elsewhere", "description": "x", "description_html": "<p>x</p>",
+         "updated_at": "2026-11-03T10:00:00.000000Z", "created_at": "2026-11-01T10:00:00.000000Z",
+         "is_favorite": false, "is_ai_enhanced": false, "tags": ["winter gift"],
+         "yarn_ids": [], "steps": [], "images": [], "attachments": []}
+        """
+            .trimIndent()
+
+    @Test
+    fun `v2 conflict yields the current project mapped to the v1 domain`() {
+        val body = """{"error":{"code":"conflict","message":"changed","current":$projectV2}}"""
+
+        val decoded = parseProjectConflict(json, body)
+
+        assertEquals(7, decoded?.id)
+        assertEquals("Edited elsewhere", decoded?.name)
+        assertEquals(listOf("winter gift"), decoded?.tags)
+        assertEquals("2026-11-03T10:00:00.000000Z", decoded?.updatedAt)
+    }
+
+    @Test
+    fun `v1 detail conflict still works through the dispatcher`() {
+        val body = """{"detail": $projectV2}"""
+        assertEquals(7, parseProjectConflict(json, body)?.id)
+    }
+
+    @Test
+    fun `v2 yarn conflict yields the current yarn`() {
+        val body =
+            """
+            {"error":{"code":"conflict","current":{"id": 9, "name": "Merino", "is_ai_enhanced": false,
+             "is_favorite": true, "created_at": "2026-11-01T10:00:00.000000Z",
+             "updated_at": "2026-11-03T10:00:00.000000Z", "project_ids": [], "photos": []}}}
+            """
+                .trimIndent()
+        val decoded = parseYarnConflict(json, body)
+        assertEquals(9, decoded?.id)
+        assertEquals(true, decoded?.isFavorite)
+    }
+
+    @Test
+    fun `errors without a current entity and garbage give null`() {
+        assertNull(
+            parseProjectConflict(
+                json,
+                """{"error":{"code":"validation_error","message":"bad","fields":{"name":"required"}}}""",
+            )
+        )
+        assertNull(parseProjectConflict(json, """{"error":{"code":"not_found"}}"""))
+        assertNull(parseProjectConflict(json, ""))
+        assertNull(parseYarnConflict(json, "<html>502</html>"))
+    }
+}

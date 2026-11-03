@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.repository
 
 import blue.anika.wolle.data.api.AdminApi
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.dto.AdminUserDto
 import blue.anika.wolle.data.api.dto.ApiErrorEnvelopeDto
 import blue.anika.wolle.data.api.dto.AuditDetailDto
@@ -91,14 +92,32 @@ private val ADMIN_ERROR_JSON = Json { ignoreUnknownKeys = true }
 /**
  * Administrator data (audit log and accounts). Online-only: nothing is cached in Room.
  *
- * The server has no "am I an administrator" flag yet, so [probeAdmin] asks the user list once per
- * app start and token: 200 means yes, 401/403 means no. Switching to a real flag later only means
- * changing that one function.
+ * Visibility of the Admin entry comes from the current user's `is_admin` in [ApiCapabilities] (one
+ * `GET /api/v2/meta` per app start and token). When the server has no v2 meta (an older server),
+ * [probeAdmin] falls back to asking the user list once: 200 means yes, 401/403 means no.
  */
 @Singleton
 class AdminRepository
-@Inject
-constructor(private val api: AdminApi, private val settings: SettingsRepository) {
+internal constructor(
+    private val api: AdminApi,
+    private val capabilities: ApiCapabilities,
+    private val tokenProvider: () -> String,
+    private val savedEmail: () -> String?,
+    private val saveEmail: (String) -> Unit,
+) {
+    @Inject
+    constructor(
+        api: AdminApi,
+        capabilities: ApiCapabilities,
+        settings: SettingsRepository,
+    ) : this(
+        api,
+        capabilities,
+        { settings.credentials.value.apiToken },
+        { settings.accountEmail.value },
+        { settings.setAccountEmail(it) },
+    )
+
     private val _isAdmin = MutableStateFlow<Boolean?>(null)
 
     /** null until the first probe finished (or failed to reach the server). */
@@ -106,19 +125,32 @@ constructor(private val api: AdminApi, private val settings: SettingsRepository)
 
     private var probedToken: String? = null
 
-    /** Email of the signed-in account when known (password sign-in), to mark "You". */
+    /** Email of the signed-in account: from the server's meta when known, else the saved one. */
     val currentEmail: String?
-        get() = settings.accountEmail.value
+        get() = capabilities.current.user?.email ?: savedEmail()
+
+    /** Server id of the signed-in account; only known when the server speaks v2. */
+    val currentUserId: Long?
+        get() = capabilities.current.user?.id
 
     suspend fun probeAdmin(): Boolean? {
-        val token = settings.credentials.value.apiToken
+        val token = tokenProvider()
         if (token.isBlank()) {
             probedToken = null
             _isAdmin.value = null
             return null
         }
         if (probedToken == token && _isAdmin.value != null) return _isAdmin.value
-        return try {
+        val user = capabilities.resolve().user
+        if (user != null) {
+            if (user.email != savedEmail()) saveEmail(user.email)
+            return remember(token, user.isAdmin)
+        }
+        return probeByUserList(token)
+    }
+
+    private suspend fun probeByUserList(token: String): Boolean? =
+        try {
             api.listUsers(page = 1)
             remember(token, true)
         } catch (cancellation: CancellationException) {
@@ -130,7 +162,6 @@ constructor(private val api: AdminApi, private val settings: SettingsRepository)
                 else -> null
             }
         }
-    }
 
     private fun remember(token: String, admin: Boolean): Boolean {
         probedToken = token
@@ -144,7 +175,10 @@ constructor(private val api: AdminApi, private val settings: SettingsRepository)
 
     suspend fun auditDetail(id: Long): AuditDetailDto = call { api.getAuditEvent(id).data }
 
-    suspend fun users(page: Int) = call { api.listUsers(page) }
+    suspend fun users(page: Int) = call {
+        capabilities.resolve()
+        api.listUsers(page)
+    }
 
     suspend fun createUser(email: String, password: String, isAdmin: Boolean): AdminUserDto = call {
         api.createUser(CreateAdminUserRequest(email.trim(), password, isAdmin)).data

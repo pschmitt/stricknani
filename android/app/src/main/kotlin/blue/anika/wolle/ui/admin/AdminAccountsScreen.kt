@@ -161,7 +161,12 @@ fun AdminAccountsScreen(onBack: () -> Unit, viewModel: AdminAccountsViewModel = 
                                 items(state.users, key = { it.id }) { user ->
                                     AccountRow(
                                         user = user,
-                                        isYou = isCurrentUser(user, state.currentEmail),
+                                        isYou =
+                                            isCurrentUser(
+                                                user,
+                                                state.currentEmail,
+                                                state.currentUserId,
+                                            ),
                                         busy = state.busyUserId == user.id,
                                         avatarUrl = viewModel.avatarUrl(user.avatarUrl),
                                         onToggleActive = { toToggle = user },

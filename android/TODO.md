@@ -43,16 +43,24 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## SNA-87: Migrate the app from `/api/v1` to `/api/v2`
 
-Status: in progress (2026-11-03). Groundwork done, no live call switched. Plan, endpoint map,
-shape differences, Room decision and the `ApiCapabilities` design: `android/docs/v2-migration.md`.
-The server rejects Bearer tokens on v2 resource routes today, so each phase waits for its slice.
+Status: in progress (2026-11-03). Phase (a) landed in code (unit-tested, builds, lint clean) but
+is NOT yet verified against a v2 server on a device: the test phone is signed in to the production
+(Python, v1-only) server, so only the v1 fallback could be observed. Plan, endpoint map, shape
+differences, Room decision and the `ApiCapabilities` design: `android/docs/v2-migration.md`.
 
 - [x] Groundwork: v2 Retrofit interfaces (`ProjectsV2Api`, `YarnsV2Api`, `CategoriesV2Api`),
       envelope/DTO types, v2 -> v1-domain mappers and Room entity mappers, v2 409 parser; provided
       in DI but unused. Unit-tested against sample JSON from the Rust serializers
       (`V2DtoTest`). Room is unchanged: v2 is mapped into the v1-shaped `detailJson` (no migration).
-- [ ] Phase (a) projects/yarns/categories/media reads and writes, favorites (PUT) and deletes.
-      Needs: Bearer PAT auth on the v2 resource routes (Codex).
+- [x] Phase (a) (code): `ApiCapabilities` probes `GET /api/v2/meta` with the Bearer token once per
+      app start and credentials (200 + `user` = v2; 404/405 = v1 cached; 401/5xx/offline = v1 for
+      that call, re-probed next time). Project/yarn/category reads, create/update/delete,
+      favourites (PUT/DELETE), media uploads and deletes go to v2 when supported, else v1. The
+      replay worker parses v2 `{error:{current}}` and v1 `{detail}` 409s. Admin visibility and the
+      Accounts "You" marker use the meta user (`is_admin`, id, email); the user-list probe is the
+      fallback. Tags are split on commas client side (`parseTagInput`). Left: verify on a device
+      signed in to a v2 server (create/edit/delete, favourite, uploads, 409), persist the probe
+      result for offline starts, re-probe on a v2 401.
 - [ ] Phase (b) sync. Needs: `GET /api/v2/sync/{projects,yarns,categories}` (Codex).
 - [ ] Phase (c) auth/token + meta/me and `ApiCapabilities` probe (v2 where supported, v1
       fallback for old servers). Needs: v2 token login and a Bearer `GET /api/v2/me` with

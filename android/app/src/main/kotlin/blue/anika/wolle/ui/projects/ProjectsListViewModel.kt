@@ -3,8 +3,6 @@ package blue.anika.wolle.ui.projects
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.CategoriesApi
-import blue.anika.wolle.data.api.dto.CategoryCreateRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -69,7 +67,6 @@ class ProjectsListViewModel
 constructor(
     private val projectRepository: ProjectRepository,
     private val categoryRepository: CategoryRepository,
-    private val categoriesApi: CategoriesApi,
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
     private val projectImporter: ProjectImporter,
@@ -207,7 +204,7 @@ constructor(
         if (name.isBlank()) return
         viewModelScope.launch {
             try {
-                categoriesApi.createCategory(CategoryCreateRequest(name.trim()))
+                categoryRepository.create(name.trim())
                 categoryRepository.sync()
                 mutationFeedback.show(R.string.mutation_category_created, name.trim())
             } catch (e: Exception) {

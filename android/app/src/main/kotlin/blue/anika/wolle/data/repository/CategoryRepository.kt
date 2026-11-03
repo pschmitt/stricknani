@@ -1,6 +1,11 @@
 package blue.anika.wolle.data.repository
 
+import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.SyncApi
+import blue.anika.wolle.data.api.dto.CategoryCreateRequest
+import blue.anika.wolle.data.api.dto.CategoryUpdateRequest
+import blue.anika.wolle.data.api.v2.CategoriesV2Api
 import blue.anika.wolle.data.db.dao.CategoryDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.CategoryEntity
@@ -22,8 +27,27 @@ constructor(
     private val categoryDao: CategoryDao,
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
+    private val categoriesApi: CategoriesApi,
+    private val categoriesV2Api: CategoriesV2Api,
+    private val capabilities: ApiCapabilities,
 ) {
     fun observeAll(): Flow<List<CategoryEntity>> = categoryDao.observeAll()
+
+    /** Creates a category on the active API generation. Callers re-sync afterwards. */
+    suspend fun create(name: String) {
+        if (capabilities.useV2()) categoriesV2Api.createCategory(CategoryCreateRequest(name))
+        else categoriesApi.createCategory(CategoryCreateRequest(name))
+    }
+
+    suspend fun rename(id: Int, name: String) {
+        if (capabilities.useV2()) categoriesV2Api.updateCategory(id, CategoryUpdateRequest(name))
+        else categoriesApi.updateCategory(id, CategoryUpdateRequest(name))
+    }
+
+    suspend fun delete(id: Int) {
+        if (capabilities.useV2()) categoriesV2Api.deleteCategory(id)
+        else categoriesApi.deleteCategory(id)
+    }
 
     /**
      * Refreshes the complete category cache and reports whether its contents changed.

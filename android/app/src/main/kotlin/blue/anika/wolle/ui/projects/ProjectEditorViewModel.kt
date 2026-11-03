@@ -304,7 +304,7 @@ constructor(
                         description = current.description.trim().ifBlank { null },
                         notes = current.notes.trim().ifBlank { null },
                         otherMaterials = current.otherMaterials.trim().ifBlank { null },
-                        tags = current.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                        tags = parseTagInput(current.tags),
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
                         yarnIds = current.selectedYarnIds.toList(),
@@ -378,3 +378,12 @@ constructor(
         const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }
+
+/**
+ * The editor's comma-separated tag field as a tag list. Splits on commas only: the v2 API stores
+ * every list item as one verbatim label (so "winter gift" stays one tag), whereas v1 re-split each
+ * item on spaces and `#` on the server. Blank items and case-insensitive duplicates are dropped, as
+ * the server did.
+ */
+internal fun parseTagInput(input: String): List<String> =
+    input.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }

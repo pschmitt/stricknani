@@ -1,10 +1,13 @@
 package blue.anika.wolle.data.repository
 
 import androidx.room.withTransaction
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import blue.anika.wolle.data.api.v2.YarnsV2Api
+import blue.anika.wolle.data.api.v2.toV1
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
@@ -41,6 +44,8 @@ constructor(
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
     private val yarnsApi: YarnsApi,
+    private val yarnsV2Api: YarnsV2Api,
+    private val capabilities: ApiCapabilities,
     private val pendingMutationDao: PendingMutationDao,
     private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
@@ -53,7 +58,8 @@ constructor(
 
     /** Refreshes one yarn and returns its detail so a detail screen can refresh linked projects. */
     suspend fun refreshOne(id: Int): YarnRefreshResult {
-        val detail = yarnsApi.getYarn(id)
+        val detail =
+            if (capabilities.useV2()) yarnsV2Api.getYarn(id).data.toV1() else yarnsApi.getYarn(id)
         val refreshed = detail.toEntity(json)
         val changed = yarnDao.getById(id)?.let { it != refreshed } ?: true
         yarnDao.upsertAll(listOf(refreshed))
@@ -65,7 +71,12 @@ constructor(
         yarnDao.upsertAll(listOf(entity.copy(isFavorite = !wasFavorite)))
         try {
             val updated =
-                if (wasFavorite) yarnsApi.unfavoriteYarn(entity.id)
+                if (capabilities.useV2()) {
+                    val response =
+                        if (wasFavorite) yarnsV2Api.unfavoriteYarn(entity.id)
+                        else yarnsV2Api.favoriteYarn(entity.id)
+                    response.data.toV1()
+                } else if (wasFavorite) yarnsApi.unfavoriteYarn(entity.id)
                 else yarnsApi.favoriteYarn(entity.id)
             yarnDao.upsertAll(listOf(updated.toEntity(json)))
         } catch (e: Exception) {
@@ -210,7 +221,9 @@ constructor(
 
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: YarnWriteRequest): Int {
-        val created = yarnsApi.createYarn(request)
+        val created =
+            if (capabilities.useV2()) yarnsV2Api.createYarn(request).data.toV1()
+            else yarnsApi.createYarn(request)
         database.withTransaction {
             yarnDao.deleteByIds(listOf(tempId))
             yarnDao.upsertAll(listOf(created.toEntity(json)))
@@ -221,7 +234,9 @@ constructor(
 
     /** Called only by `WriteReplayWorker` - a 409 (SNA-33 conflict) propagates to its caller. */
     suspend fun replayUpdate(id: Int, request: YarnWriteRequest) {
-        val updated = yarnsApi.updateYarn(id, request)
+        val updated =
+            if (capabilities.useV2()) yarnsV2Api.updateYarn(id, request).data.toV1()
+            else yarnsApi.updateYarn(id, request)
         yarnDao.upsertAll(listOf(updated.toEntity(json)))
     }
 
@@ -238,7 +253,7 @@ constructor(
     /** See `ProjectRepository.replayDelete`'s kdoc - a 404 is success, not a failure (SNA-33). */
     suspend fun replayDelete(id: Int) {
         try {
-            yarnsApi.deleteYarn(id)
+            if (capabilities.useV2()) yarnsV2Api.deleteYarn(id) else yarnsApi.deleteYarn(id)
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
@@ -246,7 +261,9 @@ constructor(
 
     /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
     suspend fun replayPhotoUpload(id: Int, upload: PendingUpload) {
-        yarnsApi.uploadPhoto(id, pendingUploadStore.multipart(upload))
+        val file = pendingUploadStore.multipart(upload)
+        if (capabilities.useV2()) yarnsV2Api.uploadPhoto(id, file)
+        else yarnsApi.uploadPhoto(id, file)
         pendingUploadStore.delete(upload)
         runCatching { refreshOne(id) }
     }
@@ -255,7 +272,8 @@ constructor(
     suspend fun replayPhotoDelete(id: Int, photoId: Int) {
         removePhotoFromLocalDetail(id, photoId)
         try {
-            yarnsApi.deletePhoto(yarnId = id, photoId = photoId)
+            if (capabilities.useV2()) yarnsV2Api.deletePhoto(id, photoId)
+            else yarnsApi.deletePhoto(yarnId = id, photoId = photoId)
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }

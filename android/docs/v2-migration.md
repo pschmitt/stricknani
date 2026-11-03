@@ -1,6 +1,7 @@
 # Android: migrating from `/api/v1` to `/api/v2` (SNA-87)
 
-Status: groundwork only. Nothing in the app calls v2 yet. Server facts below were read from
+Status: phase (a) implemented (2026-11-03): resource calls use v2 when `GET /api/v2/meta` with the
+Bearer token returns a user, else v1. Sync, token login and URL import are still v1. Server facts below were read from
 `rust/src/**` and `docs/web-v2-contract.md` in the `rust` branch (2026-11-03); the backend agent is
 still changing them, so re-check each slice before switching it.
 
@@ -222,3 +223,16 @@ class ApiCapabilitiesProvider @Inject constructor(
 
 Present but cookie-only (needs only item 1): projects/yarns create/update/delete, favorites,
 categories, project image/attachment and yarn photo upload/delete.
+
+## 7. Phase (a) as built
+
+- Server facts (commit 3e1b8b2): `GET /api/v2/meta` -> `{data:{version, build_id, is_admin, user:
+  {id,email,is_admin}|null}}`; 200 for anonymous callers too (`user` null), 401 `session_expired` for
+  an invalid Bearer. v2 resource and admin routes accept the PAT without Origin/CSRF.
+- `data/api/ApiCapabilities.kt` (probe, cache per server+token, `useV2()`); repositories branch per
+  call. Only 404/405 and a user-less 200 are cached as v1; 401, 5xx and offline use v1 for that call
+  and probe again. The probe result is not persisted yet.
+- Still v1: all `sync/*`, `auth/token`, `meta` in onboarding, URL import.
+- v2 409: `WriteReplayWorker` uses `parseProjectConflict`/`parseYarnConflict` (v2 `error.current`,
+  then v1 `detail`). Queued outbox payloads are version-agnostic.
+- Tags: the editor splits on commas only (`parseTagInput`), which matches v2's verbatim labels.

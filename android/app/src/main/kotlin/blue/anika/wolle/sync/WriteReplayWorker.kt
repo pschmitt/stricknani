@@ -8,6 +8,10 @@ import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import blue.anika.wolle.data.api.v2.ProjectV2Dto
+import blue.anika.wolle.data.api.v2.YarnV2Dto
+import blue.anika.wolle.data.api.v2.parseV2Conflict
+import blue.anika.wolle.data.api.v2.toV1
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.entity.MutationEntityType
 import blue.anika.wolle.data.db.entity.MutationOperation
@@ -114,7 +118,7 @@ constructor(
                             )
                         }
                         409 -> {
-                            decodeConflictBody<ProjectDto>(e)?.let {
+                            parseProjectConflict(json, e.errorBodyText())?.let {
                                 projectRepository.adoptRemoteProject(it)
                             }
                             throw ConflictException(
@@ -171,7 +175,7 @@ constructor(
                             )
                         }
                         409 -> {
-                            decodeConflictBody<YarnDto>(e)?.let {
+                            parseYarnConflict(json, e.errorBodyText())?.let {
                                 yarnRepository.adoptRemoteYarn(it)
                             }
                             throw ConflictException(
@@ -195,12 +199,22 @@ constructor(
             else -> error("Unknown yarn mutation operation: ${mutation.operation}")
         }
     }
-
-    private inline fun <reified T> decodeConflictBody(exception: HttpException): T? {
-        val body = exception.response()?.errorBody()?.string() ?: return null
-        return parseConflictDetail(json, body)
-    }
 }
+
+private fun HttpException.errorBodyText(): String = response()?.errorBody()?.string().orEmpty()
+
+/**
+ * A 409's current server state on either API generation: v2 sends `{error:{code:"conflict",
+ * current:<entity>}}` (the entity carries the extra `*_html` fields), v1 sends `{detail:<entity>}`.
+ * The two shapes never overlap, so each parser returns null for the other's body.
+ */
+internal fun parseProjectConflict(json: Json, errorBody: String): ProjectDto? =
+    parseV2Conflict<ProjectV2Dto>(json, errorBody)?.toV1()
+        ?: parseConflictDetail<ProjectDto>(json, errorBody)
+
+internal fun parseYarnConflict(json: Json, errorBody: String): YarnDto? =
+    parseV2Conflict<YarnV2Dto>(json, errorBody)?.toV1()
+        ?: parseConflictDetail<YarnDto>(json, errorBody)
 
 /**
  * FastAPI wraps a 409's body as `{"detail": <the entity's current server state>}` (SNA-33) - decode

@@ -38,9 +38,13 @@ fun generateTemporaryPassword(
     }
 }
 
-/** Whether [user] is the signed-in account, by email (the only identity the app knows). */
-fun isCurrentUser(user: AdminUserDto, currentEmail: String?): Boolean =
-    currentEmail != null && user.email.equals(currentEmail, ignoreCase = true)
+/**
+ * Whether [user] is the signed-in account: by server id when the server reported it (v2 meta),
+ * otherwise by email (a password sign-in remembers it).
+ */
+fun isCurrentUser(user: AdminUserDto, currentEmail: String?, currentUserId: Long? = null): Boolean =
+    if (currentUserId != null) user.id == currentUserId
+    else currentEmail != null && user.email.equals(currentEmail, ignoreCase = true)
 
 sealed interface AccountsPhase {
     data object Loading : AccountsPhase
@@ -55,6 +59,7 @@ data class AccountsState(
     val phase: AccountsPhase = AccountsPhase.Loading,
     val isRefreshing: Boolean = false,
     val currentEmail: String? = null,
+    val currentUserId: Long? = null,
     /** User whose Disable/Enable request is in flight. */
     val busyUserId: Long? = null,
 )
@@ -76,7 +81,13 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val feedback: MutationFeedback,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AccountsState(currentEmail = repository.currentEmail))
+    private val _state =
+        MutableStateFlow(
+            AccountsState(
+                currentEmail = repository.currentEmail,
+                currentUserId = repository.currentUserId,
+            )
+        )
     val state: StateFlow<AccountsState> = _state.asStateFlow()
 
     private val _form = MutableStateFlow<FormState>(FormState.Idle)
@@ -117,6 +128,7 @@ constructor(
                         phase = AccountsPhase.Ready,
                         isRefreshing = false,
                         currentEmail = repository.currentEmail,
+                        currentUserId = repository.currentUserId,
                     )
                 }
             } catch (cancellation: CancellationException) {

@@ -1,11 +1,14 @@
 package blue.anika.wolle.data.repository
 
 import androidx.room.withTransaction
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepDto
+import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.api.v2.toV1
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
@@ -45,6 +48,8 @@ constructor(
     private val syncStateDao: SyncStateDao,
     private val syncApi: SyncApi,
     private val projectsApi: ProjectsApi,
+    private val projectsV2Api: ProjectsV2Api,
+    private val capabilities: ApiCapabilities,
     private val pendingMutationDao: PendingMutationDao,
     private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
@@ -59,7 +64,7 @@ constructor(
 
     /** Refreshes one project and returns its detail so a detail screen can refresh linked yarns. */
     suspend fun refreshOne(id: Int): ProjectRefreshResult {
-        val detail = projectsApi.getProject(id)
+        val detail = fetchProject(id)
         val refreshed = detail.toEntity(json)
         val changed = projectDao.getById(id)?.let { it != refreshed } ?: true
         projectDao.upsertAll(listOf(refreshed))
@@ -74,15 +79,27 @@ constructor(
     suspend fun toggleFavorite(entity: ProjectEntity, wasFavorite: Boolean) {
         projectDao.upsertAll(listOf(entity.copy(isFavorite = !wasFavorite)))
         try {
-            val updated =
-                if (wasFavorite) projectsApi.unfavoriteProject(entity.id)
-                else projectsApi.favoriteProject(entity.id)
+            val updated = setFavoriteRemote(entity.id, favorite = !wasFavorite)
             projectDao.upsertAll(listOf(updated.toEntity(json)))
         } catch (e: Exception) {
             projectDao.upsertAll(listOf(entity.copy(isFavorite = wasFavorite)))
             throw e
         }
     }
+
+    /** `GET` one project on the active API generation, mapped to the app's domain shape. */
+    private suspend fun fetchProject(id: Int): ProjectDto =
+        if (capabilities.useV2()) projectsV2Api.getProject(id).data.toV1()
+        else projectsApi.getProject(id)
+
+    /** v1: POST/DELETE; v2: PUT/DELETE on `.../favorite`. */
+    private suspend fun setFavoriteRemote(id: Int, favorite: Boolean): ProjectDto =
+        if (capabilities.useV2()) {
+            val response =
+                if (favorite) projectsV2Api.favoriteProject(id)
+                else projectsV2Api.unfavoriteProject(id)
+            response.data.toV1()
+        } else if (favorite) projectsApi.favoriteProject(id) else projectsApi.unfavoriteProject(id)
 
     /**
      * Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14).
@@ -284,7 +301,9 @@ constructor(
 
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: ProjectWriteRequest): Int {
-        val created = projectsApi.createProject(request)
+        val created =
+            if (capabilities.useV2()) projectsV2Api.createProject(request).data.toV1()
+            else projectsApi.createProject(request)
         database.withTransaction {
             projectDao.deleteByIds(listOf(tempId))
             projectDao.upsertAll(listOf(created.toEntity(json)))
@@ -295,7 +314,9 @@ constructor(
 
     /** Called only by `WriteReplayWorker` - a 409 (SNA-33 conflict) propagates to its caller. */
     suspend fun replayUpdate(id: Int, request: ProjectWriteRequest) {
-        val updated = projectsApi.updateProject(id, request)
+        val updated =
+            if (capabilities.useV2()) projectsV2Api.updateProject(id, request).data.toV1()
+            else projectsApi.updateProject(id, request)
         projectDao.upsertAll(listOf(updated.toEntity(json)))
     }
 
@@ -324,7 +345,8 @@ constructor(
      */
     suspend fun replayDelete(id: Int) {
         try {
-            projectsApi.deleteProject(id)
+            if (capabilities.useV2()) projectsV2Api.deleteProject(id)
+            else projectsApi.deleteProject(id)
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
@@ -332,11 +354,10 @@ constructor(
 
     /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
     suspend fun replayTitleImageUpload(id: Int, upload: PendingUpload) {
-        projectsApi.uploadTitleImage(
-            projectId = id,
-            file = pendingUploadStore.multipart(upload),
-            altText = upload.altText.toRequestBody("text/plain".toMediaType()),
-        )
+        val file = pendingUploadStore.multipart(upload)
+        val altText = upload.altText.toRequestBody("text/plain".toMediaType())
+        if (capabilities.useV2()) projectsV2Api.uploadTitleImage(id, file, altText)
+        else projectsApi.uploadTitleImage(projectId = id, file = file, altText = altText)
         pendingUploadStore.delete(upload)
         runCatching { refreshOne(id) }
     }
@@ -345,24 +366,27 @@ constructor(
     suspend fun replayStepImageUpload(id: Int, upload: PendingUpload) {
         val stepIndex = requireNotNull(upload.stepIndex) { "A step image needs its step index" }
         val step =
-            projectsApi.getProject(id).steps.getOrNull(stepIndex)
+            fetchProject(id).steps.getOrNull(stepIndex)
                 ?: error("Project step $stepIndex no longer exists")
-        projectsApi.uploadStepImage(
-            projectId = id,
-            stepId = step.id,
-            file = pendingUploadStore.multipart(upload),
-            altText = upload.altText.toRequestBody("text/plain".toMediaType()),
-        )
+        val file = pendingUploadStore.multipart(upload)
+        val altText = upload.altText.toRequestBody("text/plain".toMediaType())
+        if (capabilities.useV2()) projectsV2Api.uploadStepImage(id, step.id, file, altText)
+        else
+            projectsApi.uploadStepImage(
+                projectId = id,
+                stepId = step.id,
+                file = file,
+                altText = altText,
+            )
         pendingUploadStore.delete(upload)
         runCatching { refreshOne(id) }
     }
 
     /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
     suspend fun replayAttachmentUpload(id: Int, upload: PendingUpload) {
-        projectsApi.uploadAttachment(
-            projectId = id,
-            file = pendingUploadStore.multipart(upload),
-        )
+        val file = pendingUploadStore.multipart(upload)
+        if (capabilities.useV2()) projectsV2Api.uploadAttachment(id, file)
+        else projectsApi.uploadAttachment(projectId = id, file = file)
         pendingUploadStore.delete(upload)
         runCatching { refreshOne(id) }
     }
@@ -373,7 +397,8 @@ constructor(
      */
     suspend fun replayAttachmentDelete(id: Int, attachmentId: Int) {
         try {
-            projectsApi.deleteAttachment(projectId = id, attachmentId = attachmentId)
+            if (capabilities.useV2()) projectsV2Api.deleteAttachment(id, attachmentId)
+            else projectsApi.deleteAttachment(projectId = id, attachmentId = attachmentId)
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
@@ -384,7 +409,8 @@ constructor(
     suspend fun replayImageDelete(id: Int, imageId: Int) {
         removeImageFromLocalDetail(id, imageId)
         try {
-            projectsApi.deleteImage(projectId = id, imageId = imageId)
+            if (capabilities.useV2()) projectsV2Api.deleteImage(id, imageId)
+            else projectsApi.deleteImage(projectId = id, imageId = imageId)
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
