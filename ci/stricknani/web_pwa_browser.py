@@ -903,6 +903,96 @@ def run_acceptance(
                 "CacheStorage contains a path outside the exact generated allowlist",
             )
             loaded_assets = _loaded_immutable_assets(page)
+            missing_loaded_assets = sorted(loaded_assets - set(cached_paths))
+            _require(
+                all(
+                    path in expected_assets
+                    and path.startswith(IMMUTABLE_ASSET_PREFIX)
+                    and path.endswith((".js", ".css"))
+                    for path in missing_loaded_assets
+                ),
+                "a loaded immutable asset is outside the generated public allowlist",
+            )
+            if missing_loaded_assets:
+                mark_stage("demand-fetching missing loaded immutable assets")
+                _wait_for_controlled_worker(page, expected_version)
+                for asset_path in missing_loaded_assets:
+                    fetch_result = page.evaluate(
+                        """async path => {
+                          const response = await window.fetch(path, {
+                            cache: 'reload',
+                            credentials: 'omit',
+                          });
+                          const body = await response.arrayBuffer();
+                          return {
+                            status: response.status,
+                            ok: response.ok,
+                            basic: response.type === 'basic',
+                            redirected: response.redirected,
+                            urlMatches: response.url
+                              === new URL(path, window.location.href).href,
+                            bodyBytes: body.byteLength,
+                          };
+                        }""",
+                        asset_path,
+                    )
+                    body_bytes = (
+                        fetch_result.get("bodyBytes")
+                        if isinstance(fetch_result, dict)
+                        else None
+                    )
+                    _require(
+                        isinstance(fetch_result, dict)
+                        and fetch_result.get("status") == 200
+                        and fetch_result.get("ok") is True
+                        and fetch_result.get("basic") is True
+                        and fetch_result.get("redirected") is False
+                        and fetch_result.get("urlMatches") is True
+                        and type(body_bytes) is int
+                        and body_bytes > 0,
+                        "controlled demand fetch did not return an exact public asset",
+                    )
+                _wait_for_async_condition(
+                    page,
+                    """async expected => {
+                      const cache = await caches.open(expected.cacheName);
+                      const cached = new Set((await cache.keys()).map(
+                        request => new URL(request.url).pathname
+                      ));
+                      const loaded = performance.getEntriesByType('resource')
+                        .flatMap(entry => {
+                          try {
+                            return [new URL(entry.name).pathname];
+                          } catch {
+                            return [];
+                          }
+                        })
+                        .filter(path => path.startsWith(expected.prefix)
+                          && (path.endsWith('.js') || path.endsWith('.css')));
+                      return expected.paths.every(path => cached.has(path))
+                        && loaded.every(path => cached.has(path));
+                    }""",
+                    {
+                        "cacheName": next(iter(caches)),
+                        "prefix": IMMUTABLE_ASSET_PREFIX,
+                        "paths": sorted(loaded_assets),
+                    },
+                    "loaded immutable assets to enter CacheStorage",
+                    timeout_ms=10_000,
+                )
+                caches = _cache_snapshot(page)
+                _require(len(caches) == 1, "initial app cache count is unexpected")
+                cached_paths = next(iter(caches.values()))
+                _require(
+                    REQUIRED_OFFLINE_ASSETS.issubset(cached_paths),
+                    "required offline recovery assets are missing from CacheStorage",
+                )
+                _require(
+                    set(cached_paths).issubset(expected_assets),
+                    "CacheStorage contains a path outside "
+                    "the exact generated allowlist",
+                )
+                loaded_assets = _loaded_immutable_assets(page)
             _require(
                 loaded_assets.issubset(cached_paths),
                 "an immutable asset loaded by the app was not cached on demand",
@@ -1088,7 +1178,6 @@ def run_acceptance(
 
             boundary_tab.goto(f"{origin}/app/login", wait_until="networkidle")
             _wait_for_initial_worker(boundary_tab, expected_version)
-            _sign_in_through_api(boundary_tab, fixture_file)
             boundary_tab.goto(f"{origin}/app/projects", wait_until="networkidle")
             boundary_tab.locator(".app-shell").wait_for(state="visible", timeout=10_000)
             _wait_for_controlled_worker(boundary_tab, expected_version)
@@ -1383,7 +1472,6 @@ def run_acceptance(
             )
 
             _sign_in_through_api(second_tab, fixture_file)
-            _sign_in_through_api(boundary_tab, fixture_file)
 
             mark_stage("update: checking retained caches after the takeover")
             takeover_caches = _cache_snapshot(second_tab)
@@ -1530,20 +1618,74 @@ def run_acceptance(
             mark_stage("update boundary: clicking a same-document hash link")
             boundary_tab.evaluate(
                 """() => {
+                  const main = document.querySelector('main#main-content');
+                  if (!(main instanceof HTMLElement)) {
+                    throw new Error('main#main-content is missing');
+                  }
+                  const heading = main.querySelector('.page-header');
+                  if (!(heading instanceof HTMLElement)) {
+                    throw new Error('main#main-content page heading is missing');
+                  }
+                  const boundary = document.createElement('section');
+                  boundary.id = 'pwa-update-boundary-links';
                   const target = document.createElement('span');
                   target.id = 'pwa-update-boundary-hash-target';
-                  document.body.append(target);
+                  target.textContent = 'Navigation boundary target';
                   const link = document.createElement('a');
                   link.id = 'pwa-update-boundary-hash-link';
                   link.href = '#pwa-update-boundary-hash-target';
                   link.textContent = 'Navigation boundary';
-                  document.body.append(link);
+                  boundary.append(link, target);
+                  heading.insertAdjacentElement('afterend', boundary);
                 }"""
             )
             hash_origin_before = boundary_tab.evaluate("() => performance.timeOrigin")
             hash_history_before = boundary_tab.evaluate("() => history.length")
             hash_dialogs_before = boundary_dialog_count[0]
-            boundary_tab.locator("#pwa-update-boundary-hash-link").click()
+            hash_link = boundary_tab.locator("#pwa-update-boundary-hash-link")
+            hash_link.scroll_into_view_if_needed()
+            hash_hit_test = boundary_tab.evaluate(
+                """() => {
+                  const link = document.querySelector(
+                    '#pwa-update-boundary-hash-link'
+                  );
+                  if (!(link instanceof HTMLElement)) {
+                    return { hit: false, x: 0, y: 0, hitTag: '' };
+                  }
+                  const rect = link.getBoundingClientRect();
+                  const x = rect.left + rect.width / 2;
+                  const y = rect.top + rect.height / 2;
+                  const hit = document.elementFromPoint(x, y);
+                  return {
+                    hit: hit === link || link.contains(hit),
+                    x,
+                    y,
+                    hitTag: hit?.tagName ?? '',
+                  };
+                }"""
+            )
+            if not (
+                isinstance(hash_hit_test, dict) and hash_hit_test.get("hit") is True
+            ):
+                hit_x = (
+                    hash_hit_test.get("x", 0) if isinstance(hash_hit_test, dict) else 0
+                )
+                hit_y = (
+                    hash_hit_test.get("y", 0) if isinstance(hash_hit_test, dict) else 0
+                )
+                if type(hit_x) not in (int, float):
+                    hit_x = 0
+                if type(hit_y) not in (int, float):
+                    hit_y = 0
+                hit_target = (
+                    isinstance(hash_hit_test, dict) and hash_hit_test.get("hit") is True
+                )
+                raise AcceptanceFailure(
+                    "same-document hash link center is covered "
+                    f"(hit: {hit_target}; "
+                    f"x: {hit_x:.0f}; y: {hit_y:.0f})"
+                )
+            hash_link.click()
             wait_for_boundary_state(
                 "() => location.hash === '#pwa-update-boundary-hash-target'",
                 "same-document hash navigation",
@@ -1587,13 +1729,43 @@ def run_acceptance(
             boundary_tab.route(external_url, fulfill_boundary_destination)
             boundary_tab.evaluate(
                 """url => {
+                  const main = document.querySelector('main#main-content');
+                  const boundary = document.querySelector(
+                    '#pwa-update-boundary-links'
+                  );
+                  if (!(main instanceof HTMLElement)
+                      || !(boundary instanceof HTMLElement)
+                      || !main.contains(boundary)) {
+                    throw new Error('boundary links are outside main#main-content');
+                  }
                   const link = document.createElement('a');
                   link.id = 'pwa-update-boundary-external-link';
                   link.href = url;
                   link.textContent = 'External loopback destination';
-                  document.body.append(link);
+                  boundary.append(link);
                 }""",
                 external_url,
+            )
+            boundary_tab.add_init_script(
+                """(() => {
+                  let visible = false;
+                  const sample = () => {
+                    const now = [...document.querySelectorAll('[role="status"]')]
+                      .some(node => node.textContent?.trim()
+                        === 'Stricknani was updated.');
+                    if (now && !visible) {
+                      const key = 'pwa-updated-toast-count';
+                      sessionStorage.setItem(
+                        key, String(Number(sessionStorage.getItem(key) || 0) + 1)
+                      );
+                    }
+                    visible = now;
+                  };
+                  new MutationObserver(sample).observe(document, {
+                    childList: true, subtree: true, characterData: true,
+                  });
+                  sample();
+                })();"""
             )
             external_origin_before = boundary_tab.evaluate(
                 "() => performance.timeOrigin"
@@ -1634,8 +1806,10 @@ def run_acceptance(
             external_history_after = boundary_tab.evaluate("() => history.length")
             external_dialog_delta = boundary_dialog_count[0] - external_dialogs_before
             _require(
-                external_response is not None
-                and external_response.status == 200
+                # Playwright sometimes reports no Response object for a fulfilled
+                # navigation; the single route hit and the rendered destination
+                # prove it was served, so only reject a non-200 Response.
+                (external_response is None or external_response.status == 200)
                 and external_route_count[0] == 1
                 and external_destination_reached
                 and external_origin_after != external_origin_before
@@ -1643,7 +1817,7 @@ def run_acceptance(
                 and external_dialog_delta == 0,
                 "external loopback navigation did not follow normal browser history "
                 "(response: "
-                f"{external_response is not None and external_response.status == 200}; "
+                f"{external_response is None or external_response.status == 200}; "
                 f"route hits: {external_route_count[0]}; "
                 f"destination: {external_destination_reached}; "
                 "time-origin changed: "
@@ -1707,6 +1881,16 @@ def run_acceptance(
                 "&& location.hash === '#pwa-update-boundary-hash-target'",
                 "browser Back to the app",
             )
+            # The first full load of the candidate build in this tab shows the
+            # one-time toast; the shared seen-version marker keeps every later
+            # load, in this tab and in other tabs, quiet.
+            _require(
+                boundary_tab.evaluate(
+                    "() => sessionStorage.getItem('pwa-updated-toast-count')"
+                )
+                == "1",
+                "the boundary tab did not show the one-time updated toast exactly once",
+            )
             _require(
                 external_back_in_app
                 and external_forward_to_destination
@@ -1758,8 +1942,19 @@ def run_acceptance(
                 second_tab.get_by_text("New version ready", exact=True).count() == 0,
                 "the reloaded tab still announces an update",
             )
-            second_tab.get_by_text("Stricknani was updated.", exact=True).wait_for(
-                state="visible", timeout=5_000
+            # The toast is keyed by a localStorage "seen version" shared by
+            # every tab of the origin, so the boundary tab already consumed it.
+            _require(
+                second_tab.get_by_text("Stricknani was updated.", exact=True).count()
+                == 0,
+                "a later tab repeated the one-time updated toast",
+            )
+            _require(
+                second_tab.evaluate(
+                    "v => localStorage.getItem('stricknani.seen-app-version') === v",
+                    candidate_app_version,
+                ),
+                "the shared seen-version marker was not set to the candidate build",
             )
             second_tab.screenshot(
                 path=str(screenshots / "updated-mobile.png"), caret="hide"
@@ -2243,10 +2438,13 @@ def run_acceptance(
             mark_stage("checking online recovery and console policy")
             _require(page_errors == [], "browser reported a page exception")
             _require(csp_errors == [], "browser reported a CSP violation")
+            if boundary_cdp is not None:
+                try:
+                    boundary_cdp.detach()
+                except PlaywrightError:
+                    pass
             if boundary_tab is not None and not boundary_tab.is_closed():
                 boundary_tab.close()
-            if boundary_cdp is not None:
-                boundary_cdp.detach()
             context.close()
             browser.close()
         except BaseException:
