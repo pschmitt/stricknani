@@ -161,10 +161,11 @@
       const stepIds = [...currentAdminData.project.steps]
         .sort((left, right) => left.step_number - right.step_number)
         .map((step) => step.id);
-      currentStepId =
+      const initialStepId =
         stepIdFromHash(page.url.hash, stepIds) ?? stepIds[0] ?? null;
-      if (currentStepId !== null) {
-        const hash = stepHash(currentStepId);
+      currentStepId = initialStepId;
+      if (initialStepId !== null) {
+        const hash = stepHash(initialStepId);
         if (page.url.hash !== hash) {
           void goto(`${page.url.pathname}${page.url.search}${hash}`, {
             replaceState: true,
