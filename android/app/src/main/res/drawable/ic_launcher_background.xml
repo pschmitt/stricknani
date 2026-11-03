@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launcher background: flat butter yellow of the "Winky Pom" icon (branding/icon-square.svg). -->
+<!-- Launcher background: the ball's own blue, so masks wider than the ball (squircles) show no padding. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#FFFFE2AE"
+        android:fillColor="#FF8CB8FF"
         android:pathData="M0,0h108v108h-108z" />
 </vector>

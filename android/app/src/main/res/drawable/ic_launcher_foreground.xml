@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Launcher foreground: the "Winky Pom" yarn ball (branding/icon-foreground.svg), tilted -8
-     degrees. The ball (r=27) sits well inside the 66dp adaptive-icon safe zone. Also used as the
-     splash icon. Keep in sync with branding/ if the mark changes. -->
+     degrees and scaled 1.36x so the ball (r=27 -> ~36.7) fills the launcher's 72dp visible circle
+     with no padding. Also used as the splash icon. Keep in sync with branding/ if the mark
+     changes. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -10,42 +11,48 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:rotation="-8">
-        <path
-            android:fillColor="#8CB8FF"
-            android:pathData="M27,54a27,27 0 1,0 54,0a27,27 0 1,0 -54,0" />
-        <group>
-            <clip-path android:pathData="M27,54a27,27 0 1,0 54,0a27,27 0 1,0 -54,0" />
+        android:scaleX="1.36"
+        android:scaleY="1.36">
+        <group
+            android:pivotX="54"
+            android:pivotY="54"
+            android:rotation="-8">
             <path
-                android:strokeColor="#2F6FED"
-                android:strokeWidth="7"
-                android:strokeLineCap="round"
-                android:pathData="M24,38Q54,27 86,42" />
+                android:fillColor="#8CB8FF"
+                android:pathData="M27,54a27,27 0 1,0 54,0a27,27 0 1,0 -54,0" />
+            <group>
+                <clip-path android:pathData="M27,54a27,27 0 1,0 54,0a27,27 0 1,0 -54,0" />
+                <path
+                    android:strokeColor="#2F6FED"
+                    android:strokeWidth="7"
+                    android:strokeLineCap="round"
+                    android:pathData="M24,38Q54,27 86,42" />
+                <path
+                    android:strokeColor="#2F6FED"
+                    android:strokeWidth="7"
+                    android:strokeLineCap="round"
+                    android:pathData="M22,70Q56,88 88,64" />
+            </group>
             <path
-                android:strokeColor="#2F6FED"
-                android:strokeWidth="7"
+                android:fillColor="#16233F"
+                android:pathData="M41.2,51a3.8,3.8 0 1,0 7.6,0a3.8,3.8 0 1,0 -7.6,0" />
+            <path
+                android:strokeColor="#16233F"
+                android:strokeWidth="3.6"
                 android:strokeLineCap="round"
-                android:pathData="M22,70Q56,88 88,64" />
+                android:pathData="M58,52Q62,46 67,52" />
+            <path
+                android:fillColor="#16233F"
+                android:strokeColor="#16233F"
+                android:strokeWidth="2"
+                android:strokeLineJoin="round"
+                android:pathData="M45,60Q54,74 63,60Z" />
+            <path
+                android:fillColor="#FF6F9F"
+                android:pathData="M33.8,60a4.2,4.2 0 1,0 8.4,0a4.2,4.2 0 1,0 -8.4,0" />
+            <path
+                android:fillColor="#FF6F9F"
+                android:pathData="M65.8,60a4.2,4.2 0 1,0 8.4,0a4.2,4.2 0 1,0 -8.4,0" />
         </group>
-        <path
-            android:fillColor="#16233F"
-            android:pathData="M41.2,51a3.8,3.8 0 1,0 7.6,0a3.8,3.8 0 1,0 -7.6,0" />
-        <path
-            android:strokeColor="#16233F"
-            android:strokeWidth="3.6"
-            android:strokeLineCap="round"
-            android:pathData="M58,52Q62,46 67,52" />
-        <path
-            android:fillColor="#16233F"
-            android:strokeColor="#16233F"
-            android:strokeWidth="2"
-            android:strokeLineJoin="round"
-            android:pathData="M45,60Q54,74 63,60Z" />
-        <path
-            android:fillColor="#FF6F9F"
-            android:pathData="M33.8,60a4.2,4.2 0 1,0 8.4,0a4.2,4.2 0 1,0 -8.4,0" />
-        <path
-            android:fillColor="#FF6F9F"
-            android:pathData="M65.8,60a4.2,4.2 0 1,0 8.4,0a4.2,4.2 0 1,0 -8.4,0" />
     </group>
 </vector>

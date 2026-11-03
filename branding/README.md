@@ -7,7 +7,7 @@ an open smile and rosy cheeks, tilted -8 degrees, on butter yellow (`#ffe2ae`).
 | --- | --- |
 | `icon.svg` | Full icon, rounded square. Web and server favicon, README. |
 | `icon-square.svg` | Full icon, full-bleed square. Play icon, maskable and legacy launcher PNGs. |
-| `icon-foreground.svg` | Ball and face on transparent, in the 108 unit adaptive-icon canvas (inside the 66 unit safe zone). |
+| `icon-foreground.svg` | Ball and face on transparent, in the 108 unit adaptive-icon canvas, scaled 1.36x so the ball fills the visible launcher circle (no padding; the launcher background is the ball's blue). |
 | `icon-monochrome.svg` | Single-colour ball with face and wraps cut out (Android themed icon). |
 | `mascot.svg` | The ball cropped to its bounds, for the web `Mascot` component. |
 | `playstore/` | `icon-512.png` and `feature-graphic.png` for the Play listing. |

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="branding/icon.svg" alt="Stricknani" width="128">
+  <img src="branding/mascot.svg" alt="Stricknani" width="200">
 </p>
 
 <h1 align="center">Stricknani</h1>
@@ -7,15 +7,14 @@
 <p align="center">A private, self-hosted place to plan knitting projects, track yarn, and calculate gauge.</p>
 
 <p align="center">
-  <a href="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani"><img src="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=rust" alt="nixbot"></a>
-  <a href="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml"><img src="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml/badge.svg?branch=rust" alt="Rust branch checks"></a>
+  <a href="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani"><img src="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=main" alt="nixbot"></a>
+  <a href="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml"><img src="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml/badge.svg?branch=main" alt="Checks"></a>
 </p>
 
-The `rust` branch is a Rust server with a SvelteKit web app and an Android
-client. The legacy Python application no longer exists on this branch; it
-lives on as the signed tag `v0.1.0` on `main`, which production still runs
-until the planned v1.0.0 cutover and which is the rollback target. The Rust
-server does not reuse Python storage: legacy data enters through the one-way
+Stricknani is a Rust server with a SvelteKit web app and an Android client.
+Since v1.0.0 it replaces the legacy Python application, which survives as the
+signed tag `v0.1.0` (the rollback target). The Rust server does not reuse
+Python storage: legacy data enters through the one-way
 snapshot importer, see [`docs/rust-migration-plan.md`](docs/rust-migration-plan.md).
 
 The only Python left is development tooling: the i18n catalog generators in

@@ -109,7 +109,8 @@ def vector_xml(comment: str, size: int, viewport: int, path: str) -> str:
 
 
 def android_vectors() -> None:
-    mono = silhouette(wraps=True)
+    # Same 1.36x as ic_launcher_foreground.xml: the ball fills the visible launcher circle.
+    mono = affinity.scale(silhouette(wraps=True), 1.36, 1.36, origin=(54, 54))
     (RES / "drawable/ic_launcher_monochrome.xml").write_text(
         vector_xml(
             "Themed launcher icon (Android 13+): the ball silhouette with the face and wraps cut "
