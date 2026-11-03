@@ -9,13 +9,15 @@
     type ActiveFilterChip,
   } from "#lib/components/LibraryFilters.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
-  import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import LibraryCard from "#lib/components/LibraryCard.svelte";
+  import LibraryGrid from "#lib/components/LibraryGrid.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
     filtersFromSearch,
     listCategories,
     listProjects,
+    setProjectFavorite,
     searchFromFilters,
     type ProjectFilters,
     type ProjectSummary,
@@ -170,6 +172,28 @@
     });
   }
 
+  let favoriteBusyIds = $state<number[]>([]);
+
+  async function toggleFavorite(item: ProjectSummary) {
+    const currentSession = session.data;
+    if (!currentSession?.user || favoriteBusyIds.includes(item.id)) return;
+    const favorite = !item.is_favorite;
+    favoriteBusyIds = [...favoriteBusyIds, item.id];
+    try {
+      await setProjectFavorite(item.id, favorite, currentSession);
+      items = items.map((entry) =>
+        entry.id === item.id ? { ...entry, is_favorite: favorite } : entry,
+      );
+    } catch (error) {
+      errorMessage =
+        error instanceof Error
+          ? error.message
+          : t("The favorite could not be updated.", locale);
+    } finally {
+      favoriteBusyIds = favoriteBusyIds.filter((id) => id !== item.id);
+    }
+  }
+
   function formatDate(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.valueOf())) return "";
@@ -267,13 +291,13 @@
   {/if}
 
   {#if loadState === "loading"}
-    <div class="project-grid loading-grid" aria-busy="true" aria-live="polite">
+    <LibraryGrid busy>
       {#each [1, 2, 3] as skeleton (skeleton)}
-        <div class="project-skeleton" aria-hidden="true">
+        <div class="library-skeleton" aria-hidden="true">
           <span></span><i></i><i></i>
         </div>
       {/each}
-    </div>
+    </LibraryGrid>
   {:else if loadState === "ready" && items.length === 0}
     <div class="empty-state" aria-live="polite">
       <EmptyArt icon="projects" tone="projects" />
@@ -300,34 +324,24 @@
       {/if}
     </div>
   {:else if loadState === "ready"}
-    <div class="project-grid" aria-live="polite">
+    <LibraryGrid>
       {#each items as item (item.id)}
-        <article class="project-card project-row">
-          <ResourceCard
-            kind="project"
-            href={`${resolve("/projects")}/${item.id}`}
-            imageUrl={item.preview_url}
-            name={item.name}
-            subtitle={[
-              item.category,
-              `${t("Updated", locale)} ${formatDate(item.updated_at)}`,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-            variant="library-row"
-            titleTag="h2"
-          />
-          {#if item.is_favorite}
-            <span
-              class="favorite-indicator"
-              role="img"
-              aria-label={t("Favorite", locale)}
-              title={t("Favorite", locale)}>★</span
-            >
-          {/if}
-        </article>
+        <LibraryCard
+          class="project-card"
+          kind="project"
+          href={`${resolve("/projects")}/${item.id}`}
+          imageUrl={item.preview_url}
+          name={item.name}
+          meta={item.category}
+          updated={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
+          chips={item.tags}
+          favorite={item.is_favorite}
+          favoriteBusy={favoriteBusyIds.includes(item.id)}
+          {locale}
+          onfavorite={() => toggleFavorite(item)}
+        />
       {/each}
-    </div>
+    </LibraryGrid>
     {#if meta.page > 1 || meta.has_more}
       <nav class="pagination" aria-label={t("Project pages", locale)}>
         <Button
@@ -410,29 +424,6 @@
     margin: 0;
   }
 
-  .project-grid {
-    display: grid;
-    gap: 0;
-    min-width: 0;
-  }
-
-  .project-row {
-    display: grid;
-    min-width: 0;
-    min-height: 72px;
-    grid-template-columns: minmax(0, 1fr) 24px;
-    align-items: center;
-    gap: 0.35rem;
-    border-bottom: 1px solid var(--line);
-    padding: 0.45rem 0.25rem;
-  }
-
-  .favorite-indicator {
-    justify-self: center;
-    color: var(--accent-strong);
-    font-size: 1rem;
-  }
-
   .pagination {
     display: flex;
     align-items: center;
@@ -446,34 +437,54 @@
     font-size: 0.88rem;
   }
 
-  .project-skeleton {
+  .library-skeleton {
     display: grid;
     min-height: 72px;
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr);
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.4rem 0.8rem;
     border-bottom: 1px solid var(--line);
   }
 
-  .project-skeleton span,
-  .project-skeleton i {
-    display: block;
-    border-radius: 0.5rem;
+  .library-skeleton span {
+    grid-row: span 2;
+    width: 64px;
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
     background: var(--surface-raised);
   }
 
-  .project-skeleton span {
-    width: 56px;
-    height: 56px;
-  }
-
-  .project-skeleton i {
+  .library-skeleton i {
+    display: block;
     width: 70%;
     height: 0.7rem;
+    border-radius: 999px;
+    background: var(--surface-raised);
   }
 
-  .project-skeleton i:last-child {
+  .library-skeleton i:last-child {
     width: 42%;
+  }
+
+  @container library-grid (min-width: 720px) {
+    .library-skeleton {
+      min-height: 0;
+      grid-template-columns: 1fr;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding-bottom: 1.1rem;
+      overflow: hidden;
+    }
+
+    .library-skeleton span {
+      grid-row: auto;
+      width: 100%;
+      border-radius: 0;
+    }
+
+    .library-skeleton i {
+      margin-inline: 1.05rem;
+    }
   }
 
   @media (max-width: 640px) {
