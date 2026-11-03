@@ -38,7 +38,7 @@ Execution-oriented backlog for Stricknani.
 | T121.7 | P1 | wip | native-api-v2/android | feat | Android client: resources, favourites and media on v2 behind a meta capability probe (done), then sync (projects, yarns), token login and URL import (done); categories sync pending a server route (owner: Claude, SNA-87) |
 | T122 | P2 | wip | tools/gauge | feat | Add optional 10 cm swatch dimensions, bounded decimal validation and density-based half-up rounding (owner: Claude) |
 | T123 | P1 | wip | resources/history | feat | Add owner-scoped recent changes and safe change details on project/yarn views; share audit projections without granting admin access |
-| T124 | P1 | todo | auth/oidc | feat | Optional OIDC alongside local users, explicit identity linking and Android PKCE handoff; follow `docs/oidc-plan.md` |
+| T124 | P0 | wip | auth/oidc | feat | Authelia OIDC on web and Android with existing-user linking and security fixes; required before production cutover; follow `docs/oidc-plan.md` |
 | T125 | P1 | wip | ops/cutover | docs | Review the dated production cutover checklist, exact-candidate gates, fresh rehearsal, Android compatibility and rollback; production requires explicit approval |
 | T120 | P1 | wip | web-rewrite | feat | Rebuild the web UI for smartphones first; follow `WEB-UI-REWRITE.md` |
 | T120.1 | P1 | done | web-rewrite/design | design | Define key mobile journeys, restrained design system, route map and browser API contracts |

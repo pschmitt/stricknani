@@ -1,10 +1,23 @@
 # Optional OIDC alongside local accounts
 
-T124 is a plan, not an implemented capability. Codex owns server contracts,
+T124 is now a production-cutover requirement, not an implemented capability.
+The selected provider is Authelia. Web and Android login, explicit linking of
+existing local users, and the associated authentication fixes must pass preview
+rehearsal before cutover. This supersedes the earlier post-go-live option.
+OIDC remains optional in the distributed software and local passwords remain
+available. Codex owns server contracts,
 identity storage, authorization and packaging review. Claude owns the web and
 Android screens. Keep the current native-login, media and history checkpoints
 moving independently; do not enable a provider or migrate production as part
 of writing this plan.
+
+Claude owns the actual Authelia client entry and SOPS-backed secret in private
+infrastructure configuration; Codex owns application configuration/module
+interfaces and protocol review. Use separate preview and production clients.
+The exact proposed provider settings and callbacks are recorded in
+[`oidc-authelia-settings.md`](oidc-authelia-settings.md). Authelia registers the
+server callback, while native App Links belong to Stricknani's own redirect
+allowlist; they are not additional confidential-client redirects at the IdP.
 
 ## Product behavior
 
@@ -23,6 +36,9 @@ existing active/last-administrator rules.
 
 Automatic account creation and automatic linking are separate options, both
 off by default. Creation produces a regular member, never an administrator.
+Per-provider `trust_email_verified` is also false by default; enabling it for
+the administratively managed Authelia issuer does not enable automatic linking
+by itself. Automatic email linking must never target an administrator account.
 Email-based linking additionally requires the provider's verified-email claim,
 an unambiguous local match and verified provenance for that local email.
 Inventory the existing verification model before enabling it: an unverified
@@ -64,6 +80,15 @@ pending logins; it must not complete a partially checked link. Persist identity
 changes and their audit records atomically. Native exchange grants store only
 hashed one-time codes and expire independently from normal PATs.
 
+Mark OIDC-origin PATs with their provider/identity and give them a finite expiry.
+Recheck local account activity and identity binding in the same transaction as
+token creation. Disable/reset must revoke browser sessions and PATs without
+silently re-enabling a disabled account. Provider disable/unlink must invalidate
+the corresponding login method and grants. IdP-side disablement is not an
+instant local revocation without a supported notification/revalidation path;
+freeze that bounded-validity policy and client reauthentication behavior in
+T124.2 rather than implying permanent PAT validity is acceptable.
+
 ## Browser protocol
 
 Use authorization code flow with S256 PKCE, random state and nonce. Bind each
@@ -80,7 +105,11 @@ paths. Never redirect to a submitted arbitrary URL. Login starts use the
 existing anonymous CSRF bootstrap; link and unlink require authenticated CSRF
 for browser cookies. Require a recent authentication proof for adding/removing
 a login method, with the precise proof exchange frozen in T124.2. Retain normal
-session rotation and secure-cookie policy. The flow and redirect review uses
+secure-cookie policy. Mint a fresh browser session at successful login and
+define replacement of the initiating session explicitly; current password
+login does not revoke every other device. PAT step-up proofs are short-lived,
+single-purpose and bound to the authenticated account and target action.
+The flow and redirect review uses
 the [OAuth security best current practice](https://www.rfc-editor.org/rfc/rfc9700.html).
 
 Audit successful login, link and unlink with safe account/provider identifiers.
@@ -96,9 +125,8 @@ tested and its SHA is sent to the client owner; existing routes are unchanged.
 | Route | Contract |
 | --- | --- |
 | `GET /meta` | Add `data.auth: {password: true, oidc: [{id, name}]}`; `oidc` is empty when disabled. Preserve current `data.user` and other fields. |
-| `POST /auth/oidc/start` | `{provider, client: "browser"}` with anonymous CSRF, or native `{provider, client: "android", redirect_uri, app_state, code_challenge, code_challenge_method: "S256"}`. Return `{data: {authorization_url, expires_at}}`. |
-| `GET /auth/oidc/authorize` | Browser handoff for a short-lived start ticket; establish browser binding, then redirect to the provider. Ticket placement and log redaction are finalized before implementation. |
-| `GET /auth/oidc/callback` | Validate/consume the provider response. Browser login sets the usual cookie; linking completes only for its initiating account; native login produces an exchange grant. |
+| `POST /auth/oidc/start` | `{provider, client: "browser"}` with anonymous CSRF, or native `{provider, client: "android", redirect_uri, app_state, code_challenge, code_challenge_method: "S256"}`. Return `{data: {authorization_url, expires_at}}` pointing directly to the provider. Browser POST sets the flow-binding cookie before redirect; native binding uses app PKCE/state. No URL-bearing start ticket. |
+| `GET /auth/oidc/callback/{provider}` | Validate/consume the provider response against its stored provider and exact discovery issuer, including response `iss` when supported. Browser login sets the usual cookie; linking completes only for its initiating account; native login produces an exchange grant. Redirect immediately to a clean result path with no-referrer/no-store. |
 | `POST /auth/oidc/exchange` | `{code, code_verifier, redirect_uri, token_name?}`; atomically consume a matching native grant and return `{data: {token}}`, with no browser cookie. |
 | `GET /account/identities` | Cookie or strict PAT; `{data: [{id, provider, subject_hint, email, linked_at}]}` for the current user only. This does not change the cookie-only `/account` contract. |
 | `POST /account/identities/link` | `{provider, client, ...native PKCE fields when applicable}` plus recent authentication; return the start envelope. Cookie mutations retain Origin/CSRF; PAT requests use explicit credentials. |
@@ -116,15 +144,20 @@ recent-auth errors and callback-to-UI result paths are part of T124.2.
 ## Android protocol
 
 Use a Custom Tab or the system browser, following [OAuth for native apps](https://www.rfc-editor.org/rfc/rfc8252.html).
-The app creates a fresh verifier/challenge before starting. The server uses its
+The app creates a fresh verifier/challenge before starting and rejects any
+callback without its own pending in-memory state and verifier. The server uses its
 own separate PKCE verifier for the provider exchange. The final app redirect
 contains only a short-lived one-time code and the app's correlation state;
 never put a PAT in a URL. Bind the grant to the initiating flow, exact allowlisted
 redirect URI and app challenge. Exchange consumes it atomically, using S256 as
 specified by [PKCE](https://www.rfc-editor.org/rfc/rfc7636.html).
 
-Prefer verified HTTPS app links where available; retain an explicitly registered
-custom scheme only with the same PKCE proof. Check the shipping manifest before
+Use verified HTTPS app links by default; a custom scheme is an explicitly
+reviewed fallback with the same PKCE proof, not proof of application identity.
+Use S256 only, with a 43–128 character verifier, exact redirect comparison and
+a grant lifetime no longer than 60 seconds. Consume a code on its first exchange
+attempt, including an invalid proof; limit exchange attempts and pending grants.
+Check the shipping manifest before
 choosing exact callback values. Do not allow arbitrary query/fragment additions.
 Reject cancellation, wrong verifier, replay and account changes without replacing
 the app's current credentials or leaking queued writes across accounts.

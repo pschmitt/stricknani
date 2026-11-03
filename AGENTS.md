@@ -92,6 +92,10 @@ Use this file as the operational source of truth for working in Stricknani.
   the deployed version and HTTPS route, then sends a short change summary with
   the working clickable preview link. Send one notification per deployed
   version; do not announce a deployment before it is verified.
+- During substantial active work, also send high-level Signal checklists with
+  **Done / WIP / Next** at milestones and about every 15 minutes during long
+  runs. Distinguish pushed source, verified builds and live deployments. Keep
+  routine compiler and test debugging out of these summaries.
 
 ### Native API v2 migration
 

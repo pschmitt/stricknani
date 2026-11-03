@@ -3,7 +3,7 @@
 This is a conditional schedule for moving `https://wolle.anika.blue` from the
 Python service to the Rust service and its new web UI. It is planning material,
 not authorization or a booked maintenance window. The earliest candidate window
-is **2026-11-06**, for roughly **60–90 minutes**, only if every gate below has
+is provisionally **2026-11-10**, for roughly **60–90 minutes**, only if every gate below has
 fresh evidence and the user records an explicit GO. Durations are estimates
 until a fresh rehearsal measures them. No date or deadline overrides a failed,
 unknown, or unchecked gate. Until GO, production traffic, storage, and services
@@ -14,6 +14,12 @@ consistent database/media capture, including any necessary brief write pause.
 That approval does not authorize the later production cutover. Do not start
 either operation merely because its proposed date has arrived.
 
+The user's updated decision makes **Authelia OIDC on web and Android, linking
+existing local users, and the associated authentication fixes mandatory before
+cutover**. This supersedes the earlier Nov 6 proposal and the suggestion to
+enable OIDC after go-live. The schedule remains provisional until that flow is
+implemented and rehearsed against Authelia.
+
 Use [`rust-migration-plan.md`](rust-migration-plan.md) as the operational
 runbook for snapshot, import, verification, routing, and rollback mechanics.
 This checklist schedules and records those steps; it does not replace or loosen
@@ -22,22 +28,35 @@ of later UI, API, Android, packaging, or migration changes.
 
 ## Conditional milestones
 
-- **Nov 4 — candidate freeze (Claude, UI owner):** close T120 P1 work required
+- **Nov 6 — earliest candidate freeze (Claude + Codex):** close T120 P1 work required
   for acceptance, freeze the UI, and identify the exact packaged web assets,
   Rust revision, and Android compatibility evidence. If P1s remain or the
   candidate changes, reset the schedule and repeat affected checks.
-- **Nov 5 — rehearsal and click-through (Root, with Claude and user):** rehearse
+- **Nov 9 — earliest rehearsal and click-through (Codex, with Claude and user):** rehearse
   the exact frozen candidate from a fresh authorized production copy into the
   isolated preview, then complete independent verification and user browser
   click-through. Protect the preview's existing edited data: record and verify
   its backup before replacing anything. Measure rehearsal and recovery time.
-- **Nov 6 — earliest possible cutover:** proceed only after all gates below are
+- **Nov 10 — earliest possible cutover:** proceed only after all gates below are
   checked, the candidate is unchanged since evidence was collected, and the
   user explicitly approves the recorded window and data-loss policy. Otherwise
   choose a later date after closing the gaps.
 
 ## GO gates — complete before touching production
 
+- [ ] **Final legacy release — Claude + Codex:** verify the signed immutable
+  `v0.1.0` tag at the final Python `main` revision, the GitHub release and
+  signed APKs, and Play internal/alpha workflow outcomes. Tag creation alone
+  does not complete this gate. Codex realizes and tests the matching Nix
+  rollback package and records its closure; publish the versioned legacy
+  container and record its immutable digest. The rolling `latest` tag is not
+  the rollback identifier. Evidence: `tag/commit: ____  release/runs: ____
+  Nix closure: ____  container digest: ____`.
+- [ ] **Public privacy policy — Claude + Codex:** preserve the existing public
+  `/privacy` URL with an HTTP redirect to anonymous `/app/privacy`; verify both
+  URLs on preview and production, with no authentication or crawler exclusion.
+  Port the existing EN/DE policy and retain sign-in/footer links before Play
+  submission. Record deployed SHA and HTTP evidence: `____________`.
 - [ ] **UI and product acceptance — Claude:** T120 P1 acceptance gaps closed;
   exact packaged web/PWA assets frozen; required mobile and desktop journeys,
   accessibility, and browser/API checks green. Record evidence and candidate
@@ -61,9 +80,17 @@ of later UI, API, Android, packaging, or migration changes.
   successful user click-through; retain reports in protected operations
   storage, not this repository. Record rehearsal duration, report locations,
   and result: `____________`.
-- [ ] **Scope decisions — user:** explicitly decide whether remaining OIDC or
-  native API v2 work is required for this release. Do not silently defer a
-  known blocker or enable a new provider as part of cutover. Review the recorded
+- [ ] **OIDC and authentication — Codex + Claude:** Authelia login works on web
+  and Android, including explicit linking of existing local users, step-up,
+  exact redirects, App Links/PKCE, flow binding, mix-up protection, ID-token
+  validation, callback hygiene, and expiring/marked OIDC PATs. Malformed stored
+  password hashes return uniform 401; reset/disable revoke PATs and browser
+  sessions, and reset preserves the disabled state. Verify the Nix module,
+  separate preview/production Authelia clients and SOPS-backed credentials.
+  Rehearse login/linking on the preview against Authelia in browser and on the
+  test phone. Record server/UI/infra revisions and evidence: `____________`.
+- [ ] **Scope decisions — user:** review any remaining native API v2 work and
+  other release blockers explicitly; OIDC is already required. Review the recorded
   differences: browser print/save is not the legacy generated PDF; domain CLI
   automation uses the authenticated API/browser rather than direct-DB CLI.
 - [ ] **Security review — Root + user:** rerun `cargo audit` on the final
@@ -72,12 +99,33 @@ of later UI, API, Android, packaging, or migration changes.
   unmaintained notice. See [`rust-security-review.md`](rust-security-review.md)
   for the recorded dependency paths and scoped decisions.
   Record explicit disposition and next review deadline **2026-12-01**; no
-  blanket waiver. Stop for new findings or changed dependency paths.
+  blanket waiver. OIDC adds runtime RSA verification; reassess the RSA advisory
+  against that actual path rather than reusing the SQLite-only disposition.
+  Stop for new findings or changed dependency paths.
 - [ ] **Window and decision — user:** choose the date/time and duration after
   rehearsal; record exact candidate SHA and package hash, backup locations,
   rollback choice, and write-loss/reconciliation policy. User's explicit GO:
   `approved by/date/time: __________`. Without this record, do not begin
   production operations.
+
+## Two-release sequence
+
+1. **Final Python `v0.1.0`, before merging `rust`:** Claude owns the signed tag,
+   GitHub/APK release and Play internal/alpha upload. Codex owns legacy
+   container/Nix artifacts and their rollback verification. The tag is being
+   released; record terminal workflow results before marking it complete.
+2. **Rehearsal, approved cutover, production verification:** use the exact
+   tested candidate and the gates above. Prepare the Rust/web/Android 1.0.0
+   version changes before freezing that candidate so the eventual release can
+   identify the same verified revision. Android's versionCode must advance
+   beyond legacy and test artifacts.
+3. **New-stack `v1.0.0`, after verification:** tag the verified post-merge
+   `main` revision, publish the Rust container/Nix and GitHub release, and
+   publish the signed Android app through the existing release/Play workflows.
+   Claude owns Android signing, EN/DE release notes and in-app About/what's new;
+   Codex owns server/container/Nix and workflow review. Confirm all component
+   versions, artifacts, digest/closure and release notes agree. Never move a
+   semantic version tag to repair a workflow; keep rolling `latest` separate.
 
 ## Approved-window checklist
 
