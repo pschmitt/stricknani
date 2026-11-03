@@ -56,6 +56,7 @@ import blue.anika.wolle.ui.common.PhotoEditHostProvider
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
+import blue.anika.wolle.ui.common.UrlTextField
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import java.io.File
 
@@ -424,18 +425,13 @@ fun YarnEditorScreen(
                                         capitalization = KeyboardCapitalization.Sentences
                                     ),
                             )
-                            OutlinedTextField(
+                            UrlTextField(
                                 value = form.link,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(link = value) }
                                 },
-                                label = {
-                                    Text(stringResource(R.string.project_editor_link_label))
-                                },
-                                placeholder = { Text("https://") },
+                                label = stringResource(R.string.project_editor_link_label),
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                             )
                         }
                     }

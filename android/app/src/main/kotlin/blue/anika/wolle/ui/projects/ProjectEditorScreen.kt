@@ -59,7 +59,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,6 +77,7 @@ import blue.anika.wolle.ui.common.PhotoEditHostProvider
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
+import blue.anika.wolle.ui.common.UrlTextField
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import blue.anika.wolle.ui.common.showFeedback
 import java.io.File
@@ -276,22 +276,13 @@ fun ProjectEditorScreen(
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                             )
-                            OutlinedTextField(
+                            UrlTextField(
                                 value = form.link,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(link = value) }
                                 },
-                                label = {
-                                    Text(stringResource(R.string.project_editor_link_label))
-                                },
-                                placeholder = { Text("https://") },
+                                label = stringResource(R.string.project_editor_link_label),
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        keyboardType = KeyboardType.Uri,
-                                        imeAction = ImeAction.Next,
-                                    ),
                             )
                         }
                     }

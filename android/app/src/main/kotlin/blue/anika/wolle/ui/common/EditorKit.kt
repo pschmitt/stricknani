@@ -77,6 +77,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -98,6 +99,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -106,6 +108,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -782,4 +787,85 @@ fun EditorListRow(
             }
         }
     }
+}
+
+/**
+ * The host of a valid web link for display ("garnstudio.com"), or null when [value] is not an
+ * http(s) URL with a host. Surrounding whitespace is ignored.
+ */
+fun urlHostOrNull(value: String): String? {
+    val uri = runCatching { java.net.URI(value.trim()) }.getOrNull() ?: return null
+    val scheme = uri.scheme?.lowercase()
+    if (scheme != "http" && scheme != "https") return null
+    return uri.host?.removePrefix("www.")?.takeIf { it.contains('.') || it == "localhost" }
+}
+
+/**
+ * A link field shared by the project and yarn editors: the URL wraps over up to four lines instead
+ * of being cut off, breaks anywhere without hyphens, stays a single line of text (newlines are
+ * dropped), and offers Open (valid links) and Clear (while focused) inside the field. The domain
+ * shows below when the field is not being edited; text that is not a web link shows an error.
+ */
+@Composable
+fun UrlTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    var focused by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
+    val host = urlHostOrNull(value)
+    val invalid = value.isNotBlank() && host == null
+    val openLabel = stringResource(R.string.editor_link_open)
+    val clearLabel = stringResource(R.string.editor_link_clear)
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onValueChange(it.filterNot { char -> char == '\n' || char == '\r' }) },
+        label = { Text(label) },
+        placeholder = { Text("https://") },
+        textStyle =
+            MaterialTheme.typography.bodyMedium.copy(
+                lineBreak = LineBreak.Simple,
+                hyphens = Hyphens.None,
+            ),
+        singleLine = false,
+        minLines = 1,
+        maxLines = 4,
+        isError = invalid,
+        supportingText =
+            when {
+                invalid -> {
+                    { Text(stringResource(R.string.editor_link_invalid)) }
+                }
+                host != null && !focused -> {
+                    { Text(host) }
+                }
+                else -> null
+            },
+        trailingIcon =
+            if (host != null || (focused && value.isNotEmpty())) {
+                {
+                    Row {
+                        if (host != null) {
+                            IconButton(
+                                onClick = {
+                                    runCatching { uriHandler.openUri(value.trim()) }
+                                }
+                            ) {
+                                Icon(PhosphorIcons.ArrowSquareOut, contentDescription = openLabel)
+                            }
+                        }
+                        if (focused && value.isNotEmpty()) {
+                            IconButton(onClick = { onValueChange("") }) {
+                                Icon(PhosphorIcons.X, contentDescription = clearLabel)
+                            }
+                        }
+                    }
+                }
+            } else null,
+        keyboardOptions =
+            KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+        modifier = modifier.onFocusChanged { focused = it.isFocused },
+    )
 }

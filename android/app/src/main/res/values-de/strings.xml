@@ -105,6 +105,9 @@
     <string name="editor_section_photos">Fotos</string>
     <string name="project_editor_tags_label">Tags</string>
     <string name="project_editor_link_label">Link</string>
+    <string name="editor_link_open">Link öffnen</string>
+    <string name="editor_link_clear">Link löschen</string>
+    <string name="editor_link_invalid">Gib eine vollständige Webadresse ein, zum Beispiel https://example.com</string>
     <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>
     <string name="project_editor_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
     <string name="project_editor_steps_label">Schritte</string>

@@ -105,6 +105,9 @@
     <string name="editor_section_photos">Photos</string>
     <string name="project_editor_tags_label">Tags</string>
     <string name="project_editor_link_label">Link</string>
+    <string name="editor_link_open">Open link</string>
+    <string name="editor_link_clear">Clear link</string>
+    <string name="editor_link_invalid">Enter a full web address, for example https://example.com</string>
     <string name="project_editor_delete_dialog_title">Delete project “%1$s”?</string>
     <string name="project_editor_delete_dialog_text">This can\'t be undone.</string>
     <string name="project_editor_steps_label">Steps</string>
