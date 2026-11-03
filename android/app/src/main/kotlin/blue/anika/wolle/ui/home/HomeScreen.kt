@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,6 +79,7 @@ import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.common.stitchedBorder
 import coil3.compose.AsyncImage
 import java.util.Calendar
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -110,6 +112,19 @@ fun HomeScreen(
     // attention (failures, changes waiting, never synced yet) or once the user pulled to
     // refresh here and so asked for the status.
     var pulledToRefresh by rememberSaveable { mutableStateOf(false) }
+    // After a pull, the card says "All caught up" for a moment and then gets out of the way -
+    // but only when nothing went wrong and nothing is waiting; problems stay visible.
+    LaunchedEffect(pulledToRefresh, isRefreshing, failedMutations.isEmpty(), pendingChangesCount) {
+        if (
+            pulledToRefresh &&
+                !isRefreshing &&
+                failedMutations.isEmpty() &&
+                pendingChangesCount == 0
+        ) {
+            delay(SYNC_CARD_LINGER_MILLIS)
+            pulledToRefresh = false
+        }
+    }
     val showSyncStatus =
         pulledToRefresh ||
             failedMutations.isNotEmpty() ||
@@ -595,3 +610,6 @@ private fun CozyEmptyHome(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(8.dp))
     }
 }
+
+/** How long the sync card stays after a successful pull-to-refresh. */
+private const val SYNC_CARD_LINGER_MILLIS = 10_000L
