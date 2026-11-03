@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-03 17:17+0100\n"
+"POT-Creation-Date: 2026-11-03 17:53+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: en\n"
@@ -276,16 +276,16 @@ msgstr "You are offline. Some features may be unavailable."
 #: stricknani/templates/auth/login.html:138 stricknani/templates/base.html:138
 #: stricknani/templates/legal/privacy.html:3
 #: stricknani/templates/legal/privacy.html:17
-#: web/src/lib/components/AccountMenu.svelte:319
+#: web/src/lib/components/AccountMenu.svelte:337
 #: web/src/lib/components/SignInForm.svelte:152
-#: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:42
+#: web/src/routes/+layout.svelte:73 web/src/routes/more/+page.svelte:42
 #: web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
 
 #: stricknani/templates/base.html:141
-#: web/src/lib/components/AccountMenu.svelte:310
+#: web/src/lib/components/AccountMenu.svelte:315
 #: web/src/lib/components/SignInForm.svelte:156
 msgid "Get the Android app"
 msgstr "Get the Android app"
@@ -431,9 +431,9 @@ msgstr ""
 #: stricknani/templates/admin/users.html:7
 #: stricknani/templates/shared/unified_navbar.html:88
 #: stricknani/templates/shared/unified_navbar.html:152
-#: web/src/lib/components/AccountMenu.svelte:260
-#: web/src/lib/components/AccountMenu.svelte:298
-#: web/src/routes/+layout.svelte:269 web/src/routes/more/+page.svelte:60
+#: web/src/lib/components/AccountMenu.svelte:265
+#: web/src/lib/components/AccountMenu.svelte:303
+#: web/src/routes/+layout.svelte:271 web/src/routes/more/+page.svelte:60
 msgid "Admin"
 msgstr "Admin"
 
@@ -654,7 +654,7 @@ msgstr "Please sign in below"
 #: web/src/lib/features/auth/SignupForm.svelte:267
 #: web/src/lib/features/home/HomeDashboard.svelte:127
 #: web/src/lib/features/projects/ProjectEditor.svelte:1005
-#: web/src/routes/+layout.svelte:157 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:159 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -1207,7 +1207,7 @@ msgstr ""
 
 #: stricknani/templates/macros/buttons.html:77
 #: stricknani/templates/shared/unified_navbar.html:25
-#: web/src/routes/+layout.svelte:214
+#: web/src/routes/+layout.svelte:216
 msgid "Back"
 msgstr "Back"
 
@@ -1436,7 +1436,7 @@ msgstr ""
 
 #: rust/src/web.rs:2181 rust/src/web_accounts.rs:851
 #: stricknani/templates/projects/categories.html:44
-#: web/src/routes/+layout.svelte:61 web/src/routes/create/+page.svelte:10
+#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:10
 msgid "Create"
 msgstr "Create"
 
@@ -1499,7 +1499,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:636
 #: web/src/lib/features/projects/ProjectReader.svelte:644
 #: web/src/lib/features/projects/ProjectReader.svelte:660
-#: web/src/routes/+layout.svelte:296
+#: web/src/routes/+layout.svelte:298
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -2042,7 +2042,7 @@ msgstr ""
 #: stricknani/templates/shared/unified_navbar.html:125
 #: web/src/lib/features/projects/ProjectLibrary.svelte:183
 #: web/src/lib/features/projects/ProjectLibrary.svelte:194
-#: web/src/routes/+layout.svelte:59
+#: web/src/routes/+layout.svelte:60
 msgid "Projects"
 msgstr "Projects"
 
@@ -2144,7 +2144,7 @@ msgstr ""
 
 #: rust/src/import_service.rs:422 rust/src/web_accounts.rs:829
 #: stricknani/templates/shared/unified_navbar.html:16
-#: web/src/routes/+layout.svelte:226 web/src/routes/+layout.svelte:306
+#: web/src/routes/+layout.svelte:228 web/src/routes/+layout.svelte:308
 msgid "Main navigation"
 msgstr "Main navigation"
 
@@ -2156,13 +2156,13 @@ msgstr "Main navigation"
 #: web/src/lib/features/yarns/YarnDetail.svelte:212
 #: web/src/lib/features/yarns/YarnLibrary.svelte:129
 #: web/src/lib/features/yarns/YarnLibrary.svelte:140
-#: web/src/routes/+layout.svelte:60
+#: web/src/routes/+layout.svelte:61
 msgid "Yarns"
 msgstr "Yarns"
 
 #: stricknani/templates/shared/unified_navbar.html:97
 #: web/src/lib/features/home/HomeDashboard.svelte:96
-#: web/src/routes/+layout.svelte:58
+#: web/src/routes/+layout.svelte:59
 msgid "Home"
 msgstr "Home"
 
@@ -2176,7 +2176,7 @@ msgstr ""
 
 #: stricknani/templates/shared/unified_navbar.html:235
 #: stricknani/templates/shared/unified_navbar.html:293
-#: web/src/lib/components/AccountMenu.svelte:267
+#: web/src/lib/components/AccountMenu.svelte:272
 #: web/src/lib/components/LocaleSwitcher.svelte:20
 #: web/src/lib/features/account/AccountSettings.svelte:638
 msgid "Language"
@@ -2624,7 +2624,7 @@ msgid "Import a pattern"
 msgstr ""
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
-#: rust/src/web_accounts.rs:835 web/src/lib/components/AccountMenu.svelte:330
+#: rust/src/web_accounts.rs:835 web/src/lib/components/AccountMenu.svelte:348
 #: web/src/lib/features/account/AccountSettings.svelte:956
 msgid "Sign out"
 msgstr "Sign out"
@@ -2708,7 +2708,7 @@ msgstr "Login"
 #: web/src/lib/features/auth/SignupForm.svelte:275
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/routes/+layout.svelte:71 web/src/routes/more/+page.svelte:33
+#: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:33
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
 
@@ -2813,9 +2813,9 @@ msgid "Apply filters"
 msgstr "Clear filters"
 
 #: rust/src/web.rs:2210 rust/src/web_accounts.rs:832 rust/src/web_audit.rs:124
-#: web/src/lib/components/AccountMenu.svelte:215
-#: web/src/lib/components/AccountMenu.svelte:241
-#: web/src/lib/components/AccountMenu.svelte:279
+#: web/src/lib/components/AccountMenu.svelte:220
+#: web/src/lib/components/AccountMenu.svelte:246
+#: web/src/lib/components/AccountMenu.svelte:284
 #: web/src/lib/features/account/AccountSettings.svelte:625
 #: web/src/lib/features/account/AccountSettings.svelte:636
 msgid "Account"
@@ -2867,7 +2867,7 @@ msgstr ""
 msgid "Reading text…"
 msgstr "Extracting text..."
 
-#: rust/src/web_accounts.rs:828 web/src/lib/components/AccountMenu.svelte:288
+#: rust/src/web_accounts.rs:828 web/src/lib/components/AccountMenu.svelte:293
 msgid "Account settings"
 msgstr "Account settings"
 
@@ -3014,7 +3014,7 @@ msgstr "A newer version was saved"
 msgid "A place for your projects and yarn."
 msgstr "A place for your projects and yarn."
 
-#: web/src/routes/+layout.svelte:137
+#: web/src/routes/+layout.svelte:139
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "A quiet place to keep your knitting projects and yarn close."
 
@@ -3057,7 +3057,7 @@ msgstr "API access"
 msgid "API token revoked."
 msgstr "API token revoked."
 
-#: web/src/routes/+layout.svelte:290
+#: web/src/routes/+layout.svelte:292
 msgid "Account access"
 msgstr "Account access"
 
@@ -3260,7 +3260,7 @@ msgstr "Archiving is unavailable right now."
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
-#: web/src/routes/+layout.svelte:294
+#: web/src/routes/+layout.svelte:296
 msgid "Ask an administrator if you need access."
 msgstr "Ask an administrator if you need access."
 
@@ -3299,7 +3299,7 @@ msgstr "Audit events could not be loaded."
 
 #: web/src/lib/features/admin/AdminAudit.svelte:306
 #: web/src/lib/features/admin/AdminAudit.svelte:313
-#: web/src/routes/+layout.svelte:280 web/src/routes/more/+page.svelte:66
+#: web/src/routes/+layout.svelte:282 web/src/routes/more/+page.svelte:66
 msgid "Audit log"
 msgstr "Audit log"
 
@@ -3364,7 +3364,7 @@ msgstr "Calculation Results"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/routes/+layout.svelte:70 web/src/routes/more/+page.svelte:24
+#: web/src/routes/+layout.svelte:71 web/src/routes/more/+page.svelte:24
 msgid "Categories"
 msgstr "Categories"
 
@@ -3580,7 +3580,7 @@ msgstr "Copy token"
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr "Copy was blocked. Select and copy the token manually."
 
-#: web/src/lib/components/AccountMenu.svelte:182
+#: web/src/lib/components/AccountMenu.svelte:187
 #: web/src/lib/features/account/AccountSettings.svelte:232
 #: web/src/lib/features/account/AccountSettings.svelte:239
 msgid "Could not sign out."
@@ -4230,7 +4230,7 @@ msgstr "Materials"
 msgid "Media storage is unavailable. Try again later."
 msgstr "Media storage is unavailable. Try again later."
 
-#: web/src/routes/+layout.svelte:62 web/src/routes/more/+page.svelte:13
+#: web/src/routes/+layout.svelte:63 web/src/routes/more/+page.svelte:13
 #: web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "More"
@@ -4510,7 +4510,7 @@ msgstr "Open your project library to continue."
 msgid "Opening your pattern…"
 msgstr "Opening your pattern…"
 
-#: web/src/routes/+layout.svelte:173
+#: web/src/routes/+layout.svelte:175
 msgid "Opening your workspace…"
 msgstr "Opening your workspace…"
 
@@ -4768,6 +4768,10 @@ msgstr "Project tags"
 #: web/src/lib/features/categories/CategoryManager.svelte:377
 msgid "Projects that use this category will no longer show it."
 msgstr "Projects that use this category will no longer show it."
+
+#: web/src/lib/components/AccountMenu.svelte:322
+msgid "QR code for the Android app download"
+msgstr "QR code for the Android app download"
 
 #: web/src/lib/features/admin/AdminResource.svelte:362
 #: web/src/lib/features/projects/ProjectReader.svelte:703
@@ -5073,6 +5077,10 @@ msgstr "Saving yarn…"
 msgid "Saving…"
 msgstr "Saving…"
 
+#: web/src/lib/components/AccountMenu.svelte:326
+msgid "Scan with your phone to get the app."
+msgstr "Scan with your phone to get the app."
+
 #: web/src/lib/features/projects/YarnPicker.svelte:39
 msgid "Search yarn"
 msgstr "Search yarn"
@@ -5187,7 +5195,7 @@ msgstr "Skein weight"
 msgid "Skein weight in grams"
 msgstr "Skein weight in grams"
 
-#: web/src/routes/+layout.svelte:145
+#: web/src/routes/+layout.svelte:147
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -5591,7 +5599,7 @@ msgstr "The server returned an unexpected import response."
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
-#: web/src/lib/session.svelte.ts:139 web/src/routes/+layout.svelte:186
+#: web/src/lib/session.svelte.ts:139 web/src/routes/+layout.svelte:188
 msgid "The session could not be loaded."
 msgstr "The session could not be loaded."
 
@@ -5654,7 +5662,7 @@ msgstr "The yarn could not be saved."
 msgid "The yarn list could not be loaded."
 msgstr "The yarn list could not be loaded."
 
-#: web/src/lib/components/AccountMenu.svelte:271
+#: web/src/lib/components/AccountMenu.svelte:276
 #: web/src/lib/components/ThemeSwitcher.svelte:22
 msgid "Theme"
 msgstr "Theme"
@@ -5889,7 +5897,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/yarns/YarnDetail.svelte:235
 #: web/src/lib/features/yarns/YarnForm.svelte:590
 #: web/src/lib/features/yarns/YarnLibrary.svelte:182
-#: web/src/routes/+layout.svelte:194
+#: web/src/routes/+layout.svelte:196
 msgid "Try again"
 msgstr "Try again"
 
@@ -6048,17 +6056,17 @@ msgstr "What would you like to add?"
 msgid "Width"
 msgstr "Width"
 
-#: web/src/lib/components/AccountMenu.svelte:330
+#: web/src/lib/components/AccountMenu.svelte:348
 #: web/src/lib/features/account/AccountSettings.svelte:775
 #: web/src/lib/features/account/AccountSettings.svelte:956
 msgid "Working…"
 msgstr "Working…"
 
-#: web/src/routes/+layout.svelte:244
+#: web/src/routes/+layout.svelte:246
 msgid "Workspace"
 msgstr "Workspace"
 
-#: web/src/routes/+layout.svelte:245
+#: web/src/routes/+layout.svelte:247
 msgid "Workspace navigation"
 msgstr "Workspace navigation"
 
@@ -6149,7 +6157,7 @@ msgstr "You are already signed in."
 msgid "You confirmed it is you. Continue where you left off."
 msgstr "You confirmed it is you. Continue where you left off."
 
-#: web/src/routes/+layout.svelte:292
+#: web/src/routes/+layout.svelte:294
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
@@ -6207,7 +6215,7 @@ msgstr "Your edits stay here if saving fails."
 msgid "Your favorite projects and yarns, together."
 msgstr "Your favorite projects and yarns, together."
 
-#: web/src/routes/+layout.svelte:227
+#: web/src/routes/+layout.svelte:229
 msgid "Your library"
 msgstr "Your library"
 
@@ -6260,7 +6268,7 @@ msgstr "Your sign-up session expired. Refresh and try again."
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 
-#: web/src/routes/+layout.svelte:182
+#: web/src/routes/+layout.svelte:184
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
 

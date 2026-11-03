@@ -3,6 +3,9 @@
 /** Viewport width at or below which the menu becomes a bottom sheet. */
 export const SHEET_MEDIA_QUERY = "(max-width: 640px)";
 
+/** A precise hovering pointer (a mouse), as opposed to a touch screen. */
+export const POINTER_MEDIA_QUERY = "(hover: hover) and (pointer: fine)";
+
 const SWIPE_DISTANCE_PX = 80;
 const SWIPE_VELOCITY_PX_PER_MS = 0.6;
 const SWIPE_FLICK_MIN_PX = 24;

@@ -9,7 +9,7 @@ buildNpmPackage {
   version = "0.1.0";
   src = ../web;
   nodejs = nodejs_22;
-  npmDepsHash = "sha256-i63g0lvZMitoe4ivzg9U5Xf0eEKjFV8HWEgmFqfyyxY=";
+  npmDepsHash = "sha256-wxRSes1lujXm1alpThFmHlYIdGc7PgCsqGe1Mw7ErVI=";
   npmBuildScript = "build";
   doCheck = true;
   checkPhase = ''
