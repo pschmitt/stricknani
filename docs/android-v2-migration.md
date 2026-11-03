@@ -129,8 +129,8 @@ calls. The client adapts to those contracts rather than assuming v1 payloads.
 | Yarn media | Photo upload/delete and protected downloads already exist |
 | Imports | `POST /imports/preview` for text/URL and `/imports/preview-file` for file input; retain feature, size, rate and SSRF protections |
 | Admin | Existing account actions, audit list/detail, read-only cross-owner resources and protected media; SNA-86 uses the same PAT support |
-| Sync | Add v2 endpoints in T121.2 using the shared delta semantics; freeze exact DTO/envelope mapping before client changes |
-| Token login | Add v2 native token issuance in T121.3; browser `/auth/login` remains a cookie/session flow |
+| Sync | Projects and yarns use v2 delta endpoints; category sync remains v1 until the category v2 endpoint lands |
+| Token login | Android uses v2 native token issuance and metadata-based server detection; browser `/auth/login` remains a cookie/session flow |
 
 All paths in the table are below `/api/v2`. Exact media paths are returned in
 the DTOs; clients should use them and attach their PAT to authenticated

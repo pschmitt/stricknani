@@ -165,8 +165,8 @@ or belonging to browser sessions return `404`.
 ## Gauge tool
 
 `POST /tools/gauge` is a stateless calculation and does not require a session
-or CSRF token. It accepts the same six field names as the existing gauge form;
-the five required values and the optional `pattern_row_count` must be positive
+or CSRF token. The five required count values and optional
+`pattern_row_count` must be positive
 32-bit integers when present:
 
 ```json
@@ -179,6 +179,19 @@ the five required values and the optional `pattern_row_count` must be positive
   "pattern_row_count": 100
 }
 ```
+
+Four optional JSON-number fields set swatch dimensions in centimeters:
+`pattern_swatch_width_cm`, `pattern_swatch_height_cm`,
+`user_swatch_width_cm`, and `user_swatch_height_cm`. Omitted or null means 10.
+Values must be above 0 and at most 100, with no more than three decimals.
+Strings, booleans, zero, negatives, values above 100 and excess precision return
+422 with `error.fields.<name>` equal to
+`Must be a number above 0 and at most 100 with up to 3 decimals`.
+
+Counts use exact u128 integer arithmetic with sizes in thousandths of a
+centimeter: `cast_on × user × pattern_dimension / (pattern × user_dimension)`,
+rounded half-up. Android uses the same rounding. Omitting all dimensions retains
+the previous result, including ties (`121 × 19 / 22` becomes `105`).
 
 Success returns `{ "data": { "adjusted_stitches": "88",
 "adjusted_rows": "107" } }`; calculated counts are decimal strings so large
