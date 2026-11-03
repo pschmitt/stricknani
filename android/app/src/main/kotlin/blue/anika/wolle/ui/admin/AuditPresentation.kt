@@ -258,6 +258,18 @@ fun ChangeValue.displayText(string: (Int) -> String): String =
         ChangeValue.Unknown -> string(R.string.admin_value_unknown)
     }
 
+/** True when this side has no real value, so the UI shows a muted placeholder instead of text. */
+fun ChangeValue.isEmptyValue(): Boolean =
+    when (this) {
+        is ChangeValue.Text -> value.isNullOrBlank()
+        is ChangeValue.TextList -> values.isEmpty()
+        is ChangeValue.Yarns -> names.isEmpty()
+        is ChangeValue.Integer -> value == null
+        is ChangeValue.Steps -> steps.isEmpty()
+        ChangeValue.Unknown -> true
+        else -> false
+    }
+
 private fun ChangeStep.asLine(): String = "$number. $title" + (description?.let { "\n$it" } ?: "")
 
 /** `unavailable_reason` -> message. */

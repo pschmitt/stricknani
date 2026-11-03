@@ -51,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -60,9 +59,13 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,8 +74,10 @@ import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.parseChangeValue
 import blue.anika.wolle.data.repository.AdminFailure
+import blue.anika.wolle.ui.common.DiffSegment
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.WordDiff
 import blue.anika.wolle.ui.common.YarnLoader
 import java.time.LocalDate
 import java.time.ZoneId
@@ -576,17 +581,23 @@ private fun DetailLine(label: String, content: @Composable () -> Unit) {
 }
 
 /**
- * One changed field, before -> after, like the website's DiffPanel: the old value in red with a
- * strikethrough, the new value in green.
+ * One changed field, before -> after, like the website's ChangeList: tinted -/+ panels joined by an
+ * arrow, with only the changed words highlighted (removed struck through, added bold).
  */
 @Composable
 internal fun ChangeCard(item: ChangeItemDto) {
     val resources = LocalResources.current
     val string: (Int) -> String = { resources.getString(it) }
-    val before = parseChangeValue(item.before).displayText(string)
-    val after = parseChangeValue(item.after).displayText(string)
-    val removed = MaterialTheme.colorScheme.error
-    val added = AuditTone.Green.color()
+    val beforeValue = parseChangeValue(item.before)
+    val afterValue = parseChangeValue(item.after)
+    val beforeEmpty = beforeValue.isEmptyValue()
+    val afterEmpty = afterValue.isEmptyValue()
+    val before = beforeValue.displayText(string)
+    val after = afterValue.displayText(string)
+    val diff =
+        remember(before, after, beforeEmpty, afterEmpty) {
+            WordDiff.diff(if (beforeEmpty) "" else before, if (afterEmpty) "" else after)
+        }
     val fieldLabel =
         changeFieldLabelRes(item.field)?.let(string) ?: string(R.string.admin_field_unknown)
     val beforeLabel = stringResource(R.string.admin_changes_before)
@@ -597,14 +608,34 @@ internal fun ChangeCard(item: ChangeItemDto) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 fieldLabel,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
-            DiffBlock(label = beforeLabel, text = before, color = removed, struck = true)
-            DiffBlock(label = afterLabel, text = after, color = added, struck = false)
+            DiffBlock(
+                label = beforeLabel,
+                sign = "\u2212",
+                text = before,
+                segments = diff.before,
+                empty = beforeEmpty,
+                removed = true,
+            )
+            Text(
+                "\u2193",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally).clearAndSetSemantics {},
+            )
+            DiffBlock(
+                label = afterLabel,
+                sign = "+",
+                text = after,
+                segments = diff.after,
+                empty = afterEmpty,
+                removed = false,
+            )
         }
     }
 }
@@ -612,23 +643,62 @@ internal fun ChangeCard(item: ChangeItemDto) {
 @Composable
 private fun DiffBlock(
     label: String,
+    sign: String,
     text: String,
-    color: Color,
-    struck: Boolean,
+    segments: List<DiffSegment>,
+    empty: Boolean,
+    removed: Boolean,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val tone = if (removed) scheme.error else AuditTone.Green.color()
+    val highlight =
+        if (removed) scheme.errorContainer.copy(alpha = 0.7f) else tone.copy(alpha = 0.22f)
+    val annotated =
+        remember(segments, removed, highlight, tone) {
+            buildAnnotatedString {
+                segments.forEach { segment ->
+                    if (!segment.changed) {
+                        append(segment.text)
+                    } else {
+                        val style =
+                            if (removed) {
+                                SpanStyle(
+                                    color = tone,
+                                    background = highlight,
+                                    textDecoration = TextDecoration.LineThrough,
+                                )
+                            } else {
+                                SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    background = highlight,
+                                )
+                            }
+                        withStyle(style) { append(segment.text) }
+                    }
+                }
+            }
+        }
     Column(
         Modifier.fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .background(color.copy(alpha = 0.10f))
+            .background(tone.copy(alpha = 0.08f))
             .padding(horizontal = 10.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { contentDescription = "$label: $text" }
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color)
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = color,
-            textDecoration = if (struck) TextDecoration.LineThrough else null,
-        )
+        Text("$sign $label", style = MaterialTheme.typography.labelSmall, color = tone)
+        if (empty) {
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+                fontStyle = FontStyle.Italic,
+            )
+        } else {
+            Text(
+                annotated,
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurface,
+            )
+        }
     }
 }
