@@ -32,11 +32,13 @@
     border-radius: var(--radius-xs);
   }
 
+  /* Always dark modules on white, in both themes: some scanners cannot read
+     an inverted (light-on-dark) code. */
   .qr-code__background {
-    fill: var(--surface);
+    fill: #ffffff;
   }
 
   .qr-code__modules {
-    fill: var(--ink);
+    fill: #1a1421;
   }
 </style>
