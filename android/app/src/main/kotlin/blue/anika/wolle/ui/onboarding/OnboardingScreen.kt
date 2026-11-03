@@ -322,6 +322,10 @@ private fun ManualOnboardingFields(
         enabled = enabled,
         visualTransformation =
             if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        // Tell the keyboard this is a secret: no word suggestions or learning, and tools such as
+        // adb::rbw-type can see the focused field is a password field.
+        keyboardOptions =
+            KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
         trailingIcon = {
             IconButton(onClick = { onTokenVisibleChange(!tokenVisible) }) {
                 Icon(
@@ -387,6 +391,10 @@ private fun PasswordOnboardingFields(
         enabled = enabled,
         visualTransformation =
             if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        // Tell the keyboard this is a secret: no word suggestions or learning, and tools such as
+        // adb::rbw-type can see the focused field is a password field.
+        keyboardOptions =
+            KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
         trailingIcon = {
             IconButton(onClick = { onPasswordVisibleChange(!passwordVisible) }) {
                 Icon(
