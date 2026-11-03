@@ -4646,7 +4646,7 @@ def run_acceptance(
                 len(project_mutation_requests) == image_delete_count + 1,
                 "busy project photo confirmation allowed a duplicate request",
             )
-            held_project_image_deletes[0].fulfill(status=204, body="")
+            held_project_image_deletes[0].continue_()
             page.unroute(project_image_delete_url, hold_project_image_delete)
             page.locator(".media-list img").wait_for(state="detached")
             _require(

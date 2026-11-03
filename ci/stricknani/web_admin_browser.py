@@ -238,6 +238,7 @@ def _create_admin_audit_project(
         create_response_info.value.status == 201,
         "synthetic administrator audit project creation failed",
     )
+    page.wait_for_url(re.compile(r".*/app/projects/[0-9]+$"))
     project_id_path = urlsplit(page.url).path.removeprefix("/app/projects/")
     _require(
         project_id_path.isdigit(),
@@ -253,6 +254,7 @@ def _create_admin_audit_project(
         state="visible"
     )
     project_optional_details = page.locator("details.optional-details")
+    project_optional_details.wait_for(state="visible")
     _require(
         project_optional_details.count() == 1
         and project_optional_details.get_attribute("open") is not None,

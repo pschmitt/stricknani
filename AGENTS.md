@@ -84,6 +84,10 @@ Use this file as the operational source of truth for working in Stricknani.
 - Fixture runners own their `--private-dir`: pass a fresh, nonexistent leaf
   path, rather than creating it first. Create only its private parent when
   needed, and use the fixture environment loader instead of guessing JSON keys.
+- When a packaged fixture must override `WEB_ROOT`, use its underlying server
+  executable rather than the Nix launcher, which can replace that environment
+  value. Verify the executable's file type and checksum before launching, and
+  prove that the fixture serves the requested web root before update tests.
 - Reuse validated shared image fixtures. Ad-hoc tiny PNG payloads can contain
   invalid CRCs and fail uploads before a UI probe begins; avoid extra synthetic
   media setup when the existing seeded fixture already covers the check.
