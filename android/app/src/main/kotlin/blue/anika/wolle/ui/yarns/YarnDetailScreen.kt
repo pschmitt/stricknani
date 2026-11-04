@@ -164,7 +164,9 @@ fun YarnDetailScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text(if (state is YarnDetailUiState.Loaded) state.entity.name else "") },
+                    title = {
+                        Text(if (state is YarnDetailUiState.Loaded) state.entity.name else "")
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
@@ -234,7 +236,9 @@ fun YarnDetailScreen(
                                             color = MaterialTheme.colorScheme.error,
                                         )
                                     },
-                                    leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
+                                    leadingIcon = {
+                                        DestructiveDeleteIcon(contentDescription = null)
+                                    },
                                     onClick = {
                                         menuExpanded = false
                                         showDeleteDialog = true
@@ -244,7 +248,9 @@ fun YarnDetailScreen(
                         }
                     },
                 )
-                banner?.let { OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                banner?.let {
+                    OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                }
             }
         },
     ) { innerPadding ->

@@ -250,9 +250,9 @@ constructor(
     ) = importController.confirm(selectedImages, reviewed, selectedAssets)
 
     /**
-     * The user's own yarns, for the stash picker of the import review. An import always creates
-     * the importing user's own project, so an administrator who also caches other users' yarns
-     * must never be offered those here: the server links only yarns of the project's owner.
+     * The user's own yarns, for the stash picker of the import review. An import always creates the
+     * importing user's own project, so an administrator who also caches other users' yarns must
+     * never be offered those here: the server links only yarns of the project's owner.
      */
     val stashYarns: StateFlow<List<YarnEntity>> =
         combine(

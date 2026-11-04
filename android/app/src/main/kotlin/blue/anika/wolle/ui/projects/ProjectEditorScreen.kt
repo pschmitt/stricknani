@@ -227,16 +227,23 @@ fun ProjectEditorScreen(
                         },
                         actions = {
                             if (viewModel.isEditing) {
-                                IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
+                                IconButton(
+                                    onClick = { showDeleteDialog = true },
+                                    enabled = !isSaving,
+                                ) {
                                     DestructiveDeleteIcon(
                                         contentDescription =
-                                            stringResource(R.string.project_editor_delete_description)
+                                            stringResource(
+                                                R.string.project_editor_delete_description
+                                            )
                                     )
                                 }
                             }
                         },
                     )
-                    banner?.let { OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                    banner?.let {
+                        OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
                 }
             },
             bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },

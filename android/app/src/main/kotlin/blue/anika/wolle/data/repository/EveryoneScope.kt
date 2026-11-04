@@ -31,8 +31,8 @@ private const val PURGE_CHUNK = 500
 
 /**
  * The `sync_state` key of one entity type's cursor under [scope]. Each scope has its own cursor, so
- * going from Mine to Everyone starts a full sync instead of resuming a cursor that never saw
- * other people's items.
+ * going from Mine to Everyone starts a full sync instead of resuming a cursor that never saw other
+ * people's items.
  */
 fun syncCursorKey(entityType: String, scope: SyncScope): String =
     if (scope == SyncScope.ALL) "$entityType@all" else entityType
@@ -96,9 +96,9 @@ internal constructor(
             .distinctUntilChanged()
 
     /**
-     * The scope the next sync runs in. Asks the server who the user is first (throws like any
-     * other sync call when that fails). When the answer is Mine, other people's cached items are
-     * purged, which also covers a demoted administrator.
+     * The scope the next sync runs in. Asks the server who the user is first (throws like any other
+     * sync call when that fails). When the answer is Mine, other people's cached items are purged,
+     * which also covers a demoted administrator.
      */
     suspend fun forSync(): SyncScope {
         val user = resolveUser()

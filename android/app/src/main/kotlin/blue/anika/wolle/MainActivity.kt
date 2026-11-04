@@ -144,7 +144,8 @@ class MainActivity : ComponentActivity() {
                         // isConfigured flips anyway (see its kdoc).
                         pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
                         onDeepLinkConsumed = { pendingDeepLink = null },
-                        // Only meaningful pre-onboarding - once configured, a stray setup URI (an old
+                        // Only meaningful pre-onboarding - once configured, a stray setup URI (an
+                        // old
                         // QR scanned again, say) has nothing useful to do.
                         pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
                         onSetupUriConsumed = { pendingSetupUri = null },

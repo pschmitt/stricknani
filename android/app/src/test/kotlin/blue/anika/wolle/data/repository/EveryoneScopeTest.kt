@@ -31,8 +31,9 @@ class EveryoneScopeTest {
 
         override suspend fun getCursor(entityType: String) = rows.value[entityType]
 
-        override fun observeAll(): Flow<List<SyncStateEntity>> =
-            rows.map { it.map { (k, v) -> SyncStateEntity(k, v) } }
+        override fun observeAll(): Flow<List<SyncStateEntity>> = rows.map {
+            it.map { (k, v) -> SyncStateEntity(k, v) }
+        }
 
         override suspend fun setCursor(state: SyncStateEntity) {
             rows.value = rows.value + (state.entityType to state.cursor)
@@ -149,7 +150,9 @@ class EveryoneScopeTest {
                 syncStateDao = state,
                 projectDao = projectDao,
                 yarnDao = yarnDao,
-                pendingIds = { type, ids -> ids.filter { it in (pending[type] ?: emptySet()) }.toSet() },
+                pendingIds = { type, ids ->
+                    ids.filter { it in (pending[type] ?: emptySet()) }.toSet()
+                },
                 inTransaction = { block -> block() },
             )
         return Fixture(state, projectDao, yarnDao, scope)

@@ -176,7 +176,10 @@ fun YarnEditorScreen(
                         },
                         actions = {
                             if (viewModel.isEditing) {
-                                IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
+                                IconButton(
+                                    onClick = { showDeleteDialog = true },
+                                    enabled = !isSaving,
+                                ) {
                                     DestructiveDeleteIcon(
                                         contentDescription =
                                             stringResource(R.string.yarn_editor_delete_description)
@@ -185,7 +188,9 @@ fun YarnEditorScreen(
                             }
                         },
                     )
-                    banner?.let { OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                    banner?.let {
+                        OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
                 }
             },
             bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },

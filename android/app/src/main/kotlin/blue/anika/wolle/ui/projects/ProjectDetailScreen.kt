@@ -238,7 +238,9 @@ fun ProjectDetailScreen(
                                             color = MaterialTheme.colorScheme.error,
                                         )
                                     },
-                                    leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
+                                    leadingIcon = {
+                                        DestructiveDeleteIcon(contentDescription = null)
+                                    },
                                     onClick = {
                                         menuExpanded = false
                                         showDeleteDialog = true
@@ -248,7 +250,9 @@ fun ProjectDetailScreen(
                         }
                     },
                 )
-                banner?.let { OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                banner?.let {
+                    OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                }
             }
         },
     ) { innerPadding ->

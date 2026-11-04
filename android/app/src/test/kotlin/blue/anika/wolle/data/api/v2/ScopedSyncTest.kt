@@ -101,7 +101,8 @@ class ScopedSyncTest {
             json.decodeFromString<V2SyncPageDto<Int>>(
                 """{"updated":[],"server_time":"t","scope":"all"}"""
             )
-        val without = json.decodeFromString<V2SyncPageDto<Int>>("""{"updated":[],"server_time":"t"}""")
+        val without =
+            json.decodeFromString<V2SyncPageDto<Int>>("""{"updated":[],"server_time":"t"}""")
 
         assertEquals("all", with.scope)
         assertEquals(null, without.scope)

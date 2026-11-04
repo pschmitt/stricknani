@@ -45,14 +45,14 @@ class AppDatabaseMigrationTest {
 
         val db = helper.runMigrationsAndValidate(DB, 4, true, MIGRATION_3_4)
 
-        db.query("SELECT name, ownerId, ownerName, ownerAvatarUrl, isFavorite FROM projects")
-            .use { c ->
-                assertTrue(c.moveToFirst())
-                assertEquals("Socks", c.getString(0))
-                // No owner info means "the signed-in user's own".
-                assertTrue(c.isNull(1) && c.isNull(2) && c.isNull(3))
-                assertEquals(1, c.getInt(4))
-            }
+        db.query("SELECT name, ownerId, ownerName, ownerAvatarUrl, isFavorite FROM projects").use {
+            c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Socks", c.getString(0))
+            // No owner info means "the signed-in user's own".
+            assertTrue(c.isNull(1) && c.isNull(2) && c.isNull(3))
+            assertEquals(1, c.getInt(4))
+        }
         db.query("SELECT name, ownerId FROM yarns").use { c ->
             assertTrue(c.moveToFirst())
             assertEquals("Merino", c.getString(0))

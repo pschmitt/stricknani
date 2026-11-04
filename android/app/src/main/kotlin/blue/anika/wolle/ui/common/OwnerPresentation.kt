@@ -45,14 +45,15 @@ fun YarnEntity.ownerBadge(currentUserId: Long?): OwnerBadgeData? =
     ownerBadgeOf(ownerId, ownerName, ownerAvatarUrl, currentUserId)
 
 /** The banner of a foreign item's detail/edit screen; null for the user's own items. */
-fun ownerBannerOf(badge: OwnerBadgeData?, kind: OwnedKind): OwnerBannerData? =
-    badge?.let { OwnerBannerData(it.name, kind) }
+fun ownerBannerOf(badge: OwnerBadgeData?, kind: OwnedKind): OwnerBannerData? = badge?.let {
+    OwnerBannerData(it.name, kind)
+}
 
 /**
- * The yarns [ownerId] owns. A null [ownerId] means the signed-in user (a new project, or an old
- * row without owner info), and rows without owner info are the user's own too. The server only
- * links a yarn to a project of the same owner, so the project editor's picker uses the project
- * owner's yarns, and the import stash uses only the importing user's own.
+ * The yarns [ownerId] owns. A null [ownerId] means the signed-in user (a new project, or an old row
+ * without owner info), and rows without owner info are the user's own too. The server only links a
+ * yarn to a project of the same owner, so the project editor's picker uses the project owner's
+ * yarns, and the import stash uses only the importing user's own.
  */
 fun yarnsOwnedBy(
     yarns: List<YarnEntity>,
