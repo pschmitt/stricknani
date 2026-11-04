@@ -89,6 +89,10 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const canManageAdmin = $derived(
+    session.data?.user?.is_admin === true &&
+      session.data?.capabilities.admin_actions === true,
+  );
   const accountActionsEnabled = $derived(
     session.data?.capabilities.account_actions === true,
   );
@@ -841,6 +845,16 @@
                 : t("Member", locale)}</span
             >
           </p>
+          {#if canManageAdmin}
+            <a
+              class="ui-button ui-button--secondary ui-button--sm"
+              href={resolve("/admin/users")}
+            >
+              <ActionLabel icon="admin"
+                >{t("Manage users and audit log", locale)}</ActionLabel
+              >
+            </a>
+          {/if}
           {#if profile.avatar_url && profile.avatar_source !== "gravatar"}
             <SharedButton
               variant="ghost"

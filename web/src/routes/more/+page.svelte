@@ -37,12 +37,6 @@
       )}
     />
     <NavigationTile
-      href={resolve("/about")}
-      icon="info"
-      title={t("About", locale)}
-      description={t("Version, links and credits.", locale)}
-    />
-    <NavigationTile
       href={androidApp.url}
       target="_blank"
       rel="noopener noreferrer"
@@ -58,18 +52,15 @@
         href={resolve("/admin/users")}
         icon="admin"
         title={t("Admin", locale)}
-        description={t("Manage accounts, sign-in access, and roles.", locale)}
-      />
-      <NavigationTile
-        href={resolve("/admin/audit")}
-        icon="audit"
-        title={t("Audit log", locale)}
-        description={t(
-          "Review recent changes to projects, yarn, and categories.",
-          locale,
-        )}
+        description={t("Manage accounts and review the audit log.", locale)}
       />
     {/if}
+    <NavigationTile
+      href={resolve("/about")}
+      icon="info"
+      title={t("About", locale)}
+      description={t("Version, links and credits.", locale)}
+    />
   </nav>
 </section>
 

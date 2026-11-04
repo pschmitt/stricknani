@@ -1,6 +1,6 @@
 // Where the Stricknani Android app lives. Change the download target here only.
 
-/** Signed APKs from GitHub; the redesigned app ships as v1.0.0 at the production cutover. */
+/** Signed APKs from the latest GitHub release. */
 export const androidDownloadUrl =
   "https://github.com/pschmitt/stricknani/releases/latest";
 

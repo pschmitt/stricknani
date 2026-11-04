@@ -6,6 +6,7 @@
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import AdminTabs from "./AdminTabs.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import AdminUserIdentities from "#lib/features/auth/AdminUserIdentities.svelte";
   import {
@@ -560,16 +561,14 @@
   }
 </script>
 
-<svelte:head
-  ><title>Stricknani · {t("User administration", locale)}</title></svelte:head
->
+<svelte:head><title>Stricknani · {t("Admin", locale)}</title></svelte:head>
 
 <section
   class="admin-page page-container page-container--wide"
   aria-labelledby="users-title"
 >
   <div class="admin-heading">
-    <PageHeader title={t("User accounts", locale)} titleId="users-title">
+    <PageHeader title={t("Admin", locale)} titleId="users-title">
       {#snippet actions()}
         <SharedButton
           variant="primary"
@@ -583,6 +582,7 @@
       {/snippet}
     </PageHeader>
   </div>
+  <AdminTabs active="users" {locale} />
 
   {#if pageStatus}<p class="notice notice-success" role="status">
       {pageStatus}

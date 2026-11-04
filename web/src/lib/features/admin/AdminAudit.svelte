@@ -7,6 +7,7 @@
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import AdminTabs from "./AdminTabs.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
@@ -303,16 +304,19 @@
   }
 </script>
 
-<svelte:head><title>Stricknani · {t("Audit log", locale)}</title></svelte:head>
+<svelte:head
+  ><title>Stricknani · {t("Admin", locale)} · {t("Audit log", locale)}</title
+  ></svelte:head
+>
 
 <section
   class="audit-page page-container page-container--wide"
   aria-labelledby="audit-title"
 >
   <div class="audit-heading">
-    <PageHeader title={t("Audit log", locale)} titleId="audit-title"
-    ></PageHeader>
+    <PageHeader title={t("Admin", locale)} titleId="audit-title"></PageHeader>
   </div>
+  <AdminTabs active="audit" {locale} />
 
   <form
     class="audit-filters"

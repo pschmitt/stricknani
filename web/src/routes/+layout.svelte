@@ -70,7 +70,6 @@
   const secondaryNavigation = [
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
-    { href: "/about", label: msg("About"), icon: "info" },
   ] as const;
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
@@ -264,8 +263,8 @@
       </nav>
 
       <div class="rail-divider"></div>
-      <p class="nav-caption">{t("Workspace", locale)}</p>
-      <nav class="secondary-nav" aria-label={t("Workspace navigation", locale)}>
+      <p class="nav-caption">{t("More", locale)}</p>
+      <nav class="secondary-nav" aria-label={t("More navigation", locale)}>
         {#each secondaryNavigation as item}
           <a
             class:active={isActive(item.href)}
@@ -281,8 +280,10 @@
         {/each}
         {#if canManageAdmin}
           <a
-            class:active={isActive("/admin/users")}
-            aria-current={isActive("/admin/users") ? "page" : undefined}
+            class:active={isActive("/admin/users") || isActive("/admin/audit")}
+            aria-current={isActive("/admin/users") || isActive("/admin/audit")
+              ? "page"
+              : undefined}
             data-tone="admin"
             href={linkTo("/admin/users")}
           >
@@ -291,18 +292,16 @@
             >
             <span>{t("Admin", locale)}</span>
           </a>
-          <a
-            class:active={isActive("/admin/audit")}
-            aria-current={isActive("/admin/audit") ? "page" : undefined}
-            data-tone="audit"
-            href={linkTo("/admin/audit")}
-          >
-            <span class="nav-icon" data-tone="audit"
-              ><NavIcon name="audit" /></span
-            >
-            <span>{t("Audit log", locale)}</span>
-          </a>
         {/if}
+        <a
+          class:active={isActive("/about")}
+          aria-current={isActive("/about") ? "page" : undefined}
+          data-tone="info"
+          href={linkTo("/about")}
+        >
+          <span class="nav-icon" data-tone="info"><NavIcon name="info" /></span>
+          <span>{t("About", locale)}</span>
+        </a>
       </nav>
     </aside>
 

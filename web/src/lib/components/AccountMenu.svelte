@@ -5,18 +5,16 @@
   import { page } from "$app/state";
   import {
     nextMenuIndex,
-    POINTER_MEDIA_QUERY,
     SHEET_MEDIA_QUERY,
     shouldDismissSheet,
     trapTabIndex,
   } from "#lib/account-menu.ts";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
-  import QrCode from "#lib/components/QrCode.svelte";
   import ThemeSwitcher from "#lib/components/ThemeSwitcher.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-  import { androidAction } from "#lib/app-links.ts";
+  import AndroidAppDialog from "#lib/features/account/AndroidAppDialog.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { session, signOut } from "#lib/session.svelte.ts";
 
@@ -34,7 +32,6 @@
     locale: Locale;
   } = $props();
 
-  const androidApp = androidAction();
   const exitMs = 180;
   const focusableSelector =
     'button:not(:disabled), a[href], [role="menuitem"]:not([aria-disabled="true"])';
@@ -44,7 +41,7 @@
   let mounted = $state(false);
   let open = $state(false);
   let sheet = $state(false);
-  let showQr = $state(false);
+  let appDialog = $state<ReturnType<typeof AndroidAppDialog>>();
   let anchorTop = $state(0);
   let anchorRight = $state(0);
   let dragY = $state(0);
@@ -77,8 +74,6 @@
     if (mounted || !trigger) return;
     clearTimeout(closeTimer);
     sheet = window.matchMedia(SHEET_MEDIA_QUERY).matches;
-    // Phones keep the plain link; a mouse-driven wide screen also shows a code to scan.
-    showQr = !sheet && window.matchMedia(POINTER_MEDIA_QUERY).matches;
     const anchor = trigger.getBoundingClientRect();
     anchorTop = anchor.bottom + 6;
     anchorRight = Math.max(8, window.innerWidth - anchor.right);
@@ -169,6 +164,11 @@
     const delta = event.clientY - start.y;
     if (shouldDismissSheet(delta, event.timeStamp - start.at)) closeMenu();
     else dragY = 0;
+  }
+
+  function openAppDialog() {
+    closeMenu(false);
+    appDialog?.show();
   }
 
   async function handleSignOut() {
@@ -303,39 +303,16 @@
             <span>{t("Admin", locale)}</span>
           </a>
         {/if}
-        <a
+        <button
           class="account-menu-item"
+          type="button"
           role="menuitem"
-          href={androidApp.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onclick={() => closeMenu(false)}
+          aria-haspopup="dialog"
+          onclick={openAppDialog}
         >
           <NavIcon name="download" />
           <span>{t("Get the Android app", locale)}</span>
-        </a>
-        {#if showQr}
-          <div class="account-menu-qr" role="none">
-            <div class="account-menu-qr-code">
-              <QrCode
-                value={androidApp.url}
-                label={t("QR code for the Android app download", locale)}
-              />
-            </div>
-            <p class="account-menu-qr-hint">
-              {t("Scan with your phone to get the app.", locale)}
-            </p>
-          </div>
-        {/if}
-        <a
-          class="account-menu-item"
-          role="menuitem"
-          href={resolve("/about")}
-          onclick={() => closeMenu(false)}
-        >
-          <NavIcon name="info" />
-          <span>{t("About", locale)}</span>
-        </a>
+        </button>
         <button
           class="account-menu-item account-menu-item--danger"
           type="button"
@@ -352,6 +329,12 @@
     </div>
   </div>
 {/if}
+
+<AndroidAppDialog
+  bind:this={appDialog}
+  {locale}
+  onclose={() => trigger?.focus({ preventScroll: true })}
+/>
 
 <style>
   .account-menu {
@@ -576,29 +559,6 @@
   .account-menu-item[aria-disabled="true"] {
     color: var(--ink-muted);
     cursor: progress;
-  }
-
-  .account-menu-qr {
-    display: grid;
-    justify-items: center;
-    gap: 0.4rem;
-    padding: 0.25rem 0.75rem 0.5rem;
-  }
-
-  .account-menu-qr-code {
-    box-sizing: border-box;
-    width: 9rem;
-    padding: 0.25rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    background: var(--surface);
-  }
-
-  .account-menu-qr-hint {
-    margin: 0;
-    color: var(--ink-muted);
-    font-size: 0.8rem;
-    text-align: center;
   }
 
   .account-menu-item--danger,
