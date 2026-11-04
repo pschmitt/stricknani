@@ -661,7 +661,7 @@
     <string name="yarn_editor_fiber_content_hint" formatted="false">z. B. 80 % Merino, 20 % Polyamid</string>
     <!-- Admin: Aktivitätsprotokoll und Konten (SNA-86) -->
     <string name="settings_category_admin_title">Admin</string>
-    <string name="settings_category_admin_subtitle">Aktivitäten und Konten</string>
+    <string name="settings_category_admin_subtitle">Konten und Aktivitäten</string>
     <string name="admin_try_again">Nochmal versuchen</string>
     <string name="admin_activity_title">Aktivität</string>
     <string name="admin_activity_subtitle">Sieh, wer wann was geändert hat</string>

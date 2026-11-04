@@ -291,7 +291,13 @@ internal fun AccountSettingsScreen(
                             )
                         },
                     )
-                    listOf(SettingsCategory.Sync, SettingsCategory.Backup, SettingsCategory.About)
+                    // About stays last; Admin only appears for administrators.
+                    listOfNotNull(
+                            SettingsCategory.Sync,
+                            SettingsCategory.Backup,
+                            SettingsCategory.Admin.takeIf { isAdmin },
+                            SettingsCategory.About,
+                        )
                         .forEach { category ->
                             SettingsListItem(
                                 modifier =

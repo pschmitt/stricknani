@@ -59,18 +59,18 @@ internal fun AdminSettingsScreen(
             item {
                 SettingsSingleItemCard {
                     AdminRow(
-                        icon = PhosphorIcons.ClockCounterClockwise,
-                        title = stringResource(R.string.admin_activity_title),
-                        subtitle = stringResource(R.string.admin_activity_subtitle),
-                        tag = "admin-open-activity",
-                        onClick = onOpenActivity,
-                    )
-                    AdminRow(
                         icon = PhosphorIcons.UsersThree,
                         title = stringResource(R.string.admin_accounts_title),
                         subtitle = stringResource(R.string.admin_accounts_subtitle),
                         tag = "admin-open-accounts",
                         onClick = onOpenAccounts,
+                    )
+                    AdminRow(
+                        icon = PhosphorIcons.ClockCounterClockwise,
+                        title = stringResource(R.string.admin_activity_title),
+                        subtitle = stringResource(R.string.admin_activity_subtitle),
+                        tag = "admin-open-activity",
+                        onClick = onOpenActivity,
                     )
                 }
             }

@@ -661,7 +661,7 @@
     <string name="yarn_editor_fiber_content_hint" formatted="false">e.g. 80% merino, 20% nylon</string>
     <!-- Admin: activity log and accounts (SNA-86) -->
     <string name="settings_category_admin_title">Admin</string>
-    <string name="settings_category_admin_subtitle">Activity log and accounts</string>
+    <string name="settings_category_admin_subtitle">Accounts and activity log</string>
     <string name="admin_try_again">Try again</string>
     <string name="admin_activity_title">Activity</string>
     <string name="admin_activity_subtitle">See who changed what, and when</string>
