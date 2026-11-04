@@ -1,6 +1,8 @@
 import { ApiError, apiRequest } from "#lib/api.ts";
 import {
+  parseAuditMedia,
   parseChangeSet,
+  type AuditMedia,
   type ChangeSetV1,
   type ChangeUnavailableReason,
   type PageMeta,
@@ -18,6 +20,7 @@ export interface HistoryEvent {
   action: string;
   created_at: string;
   has_changes: boolean;
+  media: AuditMedia | null;
 }
 
 export interface HistoryPage {
@@ -64,6 +67,7 @@ export function parseHistoryEvent(value: unknown): HistoryEvent {
     action: value.action,
     created_at: value.created_at,
     has_changes: value.has_changes === true,
+    media: parseAuditMedia(value.media),
   };
 }
 

@@ -7,6 +7,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ChangeList from "#lib/features/history/ChangeList.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
+  import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { getAuditEventDetail, type AuditEventDetail } from "./admin-api";
@@ -158,10 +159,22 @@
           : null}
         titleTag="h2"
       />
+      {#if detail.event.media}
+        <div class="event-media">
+          <AuditMediaPreview
+            media={detail.event.media}
+            {locale}
+            variant="note"
+          />
+          <AuditMediaPreview media={detail.event.media} {locale} />
+        </div>
+      {/if}
     </article>
 
     {#if detail.changes}
       <ChangeList changes={detail.changes} {locale} />
+    {:else if detail.event.media}
+      <!-- The file above is the whole record of an upload or removal. -->
     {:else}
       <p class="notice-panel">
         {#if detail.unavailable_reason === "not_recorded"}
@@ -199,6 +212,14 @@
   .event-actor time {
     margin-left: auto;
     color: var(--muted);
+  }
+  .event-media {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
   }
   .event-card :global(.resource-card__name) {
     margin: 0.9rem 0 0.4rem;

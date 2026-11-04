@@ -24,6 +24,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -86,7 +88,12 @@ import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminAuditScreen(onBack: () -> Unit, viewModel: AdminAuditViewModel = hiltViewModel()) {
+fun AdminAuditScreen(
+    onBack: () -> Unit,
+    onOpenProject: (Int) -> Unit = {},
+    onOpenYarn: (Int) -> Unit = {},
+    viewModel: AdminAuditViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val detail by viewModel.detail.collectAsStateWithLifecycle()
 
@@ -145,6 +152,13 @@ fun AdminAuditScreen(onBack: () -> Unit, viewModel: AdminAuditViewModel = hiltVi
                                 state = state,
                                 avatarUrl = viewModel::avatarUrl,
                                 onOpen = viewModel::openEvent,
+                                onOpenItem = { target ->
+                                    when (target) {
+                                        is AuditTarget.Project -> onOpenProject(target.id.toInt())
+                                        is AuditTarget.Yarn -> onOpenYarn(target.id.toInt())
+                                        else -> Unit
+                                    }
+                                },
                                 onLoadMore = viewModel::loadMore,
                             )
                         }
@@ -247,6 +261,7 @@ private fun AuditList(
     state: AuditListState,
     avatarUrl: (String?) -> String?,
     onOpen: (AuditEventDto) -> Unit,
+    onOpenItem: (AuditTarget) -> Unit,
     onLoadMore: () -> Unit,
 ) {
     val zone = remember { ZoneId.systemDefault() }
@@ -278,7 +293,12 @@ private fun AuditList(
                 )
             }
             items(group.events, key = { it.id }) { event ->
-                AuditRow(event, avatarUrl = avatarUrl, onClick = { onOpen(event) })
+                AuditRow(
+                    event,
+                    avatarUrl = avatarUrl,
+                    onOpenDetails = { onOpen(event) },
+                    onOpenItem = onOpenItem,
+                )
             }
         }
         if (state.isLoadingMore) {
@@ -369,7 +389,12 @@ private fun formatTime(event: AuditEventDto, style: FormatStyle = FormatStyle.SH
 }
 
 @Composable
-private fun AuditRow(event: AuditEventDto, avatarUrl: (String?) -> String?, onClick: () -> Unit) {
+private fun AuditRow(
+    event: AuditEventDto,
+    avatarUrl: (String?) -> String?,
+    onOpenDetails: () -> Unit,
+    onOpenItem: (AuditTarget) -> Unit,
+) {
     val kind = auditActionPresentation(event.action).kind
     val tone = kind.tone().color()
     val title = entityTitle(event)
@@ -378,53 +403,102 @@ private fun AuditRow(event: AuditEventDto, avatarUrl: (String?) -> String?, onCl
         entityTypeLabelRes(event.entityType)?.let { stringResource(it) } ?: event.entityType
     val time = formatTime(event)
     val actor = event.actorEmail ?: stringResource(R.string.admin_actor_unknown)
+    val target = event.target()
+    val navigable = target is AuditTarget.Project || target is AuditTarget.Yarn
     val description = stringResource(R.string.admin_event_description, action, title, actor, time)
+    val detailKind = event.detailKind()
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier =
-            Modifier.fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .clickable(
-                    onClickLabel = stringResource(R.string.admin_event_open),
-                    onClick = onClick,
-                )
-                .semantics { contentDescription = description },
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("admin-audit-row"),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier =
-                Modifier.padding(horizontal = 12.dp, vertical = 10.dp).clearAndSetSemantics {},
-        ) {
-            ActionBadge(kind)
-            Column(Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    "$action · $typeLabel",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = tone,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier =
+                    Modifier.weight(1f)
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable(
+                            onClickLabel =
+                                if (navigable) stringResource(R.string.admin_open_item, title)
+                                else stringResource(R.string.admin_event_open),
+                            onClick = { if (navigable) onOpenItem(target) else onOpenDetails() },
+                        )
+                        .padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
+                        .semantics { contentDescription = description }
+                        .testTag("admin-audit-row-main"),
             ) {
-                Text(
-                    time,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ActionBadge(kind)
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        "$action · $typeLabel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = tone,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    event.media?.let { media ->
+                        Text(
+                            auditMediaNote(media),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (target is AuditTarget.Deleted) {
+                        Text(
+                            stringResource(R.string.admin_item_deleted),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.testTag("admin-audit-row-deleted"),
+                        )
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.clearAndSetSemantics {},
+                ) {
+                    Text(
+                        time,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 24.dp)
+                }
+            }
+            IconButton(
+                onClick = onOpenDetails,
+                modifier = Modifier.testTag("admin-audit-details"),
+            ) {
+                Icon(
+                    when (detailKind) {
+                        AuditDetailKind.Media -> Icons.Filled.Image
+                        AuditDetailKind.Changes -> PhosphorIcons.ClockCounterClockwise
+                        AuditDetailKind.None -> Icons.Filled.Info
+                    },
+                    contentDescription =
+                        stringResource(
+                            when (detailKind) {
+                                AuditDetailKind.Media ->
+                                    if (event.media?.isImage == true)
+                                        R.string.admin_media_show_picture
+                                    else R.string.admin_media_open_file
+                                AuditDetailKind.Changes -> R.string.admin_event_open
+                                AuditDetailKind.None -> R.string.admin_no_details
+                            }
+                        ),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 24.dp)
             }
         }
     }
@@ -461,11 +535,15 @@ private fun AuditDetailSheet(
             AuditDetailHeader(event, avatarUrl)
             when (state) {
                 is AuditDetailState.Loading ->
-                    Box(
-                        Modifier.fillMaxWidth().padding(24.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        YarnLoader(size = 56.dp)
+                    if (state.event.media != null) {
+                        AuditMediaBlock(state.event.media)
+                    } else {
+                        Box(
+                            Modifier.fillMaxWidth().padding(24.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            YarnLoader(size = 56.dp)
+                        }
                     }
                 is AuditDetailState.Failed ->
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -482,7 +560,10 @@ private fun AuditDetailSheet(
                     }
                 is AuditDetailState.Loaded -> {
                     val changes = state.detail.changes
-                    if (changes != null) {
+                    val media = state.detail.event.media
+                    if (media != null) {
+                        AuditMediaBlock(media)
+                    } else if (changes != null) {
                         Text(
                             stringResource(R.string.admin_changes_title),
                             style = MaterialTheme.typography.titleMedium,
@@ -495,6 +576,12 @@ private fun AuditDetailSheet(
                             )
                         }
                         changes.items.forEach { item -> ChangeCard(item) }
+                    } else if (state.detail.unavailableReason == "not_recorded") {
+                        Text(
+                            stringResource(R.string.admin_no_details),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     } else {
                         Text(
                             stringResource(unavailableReasonRes(state.detail.unavailableReason)),

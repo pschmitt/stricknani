@@ -11,6 +11,7 @@
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
+  import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import { knownAuditActions } from "./audit-action";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -397,6 +398,16 @@
                     href={event.resource.href}
                     imageUrl={event.resource.preview_url}
                   />
+                  <!-- Every row reserves this line so rows keep one height, with or without media. -->
+                  <div class="event-note">
+                    {#if event.media}
+                      <AuditMediaPreview
+                        media={event.media}
+                        {locale}
+                        variant="note"
+                      />
+                    {/if}
+                  </div>
                 </div>
                 <p class="event-actor">
                   <span class="visually-hidden">{t("By", locale)}</span>
@@ -414,7 +425,14 @@
                     title={eventDate(event.created_at)}
                     >{eventTime(event.created_at)}</time
                   >
-                  <div class="event-diff-slot" aria-hidden={!event.has_changes}>
+                  <div class="event-diff-slot">
+                    {#if event.media}
+                      <AuditMediaPreview media={event.media} {locale} />
+                    {:else if !event.has_changes}
+                      <span class="no-details" data-audit-no-details
+                        >{t("No details recorded", locale)}</span
+                      >
+                    {/if}
                     {#if event.has_changes}
                       <a
                         class="ui-button ui-button--ghost ui-button--sm show-diff"
@@ -567,6 +585,10 @@
     white-space: nowrap;
     overflow-wrap: normal;
   }
+  .event-note {
+    min-height: 1.3rem;
+    min-width: 0;
+  }
   .event-actor {
     grid-area: actor;
     min-width: 0;
@@ -608,6 +630,11 @@
     min-height: 44px;
     align-items: center;
     justify-content: end;
+  }
+  .no-details {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+    text-align: right;
   }
   .show-diff {
     min-height: 44px;

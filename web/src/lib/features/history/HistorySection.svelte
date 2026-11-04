@@ -6,6 +6,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import ChangeList from "./ChangeList.svelte";
+  import AuditMediaPreview from "#lib/features/admin/AuditMediaPreview.svelte";
   import {
     getHistoryDetail,
     historyUnsupported,
@@ -130,7 +131,8 @@
   // Fetch the field details of what is on screen so each row can say what changed.
   $effect(() => {
     for (const event of visible) {
-      if (event.has_changes) untrack(() => requestDetail(event.id));
+      if (event.has_changes && !event.media)
+        untrack(() => requestDetail(event.id));
     }
   });
 
@@ -193,6 +195,8 @@
   }
 
   function headline(event: HistoryEvent): string {
+    if (event.media?.name)
+      return `${actionLabel(event.action, locale)}: ${event.media.name}`;
     const entry = details[event.id];
     return eventHeadline(
       event.action,
@@ -296,7 +300,7 @@
               </span>
             </span>
           {/snippet}
-          {#if event.has_changes}
+          {#if event.has_changes || event.media}
             <button
               type="button"
               class="entry-row"
@@ -317,7 +321,16 @@
                 aria-label={headline(event)}
               >
                 <p class="entry-date">{fullDate(event.created_at, locale)}</p>
-                {#if !entry || entry.state === "loading"}
+                {#if event.media}
+                  <div class="entry-media">
+                    <AuditMediaPreview
+                      media={event.media}
+                      {locale}
+                      variant="note"
+                    />
+                    <AuditMediaPreview media={event.media} {locale} />
+                  </div>
+                {:else if !entry || entry.state === "loading"}
                   <p class="history-muted" aria-live="polite">
                     {t("Loading recorded changes…", locale)}
                   </p>
@@ -347,6 +360,9 @@
           {:else}
             <div class="entry-row entry-row--static">
               {@render summary()}
+              <span class="history-muted" data-history-no-details
+                >{t("No details recorded", locale)}</span
+              >
             </div>
           {/if}
         </li>
@@ -402,6 +418,14 @@
     border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
     background: var(--surface);
+  }
+
+  .entry-media {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .history[hidden] {

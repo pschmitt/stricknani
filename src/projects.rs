@@ -13,8 +13,8 @@ use serde_json::{Value, json};
 use sqlx::{FromRow, Sqlite, Transaction};
 
 use crate::audit::{
-    Action as AuditAction, ChangeField, ChangeItemV1, ChangeSetV1, ChangeValue,
-    Entity as AuditEntity, StepSnapshot,
+    Action as AuditAction, ChangeField, ChangeItemV1, ChangeValue, Entity as AuditEntity,
+    StepSnapshot,
 };
 use crate::auth::bearer_user;
 use crate::db::AppState;
@@ -512,7 +512,7 @@ async fn create_project_with_yarn_ids(
     let after_category = category_name_for_audit(&mut transaction, category_id)
         .await
         .map_err(|_| ProjectError::Database)?;
-    let audit_changes = project_audit_changes(
+    let audit_changes = crate::audit::changes_from_items(project_audit_changes(
         None,
         &payload,
         &name,
@@ -520,7 +520,7 @@ async fn create_project_with_yarn_ids(
         Vec::new(),
         audit_yarn_names,
         tag_policy,
-    );
+    ));
     let now = timestamp(Utc::now());
     let tags = encode_tags(&payload.tags, tag_policy);
     let inserted = sqlx::query(
@@ -693,7 +693,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     let after_category = category_name_for_audit(&mut transaction, category_id)
         .await
         .map_err(|_| ProjectError::Database)?;
-    let audit_changes = project_audit_changes(
+    let audit_items = project_audit_changes(
         Some(&current),
         &payload,
         &name,
@@ -702,6 +702,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
         new_audit_yarn_names,
         tag_policy,
     );
+    let audit_changes = crate::audit::changes_from_items(audit_items.clone());
     let updated_at = next_timestamp(&current.updated_at).ok_or(ProjectError::Database)?;
     let tags = encode_tags(&payload.tags, tag_policy);
     let updated = sqlx::query(
@@ -757,17 +758,19 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     {
         return Err(ProjectError::Database);
     }
-    if crate::audit::record_with_data(
-        &mut transaction,
-        actor_id,
-        AuditEntity::Project,
-        project_id,
-        AuditAction::Updated,
-        Some(&name),
-        audit_changes.as_ref(),
-    )
-    .await
-    .is_err()
+    // A save that changes nothing is not an event worth recording.
+    if !audit_items.is_empty()
+        && crate::audit::record_with_data(
+            &mut transaction,
+            actor_id,
+            AuditEntity::Project,
+            project_id,
+            AuditAction::Updated,
+            Some(&name),
+            audit_changes.as_ref(),
+        )
+        .await
+        .is_err()
     {
         return Err(ProjectError::Database);
     }
@@ -1138,7 +1141,7 @@ fn project_audit_changes(
     before_yarn_names: Vec<String>,
     after_yarn_names: Vec<String>,
     tag_policy: TagPolicy,
-) -> Option<ChangeSetV1> {
+) -> Vec<ChangeItemV1> {
     let mut items = Vec::new();
     let mut push_text = |field, old: Option<&str>, new: Option<&str>| {
         if let Some(item) = crate::audit::text_change(field, old, new) {
@@ -1278,7 +1281,7 @@ fn project_audit_changes(
             after: ChangeValue::LinkChanged(after_link.is_some()),
         });
     }
-    crate::audit::changes(items.into_iter().map(Some))
+    items
 }
 
 async fn ensure_category(

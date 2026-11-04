@@ -368,7 +368,11 @@ fun StricknaniNavHost(
                     )
                 }
                 screen<Route.AdminAudit>(motion) {
-                    AdminAuditScreen(onBack = { navController.navigateUp() })
+                    AdminAuditScreen(
+                        onBack = { navController.navigateUp() },
+                        onOpenProject = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onOpenYarn = { id -> navController.navigate(Route.YarnDetail(id)) },
+                    )
                 }
                 screen<Route.AdminAccounts>(motion) {
                     AdminAccountsScreen(onBack = { navController.navigateUp() })

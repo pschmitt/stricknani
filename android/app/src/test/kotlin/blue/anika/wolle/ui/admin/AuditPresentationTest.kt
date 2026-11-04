@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.Color
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AdminUserDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.AuditMediaDto
+import blue.anika.wolle.data.api.dto.AuditResourceDto
 import blue.anika.wolle.data.api.dto.ChangeStep
 import blue.anika.wolle.data.api.dto.ChangeValue
 import java.time.Instant
@@ -182,5 +184,98 @@ class AuditPresentationTest {
         assertTrue(isCurrentUser(user, "anna@example.org"))
         assertEquals(false, isCurrentUser(user, null))
         assertEquals(false, isCurrentUser(user, "bob@example.org"))
+    }
+
+    private fun resourceEvent(
+        kind: String?,
+        exists: Boolean,
+        id: Long = 7,
+        media: AuditMediaDto? = null,
+        hasChanges: Boolean = false,
+    ) =
+        AuditEventDto(
+            id = 1,
+            entityType = kind ?: "project",
+            entityId = id,
+            action = "updated",
+            createdAt = "2026-11-02T18:30:05Z",
+            resource = AuditResourceDto(kind = kind, id = id, exists = exists),
+            hasChanges = hasChanges,
+            media = media,
+        )
+
+    @Test
+    fun `tapping a project or yarn event opens the item, deleted ones say so`() {
+        assertEquals(AuditTarget.Project(7), resourceEvent("project", true).target())
+        assertEquals(AuditTarget.Yarn(7), resourceEvent("yarn", true).target())
+        assertEquals(AuditTarget.Deleted, resourceEvent("project", false).target())
+        assertEquals(AuditTarget.Deleted, resourceEvent("yarn", false).target())
+        assertEquals(AuditTarget.None, resourceEvent("category", true).target())
+        assertEquals(AuditTarget.None, resourceEvent(null, false).copy(entityType = "x").target())
+    }
+
+    @Test
+    fun `media state distinguishes pictures, files and deleted media`() {
+        val picture =
+            AuditMediaDto(
+                kind = "image",
+                id = 3,
+                name = "front.png",
+                exists = true,
+                isImage = true,
+                url = "/api/v2/admin/resources/project/7/media/image/3",
+                thumbnailUrl = "/api/v2/admin/resources/project/7/media/image/3/thumbnail",
+            )
+        assertTrue(picture.state() is AuditMediaState.Picture)
+        val file =
+            AuditMediaDto(
+                kind = "attachment",
+                id = 4,
+                name = "chart.pdf",
+                exists = true,
+                url = "/media/projects/7/x.pdf",
+            )
+        assertTrue(file.state() is AuditMediaState.File)
+        val gone = picture.copy(exists = false, url = null, thumbnailUrl = null)
+        assertEquals(AuditMediaState.Deleted(isImage = true), gone.state())
+        // A server that says it exists but sends no link is treated as deleted, never a dead link.
+        assertEquals(
+            AuditMediaState.Deleted(isImage = false),
+            file.copy(url = null).state(),
+        )
+        assertEquals("front.png", picture.displayName())
+        assertNull(picture.copy(name = "  ").displayName())
+    }
+
+    @Test
+    fun `every event offers media, changes or an explicit no details state`() {
+        val media = AuditMediaDto(kind = "photo", id = 1, exists = true, isImage = true, url = "/x")
+        assertEquals(AuditDetailKind.Media, resourceEvent("yarn", true, media = media).detailKind())
+        assertEquals(
+            AuditDetailKind.Changes,
+            resourceEvent("project", true, hasChanges = true).detailKind(),
+        )
+        assertEquals(AuditDetailKind.None, resourceEvent("project", true).detailKind())
+    }
+
+    @Test
+    fun `new change fields have labels`() {
+        listOf(
+                "project.cover_image",
+                "project.image_order",
+                "project.step_image_order",
+                "yarn.primary_photo",
+                "yarn.photo_order",
+            )
+            .forEach { assertNotNull(it, changeFieldLabelRes(it)) }
+    }
+
+    @Test
+    fun `cached file names are safe`() {
+        val media = AuditMediaDto(id = 9, name = "../../etc/pass wd?.pdf")
+        val name = safeAuditFileName(media)
+        assertTrue(name.startsWith("9-"))
+        assertTrue(name.none { it == '/' || it == '\\' || it == ' ' || it == '?' })
+        assertEquals("5-file", safeAuditFileName(AuditMediaDto(id = 5, name = null)))
     }
 }

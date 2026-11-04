@@ -56,10 +56,12 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.ui.admin.ActionBadge
 import blue.anika.wolle.ui.admin.AdminAvatar
+import blue.anika.wolle.ui.admin.AuditMediaBlock
 import blue.anika.wolle.ui.admin.ChangeCard
 import blue.anika.wolle.ui.admin.auditActionPresentation
 import blue.anika.wolle.ui.admin.auditEventInstant
 import blue.anika.wolle.ui.admin.color
+import blue.anika.wolle.ui.admin.displayName
 import blue.anika.wolle.ui.admin.tone
 import blue.anika.wolle.ui.admin.unavailableReasonRes
 import blue.anika.wolle.ui.common.Mascot
@@ -244,6 +246,9 @@ private fun actionLabel(action: String): String {
 /** The summary of what changed once the details are in, else the plain action name. */
 @Composable
 private fun historyHeadline(event: AuditEventDto, state: HistoryUiState): String {
+    event.media?.displayName()?.let { name ->
+        return "${actionLabel(event.action)}: $name"
+    }
     val loaded = state.details[event.id] as? HistoryDetailState.Loaded
     val parts = summaryParts(loaded?.detail?.changes)
     if (parts.isEmpty()) return actionLabel(event.action)
@@ -324,7 +329,7 @@ private fun HistoryRow(
     val byText = other?.let { stringResource(R.string.history_by, it) }
     val description = listOfNotNull(headline, action, date, byText).joinToString(", ")
     val surface = MaterialTheme.colorScheme.surfaceContainer
-    val expandable = event.hasChanges
+    val expandable = event.hasChanges || event.media != null
     val rowModifier =
         Modifier.fillMaxWidth()
             .height(IntrinsicSize.Min)
@@ -450,37 +455,43 @@ private fun HistoryEventSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            when (detail) {
-                null,
-                HistoryDetailState.Loading ->
-                    Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) {
-                        YarnLoader(size = 56.dp)
-                    }
-                HistoryDetailState.Failed ->
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(R.string.history_detail_failed),
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        TextButton(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
-                            Text(stringResource(R.string.admin_try_again))
+            if (event.media != null) {
+                AuditMediaBlock(event.media)
+            } else
+                when (detail) {
+                    null,
+                    HistoryDetailState.Loading ->
+                        Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) {
+                            YarnLoader(size = 56.dp)
+                        }
+                    HistoryDetailState.Failed ->
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(R.string.history_detail_failed),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            TextButton(
+                                onClick = onRetry,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) {
+                                Text(stringResource(R.string.admin_try_again))
+                            }
+                        }
+                    is HistoryDetailState.Loaded -> {
+                        val changes = detail.detail.changes
+                        if (changes != null && changes.items.isNotEmpty()) {
+                            changes.items.forEach { item -> ChangeCard(item) }
+                        } else {
+                            Text(
+                                stringResource(
+                                    if (changes != null) R.string.admin_changes_none
+                                    else unavailableReasonRes(detail.detail.unavailableReason)
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
-                is HistoryDetailState.Loaded -> {
-                    val changes = detail.detail.changes
-                    if (changes != null && changes.items.isNotEmpty()) {
-                        changes.items.forEach { item -> ChangeCard(item) }
-                    } else {
-                        Text(
-                            stringResource(
-                                if (changes != null) R.string.admin_changes_none
-                                else unavailableReasonRes(detail.detail.unavailableReason)
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
-            }
         }
     }
 }

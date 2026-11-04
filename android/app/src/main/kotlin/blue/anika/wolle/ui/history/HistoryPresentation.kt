@@ -45,6 +45,9 @@ private val fieldNouns: Map<String, Int> =
         "project.steps" to R.string.history_noun_steps,
         "project.is_ai_enhanced" to R.string.history_noun_ai,
         "project.link" to R.string.history_noun_link,
+        "project.cover_image" to R.string.history_noun_cover_image,
+        "project.image_order" to R.string.history_noun_image_order,
+        "project.step_image_order" to R.string.history_noun_step_image_order,
         "yarn.name" to R.string.history_noun_name,
         "yarn.description" to R.string.history_noun_description,
         "yarn.brand" to R.string.history_noun_brand,
@@ -58,6 +61,8 @@ private val fieldNouns: Map<String, Int> =
         "yarn.notes" to R.string.history_noun_notes,
         "yarn.is_ai_enhanced" to R.string.history_noun_ai,
         "yarn.link" to R.string.history_noun_link,
+        "yarn.primary_photo" to R.string.history_noun_primary_photo,
+        "yarn.photo_order" to R.string.history_noun_photo_order,
         "category.name" to R.string.history_noun_name,
     )
 

@@ -806,7 +806,10 @@ async fn reorder_media(
             }
         }
         .map_err(|_| MediaOrderError::Database)?;
-        if record_order_change(&mut tx, actor_id, group).await.is_err() {
+        if record_order_change(&mut tx, actor_id, group, &rows, &ids)
+            .await
+            .is_err()
+        {
             let _ = tx.rollback().await;
             return Err(MediaOrderError::Database);
         }
@@ -1019,34 +1022,94 @@ async fn current_parent_timestamp(
     .map_err(|_| MediaOrderError::Database)
 }
 
+async fn media_labels(
+    tx: &mut Transaction<'_, Sqlite>,
+    rows: &[OrderedMediaRow],
+    order: &[i64],
+) -> Result<Vec<String>, sqlx::Error> {
+    let mut labels = Vec::with_capacity(order.len());
+    for public_id in order {
+        let Some((internal_id, _, _, _)) = rows.iter().find(|row| row.1 == *public_id) else {
+            continue;
+        };
+        let names: Option<(String, String)> =
+            sqlx::query_as("SELECT original_filename, filename FROM media_files WHERE id = ?")
+                .bind(internal_id)
+                .fetch_optional(&mut **tx)
+                .await?;
+        let (original, stored) = names.unwrap_or_default();
+        labels.push(crate::audit::media_label(
+            Some(&original),
+            &stored,
+            *public_id,
+        ));
+    }
+    Ok(labels)
+}
+
+/// Record a media reorder as a field-level diff: the new order of the files
+/// and, when the first picture (the cover) changed, which picture that was.
 async fn record_order_change(
     tx: &mut Transaction<'_, Sqlite>,
     user_id: i64,
     group: MediaOrderGroup,
+    rows: &[OrderedMediaRow],
+    new_order: &[i64],
 ) -> Result<(), sqlx::Error> {
-    match group {
-        MediaOrderGroup::ProjectTitles(project_id)
-        | MediaOrderGroup::ProjectSteps { project_id, .. } => {
-            crate::audit::record(
-                tx,
-                user_id,
-                AuditEntity::Project,
-                project_id,
-                AuditAction::Updated,
-            )
-            .await
-        }
-        MediaOrderGroup::YarnPhotos(yarn_id) => {
-            crate::audit::record(
-                tx,
-                user_id,
-                AuditEntity::Yarn,
-                yarn_id,
-                AuditAction::Updated,
-            )
-            .await
-        }
-    }
+    use crate::audit::{ChangeField, ChangeValue};
+    let current_order: Vec<i64> = rows.iter().map(|row| row.1).collect();
+    let before = media_labels(tx, rows, &current_order).await?;
+    let after = media_labels(tx, rows, new_order).await?;
+    let (entity, entity_id, order_field, cover_field) = match group {
+        MediaOrderGroup::ProjectTitles(project_id) => (
+            AuditEntity::Project,
+            project_id,
+            ChangeField::ProjectImageOrder,
+            Some(ChangeField::ProjectCoverImage),
+        ),
+        MediaOrderGroup::ProjectSteps { project_id, .. } => (
+            AuditEntity::Project,
+            project_id,
+            ChangeField::ProjectStepImageOrder,
+            None,
+        ),
+        MediaOrderGroup::YarnPhotos(yarn_id) => (
+            AuditEntity::Yarn,
+            yarn_id,
+            ChangeField::YarnPhotoOrder,
+            Some(ChangeField::YarnPrimaryPhoto),
+        ),
+    };
+    let label_of = |id: Option<i64>, labels: &[String], order: &[i64]| {
+        id.and_then(|id| order.iter().position(|value| *value == id))
+            .and_then(|index| labels.get(index).cloned())
+    };
+    let primary_before = rows.iter().find(|row| row.3).map(|row| row.1);
+    let primary_after = new_order.first().copied();
+    let cover = cover_field.map(|field| {
+        crate::audit::change_item(
+            field,
+            ChangeValue::Text(label_of(primary_before, &before, &current_order)),
+            ChangeValue::Text(label_of(primary_after, &after, new_order)),
+        )
+    });
+    let mut items = vec![crate::audit::change_item(
+        order_field,
+        ChangeValue::TextList(before),
+        ChangeValue::TextList(after),
+    )];
+    items.extend(cover);
+    let changes = crate::audit::changes(items);
+    crate::audit::record_with_data(
+        tx,
+        user_id,
+        entity,
+        entity_id,
+        AuditAction::Updated,
+        None,
+        changes.as_ref(),
+    )
+    .await
 }
 
 async fn compact_group(
@@ -1297,12 +1360,21 @@ pub(crate) async fn upload_project_image(
             return Err(MediaOperationError::Database);
         }
     };
-    if crate::audit::record(
+    if crate::audit::record_with_media(
         &mut tx,
         actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Uploaded,
+        &crate::audit::MediaRef {
+            kind: crate::audit::MediaKind::Image,
+            public_id,
+            name: Some(crate::audit::media_label(
+                Some(&upload.original_filename),
+                &files.filename,
+                public_id,
+            )),
+        },
     )
     .await
     .is_err()
@@ -1731,12 +1803,21 @@ async fn store_project_attachment(
             return Err(MediaOperationError::Database);
         }
     };
-    if crate::audit::record(
+    if crate::audit::record_with_media(
         &mut tx,
         actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Uploaded,
+        &crate::audit::MediaRef {
+            kind: crate::audit::MediaKind::Attachment,
+            public_id,
+            name: Some(crate::audit::media_label(
+                Some(&original_filename),
+                &files.filename,
+                public_id,
+            )),
+        },
     )
     .await
     .is_err()
@@ -1922,12 +2003,21 @@ pub(crate) async fn upload_yarn_photo_for_owner(
             return Err(MediaOperationError::Database);
         }
     };
-    if crate::audit::record(
+    if crate::audit::record_with_media(
         &mut tx,
         actor_id,
         AuditEntity::Yarn,
         yarn_id,
         AuditAction::Uploaded,
+        &crate::audit::MediaRef {
+            kind: crate::audit::MediaKind::Photo,
+            public_id,
+            name: Some(crate::audit::media_label(
+                Some(&upload.original_filename),
+                &files.filename,
+                public_id,
+            )),
+        },
     )
     .await
     .is_err()
@@ -2093,12 +2183,25 @@ pub(crate) async fn delete_project_media(
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
     }
-    if crate::audit::record(
+    if crate::audit::record_with_media(
         &mut tx,
         actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Removed,
+        &crate::audit::MediaRef {
+            kind: if row.kind == "attachment" {
+                crate::audit::MediaKind::Attachment
+            } else {
+                crate::audit::MediaKind::Image
+            },
+            public_id: row.public_id,
+            name: Some(crate::audit::media_label(
+                Some(row.original_filename.as_str()),
+                &row.filename,
+                row.public_id,
+            )),
+        },
     )
     .await
     .is_err()
@@ -2214,12 +2317,21 @@ pub(crate) async fn delete_yarn_photo_for_owner(
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
     }
-    if crate::audit::record(
+    if crate::audit::record_with_media(
         &mut tx,
         actor_id,
         AuditEntity::Yarn,
         yarn_id,
         AuditAction::Removed,
+        &crate::audit::MediaRef {
+            kind: crate::audit::MediaKind::Photo,
+            public_id: photo.public_id,
+            name: Some(crate::audit::media_label(
+                Some(photo.original_filename.as_str()),
+                &photo.filename,
+                photo.public_id,
+            )),
+        },
     )
     .await
     .is_err()

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Photos taken with the camera app land in cache/captures/ before the editor copies them. -->
+<!-- Photos taken with the camera app land in cache/captures/ before the editor copies them.
+     Files fetched from the audit log (cache/audit-files/) are handed to a viewer app read-only. -->
 <paths>
     <cache-path name="captures" path="captures/" />
+    <cache-path name="audit-files" path="audit-files/" />
 </paths>

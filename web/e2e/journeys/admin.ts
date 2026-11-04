@@ -1881,9 +1881,8 @@ async function runAcceptance(
         .locator("a.resource-card__link")
         .getAttribute("href")) ?? "";
     check(
-      urlPath(auditResourceHref) ===
-        `/app/admin/resources/project/${crossOwnerProjectId}`,
-      "audit resource card did not use its authorized admin route",
+      urlPath(auditResourceHref) === `/app/projects/${crossOwnerProjectId}`,
+      "audit resource card did not link to the normal project page",
     );
     const auditProjectImage = await assertDecodedCardImage(
       auditResourceCard,
@@ -1906,9 +1905,8 @@ async function runAcceptance(
         .locator("a.resource-card__link")
         .getAttribute("href")) ?? "";
     check(
-      urlPath(auditYarnHref) ===
-        `/app/admin/resources/yarn/${crossOwnerYarnId}`,
-      "audit yarn card did not use its authorized admin route",
+      urlPath(auditYarnHref) === `/app/yarns/${crossOwnerYarnId}`,
+      "audit yarn card did not link to the normal yarn page",
     );
     const auditYarnImage = await assertDecodedCardImage(
       auditYarnCard,
@@ -2318,6 +2316,18 @@ async function runAcceptance(
       );
     };
     page.on("response", recordNoSnapshotDetail);
+    // Uploads now record their media, so none of the fixture's events lacks
+    // details. Serve one without its media to stand in for an old upload.
+    const stripMedia = async (route: Route): Promise<void> => {
+      const response = await route.fetch();
+      const body = asRecord(await response.json());
+      const data = asRecord(body?.data);
+      const event = asRecord(data?.event);
+      if (event !== null) event.media = null;
+      await route.fulfill({ response, json: body });
+    };
+    const noSnapshotApiPattern = `**/api/v2/admin/audit/${noSnapshotEventId}`;
+    await page.route(noSnapshotApiPattern, stripMedia);
     const noSnapshotPageResponse = await isTimeout(() =>
       page.goto(`${origin}/app/admin/audit/${noSnapshotEventId}`, {
         waitUntil: "domcontentloaded",
@@ -2338,6 +2348,7 @@ async function runAcceptance(
     const noSnapshotRouteMatches =
       urlPath(page.url()) === `/app/admin/audit/${noSnapshotEventId}`;
     await settle();
+    await page.unroute(noSnapshotApiPattern, stripMedia);
     if (!(
       noSnapshotVisible &&
       !noSnapshotLoading &&
@@ -2441,9 +2452,7 @@ async function runAcceptance(
       () => window.scrollY,
     );
     await historyResourceRow.locator("a.resource-card__link").click();
-    await page.waitForURL(
-      `**/app/admin/resources/project/${crossOwnerProjectId}`,
-    );
+    await page.waitForURL(`**/app/projects/${crossOwnerProjectId}`);
     mark("return from resource to filtered audit with native browser history");
     await page.goBack({ waitUntil: "domcontentloaded" });
     await page.waitForURL("**/app/admin/audit?entity=project&action=updated");
@@ -2786,6 +2795,73 @@ async function runAcceptance(
     });
     await page.unroute(avatarSource, blockFixtureAvatar);
 
+    mark("audit shows uploaded pictures and files with a viewer");
+    await page.goto(`${origin}/app/admin/audit`, { waitUntil: "networkidle" });
+    await page.locator(".event-row").first().waitFor({ state: "visible" });
+    const eventRowsWithoutDetails: number = await page
+      .locator(".event-row")
+      .evaluateAll(
+        (rows) =>
+          rows.filter(
+            (row) =>
+              !row.querySelector(
+                ".show-diff, [data-audit-media-show], [data-audit-media-open], " +
+                  "[data-audit-media-deleted], [data-audit-no-details]",
+              ),
+          ).length,
+      );
+    check(
+      eventRowsWithoutDetails === 0,
+      "an audit row offered neither details, media nor a no-details note",
+    );
+    const coverRow = page
+      .locator(".event-row")
+      .filter({ hasText: "synthetic-project-cover.png" })
+      .first();
+    await coverRow.waitFor({ state: "visible" });
+    await coverRow.getByRole("button", { name: "Show picture" }).click();
+    const mediaDialog = page.locator("dialog.media-dialog[open]");
+    await mediaDialog.waitFor({ state: "visible" });
+    const viewerPicture = mediaDialog.locator("img");
+    const viewerSource: string =
+      (await viewerPicture.getAttribute("src")) ?? "";
+    await page.waitForFunction(
+      () => {
+        const image = document.querySelector<HTMLImageElement>(
+          "dialog.media-dialog[open] img",
+        );
+        return Boolean(image?.complete && image.naturalWidth > 0);
+      },
+      undefined,
+      { timeout: 5_000 },
+    );
+    check(
+      new RegExp(
+        `^/api/v2/admin/resources/project/${crossOwnerProjectId}/media/image/\\d+$`,
+      ).test(viewerSource),
+      "the audit picture viewer did not use the read-only admin media route",
+    );
+    await page.keyboard.press("Escape");
+    await mediaDialog.waitFor({ state: "detached" });
+    const fileRow = page
+      .locator(".event-row")
+      .filter({ hasText: "synthetic-pattern.txt" })
+      .first();
+    const fileLink = fileRow.getByRole("link", { name: "Open file" });
+    await fileLink.waitFor({ state: "visible" });
+    const fileHref = (await fileLink.getAttribute("href")) ?? "";
+    check(
+      new RegExp(
+        `^/api/v2/admin/resources/project/${crossOwnerProjectId}/media/attachment/\\d+$`,
+      ).test(fileHref),
+      "the audit file link did not use the read-only admin media route",
+    );
+    const fileStatus: number = await page.evaluate(async (href) => {
+      const response = await fetch(href);
+      return response.status;
+    }, fileHref);
+    check(fileStatus === 200, "the audit file link did not download");
+
     mark("member is denied admin API access");
     mark("locate administrator sign-out control");
     mark("click administrator sign-out");
@@ -2930,6 +3006,23 @@ async function runAcceptance(
       "deleted resource did not resolve to an honest event detail",
     );
     page.off("response", recordDeletedEvent);
+
+    mark("audit says deleted pictures and files are deleted");
+    await page.goto(`${origin}/app/admin/audit`, { waitUntil: "networkidle" });
+    const deletedFileRow = page
+      .locator(".event-row")
+      .filter({ hasText: "synthetic-pattern.txt" })
+      .first();
+    await deletedFileRow.waitFor({ state: "visible" });
+    check(
+      (await deletedFileRow.locator(".media-note--deleted").count()) === 1 &&
+        (await deletedFileRow.locator("[data-audit-media-deleted]").count()) ===
+          1 &&
+        (await deletedFileRow
+          .getByRole("link", { name: "Open file" })
+          .count()) === 0,
+      "a deleted file was not marked deleted in the audit log",
+    );
 
     mark("responsive layout and sensitive data check");
     for (const [route, tab] of [

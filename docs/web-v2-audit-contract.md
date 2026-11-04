@@ -25,7 +25,23 @@ resource: {
   exists: boolean;
 };
 has_changes: boolean;
+media: AuditMedia | null; // upload and removal events only
 ```
+
+`AuditMedia` names the file an upload or removal event was about:
+`{ kind: 'image' | 'photo' | 'attachment', id, name, exists, is_image,
+content_type, size_bytes, url, thumbnail_url }`. The event stores the kind,
+public id and file name (migration 0023; old uploads are backfilled by
+timestamp where the file still exists). `exists` is false once the file was
+deleted: `url` and `thumbnail_url` are then null and clients say "deleted"
+instead of linking. In the administrator log the URLs use the read-only admin
+media route; in the owner history they use the owner's `/media/...` routes.
+Every event therefore offers a diff (`has_changes`), media, or an explicit
+"no details recorded" state. Saves that change nothing record no event, and
+media reorders record `project.image_order`, `project.cover_image`,
+`project.step_image_order`, `yarn.photo_order` and `yarn.primary_photo`.
+Live projects and yarns link to the normal `/app/projects/{id}` and
+`/app/yarns/{id}` pages, which administrators may open for any owner.
 
 Prefer recorded event-time names. Historical events may use the current
 resource name when available, clearly distinguished by `name_source`.

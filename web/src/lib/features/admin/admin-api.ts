@@ -20,6 +20,23 @@ export interface AuditEvent {
   created_at: string;
   resource: AuditResourceReference;
   has_changes: boolean;
+  /** The picture or file an upload/removal event was about. */
+  media: AuditMedia | null;
+}
+
+export type AuditMediaKind = "image" | "photo" | "attachment";
+
+export interface AuditMedia {
+  kind: AuditMediaKind;
+  id: number;
+  name: string | null;
+  /** False once the file has been deleted; then there is no url. */
+  exists: boolean;
+  is_image: boolean;
+  content_type: string | null;
+  size_bytes: number | null;
+  url: string | null;
+  thumbnail_url: string | null;
 }
 
 export type AuditResourceKind = "project" | "yarn" | "category";
@@ -189,6 +206,50 @@ function parseAuditEvent(value: unknown): AuditEvent {
     created_at: value.created_at,
     resource: parseAuditResourceReference(value.resource, value),
     has_changes: value.has_changes,
+    media: parseAuditMedia(value.media),
+  };
+}
+
+function validMediaUrl(value: unknown): value is string | null {
+  if (value === null) return true;
+  return (
+    typeof value === "string" &&
+    value.length <= 512 &&
+    (value.startsWith("/api/v2/admin/resources/") ||
+      value.startsWith("/media/")) &&
+    !value.includes("..")
+  );
+}
+
+/** Same-origin media links only; a malformed media block never hides the event. */
+export function parseAuditMedia(value: unknown): AuditMedia | null {
+  if (
+    !record(value) ||
+    !(
+      value.kind === "image" ||
+      value.kind === "photo" ||
+      value.kind === "attachment"
+    ) ||
+    !positiveInteger(value.id) ||
+    !(value.name === null || typeof value.name === "string") ||
+    typeof value.exists !== "boolean" ||
+    typeof value.is_image !== "boolean" ||
+    !(value.content_type === null || typeof value.content_type === "string") ||
+    !(value.size_bytes === null || safeInteger(value.size_bytes)) ||
+    !validMediaUrl(value.url) ||
+    !validMediaUrl(value.thumbnail_url)
+  )
+    return null;
+  return {
+    kind: value.kind,
+    id: value.id,
+    name: value.name,
+    exists: value.exists && value.url !== null,
+    is_image: value.is_image,
+    content_type: value.content_type,
+    size_bytes: value.size_bytes,
+    url: value.url,
+    thumbnail_url: value.thumbnail_url,
   };
 }
 
@@ -222,13 +283,20 @@ function parseAuditResourceReference(
     throw invalidResponse();
 
   if (value.href !== null) {
-    const resourceHref =
+    const resourceHrefs =
       value.kind !== null && value.exists && value.id > 0
-        ? `/app/admin/resources/${value.kind}/${value.id}`
-        : null;
+        ? [
+            `/app/admin/resources/${value.kind}/${value.id}`,
+            ...(value.kind === "project"
+              ? [`/app/projects/${value.id}`]
+              : value.kind === "yarn"
+                ? [`/app/yarns/${value.id}`]
+                : []),
+          ]
+        : [];
     const eventHref = `/app/admin/audit/${event.id}`;
     if (
-      value.href !== resourceHref &&
+      !resourceHrefs.includes(value.href as string) &&
       !(value.href === eventHref && !value.exists)
     ) {
       throw invalidResponse();
@@ -260,7 +328,11 @@ function validAuditPreviewUrl(
     exists !== true ||
     id <= 0 ||
     kind === null ||
-    href !== `/app/admin/resources/${kind}/${id}`
+    !(
+      href === `/app/admin/resources/${kind}/${id}` ||
+      href === `/app/projects/${id}` ||
+      href === `/app/yarns/${id}`
+    )
   )
     return false;
   const mediaKind =
@@ -291,6 +363,9 @@ const changeFields = new Set([
   "project.attachment_count",
   "project.is_ai_enhanced",
   "project.link",
+  "project.cover_image",
+  "project.image_order",
+  "project.step_image_order",
   "yarn.name",
   "yarn.description",
   "yarn.brand",
@@ -305,6 +380,8 @@ const changeFields = new Set([
   "yarn.photo_count",
   "yarn.is_ai_enhanced",
   "yarn.link",
+  "yarn.primary_photo",
+  "yarn.photo_order",
   "category.name",
 ]);
 
@@ -325,7 +402,8 @@ function compatibleChangeValue(
   )
     return type === "integer";
   if (field.endsWith(".is_ai_enhanced")) return type === "boolean";
-  if (field.endsWith(".tags")) return type === "text_list";
+  if (field.endsWith(".tags") || field.endsWith("_order"))
+    return type === "text_list";
   return type === "text";
 }
 
@@ -343,9 +421,9 @@ function parseChangeValue(value: unknown, field: string): ChangeValue {
     case "yarns":
       if (
         !Array.isArray(value.value) ||
-        value.value.length > 256 ||
+        value.value.length > 5000 ||
         !value.value.every(
-          (item) => typeof item === "string" && item.length <= 4096,
+          (item) => typeof item === "string" && item.length <= 16_384,
         )
       )
         throw invalidResponse();
@@ -362,7 +440,7 @@ function parseChangeValue(value: unknown, field: string): ChangeValue {
       if (typeof value.value !== "boolean") throw invalidResponse();
       return { type: value.type, value: value.value };
     case "steps":
-      if (!Array.isArray(value.value) || value.value.length > 256)
+      if (!Array.isArray(value.value) || value.value.length > 5000)
         throw invalidResponse();
       return {
         type: "steps",
@@ -371,7 +449,7 @@ function parseChangeValue(value: unknown, field: string): ChangeValue {
             !record(step) ||
             !Number.isSafeInteger(step.number) ||
             typeof step.title !== "string" ||
-            step.title.length > 4096 ||
+            step.title.length > 16_384 ||
             !(
               step.description === null ||
               (typeof step.description === "string" &&
@@ -389,7 +467,7 @@ function parseChangeValue(value: unknown, field: string): ChangeValue {
     case "legacy_text":
       if (
         typeof value.value !== "string" ||
-        value.value.length > 4096 ||
+        value.value.length > 16_384 ||
         !compatibleChangeValue(field, "legacy_text")
       )
         throw invalidResponse();

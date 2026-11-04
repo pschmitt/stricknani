@@ -311,17 +311,18 @@ pub(crate) async fn update_for_owner(
         ChangeValue::Text(Some(name.clone())),
     )
     .and_then(|item| ChangeSetV1::new(vec![item]));
-    if audit::record_with_data(
-        &mut tx,
-        user_id,
-        Entity::Category,
-        category_id,
-        Action::Updated,
-        Some(&name),
-        changes.as_ref(),
-    )
-    .await
-    .is_err()
+    if old_name != name
+        && audit::record_with_data(
+            &mut tx,
+            user_id,
+            Entity::Category,
+            category_id,
+            Action::Updated,
+            Some(&name),
+            changes.as_ref(),
+        )
+        .await
+        .is_err()
     {
         let _ = tx.rollback().await;
         return Err(CategoryError::Database);

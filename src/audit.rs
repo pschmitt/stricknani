@@ -110,6 +110,12 @@ pub(crate) enum ChangeField {
     ProjectIsAiEnhanced,
     #[serde(rename = "project.link")]
     ProjectLink,
+    #[serde(rename = "project.cover_image")]
+    ProjectCoverImage,
+    #[serde(rename = "project.image_order")]
+    ProjectImageOrder,
+    #[serde(rename = "project.step_image_order")]
+    ProjectStepImageOrder,
     #[serde(rename = "yarn.name")]
     YarnName,
     #[serde(rename = "yarn.description")]
@@ -138,6 +144,10 @@ pub(crate) enum ChangeField {
     YarnIsAiEnhanced,
     #[serde(rename = "yarn.link")]
     YarnLink,
+    #[serde(rename = "yarn.primary_photo")]
+    YarnPrimaryPhoto,
+    #[serde(rename = "yarn.photo_order")]
+    YarnPhotoOrder,
     #[serde(rename = "category.name")]
     CategoryName,
 }
@@ -243,7 +253,10 @@ impl ChangeField {
             | Self::ProjectImageCount
             | Self::ProjectAttachmentCount
             | Self::ProjectIsAiEnhanced
-            | Self::ProjectLink => Entity::Project,
+            | Self::ProjectLink
+            | Self::ProjectCoverImage
+            | Self::ProjectImageOrder
+            | Self::ProjectStepImageOrder => Entity::Project,
             Self::YarnName
             | Self::YarnDescription
             | Self::YarnBrand
@@ -257,14 +270,19 @@ impl ChangeField {
             | Self::YarnNotes
             | Self::YarnPhotoCount
             | Self::YarnIsAiEnhanced
-            | Self::YarnLink => Entity::Yarn,
+            | Self::YarnLink
+            | Self::YarnPrimaryPhoto
+            | Self::YarnPhotoOrder => Entity::Yarn,
             Self::CategoryName => Entity::Category,
         }
     }
 
     pub(crate) fn value_type(self) -> ChangeValueType {
         match self {
-            Self::ProjectTags => ChangeValueType::TextList,
+            Self::ProjectTags
+            | Self::ProjectImageOrder
+            | Self::ProjectStepImageOrder
+            | Self::YarnPhotoOrder => ChangeValueType::TextList,
             Self::ProjectYarns => ChangeValueType::Yarns,
             Self::ProjectSteps => ChangeValueType::Steps,
             Self::ProjectStepCount
@@ -283,6 +301,8 @@ impl ChangeField {
             | Self::ProjectDescription
             | Self::ProjectNotes
             | Self::ProjectOtherMaterials
+            | Self::ProjectCoverImage
+            | Self::YarnPrimaryPhoto
             | Self::YarnName
             | Self::YarnDescription
             | Self::YarnBrand
@@ -402,12 +422,97 @@ pub(crate) fn changes(
     ChangeSetV1::new(items)
 }
 
+/// Build a change set from collected items; `None` when there are none or the
+/// items are structurally unrepresentable.
+pub(crate) fn changes_from_items(items: Vec<ChangeItemV1>) -> Option<ChangeSetV1> {
+    ChangeSetV1::new(items)
+}
+
+/// The public media namespace an upload or removal event refers to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum MediaKind {
+    Image,
+    Photo,
+    Attachment,
+}
+
+impl MediaKind {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::Image => "image",
+            Self::Photo => "photo",
+            Self::Attachment => "attachment",
+        }
+    }
+}
+
+/// The media file an upload/removal event was about. `name` is the file name
+/// the user supplied (or the stored one), never a path.
+#[derive(Clone, Debug)]
+pub(crate) struct MediaRef {
+    pub(crate) kind: MediaKind,
+    pub(crate) public_id: i64,
+    pub(crate) name: Option<String>,
+}
+
+/// A readable label for a media file in order/cover diffs.
+pub(crate) fn media_label(original: Option<&str>, stored: &str, public_id: i64) -> String {
+    let name = original
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .or_else(|| Some(stored.trim()).filter(|value| !value.is_empty()));
+    match name {
+        Some(name) => name.chars().take(200).collect(),
+        None => format!("#{public_id}"),
+    }
+}
+
+const COMPACT_TEXT_CHARS: usize = 8_000;
+
+fn truncate_text(value: &mut String) {
+    if value.chars().count() > COMPACT_TEXT_CHARS {
+        let cut: String = value.chars().take(COMPACT_TEXT_CHARS).collect();
+        *value = format!("{cut}\u{2026}");
+    }
+}
+
+impl ChangeSetV1 {
+    /// Shorten every long text so a change set that exceeded the size budget
+    /// still shows a useful (if abbreviated) diff instead of nothing.
+    pub(crate) fn compacted(&self) -> Self {
+        let mut compact = self.clone();
+        for item in &mut compact.items {
+            for value in [&mut item.before, &mut item.after] {
+                match value {
+                    ChangeValue::Text(Some(text)) | ChangeValue::LegacyText(text) => {
+                        truncate_text(text);
+                    }
+                    ChangeValue::TextList(values) | ChangeValue::Yarns(values) => {
+                        values.iter_mut().for_each(truncate_text);
+                    }
+                    ChangeValue::Steps(steps) => {
+                        for step in steps {
+                            truncate_text(&mut step.title);
+                            if let Some(description) = step.description.as_mut() {
+                                truncate_text(description);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        compact
+    }
+}
+
 /// Insert a minimal audit event in the same transaction as its domain mutation.
 ///
 /// This compatibility entry point records only identifiers and a safe resource
 /// name snapshot; new domain writes should use `record_with_data` for typed,
 /// allowlisted changes. Neither path accepts raw details, credentials, hashes,
 /// or debug output.
+#[cfg(test)]
 pub(crate) async fn record(
     tx: &mut Transaction<'_, Sqlite>,
     actor_id: i64,
@@ -416,6 +521,28 @@ pub(crate) async fn record(
     action: Action,
 ) -> Result<(), sqlx::Error> {
     record_with_data(tx, actor_id, entity, target_id, action, None, None).await
+}
+
+/// Record an upload or removal together with the media file it was about.
+pub(crate) async fn record_with_media(
+    tx: &mut Transaction<'_, Sqlite>,
+    actor_id: i64,
+    entity: Entity,
+    target_id: i64,
+    action: Action,
+    media: &MediaRef,
+) -> Result<(), sqlx::Error> {
+    record_event(
+        tx,
+        actor_id,
+        entity,
+        target_id,
+        action,
+        None,
+        None,
+        Some(media),
+    )
+    .await
 }
 
 /// Record a resource snapshot and optional typed diff with the domain write.
@@ -429,6 +556,30 @@ pub(crate) async fn record_with_data(
     action: Action,
     resource_name: Option<&str>,
     changes: Option<&ChangeSetV1>,
+) -> Result<(), sqlx::Error> {
+    record_event(
+        tx,
+        actor_id,
+        entity,
+        target_id,
+        action,
+        resource_name,
+        changes,
+        None,
+    )
+    .await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn record_event(
+    tx: &mut Transaction<'_, Sqlite>,
+    actor_id: i64,
+    entity: Entity,
+    target_id: i64,
+    action: Action,
+    resource_name: Option<&str>,
+    changes: Option<&ChangeSetV1>,
+    media: Option<&MediaRef>,
 ) -> Result<(), sqlx::Error> {
     let resource_name = match resource_name {
         Some(name) => Some(name.to_owned()),
@@ -444,7 +595,13 @@ pub(crate) async fn record_with_data(
             let encoded = serde_json::to_vec(changes)
                 .map_err(|error| sqlx::Error::Encode(Box::new(error)))?;
             if encoded.len() > MAX_CHANGESET_BYTES {
-                (Some(i64::from(changes.version)), None)
+                let compact = serde_json::to_string(&changes.compacted())
+                    .map_err(|error| sqlx::Error::Encode(Box::new(error)))?;
+                if compact.len() > MAX_CHANGESET_BYTES {
+                    (Some(i64::from(changes.version)), None)
+                } else {
+                    (Some(i64::from(changes.version)), Some(compact))
+                }
             } else {
                 let encoded = String::from_utf8(encoded)
                     .map_err(|error| sqlx::Error::Encode(Box::new(error)))?;
@@ -456,8 +613,9 @@ pub(crate) async fn record_with_data(
     sqlx::query(
         "INSERT INTO audit_events \
          (actor_user_id, entity_type, entity_id, action, created_at, \
-          resource_name_snapshot, change_version, safe_changes) \
-         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?)",
+          resource_name_snapshot, change_version, safe_changes, \
+          media_kind, media_public_id, media_name) \
+         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?, ?, ?, ?)",
     )
     .bind(actor_id)
     .bind(entity.as_str())
@@ -466,6 +624,9 @@ pub(crate) async fn record_with_data(
     .bind(resource_name)
     .bind(change_version)
     .bind(safe_changes)
+    .bind(media.map(|media| media.kind.as_str()))
+    .bind(media.map(|media| media.public_id))
+    .bind(media.and_then(|media| media.name.as_deref()))
     .execute(&mut **tx)
     .await?;
     Ok(())
@@ -653,7 +814,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn oversized_changeset_keeps_event_and_marks_detail_unavailable() {
+    async fn oversized_changeset_is_compacted_and_still_shows_a_diff() {
         let pool = db::connect("sqlite::memory:")
             .await
             .expect("test database should migrate");
@@ -668,6 +829,57 @@ mod tests {
                 ChangeField::ProjectNotes,
                 ChangeValue::Text(None),
                 ChangeValue::Text(Some("x".repeat(MAX_CHANGESET_BYTES))),
+            )
+            .unwrap(),
+        ])
+        .unwrap();
+        let mut tx = pool.begin().await.expect("transaction should begin");
+        record_with_data(
+            &mut tx,
+            actor_id,
+            Entity::Project,
+            17,
+            Action::Updated,
+            Some("Sample project"),
+            Some(&changes),
+        )
+        .await
+        .expect("oversized history should not reject the domain update");
+        tx.commit().await.expect("event should commit");
+        let row = sqlx::query("SELECT change_version, safe_changes FROM audit_events")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        use sqlx::Row;
+        assert_eq!(row.get::<Option<i64>, _>("change_version"), Some(1));
+        let stored = row.get::<Option<String>, _>("safe_changes").unwrap();
+        assert!(stored.len() < MAX_CHANGESET_BYTES);
+        assert!(stored.contains('\u{2026}'));
+    }
+
+    #[tokio::test]
+    async fn unrepresentably_large_changeset_keeps_event_and_marks_detail_unavailable() {
+        let pool = db::connect("sqlite::memory:")
+            .await
+            .expect("test database should migrate");
+        let actor_id: i64 = sqlx::query_scalar(
+            "INSERT INTO users(email, password_hash) VALUES('audit-huge@example.test', 'test-hash') RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("test actor should be inserted");
+        let steps = (0..20_000)
+            .map(|number| super::StepSnapshot {
+                number,
+                title: "step title".to_owned(),
+                description: Some("d".repeat(40)),
+            })
+            .collect();
+        let changes = ChangeSetV1::new(vec![
+            ChangeItemV1::new(
+                ChangeField::ProjectSteps,
+                ChangeValue::Steps(Vec::new()),
+                ChangeValue::Steps(steps),
             )
             .unwrap(),
         ])

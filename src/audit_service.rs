@@ -122,6 +122,22 @@ pub(crate) struct AuditResource {
     pub(crate) exists: bool,
 }
 
+/// The media file an upload or removal event was about.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditMedia {
+    /// `image`, `photo` or `attachment`.
+    pub(crate) kind: String,
+    pub(crate) id: i64,
+    pub(crate) name: Option<String>,
+    /// False once the file has been deleted; `url` is then null.
+    pub(crate) exists: bool,
+    pub(crate) is_image: bool,
+    pub(crate) content_type: Option<String>,
+    pub(crate) size_bytes: Option<i64>,
+    pub(crate) url: Option<String>,
+    pub(crate) thumbnail_url: Option<String>,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub(crate) struct AuditEvent {
     pub(crate) id: i64,
@@ -134,6 +150,7 @@ pub(crate) struct AuditEvent {
     pub(crate) created_at: String,
     pub(crate) resource: AuditResource,
     pub(crate) has_changes: bool,
+    pub(crate) media: Option<AuditMedia>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -156,9 +173,28 @@ enum AuditAudience {
     Owner { owner_id: i64 },
 }
 
+macro_rules! media_event_columns {
+    () => {
+        ", e.media_kind AS media_kind, e.media_public_id AS media_public_id, \
+        e.media_name AS media_name, mf.filename AS media_current_filename, \
+        mf.content_type AS media_content_type, mf.is_safe_inline AS media_safe_inline, \
+        mf.size_bytes AS media_size_bytes "
+    };
+}
+
+macro_rules! media_event_join {
+    () => {
+        " LEFT JOIN media_files AS mf ON mf.id = (SELECT m.id FROM media_files AS m \
+            WHERE e.media_public_id IS NOT NULL AND m.public_id = e.media_public_id \
+              AND CASE m.kind WHEN 'title' THEN 'image' WHEN 'step' THEN 'image' ELSE m.kind END = e.media_kind \
+              AND ((e.entity_type = 'project' AND m.project_id = e.entity_id) \
+                OR (e.entity_type = 'yarn' AND m.yarn_id = e.entity_id)) LIMIT 1) "
+    };
+}
+
 macro_rules! resource_event_columns {
     () => {
-        "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
+        concat!("SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
         u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
         e.entity_type, e.entity_id, e.action, e.created_at, \
         e.resource_name_snapshot, e.change_version, \
@@ -190,8 +226,8 @@ macro_rules! resource_event_columns {
             JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
             WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
             ORDER BY m.position, m.id LIMIT 1) \
-        END AS current_preview_filename \
- "
+        END AS current_preview_filename",
+        media_event_columns!())
     };
 }
 
@@ -199,8 +235,9 @@ const RESOURCE_EVENT_SELECT: &str = concat!(
     resource_event_columns!(),
     "FROM audit_events AS e \
  LEFT JOIN users AS u ON u.id = e.actor_user_id \
- LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
- WHERE e.entity_type = ? AND e.entity_id = ?"
+ LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id ",
+    media_event_join!(),
+    " WHERE e.entity_type = ? AND e.entity_id = ?"
 );
 
 pub(crate) async fn list_events(
@@ -236,32 +273,15 @@ pub(crate) async fn list_events(
         .min(i64::from(MAX_PAGE)) as u32;
     let page = filter.page.unwrap_or(1).min(page_count);
     let offset = i64::from(page - 1) * PAGE_SIZE;
-    let rows = sqlx::query(
-        "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
-                u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
-                e.entity_type, e.entity_id, e.action, e.created_at, \
-                e.resource_name_snapshot, e.change_version, \
-                (e.safe_changes IS NOT NULL) AS safe_changes_present, \
-                (e.details IS NOT NULL) AS legacy_details_present, \
-                CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
-                  WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
-                  WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
-                CASE e.entity_type \
-                  WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
-                    JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
-                    WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
-                    ORDER BY m.is_project_cover DESC, m.position, m.id LIMIT 1) \
-                  WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
-                    JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
-                    WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
-                    ORDER BY m.position, m.id LIMIT 1) \
-                END AS current_preview_media_id \
-         FROM audit_events AS e \
+    let rows = sqlx::query(concat!(
+        resource_event_columns!(),
+        "FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
-         LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
-         WHERE (? IS NULL OR e.entity_type = ?) AND (? IS NULL OR e.action = ?) \
-         ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?",
-    )
+         LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id ",
+        media_event_join!(),
+        " WHERE (? IS NULL OR e.entity_type = ?) AND (? IS NULL OR e.action = ?) \
+         ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?"
+    ))
     .bind(entity)
     .bind(entity)
     .bind(action)
@@ -295,35 +315,14 @@ pub(crate) async fn get_event_detail(
             AdminError::Forbidden => AuditError::Forbidden,
             _ => AuditError::Database,
         })?;
-    let row = sqlx::query(
-        "SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
-                u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
-                e.entity_type, e.entity_id, e.action, e.created_at, \
-                e.resource_name_snapshot, e.change_version, \
-                CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
-                CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
-                COALESCE(length(e.safe_changes) > 262144, 0) AS safe_changes_too_large, \
-                COALESCE(length(e.details) > 262144, 0) AS legacy_details_too_large, \
-                (e.safe_changes IS NOT NULL) AS safe_changes_present, \
-                (e.details IS NOT NULL) AS legacy_details_present, \
-                CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
-                  WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
-                  WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
-                CASE e.entity_type \
-                  WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
-                    JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
-                    WHERE p.id = e.entity_id AND m.kind IN ('title', 'step') \
-                    ORDER BY m.is_project_cover DESC, m.position, m.id LIMIT 1) \
-                  WHEN 'yarn' THEN (SELECT m.public_id FROM media_files AS m \
-                    JOIN yarns AS y ON y.id = m.yarn_id AND y.owner_id = m.owner_id \
-                    WHERE y.id = e.entity_id AND m.kind = 'photo' AND m.is_primary = 1 \
-                    ORDER BY m.position, m.id LIMIT 1) \
-                END AS current_preview_media_id \
-         FROM audit_events AS e \
+    let row = sqlx::query(concat!(
+        resource_event_columns!(),
+        "FROM audit_events AS e \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
-         LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
-         WHERE e.id = ?",
-    )
+         LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id ",
+        media_event_join!(),
+        " WHERE e.id = ?"
+    ))
     .bind(event_id)
     .fetch_optional(pool)
     .await
@@ -657,7 +656,9 @@ pub(crate) async fn list_activity(
          JOIN audit_events AS e ON e.id = v.id \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
          LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id \
+         {media_join} \
          ORDER BY e.created_at DESC, e.id DESC",
+        media_join = media_event_join!(),
         columns = resource_event_columns!(),
         a = branch("project", "projects"),
         b = branch("yarn", "yarns"),
@@ -756,7 +757,15 @@ fn make_event(
         href: kind.and_then(|kind| match audience {
             AuditAudience::Administrator => (entity_id > 0).then(|| {
                 if exists {
-                    format!("/app/admin/resources/{}/{entity_id}", kind.as_str())
+                    // Administrators open projects and yarns on the normal
+                    // pages, whoever owns them.
+                    match kind {
+                        Entity::Project => format!("/app/projects/{entity_id}"),
+                        Entity::Yarn => format!("/app/yarns/{entity_id}"),
+                        Entity::Category => {
+                            format!("/app/admin/resources/{}/{entity_id}", kind.as_str())
+                        }
+                    }
                 } else {
                     format!("/app/admin/audit/{}", row.get::<i64, _>("id"))
                 }
@@ -806,6 +815,7 @@ fn make_event(
         },
         exists,
     };
+    let media = make_media(row, kind, entity_id, audience);
     let has_changes = row.get::<bool, _>("safe_changes_present")
         || row.get::<Option<i64>, _>("change_version").is_some()
         || row.get::<bool, _>("legacy_details_present");
@@ -843,7 +853,79 @@ fn make_event(
         created_at: row.get("created_at"),
         resource,
         has_changes,
+        media,
     }
+}
+
+fn make_media(
+    row: &sqlx::sqlite::SqliteRow,
+    kind: Option<Entity>,
+    entity_id: i64,
+    audience: AuditAudience,
+) -> Option<AuditMedia> {
+    let media_kind = row.get::<Option<String>, _>("media_kind")?;
+    let public_id = row.get::<Option<i64>, _>("media_public_id")?;
+    let kind = kind?;
+    let current_filename = row.get::<Option<String>, _>("media_current_filename");
+    let content_type = row.get::<Option<String>, _>("media_content_type");
+    let safe_inline = row
+        .get::<Option<bool>, _>("media_safe_inline")
+        .unwrap_or(false);
+    let is_image = media_kind != "attachment"
+        || (safe_inline
+            && content_type
+                .as_deref()
+                .is_some_and(|value| value.starts_with("image/")));
+    let (url, thumbnail_url) = match (&current_filename, audience) {
+        (None, _) => (None, None),
+        (Some(_), AuditAudience::Administrator) => (
+            crate::media::admin_resource_media_url(
+                kind.as_str(),
+                entity_id,
+                &media_kind,
+                public_id,
+                false,
+            ),
+            is_image
+                .then(|| {
+                    crate::media::admin_resource_media_url(
+                        kind.as_str(),
+                        entity_id,
+                        &media_kind,
+                        public_id,
+                        true,
+                    )
+                })
+                .flatten(),
+        ),
+        (Some(filename), AuditAudience::Owner { .. }) => {
+            let parent = match kind {
+                Entity::Project => "projects",
+                Entity::Yarn => "yarns",
+                Entity::Category => return None,
+            };
+            (
+                Some(format!("/media/{parent}/{entity_id}/{filename}")),
+                (is_image && media_kind != "attachment").then(|| {
+                    format!(
+                        "/media/thumbnails/{parent}/{entity_id}/{}",
+                        crate::media::avatar_thumbnail_name(filename)
+                    )
+                }),
+            )
+        }
+    };
+    Some(AuditMedia {
+        kind: media_kind,
+        id: public_id,
+        name: row.get("media_name"),
+        exists: current_filename.is_some(),
+        is_image,
+        content_type,
+        size_bytes: row.get("media_size_bytes"),
+        url,
+        thumbnail_url,
+    })
 }
 
 fn current_name_present(row: &sqlx::sqlite::SqliteRow) -> bool {

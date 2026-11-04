@@ -71,6 +71,24 @@ data class AuditResourceDto(
     val exists: Boolean = false,
 )
 
+/**
+ * `AuditMedia` in `audit_service.rs`: the picture or file an upload/removal event was about. [url]
+ * and [thumbnailUrl] are null once the file has been deleted ([exists] is false).
+ */
+@Serializable
+data class AuditMediaDto(
+    /** `image`, `photo` or `attachment`. */
+    val kind: String = "image",
+    val id: Long = 0,
+    val name: String? = null,
+    val exists: Boolean = false,
+    @SerialName("is_image") val isImage: Boolean = false,
+    @SerialName("content_type") val contentType: String? = null,
+    @SerialName("size_bytes") val sizeBytes: Long? = null,
+    val url: String? = null,
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
+)
+
 @Serializable
 data class AuditEventDto(
     val id: Long,
@@ -83,6 +101,7 @@ data class AuditEventDto(
     @SerialName("created_at") val createdAt: String,
     val resource: AuditResourceDto = AuditResourceDto(),
     @SerialName("has_changes") val hasChanges: Boolean = false,
+    val media: AuditMediaDto? = null,
 )
 
 @Serializable data class AuditPageDto(val data: List<AuditEventDto>, val meta: AdminPageMetaDto)

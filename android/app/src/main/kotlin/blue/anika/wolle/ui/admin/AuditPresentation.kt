@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.ChangeStep
 import blue.anika.wolle.data.api.dto.ChangeValue
 import blue.anika.wolle.data.util.DateTimeUtils
@@ -214,6 +215,9 @@ private val fieldLabels: Map<String, Int> =
         "project.attachment_count" to R.string.admin_field_attachment_count,
         "project.is_ai_enhanced" to R.string.admin_field_ai_enhanced,
         "project.link" to R.string.admin_field_link,
+        "project.cover_image" to R.string.admin_field_cover_image,
+        "project.image_order" to R.string.admin_field_image_order,
+        "project.step_image_order" to R.string.admin_field_step_image_order,
         "yarn.name" to R.string.admin_field_yarn_name,
         "yarn.description" to R.string.admin_field_description,
         "yarn.brand" to R.string.admin_field_brand,
@@ -228,6 +232,8 @@ private val fieldLabels: Map<String, Int> =
         "yarn.photo_count" to R.string.admin_field_photo_count,
         "yarn.is_ai_enhanced" to R.string.admin_field_ai_enhanced,
         "yarn.link" to R.string.admin_field_link,
+        "yarn.primary_photo" to R.string.admin_field_primary_photo,
+        "yarn.photo_order" to R.string.admin_field_photo_order,
         "category.name" to R.string.admin_field_category_name,
     )
 
@@ -281,3 +287,82 @@ fun unavailableReasonRes(reason: String?): Int =
         "too_large" -> R.string.admin_changes_too_large
         else -> R.string.admin_changes_unavailable
     }
+
+// --- What an event offers: its resource, its media, its details --------------------------------
+
+/** Where tapping an event's item should lead. */
+sealed interface AuditTarget {
+    /** The normal project page (the server grants administrators every project). */
+    data class Project(val id: Long) : AuditTarget
+
+    data class Yarn(val id: Long) : AuditTarget
+
+    /** The project or yarn no longer exists: show a "deleted" state, not a dead link. */
+    data object Deleted : AuditTarget
+
+    /** Categories and unknown resources have no page of their own. */
+    data object None : AuditTarget
+}
+
+fun AuditEventDto.target(): AuditTarget {
+    val kind = resource.kind ?: entityType
+    if (kind != "project" && kind != "yarn") return AuditTarget.None
+    if (!resource.exists || entityId <= 0) return AuditTarget.Deleted
+    return if (kind == "project") AuditTarget.Project(entityId) else AuditTarget.Yarn(entityId)
+}
+
+/** What the media of an upload/removal event can show right now. */
+sealed interface AuditMediaState {
+    /** The picture still exists: show it (thumbnail in lists, full size in the sheet). */
+    data class Picture(val url: String, val thumbnailUrl: String?) : AuditMediaState
+
+    /** A non-image file that still exists: offer it to open. */
+    data class File(val url: String) : AuditMediaState
+
+    /** The file was deleted since; only its name and kind are known. */
+    data class Deleted(val isImage: Boolean) : AuditMediaState
+}
+
+fun AuditMediaDto.state(): AuditMediaState {
+    val link = url
+    return when {
+        !exists || link.isNullOrBlank() -> AuditMediaState.Deleted(isImage)
+        isImage -> AuditMediaState.Picture(link, thumbnailUrl)
+        else -> AuditMediaState.File(link)
+    }
+}
+
+/** The file name to show, falling back to the kind when the server never recorded one. */
+fun AuditMediaDto.displayName(): String? = name?.trim()?.ifBlank { null }
+
+/** What the detail sheet of an event can show. */
+enum class AuditDetailKind {
+    /** An upload or removal: the picture or file. */
+    Media,
+
+    /** Recorded field changes (loaded on demand). */
+    Changes,
+
+    /** Nothing was recorded (old events). */
+    None,
+}
+
+fun AuditEventDto.detailKind(): AuditDetailKind =
+    when {
+        media != null -> AuditDetailKind.Media
+        hasChanges -> AuditDetailKind.Changes
+        else -> AuditDetailKind.None
+    }
+
+/** A file name that is safe to create in the cache directory. */
+fun safeAuditFileName(media: AuditMediaDto): String {
+    val base =
+        (media.displayName() ?: "file")
+            .substringAfterLast('/')
+            .substringAfterLast('\\')
+            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .trim('.', '_')
+            .ifEmpty { "file" }
+            .take(80)
+    return "${media.id}-$base"
+}

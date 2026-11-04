@@ -576,7 +576,7 @@ async fn audit_detail_projects_only_allowlisted_legacy_changes_for_admins() {
     assert_eq!(body["data"]["event"]["resource"]["name_source"], "current");
     assert_eq!(
         body["data"]["event"]["resource"]["href"],
-        format!("/app/admin/resources/project/{project_id}")
+        format!("/app/projects/{project_id}")
     );
     assert_eq!(body["data"]["event"]["has_changes"], true);
     assert_eq!(body["data"]["changes"]["version"], 1);

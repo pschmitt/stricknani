@@ -198,4 +198,49 @@ class AdminDtoTest {
             )
         assertEquals("email_in_use", error.error?.code)
     }
+
+    @Test
+    fun `upload event decodes its media and an event without media decodes to null`() {
+        val withMedia =
+            json.decodeFromString<AuditEventDto>(
+                """
+                {"id": 8, "actor_email": "a@example.org", "actor_avatar_url": null,
+                 "legacy_actor_user_id": null, "entity_type": "project", "entity_id": 7,
+                 "action": "uploaded", "created_at": "2026-11-02T18:30:05Z",
+                 "resource": {"kind": "project", "id": 7, "name": "Hat", "name_source": "event",
+                              "href": "/app/projects/7", "preview_url": null, "exists": true},
+                 "has_changes": false,
+                 "media": {"kind": "image", "id": 12, "name": "front.png", "exists": true,
+                           "is_image": true, "content_type": "image/png", "size_bytes": 120,
+                           "url": "/api/v2/admin/resources/project/7/media/image/12",
+                           "thumbnail_url": "/api/v2/admin/resources/project/7/media/image/12/thumbnail"}}
+                """
+                    .trimIndent()
+            )
+        val media = withMedia.media!!
+        assertEquals(12L, media.id)
+        assertEquals("front.png", media.name)
+        assertTrue(media.exists && media.isImage)
+        assertEquals("/app/projects/7", withMedia.resource.href)
+        assertNull(json.decodeFromString<AuditEventDto>(eventJson).media)
+    }
+
+    @Test
+    fun `removed event with deleted media has no urls`() {
+        val removed =
+            json.decodeFromString<AuditEventDto>(
+                """
+                {"id": 9, "entity_type": "project", "entity_id": 7, "action": "removed",
+                 "created_at": "2026-11-02T18:30:06Z",
+                 "media": {"kind": "attachment", "id": 3, "name": "chart.pdf", "exists": false,
+                           "is_image": false, "content_type": null, "size_bytes": null,
+                           "url": null, "thumbnail_url": null}}
+                """
+                    .trimIndent()
+            )
+        val media = removed.media!!
+        assertFalse(media.exists)
+        assertNull(media.url)
+        assertEquals("chart.pdf", media.name)
+    }
 }

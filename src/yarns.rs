@@ -11,7 +11,7 @@ use serde_json::json;
 use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
 
 use crate::{
-    audit::{self, Action, ChangeField, ChangeItemV1, ChangeSetV1, ChangeValue, Entity},
+    audit::{self, Action, ChangeField, ChangeItemV1, ChangeValue, Entity},
     auth::bearer_user,
     db::AppState,
 };
@@ -358,7 +358,7 @@ pub(crate) async fn create_for_owner(
     payload: YarnWriteRequest,
 ) -> Result<YarnResponse, YarnError> {
     let name = clean_name(&payload.name);
-    let audit_changes = yarn_audit_changes(None, &payload, &name);
+    let audit_changes = audit::changes_from_items(yarn_audit_changes(None, &payload, &name));
     let prepared_images =
         if !payload.image_urls.is_empty() && state.external_imports && state.media_root.is_some() {
             let urls: Vec<String> = payload.image_urls.iter().take(6).cloned().collect();
@@ -473,7 +473,8 @@ pub(crate) async fn update_for_owner(
         Ok(None) => return Err(YarnError::NotFound),
         Err(_) => return Err(YarnError::Database),
     };
-    let audit_changes = yarn_audit_changes(Some(&current), &payload, &name);
+    let audit_items = yarn_audit_changes(Some(&current), &payload, &name);
+    let audit_changes = audit::changes_from_items(audit_items.clone());
     if expected
         .as_deref()
         .is_some_and(|value| value != current.updated_at)
@@ -543,17 +544,19 @@ pub(crate) async fn update_for_owner(
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
     }
-    if audit::record_with_data(
-        &mut tx,
-        actor_id,
-        Entity::Yarn,
-        yarn_id,
-        Action::Updated,
-        Some(&name),
-        audit_changes.as_ref(),
-    )
-    .await
-    .is_err()
+    // A save that changes nothing is not an event worth recording.
+    if !audit_items.is_empty()
+        && audit::record_with_data(
+            &mut tx,
+            actor_id,
+            Entity::Yarn,
+            yarn_id,
+            Action::Updated,
+            Some(&name),
+            audit_changes.as_ref(),
+        )
+        .await
+        .is_err()
     {
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
@@ -864,7 +867,7 @@ fn yarn_audit_changes(
     before: Option<&YarnRow>,
     payload: &YarnWriteRequest,
     name: &str,
-) -> Option<ChangeSetV1> {
+) -> Vec<ChangeItemV1> {
     let mut items = Vec::new();
     let mut text = |field, old: Option<&str>, new: Option<&str>| {
         if let Some(item) = audit::text_change(field, old, new) {
@@ -979,7 +982,7 @@ fn yarn_audit_changes(
             after: ChangeValue::LinkChanged(after_link.is_some()),
         });
     }
-    audit::changes(items.into_iter().map(Some))
+    items
 }
 
 async fn bump_linked_project_timestamps(
