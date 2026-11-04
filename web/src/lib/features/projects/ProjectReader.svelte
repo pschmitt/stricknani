@@ -18,6 +18,8 @@
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
+  import { foreignOwner } from "#lib/owner.ts";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
@@ -881,6 +883,12 @@
         </div>
       {/snippet}
     </PageHeader>
+    {#if !adminData && foreignOwner(currentProject.owner, userId)}
+      {@const foreign = foreignOwner(currentProject.owner, userId)}
+      {#if foreign}
+        <ForeignOwnerBanner kind="project" owner={foreign} {locale} />
+      {/if}
+    {/if}
     {#if printError}
       <p class="print-error" role="alert">{printError}</p>
     {/if}

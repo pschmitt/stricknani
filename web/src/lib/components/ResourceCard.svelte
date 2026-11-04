@@ -1,5 +1,7 @@
 <script lang="ts">
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import OwnerBadge from "#lib/components/OwnerBadge.svelte";
+  import type { ResourceOwner } from "#lib/owner.ts";
 
   export type ResourceCardKind = "project" | "yarn" | "category" | "resource";
   export type ResourceCardVariant = "compact" | "library" | "library-row";
@@ -13,6 +15,8 @@
     subtitle?: string | null;
     meta?: string[];
     badge?: string | null;
+    /** Set only for items the signed-in user does not own. */
+    owner?: ResourceOwner | null;
     variant?: ResourceCardVariant;
     titleTag?: ResourceCardTitleTag;
     titleId?: string;
@@ -26,6 +30,7 @@
     subtitle = null,
     meta = [],
     badge = null,
+    owner = null,
     variant = "compact",
     titleTag = "span",
     titleId,
@@ -82,6 +87,9 @@
       />
     {:else}
       <NavIcon name={iconName} />
+    {/if}
+    {#if owner}
+      <span class="resource-card__owner"><OwnerBadge {owner} /></span>
     {/if}
     {#if variant === "library" && badge}
       <span class="resource-card__badge">{badge}</span>
@@ -296,6 +304,13 @@
     line-height: 1.3;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .resource-card__owner {
+    position: absolute;
+    inset-block-end: 0.2rem;
+    inset-inline-end: 0.2rem;
+    display: inline-flex;
   }
 
   .resource-card__badge {

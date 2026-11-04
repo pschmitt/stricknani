@@ -1,6 +1,8 @@
 <script lang="ts">
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import OwnerBadge from "#lib/components/OwnerBadge.svelte";
+  import type { ResourceOwner } from "#lib/owner.ts";
 
   export type LibraryCardKind = "project" | "yarn";
 
@@ -15,6 +17,8 @@
     updated?: string | null;
     /** Rendered as at most three chips. */
     chips?: string[];
+    /** Set only for items the signed-in user does not own. */
+    owner?: ResourceOwner | null;
     favorite: boolean;
     favoriteBusy?: boolean;
     locale: "en" | "de";
@@ -30,6 +34,7 @@
     meta = null,
     updated = null,
     chips = [],
+    owner = null,
     favorite,
     favoriteBusy = false,
     locale,
@@ -59,6 +64,9 @@
         <span class="library-card__placeholder" aria-hidden="true">
           <NavIcon name={kind === "project" ? "projects" : "yarns"} />
         </span>
+      {/if}
+      {#if owner}
+        <span class="library-card__owner"><OwnerBadge {owner} {locale} /></span>
       {/if}
     </span>
     <span class="library-card__copy">
@@ -138,6 +146,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .library-card__owner {
+    position: absolute;
+    inset-block-end: 0.3rem;
+    inset-inline-start: 0.3rem;
+    display: inline-flex;
   }
 
   .library-card__placeholder {

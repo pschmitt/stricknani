@@ -640,6 +640,98 @@ async function deleteCrossOwnerResource(
   }
 }
 
+async function assertNoScopeFilter(page: Page, origin: string): Promise<void> {
+  await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
+  await page
+    .getByRole("heading", { name: "Projects", exact: true })
+    .waitFor({ state: "visible" });
+  check(
+    (await page.getByTestId("scope-filter").count()) === 0,
+    "a regular user was offered the Mine / Everyone filter",
+  );
+}
+
+/**
+ * An administrator sees another user's project in the library with an owner badge, can narrow to
+ * Mine and back, opens it with the "someone else's project" banner, edits it, and the change
+ * persists across a reload.
+ */
+async function assertAdminEditsForeignProject(
+  page: Page,
+  origin: string,
+  project: CrossOwnerResource,
+  mark: Mark,
+): Promise<void> {
+  const bannerText =
+    /^This is .+'s project\. Changes you make are saved to their project and recorded in the audit log\.$/;
+  mark("administrator library shows Mine / Everyone and the owner badge");
+  await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
+  await page
+    .getByRole("heading", { name: "Projects", exact: true })
+    .waitFor({ state: "visible" });
+  const filter = page.getByTestId("scope-filter");
+  await filter.waitFor({ state: "visible" });
+  await expect(
+    filter.getByRole("button", { name: "Everyone", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  const card = page.locator(".library-card").filter({ hasText: project.name });
+  await card.waitFor({ state: "visible" });
+  check(
+    (await card.locator('[aria-label^="Owned by "]').count()) === 1,
+    "the foreign project card has no owner badge",
+  );
+  mark("administrator narrows the library to Mine and back");
+  await filter.getByRole("button", { name: "Mine", exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await filter.getByRole("button", { name: "Everyone", exact: true }).click();
+  await card.waitFor({ state: "visible" });
+
+  mark("administrator opens the foreign project and sees the banner");
+  await page.goto(`${origin}/app/projects/${project.projectId}`, {
+    waitUntil: "networkidle",
+  });
+  const banner = page.getByTestId("foreign-owner-banner");
+  await banner.waitFor({ state: "visible" });
+  check(
+    bannerText.test(((await banner.textContent()) ?? "").trim()),
+    "the foreign project banner text is wrong",
+  );
+
+  mark("administrator edits the foreign project");
+  await page.goto(`${origin}/app/projects/${project.projectId}/edit`, {
+    waitUntil: "networkidle",
+  });
+  await page.getByTestId("foreign-owner-banner").waitFor({ state: "visible" });
+  const details = page.locator("details.optional-details");
+  await details.waitFor({ state: "visible" });
+  if ((await details.getAttribute("open")) === null) {
+    await details.locator("summary").click();
+  }
+  const marker = "9 mm admin-edited";
+  const updated = page.waitForResponse(
+    (response) =>
+      urlPath(response.url()) === `/api/v2/projects/${project.projectId}` &&
+      response.request().method() === "PUT",
+  );
+  await page.getByLabel("Needles", { exact: true }).fill(marker);
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  check(
+    (await updated).status() === 200,
+    "the administrator could not save the foreign project",
+  );
+
+  mark("administrator edit persists after a reload");
+  await page.goto(`${origin}/app/projects/${project.projectId}/edit`, {
+    waitUntil: "networkidle",
+  });
+  const reloadedDetails = page.locator("details.optional-details");
+  await reloadedDetails.waitFor({ state: "visible" });
+  if ((await reloadedDetails.getAttribute("open")) === null) {
+    await reloadedDetails.locator("summary").click();
+  }
+  await expect(page.getByLabel("Needles", { exact: true })).toHaveValue(marker);
+}
+
 async function saveScreenshot(
   page: Page,
   directory: string | undefined,
@@ -2725,6 +2817,14 @@ async function runAcceptance(
       resourceForbiddenStatus === 403,
       "a member session was not denied by the admin resource API",
     );
+    mark("member is not offered the Mine / Everyone filter");
+    await assertNoScopeFilter(page, origin);
+    mark("administrator edits the member's project");
+    await signOut(page);
+    await signInAccount(page, origin, adminEmail, adminPassword);
+    await assertAdminEditsForeignProject(page, origin, crossOwner, mark);
+    await signOut(page);
+    await signInAccount(page, origin, memberEmail, resetPassword);
     mark("owner deletes synthetic resource through authenticated v2 API");
     await deleteCrossOwnerResource(page, origin, crossOwnerProjectId);
 

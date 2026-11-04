@@ -10,6 +10,8 @@
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
+  import { foreignOwner } from "#lib/owner.ts";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
@@ -625,6 +627,13 @@
           >{/if}
       {/snippet}
     </PageHeader>
+
+    {#if foreignOwner(loadedYarn?.owner, userId)}
+      {@const foreign = foreignOwner(loadedYarn?.owner, userId)}
+      {#if foreign}
+        <ForeignOwnerBanner kind="yarn" owner={foreign} {locale} />
+      {/if}
+    {/if}
 
     {#if yarnId === null && session.data?.capabilities.external_imports}
       <p class="import-link">

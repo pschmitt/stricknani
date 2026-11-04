@@ -11,7 +11,10 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
+  import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import { scopeFor } from "#lib/library-scope.svelte.ts";
+  import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
     filtersFromSearch,
@@ -39,6 +42,7 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const scope = $derived(scopeFor(session.data?.user));
   const hasFilters = $derived(
     Boolean(
       filters.query || filters.category || filters.tag || filters.favorite,
@@ -95,6 +99,7 @@
   $effect(() => {
     const search = page.url.search;
     const currentUserId = userId;
+    const currentScope = scope;
     reload;
     const controller = new AbortController();
     items = [];
@@ -106,7 +111,9 @@
     }
     loadState = "loading";
     errorMessage = "";
-    void listProjects(search.slice(1), controller.signal)
+    void listProjects(search.slice(1), controller.signal, {
+      scope: currentScope,
+    })
       .then((result) => {
         if (controller.signal.aborted) return;
         items = result.data;
@@ -226,6 +233,8 @@
     {/snippet}
   </PageHeader>
 
+  <ScopeFilter {locale} />
+
   <LibraryFilters
     query={filters.query}
     queryLabel={t("Search your projects", locale)}
@@ -335,6 +344,7 @@
           meta={item.category}
           updated={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
           chips={item.tags}
+          owner={foreignOwner(item.owner, userId)}
           favorite={item.is_favorite}
           favoriteBusy={favoriteBusyIds.includes(item.id)}
           {locale}

@@ -2,7 +2,8 @@
   import { onDestroy } from "svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-  import { listYarns, type YarnSummary } from "../yarns/yarn-api";
+  import { searchOwnStash } from "./stash-search";
+  import type { YarnSummary } from "../yarns/yarn-api";
 
   // A searchable list of the user's own yarns. Each result is a compact resource card; picking
   // one reports it to the parent. Used for "use a yarn from my stash" and "add another yarn".
@@ -46,9 +47,7 @@
     loading = true;
     failed = false;
     try {
-      const params = new URLSearchParams();
-      if (value.trim()) params.set("q", value.trim());
-      const page = await listYarns(params.toString(), active.signal);
+      const page = await searchOwnStash(value, active.signal);
       if (controller !== active) return;
       results = page.data;
       loaded = true;

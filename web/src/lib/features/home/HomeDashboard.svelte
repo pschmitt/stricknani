@@ -14,7 +14,11 @@
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import OwnerBadge from "#lib/components/OwnerBadge.svelte";
+  import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import { scopeFor } from "#lib/library-scope.svelte.ts";
+  import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
     loadFavoriteProjects,
@@ -30,9 +34,18 @@
   const userId = $derived(session.data?.user?.id ?? null);
   const owner = () => userId;
 
-  const favoriteProjects = homeSection(owner, loadFavoriteProjects);
-  const favoriteYarns = homeSection(owner, loadFavoriteYarns);
-  const recentProjects = homeSection(owner, loadRecentProjects);
+  // The scope is read synchronously inside each loader, so a change of the Mine/Everyone choice
+  // reloads every section.
+  const scope = () => scopeFor(session.data?.user);
+  const favoriteProjects = homeSection(owner, (signal) =>
+    loadFavoriteProjects(signal, scope()),
+  );
+  const favoriteYarns = homeSection(owner, (signal) =>
+    loadFavoriteYarns(signal, scope()),
+  );
+  const recentProjects = homeSection(owner, (signal) =>
+    loadRecentProjects(signal, scope()),
+  );
 
   // The project worked on last gets the large card; the list below shows the rest.
   const current = $derived(recentProjects.items[0] ?? null);
@@ -150,6 +163,8 @@
       </a>
     </div>
   {:else}
+    <ScopeFilter {locale} />
+
     <!-- 1. Pick up the project worked on last. -->
     <section class="home-continue" aria-labelledby="home-continue-title">
       <h2 id="home-continue-title" class="home-heading">
@@ -188,6 +203,14 @@
               <img src={current.preview_url} alt="" loading="eager" />
             {:else}
               <Mascot size={72} interactive="decorative" />
+            {/if}
+            {#if foreignOwner(current.owner, userId)}
+              {@const foreign = foreignOwner(current.owner, userId)}
+              {#if foreign}
+                <span class="owner-corner"
+                  ><OwnerBadge owner={foreign} {locale} /></span
+                >
+              {/if}
             {/if}
           </span>
           <span class="continue-card__copy">
@@ -295,6 +318,14 @@
                       />
                     {/if}
                   </span>
+                  {#if foreignOwner(item.owner, userId)}
+                    {@const foreign = foreignOwner(item.owner, userId)}
+                    {#if foreign}
+                      <span class="owner-corner"
+                        ><OwnerBadge owner={foreign} {locale} /></span
+                      >
+                    {/if}
+                  {/if}
                   <span class="tile__name">{item.name}</span>
                 </a>
               </li>
@@ -325,6 +356,7 @@
                 href={resolve("/projects/[id]", { id: String(item.id) })}
                 imageUrl={item.preview_url}
                 name={item.name}
+                owner={foreignOwner(item.owner, userId)}
                 subtitle={[item.category, updatedAgo(item.updated_at)]
                   .filter(Boolean)
                   .join(" · ")}
@@ -351,6 +383,13 @@
 </section>
 
 <style>
+  .owner-corner {
+    position: absolute;
+    inset-block-start: 0.4rem;
+    inset-inline-start: 0.4rem;
+    display: inline-flex;
+  }
+
   .home-dashboard:focus {
     outline: none;
   }
@@ -583,6 +622,7 @@
     outline-offset: 4px;
   }
   .continue-card__image {
+    position: relative;
     display: grid;
     aspect-ratio: 1;
     place-items: center;
@@ -668,6 +708,7 @@
     list-style: none;
   }
   .tile {
+    position: relative;
     display: grid;
     gap: 0.45rem;
     color: var(--ink);

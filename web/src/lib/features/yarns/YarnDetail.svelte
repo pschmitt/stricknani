@@ -11,6 +11,8 @@
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
+  import { foreignOwner } from "#lib/owner.ts";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -434,6 +436,13 @@
         </div>
       {/snippet}
     </PageHeader>
+
+    {#if foreignOwner(currentYarn.owner, userId)}
+      {@const foreign = foreignOwner(currentYarn.owner, userId)}
+      {#if foreign}
+        <ForeignOwnerBanner kind="yarn" owner={foreign} {locale} />
+      {/if}
+    {/if}
 
     {#if actionError}<div class="notice-error" role="alert">
         {actionError}

@@ -19,6 +19,8 @@
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
   import UrlField from "#lib/components/UrlField.svelte";
   import YarnPicker from "./YarnPicker.svelte";
+  import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
+  import { foreignOwner } from "#lib/owner.ts";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
   import {
     applyOptimisticReorder,
@@ -256,10 +258,16 @@
     return () => cleanupRoute(generation, controller);
   });
 
+  // An administrator may edit another user's project. Its category and yarn choices belong to
+  // that owner, never to the administrator.
+  const foreignProjectOwner = $derived(foreignOwner(project?.owner, userId));
+  const foreignProjectOwnerId = $derived(foreignProjectOwner?.id ?? null);
+
   $effect(() => {
     const ownerId = userId;
+    const foreignId = foreignProjectOwnerId;
     const generation = ++categoryGeneration;
-    if (ownerId === null) {
+    if (ownerId === null || foreignId !== null) {
       categories = [];
       categoryError = "";
       categoryLoading = false;
@@ -305,6 +313,7 @@
   $effect(() => {
     const ownerId = userId;
     const query = yarnQuery;
+    const foreignId = foreignProjectOwnerId;
     const generation = ++yarnGeneration;
     if (ownerId === null) {
       yarnResults = [];
@@ -322,7 +331,13 @@
     yarnLoading = true;
     yarnSearchError = "";
     const params = new URLSearchParams({ q: query.trim() });
-    void listYarns(params.toString(), controller.signal)
+    void listYarns(
+      params.toString(),
+      controller.signal,
+      foreignId === null
+        ? { scope: "mine" }
+        : { scope: "all", ownerId: foreignId },
+    )
       .then((result) => {
         if (
           controller.signal.aborted ||
@@ -1109,6 +1124,10 @@
     title={isCreating ? t("New project", locale) : t("Edit project", locale)}
     titleId="editor-title"
   />
+
+  {#if foreignProjectOwner && loadState === "ready"}
+    <ForeignOwnerBanner kind="project" owner={foreignProjectOwner} {locale} />
+  {/if}
 
   {#if loadState === "signed-out"}
     <div class="notice" role="status">

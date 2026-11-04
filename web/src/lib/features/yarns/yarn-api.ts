@@ -1,5 +1,7 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import { ownerField, type ResourceOwner } from "#lib/owner.ts";
+import type { LibraryScope } from "#lib/library-scope.svelte.ts";
 
 export interface YarnSummary {
   id: number;
@@ -10,6 +12,8 @@ export interface YarnSummary {
   is_favorite: boolean;
   updated_at: string;
   preview_url: string | null;
+  /** Who owns the yarn; absent on responses that predate owner info. */
+  owner?: ResourceOwner | null;
 }
 
 export interface YarnPhoto {
@@ -58,7 +62,12 @@ export interface YarnWrite {
 
 export interface YarnPage {
   data: YarnSummary[];
-  meta: { page: number; per_page: number; has_more: boolean };
+  meta: {
+    page: number;
+    per_page: number;
+    has_more: boolean;
+    scope?: LibraryScope;
+  };
 }
 
 export interface LinkedProject {
@@ -101,11 +110,26 @@ export function yarnSearchFromFilters(filters: YarnFilters): string {
   return params.toString();
 }
 
+export interface ListScope {
+  /** Whose items to list. Omitted: the server default (Everyone for admins). */
+  scope?: LibraryScope;
+  /** Restrict to one owner's items (administrators only). */
+  ownerId?: number;
+}
+
+export function applyListScope(params: URLSearchParams, scope: ListScope) {
+  if (scope.scope) params.set("scope", scope.scope);
+  if (scope.ownerId !== undefined)
+    params.set("owner_id", String(scope.ownerId));
+}
+
 export async function listYarns(
   search: string,
   signal: AbortSignal,
+  scope: ListScope = {},
 ): Promise<YarnPage> {
   const params = new URLSearchParams(search);
+  applyListScope(params, scope);
   const suffix = params.size ? `?${params}` : "";
   const payload: unknown = await apiRequest(`/api/v2/yarns${suffix}`, {
     signal,
@@ -121,7 +145,14 @@ export async function listYarns(
     throw invalidResponse();
   return {
     data: payload.data.map(parseYarnSummary),
-    meta: { page, per_page, has_more },
+    meta: {
+      page,
+      per_page,
+      has_more,
+      ...(payload.meta.scope === "mine" || payload.meta.scope === "all"
+        ? { scope: payload.meta.scope }
+        : {}),
+    },
   };
 }
 
@@ -298,6 +329,7 @@ export function parseYarnSummary(value: unknown): YarnSummary {
     is_favorite: value.is_favorite,
     updated_at: value.updated_at,
     preview_url: value.preview_url,
+    ...ownerField(value.owner),
   };
 }
 
@@ -361,6 +393,7 @@ export function parseYarnDetail(value: unknown): YarnDetail {
       photos.find((photo) => photo.is_primary)?.thumbnail_url ??
       photos[0]?.thumbnail_url ??
       null,
+    ...ownerField(value.owner),
     description: value.description,
     description_html: value.description_html,
     dye_lot: value.dye_lot,

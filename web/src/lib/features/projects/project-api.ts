@@ -1,6 +1,12 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
-import type { YarnWrite } from "../yarns/yarn-api.ts";
+import { ownerField, type ResourceOwner } from "#lib/owner.ts";
+import type { LibraryScope } from "#lib/library-scope.svelte.ts";
+import {
+  applyListScope,
+  type ListScope,
+  type YarnWrite,
+} from "../yarns/yarn-api.ts";
 
 export interface ProjectSummary {
   id: number;
@@ -10,6 +16,8 @@ export interface ProjectSummary {
   is_favorite: boolean;
   updated_at: string;
   preview_url: string | null;
+  /** Who owns the project; absent on responses that predate owner info. */
+  owner?: ResourceOwner | null;
 }
 
 export interface ProjectStep {
@@ -128,7 +136,12 @@ export interface ProjectFilters {
 
 export interface ProjectPage {
   data: ProjectSummary[];
-  meta: { page: number; per_page: number; has_more: boolean };
+  meta: {
+    page: number;
+    per_page: number;
+    has_more: boolean;
+    scope?: LibraryScope;
+  };
 }
 
 const emptyFilters: ProjectFilters = {
@@ -167,8 +180,10 @@ export function searchFromFilters(filters: ProjectFilters): string {
 export async function listProjects(
   search: string,
   signal: AbortSignal,
+  scope: ListScope = {},
 ): Promise<ProjectPage> {
   const query = new URLSearchParams(search);
+  applyListScope(query, scope);
   const suffix = query.size ? `?${query}` : "";
   const payload: unknown = await apiRequest(`/api/v2/projects${suffix}`, {
     signal,
@@ -187,7 +202,17 @@ export async function listProjects(
   )
     throw invalidResponse();
   const data = payload.data.map(parseProjectSummary);
-  return { data, meta: { page, per_page, has_more } };
+  return {
+    data,
+    meta: {
+      page,
+      per_page,
+      has_more,
+      ...(payload.meta.scope === "mine" || payload.meta.scope === "all"
+        ? { scope: payload.meta.scope }
+        : {}),
+    },
+  };
 }
 
 export async function listCategories(
@@ -454,6 +479,7 @@ function parseProjectSummary(value: unknown): ProjectSummary {
     is_favorite: value.is_favorite,
     updated_at: value.updated_at,
     preview_url: value.preview_url,
+    ...ownerField(value.owner),
   };
 }
 
@@ -527,6 +553,7 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     steps,
     images,
     attachments,
+    ...ownerField(value.owner),
   };
 }
 
