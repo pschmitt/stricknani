@@ -20,7 +20,8 @@ on:
       - "tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
       - "pyproject.toml"
-      - "uv.lock"
+      - "flake.nix"
+      - "flake.lock"
       - ".github/workflows/web-ui.yaml"
   pull_request:
     branches: [main, rust]
@@ -41,7 +42,8 @@ on:
       - "tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
       - "pyproject.toml"
-      - "uv.lock"
+      - "flake.nix"
+      - "flake.lock"
       - ".github/workflows/web-ui.yaml"
   workflow_dispatch:
 
@@ -121,22 +123,8 @@ jobs:
         with:
           workspaces: rust -> target
 
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          version: "0.13.6"
-          enable-cache: true
-
-      - name: Install browser runner dependencies
-        run: uv sync --locked
-
-      - name: Install Playwright Chromium
-        run: uv run playwright install --with-deps chromium
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Build server and dev-only fixture example
         run: cargo build --locked --manifest-path rust/Cargo.toml --bin stricknani-server --example optional_browser_fixture
@@ -146,7 +134,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-core-disabled"
-          uv run python -m ci.stricknani.web_ui_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_ui_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -156,7 +144,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-accessibility"
-          uv run python -m ci.stricknani.web_accessibility_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_accessibility_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -166,7 +154,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-pwa"
-          uv run python -m ci.stricknani.web_pwa_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_pwa_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -176,7 +164,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-services-success"
-          uv run python -m ci.stricknani.web_ui_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_ui_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir" \
@@ -190,7 +178,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-services-failure"
-          uv run python -m ci.stricknani.web_ui_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_ui_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir" \
@@ -204,7 +192,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-account"
-          uv run python -m ci.stricknani.web_account_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_account_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -214,7 +202,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-admin"
-          uv run python -m ci.stricknani.web_admin_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_admin_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -224,7 +212,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-imports"
-          uv run python -m ci.stricknani.web_import_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_import_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -234,7 +222,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           private_dir="$RUNNER_TEMP/stricknani-web-browser-yarns"
-          uv run python -m ci.stricknani.web_yarn_browser \
+          nix develop '.#tooling' --command python -m ci.stricknani.web_yarn_browser \
             --binary "$STRICKNANI_SERVER_BINARY" \
             --web-root "$STRICKNANI_WEB_ROOT" \
             --private-dir "$private_dir"
@@ -253,7 +241,7 @@ jobs:
             state_file="$private_dir/fixture-state.json"
             if [[ -f "$state_file" ]]
             then
-              uv run python -m ci.stricknani.rust_fixture stop \
+              nix develop '.#tooling' --command python -m ci.stricknani.rust_fixture stop \
                 --state-file "$state_file" || true
             fi
             rm -rf -- "$private_dir"

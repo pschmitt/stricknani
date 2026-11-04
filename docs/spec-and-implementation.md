@@ -143,7 +143,7 @@ Operations:
 | Tool          | Purpose                  |
 | ------------- | ------------------------ |
 | Python 3.13+  | Language runtime         |
-| uv            | Dependency management    |
+| Nix dev shell | Tooling environment      |
 | pytest        | Unit & integration tests |
 | ruff          | Linter + formatter       |
 | mypy (strict) | Type checking            |
@@ -163,7 +163,6 @@ Linting is mandatory in CI.
 
 | Command            | Description                         |
 | ------------------ | ----------------------------------- |
-| `just setup`       | Setup uv environment                |
 | `just run`         | Run dev server with reload          |
 | `just lint`        | Run Ruff + MyPy                     |
 | `just fmt`         | Format code                         |
@@ -179,7 +178,7 @@ Linting is mandatory in CI.
 
 - `packages.${system}.stricknani` → runnable app
 - `packages.${system}.stricknani-docker` → Docker image
-- `devShells.${system}.default` → uv + just + pytest + ruff
+- `devShells.${system}.default` → just + pytest + ruff (Nix-provided)
 - `checks` → build + tests + flake validation
 - Reproducible build required.
 
@@ -362,7 +361,7 @@ This section summarizes the initial implementation of Stricknani v0.1.0.
    - justfile with common tasks (setup, run, lint, test, etc.)
    - Demo data seeder for development (`just demo-data`)
    - Environment configuration via `.env` file
-   - uv for fast dependency management
+   - Nix dev shell for tooling
 
 ## Project Structure
 
@@ -443,8 +442,8 @@ stricknani/
 ### Development
 
 ```bash
-# Setup environment
-just setup
+# Enter the dev shell
+nix develop
 
 # Run development server (port 7674)
 just run

@@ -1,31 +1,6 @@
-[project]
-name = "stricknani-tooling"
-version = "1.0.0"
-description = "Development tooling for Stricknani: i18n catalog generators and browser/CI harnesses (the product itself is Rust, web/ and android/)"
-readme = "README.md"
-license = { text = "GPL-3.0-only" }
-authors = [
-    { name = "Philipp Schmitt", email = "philipp@schmitt.co" }
-]
-requires-python = ">=3.12"
-# Nothing in this project is installed or shipped. The scripts under scripts/
-# and ci/ and their tests only need the dev group below.
-dependencies = []
-
-[dependency-groups]
-dev = [
-    # Translation catalog tooling (scripts/*_i18n.py, scripts/check_translations.py).
-    "babel>=2.14.0",
-    # Browser acceptance harnesses (ci/stricknani/web_*_browser.py).
-    "playwright==1.64.1",
-    "pytest>=8.3.3",
-    "ruff>=0.6.9",
-    "mypy>=1.11.2",
-]
-
-[tool.uv]
-package = false
-default-groups = ["dev"]
+# Configuration for the Python development tooling (ruff, mypy, pytest).
+# The tools themselves come from the Nix dev shell (`nix develop`); nothing in
+# this file is installed or shipped.
 
 [tool.ruff]
 line-length = 88

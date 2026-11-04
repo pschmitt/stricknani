@@ -3,24 +3,23 @@
 # The product is the Rust server (rust/), the Svelte web app (web/) and the
 # Android app (android/). The Python in this repository is development tooling
 # only: i18n catalog generators (scripts/) and browser/CI harnesses (ci/).
+#
+# Tooling model: every recipe runs inside the Nix dev shell, which provides
+# cargo/clippy/rustfmt, node/npm, python (babel, pytest, mypy, playwright and
+# shapely), ruff, biome, statix, nixfmt, vendir and resvg. Inside `nix develop`
+# (or direnv's `use flake`) recipes run as they are; anywhere else
+# scripts/just-shell re-executes each recipe line through `nix develop`
+# (STRICKNANI_NIX_SHELL picks the shell, default `.#rust`). Add missing tools to
+# the shell in flake.nix instead of wrapping them in a recipe. Android recipes
+# live in android/justfile and are not affected.
 
-set shell := ["bash", "-c"]
+set shell := ["./scripts/just-shell", "-c"]
 
 # Default port for dev server
 dev_port := env("PORT", "7674")
 
 default:
   @just --choose
-
-# Install the Python development tooling (i18n generators, browser harnesses)
-[group: 'dev']
-setup:
-  uv sync
-
-# CI helpers
-[group: 'ci']
-ci-setup-py:
-  uv sync --locked
 
 # Run the Rust dev server. Set RUST_DATABASE_URL and RUST_MEDIA_ROOT to
 # disposable Rust-owned storage paths before starting it.
@@ -41,11 +40,11 @@ lint: lint-ruff lint-mypy lint-css
 
 [group: 'lint']
 lint-ruff:
-  uv run ruff check .
+  ruff check .
 
 [group: 'lint']
 lint-mypy:
-  uv run mypy .
+  mypy .
 
 biome_action := if env('CI', '') != '' { 'ci' } else { 'lint' }
 
@@ -56,37 +55,37 @@ lint-css:
 # Check translations
 [group: 'i18n']
 i18n-check:
-  uv run python -m scripts.check_translations
-  uv run python -m scripts.generate_rust_i18n --check
-  uv run python -m scripts.generate_web_i18n --check
+  python -m scripts.check_translations
+  python -m scripts.generate_rust_i18n --check
+  python -m scripts.generate_web_i18n --check
 
 # Rebuild the POT template from the Rust and web sources. Babel only writes the
 # empty template (babel.cfg has no gettext sources left); the Rust and web
 # extractors then fill it.
 [group: 'i18n']
 i18n-extract:
-  uv run python -m babel.messages.frontend extract \
+  python -m babel.messages.frontend extract \
     -F babel.cfg \
     -o stricknani/locales/messages.pot scripts
-  uv run python -m scripts.extract_rust_i18n
-  uv run python -m scripts.generate_web_i18n --extract
+  python -m scripts.extract_rust_i18n
+  python -m scripts.generate_web_i18n --extract
 
 # Update translation catalogs from the template
 [group: 'i18n']
 i18n-update: i18n-extract
-  uv run python -m babel.messages.frontend update \
+  python -m babel.messages.frontend update \
     -i stricknani/locales/messages.pot \
     -d stricknani/locales
-  uv run python -m scripts.generate_rust_i18n --seed-german
-  uv run python -m scripts.generate_rust_i18n
-  uv run python -m scripts.generate_web_i18n --update
+  python -m scripts.generate_rust_i18n --seed-german
+  python -m scripts.generate_rust_i18n
+  python -m scripts.generate_web_i18n --update
 
 # Compile catalogs after edits
 [group: 'i18n']
 i18n-compile:
-  uv run python -m babel.messages.frontend compile -d stricknani/locales
-  uv run python -m scripts.generate_rust_i18n
-  uv run python -m scripts.generate_web_i18n
+  python -m babel.messages.frontend compile -d stricknani/locales
+  python -m scripts.generate_rust_i18n
+  python -m scripts.generate_web_i18n
 
 # Format code
 [group: 'fmt']
@@ -100,8 +99,8 @@ fmt-rust:
 
 [group: 'fmt']
 fmt-ruff:
-  uv run ruff format .
-  uv run ruff check --fix .
+  ruff format .
+  ruff check --fix .
 
 [group: 'fmt']
 fmt-nix:
@@ -140,7 +139,7 @@ todo-todo:
 # Python tooling tests: i18n generators and the browser/CI harness helpers.
 [group: 'test']
 test-harness:
-  uv run pytest -q
+  pytest -q
 
 # Native Rust suite plus the Python tooling tests.
 [group: 'test']
@@ -239,4 +238,4 @@ renovate *args:
 
 # Regenerate derived brand assets (PNGs, favicon, Android vectors) from branding/*.svg
 branding:
-	nix-shell -p resvg -p 'python3.withPackages (p: [p.shapely])' --run 'python3 branding/build.py'
+  python branding/build.py

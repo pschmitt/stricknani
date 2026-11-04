@@ -19,7 +19,30 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          python = pkgs.python313;
+          # Python development tooling (i18n generators, browser harnesses and
+          # their tests). The playwright wheel and the browsers come from the
+          # same nixpkgs, so their versions always match.
+          pythonTooling = pkgs.python313.withPackages (
+            ps: with ps; [
+              babel
+              mypy
+              playwright
+              pytest
+              shapely
+            ]
+          );
+          pythonToolingPackages = [
+            pythonTooling
+            pkgs.ruff
+            pkgs.just
+            pkgs.resvg
+          ];
+          playwrightEnv = {
+            # Tells scripts/just-shell (the justfile's shell) it is already in a dev shell.
+            STRICKNANI_DEVSHELL = "1";
+            PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+            PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+          };
 
           # Commit of this flake for the About page; empty when the revision is unknown.
           gitRevision =
@@ -126,41 +149,38 @@
             # `nix develop .#ktfmt` supplies the binary used by Android lint.
             ktfmt = pkgs.mkShell { packages = [ pkgs.ktfmt ]; };
 
-            rust = pkgs.mkShell {
-              packages = with pkgs; [
-                cargo
-                cargo-audit
-                clippy
-                rust-analyzer
-                rustc
-                rustfmt
-                sqlite
-                pkg-config
-                just
-                uv
-                python
-                ruff
-                mypy
-                statix
-                nixfmt
-                ktfmt
-                nodejs
-                poppler-utils
-                tesseract
-                vendir
-                biome
-              ];
+            # Python tooling only: `nix develop .#tooling -c just lint-ruff`.
+            tooling = pkgs.mkShell ({ packages = pythonToolingPackages; } // playwrightEnv);
 
-              shellHook = ''
-                ${pre-commit-check.shellHook}
+            rust = pkgs.mkShell (
+              {
+                packages =
+                  pythonToolingPackages
+                  ++ (with pkgs; [
+                    cargo
+                    cargo-audit
+                    clippy
+                    rust-analyzer
+                    rustc
+                    rustfmt
+                    sqlite
+                    pkg-config
+                    statix
+                    nixfmt
+                    ktfmt
+                    nodejs
+                    poppler-utils
+                    tesseract
+                    vendir
+                    biome
+                  ]);
 
-                # The Python tooling (Playwright's greenlet, ...) loads binary
-                # wheels linked against libstdc++.so.6 from the Nix C++ stdlib.
-                export LD_LIBRARY_PATH="${
-                  pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
-                }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-              '';
-            };
+                shellHook = ''
+                  ${pre-commit-check.shellHook}
+                '';
+              }
+              // playwrightEnv
+            );
 
             default = self.devShells.${system}.rust;
           };

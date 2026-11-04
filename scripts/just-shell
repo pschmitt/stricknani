@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Shell for the root justfile (`set shell`): run the recipe line in the Nix dev
+# shell, entering it first when the caller is not already inside one.
+set -euo pipefail
+
+if [[ -n ${STRICKNANI_DEVSHELL:-} || -n ${IN_NIX_SHELL:-} ]]
+then
+  exec bash "$@"
+fi
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+exec nix develop "${STRICKNANI_NIX_SHELL:-.#rust}" --command bash "$@"
