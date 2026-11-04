@@ -68,6 +68,47 @@ Use this file as the operational source of truth for working in Stricknani.
   incident queues. The coordinator handles triage and any required targeted
   record; never read unrelated incident entries to confirm a write.
 
+### Build workers and landing
+
+- A fresh `rworker` has no build cache: compiling the server, the web
+  dependencies and the Nix checks from scratch takes 15 minutes or more. The
+  coordinator keeps one or two warm workers per session and names one in each
+  subagent brief; subagents reuse it (`rworker extend` instead of a new
+  worker) and create their own only when the brief says so. Every worker gets
+  `rworker down` once its last job is collected.
+- Iterate with incremental Cargo on the worker (one stable
+  `CARGO_TARGET_DIR` per worker, e.g. `~/cargo-target`) and run focused tests;
+  run the full Nix build (`.#stricknani`, `.#stricknani-web`,
+  `.#checks.x86_64-linux.pre-commit-check`) once per landing, not per edit.
+- On every worker, `mkdir -p ~/tmp && export TMPDIR=~/tmp` before builds:
+  older worker images keep `/tmp` on a small RAM disk, and Nix fails with a
+  misleading error when `TMPDIR` points at a directory that does not exist.
+- Run final checks from a clean `git archive` of the commit you will push,
+  never from the working tree. A working tree hides files that `.gitignore`
+  keeps out of the commit; `path:.` flake refs ignore `.gitignore` too.
+  Exclude `android/.just` (its Python files fail the pre-commit check, and
+  GitHub builds never include it).
+- The e2e suite runs against the unwrapped server of that build:
+  `STRICKNANI_SERVER_BINARY=<out>/bin/.stricknani-server-wrapped
+  STRICKNANI_WEB_ROOT=<out>/share/stricknani/web npx playwright test` in
+  `web/`, inside `nix develop path:.#rust`. The two optional-services journeys
+  skip without a fixture binary. A run that prints no `passed` line did not
+  run: check the log rather than its filtered tail.
+- Android Gradle builds run through `android/justfile` on the build host that
+  holds the debug keystore, so the APK installs over the existing app.
+- Commits: add files explicitly (`git commit -a` can fail on a stale
+  `android/.just` submodule pointer in worktrees), set
+  `PRE_COMMIT_ALLOW_NO_CONFIG=1` when the hook finds no config, and restore the
+  third-party `*-OFL.txt` licence texts if a hook rewrites them; they stay
+  verbatim. Check that the commit actually exists before building or pushing.
+- Changes that must ship together (a renamed environment variable and the
+  deployment configuration that sets it) land and deploy in one step: pin the
+  matching application revision in the deployment repository in the same push.
+  A scheduled upgrade picks up whatever is on main.
+- Deploy batches: rebuilding the server on the production host takes several
+  minutes, so collect related landings and deploy them together unless the
+  user asks for a deploy now.
+
 ### UI workflow
 
 - Prioritize usable phone layouts and compact navigation. Keep mobile language
