@@ -1,42 +1,12 @@
 # Claude Code agent worktrees
 .claude/worktrees/
 
-# Python
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-!web/src/lib/
-!web/src/lib/**
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-ENV/
-env/
-
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# Testing
 
 # Database
 *.db
