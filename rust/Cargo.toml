@@ -23,7 +23,7 @@ bcrypt = "0.17"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
 openidconnect = { version = "=4.0.1", default-features = false }
 zeroize = "1"
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", features = ["serde"] }
 argon2 = "0.5"
 rand = "0.8"
