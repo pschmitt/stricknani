@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-04 07:08+0100\n"
+"POT-Creation-Date: 2026-11-04 07:18+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -677,7 +677,7 @@ msgstr "(öffnet in neuem Tab)"
 msgid "A category with this name already exists."
 msgstr "Eine Kategorie mit diesem Namen gibt es bereits."
 
-#: web/src/routes/privacy/+page.svelte:159
+#: web/src/routes/privacy/+page.svelte:165
 msgid ""
 "A deployment may enable integrations that send limited information "
 "outside the Stricknani instance. For example, an AI provider may receive "
@@ -966,7 +966,7 @@ msgstr "Eine archivierte Kopie ist verfügbar."
 msgid "Android app"
 msgstr "Android-App"
 
-#: web/src/routes/privacy/+page.svelte:105
+#: web/src/routes/privacy/+page.svelte:111
 msgid "Android app and offline data"
 msgstr "Android-App und Offline-Daten"
 
@@ -1136,7 +1136,7 @@ msgstr "Garne ansehen, hinzufügen und finden"
 msgid "Build"
 msgstr "Build"
 
-#: web/src/routes/privacy/+page.svelte:149
+#: web/src/routes/privacy/+page.svelte:155
 msgid ""
 "Builds installed from GitHub rather than Google Play check GitHub "
 "Releases for a newer version. That request does not include your access "
@@ -1216,7 +1216,7 @@ msgstr "Geändert"
 msgid "Changed {fields}"
 msgstr "{fields} geändert"
 
-#: web/src/routes/privacy/+page.svelte:236
+#: web/src/routes/privacy/+page.svelte:242
 msgid "Changes to this policy"
 msgstr "Änderungen an dieser Richtlinie"
 
@@ -1822,7 +1822,7 @@ msgstr "Zum Beispiel: DK oder Fingering"
 msgid "For example, my tablet"
 msgstr "Zum Beispiel: Mein Tablet"
 
-#: web/src/routes/privacy/+page.svelte:225
+#: web/src/routes/privacy/+page.svelte:231
 msgid ""
 "For software questions or privacy concerns that relate to the project, "
 "use the"
@@ -1877,7 +1877,7 @@ msgid "Get the Android app"
 msgstr "Android-App holen"
 
 #: web/src/routes/privacy/+page.svelte:59
-#: web/src/routes/privacy/+page.svelte:230
+#: web/src/routes/privacy/+page.svelte:236
 msgid "GitHub issue tracker"
 msgstr "GitHub-Issue-Tracker"
 
@@ -1972,7 +1972,7 @@ msgstr ""
 "Falls die Erkennung fehlschlägt, probiere jeweils eine Sprache. Auf "
 "diesem Server sind möglicherweise nicht beide Sprachpakete installiert."
 
-#: web/src/routes/privacy/+page.svelte:143
+#: web/src/routes/privacy/+page.svelte:149
 msgid ""
 "If the app crashes, it saves a diagnostic report on the device (time, app"
 " version, device model, Android version, and a stack trace, with access "
@@ -2542,7 +2542,7 @@ msgstr "Noch keine Projekte verwenden dieses Garn."
 msgid "No projects yet."
 msgstr "Noch keine Projekte."
 
-#: web/src/routes/privacy/+page.svelte:209
+#: web/src/routes/privacy/+page.svelte:215
 msgid ""
 "No software can guarantee absolute security. The security and "
 "confidentiality of a self-hosted installation also depend on the "
@@ -2633,7 +2633,7 @@ msgstr "Noch nichts – deine Änderungen erscheinen hier."
 msgid "Offline-first knitting projects and yarn stash."
 msgstr "Strickprojekte und Garnvorrat, auch offline."
 
-#: web/src/routes/privacy/+page.svelte:137
+#: web/src/routes/privacy/+page.svelte:143
 msgid ""
 "On Android 13 and later, the app may ask for permission to show a "
 "notification when a background sync finds changes. The notification is "
@@ -2712,7 +2712,7 @@ msgstr "Dein Arbeitsbereich wird geöffnet …"
 msgid "Opening {name}…"
 msgstr "{name} wird geöffnet…"
 
-#: web/src/routes/privacy/+page.svelte:86
+#: web/src/routes/privacy/+page.svelte:92
 msgid ""
 "Operational information: application and import logs may contain "
 "timestamps, routes, status information, error details, and identifiers "
@@ -2725,7 +2725,7 @@ msgstr ""
 "Betreiberin oder der Betreiber bestimmt Speicherort und Aufbewahrung der "
 "Protokolle."
 
-#: web/src/routes/privacy/+page.svelte:157
+#: web/src/routes/privacy/+page.svelte:163
 msgid "Optional external services"
 msgstr "Optionale externe Dienste"
 
@@ -2940,7 +2940,7 @@ msgstr "Profilbild entfernt."
 msgid "Profile picture updated."
 msgstr "Profilbild aktualisiert."
 
-#: web/src/routes/privacy/+page.svelte:165
+#: web/src/routes/privacy/+page.svelte:171
 msgid ""
 "Profile pictures: if you have not uploaded one, the server may look up "
 "your Gravatar. It sends Gravatar a SHA-256 hash of your email address "
@@ -3034,7 +3034,7 @@ msgstr "Projekt-Schlagwörter"
 msgid "Projects that use this category will no longer show it."
 msgstr "Projekte, die diese Kategorie verwenden, zeigen sie danach nicht mehr an."
 
-#: web/src/routes/privacy/+page.svelte:113
+#: web/src/routes/privacy/+page.svelte:119
 msgid ""
 "Projects, yarn entries, and their photos are cached on the device so the "
 "app can work offline. Offline edits may be queued locally and are sent to"
@@ -3434,7 +3434,7 @@ msgstr "Deine Projekte durchsuchen"
 msgid "Search your yarn"
 msgstr "Garne durchsuchen"
 
-#: web/src/routes/privacy/+page.svelte:201
+#: web/src/routes/privacy/+page.svelte:207
 msgid "Security"
 msgstr "Sicherheit"
 
@@ -3551,6 +3551,23 @@ msgstr "Die Anmeldung mit {name} hat nicht geklappt. Versuche es noch einmal."
 #: web/src/lib/components/SignInForm.svelte:135
 msgid "Signing in…"
 msgstr "Anmeldung läuft …"
+
+#: web/src/routes/privacy/+page.svelte:86
+msgid ""
+"Single sign-on: if the operator enables sign-in through an OpenID Connect"
+" provider such as Authelia and you link it to your account, the server "
+"stores the provider's identifier for you (issuer and subject) and the "
+"email address the provider confirmed, so it can recognise you. The "
+"provider handles the sign-in itself under its own terms. You can unlink "
+"it in your account settings."
+msgstr ""
+"Single Sign-on: Wenn der Betreiber die Anmeldung über einen OpenID-"
+"Connect-Anbieter wie Authelia aktiviert und du ihn mit deinem Konto "
+"verknüpfst, speichert der Server die Kennung des Anbieters für dich "
+"(Issuer und Subject) und die vom Anbieter bestätigte E-Mail-Adresse, um "
+"dich wiederzuerkennen. Die Anmeldung selbst übernimmt der Anbieter nach "
+"seinen eigenen Bedingungen. Du kannst die Verknüpfung in deinen "
+"Kontoeinstellungen aufheben."
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:554
 msgid "Skein length"
@@ -3693,7 +3710,7 @@ msgstr "Maschen"
 msgid "Stitches to cast on"
 msgstr "Anschlagmaschen"
 
-#: web/src/routes/privacy/+page.svelte:185
+#: web/src/routes/privacy/+page.svelte:191
 msgid "Storage, retention, and deletion"
 msgstr "Speicherung, Aufbewahrung und Löschung"
 
@@ -3714,7 +3731,7 @@ msgstr ""
 " Seite beschreibt das Standardverhalten der Software und ist keine "
 "Zusicherung für jede Bereitstellung."
 
-#: web/src/routes/privacy/+page.svelte:203
+#: web/src/routes/privacy/+page.svelte:209
 msgid ""
 "Stricknani uses password hashing, access checks, CSRF protection, upload "
 "validation, and security response headers. Operators should use HTTPS, "
@@ -3840,19 +3857,21 @@ msgstr "Das API-Token konnte nicht erstellt werden."
 msgid "The API token could not be revoked."
 msgstr "Das API-Token konnte nicht widerrufen werden."
 
-#: web/src/routes/privacy/+page.svelte:107
+#: web/src/routes/privacy/+page.svelte:113
 msgid ""
 "The Android app connects only to the Stricknani server URL that you "
 "configure. It stores that URL and your personal access token locally, "
-"encrypted at rest, and does not ask for or store your Stricknani account "
-"password."
+"encrypted at rest. If you sign in with your email and password, the "
+"password is sent only to your server to create that token and is never "
+"stored on the device."
 msgstr ""
-"Die Android-App verbindet sich nur mit der von dir konfigurierten "
-"Stricknani-Server-URL. Sie speichert diese URL und dein persönliches "
-"Zugriffstoken lokal verschlüsselt und fragt dein Stricknani-Kontopasswort"
-" weder ab noch speichert sie es."
+"Die Android-App verbindet sich nur mit der Stricknani-Server-URL, die du "
+"einstellst. Sie speichert diese URL und deinen persönlichen Zugriffstoken"
+" lokal und verschlüsselt. Wenn du dich mit E-Mail und Passwort anmeldest,"
+" wird das Passwort nur an deinen Server gesendet, um diesen Token zu "
+"erstellen, und nie auf dem Gerät gespeichert."
 
-#: web/src/routes/privacy/+page.svelte:125
+#: web/src/routes/privacy/+page.svelte:131
 msgid ""
 "The Android app does not use Android cloud backup. You can export a "
 "backup of the server connection and app settings, including your personal"
@@ -3867,7 +3886,7 @@ msgstr ""
 "einem Passwort geschützt werden; ohne Passwort kann jeder die Datei "
 "lesen, der sie öffnen kann."
 
-#: web/src/routes/privacy/+page.svelte:119
+#: web/src/routes/privacy/+page.svelte:125
 msgid ""
 "The Android app has no analytics, advertising, tracking, or crash-"
 "reporting service of its own. Data sent during synchronization goes to "
@@ -3894,7 +3913,7 @@ msgstr "Der Kontostatus konnte nicht geändert werden."
 msgid "The app could not be connected. Try again."
 msgstr "Die App konnte nicht verbunden werden. Bitte versuche es erneut."
 
-#: web/src/routes/privacy/+page.svelte:131
+#: web/src/routes/privacy/+page.svelte:137
 msgid ""
 "The app uses the camera only when you choose to scan a setup QR code. The"
 " camera image is processed on the device."
@@ -3961,7 +3980,7 @@ msgstr ""
 "Das erste Foto ist das Titelbild. Ziehe ein Foto oder nutze die "
 "Pfeiltasten, um die Reihenfolge zu ändern."
 
-#: web/src/routes/privacy/+page.svelte:187
+#: web/src/routes/privacy/+page.svelte:193
 msgid ""
 "The instance stores account data and content in its configured database "
 "and media storage. There is no universal retention period: the operator "
@@ -4197,7 +4216,7 @@ msgstr "Die Person wird abgemeldet und kann sich nicht mehr anmelden."
 msgid "The user will need to sign in with the new password."
 msgstr "Die Person muss sich mit dem neuen Passwort anmelden."
 
-#: web/src/routes/privacy/+page.svelte:97
+#: web/src/routes/privacy/+page.svelte:103
 msgid ""
 "The web app uses this information to authenticate you, provide project "
 "and yarn management, synchronize API clients, serve your authorized "
@@ -4210,7 +4229,7 @@ msgstr ""
 "zu schützen und Fehler zu diagnostizieren. Sie verkauft deine "
 "Informationen nicht und verwendet sie nicht für Werbung."
 
-#: web/src/routes/privacy/+page.svelte:177
+#: web/src/routes/privacy/+page.svelte:183
 msgid ""
 "The web interface itself uses locally served assets and does not require "
 "an analytics or advertising network."
@@ -4252,7 +4271,7 @@ msgstr "Du kannst deine Identität gerade nicht bestätigen."
 msgid "These changes could not be loaded."
 msgstr "Diese Änderungen konnten nicht geladen werden."
 
-#: web/src/routes/privacy/+page.svelte:171
+#: web/src/routes/privacy/+page.svelte:177
 msgid ""
 "These integrations are optional and controlled by the instance operator. "
 "Their providers process information under their own terms and privacy "
@@ -4375,7 +4394,7 @@ msgstr ""
 "Diese Richtlinie erklärt, wie Stricknani mit Informationen umgeht, wenn "
 "du eine Stricknani-Webinstanz oder die zugehörige Android-App nutzt."
 
-#: web/src/routes/privacy/+page.svelte:238
+#: web/src/routes/privacy/+page.svelte:244
 msgid ""
 "This policy may be updated when Stricknani behavior or integrations "
 "change. The current version is published at this URL. Check the effective"
@@ -4732,7 +4751,7 @@ msgstr "Was möchtest du hinzufügen?"
 msgid "Who is responsible for your data?"
 msgstr "Wer ist für deine Daten verantwortlich?"
 
-#: web/src/routes/privacy/+page.svelte:95
+#: web/src/routes/privacy/+page.svelte:101
 msgid "Why this information is used"
 msgstr "Warum diese Informationen verwendet werden"
 
@@ -4870,7 +4889,7 @@ msgstr "Noch 4 Schritte, dann bist du Entwickler."
 msgid "You are now a developer!"
 msgstr "Du bist jetzt Entwickler!"
 
-#: web/src/routes/privacy/+page.svelte:193
+#: web/src/routes/privacy/+page.svelte:199
 msgid ""
 "You can manage your content and revoke personal access tokens through the"
 " available features. To request deletion or an export of account data, "
@@ -4914,7 +4933,7 @@ msgstr "Du hast keinen Zugriff auf diese Seite."
 msgid "You do not have permission to do that."
 msgstr "Du darfst diese Aktion nicht ausführen."
 
-#: web/src/routes/privacy/+page.svelte:219
+#: web/src/routes/privacy/+page.svelte:225
 msgid ""
 "You may choose what to enter, upload, synchronize, or send to optional "
 "integrations. You may stop using the Android app, clear its local data, "
@@ -4971,7 +4990,7 @@ msgstr ""
 "Dein Konto ist bereit. Melde dich mit deiner E-Mail-Adresse und deinem "
 "Passwort an."
 
-#: web/src/routes/privacy/+page.svelte:217
+#: web/src/routes/privacy/+page.svelte:223
 msgid "Your choices and contact"
 msgstr "Deine Wahlmöglichkeiten und Kontakt"
 

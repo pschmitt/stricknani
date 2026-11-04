@@ -84,6 +84,12 @@
       </li>
       <li>
         {t(
+          "Single sign-on: if the operator enables sign-in through an OpenID Connect provider such as Authelia and you link it to your account, the server stores the provider's identifier for you (issuer and subject) and the email address the provider confirmed, so it can recognise you. The provider handles the sign-in itself under its own terms. You can unlink it in your account settings.",
+          locale,
+        )}
+      </li>
+      <li>
+        {t(
           "Operational information: application and import logs may contain timestamps, routes, status information, error details, and identifiers needed to operate and troubleshoot the instance. The operator chooses log destinations and retention.",
           locale,
         )}
@@ -105,7 +111,7 @@
     <h2>{t("Android app and offline data", locale)}</h2>
     <p>
       {t(
-        "The Android app connects only to the Stricknani server URL that you configure. It stores that URL and your personal access token locally, encrypted at rest, and does not ask for or store your Stricknani account password.",
+        "The Android app connects only to the Stricknani server URL that you configure. It stores that URL and your personal access token locally, encrypted at rest. If you sign in with your email and password, the password is sent only to your server to create that token and is never stored on the device.",
         locale,
       )}
     </p>
