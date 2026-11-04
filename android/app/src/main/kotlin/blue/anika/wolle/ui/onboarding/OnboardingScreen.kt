@@ -106,6 +106,7 @@ fun OnboardingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val oidcProviders by viewModel.oidcProviders.collectAsStateWithLifecycle()
+    val registrationOpen by viewModel.registrationOpen.collectAsStateWithLifecycle()
     var mode by remember { mutableStateOf(OnboardingMode.PASSWORD) }
     var serverUrl by remember { mutableStateOf("") }
     var apiToken by remember { mutableStateOf("") }
@@ -113,8 +114,12 @@ fun OnboardingScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmation by remember { mutableStateOf("") }
+    var creating by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val isValidating = uiState is OnboardingUiState.Validating
+    // The account form only exists while the server says registration is open.
+    val registering = creating && registrationOpen == true && mode == OnboardingMode.PASSWORD
     val uriHandler = LocalUriHandler.current
 
     // Look for sign-in providers (Authelia) once the address settles; none are listed today.
@@ -211,6 +216,8 @@ fun OnboardingScreen(
                                     onPasswordChange = { password = it },
                                     passwordVisible = passwordVisible,
                                     onPasswordVisibleChange = { passwordVisible = it },
+                                    confirmation = if (registering) confirmation else null,
+                                    onConfirmationChange = { confirmation = it },
                                     enabled = !isValidating,
                                 )
                         }
@@ -232,7 +239,9 @@ fun OnboardingScreen(
                         when (mode) {
                             OnboardingMode.MANUAL -> viewModel.connect(serverUrl, apiToken)
                             OnboardingMode.PASSWORD ->
-                                viewModel.signInWithPassword(serverUrl, email, password)
+                                if (registering)
+                                    viewModel.register(serverUrl, email, password, confirmation)
+                                else viewModel.signInWithPassword(serverUrl, email, password)
                             OnboardingMode.QR -> showScanner = true
                         }
                     },
@@ -252,13 +261,32 @@ fun OnboardingScreen(
                     Text(
                         when (mode) {
                             OnboardingMode.PASSWORD ->
-                                stringResource(R.string.onboarding_mode_password)
+                                stringResource(
+                                    if (registering) R.string.onboarding_register_button
+                                    else R.string.onboarding_mode_password
+                                )
                             OnboardingMode.QR -> stringResource(R.string.onboarding_qr_scan_button)
                             OnboardingMode.MANUAL ->
                                 stringResource(R.string.onboarding_connect_button)
                         },
                         style = MaterialTheme.typography.titleMedium,
                     )
+                }
+
+                if (mode == OnboardingMode.PASSWORD && registrationOpen == true) {
+                    TextButton(
+                        onClick = { creating = !creating },
+                        enabled = !isValidating,
+                        modifier =
+                            Modifier.padding(top = 8.dp).testTag("onboarding-toggle-register"),
+                    ) {
+                        Text(
+                            stringResource(
+                                if (registering) R.string.onboarding_register_back
+                                else R.string.onboarding_register_prompt
+                            )
+                        )
+                    }
                 }
 
                 // Only when the server's meta lists providers. Below the email and password form,
@@ -293,6 +321,11 @@ fun OnboardingScreen(
                     }
                 }
             }
+        }
+
+        // A closed server points people to setting up their own instead.
+        if (mode == OnboardingMode.PASSWORD && registrationOpen == false) {
+            SelfHostCard(modifier = Modifier.padding(top = 20.dp))
         }
 
         // Signing in is the friendly default; the setup code and the token are for people who
@@ -408,6 +441,8 @@ private fun PasswordOnboardingFields(
     onPasswordChange: (String) -> Unit,
     passwordVisible: Boolean,
     onPasswordVisibleChange: (Boolean) -> Unit,
+    confirmation: String?,
+    onConfirmationChange: (String) -> Unit,
     enabled: Boolean,
 ) {
     OutlinedTextField(
@@ -459,4 +494,25 @@ private fun PasswordOnboardingFields(
         },
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
     )
+
+    if (confirmation != null) {
+        OutlinedTextField(
+            value = confirmation,
+            onValueChange = onConfirmationChange,
+            label = { Text(stringResource(R.string.onboarding_register_confirm_label)) },
+            singleLine = true,
+            enabled = enabled,
+            visualTransformation =
+                if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions =
+                KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("onboarding-confirm"),
+        )
+        Text(
+            text = stringResource(R.string.onboarding_register_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
 }

@@ -1000,4 +1000,21 @@
 
     <string name="account_admin_card_title">Suchst du die Admin-Seite?</string>
     <string name="account_admin_card_subtitle">Benutzer und Audit-Log verwalten</string>
+    <string name="onboarding_register_prompt">Noch kein Konto? Jetzt erstellen</string>
+    <string name="onboarding_register_back">Ich habe schon ein Konto</string>
+    <string name="onboarding_register_button">Konto erstellen</string>
+    <string name="onboarding_register_confirm_label">Passwort bestätigen</string>
+    <string name="onboarding_register_hint">Mindestens 12 Zeichen, nichts Häufiges.</string>
+    <string name="onboarding_register_error_mismatch">Die Passwörter stimmen nicht überein</string>
+    <string name="onboarding_register_error_closed">Dieser Server hat die Registrierung geschlossen</string>
+    <string name="onboarding_register_error_invalid">Prüfe die E-Mail-Adresse und nimm ein Passwort mit mindestens 12 Zeichen, das nicht häufig verwendet wird</string>
+    <string name="onboarding_register_error_not_created">Das Konto konnte nicht erstellt werden. Falls du schon eins hast, melde dich stattdessen an.</string>
+    <string name="selfhost_card_title">Hier sind Registrierungen geschlossen, aber du kannst dein eigenes privates Stricknani aufsetzen!</string>
+    <string name="selfhost_card_github">Stricknani auf GitHub</string>
+    <string name="selfhost_card_agent_title">Mit einem KI-Coding-Agenten einrichten</string>
+    <string name="selfhost_card_agent_hint">Kopiere diesen Prompt in Claude Code, Codex oder opencode. Der Prompt ist auf Englisch.</string>
+    <string name="selfhost_card_copy">Einrichtungs-Prompt kopieren</string>
+    <string name="selfhost_card_copied">Einrichtungs-Prompt kopiert</string>
+    <string name="selfhost_card_show_prompt">Prompt anzeigen</string>
+    <string name="selfhost_card_hide_prompt">Prompt verbergen</string>
 </resources>

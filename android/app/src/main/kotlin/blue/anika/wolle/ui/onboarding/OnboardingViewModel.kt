@@ -15,6 +15,9 @@ import blue.anika.wolle.data.onboarding.OnboardingValidationException
 import blue.anika.wolle.data.onboarding.OnboardingValidator
 import blue.anika.wolle.data.onboarding.PasswordTokenMinter
 import blue.anika.wolle.data.onboarding.QrConfigCodec
+import blue.anika.wolle.data.onboarding.RegistrationClient
+import blue.anika.wolle.data.onboarding.RegistrationError
+import blue.anika.wolle.data.onboarding.RegistrationException
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
@@ -49,6 +52,7 @@ class OnboardingViewModel
 constructor(
     private val validator: OnboardingValidator,
     private val passwordTokenMinter: PasswordTokenMinter,
+    private val registrationClient: RegistrationClient,
     private val settingsRepository: SettingsRepository,
     private val syncScheduler: SyncScheduler,
     private val oidc: OidcCoordinator,
@@ -68,6 +72,15 @@ constructor(
      * hidden) until a reachable server says otherwise; today's servers list none.
      */
     val oidcProviders: StateFlow<List<OidcProvider>> = _oidcProviders.asStateFlow()
+
+    private val _registrationOpen = MutableStateFlow<Boolean?>(null)
+
+    /**
+     * Whether the entered server allows self-service registration, from `registration_enabled` in
+     * its meta. Null until a reachable server says (or when it cannot be told), in which case the
+     * screen shows neither the "create an account" path nor the "set up your own" card.
+     */
+    val registrationOpen: StateFlow<Boolean?> = _registrationOpen.asStateFlow()
 
     private var oidcProviderName = DEFAULT_PROVIDER_NAME
 
@@ -90,8 +103,9 @@ constructor(
     private suspend fun observeServerUrl() {
         serverUrlInput.debounce(SERVER_URL_SETTLE_MILLIS).distinctUntilChanged().collectLatest { url
             ->
-            _oidcProviders.value =
-                if (url.trimEnd('/').toHttpUrlOrNull() == null) emptyList() else oidc.providers(url)
+            val valid = url.trimEnd('/').toHttpUrlOrNull() != null
+            _oidcProviders.value = if (valid) oidc.providers(url) else emptyList()
+            _registrationOpen.value = if (valid) registrationClient.isOpen(url) else null
         }
     }
 
@@ -187,6 +201,40 @@ constructor(
     }
 
     /**
+     * Self-service registration: creates a member account and signs in with the token the server
+     * returns, exactly like [signInWithPassword] does after a login. Only reachable when
+     * [registrationOpen] is true.
+     */
+    fun register(serverUrl: String, email: String, password: String, confirmation: String) {
+        if (serverUrl.isBlank() || email.isBlank() || password.isBlank()) {
+            _uiState.value =
+                OnboardingUiState.Error(
+                    context.getString(R.string.onboarding_error_missing_password_fields)
+                )
+            return
+        }
+        if (password != confirmation) {
+            _uiState.value =
+                OnboardingUiState.Error(
+                    context.getString(R.string.onboarding_register_error_mismatch)
+                )
+            return
+        }
+        _uiState.value = OnboardingUiState.Validating
+        viewModelScope.launch {
+            registrationClient
+                .register(serverUrl, email, password, deviceName = deviceNames.deviceName())
+                .onSuccess { apiToken ->
+                    persistAndSucceed(serverUrl, apiToken)
+                    settingsRepository.setAccountEmail(email.trim().lowercase())
+                }
+                .onFailure { error ->
+                    _uiState.value = OnboardingUiState.Error(error.toRegistrationMessage())
+                }
+        }
+    }
+
+    /**
      * QR-code onboarding (SNA-13): decodes a payload scanned from the web Settings page's setup QR,
      * then goes through the normal [connect] validation - unlike [signInWithPassword]'s freshly
      * minted token, a QR code can sit around (screenshotted, scanned later) so its token could be
@@ -213,6 +261,23 @@ constructor(
 
     private companion object {
         const val SERVER_URL_SETTLE_MILLIS = 600L
+    }
+
+    private fun Throwable.toRegistrationMessage(): String {
+        val error = (this as? RegistrationException)?.error ?: return toUserMessage()
+        return when (error) {
+            RegistrationError.Closed -> context.getString(R.string.onboarding_register_error_closed)
+            RegistrationError.Invalid ->
+                context.getString(R.string.onboarding_register_error_invalid)
+            RegistrationError.NotCreated ->
+                context.getString(R.string.onboarding_register_error_not_created)
+            RegistrationError.RateLimited ->
+                context.getString(R.string.onboarding_error_rate_limited)
+            RegistrationError.Unreachable ->
+                context.getString(R.string.onboarding_error_unreachable)
+            is RegistrationError.ServerError ->
+                context.getString(R.string.onboarding_error_server_error, error.code)
+        }
     }
 
     private fun Throwable.toUserMessage(): String =
