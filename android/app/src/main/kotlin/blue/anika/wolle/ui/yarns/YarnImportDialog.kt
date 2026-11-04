@@ -160,6 +160,7 @@ fun YarnImportDialog(
                                         else selectedImages + picked
                                 },
                                 thumbnailUrl = thumbnailUrl,
+                                previews = availability.url,
                             )
                         }
                     }

@@ -199,6 +199,7 @@ fun ProjectImportDialog(
                                         else selectedImages + url
                                 },
                                 thumbnailUrl = thumbnailUrl,
+                                previews = availability.url,
                             )
                         }
                         if (state.preview.assets.isNotEmpty()) {
