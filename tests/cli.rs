@@ -279,3 +279,131 @@ fn help_needs_no_database_and_invalid_config_is_redacted() {
     assert!(!failed.status.success());
     assert!(!String::from_utf8_lossy(&failed.stderr).contains("invalid-sensitive-test-value"));
 }
+
+#[tokio::test]
+async fn avatar_cli_sets_replaces_clears_and_rejects_bad_input() {
+    let id = rand::random::<u64>();
+    let path = std::env::temp_dir().join(format!("stricknani-avatar-cli-{id}.db"));
+    let url = format!("sqlite:{}", path.display());
+    let media = std::env::temp_dir().join("stricknani-cli-test-media");
+    assert!(
+        cli(
+            &url,
+            &["create-user", "avatar@example.invalid"],
+            Some(b"disposable-test-password\n")
+        )
+        .status
+        .success()
+    );
+    let pool = db::connect(&url).await.unwrap();
+    let profile = || async {
+        sqlx::query_scalar::<_, Option<String>>("SELECT profile_image FROM users")
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+
+    let png_path = std::env::temp_dir().join(format!("stricknani-avatar-{id}.png"));
+    let mut png = std::io::Cursor::new(Vec::new());
+    image::DynamicImage::new_rgba8(4, 4)
+        .write_to(&mut png, image::ImageFormat::Png)
+        .unwrap();
+    std::fs::write(&png_path, png.into_inner()).unwrap();
+    let png_arg = png_path.to_str().unwrap();
+
+    let set = cli(
+        &url,
+        &["set-avatar", "AVATAR@example.invalid", png_arg],
+        None,
+    );
+    assert!(
+        set.status.success(),
+        "{}",
+        String::from_utf8_lossy(&set.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&set.stdout).trim(), "avatar set");
+    let first = profile().await.expect("profile image set");
+    assert!(media.join("users").exists());
+
+    let replaced = cli(
+        &url,
+        &["set-avatar", "avatar@example.invalid", png_arg],
+        None,
+    );
+    assert!(replaced.status.success());
+    let second = profile().await.expect("profile image replaced");
+    assert_ne!(first, second);
+    let rows: i64 = sqlx::query_scalar("SELECT count(*) FROM user_avatars")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(rows, 1);
+
+    let cleared = cli(&url, &["clear-avatar", "avatar@example.invalid"], None);
+    assert!(cleared.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&cleared.stdout).trim(),
+        "avatar cleared"
+    );
+    assert!(profile().await.is_none());
+    let rows: i64 = sqlx::query_scalar("SELECT count(*) FROM user_avatars")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(rows, 0);
+
+    let unknown = cli(
+        &url,
+        &["set-avatar", "nobody@example.invalid", png_arg],
+        None,
+    );
+    assert!(!unknown.status.success());
+    assert!(String::from_utf8_lossy(&unknown.stderr).contains("unknown or disabled user"));
+    assert!(
+        !cli(&url, &["clear-avatar", "nobody@example.invalid"], None)
+            .status
+            .success()
+    );
+
+    let secret = "not-an-image-secret-content";
+    let bad_path = std::env::temp_dir().join(format!("stricknani-avatar-{id}.txt"));
+    std::fs::write(&bad_path, secret).unwrap();
+    let invalid = cli(
+        &url,
+        &[
+            "set-avatar",
+            "avatar@example.invalid",
+            bad_path.to_str().unwrap(),
+        ],
+        None,
+    );
+    assert!(!invalid.status.success());
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("invalid avatar image"));
+    assert!(!String::from_utf8_lossy(&invalid.stderr).contains(secret));
+    assert!(!String::from_utf8_lossy(&invalid.stdout).contains(secret));
+    assert!(profile().await.is_none());
+    let missing = cli(
+        &url,
+        &["set-avatar", "avatar@example.invalid", "/nonexistent/x.png"],
+        None,
+    );
+    assert!(!missing.status.success());
+
+    assert!(
+        cli(&url, &["disable-user", "avatar@example.invalid"], None)
+            .status
+            .success()
+    );
+    let disabled = cli(
+        &url,
+        &["set-avatar", "avatar@example.invalid", png_arg],
+        None,
+    );
+    assert!(!disabled.status.success());
+    assert!(String::from_utf8_lossy(&disabled.stderr).contains("unknown or disabled user"));
+
+    pool.close().await;
+    std::fs::remove_file(path).unwrap();
+    std::fs::remove_file(png_path).unwrap();
+    std::fs::remove_file(bad_path).unwrap();
+}

@@ -31,6 +31,7 @@ pub mod oidc;
 pub mod oidc_configuration_service;
 pub mod oidc_http_state;
 pub(crate) mod oidc_identity_service;
+pub mod operator_avatar;
 pub mod projects;
 pub mod pwa;
 pub(crate) mod resource_access;

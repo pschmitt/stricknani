@@ -58,7 +58,8 @@ The system CLI command remains `stricknani-cli`. In Rust mode it forwards its
 arguments to `stricknani-server` while running as the service account and
 providing the Rust database and media settings. Rust commands include
 `create-admin EMAIL`, `create-user EMAIL`, `disable-user EMAIL`,
-`revoke-token ID`, and `import-snapshot`. Account passwords are read from
+`set-avatar EMAIL PATH`, `clear-avatar EMAIL`, `revoke-token ID`, and
+`import-snapshot`. Account passwords are read from
 standard input, not command-line arguments.
 
 Rust startup migrates only its own empty Rust database. It does not upgrade the

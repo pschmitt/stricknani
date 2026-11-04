@@ -11,9 +11,10 @@ use stricknani_server::config::Config;
 use stricknani_server::db;
 use stricknani_server::error_reporting::ErrorReportingSettings;
 use stricknani_server::importer::{ImportOptions, import_snapshot};
+use stricknani_server::operator_avatar;
 use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    STRICKNANI_DATABASE_URL  SQLite database URL\n    STRICKNANI_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    STRICKNANI_SENTRY_DSN_FILE   File holding a Sentry DSN (or STRICKNANI_SENTRY_DSN); error reporting is off without one\n    STRICKNANI_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    STRICKNANI_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server set-avatar EMAIL PATH\n    stricknani-server clear-avatar EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. set-avatar stores the image file at PATH (validated and resized like an app upload) as the avatar of an active user; clear-avatar removes it. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    STRICKNANI_DATABASE_URL  SQLite database URL\n    STRICKNANI_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    STRICKNANI_SENTRY_DSN_FILE   File holding a Sentry DSN (or STRICKNANI_SENTRY_DSN); error reporting is off without one\n    STRICKNANI_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    STRICKNANI_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n";
 
 fn main() -> ExitCode {
     if std::env::args_os()
@@ -110,6 +111,20 @@ async fn run() -> Result<(), &'static str> {
                 return Err("usage: stricknani-server disable-user EMAIL");
             }
             disable_user(&email).await
+        }
+        "set-avatar" => {
+            let (Some(email), Some(path), None) =
+                (arguments.next(), arguments.next(), arguments.next())
+            else {
+                return Err("usage: stricknani-server set-avatar EMAIL PATH");
+            };
+            set_avatar(&email, &path).await
+        }
+        "clear-avatar" => {
+            let (Some(email), None) = (arguments.next(), arguments.next()) else {
+                return Err("usage: stricknani-server clear-avatar EMAIL");
+            };
+            clear_avatar(&email).await
         }
         "revoke-token" => {
             let Some(id) = arguments.next() else {
@@ -434,6 +449,39 @@ async fn disable_user(email: &str) -> Result<(), &'static str> {
     }
 
     println!("user disabled");
+    Ok(())
+}
+
+async fn set_avatar(email: &str, path: &str) -> Result<(), &'static str> {
+    const MAX_AVATAR_FILE_BYTES: u64 = 25 * 1024 * 1024;
+    let config = Config::from_env().map_err(|_| "invalid server configuration")?;
+    let pool = db::connect(&config.database_url)
+        .await
+        .map_err(|_| "cannot initialize Rust database")?;
+    let file = std::fs::File::open(path).map_err(|_| "cannot read avatar file")?;
+    let mut bytes = Vec::new();
+    file.take(MAX_AVATAR_FILE_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| "cannot read avatar file")?;
+    if bytes.len() as u64 > MAX_AVATAR_FILE_BYTES {
+        return Err("avatar file is too large");
+    }
+    let original_filename = std::path::Path::new(path).file_name().map_or_else(
+        || "avatar".to_owned(),
+        |name| name.to_string_lossy().into_owned(),
+    );
+    operator_avatar::set_avatar(&pool, &config.media_root, email, bytes, original_filename).await?;
+    println!("avatar set");
+    Ok(())
+}
+
+async fn clear_avatar(email: &str) -> Result<(), &'static str> {
+    let config = Config::from_env().map_err(|_| "invalid server configuration")?;
+    let pool = db::connect(&config.database_url)
+        .await
+        .map_err(|_| "cannot initialize Rust database")?;
+    operator_avatar::clear_avatar(&pool, email).await?;
+    println!("avatar cleared");
     Ok(())
 }
 
