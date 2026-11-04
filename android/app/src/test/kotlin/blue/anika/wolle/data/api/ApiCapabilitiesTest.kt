@@ -211,3 +211,20 @@ class ApiCapabilitiesTest {
         assertEquals(2, meta.calls)
     }
 }
+
+class ImportAvailabilityTest {
+    @Test
+    fun `a v2 server reports exactly what it has`() {
+        val state = ApiCapabilitiesState(ApiGeneration.V2, importsUrl = true, importsAi = false)
+        assertEquals(ImportAvailability(url = true, ai = false), state.importAvailability())
+        val noUrl = ApiCapabilitiesState(ApiGeneration.V2, importsUrl = false, importsAi = true)
+        assertEquals(ImportAvailability(url = false, ai = true), noUrl.importAvailability())
+        val none = ApiCapabilitiesState(ApiGeneration.V2)
+        assertEquals(ImportAvailability(url = false, ai = false), none.importAvailability())
+    }
+
+    @Test
+    fun `without a v2 answer nothing is greyed out`() {
+        assertEquals(ImportAvailability(), ApiCapabilitiesState().importAvailability())
+    }
+}

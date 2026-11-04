@@ -40,6 +40,17 @@ data class ApiCapabilitiesState(
 )
 
 /**
+ * What the import dialogs may offer. Only a v2 server reports `meta.imports`; for any other state
+ * (legacy server, not probed yet, offline) nothing is claimed to be off, so a dialog never greys
+ * out on a guess.
+ */
+data class ImportAvailability(val url: Boolean = true, val ai: Boolean = true)
+
+fun ApiCapabilitiesState.importAvailability(): ImportAvailability =
+    if (generation == ApiGeneration.V2) ImportAvailability(url = importsUrl, ai = importsAi)
+    else ImportAvailability()
+
+/**
  * Decides, per server and token, whether resource calls go to `/api/v2` or `/api/v1`.
  *
  * One probe of `GET /api/v2/meta` with the Bearer token, cached for the rest of the process and

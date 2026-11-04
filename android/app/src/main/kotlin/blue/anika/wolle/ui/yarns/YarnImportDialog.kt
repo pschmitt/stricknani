@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.ui.common.ImportAvailabilityNotes
 import blue.anika.wolle.ui.common.ImportImagePicker
 import blue.anika.wolle.ui.projects.ProjectImportFailure
 import blue.anika.wolle.ui.projects.importWarningRes
@@ -41,6 +43,7 @@ fun YarnImportDialog(
     onConfirm: (List<String>) -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
+    availability: ImportAvailability = ImportAvailability(),
     thumbnailUrl: (String) -> String? = { null },
 ) {
     var url by rememberSaveable { mutableStateOf("") }
@@ -74,10 +77,11 @@ fun YarnImportDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 when (state) {
-                    YarnImportState.Idle ->
+                    YarnImportState.Idle -> {
                         OutlinedTextField(
                             value = url,
                             onValueChange = { url = it },
+                            enabled = availability.url,
                             modifier = Modifier.testTag("yarn-import-url"),
                             label = { Text(stringResource(R.string.yarn_import_url_label)) },
                             placeholder = {
@@ -85,6 +89,8 @@ fun YarnImportDialog(
                             },
                             singleLine = true,
                         )
+                        ImportAvailabilityNotes(availability)
+                    }
                     is YarnImportState.Importing ->
                         ImportProgress(
                             text = stringResource(R.string.yarn_import_progress_description),
@@ -191,6 +197,7 @@ fun YarnImportDialog(
                 YarnImportState.Idle ->
                     TextButton(
                         modifier = Modifier.testTag("yarn-import-start"),
+                        enabled = availability.url,
                         onClick = { onStart(url) },
                     ) {
                         Text(stringResource(R.string.project_import_start))

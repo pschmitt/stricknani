@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -74,6 +77,7 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
     private val projectImporter: ProjectImporter,
+    private val apiCapabilities: ApiCapabilities,
     private val syncScheduler: SyncScheduler,
     private val settingsRepository: SettingsRepository,
     @ApplicationContext private val context: Context,
@@ -170,6 +174,12 @@ constructor(
         }
 
     val importState: StateFlow<ProjectImportState> = importController.state
+
+    /** Which import options the server offers; the dialog greys out the ones it does not. */
+    val importAvailability: StateFlow<ImportAvailability> =
+        apiCapabilities.state
+            .map { it.importAvailability() }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, ImportAvailability())
 
     init {
         refresh(trigger = RefreshTrigger.Automatic)

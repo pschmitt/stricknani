@@ -73,6 +73,7 @@ fun ProjectsListScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
+    val importAvailability by viewModel.importAvailability.collectAsStateWithLifecycle()
     var showAddCategoryDialog by rememberSaveable { mutableStateOf(false) }
     var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -250,6 +251,7 @@ fun ProjectsListScreen(
     ProjectImportDialog(
         visible = showImportDialog,
         state = importState,
+        availability = importAvailability,
         onStart = viewModel::startImport,
         onConfirm = viewModel::confirmImport,
         thumbnailUrl = viewModel::importThumbnailUrl,

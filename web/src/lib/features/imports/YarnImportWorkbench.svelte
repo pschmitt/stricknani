@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { importAvailability } from "./import-availability.ts";
   import { beforeNavigate } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onDestroy, onMount } from "svelte";
@@ -32,10 +33,9 @@
   let createdYarnId = $state<number | null>(null);
   let controller: AbortController | null = null;
 
-  const allowExternal = $derived(
-    session.data?.capabilities.external_imports === true,
-  );
-  const allowAi = $derived(session.data?.capabilities.ai === true);
+  const availability = $derived(importAvailability(session.data?.capabilities));
+  const allowExternal = $derived(availability.url);
+  const allowAi = $derived(availability.ai);
   const allowPreview = $derived(
     session.data?.capabilities.import_preview === true,
   );
@@ -179,13 +179,19 @@
         <p class="eyebrow">{t("Step 1", locale)}</p>
         <h2 id="yarn-source-title">{t("Paste a link to the yarn", locale)}</h2>
       </div>
-      {#if allowAi && allowPreview}
-        <label class="ai-toggle"
-          ><input type="checkbox" bind:checked={useAi} disabled={busy} /><span
-            >{t("Ask AI to improve extraction", locale)}</span
-          ></label
-        >
-      {/if}
+      <label class="ai-toggle" class:ai-toggle--off={!allowAi}
+        ><input
+          type="checkbox"
+          checked={allowAi && useAi}
+          onchange={(event) => (useAi = event.currentTarget.checked)}
+          disabled={busy || !allowAi}
+        /><span class="ai-toggle__text"
+          >{t("Ask AI to improve extraction", locale)}{#if !allowAi}<small
+              class="ai-toggle__reason"
+              >{t("AI import is turned off on this server.", locale)}</small
+            >{/if}</span
+        ></label
+      >
     </div>
     <label class="field"
       ><span>{t("Yarn page URL", locale)}</span><input
@@ -204,7 +210,7 @@
       )}
     </p>
     {#if !allowExternal}<p class="supporting">
-        {t("URL imports are disabled for this account.", locale)}
+        {t("Link imports are turned off on this server.", locale)}
       </p>{/if}
     <Button
       class="primary"
@@ -432,6 +438,17 @@
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
+  }
+  .ai-toggle__text {
+    display: grid;
+    gap: 0.1rem;
+  }
+  .ai-toggle__reason {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+  }
+  .ai-toggle--off {
+    opacity: 0.7;
   }
   .ai-toggle {
     display: flex;

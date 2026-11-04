@@ -4,6 +4,7 @@
   import KnittingBasket from "#lib/components/KnittingBasket.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { importAvailability } from "#lib/features/imports/import-availability.ts";
   const locale = $derived(session.data?.locale ?? "en");
 
   type CreateOption = {
@@ -12,7 +13,12 @@
     tone: "projects" | "yarns" | "create";
     title: string;
     description: string;
+    /** Why this option cannot be used on this server, if so. */
+    disabledReason?: string;
+    /** A softer limit: the option works, one part of it does not. */
+    note?: string;
   };
+  const availability = $derived(importAvailability(session.data?.capabilities));
 
   const options: CreateOption[] = $derived([
     {
@@ -38,6 +44,9 @@
         "Create a project draft from text, a file, or a pattern link.",
         locale,
       ),
+      note: availability.ai
+        ? undefined
+        : t("AI import is turned off on this server.", locale),
     },
     {
       href: resolve("/imports/yarn"),
@@ -45,6 +54,12 @@
       tone: "yarns",
       title: t("Import a yarn", locale),
       description: t("Fill in a yarn from a shop or Ravelry link.", locale),
+      disabledReason: availability.url
+        ? undefined
+        : t("Link imports are turned off on this server.", locale),
+      note: availability.ai
+        ? undefined
+        : t("AI import is turned off on this server.", locale),
     },
   ]);
 </script>
@@ -69,23 +84,44 @@
   </header>
   <div class="create-options">
     {#each options as option (option.href)}
-      <a
-        class="create-card"
-        href={option.href}
-        style:--card-tone={`var(--tone-${option.tone})`}
-        style:--card-wash={`var(--tone-${option.tone}-wash)`}
-      >
-        <span class="create-card__icon" aria-hidden="true"
-          ><NavIcon name={option.icon} /></span
+      {#if option.disabledReason}
+        <div
+          class="create-card create-card--disabled"
+          role="link"
+          aria-disabled="true"
+          style:--card-tone={`var(--tone-${option.tone})`}
+          style:--card-wash={`var(--tone-${option.tone}-wash)`}
         >
-        <span class="create-card__copy">
-          <span class="create-card__title">{option.title}</span>
-          <span class="create-card__description">{option.description}</span>
-        </span>
-        <span class="create-card__go" aria-hidden="true"
-          ><NavIcon name="next" /></span
+          <span class="create-card__icon" aria-hidden="true"
+            ><NavIcon name={option.icon} /></span
+          >
+          <span class="create-card__copy">
+            <span class="create-card__title">{option.title}</span>
+            <span class="create-card__description">{option.description}</span>
+            <span class="create-card__note">{option.disabledReason}</span>
+          </span>
+        </div>
+      {:else}
+        <a
+          class="create-card"
+          href={option.href}
+          style:--card-tone={`var(--tone-${option.tone})`}
+          style:--card-wash={`var(--tone-${option.tone}-wash)`}
         >
-      </a>
+          <span class="create-card__icon" aria-hidden="true"
+            ><NavIcon name={option.icon} /></span
+          >
+          <span class="create-card__copy">
+            <span class="create-card__title">{option.title}</span>
+            <span class="create-card__description">{option.description}</span>
+            {#if option.note}<span class="create-card__note">{option.note}</span
+              >{/if}
+          </span>
+          <span class="create-card__go" aria-hidden="true"
+            ><NavIcon name="next" /></span
+          >
+        </a>
+      {/if}
     {/each}
   </div>
 </section>
@@ -139,7 +175,21 @@
     transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
   }
 
-  .create-card:hover {
+  .create-card--disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .create-card--disabled:hover {
+    transform: none;
+  }
+
+  .create-card__note {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .create-card:not(.create-card--disabled):hover {
     transform: translateY(-2px);
   }
 

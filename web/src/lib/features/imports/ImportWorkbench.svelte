@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { importAvailability } from "./import-availability.ts";
   import { beforeNavigate } from "$app/navigation";
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
@@ -52,10 +53,9 @@
   let controller: AbortController | null = null;
   let writeController: AbortController | null = null;
 
-  const allowExternal = $derived(
-    session.data?.capabilities.external_imports === true,
-  );
-  const allowAi = $derived(session.data?.capabilities.ai === true);
+  const availability = $derived(importAvailability(session.data?.capabilities));
+  const allowExternal = $derived(availability.url);
+  const allowAi = $derived(availability.ai);
   const allowPreview = $derived(
     session.data?.capabilities.import_preview === true,
   );
@@ -182,7 +182,7 @@
       return;
     }
     if (sourceKind === "url" && !allowExternal) {
-      errorMessage = t("URL imports are disabled for this account.", locale);
+      errorMessage = t("Link imports are turned off on this server.", locale);
       return;
     }
     if (sourceKind === "url" && !isHttpUrl(sourceUrl)) {
@@ -429,15 +429,19 @@
         <p class="eyebrow">{t("Step 1", locale)}</p>
         <h2 id="source-title">{t("Choose a source", locale)}</h2>
       </div>
-      {#if allowAi && allowPreview}
-        <label class="ai-toggle"
-          ><input
-            type="checkbox"
-            bind:checked={useAi}
-            disabled={sourceDisabled}
-          /><span>{t("Ask AI to improve extraction", locale)}</span></label
-        >
-      {/if}
+      <label class="ai-toggle" class:ai-toggle--off={!allowAi}
+        ><input
+          type="checkbox"
+          checked={allowAi && useAi}
+          onchange={(event) => (useAi = event.currentTarget.checked)}
+          disabled={sourceDisabled || !allowAi}
+        /><span class="ai-toggle__text"
+          >{t("Ask AI to improve extraction", locale)}{#if !allowAi}<small
+              class="ai-toggle__reason"
+              >{t("AI import is turned off on this server.", locale)}</small
+            >{/if}</span
+        ></label
+      >
     </div>
     <div
       class="source-tabs"
@@ -474,13 +478,16 @@
         aria-pressed={sourceKind === "url"}
         disabled={!allowExternal || sourceDisabled}
         title={!allowExternal
-          ? t("URL imports are disabled for this account.", locale)
+          ? t("Link imports are turned off on this server.", locale)
           : undefined}
         onclick={() => (sourceKind = "url")}
       >
         {t("From a link", locale)}
       </Button>
     </div>
+    {#if !allowExternal && allowPreview}<p class="supporting">
+        {t("Link imports are turned off on this server.", locale)}
+      </p>{/if}
     {#if sourceKind === "text"}
       <label class="field"
         ><span>{t("Pattern text or instructions", locale)}</span><textarea
@@ -533,12 +540,6 @@
         {t("Import preview is unavailable right now. Try again later.", locale)}
       </p>
     {/if}
-    {#if allowPreview && !allowAi}<p class="supporting">
-        {t(
-          "AI enhancement is unavailable. You can still preview and review the extracted draft.",
-          locale,
-        )}
-      </p>{/if}
     {#if preview?.ai_fallback}<p class="notice" role="status">
         {t(
           "AI enhancement was unavailable, so this preview uses the original extraction.",
@@ -903,6 +904,17 @@
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
+  }
+  .ai-toggle__text {
+    display: grid;
+    gap: 0.1rem;
+  }
+  .ai-toggle__reason {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+  }
+  .ai-toggle--off {
+    opacity: 0.7;
   }
   .ai-toggle {
     display: flex;
