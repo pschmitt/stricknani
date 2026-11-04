@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::extract::{ConnectInfo, DefaultBodyLimit, Extension, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -544,9 +544,8 @@ async fn verify_password(
                 }
             };
             let upgraded_hash = valid.then(|| {
-                let salt = SaltString::generate(&mut OsRng);
                 Argon2::default()
-                    .hash_password(password.as_bytes(), &salt)
+                    .hash_password(password.as_bytes())
                     .map(|hash| hash.to_string())
                     .map_err(|_| ())
             });
@@ -568,7 +567,7 @@ async fn verify_password(
                 valid: true,
                 upgraded_hash: None,
             }),
-            Err(argon2::password_hash::Error::Password) => Ok(PasswordVerification {
+            Err(argon2::password_hash::Error::PasswordInvalid) => Ok(PasswordVerification {
                 valid: false,
                 upgraded_hash: None,
             }),
@@ -589,7 +588,7 @@ async fn verify_password(
 fn verify_dummy_password(password: &[u8]) -> Result<(), ()> {
     let parsed = PasswordHash::new(DUMMY_PASSWORD_HASH).map_err(|_| ())?;
     match Argon2::default().verify_password(password, &parsed) {
-        Ok(()) | Err(argon2::password_hash::Error::Password) => Ok(()),
+        Ok(()) | Err(argon2::password_hash::Error::PasswordInvalid) => Ok(()),
         Err(_) => Err(()),
     }
 }
@@ -631,9 +630,8 @@ pub(crate) async fn hash_password_for_account(
     let permit = password_semaphore().acquire_owned().await.map_err(|_| ())?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
-        let salt = SaltString::generate(&mut OsRng);
         Argon2::default()
-            .hash_password(password.as_bytes(), &salt)
+            .hash_password(password.as_bytes())
             .map(|hash| hash.to_string())
             .map_err(|_| ())
     })

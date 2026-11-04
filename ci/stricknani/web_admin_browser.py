@@ -761,12 +761,13 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
     # Privacy Policy is linked from About only. About is always the last tile.
     _require(
         cards.locator("a").count() == len(expected_cards) + 1
-        and cards.locator("a")
-        .last.get_attribute("href", timeout=1000)
-        .endswith("/about")
-        and page.locator(".secondary-nav a")
-        .last.get_attribute("href", timeout=1000)
-        .endswith("/about")
+        and (
+            cards.locator("a").last.get_attribute("href", timeout=1000) or ""
+        ).endswith("/about")
+        and (
+            page.locator(".secondary-nav a").last.get_attribute("href", timeout=1000)
+            or ""
+        ).endswith("/about")
         and page.locator(".nav-caption").inner_text().strip() == "More"
         and page.locator(".secondary-nav a[href$='/admin/audit']").count() == 0
         and cards.locator("a[href$='/admin/audit']").count() == 0

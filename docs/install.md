@@ -72,8 +72,6 @@ Enter the Rust development shell for the native and repository checks:
 
 ```sh
 nix develop '.#rust'
-export UV_PYTHON=python3.13
-just ci-setup-py
 just test
 just check
 ```
@@ -85,6 +83,6 @@ translation checks. The web app has its own commands in
 
 The Python in this repository is tooling only: `scripts/` holds the i18n
 catalog generators and `ci/stricknani/` the Playwright browser and fixture
-harnesses. `uv` installs it from `pyproject.toml` (`just setup`). The legacy
+harnesses. The Nix dev shell (`nix develop`) provides it. The legacy
 Python application is the signed tag `v0.1.0` on `main`. The root
 `Dockerfile` builds the Rust runtime.

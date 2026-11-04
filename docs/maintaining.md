@@ -96,8 +96,8 @@ just i18n-check      # fail on missing, fuzzy or stale catalogs
 ```
 
 `web/static/messages.json` and `rust/locales/messages.json` are generated;
-commit them with the `.po` files. The generators are Python (Babel), run with
-`uv`; see `pyproject.toml`.
+commit them with the `.po` files. The generators are Python (Babel), run from the
+Nix dev shell (`nix develop`).
 
 ## Dependencies and vendoring
 

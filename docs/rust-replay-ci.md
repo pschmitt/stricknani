@@ -27,5 +27,5 @@ The small fixture helper can be exercised without Nix, Gradle, an emulator, or
 network access with:
 
 ```sh
-uv run pytest tests/test_rust_fixture.py
+pytest tests/test_rust_fixture.py
 ```

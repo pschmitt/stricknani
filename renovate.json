@@ -36,9 +36,6 @@
       "datasourceTemplate": "npm"
     }
   ],
-  "pep621": {
-    "enabled": true
-  },
   "nix": {
     "enabled": true
   },

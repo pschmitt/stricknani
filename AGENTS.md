@@ -288,7 +288,7 @@ Use this file as the operational source of truth for working in Stricknani.
   - `just i18n-compile`
   - `just i18n-check`
 - `just i18n-*` run the Python (Babel) generators under `scripts/` through
-  `uv`; they produce `rust/locales/messages.json` and
+  the Nix dev shell; they produce `rust/locales/messages.json` and
   `web/static/messages.json`, which are committed with the `.po` files.
 
 ### Database Migrations
@@ -367,7 +367,7 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ## Handy Commands
 
-- Setup of the Python tooling: `just setup`
+- Python tooling: enter `nix develop` (or `nix develop '.#tooling'` for the Python-only shell); no setup step
 - Dev server: `just run`
 - Lint: `just lint` (tooling), `just rust-lint`, `just web-check`, `just lint-nix`
 - Format: `just fmt`
@@ -382,19 +382,22 @@ The product is Rust, `web/` and `android/`. The Python left in the repository
 is development tooling: `scripts/` (i18n generators, `check_translations`,
 `todo.sh` and friends) and `ci/stricknani/` (Playwright browser harnesses,
 fixture runner, importer verifier), with their tests in `tests/`. It is
-installed from `pyproject.toml`/`uv.lock` (dependency group `dev`, no package).
+provided by the Nix dev shells (`babel`, `pytest`, `mypy`, `playwright`, `ruff`,
+and the matching Playwright browsers); `pyproject.toml` only holds the ruff,
+mypy and pytest configuration.
 The legacy Python application is gone; its last release is the signed tag
 `v0.1.0`.
 
-Inside the Rust dev shell, set `UV_PYTHON=python3.13` before `uv sync` or
-`uv run`; this selects the supported Nix Python and its available wheels.
+The Python-only shell is `nix develop '.#tooling'`; the Rust shell includes the
+same tools. Run them directly there (`ruff check .`, `mypy .`, `pytest`) or via
+`just lint`, `just test` and `just i18n-*`. There is no virtualenv or lock file:
+bump the tooling with `nix flake update`.
 
 For remote Nix evaluation, create a small filtered snapshot from the current
 source and evaluate the dev shell there; run checks from a separate cached
 checkout. Do not point Nix evaluation at the large Cargo-cache checkout, since
 its `target` and virtual environment make source evaluation unnecessarily
-expensive. Keep `UV_PYTHON=python3.13` in the dev-shell command environment so
-`uv` does not try to build unsupported source wheels for a host-selected Python.
+expensive.
 
 ## Documentation Layout
 

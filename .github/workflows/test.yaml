@@ -12,7 +12,6 @@ on:
       - "tests/**"
       - "stricknani/locales/**"
       - "pyproject.toml"
-      - "uv.lock"
       - "justfile"
       - "biome.json"
       - "flake.nix"
@@ -29,7 +28,6 @@ on:
       - "tests/**"
       - "stricknani/locales/**"
       - "pyproject.toml"
-      - "uv.lock"
       - "justfile"
       - "biome.json"
       - "flake.nix"
@@ -47,4 +45,4 @@ jobs:
         uses: cachix/install-nix-action@v31
 
       - name: Run Rust-first checks
-        run: nix develop '.#rust' --command env UV_PYTHON=python3.13 bash -c 'just ci-setup-py && just check'
+        run: nix develop '.#rust' --command just check
