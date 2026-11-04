@@ -28,6 +28,30 @@ class PrivilegedInstallerTest {
     }
 
     @Test
+    fun `a denied permission is reported as denied only while the service runs`() {
+        assertEquals(
+            PrivilegedState.PERMISSION_DENIED,
+            privilegedState(true, true, false, permissionDenied = true),
+        )
+        assertEquals(
+            PrivilegedState.READY,
+            privilegedState(true, true, true, permissionDenied = true),
+        )
+        assertEquals(
+            PrivilegedState.NOT_RUNNING,
+            privilegedState(true, false, false, permissionDenied = true),
+        )
+    }
+
+    @Test
+    fun `outside developer mode Shizuku never takes the install`() {
+        assertEquals(
+            InstallPath.PACKAGE_INSTALLER,
+            chooseInstallPath(true, PrivilegedState.READY, developerMode = false),
+        )
+    }
+
+    @Test
     fun `Sui has a binder without any manager app`() {
         assertEquals(PrivilegedState.READY, privilegedState(false, true, true))
         assertEquals(PrivilegedState.PERMISSION_NEEDED, privilegedState(false, true, false))
@@ -55,6 +79,7 @@ class PrivilegedInstallerTest {
                 PrivilegedState.UNAVAILABLE,
                 PrivilegedState.NOT_RUNNING,
                 PrivilegedState.PERMISSION_NEEDED,
+                PrivilegedState.PERMISSION_DENIED,
             )
             .forEach {
                 assertEquals(InstallPath.PACKAGE_INSTALLER, chooseInstallPath(true, it))

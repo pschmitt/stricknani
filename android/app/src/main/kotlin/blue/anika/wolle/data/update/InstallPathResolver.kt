@@ -19,7 +19,11 @@ constructor(
 
     /** The path an update started now would take. */
     suspend fun path(): InstallPath =
-        chooseInstallPath(preferences.shizukuInstall.first(), privileged.state.value)
+        chooseInstallPath(
+            preferences.shizukuInstall.first(),
+            privileged.state.value,
+            preferences.developerMode.first(),
+        )
 
     /** Installs need no confirmation and no "unknown apps" setup: Shizuku is on and ready. */
     suspend fun privilegedSelected(): Boolean = path() == InstallPath.PRIVILEGED
@@ -30,8 +34,11 @@ constructor(
 
     /** [silentInstallPossible] as a flow, for the settings UI. */
     fun silentInstallPossibleFlow(): Flow<Boolean> =
-        combine(preferences.shizukuInstall, privileged.state) { enabled, state ->
-            chooseInstallPath(enabled, state) == InstallPath.PRIVILEGED ||
+        combine(preferences.shizukuInstall, privileged.state, preferences.developerMode) {
+            enabled,
+            state,
+            developerMode ->
+            chooseInstallPath(enabled, state, developerMode) == InstallPath.PRIVILEGED ||
                 inspector.canInstallSilently()
         }
 }

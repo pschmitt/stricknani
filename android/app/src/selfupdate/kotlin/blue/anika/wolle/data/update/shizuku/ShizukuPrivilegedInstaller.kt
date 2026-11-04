@@ -47,10 +47,16 @@ constructor(@ApplicationContext private val context: Context) : PrivilegedInstal
     private val _state = MutableStateFlow(PrivilegedState.UNAVAILABLE)
     override val state: StateFlow<PrivilegedState> = _state.asStateFlow()
 
+    /** Set when a permission request was answered with "deny"; cleared by a grant. */
+    @Volatile private var deniedByUser = false
+
     init {
         Shizuku.addBinderReceivedListenerSticky { refresh() }
         Shizuku.addBinderDeadListener { refresh() }
-        Shizuku.addRequestPermissionResultListener { _, _ -> refresh() }
+        Shizuku.addRequestPermissionResultListener { _, result ->
+            deniedByUser = result != PackageManager.PERMISSION_GRANTED
+            refresh()
+        }
         refresh()
     }
 
@@ -60,8 +66,16 @@ constructor(@ApplicationContext private val context: Context) : PrivilegedInstal
             alive &&
                 runCatching { Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED }
                     .getOrDefault(false)
+        // "Deny and don't ask again" shows up as a rationale request; a plain deny as our flag.
+        if (granted) deniedByUser = false
+        val denied =
+            alive &&
+                !granted &&
+                (deniedByUser ||
+                    runCatching { Shizuku.shouldShowRequestPermissionRationale() }
+                        .getOrDefault(false))
         val supported = !alive || runCatching { !Shizuku.isPreV11() }.getOrDefault(true)
-        _state.value = privilegedState(managerInstalled(), alive, granted, supported)
+        _state.value = privilegedState(managerInstalled(), alive, granted, supported, denied)
     }
 
     override fun requestPermission() {

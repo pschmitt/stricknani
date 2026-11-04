@@ -22,8 +22,11 @@ enum class PrivilegedState {
     /** Shizuku is installed but its service is not running. */
     NOT_RUNNING,
 
-    /** The service runs; this app has not been allowed to use it. */
+    /** The service runs; this app has not been allowed to use it yet (it can still ask). */
     PERMISSION_NEEDED,
+
+    /** The user denied the permission (or ticked "don't ask again"); only Shizuku can undo it. */
+    PERMISSION_DENIED,
 
     /** Installs can go through the privileged binder. */
     READY,
@@ -41,18 +44,26 @@ internal fun privilegedState(
     binderAlive: Boolean,
     permissionGranted: Boolean,
     supportedVersion: Boolean = true,
+    permissionDenied: Boolean = false,
 ): PrivilegedState =
     when {
         binderAlive && !supportedVersion -> PrivilegedState.UNAVAILABLE
         binderAlive && permissionGranted -> PrivilegedState.READY
+        binderAlive && permissionDenied -> PrivilegedState.PERMISSION_DENIED
         binderAlive -> PrivilegedState.PERMISSION_NEEDED
         managerInstalled -> PrivilegedState.NOT_RUNNING
         else -> PrivilegedState.UNAVAILABLE
     }
 
-/** Shizuku is used only when the user switched it on and it is ready right now. */
-internal fun chooseInstallPath(enabled: Boolean, state: PrivilegedState): InstallPath =
-    if (enabled && state == PrivilegedState.READY) InstallPath.PRIVILEGED
+/**
+ * Shizuku is used only in developer mode, when the user switched it on and it is ready right now.
+ */
+internal fun chooseInstallPath(
+    enabled: Boolean,
+    state: PrivilegedState,
+    developerMode: Boolean = true,
+): InstallPath =
+    if (developerMode && enabled && state == PrivilegedState.READY) InstallPath.PRIVILEGED
     else InstallPath.PACKAGE_INSTALLER
 
 /**

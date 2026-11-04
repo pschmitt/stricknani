@@ -95,9 +95,27 @@ constructor(
     val shizukuEnabled: StateFlow<Boolean> =
         preferences.shizukuInstall.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    /** Silent installs through Shizuku are a developer-mode feature. */
+    val developerMode: StateFlow<Boolean> =
+        preferences.developerMode.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    init {
+        // A denied permission leaves the switch off; it stays off until Shizuku grants it again.
+        viewModelScope.launch {
+            resolver.privileged.state.collect { state ->
+                if (state == PrivilegedState.PERMISSION_DENIED && shizukuEnabled.value) {
+                    preferences.setShizukuInstall(false)
+                }
+            }
+        }
+    }
+
     fun refreshShizuku() = resolver.privileged.refresh()
 
-    /** Switches silent installs through Shizuku on or off; on, it asks for permission if needed. */
+    /**
+     * Switches silent installs through Shizuku on or off; on, it asks for the permission right
+     * away. The answer arrives through [shizukuState]; a denial switches this off again.
+     */
     fun setShizukuEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferences.setShizukuInstall(enabled)

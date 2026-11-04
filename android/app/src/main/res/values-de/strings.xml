@@ -212,6 +212,8 @@
     <string name="import_progress_slow_hint">Manche Seiten brauchen eine Minute, wenn die KI sie in einem Browser öffnet.</string>
     <string name="import_error_blocked">Die Website hat die Anfrage von Stricknani abgelehnt. Versuche einen anderen Link oder lege es von Hand an.</string>
     <string name="import_error_not_found">Die Seite wurde nicht gefunden. Prüfe den Link.</string>
+    <string name="import_unavailable_url">Link-Importe sind auf diesem Server ausgeschaltet.</string>
+    <string name="import_unavailable_ai">KI-Import ist auf diesem Server ausgeschaltet.</string>
     <string name="import_error_disabled">Der Import über einen Link ist auf diesem Server ausgeschaltet.</string>
     <string name="yarn_import_dialog_title">Garn importieren</string>
     <string name="yarn_import_url_label">Link zum Garn</string>
@@ -431,8 +433,9 @@
     <string name="about_settings_version_title">Version</string>
     <string name="about_settings_app_version_label">App-Version</string>
     <string name="about_update_checking">Suche nach Updates …</string>
-    <string name="about_update_up_to_date">Auf dem neuesten Stand</string>
-    <string name="about_update_available">Version %1$s verfügbar</string>
+    <string name="about_update_up_to_date">Aktuell auf %1$s</string>
+    <string name="about_update_available_stable">Stable %1$s verfügbar</string>
+    <string name="about_update_available_latest">Latest-Build %1$s verfügbar</string>
     <string name="about_update_failed">Updates konnten nicht geprüft werden</string>
     <string name="about_update_dev_build">Entwicklungs-Build: Updates werden nicht geprüft</string>
     <string name="about_update_play">Updates kommen über Google Play</string>
@@ -442,7 +445,6 @@
     <string name="about_update_channel_latest">Aktuell</string>
     <string name="about_update_channel_stable_help">Nur getaggte Releases. Der Wechsel von „Aktuell“ führt nie zu einem Downgrade.</string>
     <string name="about_update_channel_latest_help">Jeder Build von main (fortlaufend), nur Release-APK.</string>
-    <string name="about_settings_version_with_channel">%1$s · %2$s</string>
     <string name="about_update_button">Aktualisieren</string>
     <string name="about_update_check_again">Erneut prüfen</string>
     <string name="about_update_check">Nach Updates suchen</string>
@@ -1041,12 +1043,11 @@
     <string name="about_shizuku_title">Updates still mit Shizuku installieren</string>
     <string name="about_shizuku_state_ready">Bereit: Updates werden ohne Rückfrage installiert.</string>
     <string name="about_shizuku_state_permission">Berechtigung nötig: Stricknani in Shizuku erlauben.</string>
+    <string name="about_shizuku_state_denied">Berechtigung verweigert. Öffne Shizuku und erlaube Stricknani dort, dann komm zurück.</string>
+    <string name="about_shizuku_state_not_installed">Shizuku ist nicht installiert (oder zu alt). Installiere und starte es, um das zu nutzen.</string>
     <string name="about_shizuku_state_not_running">Läuft nicht: Shizuku zuerst starten.</string>
     <string name="about_shizuku_allow">In Shizuku erlauben</string>
     <string name="about_shizuku_open">Shizuku öffnen</string>
-    <string name="about_shizuku_later">Nicht jetzt</string>
-    <string name="about_shizuku_start_title">Shizuku zuerst starten</string>
-    <string name="about_shizuku_start_message">Shizuku ist installiert, läuft aber nicht. Starte es, komm zurück und erlaube Stricknani. Bis dahin nutzen Updates den normalen Installer.</string>
     <string name="developer_shizuku_reinstall">Diesen Build über Shizuku neu installieren</string>
     <string name="developer_shizuku_reinstall_description">Installiert die laufende APK erneut über Shizuku, um den stillen Weg zu testen.</string>
 

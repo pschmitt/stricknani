@@ -272,4 +272,20 @@ class UpdateCheckerTest {
         assertEquals(UpdateChannel.STABLE, UpdateChannel.fromName(null))
         assertEquals(UpdateChannel.STABLE, UpdateChannel.fromName("nonsense"))
     }
+
+    @Test
+    fun `developer mode off falls back to stable whatever was stored`() {
+        assertEquals(
+            UpdateChannel.STABLE,
+            effectiveUpdateChannel(UpdateChannel.LATEST, developerMode = false),
+        )
+        assertEquals(
+            UpdateChannel.LATEST,
+            effectiveUpdateChannel(UpdateChannel.LATEST, developerMode = true),
+        )
+        assertEquals(
+            UpdateChannel.STABLE,
+            effectiveUpdateChannel(UpdateChannel.STABLE, developerMode = true),
+        )
+    }
 }

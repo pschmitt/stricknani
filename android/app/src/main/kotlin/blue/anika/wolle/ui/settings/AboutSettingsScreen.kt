@@ -189,7 +189,7 @@ internal fun AboutSettingsScreen(
     val shizukuState by installViewModel.shizukuState.collectAsStateWithLifecycle()
     val shizukuEnabled by installViewModel.shizukuEnabled.collectAsStateWithLifecycle()
     val silentPossible by installViewModel.silentInstallPossible.collectAsStateWithLifecycle()
-    var shizukuStartHint by remember { mutableStateOf(false) }
+    val installDeveloperMode by installViewModel.developerMode.collectAsStateWithLifecycle()
     // Starting Shizuku or allowing the app happens elsewhere; re-read the state on return.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { installViewModel.refreshShizuku() }
     UpdateInstallEffects(installViewModel, installState)
@@ -199,29 +199,6 @@ internal fun AboutSettingsScreen(
             delay(4_000)
             mascotCue = null
         }
-    }
-
-    if (shizukuStartHint) {
-        AlertDialog(
-            onDismissRequest = { shizukuStartHint = false },
-            title = { Text(stringResource(R.string.about_shizuku_start_title)) },
-            text = { Text(stringResource(R.string.about_shizuku_start_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        shizukuStartHint = false
-                        openShizuku(context, installViewModel)
-                    }
-                ) {
-                    Text(stringResource(R.string.about_shizuku_open))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { shizukuStartHint = false }) {
-                    Text(stringResource(R.string.about_shizuku_later))
-                }
-            },
-        )
     }
 
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
@@ -267,19 +244,12 @@ internal fun AboutSettingsScreen(
                             Text(stringResource(R.string.about_settings_app_version_label))
                         },
                         supportingContent = {
-                            Text(
-                                if (BuildConfig.SELF_UPDATE_ENABLED)
-                                    stringResource(
-                                        R.string.about_settings_version_with_channel,
-                                        appVersion,
-                                        stringResource(updateChannel.labelRes()),
-                                    )
-                                else appVersion
-                            )
+                            Text(appVersion)
                         },
                     )
                     AboutUpdateRow(
                         state = updateState,
+                        channel = updateChannel,
                         install = installState,
                         onDownload = {
                             // Release APKs install themselves; debug builds (another package id)
@@ -302,25 +272,23 @@ internal fun AboutSettingsScreen(
                         onRetry = viewModel::checkForUpdate,
                         onOpenPlay = { uriHandler.openUri(PLAY_URL) },
                     )
-                    if (BuildConfig.SELF_UPDATE_ENABLED) {
+                    if (BuildConfig.SELF_UPDATE_ENABLED && installDeveloperMode) {
                         UpdateChannelRow(
                             selected = updateChannel,
                             onSelect = viewModel::setUpdateChannel,
                         )
                     }
-                    if (
-                        installViewModel.shizukuSupported &&
-                            shizukuState != PrivilegedState.UNAVAILABLE
-                    ) {
-                        ShizukuInstallRow(
-                            enabled = shizukuEnabled,
+                    val shizukuUi =
+                        shizukuToggleUi(
+                            developerMode = installDeveloperMode,
+                            supported = installViewModel.shizukuSupported,
+                            preferenceOn = shizukuEnabled,
                             state = shizukuState,
-                            onChange = { on ->
-                                installViewModel.setShizukuEnabled(on)
-                                if (on && shizukuState == PrivilegedState.NOT_RUNNING) {
-                                    shizukuStartHint = true
-                                }
-                            },
+                        )
+                    if (shizukuUi.visible) {
+                        ShizukuInstallRow(
+                            ui = shizukuUi,
+                            onChange = installViewModel::setShizukuEnabled,
                             onAllow = installViewModel::requestShizukuPermission,
                             onOpenShizuku = { openShizuku(context, installViewModel) },
                         )
@@ -553,6 +521,7 @@ private fun AboutHero(cue: MascotCue?) {
 @Composable
 private fun AboutUpdateRow(
     state: AboutUpdateState,
+    channel: UpdateChannel,
     install: UpdateInstallState,
     onDownload: (AppUpdate) -> Unit,
     onTryAgain: () -> Unit,
@@ -612,11 +581,20 @@ private fun AboutUpdateRow(
                     ?: when (state) {
                         AboutUpdateState.Checking -> stringResource(R.string.about_update_checking)
                         AboutUpdateState.UpToDate ->
-                            stringResource(R.string.about_update_up_to_date)
+                            stringResource(
+                                R.string.about_update_up_to_date,
+                                stringResource(channel.labelRes()),
+                            )
                         AboutUpdateState.AheadOfStable ->
                             stringResource(R.string.about_update_ahead_of_stable)
                         is AboutUpdateState.Available ->
-                            stringResource(R.string.about_update_available, state.update.version)
+                            stringResource(
+                                when (channel) {
+                                    UpdateChannel.STABLE -> R.string.about_update_available_stable
+                                    UpdateChannel.LATEST -> R.string.about_update_available_latest
+                                },
+                                state.update.version,
+                            )
                         AboutUpdateState.Failed -> stringResource(R.string.about_update_failed)
                         AboutUpdateState.DevBuild -> stringResource(R.string.about_update_dev_build)
                         AboutUpdateState.Play -> stringResource(R.string.about_update_play)
@@ -699,13 +677,12 @@ private fun openShizuku(context: Context, viewModel: UpdateInstallViewModel) {
 }
 
 /**
- * "Install updates silently with Shizuku": one switch plus the state it is in - not running,
- * permission needed or ready - with the action that moves it on.
+ * "Install updates silently with Shizuku" (developer mode): one switch plus the state it is in. The
+ * switch is disabled, and off, whenever Shizuku is missing, stopped or has denied the app.
  */
 @Composable
 private fun ShizukuInstallRow(
-    enabled: Boolean,
-    state: PrivilegedState,
+    ui: ShizukuToggleUi,
     onChange: (Boolean) -> Unit,
     onAllow: () -> Unit,
     onOpenShizuku: () -> Unit,
@@ -714,27 +691,34 @@ private fun ShizukuInstallRow(
         modifier =
             Modifier.fillMaxWidth()
                 .testTag("about-shizuku-row")
-                .toggleable(value = enabled, role = Role.Switch, onValueChange = onChange),
+                .toggleable(
+                    value = ui.checked,
+                    enabled = ui.enabled,
+                    role = Role.Switch,
+                    onValueChange = onChange,
+                ),
         headlineContent = { Text(stringResource(R.string.about_shizuku_title)) },
         supportingContent = {
             Column {
                 Text(
                     stringResource(
-                        when (state) {
-                            PrivilegedState.READY -> R.string.about_shizuku_state_ready
-                            PrivilegedState.PERMISSION_NEEDED ->
-                                R.string.about_shizuku_state_permission
-                            else -> R.string.about_shizuku_state_not_running
+                        when (ui.hint) {
+                            ShizukuHint.READY -> R.string.about_shizuku_state_ready
+                            ShizukuHint.PERMISSION_NEEDED -> R.string.about_shizuku_state_permission
+                            ShizukuHint.PERMISSION_DENIED -> R.string.about_shizuku_state_denied
+                            ShizukuHint.NOT_RUNNING -> R.string.about_shizuku_state_not_running
+                            else -> R.string.about_shizuku_state_not_installed
                         }
                     ),
                     modifier = Modifier.testTag("about-shizuku-state"),
                 )
-                when (state) {
-                    PrivilegedState.PERMISSION_NEEDED ->
+                when (ui.hint) {
+                    ShizukuHint.PERMISSION_NEEDED ->
                         TextButton(onClick = onAllow) {
                             Text(stringResource(R.string.about_shizuku_allow))
                         }
-                    PrivilegedState.NOT_RUNNING ->
+                    ShizukuHint.PERMISSION_DENIED,
+                    ShizukuHint.NOT_RUNNING ->
                         TextButton(onClick = onOpenShizuku) {
                             Text(stringResource(R.string.about_shizuku_open))
                         }
@@ -742,7 +726,9 @@ private fun ShizukuInstallRow(
                 }
             }
         },
-        trailingContent = { Switch(checked = enabled, onCheckedChange = null) },
+        trailingContent = {
+            Switch(checked = ui.checked, enabled = ui.enabled, onCheckedChange = null)
+        },
     )
 }
 

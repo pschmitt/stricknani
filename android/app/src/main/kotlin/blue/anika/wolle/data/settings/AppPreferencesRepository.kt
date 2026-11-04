@@ -13,8 +13,10 @@ import blue.anika.wolle.data.errorreporting.ERROR_REPORTING_DEFAULT_ENABLED
 import blue.anika.wolle.data.errorreporting.ErrorReportingDto
 import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateNotice
+import blue.anika.wolle.data.update.effectiveUpdateChannel
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -108,9 +110,19 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_DISMISSED_UPDATE] = version }
     }
 
-    /** Which GitHub release stream updates follow; stable unless the user picks otherwise. */
+    /**
+     * Which GitHub release stream updates follow: the stored pick, but always stable while
+     * developer mode is off (the channel choice is a developer option).
+     */
     val updateChannel =
-        dataStore.data.map { prefs -> UpdateChannel.fromName(prefs[KEY_UPDATE_CHANNEL]) }
+        dataStore.data
+            .map { prefs ->
+                effectiveUpdateChannel(
+                    UpdateChannel.fromName(prefs[KEY_UPDATE_CHANNEL]),
+                    prefs[KEY_DEVELOPER_MODE] ?: false,
+                )
+            }
+            .distinctUntilChanged()
 
     suspend fun setUpdateChannel(channel: UpdateChannel) {
         dataStore.edit { prefs -> prefs[KEY_UPDATE_CHANNEL] = channel.name }
