@@ -6,8 +6,10 @@ import androidx.work.Configuration
 import blue.anika.wolle.crash.CrashReportInstaller
 import blue.anika.wolle.data.errorreporting.ErrorReportingController
 import blue.anika.wolle.data.settings.AppPreferencesRepository
+import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.data.update.UpdateScheduler
 import blue.anika.wolle.data.update.inAppUpdateAvailable
+import blue.anika.wolle.data.update.installedBuildId
 import blue.anika.wolle.di.MediaClient
 import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.SyncScheduler
@@ -41,6 +43,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
     @Inject lateinit var syncScheduler: SyncScheduler
     @Inject lateinit var syncNotifier: SyncNotifier
     @Inject lateinit var updateScheduler: UpdateScheduler
+    @Inject lateinit var updateAvailableNotifier: UpdateAvailableNotifier
     @Inject lateinit var appPreferences: AppPreferencesRepository
     @Inject lateinit var errorReporting: ErrorReportingController
     @Inject @MediaClient lateinit var mediaOkHttpClient: OkHttpClient
@@ -77,7 +80,15 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         if (inAppUpdateAvailable) {
             // Keeps the periodic update check in line with "Update automatically" after a restart.
             CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-                updateScheduler.setAutoCheck(appPreferences.autoUpdate.first())
+                updateScheduler.syncChecks(
+                    appPreferences.autoUpdate.first(),
+                    appPreferences.notifyAppUpdates.first(),
+                )
+                // The app was updated since the last announcement: take it down.
+                if (appPreferences.updateNotice.first()?.installedBuild != installedBuildId()) {
+                    updateAvailableNotifier.cancel()
+                    appPreferences.clearUpdateNotice()
+                }
             }
         }
     }

@@ -31,6 +31,7 @@ import blue.anika.wolle.data.onboarding.QrConfigCodec
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
+import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.ui.common.CrashReportDialog
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
@@ -39,6 +40,7 @@ import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.showOidcFailure
+import blue.anika.wolle.ui.settings.SettingsCategory
 import blue.anika.wolle.ui.theme.StricknaniTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -76,7 +78,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        pendingDeepLink = DeepLinkParser.parse(intent?.dataString)
+        pendingDeepLink = routeFor(intent)
         pendingSetupUri = intent?.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
         pendingCrashReport = CrashReportStore(applicationContext).takePending()
         // A recreated activity (rotation) still holds the original intent: only a fresh launch may
@@ -149,10 +151,18 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        pendingDeepLink = DeepLinkParser.parse(intent.dataString)
+        pendingDeepLink = routeFor(intent)
         pendingSetupUri = intent.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
         handleOidcCallback(intent)
     }
+
+    /** A web link, or the "update available" notification, which opens Settings -> About. */
+    private fun routeFor(intent: Intent?): Route? =
+        if (intent?.action == UpdateAvailableNotifier.ACTION_OPEN_UPDATE) {
+            Route.SettingsCategoryRoute(SettingsCategory.About.name)
+        } else {
+            DeepLinkParser.parse(intent?.dataString)
+        }
 
     /**
      * `stricknani://oidc-callback?...` is the return from the browser sign-in. It is handled once

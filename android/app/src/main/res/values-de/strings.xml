@@ -973,8 +973,16 @@
     <string name="update_failure_permission">Erlaube Stricknani, Apps zu installieren, damit es sich selbst aktualisieren kann.</string>
     <string name="update_failure_install">Android konnte das Update nicht installieren.</string>
     <string name="update_failure_cancelled">Die Installation wurde abgebrochen.</string>
-    <string name="update_notification_channel_name">App-Updates</string>
+    <string name="update_notification_channel_name">Update-Fortschritt</string>
     <string name="update_notification_channel_description">Fortschritt und Ergebnis von Stricknani-Updates</string>
+    <string name="update_available_channel_name">Neue App-Versionen</string>
+    <string name="update_available_channel_description">Ein Hinweis, wenn eine neue Version von Stricknani verfügbar ist, höchstens einmal am Tag</string>
+    <string name="update_available_notification_title">Stricknani-Update verfügbar</string>
+    <string name="update_available_notification_text">Version %1$s ist bereit. Zum Aktualisieren tippen.</string>
+    <string name="about_notify_updates_title">Über App-Updates benachrichtigen</string>
+    <string name="about_notify_updates_help">Höchstens eine Benachrichtigung am Tag, wenn eine neue Version verfügbar ist.</string>
+    <string name="developer_test_update_notification">Update-Benachrichtigung testen</string>
+    <string name="developer_test_update_notification_description">Zeigt eine Beispiel-Benachrichtigung. Das Tageslimit bleibt unberührt.</string>
     <string name="update_notification_downloading">Stricknani-Update wird heruntergeladen</string>
     <string name="update_notification_installing">Stricknani-Update wird installiert</string>
     <string name="update_notification_failed">Stricknani-Update fehlgeschlagen</string>
