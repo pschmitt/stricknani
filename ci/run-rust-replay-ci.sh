@@ -19,7 +19,7 @@ main() {
   fi
 
   local repo_root adb_bin serial
-  repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)" || return 1
+  repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)" || return 1
   cd "$repo_root" || return 1
   adb_bin="$(command -v adb)" || return 1
   local -a emulators=()
@@ -33,12 +33,13 @@ main() {
     return 1
   fi
 
-  python3 -m ci.stricknani.rust_fixture run-replay \
+  # npm runs the script from web/, so every path below is absolute.
+  npm --prefix web run --silent fixture -- run-replay \
     --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
     --adb "$adb_bin" \
     --serial "${emulators[0]}" \
-    --apk android/app/build/outputs/apk/debug/app-x86_64-debug.apk \
-    --test-apk android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+    --apk "$repo_root/android/app/build/outputs/apk/debug/app-x86_64-debug.apk" \
+    --test-apk "$repo_root/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk" \
     2>&1 | tee "$RUNNER_TEMP/rust-replay-sanitized.log" || return 1
 }
 

@@ -24,8 +24,8 @@ captures remain available in the diagnostic artifacts because Play allows at mos
 device bucket.
 
 The screenshot test runs against the same disposable native Rust fixture as
-`android-rust-e2e.yaml` (`ci/stricknani/rust_fixture.py`, seeded by `ci/stricknani/seed_rust.py`
-with `--screenshot-detail`): `Heirloom Baby Blanket` provides a project detail with needles, stitch
+`android-rust-e2e.yaml` (`npm --prefix web run fixture -- start`, seeded by `npm --prefix web run seed`
+with `--screenshot-detail`; sources in `web/e2e/lib/`): `Heirloom Baby Blanket` provides a project detail with needles, stitch
 sample and notes, and `Riverbend Merino DK` provides a yarn detail. The fixture listens on a free
 host port; `scripts/run-screenshot-test.sh` maps the app's `127.0.0.1:7674` to it via `FIXTURE_PORT`.
 The offline state is produced by enabling emulator airplane mode, pulling to refresh Home, and

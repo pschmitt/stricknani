@@ -139,7 +139,7 @@ jobs:
           then
             args+=(--require-ready)
           fi
-          python3 android/scripts/validate-play-store-metadata.py "${args[@]}"
+          node android/scripts/validate-play-store-metadata.mjs "${args[@]}"
 
   play-store:
     name: Build and publish signed Android App Bundle

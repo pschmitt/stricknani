@@ -3,7 +3,6 @@ name: Android Rust Replay
 on:
   push:
     branches:
-      - rust
     paths:
       - "android/**"
       - "Cargo.toml"
@@ -14,10 +13,11 @@ on:
       - "templates/**"
       - "examples/**"
       - "locales/**"
-      - "ci/stricknani/**"
+      - "web/e2e/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "ci/run-rust-*.sh"
       - "nix/rust-package.nix"
-      - "ci/tests/test_rust_replay_runner.py"
-      - "ci/tests/test_rust_fixture.py"
       - "docs/rust-replay-ci.md"
       - "flake.nix"
       - "flake.lock"
@@ -39,6 +39,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci --prefix web
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -65,7 +75,7 @@ jobs:
           RUST_SERVER_BINARY: ${{ steps.rust.outputs.binary }}
         run: |
           set -Eeuo pipefail
-          python3 -m ci.stricknani.rust_fixture start \
+          npm --prefix web run --silent fixture -- start \
             --binary "$RUST_SERVER_BINARY" \
             --temp-dir "$RUNNER_TEMP" \
             --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
@@ -89,7 +99,7 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
-          script: bash ../ci/stricknani/run-rust-replay-ci.sh
+          script: bash ../ci/run-rust-replay-ci.sh
 
       - name: Stop and remove disposable Rust fixture
         if: ${{ always() }}
@@ -97,7 +107,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           if [[ -f "$RUNNER_TEMP/stricknani-rust-fixture-state.json" ]]; then
-            python3 -m ci.stricknani.rust_fixture stop \
+            npm --prefix web run --silent fixture -- stop \
               --state-file "$RUNNER_TEMP/stricknani-rust-fixture-state.json" || true
           fi
 

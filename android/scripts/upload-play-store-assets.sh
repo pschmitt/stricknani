@@ -18,7 +18,7 @@ validate_listing() {
   then
     extra_args+=(--require-ready --require-screenshots)
   fi
-  python3 "$root/android/scripts/validate-play-store-metadata.py" --root "$root" "${extra_args[@]}"
+  node "$root/android/scripts/validate-play-store-metadata.mjs" --root "$root" "${extra_args[@]}"
 }
 
 verify_package() {
@@ -29,29 +29,31 @@ verify_package() {
     rm -f "$apps_json"
     return 1
   fi
-  if ! python3 - "$apps_json" "$play_package" <<'PY'
-import json
-import sys
-from pathlib import Path
+  if ! node - "$apps_json" "$play_package" <<'JS'
+const { readFileSync } = require("node:fs");
 
-path = Path(sys.argv[1])
-expected = sys.argv[2]
-data = json.loads(path.read_text(encoding="utf-8"))
+const [path, expected] = process.argv.slice(2);
+const data = JSON.parse(readFileSync(path, "utf8"));
 
-def contains_package(value):
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if key in {"package_name", "packageName"} and item == expected:
-                return True
-            if contains_package(item):
-                return True
-    elif isinstance(value, list):
-        return any(contains_package(item) for item in value)
-    return False
+function containsPackage(value) {
+  if (Array.isArray(value)) {
+    return value.some(containsPackage);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.entries(value).some(
+      ([key, item]) =>
+        ((key === "package_name" || key === "packageName") && item === expected) ||
+        containsPackage(item),
+    );
+  }
+  return false;
+}
 
-if not contains_package(data):
-    raise SystemExit(f"Play Console package {expected} was not returned by gpc apps list")
-PY
+if (!containsPackage(data)) {
+  console.error(`Play Console package ${expected} was not returned by gpc apps list`);
+  process.exit(1);
+}
+JS
   then
     rm -f "$apps_json"
     return 1

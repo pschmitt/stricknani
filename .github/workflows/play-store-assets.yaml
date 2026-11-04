@@ -37,7 +37,7 @@ jobs:
           then
             args+=(--require-ready --require-screenshots)
           fi
-          python3 android/scripts/validate-play-store-metadata.py "${args[@]}"
+          node android/scripts/validate-play-store-metadata.mjs "${args[@]}"
 
   upload-gate:
     name: Require explicit asset publication gate

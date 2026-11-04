@@ -19,7 +19,7 @@ cleanup_reverse() {
 
 run_e2e() {
   local repo_root qemu_value
-  repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)" || return 1
+  repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)" || return 1
   cd "$repo_root/android" || return 1
 
   if [[ -z "${E2E_TOKEN:-}" ]]

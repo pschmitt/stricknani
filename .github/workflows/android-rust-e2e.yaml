@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
-      - rust
     paths:
       - "android/**"
-      - "ci/stricknani/**"
+      - "web/e2e/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "ci/run-rust-*.sh"
       - "Cargo.toml"
       - "Cargo.lock"
       - "src/**"
@@ -23,7 +25,10 @@ on:
   pull_request:
     paths:
       - "android/**"
-      - "ci/stricknani/**"
+      - "web/e2e/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "ci/run-rust-*.sh"
       - "Cargo.toml"
       - "Cargo.lock"
       - "src/**"
@@ -73,6 +78,16 @@ jobs:
           printf 'RUST_FIXTURE_STATE=%s/stricknani-rust-e2e-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           printf 'RUST_E2E_TOKEN_FILE=%s/stricknani-rust-e2e-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci --prefix web
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
@@ -95,7 +110,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m ci.stricknani.rust_fixture start \
+          npm --prefix web run --silent fixture -- start \
             --binary "$RUST_SERVER_BINARY" \
             --temp-dir "$RUNNER_TEMP" \
             --fixture-file "$RUST_FIXTURE_FILE" \
@@ -105,7 +120,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m ci.stricknani.seed_rust \
+          npm --prefix web run --silent seed -- \
             --fixture-file "$RUST_FIXTURE_FILE" \
             --token-file "$RUST_E2E_TOKEN_FILE"
 
@@ -114,45 +129,43 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 - "$RUST_E2E_TOKEN_FILE" "$GITHUB_ENV" <<'PY'
-          import json
-          import sys
-          from pathlib import Path
+          node - "$RUST_E2E_TOKEN_FILE" "$GITHUB_ENV" <<'JS'
+          const { appendFileSync, readFileSync } = require("node:fs");
 
-          fixture = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          token = fixture.get("token") if isinstance(fixture, dict) else None
-          if not isinstance(token, str) or not token or "\n" in token or "\r" in token:
-              raise SystemExit("Rust E2E token fixture is invalid")
-          print(f"::add-mask::{token}", flush=True)
-          with Path(sys.argv[2]).open("a", encoding="utf-8") as env_file:
-              env_file.write(f"E2E_TOKEN={token}\n")
-          PY
+          const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          const token = fixture !== null && typeof fixture === "object" ? fixture.token : undefined;
+          if (typeof token !== "string" || !token || /[\r\n]/.test(token)) {
+            console.error("Rust E2E token fixture is invalid");
+            process.exit(1);
+          }
+          console.log(`::add-mask::${token}`);
+          appendFileSync(process.argv[3], `E2E_TOKEN=${token}\n`);
+          JS
 
       - name: Read native fixture port
         shell: bash
         run: |
           set -Eeuo pipefail
-          port="$(python3 - "$RUST_FIXTURE_FILE" <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-          from urllib.parse import urlsplit
+          port="$(node - "$RUST_FIXTURE_FILE" <<'JS'
+          const { readFileSync } = require("node:fs");
 
-          fixture = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          parsed = urlsplit(fixture["url"])
+          const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          const parsed = new URL(fixture.url);
           if (
-              parsed.scheme != "http"
-              or parsed.hostname not in {"127.0.0.1", "localhost"}
-              or parsed.username is not None
-              or parsed.password is not None
-              or parsed.port is None
-              or parsed.path
-              or parsed.query
-              or parsed.fragment
-          ):
-              raise SystemExit("Rust fixture URL must be a loopback origin with a port")
-          print(parsed.port)
-          PY
+            parsed.protocol !== "http:" ||
+            !["127.0.0.1", "localhost"].includes(parsed.hostname) ||
+            parsed.username ||
+            parsed.password ||
+            !parsed.port ||
+            parsed.pathname !== "/" ||
+            parsed.search ||
+            parsed.hash
+          ) {
+            console.error("Rust fixture URL must be a loopback origin with a port");
+            process.exit(1);
+          }
+          console.log(parsed.port);
+          JS
           )"
           printf 'RUST_FIXTURE_PORT=%s\n' "$port" >> "$GITHUB_ENV"
 
@@ -174,15 +187,15 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
-          script: bash ../ci/stricknani/run-rust-e2e-ci.sh
+          script: bash ../ci/run-rust-e2e-ci.sh
 
       - name: Summarize Android instrumentation failures
         if: ${{ failure() }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m ci.stricknani.summarize_rust_e2e \
-            --results-dir android/app/build/outputs/androidTest-results/connected/debug \
+          npm --prefix web run --silent summarize-e2e -- \
+            --results-dir "$GITHUB_WORKSPACE/android/app/build/outputs/androidTest-results/connected/debug" \
             --fixture-file "$RUST_FIXTURE_FILE" \
             --token-file "$RUST_E2E_TOKEN_FILE"
 
@@ -192,6 +205,6 @@ jobs:
         run: |
           set -Eeuo pipefail
           if [[ -f "$RUST_FIXTURE_STATE" ]]; then
-            python3 -m ci.stricknani.rust_fixture stop --state-file "$RUST_FIXTURE_STATE" || true
+            npm --prefix web run --silent fixture -- stop --state-file "$RUST_FIXTURE_STATE" || true
           fi
           rm -f -- "$RUST_E2E_TOKEN_FILE" "$RUST_FIXTURE_FILE" "$RUST_FIXTURE_STATE"

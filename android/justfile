@@ -83,7 +83,7 @@ e2e-build host=remote_host: (gradle host "assembleDebug assembleDebugAndroidTest
 # contacting Google Play. Screenshot buckets are populated by the manual Android screenshots
 # workflow and reviewed before the explicit upload recipe is ever used.
 play-store-validate:
-    python3 scripts/validate-play-store-metadata.py --root ..
+    node scripts/validate-play-store-metadata.mjs --root ..
 
 # Upload reviewed Play Store assets only when the caller supplies the exact confirmation string and
 # has already authenticated gpc. The script itself performs the final validation and refuses to

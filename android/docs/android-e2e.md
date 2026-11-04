@@ -12,10 +12,11 @@ instrumentation arguments (`e2e_base_url` and `e2e_token`).
 The manual `focused` lane runs the route/accessibility, dialog, empty-state, sync-feedback, and
 offline-cache instrumentation classes separately so a failure identifies the affected surface.
 
-The fixture is defined in [`ci/stricknani/docker-compose.yml`](../../ci/stricknani/docker-compose.yml).
-The workflow builds the repository image, waits for `/healthz`, runs the existing deterministic
-`seed_demo` command, validates the seeded records and representative images through the API, and
-mints a disposable PAT. Docker volumes are removed on every workflow exit path.
+The fixture is the disposable native Rust server started by `npm --prefix web run fixture -- start`
+(sources in [`web/e2e/lib/`](../../web/e2e/lib/fixture.ts)). The workflow builds the Rust candidate with
+Nix, seeds the deterministic records with `npm --prefix web run seed`, which validates them through
+the API and mints a disposable PAT, and removes the private directory and server process on every
+workflow exit path (`npm --prefix web run fixture -- stop`). Run `npm ci --prefix web` once first.
 
 Every run uploads connected-test XML/HTML reports, named instrumentation screenshots, logcat,
 fixture logs, a final emulator screenshot, and host diagnostics. For local Gradle verification use
