@@ -139,8 +139,8 @@ class ProjectImportController(
             }
 
         /**
-         * v2 import errors (`src/api_v2/imports.rs`): 429 `rate_limited` -> try again later;
-         * 422 `validation_error` (bad URL) and `unsafe_url` -> the "check the link" message;
+         * v2 import errors (`src/api_v2/imports.rs`): 429 `rate_limited` -> try again later; 422
+         * `validation_error` (bad URL) and `unsafe_url` -> the "check the link" message;
          * `import_unavailable`, `feature_disabled`, timeouts, fetch failures and unparsable
          * documents -> "couldn't read that pattern".
          */

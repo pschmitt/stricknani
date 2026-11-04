@@ -8,9 +8,7 @@ import kotlinx.serialization.json.Json
 /** `src/api_v2/mod.rs`'s `Envelope<T>`: every v2 success body is `{ "data": ... }`. */
 @Serializable data class V2Envelope<T>(val data: T)
 
-/**
- * `src/api_v2/{projects,yarns}.rs`'s `ListEnvelope<T>`: `{ "data": [...], "meta": {...} }`.
- */
+/** `src/api_v2/{projects,yarns}.rs`'s `ListEnvelope<T>`: `{ "data": [...], "meta": {...} }`. */
 @Serializable data class V2ListEnvelope<T>(val data: List<T>, val meta: V2PageMeta)
 
 /** `PageMeta`. Page numbers are 1-based and the page size is fixed server-side (50). */

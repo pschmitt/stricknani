@@ -17,9 +17,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
- * `src/api_v2/{projects,media}.rs`. NOT wired into any repository yet (SNA-87): the server
- * only accepts a browser session cookie on these routes today; Bearer PAT support is pending. Kept
- * 1:1 with `ProjectsApi` so a repository can switch by changing the injected type and calling the
+ * `src/api_v2/{projects,media}.rs`. NOT wired into any repository yet (SNA-87): the server only
+ * accepts a browser session cookie on these routes today; Bearer PAT support is pending. Kept 1:1
+ * with `ProjectsApi` so a repository can switch by changing the injected type and calling the
  * mappers in `V2Mappers.kt`.
  */
 interface ProjectsV2Api {
