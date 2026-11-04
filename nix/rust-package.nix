@@ -21,7 +21,7 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "stricknani-server";
-  version = "1.1.0";
+  version = "1.1.1";
   dontUnpack = true;
   nativeBuildInputs = [ makeWrapper ];
 
