@@ -2,10 +2,6 @@ package blue.anika.wolle.screenshots
 
 import android.Manifest
 import android.os.Build
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -14,12 +10,16 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import blue.anika.wolle.MainActivity
+import blue.anika.wolle.R
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -64,55 +64,59 @@ class StricknaniScreenshotTest {
         capture("onboarding")
 
         connectToFixture()
+        // Home: greeting, mascot, Continue card. Let the greeting settle and the activity feed load.
+        // The first sync fills Home asynchronously; wait for the Continue card, then let the
+        // greeting and the activity feed settle.
+        composeRule.waitUntil(180_000) { hasTag("home-continue-card") }
+        Thread.sleep(8_000)
         capture("home")
 
-        composeRule.onNodeWithText("Projects").performClick()
-        waitForText("Search projects")
-        composeRule
-            .onNodeWithTag("e2e-projects-list")
-            .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
+        // Recent activity sits further down Home.
+        composeRule.onNodeWithText(string(R.string.activity_title)).performScrollTo()
+        Thread.sleep(1_000)
+        capture("activity")
+
+        composeRule.onNodeWithText(string(R.string.destination_label_projects)).performClick()
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
+        Thread.sleep(1_500)
         capture("project-list")
 
         composeRule.onNodeWithText("Heirloom Baby Blanket", useUnmergedTree = true).performClick()
-        composeRule
-            .onNodeWithTag("e2e-project-detail")
-            .performScrollToNode(hasTextMatcher("Description"))
-        waitForText("Description", timeoutMillis = 120_000)
+        composeRule.waitUntil(120_000) { hasTag("e2e-project-detail") }
+        Thread.sleep(2_000)
         capture("project")
 
+        composeRule.onNodeWithTag("e2e-project-detail").performTouchInput { swipeUp() }
+        Thread.sleep(1_000)
+        capture("project-details")
+
         composeRule
-            .onNodeWithTag("e2e-project-detail")
-            .performScrollToNode(hasTextMatcher("Stitch sample"))
-        waitForText("Stitch sample", timeoutMillis = 120_000)
-        capture("project-stitch-sample")
-
-        composeRule.onNodeWithTag("e2e-project-detail").performScrollToNode(hasTextMatcher("Notes"))
-        waitForText("Notes", timeoutMillis = 120_000)
-        capture("project-notes")
-
-        composeRule.onNodeWithContentDescription("Back").performClick()
-        // Yarns is no longer a default tab; Home's stash card opens the list.
-        composeRule.onNodeWithText("Home").performClick()
+            .onNodeWithContentDescription(string(R.string.settings_nav_back))
+            .performClick()
+        composeRule.onNodeWithText(string(R.string.destination_label_home)).performClick()
         composeRule.onNodeWithTag("home-stash-card").performScrollTo().performClick()
-        waitForText("Search yarns")
-        composeRule
-            .onNodeWithTag("e2e-yarns-list")
-            .performScrollToNode(hasTextMatcher("Riverbend Merino DK"))
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
+        Thread.sleep(1_500)
         capture("yarn-list")
 
         composeRule.onNodeWithText("Riverbend Merino DK").performClick()
-        composeRule.onNodeWithTag("e2e-yarn-detail").performScrollToNode(hasTextMatcher("Brand"))
-        waitForText("Brand", timeoutMillis = 120_000)
+        composeRule.waitUntil(120_000) { hasTag("e2e-yarn-detail") }
+        Thread.sleep(2_000)
         capture("yarn")
 
-        composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Settings").performClick()
-        waitForText("Settings")
-        capture("settings")
-
-        captureOfflineState()
+        composeRule
+            .onNodeWithContentDescription(string(R.string.settings_nav_back))
+            .performClick()
+        composeRule
+            .onNodeWithContentDescription(string(R.string.settings_nav_back))
+            .performClick()
+        composeRule.onNodeWithText(string(R.string.destination_label_home)).performClick()
+        composeRule
+            .onNodeWithContentDescription(string(R.string.home_gauge_calculator_description))
+            .performClick()
+        waitForText(string(R.string.gauge_calculator_title))
+        Thread.sleep(1_000)
+        capture("gauge")
     }
 
     private fun connectToFixture() {
@@ -120,16 +124,25 @@ class StricknaniScreenshotTest {
         // Home itself only shows favorites/recent projects, so use the Projects nav label as the
         // configured-state marker and assert fixture rows only after navigating to their lists.
         composeRule.waitUntil(120_000) {
-            hasTag("e2e-onboarding-server-url") || hasText("Projects")
+            hasTag("e2e-onboarding-server-url") ||
+                hasText(string(R.string.destination_label_projects))
         }
         if (hasTag("e2e-onboarding-server-url")) {
-            composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
+            composeRule
+                .onNodeWithTag("onboarding-mode-manual")
+                .performSemanticsAction(SemanticsActions.OnClick)
+            // The form cross-fades between modes; typing into a field that is still fading out
+            // fails with "Failed to perform text input", so wait for the token field first.
+            composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
+            composeRule.waitForIdle()
+            Thread.sleep(1_000)
             composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
+            composeRule.onNodeWithTag("e2e-onboarding-api-token").performClick()
             composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
             grantNotificationPermission()
-            composeRule.onNodeWithText("Connect").performClick()
+            composeRule.onNodeWithText(string(R.string.onboarding_connect_button)).performClick()
         }
-        waitForText("Projects", timeoutMillis = 120_000)
+        waitForText(string(R.string.destination_label_projects), timeoutMillis = 120_000)
     }
 
     private fun grantNotificationPermission() {
@@ -137,44 +150,13 @@ class StricknaniScreenshotTest {
             InstrumentationRegistry.getInstrumentation()
                 .uiAutomation
                 .executeShellCommand(
-                    "pm grant blue.anika.wolle.debug ${Manifest.permission.POST_NOTIFICATIONS}"
+                    "pm grant ${composeRule.activity.packageName} ${Manifest.permission.POST_NOTIFICATIONS}"
                 )
                 .close()
         }
     }
 
-    private fun captureOfflineState() {
-        composeRule.onNodeWithText("Home").performClick()
-        waitForText("Home")
-        // Returning to Home starts its automatic refresh. Wait for that refresh to settle before
-        // the explicit offline gesture, otherwise RefreshController correctly ignores the pull as
-        // a duplicate and the offline snackbar never appears.
-        // The sync card stays hidden when all is well, so wait on the refresh state instead.
-        composeRule.waitUntil(timeoutMillis = 120_000) {
-            composeRule
-                .onAllNodes(
-                    hasTestTag("e2e-home-refresh") and
-                        SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "idle")
-                )
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-        // The fixture is reached through adb reverse. The host-side screenshot harness removes
-        // that reverse after this marker, making only the API endpoint unreachable while keeping
-        // the test activity alive on emulator images that recreate activities for airplane mode.
-        signalOfflineCapture()
-        device.swipe(
-            device.displayWidth / 2,
-            device.displayHeight / 3,
-            device.displayWidth / 2,
-            device.displayHeight * 3 / 4,
-            20,
-        )
-        // The snackbar is covered by the focused E2E lane. Tablet Compose runs can take longer
-        // than the snackbar lifetime while settling after the gesture, so keep this review-only
-        // capture best effort and let the screenshot itself document the resulting state.
-        capture("offline")
-    }
+    private fun string(id: Int): String = composeRule.activity.getString(id)
 
     private fun waitForText(text: String, timeoutMillis: Long = 30_000) {
         composeRule.waitUntil(timeoutMillis) { hasText(text) }
@@ -201,19 +183,11 @@ class StricknaniScreenshotTest {
         Thread.sleep(1_000)
     }
 
-    private fun signalOfflineCapture() {
-        InstrumentationRegistry.getInstrumentation()
-            .uiAutomation
-            .executeShellCommand("touch $OFFLINE_CAPTURE_MARKER")
-            .use {}
-    }
-
     private fun requiredArgument(name: String): String =
         arguments.getString(name)?.takeIf(String::isNotBlank)
             ?: error("$name instrumentation argument is required")
 
     private companion object {
         const val CAPTURE_MARKER_PREFIX = "/data/local/tmp/stricknani-screenshot-capture-"
-        const val OFFLINE_CAPTURE_MARKER = "/data/local/tmp/stricknani-screenshot-offline"
     }
 }

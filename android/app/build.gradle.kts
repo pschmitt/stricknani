@@ -85,7 +85,11 @@ android {
     }
 
     buildTypes {
-        named("debug") { applicationIdSuffix = ".debug" }
+        // -PappIdSuffix=.shots installs a side-by-side copy (own data) for screenshot runs on a
+        // phone that already has the real debug app signed in.
+        named("debug") {
+            applicationIdSuffix = (project.findProperty("appIdSuffix") as String?) ?: ".debug"
+        }
         named("release") {
             isMinifyEnabled = true
             isShrinkResources = true
