@@ -249,3 +249,166 @@ export function activityAgo(
   if (days > -60) return relative.format(Math.round(days / 7), "week");
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(then);
 }
+
+/** Icon of a timeline node: what happened, not what it happened to. */
+export type ActivityIcon =
+  | "sparkle"
+  | "action-update"
+  | "camera"
+  | "action-delete"
+  | "action-remove"
+  | "action-upload"
+  | "action-default";
+
+const exactIcons: Record<string, ActivityIcon> = {
+  created: "sparkle",
+  step_created: "sparkle",
+  updated: "action-update",
+  step_updated: "action-update",
+  photo_promoted: "action-update",
+  title_image_promoted: "action-update",
+  uploaded: "camera",
+  photo_uploaded: "camera",
+  title_image_uploaded: "camera",
+  stitch_sample_image_uploaded: "camera",
+  step_image_uploaded: "camera",
+  attachment_uploaded: "action-upload",
+  deleted: "action-delete",
+  step_deleted: "action-delete",
+  attachment_deleted: "action-delete",
+  image_deleted: "action-delete",
+  photo_deleted: "action-delete",
+  removed: "action-remove",
+};
+
+/** Maps an audit action to a node icon; unknown actions are read by their suffix. */
+export function activityIcon(action: string): ActivityIcon {
+  const key = action.toLowerCase();
+  if (Object.hasOwn(exactIcons, key))
+    return exactIcons[key] ?? "action-default";
+  if (key.endsWith("_created")) return "sparkle";
+  if (key.endsWith("_updated") || key.endsWith("_changed"))
+    return "action-update";
+  if (key.endsWith("_uploaded")) return "camera";
+  if (key.endsWith("_deleted")) return "action-delete";
+  if (key.endsWith("_removed")) return "action-remove";
+  return "action-default";
+}
+
+export interface ActivityDay {
+  /** Local calendar day, `YYYY-MM-DD`; `unknown` for an unreadable timestamp. */
+  key: string;
+  /** "Today", "Yesterday" or a short date; empty for `unknown`. */
+  label: string;
+  items: ActivityItem[];
+}
+
+const UNKNOWN_DAY = "unknown";
+
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+/** The local calendar day of a timestamp, or `unknown` when it cannot be read. */
+export function activityDayKey(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return UNKNOWN_DAY;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** "Today", "Yesterday", else "Feb 14" (with the year when it is not this year). */
+export function activityDayLabel(
+  value: string,
+  locale: Locale,
+  now: Date = new Date(),
+): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return "";
+  const days = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000);
+  if (days <= 0) return t("Today", locale);
+  if (days === 1) return t("Yesterday", locale);
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
+  }).format(date);
+}
+
+/** The time of day, 24-hour in both languages: "14:32". */
+export function activityTime(value: string, locale: Locale): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return "";
+  return new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}
+
+function sameActor(a: ActivityItem, b: ActivityItem): boolean {
+  return a.actor.is_self === b.actor.is_self && a.actor.name === b.actor.name;
+}
+
+/** Created and deleted are single events and never fold into a run. */
+function mergeable(newer: ActivityItem, older: ActivityItem): boolean {
+  return (
+    newer.entity_type === older.entity_type &&
+    newer.entity_id === older.entity_id &&
+    newer.action === older.action &&
+    newer.action !== "created" &&
+    newer.action !== "deleted" &&
+    sameActor(newer, older)
+  );
+}
+
+/**
+ * Folds consecutive entries (newest first) for the same item, action and actor
+ * into one: counts add up, the span widens and the changed fields are united.
+ * The server already does this within 10 minutes; this extends it to the day.
+ * Callers pass entries of a single day.
+ */
+export function mergeActivityRuns(items: ActivityItem[]): ActivityItem[] {
+  const merged: ActivityItem[] = [];
+  for (const item of items) {
+    const last = merged[merged.length - 1];
+    if (last && mergeable(last, item)) {
+      merged[merged.length - 1] = {
+        ...last,
+        count: last.count + item.count,
+        first_event_id: item.first_event_id,
+        first_created_at: item.first_created_at,
+        thumbnail_url: last.thumbnail_url ?? item.thumbnail_url,
+        changed_fields: [
+          ...last.changed_fields,
+          ...item.changed_fields.filter(
+            (f) => !last.changed_fields.includes(f),
+          ),
+        ],
+      };
+    } else {
+      merged.push(item);
+    }
+  }
+  return merged;
+}
+
+/** Groups a newest-first feed by local day and folds repeats within each day. */
+export function groupActivity(
+  items: ActivityItem[],
+  locale: Locale,
+  now: Date = new Date(),
+): ActivityDay[] {
+  const buckets: { key: string; label: string; items: ActivityItem[] }[] = [];
+  for (const item of items) {
+    const key = activityDayKey(item.created_at);
+    const last = buckets[buckets.length - 1];
+    if (last && last.key === key) last.items.push(item);
+    else
+      buckets.push({
+        key,
+        label: activityDayLabel(item.created_at, locale, now),
+        items: [item],
+      });
+  }
+  return buckets.map((b) => ({ ...b, items: mergeActivityRuns(b.items) }));
+}

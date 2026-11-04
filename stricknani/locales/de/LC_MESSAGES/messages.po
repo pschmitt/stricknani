@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-04 08:55+0100\n"
+"POT-Creation-Date: 2026-11-04 09:19+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -2273,7 +2273,7 @@ msgstr "Verknüpfte Projekte werden geladen …"
 msgid "Loading project details…"
 msgstr "Projektdetails werden geladen …"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:98
+#: web/src/lib/features/home/ActivityFeed.svelte:106
 msgid "Loading recent activity…"
 msgstr "Letzte Aktivität wird geladen…"
 
@@ -2651,7 +2651,7 @@ msgstr "Notizen nach oben verschoben"
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:109
+#: web/src/lib/features/home/ActivityFeed.svelte:117
 msgid "Nothing yet - your changes will show up here."
 msgstr "Noch nichts – deine Änderungen erscheinen hier."
 
@@ -3095,12 +3095,12 @@ msgstr "Nur-Lesen-Ansicht"
 msgid "Reading the source and preparing a draft…"
 msgstr "Quelle wird gelesen und ein Entwurf vorbereitet…"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:71
+#: web/src/lib/features/home/ActivityFeed.svelte:73
 msgid "Recent activity"
 msgstr "Letzte Aktivität"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:102
-#: web/src/lib/features/home/ActivityFeed.svelte:158
+#: web/src/lib/features/home/ActivityFeed.svelte:110
+#: web/src/lib/features/home/ActivityFeed.svelte:198
 msgid "Recent activity could not be loaded."
 msgstr "Die letzte Aktivität konnte nicht geladen werden."
 
@@ -3500,7 +3500,7 @@ msgstr "Änderungen anzeigen"
 msgid "Show fewer"
 msgstr "Weniger anzeigen"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:166
+#: web/src/lib/features/home/ActivityFeed.svelte:206
 msgid "Show more"
 msgstr "Mehr anzeigen"
 
@@ -4499,6 +4499,7 @@ msgid "Title image uploaded"
 msgstr "Titelbild hochgeladen"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:277
+#: web/src/lib/features/home/activity.ts:328
 msgid "Today"
 msgstr "Heute"
 
@@ -4563,8 +4564,8 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistorySection.svelte:264
 #: web/src/lib/features/history/HistorySection.svelte:345
-#: web/src/lib/features/home/ActivityFeed.svelte:104
-#: web/src/lib/features/home/ActivityFeed.svelte:160
+#: web/src/lib/features/home/ActivityFeed.svelte:112
+#: web/src/lib/features/home/ActivityFeed.svelte:200
 #: web/src/lib/features/home/HomeDashboard.svelte:178
 #: web/src/lib/features/home/HomeDashboard.svelte:260
 #: web/src/lib/features/media/ArchiveControl.svelte:445
@@ -4861,6 +4862,7 @@ msgid "Yarn weight"
 msgstr "Garnstärke"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:279
+#: web/src/lib/features/home/activity.ts:329
 msgid "Yesterday"
 msgstr "Gestern"
 
@@ -5132,10 +5134,6 @@ msgstr "Kategorie"
 msgid "colorway"
 msgstr "Farbe"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:136
-msgid "deleted"
-msgstr "gelöscht"
-
 #: web/src/lib/features/history/history-summary.ts:47
 #: web/src/lib/features/history/history-summary.ts:55
 msgid "description"
@@ -5294,4 +5292,7 @@ msgstr "{n} weitere"
 
 #~ msgid "Workspace"
 #~ msgstr "Arbeitsbereich"
+
+#~ msgid "deleted"
+#~ msgstr "gelöscht"
 

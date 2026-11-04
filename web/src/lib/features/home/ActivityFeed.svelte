@@ -4,9 +4,11 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import {
-    activityAgo,
     activityDetail,
+    activityIcon,
     activitySentence,
+    activityTime,
+    groupActivity,
     loadActivity,
     mergeActivity,
     type ActivityItem,
@@ -69,6 +71,7 @@
   }
 
   const title = $derived(t("Recent activity", locale));
+  const days = $derived(groupActivity(items, locale));
 </script>
 
 <section class="activity" aria-labelledby="home-activity-title">
@@ -79,21 +82,26 @@
   </div>
 
   {#if status === "loading"}
-    <ul
-      class="activity__list"
-      aria-hidden="true"
-      data-testid="activity-loading"
-    >
-      {#each [0, 1, 2] as row (row)}
-        <li class="activity__row activity__row--placeholder">
-          <span class="activity__thumb"></span>
-          <span class="activity__copy">
-            <span class="placeholder-line"></span>
-            <span class="placeholder-line placeholder-line--short"></span>
-          </span>
-        </li>
-      {/each}
-    </ul>
+    <ol class="tl" aria-hidden="true" data-testid="activity-loading">
+      <li class="tl__day">
+        <div class="tl__daylabel tl__daylabel--placeholder">
+          <span class="placeholder-line placeholder-line--label"></span>
+        </div>
+        <ol class="tl__entries">
+          {#each [0, 1, 2] as row (row)}
+            <li class="tl__entry">
+              <div class="tl__row">
+                <span class="tl__node tl__node--placeholder"></span>
+                <span class="tl__copy">
+                  <span class="placeholder-line"></span>
+                  <span class="placeholder-line placeholder-line--short"></span>
+                </span>
+              </div>
+            </li>
+          {/each}
+        </ol>
+      </li>
+    </ol>
     <p class="visually-hidden" role="status">
       {t("Loading recent activity…", locale)}
     </p>
@@ -109,54 +117,82 @@
       {t("Nothing yet - your changes will show up here.", locale)}
     </p>
   {:else}
-    <ul class="activity__list" aria-label={title}>
-      {#each items as item (item.id)}
-        {@const sentence = activitySentence(item, locale)}
-        {@const detail = activityDetail(item, locale)}
-        {@const ago = activityAgo(item.created_at, locale)}
-        {#snippet row()}
-          <span class="activity__thumb" data-kind={item.entity_type}>
-            {#if item.thumbnail_url}
-              <img src={item.thumbnail_url} alt="" loading="lazy" />
-            {:else}
-              <NavIcon
-                name={item.entity_type === "project" ? "projects" : "yarns"}
-              />
-            {/if}
-          </span>
-          <span class="activity__copy">
-            <span class="activity__sentence"
-              >{sentence.before}{#if sentence.name !== null}<strong
-                  class="activity__name">{sentence.name}</strong
-                >{/if}{sentence.after}</span
-            >
-            {#if detail || !item.exists}
-              <span class="activity__detail"
-                >{#if !item.exists}<span class="activity__gone"
-                    >{t("deleted", locale)}</span
-                  >{#if detail}
-                    ·
-                  {/if}{/if}{detail}</span
-              >
-            {/if}
-          </span>
-          <time class="activity__time" datetime={item.created_at}>{ago}</time>
-        {/snippet}
-        <li class="activity__item" data-deleted={!item.exists ? "" : undefined}>
-          {#if item.exists && item.href}
-            <a
-              class="activity__row"
-              href={item.entity_type === "project"
-                ? resolve("/projects/[id]", { id: String(item.entity_id) })
-                : resolve("/yarns/[id]", { id: String(item.entity_id) })}
-              >{@render row()}</a
-            >
-          {:else}
-            <div class="activity__row">{@render row()}</div>
+    <ol class="tl" aria-label={title}>
+      {#each days as day (day.key)}
+        <li class="tl__day">
+          {#if day.label}
+            <h3 class="tl__daylabel">{day.label}</h3>
           {/if}
+          <ol class="tl__entries">
+            {#each day.items as item, index (item.id)}
+              {@const sentence = activitySentence(item, locale)}
+              {@const detail = activityDetail(item, locale)}
+              {@const icon = activityIcon(item.action)}
+              {#snippet row()}
+                <span class="tl__node" aria-hidden="true">
+                  {#if icon === "sparkle"}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9zM19 3.5v3M17.5 5h3"
+                      />
+                    </svg>
+                  {:else}
+                    <NavIcon name={icon} />
+                  {/if}
+                </span>
+                <span class="tl__copy">
+                  <span class="tl__sentence"
+                    >{sentence.before}{#if sentence.name !== null}<strong
+                        class="tl__name">{sentence.name}</strong
+                      >{/if}{sentence.after}</span
+                  >
+                  <span class="tl__meta"
+                    ><time datetime={item.created_at}
+                      >{activityTime(item.created_at, locale)}</time
+                    >{#if detail}{" "}· {detail}{/if}</span
+                  >
+                </span>
+                {#if item.thumbnail_url}
+                  <img
+                    class="tl__thumb"
+                    src={item.thumbnail_url}
+                    alt=""
+                    loading="lazy"
+                  />
+                {/if}
+              {/snippet}
+              <li
+                class="tl__entry"
+                data-tone={item.entity_type}
+                data-deleted={!item.exists ? "" : undefined}
+                style:--i={Math.min(index, 8)}
+              >
+                {#if item.exists && item.href}
+                  <a
+                    class="tl__row"
+                    href={item.entity_type === "project"
+                      ? resolve("/projects/[id]", {
+                          id: String(item.entity_id),
+                        })
+                      : resolve("/yarns/[id]", { id: String(item.entity_id) })}
+                    >{@render row()}</a
+                  >
+                {:else}
+                  <div class="tl__row">{@render row()}</div>
+                {/if}
+              </li>
+            {/each}
+          </ol>
         </li>
       {/each}
-    </ul>
+    </ol>
     {#if moreFailed}
       <div class="activity__error" role="alert">
         <p>{t("Recent activity could not be loaded.", locale)}</p>
@@ -178,6 +214,7 @@
   .activity {
     display: grid;
     min-width: 0;
+    max-width: 34rem;
     gap: 0.7rem;
   }
   .activity__title {
@@ -202,95 +239,153 @@
     width: 1.1rem;
     height: 1.1rem;
   }
-  .activity__list {
-    display: grid;
-    gap: 0.45rem;
+
+  /* The timeline: one rail behind every node, entries grouped under day labels. */
+  .tl {
+    --node: 2.1rem;
+    --pad: 0.3rem;
+    --gap: 0.75rem;
+    position: relative;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .activity__row {
+  /* The rail is cut into pieces (one per entry and day label) so it follows
+     rows of any height; the first and last piece stop at their node. */
+  .tl__entry,
+  .tl__daylabel {
+    position: relative;
+  }
+  .tl__entry::before,
+  .tl__daylabel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--pad) + var(--node) / 2 - 1px);
+    width: 2px;
+    background: var(--line);
+  }
+  .tl__day:first-child .tl__daylabel::before {
+    display: none;
+  }
+  .tl__day:first-child .tl__entry:first-child::before {
+    top: calc(var(--pad) + var(--node) / 2);
+  }
+  .tl__day:last-child .tl__entry:last-child::before {
+    bottom: auto;
+    height: calc(var(--pad) + var(--node) / 2);
+  }
+  .tl__day:only-child .tl__entry:only-child::before {
+    display: none;
+  }
+  .tl__entries {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tl__daylabel {
+    margin: 0;
+    padding: 0.7rem 0 0.15rem calc(var(--pad) + var(--node) + var(--gap));
+    color: var(--ink-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.1rem;
+  }
+  .tl__day:first-child .tl__daylabel {
+    padding-top: 0;
+  }
+  .tl__daylabel--placeholder {
+    padding-bottom: 0.3rem;
+  }
+  .tl__row {
+    position: relative;
     display: grid;
-    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.8rem;
+    grid-template-columns: var(--node) minmax(0, 1fr);
+    grid-auto-columns: auto;
+    grid-auto-flow: column;
+    align-items: start;
+    gap: var(--gap);
     min-height: 44px;
-    border-radius: var(--radius-md);
-    padding: 0.5rem 0.8rem 0.5rem 0.5rem;
+    border-radius: var(--radius-sm);
+    padding: var(--pad);
+    padding-right: 0.6rem;
     color: var(--ink);
-    background: var(--surface);
     text-decoration: none;
   }
-  a.activity__row:hover {
-    background: color-mix(in srgb, var(--surface) 88%, var(--accent) 12%);
+  a.tl__row:hover {
+    background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
   }
-  a.activity__row:focus-visible {
+  a.tl__row:focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
   }
-  .activity__thumb {
+  .tl__node {
     display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: var(--node);
+    height: var(--node);
     place-items: center;
-    overflow: hidden;
-    border-radius: 0.8rem;
-    color: var(--on-primary-container);
-    background: var(--primary-container);
+    border-radius: 50%;
+    color: var(--tone-projects);
+    background: var(--tone-projects-wash);
   }
-  .activity__thumb[data-kind="yarn"] {
-    color: var(--on-lagoon-container);
-    background: var(--lagoon-container);
+  .tl__entry[data-tone="yarn"] .tl__node {
+    color: var(--tone-yarns);
+    background: var(--tone-yarns-wash);
   }
-  .activity__thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .tl__node :global(svg),
+  .tl__node svg {
+    width: 1.1rem;
+    height: 1.1rem;
   }
-  .activity__thumb :global(svg) {
-    width: 1.35rem;
-    height: 1.35rem;
-  }
-  .activity__copy {
+  .tl__copy {
     display: grid;
     min-width: 0;
-    gap: 0.1rem;
+    min-height: var(--node);
+    align-content: center;
+    gap: 0.05rem;
   }
-  .activity__sentence {
+  .tl__sentence {
     overflow-wrap: anywhere;
-    font-size: 0.97rem;
+    font-size: 0.95rem;
     line-height: 1.3;
   }
-  .activity__name {
+  .tl__name {
     font-weight: 800;
   }
-  .activity__detail {
+  .tl__meta {
     color: var(--ink-muted);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     line-height: 1.3;
     overflow-wrap: anywhere;
   }
-  .activity__gone {
-    font-weight: 700;
+  .tl__meta time {
+    font-variant-numeric: tabular-nums;
   }
-  .activity__time {
-    align-self: start;
-    padding-top: 0.1rem;
-    color: var(--ink-muted);
-    font-size: 0.8rem;
-    white-space: nowrap;
+  .tl__thumb {
+    width: 2.25rem;
+    height: 2.25rem;
+    align-self: center;
+    border-radius: 0.65rem;
+    object-fit: cover;
+    background: var(--surface-raised);
   }
-  .activity__item[data-deleted] .activity__name {
+  .tl__entry[data-deleted] .tl__name {
     text-decoration: line-through;
     text-decoration-thickness: 1.5px;
   }
-  .activity__item[data-deleted] .activity__row {
+  .tl__entry[data-deleted] .tl__row {
     color: var(--ink-muted);
-    background: color-mix(in srgb, var(--surface) 55%, transparent);
   }
-  .activity__item[data-deleted] .activity__thumb {
-    opacity: 0.6;
-    filter: grayscale(0.6);
+  .tl__entry[data-deleted] .tl__node {
+    color: var(--ink-muted);
+    background: var(--surface-highest);
+  }
+  .tl__entry[data-deleted] .tl__thumb {
+    opacity: 0.55;
+    filter: grayscale(0.7);
   }
   .activity__empty {
     margin: 0;
@@ -314,7 +409,7 @@
   .activity__error p {
     margin: 0;
   }
-  .activity__row--placeholder .activity__thumb,
+  .tl__node--placeholder,
   .placeholder-line {
     background: color-mix(in srgb, var(--ink-muted) 18%, transparent);
   }
@@ -323,6 +418,10 @@
     width: 70%;
     height: 0.95rem;
     border-radius: 0.4rem;
+  }
+  .placeholder-line--label {
+    width: 3.5rem;
+    height: 0.7rem;
   }
   .placeholder-line--short {
     width: 40%;
@@ -337,26 +436,25 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
-  @media (min-width: 900px) {
-    .activity__list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  @media (prefers-reduced-motion: no-preference) {
+    .tl::before {
+      transform-origin: top;
+      animation: tl-rail 600ms ease-out both;
     }
-  }
-  @media (max-width: 420px) {
-    .activity__row {
-      grid-template-columns: 2.5rem minmax(0, 1fr);
-      row-gap: 0.1rem;
+    .tl__entry {
+      animation: tl-in 260ms ease-out both;
+      animation-delay: calc(var(--i, 0) * 35ms);
     }
-    .activity__thumb {
-      grid-row: span 2;
+    @keyframes tl-rail {
+      from {
+        transform: scaleY(0);
+      }
     }
-    .activity__time {
-      grid-column: 2;
-      padding-top: 0;
-    }
-    .activity__thumb {
-      width: 2.5rem;
-      height: 2.5rem;
+    @keyframes tl-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
     }
   }
 </style>

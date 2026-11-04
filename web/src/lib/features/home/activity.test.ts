@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   activityAgo,
+  activityDayKey,
+  activityDayLabel,
+  activityIcon,
+  activityTime,
+  groupActivity,
+  mergeActivityRuns,
   activityDetail,
   activitySentence,
   loadActivity,
@@ -201,5 +207,156 @@ describe("activityAgo", () => {
 
   it("returns nothing for an invalid date", () => {
     expect(activityAgo("nope", "en", now)).toBe("");
+  });
+});
+
+describe("activityIcon", () => {
+  it("maps the audit vocabulary to node icons", () => {
+    expect(activityIcon("created")).toBe("sparkle");
+    expect(activityIcon("updated")).toBe("action-update");
+    expect(activityIcon("uploaded")).toBe("camera");
+    expect(activityIcon("photo_uploaded")).toBe("camera");
+    expect(activityIcon("attachment_uploaded")).toBe("action-upload");
+    expect(activityIcon("deleted")).toBe("action-delete");
+    expect(activityIcon("removed")).toBe("action-remove");
+  });
+
+  it("reads unknown actions by suffix and falls back", () => {
+    expect(activityIcon("pattern_created")).toBe("sparkle");
+    expect(activityIcon("pattern_deleted")).toBe("action-delete");
+    expect(activityIcon("Step_Updated")).toBe("action-update");
+    expect(activityIcon("whatever")).toBe("action-default");
+    expect(activityIcon("constructor")).toBe("action-default");
+  });
+});
+
+describe("day grouping", () => {
+  const now = new Date(2026, 10, 3, 12, 0, 0);
+  const iso = (y: number, m: number, d: number, h = 12, min = 0) =>
+    new Date(y, m, d, h, min).toISOString();
+
+  it("keys by local calendar day", () => {
+    expect(activityDayKey(iso(2026, 10, 3, 0, 5))).toBe("2026-11-03");
+    expect(activityDayKey(iso(2026, 10, 3, 23, 55))).toBe("2026-11-03");
+    expect(activityDayKey("nope")).toBe("unknown");
+  });
+
+  it("labels today, yesterday and dates", () => {
+    expect(activityDayLabel(iso(2026, 10, 3, 0, 1), "en", now)).toBe("Today");
+    expect(activityDayLabel(iso(2026, 10, 2, 23, 59), "en", now)).toBe(
+      "Yesterday",
+    );
+    expect(activityDayLabel(iso(2026, 1, 14), "en", now)).toBe("Feb 14");
+    expect(activityDayLabel(iso(2025, 1, 14), "en", now)).toBe("Feb 14, 2025");
+    expect(activityDayLabel(iso(2026, 1, 14), "de", now)).toContain("14.");
+    expect(activityDayLabel("nope", "en", now)).toBe("");
+  });
+
+  it("formats the time of day as 24 hours", () => {
+    expect(activityTime(iso(2026, 10, 3, 14, 32), "en")).toBe("14:32");
+    expect(activityTime(iso(2026, 10, 3, 9, 5), "de")).toBe("09:05");
+    expect(activityTime("nope", "en")).toBe("");
+  });
+
+  it("splits a feed into days, newest first", () => {
+    const items = [
+      parseActivityItem({ ...raw, id: 5, created_at: iso(2026, 10, 3, 11) }),
+      parseActivityItem({
+        ...raw,
+        id: 4,
+        entity_id: 9,
+        created_at: iso(2026, 10, 3, 9),
+      }),
+      parseActivityItem({ ...raw, id: 3, created_at: iso(2026, 10, 2, 20) }),
+      parseActivityItem({ ...raw, id: 2, created_at: iso(2026, 1, 14, 8) }),
+    ];
+    const days = groupActivity(items, "en", now);
+    expect(days.map((d) => d.label)).toEqual(["Today", "Yesterday", "Feb 14"]);
+    expect(days.map((d) => d.items.length)).toEqual([2, 1, 1]);
+  });
+});
+
+describe("mergeActivityRuns", () => {
+  const entry = (over: Record<string, unknown>) =>
+    parseActivityItem({
+      ...raw,
+      count: 1,
+      created_at: "2026-11-03T10:00:00.000Z",
+      first_created_at: "2026-11-03T10:00:00.000Z",
+      ...over,
+    });
+
+  it("folds consecutive runs and unites the fields", () => {
+    const merged = mergeActivityRuns([
+      entry({
+        id: 30,
+        first_event_id: 28,
+        count: 2,
+        changed_fields: ["project.notes"],
+      }),
+      entry({
+        id: 20,
+        first_event_id: 20,
+        first_created_at: "2026-11-03T07:00:00.000Z",
+        changed_fields: ["project.notes", "project.needles"],
+      }),
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.id).toBe(30);
+    expect(merged[0]?.count).toBe(3);
+    expect(merged[0]?.first_event_id).toBe(20);
+    expect(merged[0]?.first_created_at).toBe("2026-11-03T07:00:00.000Z");
+    expect(merged[0]?.changed_fields).toEqual([
+      "project.notes",
+      "project.needles",
+    ]);
+  });
+
+  it("keeps different items, actions and actors apart", () => {
+    const base = { changed_fields: [] };
+    expect(
+      mergeActivityRuns([
+        entry({ ...base, id: 3 }),
+        entry({ ...base, id: 2, entity_id: 99 }),
+        entry({ ...base, id: 1, action: "uploaded" }),
+      ]),
+    ).toHaveLength(3);
+    expect(
+      mergeActivityRuns([
+        entry({ id: 3 }),
+        entry({
+          id: 2,
+          actor: { name: null, is_self: false, avatar_url: null },
+        }),
+      ]),
+    ).toHaveLength(2);
+  });
+
+  it("only merges neighbours, never created or deleted", () => {
+    expect(
+      mergeActivityRuns([
+        entry({ id: 4 }),
+        entry({ id: 3, entity_id: 99 }),
+        entry({ id: 2 }),
+      ]),
+    ).toHaveLength(3);
+    expect(
+      mergeActivityRuns([
+        entry({ id: 2, action: "deleted" }),
+        entry({ id: 1, action: "deleted" }),
+      ]),
+    ).toHaveLength(2);
+  });
+
+  it("does not merge across days", () => {
+    const days = groupActivity(
+      [
+        entry({ id: 2, created_at: new Date(2026, 10, 3, 9).toISOString() }),
+        entry({ id: 1, created_at: new Date(2026, 10, 2, 9).toISOString() }),
+      ],
+      "en",
+      new Date(2026, 10, 3, 12),
+    );
+    expect(days).toHaveLength(2);
   });
 });
