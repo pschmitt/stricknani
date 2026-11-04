@@ -125,8 +125,8 @@ internal fun navigateToTopLevelRoot(
  *   it through the same [blue.anika.wolle.ui.onboarding.OnboardingViewModel.connectFromScannedText]
  *   path the in-app scanner uses, then cleared via [onSetupUriConsumed]. `null` means nothing
  *   pending - only meaningful pre-onboarding, see [MainActivity]'s call site.
- * @param pendingSharedUrl a link another app shared to this one. It waits through onboarding, then a
- *   chooser asks whether to import it as a project or a yarn; [onSharedUrlConsumed] clears it.
+ * @param pendingSharedUrl a link another app shared to this one. It waits through onboarding, then
+ *   a chooser asks whether to import it as a project or a yarn; [onSharedUrlConsumed] clears it.
  *   Choosing only opens the import dialog with the link filled in - nothing is imported until the
  *   user confirms there.
  */
@@ -385,7 +385,8 @@ fun StricknaniNavHost(
                         onBack = { navController.navigateUp() },
                         onNewProject = { navController.navigate(Route.ProjectEditor()) },
                         onNewYarn = { navController.navigate(Route.YarnEditor()) },
-                        initialImportKind = ShareImportKind.entries.firstOrNull { it.name == route.kind },
+                        initialImportKind =
+                            ShareImportKind.entries.firstOrNull { it.name == route.kind },
                         initialImportUrl = route.url,
                     )
                 }

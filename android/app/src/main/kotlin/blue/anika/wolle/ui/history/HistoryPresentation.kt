@@ -162,7 +162,10 @@ sealed interface HistoryDetailBody {
     /** Recorded field changes; an empty list reads "No changes". */
     data class Changes(val items: List<ChangeItemDto>) : HistoryDetailBody
 
-    /** The snapshot cannot be shown (`too_large`, `malformed` or unknown; `not_recorded` is [NoDetails]). */
+    /**
+     * The snapshot cannot be shown (`too_large`, `malformed` or unknown; `not_recorded` is
+     * [NoDetails]).
+     */
     data class Unavailable(val reason: String?) : HistoryDetailBody
 }
 

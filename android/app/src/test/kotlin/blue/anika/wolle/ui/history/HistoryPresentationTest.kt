@@ -1,8 +1,8 @@
 package blue.anika.wolle.ui.history
 
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.dto.AuditDetailEnvelopeDto
 import blue.anika.wolle.data.api.dto.AuditDetailDto
+import blue.anika.wolle.data.api.dto.AuditDetailEnvelopeDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.AuditPageDto
@@ -209,7 +209,10 @@ class HistoryPresentationTest {
         val media = AuditMediaDto(kind = "image", id = 3, name = "front.png", isImage = true)
         val e = event(2, "image_uploaded", hasChanges = false).copy(media = media)
         assertEquals(HistoryDetailBody.Media(media), historyDetailBody(e, null))
-        assertEquals(HistoryDetailBody.Media(media), historyDetailBody(e, HistoryDetailState.Failed))
+        assertEquals(
+            HistoryDetailBody.Media(media),
+            historyDetailBody(e, HistoryDetailState.Failed),
+        )
     }
 
     @Test

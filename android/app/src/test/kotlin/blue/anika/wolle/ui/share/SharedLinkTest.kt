@@ -65,7 +65,11 @@ class SharedLinkTest {
     fun `intake needs a text share`() {
         assertEquals(
             ShareIntake.Link("https://example.com/a"),
-            SharedLink.intake("android.intent.action.SEND", "text/plain", "T https://example.com/a"),
+            SharedLink.intake(
+                "android.intent.action.SEND",
+                "text/plain",
+                "T https://example.com/a",
+            ),
         )
         assertEquals(
             ShareIntake.NoLink,

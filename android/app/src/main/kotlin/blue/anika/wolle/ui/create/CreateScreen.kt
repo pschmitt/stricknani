@@ -50,8 +50,8 @@ import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.projects.ProjectImportDialog
-import blue.anika.wolle.ui.share.ShareImportKind
 import blue.anika.wolle.ui.projects.ProjectsListViewModel
+import blue.anika.wolle.ui.share.ShareImportKind
 import blue.anika.wolle.ui.yarns.YarnImportDialog
 import blue.anika.wolle.ui.yarns.YarnsListViewModel
 
@@ -135,7 +135,8 @@ fun CreateScreen(
 
     ProjectImportDialog(
         visible = showProjectImport,
-        initialUrl = initialImportUrl.takeIf { initialImportKind == ShareImportKind.Project }.orEmpty(),
+        initialUrl =
+            initialImportUrl.takeIf { initialImportKind == ShareImportKind.Project }.orEmpty(),
         state = projectImportState,
         availability = availability,
         onStart = projects::startImport,
@@ -151,7 +152,8 @@ fun CreateScreen(
     )
     YarnImportDialog(
         visible = showYarnImport,
-        initialUrl = initialImportUrl.takeIf { initialImportKind == ShareImportKind.Yarn }.orEmpty(),
+        initialUrl =
+            initialImportUrl.takeIf { initialImportKind == ShareImportKind.Yarn }.orEmpty(),
         state = yarnImportState,
         availability = availability,
         onStart = yarns::startImport,
