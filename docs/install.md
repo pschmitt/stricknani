@@ -7,11 +7,11 @@ snapshot importer is described in the [migration plan](rust-migration-plan.md).
 
 ## Container
 
-Requirements: Docker and a checkout of this branch. Build the image from the
+Requirements: Docker and a checkout of this repository. Build the image from the
 repository root and start it with a persistent data volume:
 
 ```sh
-docker build -t stricknani:rust .
+docker build -t stricknani .
 docker volume create stricknani-data
 docker run -d \
   --name stricknani \
@@ -20,7 +20,7 @@ docker run -d \
   -v stricknani-data:/var/lib/stricknani \
   -e TRUSTED_HOSTS=localhost,127.0.0.1 \
   -e SESSION_COOKIE_SECURE=false \
-  stricknani:rust
+  stricknani
 ```
 
 This example binds to loopback for local HTTP use. The container stores its
