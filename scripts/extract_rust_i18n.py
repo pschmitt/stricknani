@@ -12,7 +12,7 @@ from pathlib import Path
 from babel.messages.pofile import read_po, write_po
 
 ROOT = Path(__file__).resolve().parents[1]
-RUST_SOURCE = ROOT / "rust" / "src" / "web.rs"
+RUST_SOURCE = ROOT / "src" / "web.rs"
 POT_PATH = ROOT / "stricknani" / "locales" / "messages.pot"
 CALL = re.compile(
     r"\btr\s*\(\s*(?P<english>\"(?:\\.|[^\"\\])*\")\s*,\s*"
@@ -35,7 +35,7 @@ def rust_label_pairs(source: str) -> dict[str, str]:
     return messages
 
 
-def rust_source_files(source_dir: Path = ROOT / "rust" / "src") -> list[Path]:
+def rust_source_files(source_dir: Path = ROOT / "src") -> list[Path]:
     """Return source files in a stable order for complete Rust UI extraction."""
     return sorted(source_dir.rglob("*.rs"))
 

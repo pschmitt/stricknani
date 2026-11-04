@@ -10,7 +10,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Decoding of `rust/src/api_v2/sync.rs` bodies, v2 -> v1 mapping, paging loop, full resync. */
+/** Decoding of `src/api_v2/sync.rs` bodies, v2 -> v1 mapping, paging loop, full resync. */
 class SyncV2Test {
     private val json = Json {
         ignoreUnknownKeys = true

@@ -25,5 +25,5 @@ not an operating-system network or filesystem sandbox.
 The server binary must dispatch `document-worker` synchronously before creating a Tokio runtime,
 then call `document_worker::run_stdio()`. The module requires the Rustix `process` feature for
 resource limits and Tokio's `process` and `sync` features for child management and the concurrency
-semaphore. `rust/tests/document_worker.rs` exercises the actual CLI worker with a plain-text draft,
+semaphore. `tests/document_worker.rs` exercises the actual CLI worker with a plain-text draft,
 an invalid PDF, malformed JSON, oversized JSON, and an oversized document rejected by the parent.

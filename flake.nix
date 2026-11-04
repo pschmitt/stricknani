@@ -97,7 +97,7 @@
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
-              # Python tooling (scripts/, ci/, tests/)
+              # Python tooling (scripts/, ci/)
               ruff.enable = true;
               ruff-format.enable = true;
 

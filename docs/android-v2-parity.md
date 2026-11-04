@@ -1,14 +1,14 @@
 # Android and Rust server API v2 parity inventory
 
 Task T121.4 (contracts). Status as of the `rust` branch at `b9ffdbb`. This file compares
-what the Android app calls (or is prepared to call) with what `rust/src/api_v2/*.rs`
+what the Android app calls (or is prepared to call) with what `src/api_v2/*.rs`
 serves. It is an inventory, not a design: it changes no server or client code.
 
 - Android side: `android/app/src/main/kotlin/blue/anika/wolle/data/api/` (`v2/*`,
   `ApiCapabilities.kt`, `AdminApi.kt`, `HistoryApi.kt`, `SyncApi.kt`,
   `ProjectImportApi.kt`), `sync/WriteReplayWorker.kt`, and the onboarding classes.
-- Server side: `rust/src/api_v2/*.rs`.
-- Executable contract: `rust/tests/api_v2_client_contract.rs`. It drives the composed
+- Server side: `src/api_v2/*.rs`.
+- Executable contract: `tests/api_v2_client_contract.rs`. It drives the composed
   application with a Bearer PAT the way OkHttp does (no cookie, no `Origin`, no CSRF
   header) and decodes every response with a Rust copy of the Kotlin DTO rules
   (required keys, nullable keys, non-null lists with defaults).
@@ -64,7 +64,7 @@ Pinned by `meta_probe_reports_the_pat_owner_and_rejects_bad_bearers_without_cook
 ## Route inventory
 
 "Android" names the Retrofit method or class. "Server" is the handler module in
-`rust/src/api_v2/`.
+`src/api_v2/`.
 
 ### Capability probe, authentication
 

@@ -4,7 +4,14 @@ on:
   push:
     branches: [ main ]
     paths:
-      - "rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
       - "web/**"
       - "nix/**"
       - "flake.nix"
@@ -15,7 +22,14 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - "rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
       - "web/**"
       - "nix/**"
       - "flake.nix"

@@ -2,13 +2,13 @@
 
 Status: phase (a) implemented (2026-11-03): resource calls use v2 when `GET /api/v2/meta` with the
 Bearer token returns a user, else v1. Sync, token login and URL import are still v1. Server facts below were read from
-`rust/src/**` and `docs/web-v2-contract.md` in the `rust` branch (2026-11-03); the backend agent is
+`src/**` and `docs/web-v2-contract.md` in the `rust` branch (2026-11-03); the backend agent is
 still changing them, so re-check each slice before switching it.
 
 ## 0. Server state today
 
-- v1 (`/api/v1`, `rust/src/{projects,yarns,categories,sync,auth,media}.rs`) is Bearer-PAT only.
-- v2 resource routes (`rust/src/api_v2/*.rs`) use `browser_user`/`mutation_user`: a browser session
+- v1 (`/api/v1`, `src/{projects,yarns,categories,sync,auth,media}.rs`) is Bearer-PAT only.
+- v2 resource routes (`src/api_v2/*.rs`) use `browser_user`/`mutation_user`: a browser session
   cookie, plus `Origin` and `X-CSRF-Token` on writes. A `Bearer` header is not looked at. The only v2
   routes that accept a PAT are `/api/v2/admin/*` (already used by `AdminApi`).
 - v2 already exists for projects, yarns, categories, media upload/delete, favorites and deletes, but
@@ -31,7 +31,7 @@ still changing them, so re-check each slice before switching it.
 | Timestamps | `"2026-11-01T12:00:00.000000Z"` style strings (`created_at`, `updated_at`, `server_time`) | same strings, same struct (`ProjectResponse`) | none: `DateTimeUtils` already parses with/without offset. Echo `updated_at` back verbatim in `expected_updated_at` |
 | Media/thumbnail URLs | `/media/projects/{id}/{file}`, `/media/thumbnails/projects/{id}/thumb_{stem}.jpg`; same for yarns | identical (same `crate::media` serializers) | none. `MediaUrlResolver`/`MediaClient` unchanged. Media serving stays on `/media/...` with Bearer (v1-era route, not versioned) |
 | Markdown | raw Markdown only | raw plus server-sanitized `description_html`, `notes_html`, `other_materials_html`, step `description_html`, yarn `description_html`/`notes_html` | Ignored for now (the app renders Markdown itself, SNA-22/44). Possible later simplification |
-| Tags | tokenized: v1 splits on comma, `#`, whitespace, case-insensitive dedupe | **each array item is one verbatim label** (`TagPolicy::PreserveLabels`) | Behaviour change: "winter gift" stays one tag in v2 but becomes two in v1. Offline-created tags with spaces will show differently after the switch. Tag filter (`?tag=`) matching rules changed with it; verify against `rust/tests/api_v2_projects.rs` |
+| Tags | tokenized: v1 splits on comma, `#`, whitespace, case-insensitive dedupe | **each array item is one verbatim label** (`TagPolicy::PreserveLabels`) | Behaviour change: "winter gift" stays one tag in v2 but becomes two in v1. Offline-created tags with spaces will show differently after the switch. Tag filter (`?tag=`) matching rules changed with it; verify against `tests/api_v2_projects.rs` |
 | Favorite | `POST` / `DELETE .../favorite` | `PUT` / `DELETE .../favorite` | Different verb |
 | Update with images | `image_urls` allowed on update (import path) | update rejects non-empty `image_urls` (422 `image_urls`) | The app never sends `image_urls` on update (it uses multipart), verify `ProjectWriteRequest.imageUrls` stays empty on `updateProject` |
 | Nullability | `images`/`attachments` typed as arrays | arrays too (raw JSON values server-side, same shape) | none |

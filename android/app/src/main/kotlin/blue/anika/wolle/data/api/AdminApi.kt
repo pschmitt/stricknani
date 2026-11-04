@@ -15,7 +15,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-/** `rust/src/api_v2/{audit,admin}.rs` - administrator-only, online-only. */
+/** `src/api_v2/{audit,admin}.rs` - administrator-only, online-only. */
 interface AdminApi {
     /**
      * [entity] is `project`, `yarn` or `category`; null means all. Null query values are omitted.

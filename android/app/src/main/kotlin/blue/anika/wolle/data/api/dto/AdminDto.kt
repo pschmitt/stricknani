@@ -13,8 +13,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /*
- * Wire types for the administrator API (`rust/src/api_v2/{admin,audit}.rs`, structs in
- * `rust/src/{admin_service,audit_service}.rs`). The web client parses the same shapes in
+ * Wire types for the administrator API (`src/api_v2/{admin,audit}.rs`, structs in
+ * `src/{admin_service,audit_service}.rs`). The web client parses the same shapes in
  * `web/src/lib/features/admin/admin-api.ts`.
  */
 

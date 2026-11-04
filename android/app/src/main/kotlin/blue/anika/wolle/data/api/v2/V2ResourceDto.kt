@@ -7,7 +7,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /*
- * Wire shapes of `rust/src/api_v2/{projects,yarns}.rs`. Identical to v1 except for the added
+ * Wire shapes of `src/api_v2/{projects,yarns}.rs`. Identical to v1 except for the added
  * server-rendered `*_html` companions. The shapes that did not change are reused from the v1 DTOs
  * (`ImageDto`, `AttachmentDto`, `YarnPhotoDto`, `CategoryDto`, `ProjectListItemDto`,
  * `YarnListItemDto`, `ProjectWriteRequest`, `YarnWriteRequest`, `CategoryCreateRequest`,

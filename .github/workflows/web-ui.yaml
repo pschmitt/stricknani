@@ -7,17 +7,24 @@ on:
       - "web/**"
       - "nix/web-package.nix"
       - "nix/rust-package.nix"
-      - "rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
       - "ci/stricknani/**"
       - "stricknani/locales/**"
       - "scripts/generate_web_i18n.py"
-      - "tests/test_rust_e2e_seed.py"
-      - "tests/test_rust_fixture.py"
-      - "tests/test_web_i18n.py"
-      - "tests/test_web_ui_browser.py"
-      - "tests/test_web_accessibility_browser.py"
-      - "tests/test_web_pwa_browser.py"
-      - "tests/test_web_performance_browser.py"
+      - "ci/tests/test_rust_e2e_seed.py"
+      - "ci/tests/test_rust_fixture.py"
+      - "ci/tests/test_web_i18n.py"
+      - "ci/tests/test_web_ui_browser.py"
+      - "ci/tests/test_web_accessibility_browser.py"
+      - "ci/tests/test_web_pwa_browser.py"
+      - "ci/tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
       - "pyproject.toml"
       - "flake.nix"
@@ -29,17 +36,24 @@ on:
       - "web/**"
       - "nix/web-package.nix"
       - "nix/rust-package.nix"
-      - "rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
       - "ci/stricknani/**"
       - "stricknani/locales/**"
       - "scripts/generate_web_i18n.py"
-      - "tests/test_rust_e2e_seed.py"
-      - "tests/test_rust_fixture.py"
-      - "tests/test_web_i18n.py"
-      - "tests/test_web_ui_browser.py"
-      - "tests/test_web_accessibility_browser.py"
-      - "tests/test_web_pwa_browser.py"
-      - "tests/test_web_performance_browser.py"
+      - "ci/tests/test_rust_e2e_seed.py"
+      - "ci/tests/test_rust_fixture.py"
+      - "ci/tests/test_web_i18n.py"
+      - "ci/tests/test_web_ui_browser.py"
+      - "ci/tests/test_web_accessibility_browser.py"
+      - "ci/tests/test_web_pwa_browser.py"
+      - "ci/tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
       - "pyproject.toml"
       - "flake.nix"
@@ -93,8 +107,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      STRICKNANI_SERVER_BINARY: ${{ github.workspace }}/rust/target/debug/stricknani-server
-      STRICKNANI_FIXTURE_BINARY: ${{ github.workspace }}/rust/target/debug/examples/optional_browser_fixture
+      STRICKNANI_SERVER_BINARY: ${{ github.workspace }}/target/debug/stricknani-server
+      STRICKNANI_FIXTURE_BINARY: ${{ github.workspace }}/target/debug/examples/optional_browser_fixture
       STRICKNANI_WEB_ROOT: ${{ github.workspace }}/web/build
     steps:
       - uses: actions/checkout@v7
@@ -120,14 +134,12 @@ jobs:
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust -> target
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
       - name: Build server and dev-only fixture example
-        run: cargo build --locked --manifest-path rust/Cargo.toml --bin stricknani-server --example optional_browser_fixture
+        run: cargo build --locked --bin stricknani-server --example optional_browser_fixture
 
       - name: Run core browser journey with optional services disabled
         shell: bash

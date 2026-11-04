@@ -5,11 +5,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-/** `rust/src/api_v2/mod.rs`'s `Envelope<T>`: every v2 success body is `{ "data": ... }`. */
+/** `src/api_v2/mod.rs`'s `Envelope<T>`: every v2 success body is `{ "data": ... }`. */
 @Serializable data class V2Envelope<T>(val data: T)
 
 /**
- * `rust/src/api_v2/{projects,yarns}.rs`'s `ListEnvelope<T>`: `{ "data": [...], "meta": {...} }`.
+ * `src/api_v2/{projects,yarns}.rs`'s `ListEnvelope<T>`: `{ "data": [...], "meta": {...} }`.
  */
 @Serializable data class V2ListEnvelope<T>(val data: List<T>, val meta: V2PageMeta)
 

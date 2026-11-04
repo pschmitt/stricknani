@@ -64,7 +64,7 @@ changing component contracts:
 - Yarn cards reportedly use oversized no-photo placeholders and clip long
   names. Check both photo and no-photo cards in [ResourceCard.svelte](../web/src/lib/components/ResourceCard.svelte#L1).
 - The review reported imported yarn records named after needles, hooks and
-  buttons. Investigate classification in [import_service.rs](../rust/src/import_service.rs)
+  buttons. Investigate classification in [import_service.rs](../src/import_service.rs)
   and the source data before changing the model. The yarn detail's recommended
   needle field is a separate, legitimate field.
 - Login alignment and decorative contrast were reported; the review requested

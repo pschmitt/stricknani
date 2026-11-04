@@ -39,9 +39,9 @@ Bearer-authenticated API routes at `/api/v1/projects/{id}/archive` and
 `/api/v1/yarns/{id}/archive` return an accepted state. Browser routes require
 the application session and CSRF token, then redirect back to the entity.
 Disabled requests are rejected without enqueueing. The server polls one job
-every 30 seconds while the flag is enabled. `rust/tests/archive_service.rs`
+every 30 seconds while the flag is enabled. `tests/archive_service.rs`
 tests auth, CSRF, feature gating, foreign-owner denial, and idempotent enqueue;
-`rust/tests/archive_jobs.rs` uses fixture transports to cover persistence,
+`tests/archive_jobs.rs` uses fixture transports to cover persistence,
 recovery, retry bounds, stale entities and workers, and save/availability
 behavior without contacting the archive.
 

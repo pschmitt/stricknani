@@ -47,7 +47,7 @@ origin-relative registered project/yarn media paths only; foreign media is
 reported as missing. API requests require a bearer PAT. Browser requests require
 the application session and `X-CSRF-Token`. The `force` request field is accepted
 for compatibility, but there is no result cache yet, so every valid request runs
-recognition. `rust/tests/ocr_service.rs` covers auth/CSRF, owner checks, invalid
+recognition. `tests/ocr_service.rs` covers auth/CSRF, owner checks, invalid
 paths/languages, disabled behavior, and the 25 MiB request limit using fake
 transports. A bounded smoke request with the packaged Tesseract binary passed
 against a disposable fixture; the fixture was removed afterward. The Nix

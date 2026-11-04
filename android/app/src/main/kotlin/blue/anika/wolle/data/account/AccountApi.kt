@@ -16,7 +16,7 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 
 /**
- * `rust/src/api_v2/account.rs` (`docs/web-v2-contract.md`, "Bearer PAT access"): the account
+ * `src/api_v2/account.rs` (`docs/web-v2-contract.md`, "Bearer PAT access"): the account
  * self-service routes a bearer PAT may use. Servers without that change answer 401/404/405, which
  * [AccountRepository] maps to "feature unavailable".
  */

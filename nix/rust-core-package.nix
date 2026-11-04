@@ -9,7 +9,14 @@ let
   rustSource = lib.fileset.toSource {
     root = ../.;
     fileset = lib.fileset.unions [
-      ../rust
+      ../Cargo.toml
+      ../Cargo.lock
+      ../src
+      ../tests
+      ../migrations
+      ../templates
+      ../examples
+      ../locales
       ../web/static/manifest.webmanifest
       ../web/static/offline.html
       ../web/static/offline.css
@@ -22,8 +29,7 @@ rustPlatform.buildRustPackage {
   pname = "stricknani-server-core";
   version = "1.0.1";
   src = rustSource;
-  sourceRoot = "source/rust";
-  cargoLock.lockFile = "${rustSource}/rust/Cargo.lock";
+  cargoLock.lockFile = "${rustSource}/Cargo.lock";
 
   nativeCheckInputs = [
     rustfmt

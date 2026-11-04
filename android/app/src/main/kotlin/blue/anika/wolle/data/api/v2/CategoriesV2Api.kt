@@ -10,7 +10,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
-/** `rust/src/api_v2/categories.rs`. Not wired in yet - see [ProjectsV2Api]. */
+/** `src/api_v2/categories.rs`. Not wired in yet - see [ProjectsV2Api]. */
 interface CategoriesV2Api {
     @GET("api/v2/categories") suspend fun listCategories(): V2Envelope<List<CategoryDto>>
 

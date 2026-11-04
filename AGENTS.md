@@ -264,7 +264,7 @@ Use this file as the operational source of truth for working in Stricknani.
   There is no `vendir` and no vendored `static/` tree. After changing `web/package.json` or its
   lockfile, update `npmDepsHash` in `nix/web-package.nix`.
 - Old non-API page paths (`/projects`, `/login`, ...) only redirect to `/app/`; see
-  `rust/src/legacy_redirects.rs`. New pages belong in `web/`.
+  `src/legacy_redirects.rs`. New pages belong in `web/`.
 
 ### Translations (UI text)
 
@@ -273,7 +273,7 @@ Use this file as the operational source of truth for working in Stricknani.
   and nothing else lives in `stricknani/`. Moving the catalogs is a planned
   follow-up; do not move them as a drive-by.
 - Add new strings to both the `en` and `de` catalogs.
-- Rust UI text is `tr("English", "Deutsch")` calls in `rust/src/`; web UI text
+- Rust UI text is `tr("English", "Deutsch")` calls in `src/`; web UI text
   is `t()`/`msg()` calls in `web/src/`. Keep message IDs literal in each call.
   Branch between calls instead of passing a conditional key: the web extractor
   does not discover conditional first arguments. When moving labels into shared
@@ -284,14 +284,14 @@ Use this file as the operational source of truth for working in Stricknani.
   - `just i18n-compile`
   - `just i18n-check`
 - `just i18n-*` run the Python (Babel) generators under `scripts/` through
-  the Nix dev shell; they produce `rust/locales/messages.json` and
+  the Nix dev shell; they produce `locales/messages.json` and
   `web/static/messages.json`, which are committed with the `.po` files.
 
 ### Database Migrations
 
-- The Rust server owns its SQLite schema in `rust/migrations/`. Add a numbered
+- The Rust server owns its SQLite schema in `migrations/`. Add a numbered
   SQL migration for every schema change and cover it with a test in
-  `rust/tests/`.
+  `tests/`.
 - The legacy Python schema (Alembic, tag `v0.1.0`) only matters to the
   snapshot importer (`stricknani-server import-snapshot`); keep the importer and
   its fixtures working.
@@ -307,7 +307,7 @@ Use this file as the operational source of truth for working in Stricknani.
     `just rust-test` (`cargo test --all-targets`)
   - Web: `just web-check` (`svelte-check`, Prettier), `just web-test`
     (Vitest) and `just web-build`
-  - Python tooling (`scripts/`, `ci/`, `tests/`): `just lint-ruff`,
+  - Python tooling (`scripts/`, `ci/`): `just lint-ruff`,
     `just lint-mypy`, `just test-harness` (pytest)
   - Nix: `just lint-nix` (`statix check`); format Nix with `nixfmt`
   - i18n: `just i18n-check`
@@ -375,7 +375,7 @@ Use this file as the operational source of truth for working in Stricknani.
 The product is Rust, `web/` and `android/`. The Python left in the repository
 is development tooling: `scripts/` (i18n generators, `check_translations`,
 `todo.sh` and friends) and `ci/stricknani/` (Playwright browser harnesses,
-fixture runner, importer verifier), with their tests in `tests/`. It is
+fixture runner, importer verifier), with their tests in `ci/tests/`. It is
 provided by the Nix dev shells (`babel`, `pytest`, `mypy`, `playwright`, `ruff`,
 and the matching Playwright browsers); `pyproject.toml` only holds the ruff,
 mypy and pytest configuration.
@@ -395,6 +395,9 @@ expensive.
 
 ## Documentation Layout
 
+- Repository layout: the Rust server crate lives at the repository root (`Cargo.toml`, `src/`,
+  `tests/`, `migrations/`, `templates/`, `examples/`, `locales/`); `web/`, `android/`, `ci/`
+  and `scripts/` sit beside it. The Python tooling tests are in `ci/tests/`.
 - Operational rules: `AGENTS.md`
 - Work queue: `TODO.md`
 - User/developer runbook: `README.md`, `docs/install.md`, `docs/maintaining.md`

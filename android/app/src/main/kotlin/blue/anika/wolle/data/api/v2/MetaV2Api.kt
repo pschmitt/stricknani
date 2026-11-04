@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 
 /**
- * `rust/src/api_v2/meta.rs`: `GET /api/v2/meta` answers 200 for anyone. With a valid Bearer token
+ * `src/api_v2/meta.rs`: `GET /api/v2/meta` answers 200 for anyone. With a valid Bearer token
  * `data.user` is the token's owner; without one (or with a cookie-less request) `user` is null. An
  * invalid Bearer token is a 401.
  */

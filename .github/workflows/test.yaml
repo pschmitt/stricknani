@@ -4,12 +4,18 @@ on:
   push:
     branches: [ main, rust ]
     paths:
-      - "rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
       - "web/**"
       - "nix/**"
       - "ci/**"
       - "scripts/**"
-      - "tests/**"
       - "stricknani/locales/**"
       - "pyproject.toml"
       - "justfile"
@@ -19,12 +25,18 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - "rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
       - "web/**"
       - "nix/**"
       - "ci/**"
       - "scripts/**"
-      - "tests/**"
       - "stricknani/locales/**"
       - "pyproject.toml"
       - "justfile"

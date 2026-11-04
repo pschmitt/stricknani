@@ -27,7 +27,7 @@ branch.
 | --- | --- | --- |
 | Android APKs | Push to `main`, or a `v*` / `X.Y.Z` tag | A push moves the rolling `latest` prerelease (debug and release APKs). A tag publishes a permanent GitHub release with signed release APKs, `SHA256SUMS` and build provenance. |
 | Play Store bundle | A `vX.Y.Z` tag | A signed bundle goes to the internal and closed testing tracks. See [`android/docs/play-store-release.md`](../android/docs/play-store-release.md). |
-| Container image | Push to `main` that touches `rust/`, `web/`, `nix/`, the flake or the `Dockerfile` | The image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
+| Container image | Push to `main` that touches the crate (`src/`, `tests/`, `migrations/`, ...), `web/`, `nix/`, the flake or the `Dockerfile` | The image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
 
 To cut a release:
 
@@ -82,7 +82,7 @@ UI text lives in gettext catalogs for English and German:
 
 The catalogs still live under `stricknani/locales/` for historical reasons;
 nothing else remains in that directory. Add every new string to both. Rust UI
-labels are `tr("English", "Deutsch")` calls in `rust/src/`; the web UI uses
+labels are `tr("English", "Deutsch")` calls in `src/`; the web UI uses
 `t()` and `msg()` calls in `web/src/`. Keep message IDs literal there, because
 the extractor does not follow computed keys. Avoid apostrophes
 inside HTML comments; the extractor reads them as quotes. After a change, run
@@ -95,7 +95,7 @@ just i18n-compile    # compile .mo files, regenerate Rust and web catalogs
 just i18n-check      # fail on missing, fuzzy or stale catalogs
 ```
 
-`web/static/messages.json` and `rust/locales/messages.json` are generated;
+`web/static/messages.json` and `locales/messages.json` are generated;
 commit them with the `.po` files. The generators are Python (Babel), run from the
 Nix dev shell (`nix develop`).
 
@@ -110,12 +110,12 @@ After changing `web/package.json` or the lockfile, update `npmDepsHash` in
 nix run nixpkgs#prefetch-npm-deps web/package-lock.json
 ```
 
-Rust crates are locked in `rust/Cargo.lock`. Renovate opens the update pull
+Rust crates are locked in `Cargo.lock`. Renovate opens the update pull
 requests for all of the above.
 
 ## Database migrations
 
-The Rust server owns its SQLite schema in `rust/migrations/`; add a numbered
+The Rust server owns its SQLite schema in `migrations/`; add a numbered
 SQL file for every schema change and cover it with a test. The legacy Python
 app (tag `v0.1.0`) used Alembic; its schema only matters to the one-way
 `stricknani-server import-snapshot` command.

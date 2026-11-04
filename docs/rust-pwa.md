@@ -4,7 +4,7 @@ The installable app lives under `/app/`. The Rust server serves its worker, mani
 fallback and icons from the generated web build (`WEB_ROOT`) through `pwa::router_with_web_root()`:
 `/app/sw.js` (scope `/app/`), `/app/manifest.webmanifest`, `/app/offline.html`, `/app/offline.css`,
 `/app/offline-theme.js` and `/app/icons/*.png`. The worker policy lives in
-`web/static/service-worker.js`; `rust/tests/pwa.rs` verifies the routes, headers and scope.
+`web/static/service-worker.js`; `tests/pwa.rs` verifies the routes, headers and scope.
 
 ## Retired root worker
 

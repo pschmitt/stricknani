@@ -13,7 +13,7 @@ from scripts.extract_rust_i18n import ROOT, RUST_SOURCE, rust_label_pairs_for_tr
 
 LOCALES = ROOT / "stricknani" / "locales"
 GERMAN_PO = LOCALES / "de" / "LC_MESSAGES" / "messages.po"
-RUNTIME_CATALOG = ROOT / "rust" / "locales" / "messages.json"
+RUNTIME_CATALOG = ROOT / "locales" / "messages.json"
 
 
 def seed_german_catalog(

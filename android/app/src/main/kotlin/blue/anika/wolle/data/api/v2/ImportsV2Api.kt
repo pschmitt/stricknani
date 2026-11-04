@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import retrofit2.http.Body
 import retrofit2.http.POST
 
-/** `rust/src/api_v2/imports.rs`: JSON in, `{data:{draft:{...camelCase...}}}` out. */
+/** `src/api_v2/imports.rs`: JSON in, `{data:{draft:{...camelCase...}}}` out. */
 interface ImportsV2Api {
     @POST("api/v2/imports/preview")
     suspend fun previewImport(@Body request: ImportPreviewRequest): V2Envelope<ImportPreviewDto>

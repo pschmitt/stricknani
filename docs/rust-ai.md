@@ -1,6 +1,6 @@
 # Rust AI import client
 
-`rust/src/ai.rs` is a bounded, optional client for enhancing an already parsed
+`src/ai.rs` is a bounded, optional client for enhancing an already parsed
 project draft. It uses chat completions with JSON mode, which the Python import
 paths already use and which is supported by the OpenAI-compatible OpenAI,
 OpenRouter, and Groq chat endpoints. OpenAI recommends Structured Outputs when
@@ -70,7 +70,7 @@ failed AI. Callers must use that flag as the only source of an AI-enhanced marke
 
 ## Fixture acceptance cases
 
-`rust/tests/ai.rs` and `rust/tests/url_import.rs` use an injected transport or a
+`tests/ai.rs` and `tests/url_import.rs` use an injected transport or a
 loopback HTTP server only; no provider network or real
 credentials are involved. It covers disabled-key access, provider and key
 precedence, custom model selection, endpoint validation, request fields and

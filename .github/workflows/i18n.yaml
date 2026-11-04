@@ -5,12 +5,12 @@ on:
     branches: [ main, rust ]
     paths:
       - "stricknani/locales/**"
-      - "rust/src/**"
-      - "rust/locales/**"
+      - "src/**"
+      - "locales/**"
       - "web/**"
       - "scripts/**"
-      - "tests/test_web_i18n.py"
-      - "tests/test_rust_i18n.py"
+      - "ci/tests/test_web_i18n.py"
+      - "ci/tests/test_rust_i18n.py"
       - "babel.cfg"
       - "pyproject.toml"
       - "flake.nix"
@@ -21,12 +21,12 @@ on:
     branches: [ main ]
     paths:
       - "stricknani/locales/**"
-      - "rust/src/**"
-      - "rust/locales/**"
+      - "src/**"
+      - "locales/**"
       - "web/**"
       - "scripts/**"
-      - "tests/test_web_i18n.py"
-      - "tests/test_rust_i18n.py"
+      - "ci/tests/test_web_i18n.py"
+      - "ci/tests/test_rust_i18n.py"
       - "babel.cfg"
       - "pyproject.toml"
       - "flake.nix"

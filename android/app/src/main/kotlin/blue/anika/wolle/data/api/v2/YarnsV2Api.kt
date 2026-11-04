@@ -14,7 +14,7 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-/** `rust/src/api_v2/{yarns,media}.rs`. Not wired in yet - see [ProjectsV2Api]. */
+/** `src/api_v2/{yarns,media}.rs`. Not wired in yet - see [ProjectsV2Api]. */
 interface YarnsV2Api {
     @GET("api/v2/yarns")
     suspend fun listYarns(

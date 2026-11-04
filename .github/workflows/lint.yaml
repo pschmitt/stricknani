@@ -6,7 +6,6 @@ on:
     paths:
       - "ci/**"
       - "scripts/**"
-      - "tests/**"
       - "pyproject.toml"
       - "flake.nix"
       - "flake.lock"
@@ -17,7 +16,6 @@ on:
     paths:
       - "ci/**"
       - "scripts/**"
-      - "tests/**"
       - "pyproject.toml"
       - "flake.nix"
       - "flake.lock"

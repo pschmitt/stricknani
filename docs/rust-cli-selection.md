@@ -21,10 +21,10 @@ offers a browser or API workflow and where behavior is intentionally different.
 
 Rust command documentation is in `stricknani-server --help` and the
 [NixOS module guide](rust-nixos.md). The actual command dispatch is in
-[`rust/src/main.rs`](../rust/src/main.rs); command behavior tests are in
-[`rust/tests/cli.rs`](../rust/tests/cli.rs). Browser and API alternatives are
-implemented in [`rust/src/web.rs`](../rust/src/web.rs),
-[`rust/src/web_accounts.rs`](../rust/src/web_accounts.rs), and the versioned
+[`src/main.rs`](../src/main.rs); command behavior tests are in
+[`tests/cli.rs`](../tests/cli.rs). Browser and API alternatives are
+implemented in [`src/web.rs`](../src/web.rs),
+[`src/web_accounts.rs`](../src/web_accounts.rs), and the versioned
 domain routers.
 
 ## Scope and migration status

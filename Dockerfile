@@ -4,7 +4,13 @@ WORKDIR /src
 
 COPY flake.nix flake.lock ./
 COPY nix/ ./nix/
-COPY rust/ ./rust/
+COPY Cargo.toml Cargo.lock ./
+COPY src/ ./src/
+COPY tests/ ./tests/
+COPY migrations/ ./migrations/
+COPY templates/ ./templates/
+COPY examples/ ./examples/
+COPY locales/ ./locales/
 COPY web/ ./web/
 
 RUN nix --extra-experimental-features "nix-command flakes" build \

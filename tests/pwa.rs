@@ -68,22 +68,22 @@ async fn app_worker_and_offline_assets_are_explicit_app_scoped_public_routes() {
     .unwrap();
     fs::write(
         root.path().join("manifest.webmanifest"),
-        include_str!("../../web/static/manifest.webmanifest"),
+        include_str!("../web/static/manifest.webmanifest"),
     )
     .unwrap();
     fs::write(
         root.path().join("offline.html"),
-        include_str!("../../web/static/offline.html"),
+        include_str!("../web/static/offline.html"),
     )
     .unwrap();
     fs::write(
         root.path().join("offline.css"),
-        include_str!("../../web/static/offline.css"),
+        include_str!("../web/static/offline.css"),
     )
     .unwrap();
     fs::write(
         root.path().join("offline-theme.js"),
-        include_str!("../../web/static/offline-theme.js"),
+        include_str!("../web/static/offline-theme.js"),
     )
     .unwrap();
     fs::write(root.path().join("icons/icon-192.png"), b"png192").unwrap();
@@ -207,22 +207,22 @@ async fn app_worker_routes_coexist_with_the_frontend_shell_without_fallback_leak
     .unwrap();
     fs::write(
         root.path().join("manifest.webmanifest"),
-        include_str!("../../web/static/manifest.webmanifest"),
+        include_str!("../web/static/manifest.webmanifest"),
     )
     .unwrap();
     fs::write(
         root.path().join("offline.html"),
-        include_str!("../../web/static/offline.html"),
+        include_str!("../web/static/offline.html"),
     )
     .unwrap();
     fs::write(
         root.path().join("offline.css"),
-        include_str!("../../web/static/offline.css"),
+        include_str!("../web/static/offline.css"),
     )
     .unwrap();
     fs::write(
         root.path().join("offline-theme.js"),
-        include_str!("../../web/static/offline-theme.js"),
+        include_str!("../web/static/offline-theme.js"),
     )
     .unwrap();
     fs::write(root.path().join("icons/icon-192.png"), b"png192").unwrap();
@@ -255,7 +255,7 @@ async fn app_worker_routes_coexist_with_the_frontend_shell_without_fallback_leak
 
 #[test]
 fn app_worker_uses_per_tab_updates_and_retains_only_public_immutable_assets() {
-    let worker = include_str!("../../web/static/service-worker.js");
+    let worker = include_str!("../web/static/service-worker.js");
     let install = worker
         .split("self.addEventListener(\"install\"")
         .nth(1)

@@ -5,7 +5,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * `rust/src/api_v2/activity.rs`: the Home "Recent activity" feed. Online-only. A 404/405 means the
+ * `src/api_v2/activity.rs`: the Home "Recent activity" feed. Online-only. A 404/405 means the
  * server does not have the endpoint yet.
  */
 interface ActivityV2Api {

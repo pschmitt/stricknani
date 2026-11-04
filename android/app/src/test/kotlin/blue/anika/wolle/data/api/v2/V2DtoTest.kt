@@ -20,7 +20,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Parses sample JSON shaped like the Rust v2 serializers (`rust/src/api_v2/{projects,yarns,
+ * Parses sample JSON shaped like the Rust v2 serializers (`src/api_v2/{projects,yarns,
  * categories,media}.rs`, `docs/web-v2-contract.md`) and checks the v2 -> v1-domain mappers.
  */
 class V2DtoTest {

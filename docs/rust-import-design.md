@@ -1,6 +1,6 @@
 # Rust URL import foundation
 
-`rust/src/imports.rs` provides the bounded public-URL fetch layer used by the Android import
+`src/imports.rs` provides the bounded public-URL fetch layer used by the Android import
 endpoint, browser import preview, and create-time image import. The document parser runs through
 `document_worker`; `import_service` maps extracted drafts to Android responses and reviewable
 browser forms. Optional AI enhancement is wired through the same service when enabled and
@@ -38,10 +38,10 @@ transport/status failure instead of weakening its security policy.
 
 ## Testing
 
-`rust/tests/imports.rs` injects resolver and transport fixtures. It covers URL rejection,
+`tests/imports.rs` injects resolver and transport fixtures. It covers URL rejection,
 address ranges, mixed DNS answers, DNS pinning for redirects, redirect and body limits, error
 redaction, and the HTML/binary response boundary. These tests do not contact public hosts.
-`rust/tests/import_document.rs` covers structured HTML extraction, text and Markdown drafts,
+`tests/import_document.rs` covers structured HTML extraction, text and Markdown drafts,
 image metadata, digest shape, size limits, and malformed or unsupported input without network
 access.
 
@@ -113,11 +113,11 @@ fetch or database write; production wiring may enable it only through the explic
 `RUST_EXTERNAL_IMPORTS_ENABLED` setting. Tests inject an image fetcher and use in-memory SQLite and
 temporary media directories; they do not contact public hosts.
 
-`rust/tests/import_service.rs` covers bearer authorization, the disabled remote-URL path, browser
+`tests/import_service.rs` covers bearer authorization, the disabled remote-URL path, browser
 CSRF, text and AI previews, file parsing, AI provenance through creation, and bounded source text.
-`rust/tests/image_import.rs` covers safe fetch policy, best-effort create-time media import, exact
-byte deduplication, and media persistence with injected transports. `rust/tests/document_worker.rs`
-and `rust/tests/import_document.rs` exercise the isolated parser boundary and local formats. OCR
+`tests/image_import.rs` covers safe fetch policy, best-effort create-time media import, exact
+byte deduplication, and media persistence with injected transports. `tests/document_worker.rs`
+and `tests/import_document.rs` exercise the isolated parser boundary and local formats. OCR
 is a separate authorized-media utility at `/utils/ocr`; it is not automatically run during import.
 
 ## URL import pipeline
@@ -168,7 +168,7 @@ Fetch failures map to `import_blocked` (HTTP 401, 403, 429, 503 from the site),
 
 ### Tests
 
-`rust/tests/url_import.rs` runs golden fixtures from `rust/tests/fixtures/url_import/`: an English
+`tests/url_import.rs` runs golden fixtures from `tests/fixtures/url_import/`: an English
 JSON-LD shop, a German ISO-8859-1 microdata shop, a ProductGroup with `PropertyValue` specs, two
 DROPS layouts, a blog `HowTo`, and Ravelry pattern and yarn pages with their API JSON. They also
 cover AI merging against a scripted transport and a plain-HTTP OpenAI-compatible server. No test

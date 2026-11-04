@@ -42,10 +42,9 @@ def test_extracted_labels_have_german_catalog_entries() -> None:
     assert set(labels) <= translations.keys()
 
 
-def test_rust_source_scan_includes_account_ui() -> None:
-    sources = rust_source_files()
-    assert any(source.name == "web_accounts.rs" for source in sources)
-    assert "Account settings" in rust_label_pairs_for_tree()
+def test_rust_source_scan_covers_the_whole_source_tree() -> None:
+    names = {source.name for source in rust_source_files()}
+    assert {"web.rs", "lib.rs", "mod.rs"} <= names
 
 
 def test_cross_file_fallback_conflicts_are_rejected(tmp_path: Path) -> None:

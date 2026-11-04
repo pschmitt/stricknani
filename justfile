@@ -1,6 +1,6 @@
 # Stricknani justfile
 #
-# The product is the Rust server (rust/), the Svelte web app (web/) and the
+# The product is the Rust server (repository root), the Svelte web app (web/) and the
 # Android app (android/). The Python in this repository is development tooling
 # only: i18n catalog generators (scripts/) and browser/CI harnesses (ci/).
 #
@@ -30,9 +30,9 @@ run *args:
   set -euo pipefail
   : "${RUST_DATABASE_URL:?Set RUST_DATABASE_URL to a disposable Rust database}"
   : "${RUST_MEDIA_ROOT:?Set RUST_MEDIA_ROOT to a Rust-owned media directory}"
-  BIND_PORT="${BIND_PORT:-{{ dev_port }}}" cargo run --manifest-path rust/Cargo.toml -- serve {{ args }}
+  BIND_PORT="${BIND_PORT:-{{ dev_port }}}" cargo run -- serve {{ args }}
 
-# Lint the Python tooling (scripts/, ci/, tests/) and the Rust server's static
+# Lint the Python tooling (scripts/, ci/) and the Rust server's static
 # CSS. Rust, web and Nix lint recipes are `rust-lint`, `web-check` and
 # `lint-nix`.
 [group: 'lint']
@@ -89,7 +89,7 @@ fmt: fmt-ruff fmt-nix fmt-rust
 # build host described in AGENTS.md.
 [group: 'fmt']
 fmt-rust:
-  cargo fmt --manifest-path rust/Cargo.toml
+  cargo fmt
 
 [group: 'fmt']
 fmt-ruff:
@@ -138,13 +138,13 @@ test: rust-test test-harness
 # Run Rust tests on the remote build host described in AGENTS.md.
 [group: 'test']
 rust-test:
-  cargo test --manifest-path rust/Cargo.toml --all-targets
+  cargo test --all-targets
 
 # Validate Rust formatting and run strict Clippy on the remote build host.
 [group: 'lint']
 rust-lint:
-  cargo fmt --manifest-path rust/Cargo.toml --check
-  cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings
+  cargo fmt --check
+  cargo clippy --all-targets --all-features -- -D warnings
 
 # Run every repository check: Python tooling, Rust, web, Nix and i18n.
 check: lint lint-nix rust-lint test i18n-check web-check web-test web-build

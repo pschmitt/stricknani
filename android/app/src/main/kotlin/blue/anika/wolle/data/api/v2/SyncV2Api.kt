@@ -7,7 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * `rust/src/api_v2/sync.rs`. Query: `since` (a previous `server_time`, verbatim) or `cursor` (a
+ * `src/api_v2/sync.rs`. Query: `since` (a previous `server_time`, verbatim) or `cursor` (a
  * previous `next_cursor`), never both; `limit` 1..50 (default 50, and part of the cursor).
  * Categories sync the same way; servers without that route fall back to
  * [blue.anika.wolle.data.api.SyncApi].

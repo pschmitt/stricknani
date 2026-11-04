@@ -19,7 +19,7 @@ The event rolls back with the resource change. The helper has no free-form
 details field, so callers cannot persist imported notes, credentials, or request
 bodies as event details.
 
-`rust/tests/audit.rs` covers administrator access, filters, pagination,
+`tests/audit.rs` covers administrator access, filters, pagination,
 escaping, category and yarn mutation events, and the absence of events for
 duplicates, conflicts, or missing resources. The project and media integration
 tests exercise their respective domain paths. Imported Python audit rows remain
