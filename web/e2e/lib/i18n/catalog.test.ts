@@ -81,7 +81,8 @@ describe("PO writer", () => {
     );
     const out = renderPo(po);
     expect(out).toContain('#: a.svelte:2 a.svelte:10 b.svelte:2\nmsgid "X"');
-    expect(out.endsWith('#~ msgid "Old"\n#~ msgstr "Alt"\n\n')).toBe(true);
+    expect(out.endsWith('#~ msgid "Old"\n#~ msgstr "Alt"\n')).toBe(true);
+    expect(out.endsWith("\n\n")).toBe(false);
   });
 });
 

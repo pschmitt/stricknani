@@ -1143,7 +1143,9 @@ export function renderPo(
       out.push("\n");
     }
   }
-  return out.join("");
+  // Babel ends with a blank line; the repository's end-of-file-fixer hook keeps
+  // exactly one trailing newline, so match it rather than fight it on every edit.
+  return out.join("").replace(/\n+$/, "\n");
 }
 
 /**
