@@ -2901,15 +2901,19 @@ def run_acceptance(
                     and signup_data.get("is_admin") is False,
                     "signup returned an unexpected member account",
                 )
+                mark_stage("waiting for the new member to be signed in")
+                page.wait_for_url("**/app/projects", timeout=10_000)
+                page.locator(".app-shell").wait_for(state="visible")
+                page.set_viewport_size({"width": 1280, "height": 844})
                 _require(
-                    page.locator(".app-shell").count() == 0,
-                    "signup implicitly authenticated the new member",
+                    any(
+                        status == 200 and email == signup_email
+                        for status, email in session_identity_observations[
+                            sessions_before_signup:
+                        ]
+                    ),
+                    "registration did not sign the new member in",
                 )
-                page.wait_for_url("**/app/login?created=1")
-                page.get_by_text(
-                    "Your account is ready. Sign in with your email and password.",
-                    exact=True,
-                ).wait_for(state="visible")
                 _require(
                     any(
                         status == 200 and user_null and csrf
@@ -2919,6 +2923,11 @@ def run_acceptance(
                     ),
                     "signup did not refresh an anonymous session and CSRF token",
                 )
+                mark_stage("signing out before the duplicate registration check")
+                _open_account_from_profile(page)
+                _account_sign_out_button(page).click()
+                page.wait_for_url("**/app/login", timeout=10_000)
+                page.locator("#email").wait_for(state="visible")
                 page.goto(f"{origin}/app/signup", wait_until="networkidle")
                 page.locator("#signup-email").fill(signup_email)
                 page.locator("#signup-password").fill(signup_password)
@@ -2942,7 +2951,9 @@ def run_acceptance(
                     "a duplicate signup did not return the account conflict",
                 )
                 page.get_by_text(
-                    "An account already exists for this email.", exact=True
+                    "The account could not be created. If you already have one, "
+                    "sign in instead.",
+                    exact=True,
                 ).wait_for(state="visible")
                 page.goto(f"{origin}/app/login?created=1", wait_until="networkidle")
                 page.locator("#email").wait_for(state="visible")

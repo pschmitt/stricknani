@@ -8,6 +8,11 @@
   import SharedButton from "#lib/components/Button.svelte";
   import AuthFooter from "#lib/components/AuthFooter.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
+  import {
+    registrationOpen,
+    selfHostCardVisible,
+  } from "#lib/features/auth/registration-gate.ts";
+  import SelfHostCard from "#lib/components/SelfHostCard.svelte";
   import OidcSignIn from "#lib/features/auth/OidcSignIn.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session, signIn } from "#lib/session.svelte.ts";
@@ -143,13 +148,16 @@
         <OidcSignIn {locale} />
       </div>
 
-      {#if session.data?.capabilities.signup}
+      {#if registrationOpen(session)}
         <p class="auth-signup-link">
           {t("New to Stricknani?", locale)}
           <a href={resolve("/signup")}>{t("Create an account", locale)}</a>
         </p>
       {/if}
     </section>
+    {#if selfHostCardVisible(session)}
+      <SelfHostCard {locale} />
+    {/if}
     <AuthFooter />
   </div>
 </main>

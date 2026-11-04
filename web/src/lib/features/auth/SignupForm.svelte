@@ -6,10 +6,12 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import SharedButton from "#lib/components/Button.svelte";
   import { ApiError } from "#lib/api.ts";
+  import SelfHostCard from "#lib/components/SelfHostCard.svelte";
   import AuthFooter from "#lib/components/AuthFooter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { refreshSession, session } from "#lib/session.svelte.ts";
+  import { refreshSession, session, signIn } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
+  import { registrationOpen, selfHostCardVisible } from "./registration-gate";
   import { createAccount } from "./signup-api";
 
   let email = $state("");
@@ -22,11 +24,7 @@
   let controller: AbortController | undefined;
 
   const locale = $derived(session.data?.locale ?? "en");
-  const enabled = $derived(
-    session.status === "ready" &&
-      session.data?.user === null &&
-      session.data.capabilities.signup,
-  );
+  const enabled = $derived(registrationOpen(session));
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
@@ -67,8 +65,11 @@
   function errorCopy(error: unknown): string {
     if (!(error instanceof ApiError))
       return t("The account could not be created. Try again.", locale);
-    if (error.code === "account_exists")
-      return t("An account already exists for this email.", locale);
+    if (error.code === "registration_failed")
+      return t(
+        "The account could not be created. If you already have one, sign in instead.",
+        locale,
+      );
     if (error.code === "signup_disabled")
       return t("Account registration is unavailable.", locale);
     if (error.code === "rate_limited")
@@ -109,12 +110,20 @@
       );
       if (!isCurrent(requestGeneration, csrfToken)) return;
 
+      const credentials = { email: email.trim(), password };
       password = "";
       confirmation = "";
       submitting = false;
-      const bootstrap = refreshSession();
-      await goto(`${resolve("/login")}?created=1`, { replaceState: true });
-      await bootstrap;
+      // Sign-up clears the pre-auth CSRF cookie, so bootstrap a fresh one and
+      // sign the new member in. If that fails, the sign-in page still says the
+      // account is ready.
+      await refreshSession();
+      try {
+        await signIn(credentials.email, credentials.password);
+        await goto(resolve("/projects"), { replaceState: true });
+      } catch {
+        await goto(`${resolve("/login")}?created=1`, { replaceState: true });
+      }
     } catch (error) {
       if (!isCurrent(requestGeneration, csrfToken)) return;
       if (error instanceof ApiError && error.fields) {
@@ -273,6 +282,9 @@
       </p>
     {/if}
   </section>
+  {#if selfHostCardVisible(session)}
+    <SelfHostCard {locale} />
+  {/if}
   <AuthFooter class="signup-footer" />
 </div>
 

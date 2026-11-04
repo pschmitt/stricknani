@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-04 09:43+0100\n"
+"POT-Creation-Date: 2026-11-04 09:59+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -239,10 +239,10 @@ msgid "Gauge calculator"
 msgstr "Maschenprobe berechnen"
 
 #: rust/src/web.rs:2160 rust/src/web_signup.rs:276
-#: web/src/lib/components/SignInForm.svelte:53
-#: web/src/lib/components/SignInForm.svelte:64
-#: web/src/lib/components/SignInForm.svelte:138
-#: web/src/lib/features/auth/SignupForm.svelte:272
+#: web/src/lib/components/SignInForm.svelte:58
+#: web/src/lib/components/SignInForm.svelte:69
+#: web/src/lib/components/SignInForm.svelte:143
+#: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:149
 #: web/src/lib/features/projects/ProjectEditor.svelte:1115
 #: web/src/routes/+layout.svelte:179 web/src/routes/login/+page.svelte:8
@@ -250,24 +250,24 @@ msgid "Sign in"
 msgstr "Anmelden"
 
 #: rust/src/web.rs:2161 rust/src/web_accounts.rs:864 rust/src/web_signup.rs:272
-#: web/src/lib/components/SignInForm.svelte:149
-#: web/src/lib/features/auth/SignupForm.svelte:147
-#: web/src/lib/features/auth/SignupForm.svelte:176
+#: web/src/lib/components/SignInForm.svelte:154
+#: web/src/lib/features/auth/SignupForm.svelte:156
+#: web/src/lib/features/auth/SignupForm.svelte:185
 msgid "Create an account"
 msgstr "Konto erstellen"
 
 #: rust/src/web.rs:2163 rust/src/web_accounts.rs:852 rust/src/web_signup.rs:273
-#: web/src/lib/components/SignInForm.svelte:99
+#: web/src/lib/components/SignInForm.svelte:104
 #: web/src/lib/features/admin/AdminUsers.svelte:613
-#: web/src/lib/features/auth/SignupForm.svelte:186
+#: web/src/lib/features/auth/SignupForm.svelte:195
 msgid "Email"
 msgstr "E-Mail"
 
 #: rust/src/web.rs:2164 rust/src/web_signup.rs:274
-#: web/src/lib/components/SignInForm.svelte:114
+#: web/src/lib/components/SignInForm.svelte:119
 #: web/src/lib/features/account/AccountSettings.svelte:1005
 #: web/src/lib/features/auth/ReauthDialog.svelte:149
-#: web/src/lib/features/auth/SignupForm.svelte:207
+#: web/src/lib/features/auth/SignupForm.svelte:216
 msgid "Password"
 msgstr "Passwort"
 
@@ -665,7 +665,7 @@ msgstr "Ziel"
 msgid "No audit events found."
 msgstr "Keine Audit-Einträge gefunden."
 
-#: rust/src/web_signup.rs:275 web/src/lib/features/auth/SignupForm.svelte:264
+#: rust/src/web_signup.rs:275 web/src/lib/features/auth/SignupForm.svelte:273
 msgid "Create account"
 msgstr "Konto erstellen"
 
@@ -710,7 +710,7 @@ msgstr ""
 msgid "A newer version was saved"
 msgstr "Eine neuere Version wurde gespeichert"
 
-#: web/src/lib/features/auth/SignupForm.svelte:174
+#: web/src/lib/features/auth/SignupForm.svelte:183
 msgid "A place for your projects and yarn."
 msgstr "Ein Ort für deine Projekte und deine Wolle."
 
@@ -780,12 +780,12 @@ msgstr ""
 "Kontoinformationen: deine E-Mail-Adresse, ein Passwort-Hash und der "
 "Kontozustand, etwa deine Rolle und ob das Konto aktiv ist."
 
-#: web/src/lib/features/auth/SignupForm.svelte:151
+#: web/src/lib/features/auth/SignupForm.svelte:160
 msgid "Account registration"
 msgstr "Konto erstellen"
 
-#: web/src/lib/features/auth/SignupForm.svelte:73
-#: web/src/lib/features/auth/SignupForm.svelte:162
+#: web/src/lib/features/auth/SignupForm.svelte:74
+#: web/src/lib/features/auth/SignupForm.svelte:171
 msgid "Account registration is unavailable."
 msgstr "Die Registrierung ist nicht verfügbar."
 
@@ -939,13 +939,9 @@ msgstr "Danach"
 msgid "All categories"
 msgstr "Alle Kategorien"
 
-#: web/src/lib/features/auth/SignupForm.svelte:271
+#: web/src/lib/features/auth/SignupForm.svelte:280
 msgid "Already have an account?"
 msgstr "Hast du bereits ein Konto?"
-
-#: web/src/lib/features/auth/SignupForm.svelte:71
-msgid "An account already exists for this email."
-msgstr "Für diese E-Mail-Adresse gibt es bereits ein Konto."
 
 #: web/src/lib/features/admin/AdminUsers.svelte:204
 msgid "An account with that email already exists."
@@ -1049,7 +1045,7 @@ msgstr "KI bitten, die Extraktion zu verbessern"
 msgid "Ask an administrator if you need access."
 msgstr "Wende dich an die Administration, wenn du Zugriff benötigst."
 
-#: web/src/lib/features/auth/SignupForm.svelte:164
+#: web/src/lib/features/auth/SignupForm.svelte:173
 msgid "Ask your server administrator if you need an account."
 msgstr "Wende dich an die Serververwaltung, wenn du ein Konto benötigst."
 
@@ -1128,7 +1124,7 @@ msgstr "Zurück zu Mehr"
 msgid "Back to projects"
 msgstr "Zurück zu Projekten"
 
-#: web/src/lib/features/auth/SignupForm.svelte:169
+#: web/src/lib/features/auth/SignupForm.svelte:178
 #: web/src/routes/about/+page.svelte:206 web/src/routes/privacy/+page.svelte:20
 msgid "Back to sign in"
 msgstr "Zurück zur Anmeldung"
@@ -1265,9 +1261,9 @@ msgstr "Archivstatus erneut prüfen"
 
 #: web/src/lib/api.ts:295
 #: web/src/lib/features/account/AccountSettings.svelte:755
+#: web/src/lib/features/auth/SignupForm.svelte:59
 #: web/src/lib/features/auth/SignupForm.svelte:61
-#: web/src/lib/features/auth/SignupForm.svelte:63
-#: web/src/lib/features/auth/SignupForm.svelte:125
+#: web/src/lib/features/auth/SignupForm.svelte:134
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:181
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:210
 #: web/src/lib/features/projects/ProjectEditor.svelte:668
@@ -1301,8 +1297,8 @@ msgid "Choose a less common password."
 msgstr "Wähle ein Passwort, das nicht häufig verwendet wird."
 
 #: web/src/lib/features/account/AccountSettings.svelte:668
-#: web/src/lib/features/auth/SignupForm.svelte:51
-#: web/src/lib/features/auth/SignupForm.svelte:55
+#: web/src/lib/features/auth/SignupForm.svelte:49
+#: web/src/lib/features/auth/SignupForm.svelte:53
 msgid "Choose a password that is not commonly used."
 msgstr "Wähle ein Passwort, das nicht häufig verwendet wird."
 
@@ -1330,7 +1326,7 @@ msgstr "Gib eine gültige Seitennummer ein."
 msgid "Choose a yarn photo"
 msgstr "Garnfoto auswählen"
 
-#: web/src/lib/features/auth/SignupForm.svelte:178
+#: web/src/lib/features/auth/SignupForm.svelte:187
 msgid "Choose an email and a strong password to get started."
 msgstr "Wähle eine E-Mail-Adresse und ein sicheres Passwort."
 
@@ -1408,7 +1404,7 @@ msgstr "Bestätige, dass du es bist, um fortzufahren."
 msgid "Confirm new password"
 msgstr "Neues Passwort bestätigen"
 
-#: web/src/lib/features/auth/SignupForm.svelte:231
+#: web/src/lib/features/auth/SignupForm.svelte:240
 msgid "Confirm password"
 msgstr "Passwort bestätigen"
 
@@ -1440,6 +1436,11 @@ msgstr "Verknüpfung fortsetzen"
 msgid "Continue unlinking"
 msgstr "Trennen fortsetzen"
 
+#: web/src/lib/components/SelfHostCard.svelte:61
+#, fuzzy
+msgid "Copied."
+msgstr "Link kopiert."
+
 #: web/src/routes/about/+page.svelte:278
 msgid "Copied. Paste it into your bug report."
 msgstr "Kopiert. Füge es in deinen Fehlerbericht ein."
@@ -1447,6 +1448,15 @@ msgstr "Kopiert. Füge es in deinen Fehlerbericht ein."
 #: web/src/routes/about/+page.svelte:274
 msgid "Copy"
 msgstr "Kopieren"
+
+#: web/src/lib/components/SelfHostCard.svelte:61
+#, fuzzy
+msgid "Copy failed. Select the text instead."
+msgstr "Das Kopieren wurde blockiert. Markiere und kopiere das Token manuell."
+
+#: web/src/lib/components/SelfHostCard.svelte:58
+msgid "Copy prompt"
+msgstr ""
 
 #: web/src/lib/features/media/OcrControl.svelte:227
 msgid "Copy recognized text"
@@ -1519,7 +1529,7 @@ msgstr ""
 msgid "Create your first project"
 msgstr "Lege dein erstes Projekt an"
 
-#: web/src/lib/features/auth/SignupForm.svelte:260
+#: web/src/lib/features/auth/SignupForm.svelte:269
 msgid "Creating account…"
 msgstr "Konto wird erstellt …"
 
@@ -1749,7 +1759,7 @@ msgstr "Gib eine gültige HTTP- oder HTTPS-Adresse ein."
 
 #: web/src/lib/features/admin/AdminUsers.svelte:197
 #: web/src/lib/features/admin/AdminUsers.svelte:380
-#: web/src/lib/features/auth/SignupForm.svelte:45
+#: web/src/lib/features/auth/SignupForm.svelte:43
 msgid "Enter a valid email address."
 msgstr "Gib eine gültige E-Mail-Adresse ein."
 
@@ -1969,7 +1979,7 @@ msgstr "Höhe"
 msgid "Hello there!"
 msgstr "Halöööööle!"
 
-#: web/src/lib/components/SignInForm.svelte:62
+#: web/src/lib/components/SignInForm.svelte:67
 msgid "Hello, knitter!"
 msgstr "Hallo, Strickfreund!"
 
@@ -2510,7 +2520,7 @@ msgstr "Neues Projekt"
 msgid "New temporary password"
 msgstr "Neues temporäres Passwort"
 
-#: web/src/lib/components/SignInForm.svelte:148
+#: web/src/lib/components/SignInForm.svelte:153
 msgid "New to Stricknani?"
 msgstr "Neu bei Stricknani?"
 
@@ -2774,7 +2784,7 @@ msgstr "Originalanleitung öffnen"
 msgid "Open project photo"
 msgstr "Projektfoto öffnen"
 
-#: web/src/lib/features/auth/SignupForm.svelte:158
+#: web/src/lib/features/auth/SignupForm.svelte:167
 #: web/src/routes/login/+page.svelte:15
 msgid "Open projects"
 msgstr "Projekte öffnen"
@@ -2783,7 +2793,7 @@ msgstr "Projekte öffnen"
 msgid "Open step photo"
 msgstr "Schrittfoto öffnen"
 
-#: web/src/lib/features/auth/SignupForm.svelte:154
+#: web/src/lib/features/auth/SignupForm.svelte:163
 #: web/src/routes/login/+page.svelte:13
 msgid "Open your project library to continue."
 msgstr "Öffne deine Projektübersicht, um weiterzumachen."
@@ -2859,8 +2869,8 @@ msgid "Password sign-in is not enabled for your account."
 msgstr "Die Anmeldung mit Passwort ist für dein Konto nicht aktiviert."
 
 #: web/src/lib/features/account/AccountSettings.svelte:635
-#: web/src/lib/features/auth/SignupForm.svelte:46
-#: web/src/lib/features/auth/SignupForm.svelte:92
+#: web/src/lib/features/auth/SignupForm.svelte:44
+#: web/src/lib/features/auth/SignupForm.svelte:93
 msgid "Passwords must be 1024 bytes or fewer."
 msgstr "Passwörter dürfen höchstens 1024 Bytes lang sein."
 
@@ -2875,6 +2885,10 @@ msgstr "Text einfügen"
 #: web/src/lib/features/imports/ImportWorkbench.svelte:169
 msgid "Paste text to preview."
 msgstr "Füge Text für die Vorschau ein."
+
+#: web/src/lib/components/SelfHostCard.svelte:49
+msgid "Paste this into Claude Code, Codex or opencode. The prompt is in English."
+msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1346
 msgid "Pattern"
@@ -2952,7 +2966,7 @@ msgstr "Foto hochgeladen."
 msgid "Photo {position} of {total}"
 msgstr "Foto {position} von {total}"
 
-#: web/src/lib/components/SignInForm.svelte:66
+#: web/src/lib/components/SignInForm.svelte:71
 msgid "Pick up where you left off."
 msgstr "Mach dort weiter, wo du aufgehört hast."
 
@@ -3231,6 +3245,12 @@ msgstr "Aufgezeichnete Änderungen"
 #: web/src/lib/features/history/change-format.ts:135
 msgid "Recorded field"
 msgstr "Aufgezeichnetes Feld"
+
+#: web/src/lib/components/SelfHostCard.svelte:34
+msgid ""
+"Registrations are closed here, but you can set up your own private "
+"Stricknani!"
+msgstr ""
 
 #: web/src/lib/components/PwaUpdate.svelte:121
 msgid "Reload"
@@ -3543,6 +3563,10 @@ msgstr "Serverversion"
 msgid "Service worker"
 msgstr "Service Worker"
 
+#: web/src/lib/components/SelfHostCard.svelte:47
+msgid "Set it up with an AI coding agent"
+msgstr ""
+
 #: web/src/lib/components/ShareMenuItem.svelte:46
 msgid "Share"
 msgstr "Teilen"
@@ -3575,7 +3599,7 @@ msgstr "Ältere Änderungen anzeigen"
 msgid "Show recorded changes"
 msgstr "Aufgezeichnete Änderungen anzeigen"
 
-#: web/src/lib/components/SignInForm.svelte:45
+#: web/src/lib/components/SignInForm.svelte:50
 msgid "Sign in failed."
 msgstr "Anmeldung fehlgeschlagen."
 
@@ -3632,7 +3656,7 @@ msgstr "Anmeldung und Sicherheit"
 msgid "Signing in with {name} did not work. Try again."
 msgstr "Die Anmeldung mit {name} hat nicht geklappt. Versuche es noch einmal."
 
-#: web/src/lib/components/SignInForm.svelte:135
+#: web/src/lib/components/SignInForm.svelte:140
 msgid "Signing in…"
 msgstr "Anmeldung läuft …"
 
@@ -3836,6 +3860,11 @@ msgstr ""
 " Seite beschreibt das Standardverhalten der Software und ist keine "
 "Zusicherung für jede Bereitstellung."
 
+#: web/src/lib/components/SelfHostCard.svelte:44
+#, fuzzy
+msgid "Stricknani on GitHub"
+msgstr "Auf GitHub unterstützen"
+
 #: web/src/routes/privacy/+page.svelte:209
 msgid ""
 "Stricknani uses password hashing, access checks, CSRF protection, upload "
@@ -4006,7 +4035,14 @@ msgid "The Gravatar setting could not be saved."
 msgstr "Die Gravatar-Einstellung konnte nicht gespeichert werden."
 
 #: web/src/lib/features/auth/SignupForm.svelte:69
-#: web/src/lib/features/auth/SignupForm.svelte:78
+#, fuzzy
+msgid ""
+"The account could not be created. If you already have one, sign in "
+"instead."
+msgstr "Das Konto konnte nicht erstellt werden. Bitte versuche es erneut."
+
+#: web/src/lib/features/auth/SignupForm.svelte:67
+#: web/src/lib/features/auth/SignupForm.svelte:79
 msgid "The account could not be created. Try again."
 msgstr "Das Konto konnte nicht erstellt werden. Bitte versuche es erneut."
 
@@ -4145,7 +4181,7 @@ msgstr "Das Passwort konnte nicht zurückgesetzt werden."
 msgid "The password is too long."
 msgstr "Das Passwort ist zu lang."
 
-#: web/src/lib/features/auth/SignupForm.svelte:87
+#: web/src/lib/features/auth/SignupForm.svelte:88
 msgid "The passwords do not match."
 msgstr "Die Passwörter stimmen nicht überein."
 
@@ -4621,7 +4657,7 @@ msgstr "Zu viele Anfragen. Bitte in {seconds} Sekunden erneut versuchen."
 msgid "Too many requests. Wait a moment, then try again."
 msgstr "Zu viele Anfragen. Warte kurz und versuche es erneut."
 
-#: web/src/lib/features/auth/SignupForm.svelte:75
+#: web/src/lib/features/auth/SignupForm.svelte:76
 msgid "Too many sign-up attempts. Try again later."
 msgstr "Zu viele Registrierungsversuche. Bitte versuche es später erneut."
 
@@ -4776,11 +4812,11 @@ msgstr ""
 msgid "Use at least 12 characters for your new password."
 msgstr "Dein neues Passwort muss mindestens 12 Zeichen lang sein."
 
-#: web/src/lib/features/auth/SignupForm.svelte:50
+#: web/src/lib/features/auth/SignupForm.svelte:48
 msgid "Use at least 12 characters."
 msgstr "Verwende mindestens 12 Zeichen."
 
-#: web/src/lib/features/auth/SignupForm.svelte:223
+#: web/src/lib/features/auth/SignupForm.svelte:232
 msgid "Use at least 12 characters. Avoid common passwords."
 msgstr "Verwende mindestens 12 Zeichen und kein häufig verwendetes Passwort."
 
@@ -5005,7 +5041,7 @@ msgstr "Du"
 msgid "You added files to {name}"
 msgstr "Du hast Dateien zu {name} hinzugefügt"
 
-#: web/src/lib/features/auth/SignupForm.svelte:153
+#: web/src/lib/features/auth/SignupForm.svelte:162
 #: web/src/routes/login/+page.svelte:12
 msgid "You are already signed in."
 msgstr "Du bist bereits angemeldet."
@@ -5125,7 +5161,7 @@ msgstr ""
 msgid "Your account details could not be loaded."
 msgstr "Deine Kontodaten konnten nicht geladen werden."
 
-#: web/src/lib/components/SignInForm.svelte:77
+#: web/src/lib/components/SignInForm.svelte:82
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 "Dein Konto ist bereit. Melde dich mit deiner E-Mail-Adresse und deinem "
@@ -5188,7 +5224,7 @@ msgstr ""
 "Die Sitzungsprüfung ist fehlgeschlagen. Lade die Seite neu und versuche "
 "es erneut."
 
-#: web/src/lib/components/SignInForm.svelte:71
+#: web/src/lib/components/SignInForm.svelte:76
 msgid "Your session expired. Sign in again to continue."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an, um fortzufahren."
 
@@ -5206,7 +5242,7 @@ msgstr "Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es erneut.
 msgid "Your session has expired. Sign in again."
 msgstr "Deine Sitzung ist abgelaufen. Melde dich erneut an."
 
-#: web/src/lib/features/auth/SignupForm.svelte:77
+#: web/src/lib/features/auth/SignupForm.svelte:78
 msgid "Your sign-up session expired. Refresh and try again."
 msgstr ""
 "Deine Registrierungssitzung ist abgelaufen. Lade die Seite neu und "
@@ -5435,4 +5471,7 @@ msgstr "{n} weitere"
 
 #~ msgid "Your workspace is waiting online."
 #~ msgstr "Dein Arbeitsbereich ist online wieder da."
+
+#~ msgid "An account already exists for this email."
+#~ msgstr "Für diese E-Mail-Adresse gibt es bereits ein Konto."
 
