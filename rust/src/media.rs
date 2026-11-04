@@ -3552,3 +3552,24 @@ async fn remove_path_safe(root: &Path, path: &Path) -> Result<(), std::io::Error
 async fn remove_path_unchecked(path: &Path) {
     let _ = tokio::fs::remove_file(path).await;
 }
+
+#[cfg(test)]
+mod admin_avatar_url_tests {
+    use super::admin_avatar;
+
+    #[test]
+    fn admin_avatar_url_shapes_match_the_web_contract() {
+        let gravatar = admin_avatar(7, None, true, true).map(|(url, _)| url);
+        assert_eq!(
+            gravatar.as_deref(),
+            Some("/api/v2/admin/users/7/avatar/gravatar")
+        );
+        assert!(admin_avatar(7, None, false, true).is_none());
+        assert!(admin_avatar(7, None, true, false).is_none());
+        let upload = admin_avatar(7, Some("0123456789abcdef0123456789abcdef.png"), true, true)
+            .map(|(url, _)| url)
+            .expect("upload url");
+        assert!(upload.starts_with("/api/v2/admin/users/7/avatar/thumb_"));
+        assert!(upload.ends_with(".jpg"));
+    }
+}

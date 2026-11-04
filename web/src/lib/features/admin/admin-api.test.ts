@@ -145,6 +145,56 @@ describe("administrator API", () => {
     ).rejects.toMatchObject({ code: "invalid_response" });
   });
 
+  it("accepts the server-fetched Gravatar route for users and audit actors", async () => {
+    const gravatar = "/api/v2/admin/users/7/avatar/gravatar";
+    const event = {
+      id: 9,
+      actor_email: "member@example.invalid",
+      actor_avatar_url: gravatar,
+      legacy_actor_user_id: null,
+      entity_type: "project",
+      entity_id: 3,
+      action: "created",
+      created_at: "2026-11-01T12:00:00Z",
+      resource: projectResource(3),
+      has_changes: true,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json({
+            data: [{ ...user, avatar_url: gravatar }],
+            meta: { page: 1, per_page: 50, has_more: false },
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            data: [event],
+            meta: { page: 1, per_page: 50, has_more: false },
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            data: [
+              { ...user, avatar_url: "/api/v2/admin/users/8/avatar/other" },
+            ],
+            meta: { page: 1, per_page: 50, has_more: false },
+          }),
+        ),
+    );
+    await expect(listAdminUsers(1)).resolves.toMatchObject({
+      data: [{ avatar_url: gravatar }],
+    });
+    await expect(
+      listAuditEvents({ page: 1, entity: "all", action: "" }),
+    ).resolves.toMatchObject({ data: [event] });
+    await expect(listAdminUsers(1)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+  });
+
   it("binds audit preview URLs to a live resource and media namespace", async () => {
     const event = {
       id: 5,

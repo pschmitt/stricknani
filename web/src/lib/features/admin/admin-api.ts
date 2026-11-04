@@ -104,7 +104,7 @@ const safeInteger = (value: unknown): value is number =>
   Number.isSafeInteger(value);
 
 const adminAvatarPattern =
-  /^\/api\/v2\/admin\/users\/(\d+)\/avatar\/thumb_[A-Za-z0-9._-]+\.jpg$/;
+  /^\/api\/v2\/admin\/users\/(\d+)\/avatar\/(?:thumb_[A-Za-z0-9._-]+\.jpg|gravatar)$/;
 
 function validAdminAvatarUrl(
   value: unknown,
