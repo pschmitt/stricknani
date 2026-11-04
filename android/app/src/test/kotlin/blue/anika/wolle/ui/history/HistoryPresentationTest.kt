@@ -226,6 +226,15 @@ class HistoryPresentationTest {
     }
 
     @Test
+    fun `a snapshot that was never recorded reads as no details`() {
+        val e = event(5)
+        assertEquals(
+            HistoryDetailBody.NoDetails,
+            historyDetailBody(e, loaded(e, null, "not_recorded")),
+        )
+    }
+
+    @Test
     fun `an unavailable snapshot keeps its reason`() {
         val e = event(4)
         assertEquals(

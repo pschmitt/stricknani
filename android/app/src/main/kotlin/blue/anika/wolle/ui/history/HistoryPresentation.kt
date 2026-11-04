@@ -162,7 +162,7 @@ sealed interface HistoryDetailBody {
     /** Recorded field changes; an empty list reads "No changes". */
     data class Changes(val items: List<ChangeItemDto>) : HistoryDetailBody
 
-    /** The snapshot cannot be shown (`not_recorded`, `too_large`, `malformed` or unknown). */
+    /** The snapshot cannot be shown (`too_large`, `malformed` or unknown; `not_recorded` is [NoDetails]). */
     data class Unavailable(val reason: String?) : HistoryDetailBody
 }
 
@@ -181,6 +181,8 @@ fun historyDetailBody(event: AuditEventDto, detail: HistoryDetailState?): Histor
         HistoryDetailState.Failed -> HistoryDetailBody.Failed
         is HistoryDetailState.Loaded ->
             detail.detail.changes?.let { HistoryDetailBody.Changes(it.items) }
-                ?: HistoryDetailBody.Unavailable(detail.detail.unavailableReason)
+                ?: if (detail.detail.unavailableReason == "not_recorded")
+                    HistoryDetailBody.NoDetails
+                else HistoryDetailBody.Unavailable(detail.detail.unavailableReason)
     }
 }

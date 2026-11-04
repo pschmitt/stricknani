@@ -32,7 +32,7 @@
   function unavailableText(value: HistoryDetail): string {
     switch (value.unavailable_reason) {
       case "not_recorded":
-        return t("No change snapshot was recorded for this event.", locale);
+        return t("No details recorded", locale);
       case "too_large":
         return t(
           "The recorded change snapshot is too large to display.",

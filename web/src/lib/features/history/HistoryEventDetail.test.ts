@@ -94,6 +94,17 @@ describe("HistoryEventDetail", () => {
     expect(body).toContain("New");
   });
 
+  it("reads a never-recorded snapshot as no details", () => {
+    const e = event();
+    const { body } = render(HistoryEventDetail, {
+      props: props(e, {
+        state: "ready",
+        detail: { event: e, changes: null, unavailable_reason: "not_recorded" },
+      }),
+    });
+    expect(body).toContain("No details recorded");
+  });
+
   it("shows a loading note while the changes load", () => {
     const { body } = render(HistoryEventDetail, {
       props: props(event(), { state: "loading" }),
