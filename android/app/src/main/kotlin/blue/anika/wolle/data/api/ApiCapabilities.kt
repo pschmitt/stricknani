@@ -33,6 +33,10 @@ data class ApiCapabilitiesState(
     val user: CurrentUser? = null,
     /** The id of the token this app signs in with (`meta.current_token_id`), when reported. */
     val currentTokenId: Long? = null,
+    /** Link import (project and yarn) is enabled on the server. */
+    val importsUrl: Boolean = false,
+    /** The server has an AI provider for filling gaps in an import. */
+    val importsAi: Boolean = false,
 )
 
 /**
@@ -122,6 +126,8 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
                         ApiGeneration.V2,
                         CurrentUser(user.id, user.email, user.isAdmin, user.avatarUrl),
                         meta.currentTokenId,
+                        importsUrl = meta.imports?.url == true,
+                        importsAi = meta.imports?.ai == true,
                     ),
             )
         } catch (failure: HttpException) {

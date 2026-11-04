@@ -83,6 +83,11 @@ data class YarnWriteRequest(
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
     /** SNA-33: see `ProjectWriteRequest.expectedUpdatedAt`'s kdoc - same contract. */
     @SerialName("expected_updated_at") val expectedUpdatedAt: String? = null,
+    /**
+     * Photo URLs the server fetches and attaches when the yarn is created (link imports). Ignored
+     * on update; omitted from the JSON when empty.
+     */
+    @SerialName("image_urls") val imageUrls: List<String> = emptyList(),
 )
 
 /** `stricknani/routes/api/schemas.py`'s `YarnPage`. */

@@ -184,8 +184,6 @@
     <string name="project_import_confirmation_title">Sieht das richtig aus?</string>
     <string name="project_import_confirmation_text">„%1$s“ zu deinen Projekten hinzufügen? Es wird sofort gespeichert, auch ohne Internet.</string>
     <string name="project_import_steps_summary">%1$d Schritte gefunden</string>
-    <string name="project_import_images_summary">%1$d Fotos gefunden</string>
-    <string name="project_import_images_not_supported">Fotos von der Seite können noch nicht mitkommen. Text und Schritte werden gespeichert, Fotos kannst du später ergänzen.</string>
     <string name="project_import_ai_fallback">Die KI-Extraktion war nicht verfügbar; die einfache Anleitungserkennung wurde verwendet.</string>
     <string name="project_import_confirm_save">Projekt hinzufügen</string>
     <string name="project_import_success_title">Ist drin!</string>
@@ -198,6 +196,35 @@
     <string name="project_import_error_rate_limited">Gerade zu viele Importe. Versuch es in ein paar Minuten erneut.</string>
     <string name="project_import_error_server">Stricknani konnte diese Anleitung nicht lesen. Versuche einen anderen Link oder lege das Projekt selbst an.</string>
     <string name="project_import_error_unknown">Das Projekt konnte nicht importiert werden. Bitte versuche es erneut.</string>
+    <string name="import_detail_line">%1$s: %2$s</string>
+    <string name="import_detail_designer">Designer</string>
+    <string name="import_detail_sizes">Größen</string>
+    <string name="import_detail_difficulty">Schwierigkeitsgrad</string>
+    <string name="import_note_gauge">Maschenprobe</string>
+    <string name="import_note_care">Pflege</string>
+    <string name="import_note_price">Preis</string>
+    <string name="import_pick_photos">Wähle die Fotos aus, die bleiben sollen</string>
+    <string name="import_ai_filled_hint">Die KI hat einige Angaben ergänzt. Prüfe sie, bevor du dich darauf verlässt.</string>
+    <string name="import_warning_looks_like_yarn">Das sieht nach einer Garnseite aus. Importiere sie lieber über den Reiter Garne.</string>
+    <string name="import_warning_looks_like_pattern">Das sieht nach einer Anleitung aus, nicht nach einem Garn. Prüfe die Angaben.</string>
+    <string name="import_warning_little_text">Diese Seite enthält kaum lesbaren Text, daher können Angaben fehlen.</string>
+    <string name="import_error_blocked">Die Website hat die Anfrage von Stricknani abgelehnt. Versuche einen anderen Link oder lege es von Hand an.</string>
+    <string name="import_error_not_found">Die Seite wurde nicht gefunden. Prüfe den Link.</string>
+    <string name="import_error_disabled">Der Import über einen Link ist auf diesem Server ausgeschaltet.</string>
+    <string name="yarn_import_dialog_title">Garn importieren</string>
+    <string name="yarn_import_url_label">Link zum Garn</string>
+    <string name="yarn_import_url_placeholder">https://shop.example/mein-garn</string>
+    <string name="yarn_import_progress">Garn wird importiert</string>
+    <string name="yarn_import_progress_description">Die Garnseite wird gelesen…</string>
+    <string name="yarn_import_saving_description">Das Garn wandert in deinen Vorrat…</string>
+    <string name="yarn_import_confirmation_text">„%1$s“ zu deinen Garnen hinzufügen? Es wird sofort gespeichert, auch ohne Internet.</string>
+    <string name="yarn_import_confirm_save">Garn hinzufügen</string>
+    <string name="yarn_import_success_text">„%1$s“ ist jetzt in deinen Garnen.</string>
+    <string name="yarn_import_error_invalid_url">Füge den vollständigen Link zum Garn ein, beginnend mit https://</string>
+    <string name="yarn_import_error_server">Stricknani konnte diese Garnseite nicht lesen. Versuche einen anderen Link oder lege das Garn von Hand an.</string>
+    <string name="yarn_import_error_unknown">Das Garn konnte nicht importiert werden. Bitte versuche es erneut.</string>
+    <string name="yarns_list_import_description">Garn über einen Link importieren</string>
+    <string name="mutation_yarn_imported_queued">Garn „%1$s“ importiert.</string>
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">Neue Wolle</string>

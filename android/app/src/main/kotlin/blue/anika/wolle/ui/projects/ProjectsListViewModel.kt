@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.projects
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
@@ -15,9 +16,11 @@ import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +76,7 @@ constructor(
     private val projectImporter: ProjectImporter,
     private val syncScheduler: SyncScheduler,
     private val settingsRepository: SettingsRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -152,7 +156,11 @@ constructor(
             scope = viewModelScope,
             importer = projectImporter,
         ) { preview ->
-            val projectId = projectRepository.createProject(preview.request)
+            val request =
+                preview.request.copy(
+                    notes = projectImportNotes(context, preview.request.notes, preview.details)
+                )
+            val projectId = projectRepository.createProject(request)
             syncScheduler.replayThenSyncNow()
             mutationFeedback.show(
                 R.string.mutation_project_imported_queued,
@@ -226,7 +234,10 @@ constructor(
 
     fun retryImport() = importController.retry()
 
-    fun confirmImport() = importController.confirm()
+    fun confirmImport(selectedImages: List<String>) = importController.confirm(selectedImages)
+
+    /** The server's thumbnail proxy for a picture of the imported page, as a loadable URL. */
+    fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
 
     fun cancelImport() = importController.cancel()
 

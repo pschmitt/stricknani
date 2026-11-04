@@ -24,7 +24,12 @@ data class MetaV2Dto(
     @SerialName("current_token_id") val currentTokenId: Long? = null,
     /** Optional, operator-configured error reporting; absent on servers that predate it. */
     @SerialName("error_reporting") val errorReporting: ErrorReportingDto? = null,
+    /** What link imports can do on this server; absent on servers without the feature. */
+    val imports: MetaV2ImportsDto? = null,
 )
+
+/** `meta.imports`: link import and AI availability. */
+@Serializable data class MetaV2ImportsDto(val url: Boolean = false, val ai: Boolean = false)
 
 @Serializable
 data class MetaV2UserDto(

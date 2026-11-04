@@ -184,8 +184,6 @@
     <string name="project_import_confirmation_title">Does this look right?</string>
     <string name="project_import_confirmation_text">Add “%1$s” to your projects? It’s saved right away, even without internet.</string>
     <string name="project_import_steps_summary">%1$d steps found</string>
-    <string name="project_import_images_summary">%1$d photos found</string>
-    <string name="project_import_images_not_supported">Photos from the page can’t come along yet. The text and steps are saved, and you can add photos later.</string>
     <string name="project_import_ai_fallback">AI extraction was unavailable; basic pattern extraction was used.</string>
     <string name="project_import_confirm_save">Add project</string>
     <string name="project_import_success_title">It’s in!</string>
@@ -198,6 +196,35 @@
     <string name="project_import_error_rate_limited">Too many imports just now. Try again in a few minutes.</string>
     <string name="project_import_error_server">Stricknani couldn’t read that pattern. Try another link, or add the project by hand.</string>
     <string name="project_import_error_unknown">The project could not be imported. Please try again.</string>
+    <string name="import_detail_line">%1$s: %2$s</string>
+    <string name="import_detail_designer">Designer</string>
+    <string name="import_detail_sizes">Sizes</string>
+    <string name="import_detail_difficulty">Difficulty</string>
+    <string name="import_note_gauge">Gauge</string>
+    <string name="import_note_care">Care</string>
+    <string name="import_note_price">Price</string>
+    <string name="import_pick_photos">Choose the photos to keep</string>
+    <string name="import_ai_filled_hint">AI helped fill some details. Check them before relying on them.</string>
+    <string name="import_warning_looks_like_yarn">This looks like a yarn page. You may want to import it from the Yarns tab instead.</string>
+    <string name="import_warning_looks_like_pattern">This looks like a pattern page, not a yarn. Check the details.</string>
+    <string name="import_warning_little_text">This page has little readable text, so some details may be missing.</string>
+    <string name="import_error_blocked">That website refused Stricknani’s request. Try another link, or add it by hand.</string>
+    <string name="import_error_not_found">That page wasn’t found. Check the link.</string>
+    <string name="import_error_disabled">Importing from a link is switched off on this server.</string>
+    <string name="yarn_import_dialog_title">Import yarn</string>
+    <string name="yarn_import_url_label">Link to the yarn</string>
+    <string name="yarn_import_url_placeholder">https://shop.example/my-yarn</string>
+    <string name="yarn_import_progress">Importing yarn</string>
+    <string name="yarn_import_progress_description">Reading the yarn page…</string>
+    <string name="yarn_import_saving_description">Winding it into your stash…</string>
+    <string name="yarn_import_confirmation_text">Add “%1$s” to your yarns? It’s saved right away, even without internet.</string>
+    <string name="yarn_import_confirm_save">Add yarn</string>
+    <string name="yarn_import_success_text">“%1$s” is now in your yarns.</string>
+    <string name="yarn_import_error_invalid_url">Paste the full link to the yarn, starting with https://</string>
+    <string name="yarn_import_error_server">Stricknani couldn’t read that yarn page. Try another link, or add the yarn by hand.</string>
+    <string name="yarn_import_error_unknown">The yarn could not be imported. Please try again.</string>
+    <string name="yarns_list_import_description">Import yarn from a link</string>
+    <string name="mutation_yarn_imported_queued">Yarn “%1$s” imported.</string>
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">New yarn</string>
