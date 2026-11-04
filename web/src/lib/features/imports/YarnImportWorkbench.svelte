@@ -41,6 +41,9 @@
   );
   const hasDirtyDraft = $derived(Boolean(draft && !createdYarnId));
   const provenance = $derived(preview?.draft.provenance ?? {});
+  const browsed = $derived(
+    preview?.draft.warnings.includes("ai_browsed") ?? false,
+  );
   const warnings = $derived(
     (preview?.draft.warnings ?? [])
       .map((code) => importWarningMessage(code, locale))
@@ -152,7 +155,7 @@
 >
 
 {#snippet hint(key: string)}
-  {@const kind = fieldHint(provenance, key)}
+  {@const kind = fieldHint(provenance, key, browsed)}
   {#if kind}<small
       class="hint hint-{kind}"
       title={t("Check this value", locale)}>{t(hintLabels[kind], locale)}</small
@@ -214,6 +217,12 @@
     </Button>
     {#if busy}<p class="status" role="status" aria-live="polite">
         {t("Reading the source and preparing a draft…", locale)}
+      </p>{/if}
+    {#if busy}<p class="status" role="status">
+        {t(
+          "Reading the page… some pages take a minute when the AI opens them in a browser.",
+          locale,
+        )}
       </p>{/if}
   </section>
 

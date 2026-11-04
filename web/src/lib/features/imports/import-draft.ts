@@ -428,9 +428,11 @@ export type FieldHint = "ai" | "guessed" | "";
 export function fieldHint(
   provenance: Record<string, string>,
   key: string,
+  browsed = false,
 ): FieldHint {
   const source = provenance[key];
-  if (source === "ai") return "ai";
+  // Read by the AI from the live page: nothing on our side can verify it.
+  if (source === "ai") return browsed ? "guessed" : "ai";
   if (source === "text") return "guessed";
   return "";
 }
@@ -450,6 +452,11 @@ export function importWarningMessage(
     case "not_a_yarn_page":
       return t(
         "This looks like a pattern page, not a yarn. Check the fields below.",
+        locale,
+      );
+    case "ai_browsed":
+      return t(
+        "The AI read this page in a browser. Check the fields marked Guessed before saving.",
         locale,
       );
     case "little_page_text":

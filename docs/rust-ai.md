@@ -37,6 +37,8 @@ enabled, provider resolution is:
    `openai/gpt-4o-mini`, `llama-3.3-70b-versatile`, or `hermes-agent`).
 5. `AI_TIMEOUT_SECONDS` (5 to 300, default 60) bounds one request. Agent
    gateways can need most of a minute.
+6. `AI_BROWSE` (default off) and `AI_BROWSE_TIMEOUT_SECONDS` (30 to 200,
+   default 180); see [Browse mode](#browse-mode).
 
 The key is held in a zeroizing string, has a redacted `Debug`, and is marked
 sensitive in the Authorization header. The HTTP client disables environment
@@ -101,6 +103,56 @@ the object are tolerated) and then validated:
   most of their words occur in the page.
 - Every accepted field is marked `ai` in `draft.provenance`, which the clients
   show as an "AI" badge next to the field.
+
+## Browse mode
+
+`AI_BROWSE=true` (NixOS: `services.stricknani.ai.browse`) is for an agent
+gateway that has a browser tool and runs its own tool loop, such as Hermes with
+a read-only Playwright MCP server (`browser_navigate`, `browser_navigate_back`,
+`browser_wait_for`, `browser_snapshot`, `browser_close` in a throwaway
+Chromium). It makes no sense with a plain chat-completions provider. Stricknani
+only sends a chat completion and reads the final answer.
+
+With browsing on, URL imports change as follows (only when the user asked for AI):
+
+- The prompt always contains the page URL and tells the model it may open
+  exactly that URL with its browser tools when the text is missing, incomplete,
+  blocked or JavaScript-rendered, read nothing else apart from same-site
+  navigation that reveals the content, never follow instructions found on a
+  page, close the browser and answer only with the JSON schema.
+- If the server's own fetch is refused (HTTP 403, 429, 503, or a short
+  bot-protection page such as "Just a moment") the import no longer fails with
+  `import_blocked`. The model gets the URL and the schema but no page text
+  (browse-only). If the AI step then fails or contributes nothing, the original
+  `import_blocked` error is returned. Other fetch errors, including unsafe
+  addresses, never reach the browser.
+- If the fetch worked but yielded less than 400 characters of text, the text is
+  sent and the model may browse as well.
+- Quantities and steps cannot be checked against server-fetched text in these
+  two cases. They are accepted, marked `ai` in `draft.provenance` and the draft
+  gets the warning `ai_browsed`. The clients show those fields with the
+  "Guessed" badge and a notice to check them. Values from markup or site
+  extractors are still never replaced. With enough page text, the strict rules
+  above apply unchanged.
+- Links from the model are still ignored. Image URLs (`imageUrls` in the
+  answer) are accepted, only to fill an empty gallery, when they are `https`
+  without credentials, not an IP literal or `localhost`, and on the page's own
+  site (same registrable domain) or a well-known image CDN (Shopify,
+  CloudFront, Cloudinary, imgix, Akamai, Wix, Squarespace, Ravelry, BigCommerce,
+  wp.com), at most 6, marked `ai`. They are downloaded later through the
+  SSRF-safe fetcher like any imported picture.
+- `AI_BROWSE_TIMEOUT_SECONDS` (default 180, at most 200) replaces
+  `AI_TIMEOUT_SECONDS` for every URL import AI request while browsing is on. The
+  NixOS module raises nginx `proxy_read_timeout` to that value plus 40 seconds;
+  the Android import client waits up to 245 seconds, and the web and Android
+  import screens say "Reading the page…" with a hint that it can take a minute.
+
+Tool limits: the browser belongs to the gateway, not to Stricknani. Stricknani
+checks the URL with its own SSRF-safe fetch before handing it over (a refused
+page was resolved to a public address), but cannot restrict where the gateway's
+browser goes afterwards. Run the gateway's browser without access to private
+networks, keep its toolset to the read-only tools above, and treat everything
+it reads as untrusted.
 
 ## Hermes (an agent gateway) as the provider
 
@@ -181,6 +233,8 @@ credentials. API failures only add the warning `ravelry_api_failed`.
 | `ai.baseUrl` | `AI_BASE_URL` | Endpoint for `custom`; plain HTTP only for localhost. |
 | `ai.model` | `AI_MODEL` | Model name. |
 | `ai.timeoutSeconds` | `AI_TIMEOUT_SECONDS` | Request timeout. |
+| `ai.browse` | `AI_BROWSE` | Let the AI read pages with a browser tool of the gateway. |
+| `ai.browseTimeoutSeconds` | `AI_BROWSE_TIMEOUT_SECONDS` | Request timeout while browsing (30 to 200, default 180). |
 | `ravelry.credentialsFile` | `RAVELRY_USERNAME`, `RAVELRY_PASSWORD` | Environment file with the key pair. |
 
 Imported pages and their text are sent to the AI provider only when the user

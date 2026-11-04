@@ -253,7 +253,14 @@ private fun ImportProgressContent(text: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CircularProgressIndicator()
-        Text(text)
+        Column {
+            Text(text)
+            Text(
+                text = stringResource(R.string.import_progress_slow_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -286,5 +293,6 @@ internal fun importWarningRes(code: String): Int? =
         "looks_like_pattern_page",
         "not_a_yarn_page" -> R.string.import_warning_looks_like_pattern
         "little_page_text" -> R.string.import_warning_little_text
+        "ai_browsed" -> R.string.import_warning_ai_browsed
         else -> null
     }

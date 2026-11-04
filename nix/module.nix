@@ -238,6 +238,18 @@ in
         default = null;
         description = "Timeout for one AI request (AI_TIMEOUT_SECONDS, 5 to 300). Agent gateways can need a minute.";
       };
+
+      browse = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Let the AI read link imports with a browser (AI_BROWSE). Only useful with an agent gateway that has a browser tool, such as Hermes with a Playwright MCP server. Blocked or JavaScript-rendered pages are then read by the model instead of failing, and those fields are marked as AI-read for review.";
+      };
+
+      browseTimeoutSeconds = lib.mkOption {
+        type = lib.types.ints.between 30 200;
+        default = 180;
+        description = "Timeout for one AI request while ai.browse is on (AI_BROWSE_TIMEOUT_SECONDS). Also raises the nginx proxy read timeout of the Stricknani host.";
+      };
     };
 
     ravelry.credentialsFile = lib.mkOption {
@@ -505,6 +517,10 @@ in
           // lib.optionalAttrs (cfg.ai.apiKeyFile != null) { AI_API_KEY_FILE = toString cfg.ai.apiKeyFile; }
           // lib.optionalAttrs (cfg.ai.baseUrl != null) { AI_BASE_URL = cfg.ai.baseUrl; }
           // lib.optionalAttrs (cfg.ai.model != null) { AI_MODEL = cfg.ai.model; }
+          // lib.optionalAttrs cfg.ai.browse {
+            AI_BROWSE = "true";
+            AI_BROWSE_TIMEOUT_SECONDS = toString cfg.ai.browseTimeoutSeconds;
+          }
           // lib.optionalAttrs (cfg.ai.timeoutSeconds != null) {
             AI_TIMEOUT_SECONDS = toString cfg.ai.timeoutSeconds;
           }
@@ -613,6 +629,10 @@ in
             proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
             recommendedProxySettings = true;
             proxyWebsockets = true;
+            # A browsing AI import can run for the whole browse timeout; nginx defaults to 60 s.
+            extraConfig = lib.optionalString (cfg.ai.enable && cfg.ai.browse) ''
+              proxy_read_timeout ${toString (cfg.ai.browseTimeoutSeconds + 40)}s;
+            '';
           };
         }
         // lib.genAttrs (map (status: "@stricknani_down_${status}") downStatuses) (name: {

@@ -208,6 +208,8 @@
     <string name="import_warning_looks_like_yarn">Das sieht nach einer Garnseite aus. Importiere sie lieber über den Reiter Garne.</string>
     <string name="import_warning_looks_like_pattern">Das sieht nach einer Anleitung aus, nicht nach einem Garn. Prüfe die Angaben.</string>
     <string name="import_warning_little_text">Diese Seite enthält kaum lesbaren Text, daher können Angaben fehlen.</string>
+    <string name="import_warning_ai_browsed">Die KI hat diese Seite in einem Browser gelesen. Prüfe die als KI markierten Angaben vor dem Speichern.</string>
+    <string name="import_progress_slow_hint">Manche Seiten brauchen eine Minute, wenn die KI sie in einem Browser öffnet.</string>
     <string name="import_error_blocked">Die Website hat die Anfrage von Stricknani abgelehnt. Versuche einen anderen Link oder lege es von Hand an.</string>
     <string name="import_error_not_found">Die Seite wurde nicht gefunden. Prüfe den Link.</string>
     <string name="import_error_disabled">Der Import über einen Link ist auf diesem Server ausgeschaltet.</string>

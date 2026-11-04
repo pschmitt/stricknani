@@ -190,6 +190,9 @@ describe("yarn import review mapping", () => {
     expect(fieldHint(provenance, "b")).toBe("guessed");
     expect(fieldHint(provenance, "c")).toBe("");
     expect(fieldHint(provenance, "missing")).toBe("");
+    // Fields the AI read from the live page are shown as unverified guesses.
+    expect(fieldHint(provenance, "a", true)).toBe("guessed");
+    expect(fieldHint(provenance, "c", true)).toBe("");
     expect(importWarningMessage("looks_like_yarn_page", "en")).toContain(
       "yarn",
     );

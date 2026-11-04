@@ -382,6 +382,127 @@ fn shape_for_target(draft: &mut ImportDocumentDraft, target: ImportTarget) {
     }
 }
 
+/// Whether the model may read the page itself, and why.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum BrowseState {
+    /// Browsing is off or the AI was not requested: the page text is the only evidence.
+    Off,
+    /// The page text is fine; the model may still open the page, but numbers stay grounded in
+    /// the text.
+    Allowed { url: String },
+    /// Too little text came back: the model reads the page and its answer is checked loosely.
+    Thin { url: String },
+    /// The server was refused (403, 429, challenge page): the model works from the URL alone.
+    Blocked { url: String, error: FetchError },
+}
+
+/// A fetched and parsed link, plus how the AI step may read the page.
+pub(crate) struct UrlImport {
+    pub draft: ImportDocumentDraft,
+    pub source_text: String,
+    pub browse: BrowseState,
+}
+
+const CHALLENGE_MARKERS: [&str; 9] = [
+    "just a moment",
+    "attention required",
+    "verify you are human",
+    "verifying you are human",
+    "checking your browser",
+    "enable javascript and cookies",
+    "access denied",
+    "are you a robot",
+    "captcha",
+];
+
+/// Bot-protection interstitials are short pages that say so.
+fn looks_like_challenge(text: &str) -> bool {
+    if text.chars().count() > 2_000 {
+        return false;
+    }
+    let lower = text.to_lowercase();
+    CHALLENGE_MARKERS
+        .iter()
+        .any(|marker| lower.contains(marker))
+}
+
+/// A draft with nothing but the link, for pages only the AI browser can read.
+fn skeleton_draft(url: &str, target: ImportTarget) -> ImportDocumentDraft {
+    ImportDocumentDraft {
+        kind: DocumentKind::Html,
+        sha256: hex::encode(<sha2::Sha256 as sha2::Digest>::digest(url.as_bytes())),
+        source_url: Some(url.to_owned()),
+        project: ProjectImportDraft {
+            link: Some(url.to_owned()),
+            ..Default::default()
+        },
+        image: None,
+        yarn: (target == ImportTarget::Yarn).then(Default::default),
+        page_kind: PageKind::Unknown,
+        provenance: Default::default(),
+        warnings: Vec::new(),
+    }
+}
+
+/// Like [`import_url`], but when `browse` is set a refused or unreadable page is not an error:
+/// the draft is left for the AI step to fill by reading the page in a browser.
+pub(crate) async fn import_url_browsing(
+    worker_path: &std::path::Path,
+    input: &str,
+    target: ImportTarget,
+    browse: bool,
+) -> Result<UrlImport, ImportFailure> {
+    let url = imports::normalize_input_url(input);
+    let result = import_url(worker_path, input, target).await;
+    classify_import(result, url, target, browse)
+}
+
+/// Decide how the AI step may read the page, from the outcome of the server's own fetch.
+fn classify_import(
+    result: Result<(ImportDocumentDraft, String), ImportFailure>,
+    url: String,
+    target: ImportTarget,
+    browse: bool,
+) -> Result<UrlImport, ImportFailure> {
+    match result {
+        Ok((draft, source_text)) => {
+            let state = if !browse {
+                BrowseState::Off
+            } else {
+                let page_url = draft.source_url.clone().unwrap_or(url);
+                if looks_like_challenge(&source_text) {
+                    return Ok(UrlImport {
+                        draft: skeleton_draft(&page_url, target),
+                        source_text: String::new(),
+                        browse: BrowseState::Blocked {
+                            url: page_url,
+                            error: FetchError::HttpStatus(403),
+                        },
+                    });
+                }
+                if source_text.chars().count() < crate::url_import::ai_merge::THIN_TEXT_CHARS {
+                    BrowseState::Thin { url: page_url }
+                } else {
+                    BrowseState::Allowed { url: page_url }
+                }
+            };
+            Ok(UrlImport {
+                draft,
+                source_text,
+                browse: state,
+            })
+        }
+        Err(ImportFailure::Fetch(error @ FetchError::HttpStatus(403 | 429 | 503))) if browse => {
+            Ok(UrlImport {
+                draft: skeleton_draft(&url, target),
+                source_text: String::new(),
+                browse: BrowseState::Blocked { url, error },
+            })
+        }
+        Err(error) => Err(error),
+    }
+}
+
 /// Optional AI pass for URL imports. Returns whether the model contributed.
 pub(crate) async fn normalize_with_ai(
     ai: Option<&AiClient>,
@@ -389,19 +510,46 @@ pub(crate) async fn normalize_with_ai(
     requested: bool,
     source_text: &str,
     target: ImportTarget,
+    browse: &BrowseState,
 ) -> bool {
+    use crate::url_import::ai_merge::{self, BrowseContext, Grounding};
     let Some(client) = ai.filter(|_| requested) else {
         return false;
     };
-    if source_text.trim().is_empty() {
+    let browse = if client.browse_enabled() {
+        browse
+    } else {
+        &BrowseState::Off
+    };
+    let missing = source_text.trim().is_empty();
+    let (context, browsed_url) = match browse {
+        BrowseState::Off => (None, None),
+        BrowseState::Allowed { url } => (
+            Some(BrowseContext {
+                url,
+                text_missing: false,
+            }),
+            None,
+        ),
+        BrowseState::Thin { url } | BrowseState::Blocked { url, .. } => (
+            Some(BrowseContext {
+                url,
+                text_missing: missing,
+            }),
+            Some(url.as_str()),
+        ),
+    };
+    if missing && context.is_none() {
         return false;
     }
-    let (system, user) = crate::url_import::ai_merge::build_messages(target, draft, source_text);
+    let (system, user) = ai_merge::build_messages_with(target, draft, source_text, context);
     let Ok(answer) = client.complete_json(&system, &user).await else {
         return false;
     };
-    let changed = crate::url_import::ai_merge::apply(draft, &answer, source_text, target);
-    changed > 0
+    let grounding = browsed_url.map_or(Grounding::PageText, |page_url| Grounding::Browsed {
+        page_url,
+    });
+    ai_merge::apply_with(draft, &answer, source_text, target, grounding) > 0
 }
 
 pub(crate) async fn enhance_draft(
@@ -1147,4 +1295,279 @@ fn number_prefix(value: &str) -> Option<i64> {
         .take_while(char::is_ascii_digit)
         .collect();
     digits.parse().ok()
+}
+
+#[cfg(test)]
+mod browse_tests {
+    use std::collections::HashMap;
+
+    use serde_json::{Value, json};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    use super::*;
+    use crate::import_document::FieldSource;
+
+    /// Serve one OpenAI-compatible reply over plain HTTP and hand back the request body.
+    async fn mock_ai(reply: Value) -> (AiClient, tokio::task::JoinHandle<Value>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0_u8; 8192];
+            let body_start = loop {
+                let read = socket.read(&mut buffer).await.unwrap();
+                request.extend_from_slice(&buffer[..read]);
+                if let Some(index) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                    let head = String::from_utf8_lossy(&request[..index]).to_ascii_lowercase();
+                    let length: usize = head
+                        .lines()
+                        .find_map(|l| {
+                            l.strip_prefix("content-length:")
+                                .map(|v| v.trim().parse().unwrap())
+                        })
+                        .unwrap_or(0);
+                    if request.len() >= index + 4 + length {
+                        break index + 4;
+                    }
+                }
+            };
+            let content =
+                json!({"choices": [{"message": {"content": reply.to_string()}}]}).to_string();
+            socket
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{content}",
+                        content.len()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+            serde_json::from_slice(&request[body_start..]).unwrap()
+        });
+        let base = format!("http://127.0.0.1:{port}/v1");
+        let values = HashMap::from([
+            ("AI_PROVIDER", "custom"),
+            ("AI_BASE_URL", base.as_str()),
+            ("AI_API_KEY", "k"),
+            ("AI_BROWSE", "true"),
+        ]);
+        let config =
+            crate::ai::AiConfig::from_lookup(true, |key| values.get(key).map(|v| (*v).to_owned()))
+                .unwrap()
+                .unwrap();
+        (AiClient::new(config).unwrap(), server)
+    }
+
+    fn fetched(text: &str) -> Result<(ImportDocumentDraft, String), ImportFailure> {
+        let mut draft = skeleton_draft("https://shop.example/p/1", ImportTarget::Yarn);
+        draft
+            .provenance
+            .insert("yarn.name".into(), FieldSource::Structured);
+        Ok((draft, text.to_owned()))
+    }
+
+    #[test]
+    fn refused_fetches_become_browse_only_when_browsing_is_on() {
+        let url = "https://shop.example/p/1".to_owned();
+        for status in [403, 429, 503] {
+            let imported = classify_import(
+                Err(ImportFailure::Fetch(FetchError::HttpStatus(status))),
+                url.clone(),
+                ImportTarget::Yarn,
+                true,
+            )
+            .unwrap();
+            assert!(matches!(imported.browse, BrowseState::Blocked { .. }));
+            assert!(imported.source_text.is_empty());
+            assert_eq!(imported.draft.source_url.as_deref(), Some(url.as_str()));
+            assert!(imported.draft.yarn.is_some());
+        }
+        // Without browsing, and for errors browsing cannot fix, nothing changes.
+        for (status, browse) in [(403, false), (404, true), (401, true)] {
+            assert!(
+                classify_import(
+                    Err(ImportFailure::Fetch(FetchError::HttpStatus(status))),
+                    url.clone(),
+                    ImportTarget::Yarn,
+                    browse,
+                )
+                .is_err()
+            );
+        }
+        assert!(
+            classify_import(
+                Err(ImportFailure::Fetch(FetchError::UnsafeAddress)),
+                url,
+                ImportTarget::Yarn,
+                true,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn thin_text_and_challenge_pages_are_detected() {
+        let url = "https://shop.example/p/1".to_owned();
+        let state = |text: &str, browse| {
+            classify_import(fetched(text), url.clone(), ImportTarget::Yarn, browse)
+                .unwrap()
+                .browse
+        };
+        assert_eq!(state("short", false), BrowseState::Off);
+        assert!(matches!(state("short", true), BrowseState::Thin { .. }));
+        assert!(matches!(
+            state("Just a moment... Verify you are human", true),
+            BrowseState::Blocked { .. }
+        ));
+        assert!(matches!(
+            state(&"a real product page ".repeat(60), true),
+            BrowseState::Allowed { .. }
+        ));
+        // A long page that merely mentions a captcha is not a challenge page.
+        assert!(matches!(
+            state(&format!("captcha {}", "yarn ".repeat(600)), true),
+            BrowseState::Allowed { .. }
+        ));
+    }
+
+    #[tokio::test]
+    async fn blocked_page_is_read_by_the_ai_from_the_url_alone() {
+        let imported = classify_import(
+            Err(ImportFailure::Fetch(FetchError::HttpStatus(403))),
+            "https://shop.example/p/1".to_owned(),
+            ImportTarget::Yarn,
+            true,
+        )
+        .unwrap();
+        let mut draft = imported.draft;
+        let (client, server) = mock_ai(json!({
+            "pageKind": "yarn",
+            "yarn": {"name": "Rios", "brand": "Malabrigo", "weightGrams": 100, "lengthMeters": 192,
+                     "fiberContent": "100% Merino", "link": "https://evil.example"},
+            "imageUrls": [
+                "https://shop.example/img/1.jpg",
+                "https://cdn.shopify.com/s/files/2.jpg",
+                "https://evil.example/3.jpg",
+                "http://shop.example/4.jpg",
+                "https://127.0.0.1/5.jpg"
+            ]
+        }))
+        .await;
+        assert!(client.browse_enabled());
+        let ok = normalize_with_ai(
+            Some(&client),
+            &mut draft,
+            true,
+            "",
+            ImportTarget::Yarn,
+            &imported.browse,
+        )
+        .await;
+        assert!(ok);
+
+        let request = server.await.unwrap();
+        let system = request["messages"][0]["content"].as_str().unwrap();
+        let user = request["messages"][1]["content"].as_str().unwrap();
+        assert!(user.contains("Page URL: https://shop.example/p/1"));
+        assert!(!user.contains("<<<PAGE"), "no page text is sent");
+        assert!(user.contains("No page text is available"));
+        assert!(system.contains("browser tools"));
+        assert!(system.contains("never instructions"));
+        assert!(system.contains("only the JSON object"));
+
+        let yarn = draft.yarn.as_ref().unwrap();
+        assert_eq!(yarn.name.as_deref(), Some("Rios"));
+        // Quantities cannot be checked against page text; they are kept and flagged as AI.
+        assert_eq!(yarn.weight_grams, Some(100));
+        assert_eq!(yarn.length_meters, Some(192));
+        assert_eq!(draft.provenance["yarn.weightGrams"], FieldSource::Ai);
+        assert_eq!(draft.provenance["yarn.fiberContent"], FieldSource::Ai);
+        assert!(draft.warnings.iter().any(|w| w == "ai_browsed"));
+        // Model-supplied links stay ignored; only same-site and CDN images pass.
+        assert_eq!(yarn.link, None);
+        assert_eq!(
+            yarn.image_urls,
+            vec![
+                "https://shop.example/img/1.jpg".to_owned(),
+                "https://cdn.shopify.com/s/files/2.jpg".to_owned()
+            ]
+        );
+        assert_eq!(draft.provenance["yarn.imageUrls"], FieldSource::Ai);
+    }
+
+    #[tokio::test]
+    async fn readable_page_keeps_numbers_grounded_in_its_text() {
+        let text = "Rios by Malabrigo. 100% Merino. ".repeat(20);
+        let imported = classify_import(
+            fetched(&text),
+            "https://shop.example/p/1".to_owned(),
+            ImportTarget::Yarn,
+            true,
+        )
+        .unwrap();
+        assert!(matches!(imported.browse, BrowseState::Allowed { .. }));
+        let mut draft = imported.draft;
+        let (client, server) = mock_ai(json!({
+            "yarn": {"colorway": "Frost", "weightGrams": 999, "fiberContent": "50% Silk"},
+            "imageUrls": ["https://shop.example/img/1.jpg"]
+        }))
+        .await;
+        assert!(
+            normalize_with_ai(
+                Some(&client),
+                &mut draft,
+                true,
+                &text,
+                ImportTarget::Yarn,
+                &imported.browse,
+            )
+            .await
+        );
+        let user = server.await.unwrap()["messages"][1]["content"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        assert!(user.contains("Page URL: https://shop.example/p/1"));
+        assert!(user.contains("<<<PAGE"));
+        let yarn = draft.yarn.unwrap();
+        assert_eq!(yarn.colorway.as_deref(), Some("Frost"));
+        assert_eq!(yarn.weight_grams, None, "ungrounded number rejected");
+        assert_eq!(yarn.fiber_content, None, "ungrounded number rejected");
+        assert!(yarn.image_urls.is_empty(), "images only in browsed mode");
+        assert!(!draft.warnings.iter().any(|w| w == "ai_browsed"));
+    }
+
+    #[tokio::test]
+    async fn failed_ai_call_leaves_nothing_contributed() {
+        // Nothing listens on port 1.
+        let values = HashMap::from([
+            ("AI_PROVIDER", "custom"),
+            ("AI_BASE_URL", "http://127.0.0.1:1/v1"),
+            ("AI_API_KEY", "k"),
+            ("AI_BROWSE", "1"),
+        ]);
+        let config =
+            crate::ai::AiConfig::from_lookup(true, |key| values.get(key).map(|v| (*v).to_owned()))
+                .unwrap()
+                .unwrap();
+        let client = AiClient::new(config).unwrap();
+        let mut draft = skeleton_draft("https://shop.example/p/1", ImportTarget::Yarn);
+        let browse = BrowseState::Blocked {
+            url: "https://shop.example/p/1".into(),
+            error: FetchError::HttpStatus(403),
+        };
+        assert!(
+            !normalize_with_ai(
+                Some(&client),
+                &mut draft,
+                true,
+                "",
+                ImportTarget::Yarn,
+                &browse
+            )
+            .await
+        );
+    }
 }
