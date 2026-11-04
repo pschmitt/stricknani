@@ -30,6 +30,7 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
+import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateCheckResult
 import blue.anika.wolle.data.update.UpdateChecker
 import blue.anika.wolle.data.update.checkCurrentBuild
@@ -42,6 +43,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -129,10 +132,30 @@ constructor(
         updateChecking.value = true
         updateCheckJob = viewModelScope.launch {
             try {
-                updateResult.value = updateChecker.checkCurrentBuild()
+                updateResult.value =
+                    updateChecker.checkCurrentBuild(appPreferencesRepository.updateChannel.first())
             } finally {
                 updateChecking.value = false
             }
+        }
+    }
+
+    /** Release stream of the update check; only offered in builds that can self-update. */
+    val updateChannel: StateFlow<UpdateChannel> =
+        appPreferencesRepository.updateChannel.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            UpdateChannel.STABLE,
+        )
+
+    /** Persists the channel and checks again, so the row answers for the new stream right away. */
+    fun setUpdateChannel(channel: UpdateChannel) {
+        if (!BuildConfig.SELF_UPDATE_ENABLED) return
+        viewModelScope.launch {
+            appPreferencesRepository.setUpdateChannel(channel)
+            updateCheckJob?.cancelAndJoin()
+            updateResult.value = null
+            checkForUpdate()
         }
     }
 

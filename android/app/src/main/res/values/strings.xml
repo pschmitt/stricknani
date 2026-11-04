@@ -409,6 +409,13 @@
     <string name="about_update_failed">Couldn\'t check for updates</string>
     <string name="about_update_dev_build">Development build: updates are not checked</string>
     <string name="about_update_play">Updates come through Google Play</string>
+    <string name="about_update_ahead_of_stable">You\'re ahead of the latest stable release</string>
+    <string name="about_update_channel_title">Update channel</string>
+    <string name="about_update_channel_stable">Stable</string>
+    <string name="about_update_channel_latest">Latest</string>
+    <string name="about_update_channel_stable_help">Tagged releases only. Switching from Latest never downgrades.</string>
+    <string name="about_update_channel_latest_help">Every build of main (rolling), release APK only.</string>
+    <string name="about_settings_version_with_channel">%1$s · %2$s</string>
     <string name="about_update_button">Update</string>
     <string name="about_update_check_again">Check again</string>
     <string name="about_update_check">Check for updates</string>
@@ -622,8 +629,8 @@
     <!-- Settings: Appearance language picker -->
     <string name="appearance_settings_language_title">Language</string>
     <string name="update_available_title">Update available</string>
-    <string name="update_available_message">A newer version of Stricknani (%1$s) is ready to download.</string>
-    <string name="update_available_download">Download</string>
+    <string name="update_available_message">A newer version of Stricknani (%1$s) is available.</string>
+    <string name="update_available_download">Update</string>
     <string name="update_available_later">Later</string>
     <!-- Editors (SNA-85) -->
     <string name="common_undo">Undo</string>
@@ -945,4 +952,40 @@
     <string name="activity_unavailable">Activity needs a connection</string>
     <string name="activity_empty">Nothing here yet. Edits to your projects and yarns will show up here.</string>
     <string name="activity_more_failed">More activity could not be loaded.</string>
+
+    <!-- In-app update (GitHub APK builds only) -->
+    <string name="update_state_downloading">Downloading update…</string>
+    <string name="update_state_downloading_percent">Downloading update… %1$d%%</string>
+    <string name="update_state_verifying">Checking the download…</string>
+    <string name="update_state_installing">Installing update…</string>
+    <string name="update_state_confirm">Confirm the installation in the system dialog.</string>
+    <string name="update_action_try_again">Try again</string>
+    <string name="update_action_browser">Download in browser</string>
+    <string name="update_action_allow_installs">Allow installs</string>
+    <string name="update_failure_no_apk">This release has no APK for your device.</string>
+    <string name="update_failure_not_trusted">The update is not from the Stricknani GitHub releases, so it was not installed.</string>
+    <string name="update_failure_download">The download failed. Check your connection and try again.</string>
+    <string name="update_failure_storage">Not enough free storage to install the update.</string>
+    <string name="update_failure_checksum_unavailable">The release has no checksum for this APK, so it was not installed.</string>
+    <string name="update_failure_checksum_mismatch">The download does not match its checksum and was discarded.</string>
+    <string name="update_failure_unreadable">The downloaded file is not a readable APK.</string>
+    <string name="update_failure_wrong_package">The download is for a different app and was not installed.</string>
+    <string name="update_failure_wrong_version">The download is not the announced version and was not installed.</string>
+    <string name="update_failure_signature">The download is signed with a different key than this app and was not installed.</string>
+    <string name="update_failure_downgrade">The download is older than the installed version and was not installed.</string>
+    <string name="update_failure_permission">Allow Stricknani to install apps to update itself.</string>
+    <string name="update_failure_install">Android could not install the update.</string>
+    <string name="update_failure_cancelled">The installation was cancelled.</string>
+    <string name="update_notification_channel_name">App updates</string>
+    <string name="update_notification_channel_description">Progress and results of updating Stricknani</string>
+    <string name="update_notification_downloading">Downloading Stricknani update</string>
+    <string name="update_notification_installing">Installing Stricknani update</string>
+    <string name="update_notification_failed">Stricknani update failed</string>
+    <string name="update_notification_confirm">Tap to finish installing the update</string>
+    <string name="update_notification_installed">Stricknani was updated. Tap to open.</string>
+    <string name="about_update_browser_hint">This build is updated by downloading it in the browser.</string>
+    <string name="about_auto_update_title">Update automatically</string>
+    <string name="about_auto_update_help">Installs new versions in the background while the phone is charging and idle.</string>
+    <string name="about_auto_update_help_first">Installs new versions in the background while charging and idle, once the first in-app update has been confirmed.</string>
+
 </resources>

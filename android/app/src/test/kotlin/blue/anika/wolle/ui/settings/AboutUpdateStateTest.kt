@@ -25,6 +25,10 @@ class AboutUpdateStateTest {
     fun `results map one to one`() {
         assertEquals(AboutUpdateState.UpToDate, map(r = UpdateCheckResult.UpToDate))
         assertEquals(
+            AboutUpdateState.AheadOfStable,
+            map(r = UpdateCheckResult.AheadOfStable),
+        )
+        assertEquals(
             AboutUpdateState.Available(update),
             map(r = UpdateCheckResult.Available(update)),
         )

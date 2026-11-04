@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import blue.anika.wolle.data.backup.BackupFrequency
+import blue.anika.wolle.data.update.UpdateChannel
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.map
@@ -103,6 +104,21 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_DISMISSED_UPDATE] = version }
     }
 
+    /** Which GitHub release stream updates follow; stable unless the user picks otherwise. */
+    val updateChannel =
+        dataStore.data.map { prefs -> UpdateChannel.fromName(prefs[KEY_UPDATE_CHANNEL]) }
+
+    suspend fun setUpdateChannel(channel: UpdateChannel) {
+        dataStore.edit { prefs -> prefs[KEY_UPDATE_CHANNEL] = channel.name }
+    }
+
+    /** "Update automatically" (GitHub APK builds only): off unless the user turns it on. */
+    val autoUpdate = dataStore.data.map { prefs -> prefs[KEY_AUTO_UPDATE] ?: false }
+
+    suspend fun setAutoUpdate(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_AUTO_UPDATE] = enabled }
+    }
+
     /** Use the wallpaper's Material You colours instead of Stricknani's own palette. */
     val dynamicColor = dataStore.data.map { prefs -> prefs[KEY_DYNAMIC_COLOR] ?: false }
 
@@ -153,6 +169,8 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_PRINT_CONTENT = stringPreferencesKey("print_content")
         val KEY_PRINT_IMAGES = booleanPreferencesKey("print_include_images")
         val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")
+        val KEY_UPDATE_CHANNEL = stringPreferencesKey("update_channel")
+        val KEY_AUTO_UPDATE = booleanPreferencesKey("auto_update")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
         val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")

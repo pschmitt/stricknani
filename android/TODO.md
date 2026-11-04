@@ -41,6 +41,36 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-88: Real in-app self-update for the GitHub APK
+
+- [x] **Update** on the Home card and the About row downloads, verifies and installs the APK in the
+      app (`PackageInstaller` session, `USER_ACTION_NOT_REQUIRED`, `PACKAGE_SOURCE_DOWNLOADED_FILE`);
+      progress in the card/row and a notification, errors with "Try again" and "Download in browser".
+- [x] Safety: only `https://github.com/pschmitt/stricknani/releases/download/` assets (redirects stay
+      on GitHub hosts over HTTPS), checksum from the release's `SHA256SUMS`, same package, same
+      signing certificate set, no downgrade.
+- [x] "Update automatically" (default off): 12-hourly check, install while charging + idle, only
+      when silent install is possible, never in battery saver.
+- [x] Play separation: `REQUEST_INSTALL_PACKAGES`, `UPDATE_PACKAGES_WITHOUT_USER_ACTION` and the
+      receivers sit in `app/src/selfupdate/AndroidManifest.xml`, merged into the release build only
+      when `selfUpdateEnabled` (i.e. not for `bundle*` tasks); debug keeps open-in-browser.
+- [x] Update channel setting (Stable default / Latest rolling) in About, GitHub builds only:
+      stable = semver on `releases/latest`; rolling = commit named in the `latest` body; cross-checks
+      use GitHub's compare API; ahead-of-stable is reported, never downgraded.
+- [ ] Shizuku silent install (SNA-88b, deliberately not shipped): needs the privileged hidden
+      `IPackageInstaller` (aidl stubs + hidden-API bypass, as Obtainium does), a `ShizukuProvider`
+      and the `dev.rikka.shizuku` dependencies in the non-Play source set, and a device with Shizuku
+      to test. The PackageInstaller path already gives silent updates after the first one.
+- [ ] Update ownership (`setRequestUpdateOwnership`) is not used: it needs `ENFORCE_UPDATE_OWNERSHIP`
+      and only takes effect on the initial install.
+
+**Why:** direct user request - a real self-update for the APK build, not for Play.
+**How to apply:** the first update after installing from a browser/Obtainium still needs one
+confirmation; see README.
+
+Status: **mostly done** - unit tests cover asset/ABI selection, checksums, trust, signing-cert and
+downgrade guard, and the state machine; end-to-end device install not run (see report).
+
 ## SNA-87: Migrate the app from `/api/v1` to `/api/v2`
 
 Status: in progress (2026-11-03). Phase (a) landed in code (unit-tested, builds, lint clean) but

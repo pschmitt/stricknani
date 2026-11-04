@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -47,6 +49,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -75,17 +78,27 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.update.AppUpdate
+import blue.anika.wolle.data.update.UpdateChannel
+import blue.anika.wolle.data.update.UpdateInstallState
+import blue.anika.wolle.data.update.canInstallInApp
+import blue.anika.wolle.data.update.inAppUpdateAvailable
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
 import blue.anika.wolle.ui.common.privacyPolicyUrl
+import blue.anika.wolle.ui.update.UpdateFailureActions
+import blue.anika.wolle.ui.update.UpdateInstallEffects
+import blue.anika.wolle.ui.update.UpdateInstallProgress
+import blue.anika.wolle.ui.update.UpdateInstallViewModel
+import blue.anika.wolle.ui.update.updateInstallStatusText
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -165,6 +178,11 @@ internal fun AboutSettingsScreen(
         }
     }
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+    val updateChannel by viewModel.updateChannel.collectAsStateWithLifecycle()
+    val installViewModel: UpdateInstallViewModel = hiltViewModel()
+    val installState by installViewModel.state.collectAsStateWithLifecycle()
+    val autoUpdate by installViewModel.autoUpdate.collectAsStateWithLifecycle()
+    UpdateInstallEffects(installViewModel, installState)
     LaunchedEffect(Unit) { viewModel.checkForUpdate() }
     LaunchedEffect(mascotCue) {
         if (mascotCue != null) {
@@ -215,14 +233,55 @@ internal fun AboutSettingsScreen(
                         headlineContent = {
                             Text(stringResource(R.string.about_settings_app_version_label))
                         },
-                        supportingContent = { Text(appVersion) },
+                        supportingContent = {
+                            Text(
+                                if (BuildConfig.SELF_UPDATE_ENABLED)
+                                    stringResource(
+                                        R.string.about_settings_version_with_channel,
+                                        appVersion,
+                                        stringResource(updateChannel.labelRes()),
+                                    )
+                                else appVersion
+                            )
+                        },
                     )
                     AboutUpdateRow(
                         state = updateState,
-                        onDownload = { uriHandler.openUri(it.downloadUrl) },
+                        install = installState,
+                        onDownload = {
+                            // Release APKs install themselves; debug builds (another package id)
+                            // keep the browser download.
+                            if (it.canInstallInApp()) installViewModel.start(it)
+                            else uriHandler.openUri(it.downloadUrl)
+                        },
+                        onTryAgain = {
+                            installViewModel.dismissFailure()
+                            (updateState as? AboutUpdateState.Available)
+                                ?.update
+                                ?.let(installViewModel::start)
+                        },
+                        onOpenBrowser = {
+                            installViewModel.dismissFailure()
+                            (updateState as? AboutUpdateState.Available)?.update?.let {
+                                uriHandler.openUri(it.downloadUrl)
+                            }
+                        },
                         onRetry = viewModel::checkForUpdate,
                         onOpenPlay = { uriHandler.openUri(PLAY_URL) },
                     )
+                    if (BuildConfig.SELF_UPDATE_ENABLED) {
+                        UpdateChannelRow(
+                            selected = updateChannel,
+                            onSelect = viewModel::setUpdateChannel,
+                        )
+                    }
+                    if (inAppUpdateAvailable) {
+                        AutoUpdateRow(
+                            checked = autoUpdate,
+                            silentPossible = installViewModel.silentInstallPossible(),
+                            onChange = installViewModel::setAutoUpdate,
+                        )
+                    }
                     val buildHint = stringResource(R.string.about_settings_build_hint)
                     SettingsListItem(
                         modifier =
@@ -427,10 +486,17 @@ private fun AboutHero(cue: MascotCue?) {
 @Composable
 private fun AboutUpdateRow(
     state: AboutUpdateState,
+    install: UpdateInstallState,
     onDownload: (AppUpdate) -> Unit,
+    onTryAgain: () -> Unit,
+    onOpenBrowser: () -> Unit,
     onRetry: () -> Unit,
     onOpenPlay: () -> Unit,
 ) {
+    // An install in flight (or just failed) takes over the row of the update it belongs to.
+    val installing = state is AboutUpdateState.Available && install.isBusy
+    val failed =
+        (install as? UpdateInstallState.Failed)?.takeIf { state is AboutUpdateState.Available }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     SettingsListItem(
         modifier = Modifier.testTag("about-update-row"),
@@ -438,7 +504,8 @@ private fun AboutUpdateRow(
             when (state) {
                 AboutUpdateState.Checking ->
                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                AboutUpdateState.UpToDate ->
+                AboutUpdateState.UpToDate,
+                AboutUpdateState.AheadOfStable ->
                     Icon(
                         Icons.Filled.CheckCircle,
                         contentDescription = null,
@@ -457,26 +524,47 @@ private fun AboutUpdateRow(
                     Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = muted)
             }
         },
+        supportingContent =
+            when {
+                installing -> {
+                    { UpdateInstallProgress(install, Modifier.padding(top = 8.dp)) }
+                }
+                failed != null -> {
+                    {
+                        UpdateFailureActions(failed.failure, onTryAgain, onOpenBrowser)
+                    }
+                }
+                state is AboutUpdateState.Available && !state.update.canInstallInApp() -> {
+                    { Text(stringResource(R.string.about_update_browser_hint)) }
+                }
+                else -> null
+            },
         headlineContent = {
             Text(
-                when (state) {
-                    AboutUpdateState.Checking -> stringResource(R.string.about_update_checking)
-                    AboutUpdateState.UpToDate -> stringResource(R.string.about_update_up_to_date)
-                    is AboutUpdateState.Available ->
-                        stringResource(R.string.about_update_available, state.update.version)
-                    AboutUpdateState.Failed -> stringResource(R.string.about_update_failed)
-                    AboutUpdateState.DevBuild -> stringResource(R.string.about_update_dev_build)
-                    AboutUpdateState.Play -> stringResource(R.string.about_update_play)
-                }
+                updateInstallStatusText(install)?.takeIf { installing || failed != null }
+                    ?: when (state) {
+                        AboutUpdateState.Checking -> stringResource(R.string.about_update_checking)
+                        AboutUpdateState.UpToDate ->
+                            stringResource(R.string.about_update_up_to_date)
+                        AboutUpdateState.AheadOfStable ->
+                            stringResource(R.string.about_update_ahead_of_stable)
+                        is AboutUpdateState.Available ->
+                            stringResource(R.string.about_update_available, state.update.version)
+                        AboutUpdateState.Failed -> stringResource(R.string.about_update_failed)
+                        AboutUpdateState.DevBuild -> stringResource(R.string.about_update_dev_build)
+                        AboutUpdateState.Play -> stringResource(R.string.about_update_play)
+                    }
             )
         },
         trailingContent = {
             when (state) {
                 is AboutUpdateState.Available ->
-                    Button(onClick = { onDownload(state.update) }) {
-                        Text(stringResource(R.string.about_update_button))
-                    }
-                AboutUpdateState.UpToDate ->
+                    if (!installing && failed == null)
+                        Button(onClick = { onDownload(state.update) }) {
+                            Text(stringResource(R.string.about_update_button))
+                        }
+                AboutUpdateState.UpToDate,
+                AboutUpdateState.AheadOfStable ->
                     TextButton(onClick = onRetry) {
                         Text(stringResource(R.string.about_update_check))
                     }
@@ -492,6 +580,66 @@ private fun AboutUpdateRow(
                 AboutUpdateState.DevBuild -> Unit
             }
         },
+    )
+}
+
+@StringRes
+private fun UpdateChannel.labelRes(): Int =
+    when (this) {
+        UpdateChannel.STABLE -> R.string.about_update_channel_stable
+        UpdateChannel.LATEST -> R.string.about_update_channel_latest
+    }
+
+/** Stable (tagged releases) or Latest (the rolling build of main); GitHub builds only. */
+@Composable
+private fun UpdateChannelRow(selected: UpdateChannel, onSelect: (UpdateChannel) -> Unit) {
+    SettingsListItem(
+        modifier = Modifier.testTag("about-update-channel-row"),
+        headlineContent = { Text(stringResource(R.string.about_update_channel_title)) },
+        supportingContent = {
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    UpdateChannel.entries.forEach { channel ->
+                        FilterChip(
+                            selected = channel == selected,
+                            onClick = { onSelect(channel) },
+                            label = { Text(stringResource(channel.labelRes())) },
+                            modifier = Modifier.testTag("about-update-channel-${channel.name}"),
+                        )
+                    }
+                }
+                Text(
+                    stringResource(
+                        when (selected) {
+                            UpdateChannel.STABLE -> R.string.about_update_channel_stable_help
+                            UpdateChannel.LATEST -> R.string.about_update_channel_latest_help
+                        }
+                    ),
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        },
+    )
+}
+
+/** "Update automatically" (GitHub APK builds): background check plus install while idle. */
+@Composable
+private fun AutoUpdateRow(checked: Boolean, silentPossible: Boolean, onChange: (Boolean) -> Unit) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("about-auto-update-row")
+                .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        headlineContent = { Text(stringResource(R.string.about_auto_update_title)) },
+        supportingContent = {
+            Text(
+                stringResource(
+                    if (silentPossible) R.string.about_auto_update_help
+                    else R.string.about_auto_update_help_first
+                )
+            )
+        },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
     )
 }
 

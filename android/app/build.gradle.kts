@@ -60,6 +60,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The install permissions and receivers of the in-app updater live in their own manifest, merged
+    // into the release build only when self-update is on. The Play bundle (-PselfUpdate=false or
+    // any `bundle` task) and debug builds (which keep the open-in-browser update) never get them.
+    if (selfUpdateEnabled) {
+        sourceSets.getByName("release").manifest.srcFile("src/selfupdate/AndroidManifest.xml")
+    }
+
     signingConfigs {
         // Only overridden in CI (see .github/workflows/release.yaml, once it exists - SNA-12),
         // which decodes a persistent keystore from a secret and exports CI_KEYSTORE_PATH - local

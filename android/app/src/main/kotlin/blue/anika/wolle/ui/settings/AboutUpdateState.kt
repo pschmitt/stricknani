@@ -15,6 +15,9 @@ sealed interface AboutUpdateState {
 
     data object Failed : AboutUpdateState
 
+    /** Newer than the latest stable release (e.g. a rolling build on the stable channel). */
+    data object AheadOfStable : AboutUpdateState
+
     /** Local or dirty build: there is no release to compare against, so nothing is claimed. */
     data object DevBuild : AboutUpdateState
 
@@ -38,6 +41,7 @@ fun aboutUpdateState(
             when (result) {
                 UpdateCheckResult.UpToDate -> AboutUpdateState.UpToDate
                 is UpdateCheckResult.Available -> AboutUpdateState.Available(result.update)
+                UpdateCheckResult.AheadOfStable -> AboutUpdateState.AheadOfStable
                 UpdateCheckResult.NotEligible -> AboutUpdateState.DevBuild
                 UpdateCheckResult.Failed -> AboutUpdateState.Failed
             }

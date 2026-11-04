@@ -58,10 +58,30 @@ repo's URL and adjust the APK filter regex/prerelease settings, or just grab the
 the [Releases page](https://github.com/pschmitt/stricknani/releases).
 
 Sideloaded APK installs also check GitHub Releases themselves: when a newer build exists, Home
-shows an "Update available" card whose **Download** button opens the matching APK (right ABI and
-variant) in the browser. Tagged builds follow the newest stable release, `latest` builds follow the
-`latest` pre-release. The Play Store build does not include this check at all (it is compiled
-out when building the bundle); the store updates those installs.
+shows an "Update available" card and About a version row, each with an **Update** button. Tagged
+builds follow the newest stable release, `latest` builds follow the `latest` pre-release.
+
+**Update channel (About, GitHub builds only).** *Stable* (default) follows the newest `vX.Y.Z`
+release by semver; *Latest* follows the rolling `latest` pre-release, compared by the commit its
+body names. Switching from Latest to Stable never downgrades: a build ahead of the newest stable
+reports "You're ahead of the latest stable release" until a newer stable exists.
+
+**In-app update (release APKs only).** **Update** downloads the APK for your device's ABI from this
+repository's GitHub release over HTTPS, checks it against the release's `SHA256SUMS`, checks that it
+is the same package signed with the same certificate and not older than the installed version, and
+installs it through Android's `PackageInstaller`. The first update asks once in the system dialog
+(and for the "Install unknown apps" permission); because Stricknani then is its own installer of
+record, later updates install without a confirmation on Android 12+. Errors (checksum mismatch,
+failed download, low storage, installer failure) are shown with **Try again** and **Download in
+browser**. **Update automatically** (About, off by default) checks twice a day and installs while the
+phone is charging and idle, only once silent installs are possible, never in battery saver. Shizuku
+is not supported (see `TODO.md` SNA-88). Debug builds (`blue.anika.wolle.debug`) keep the browser
+download, since a release APK is a different package.
+
+**Play Store build.** It includes none of this: the check and updater are compiled out when
+building the bundle, and the `REQUEST_INSTALL_PACKAGES` permission and updater receivers live in
+`app/src/selfupdate/AndroidManifest.xml`, which is merged into non-bundle release builds only. The
+store updates those installs.
 
 [obtainium-link]: https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22blue.anika.wolle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fpschmitt%2Fstricknani%22%2C%22author%22%3A%22pschmitt%22%2C%22name%22%3A%22Stricknani%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22.%2A-release%5C%5C%5C%5C.apk%24%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22trackOnly%5C%22%3Afalse%7D%22%7D
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Merged into the GitHub-APK release build only (see app/build.gradle.kts). The Play bundle is
+     built without it, so Play never sees the install permissions or the receivers. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- In-app self-update through PackageInstaller sessions. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Lets the update install silently once this app is the installer of record (Android 12+). -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+
+    <application>
+        <!-- Answers of the install session (confirmation needed, failure). Not exported: the system
+             delivers to it through a PendingIntent. -->
+        <receiver
+            android:name="blue.anika.wolle.data.update.InstallStatusReceiver"
+            android:exported="false" />
+        <!-- Tells the user the new version is running (the app is killed during the install). -->
+        <receiver
+            android:name="blue.anika.wolle.data.update.UpdateInstalledReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

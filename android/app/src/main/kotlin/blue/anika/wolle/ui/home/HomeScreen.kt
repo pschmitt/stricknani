@@ -83,6 +83,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
+import blue.anika.wolle.data.update.canInstallInApp
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
@@ -96,6 +97,8 @@ import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
 import blue.anika.wolle.ui.common.stitchedBorder
 import blue.anika.wolle.ui.signin.SignedOutPanel
+import blue.anika.wolle.ui.update.UpdateInstallEffects
+import blue.anika.wolle.ui.update.UpdateInstallViewModel
 import coil3.compose.AsyncImage
 import java.util.Calendar
 import kotlin.math.roundToInt
@@ -124,6 +127,9 @@ fun HomeScreen(
     val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
     val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
     val activity by viewModel.activity.collectAsStateWithLifecycle()
+    val installViewModel: UpdateInstallViewModel = hiltViewModel()
+    val installState by installViewModel.state.collectAsStateWithLifecycle()
+    UpdateInstallEffects(installViewModel, installState)
     LaunchedEffect(signedOut) { viewModel.onSignedOutChanged(signedOut) }
     val uriHandler = LocalUriHandler.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -263,7 +269,21 @@ fun HomeScreen(
                             ) { requestDismiss ->
                                 UpdateAvailableCard(
                                     update = update,
-                                    onDownload = { uriHandler.openUri(update.downloadUrl) },
+                                    install = installState,
+                                    onDownload = {
+                                        // Release APKs install themselves; debug builds (another
+                                        // package id) keep the browser download.
+                                        if (update.canInstallInApp()) installViewModel.start(update)
+                                        else uriHandler.openUri(update.downloadUrl)
+                                    },
+                                    onTryAgain = {
+                                        installViewModel.dismissFailure()
+                                        installViewModel.start(update)
+                                    },
+                                    onOpenBrowser = {
+                                        installViewModel.dismissFailure()
+                                        uriHandler.openUri(update.downloadUrl)
+                                    },
                                     onDismiss = requestDismiss,
                                 )
                             }

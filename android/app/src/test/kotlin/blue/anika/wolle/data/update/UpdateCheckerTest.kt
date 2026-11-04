@@ -40,10 +40,22 @@ class UpdateCheckerTest {
         """
             .trimIndent()
 
-    private fun check(revision: String, version: String = "0.1.0", debug: Boolean = false) =
-        runBlocking {
-            checker.check(revision, version, debug, listOf("arm64-v8a", "armeabi-v7a"))
-        }
+    private val abis = listOf("arm64-v8a", "armeabi-v7a")
+
+    private fun check(
+        revision: String,
+        version: String = "0.1.0",
+        debug: Boolean = false,
+        channel: UpdateChannel = UpdateChannel.STABLE,
+    ) = runBlocking { checker.check(revision, version, debug, abis, channel) }
+
+    private fun detailed(
+        revision: String,
+        version: String = "0.1.0",
+        channel: UpdateChannel = UpdateChannel.STABLE,
+    ) = runBlocking { checker.checkDetailed(revision, version, false, abis, channel) }
+
+    private fun compareJson(status: String) = """{"status":"$status","ahead_by":1}"""
 
     @Test
     fun `tagged build gets newer stable release with matching abi apk`() {
@@ -51,7 +63,10 @@ class UpdateCheckerTest {
 
         val update = check(revision = "v1.1.0", version = "1.1.0")
 
-        assertEquals(AppUpdate("1.2.0", "https://example.test/arm64.apk"), update)
+        assertEquals("1.2.0", update?.version)
+        assertEquals("https://example.test/arm64.apk", update?.downloadUrl)
+        assertEquals("1.2.0", update?.stableVersion)
+        assertEquals("stricknani-v1.2.0-app-arm64-v8a-release.apk", update?.asset?.name)
         assertEquals("/repos/x/y/releases/latest", server.takeRequest().path)
     }
 
@@ -73,9 +88,11 @@ class UpdateCheckerTest {
     fun `rolling build behind latest prerelease gets update`() {
         server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
 
-        val update = check(revision = "b".repeat(12))
+        val update = check(revision = "b".repeat(12), channel = UpdateChannel.LATEST)
 
-        assertEquals(AppUpdate("aaaaaaa", "https://example.test/arm64.apk"), update)
+        assertEquals("aaaaaaa", update?.version)
+        assertEquals("https://example.test/arm64.apk", update?.downloadUrl)
+        assertNull(update?.stableVersion)
         assertEquals("/repos/x/y/releases/tags/latest", server.takeRequest().path)
     }
 
@@ -83,7 +100,7 @@ class UpdateCheckerTest {
     fun `rolling build on latest commit gets nothing`() {
         server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
 
-        assertNull(check(revision = remoteCommit.take(12)))
+        assertNull(check(revision = remoteCommit.take(12), channel = UpdateChannel.LATEST))
     }
 
     @Test
@@ -92,7 +109,7 @@ class UpdateCheckerTest {
 
         assertEquals(
             "https://example.test/arm64-debug.apk",
-            check("b".repeat(12), debug = true)?.downloadUrl,
+            check("b".repeat(12), debug = true, channel = UpdateChannel.LATEST)?.downloadUrl,
         )
     }
 
@@ -131,5 +148,128 @@ class UpdateCheckerTest {
         assertEquals(UpdateCheckResult.NotEligible, detailed("unknown", "1.1.0"))
         server.enqueue(MockResponse().setResponseCode(500))
         assertEquals(UpdateCheckResult.Failed, detailed("v1.1.0", "1.1.0"))
+    }
+
+    @Test
+    fun `stable channel never takes the rolling prerelease`() {
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+
+        check(revision = "v1.1.0", version = "1.1.0")
+
+        assertEquals("/repos/x/y/releases/latest", server.takeRequest().path)
+    }
+
+    @Test
+    fun `tagged build newer than the newest stable is ahead, not downgraded`() {
+        server.enqueue(MockResponse().setBody(releaseJson("v1.0.0")))
+
+        assertEquals(
+            UpdateCheckResult.AheadOfStable,
+            detailed(revision = "v1.1.0", version = "1.1.0"),
+        )
+    }
+
+    @Test
+    fun `rolling build on stable is offered the tag only when the tag is ahead of it`() {
+        val rolling = "b".repeat(12)
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setBody(compareJson("ahead")))
+
+        val result = detailed(rolling)
+
+        assertEquals("1.2.0", (result as UpdateCheckResult.Available).update.version)
+        server.takeRequest()
+        assertEquals(
+            "/repos/x/y/compare/$rolling...v1.2.0?per_page=1",
+            server.takeRequest().path,
+        )
+    }
+
+    @Test
+    fun `rolling build ahead of stable is told so instead of downgraded`() {
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setBody(compareJson("behind")))
+        assertEquals(UpdateCheckResult.AheadOfStable, detailed("b".repeat(12)))
+
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setBody(compareJson("diverged")))
+        assertEquals(UpdateCheckResult.AheadOfStable, detailed("b".repeat(12)))
+
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setBody(compareJson("identical")))
+        assertEquals(UpdateCheckResult.UpToDate, detailed("b".repeat(12)))
+    }
+
+    @Test
+    fun `git describe revisions count as rolling builds`() {
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setBody(compareJson("behind")))
+
+        assertEquals(
+            UpdateCheckResult.AheadOfStable,
+            detailed("v1.1.0-5-gabcdef012345", version = "1.1.0"),
+        )
+        server.takeRequest()
+        assertEquals(
+            "/repos/x/y/compare/abcdef012345...v1.2.0?per_page=1",
+            server.takeRequest().path,
+        )
+    }
+
+    @Test
+    fun `tagged build on the latest channel gets the rolling build when it is ahead`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("ahead")))
+
+        val update = check("v1.1.0", "1.1.0", channel = UpdateChannel.LATEST)
+
+        assertEquals("aaaaaaa", update?.version)
+        // The release APK of the rolling build, never the debug package.
+        assertEquals("https://example.test/arm64.apk", update?.downloadUrl)
+        server.takeRequest()
+        assertEquals(
+            "/repos/x/y/compare/v1.1.0...$remoteCommit?per_page=1",
+            server.takeRequest().path,
+        )
+    }
+
+    @Test
+    fun `tagged build not behind the rolling build gets nothing on the latest channel`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("behind")))
+
+        assertEquals(
+            UpdateCheckResult.UpToDate,
+            detailed("v1.1.0", "1.1.0", UpdateChannel.LATEST),
+        )
+    }
+
+    @Test
+    fun `latest release without a commit fails the rolling check`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "no hash here")))
+
+        assertEquals(
+            UpdateCheckResult.Failed,
+            detailed("b".repeat(12), channel = UpdateChannel.LATEST),
+        )
+    }
+
+    @Test
+    fun `installed build identity is read from the git revision`() {
+        assertEquals(InstalledBuild.Tagged, InstalledBuild.parse("v1.2.3"))
+        assertEquals(InstalledBuild.Rolling("abcdef0"), InstalledBuild.parse("abcdef0"))
+        assertEquals(
+            InstalledBuild.Rolling("9a7bfc70abcd"),
+            InstalledBuild.parse("v1.0.0-12-g9a7bfc70abcd"),
+        )
+        assertEquals(InstalledBuild.Unknown, InstalledBuild.parse("v1.0.0-12-g9a7bfc70abcd-dirty"))
+        assertEquals(InstalledBuild.Unknown, InstalledBuild.parse("unknown"))
+    }
+
+    @Test
+    fun `channel names round trip and default to stable`() {
+        assertEquals(UpdateChannel.LATEST, UpdateChannel.fromName("LATEST"))
+        assertEquals(UpdateChannel.STABLE, UpdateChannel.fromName(null))
+        assertEquals(UpdateChannel.STABLE, UpdateChannel.fromName("nonsense"))
     }
 }

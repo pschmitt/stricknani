@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -146,6 +148,15 @@ constructor(
 
     init {
         refresh(trigger = RefreshTrigger.Automatic)
+        if (BuildConfig.SELF_UPDATE_ENABLED) {
+            // A channel switch in About replaces the card with the other stream's answer.
+            viewModelScope.launch {
+                appPreferences.updateChannel.drop(1).collect {
+                    updateCheckJob?.cancel()
+                    checkForUpdate()
+                }
+            }
+        }
     }
 
     private var updateCheckJob: Job? = null
@@ -155,9 +166,16 @@ constructor(
         if (!BuildConfig.SELF_UPDATE_ENABLED) return
         if (updateCheckJob?.isActive == true) return
         updateCheckJob = viewModelScope.launch {
-            // A failed or offline check yields null - keep any update already found.
-            (updateChecker.checkCurrentBuild() as? UpdateCheckResult.Available)?.let {
-                foundUpdate.value = it.update
+            // A failed or offline check keeps any update already found; any definite answer
+            // (including "ahead of stable" after a channel switch) replaces it.
+            when (
+                val result = updateChecker.checkCurrentBuild(appPreferences.updateChannel.first())
+            ) {
+                is UpdateCheckResult.Available -> foundUpdate.value = result.update
+                UpdateCheckResult.Failed -> Unit
+                UpdateCheckResult.UpToDate,
+                UpdateCheckResult.AheadOfStable,
+                UpdateCheckResult.NotEligible -> foundUpdate.value = null
             }
         }
     }

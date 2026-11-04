@@ -4,6 +4,9 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import blue.anika.wolle.crash.CrashReportInstaller
+import blue.anika.wolle.data.settings.AppPreferencesRepository
+import blue.anika.wolle.data.update.UpdateScheduler
+import blue.anika.wolle.data.update.inAppUpdateAvailable
 import blue.anika.wolle.di.MediaClient
 import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.SyncScheduler
@@ -15,6 +18,11 @@ import coil3.disk.DiskCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import timber.log.Timber
@@ -31,6 +39,8 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var syncScheduler: SyncScheduler
     @Inject lateinit var syncNotifier: SyncNotifier
+    @Inject lateinit var updateScheduler: UpdateScheduler
+    @Inject lateinit var appPreferences: AppPreferencesRepository
     @Inject @MediaClient lateinit var mediaOkHttpClient: OkHttpClient
 
     override val workManagerConfiguration: Configuration
@@ -59,6 +69,12 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         // pre-onboarding) so it's safe to call unconditionally on every process start.
         syncScheduler.schedulePeriodic()
         syncScheduler.syncNow()
+        if (inAppUpdateAvailable) {
+            // Keeps the periodic update check in line with "Update automatically" after a restart.
+            CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+                updateScheduler.setAutoCheck(appPreferences.autoUpdate.first())
+            }
+        }
     }
 
     private companion object {
