@@ -32,7 +32,7 @@ pub struct Config {
     pub archive_enabled: bool,
     /// Optional operator-configured error reporting (Sentry); inactive without a DSN.
     pub error_reporting: ErrorReportingSettings,
-    /// Validated provider configuration, absent unless `RUST_AI_ENABLED=true`.
+    /// Validated provider configuration, absent unless `AI_ENABLED=true`.
     pub ai: Option<AiConfig>,
     /// Validated OIDC provider configuration, absent unless explicitly enabled.
     pub oidc: Option<ProviderConfig>,
@@ -70,19 +70,21 @@ impl Config {
     }
 
     fn from_lookup(mut get: impl FnMut(&str) -> Option<String>) -> Result<Self, ConfigError> {
-        let database_url = get("RUST_DATABASE_URL")
+        let database_url = get("STRICKNANI_DATABASE_URL")
             .filter(|value| !value.trim().is_empty())
-            .ok_or(ConfigError("RUST_DATABASE_URL must be set"))?;
+            .ok_or(ConfigError("STRICKNANI_DATABASE_URL must be set"))?;
         if !database_url.starts_with("sqlite:") {
-            return Err(ConfigError("RUST_DATABASE_URL must use SQLite"));
+            return Err(ConfigError("STRICKNANI_DATABASE_URL must use SQLite"));
         }
 
-        let media_root = get("RUST_MEDIA_ROOT")
+        let media_root = get("STRICKNANI_MEDIA_ROOT")
             .filter(|value| !value.trim().is_empty())
             .map(PathBuf::from)
-            .ok_or(ConfigError("RUST_MEDIA_ROOT must be set"))?;
+            .ok_or(ConfigError("STRICKNANI_MEDIA_ROOT must be set"))?;
         if !media_root.is_absolute() {
-            return Err(ConfigError("RUST_MEDIA_ROOT must be an absolute path"));
+            return Err(ConfigError(
+                "STRICKNANI_MEDIA_ROOT must be an absolute path",
+            ));
         }
 
         if let Some(legacy_url) = get("DATABASE_URL") {
@@ -135,41 +137,41 @@ impl Config {
             Some("true" | "1") => true,
             _ => return Err(ConfigError("SESSION_COOKIE_SECURE must be true or false")),
         };
-        let external_imports = match get("RUST_EXTERNAL_IMPORTS_ENABLED").as_deref() {
+        let external_imports = match get("EXTERNAL_IMPORTS_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
             _ => {
                 return Err(ConfigError(
-                    "RUST_EXTERNAL_IMPORTS_ENABLED must be true or false",
+                    "EXTERNAL_IMPORTS_ENABLED must be true or false",
                 ));
             }
         };
-        let archive_enabled = match get("RUST_WAYBACK_ENABLED").as_deref() {
+        let archive_enabled = match get("WAYBACK_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
-            _ => return Err(ConfigError("RUST_WAYBACK_ENABLED must be true or false")),
+            _ => return Err(ConfigError("WAYBACK_ENABLED must be true or false")),
         };
-        let signup_enabled = match get("RUST_SIGNUP_ENABLED").as_deref() {
+        let signup_enabled = match get("SIGNUP_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
-            _ => return Err(ConfigError("RUST_SIGNUP_ENABLED must be true or false")),
+            _ => return Err(ConfigError("SIGNUP_ENABLED must be true or false")),
         };
-        let gravatar_enabled = match get("RUST_GRAVATAR_ENABLED").as_deref() {
+        let gravatar_enabled = match get("GRAVATAR_ENABLED").as_deref() {
             None | Some("true" | "1") => true,
             Some("false" | "0") => false,
-            _ => return Err(ConfigError("RUST_GRAVATAR_ENABLED must be true or false")),
+            _ => return Err(ConfigError("GRAVATAR_ENABLED must be true or false")),
         };
         let error_reporting = ErrorReportingSettings::from_lookup(&mut get)
             .map_err(|_| ConfigError("Sentry error reporting configuration is invalid"))?;
-        let ocr_enabled = match get("RUST_OCR_ENABLED").as_deref() {
+        let ocr_enabled = match get("OCR_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
-            _ => return Err(ConfigError("RUST_OCR_ENABLED must be true or false")),
+            _ => return Err(ConfigError("OCR_ENABLED must be true or false")),
         };
-        let ai_enabled = match get("RUST_AI_ENABLED").as_deref() {
+        let ai_enabled = match get("AI_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
-            _ => return Err(ConfigError("RUST_AI_ENABLED must be true or false")),
+            _ => return Err(ConfigError("AI_ENABLED must be true or false")),
         };
         let ai = AiConfig::from_lookup(ai_enabled, &mut get)
             .map_err(|_| ConfigError("AI provider configuration is invalid"))?;
@@ -178,10 +180,10 @@ impl Config {
                 "RAVELRY_USERNAME and RAVELRY_PASSWORD must be set together",
             ));
         }
-        let oidc_enabled = match get("RUST_OIDC_ENABLED").as_deref() {
+        let oidc_enabled = match get("OIDC_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
-            _ => return Err(ConfigError("RUST_OIDC_ENABLED must be true or false")),
+            _ => return Err(ConfigError("OIDC_ENABLED must be true or false")),
         };
         let (oidc, oidc_pat_ttl_seconds) = if oidc_enabled {
             if !secure_cookies {
@@ -228,24 +230,22 @@ fn oidc_from_lookup(
     get: &mut impl FnMut(&str) -> Option<String>,
     trusted_hosts: &str,
 ) -> Result<(ProviderConfig, u64), ConfigError> {
-    let issuer = required_oidc_value(get, "RUST_OIDC_ISSUER")?;
+    let issuer = required_oidc_value(get, "OIDC_ISSUER")?;
     let client_id = oidc_client_id_from_lookup(get)?;
     if client_id.is_empty() || client_id.len() > 256 || client_id.chars().any(char::is_control) {
         return Err(ConfigError("OIDC client ID is invalid"));
     }
-    let callback_uri = required_oidc_value(get, "RUST_OIDC_CALLBACK_URI")?;
-    let secret_file = required_oidc_value(get, "RUST_OIDC_CLIENT_SECRET_FILE")?;
+    let callback_uri = required_oidc_value(get, "OIDC_CALLBACK_URI")?;
+    let secret_file = required_oidc_value(get, "OIDC_CLIENT_SECRET_FILE")?;
     let client_secret = read_oidc_client_secret(&secret_file)?;
-    let native_redirect_uris = parse_native_redirects(get("RUST_OIDC_NATIVE_REDIRECT_URIS"))?;
-    let pat_ttl_seconds = get("RUST_OIDC_PAT_TTL_SECONDS")
+    let native_redirect_uris = parse_native_redirects(get("OIDC_NATIVE_REDIRECT_URIS"))?;
+    let pat_ttl_seconds = get("OIDC_PAT_TTL_SECONDS")
         .map(|value| {
             value
                 .parse::<u64>()
                 .ok()
                 .filter(|seconds| (1..=DEFAULT_OIDC_PAT_TTL_SECONDS).contains(seconds))
-                .ok_or(ConfigError(
-                    "RUST_OIDC_PAT_TTL_SECONDS must be from 1 to 604800",
-                ))
+                .ok_or(ConfigError("OIDC_PAT_TTL_SECONDS must be from 1 to 604800"))
         })
         .transpose()?
         .unwrap_or(DEFAULT_OIDC_PAT_TTL_SECONDS);
@@ -273,8 +273,8 @@ fn oidc_from_lookup(
 fn oidc_client_id_from_lookup(
     get: &mut impl FnMut(&str) -> Option<String>,
 ) -> Result<String, ConfigError> {
-    let client_id = get("RUST_OIDC_CLIENT_ID");
-    let client_id_file = get("RUST_OIDC_CLIENT_ID_FILE");
+    let client_id = get("OIDC_CLIENT_ID");
+    let client_id_file = get("OIDC_CLIENT_ID_FILE");
     match (client_id, client_id_file) {
         (Some(value), None) => Ok(value.trim().to_owned()),
         (None, Some(path)) => {
@@ -282,7 +282,7 @@ fn oidc_client_id_from_lookup(
             Ok(value.trim().to_owned())
         }
         _ => Err(ConfigError(
-            "configure exactly one of RUST_OIDC_CLIENT_ID or RUST_OIDC_CLIENT_ID_FILE",
+            "configure exactly one of OIDC_CLIENT_ID or OIDC_CLIENT_ID_FILE",
         )),
     }
 }
@@ -416,18 +416,18 @@ mod tests {
 
     fn oidc_values(secret_path: &str) -> Vec<(&'static str, String)> {
         vec![
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db".to_owned()),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media".to_owned()),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db".to_owned()),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media".to_owned()),
             ("SESSION_COOKIE_SECURE", "true".to_owned()),
             ("TRUSTED_HOSTS", "app.example.test".to_owned()),
-            ("RUST_OIDC_ENABLED", "true".to_owned()),
-            ("RUST_OIDC_ISSUER", "https://id.example.test".to_owned()),
-            ("RUST_OIDC_CLIENT_ID", "synthetic-client".to_owned()),
+            ("OIDC_ENABLED", "true".to_owned()),
+            ("OIDC_ISSUER", "https://id.example.test".to_owned()),
+            ("OIDC_CLIENT_ID", "synthetic-client".to_owned()),
             (
-                "RUST_OIDC_CALLBACK_URI",
+                "OIDC_CALLBACK_URI",
                 "https://app.example.test/api/v2/auth/oidc/callback/authelia".to_owned(),
             ),
-            ("RUST_OIDC_CLIENT_SECRET_FILE", secret_path.to_owned()),
+            ("OIDC_CLIENT_SECRET_FILE", secret_path.to_owned()),
         ]
     }
 
@@ -442,20 +442,20 @@ mod tests {
     #[test]
     fn gravatar_is_on_by_default_and_can_be_disabled() {
         let base = [
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
         ];
         assert!(parse(&base).expect("default config").gravatar_enabled);
         for (value, expected) in [("true", true), ("1", true), ("false", false), ("0", false)] {
             let mut values = base.to_vec();
-            values.push(("RUST_GRAVATAR_ENABLED", value));
+            values.push(("GRAVATAR_ENABLED", value));
             assert_eq!(
                 parse(&values).expect("valid flag").gravatar_enabled,
                 expected
             );
         }
         let mut values = base.to_vec();
-        values.push(("RUST_GRAVATAR_ENABLED", "maybe"));
+        values.push(("GRAVATAR_ENABLED", "maybe"));
         assert!(parse(&values).is_err());
     }
 
@@ -474,11 +474,11 @@ mod tests {
     #[test]
     fn rejects_non_sqlite_database_urls() {
         let error = parse(&[
-            ("RUST_DATABASE_URL", "postgres://db.invalid/test"),
-            ("RUST_MEDIA_ROOT", "/media"),
+            ("STRICKNANI_DATABASE_URL", "postgres://db.invalid/test"),
+            ("STRICKNANI_MEDIA_ROOT", "/media"),
         ])
         .expect_err("non-SQLite databases must be rejected");
-        assert_eq!(error.to_string(), "RUST_DATABASE_URL must use SQLite");
+        assert_eq!(error.to_string(), "STRICKNANI_DATABASE_URL must use SQLite");
         assert!(!error.to_string().contains("secret"));
     }
 
@@ -486,8 +486,8 @@ mod tests {
     fn requires_an_absolute_media_root() {
         assert!(
             parse(&[
-                ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
-                ("RUST_MEDIA_ROOT", "media")
+                ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/test.db"),
+                ("STRICKNANI_MEDIA_ROOT", "media")
             ])
             .is_err()
         );
@@ -496,8 +496,8 @@ mod tests {
     #[test]
     fn parses_bind_host_and_uses_bind_port_before_port() {
         let config = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/test.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/media"),
             ("BIND_HOST", "::1"),
             ("BIND_PORT", "8080"),
             ("PORT", "9090"),
@@ -512,8 +512,8 @@ mod tests {
     #[test]
     fn falls_back_to_port_then_default_and_keeps_static_default() {
         let config = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/test.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/media"),
             ("PORT", "9001"),
         ])
         .expect("valid configuration");
@@ -523,8 +523,8 @@ mod tests {
         );
 
         let config = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/test.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/test.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/media"),
         ])
         .expect("valid configuration");
         assert_eq!(
@@ -536,16 +536,16 @@ mod tests {
     fn refuses_explicit_shared_database_or_media_paths() {
         assert!(
             parse(&[
-                ("RUST_DATABASE_URL", "sqlite:///tmp/./shared.db"),
+                ("STRICKNANI_DATABASE_URL", "sqlite:///tmp/./shared.db"),
                 ("DATABASE_URL", "sqlite:/tmp/shared.db"),
-                ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+                ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
             ])
             .is_err()
         );
         assert!(
             parse(&[
-                ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-                ("RUST_MEDIA_ROOT", "/tmp/shared-media"),
+                ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+                ("STRICKNANI_MEDIA_ROOT", "/tmp/shared-media"),
                 ("MEDIA_ROOT", "/tmp/./shared-media"),
             ])
             .is_err()
@@ -555,8 +555,8 @@ mod tests {
     #[test]
     fn external_listener_requires_explicit_hosts_and_secure_cookies() {
         let base = [
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
             ("BIND_HOST", "0.0.0.0"),
         ];
         assert!(parse(&base).is_err());
@@ -571,8 +571,8 @@ mod tests {
     #[test]
     fn loopback_configuration_uses_safe_exact_host_defaults() {
         let config = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
         ])
         .expect("loopback defaults are safe");
         assert!(config.trusted_hosts.allows_host("localhost:7674"));
@@ -583,8 +583,8 @@ mod tests {
     fn ai_is_disabled_by_default_without_reading_provider_credentials() {
         let mut reads = Vec::new();
         let values = [
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
             ("OPENAI_API_KEY", "fixture-secret"),
         ];
         let config = Config::from_lookup(|key| {
@@ -603,17 +603,17 @@ mod tests {
     #[test]
     fn ai_requires_a_key_only_when_enabled_and_does_not_debug_secrets() {
         let required = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
-            ("RUST_AI_ENABLED", "true"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
+            ("AI_ENABLED", "true"),
         ])
         .expect_err("enabled AI requires an API key");
         assert_eq!(required.to_string(), "AI provider configuration is invalid");
 
         let config = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
-            ("RUST_AI_ENABLED", "true"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
+            ("AI_ENABLED", "true"),
             ("AI_API_KEY", "fixture-secret"),
         ])
         .expect("enabled AI config accepts a key");
@@ -624,27 +624,27 @@ mod tests {
     #[test]
     fn rejects_invalid_ai_feature_flag() {
         let error = parse(&[
-            ("RUST_DATABASE_URL", "sqlite:/tmp/rust.db"),
-            ("RUST_MEDIA_ROOT", "/tmp/rust-media"),
-            ("RUST_AI_ENABLED", "yes"),
+            ("STRICKNANI_DATABASE_URL", "sqlite:/tmp/rust.db"),
+            ("STRICKNANI_MEDIA_ROOT", "/tmp/rust-media"),
+            ("AI_ENABLED", "yes"),
         ])
         .expect_err("invalid feature flag must fail closed");
-        assert_eq!(error.to_string(), "RUST_AI_ENABLED must be true or false");
+        assert_eq!(error.to_string(), "AI_ENABLED must be true or false");
     }
 
     #[test]
     fn oidc_is_opt_in_and_disabled_mode_does_not_read_provider_environment() {
         let mut reads = Vec::new();
         let config = Config::from_lookup(|key| {
-            if key == "RUST_OIDC_ENABLED" {
+            if key == "OIDC_ENABLED" {
                 None
-            } else if key.starts_with("RUST_OIDC_") {
+            } else if key.starts_with("OIDC_") {
                 reads.push(key.to_owned());
                 Some("invalid and deliberately ignored".to_owned())
             } else {
                 match key {
-                    "RUST_DATABASE_URL" => Some("sqlite:/tmp/rust.db".to_owned()),
-                    "RUST_MEDIA_ROOT" => Some("/tmp/rust-media".to_owned()),
+                    "STRICKNANI_DATABASE_URL" => Some("sqlite:/tmp/rust.db".to_owned()),
+                    "STRICKNANI_MEDIA_ROOT" => Some("/tmp/rust-media".to_owned()),
                     _ => None,
                 }
             }
@@ -681,8 +681,8 @@ mod tests {
         let (_secret_file, secret_path) = oidc_secret(b"synthetic-client-secret");
         let (_client_id_file, client_id_path) = oidc_secret(b"synthetic-client\n");
         let mut values = oidc_values(&secret_path);
-        values.retain(|(name, _)| *name != "RUST_OIDC_CLIENT_ID");
-        values.push(("RUST_OIDC_CLIENT_ID_FILE", client_id_path));
+        values.retain(|(name, _)| *name != "OIDC_CLIENT_ID");
+        values.push(("OIDC_CLIENT_ID_FILE", client_id_path));
 
         let config = Config::from_lookup(|key| {
             values
@@ -693,7 +693,7 @@ mod tests {
         .expect("client ID can be read from its runtime file");
         assert_eq!(config.oidc.as_ref().unwrap().client_id, "synthetic-client");
 
-        values.push(("RUST_OIDC_CLIENT_ID", "synthetic-client".to_owned()));
+        values.push(("OIDC_CLIENT_ID", "synthetic-client".to_owned()));
         let error = Config::from_lookup(|key| {
             values
                 .iter()
@@ -703,13 +703,13 @@ mod tests {
         .expect_err("inline and file client IDs cannot be combined");
         assert_eq!(
             error.to_string(),
-            "configure exactly one of RUST_OIDC_CLIENT_ID or RUST_OIDC_CLIENT_ID_FILE"
+            "configure exactly one of OIDC_CLIENT_ID or OIDC_CLIENT_ID_FILE"
         );
 
-        values.retain(|(name, _)| *name != "RUST_OIDC_CLIENT_ID_FILE");
+        values.retain(|(name, _)| *name != "OIDC_CLIENT_ID_FILE");
         if let Some((_, value)) = values
             .iter_mut()
-            .find(|(name, _)| *name == "RUST_OIDC_CLIENT_ID")
+            .find(|(name, _)| *name == "OIDC_CLIENT_ID")
         {
             *value = "synthetic\nclient".to_owned();
         }
@@ -741,7 +741,7 @@ mod tests {
         let mut values = oidc_values(&path);
         if let Some((_, callback)) = values
             .iter_mut()
-            .find(|(name, _)| *name == "RUST_OIDC_CALLBACK_URI")
+            .find(|(name, _)| *name == "OIDC_CALLBACK_URI")
         {
             *callback =
                 "https://app.example.test:8443/api/v2/auth/oidc/callback/authelia".to_owned();
@@ -764,16 +764,16 @@ mod tests {
         let (_file, path) = oidc_secret(b"fixture-secret");
         for (key, value) in [
             (
-                "RUST_OIDC_CALLBACK_URI",
+                "OIDC_CALLBACK_URI",
                 "http://app.example.test/api/v2/auth/oidc/callback/authelia",
             ),
-            ("RUST_OIDC_ISSUER", "http://id.example.test"),
+            ("OIDC_ISSUER", "http://id.example.test"),
             (
-                "RUST_OIDC_CALLBACK_URI",
+                "OIDC_CALLBACK_URI",
                 "https://app.example.test/redirect?next=https://evil.example.test",
             ),
-            ("RUST_OIDC_PAT_TTL_SECONDS", "0"),
-            ("RUST_OIDC_PAT_TTL_SECONDS", "604801"),
+            ("OIDC_PAT_TTL_SECONDS", "0"),
+            ("OIDC_PAT_TTL_SECONDS", "604801"),
         ] {
             let mut values = oidc_values(&path);
             values.retain(|(entry, _)| *entry != key);
@@ -810,7 +810,7 @@ mod tests {
             "stricknani://oidc-callback,stricknani://oidc-callback",
         ] {
             let mut values = oidc_values(&path);
-            values.push(("RUST_OIDC_NATIVE_REDIRECT_URIS", redirects.to_owned()));
+            values.push(("OIDC_NATIVE_REDIRECT_URIS", redirects.to_owned()));
             assert!(
                 Config::from_lookup(|name| {
                     values

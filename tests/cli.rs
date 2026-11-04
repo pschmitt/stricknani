@@ -11,9 +11,9 @@ fn cli(url: &str, args: &[&str], input: Option<&[u8]>) -> std::process::Output {
     let mut child = Command::new(env!("CARGO_BIN_EXE_stricknani-server"))
         .args(args)
         .env("RUST_LOG", "error")
-        .env("RUST_DATABASE_URL", url)
+        .env("STRICKNANI_DATABASE_URL", url)
         .env(
-            "RUST_MEDIA_ROOT",
+            "STRICKNANI_MEDIA_ROOT",
             std::env::temp_dir().join("stricknani-cli-test-media"),
         )
         .stdin(Stdio::piped())
@@ -268,8 +268,8 @@ async fn create_admin_reads_password_from_stdin_and_stores_admin_role_atomically
 fn help_needs_no_database_and_invalid_config_is_redacted() {
     let help = Command::new(env!("CARGO_BIN_EXE_stricknani-server"))
         .arg("--help")
-        .env_remove("RUST_DATABASE_URL")
-        .env_remove("RUST_MEDIA_ROOT")
+        .env_remove("STRICKNANI_DATABASE_URL")
+        .env_remove("STRICKNANI_MEDIA_ROOT")
         .output()
         .unwrap();
     assert!(help.status.success());

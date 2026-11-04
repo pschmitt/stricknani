@@ -57,7 +57,7 @@ package and NixOS module, and development setup are in
 ## Set it up with an AI agent
 
 Stricknani is private by default: nobody can register until you set
-`RUST_SIGNUP_ENABLED=true` (NixOS: `services.stricknani.registration.enable`).
+`SIGNUP_ENABLED=true` (NixOS: `services.stricknani.registration.enable`).
 To have a coding agent install it, paste this into Claude Code, Codex or
 opencode on the machine that will host it:
 
@@ -69,7 +69,7 @@ Set up a private Stricknani instance for me. Stricknani is a self-hosted knittin
 3. Create the first administrator with "stricknani-server create-admin EMAIL" (stricknani-cli on NixOS). Pass the password on standard input, at least 12 characters, never on the command line.
 4. Set TRUSTED_HOSTS to the exact host name people will open, for example stricknani.example.com.
 5. Put it behind an HTTPS reverse proxy and set SESSION_COOKIE_SECURE=true. Do not expose port 7674 directly.
-6. Leave public registration off (RUST_SIGNUP_ENABLED unset). Create accounts for other people with "create-user EMAIL".
+6. Leave public registration off (SIGNUP_ENABLED unset). Create accounts for other people with "create-user EMAIL".
 7. Check /healthz, sign in at https://stricknani.example.com/app/, then tell me what you did and what is left for me (DNS, backups).
 ```
 

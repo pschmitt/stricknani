@@ -113,12 +113,12 @@ describe("serverEnvironment", () => {
     const signup = serverEnvironment(runtime, 32123, undefined, true);
 
     expect(defaults).not.toHaveProperty("WEB_ROOT");
-    expect(defaults).not.toHaveProperty("RUST_SIGNUP_ENABLED");
+    expect(defaults).not.toHaveProperty("SIGNUP_ENABLED");
     expect(defaults).not.toHaveProperty("TRUSTED_HOSTS");
     expect(web.WEB_ROOT).toBe(resolve(webRoot));
-    expect(signup.RUST_SIGNUP_ENABLED).toBe("true");
+    expect(signup.SIGNUP_ENABLED).toBe("true");
     expect(web).not.toHaveProperty("TRUSTED_HOSTS");
-    expect(web.RUST_DATABASE_URL).toBe(defaults.RUST_DATABASE_URL);
+    expect(web.STRICKNANI_DATABASE_URL).toBe(defaults.STRICKNANI_DATABASE_URL);
     expect(() =>
       serverEnvironment(runtime, 32123, join(tmp, "missing")),
     ).toThrow(/web root must be an existing directory/);
@@ -255,7 +255,7 @@ describe("startFixture", () => {
         resolvedBinary,
         "create-user",
       ]);
-      expect(spawned[0]?.env.RUST_SIGNUP_ENABLED).toBe("true");
+      expect(spawned[0]?.env.SIGNUP_ENABLED).toBe("true");
 
       const credentials = JSON.parse(readFileSync(fixtureFile, "utf-8")) as {
         email: string;

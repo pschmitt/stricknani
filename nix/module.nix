@@ -15,23 +15,23 @@ let
     "504"
   ];
   oidcEnabledEnvironmentFile = pkgs.writeText "stricknani-oidc-enabled.env" ''
-    RUST_OIDC_ENABLED=${lib.boolToString cfg.oidc.enable}
+    OIDC_ENABLED=${lib.boolToString cfg.oidc.enable}
   '';
   oidcEnvironment = lib.optionalAttrs cfg.oidc.enable (
     lib.optionalAttrs (cfg.oidc.issuer != null) {
-      RUST_OIDC_ISSUER = cfg.oidc.issuer;
+      OIDC_ISSUER = cfg.oidc.issuer;
     }
     // lib.optionalAttrs (cfg.oidc.clientId != null) {
-      RUST_OIDC_CLIENT_ID = cfg.oidc.clientId;
+      OIDC_CLIENT_ID = cfg.oidc.clientId;
     }
     // lib.optionalAttrs (cfg.oidc.clientSecretFile != null) {
-      RUST_OIDC_CLIENT_SECRET_FILE = cfg.oidc.clientSecretFile;
+      OIDC_CLIENT_SECRET_FILE = cfg.oidc.clientSecretFile;
     }
     // lib.optionalAttrs (cfg.oidc.callbackUri != null) {
-      RUST_OIDC_CALLBACK_URI = cfg.oidc.callbackUri;
+      OIDC_CALLBACK_URI = cfg.oidc.callbackUri;
     }
     // lib.optionalAttrs (cfg.oidc.nativeRedirectUris != null) {
-      RUST_OIDC_NATIVE_REDIRECT_URIS = lib.concatStringsSep "," cfg.oidc.nativeRedirectUris;
+      OIDC_NATIVE_REDIRECT_URIS = lib.concatStringsSep "," cfg.oidc.nativeRedirectUris;
     }
   );
   loopbackBind = lib.hasPrefix "127." cfg.bindHost || cfg.bindHost == "::1";
@@ -121,8 +121,8 @@ let
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
     exec sudo -u "${user}" -- env \
       -u DATABASE_URL -u MEDIA_ROOT \
-      RUST_DATABASE_URL="${cfg.databaseUrl}" \
-      RUST_MEDIA_ROOT="${cfg.mediaRoot}" \
+      STRICKNANI_DATABASE_URL="${cfg.databaseUrl}" \
+      STRICKNANI_MEDIA_ROOT="${cfg.mediaRoot}" \
       ${pkgs.runtimeShell} -c '
         cd "${cfg.dataDir}";
         exec "${cfg.package}/bin/stricknani-server" "$@" \
@@ -187,20 +187,20 @@ in
     gravatar.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Let the server fetch Gravatar images (SHA-256 of the account email) for users without an uploaded avatar. Clients never contact Gravatar. Sets RUST_GRAVATAR_ENABLED; users can still opt out individually.";
+      description = "Let the server fetch Gravatar images (SHA-256 of the account email) for users without an uploaded avatar. Clients never contact Gravatar. Sets GRAVATAR_ENABLED; users can still opt out individually.";
     };
 
     imports.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Let the server fetch public web pages for importing projects and yarns from a link, and download the pictures found there. Sets RUST_EXTERNAL_IMPORTS_ENABLED. Pages are fetched with address checks that block private networks.";
+      description = "Let the server fetch public web pages for importing projects and yarns from a link, and download the pictures found there. Sets EXTERNAL_IMPORTS_ENABLED. Pages are fetched with address checks that block private networks.";
     };
 
     ai = {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = false;
-        description = "Let users ask an AI model to fill gaps in an import draft. Sets RUST_AI_ENABLED. Needs ai.apiKeyFile or an API key in secretKeyFile. Without it imports still work with rule-based extraction. The page text of imported links is sent to the model.";
+        description = "Let users ask an AI model to fill gaps in an import draft. Sets AI_ENABLED. Needs ai.apiKeyFile or an API key in secretKeyFile. Without it imports still work with rule-based extraction. The page text of imported links is sent to the model.";
       };
 
       provider = lib.mkOption {
@@ -261,29 +261,29 @@ in
     registration.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Allow anyone who can reach the instance to create their own account (web and Android). Sets RUST_SIGNUP_ENABLED. Leave this off for a private instance; accounts are then created by an administrator or with stricknani-cli create-user.";
+      description = "Allow anyone who can reach the instance to create their own account (web and Android). Sets SIGNUP_ENABLED. Leave this off for a private instance; accounts are then created by an administrator or with stricknani-cli create-user.";
     };
 
     sentry = {
       dsnFile = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "Absolute runtime path of a file holding the Sentry DSN (never a Nix value). Setting it turns on optional error reporting (RUST_SENTRY_DSN_FILE); without it nothing is sent anywhere. Users can opt out in their account settings.";
+        description = "Absolute runtime path of a file holding the Sentry DSN (never a Nix value). Setting it turns on optional error reporting (STRICKNANI_SENTRY_DSN_FILE); without it nothing is sent anywhere. Users can opt out in their account settings.";
       };
       frontendDsnFile = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "Optional absolute runtime path of a file holding a separate Sentry DSN for the web and Android apps (RUST_SENTRY_FRONTEND_DSN_FILE). Defaults to the dsnFile DSN, so one project can serve everything; events carry a component tag (server, web, android).";
+        description = "Optional absolute runtime path of a file holding a separate Sentry DSN for the web and Android apps (STRICKNANI_SENTRY_FRONTEND_DSN_FILE). Defaults to the dsnFile DSN, so one project can serve everything; events carry a component tag (server, web, android).";
       };
       environment = lib.mkOption {
         type = lib.types.str;
         default = "production";
-        description = "Sentry environment name (RUST_SENTRY_ENVIRONMENT). Only used with a DSN file.";
+        description = "Sentry environment name (STRICKNANI_SENTRY_ENVIRONMENT). Only used with a DSN file.";
       };
       tracesSampleRate = lib.mkOption {
         type = lib.types.numbers.between 0 1;
         default = 0;
-        description = "Share of requests traced for performance monitoring (RUST_SENTRY_TRACES_SAMPLE_RATE); 0 reports errors only. Only used with a DSN file.";
+        description = "Share of requests traced for performance monitoring (STRICKNANI_SENTRY_TRACES_SAMPLE_RATE); 0 reports errors only. Only used with a DSN file.";
       };
     };
 
@@ -425,7 +425,7 @@ in
         message = "services.stricknani.ai.provider = \"custom\" requires ai.baseUrl.";
       }
       {
-        assertion = !(cfg.extraConfig ? RUST_DATABASE_URL) && !(cfg.extraConfig ? RUST_MEDIA_ROOT);
+        assertion = !(cfg.extraConfig ? STRICKNANI_DATABASE_URL) && !(cfg.extraConfig ? STRICKNANI_MEDIA_ROOT);
         message = "Set Rust database and media paths with databaseUrl and mediaRoot, not extraConfig.";
       }
       {
@@ -445,10 +445,10 @@ in
         message = "services.stricknani.oidc requires secure session cookies.";
       }
       {
-        assertion = builtins.all (name: !(lib.hasPrefix "RUST_OIDC_" name)) (
+        assertion = builtins.all (name: !(lib.hasPrefix "OIDC_" name)) (
           builtins.attrNames cfg.extraConfig
         );
-        message = "Set RUST_OIDC_* values with services.stricknani.oidc.environmentFile, not extraConfig.";
+        message = "Set OIDC_* values with services.stricknani.oidc.environmentFile, not extraConfig.";
       }
       {
         assertion = cfg.oidc.clientSecretFile == null || lib.hasPrefix "/" cfg.oidc.clientSecretFile;
@@ -462,7 +462,7 @@ in
         message = "services.stricknani.sentry.dsnFile and frontendDsnFile must be absolute runtime paths.";
       }
       {
-        assertion = !(cfg.extraConfig ? RUST_SENTRY_DSN);
+        assertion = !(cfg.extraConfig ? STRICKNANI_SENTRY_DSN);
         message = "Set the Sentry DSN with services.stricknani.sentry.dsnFile, not extraConfig.";
       }
       {
@@ -491,24 +491,24 @@ in
         environment = {
           BIND_HOST = cfg.bindHost;
           BIND_PORT = toString cfg.port;
-          RUST_DATABASE_URL = cfg.databaseUrl;
-          RUST_MEDIA_ROOT = toString cfg.mediaRoot;
+          STRICKNANI_DATABASE_URL = cfg.databaseUrl;
+          STRICKNANI_MEDIA_ROOT = toString cfg.mediaRoot;
           TRUSTED_HOSTS = trustedHosts;
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
-          RUST_GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
-          RUST_SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
-          RUST_EXTERNAL_IMPORTS_ENABLED = lib.boolToString cfg.imports.enable;
-          RUST_AI_ENABLED = lib.boolToString cfg.ai.enable;
+          GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
+          SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
+          EXTERNAL_IMPORTS_ENABLED = lib.boolToString cfg.imports.enable;
+          AI_ENABLED = lib.boolToString cfg.ai.enable;
         }
         // lib.optionalAttrs (cfg.sentry.dsnFile != null) {
-          RUST_SENTRY_DSN_FILE = cfg.sentry.dsnFile;
+          STRICKNANI_SENTRY_DSN_FILE = cfg.sentry.dsnFile;
         }
         // lib.optionalAttrs (cfg.sentry.frontendDsnFile != null) {
-          RUST_SENTRY_FRONTEND_DSN_FILE = cfg.sentry.frontendDsnFile;
+          STRICKNANI_SENTRY_FRONTEND_DSN_FILE = cfg.sentry.frontendDsnFile;
         }
         // lib.optionalAttrs (cfg.sentry.dsnFile != null || cfg.sentry.frontendDsnFile != null) {
-          RUST_SENTRY_ENVIRONMENT = cfg.sentry.environment;
-          RUST_SENTRY_TRACES_SAMPLE_RATE = toString cfg.sentry.tracesSampleRate;
+          STRICKNANI_SENTRY_ENVIRONMENT = cfg.sentry.environment;
+          STRICKNANI_SENTRY_TRACES_SAMPLE_RATE = toString cfg.sentry.tracesSampleRate;
         }
         // lib.optionalAttrs cfg.ai.enable (
           {

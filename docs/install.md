@@ -1,7 +1,11 @@
 # Install and run
 
-The server needs its own SQLite database (`RUST_DATABASE_URL`) and media
-directory (`RUST_MEDIA_ROOT`).
+The server needs its own SQLite database (`STRICKNANI_DATABASE_URL`) and media
+directory (`STRICKNANI_MEDIA_ROOT`).
+
+The historical `RUST_` prefix of the server variables is gone (`RUST_SIGNUP_ENABLED`
+is now `SIGNUP_ENABLED`); the database, media and Sentry variables use the
+`STRICKNANI_` prefix. The old names are no longer read.
 
 ## Container
 
@@ -39,13 +43,13 @@ For a public deployment, terminate HTTPS at a trusted reverse proxy, set
 authority clients use. Do not expose the app directly to the Internet.
 Registration, external imports, AI, OCR, and Wayback are disabled by default.
 To let people create their own accounts (web and Android), set
-`RUST_SIGNUP_ENABLED=true`. While it is off, the sign-in page and the Android
+`SIGNUP_ENABLED=true`. While it is off, the sign-in page and the Android
 app show a card that points to this repository and offers a setup prompt for an
 AI coding agent. Without self-service registration, add accounts with
 `stricknani-server create-user EMAIL`.
 
-Optional Sentry error reporting stays off unless `RUST_SENTRY_DSN_FILE` (or
-`RUST_SENTRY_DSN`) is set; see [rust-nixos.md](rust-nixos.md#error-reporting-sentry).
+Optional Sentry error reporting stays off unless `STRICKNANI_SENTRY_DSN_FILE` (or
+`STRICKNANI_SENTRY_DSN`) is set; see [rust-nixos.md](rust-nixos.md#error-reporting-sentry).
 
 ## Nix package
 
@@ -55,8 +59,8 @@ directory before starting it:
 ```sh
 export STRICKNANI_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/stricknani-rust"
 mkdir -p "$STRICKNANI_DATA_DIR/media"
-export RUST_DATABASE_URL="sqlite:$STRICKNANI_DATA_DIR/stricknani.sqlite3"
-export RUST_MEDIA_ROOT="$STRICKNANI_DATA_DIR/media"
+export STRICKNANI_DATABASE_URL="sqlite:$STRICKNANI_DATA_DIR/stricknani.sqlite3"
+export STRICKNANI_MEDIA_ROOT="$STRICKNANI_DATA_DIR/media"
 export SESSION_COOKIE_SECURE=false
 nix run '.#stricknani' -- create-admin admin@example.invalid < /path/to/protected-admin-password
 nix run '.#stricknani'

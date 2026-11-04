@@ -32,7 +32,7 @@ describe("setup prompt", () => {
     expect(SETUP_PROMPT).toContain("docs/install.md");
     expect(SETUP_PROMPT).toContain("TRUSTED_HOSTS");
     expect(SETUP_PROMPT).toContain("SESSION_COOKIE_SECURE=true");
-    expect(SETUP_PROMPT).toContain("RUST_SIGNUP_ENABLED");
+    expect(SETUP_PROMPT).toContain("SIGNUP_ENABLED");
     expect(SETUP_PROMPT).toContain("example.com");
     expect(SETUP_PROMPT).toContain(REPOSITORY_URL);
   });

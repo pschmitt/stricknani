@@ -110,7 +110,7 @@ keeps create requests within the Android API client's ten-second timeout; import
 and may skip candidates that do not finish in time. `AppState.external_imports` defaults to false. When
 disabled, a create request carrying image URLs keeps the existing 501 response and performs no
 fetch or database write; production wiring may enable it only through the explicit
-`RUST_EXTERNAL_IMPORTS_ENABLED` setting. Tests inject an image fetcher and use in-memory SQLite and
+`EXTERNAL_IMPORTS_ENABLED` setting. Tests inject an image fetcher and use in-memory SQLite and
 temporary media directories; they do not contact public hosts.
 
 `tests/import_service.rs` covers bearer authorization, the disabled remote-URL path, browser

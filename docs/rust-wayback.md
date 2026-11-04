@@ -2,7 +2,7 @@
 
 `WaybackClient` has no usable default transport and constructing it performs no
 requests. The server creates the production client only when
-`RUST_WAYBACK_ENABLED=true`; the feature defaults off. Clone the client into
+`WAYBACK_ENABLED=true`; the feature defaults off. Clone the client into
 the single background worker so the two-request limit applies across calls.
 
 The route or background worker supplies the original source URL to

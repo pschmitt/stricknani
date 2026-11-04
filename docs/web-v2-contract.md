@@ -122,7 +122,7 @@ member in; the web app then calls `GET /api/v2/session` again to bootstrap a
 fresh CSRF token and signs in with `POST /api/v2/auth/login`. An email that is
 already registered answers HTTP 409 `registration_failed` with the same generic
 message as any other refusal, so the reply never names the cause. Registration
-is off unless the operator sets `RUST_SIGNUP_ENABLED=true`
+is off unless the operator sets `SIGNUP_ENABLED=true`
 (`services.stricknani.registration.enable` on NixOS). Disabled signup returns
 HTTP 404 with `error.code = "signup_disabled"` and creates nothing; the session
 capability `signup` and `registration_enabled` in `GET /api/v2/meta` are false
@@ -222,13 +222,13 @@ one exists. Lookups are lazy: payloads never wait for Gravatar.
   `true`) and `gravatar_enabled` (whether the server offers it). `PATCH /account`
   with `{use_gravatar}` stores the preference for browser sessions (with CSRF)
   and bearer PATs, and returns the updated account.
-- **Server.** `RUST_GRAVATAR_ENABLED` (default `true`; NixOS option
+- **Server.** `GRAVATAR_ENABLED` (default `true`; NixOS option
   `services.stricknani.gravatar.enable`) switches the feature off for the whole
   instance. Migration `0019_user_gravatar.sql` adds `users.use_gravatar`.
 
 ### Error reporting
 
-Optional, operator-configured Sentry reporting (`RUST_SENTRY_DSN_FILE`; NixOS
+Optional, operator-configured Sentry reporting (`STRICKNANI_SENTRY_DSN_FILE`; NixOS
 `services.stricknani.sentry.*`; see `rust-nixos.md`).
 
 - **Availability.** `GET /session` (`data.error_reporting`) and `GET /meta`

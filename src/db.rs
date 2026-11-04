@@ -29,7 +29,7 @@ impl AppState {
     }
 
     /// Configure the server-side Gravatar fallback (disabled by default here;
-    /// the server binary enables it from `RUST_GRAVATAR_ENABLED`).
+    /// the server binary enables it from `GRAVATAR_ENABLED`).
     pub fn with_gravatar(mut self, gravatar: crate::gravatar::GravatarSettings) -> Self {
         self.gravatar = gravatar;
         self

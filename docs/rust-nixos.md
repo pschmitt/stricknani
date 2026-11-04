@@ -31,7 +31,7 @@ traffic remain separate steps that require the documented acceptance and
 approval process.
 
 The module translates its service options into the Rust environment names:
-`RUST_DATABASE_URL`, `RUST_MEDIA_ROOT`, `BIND_HOST`, `BIND_PORT`,
+`STRICKNANI_DATABASE_URL`, `STRICKNANI_MEDIA_ROOT`, `BIND_HOST`, `BIND_PORT`,
 `TRUSTED_HOSTS`, and `SESSION_COOKIE_SECURE`. It deliberately does not pass the
 legacy `DATABASE_URL` or `MEDIA_ROOT` aliases in Rust mode. Rust supports
 file-backed SQLite only; the module rejects PostgreSQL and in-memory URLs for
@@ -39,7 +39,7 @@ this backend. Rust SQLite URLs may use either `sqlite:/absolute/path` or
 `sqlite:///absolute/path`; scheduled backups normalize both forms before
 calling `sqlite3`.
 
-`registration.enable` (default `false`) sets `RUST_SIGNUP_ENABLED`: when `true`,
+`registration.enable` (default `false`) sets `SIGNUP_ENABLED`: when `true`,
 anyone who can reach the instance can create a member account on the web or in
 the Android app. Leave it off for a private instance.
 
@@ -49,7 +49,7 @@ listener also requires secure cookies and an explicit trusted-host allowlist;
 the module supplies the configured hostname, aliases, and loopback names.
 Rust feature flags and provider credentials can be supplied with the existing
 `extraConfig` and `secretKeyFile` runtime interfaces. For example, configure
-`RUST_AI_ENABLED=true` and the provider settings only when enabling AI. Keep
+`AI_ENABLED=true` and the provider settings only when enabling AI. Keep
 those values in the protected environment file, not in Nix expressions. Set
 database and media paths through `databaseUrl` and `mediaRoot`, not
 `extraConfig`, so the server and backup job use the same paths.
@@ -88,10 +88,10 @@ unavailable (and hide their settings), and the tunnel route answers 404.
 
 | NixOS option | Environment variable | Meaning |
 | --- | --- | --- |
-| `sentry.dsnFile` | `RUST_SENTRY_DSN_FILE` | Absolute runtime path of a file holding the DSN. Preferred; keep the DSN out of the Nix store. `RUST_SENTRY_DSN` is the plain-value alternative for containers. |
-| `sentry.frontendDsnFile` | `RUST_SENTRY_FRONTEND_DSN_FILE` | Optional separate DSN for the web and Android apps (`RUST_SENTRY_FRONTEND_DSN` also works). Falls back to the server DSN, so one Sentry project can serve everything. |
-| `sentry.environment` | `RUST_SENTRY_ENVIRONMENT` | Environment name (default `production`). |
-| `sentry.tracesSampleRate` | `RUST_SENTRY_TRACES_SAMPLE_RATE` | 0 to 1 (default `0`: errors only). |
+| `sentry.dsnFile` | `STRICKNANI_SENTRY_DSN_FILE` | Absolute runtime path of a file holding the DSN. Preferred; keep the DSN out of the Nix store. `STRICKNANI_SENTRY_DSN` is the plain-value alternative for containers. |
+| `sentry.frontendDsnFile` | `STRICKNANI_SENTRY_FRONTEND_DSN_FILE` | Optional separate DSN for the web and Android apps (`STRICKNANI_SENTRY_FRONTEND_DSN` also works). Falls back to the server DSN, so one Sentry project can serve everything. |
+| `sentry.environment` | `STRICKNANI_SENTRY_ENVIRONMENT` | Environment name (default `production`). |
+| `sentry.tracesSampleRate` | `STRICKNANI_SENTRY_TRACES_SAMPLE_RATE` | 0 to 1 (default `0`: errors only). |
 
 The service user must be able to read the file (for example through
 `LoadCredential`). Use a current-style DSN without a secret key; the public

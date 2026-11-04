@@ -13,5 +13,5 @@ export const SETUP_PROMPT = `Set up a private Stricknani instance for me. Strick
 3. Create the first administrator with "stricknani-server create-admin EMAIL" (stricknani-cli on NixOS). Pass the password on standard input, at least 12 characters, never on the command line.
 4. Set TRUSTED_HOSTS to the exact host name people will open, for example stricknani.example.com.
 5. Put it behind an HTTPS reverse proxy and set SESSION_COOKIE_SECURE=true. Do not expose port 7674 directly.
-6. Leave public registration off (RUST_SIGNUP_ENABLED unset). Create accounts for other people with "create-user EMAIL".
+6. Leave public registration off (SIGNUP_ENABLED unset). Create accounts for other people with "create-user EMAIL".
 7. Check /healthz, sign in at https://stricknani.example.com/app/, then tell me what you did and what is left for me (DNS, backups).`;

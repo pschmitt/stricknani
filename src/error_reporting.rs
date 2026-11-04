@@ -143,27 +143,27 @@ fn read_dsn(
 }
 
 impl ErrorReportingSettings {
-    /// Read `RUST_SENTRY_DSN_FILE` / `RUST_SENTRY_DSN` (server), the optional
-    /// `RUST_SENTRY_FRONTEND_DSN_FILE` / `RUST_SENTRY_FRONTEND_DSN` (web and
-    /// Android; falls back to the server DSN), plus `RUST_SENTRY_ENVIRONMENT`
-    /// and `RUST_SENTRY_TRACES_SAMPLE_RATE`.
+    /// Read `STRICKNANI_SENTRY_DSN_FILE` / `STRICKNANI_SENTRY_DSN` (server), the optional
+    /// `STRICKNANI_SENTRY_FRONTEND_DSN_FILE` / `STRICKNANI_SENTRY_FRONTEND_DSN` (web and
+    /// Android; falls back to the server DSN), plus `STRICKNANI_SENTRY_ENVIRONMENT`
+    /// and `STRICKNANI_SENTRY_TRACES_SAMPLE_RATE`.
     pub fn from_lookup(
         get: &mut impl FnMut(&str) -> Option<String>,
     ) -> Result<Self, SettingsError> {
-        let backend = read_dsn(get, "RUST_SENTRY_DSN_FILE", "RUST_SENTRY_DSN")?;
+        let backend = read_dsn(get, "STRICKNANI_SENTRY_DSN_FILE", "STRICKNANI_SENTRY_DSN")?;
         let frontend = read_dsn(
             get,
-            "RUST_SENTRY_FRONTEND_DSN_FILE",
-            "RUST_SENTRY_FRONTEND_DSN",
+            "STRICKNANI_SENTRY_FRONTEND_DSN_FILE",
+            "STRICKNANI_SENTRY_FRONTEND_DSN",
         )?;
         if backend.is_none() && frontend.is_none() {
             return Ok(Self::default());
         }
-        let environment = get("RUST_SENTRY_ENVIRONMENT")
+        let environment = get("STRICKNANI_SENTRY_ENVIRONMENT")
             .map(|value| value.trim().to_owned())
             .filter(|value| !value.is_empty())
             .unwrap_or_else(|| DEFAULT_ENVIRONMENT.to_owned());
-        let traces_sample_rate = match get("RUST_SENTRY_TRACES_SAMPLE_RATE") {
+        let traces_sample_rate = match get("STRICKNANI_SENTRY_TRACES_SAMPLE_RATE") {
             None => 0.0,
             Some(value) => value
                 .trim()
@@ -171,7 +171,7 @@ impl ErrorReportingSettings {
                 .ok()
                 .filter(|rate| (0.0..=1.0).contains(rate))
                 .ok_or(SettingsError(
-                    "RUST_SENTRY_TRACES_SAMPLE_RATE must be a number from 0 to 1",
+                    "STRICKNANI_SENTRY_TRACES_SAMPLE_RATE must be a number from 0 to 1",
                 ))?,
         };
         Self::with_dsns(
@@ -219,7 +219,7 @@ impl ErrorReportingSettings {
                 .any(|c| c.is_control() || c.is_whitespace())
         {
             return Err(SettingsError(
-                "RUST_SENTRY_ENVIRONMENT must be a short name without whitespace",
+                "STRICKNANI_SENTRY_ENVIRONMENT must be a short name without whitespace",
             ));
         }
         let mut builder = reqwest::Client::builder()
@@ -1040,8 +1040,8 @@ mod tests {
         );
         let with = |dsn: &'static str, rate: Option<&'static str>| {
             ErrorReportingSettings::from_lookup(&mut |key| match key {
-                "RUST_SENTRY_DSN" => Some(dsn.to_owned()),
-                "RUST_SENTRY_TRACES_SAMPLE_RATE" => rate.map(str::to_owned),
+                "STRICKNANI_SENTRY_DSN" => Some(dsn.to_owned()),
+                "STRICKNANI_SENTRY_TRACES_SAMPLE_RATE" => rate.map(str::to_owned),
                 _ => None,
             })
         };
@@ -1109,8 +1109,10 @@ mod tests {
     #[test]
     fn frontend_dsn_is_read_from_its_own_variables() {
         let settings = ErrorReportingSettings::from_lookup(&mut |key| match key {
-            "RUST_SENTRY_DSN" => Some(DSN.to_owned()),
-            "RUST_SENTRY_FRONTEND_DSN" => Some("https://webkey@sentry.example.test/43".to_owned()),
+            "STRICKNANI_SENTRY_DSN" => Some(DSN.to_owned()),
+            "STRICKNANI_SENTRY_FRONTEND_DSN" => {
+                Some("https://webkey@sentry.example.test/43".to_owned())
+            }
             _ => None,
         })
         .unwrap();

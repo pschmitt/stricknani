@@ -284,17 +284,17 @@ export function serverEnvironment(
     PATH: process.env.PATH ?? "/usr/bin:/bin",
     HOME: runtime,
     TMPDIR: runtime,
-    RUST_DATABASE_URL: `sqlite:${join(runtime, "fixture.sqlite3")}`,
-    RUST_MEDIA_ROOT: join(runtime, "media"),
+    STRICKNANI_DATABASE_URL: `sqlite:${join(runtime, "fixture.sqlite3")}`,
+    STRICKNANI_MEDIA_ROOT: join(runtime, "media"),
     BIND_HOST: "127.0.0.1",
     BIND_PORT: String(port),
-    RUST_AI_ENABLED: "false",
-    RUST_OCR_ENABLED: "false",
-    RUST_EXTERNAL_IMPORTS_ENABLED: "false",
-    RUST_WAYBACK_ENABLED: "false",
+    AI_ENABLED: "false",
+    OCR_ENABLED: "false",
+    EXTERNAL_IMPORTS_ENABLED: "false",
+    WAYBACK_ENABLED: "false",
     // The fixture must not call gravatar.com; with no network the fallback
     // route 404s and the browser logs it as a console error.
-    RUST_GRAVATAR_ENABLED: "false",
+    GRAVATAR_ENABLED: "false",
   };
   if (browserAuthority !== null) {
     environment.TRUSTED_HOSTS = [
@@ -311,7 +311,7 @@ export function serverEnvironment(
     }
     environment.WEB_ROOT = resolvedWebRoot;
   }
-  if (signupEnabled) environment.RUST_SIGNUP_ENABLED = "true";
+  if (signupEnabled) environment.SIGNUP_ENABLED = "true";
   return environment;
 }
 

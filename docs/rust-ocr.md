@@ -42,7 +42,7 @@ the storage boundary.
 
 ## Server integration
 
-`RUST_OCR_ENABLED=true` enables authenticated `POST /utils/ocr`. It accepts
+`OCR_ENABLED=true` enables authenticated `POST /utils/ocr`. It accepts
 origin-relative registered project/yarn media paths only; foreign media is
 reported as missing. API requests require a bearer PAT. Browser requests require
 the application session and `X-CSRF-Token`. The `force` request field is accepted

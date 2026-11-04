@@ -12,7 +12,7 @@ and [Groq structured output guide](https://console.groq.com/docs/structured-outp
 
 ## Configuration
 
-The server integration is off unless `RUST_AI_ENABLED=true` and the user selects
+The server integration is off unless `AI_ENABLED=true` and the user selects
 AI for that import (the web and Android clients select it by default when the
 server reports a provider). Without a provider, imports still work with the
 rule-based extraction described in `rust-import-design.md`. When disabled,
@@ -304,8 +304,8 @@ credentials. API failures only add the warning `ravelry_api_failed`.
 
 | Option | Environment | Purpose |
 | --- | --- | --- |
-| `imports.enable` | `RUST_EXTERNAL_IMPORTS_ENABLED` | Link imports and picture downloads. |
-| `ai.enable` | `RUST_AI_ENABLED` | Allow AI gap filling. |
+| `imports.enable` | `EXTERNAL_IMPORTS_ENABLED` | Link imports and picture downloads. |
+| `ai.enable` | `AI_ENABLED` | Allow AI gap filling. |
 | `ai.provider` | `AI_PROVIDER` | `openai`, `openrouter`, `groq`, `custom`. |
 | `ai.apiKeyFile` | `AI_API_KEY_FILE` | Secret file with only the key. |
 | `ai.baseUrl` | `AI_BASE_URL` | Endpoint for `custom`; plain HTTP only for localhost. |

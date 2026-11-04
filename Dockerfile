@@ -42,15 +42,15 @@ WORKDIR /var/lib/stricknani
 USER 65532:65532
 ENV BIND_HOST=0.0.0.0 \
     BIND_PORT=7674 \
-    RUST_DATABASE_URL=sqlite:/var/lib/stricknani/stricknani.sqlite3 \
-    RUST_MEDIA_ROOT=/var/lib/stricknani/media \
+    STRICKNANI_DATABASE_URL=sqlite:/var/lib/stricknani/stricknani.sqlite3 \
+    STRICKNANI_MEDIA_ROOT=/var/lib/stricknani/media \
     TRUSTED_HOSTS=localhost,127.0.0.1 \
     SESSION_COOKIE_SECURE=true \
-    RUST_SIGNUP_ENABLED=false \
-    RUST_EXTERNAL_IMPORTS_ENABLED=false \
-    RUST_AI_ENABLED=false \
-    RUST_OCR_ENABLED=false \
-    RUST_WAYBACK_ENABLED=false
+    SIGNUP_ENABLED=false \
+    EXTERNAL_IMPORTS_ENABLED=false \
+    AI_ENABLED=false \
+    OCR_ENABLED=false \
+    WAYBACK_ENABLED=false
 
 EXPOSE 7674
 STOPSIGNAL SIGTERM

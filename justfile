@@ -21,15 +21,15 @@ dev_port := env("PORT", "7674")
 default:
   @just --choose
 
-# Run the Rust dev server. Set RUST_DATABASE_URL and RUST_MEDIA_ROOT to
+# Run the Rust dev server. Set STRICKNANI_DATABASE_URL and STRICKNANI_MEDIA_ROOT to
 # disposable Rust-owned storage paths before starting it.
 [group: 'dev']
 [positional-arguments]
 run *args:
   #!/usr/bin/env bash
   set -euo pipefail
-  : "${RUST_DATABASE_URL:?Set RUST_DATABASE_URL to a disposable Rust database}"
-  : "${RUST_MEDIA_ROOT:?Set RUST_MEDIA_ROOT to a Rust-owned media directory}"
+  : "${STRICKNANI_DATABASE_URL:?Set STRICKNANI_DATABASE_URL to a disposable Rust database}"
+  : "${STRICKNANI_MEDIA_ROOT:?Set STRICKNANI_MEDIA_ROOT to a Rust-owned media directory}"
   BIND_PORT="${BIND_PORT:-{{ dev_port }}}" cargo run -- serve {{ args }}
 
 # Lint the repository tooling. Rust, web and Nix lint recipes are `rust-lint`,
