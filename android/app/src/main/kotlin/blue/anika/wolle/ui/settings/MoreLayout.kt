@@ -12,7 +12,7 @@ sealed interface MoreLink {
 /**
  * The More screen's order: Create, Categories, Gauge calculator; then the Settings group (Account
  * settings first, drawn by the screen, then the Android-only [settings]); the Data group ([data]:
- * keeping up to date, backup and Admin for administrators); then [footer], About on its own at the
+ * Admin for administrators, keeping up to date and backup); then [footer], About on its own at the
  * bottom. Sign out lives only in Account settings.
  */
 data class MoreLayout(
@@ -38,9 +38,9 @@ fun moreLayout(isAdmin: Boolean): MoreLayout =
             ),
         data =
             listOfNotNull(
+                SettingsCategory.Admin.takeIf { isAdmin },
                 SettingsCategory.Sync,
                 SettingsCategory.Backup,
-                SettingsCategory.Admin.takeIf { isAdmin },
             ),
         footer = listOf(SettingsCategory.About),
     )

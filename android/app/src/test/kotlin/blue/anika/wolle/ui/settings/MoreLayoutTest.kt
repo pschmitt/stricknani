@@ -27,9 +27,9 @@ class MoreLayoutTest {
     }
 
     @Test
-    fun `Data holds keeping up to date, backup and Admin for administrators`() {
+    fun `Data holds Admin for administrators, then keeping up to date and backup`() {
         assertEquals(
-            listOf(SettingsCategory.Sync, SettingsCategory.Backup, SettingsCategory.Admin),
+            listOf(SettingsCategory.Admin, SettingsCategory.Sync, SettingsCategory.Backup),
             moreLayout(isAdmin = true).data,
         )
         assertEquals(
