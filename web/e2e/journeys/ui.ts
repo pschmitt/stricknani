@@ -1027,7 +1027,10 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     page.waitForResponse(
       (candidate) =>
         urlPath(candidate.url()) === "/api/v2/projects" &&
-        new URL(candidate.url()).search === "",
+        // The library always sends its scope; no filter parameter may remain.
+        [...new URL(candidate.url()).searchParams.keys()].every(
+          (key) => key === "scope",
+        ),
     ),
     (async () => {
       filterDialog = await openLibraryFilters(page);
