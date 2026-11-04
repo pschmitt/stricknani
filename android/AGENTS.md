@@ -43,7 +43,7 @@ scoped to this directory, not mixed into the root one.
 
 ## Builds
 
-- **Never run Gradle builds locally on this machine** - use a designated remote build host from
+- **Never run Gradle builds locally on this machine** - use an ad-hoc `rworker` (see the `rworker` skill) or a designated remote build host from
   the private `brkn-infra` skill (`just sync`, `just gradle`, `just build [variant]`, `just lint`,
   `just test`, `just check`, `just fetch`, `just build-fetch`, run from `android/`). Remote build
   directory: `~/build/stricknani-android` (see `android/justfile`).

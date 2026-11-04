@@ -40,7 +40,7 @@ Use this file as the operational source of truth for working in Stricknani.
   registration attempts instead of doing the assigned work.
 - Commit and push small checkpoints regularly, including work in progress. Do not wait for the entire rewrite to be complete. State which checks passed, failed, or remain pending in the checkpoint notes; a checkpoint is not a release or deployment approval.
 - After each push, use the `ci-watch` skill and continue independent work while CI runs.
-- Run expensive Cargo, Gradle, and Nix work on a designated remote build host. Evaluate Nix dev shells from a clean source snapshot, then run tools in a separate working directory containing build caches. Keep credentials and copied data outside both source trees.
+- Run expensive Cargo, Gradle, and Nix work on an ad-hoc `rworker` (see the `rworker` skill) or a designated remote build host. Evaluate Nix dev shells from a clean source snapshot, then run tools in a separate working directory containing build caches. Keep credentials and copied data outside both source trees.
 - Distribute independent builds and browser checks across the available build
   hosts in the private infrastructure skill. Check current CPU and memory load
   when choosing a host, and reuse verified artifacts and dependency caches.
