@@ -30,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
-import blue.anika.wolle.data.oidc.OidcProvider
 import blue.anika.wolle.ui.common.DEFAULT_PRIVACY_POLICY_URL
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
@@ -212,10 +212,6 @@ fun OnboardingScreen(
                                     passwordVisible = passwordVisible,
                                     onPasswordVisibleChange = { passwordVisible = it },
                                     enabled = !isValidating,
-                                    oidcProviders = oidcProviders,
-                                    onOidcSignIn = { provider ->
-                                        viewModel.signInWithOidc(serverUrl, provider)
-                                    },
                                 )
                         }
                     }
@@ -263,6 +259,38 @@ fun OnboardingScreen(
                         },
                         style = MaterialTheme.typography.titleMedium,
                     )
+                }
+
+                // Only when the server's meta lists providers. Below the email and password form,
+                // as a secondary way in.
+                if (mode == OnboardingMode.PASSWORD && oidcProviders.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.onboarding_oidc_or),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                    oidcProviders.forEach { provider ->
+                        OutlinedButton(
+                            onClick = { viewModel.signInWithOidc(serverUrl, provider) },
+                            enabled = !isValidating,
+                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(top = 12.dp)
+                                    .testTag("onboarding-oidc-${provider.id}"),
+                        ) {
+                            Icon(
+                                PhosphorIcons.LockKey,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            Text(
+                                stringResource(R.string.onboarding_oidc_button, provider.name),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -381,8 +409,6 @@ private fun PasswordOnboardingFields(
     passwordVisible: Boolean,
     onPasswordVisibleChange: (Boolean) -> Unit,
     enabled: Boolean,
-    oidcProviders: List<OidcProvider>,
-    onOidcSignIn: (OidcProvider) -> Unit,
 ) {
     OutlinedTextField(
         value = serverUrl,
@@ -394,38 +420,6 @@ private fun PasswordOnboardingFields(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         modifier = Modifier.fillMaxWidth().testTag("e2e-onboarding-server-url"),
     )
-
-    // Only when the server's meta lists providers. Above the email and password form, since it
-    // is the way most people on such a server will sign in.
-    if (oidcProviders.isNotEmpty()) {
-        oidcProviders.forEach { provider ->
-            Button(
-                onClick = { onOidcSignIn(provider) },
-                enabled = enabled,
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .testTag("onboarding-oidc-${provider.id}"),
-            ) {
-                Icon(
-                    PhosphorIcons.LockKey,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-                Text(
-                    stringResource(R.string.onboarding_oidc_button, provider.name),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-        }
-        Text(
-            text = stringResource(R.string.onboarding_oidc_or),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 16.dp),
-        )
-    }
 
     OutlinedTextField(
         value = email,

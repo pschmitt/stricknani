@@ -862,7 +862,7 @@
     <!-- Sign-in with an identity provider (OIDC); shown only when the server lists one -->
     <string name="onboarding_error_missing_url">Enter the Stricknani address first</string>
     <string name="onboarding_oidc_button">Sign in with %1$s</string>
-    <string name="onboarding_oidc_or">or use your email and password</string>
+    <string name="onboarding_oidc_or">or</string>
     <string name="error_oidc_expired">That sign-in link expired, please try again.</string>
     <string name="error_oidc_unlinked">No Stricknani account is linked to this %1$s login yet. Sign in with your password, then link %1$s in Settings → Account.</string>
     <string name="error_oidc_unavailable">Signing in with %1$s isn’t available right now. You can sign in with your password instead.</string>

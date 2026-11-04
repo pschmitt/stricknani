@@ -862,7 +862,7 @@
     <!-- Anmeldung über einen Identity Provider (OIDC); nur sichtbar, wenn der Server einen anbietet -->
     <string name="onboarding_error_missing_url">Gib zuerst die Stricknani-Adresse ein</string>
     <string name="onboarding_oidc_button">Mit %1$s anmelden</string>
-    <string name="onboarding_oidc_or">oder mit E-Mail und Passwort</string>
+    <string name="onboarding_oidc_or">oder</string>
     <string name="error_oidc_expired">Dieser Anmelde-Link ist abgelaufen. Bitte versuche es noch einmal.</string>
     <string name="error_oidc_unlinked">Mit diesem %1$s-Login ist noch kein Stricknani-Konto verknüpft. Melde dich mit deinem Passwort an und verknüpfe %1$s dann unter Einstellungen → Konto.</string>
     <string name="error_oidc_unavailable">Die Anmeldung mit %1$s ist gerade nicht verfügbar. Du kannst dich stattdessen mit deinem Passwort anmelden.</string>
