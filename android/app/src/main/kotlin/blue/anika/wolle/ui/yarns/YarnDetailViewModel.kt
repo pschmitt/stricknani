@@ -10,16 +10,19 @@ import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.HistoryKind
 import blue.anika.wolle.data.repository.HistoryRepository
+import blue.anika.wolle.data.repository.ItemLoad
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrderRepository
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.ErrorKind
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.ReadingTextSize
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
+import blue.anika.wolle.ui.common.errorKindForStatus
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.history.HistoryController
@@ -37,6 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,6 +51,9 @@ sealed interface YarnDetailUiState {
     data object Loading : YarnDetailUiState
 
     data object NotFound : YarnDetailUiState
+
+    /** Not cached and the server could not serve it: offline, forbidden or a server error. */
+    data class LoadFailed(val kind: ErrorKind) : YarnDetailUiState
 
     data class Loaded(
         val entity: YarnEntity,
@@ -92,6 +99,44 @@ constructor(
             .map { it.isUserInitiatedRefresh() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
 
+    /**
+     * Result of the cache-miss fallback; null while unchecked. A detail screen opens by id whatever
+     * the Mine | Everyone list filter says (audit log, Home activity, deep links): when the row is
+     * not in Room it is fetched from the server, otherwise this says why it is not shown.
+     */
+    private val cacheMiss = MutableStateFlow<ItemLoad?>(null)
+
+    init {
+        viewModelScope.launch {
+            yarnRepository
+                .observeById(yarnId)
+                .map { it != null }
+                .distinctUntilChanged()
+                .collect { present ->
+                    if (present) cacheMiss.value = null else resolveMissing()
+                }
+        }
+    }
+
+    private suspend fun resolveMissing() {
+        cacheMiss.value = null
+        val result = yarnRepository.loadIfMissing(yarnId)
+        if (result == ItemLoad.Available) {
+            // The linked projects of an item fetched on demand are cached too, so they show up.
+            yarnRepository.observeById(yarnId).first()?.let { entity ->
+                yarnRepository.decodeDetail(entity).projectIds.distinct().forEach {
+                    projectRepository.loadIfMissing(it)
+                }
+            }
+        }
+        cacheMiss.value = result
+    }
+
+    /** Tries the server again after a [YarnDetailUiState.LoadFailed]. */
+    fun retryLoad() {
+        viewModelScope.launch { resolveMissing() }
+    }
+
     // SNA-36: see `ProjectDetailViewModel`'s identical fix - keeps the JSON detail decode gated on
     // this yarn's own row actually changing, not every unrelated project write.
     private val detailFlow: Flow<Pair<YarnEntity, YarnDto>?> =
@@ -100,9 +145,19 @@ constructor(
         }
 
     val uiState: StateFlow<YarnDetailUiState> =
-        combine(detailFlow, projectRepository.observeAll()) { detailPair, projects ->
+        combine(detailFlow, projectRepository.observeAllIncludingForeign(), cacheMiss) {
+                detailPair,
+                projects,
+                miss ->
                 if (detailPair == null) {
-                    YarnDetailUiState.NotFound
+                    when (miss) {
+                        null,
+                        ItemLoad.Available -> YarnDetailUiState.Loading
+                        ItemLoad.Gone -> YarnDetailUiState.NotFound
+                        ItemLoad.Offline -> YarnDetailUiState.LoadFailed(ErrorKind.Offline)
+                        is ItemLoad.Failed ->
+                            YarnDetailUiState.LoadFailed(errorKindForStatus(miss.status))
+                    }
                 } else {
                     val (entity, detail) = detailPair
                     val linked =

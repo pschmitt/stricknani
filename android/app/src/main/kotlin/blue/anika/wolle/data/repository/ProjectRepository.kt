@@ -33,6 +33,7 @@ import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -65,7 +66,33 @@ constructor(
     private val json: Json,
     private val everyoneScope: EveryoneScope,
 ) {
-    fun observeAll(): Flow<List<ProjectEntity>> = projectDao.observeAll()
+    /** What the lists show: an administrator on Mine sees only their own rows (cache untouched). */
+    fun observeAll(): Flow<List<ProjectEntity>> =
+        combine(projectDao.observeAll(), everyoneScope.listFilter) { rows, me ->
+            rows.visibleTo(me) { it.ownerId }
+        }
+
+    /** Every cached row regardless of the Mine filter, for detail screens resolving links by id. */
+    fun observeAllIncludingForeign(): Flow<List<ProjectEntity>> = projectDao.observeAll()
+
+    /**
+     * Makes sure [id] is in Room before a detail screen reads it: fetches it when the cache misses
+     * (see [loadIfMissing]). The row is cached whoever owns it; lists hide foreign rows on Mine
+     * through [observeAll]'s filter, so it does not re-enter the Mine list.
+     */
+    suspend fun loadIfMissing(id: Int): ItemLoad =
+        loadIfMissing(
+            id = id,
+            isCached = { projectDao.getById(id) != null },
+            isDeletedLocally = {
+                pendingMutationDao.getReplayable(
+                    MutationEntityType.PROJECT,
+                    MutationOperation.DELETE,
+                    id,
+                ) != null
+            },
+            fetchAndCache = { refreshOne(id) },
+        )
 
     fun observeById(id: Int): Flow<ProjectEntity?> = projectDao.observeById(id)
 

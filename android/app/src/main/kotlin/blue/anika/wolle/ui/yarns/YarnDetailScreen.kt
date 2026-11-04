@@ -149,7 +149,8 @@ fun YarnDetailScreen(
         refreshState,
         snackbarHostState,
         viewModel::dismissRefreshFeedback,
-        problemsShownInline = uiState is YarnDetailUiState.NotFound,
+        problemsShownInline =
+            uiState is YarnDetailUiState.NotFound || uiState is YarnDetailUiState.LoadFailed,
     )
 
     val state = uiState
@@ -271,6 +272,15 @@ fun YarnDetailScreen(
                             }
                         }
                     }
+                is YarnDetailUiState.LoadFailed ->
+                    ErrorState(
+                        kind = state.kind,
+                        seed = "yarn-${viewModel.yarnId}",
+                        onRetry = viewModel::retryLoad,
+                        onBack = onBack,
+                        backLabel = stringResource(R.string.error_back_yarns),
+                        onHome = onHome,
+                    )
                 is YarnDetailUiState.NotFound ->
                     ErrorState(
                         kind = refreshFailure ?: ErrorKind.YarnMissing,

@@ -151,7 +151,8 @@ fun ProjectDetailScreen(
         refreshState,
         snackbarHostState,
         viewModel::dismissRefreshFeedback,
-        problemsShownInline = uiState is ProjectDetailUiState.NotFound,
+        problemsShownInline =
+            uiState is ProjectDetailUiState.NotFound || uiState is ProjectDetailUiState.LoadFailed,
     )
 
     val state = uiState
@@ -273,6 +274,15 @@ fun ProjectDetailScreen(
                             }
                         }
                     }
+                is ProjectDetailUiState.LoadFailed ->
+                    ErrorState(
+                        kind = state.kind,
+                        seed = "project-${viewModel.projectId}",
+                        onRetry = viewModel::retryLoad,
+                        onBack = onBack,
+                        backLabel = stringResource(R.string.error_back_projects),
+                        onHome = onHome,
+                    )
                 is ProjectDetailUiState.NotFound ->
                     ErrorState(
                         kind = refreshFailure ?: ErrorKind.ProjectMissing,

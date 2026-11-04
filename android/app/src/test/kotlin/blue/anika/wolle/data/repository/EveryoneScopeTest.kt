@@ -19,8 +19,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Admin scope on the device: which scope a sync runs in, which cursor it uses, what the Mine /
- * Everyone switch purges, and that a fresh (signed-out) database starts from the defaults.
+ * Admin scope on the device: administrators always sync everything, Mine | Everyone only filters
+ * lists, demotion purges, and a fresh (signed-out) database starts from the defaults.
  */
 class EveryoneScopeTest {
     private val admin = CurrentUser(id = 1, email = "anika@example.org", isAdmin = true)
@@ -153,18 +153,23 @@ class EveryoneScopeTest {
                 pendingIds = { type, ids ->
                     ids.filter { it in (pending[type] ?: emptySet()) }.toSet()
                 },
-                inTransaction = { block -> block() },
             )
         return Fixture(state, projectDao, yarnDao, scope)
     }
 
     @Test
-    fun `administrators default to Everyone, everybody else is always Mine`() {
-        assertEquals(SyncScope.ALL, effectiveScope(isAdmin = true, stored = null))
-        assertEquals(SyncScope.ALL, effectiveScope(isAdmin = true, stored = "1"))
-        assertEquals(SyncScope.MINE, effectiveScope(isAdmin = true, stored = "0"))
-        assertEquals(SyncScope.MINE, effectiveScope(isAdmin = false, stored = null))
-        assertEquals(SyncScope.MINE, effectiveScope(isAdmin = false, stored = "1"))
+    fun `administrators always sync everything, everybody else only their own`() {
+        assertEquals(SyncScope.ALL, syncScopeFor(isAdmin = true))
+        assertEquals(SyncScope.MINE, syncScopeFor(isAdmin = false))
+    }
+
+    @Test
+    fun `administrators view Everyone until they pick Mine, others never`() {
+        assertTrue(viewsEveryone(isAdmin = true, stored = null))
+        assertTrue(viewsEveryone(isAdmin = true, stored = "1"))
+        assertFalse(viewsEveryone(isAdmin = true, stored = "0"))
+        assertFalse(viewsEveryone(isAdmin = false, stored = null))
+        assertFalse(viewsEveryone(isAdmin = false, stored = "1"))
     }
 
     @Test
@@ -213,57 +218,86 @@ class EveryoneScopeTest {
     }
 
     @Test
-    fun `switching to Mine purges other users' rows and resets the all cursors`() = runTest {
+    fun `an administrator on Mine still syncs all and keeps every cached row`() = runTest {
         val f =
             fixture(
                 admin,
                 projects = listOf(project(1, 1), project(2, 7)),
                 yarns = listOf(yarn(10, 1), yarn(11, 7)),
             )
-        f.state.setCursor(SyncStateEntity("project", "MINE-CURSOR"))
-        f.state.setCursor(SyncStateEntity("project@all", "ALL-CURSOR"))
-        f.state.setCursor(SyncStateEntity("yarn@all", "ALL-CURSOR"))
-
         f.scope.setEnabled(false)
 
-        assertEquals(listOf(1), f.projects.rows.map { it.id })
-        assertEquals(listOf(10), f.yarns.rows.map { it.id })
-        assertNull(f.state.getCursor("project@all"))
-        assertNull(f.state.getCursor("yarn@all"))
-        // The user's own cursor survives, so Mine resumes where it left off.
-        assertEquals("MINE-CURSOR", f.state.getCursor("project"))
-        assertEquals(SyncScope.MINE, f.scope.forSync())
-        assertFalse(f.scope.state.first().enabled)
-        assertTrue(f.scope.state.first().available)
+        assertEquals(SyncScope.ALL, f.scope.forSync())
+
+        assertEquals(listOf(1, 2), f.projects.rows.map { it.id })
+        assertEquals(listOf(10, 11), f.yarns.rows.map { it.id })
     }
 
     @Test
-    fun `switching to Everyone drops stale all cursors so the next sync is a full one`() = runTest {
-        val f = fixture(admin)
-        f.state.setCursor(SyncStateEntity(EVERYONE_FILTER_KEY, "0"))
-        f.state.setCursor(SyncStateEntity("project@all", "STALE"))
+    fun `switching Mine and Everyone is a view filter - no purge, no cursor change`() = runTest {
+        val f = fixture(admin, projects = listOf(project(1, 1), project(2, 7)))
+        f.state.setCursor(SyncStateEntity("project@all", "ALL-CURSOR"))
+
+        f.scope.setEnabled(false)
+
+        assertEquals(listOf(1, 2), f.projects.rows.map { it.id })
+        assertEquals("ALL-CURSOR", f.state.getCursor("project@all"))
+        assertEquals(admin.id, f.scope.listFilter.first())
+        assertFalse(f.scope.state.first().enabled)
+        assertTrue(f.scope.state.first().available)
 
         f.scope.setEnabled(true)
 
-        assertNull(f.state.getCursor("project@all"))
-        assertEquals(SyncScope.ALL, f.scope.forSync())
+        assertEquals("ALL-CURSOR", f.state.getCursor("project@all"))
+        assertNull(f.scope.listFilter.first())
         assertTrue(f.scope.state.first().enabled)
     }
 
     @Test
-    fun `foreign rows with a queued local write survive the purge`() = runTest {
+    fun `lists only drop foreign rows on Mine`() {
+        val rows = listOf(project(1, 1), project(2, 7), project(3, null))
+
+        assertEquals(listOf(1, 3), rows.visibleTo(hiddenFor = 1L) { it.ownerId }.map { it.id })
+        assertEquals(listOf(1, 2, 3), rows.visibleTo(hiddenFor = null) { it.ownerId }.map { it.id })
+    }
+
+    @Test
+    fun `a non-administrator has no list filter`() = runTest {
+        assertNull(fixture(member).scope.listFilter.first())
+        assertNull(fixture(user = null).scope.listFilter.first())
+    }
+
+    @Test
+    fun `upgrading from a Mine install starts a full all-scope sync`() = runTest {
+        val f = fixture(admin, projects = listOf(project(1, 1)))
+        f.state.setCursor(SyncStateEntity("project", "OLD-MINE"))
+        f.state.setCursor(SyncStateEntity("yarn", "OLD-MINE"))
+        f.state.setCursor(SyncStateEntity(EVERYONE_FILTER_KEY, "0"))
+
+        assertEquals(SyncScope.ALL, f.scope.forSync())
+
+        // No `@all` cursor: the sync asks for everything. The Mine cursors are gone, so a later
+        // demotion also starts from a full sync.
+        assertNull(f.state.getCursor(syncCursorKey("project", SyncScope.ALL)))
+        assertNull(f.state.getCursor("project"))
+        assertNull(f.state.getCursor("yarn"))
+        assertEquals("0", f.state.getCursor(EVERYONE_FILTER_KEY))
+    }
+
+    @Test
+    fun `a demoted administrator's foreign rows are purged except queued writes`() = runTest {
         val f =
             fixture(
-                admin,
-                projects = listOf(project(2, 7), project(3, 7)),
+                member,
+                projects = listOf(project(1, 1), project(2, 7), project(3, 7)),
                 yarns = listOf(yarn(11, 7)),
-                pending = mapOf("project" to setOf(3), "yarn" to setOf(11)),
+                pending = mapOf("project" to setOf(3)),
             )
 
-        f.scope.setEnabled(false)
+        f.scope.forSync()
 
-        assertEquals(listOf(3), f.projects.rows.map { it.id })
-        assertEquals(listOf(11), f.yarns.rows.map { it.id })
+        assertEquals(listOf(1, 3), f.projects.rows.map { it.id })
+        assertTrue(f.yarns.rows.isEmpty())
     }
 
     @Test
@@ -277,13 +311,13 @@ class EveryoneScopeTest {
     fun `a fresh database after sign-out starts from the defaults`() = runTest {
         val signedIn = fixture(admin, projects = listOf(project(2, 7)))
         signedIn.scope.setEnabled(false)
-        signedIn.state.setCursor(SyncStateEntity("project", "OLD-ACCOUNT"))
+        signedIn.state.setCursor(SyncStateEntity("project@all", "OLD-ACCOUNT"))
 
         // Sign-out wipes every table (SettingsViewModel.signOut -> clearAllTables): the next
         // account sees no cursor, no stored choice and no rows.
         val next = fixture(admin, state = FakeSyncState())
 
-        assertNull(next.state.getCursor("project"))
+        assertNull(next.state.getCursor("project@all"))
         assertNull(next.state.getCursor(EVERYONE_FILTER_KEY))
         assertEquals(SyncScope.ALL, next.scope.forSync())
         assertTrue(next.projects.rows.isEmpty())

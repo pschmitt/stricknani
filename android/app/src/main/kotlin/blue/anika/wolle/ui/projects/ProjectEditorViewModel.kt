@@ -152,7 +152,7 @@ constructor(
      */
     val yarns: StateFlow<List<YarnEntity>> =
         combine(
-                yarnRepository.observeAll(),
+                yarnRepository.observeAllIncludingForeign(),
                 editedProject.map { it?.ownerId }.distinctUntilChanged(),
                 currentUserId,
             ) { all, ownerId, me ->
