@@ -45,6 +45,6 @@
     "vite": "^8.3.5",
     "prettier": "^3.6.2",
     "prettier-plugin-svelte": "^4.0.0",
-    "vitest": "^4.1.0"
+    "vitest": "^5.0.0"
   }
 }
