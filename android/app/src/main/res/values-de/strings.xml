@@ -999,4 +999,6 @@
     <string name="developer_shizuku_reinstall">Diesen Build über Shizuku neu installieren</string>
     <string name="developer_shizuku_reinstall_description">Installiert die laufende APK erneut über Shizuku, um den stillen Weg zu testen.</string>
 
+    <string name="account_admin_card_title">Suchst du die Admin-Seite?</string>
+    <string name="account_admin_card_subtitle">Benutzer und Audit-Log verwalten</string>
 </resources>

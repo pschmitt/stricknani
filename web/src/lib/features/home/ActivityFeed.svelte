@@ -144,7 +144,11 @@
         {/snippet}
         <li class="activity__item" data-deleted={!item.exists ? "" : undefined}>
           {#if item.exists && item.href}
-            <a class="activity__row" href={resolve(item.href as "/")}
+            <a
+              class="activity__row"
+              href={item.entity_type === "project"
+                ? resolve("/projects/[id]", { id: String(item.entity_id) })
+                : resolve("/yarns/[id]", { id: String(item.entity_id) })}
               >{@render row()}</a
             >
           {:else}

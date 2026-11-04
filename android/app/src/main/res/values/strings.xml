@@ -999,4 +999,6 @@
     <string name="developer_shizuku_reinstall">Reinstall this build via Shizuku</string>
     <string name="developer_shizuku_reinstall_description">Installs the running APK again through Shizuku to test the silent path.</string>
 
+    <string name="account_admin_card_title">Looking for the admin page?</string>
+    <string name="account_admin_card_subtitle">Manage users and audit log</string>
 </resources>

@@ -1,6 +1,7 @@
 package blue.anika.wolle.ui.settings
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
@@ -45,7 +47,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,6 +108,10 @@ internal fun AccountSettingsScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            // Administrators get the way to Admin as its own card, above the profile.
+            if (isAdmin) {
+                item { AdminCard(onClick = { onOpenCategory(SettingsCategory.Admin) }) }
+            }
             // Profile: the picture (change/remove need a server with bearer account access), the
             // email and the role.
             item {
@@ -291,13 +299,7 @@ internal fun AccountSettingsScreen(
                             )
                         },
                     )
-                    // About stays last; Admin only appears for administrators.
-                    listOfNotNull(
-                            SettingsCategory.Sync,
-                            SettingsCategory.Backup,
-                            SettingsCategory.Admin.takeIf { isAdmin },
-                            SettingsCategory.About,
-                        )
+                    listOf(SettingsCategory.Sync, SettingsCategory.Backup, SettingsCategory.About)
                         .forEach { category ->
                             SettingsListItem(
                                 modifier =
@@ -509,3 +511,45 @@ private fun Int.textSizeLabel(): String =
             else -> R.string.account_text_default
         }
     )
+
+/** Administrators only: the way to Admin, styled like Home's stash card. */
+@Composable
+private fun AdminCard(onClick: () -> Unit) {
+    androidx.compose.material3.Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        modifier = Modifier.fillMaxWidth().testTag("account-admin-card"),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Box(
+                Modifier.size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    SettingsCategory.Admin.icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.account_admin_card_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    stringResource(R.string.account_admin_card_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        }
+    }
+}

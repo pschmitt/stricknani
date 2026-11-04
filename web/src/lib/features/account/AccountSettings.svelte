@@ -4,7 +4,6 @@
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { chooseLocale } from "#lib/components/LocaleSwitcher.svelte";
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -777,6 +776,25 @@
     <p class="page-status" role="status" aria-live="polite">{pageStatus}</p>
   {/if}
 
+  {#if canManageAdmin}
+    <a class="admin-card" href={resolve("/admin/users")}>
+      <span class="admin-card__icon" aria-hidden="true"
+        ><NavIcon name="admin" /></span
+      >
+      <span class="admin-card__copy">
+        <span class="admin-card__title"
+          >{t("Looking for the admin page?", locale)}</span
+        >
+        <span class="admin-card__hint"
+          >{t("Manage users and audit log", locale)}</span
+        >
+      </span>
+      <span class="admin-card__go" aria-hidden="true"
+        ><NavIcon name="next" /></span
+      >
+    </a>
+  {/if}
+
   <section class="card" aria-labelledby="profile-title">
     <header class="card__header">
       <span class="card__icon card__icon--profile" aria-hidden="true"
@@ -845,16 +863,6 @@
                 : t("Member", locale)}</span
             >
           </p>
-          {#if canManageAdmin}
-            <a
-              class="ui-button ui-button--secondary ui-button--sm"
-              href={resolve("/admin/users")}
-            >
-              <ActionLabel icon="admin"
-                >{t("Manage users and audit log", locale)}</ActionLabel
-              >
-            </a>
-          {/if}
           {#if profile.avatar_url && profile.avatar_source !== "gravatar"}
             <SharedButton
               variant="ghost"
@@ -1417,6 +1425,90 @@
     max-width: 44rem;
     margin-inline: auto;
     gap: 1rem;
+  }
+
+  /* Admins only: the way to Admin, styled like Home's stash card. */
+  .admin-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1.1rem;
+    color: var(--ink);
+    background: var(--tone-admin-wash);
+    text-decoration: none;
+    transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+
+  .admin-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .admin-card:active {
+    transform: scale(0.98);
+  }
+
+  .admin-card:focus-visible {
+    outline: 3px solid var(--tone-admin);
+    outline-offset: 3px;
+  }
+
+  .admin-card__icon,
+  .admin-card__go {
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--tone-admin);
+    background: color-mix(in srgb, var(--tone-admin) 16%, transparent);
+  }
+
+  .admin-card__icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .admin-card__go {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .admin-card__icon :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .admin-card__go :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .admin-card__copy {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .admin-card__title {
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    font-weight: 650;
+  }
+
+  .admin-card__hint {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .admin-card {
+      transition: none;
+    }
+
+    .admin-card:hover,
+    .admin-card:active {
+      transform: none;
+    }
   }
 
   .card {
