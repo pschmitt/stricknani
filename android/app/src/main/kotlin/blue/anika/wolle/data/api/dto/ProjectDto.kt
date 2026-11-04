@@ -77,6 +77,8 @@ data class ProjectDto(
     val steps: List<StepDto> = emptyList(),
     val images: List<ImageDto> = emptyList(),
     val attachments: List<AttachmentDto> = emptyList(),
+    /** Null for placeholders and servers that do not report owners (treated as the user's own). */
+    val owner: OwnerDto? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `ProjectListItemResponse`. */

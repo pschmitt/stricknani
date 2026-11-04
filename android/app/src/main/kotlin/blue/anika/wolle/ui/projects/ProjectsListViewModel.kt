@@ -24,6 +24,7 @@ import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
+import blue.anika.wolle.ui.common.yarnsOwnedBy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
@@ -248,10 +249,18 @@ constructor(
         selectedAssets: List<String>,
     ) = importController.confirm(selectedImages, reviewed, selectedAssets)
 
-    /** The user's own yarns, for the stash picker of the import review. */
+    /**
+     * The user's own yarns, for the stash picker of the import review. An import always creates
+     * the importing user's own project, so an administrator who also caches other users' yarns
+     * must never be offered those here: the server links only yarns of the project's owner.
+     */
     val stashYarns: StateFlow<List<YarnEntity>> =
-        yarnRepository
-            .observeAll()
+        combine(
+                yarnRepository.observeAll(),
+                apiCapabilities.state.map { it.user?.id }.distinctUntilChanged(),
+            ) { yarns, currentUserId ->
+                yarnsOwnedBy(yarns, ownerId = null, currentUserId = currentUserId)
+            }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),

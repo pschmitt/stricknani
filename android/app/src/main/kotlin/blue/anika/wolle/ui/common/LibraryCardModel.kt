@@ -36,4 +36,6 @@ data class LibraryCardData(
     val imageUrl: String?,
     val isFavorite: Boolean,
     val chips: List<String>,
+    /** Set for items owned by someone else (administrators): the owner's avatar badge. */
+    val owner: OwnerBadgeData? = null,
 )

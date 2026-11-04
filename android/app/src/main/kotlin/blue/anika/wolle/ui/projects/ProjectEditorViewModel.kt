@@ -12,6 +12,7 @@ import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.db.entity.CategoryEntity
+import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
@@ -25,16 +26,24 @@ import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.OwnedKind
+import blue.anika.wolle.ui.common.OwnerBannerData
 import blue.anika.wolle.ui.common.PhotoRemoval
+import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerBannerOf
+import blue.anika.wolle.ui.common.yarnsOwnedBy
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -130,14 +139,37 @@ constructor(
                 emptyList(),
             )
 
+    private val editedProject: Flow<ProjectEntity?> =
+        route.projectId?.let { projectRepository.observeById(it) } ?: flowOf(null)
+
+    private val currentUserId: Flow<Long?> =
+        capabilities.state.map { it.user?.id }.distinctUntilChanged()
+
+    /**
+     * The yarns that can be linked: the project owner's. On someone else's project (an
+     * administrator editing it) that is the owner's stash, not the editor's, because the server
+     * only links yarns of the project's owner.
+     */
     val yarns: StateFlow<List<YarnEntity>> =
-        yarnRepository
-            .observeAll()
+        combine(
+                yarnRepository.observeAll(),
+                editedProject.map { it?.ownerId }.distinctUntilChanged(),
+                currentUserId,
+            ) { all, ownerId, me ->
+                yarnsOwnedBy(all, ownerId, me)
+            }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 emptyList(),
             )
+
+    /** Banner for an administrator editing someone else's project; null for the user's own. */
+    val ownerBanner: StateFlow<OwnerBannerData?> =
+        combine(editedProject, currentUserId) { project, me ->
+                ownerBannerOf(project?.ownerBadge(me), OwnedKind.Project)
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     fun previewUrl(yarn: YarnEntity): String? = mediaUrlResolver.resolve(yarn.previewUrl)
 

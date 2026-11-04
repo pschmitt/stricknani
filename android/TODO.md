@@ -41,6 +41,29 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-89: Administrators see and edit everybody's projects and yarns
+
+**Status:** in progress (2026-11-04)
+
+An administrator's device may cache other users' projects and yarns, so it is opt-in and isolated.
+
+- [x] `owner` (id, email, name, avatar) on project and yarn DTOs, persisted in Room
+      (`ownerId`/`ownerName`/`ownerAvatarUrl`; schema 4 with a real 3 -> 4 migration that keeps
+      queued writes). NULL owner = the signed-in user's own.
+- [x] "Mine | Everyone" chip on the project and yarn lists (administrators only, default Everyone,
+      stored in Room's `sync_state`, so every sign-out wipes it with the rest). Turning it off purges
+      other users' rows (those with a queued local write stay until replayed) and their `@all`
+      cursors; turning it on resets the `@all` cursors and runs a full `scope=all` sync.
+- [x] Per-scope sync cursors (`project`, `project@all`), 409 `scope_mismatch` restarts as a full
+      resync, a demoted administrator is purged by the next sync.
+- [x] Owner badge on library cards/rows, Home shelves, Continue card and search results; compact
+      banner on project/yarn detail and editor screens of someone else's item (EN/DE).
+- [x] Import stash only offers the importing user's own yarns; the project editor's yarn picker
+      offers the project owner's yarns.
+- [x] Queued edits of others' items replay with the same credentials; a 403 on replay (role
+      withdrawn) resolves as a conflict instead of blocking the queue.
+- [ ] On-device verification (parent) on the Zenfone and P11.
+
 ## SNA-88: Real in-app self-update for the GitHub APK
 
 - [x] **Update** on the Home card and the About row downloads, verifies and installs the APK in the

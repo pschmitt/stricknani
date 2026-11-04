@@ -3,6 +3,7 @@ package blue.anika.wolle.data.api.v2
 import blue.anika.wolle.data.api.dto.CategoryDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import retrofit2.HttpException
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -10,6 +11,10 @@ import retrofit2.http.Query
  * `src/api_v2/sync.rs`. Query: `since` (a previous `server_time`, verbatim) or `cursor` (a previous
  * `next_cursor`), never both; `limit` 1..50 (default 50, and part of the cursor). Categories sync
  * the same way; servers without that route fall back to [blue.anika.wolle.data.api.SyncApi].
+ *
+ * `scope` is `all` for an administrator who wants other users' items too and absent otherwise (the
+ * server default is `mine`). A cursor issued under one scope is refused under the other with 409
+ * `scope_mismatch`, see [runScopedV2Sync].
  */
 interface SyncV2Api {
     @GET("api/v2/sync/projects")
@@ -17,6 +22,7 @@ interface SyncV2Api {
         @Query("since") since: String? = null,
         @Query("cursor") cursor: String? = null,
         @Query("limit") limit: Int? = null,
+        @Query("scope") scope: String? = null,
     ): V2Envelope<V2SyncPageDto<ProjectV2Dto>>
 
     @GET("api/v2/sync/yarns")
@@ -24,6 +30,7 @@ interface SyncV2Api {
         @Query("since") since: String? = null,
         @Query("cursor") cursor: String? = null,
         @Query("limit") limit: Int? = null,
+        @Query("scope") scope: String? = null,
     ): V2Envelope<V2SyncPageDto<YarnV2Dto>>
 
     @GET("api/v2/sync/categories")
@@ -43,6 +50,8 @@ data class V2SyncPageDto<T>(
     @SerialName("full_resync_required") val fullResyncRequired: Boolean = false,
     @SerialName("has_more") val hasMore: Boolean = false,
     @SerialName("next_cursor") val nextCursor: String? = null,
+    /** The scope the server actually applied (`mine` or `all`). */
+    val scope: String? = null,
 )
 
 /** What a complete v2 sync run produced. */
@@ -74,8 +83,9 @@ internal suspend fun <T> runV2Sync(
     idOf: (T) -> Int,
     fetch: suspend (since: String?, cursor: String?) -> V2SyncPageDto<T>,
     onPage: suspend (updated: List<T>, deletedIds: List<Int>) -> Unit,
+    startAsFullResync: Boolean = false,
 ): V2SyncOutcome {
-    var fullResync = false
+    var fullResync = startAsFullResync
     var startSince = since
     while (true) {
         val seen = mutableSetOf<Int>()
@@ -111,3 +121,27 @@ internal fun staleAfterFullResync(
     seen: Set<Int>,
     pendingLocalIds: Set<Int>,
 ): List<Int> = localIds.filter { it > 0 && it !in seen && it !in pendingLocalIds }
+
+/** True for the server's 409 `scope_mismatch`: the cursor was issued under another scope. */
+internal fun HttpException.isScopeMismatch(): Boolean =
+    code() == 409 &&
+        runCatching { response()?.errorBody()?.string().orEmpty().contains("scope_mismatch") }
+            .getOrDefault(false)
+
+/**
+ * [runV2Sync], recovering once from a `scope_mismatch` (the scope changed under a stored cursor,
+ * for example an administrator lost the role mid-run): the cursor is dropped and the sync restarts
+ * from scratch as a full resync, so rows the new scope no longer contains are removed afterwards.
+ */
+internal suspend fun <T> runScopedV2Sync(
+    since: String?,
+    idOf: (T) -> Int,
+    fetch: suspend (since: String?, cursor: String?) -> V2SyncPageDto<T>,
+    onPage: suspend (updated: List<T>, deletedIds: List<Int>) -> Unit,
+): V2SyncOutcome =
+    try {
+        runV2Sync(since, idOf, fetch, onPage)
+    } catch (failure: HttpException) {
+        if (!failure.isScopeMismatch()) throw failure
+        runV2Sync(null, idOf, fetch, onPage, startAsFullResync = true)
+    }

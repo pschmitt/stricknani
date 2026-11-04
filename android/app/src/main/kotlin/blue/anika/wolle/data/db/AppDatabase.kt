@@ -2,6 +2,8 @@ package blue.anika.wolle.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import blue.anika.wolle.data.db.dao.CategoryDao
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
@@ -22,7 +24,7 @@ import blue.anika.wolle.data.db.entity.YarnEntity
             SyncStateEntity::class,
             PendingMutationEntity::class,
         ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,3 +38,24 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun pendingMutationDao(): PendingMutationDao
 }
+
+/**
+ * 3 -> 4 (admin scope): projects and yarns remember their owner. Existing rows keep NULL owner
+ * columns, which means "the signed-in user's own" - exactly what they were before. Queued writes
+ * and sync cursors are untouched, so no offline edit is lost by the upgrade.
+ */
+val MIGRATION_3_4: Migration =
+    object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_3_4_STATEMENTS.forEach(db::execSQL)
+        }
+    }
+
+internal val MIGRATION_3_4_STATEMENTS: List<String> =
+    listOf("projects", "yarns").flatMap { table ->
+        listOf(
+            "ALTER TABLE `$table` ADD COLUMN `ownerId` INTEGER",
+            "ALTER TABLE `$table` ADD COLUMN `ownerName` TEXT",
+            "ALTER TABLE `$table` ADD COLUMN `ownerAvatarUrl` TEXT",
+        )
+    }

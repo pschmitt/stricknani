@@ -2,6 +2,7 @@ package blue.anika.wolle.data.api.v2
 
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ImageDto
+import blue.anika.wolle.data.api.dto.OwnerDto
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -51,6 +52,7 @@ data class ProjectV2Dto(
     val steps: List<StepV2Dto> = emptyList(),
     val images: List<ImageDto> = emptyList(),
     val attachments: List<AttachmentDto> = emptyList(),
+    val owner: OwnerDto? = null,
 )
 
 /** `YarnDto` in `api_v2/yarns.rs`. */
@@ -78,6 +80,7 @@ data class YarnV2Dto(
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("project_ids") val projectIds: List<Int> = emptyList(),
     val photos: List<YarnPhotoDto> = emptyList(),
+    val owner: OwnerDto? = null,
 )
 
 /** Body of the three media-order routes: the complete desired order, no version or If-Match. */

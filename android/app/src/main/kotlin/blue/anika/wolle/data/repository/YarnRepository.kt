@@ -9,7 +9,7 @@ import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.api.v2.MediaOrderRequest
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
-import blue.anika.wolle.data.api.v2.runV2Sync
+import blue.anika.wolle.data.api.v2.runScopedV2Sync
 import blue.anika.wolle.data.api.v2.staleAfterFullResync
 import blue.anika.wolle.data.api.v2.toV1
 import blue.anika.wolle.data.db.AppDatabase
@@ -59,6 +59,7 @@ constructor(
     private val pendingMutationDao: PendingMutationDao,
     private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
+    private val everyoneScope: EveryoneScope,
 ) {
     fun observeAll(): Flow<List<YarnEntity>> = yarnDao.observeAll()
 
@@ -101,6 +102,7 @@ constructor(
     suspend fun sync(): Boolean = if (capabilities.useV2()) syncV2() else syncV1()
 
     private suspend fun syncV1(): Boolean {
+        // A v1 server has no scope: it only ever serves the user's own items.
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncYarns(since = cursor)
         val changed = applyDelta(response.updated, response.deletedIds)
@@ -115,12 +117,14 @@ constructor(
      */
     private suspend fun syncV2(): Boolean {
         var changed = false
+        val scope = everyoneScope.forSync()
+        val cursorKey = syncCursorKey(ENTITY_TYPE, scope)
         val outcome =
-            runV2Sync(
-                since = syncStateDao.getCursor(ENTITY_TYPE),
+            runScopedV2Sync(
+                since = syncStateDao.getCursor(cursorKey),
                 idOf = { it.id },
                 fetch = { since, cursor ->
-                    syncV2Api.syncYarns(since = since, cursor = cursor).data
+                    syncV2Api.syncYarns(since = since, cursor = cursor, scope = scope.wire).data
                 },
                 onPage = { updated, deletedIds ->
                     if (applyDelta(updated.map { it.toV1() }, deletedIds)) changed = true
@@ -139,7 +143,7 @@ constructor(
                 changed = true
             }
         }
-        syncStateDao.setCursor(SyncStateEntity(ENTITY_TYPE, outcome.serverTime))
+        syncStateDao.setCursor(SyncStateEntity(cursorKey, outcome.serverTime))
         return changed
     }
 
@@ -406,6 +410,9 @@ internal fun YarnDto.toEntity(json: Json): YarnEntity =
         updatedAt = DateTimeUtils.parseToEpochMillis(updatedAt),
         previewUrl = (photos.firstOrNull { it.isPrimary } ?: photos.firstOrNull())?.thumbnailUrl,
         detailJson = json.encodeToString(this),
+        ownerId = owner?.id,
+        ownerName = owner?.name?.ifBlank { null } ?: owner?.email?.ifBlank { null },
+        ownerAvatarUrl = owner?.avatarUrl,
     )
 
 internal fun removeYarnPhoto(yarn: YarnDto, photoId: Int): YarnDto =

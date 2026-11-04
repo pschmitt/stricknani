@@ -14,9 +14,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.getSystemService
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -25,6 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.crash.CrashReportStore
+import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
 import blue.anika.wolle.data.oidc.OidcFailure
 import blue.anika.wolle.data.onboarding.QrConfigCodec
@@ -33,7 +37,9 @@ import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.ui.common.CrashReportDialog
+import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.OwnerContext
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
 import blue.anika.wolle.ui.navigation.DeepLinkParser
 import blue.anika.wolle.ui.navigation.Route
@@ -62,6 +68,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
     @Inject lateinit var mutationFeedback: MutationFeedback
     @Inject lateinit var oidcCoordinator: OidcCoordinator
+    @Inject lateinit var apiCapabilities: ApiCapabilities
+    @Inject lateinit var mediaUrlResolver: MediaUrlResolver
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
@@ -119,20 +127,30 @@ class MainActivity : ComponentActivity() {
                 )
                 onDispose {}
             }
+            val apiState by apiCapabilities.state.collectAsStateWithLifecycle()
+            val ownerContext =
+                remember(apiState.user?.id) {
+                    OwnerContext(
+                        currentUserId = apiState.user?.id,
+                        resolveUrl = mediaUrlResolver::resolve,
+                    )
+                }
             StricknaniTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
-                StricknaniNavHost(
-                    startDestination = if (isConfigured) Route.Home else Route.Onboarding,
-                    // Deferred (not consumed) until onboarding is done - there's nothing to
-                    // navigate to yet, and StricknaniNavHost gets a fresh NavController once
-                    // isConfigured flips anyway (see its kdoc).
-                    pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
-                    onDeepLinkConsumed = { pendingDeepLink = null },
-                    // Only meaningful pre-onboarding - once configured, a stray setup URI (an old
-                    // QR scanned again, say) has nothing useful to do.
-                    pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
-                    onSetupUriConsumed = { pendingSetupUri = null },
-                    mutationFeedback = mutationFeedback,
-                )
+                CompositionLocalProvider(LocalOwnerContext provides ownerContext) {
+                    StricknaniNavHost(
+                        startDestination = if (isConfigured) Route.Home else Route.Onboarding,
+                        // Deferred (not consumed) until onboarding is done - there's nothing to
+                        // navigate to yet, and StricknaniNavHost gets a fresh NavController once
+                        // isConfigured flips anyway (see its kdoc).
+                        pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
+                        onDeepLinkConsumed = { pendingDeepLink = null },
+                        // Only meaningful pre-onboarding - once configured, a stray setup URI (an old
+                        // QR scanned again, say) has nothing useful to do.
+                        pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
+                        onSetupUriConsumed = { pendingSetupUri = null },
+                        mutationFeedback = mutationFeedback,
+                    )
+                }
                 if (isConfigured) {
                     RequestNotificationPermissionEffect(appPreferencesRepository)
                 }

@@ -25,6 +25,7 @@ import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
+import blue.anika.wolle.data.repository.EVERYONE_FILTER_KEY
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.NavbarItemPreference
@@ -97,7 +98,11 @@ constructor(
     val lastSyncedMillis: StateFlow<Long?> =
         syncStateDao
             .observeAll()
-            .map { states -> states.maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) } }
+            .map { states ->
+                states
+                    .filter { it.entityType != EVERYONE_FILTER_KEY }
+                    .maxOfOrNull { DateTimeUtils.parseToEpochMillis(it.cursor) }
+            }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     val failedMutations: StateFlow<List<PendingMutationEntity>> =

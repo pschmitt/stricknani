@@ -25,4 +25,12 @@ data class ProjectEntity(
     val updatedAt: Long,
     val previewUrl: String?,
     val detailJson: String,
+    /**
+     * Owner of the project as the server reported it (admin scope). Null for rows without owner
+     * info, which are the signed-in user's own. A row is "foreign" when [ownerId] is set and
+     * differs from the signed-in user.
+     */
+    val ownerId: Long? = null,
+    val ownerName: String? = null,
+    val ownerAvatarUrl: String? = null,
 )

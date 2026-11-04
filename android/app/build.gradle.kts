@@ -92,6 +92,9 @@ android {
         sourceSets.getByName("test").kotlin.directories.add("src/errorreporting-test/kotlin")
     }
 
+    // Room's exported schemas (one JSON per database version) feed the migration test.
+    sourceSets.getByName("androidTest").assets.directories.add("schemas")
+
     signingConfigs {
         // Only overridden in CI (see .github/workflows/release.yaml, once it exists - SNA-12),
         // which decodes a persistent keystore from a secret and exports CI_KEYSTORE_PATH - local
@@ -243,6 +246,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)

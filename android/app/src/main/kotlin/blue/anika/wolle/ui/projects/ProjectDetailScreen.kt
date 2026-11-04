@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -67,9 +68,12 @@ import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
+import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.NotesDisclosure
+import blue.anika.wolle.ui.common.OwnedKind
+import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
@@ -82,6 +86,8 @@ import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
+import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerBannerOf
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.rememberRefreshFailure
 import blue.anika.wolle.ui.common.shareUrl
@@ -149,93 +155,101 @@ fun ProjectDetailScreen(
     )
 
     val state = uiState
+    val ownerContext = LocalOwnerContext.current
+    val banner =
+        (state as? ProjectDetailUiState.Loaded)?.let {
+            ownerBannerOf(it.entity.ownerBadge(ownerContext.currentUserId), OwnedKind.Project)
+        }
     val refreshFailure = rememberRefreshFailure(refreshState)
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(if (state is ProjectDetailUiState.Loaded) state.entity.name else "")
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back),
-                        )
-                    }
-                },
-                actions = {
-                    if (state is ProjectDetailUiState.Loaded) {
-                        val context = LocalContext.current
-                        var menuExpanded by remember { mutableStateOf(false) }
-                        // The everyday actions sit in the bar; the menu keeps Share and Delete.
-                        FavoriteToggleButton(
-                            isFavorite = state.entity.isFavorite,
-                            onClick = viewModel::toggleFavorite,
-                        )
-                        IconButton(onClick = { onEditClick(state.entity.id) }) {
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(if (state is ProjectDetailUiState.Loaded) state.entity.name else "")
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
                             Icon(
-                                Icons.Filled.Edit,
-                                contentDescription = stringResource(R.string.common_edit),
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.common_back),
                             )
                         }
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                Icons.Filled.MoreVert,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.project_detail_more_actions_description
-                                    ),
+                    },
+                    actions = {
+                        if (state is ProjectDetailUiState.Loaded) {
+                            val context = LocalContext.current
+                            var menuExpanded by remember { mutableStateOf(false) }
+                            // The everyday actions sit in the bar; the menu keeps Share and Delete.
+                            FavoriteToggleButton(
+                                isFavorite = state.entity.isFavorite,
+                                onClick = viewModel::toggleFavorite,
                             )
+                            IconButton(onClick = { onEditClick(state.entity.id) }) {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = stringResource(R.string.common_edit),
+                                )
+                            }
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    Icons.Filled.MoreVert,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.project_detail_more_actions_description
+                                        ),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                            ) {
+                                TextSizeMenuSection(
+                                    step = textStep,
+                                    onStepChange = viewModel::setTextStep,
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.print_action)) },
+                                    leadingIcon = {
+                                        Icon(PhosphorIcons.Printer, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showPrintDialog = true
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.common_share)) },
+                                    leadingIcon = {
+                                        Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
+                                    },
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            stringResource(R.string.common_delete),
+                                            color = MaterialTheme.colorScheme.error,
+                                        )
+                                    },
+                                    leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showDeleteDialog = true
+                                    },
+                                )
+                            }
                         }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                        ) {
-                            TextSizeMenuSection(
-                                step = textStep,
-                                onStepChange = viewModel::setTextStep,
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.print_action)) },
-                                leadingIcon = {
-                                    Icon(PhosphorIcons.Printer, contentDescription = null)
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    showPrintDialog = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.common_share)) },
-                                leadingIcon = {
-                                    Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
-                                },
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        stringResource(R.string.common_delete),
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                },
-                                leadingIcon = { DestructiveDeleteIcon(contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    showDeleteDialog = true
-                                },
-                            )
-                        }
-                    }
-                },
-            )
+                    },
+                )
+                banner?.let { OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+            }
         },
     ) { innerPadding ->
         PullToRefreshBox(

@@ -32,9 +32,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.OwnerBadge
+import blue.anika.wolle.ui.common.OwnerBadgeData
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SearchField
+import blue.anika.wolle.ui.common.ownerBadge
 import coil3.compose.AsyncImage
 
 @Composable
@@ -45,6 +49,7 @@ fun SearchScreen(
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
+    val currentUserId = LocalOwnerContext.current.currentUserId
 
     Scaffold { innerPadding ->
         Column(Modifier.fillMaxSize().padding(innerPadding)) {
@@ -89,6 +94,7 @@ fun SearchScreen(
                                         previewUrl = viewModel.previewUrl(result.entity.previewUrl),
                                         fallbackIcon = PhosphorIcons.Hoodie,
                                         onClick = { onProjectClick(result.entity.id) },
+                                        owner = result.entity.ownerBadge(currentUserId),
                                     )
                                 is SearchResult.YarnResult ->
                                     SearchResultCard(
@@ -103,6 +109,7 @@ fun SearchScreen(
                                         previewUrl = viewModel.previewUrl(result.entity.previewUrl),
                                         fallbackIcon = MdiIcons.YarnBall,
                                         onClick = { onYarnClick(result.entity.id) },
+                                        owner = result.entity.ownerBadge(currentUserId),
                                     )
                             }
                         }
@@ -119,6 +126,7 @@ private fun SearchResultCard(
     previewUrl: String?,
     fallbackIcon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
+    owner: OwnerBadgeData? = null,
 ) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -140,7 +148,7 @@ private fun SearchResultCard(
                 }
             }
             Spacer(Modifier.width(12.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleSmall)
                 subtitle?.let {
                     Text(
@@ -150,6 +158,7 @@ private fun SearchResultCard(
                     )
                 }
             }
+            owner?.let { OwnerBadge(it, size = 24.dp) }
         }
     }
 }

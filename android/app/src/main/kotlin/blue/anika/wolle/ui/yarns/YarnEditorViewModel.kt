@@ -19,7 +19,11 @@ import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.OwnedKind
+import blue.anika.wolle.ui.common.OwnerBannerData
 import blue.anika.wolle.ui.common.PhotoRemoval
+import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerBannerOf
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -28,7 +32,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -104,6 +110,16 @@ constructor(
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 capabilities.current.generation == ApiGeneration.V2,
             )
+
+    /** Banner for an administrator editing someone else's yarn; null for the user's own. */
+    val ownerBanner: StateFlow<OwnerBannerData?> =
+        combine(
+                route.yarnId?.let { yarnRepository.observeById(it) } ?: flowOf(null),
+                capabilities.state.map { it.user?.id }.distinctUntilChanged(),
+            ) { yarn, me ->
+                ownerBannerOf(yarn?.ownerBadge(me), OwnedKind.Yarn)
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     init {
         val id = route.yarnId

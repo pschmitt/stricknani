@@ -1161,4 +1161,10 @@
     <string name="error_back_projects">Back to projects</string>
     <string name="error_back_yarns">Back to yarns</string>
     <string name="error_go_back">Go back</string>
+    <string name="owner_badge_description">Owned by %1$s</string>
+    <string name="owner_banner_project">This is %1$s\'s project. Changes you make are saved to their project and recorded in the audit log.</string>
+    <string name="owner_banner_yarn">This is %1$s\'s yarn. Changes you make are saved to their yarn and recorded in the audit log.</string>
+    <string name="owner_filter_label">Show</string>
+    <string name="owner_filter_mine">Mine</string>
+    <string name="owner_filter_everyone">Everyone</string>
 </resources>

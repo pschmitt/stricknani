@@ -1158,4 +1158,10 @@
     <string name="error_back_projects">Zurück zu Projekten</string>
     <string name="error_back_yarns">Zurück zu den Garnen</string>
     <string name="error_go_back">Zurück</string>
+    <string name="owner_badge_description">Gehört %1$s</string>
+    <string name="owner_banner_project">Dies ist das Projekt von %1$s. Deine Änderungen werden in dessen Projekt gespeichert und im Prüfprotokoll festgehalten.</string>
+    <string name="owner_banner_yarn">Dies ist das Garn von %1$s. Deine Änderungen werden in dessen Garn gespeichert und im Prüfprotokoll festgehalten.</string>
+    <string name="owner_filter_label">Anzeigen</string>
+    <string name="owner_filter_mine">Meine</string>
+    <string name="owner_filter_everyone">Alle</string>
 </resources>

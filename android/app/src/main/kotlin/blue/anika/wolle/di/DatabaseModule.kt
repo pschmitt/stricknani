@@ -3,6 +3,7 @@ package blue.anika.wolle.di
 import android.content.Context
 import androidx.room.Room
 import blue.anika.wolle.data.db.AppDatabase
+import blue.anika.wolle.data.db.MIGRATION_3_4
 import blue.anika.wolle.data.db.dao.CategoryDao
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
@@ -23,8 +24,9 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "stricknani.db")
-            // Every table here is a fully rebuildable server-side cache, not user data - a schema
-            // bump just wipes and resyncs rather than needing a hand-written Migration.
+            // 3 -> 4 keeps queued offline writes. Older versions only held a rebuildable server
+            // cache (plus a few queued writes of long-gone builds), so they still wipe and resync.
+            .addMigrations(MIGRATION_3_4)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 

@@ -16,4 +16,8 @@ data class YarnEntity(
     val updatedAt: Long,
     val previewUrl: String?,
     val detailJson: String,
+    /** See `ProjectEntity.ownerId`. */
+    val ownerId: Long? = null,
+    val ownerName: String? = null,
+    val ownerAvatarUrl: String? = null,
 )

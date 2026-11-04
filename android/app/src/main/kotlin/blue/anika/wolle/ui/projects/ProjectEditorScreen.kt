@@ -72,6 +72,7 @@ import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.FeedbackKind
+import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
 import blue.anika.wolle.ui.common.PhotoReorder
@@ -110,6 +111,7 @@ fun ProjectEditorScreen(
     val reorderAvailable by viewModel.reorderAvailable.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
+    val banner by viewModel.ownerBanner.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
@@ -205,34 +207,37 @@ fun ProjectEditorScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            stringResource(
-                                if (viewModel.isEditing) R.string.project_editor_title_edit
-                                else R.string.project_new_label
+                Column {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                stringResource(
+                                    if (viewModel.isEditing) R.string.project_editor_title_edit
+                                    else R.string.project_new_label
+                                )
                             )
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = leave) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.common_back),
-                            )
-                        }
-                    },
-                    actions = {
-                        if (viewModel.isEditing) {
-                            IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
-                                DestructiveDeleteIcon(
-                                    contentDescription =
-                                        stringResource(R.string.project_editor_delete_description)
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = leave) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.common_back),
                                 )
                             }
-                        }
-                    },
-                )
+                        },
+                        actions = {
+                            if (viewModel.isEditing) {
+                                IconButton(onClick = { showDeleteDialog = true }, enabled = !isSaving) {
+                                    DestructiveDeleteIcon(
+                                        contentDescription =
+                                            stringResource(R.string.project_editor_delete_description)
+                                    )
+                                }
+                            }
+                        },
+                    )
+                    banner?.let { OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                }
             },
             bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },
         ) { innerPadding ->

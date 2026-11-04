@@ -15,4 +15,7 @@ interface SyncStateDao {
     @Query("SELECT * FROM sync_state") fun observeAll(): Flow<List<SyncStateEntity>>
 
     @Upsert suspend fun setCursor(state: SyncStateEntity)
+
+    @Query("DELETE FROM sync_state WHERE entityType IN (:entityTypes)")
+    suspend fun deleteCursors(entityTypes: List<String>)
 }

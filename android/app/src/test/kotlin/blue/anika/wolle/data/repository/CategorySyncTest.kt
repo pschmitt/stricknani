@@ -86,6 +86,10 @@ class CategorySyncTest {
         override suspend fun setCursor(state: SyncStateEntity) {
             cursor = state.cursor
         }
+
+        override suspend fun deleteCursors(entityTypes: List<String>) {
+            cursor = null
+        }
     }
 
     private class FakeV1(var response: CategorySyncResponseDto? = null) : SyncApi {
@@ -104,11 +108,19 @@ class CategorySyncTest {
     private class FakeV2(val pages: ArrayDeque<() -> V2SyncPageDto<CategoryDto>>) : SyncV2Api {
         val requests = mutableListOf<Triple<String?, String?, Int?>>()
 
-        override suspend fun syncProjects(since: String?, cursor: String?, limit: Int?) =
-            error("unused")
+        override suspend fun syncProjects(
+            since: String?,
+            cursor: String?,
+            limit: Int?,
+            scope: String?,
+        ) = error("unused")
 
-        override suspend fun syncYarns(since: String?, cursor: String?, limit: Int?) =
-            error("unused")
+        override suspend fun syncYarns(
+            since: String?,
+            cursor: String?,
+            limit: Int?,
+            scope: String?,
+        ) = error("unused")
 
         override suspend fun syncCategories(since: String?, cursor: String?, limit: Int?) =
             V2Envelope(pages.removeFirst()().also { requests += Triple(since, cursor, limit) })

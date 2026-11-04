@@ -88,6 +88,17 @@ constructor(
                 )
                 pendingMutationDao.markConflict(mutation.id, conflict.message!!)
                 // Not anyFailure: this mutation is done (resolved, not pending) - nothing to retry.
+            } catch (forbidden: HttpException) {
+                if (forbidden.code() != 403) {
+                    handleReplayFailure(mutation, forbidden)
+                    anyFailure = true
+                    break
+                }
+                // An administrator's queued edit of someone else's item, replayed after the role
+                // was withdrawn: resolved as a conflict like any other rejected write, so it does
+                // not block the queue behind it. The cached copy goes with the next sync.
+                Timber.i("Replay of mutation ${mutation.id} refused (403)")
+                pendingMutationDao.markConflict(mutation.id, NOT_ALLOWED_MESSAGE)
             } catch (failure: Exception) {
                 Timber.w(
                     failure,
@@ -103,6 +114,14 @@ constructor(
             }
         }
         return if (anyFailure) Result.retry() else Result.success()
+    }
+
+    private suspend fun handleReplayFailure(mutation: PendingMutationEntity, failure: Exception) {
+        Timber.w(
+            failure,
+            "Replay failed for mutation ${mutation.id} (${mutation.entityType}/${mutation.operation})",
+        )
+        pendingMutationDao.setError(mutation.id, failure.message ?: "Sync failed")
     }
 
     private suspend fun replay(mutation: PendingMutationEntity) {
@@ -226,6 +245,9 @@ constructor(
         }
     }
 }
+
+private const val NOT_ALLOWED_MESSAGE =
+    "You are no longer allowed to change this item - your change was discarded."
 
 private fun HttpException.errorBodyText(): String = response()?.errorBody()?.string().orEmpty()
 

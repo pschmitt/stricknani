@@ -84,8 +84,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.update.canInstallInApp
+import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.OwnerBadge
+import blue.anika.wolle.ui.common.OwnerBadgeData
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.RefreshState
@@ -95,6 +98,7 @@ import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.common.isProblem
 import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
+import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.stitchedBorder
 import blue.anika.wolle.ui.signin.SignedOutPanel
 import blue.anika.wolle.ui.update.UpdateInstallEffects
@@ -118,6 +122,7 @@ fun HomeScreen(
     onOpenSyncIssues: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val currentUserId = LocalOwnerContext.current.currentUserId
     val favoriteProjects by viewModel.favoriteProjects.collectAsStateWithLifecycle()
     val favoriteYarns by viewModel.favoriteYarns.collectAsStateWithLifecycle()
     val recentProjects by viewModel.recentProjects.collectAsStateWithLifecycle()
@@ -316,6 +321,7 @@ fun HomeScreen(
                             ContinueKnittingCard(
                                 project = project,
                                 previewUrl = viewModel.previewUrl(project.previewUrl),
+                                owner = project.ownerBadge(currentUserId),
                                 onClick = { onProjectClick(project.id) },
                                 modifier = Modifier.padding(horizontal = 16.dp),
                             )
@@ -342,6 +348,7 @@ fun HomeScreen(
                                         previewUrl = viewModel.previewUrl(project.previewUrl),
                                         fallbackIcon = PhosphorIcons.Hoodie,
                                         tint = tileTint(index),
+                                        owner = project.ownerBadge(currentUserId),
                                         onClick = { onProjectClick(project.id) },
                                     )
                                 }
@@ -363,6 +370,7 @@ fun HomeScreen(
                                         previewUrl = viewModel.previewUrl(yarn.previewUrl),
                                         fallbackIcon = MdiIcons.YarnBall,
                                         tint = tileTint(index + 1),
+                                        owner = yarn.ownerBadge(currentUserId),
                                         onClick = { onYarnClick(yarn.id) },
                                     )
                                 }
@@ -384,6 +392,7 @@ fun HomeScreen(
                                         previewUrl = viewModel.previewUrl(project.previewUrl),
                                         fallbackIcon = PhosphorIcons.Hoodie,
                                         tint = tileTint(index + 2),
+                                        owner = project.ownerBadge(currentUserId),
                                         onClick = { onProjectClick(project.id) },
                                     )
                                 }
@@ -584,6 +593,7 @@ private fun ContinueKnittingCard(
     previewUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    owner: OwnerBadgeData? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -662,6 +672,7 @@ private fun ContinueKnittingCard(
                         project.category?.let { Pill(it) }
                         Pill(relativeDay(project.updatedAt))
                     }
+                    owner?.let { OwnerBadge(it, size = 24.dp) }
                 }
             }
         }
@@ -799,29 +810,39 @@ private fun ShelfTile(
     fallbackIcon: ImageVector,
     tint: Pair<Color, Color>,
     onClick: () -> Unit,
+    owner: OwnerBadgeData? = null,
 ) {
     Column(modifier = Modifier.width(132.dp)) {
-        Box(
-            modifier =
-                Modifier.size(132.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(tint.first)
-                    .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (previewUrl != null) {
-                AsyncImage(
-                    model = previewUrl,
-                    contentDescription = title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Icon(
-                    fallbackIcon,
-                    contentDescription = null,
-                    tint = tint.second,
-                    modifier = Modifier.size(40.dp),
+        Box(modifier = Modifier.size(132.dp)) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(tint.first)
+                        .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (previewUrl != null) {
+                    AsyncImage(
+                        model = previewUrl,
+                        contentDescription = title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Icon(
+                        fallbackIcon,
+                        contentDescription = null,
+                        tint = tint.second,
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
+            }
+            owner?.let {
+                OwnerBadge(
+                    it,
+                    size = 24.dp,
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
                 )
             }
         }

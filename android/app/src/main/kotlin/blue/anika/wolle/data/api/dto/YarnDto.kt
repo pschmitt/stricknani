@@ -50,6 +50,8 @@ data class YarnDto(
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("project_ids") val projectIds: List<Int> = emptyList(),
     val photos: List<YarnPhotoDto> = emptyList(),
+    /** Null for placeholders and servers that do not report owners (treated as the user's own). */
+    val owner: OwnerDto? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `YarnListItemResponse`. */

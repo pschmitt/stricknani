@@ -155,6 +155,9 @@ fun LibraryCard(
                         },
                 )
             }
+            data.owner?.let { owner ->
+                OwnerBadge(owner, modifier = Modifier.align(Alignment.TopStart).padding(10.dp))
+            }
             Box(
                 Modifier.align(Alignment.TopEnd)
                     .padding(8.dp)
@@ -223,8 +226,17 @@ fun LibraryRow(
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(width = 112.dp, height = 84.dp).clip(RoundedCornerShape(14.dp))) {
-                LibraryCover(data = data, iconSize = 36.dp, modifier = Modifier.fillMaxSize())
+            Box(Modifier.size(width = 112.dp, height = 84.dp)) {
+                Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))) {
+                    LibraryCover(data = data, iconSize = 36.dp, modifier = Modifier.fillMaxSize())
+                }
+                data.owner?.let { owner ->
+                    OwnerBadge(
+                        owner,
+                        size = 24.dp,
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {

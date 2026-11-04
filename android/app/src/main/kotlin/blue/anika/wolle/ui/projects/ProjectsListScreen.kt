@@ -47,15 +47,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.EveryoneFilterChips
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
+import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.libraryChips
+import blue.anika.wolle.ui.common.ownerBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,6 +162,7 @@ fun ProjectsListScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     modifier = Modifier.testTag("projects-list-category-filters"),
                 ) {
+                    item { EveryoneFilterChips() }
                     item {
                         FilterChip(
                             selected = selectedCategory == null,
@@ -216,7 +220,8 @@ fun ProjectsListScreen(
                         key = { it.id },
                         toCard = { project ->
                             val tags = viewModel.tagsOf(project)
-                            remember(project, tags) {
+                            val me = LocalOwnerContext.current.currentUserId
+                            remember(project, tags, me) {
                                 LibraryCardData(
                                     domain = LibraryDomain.Project,
                                     title = project.name,
@@ -225,6 +230,7 @@ fun ProjectsListScreen(
                                     imageUrl = viewModel.previewUrl(project),
                                     isFavorite = project.isFavorite,
                                     chips = libraryChips(tags),
+                                    owner = project.ownerBadge(me),
                                 )
                             }
                         },

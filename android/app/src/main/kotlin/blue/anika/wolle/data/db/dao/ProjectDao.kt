@@ -24,4 +24,11 @@ interface ProjectDao {
     @Query("SELECT id FROM projects WHERE id > 0") suspend fun getServerIds(): List<Int>
 
     @Query("DELETE FROM projects WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Int>)
+
+    /**
+     * Ids of rows owned by someone other than [currentUserId] (admin scope). Rows without owner
+     * info are the user's own and never match.
+     */
+    @Query("SELECT id FROM projects WHERE ownerId IS NOT NULL AND ownerId != :currentUserId")
+    suspend fun getForeignIds(currentUserId: Long): List<Int>
 }

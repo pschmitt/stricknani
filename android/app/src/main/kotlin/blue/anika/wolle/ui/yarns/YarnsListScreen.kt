@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.yarns
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,15 +39,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.EveryoneFilterChips
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
+import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
+import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.yarnChips
 import blue.anika.wolle.ui.common.yarnMetaLine
 
@@ -127,7 +131,11 @@ fun YarnsListScreen(
                     placeholder = stringResource(R.string.yarns_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
-                Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                ) {
+                    EveryoneFilterChips()
                     FilterChip(
                         selected = favoritesOnly,
                         onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
@@ -156,7 +164,8 @@ fun YarnsListScreen(
                         items = yarns,
                         key = { it.id },
                         toCard = { yarn ->
-                            remember(yarn, detailsToAdd) {
+                            val me = LocalOwnerContext.current.currentUserId
+                            remember(yarn, detailsToAdd, me) {
                                 LibraryCardData(
                                     domain = LibraryDomain.Yarn,
                                     title = yarn.name,
@@ -165,6 +174,7 @@ fun YarnsListScreen(
                                     imageUrl = viewModel.previewUrl(yarn),
                                     isFavorite = yarn.isFavorite,
                                     chips = yarnChips(yarn.weightCategory),
+                                    owner = yarn.ownerBadge(me),
                                 )
                             }
                         },
