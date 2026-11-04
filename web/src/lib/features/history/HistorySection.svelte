@@ -5,7 +5,7 @@
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-    import HistoryEventDetail from "./HistoryEventDetail.svelte";
+  import HistoryEventDetail from "./HistoryEventDetail.svelte";
   import {
     getHistoryDetail,
     historyUnsupported,
@@ -561,7 +561,6 @@
     .entry-chevron {
       transition: transform 160ms ease;
     }
-
   }
 
   .entry-chevron--open {

@@ -1,8 +1,11 @@
+import type { ComponentProps } from "svelte";
 import { render } from "svelte/server";
 import { describe, expect, it } from "vitest";
 import type { AuditMedia } from "#lib/features/admin/admin-api.ts";
 import HistoryEventDetail from "./HistoryEventDetail.svelte";
 import type { HistoryEvent } from "./history-api";
+
+type DetailProp = ComponentProps<typeof HistoryEventDetail>["detail"];
 import { historyDetailKind } from "./history-summary";
 
 const event = (patch: Partial<HistoryEvent> = {}): HistoryEvent => ({
@@ -30,7 +33,7 @@ const picture: AuditMedia = {
   thumbnail_url: "/media/thumbnails/projects/7/front.png",
 };
 
-const props = (e: HistoryEvent, detail?: object) => ({
+const props = (e: HistoryEvent, detail?: DetailProp) => ({
   event: e,
   locale: "en" as const,
   id: "history-projects-7-event-5",
@@ -77,8 +80,8 @@ describe("HistoryEventDetail", () => {
             items: [
               {
                 field: "project.name",
-                before: { type: "text", value: "Old" },
-                after: { type: "text", value: "New" },
+                before: { type: "text" as const, value: "Old" },
+                after: { type: "text" as const, value: "New" },
               },
             ],
           },
