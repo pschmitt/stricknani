@@ -3,26 +3,13 @@
   import { androidAction } from "#lib/app-links.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
-  import Button from "#lib/components/Button.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
-  import { signOutFromApp } from "#lib/sign-out.ts";
   import NavigationTile from "#lib/components/NavigationTile.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
   const androidApp = androidAction();
   const user = $derived(session.data?.user ?? null);
-  let signOutBusy = $state(false);
-
-  async function handleSignOut() {
-    if (signOutBusy) return;
-    signOutBusy = true;
-    try {
-      await signOutFromApp(locale);
-    } finally {
-      signOutBusy = false;
-    }
-  }
 </script>
 
 <svelte:head><title>Stricknani · {t("More", locale)}</title></svelte:head>
@@ -68,20 +55,6 @@
         locale,
       )}
     />
-    {#if session.data?.user?.is_admin}
-      <NavigationTile
-        href={resolve("/admin/users")}
-        icon="admin"
-        title={t("Admin", locale)}
-        description={t("Manage accounts and review the audit log.", locale)}
-      />
-    {/if}
-    <NavigationTile
-      href={resolve("/about")}
-      icon="info"
-      title={t("About", locale)}
-      description={t("Version, links and credits.", locale)}
-    />
   </nav>
 
   {#if user}
@@ -103,16 +76,28 @@
           <span class="more-account__email">{user.email}</span>
         </span>
       </a>
-      <Button
-        variant="secondary"
-        icon="sign-out"
-        disabled={signOutBusy}
-        onclick={() => void handleSignOut()}
-      >
-        {signOutBusy ? t("Working…", locale) : t("Sign out", locale)}
-      </Button>
     </section>
   {/if}
+
+  <nav
+    class="more-links more-links--footer"
+    aria-label={t("More navigation", locale)}
+  >
+    {#if session.data?.user?.is_admin}
+      <NavigationTile
+        href={resolve("/admin/users")}
+        icon="admin"
+        title={t("Admin", locale)}
+        description={t("Manage accounts and review the audit log.", locale)}
+      />
+    {/if}
+    <NavigationTile
+      href={resolve("/about")}
+      icon="info"
+      title={t("About", locale)}
+      description={t("Version, links and credits.", locale)}
+    />
+  </nav>
 </section>
 
 <style>
@@ -129,6 +114,10 @@
     margin-top: 1.25rem;
     padding-top: 1.25rem;
     border-top: 1px solid var(--line);
+  }
+
+  .more-links--footer {
+    margin-top: 1.25rem;
   }
 
   .more-account__link {

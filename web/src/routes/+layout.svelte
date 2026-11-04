@@ -291,6 +291,13 @@
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
+        <AccountMenu
+          email={user.email}
+          {avatarUrl}
+          isAdmin={user.is_admin === true}
+          {canManageAdmin}
+          {locale}
+        />
         {#if canManageAdmin}
           <a
             class:active={isActive("/admin/users") || isActive("/admin/audit")}
@@ -315,13 +322,6 @@
           <span class="nav-icon" data-tone="info"><NavIcon name="info" /></span>
           <span>{t("About", locale)}</span>
         </a>
-        <AccountMenu
-          email={user.email}
-          {avatarUrl}
-          isAdmin={user.is_admin === true}
-          {canManageAdmin}
-          {locale}
-        />
       </nav>
     </aside>
 
