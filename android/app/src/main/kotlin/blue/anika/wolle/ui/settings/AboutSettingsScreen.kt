@@ -79,11 +79,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.update.AppUpdate
+import blue.anika.wolle.data.update.PrivilegedState
 import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateInstallState
 import blue.anika.wolle.data.update.canInstallInApp
@@ -182,6 +185,12 @@ internal fun AboutSettingsScreen(
     val installViewModel: UpdateInstallViewModel = hiltViewModel()
     val installState by installViewModel.state.collectAsStateWithLifecycle()
     val autoUpdate by installViewModel.autoUpdate.collectAsStateWithLifecycle()
+    val shizukuState by installViewModel.shizukuState.collectAsStateWithLifecycle()
+    val shizukuEnabled by installViewModel.shizukuEnabled.collectAsStateWithLifecycle()
+    val silentPossible by installViewModel.silentInstallPossible.collectAsStateWithLifecycle()
+    var shizukuStartHint by remember { mutableStateOf(false) }
+    // Starting Shizuku or allowing the app happens elsewhere; re-read the state on return.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { installViewModel.refreshShizuku() }
     UpdateInstallEffects(installViewModel, installState)
     LaunchedEffect(Unit) { viewModel.checkForUpdate() }
     LaunchedEffect(mascotCue) {
@@ -189,6 +198,29 @@ internal fun AboutSettingsScreen(
             delay(4_000)
             mascotCue = null
         }
+    }
+
+    if (shizukuStartHint) {
+        AlertDialog(
+            onDismissRequest = { shizukuStartHint = false },
+            title = { Text(stringResource(R.string.about_shizuku_start_title)) },
+            text = { Text(stringResource(R.string.about_shizuku_start_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        shizukuStartHint = false
+                        openShizuku(context, installViewModel)
+                    }
+                ) {
+                    Text(stringResource(R.string.about_shizuku_open))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { shizukuStartHint = false }) {
+                    Text(stringResource(R.string.about_shizuku_later))
+                }
+            },
+        )
     }
 
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
@@ -275,10 +307,27 @@ internal fun AboutSettingsScreen(
                             onSelect = viewModel::setUpdateChannel,
                         )
                     }
+                    if (
+                        installViewModel.shizukuSupported &&
+                            shizukuState != PrivilegedState.UNAVAILABLE
+                    ) {
+                        ShizukuInstallRow(
+                            enabled = shizukuEnabled,
+                            state = shizukuState,
+                            onChange = { on ->
+                                installViewModel.setShizukuEnabled(on)
+                                if (on && shizukuState == PrivilegedState.NOT_RUNNING) {
+                                    shizukuStartHint = true
+                                }
+                            },
+                            onAllow = installViewModel::requestShizukuPermission,
+                            onOpenShizuku = { openShizuku(context, installViewModel) },
+                        )
+                    }
                     if (inAppUpdateAvailable) {
                         AutoUpdateRow(
                             checked = autoUpdate,
-                            silentPossible = installViewModel.silentInstallPossible(),
+                            silentPossible = silentPossible,
                             onChange = installViewModel::setAutoUpdate,
                         )
                     }
@@ -353,6 +402,13 @@ internal fun AboutSettingsScreen(
                         revision = revision,
                         onDeveloperModeChange = viewModel::setDeveloperMode,
                         onAddToObtainium = { rolling -> addToObtainium(rolling) },
+                        onReinstallViaShizuku =
+                            if (
+                                installViewModel.shizukuSupported &&
+                                    shizukuState == PrivilegedState.READY
+                            ) {
+                                installViewModel::reinstallThisBuild
+                            } else null,
                     )
                 }
             }
@@ -622,6 +678,63 @@ private fun UpdateChannelRow(selected: UpdateChannel, onSelect: (UpdateChannel) 
     )
 }
 
+private fun openShizuku(context: Context, viewModel: UpdateInstallViewModel) {
+    val intent = viewModel.shizukuManagerIntent() ?: return
+    try {
+        context.startActivity(intent)
+    } catch (_: ActivityNotFoundException) {
+        // The manager vanished between the check and the tap; nothing to open.
+    }
+}
+
+/**
+ * "Install updates silently with Shizuku": one switch plus the state it is in - not running,
+ * permission needed or ready - with the action that moves it on.
+ */
+@Composable
+private fun ShizukuInstallRow(
+    enabled: Boolean,
+    state: PrivilegedState,
+    onChange: (Boolean) -> Unit,
+    onAllow: () -> Unit,
+    onOpenShizuku: () -> Unit,
+) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("about-shizuku-row")
+                .toggleable(value = enabled, role = Role.Switch, onValueChange = onChange),
+        headlineContent = { Text(stringResource(R.string.about_shizuku_title)) },
+        supportingContent = {
+            Column {
+                Text(
+                    stringResource(
+                        when (state) {
+                            PrivilegedState.READY -> R.string.about_shizuku_state_ready
+                            PrivilegedState.PERMISSION_NEEDED ->
+                                R.string.about_shizuku_state_permission
+                            else -> R.string.about_shizuku_state_not_running
+                        }
+                    ),
+                    modifier = Modifier.testTag("about-shizuku-state"),
+                )
+                when (state) {
+                    PrivilegedState.PERMISSION_NEEDED ->
+                        TextButton(onClick = onAllow) {
+                            Text(stringResource(R.string.about_shizuku_allow))
+                        }
+                    PrivilegedState.NOT_RUNNING ->
+                        TextButton(onClick = onOpenShizuku) {
+                            Text(stringResource(R.string.about_shizuku_open))
+                        }
+                    else -> Unit
+                }
+            }
+        },
+        trailingContent = { Switch(checked = enabled, onCheckedChange = null) },
+    )
+}
+
 /** "Update automatically" (GitHub APK builds): background check plus install while idle. */
 @Composable
 private fun AutoUpdateRow(checked: Boolean, silentPossible: Boolean, onChange: (Boolean) -> Unit) {
@@ -729,6 +842,7 @@ private fun DeveloperCard(
     revision: BuildRevision?,
     onDeveloperModeChange: (Boolean) -> Unit,
     onAddToObtainium: (rolling: Boolean) -> Unit,
+    onReinstallViaShizuku: (() -> Unit)?,
 ) {
     val unknown = stringResource(R.string.developer_card_unknown)
     SettingsGroupCard(
@@ -803,6 +917,13 @@ private fun DeveloperCard(
             ) {
                 onAddToObtainium(true)
             }
+        }
+        if (onReinstallViaShizuku != null) {
+            ObtainiumRow(
+                stringResource(R.string.developer_shizuku_reinstall),
+                stringResource(R.string.developer_shizuku_reinstall_description),
+                onReinstallViaShizuku,
+            )
         }
     }
 }

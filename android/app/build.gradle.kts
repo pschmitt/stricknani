@@ -60,11 +60,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // The install permissions and receivers of the in-app updater live in their own manifest, merged
+    // The install permissions and receivers of the in-app updater live in their own manifest,
+    // merged
     // into the release build only when self-update is on. The Play bundle (-PselfUpdate=false or
     // any `bundle` task) and debug builds (which keep the open-in-browser update) never get them.
+    // Debug gets it too: that is where the Shizuku install path is exercised on a device (the
+    // in-app update UI itself stays release-only, see inAppUpdateAvailable).
     if (selfUpdateEnabled) {
-        sourceSets.getByName("release").manifest.srcFile("src/selfupdate/AndroidManifest.xml")
+        listOf("debug", "release").forEach { name ->
+            sourceSets.getByName(name).apply {
+                manifest.srcFile("src/selfupdate/AndroidManifest.xml")
+                kotlin.directories.add("src/selfupdate/kotlin")
+            }
+        }
     }
 
     signingConfigs {
@@ -200,6 +208,15 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.timber)
+
+    // Shizuku silent installs (SNA-88): GitHub APK builds only, never in the Play bundle.
+    if (selfUpdateEnabled) {
+        listOf("debugImplementation", "releaseImplementation").forEach { configuration ->
+            add(configuration, libs.shizuku.api)
+            add(configuration, libs.shizuku.provider)
+            add(configuration, libs.hiddenapibypass)
+        }
+    }
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
@@ -21,12 +22,14 @@ import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import timber.log.Timber
 
 /**
  * Downloads over HTTPS from GitHub only: every hop (the release URL and the CDN redirect behind it)
@@ -170,7 +173,7 @@ class PackageInstallerSessionInstaller
 @Inject
 constructor(@ApplicationContext private val context: Context) : ApkSessionInstaller {
 
-    override fun commit(file: File) {
+    override suspend fun commit(file: File) {
         val installer = context.packageManager.packageInstaller
         // A session left behind by an earlier attempt only pins storage.
         installer.mySessions.forEach { runCatching { installer.abandonSession(it.sessionId) } }
@@ -197,19 +200,68 @@ constructor(@ApplicationContext private val context: Context) : ApkSessionInstal
                 }
             }
             UpdateInstalledMarker.set(context)
-            val intent =
-                Intent(context, InstallStatusReceiver::class.java).setPackage(context.packageName)
-            // Mutable: the system fills in the status extras.
-            val sender =
-                PendingIntent.getBroadcast(
-                        context,
-                        sessionId,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
-                    )
-                    .intentSender
+            val sender = installStatusSender(context, sessionId)
             session.commit(sender)
         }
+    }
+}
+
+/**
+ * Where an install session reports to: [InstallStatusReceiver], through a mutable PendingIntent.
+ */
+internal fun installStatusSender(context: Context, requestCode: Int): IntentSender {
+    val intent = Intent(context, InstallStatusReceiver::class.java).setPackage(context.packageName)
+    // Mutable: the system fills in the status extras.
+    return PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+        )
+        .intentSender
+}
+
+/** Reinstalls the APK this process runs from through [PrivilegedInstaller] (developer action). */
+internal suspend fun PrivilegedInstaller.installRunningBuild(context: Context) =
+    withContext(Dispatchers.IO) {
+        check(state.value == PrivilegedState.READY) { "Shizuku is not ready" }
+        UpdateInstalledMarker.set(context)
+        install(File(context.applicationInfo.sourceDir), installStatusSender(context, 0x5113))
+    }
+
+/**
+ * Sends the APK through Shizuku when the user enabled it and it is ready, and through a regular
+ * [PackageInstaller] session otherwise - including when the privileged attempt fails outright.
+ */
+class RoutingSessionInstaller
+@Inject
+constructor(
+    @ApplicationContext private val context: Context,
+    private val regular: PackageInstallerSessionInstaller,
+    private val resolver: InstallPathResolver,
+) : ApkSessionInstaller {
+
+    override suspend fun isPrivileged(): Boolean = resolver.privilegedSelected()
+
+    override suspend fun commit(file: File) {
+        if (resolver.privilegedSelected()) {
+            try {
+                UpdateInstalledMarker.set(context)
+                resolver.privileged.install(file, installStatusSender(context, PRIVILEGED_REQUEST))
+                return
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Shizuku install failed, falling back to PackageInstaller")
+                UpdateInstalledMarker.clear(context)
+                resolver.privileged.refresh()
+            }
+        }
+        regular.commit(file)
+    }
+
+    private companion object {
+        const val PRIVILEGED_REQUEST = 0x5112
     }
 }
 
@@ -285,7 +337,7 @@ abstract class UpdateBindingsModule {
 
     @Binds abstract fun inspector(impl: AndroidApkInspector): ApkInspector
 
-    @Binds abstract fun installer(impl: PackageInstallerSessionInstaller): ApkSessionInstaller
+    @Binds abstract fun installer(impl: RoutingSessionInstaller): ApkSessionInstaller
 
     companion object {
         @Provides

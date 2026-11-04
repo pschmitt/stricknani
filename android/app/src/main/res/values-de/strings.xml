@@ -987,5 +987,16 @@
     <string name="about_auto_update_title">Automatisch aktualisieren</string>
     <string name="about_auto_update_help">Installiert neue Versionen im Hintergrund, während das Handy lädt und ruht.</string>
     <string name="about_auto_update_help_first">Installiert neue Versionen im Hintergrund, während das Handy lädt und ruht, sobald das erste In-App-Update bestätigt wurde.</string>
+    <string name="about_shizuku_title">Updates still mit Shizuku installieren</string>
+    <string name="about_shizuku_state_ready">Bereit: Updates werden ohne Rückfrage installiert.</string>
+    <string name="about_shizuku_state_permission">Berechtigung nötig: Stricknani in Shizuku erlauben.</string>
+    <string name="about_shizuku_state_not_running">Läuft nicht: Shizuku zuerst starten.</string>
+    <string name="about_shizuku_allow">In Shizuku erlauben</string>
+    <string name="about_shizuku_open">Shizuku öffnen</string>
+    <string name="about_shizuku_later">Nicht jetzt</string>
+    <string name="about_shizuku_start_title">Shizuku zuerst starten</string>
+    <string name="about_shizuku_start_message">Shizuku ist installiert, läuft aber nicht. Starte es, komm zurück und erlaube Stricknani. Bis dahin nutzen Updates den normalen Installer.</string>
+    <string name="developer_shizuku_reinstall">Diesen Build über Shizuku neu installieren</string>
+    <string name="developer_shizuku_reinstall_description">Installiert die laufende APK erneut über Shizuku, um den stillen Weg zu testen.</string>
 
 </resources>

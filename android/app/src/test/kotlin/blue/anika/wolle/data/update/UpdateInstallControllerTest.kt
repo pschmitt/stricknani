@@ -162,6 +162,27 @@ class UpdateInstallControllerTest {
     }
 
     @Test
+    fun `a privileged install needs no unknown-apps permission`() = runTest {
+        inspector.canRequest = false
+        installer.privileged = true
+
+        controller.execute(update)
+
+        assertEquals(UpdateInstallState.Installing, controller.state.value)
+        assertEquals(apkBytes, installer.committed?.readText())
+    }
+
+    @Test
+    fun `without the privileged path the missing permission still stops the update`() = runTest {
+        inspector.canRequest = false
+
+        controller.execute(update)
+
+        assertEquals(UpdateFailure.PERMISSION_NEEDED, failure())
+        assertEquals(null, installer.committed)
+    }
+
+    @Test
     fun `an unreadable apk is refused`() = runTest {
         inspector.archiveReadable = false
 
@@ -255,8 +276,11 @@ class UpdateInstallControllerTest {
     private class FakeInstaller : ApkSessionInstaller {
         var committed: File? = null
         var error: Exception? = null
+        var privileged = false
 
-        override fun commit(file: File) {
+        override suspend fun isPrivileged() = privileged
+
+        override suspend fun commit(file: File) {
             error?.let { throw it }
             committed = file
         }

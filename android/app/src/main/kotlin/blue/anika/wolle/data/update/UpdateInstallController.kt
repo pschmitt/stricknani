@@ -78,7 +78,10 @@ interface ApkInspector {
 
 /** Hands a verified APK to the system installer (the session is committed, not yet finished). */
 interface ApkSessionInstaller {
-    fun commit(file: File)
+    /** True when the install bypasses the system's consent (Shizuku): no "unknown apps" needed. */
+    suspend fun isPrivileged(): Boolean = false
+
+    suspend fun commit(file: File)
 }
 
 /**
@@ -147,7 +150,9 @@ constructor(
         if (!isTrustedAssetUrl(asset.url) || !isTrustedAssetUrl(checksumsUrl)) {
             return fail(UpdateFailure.NOT_TRUSTED)
         }
-        if (!inspector.canRequestInstalls()) return fail(UpdateFailure.PERMISSION_NEEDED)
+        if (!installer.isPrivileged() && !inspector.canRequestInstalls()) {
+            return fail(UpdateFailure.PERMISSION_NEEDED)
+        }
         val installed = inspector.installed() ?: return fail(UpdateFailure.UNREADABLE_APK)
 
         val dir = workDir.dir

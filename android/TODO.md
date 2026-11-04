@@ -57,10 +57,12 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 - [x] Update channel setting (Stable default / Latest rolling) in About, GitHub builds only:
       stable = semver on `releases/latest`; rolling = commit named in the `latest` body; cross-checks
       use GitHub's compare API; ahead-of-stable is reported, never downgraded.
-- [ ] Shizuku silent install (SNA-88b, deliberately not shipped): needs the privileged hidden
-      `IPackageInstaller` (aidl stubs + hidden-API bypass, as Obtainium does), a `ShizukuProvider`
-      and the `dev.rikka.shizuku` dependencies in the non-Play source set, and a device with Shizuku
-      to test. The PackageInstaller path already gives silent updates after the first one.
+- [x] Shizuku silent install (SNA-88b): "Install updates silently with Shizuku" in About (shown
+      when Shizuku/Sui is installed; states not running / permission needed / ready). Ready installs
+      go through `IPackageInstaller` over `ShizukuBinderWrapper` (reflection + hiddenapibypass), as
+      shell, with no installer-of-record or unknown-apps setup; anything else falls back to the
+      `PackageInstaller` path. Code in `app/src/selfupdate/kotlin` (not in the Play bundle); main
+      only sees `PrivilegedInstaller`. Developer card: "Reinstall this build via Shizuku".
 - [ ] Update ownership (`setRequestUpdateOwnership`) is not used: it needs `ENFORCE_UPDATE_OWNERSHIP`
       and only takes effect on the initial install.
 
@@ -68,7 +70,7 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 **How to apply:** the first update after installing from a browser/Obtainium still needs one
 confirmation; see README.
 
-Status: **mostly done** - unit tests cover asset/ABI selection, checksums, trust, signing-cert and
+Status: **done** - unit tests cover asset/ABI selection, checksums, trust, signing-cert and
 downgrade guard, and the state machine; end-to-end device install not run (see report).
 
 ## SNA-87: Migrate the app from `/api/v1` to `/api/v2`

@@ -43,7 +43,7 @@ constructor(
     @Assisted params: WorkerParameters,
     private val controller: UpdateInstallController,
     private val notifier: UpdateNotifier,
-    private val inspector: ApkInspector,
+    private val resolver: InstallPathResolver,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -56,7 +56,7 @@ constructor(
             if (shouldSkipBackgroundWork(true, applicationContext.isPowerSaveMode())) {
                 return Result.success()
             }
-            if (!inspector.canInstallSilently()) {
+            if (!resolver.silentInstallPossible()) {
                 return Result.success()
             }
             controller.markQueued()
@@ -89,7 +89,7 @@ constructor(
     private val preferences: AppPreferencesRepository,
     private val controller: UpdateInstallController,
     private val scheduler: UpdateScheduler,
-    private val inspector: ApkInspector,
+    private val resolver: InstallPathResolver,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -98,7 +98,7 @@ constructor(
             return Result.success()
         }
         // Without a silent path every update would need a tap; leave those to the user.
-        if (!inspector.canInstallSilently()) return Result.success()
+        if (!resolver.silentInstallPossible()) return Result.success()
         if (controller.state.value.isBusy) return Result.success()
         val update =
             (checker.checkCurrentBuild(preferences.updateChannel.first())

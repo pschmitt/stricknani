@@ -119,6 +119,13 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_AUTO_UPDATE] = enabled }
     }
 
+    /** "Install updates silently with Shizuku" (GitHub APK builds only): off until switched on. */
+    val shizukuInstall = dataStore.data.map { prefs -> prefs[KEY_SHIZUKU_INSTALL] ?: false }
+
+    suspend fun setShizukuInstall(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_SHIZUKU_INSTALL] = enabled }
+    }
+
     /** Use the wallpaper's Material You colours instead of Stricknani's own palette. */
     val dynamicColor = dataStore.data.map { prefs -> prefs[KEY_DYNAMIC_COLOR] ?: false }
 
@@ -171,6 +178,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")
         val KEY_UPDATE_CHANNEL = stringPreferencesKey("update_channel")
         val KEY_AUTO_UPDATE = booleanPreferencesKey("auto_update")
+        val KEY_SHIZUKU_INSTALL = booleanPreferencesKey("shizuku_install")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
         val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")
