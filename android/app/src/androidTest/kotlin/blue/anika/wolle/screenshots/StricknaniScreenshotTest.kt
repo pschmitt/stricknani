@@ -68,7 +68,7 @@ class StricknaniScreenshotTest {
         // The first sync fills Home asynchronously; wait for the Continue card, then let the
         // greeting and the activity feed settle.
         composeRule.waitUntil(180_000) { hasTag("home-continue-card") }
-        Thread.sleep(8_000)
+        Thread.sleep(15_000)
         capture("home")
 
         // Recent activity sits further down Home.
