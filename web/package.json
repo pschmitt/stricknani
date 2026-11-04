@@ -12,17 +12,29 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && npm run check:e2e",
+    "check:e2e": "tsc -p e2e/tsconfig.json --noEmit",
     "test": "vitest run",
+    "e2e": "playwright test",
+    "seed": "node e2e/lib/run-ts.mjs e2e/lib/seed-cli.ts",
+    "fixture": "node e2e/lib/run-ts.mjs e2e/lib/fixture-cli.ts",
+    "replay": "node e2e/lib/run-ts.mjs e2e/lib/replay.ts",
+    "summarize-e2e": "node e2e/lib/run-ts.mjs e2e/lib/summarize-e2e.ts",
+    "verify-import": "node e2e/lib/run-ts.mjs e2e/lib/verify-import.ts",
     "format:check": "prettier --check .",
     "build": "vite build && node scripts/write-csp-manifest.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "i18n:extract": "node scripts/i18n/babel.mjs extract && node scripts/i18n/extract-rust.mjs && node scripts/i18n/generate-web.mjs --extract",
+    "i18n:update": "npm run --silent i18n:extract && node scripts/i18n/babel.mjs update && node scripts/i18n/generate-rust.mjs --seed-german && node scripts/i18n/generate-rust.mjs && node scripts/i18n/generate-web.mjs --update",
+    "i18n:compile": "node scripts/i18n/babel.mjs compile && node scripts/i18n/generate-rust.mjs && node scripts/i18n/generate-web.mjs",
+    "i18n:check": "node scripts/i18n/check-translations.mjs && node scripts/i18n/generate-rust.mjs --check && node scripts/i18n/generate-web.mjs --check"
   },
   "dependencies": {
     "@sentry/svelte": "11.10.0",
     "qrcode-generator": "2.0.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@sveltejs/adapter-static": "^4.0.1",
     "@sveltejs/kit": "^3.1.1",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

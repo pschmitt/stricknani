@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { execFileSync } from "node:child_process";
 import adapter from "@sveltejs/adapter-static";
 import { sveltekit } from "@sveltejs/kit/vite";
@@ -38,6 +39,9 @@ function gitRevision(): string {
 }
 
 export default defineConfig({
+  test: {
+    include: ["src/**/*.{test,spec}.ts", "e2e/lib/**/*.test.ts"],
+  },
   define: {
     __STRICKNANI_GIT_REVISION__: JSON.stringify(gitRevision()),
   },
