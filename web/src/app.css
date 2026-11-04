@@ -680,6 +680,11 @@ button:disabled {
   background: var(--canvas);
 }
 
+/* About sits on its own at the foot of the rail. */
+.desktop-rail .rail-footer {
+  margin-top: auto;
+}
+
 .shell-back-button {
   display: grid;
   width: 44px;

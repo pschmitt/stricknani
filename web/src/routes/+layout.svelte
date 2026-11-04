@@ -291,6 +291,8 @@
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
+      </nav>
+      <nav class="secondary-nav rail-footer" aria-label={t("Account", locale)}>
         <AccountMenu
           email={user.email}
           {avatarUrl}
