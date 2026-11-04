@@ -425,7 +425,8 @@ in
         message = "services.stricknani.ai.provider = \"custom\" requires ai.baseUrl.";
       }
       {
-        assertion = !(cfg.extraConfig ? STRICKNANI_DATABASE_URL) && !(cfg.extraConfig ? STRICKNANI_MEDIA_ROOT);
+        assertion =
+          !(cfg.extraConfig ? STRICKNANI_DATABASE_URL) && !(cfg.extraConfig ? STRICKNANI_MEDIA_ROOT);
         message = "Set Rust database and media paths with databaseUrl and mediaRoot, not extraConfig.";
       }
       {
@@ -445,9 +446,7 @@ in
         message = "services.stricknani.oidc requires secure session cookies.";
       }
       {
-        assertion = builtins.all (name: !(lib.hasPrefix "OIDC_" name)) (
-          builtins.attrNames cfg.extraConfig
-        );
+        assertion = builtins.all (name: !(lib.hasPrefix "OIDC_" name)) (builtins.attrNames cfg.extraConfig);
         message = "Set OIDC_* values with services.stricknani.oidc.environmentFile, not extraConfig.";
       }
       {
