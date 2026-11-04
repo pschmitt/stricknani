@@ -14,27 +14,23 @@ class MoreLayoutTest {
     }
 
     @Test
-    fun `the Android-only settings follow Account, which the screen draws first`() {
-        val settings = moreLayout(isAdmin = true).settings
-        assertEquals(
+    fun `Settings has Admin first for administrators, after Account which the screen draws`() {
+        val android =
             listOf(
                 SettingsCategory.Appearance,
                 SettingsCategory.Navigation,
                 SettingsCategory.DetailCards,
                 SettingsCategory.Sync,
                 SettingsCategory.Backup,
-            ),
-            settings,
-        )
-        assertFalse(SettingsCategory.Account in settings)
+            )
+        assertEquals(listOf(SettingsCategory.Admin) + android, moreLayout(isAdmin = true).settings)
+        assertEquals(android, moreLayout(isAdmin = false).settings)
+        assertFalse(SettingsCategory.Account in moreLayout(isAdmin = true).settings)
     }
 
     @Test
-    fun `Admin and About close the screen, About last`() {
-        assertEquals(
-            listOf(SettingsCategory.Admin, SettingsCategory.About),
-            moreLayout(isAdmin = true).footer,
-        )
+    fun `About stands alone at the bottom`() {
+        assertEquals(listOf(SettingsCategory.About), moreLayout(isAdmin = true).footer)
         assertEquals(listOf(SettingsCategory.About), moreLayout(isAdmin = false).footer)
     }
 

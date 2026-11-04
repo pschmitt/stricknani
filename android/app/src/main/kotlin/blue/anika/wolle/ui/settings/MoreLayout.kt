@@ -11,8 +11,9 @@ sealed interface MoreLink {
 
 /**
  * The More screen's order: Create, Categories, Gauge calculator; then the Settings group (Account
- * settings first, drawn by the screen, then the Android-only [settings]); then [footer] (Admin for
- * administrators, About last). Sign out lives only in Account settings.
+ * settings first, drawn by the screen, then [settings]: Admin for administrators and the
+ * Android-only settings); then [footer], About on its own at the bottom. Sign out lives only in
+ * Account settings.
  */
 data class MoreLayout(
     val links: List<MoreLink>,
@@ -29,12 +30,13 @@ fun moreLayout(isAdmin: Boolean): MoreLayout =
                 MoreLink.Gauge,
             ),
         settings =
-            listOf(
+            listOfNotNull(
+                SettingsCategory.Admin.takeIf { isAdmin },
                 SettingsCategory.Appearance,
                 SettingsCategory.Navigation,
                 SettingsCategory.DetailCards,
                 SettingsCategory.Sync,
                 SettingsCategory.Backup,
             ),
-        footer = listOfNotNull(SettingsCategory.Admin.takeIf { isAdmin }, SettingsCategory.About),
+        footer = listOf(SettingsCategory.About),
     )
