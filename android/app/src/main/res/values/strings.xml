@@ -669,6 +669,9 @@
     <string name="editor_discard_keep">Keep editing</string>
     <string name="editor_discard_confirm">Discard</string>
     <string name="editor_add_photo_short">Add photo</string>
+    <string name="photo_take">Take photo</string>
+    <string name="photo_choose">Choose photo</string>
+    <string name="photo_camera_denied">Camera access is off. Allow it in the system settings to take a photo.</string>
     <string name="editor_photo_cover">Cover</string>
     <string name="editor_photo_move_earlier">Move earlier</string>
     <string name="editor_photo_move_later">Move later</string>

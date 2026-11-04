@@ -5,6 +5,7 @@
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
+  import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
@@ -365,6 +366,11 @@
         type="file"
         accept="image/*"
         aria-label={t("Choose a yarn photo", locale)}
+        disabled={!mediaUploadAvailable || uploading}
+        onchange={(event) => void upload(event)}
+      />
+      <TakePhotoInput
+        {locale}
         disabled={!mediaUploadAvailable || uploading}
         onchange={(event) => void upload(event)}
       />

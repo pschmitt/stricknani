@@ -36,6 +36,8 @@ import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,6 +75,7 @@ import blue.anika.wolle.data.account.ApiTokenDto
 import blue.anika.wolle.data.account.formatTokenDate
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.rememberPhotoCapture
 
 /**
  * Profile picture with a camera badge at its bottom-end (opens the system photo picker) and, when a
@@ -86,6 +89,7 @@ internal fun ProfilePicture(
     editable: Boolean,
     busy: Boolean,
     onPicked: (String) -> Unit,
+    onCameraDenied: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     val changeLabel = stringResource(R.string.account_avatar_change)
@@ -93,6 +97,15 @@ internal fun ProfilePicture(
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
             if (uri != null) onPicked(uri.toString())
         }
+    val capture =
+        rememberPhotoCapture(
+            onPhoto = { uri -> onPicked(uri.toString()) },
+            onPermissionDenied = onCameraDenied,
+        )
+    var sourceMenu by remember { mutableStateOf(false) }
+    val pickFromGallery = {
+        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -139,11 +152,8 @@ internal fun ProfilePicture(
                                 role = Role.Button,
                                 onClickLabel = stringResource(R.string.account_avatar_change),
                             ) {
-                                picker.launch(
-                                    PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
+                                // With a camera app around, ask where the picture comes from.
+                                if (capture.available) sourceMenu = true else pickFromGallery()
                             }
                             .semantics { contentDescription = changeLabel },
                     contentAlignment = Alignment.Center,
@@ -166,6 +176,26 @@ internal fun ProfilePicture(
                             modifier = Modifier.size(16.dp),
                         )
                     }
+                }
+            }
+            if (editable) {
+                DropdownMenu(expanded = sourceMenu, onDismissRequest = { sourceMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.photo_choose)) },
+                        leadingIcon = { Icon(PhosphorIcons.Images, contentDescription = null) },
+                        onClick = {
+                            sourceMenu = false
+                            pickFromGallery()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.photo_take)) },
+                        leadingIcon = { Icon(PhosphorIcons.Camera, contentDescription = null) },
+                        onClick = {
+                            sourceMenu = false
+                            capture.launch()
+                        },
+                    )
                 }
             }
         }

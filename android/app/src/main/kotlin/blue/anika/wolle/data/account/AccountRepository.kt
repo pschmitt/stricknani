@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import blue.anika.wolle.data.api.dto.ApiErrorEnvelopeDto
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.data.uploads.deleteCapturedPhoto
 import blue.anika.wolle.ui.common.isOfflineFailure
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
@@ -320,10 +321,15 @@ private suspend fun readFromResolver(context: Context, uriString: String): Avata
     withContext(Dispatchers.IO) {
         val uri = Uri.parse(uriString)
         val resolver = context.contentResolver
+        val type = resolver.getType(uri) ?: "image/jpeg"
         val bytes =
-            resolver.openInputStream(uri)?.use { readAtMost(it, MAX_AVATAR_BYTES + 1) }
-                ?: return@withContext null
-        AvatarUpload("avatar", resolver.getType(uri) ?: "image/jpeg", bytes)
+            try {
+                resolver.openInputStream(uri)?.use { readAtMost(it, MAX_AVATAR_BYTES + 1) }
+            } finally {
+                // A camera temp file is now in memory (or unreadable); drop it either way.
+                context.deleteCapturedPhoto(uri)
+            } ?: return@withContext null
+        AvatarUpload("avatar", type, bytes)
     }
 
 /** Reads at most [limit] bytes, so an oversized pick is detected without loading all of it. */

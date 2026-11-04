@@ -20,6 +20,13 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
+    <!-- Package visibility (API 30+) so the editors can tell whether a camera app can take a photo. -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".StricknaniApp"
         android:allowBackup="false"
@@ -116,6 +123,17 @@
             android:exported="false">
             <meta-data android:name="autoStoreLocales" android:value="true" />
         </service>
+
+        <!-- Hands the camera app a write-only target for "Take photo" (cache/captures/ only). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.captures"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/capture_paths" />
+        </provider>
 
         <!-- WorkManager will be initialized manually (Configuration.Provider) once SNA-7 adds
              HiltWorkerFactory injection - disable the default ContentProvider-based auto-init

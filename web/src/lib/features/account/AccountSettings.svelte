@@ -6,6 +6,7 @@
   import { ApiError, type SessionData } from "#lib/api.ts";
   import { chooseLocale } from "#lib/components/LocaleSwitcher.svelte";
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
+  import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import ConnectAppDialog from "./ConnectAppDialog.svelte";
@@ -923,6 +924,17 @@
                 : t("Member", locale)}</span
             >
           </p>
+          <TakePhotoInput
+            {locale}
+            size="sm"
+            disabled={operation !== null || !avatarUploadEnabled}
+            onchange={(event) => {
+              if (!(event.currentTarget instanceof HTMLInputElement)) return;
+              avatarFile = event.currentTarget.files?.[0] ?? null;
+              avatarError = "";
+              event.currentTarget.value = "";
+            }}
+          />
           {#if profile.avatar_url && profile.avatar_source !== "gravatar"}
             <SharedButton
               variant="ghost"

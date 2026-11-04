@@ -230,6 +230,8 @@ constructor(
         }
     }
 
+    fun cameraDenied() = feedback.show(R.string.photo_camera_denied)
+
     fun askRemoveAvatar() = _state.update { it.copy(confirmRemoveAvatar = true) }
 
     fun dismissRemoveAvatar() = _state.update { it.copy(confirmRemoveAvatar = false) }

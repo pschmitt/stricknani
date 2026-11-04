@@ -669,6 +669,9 @@
     <string name="editor_discard_keep">Weiter bearbeiten</string>
     <string name="editor_discard_confirm">Verwerfen</string>
     <string name="editor_add_photo_short">Foto hinzufügen</string>
+    <string name="photo_take">Foto aufnehmen</string>
+    <string name="photo_choose">Foto auswählen</string>
+    <string name="photo_camera_denied">Der Kamerazugriff ist aus. Erlaube ihn in den Systemeinstellungen, um ein Foto aufzunehmen.</string>
     <string name="editor_photo_cover">Titelbild</string>
     <string name="editor_photo_move_earlier">Weiter nach vorn</string>
     <string name="editor_photo_move_later">Weiter nach hinten</string>

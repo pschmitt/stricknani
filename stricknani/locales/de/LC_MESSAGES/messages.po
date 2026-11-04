@@ -431,6 +431,10 @@ msgstr "Füge jedes Schlagwort einzeln hinzu; Kommata bleiben Teil des Schlagwor
 msgid "Add photo"
 msgstr "Foto hinzufügen"
 
+#: web/src/lib/components/TakePhotoInput.svelte:36
+msgid "Take photo"
+msgstr "Foto aufnehmen"
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:1623
 msgid "Add project photo"
 msgstr "Projektfoto hinzufügen"

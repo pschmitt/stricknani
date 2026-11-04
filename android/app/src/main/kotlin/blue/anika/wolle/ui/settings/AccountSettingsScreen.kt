@@ -129,6 +129,7 @@ internal fun AccountSettingsScreen(
                         editable = security.available,
                         busy = security.avatarBusy,
                         onPicked = securityModel::uploadAvatar,
+                        onCameraDenied = securityModel::cameraDenied,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(

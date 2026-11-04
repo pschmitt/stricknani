@@ -425,6 +425,10 @@ msgstr "Add each tag separately; commas stay inside a tag."
 msgid "Add photo"
 msgstr "Add photo"
 
+#: web/src/lib/components/TakePhotoInput.svelte:36
+msgid "Take photo"
+msgstr "Take photo"
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:1623
 msgid "Add project photo"
 msgstr "Add project photo"

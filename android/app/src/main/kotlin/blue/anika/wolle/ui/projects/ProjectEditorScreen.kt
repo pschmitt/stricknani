@@ -78,6 +78,8 @@ import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
 import blue.anika.wolle.ui.common.UrlTextField
+import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
+import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import blue.anika.wolle.ui.common.showFeedback
 import java.io.File
@@ -175,6 +177,20 @@ fun ProjectEditorScreen(
             if (index != null) uris.forEach { uri -> viewModel.addStepImage(index, uri) }
             pickingStepIndex = null
         }
+    val titleCapture =
+        rememberPhotoCapture(
+            onPhoto = viewModel::addTitleImage,
+            onPermissionDenied = rememberCameraDeniedNotifier(snackbarHostState),
+        )
+    val stepCapture =
+        rememberPhotoCapture(
+            onPhoto = { uri ->
+                val index = pickingStepIndex
+                if (index != null) viewModel.addStepImage(index, uri)
+                pickingStepIndex = null
+            },
+            onPermissionDenied = rememberCameraDeniedNotifier(snackbarHostState),
+        )
     val attachmentPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             uris.forEach(viewModel::addAttachment)
@@ -323,6 +339,8 @@ fun ProjectEditorScreen(
                             addLabel = stringResource(R.string.editor_add_photo_short),
                             removeLabel = removeLabel,
                             onAdd = { titleImagePicker.launch("image/*") },
+                            takePhotoLabel = stringResource(R.string.photo_take),
+                            onTakePhoto = titleCapture.launch.takeIf { titleCapture.available },
                             reorder =
                                 if (reorderAvailable) {
                                     PhotoReorder(form.existingTitleImages.size) { from, to ->
@@ -578,6 +596,13 @@ fun ProjectEditorScreen(
                             pickingStepIndex = index
                             stepImagePicker.launch("image/*")
                         },
+                        onTakePhoto =
+                            if (stepCapture.available) {
+                                {
+                                    pickingStepIndex = index
+                                    stepCapture.launch()
+                                }
+                            } else null,
                         reorder =
                             if (reorderAvailable) {
                                 PhotoReorder(step.existingImages.size) { from, to ->
@@ -660,6 +685,7 @@ private fun StepEditorCard(
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
     onAddImage: () -> Unit,
+    onTakePhoto: (() -> Unit)?,
     reorder: PhotoReorder?,
     onRemoveExistingImage: (Int) -> Unit,
     onRemoveNewImage: (Int) -> Unit,
@@ -786,6 +812,8 @@ private fun StepEditorCard(
                     addLabel = stringResource(R.string.editor_add_photo_short),
                     removeLabel = stringResource(R.string.project_editor_remove_image),
                     onAdd = onAddImage,
+                    takePhotoLabel = stringResource(R.string.photo_take),
+                    onTakePhoto = onTakePhoto,
                     thumbnailSize = 84,
                     reorder = reorder,
                 )

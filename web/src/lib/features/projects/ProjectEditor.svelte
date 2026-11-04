@@ -5,6 +5,7 @@
   import { resolve } from "$app/paths";
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
@@ -1628,6 +1629,12 @@
                   type="file"
                   class="shared-file-input"
                   accept="image/*"
+                  disabled={!mediaUploadAvailable}
+                  onchange={uploadImage}
+                />
+                <TakePhotoInput
+                  {locale}
+                  size="sm"
                   disabled={!mediaUploadAvailable}
                   onchange={uploadImage}
                 />

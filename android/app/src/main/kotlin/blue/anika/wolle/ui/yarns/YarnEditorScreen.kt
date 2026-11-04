@@ -57,6 +57,8 @@ import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
 import blue.anika.wolle.ui.common.UrlTextField
+import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
+import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import java.io.File
 
@@ -132,6 +134,11 @@ fun YarnEditorScreen(
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             viewModel.addPhotos(uris)
         }
+    val photoCapture =
+        rememberPhotoCapture(
+            onPhoto = { uri -> viewModel.addPhotos(listOf(uri)) },
+            onPermissionDenied = rememberCameraDeniedNotifier(snackbarHostState),
+        )
 
     LaunchedEffect(saved) { if (saved) onSaved() }
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
@@ -283,6 +290,8 @@ fun YarnEditorScreen(
                             addLabel = stringResource(R.string.editor_add_photo_short),
                             removeLabel = stringResource(R.string.yarn_editor_remove_photo),
                             onAdd = { photoPicker.launch("image/*") },
+                            takePhotoLabel = stringResource(R.string.photo_take),
+                            onTakePhoto = photoCapture.launch.takeIf { photoCapture.available },
                             reorder =
                                 if (reorderAvailable) {
                                     PhotoReorder(form.existingPhotos.size) { from, to ->

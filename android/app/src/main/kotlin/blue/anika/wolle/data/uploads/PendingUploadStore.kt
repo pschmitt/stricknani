@@ -30,6 +30,8 @@ class PendingUploadStore @Inject constructor(@ApplicationContext private val con
                 requireNotNull(input) { "Unable to read selected file" }
                 target.outputStream().use { output -> input.copyTo(output) }
             }
+            // A camera temp file is no longer needed once its bytes are in the upload queue.
+            context.deleteCapturedPhoto(uri)
             PendingUpload(
                 path = target.absolutePath,
                 fileName = fileName,

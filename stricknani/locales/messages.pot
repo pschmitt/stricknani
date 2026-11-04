@@ -413,6 +413,10 @@ msgstr ""
 msgid "Add photo"
 msgstr ""
 
+#: web/src/lib/components/TakePhotoInput.svelte:36
+msgid "Take photo"
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:1623
 msgid "Add project photo"
 msgstr ""

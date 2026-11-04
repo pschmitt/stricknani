@@ -83,6 +83,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -252,6 +253,8 @@ fun EditorPhotoStrip(
     modifier: Modifier = Modifier,
     thumbnailSize: Int = 104,
     reorder: PhotoReorder? = null,
+    takePhotoLabel: String? = null,
+    onTakePhoto: (() -> Unit)? = null,
 ) {
     val listState = rememberLazyListState()
     val reduceMotion = animationsDisabled()
@@ -553,36 +556,48 @@ fun EditorPhotoStrip(
             }
         }
         item(key = "add") {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                contentColor = MaterialTheme.colorScheme.primary,
-                modifier =
-                    Modifier.size(thumbnailSize.dp)
-                        .stitchedBorder(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            inset = 3.dp,
-                            cornerRadius = 19.dp,
-                        )
-                        .clip(MaterialTheme.shapes.medium)
-                        .clickable(role = Role.Button, onClick = onAdd),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(8.dp),
-                ) {
-                    Icon(Icons.Filled.AddAPhoto, contentDescription = null)
-                    Text(
-                        addLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
+            AddPhotoTile(Icons.Filled.AddAPhoto, addLabel, thumbnailSize, onAdd)
+        }
+        // Beside the gallery pick: only where a camera app can take the picture.
+        if (onTakePhoto != null && takePhotoLabel != null) {
+            item(key = "take") {
+                AddPhotoTile(PhosphorIcons.Camera, takePhotoLabel, thumbnailSize, onTakePhoto)
             }
+        }
+    }
+}
+
+/** A dashed "add" tile at the end of an [EditorPhotoStrip] (gallery pick or camera). */
+@Composable
+private fun AddPhotoTile(icon: ImageVector, label: String, size: Int, onClick: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor = MaterialTheme.colorScheme.primary,
+        modifier =
+            Modifier.size(size.dp)
+                .stitchedBorder(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    inset = 3.dp,
+                    cornerRadius = 19.dp,
+                )
+                .clip(MaterialTheme.shapes.medium)
+                .clickable(role = Role.Button, onClick = onClick),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp),
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
     }
 }
