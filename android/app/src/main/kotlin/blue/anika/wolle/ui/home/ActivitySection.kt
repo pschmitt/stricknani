@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.home
 
-import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,9 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,30 +21,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
-import blue.anika.wolle.data.util.DateTimeUtils
-import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.common.PhosphorIcons
-import blue.anika.wolle.ui.history.joinNatural
 import coil3.compose.AsyncImage
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /**
- * Home's "Recent activity": a compact list of the newest edits to the user's projects and yarns.
- * Online-only, so it degrades to a one-line note without a connection and is not shown at all when
- * the server has no such feed.
+ * Home's "Recent activity": a timeline of the newest edits to the user's projects and yarns, a
+ * vertical rail with one icon node per entry, grouped under day labels. Online-only, so it degrades
+ * to a one-line note without a connection and is not shown at all when the server has no such feed.
  */
 @Composable
 fun ActivitySection(
@@ -65,27 +72,29 @@ fun ActivitySection(
             accent = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
         )
-        Card(
-            modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-        ) {
+        Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
             when {
                 state.phase == ActivityPhase.Unavailable ->
                     Note(stringResource(R.string.activity_unavailable))
                 state.phase == ActivityPhase.Ready && state.items.isEmpty() ->
                     Note(stringResource(R.string.activity_empty))
-                state.phase == ActivityPhase.Ready ->
-                    Column(Modifier.padding(vertical = 4.dp)) {
-                        state.items.forEach { item ->
-                            val row = remember(item) { activityRow(item) }
-                            ActivityRow(
+                state.phase == ActivityPhase.Ready -> {
+                    val zone = remember { ZoneId.systemDefault() }
+                    val days =
+                        remember(state.items) {
+                            groupActivity(state.items, LocalDate.now(zone), zone)
+                        }
+                    days.forEachIndexed { dayIndex, day ->
+                        DayLabelRow(day.label, first = dayIndex == 0)
+                        day.rows.forEachIndexed { rowIndex, row ->
+                            val last = dayIndex == days.lastIndex && rowIndex == day.rows.lastIndex
+                            val first = dayIndex == 0 && rowIndex == 0
+                            TimelineEntry(
                                 row = row,
+                                zone = zone,
                                 previewUrl = previewUrl(row.thumbnailUrl),
+                                railTop = !first,
+                                railBottom = !last,
                                 onClick = {
                                     when (val target = row.target) {
                                         is ActivityTarget.Project -> onProjectClick(target.id)
@@ -95,33 +104,93 @@ fun ActivitySection(
                                 },
                             )
                         }
-                        if (state.moreFailed) {
+                    }
+                    if (state.moreFailed) {
+                        Text(
+                            stringResource(R.string.activity_more_failed),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = TEXT_INSET, top = 4.dp),
+                        )
+                    }
+                    if (state.hasMore) {
+                        TextButton(
+                            onClick = onShowMore,
+                            enabled = !state.loadingMore,
+                            modifier =
+                                Modifier.padding(start = TEXT_INSET - 12.dp).heightIn(min = 48.dp),
+                        ) {
                             Text(
-                                stringResource(R.string.activity_more_failed),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                stringResource(
+                                    if (state.loadingMore) R.string.history_loading
+                                    else R.string.activity_show_more
+                                )
                             )
                         }
-                        if (state.hasMore) {
-                            TextButton(
-                                onClick = onShowMore,
-                                enabled = !state.loadingMore,
-                                modifier = Modifier.padding(start = 8.dp).heightIn(min = 48.dp),
-                            ) {
-                                Text(
-                                    stringResource(
-                                        if (state.loadingMore) R.string.history_loading
-                                        else R.string.activity_show_more
-                                    )
-                                )
-                            }
-                        }
                     }
+                }
                 else -> SkeletonRows()
             }
         }
     }
+}
+
+private val NODE_SIZE = 36.dp
+private val NODE_GAP = 12.dp
+private val ROW_PAD = 6.dp
+
+/** Where the text column starts: past the rail node and its gap. */
+private val TEXT_INSET = NODE_SIZE + NODE_GAP
+
+/**
+ * Draws the timeline rail behind a row: a line through the node column, from the row's top (or from
+ * the node, for the first row) to its bottom (or to the node, for the last). Day labels draw a
+ * plain through-line, so the rail is unbroken from the first node to the last.
+ */
+private fun Modifier.rail(color: Color, top: Boolean, bottom: Boolean, nodeCenterY: Dp): Modifier =
+    drawBehind {
+        val x = NODE_SIZE.toPx() / 2
+        val centre = nodeCenterY.toPx()
+        val from = if (top) 0f else centre
+        val to = if (bottom) size.height else centre
+        if (to > from) {
+            drawLine(
+                color,
+                Offset(x, from),
+                Offset(x, to),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Butt,
+            )
+        }
+    }
+
+@Composable
+private fun DayLabelRow(label: DayLabel, first: Boolean) {
+    val locale = LocalConfiguration.current.locales[0]
+    val text =
+        when (label) {
+            DayLabel.Today -> stringResource(R.string.admin_day_today)
+            DayLabel.Yesterday -> stringResource(R.string.admin_day_yesterday)
+            is DayLabel.On ->
+                DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                    .withLocale(locale)
+                    .format(label.date)
+            DayLabel.Unknown -> stringResource(R.string.admin_day_unknown)
+        }
+    val railColor = MaterialTheme.colorScheme.outlineVariant
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            Modifier.fillMaxWidth()
+                .then(
+                    if (first) Modifier
+                    else Modifier.rail(railColor, top = true, bottom = true, nodeCenterY = 0.dp)
+                )
+                .padding(start = TEXT_INSET, top = if (first) 0.dp else 14.dp, bottom = 2.dp)
+                .semantics { heading() },
+    )
 }
 
 @Composable
@@ -130,7 +199,7 @@ private fun Note(text: String) {
         text,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(vertical = 8.dp),
     )
 }
 
@@ -138,18 +207,19 @@ private fun Note(text: String) {
 @Composable
 private fun SkeletonRows() {
     val block = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-    Column(Modifier.padding(vertical = 8.dp)) {
+    Column {
         repeat(3) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                Modifier.fillMaxWidth().padding(vertical = ROW_PAD),
+                horizontalArrangement = Arrangement.spacedBy(NODE_GAP),
             ) {
-                Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(block))
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.size(NODE_SIZE).clip(CircleShape).background(block))
+                Column(
+                    Modifier.heightIn(min = NODE_SIZE),
+                    verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+                ) {
                     Box(
-                        Modifier.fillMaxWidth(0.7f)
-                            .size(width = 200.dp, height = 14.dp)
+                        Modifier.size(width = 190.dp, height = 14.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .background(block)
                     )
@@ -165,90 +235,121 @@ private fun SkeletonRows() {
 }
 
 @Composable
-private fun ActivityRow(row: ActivityRowModel, previewUrl: String?, onClick: () -> Unit) {
-    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+private fun TimelineEntry(
+    row: ActivityRowModel,
+    zone: ZoneId,
+    previewUrl: String?,
+    railTop: Boolean,
+    railBottom: Boolean,
+    onClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val muted = colors.onSurfaceVariant
     val sentence = activitySentence(row)
-    val changes =
-        if (row.count > 1)
-            pluralStringResource(R.plurals.activity_changes_count, row.count, row.count)
-        else null
-    val headline = buildAnnotatedString {
-        append(sentence.text)
-        if (changes != null) {
-            withStyle(SpanStyle(color = muted)) { append(" · $changes") }
-        }
-    }
-    val fields = fieldsText(row)
-    val time = relativeTime(row.createdAt)
-    val deletedLabel = stringResource(R.string.activity_deleted_label)
-    val meta = if (row.deleted) "$time · $deletedLabel" else time
+    val meta = metaText(row, activityTimeOfDay(row.createdAt, zone))
     val tappable = !row.deleted
     val alpha = if (row.deleted) 0.6f else 1f
     Row(
         Modifier.fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .rail(
+                colors.outlineVariant,
+                top = railTop,
+                bottom = railBottom,
+                nodeCenterY = ROW_PAD + NODE_SIZE / 2,
+            )
+            .clip(RoundedCornerShape(16.dp))
             .then(
                 if (tappable) Modifier.clickable(role = Role.Button, onClick = onClick)
                 else Modifier
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(vertical = ROW_PAD)
             .semantics(mergeDescendants = true) {},
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(NODE_GAP),
     ) {
-        ActivityThumb(
-            previewUrl = previewUrl,
-            fallback = if (row.isYarn) MdiIcons.YarnBall else PhosphorIcons.Hoodie,
-            dimmed = row.deleted,
-        )
-        Column(Modifier.weight(1f)) {
+        TimelineNode(row)
+        Column(
+            Modifier.weight(1f).heightIn(min = NODE_SIZE),
+            verticalArrangement = Arrangement.Center,
+        ) {
             Text(
-                headline,
+                sentence,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+                color = colors.onSurface.copy(alpha = alpha),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (fields != null) {
+            if (meta.isNotEmpty()) {
                 Text(
-                    fields,
+                    meta,
                     style = MaterialTheme.typography.labelMedium,
                     color = muted,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(meta, style = MaterialTheme.typography.labelSmall, color = muted)
         }
-    }
-}
-
-@Composable
-private fun ActivityThumb(previewUrl: String?, fallback: ImageVector, dimmed: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        Modifier.size(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(colors.secondaryContainer.copy(alpha = if (dimmed) 0.5f else 1f)),
-        contentAlignment = Alignment.Center,
-    ) {
         if (previewUrl != null) {
             AsyncImage(
                 model = previewUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                alpha = if (dimmed) 0.5f else 1f,
-                modifier = Modifier.fillMaxWidth().size(44.dp),
-            )
-        } else {
-            Icon(
-                fallback,
-                contentDescription = null,
-                tint = colors.onSecondaryContainer,
-                modifier = Modifier.size(22.dp),
+                alpha = if (row.deleted) 0.5f else 1f,
+                modifier = Modifier.padding(end = 4.dp).size(40.dp).clip(RoundedCornerShape(10.dp)),
             )
         }
     }
+}
+
+/** The rail node: a circle tinted by the kind of resource, carrying the action's icon. */
+@Composable
+private fun TimelineNode(row: ActivityRowModel) {
+    val colors = MaterialTheme.colorScheme
+    val (container, content) =
+        when {
+            row.deleted -> colors.surfaceContainerHighest to colors.onSurfaceVariant
+            row.isYarn -> colors.secondaryContainer to colors.onSecondaryContainer
+            else -> colors.primaryContainer to colors.onPrimaryContainer
+        }
+    Box(
+        Modifier.size(NODE_SIZE).clip(CircleShape).background(container),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            activityIcon(row.icon),
+            contentDescription = null,
+            tint = content,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+private fun activityIcon(kind: ActivityIconKind): ImageVector =
+    when (kind) {
+        ActivityIconKind.Sparkle -> PhosphorIcons.Sparkle
+        ActivityIconKind.Pencil -> PhosphorIcons.PencilSimple
+        ActivityIconKind.Camera -> PhosphorIcons.Camera
+        ActivityIconKind.Trash -> PhosphorIcons.Trash
+        ActivityIconKind.Minus -> PhosphorIcons.Minus
+        ActivityIconKind.Attachment -> PhosphorIcons.Paperclip
+        ActivityIconKind.Other -> PhosphorIcons.NotePencil
+    }
+
+/** "14:32 · 3 changes · notes, stitch sample": the time, the run length and the changed fields. */
+@Composable
+private fun metaText(row: ActivityRowModel, time: String?): String {
+    val parts = mutableListOf<String>()
+    if (time != null) parts += time
+    if (row.count > 1) {
+        parts += pluralStringResource(R.plurals.activity_changes_count, row.count, row.count)
+    }
+    if (row.fieldNounRes.isNotEmpty()) {
+        val nouns = row.fieldNounRes.map { stringResource(it) }
+        parts +=
+            (if (row.moreFields > 0) nouns + stringResource(R.string.history_n_more, row.moreFields)
+                else nouns)
+                .joinToString(", ")
+    }
+    return parts.joinToString(" · ")
 }
 
 /** "You updated **Winter socks**": the sentence with the resource name in bold. */
@@ -281,34 +382,13 @@ private fun activitySentence(row: ActivityRowModel): AnnotatedString {
         append(text)
         if (range != null) {
             addStyle(SpanStyle(fontWeight = FontWeight.Bold), range.first, range.last + 1)
+            if (row.deleted) {
+                addStyle(
+                    SpanStyle(textDecoration = TextDecoration.LineThrough),
+                    range.first,
+                    range.last + 1,
+                )
+            }
         }
     }
-}
-
-/** "Changed name and needles", or null when no changed field is known. */
-@Composable
-private fun fieldsText(row: ActivityRowModel): String? {
-    if (row.fieldNounRes.isEmpty()) return null
-    val nouns = row.fieldNounRes.map { stringResource(it) }
-    val shown =
-        if (row.moreFields > 0) nouns + stringResource(R.string.history_n_more, row.moreFields)
-        else nouns
-    return stringResource(
-        R.string.history_changed_fields,
-        joinNatural(shown, stringResource(R.string.history_list_and)),
-    )
-}
-
-@Composable
-private fun relativeTime(createdAt: String): String {
-    val millis = runCatching { DateTimeUtils.parseToEpochMillis(createdAt) }.getOrNull()
-    return if (millis == null) createdAt
-    else
-        DateUtils.getRelativeTimeSpanString(
-                millis,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS,
-                DateUtils.FORMAT_ABBREV_RELATIVE,
-            )
-            .toString()
 }

@@ -1,7 +1,14 @@
 package blue.anika.wolle.ui.home
 
 import blue.anika.wolle.data.api.dto.ActivityItemDto
+import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.ui.admin.DayLabel
+import blue.anika.wolle.ui.admin.dayLabelFor
 import blue.anika.wolle.ui.history.fieldNounRes
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /*
  * Pure rules behind Home's "Recent activity": which sentence a feed item gets, how many changed
@@ -34,6 +41,62 @@ fun activityVerb(action: String): ActivityVerb =
         else -> ActivityVerb.Changed
     }
 
+/** What a timeline node draws: the kind of change, not the thing that changed. */
+enum class ActivityIconKind {
+    /** created */
+    Sparkle,
+    /** updated */
+    Pencil,
+    /** a photo was added */
+    Camera,
+    /** deleted */
+    Trash,
+    /** something was removed */
+    Minus,
+    /** a file other than a photo was added */
+    Attachment,
+    /** anything the app does not know by name */
+    Other,
+}
+
+private val exactIcons =
+    mapOf(
+        "created" to ActivityIconKind.Sparkle,
+        "step_created" to ActivityIconKind.Sparkle,
+        "updated" to ActivityIconKind.Pencil,
+        "step_updated" to ActivityIconKind.Pencil,
+        "photo_promoted" to ActivityIconKind.Pencil,
+        "title_image_promoted" to ActivityIconKind.Pencil,
+        "uploaded" to ActivityIconKind.Camera,
+        "photo_uploaded" to ActivityIconKind.Camera,
+        "title_image_uploaded" to ActivityIconKind.Camera,
+        "stitch_sample_image_uploaded" to ActivityIconKind.Camera,
+        "step_image_uploaded" to ActivityIconKind.Camera,
+        "attachment_uploaded" to ActivityIconKind.Attachment,
+        "deleted" to ActivityIconKind.Trash,
+        "step_deleted" to ActivityIconKind.Trash,
+        "attachment_deleted" to ActivityIconKind.Trash,
+        "image_deleted" to ActivityIconKind.Trash,
+        "photo_deleted" to ActivityIconKind.Trash,
+        "removed" to ActivityIconKind.Minus,
+    )
+
+/** The node icon of an audit action; unknown actions are read by their suffix. */
+fun activityIconKind(action: String): ActivityIconKind {
+    val key = action.lowercase()
+    exactIcons[key]?.let {
+        return it
+    }
+    return when {
+        key.endsWith("_created") -> ActivityIconKind.Sparkle
+        key.endsWith("_updated") || key.endsWith("_changed") -> ActivityIconKind.Pencil
+        key.endsWith("_uploaded") -> ActivityIconKind.Camera
+        key.endsWith("_deleted") -> ActivityIconKind.Trash
+        key.endsWith("_removed") -> ActivityIconKind.Minus
+        else -> ActivityIconKind.Other
+    }
+}
+
 /** Where a tap on a row leads. */
 sealed interface ActivityTarget {
     data class Project(val id: Int) : ActivityTarget
@@ -48,6 +111,7 @@ sealed interface ActivityTarget {
 data class ActivityRowModel(
     val key: Long,
     val verb: ActivityVerb,
+    val icon: ActivityIconKind,
     val actorIsSelf: Boolean,
     val actorName: String?,
     val isYarn: Boolean,
@@ -86,6 +150,7 @@ fun activityRow(item: ActivityItemDto): ActivityRowModel {
     return ActivityRowModel(
         key = item.id,
         verb = activityVerb(item.action),
+        icon = activityIconKind(item.action),
         actorIsSelf = item.actor.isSelf,
         actorName = item.actor.name?.takeIf { it.isNotBlank() && !item.actor.isSelf },
         isYarn = isYarn,
@@ -118,3 +183,78 @@ fun mergeActivity(
     val seen = existing.mapTo(HashSet()) { it.id }
     return existing + next.filter { seen.add(it.id) }
 }
+
+// --- Timeline: days and runs -------------------------------------------------------------------
+
+/** One day of the timeline: its label and its rows, newest first. */
+data class ActivityDay(val label: DayLabel, val rows: List<ActivityRowModel>)
+
+private fun ActivityItemDto.sameActor(other: ActivityItemDto): Boolean =
+    actor.isSelf == other.actor.isSelf && actor.name == other.actor.name
+
+/** Created and deleted are single events; everything else can fold into a run. */
+private fun ActivityItemDto.foldsInto(newer: ActivityItemDto): Boolean =
+    entityType == newer.entityType &&
+        entityId == newer.entityId &&
+        action == newer.action &&
+        action != "created" &&
+        action != "deleted" &&
+        sameActor(newer)
+
+/**
+ * Folds neighbouring entries (newest first) for the same item, action and actor into one: counts
+ * add up, the run's start moves back and the changed fields are united. The server already does
+ * this within 10 minutes; this extends it to a whole day. Pass the entries of a single day.
+ */
+fun mergeActivityRuns(items: List<ActivityItemDto>): List<ActivityItemDto> {
+    val merged = ArrayList<ActivityItemDto>()
+    for (item in items) {
+        val last = merged.lastOrNull()
+        if (last != null && item.foldsInto(last)) {
+            merged[merged.lastIndex] =
+                last.copy(
+                    count = last.count.coerceAtLeast(1) + item.count.coerceAtLeast(1),
+                    firstEventId = item.firstEventId,
+                    firstCreatedAt = item.firstCreatedAt ?: item.createdAt,
+                    thumbnailUrl = last.thumbnailUrl ?: item.thumbnailUrl,
+                    changedFields = (last.changedFields + item.changedFields).distinct(),
+                )
+        } else {
+            merged += item
+        }
+    }
+    return merged
+}
+
+/** Groups a newest-first feed into consecutive local days and folds repeats within each day. */
+fun groupActivity(items: List<ActivityItemDto>, today: LocalDate, zone: ZoneId): List<ActivityDay> {
+    val days = ArrayList<ActivityDay>()
+    var label: DayLabel? = null
+    var bucket = ArrayList<ActivityItemDto>()
+    fun flush() {
+        val current = label
+        if (current != null && bucket.isNotEmpty()) {
+            days += ActivityDay(current, mergeActivityRuns(bucket).map(::activityRow))
+        }
+        bucket = ArrayList()
+    }
+    for (item in items) {
+        val itemLabel = dayLabelFor(activityInstant(item.createdAt), today, zone)
+        if (itemLabel != label) {
+            flush()
+            label = itemLabel
+        }
+        bucket += item
+    }
+    flush()
+    return days
+}
+
+fun activityInstant(createdAt: String): Instant? =
+    runCatching { Instant.ofEpochMilli(DateTimeUtils.parseToEpochMillis(createdAt)) }.getOrNull()
+
+private val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
+
+/** The time of day in [zone], 24-hour like the web ("14:32"); null when unreadable. */
+fun activityTimeOfDay(createdAt: String, zone: ZoneId): String? =
+    activityInstant(createdAt)?.atZone(zone)?.format(timeFormat)

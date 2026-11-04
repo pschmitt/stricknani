@@ -947,7 +947,6 @@
         <item quantity="one">%1$d Änderung</item>
         <item quantity="other">%1$d Änderungen</item>
     </plurals>
-    <string name="activity_deleted_label">gelöscht</string>
     <string name="activity_show_more">Mehr anzeigen</string>
     <string name="activity_unavailable">Aktivität braucht eine Verbindung</string>
     <string name="activity_empty">Noch nichts los. Änderungen an deinen Projekten und Garnen erscheinen hier.</string>
