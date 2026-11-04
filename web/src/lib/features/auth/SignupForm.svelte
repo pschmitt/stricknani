@@ -6,7 +6,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import SharedButton from "#lib/components/Button.svelte";
   import { ApiError } from "#lib/api.ts";
-  import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
+  import AuthFooter from "#lib/components/AuthFooter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -147,146 +147,157 @@
   <title>{t("Create an account", locale)} · Stricknani</title>
 </svelte:head>
 
-<section class="signup-panel" aria-label={t("Account registration", locale)}>
-  {#if session.data?.user}
-    <h1>{t("You are already signed in.", locale)}</h1>
-    <p>{t("Open your project library to continue.", locale)}</p>
-    <a
-      class="ui-button ui-button--primary ui-button--md signup-link"
-      href={resolve("/projects")}
-      ><ActionLabel icon="projects">{t("Open projects", locale)}</ActionLabel
-      ></a
-    >
-  {:else if !enabled}
-    <h1>{t("Account registration is unavailable.", locale)}</h1>
-    <p>{t("Ask your server administrator if you need an account.", locale)}</p>
-    <a
-      class="ui-button ui-button--primary ui-button--md signup-link"
-      href={resolve("/login")}
-      ><ActionLabel icon="sign-in">{t("Back to sign in", locale)}</ActionLabel
-      ></a
-    >
-  {:else}
-    <p class="signup-intro">
-      {t("A place for your projects and yarn.", locale)}
-    </p>
-    <h1>{t("Create an account", locale)}</h1>
-    <p class="signup-description">
-      {t("Choose an email and a strong password to get started.", locale)}
-    </p>
-
-    {#if failure}
-      <div class="signup-error" role="alert">{failure}</div>
-    {/if}
-
-    <form class="signup-form" onsubmit={submit}>
-      <label for="signup-email">{t("Email", locale)}</label>
-      <input
-        id="signup-email"
-        name="email"
-        type="email"
-        inputmode="email"
-        autocomplete="email"
-        autocapitalize="none"
-        spellcheck="false"
-        bind:value={email}
-        aria-invalid={fieldErrors.email ? "true" : undefined}
-        aria-describedby={fieldErrors.email ? "signup-email-error" : undefined}
-        required
-        disabled={submitting}
-      />
-      {#if fieldErrors.email}
-        <p class="field-error" id="signup-email-error">{fieldErrors.email}</p>
-      {/if}
-
-      <label for="signup-password">{t("Password", locale)}</label>
-      <input
-        id="signup-password"
-        name="password"
-        type="password"
-        autocomplete="new-password"
-        minlength="12"
-        bind:value={password}
-        aria-invalid={fieldErrors.password ? "true" : undefined}
-        aria-describedby={fieldErrors.password
-          ? "signup-password-hint signup-password-error"
-          : "signup-password-hint"}
-        required
-        disabled={submitting}
-      />
-      <p class="field-hint" id="signup-password-hint">
-        {t("Use at least 12 characters. Avoid common passwords.", locale)}
-      </p>
-      {#if fieldErrors.password}
-        <p class="field-error" id="signup-password-error">
-          {fieldErrors.password}
-        </p>
-      {/if}
-
-      <label for="signup-confirmation">{t("Confirm password", locale)}</label>
-      <input
-        id="signup-confirmation"
-        name="confirmation"
-        type="password"
-        autocomplete="new-password"
-        bind:value={confirmation}
-        aria-invalid={fieldErrors.confirmation ? "true" : undefined}
-        aria-describedby={fieldErrors.confirmation
-          ? "signup-confirmation-error"
-          : undefined}
-        required
-        disabled={submitting}
-      />
-      {#if fieldErrors.confirmation}
-        <p class="field-error" id="signup-confirmation-error">
-          {fieldErrors.confirmation}
-        </p>
-      {/if}
-
-      <SharedButton
-        variant="primary"
-        class="signup-submit"
-        type="submit"
-        disabled={submitting || !session.data?.csrf_token}
+<div class="signup-column">
+  <section class="signup-panel" aria-label={t("Account registration", locale)}>
+    {#if session.data?.user}
+      <h1>{t("You are already signed in.", locale)}</h1>
+      <p>{t("Open your project library to continue.", locale)}</p>
+      <a
+        class="ui-button ui-button--primary ui-button--md signup-link"
+        href={resolve("/projects")}
+        ><ActionLabel icon="projects">{t("Open projects", locale)}</ActionLabel
+        ></a
       >
-        {#if submitting}
-          <span class="signup-spinner" aria-hidden="true"></span>
-          <ActionLabel icon="user-add"
-            >{t("Creating account…", locale)}</ActionLabel
-          >
-        {:else}
-          <ActionLabel icon="user-add"
-            >{t("Create account", locale)}</ActionLabel
-          >
-        {/if}
-      </SharedButton>
-    </form>
+    {:else if !enabled}
+      <h1>{t("Account registration is unavailable.", locale)}</h1>
+      <p>
+        {t("Ask your server administrator if you need an account.", locale)}
+      </p>
+      <a
+        class="ui-button ui-button--primary ui-button--md signup-link"
+        href={resolve("/login")}
+        ><ActionLabel icon="sign-in">{t("Back to sign in", locale)}</ActionLabel
+        ></a
+      >
+    {:else}
+      <p class="signup-intro">
+        {t("A place for your projects and yarn.", locale)}
+      </p>
+      <h1>{t("Create an account", locale)}</h1>
+      <p class="signup-description">
+        {t("Choose an email and a strong password to get started.", locale)}
+      </p>
 
-    <p class="signin-prompt">
-      {t("Already have an account?", locale)}
-      <a href={resolve("/login")}>{t("Sign in", locale)}</a>
-    </p>
-  {/if}
-  <footer class="signup-footer">
-    <LocaleSwitcher />
-    <a
-      class="ui-button ui-button--secondary ui-button--md"
-      href={resolve("/gauge")}
-      ><ActionLabel icon="gauge">{t("Gauge calculator", locale)}</ActionLabel
-      ></a
-    >
-  </footer>
-</section>
+      {#if failure}
+        <div class="signup-error" role="alert">{failure}</div>
+      {/if}
+
+      <form class="signup-form" onsubmit={submit}>
+        <label for="signup-email">{t("Email", locale)}</label>
+        <input
+          id="signup-email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          autocapitalize="none"
+          spellcheck="false"
+          bind:value={email}
+          aria-invalid={fieldErrors.email ? "true" : undefined}
+          aria-describedby={fieldErrors.email
+            ? "signup-email-error"
+            : undefined}
+          required
+          disabled={submitting}
+        />
+        {#if fieldErrors.email}
+          <p class="field-error" id="signup-email-error">{fieldErrors.email}</p>
+        {/if}
+
+        <label for="signup-password">{t("Password", locale)}</label>
+        <input
+          id="signup-password"
+          name="password"
+          type="password"
+          autocomplete="new-password"
+          minlength="12"
+          bind:value={password}
+          aria-invalid={fieldErrors.password ? "true" : undefined}
+          aria-describedby={fieldErrors.password
+            ? "signup-password-hint signup-password-error"
+            : "signup-password-hint"}
+          required
+          disabled={submitting}
+        />
+        <p class="field-hint" id="signup-password-hint">
+          {t("Use at least 12 characters. Avoid common passwords.", locale)}
+        </p>
+        {#if fieldErrors.password}
+          <p class="field-error" id="signup-password-error">
+            {fieldErrors.password}
+          </p>
+        {/if}
+
+        <label for="signup-confirmation">{t("Confirm password", locale)}</label>
+        <input
+          id="signup-confirmation"
+          name="confirmation"
+          type="password"
+          autocomplete="new-password"
+          bind:value={confirmation}
+          aria-invalid={fieldErrors.confirmation ? "true" : undefined}
+          aria-describedby={fieldErrors.confirmation
+            ? "signup-confirmation-error"
+            : undefined}
+          required
+          disabled={submitting}
+        />
+        {#if fieldErrors.confirmation}
+          <p class="field-error" id="signup-confirmation-error">
+            {fieldErrors.confirmation}
+          </p>
+        {/if}
+
+        <SharedButton
+          variant="primary"
+          class="signup-submit"
+          type="submit"
+          disabled={submitting || !session.data?.csrf_token}
+        >
+          {#if submitting}
+            <span class="signup-spinner" aria-hidden="true"></span>
+            <ActionLabel icon="user-add"
+              >{t("Creating account…", locale)}</ActionLabel
+            >
+          {:else}
+            <ActionLabel icon="user-add"
+              >{t("Create account", locale)}</ActionLabel
+            >
+          {/if}
+        </SharedButton>
+      </form>
+
+      <p class="signin-prompt">
+        {t("Already have an account?", locale)}
+        <a href={resolve("/login")}>{t("Sign in", locale)}</a>
+      </p>
+    {/if}
+  </section>
+  <AuthFooter class="signup-footer" />
+</div>
 
 <style>
-  .signup-panel {
-    width: min(100%, 31rem);
+  .signup-column {
+    width: min(100%, 29rem);
     min-width: 0;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    padding: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  .signup-panel {
+    position: relative;
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+    border-radius: var(--radius-lg);
     background: var(--surface);
     box-shadow: var(--shadow);
+  }
+
+  /* The same running stitch as the sign-in card. */
+  .signup-panel::after {
+    position: absolute;
+    inset: 7px;
+    border: 1.6px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 21px;
+    content: "";
+    pointer-events: none;
   }
 
   h1 {
@@ -366,24 +377,6 @@
     align-items: center;
     color: var(--accent-strong);
     font-weight: 650;
-  }
-
-  .signup-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.9rem;
-  }
-
-  .signup-footer > a {
-    flex-shrink: 1;
-    white-space: normal;
-  }
-
-  .signup-footer > a :global(.action-label__text) {
-    overflow-wrap: anywhere;
-    white-space: normal;
   }
 
   .signup-spinner {

@@ -3028,7 +3028,7 @@ def run_acceptance(
                     "a sign-in control is below the 44px target size",
                 )
                 _require(
-                    len(signed_out_tool_heights) == 3
+                    len(signed_out_tool_heights) == 5
                     and min(signed_out_tool_heights) >= 44,
                     "a signed-out tool or language control is below 44px",
                 )

@@ -75,47 +75,53 @@
   }
 </script>
 
-{#if loginError}
-  <div
-    class={loginError === "unlinked" ? "oidc-notice" : "oidc-error"}
-    role={loginError === "unlinked" ? "status" : "alert"}
-  >
-    {oidcLoginErrorMessage(loginError, locale, providerName)}
-  </div>
-{/if}
-
-{#if options.oidc.length > 0}
-  {#if startError}
-    <div class="oidc-error" role="alert">{startError}</div>
+<div class="oidc">
+  {#if loginError}
+    <div
+      class={loginError === "unlinked" ? "oidc-notice" : "oidc-error"}
+      role={loginError === "unlinked" ? "status" : "alert"}
+    >
+      {oidcLoginErrorMessage(loginError, locale, providerName)}
+    </div>
   {/if}
-  <div class="oidc-providers">
-    {#each options.oidc as provider (provider.id)}
-      <SharedButton
-        variant="secondary"
-        class="oidc-button"
-        icon="key"
-        disabled={starting !== null || !session.data?.csrf_token}
-        onclick={() => void start(provider.id)}
-      >
-        {starting === provider.id
-          ? t("Opening {name}…", locale).replaceAll("{name}", provider.name)
-          : t("Sign in with {name}", locale).replaceAll(
-              "{name}",
-              provider.name,
-            )}
-      </SharedButton>
-    {/each}
-  </div>
-  <div class="oidc-divider" role="separator" aria-label={t("or", locale)}>
-    <span>{t("or", locale)}</span>
-  </div>
-{/if}
+
+  {#if options.oidc.length > 0}
+    <div class="oidc-divider" role="separator" aria-label={t("or", locale)}>
+      <span>{t("or", locale)}</span>
+    </div>
+    {#if startError}
+      <div class="oidc-error oidc-start-error" role="alert">{startError}</div>
+    {/if}
+    <div class="oidc-providers">
+      {#each options.oidc as provider (provider.id)}
+        <SharedButton
+          variant="secondary"
+          class="oidc-button"
+          icon="key"
+          disabled={starting !== null || !session.data?.csrf_token}
+          onclick={() => void start(provider.id)}
+        >
+          {starting === provider.id
+            ? t("Opening {name}…", locale).replaceAll("{name}", provider.name)
+            : t("Sign in with {name}", locale).replaceAll(
+                "{name}",
+                provider.name,
+              )}
+        </SharedButton>
+      {/each}
+    </div>
+  {/if}
+</div>
 
 <style>
+  /* The parent lays the notice above the form; the rest stays below it. */
+  .oidc {
+    display: contents;
+  }
+
   .oidc-providers {
     display: grid;
     gap: 0.6rem;
-    margin-top: 1.2rem;
   }
 
   .oidc-providers :global(.oidc-button) {
@@ -128,7 +134,7 @@
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    margin: 1rem 0 0;
+    margin: 1.1rem 0;
     color: var(--ink-muted);
     font-size: 0.9rem;
   }
@@ -143,9 +149,15 @@
 
   .oidc-notice,
   .oidc-error {
-    margin: 1.4rem 0 1rem;
+    order: -1;
+    margin: 1.4rem 0 0;
     border-radius: var(--radius-xs);
     padding: 0.8rem 0.9rem;
+  }
+
+  .oidc-start-error {
+    order: 0;
+    margin: 0 0 0.8rem;
   }
 
   .oidc-notice {
