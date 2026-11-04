@@ -22,6 +22,7 @@ import {
   startFixture,
   stopFixture,
 } from "./fixture";
+import { readFixture, runReplay } from "./replay";
 
 class UsageError extends Error {}
 
@@ -69,8 +70,8 @@ async function runReplayFromFile(values: {
   testApk: string;
   timeoutSeconds: number;
 }): Promise<void> {
-  // Loaded lazily so start/stop do not depend on the replay runner's modules.
-  const { readFixture, runReplay } = await import("./replay");
+  // Imported statically: run-ts.mjs closes the Vite module runner once the
+  // entry module is loaded, so a dynamic import() here fails at call time.
   const fixture = readFixture({
     ...loadFixtureEnvironment(values.fixtureFile),
   });

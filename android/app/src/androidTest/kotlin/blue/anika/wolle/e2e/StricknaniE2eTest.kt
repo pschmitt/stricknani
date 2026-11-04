@@ -60,11 +60,20 @@ abstract class StricknaniE2eTest {
             hasTag("e2e-onboarding-server-url") || hasText("Projects")
         }
         if (hasTag("e2e-onboarding-server-url")) {
-            composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
-            composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
-            composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
+            // Onboarding opens in password mode, and its mode chips sit below the fold on the
+            // small CI emulator: scroll to the chip, or the click lands off-screen and is lost.
+            composeRule.onNodeWithTag("onboarding-mode-manual").performScrollTo().performClick()
+            composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
+            composeRule
+                .onNodeWithTag("e2e-onboarding-server-url")
+                .performScrollTo()
+                .performTextInput(baseUrl)
+            composeRule
+                .onNodeWithTag("e2e-onboarding-api-token")
+                .performScrollTo()
+                .performTextInput(token)
             grantNotificationPermission()
-            composeRule.onNodeWithText("Connect").performClick()
+            composeRule.onNodeWithText("Connect").performScrollTo().performClick()
         }
         // Home does not render arbitrary yarns; the full journeys navigate to Projects/Yarns
         // before asserting fixture rows. The bottom-navigation label is the stable configured
