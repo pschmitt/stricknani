@@ -8,10 +8,10 @@
 
 buildNpmPackage {
   pname = "stricknani-web";
-  version = "1.0.1";
+  version = "1.1.0";
   src = ../web;
   nodejs = nodejs_22;
-  npmDepsHash = "sha256-8zjDKkyXaLsSzqeTE1hesidnOGTUkD642oc9u2WrKmw=";
+  npmDepsHash = "sha256-j6CLHm3yZV361nw4bBCC2AtmvtI6XKOJ7wQmTXMWft0=";
   npmBuildScript = "build";
   env.STRICKNANI_GIT_REVISION = gitRevision;
   doCheck = true;
