@@ -29,7 +29,11 @@ default_abi := env_var_or_default("STRICKNANI_ANDROID_ABI", "arm64-v8a")
 # short SHA of HEAD plus "-dirty" when tracked files have uncommitted changes (untracked files are
 # ignored). Empty outside a git checkout. CI's GIT_REVISION env var still wins in Gradle.
 git_revision_prop := `rev=$(git rev-parse --short=8 HEAD 2>/dev/null) || exit 0; git diff --quiet HEAD -- 2>/dev/null || rev="$rev-dirty"; printf -- '-PgitRevision=%s' "$rev"`
-gradle_extra_props := git_revision_prop
+# Same for the version name: the tree on the build host has no tags either, so Gradle would fall
+# back to 1.0.0. Pass the newest v* release tag (without the v) when git knows one; tag and CI
+# builds derive their own name and are not affected.
+version_name_prop := `v=$(git describe --tags --match 'v[0-9]*' --abbrev=0 2>/dev/null) || exit 0; printf -- '-PversionName=%s' "${v#v}"`
+gradle_extra_props := git_revision_prop + " " + version_name_prop
 
 # Same physical fleet hardware the sibling apps deploy to (see AGENTS-shared.md) - confirmed
 # working here 2026-08-18 (just deploy-all installed blue.anika.wolle.debug, labeled "Stricknani",
