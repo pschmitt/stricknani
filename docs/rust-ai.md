@@ -13,13 +13,19 @@ and [Groq structured output guide](https://console.groq.com/docs/structured-outp
 ## Configuration
 
 The server integration is off unless `RUST_AI_ENABLED=true` and the user selects
-AI for that import. When disabled,
+AI for that import (the web and Android clients select it by default when the
+server reports a provider). Without a provider, imports still work with the
+rule-based extraction described in `rust-import-design.md`. When disabled,
 `AiConfig::from_lookup(false, ...)` returns `None` without reading any key. When
 enabled, provider resolution is:
 
 1. `AI_PROVIDER`, default `openai`; accepted values are `openai`, `openrouter`,
-   and `groq`. Unknown values fail with a redacted configuration error.
-2. API key: `AI_API_KEY`, then the selected provider key
+   `groq` and `custom` (aliases `openai-compatible`, `hermes`) for any other
+   OpenAI-compatible endpoint. `custom` requires `AI_BASE_URL`; its model
+   defaults to `hermes-agent`. Unknown values fail with a redacted
+   configuration error.
+2. API key: `AI_API_KEY`, then the file named by `AI_API_KEY_FILE` (a
+   sops-nix secret, trailing newline ignored), then the selected provider key
    (`OPENAI_API_KEY`, `OPENROUTER_API_KEY`, or `GROQ_API_KEY`), then
    `OPENAI_API_KEY` as a compatibility fallback.
 3. Endpoint: `AI_BASE_URL`, otherwise the provider's built-in API base.
@@ -28,7 +34,9 @@ enabled, provider resolution is:
    loopback address. This is an administrator-controlled endpoint; never derive
    it from an import URL.
 4. Model: `AI_MODEL`, otherwise the existing provider default (`gpt-4o-mini`,
-   `openai/gpt-4o-mini`, or `llama-3.3-70b-versatile`).
+   `openai/gpt-4o-mini`, `llama-3.3-70b-versatile`, or `hermes-agent`).
+5. `AI_TIMEOUT_SECONDS` (5 to 300, default 60) bounds one request. Agent
+   gateways can need most of a minute.
 
 The key is held in a zeroizing string, has a redacted `Debug`, and is marked
 sensitive in the Authorization header. The HTTP client disables environment
@@ -60,7 +68,8 @@ failed AI. Callers must use that flag as the only source of an AI-enhanced marke
 
 ## Fixture acceptance cases
 
-`rust/tests/ai.rs` uses an injected transport only; no provider network or real
+`rust/tests/ai.rs` and `rust/tests/url_import.rs` use an injected transport or a
+loopback HTTP server only; no provider network or real
 credentials are involved. It covers disabled-key access, provider and key
 precedence, custom model selection, endpoint validation, request fields and
 image data URLs, draft merge, source-link preservation, hallucinated image URL
@@ -73,3 +82,106 @@ Provider calls send imported text, selected draft fields, and explicitly chosen
 image bytes to the configured third-party provider. The route must make that
 external disclosure conditional on the user's explicit AI choice; local
 parsing remains the fallback.
+
+## URL import normalisation
+
+Link imports use the same client for a second, stricter job
+(`url_import::ai_merge`). The model gets the page text (at most 14,000
+characters), the values the rules already extracted, and a short system prompt
+that says the page is data and not instructions and that only the JSON schema
+may be answered. Its reply is parsed leniently (code fences and prose around
+the object are tolerated) and then validated:
+
+- Values from schema.org markup, OpenGraph or a site extractor are never
+  replaced; only gaps and rule-based text guesses can change.
+- Anything with a quantity (fiber percentages, grams, meters, needle sizes,
+  gauge, price, sizes) is kept only if every number in it occurs in the page
+  or in the extracted facts. Invented numbers are dropped.
+- Links and image URLs from the model are ignored. Steps are accepted only if
+  most of their words occur in the page.
+- Every accepted field is marked `ai` in `draft.provenance`, which the clients
+  show as an "AI" badge next to the field.
+
+## Hermes (an agent gateway) as the provider
+
+An operator who already runs a Hermes agent on the same host can point the
+`custom` provider at its OpenAI-compatible API server; no Hermes-specific code
+exists in Stricknani. That reuses the operator's ChatGPT/Codex subscription
+through Hermes (`model.provider = "openai-codex"`).
+
+Stricknani side (NixOS module):
+
+```nix
+services.stricknani = {
+  imports.enable = true;
+  ai = {
+    enable = true;
+    provider = "custom";
+    baseUrl = "http://127.0.0.1:8642/v1";
+    model = "hermes-agent";
+    apiKeyFile = config.sops.secrets."stricknani/hermesApiKey".path;
+    timeoutSeconds = 90;
+  };
+};
+```
+
+Hermes side: the gateway's API server platform is enabled with
+`API_SERVER_ENABLED=true`, `API_SERVER_KEY=<random key, e.g. openssl rand -hex 32>`,
+`API_SERVER_HOST=127.0.0.1` and `API_SERVER_PORT=8642` (the key is mandatory
+and strength-checked; the same value goes into the Stricknani key file). Chat
+completions are served at `/v1/chat/completions`.
+
+Security: Hermes is a full agent. Its API server runs the platform toolset
+`api_server`, by default the complete `hermes-api-server` bundle (shell, files,
+web, memory, skills) plus every configured MCP server and enabled plugin, and a
+request cannot turn that off. Imported pages are untrusted text, so the
+recommended setting removes tools for that platform only:
+
+```nix
+services.hermes-agent.settings = {
+  platform_toolsets.api_server = [ "no_mcp" ];             # no built-in tools, no MCP servers
+  known_plugin_toolsets.api_server = [ "homeassistant" ];  # keep enabled plugins off this platform
+};
+```
+
+Check it before trusting it: `GET /v1/toolsets` with the key must list every
+toolset as `enabled: false`. If any is enabled, run a dedicated Hermes profile
+for Stricknani (own `config.yaml` without `mcp_servers` and plugins) instead of
+the shared one. Even tool-less, the agent still carries its persona and memory
+in its prompt, so a hostile page could try to make it echo that text into a
+draft field. For a two-person instance this residual risk is accepted; do not
+use a shared gateway for an instance with untrusted users. A plain API key for
+`openai` avoids the question entirely. The earlier plan to shell out to
+`codex exec` was dropped: an OpenAI-compatible endpoint covers it without a
+second code path.
+
+The model's own wording is also constrained: the system prompt says the page
+is data and the answer must be the JSON schema only, and the validation above
+rejects anything the page does not support.
+
+## Ravelry
+
+Ravelry pages carry usable schema.org markup, but gauge, needle sizes, yarn
+weight, yardage and fibers are only clean in the read-only API. Set
+`RAVELRY_USERNAME` and `RAVELRY_PASSWORD` (a Basic-auth key pair from a Ravelry
+API app) to enable `url_import::ravelry`; both or neither, otherwise the server
+refuses to start. The module option is `ravelry.credentialsFile` (an
+environment file). The API host is a constant and the numeric pattern or yarn
+id comes from the fetched page, so no user URL is requested with the
+credentials. API failures only add the warning `ravelry_api_failed`.
+
+## NixOS options
+
+| Option | Environment | Purpose |
+| --- | --- | --- |
+| `imports.enable` | `RUST_EXTERNAL_IMPORTS_ENABLED` | Link imports and picture downloads. |
+| `ai.enable` | `RUST_AI_ENABLED` | Allow AI gap filling. |
+| `ai.provider` | `AI_PROVIDER` | `openai`, `openrouter`, `groq`, `custom`. |
+| `ai.apiKeyFile` | `AI_API_KEY_FILE` | Secret file with only the key. |
+| `ai.baseUrl` | `AI_BASE_URL` | Endpoint for `custom`; plain HTTP only for localhost. |
+| `ai.model` | `AI_MODEL` | Model name. |
+| `ai.timeoutSeconds` | `AI_TIMEOUT_SECONDS` | Request timeout. |
+| `ravelry.credentialsFile` | `RAVELRY_USERNAME`, `RAVELRY_PASSWORD` | Environment file with the key pair. |
+
+Imported pages and their text are sent to the AI provider only when the user
+leaves "Ask AI to improve extraction" on; the privacy page says so.
