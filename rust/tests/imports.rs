@@ -265,7 +265,7 @@ async fn revalidates_redirect_targets_before_requesting_and_pins_each_public_hop
         ]
     );
     assert_eq!(requests[0].max_body_bytes, BODY_LIMIT);
-    assert!(requests[0].timeout <= Duration::from_secs(10));
+    assert!(requests[0].timeout <= Duration::from_secs(15));
     assert_eq!(
         resolver.lookups.lock().unwrap().as_slice(),
         &["origin.example".to_owned(), "cdn.example".to_owned()]

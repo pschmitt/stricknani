@@ -15,7 +15,7 @@ use sqlx::SqlitePool;
 use stricknani_server::{
     db,
     image_import::{FetchError, FetchFuture, FetchedImage, HttpImageFetcher, ImageFetcher},
-    media, projects,
+    media, projects, yarns,
 };
 use tower::ServiceExt;
 use url::Url;
@@ -80,7 +80,12 @@ async fn harness(external_imports: bool) -> Harness {
         .with_external_imports(external_imports)
         .with_image_fetcher(fetcher.clone());
     let app = Router::new()
-        .nest("/api/v1", projects::router().with_state(state.clone()))
+        .nest(
+            "/api/v1",
+            projects::router()
+                .merge(yarns::router())
+                .with_state(state.clone()),
+        )
         .merge(media::router().with_state(state));
     Harness {
         app,
@@ -333,4 +338,74 @@ async fn production_fetcher_rejects_loopback_before_connecting() {
         .await
         .unwrap_err();
     assert_eq!(error, FetchError::UnsafeAddress);
+}
+
+#[tokio::test]
+async fn yarn_create_attaches_selected_photos_with_the_first_as_primary() {
+    let harness = harness(true).await;
+    harness
+        .fetcher
+        .responses
+        .lock()
+        .unwrap()
+        .extend(HashMap::from([
+            (
+                "https://shop.example.test/air-1.png".to_owned(),
+                fixture_image(image_bytes(9, 40, 70)),
+            ),
+            (
+                "https://shop.example.test/air-2.png".to_owned(),
+                fixture_image(image_bytes(90, 140, 7)),
+            ),
+        ]));
+    let response = harness
+        .app
+        .clone()
+        .oneshot(request(
+            "POST",
+            "/api/v1/yarns",
+            serde_json::json!({
+                "name": "DROPS Air",
+                "brand": "DROPS Design",
+                "weight_grams": 50,
+                "length_meters": 150,
+                "image_urls": [
+                    "https://shop.example.test/air-1.png",
+                    "https://shop.example.test/missing.png",
+                    "https://shop.example.test/air-2.png"
+                ]
+            }),
+        ))
+        .await
+        .expect("API should respond");
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let yarn = json_body(response).await;
+    let yarn_id = yarn["id"].as_i64().expect("yarn ID should be numeric");
+    let rows: Vec<(String, i64, i64, i64)> = sqlx::query_as(
+        "SELECT kind, owner_id, is_primary, position FROM media_files WHERE yarn_id = ? ORDER BY position, id",
+    )
+    .bind(yarn_id)
+    .fetch_all(&harness.pool)
+    .await
+    .expect("media rows should be queryable");
+    assert_eq!(rows.len(), 2, "the unreachable URL is skipped");
+    assert_eq!(rows[0], ("photo".to_owned(), harness.user_id, 1, 0));
+    assert_eq!(rows[1].2, 0);
+}
+
+#[tokio::test]
+async fn yarn_create_without_external_imports_ignores_image_urls() {
+    let harness = harness(false).await;
+    let response = harness
+        .app
+        .clone()
+        .oneshot(request(
+            "POST",
+            "/api/v1/yarns",
+            serde_json::json!({"name": "Plain", "image_urls": ["https://shop.example.test/a.png"]}),
+        ))
+        .await
+        .expect("API should respond");
+    assert_eq!(response.status(), StatusCode::CREATED);
+    assert!(harness.fetcher.requested.lock().unwrap().is_empty());
 }

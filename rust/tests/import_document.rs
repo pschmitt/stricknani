@@ -104,7 +104,8 @@ fn extracts_html_metadata_schema_recipe_fields_and_resolved_links() {
     .expect("HTML fixture parses");
 
     assert_eq!(parsed.kind, DocumentKind::Html);
-    assert_eq!(parsed.project.name.as_deref(), Some("Cable cardigan"));
+    // The schema.org name wins over the OpenGraph title, which often carries a site suffix.
+    assert_eq!(parsed.project.name.as_deref(), Some("Cardigan recipe"));
     assert_eq!(
         parsed.project.description.as_deref(),
         Some("A warm cardigan pattern.")

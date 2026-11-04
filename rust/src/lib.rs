@@ -34,6 +34,7 @@ pub mod projects;
 pub mod pwa;
 pub mod security;
 pub mod sync;
+pub mod url_import;
 pub mod wayback;
 mod web;
 mod web_accounts;

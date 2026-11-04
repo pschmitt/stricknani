@@ -61,6 +61,9 @@ pub(crate) struct YarnWriteRequest {
     pub(crate) is_ai_enhanced: bool,
     #[serde(default)]
     pub(crate) expected_updated_at: Option<String>,
+    /// Remote photo URLs fetched and attached on create (imports). Ignored on update.
+    #[serde(default)]
+    pub(crate) image_urls: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -316,6 +319,13 @@ pub(crate) async fn create_for_owner(
 ) -> Result<YarnResponse, YarnError> {
     let name = clean_name(&payload.name);
     let audit_changes = yarn_audit_changes(None, &payload, &name);
+    let prepared_images =
+        if !payload.image_urls.is_empty() && state.external_imports && state.media_root.is_some() {
+            let urls: Vec<String> = payload.image_urls.iter().take(6).cloned().collect();
+            crate::image_import::prepare_yarn_images(state, &name, &urls).await
+        } else {
+            Vec::new()
+        };
     let now = timestamp(Utc::now());
     let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     let result = sqlx::query(
@@ -371,6 +381,9 @@ pub(crate) async fn create_for_owner(
     }
     if tx.commit().await.is_err() {
         return Err(YarnError::Database);
+    }
+    if !prepared_images.is_empty() {
+        crate::image_import::persist_yarn_images(state, user_id, id, &name, prepared_images).await;
     }
     load_for_owner(state, user_id, id)
         .await
