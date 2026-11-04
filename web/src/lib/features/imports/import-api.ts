@@ -23,7 +23,32 @@ export interface ImportedStepDraft {
   images: string[];
 }
 
+export type ImportedPageKind = "yarn" | "pattern" | "unknown";
+export type ImportedFieldSource = "text" | "ai" | "structured" | "site";
+
+/** A yarn product page, as extracted by the server. */
+export interface ImportedYarnDetails {
+  name: string | null;
+  brand: string | null;
+  colorway: string | null;
+  description: string | null;
+  fiberContent: string | null;
+  weightCategory: string | null;
+  weightGrams: number | null;
+  lengthMeters: number | null;
+  recommendedNeedles: string | null;
+  gauge: string | null;
+  care: string | null;
+  price: string | null;
+  link: string | null;
+  imageUrls: string[];
+}
+
 export interface ImportedProjectDraft {
+  designer: string | null;
+  difficulty: string | null;
+  sizes: string | null;
+  tags: string[];
   name: string | null;
   description: string | null;
   category: string | null;
@@ -56,6 +81,11 @@ export interface ImportedDocumentDraft {
   sourceUrl: string | null;
   project: ImportedProjectDraft;
   image: ImportedImageFacts | null;
+  yarn: ImportedYarnDetails | null;
+  pageKind: ImportedPageKind;
+  /** Field path such as `yarn.brand` to where the value came from. */
+  provenance: Record<string, ImportedFieldSource>;
+  warnings: string[];
 }
 
 /** The outer preview response intentionally uses the Rust API's snake_case keys. */
@@ -78,13 +108,25 @@ export async function previewImportText(
   return previewImport({ type: "text", text, use_ai: useAi }, session, signal);
 }
 
+export type ImportTarget = "project" | "yarn";
+
 export async function previewImportUrl(
   url: string,
   useAi: boolean,
   session: SessionData,
   signal?: AbortSignal,
+  target: ImportTarget = "project",
 ): Promise<ImportPreview> {
-  return previewImport({ type: "url", url, use_ai: useAi }, session, signal);
+  return previewImport(
+    { type: "url", url, use_ai: useAi, target },
+    session,
+    signal,
+  );
+}
+
+/** Same-origin thumbnail of a picture on an imported page; the browser never contacts the site. */
+export function importImageSrc(url: string): string {
+  return `/api/v2/imports/image?url=${encodeURIComponent(url)}`;
 }
 
 export async function previewImportFile(
@@ -114,7 +156,7 @@ export async function previewImportFile(
 
 function previewImport(
   body:
-    | { type: "url"; url: string; use_ai: boolean }
+    | { type: "url"; url: string; use_ai: boolean; target: ImportTarget }
     | {
         type: "text";
         text: string;
@@ -178,7 +220,53 @@ function parseDocumentDraft(value: unknown): ImportedDocumentDraft {
     sourceUrl: value.sourceUrl,
     project: parseProjectDraft(value.project),
     image: value.image,
+    yarn: isRecord(value.yarn) ? parseYarnDetails(value.yarn) : null,
+    pageKind: isPageKind(value.pageKind) ? value.pageKind : "unknown",
+    provenance: parseProvenance(value.provenance),
+    warnings: isStringArray(value.warnings) ? value.warnings : [],
   };
+}
+
+function parseYarnDetails(value: Record<string, unknown>): ImportedYarnDetails {
+  const text = (key: string): string | null =>
+    typeof value[key] === "string" ? (value[key] as string) : null;
+  const count = (key: string): number | null =>
+    isNonnegativeInteger(value[key]) ? (value[key] as number) : null;
+  return {
+    name: text("name"),
+    brand: text("brand"),
+    colorway: text("colorway"),
+    description: text("description"),
+    fiberContent: text("fiberContent"),
+    weightCategory: text("weightCategory"),
+    weightGrams: count("weightGrams"),
+    lengthMeters: count("lengthMeters"),
+    recommendedNeedles: text("recommendedNeedles"),
+    gauge: text("gauge"),
+    care: text("care"),
+    price: text("price"),
+    link: text("link"),
+    imageUrls: isStringArray(value.imageUrls) ? value.imageUrls : [],
+  };
+}
+
+function parseProvenance(value: unknown): Record<string, ImportedFieldSource> {
+  const result: Record<string, ImportedFieldSource> = {};
+  if (!isRecord(value)) return result;
+  for (const [key, source] of Object.entries(value)) {
+    if (
+      source === "text" ||
+      source === "ai" ||
+      source === "structured" ||
+      source === "site"
+    )
+      result[key] = source;
+  }
+  return result;
+}
+
+function isPageKind(value: unknown): value is ImportedPageKind {
+  return value === "yarn" || value === "pattern" || value === "unknown";
 }
 
 function parseProjectDraft(
@@ -206,6 +294,10 @@ function parseProjectDraft(
   )
     throw invalidResponse();
   return {
+    designer: typeof value.designer === "string" ? value.designer : null,
+    difficulty: typeof value.difficulty === "string" ? value.difficulty : null,
+    sizes: typeof value.sizes === "string" ? value.sizes : null,
+    tags: isStringArray(value.tags) ? value.tags : [],
     name: value.name,
     description: value.description,
     category: value.category,
