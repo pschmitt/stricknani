@@ -8,6 +8,8 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import blue.anika.wolle.data.backup.BackupFrequency
+import blue.anika.wolle.data.errorreporting.ERROR_REPORTING_DEFAULT_ENABLED
+import blue.anika.wolle.data.errorreporting.ErrorReportingDto
 import blue.anika.wolle.data.update.UpdateChannel
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -168,7 +170,34 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         }
     }
 
+    /**
+     * This device's "Send error reports" switch (on by default; see
+     * [ERROR_REPORTING_DEFAULT_ENABLED]). Reporting also needs the server-side choice to be on.
+     */
+    val errorReportingEnabled =
+        dataStore.data.map { prefs ->
+            prefs[KEY_ERROR_REPORTING_ENABLED] ?: ERROR_REPORTING_DEFAULT_ENABLED
+        }
+
+    suspend fun setErrorReportingEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_ERROR_REPORTING_ENABLED] = enabled }
+    }
+
+    /** The last `error_reporting` the server reported (null until a server answered). */
+    val errorReportingServer =
+        dataStore.data.map { prefs ->
+            prefs[KEY_ERROR_REPORTING_SERVER]?.let { raw ->
+                runCatching { json.decodeFromString<ErrorReportingDto>(raw) }.getOrNull()
+            }
+        }
+
+    suspend fun setErrorReportingServer(value: ErrorReportingDto) {
+        dataStore.edit { prefs -> prefs[KEY_ERROR_REPORTING_SERVER] = json.encodeToString(value) }
+    }
+
     private companion object {
+        val KEY_ERROR_REPORTING_ENABLED = booleanPreferencesKey("error_reporting_enabled")
+        val KEY_ERROR_REPORTING_SERVER = stringPreferencesKey("error_reporting_server")
         val KEY_NOTES_FAB_SIDE = stringPreferencesKey("notes_fab_side")
         val KEY_NOTES_FAB_Y = floatPreferencesKey("notes_fab_y")
         val KEY_READING_TEXT_STEP = intPreferencesKey("reading_text_step")

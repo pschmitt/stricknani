@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import blue.anika.wolle.crash.CrashReportInstaller
+import blue.anika.wolle.data.errorreporting.ErrorReportingController
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.update.UpdateScheduler
 import blue.anika.wolle.data.update.inAppUpdateAvailable
@@ -41,6 +42,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
     @Inject lateinit var syncNotifier: SyncNotifier
     @Inject lateinit var updateScheduler: UpdateScheduler
     @Inject lateinit var appPreferences: AppPreferencesRepository
+    @Inject lateinit var errorReporting: ErrorReportingController
     @Inject @MediaClient lateinit var mediaOkHttpClient: OkHttpClient
 
     override val workManagerConfiguration: Configuration
@@ -63,6 +65,9 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        // Optional error reporting: inert unless this is a GitHub APK build, the server offers it
+        // and the user has not switched it off.
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch { errorReporting.run() }
         NetworkStatus.start(this)
         syncNotifier.ensureChannel()
         // Both no-op quickly (WorkManager dedupes the periodic request; SyncWorker itself no-ops

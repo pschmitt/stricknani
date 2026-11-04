@@ -32,6 +32,12 @@ val gitRevision =
 val isBuildingBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
 val selfUpdateEnabled =
     providers.gradleProperty("selfUpdate").map { it.toBoolean() }.orElse(!isBuildingBundle).get()
+// Optional Sentry error reporting follows the same rule: GitHub APK builds only. Google Play's data
+// safety form says the app collects no crash data, so the SDK is not in the Play bundle at all (no
+// dependency, no source set); the toggle never shows there. `-PerrorReporting=true|false`
+// overrides the detection.
+val errorReportingEnabled =
+    providers.gradleProperty("errorReporting").map { it.toBoolean() }.orElse(!isBuildingBundle).get()
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
@@ -54,6 +60,7 @@ android {
         versionName = configuredVersionName
         buildConfigField("String", "GIT_REVISION", "\"$gitRevision\"")
         buildConfigField("boolean", "SELF_UPDATE_ENABLED", selfUpdateEnabled.toString())
+        buildConfigField("boolean", "ERROR_REPORTING_COMPILED", errorReportingEnabled.toString())
         val buildDate = System.getenv("BUILD_DATE") ?: "unknown"
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
 
@@ -73,6 +80,16 @@ android {
                 kotlin.directories.add("src/selfupdate/kotlin")
             }
         }
+    }
+
+    // The Sentry-backed reporter lives in its own source set, compiled only when error reporting is
+    // in the build (GitHub APKs). Shared code sees the ErrorReporter interface and, without it,
+    // NoErrorReporter.
+    if (errorReportingEnabled) {
+        listOf("debug", "release").forEach { name ->
+            sourceSets.getByName(name).kotlin.directories.add("src/errorreporting/kotlin")
+        }
+        sourceSets.getByName("test").kotlin.directories.add("src/errorreporting-test/kotlin")
     }
 
     signingConfigs {
@@ -208,6 +225,11 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.timber)
+
+    // Optional error reporting: GitHub APK builds only, never in the Play bundle.
+    if (errorReportingEnabled) {
+        implementation(libs.sentry.android)
+    }
 
     // Shizuku silent installs (SNA-88): GitHub APK builds only, never in the Play bundle.
     if (selfUpdateEnabled) {

@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -189,6 +190,40 @@ internal fun GravatarToggleRow(checked: Boolean, enabled: Boolean, onChange: (Bo
                 ),
         headlineContent = { Text(stringResource(R.string.account_gravatar_toggle)) },
         supportingContent = { Text(stringResource(R.string.account_gravatar_toggle_help)) },
+        trailingContent = { Switch(checked = checked, enabled = enabled, onCheckedChange = null) },
+    )
+}
+
+/**
+ * "Send error reports": the whole row toggles. Shown only when the server offers error reporting in
+ * a build that includes it; the supporting line says what is (not) sent.
+ */
+@Composable
+internal fun ErrorReportingToggleRow(
+    checked: Boolean,
+    enabled: Boolean,
+    saveFailed: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("error-reporting-toggle")
+                .toggleable(
+                    value = checked,
+                    enabled = enabled,
+                    role = Role.Switch,
+                    onValueChange = onChange,
+                ),
+        headlineContent = { Text(stringResource(R.string.account_error_reports_toggle)) },
+        supportingContent = {
+            Text(
+                stringResource(
+                    if (saveFailed) R.string.account_error_reports_save_failed
+                    else R.string.account_error_reports_toggle_help
+                )
+            )
+        },
         trailingContent = { Switch(checked = checked, enabled = enabled, onCheckedChange = null) },
     )
 }

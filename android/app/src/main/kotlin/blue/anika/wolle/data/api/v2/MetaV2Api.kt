@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.api.v2
 
+import blue.anika.wolle.data.errorreporting.ErrorReportingDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
@@ -21,6 +22,8 @@ data class MetaV2Dto(
     val user: MetaV2UserDto? = null,
     /** Id of the calling PAT; only sent to bearer callers by servers with bearer account access. */
     @SerialName("current_token_id") val currentTokenId: Long? = null,
+    /** Optional, operator-configured error reporting; absent on servers that predate it. */
+    @SerialName("error_reporting") val errorReporting: ErrorReportingDto? = null,
 )
 
 @Serializable

@@ -48,6 +48,8 @@ okhttp = "5.5.1"
 retrofit = "3.0.0"
 retrofit-kotlinx-serialization-converter = "1.0.0"
 shizuku = "13.1.5"
+# Optional error reporting (GitHub APK builds only; see app/build.gradle.kts errorReporting).
+sentry = "8.62.0"
 timber = "5.0.1"
 zxing-core = "3.5.4"
 
@@ -113,6 +115,7 @@ retrofit-kotlinx-serialization-converter = { group = "com.jakewharton.retrofit",
 hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenapibypass" }
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
+sentry-android = { group = "io.sentry", name = "sentry-android", version.ref = "sentry" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-core" }
 

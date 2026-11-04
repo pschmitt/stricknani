@@ -23,6 +23,7 @@ import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
+import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.repository.ApiProjectImporter
 import blue.anika.wolle.data.repository.ProjectImporter
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -206,6 +207,11 @@ object NetworkModule {
     @Singleton
     fun provideAccountV2Api(retrofit: Retrofit): AccountV2Api =
         retrofit.create(AccountV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideErrorReportingApi(retrofit: Retrofit): ErrorReportingApi =
+        retrofit.create(ErrorReportingApi::class.java)
 
     @Provides
     @Singleton

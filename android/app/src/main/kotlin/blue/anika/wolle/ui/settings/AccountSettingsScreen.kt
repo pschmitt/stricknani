@@ -87,6 +87,10 @@ internal fun AccountSettingsScreen(
     val activity = LocalActivity.current
     val securityModel: AccountSecurityViewModel = hiltViewModel()
     val security by securityModel.state.collectAsStateWithLifecycle()
+    val errorReportingModel: ErrorReportingViewModel = hiltViewModel()
+    val errorReporting by errorReportingModel.state.collectAsStateWithLifecycle()
+    val errorReportingBusy by errorReportingModel.busy.collectAsStateWithLifecycle()
+    val errorReportingFailed by errorReportingModel.saveFailed.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -204,6 +208,15 @@ internal fun AccountSettingsScreen(
                             selected = textStep,
                             label = { it.textSizeLabel() },
                             onSelect = viewModel::setReadingTextStep,
+                        )
+                    }
+                    if (errorReporting.visible) {
+                        HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                        ErrorReportingToggleRow(
+                            checked = errorReporting.enabled,
+                            enabled = !errorReportingBusy,
+                            saveFailed = errorReportingFailed,
+                            onChange = errorReportingModel::set,
                         )
                     }
                 }
