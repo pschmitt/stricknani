@@ -4,14 +4,19 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -24,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -31,7 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
-import blue.anika.wolle.ui.common.Mascot
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.stitchedBorder
 
 /** The public home of Stricknani, where the install docs live. */
@@ -64,7 +70,20 @@ fun SelfHostCard(modifier: Modifier = Modifier) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Mascot(size = 44.dp)
+                // An icon chip, not the mascot: the sign-in header already shows it.
+                Box(
+                    Modifier.size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        PhosphorIcons.HouseLine,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
                 Text(
                     text = stringResource(R.string.selfhost_card_title),
                     style = MaterialTheme.typography.titleSmall,

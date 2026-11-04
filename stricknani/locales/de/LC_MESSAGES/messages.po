@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-04 09:59+0100\n"
+"POT-Creation-Date: 2026-11-04 10:00+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -1437,9 +1437,8 @@ msgid "Continue unlinking"
 msgstr "Trennen fortsetzen"
 
 #: web/src/lib/components/SelfHostCard.svelte:61
-#, fuzzy
 msgid "Copied."
-msgstr "Link kopiert."
+msgstr "Kopiert."
 
 #: web/src/routes/about/+page.svelte:278
 msgid "Copied. Paste it into your bug report."
@@ -1450,13 +1449,12 @@ msgid "Copy"
 msgstr "Kopieren"
 
 #: web/src/lib/components/SelfHostCard.svelte:61
-#, fuzzy
 msgid "Copy failed. Select the text instead."
-msgstr "Das Kopieren wurde blockiert. Markiere und kopiere das Token manuell."
+msgstr "Kopieren fehlgeschlagen. Markiere den Text stattdessen."
 
 #: web/src/lib/components/SelfHostCard.svelte:58
 msgid "Copy prompt"
-msgstr ""
+msgstr "Prompt kopieren"
 
 #: web/src/lib/features/media/OcrControl.svelte:227
 msgid "Copy recognized text"
@@ -2889,6 +2887,8 @@ msgstr "Füge Text für die Vorschau ein."
 #: web/src/lib/components/SelfHostCard.svelte:49
 msgid "Paste this into Claude Code, Codex or opencode. The prompt is in English."
 msgstr ""
+"Füge das in Claude Code, Codex oder opencode ein. Der Prompt ist auf "
+"Englisch."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1346
 msgid "Pattern"
@@ -3251,6 +3251,8 @@ msgid ""
 "Registrations are closed here, but you can set up your own private "
 "Stricknani!"
 msgstr ""
+"Hier sind Registrierungen geschlossen, aber du kannst dein eigenes "
+"privates Stricknani aufsetzen!"
 
 #: web/src/lib/components/PwaUpdate.svelte:121
 msgid "Reload"
@@ -3565,7 +3567,7 @@ msgstr "Service Worker"
 
 #: web/src/lib/components/SelfHostCard.svelte:47
 msgid "Set it up with an AI coding agent"
-msgstr ""
+msgstr "Mit einem KI-Coding-Agenten einrichten"
 
 #: web/src/lib/components/ShareMenuItem.svelte:46
 msgid "Share"
@@ -3861,9 +3863,8 @@ msgstr ""
 "Zusicherung für jede Bereitstellung."
 
 #: web/src/lib/components/SelfHostCard.svelte:44
-#, fuzzy
 msgid "Stricknani on GitHub"
-msgstr "Auf GitHub unterstützen"
+msgstr "Stricknani auf GitHub"
 
 #: web/src/routes/privacy/+page.svelte:209
 msgid ""
@@ -4035,11 +4036,12 @@ msgid "The Gravatar setting could not be saved."
 msgstr "Die Gravatar-Einstellung konnte nicht gespeichert werden."
 
 #: web/src/lib/features/auth/SignupForm.svelte:69
-#, fuzzy
 msgid ""
 "The account could not be created. If you already have one, sign in "
 "instead."
-msgstr "Das Konto konnte nicht erstellt werden. Bitte versuche es erneut."
+msgstr ""
+"Das Konto konnte nicht erstellt werden. Falls du schon eins hast, melde "
+"dich stattdessen an."
 
 #: web/src/lib/features/auth/SignupForm.svelte:67
 #: web/src/lib/features/auth/SignupForm.svelte:79

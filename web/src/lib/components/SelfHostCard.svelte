@@ -1,6 +1,6 @@
 <script lang="ts">
   import Button from "#lib/components/Button.svelte";
-  import Mascot from "#lib/components/Mascot.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { REPOSITORY_URL, SETUP_PROMPT } from "#lib/setup-prompt.ts";
 
@@ -29,7 +29,9 @@
 
 <aside class="selfhost" aria-labelledby="selfhost-title">
   <p class="selfhost__lead" id="selfhost-title">
-    <span class="selfhost__yarn" aria-hidden="true"><Mascot size={40} /></span>
+    <span class="selfhost__yarn" aria-hidden="true"
+      ><NavIcon name="home" /></span
+    >
     <span>
       {t(
         "Registrations are closed here, but you can set up your own private Stricknani!",
@@ -87,9 +89,21 @@
     line-height: 1.35;
   }
 
+  /* An icon chip, not the mascot: the sign-in header already shows it. */
   .selfhost__yarn {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
     flex: none;
-    line-height: 0;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--tone-yarns);
+    background: color-mix(in srgb, var(--tone-yarns) 16%, transparent);
+  }
+
+  .selfhost__yarn :global(svg) {
+    width: 1.3rem;
+    height: 1.3rem;
   }
 
   .selfhost__link {
