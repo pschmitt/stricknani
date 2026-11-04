@@ -31,6 +31,13 @@ data class ProjectImportResponseDto(
     @SerialName("other_materials") val otherMaterials: String? = null,
     val tags: List<String> = emptyList(),
     val link: String? = null,
+    val designer: String? = null,
+    val sizes: String? = null,
+    val difficulty: String? = null,
+    /** Field paths the model supplied (`provenance` entries with source `ai`). */
+    @SerialName("ai_fields") val aiFields: List<String> = emptyList(),
+    /** Short machine codes such as `looks_like_yarn_page`. */
+    val warnings: List<String> = emptyList(),
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
     @SerialName("ai_fallback") val aiFallback: Boolean = false,
     @SerialName("image_urls") val imageUrls: List<String> = emptyList(),

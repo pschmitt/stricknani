@@ -22,6 +22,8 @@ struct MetaData {
     is_admin: bool,
     /// Whether public self-service registration is enabled on this instance.
     registration_enabled: bool,
+    /// What link imports can do on this instance, so clients can hide or enable the entry points.
+    imports: MetaImports,
     user: Option<MetaUser>,
     /// Id of the bearer PAT making this request; absent for browser sessions
     /// and anonymous callers. Never the token value or hash.
@@ -29,6 +31,14 @@ struct MetaData {
     current_token_id: Option<i64>,
     auth: AuthDiscovery,
     error_reporting: super::telemetry::ErrorReportingInfo,
+}
+
+#[derive(Serialize)]
+struct MetaImports {
+    /// Importing a project or yarn from a web link is enabled.
+    url: bool,
+    /// An AI provider is configured for gap filling.
+    ai: bool,
 }
 
 #[derive(Serialize)]
@@ -119,6 +129,14 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
             build_id: state.app.build_id,
             is_admin,
             registration_enabled: state.app.signup_enabled,
+            imports: MetaImports {
+                url: state.app.external_imports && state.imports.is_some(),
+                ai: state.ai_enabled
+                    && state
+                        .imports
+                        .as_ref()
+                        .is_some_and(|imports| imports.ai.is_some()),
+            },
             user,
             current_token_id,
             auth: AuthDiscovery {

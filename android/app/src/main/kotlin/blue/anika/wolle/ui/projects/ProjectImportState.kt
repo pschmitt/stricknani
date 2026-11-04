@@ -33,6 +33,11 @@ enum class ProjectImportFailure {
     InvalidUrl,
     Offline,
     RateLimited,
+    /** The site refused the server's request (bot protection, login wall). */
+    Blocked,
+    NotFound,
+    /** Link import is off on this server. */
+    Disabled,
     Server,
     Unknown,
 }
@@ -78,14 +83,17 @@ class ProjectImportController(
         start(failed.url)
     }
 
-    fun confirm() {
+    /** Saves the preview; [selectedImages] replaces the pictures to attach when not null. */
+    fun confirm(selectedImages: List<String>? = null) {
         val confirmation = _state.value as? ProjectImportState.AwaitingConfirmation ?: return
+        val preview =
+            selectedImages?.let { confirmation.preview.withImages(it) } ?: confirmation.preview
         activeJob?.cancel()
         _state.value = ProjectImportState.Saving
         activeJob = scope.launch {
             try {
-                val projectId = save(confirmation.preview)
-                _state.value = ProjectImportState.Completed(projectId, confirmation.preview)
+                val projectId = save(preview)
+                _state.value = ProjectImportState.Completed(projectId, preview)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (failure: Throwable) {
@@ -145,6 +153,9 @@ class ProjectImportController(
             return when {
                 failure.code() == 422 && (code == "validation_error" || code == "unsafe_url") ->
                     ProjectImportFailure.InvalidUrl
+                code == "import_blocked" -> ProjectImportFailure.Blocked
+                code == "import_not_found" -> ProjectImportFailure.NotFound
+                code == "feature_disabled" -> ProjectImportFailure.Disabled
                 else -> ProjectImportFailure.Server
             }
         }

@@ -1,19 +1,25 @@
 package blue.anika.wolle.ui.yarns
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
+import blue.anika.wolle.data.repository.YarnImporter
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
+import blue.anika.wolle.ui.projects.yarnImportNotes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +42,9 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
     private val settingsRepository: SettingsRepository,
+    private val yarnImporter: YarnImporter,
+    private val syncScheduler: SyncScheduler,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -81,9 +90,39 @@ constructor(
                 emptyList(),
             )
 
+    private val importController =
+        YarnImportController(scope = viewModelScope, importer = yarnImporter) { preview ->
+            val request =
+                preview.request.copy(
+                    notes =
+                        listOfNotNull(
+                                preview.request.notes?.takeIf { it.isNotBlank() },
+                                yarnImportNotes(context, preview.notes),
+                            )
+                            .joinToString("\n")
+                            .ifBlank { null }
+                )
+            val yarnId = yarnRepository.createYarn(request)
+            syncScheduler.replayThenSyncNow()
+            mutationFeedback.show(R.string.mutation_yarn_imported_queued, preview.request.name)
+            yarnId
+        }
+
+    val importState: StateFlow<YarnImportState> = importController.state
+
     init {
         refresh(trigger = RefreshTrigger.Automatic)
     }
+
+    fun startImport(url: String) = importController.start(url)
+
+    fun retryImport() = importController.retry()
+
+    fun confirmImport(selectedImages: List<String>) = importController.confirm(selectedImages)
+
+    fun cancelImport() = importController.cancel()
+
+    fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
 
     fun previewUrl(entity: YarnEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
 

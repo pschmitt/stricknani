@@ -1,0 +1,6 @@
+{"yarn":{"id":1234,"name":"220 Superwash","permalink":"cascade-220-superwash","yarn_company_name":"Cascade Yarns",
+ "yarn_weight":{"name":"Worsted"},"grams":100,"yardage":220,"machine_washable":true,
+ "yarn_fibers":[{"percentage":100,"fiber_type":{"name":"Superwash Wool"}}],
+ "min_needle_size":{"metric":4.5},"max_needle_size":{"metric":5.0},
+ "notes_html":"<p>A classic worsted weight.</p>",
+ "photos":[{"sort_order":1,"medium_url":"https://images4-g.ravelrycache.com/yarn.jpg"}]}}

@@ -15,7 +15,7 @@ explicitly requested by the user.
 - Pin all approved DNS answers into the Reqwest client for that hop. Literal IPs are validated
   and used directly.
 - Follow at most five redirects manually, validating and resolving each target before connecting.
-- Bound each complete fetch to ten seconds and each response body to five MiB. Body streaming
+- Bound each complete fetch to fifteen seconds and each response body to five MiB. Body streaming
   checks the limit even when `Content-Length` is absent or incorrect.
 - The transport explicitly disables proxies and automatic redirects, sends no cookies or auth,
   disables automatic referrers, and requests identity encoding. Reqwest is configured without
@@ -32,10 +32,9 @@ library requirement. The existing Rust URL parser handles URL syntax.
 `FetchResult` retains the bounded body and content type for downstream image or PDF parsers.
 For HTML and plain text it also returns decoded text; HTML is sanitized with the existing
 Ammonia dependency before basic visible-text extraction, and a small title scan supplies the
-`<title>` value. This is intentionally not a replacement for the Python app's richer site
-parsers. Sites that require browser TLS fingerprint impersonation may reject standard Reqwest;
-the fetch layer reports a redacted transport/status failure instead of weakening its security
-policy.
+`<title>` value. The richer extraction lives in `url_import` (see below). Sites that require browser TLS
+fingerprint impersonation reject standard Reqwest; the fetch layer reports a redacted
+transport/status failure instead of weakening its security policy.
 
 ## Testing
 
@@ -106,7 +105,7 @@ Image-import resource bounds are at most 10 successful images per gallery/step t
 attempts total, five MiB per response, 25 MiB raw bodies retained across the request, and an
 eight-second batch deadline. Each fetch and image decode must finish within that shared deadline;
 processing stops as soon as it expires. The shared fetcher additionally caps each individual URL
-fetch at ten seconds and five MiB, and follows at most five redirects. The shorter batch deadline
+fetch at fifteen seconds and five MiB, and follows at most five redirects. The shorter batch deadline
 keeps create requests within the Android API client's ten-second timeout; imports remain best-effort
 and may skip candidates that do not finish in time. `AppState.external_imports` defaults to false. When
 disabled, a create request carrying image URLs keeps the existing 501 response and performs no
@@ -120,3 +119,57 @@ CSRF, text and AI previews, file parsing, AI provenance through creation, and bo
 byte deduplication, and media persistence with injected transports. `rust/tests/document_worker.rs`
 and `rust/tests/import_document.rs` exercise the isolated parser boundary and local formats. OCR
 is a separate authorized-media utility at `/utils/ocr`; it is not automatically run during import.
+
+## URL import pipeline
+
+`import_service::import_url` is the one entry point for importing a project or a yarn from a link
+(`POST /api/v2/imports/preview` with `type: "url"` and `target: "project" | "yarn"`).
+
+1. **Fetch.** A bare host gets `https://`, a fragment is dropped, then the safe fetcher runs with
+   the checks above, a desktop-browser User-Agent, `Accept`, `Accept-Language` (German first) and
+   `Sec-Fetch-*` headers, and a 15 second limit. Bytes are decoded with the declared or sniffed
+   charset (ISO-8859-1 and Windows-1252 shops included).
+2. **Extract** (inside the isolated document worker, `url_import::extract`). Facts come from
+   JSON-LD (including `@graph`, with raw newlines repaired), microdata, OpenGraph and `<meta>`
+   tags. Product, ProductGroup, HowTo, Recipe, Article and CreativeWork nodes become a yarn
+   draft (`draft.yarn`: name, brand, colorway, fiber, weight category, grams and meters per skein,
+   needles, gauge, care, price, link, photos) and a project draft (name, designer, category,
+   needles, stitch sample, sizes, difficulty, materials, yarn, steps, tags, photos). Gaps are
+   filled from the page text: `label: value` lines, table and definition rows, `SIZES:` style
+   header-and-body sections (DROPS), and German and English patterns for fiber percentages,
+   `125 m / 50 g`, needle ranges and gauge. A per-field `provenance` map records `structured`,
+   `site`, `text` or `ai`. The page kind (`yarn`, `pattern`, `unknown`) is scored from markup, URL
+   path, title and text.
+3. **Pictures.** `og:image`, schema images and `<img>` candidates (largest `srcset`, lazy-loading
+   attributes) are scored; logos, icons, payment badges, tracking pixels and tiny images are
+   dropped and size variants (`-300x300`, `_600x`) are merged. `GET /api/v2/imports/image` serves
+   a same-origin thumbnail through the safe fetcher so the clients can show the candidates without
+   contacting the site; picked URLs are fetched again on create (`image_urls`, now also for yarns).
+4. **Site data.** DROPS pages get their designer and clean title. Ravelry library pages are
+   enriched from the API when credentials are configured (see `rust-ai.md`).
+5. **AI** (optional) fills gaps with the validation described in `rust-ai.md`.
+6. **Warnings** tell the UI what to say: `no_structured_data`, `little_page_text`,
+   `looks_like_yarn_page`, `looks_like_pattern_page`, `not_a_yarn_page`, `ravelry_api_failed`.
+
+Fetch failures map to `import_blocked` (HTTP 401, 403, 429, 503 from the site),
+`import_not_found` (404, 410) and `import_fetch_failed`.
+
+### Known limits
+
+- No TLS fingerprint impersonation: no maintained Rust option exists that builds in the Nix
+  sandbox without a BoringSSL toolchain, so sites that block by TLS fingerprint answer 403 or
+  468 (seen: Shopify shops behind Cloudflare bot protection, an Imperva-protected shop,
+  yarnspirations.com). Pasting the page text covers those.
+- Pages that render their content with JavaScript yield little text (`little_page_text`).
+- Pattern instructions are only imported when the page marks them up as `HowTo`/`Recipe` steps;
+  long free-form instructions (DROPS) are not split into steps.
+- The Ravelry API mapping follows the public field names; gauge is only taken from the API when
+  `gauge_description` is set, otherwise from the page text.
+
+### Tests
+
+`rust/tests/url_import.rs` runs golden fixtures from `rust/tests/fixtures/url_import/`: an English
+JSON-LD shop, a German ISO-8859-1 microdata shop, a ProductGroup with `PropertyValue` specs, two
+DROPS layouts, a blog `HowTo`, and Ravelry pattern and yarn pages with their API JSON. They also
+cover AI merging against a scripted transport and a plain-HTTP OpenAI-compatible server. No test
+touches the network; `cargo run --example import_probe -- URL...` is the manual live probe.

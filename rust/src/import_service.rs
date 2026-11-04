@@ -21,8 +21,11 @@ use crate::{
     auth,
     db::AppState,
     document_worker::{DocumentRequest, WorkerError, parse_isolated},
-    import_document::{ImportDocumentDraft, ProjectImportDraft, YarnImportDraft},
+    import_document::{
+        DocumentKind, ImportDocumentDraft, PageKind, ProjectImportDraft, YarnImportDraft,
+    },
     imports::{self, FetchError},
+    url_import::{ImportTarget, ravelry},
     web,
 };
 
@@ -278,11 +281,29 @@ pub(crate) async fn parse_url_with_source(
     worker_path: &std::path::Path,
     input: &str,
 ) -> Result<(ImportDocumentDraft, String), ImportFailure> {
-    let fetched = imports::fetch_url(input)
+    import_url(worker_path, input, ImportTarget::Project).await
+}
+
+/// Fetch a page and turn it into a draft: safe fetch, structured extraction in the isolated
+/// worker, then Ravelry enrichment when the page is a Ravelry library entry and a key pair is
+/// configured. The second value is the page text for optional AI normalisation.
+pub(crate) async fn import_url(
+    worker_path: &std::path::Path,
+    input: &str,
+    target: ImportTarget,
+) -> Result<(ImportDocumentDraft, String), ImportFailure> {
+    let url = imports::normalize_input_url(input);
+    let fetched = imports::fetch_url(&url)
         .await
         .map_err(ImportFailure::Fetch)?;
-    let source_text = fetched.text.clone().unwrap_or_default();
-    let draft = parse_isolated(
+    let ravelry = ravelry::client_from_environment()
+        .and_then(|client| ravelry::detect(&fetched.final_url).map(|kind| (client, kind)));
+    let ravelry_id = ravelry.and_then(|(_, kind)| {
+        let html =
+            crate::url_import::charset::decode_html(&fetched.body, fetched.content_type.as_deref());
+        ravelry::id_from_html(&html, kind)
+    });
+    let mut draft = parse_isolated(
         worker_path,
         DocumentRequest {
             bytes: fetched.body,
@@ -295,7 +316,92 @@ pub(crate) async fn parse_url_with_source(
     )
     .await
     .map_err(ImportFailure::Worker)?;
+    let mut source_text = take_source_text(&mut draft);
+    if draft.kind == DocumentKind::Html {
+        if let (Some((client, kind)), Some(id)) = (ravelry, ravelry_id) {
+            match client.fetch(kind, id).await {
+                Ok(json) => match kind {
+                    ravelry::RavelryKind::Pattern => ravelry::apply_pattern(&mut draft, &json),
+                    ravelry::RavelryKind::Yarn => ravelry::apply_yarn(&mut draft, &json),
+                },
+                Err(_) => draft.warnings.push("ravelry_api_failed".to_owned()),
+            }
+        }
+    } else {
+        crate::url_import::extract::enrich_from_text(&mut draft, &source_text);
+    }
+    shape_for_target(&mut draft, target);
+    if source_text.is_empty() {
+        source_text = draft.project.description.clone().unwrap_or_default();
+    }
     Ok((draft, source_text))
+}
+
+/// Remove the internal text extras so they never reach a client; return the text for AI use.
+fn take_source_text(draft: &mut ImportDocumentDraft) -> String {
+    let page_text = match draft.project.extras.remove("page_text") {
+        Some(serde_json::Value::String(value)) => value,
+        _ => String::new(),
+    };
+    draft.project.extras.remove("structured_data");
+    if !page_text.is_empty() {
+        return page_text;
+    }
+    // Text and PDF documents keep their full text as a visible extra on purpose.
+    match draft.project.extras.get("full_text") {
+        Some(serde_json::Value::String(value)) => value.clone(),
+        _ => String::new(),
+    }
+}
+
+/// Reconcile the draft with what the user asked for and add warnings the UI can explain.
+fn shape_for_target(draft: &mut ImportDocumentDraft, target: ImportTarget) {
+    match target {
+        ImportTarget::Yarn => {
+            let yarn = draft.yarn.get_or_insert_with(Default::default);
+            if draft.page_kind == PageKind::Pattern
+                && yarn.length_meters.is_none()
+                && yarn.fiber_content.is_none()
+                && let Some(first) = draft.project.yarns.first()
+            {
+                yarn.name = first.name.clone().or_else(|| yarn.name.take());
+                yarn.brand = first.brand.clone().or_else(|| yarn.brand.take());
+                yarn.colorway = first.colorway.clone();
+                yarn.weight_category = first.weight_category.clone();
+                yarn.link = first.link.clone().or_else(|| yarn.link.take());
+                draft.warnings.push("not_a_yarn_page".to_owned());
+            } else if draft.page_kind == PageKind::Pattern {
+                draft.warnings.push("looks_like_pattern_page".to_owned());
+            }
+        }
+        ImportTarget::Project => {
+            if draft.page_kind == PageKind::Yarn {
+                draft.warnings.push("looks_like_yarn_page".to_owned());
+            }
+        }
+    }
+}
+
+/// Optional AI pass for URL imports. Returns whether the model contributed.
+pub(crate) async fn normalize_with_ai(
+    ai: Option<&AiClient>,
+    draft: &mut ImportDocumentDraft,
+    requested: bool,
+    source_text: &str,
+    target: ImportTarget,
+) -> bool {
+    let Some(client) = ai.filter(|_| requested) else {
+        return false;
+    };
+    if source_text.trim().is_empty() {
+        return false;
+    }
+    let (system, user) = crate::url_import::ai_merge::build_messages(target, draft, source_text);
+    let Ok(answer) = client.complete_json(&system, &user).await else {
+        return false;
+    };
+    let changed = crate::url_import::ai_merge::apply(draft, &answer, source_text, target);
+    changed > 0
 }
 
 pub(crate) async fn enhance_draft(
@@ -329,7 +435,7 @@ pub(crate) async fn parse_bytes(
     filename: Option<String>,
     source_url: Option<String>,
 ) -> Result<ImportDocumentDraft, WorkerError> {
-    parse_isolated(
+    let mut draft = parse_isolated(
         worker_path,
         DocumentRequest {
             bytes,
@@ -340,7 +446,9 @@ pub(crate) async fn parse_bytes(
             fetched_text: None,
         },
     )
-    .await
+    .await?;
+    take_source_text(&mut draft);
+    Ok(draft)
 }
 
 #[derive(Template)]

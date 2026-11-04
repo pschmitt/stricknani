@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { ImportPreview } from "./import-api";
 import {
   createProjectWrite,
+  createYarnImportWrite,
   createYarnWrite,
+  fieldHint,
   importProjectEditor,
+  importWarningMessage,
   isHttpUrl,
   parseMeasurement,
+  yarnImportEditor,
 } from "./import-draft";
 
 const preview: ImportPreview = {
@@ -18,7 +22,15 @@ const preview: ImportPreview = {
     sha256: "a".repeat(64),
     sourceUrl: null,
     image: null,
+    yarn: null,
+    pageKind: "pattern",
+    provenance: {},
+    warnings: [],
     project: {
+      designer: null,
+      difficulty: null,
+      sizes: null,
+      tags: [],
       name: "Winter shawl",
       description: "A simple shawl.",
       category: "Accessories",
@@ -114,5 +126,73 @@ describe("import review mapping", () => {
     expect(isHttpUrl("https://example.test/pattern")).toBe(true);
     expect(isHttpUrl("javascript:alert(1)")).toBe(false);
     expect(isHttpUrl("https://user:pass@example.test")).toBe(false);
+  });
+});
+
+describe("yarn import review mapping", () => {
+  const yarnPreview: ImportPreview = {
+    ...preview,
+    is_ai_enhanced: true,
+    draft: {
+      ...preview.draft,
+      kind: "html",
+      sourceUrl: "https://shop.example.test/air",
+      pageKind: "yarn",
+      provenance: { "yarn.brand": "structured", "yarn.fiberContent": "ai" },
+      warnings: ["looks_like_pattern_page", "ravelry_api_failed"],
+      yarn: {
+        name: "DROPS Air",
+        brand: "DROPS Design",
+        colorway: "Natur",
+        description: "Airy alpaca blend.",
+        fiberContent: "65% Alpaca, 28% Polyamide, 7% Wool",
+        weightCategory: "Aran",
+        weightGrams: 50,
+        lengthMeters: 150,
+        recommendedNeedles: "5 mm",
+        gauge: "17 sts = 10 cm",
+        care: "Hand wash",
+        price: "4.50 EUR",
+        link: null,
+        imageUrls: ["https://a.example/1.jpg", "https://a.example/2.jpg"],
+      },
+    },
+  };
+
+  it("maps yarn details to an editor and keeps gauge, care and price in notes", () => {
+    const editor = yarnImportEditor(yarnPreview);
+    expect(editor.weightGrams).toBe("50");
+    expect(editor.lengthMeters).toBe("150");
+    expect(editor.link).toBe("https://shop.example.test/air");
+    expect(editor.notes).toContain("Price: 4.50 EUR");
+    expect(editor.images.every((image) => image.selected)).toBe(true);
+  });
+
+  it("sends only selected photos and only when external images are allowed", () => {
+    const editor = yarnImportEditor(yarnPreview);
+    editor.images[1]!.selected = false;
+    const write = createYarnImportWrite(editor, true, true);
+    expect(write.image_urls).toEqual(["https://a.example/1.jpg"]);
+    expect(write).toMatchObject({
+      name: "DROPS Air",
+      weight_grams: 50,
+      recommended_needles: "5 mm",
+      is_ai_enhanced: true,
+    });
+    expect(
+      createYarnImportWrite(editor, true, false).image_urls,
+    ).toBeUndefined();
+  });
+
+  it("flags only guessed and AI values and explains known warnings", () => {
+    const provenance = { a: "ai", b: "text", c: "structured", d: "site" };
+    expect(fieldHint(provenance, "a")).toBe("ai");
+    expect(fieldHint(provenance, "b")).toBe("guessed");
+    expect(fieldHint(provenance, "c")).toBe("");
+    expect(fieldHint(provenance, "missing")).toBe("");
+    expect(importWarningMessage("looks_like_yarn_page", "en")).toContain(
+      "yarn",
+    );
+    expect(importWarningMessage("ravelry_api_failed", "en")).toBeNull();
   });
 });

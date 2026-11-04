@@ -9,17 +9,18 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.InstallPathResolver
 import blue.anika.wolle.data.update.PrivilegedState
+import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.data.update.UpdateInstallController
 import blue.anika.wolle.data.update.UpdateInstallState
 import blue.anika.wolle.data.update.UpdateNotifier
 import blue.anika.wolle.data.update.UpdateScheduler
-import blue.anika.wolle.data.update.inAppUpdateAvailable
 import blue.anika.wolle.data.update.installRunningBuild
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -32,6 +33,7 @@ constructor(
     private val controller: UpdateInstallController,
     private val scheduler: UpdateScheduler,
     private val notifier: UpdateNotifier,
+    private val availableNotifier: UpdateAvailableNotifier,
     private val resolver: InstallPathResolver,
     @ApplicationContext private val context: Context,
     private val preferences: AppPreferencesRepository,
@@ -42,8 +44,12 @@ constructor(
     val autoUpdate: StateFlow<Boolean> =
         preferences.autoUpdate.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    val notifyUpdates: StateFlow<Boolean> =
+        preferences.notifyAppUpdates.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
     fun start(update: AppUpdate) {
         notifier.cancel()
+        availableNotifier.cancel()
         scheduler.startInstall(update)
     }
 
@@ -56,8 +62,24 @@ constructor(
     fun setAutoUpdate(enabled: Boolean) {
         viewModelScope.launch {
             preferences.setAutoUpdate(enabled)
-            scheduler.setAutoCheck(enabled && inAppUpdateAvailable)
+            scheduler.syncChecks(enabled, preferences.notifyAppUpdates.first())
         }
+    }
+
+    fun setNotifyUpdates(enabled: Boolean) {
+        viewModelScope.launch {
+            preferences.setNotifyAppUpdates(enabled)
+            scheduler.syncChecks(preferences.autoUpdate.first(), enabled)
+            if (!enabled) availableNotifier.cancel()
+        }
+    }
+
+    /**
+     * Developer action: posts a sample "update available" notification. It touches neither the
+     * rate-limit state nor the preferences, so it can be pressed as often as needed.
+     */
+    fun postTestUpdateNotification() {
+        availableNotifier.show(TEST_VERSION)
     }
 
     /** Updates install without a confirmation: through Shizuku, or as installer of record. */
@@ -113,4 +135,8 @@ constructor(
     fun detachUi() = controller.detachUi()
 
     fun takeConfirmationIntent(): Intent? = controller.takeConfirmationIntent()
+
+    private companion object {
+        const val TEST_VERSION = "9.9.9 (test)"
+    }
 }

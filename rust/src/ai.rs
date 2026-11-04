@@ -21,8 +21,9 @@ const MAX_TEXT_CHARS: usize = 12_000;
 const MAX_IMAGE_BYTES: usize = 2_000_000;
 const MAX_IMAGES: usize = 3;
 const MAX_RESPONSE_BYTES: usize = 1024 * 1024;
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_DRAFT_BYTES: usize = 128 * 1024;
+const MAX_NORMALIZE_CHARS: usize = 40_000;
 
 /// A supported OpenAI-compatible chat-completions provider.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -30,6 +31,9 @@ pub enum AiProvider {
     OpenAi,
     OpenRouter,
     Groq,
+    /// Any other OpenAI-compatible endpoint, such as a local gateway or an agent server. Needs
+    /// `AI_BASE_URL`; the model defaults to `hermes-agent` unless `AI_MODEL` is set.
+    Custom,
 }
 
 impl AiProvider {
@@ -38,6 +42,7 @@ impl AiProvider {
             "openai" => Ok(Self::OpenAi),
             "openrouter" => Ok(Self::OpenRouter),
             "groq" => Ok(Self::Groq),
+            "custom" | "openai-compatible" | "hermes" => Ok(Self::Custom),
             _ => Err(AiError::InvalidProvider),
         }
     }
@@ -47,6 +52,7 @@ impl AiProvider {
             Self::OpenAi => "https://api.openai.com/v1",
             Self::OpenRouter => "https://openrouter.ai/api/v1",
             Self::Groq => "https://api.groq.com/openai/v1",
+            Self::Custom => "",
         }
     }
 
@@ -55,6 +61,7 @@ impl AiProvider {
             Self::OpenAi => "gpt-4o-mini",
             Self::OpenRouter => "openai/gpt-4o-mini",
             Self::Groq => "llama-3.3-70b-versatile",
+            Self::Custom => "hermes-agent",
         }
     }
 
@@ -63,6 +70,7 @@ impl AiProvider {
             Self::OpenAi => "OPENAI_API_KEY",
             Self::OpenRouter => "OPENROUTER_API_KEY",
             Self::Groq => "GROQ_API_KEY",
+            Self::Custom => "AI_API_KEY",
         }
     }
 }
@@ -93,6 +101,7 @@ pub struct AiConfig {
     endpoint: Url,
     model: String,
     api_key: ApiKey,
+    timeout: Duration,
 }
 
 impl fmt::Debug for AiConfig {
@@ -123,6 +132,14 @@ impl AiConfig {
             .map(|value| value.trim().to_owned())
             .filter(|value| !value.is_empty())
             .or_else(|| {
+                // A secret file path, for example a sops-nix secret.
+                lookup("AI_API_KEY_FILE")
+                    .filter(|path| !path.trim().is_empty())
+                    .and_then(|path| std::fs::read_to_string(path.trim()).ok())
+                    .map(|value| value.trim().to_owned())
+                    .filter(|value| !value.is_empty())
+            })
+            .or_else(|| {
                 lookup(provider.key_variable())
                     .map(|value| value.trim().to_owned())
                     .filter(|value| !value.is_empty())
@@ -144,11 +161,17 @@ impl AiConfig {
 
         let base_url = lookup("AI_BASE_URL").unwrap_or_else(|| provider.default_base_url().into());
         let endpoint = chat_endpoint(&base_url)?;
+        let timeout = lookup("AI_TIMEOUT_SECONDS")
+            .and_then(|value| value.trim().parse::<u64>().ok())
+            .map_or(REQUEST_TIMEOUT, |seconds| {
+                Duration::from_secs(seconds.clamp(5, 300))
+            });
         Ok(Some(Self {
             provider,
             endpoint,
             model,
             api_key: ApiKey::new(api_key),
+            timeout,
         }))
     }
 
@@ -271,13 +294,29 @@ pub struct ReqwestAiTransport {
 
 impl ReqwestAiTransport {
     pub fn new() -> Result<Self, AiError> {
-        let client = Client::builder()
+        Self::with_timeout(REQUEST_TIMEOUT)
+    }
+
+    pub fn with_timeout(timeout: Duration) -> Result<Self, AiError> {
+        Self::build(timeout, false)
+    }
+
+    /// Like [`Self::with_timeout`]; a plain-HTTP (loopback) endpoint never negotiates TLS, so it
+    /// does not require system CA certificates, which the Nix build sandbox lacks.
+    pub fn for_endpoint(endpoint: &Url, timeout: Duration) -> Result<Self, AiError> {
+        Self::build(timeout, endpoint.scheme() == "http")
+    }
+
+    fn build(timeout: Duration, plain_http: bool) -> Result<Self, AiError> {
+        let mut builder = Client::builder()
             .no_proxy()
             .redirect(reqwest::redirect::Policy::none())
-            .timeout(REQUEST_TIMEOUT)
-            .connect_timeout(Duration::from_secs(10))
-            .build()
-            .map_err(|_| AiError::InvalidConfiguration)?;
+            .timeout(timeout)
+            .connect_timeout(Duration::from_secs(10));
+        if plain_http {
+            builder = builder.tls_certs_only(Vec::new());
+        }
+        let client = builder.build().map_err(|_| AiError::InvalidConfiguration)?;
         Ok(Self { client })
     }
 }
@@ -341,10 +380,11 @@ pub struct AiClient {
 
 impl AiClient {
     pub fn new(config: AiConfig) -> Result<Self, AiError> {
-        Ok(Self {
-            config,
-            transport: Arc::new(ReqwestAiTransport::new()?),
-        })
+        let transport = Arc::new(ReqwestAiTransport::for_endpoint(
+            &config.endpoint,
+            config.timeout,
+        )?);
+        Ok(Self { config, transport })
     }
 
     pub fn with_transport(config: AiConfig, transport: Arc<dyn AiTransport>) -> Self {
@@ -399,6 +439,38 @@ impl AiClient {
         let output: AiDraftResponse =
             serde_json::from_str(raw).map_err(|_| AiError::InvalidJson)?;
         Ok(merge_response(input.draft.clone(), output))
+    }
+}
+
+impl AiClient {
+    /// Ask the model for a JSON object answering `system` and `user`. Returns the parsed object.
+    /// Text-only; used by the URL import normaliser.
+    pub async fn complete_json(&self, system: &str, user: &str) -> Result<Value, AiError> {
+        if user.chars().count() > MAX_NORMALIZE_CHARS {
+            return Err(AiError::InputTooLarge);
+        }
+        let body = json!({
+            "model": self.config.model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user}
+            ],
+            "max_tokens": 3000,
+            "temperature": 0.0,
+            "response_format": {"type": "json_object"}
+        });
+        let response = self
+            .transport
+            .post(&self.config.endpoint, &self.config.api_key, &body)
+            .await?;
+        let raw = response
+            .pointer("/choices/0/message/content")
+            .and_then(Value::as_str)
+            .ok_or(AiError::InvalidResponse)?;
+        if raw.len() > MAX_RESPONSE_BYTES {
+            return Err(AiError::ResponseTooLarge);
+        }
+        crate::url_import::ai_merge::parse_answer(raw).ok_or(AiError::InvalidJson)
     }
 }
 

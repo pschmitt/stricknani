@@ -19,6 +19,7 @@ import blue.anika.wolle.sync.isPowerSaveMode
 import blue.anika.wolle.sync.shouldSkipBackgroundWork
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -78,7 +79,12 @@ constructor(
     }
 }
 
-/** Periodic check behind "Update automatically": finds a newer build and queues its install. */
+/**
+ * The one periodic update check, about once a day. It queues the install when "Update
+ * automatically" is on and a silent path exists, and otherwise announces the new version in a
+ * rate-limited notification when "Notify me about app updates" is on. Like every periodic job it
+ * sits out while the battery saver is on.
+ */
 @HiltWorker
 class UpdateCheckWorker
 @AssistedInject
@@ -90,24 +96,71 @@ constructor(
     private val controller: UpdateInstallController,
     private val scheduler: UpdateScheduler,
     private val resolver: InstallPathResolver,
+    private val availableNotifier: UpdateAvailableNotifier,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (!inAppUpdateAvailable || !preferences.autoUpdate.first()) return Result.success()
+        if (!inAppUpdateAvailable) return Result.success()
+        val auto = preferences.autoUpdate.first()
+        val notify = preferences.notifyAppUpdates.first()
+        if (!auto && !notify) return Result.success()
         if (shouldSkipBackgroundWork(true, applicationContext.isPowerSaveMode())) {
             return Result.success()
         }
-        // Without a silent path every update would need a tap; leave those to the user.
-        if (!resolver.silentInstallPossible()) return Result.success()
         if (controller.state.value.isBusy) return Result.success()
-        val update =
-            (checker.checkCurrentBuild(preferences.updateChannel.first())
-                    as? UpdateCheckResult.Available)
-                ?.update ?: return Result.success()
-        if (update.canInstallInApp()) scheduler.enqueueAutomatic(update)
+        val channel = preferences.updateChannel.first()
+        val result = checker.checkCurrentBuild(channel)
+        val update = (result as? UpdateCheckResult.Available)?.update
+        // Without a silent path every update would need a tap; the notification is the way to say
+        // so.
+        if (
+            auto && update != null && update.canInstallInApp() && resolver.silentInstallPossible()
+        ) {
+            scheduler.enqueueAutomatic(update)
+            return Result.success()
+        }
+        if (notify) announce(result, channel)
         return Result.success()
     }
+
+    private suspend fun announce(result: UpdateCheckResult, channel: UpdateChannel) {
+        val offered =
+            when (result) {
+                is UpdateCheckResult.Available -> result.update.version
+                UpdateCheckResult.UpToDate,
+                UpdateCheckResult.AheadOfStable -> null
+                // No answer (offline, rate limited, unknown build): keep what is shown.
+                UpdateCheckResult.NotEligible,
+                UpdateCheckResult.Failed -> return
+            }
+        val now = System.currentTimeMillis()
+        val decision =
+            decideUpdateNotification(
+                offered,
+                channel,
+                preferences.updateNotice.first(),
+                now,
+                ZoneId.systemDefault(),
+            )
+        when (decision) {
+            UpdateNotificationDecision.CANCEL -> {
+                availableNotifier.cancel()
+                preferences.clearUpdateNotice()
+            }
+            UpdateNotificationDecision.NOTIFY ->
+                // Only a notification that was actually shown counts against the limit.
+                if (availableNotifier.show(requireNotNull(offered))) {
+                    preferences.recordUpdateNotice(
+                        UpdateNotice(offered, channel, now, installedBuildId())
+                    )
+                }
+            UpdateNotificationDecision.NOTHING -> Unit
+        }
+    }
 }
+
+/** Identifies the running build, so a notice can be told apart after the app was updated. */
+fun installedBuildId(): String = "${BuildConfig.VERSION_NAME}+${BuildConfig.GIT_REVISION}"
 
 @Singleton
 class UpdateScheduler
@@ -149,13 +202,17 @@ constructor(
         workManager.enqueueUniqueWork(AUTO_WORK_NAME, ExistingWorkPolicy.KEEP, request)
     }
 
-    /** Turns the periodic background check on or off (always off outside in-app builds). */
-    fun setAutoCheck(enabled: Boolean) {
-        if (!enabled || !inAppUpdateAvailable) {
+    /**
+     * Keeps the one periodic check in line with the two settings that need it: it runs when either
+     * "Update automatically" or "Notify me about app updates" is on, never outside in-app builds.
+     */
+    fun syncChecks(autoUpdate: Boolean, notify: Boolean) {
+        if (!inAppUpdateAvailable || !(autoUpdate || notify)) {
             workManager.cancelUniqueWork(CHECK_WORK_NAME)
             workManager.cancelUniqueWork(AUTO_WORK_NAME)
             return
         }
+        if (!autoUpdate) workManager.cancelUniqueWork(AUTO_WORK_NAME)
         val request =
             PeriodicWorkRequestBuilder<UpdateCheckWorker>(CHECK_INTERVAL_HOURS, TimeUnit.HOURS)
                 .setConstraints(
@@ -176,7 +233,7 @@ constructor(
         private const val MANUAL_WORK_NAME = "stricknani_app_update"
         private const val AUTO_WORK_NAME = "stricknani_app_update_auto"
         private const val CHECK_WORK_NAME = "stricknani_app_update_check"
-        private const val CHECK_INTERVAL_HOURS = 12L
+        private const val CHECK_INTERVAL_HOURS = 24L
 
         fun encode(update: AppUpdate, automatic: Boolean): Data {
             val asset = requireNotNull(update.asset)

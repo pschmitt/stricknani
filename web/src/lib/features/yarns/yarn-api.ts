@@ -52,6 +52,8 @@ export interface YarnWrite {
   notes: string | null;
   link: string | null;
   is_ai_enhanced: boolean;
+  /** Pictures fetched by the server and attached when the yarn is created (imports). */
+  image_urls?: string[];
 }
 
 export interface YarnPage {

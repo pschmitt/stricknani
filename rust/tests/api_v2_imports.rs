@@ -440,6 +440,81 @@ async fn url_preview_rejects_private_addresses_before_fetching() {
 }
 
 #[tokio::test]
+async fn yarn_target_is_accepted_and_still_blocks_private_addresses() {
+    let fixture = fixture(true).await;
+    let (session, csrf) = signed_in(&fixture.app).await;
+    let response = fixture
+        .app
+        .oneshot(preview_request(
+            &session,
+            &csrf,
+            ORIGIN,
+            serde_json::json!({"type":"url", "url":"http://10.0.0.5/yarn", "target":"yarn", "use_ai": true}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(json(response).await["error"]["code"], "unsafe_url");
+}
+
+#[tokio::test]
+async fn unknown_import_target_is_a_validation_error() {
+    let fixture = fixture(true).await;
+    let (session, csrf) = signed_in(&fixture.app).await;
+    let response = fixture
+        .app
+        .oneshot(preview_request(
+            &session,
+            &csrf,
+            ORIGIN,
+            serde_json::json!({"type":"url", "url":"https://example.test/", "target":"socks"}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
+async fn thumbnail_proxy_needs_a_session_the_feature_and_a_public_address() {
+    let disabled = fixture(false).await;
+    let (session, _csrf) = signed_in(&disabled.app).await;
+    let get = |url: &str, session: Option<&str>| {
+        let mut builder = Request::get(format!(
+            "/api/v2/imports/image?url={}",
+            url.replace(':', "%3A").replace('/', "%2F")
+        ))
+        .header("host", HOST);
+        if let Some(session) = session {
+            builder = builder.header("cookie", format!("__Host-stricknani_session={session}"));
+        }
+        builder.body(Body::empty()).unwrap()
+    };
+    let anonymous = disabled
+        .app
+        .clone()
+        .oneshot(get("https://example.test/a.jpg", None))
+        .await
+        .unwrap();
+    assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+    let off = disabled
+        .app
+        .clone()
+        .oneshot(get("https://example.test/a.jpg", Some(&session)))
+        .await
+        .unwrap();
+    assert_eq!(off.status(), StatusCode::SERVICE_UNAVAILABLE);
+
+    let enabled = fixture(true).await;
+    let (session, _csrf) = signed_in(&enabled.app).await;
+    let private = enabled
+        .app
+        .oneshot(get("http://127.0.0.1/a.jpg", Some(&session)))
+        .await
+        .unwrap();
+    assert_eq!(private.status(), StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
 async fn file_preview_checks_csrf_before_fields_and_accepts_ai_opt_in_field() {
     let fixture = fixture(false).await;
     let (session, csrf) = signed_in(&fixture.app).await;

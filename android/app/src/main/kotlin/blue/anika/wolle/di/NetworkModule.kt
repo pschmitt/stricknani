@@ -25,7 +25,9 @@ import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.repository.ApiProjectImporter
+import blue.anika.wolle.data.repository.ApiYarnImporter
 import blue.anika.wolle.data.repository.ProjectImporter
+import blue.anika.wolle.data.repository.YarnImporter
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -188,6 +190,11 @@ object NetworkModule {
         v2Api: ImportsV2Api,
         capabilities: ApiCapabilities,
     ): ProjectImporter = ApiProjectImporter(api, v2Api, capabilities)
+
+    @Provides
+    @Singleton
+    fun provideYarnImporter(v2Api: ImportsV2Api, capabilities: ApiCapabilities): YarnImporter =
+        ApiYarnImporter(v2Api, capabilities)
 
     @Provides
     @Singleton

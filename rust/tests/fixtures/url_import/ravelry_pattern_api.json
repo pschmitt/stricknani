@@ -1,0 +1,10 @@
+{"pattern":{"id":211562,"name":"Hitchhiker","notes_html":"<p>A <b>scarf</b> with a sawtooth edge, knit sideways.</p>",
+ "pattern_author":{"name":"Martina Behm"},
+ "gauge":24,"row_gauge":null,"gauge_divisor":4,"gauge_description":"24 stitches and 36 rows = 4 inches in garter stitch",
+ "yarn_weight":{"name":"Fingering","ply":"4"},"yarn_weight_description":"Fingering (14 wpi) ?",
+ "yardage":400,"yardage_max":450,"sizes_available":"One size","difficulty_average":3.4,
+ "pattern_needle_sizes":[{"id":1,"metric":4.0,"us":"6"},{"id":2,"metric":3.5,"us":"4"}],
+ "pattern_categories":[{"name":"Neck / Torso"},{"name":"Scarf"}],
+ "craft":{"name":"Knitting"},
+ "packs":[{"yarn_name":"Zauberball","colorway":"Sommerfrische","yarn":{"name":"Zauberball","yarn_company_name":"Schoppel-Wolle","permalink":"schoppel-wolle-zauberball","yarn_weight":{"name":"Fingering"}}}],
+ "photos":[{"sort_order":2,"medium_url":"https://images4-g.ravelrycache.com/b.jpg"},{"sort_order":1,"medium2_url":"https://images4-g.ravelrycache.com/a.jpg"}]}}

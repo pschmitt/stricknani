@@ -1446,6 +1446,101 @@ pub(crate) async fn persist_imported_project_image(
     Ok(())
 }
 
+/// Persist an imported image as a yarn photo, after the yarn was created.
+pub(crate) async fn persist_imported_yarn_photo(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    yarn_label: &str,
+    original_filename: &str,
+    prepared: &PreparedImage,
+) -> Result<(), ProjectImageStoreError> {
+    let root = media_root(state).map_err(|_| ProjectImageStoreError::Database)?;
+    let files = save_image_files(&root, "yarns", yarn_id, prepared)
+        .await
+        .map_err(|_| ProjectImageStoreError::Database)?;
+    let mut tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+            return Err(ProjectImageStoreError::Database);
+        }
+    };
+    let result = async {
+        let owner = sqlx::query_scalar::<_, i64>("SELECT owner_id FROM yarns WHERE id = ?")
+            .bind(yarn_id)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|_| ProjectImageStoreError::Database)?;
+        if owner != Some(user_id) {
+            return Err(ProjectImageStoreError::NotFound);
+        }
+        bump_yarn_timestamp(&mut tx, user_id, yarn_id)
+            .await
+            .map_err(|_| ProjectImageStoreError::Database)?;
+        let has_primary = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM media_files WHERE yarn_id = ? AND kind = 'photo' \
+             AND is_primary = 1)",
+        )
+        .bind(yarn_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|_| ProjectImageStoreError::Database)?;
+        let is_primary = !has_primary;
+        let position = if is_primary {
+            shift_yarn_photo_positions(&mut tx, yarn_id)
+                .await
+                .map_err(|_| ProjectImageStoreError::Database)?;
+            0
+        } else {
+            next_yarn_position(&mut tx, yarn_id)
+                .await
+                .map_err(|_| ProjectImageStoreError::Database)?
+        };
+        let public_id = media_ids::allocate(&mut tx, Namespace::Photo)
+            .await
+            .map_err(|_| ProjectImageStoreError::Database)?;
+        sqlx::query(
+            "INSERT INTO media_files \
+             (owner_id, yarn_id, kind, public_id, filename, original_filename, content_type, \
+              size_bytes, width, height, alt_text, is_primary, position, created_at) \
+             VALUES (?, ?, 'photo', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(user_id)
+        .bind(yarn_id)
+        .bind(public_id)
+        .bind(&files.filename)
+        .bind(original_filename)
+        .bind(prepared.content_type)
+        .bind(prepared.bytes.len() as i64)
+        .bind(prepared.width as i64)
+        .bind(prepared.height as i64)
+        .bind(yarn_label)
+        .bind(is_primary)
+        .bind(position)
+        .bind(Utc::now().to_rfc3339_opts(SecondsFormat::Micros, true))
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| ProjectImageStoreError::Database)?;
+        Ok(())
+    }
+    .await;
+    match result {
+        Ok(()) => {
+            if tx.commit().await.is_err() {
+                cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+                return Err(ProjectImageStoreError::Database);
+            }
+            Ok(())
+        }
+        Err(error) => {
+            let _ = tx.rollback().await;
+            cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
+            Err(error)
+        }
+    }
+}
+
 async fn upload_attachment(
     State(state): State<AppState>,
     headers: HeaderMap,

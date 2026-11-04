@@ -185,6 +185,7 @@ internal fun AboutSettingsScreen(
     val installViewModel: UpdateInstallViewModel = hiltViewModel()
     val installState by installViewModel.state.collectAsStateWithLifecycle()
     val autoUpdate by installViewModel.autoUpdate.collectAsStateWithLifecycle()
+    val notifyUpdates by installViewModel.notifyUpdates.collectAsStateWithLifecycle()
     val shizukuState by installViewModel.shizukuState.collectAsStateWithLifecycle()
     val shizukuEnabled by installViewModel.shizukuEnabled.collectAsStateWithLifecycle()
     val silentPossible by installViewModel.silentInstallPossible.collectAsStateWithLifecycle()
@@ -331,6 +332,12 @@ internal fun AboutSettingsScreen(
                             onChange = installViewModel::setAutoUpdate,
                         )
                     }
+                    if (inAppUpdateAvailable) {
+                        NotifyUpdatesRow(
+                            checked = notifyUpdates,
+                            onChange = installViewModel::setNotifyUpdates,
+                        )
+                    }
                     val buildHint = stringResource(R.string.about_settings_build_hint)
                     SettingsListItem(
                         modifier =
@@ -408,6 +415,10 @@ internal fun AboutSettingsScreen(
                                     shizukuState == PrivilegedState.READY
                             ) {
                                 installViewModel::reinstallThisBuild
+                            } else null,
+                        onTestUpdateNotification =
+                            if (BuildConfig.SELF_UPDATE_ENABLED) {
+                                installViewModel::postTestUpdateNotification
                             } else null,
                     )
                 }
@@ -756,6 +767,20 @@ private fun AutoUpdateRow(checked: Boolean, silentPossible: Boolean, onChange: (
     )
 }
 
+/** "Notify me about app updates" (GitHub APK builds): at most one notification a day. */
+@Composable
+private fun NotifyUpdatesRow(checked: Boolean, onChange: (Boolean) -> Unit) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("about-notify-updates-row")
+                .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        headlineContent = { Text(stringResource(R.string.about_notify_updates_title)) },
+        supportingContent = { Text(stringResource(R.string.about_notify_updates_help)) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+    )
+}
+
 /** A link row: icon chip, label and a short description; opens in the browser. */
 @Composable
 private fun AboutLinkRow(
@@ -843,6 +868,7 @@ private fun DeveloperCard(
     onDeveloperModeChange: (Boolean) -> Unit,
     onAddToObtainium: (rolling: Boolean) -> Unit,
     onReinstallViaShizuku: (() -> Unit)?,
+    onTestUpdateNotification: (() -> Unit)?,
 ) {
     val unknown = stringResource(R.string.developer_card_unknown)
     SettingsGroupCard(
@@ -917,6 +943,13 @@ private fun DeveloperCard(
             ) {
                 onAddToObtainium(true)
             }
+        }
+        if (onTestUpdateNotification != null) {
+            ObtainiumRow(
+                stringResource(R.string.developer_test_update_notification),
+                stringResource(R.string.developer_test_update_notification_description),
+                onTestUpdateNotification,
+            )
         }
         if (onReinstallViaShizuku != null) {
             ObtainiumRow(

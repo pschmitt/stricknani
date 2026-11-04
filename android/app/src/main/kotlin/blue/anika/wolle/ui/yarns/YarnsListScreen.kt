@@ -26,7 +26,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -39,6 +42,7 @@ import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -60,6 +64,8 @@ fun YarnsListScreen(
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
+    var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -72,6 +78,18 @@ fun YarnsListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.yarns_list_title)) },
+                actions = {
+                    IconButton(
+                        modifier = Modifier.testTag("yarn-import-open"),
+                        onClick = { showImportDialog = true },
+                    ) {
+                        Icon(
+                            PhosphorIcons.DownloadSimple,
+                            contentDescription =
+                                stringResource(R.string.yarns_list_import_description),
+                        )
+                    }
+                },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
@@ -159,4 +177,17 @@ fun YarnsListScreen(
             }
         }
     }
+
+    YarnImportDialog(
+        visible = showImportDialog,
+        state = importState,
+        onStart = viewModel::startImport,
+        onConfirm = viewModel::confirmImport,
+        onCancel = {
+            showImportDialog = false
+            viewModel.cancelImport()
+        },
+        onRetry = viewModel::retryImport,
+        thumbnailUrl = viewModel::importThumbnailUrl,
+    )
 }
