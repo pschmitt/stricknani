@@ -31,6 +31,9 @@ sealed interface Route {
 
     @Serializable data object Settings : Route
 
+    /** Create (new project/yarn, imports) - opened from the first row of More. */
+    @Serializable data object Create : Route
+
     @Serializable data class ProjectDetail(val projectId: Int) : Route
 
     @Serializable data class YarnDetail(val yarnId: Int) : Route
@@ -133,6 +136,7 @@ enum class TopLevelDestination(
         Icons.Default.MoreHoriz,
         setOf(
             Route.Settings::class,
+            Route.Create::class,
             Route.SettingsCategoryRoute::class,
             Route.Libraries::class,
             Route.AdminAudit::class,

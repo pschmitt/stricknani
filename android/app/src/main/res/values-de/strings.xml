@@ -296,6 +296,18 @@
 
     <!-- Settings root / navigation -->
     <string name="more_title">Mehr</string>
+    <string name="more_create_title">Erstellen</string>
+    <string name="more_create_subtitle">Starte ein Projekt oder ein Garn oder importiere eines.</string>
+    <string name="more_categories_subtitle">Ordne Projekte mit eigenen Kategorien.</string>
+    <string name="more_about_subtitle">Version, Links und Danksagungen.</string>
+    <string name="more_account_title">Kontoeinstellungen</string>
+    <string name="more_settings_header">Einstellungen</string>
+    <string name="create_heading">Was möchtest du hinzufügen?</string>
+    <string name="create_intro">Fang etwas Neues an oder hol dir eine Anleitung, die du schon hast.</string>
+    <string name="create_import_project_title">Projekt importieren</string>
+    <string name="create_import_project_description">Erstelle einen Projektentwurf aus Text, einer Datei oder einem Musterlink.</string>
+    <string name="create_import_yarn_title">Garn importieren</string>
+    <string name="create_import_yarn_description">Ein Garn aus einem Shop- oder Ravelry-Link ausfüllen.</string>
     <string name="more_create_project_subtitle">Plane dein nächstes Strickprojekt.</string>
     <string name="more_create_yarn_subtitle">Notiere ein Garn aus deinem Vorrat.</string>
     <string name="more_gauge_subtitle">Berechne Maschen- und Reihenzahlen aus deiner Maschenprobe.</string>

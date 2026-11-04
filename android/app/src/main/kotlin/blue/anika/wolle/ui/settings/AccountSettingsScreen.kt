@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -385,25 +384,12 @@ internal fun AccountSettingsScreen(
     }
 
     if (showSignOutDialog) {
-        AlertDialog(
-            onDismissRequest = { showSignOutDialog = false },
-            title = { Text(stringResource(R.string.account_settings_sign_out_dialog_title)) },
-            text = { Text(stringResource(R.string.settings_sign_out_description)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSignOutDialog = false
-                        viewModel.signOut()
-                    }
-                ) {
-                    Text(stringResource(R.string.settings_sign_out))
-                }
+        SignOutDialog(
+            onConfirm = {
+                showSignOutDialog = false
+                viewModel.signOut()
             },
-            dismissButton = {
-                TextButton(onClick = { showSignOutDialog = false }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
+            onDismiss = { showSignOutDialog = false },
         )
     }
 }

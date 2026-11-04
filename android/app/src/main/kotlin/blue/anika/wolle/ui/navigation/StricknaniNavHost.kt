@@ -46,6 +46,7 @@ import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.animationsDisabled
+import blue.anika.wolle.ui.create.CreateScreen
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.oidc.SessionExpiredViewModel
@@ -342,9 +343,15 @@ fun StricknaniNavHost(
                         onCategoryClick = { category ->
                             navController.navigate(Route.SettingsCategoryRoute(category.name))
                         },
+                        onCreateClick = { navController.navigate(Route.Create) },
+                        onGaugeClick = { navController.navigate(Route.Gauge) },
+                    )
+                }
+                screen<Route.Create>(motion) {
+                    CreateScreen(
+                        onBack = { navController.navigateUp() },
                         onNewProject = { navController.navigate(Route.ProjectEditor()) },
                         onNewYarn = { navController.navigate(Route.YarnEditor()) },
-                        onGaugeClick = { navController.navigate(Route.Gauge) },
                     )
                 }
                 screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->

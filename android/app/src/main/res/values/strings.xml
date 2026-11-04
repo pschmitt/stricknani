@@ -297,6 +297,18 @@
 
     <!-- Settings root / navigation -->
     <string name="more_title">More</string>
+    <string name="more_create_title">Create</string>
+    <string name="more_create_subtitle">Start a project or a yarn, or import one.</string>
+    <string name="more_categories_subtitle">Organize projects with your own category labels.</string>
+    <string name="more_about_subtitle">Version, links and credits.</string>
+    <string name="more_account_title">Account settings</string>
+    <string name="more_settings_header">Settings</string>
+    <string name="create_heading">What would you like to add?</string>
+    <string name="create_intro">Start something new, or bring in a pattern you already have.</string>
+    <string name="create_import_project_title">Import a project</string>
+    <string name="create_import_project_description">Create a project draft from text, a file, or a pattern link.</string>
+    <string name="create_import_yarn_title">Import a yarn</string>
+    <string name="create_import_yarn_description">Fill in a yarn from a shop or Ravelry link.</string>
     <string name="more_create_project_subtitle">Plan the next thing you want to knit.</string>
     <string name="more_create_yarn_subtitle">Keep a note of a yarn you own.</string>
     <string name="more_gauge_subtitle">Turn swatch measurements into stitch and row counts.</string>
