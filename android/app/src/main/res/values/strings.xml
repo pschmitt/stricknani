@@ -973,8 +973,16 @@
     <string name="update_failure_permission">Allow Stricknani to install apps to update itself.</string>
     <string name="update_failure_install">Android could not install the update.</string>
     <string name="update_failure_cancelled">The installation was cancelled.</string>
-    <string name="update_notification_channel_name">App updates</string>
+    <string name="update_notification_channel_name">Update progress</string>
     <string name="update_notification_channel_description">Progress and results of updating Stricknani</string>
+    <string name="update_available_channel_name">App updates</string>
+    <string name="update_available_channel_description">A note when a new version of Stricknani is available, at most once a day</string>
+    <string name="update_available_notification_title">Stricknani update available</string>
+    <string name="update_available_notification_text">Version %1$s is ready. Tap to update.</string>
+    <string name="about_notify_updates_title">Notify me about app updates</string>
+    <string name="about_notify_updates_help">At most one notification a day when a new version is available.</string>
+    <string name="developer_test_update_notification">Test update notification</string>
+    <string name="developer_test_update_notification_description">Posts a sample update notification. Does not affect the daily limit.</string>
     <string name="update_notification_downloading">Downloading Stricknani update</string>
     <string name="update_notification_installing">Installing Stricknani update</string>
     <string name="update_notification_failed">Stricknani update failed</string>

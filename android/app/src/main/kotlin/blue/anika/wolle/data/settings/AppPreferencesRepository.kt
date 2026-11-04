@@ -6,11 +6,13 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import blue.anika.wolle.data.backup.BackupFrequency
 import blue.anika.wolle.data.errorreporting.ERROR_REPORTING_DEFAULT_ENABLED
 import blue.anika.wolle.data.errorreporting.ErrorReportingDto
 import blue.anika.wolle.data.update.UpdateChannel
+import blue.anika.wolle.data.update.UpdateNotice
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.map
@@ -121,6 +123,43 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_AUTO_UPDATE] = enabled }
     }
 
+    /** "Notify me about app updates" (GitHub APK builds only): on unless the user turns it off. */
+    val notifyAppUpdates = dataStore.data.map { prefs -> prefs[KEY_NOTIFY_UPDATES] ?: true }
+
+    suspend fun setNotifyAppUpdates(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_NOTIFY_UPDATES] = enabled }
+    }
+
+    /** The last "update available" notification: what, on which channel, when. Null if none. */
+    val updateNotice =
+        dataStore.data.map { prefs ->
+            val version = prefs[KEY_NOTICE_VERSION] ?: return@map null
+            UpdateNotice(
+                version = version,
+                channel = UpdateChannel.fromName(prefs[KEY_NOTICE_CHANNEL]),
+                atMillis = prefs[KEY_NOTICE_AT] ?: return@map null,
+                installedBuild = prefs[KEY_NOTICE_INSTALLED].orEmpty(),
+            )
+        }
+
+    suspend fun recordUpdateNotice(notice: UpdateNotice) {
+        dataStore.edit { prefs ->
+            prefs[KEY_NOTICE_VERSION] = notice.version
+            prefs[KEY_NOTICE_CHANNEL] = notice.channel.name
+            prefs[KEY_NOTICE_AT] = notice.atMillis
+            prefs[KEY_NOTICE_INSTALLED] = notice.installedBuild
+        }
+    }
+
+    suspend fun clearUpdateNotice() {
+        dataStore.edit { prefs ->
+            prefs.remove(KEY_NOTICE_VERSION)
+            prefs.remove(KEY_NOTICE_CHANNEL)
+            prefs.remove(KEY_NOTICE_AT)
+            prefs.remove(KEY_NOTICE_INSTALLED)
+        }
+    }
+
     /** "Install updates silently with Shizuku" (GitHub APK builds only): off until switched on. */
     val shizukuInstall = dataStore.data.map { prefs -> prefs[KEY_SHIZUKU_INSTALL] ?: false }
 
@@ -207,6 +246,11 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")
         val KEY_UPDATE_CHANNEL = stringPreferencesKey("update_channel")
         val KEY_AUTO_UPDATE = booleanPreferencesKey("auto_update")
+        val KEY_NOTIFY_UPDATES = booleanPreferencesKey("notify_app_updates")
+        val KEY_NOTICE_VERSION = stringPreferencesKey("update_notice_version")
+        val KEY_NOTICE_CHANNEL = stringPreferencesKey("update_notice_channel")
+        val KEY_NOTICE_AT = longPreferencesKey("update_notice_at")
+        val KEY_NOTICE_INSTALLED = stringPreferencesKey("update_notice_installed")
         val KEY_SHIZUKU_INSTALL = booleanPreferencesKey("shizuku_install")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
