@@ -89,6 +89,7 @@ unavailable (and hide their settings), and the tunnel route answers 404.
 | NixOS option | Environment variable | Meaning |
 | --- | --- | --- |
 | `sentry.dsnFile` | `RUST_SENTRY_DSN_FILE` | Absolute runtime path of a file holding the DSN. Preferred; keep the DSN out of the Nix store. `RUST_SENTRY_DSN` is the plain-value alternative for containers. |
+| `sentry.frontendDsnFile` | `RUST_SENTRY_FRONTEND_DSN_FILE` | Optional separate DSN for the web and Android apps (`RUST_SENTRY_FRONTEND_DSN` also works). Falls back to the server DSN, so one Sentry project can serve everything. |
 | `sentry.environment` | `RUST_SENTRY_ENVIRONMENT` | Environment name (default `production`). |
 | `sentry.tracesSampleRate` | `RUST_SENTRY_TRACES_SAMPLE_RATE` | 0 to 1 (default `0`: errors only). |
 
@@ -99,6 +100,8 @@ through the server's same-origin tunnel `POST /api/v2/telemetry/sentry` and
 never contact the Sentry host themselves. The tunnel only forwards envelopes
 addressed to the configured DSN, caps them at 256 KiB, scrubs them again, and
 drops them when the signed-in user turned error reporting off.
+
+Every event carries a `component` tag (`server`, `web` or `android`) and a release of the form `stricknani-<component>@<version>+<commit>`, so one project can be filtered. The tunnel forwards an envelope to the host and project of whichever configured DSN it names (matched by key and project id).
 
 What is reported: panics and `error!` log events from the server, plus errors
 from the web and Android apps (message, stack trace, app version, browser or OS

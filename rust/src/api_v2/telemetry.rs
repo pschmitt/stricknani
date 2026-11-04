@@ -60,7 +60,22 @@ impl ErrorReportingInfo {
 pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
         .route("/telemetry/sentry", post(tunnel))
+        // Sentry SDKs without a tunnel option (Android) post to
+        // `<dsn path>/api/<project>/envelope/` of a DSN that points here.
+        .route(
+            "/telemetry/sentry/api/{project}/envelope/",
+            post(tunnel_for_dsn),
+        )
         .layer(DefaultBodyLimit::max(MAX_ENVELOPE_BYTES))
+}
+
+async fn tunnel_for_dsn(
+    state: State<ApiV2State>,
+    _project: axum::extract::Path<String>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    tunnel(state, headers, body).await
 }
 
 async fn tunnel(State(state): State<ApiV2State>, headers: HeaderMap, body: Bytes) -> Response {

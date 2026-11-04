@@ -11,7 +11,7 @@ buildNpmPackage {
   version = "1.0.1";
   src = ../web;
   nodejs = nodejs_22;
-  npmDepsHash = "sha256-puk9rbOPmn5DcAoy/s3nb0OwPEacX4ovXskvrt7WmcM=";
+  npmDepsHash = "sha256-3SfalgN5SEeXTpdHnPwaBnl9Cy+avjd9lBCg5xm/cVA=";
   npmBuildScript = "build";
   env.STRICKNANI_GIT_REVISION = gitRevision;
   doCheck = true;

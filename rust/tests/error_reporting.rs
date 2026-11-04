@@ -217,7 +217,7 @@ async fn tunnel_forwards_valid_envelopes_to_the_configured_dsn_only() {
     assert_eq!(anonymous.status(), StatusCode::NO_CONTENT);
     assert_eq!(upstream.received.lock().unwrap().len(), 2);
 
-    let wrong = envelope("http://pubkey@127.0.0.1:1/7", "{}");
+    let wrong = envelope("http://pubkey@127.0.0.1:1/8", "{}");
     let response = send(&f, request("POST", TUNNEL, Some(USER_PAT), wrong)).await;
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
     assert_eq!(upstream.received.lock().unwrap().len(), 2);
@@ -227,6 +227,25 @@ async fn tunnel_forwards_valid_envelopes_to_the_configured_dsn_only() {
     )
     .await;
     assert_eq!(garbage.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn tunnel_accepts_the_android_dsn_path() {
+    let (upstream, dsn) = start_upstream().await;
+    let f = fixture(Some(&dsn)).await;
+    // Android is given a DSN pointing at this server; its SDK posts to
+    // `<dsn path>/api/<project>/envelope/`.
+    let body = envelope(
+        "http://pubkey@knit.example.test/api/v2/telemetry/sentry/7",
+        "{}",
+    );
+    let response = send(
+        &f,
+        request("POST", "/telemetry/sentry/api/7/envelope/", None, body),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(upstream.received.lock().unwrap().len(), 1);
 }
 
 #[tokio::test]

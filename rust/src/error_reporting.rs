@@ -56,6 +56,9 @@ const ALLOWED_ITEM_TYPES: [&str; 5] = [
 /// Tag set on a request scope when the signed-in user opted out.
 const OPT_OUT_TAG: &str = "stricknani.error_reporting_opt_out";
 const REDACTED: &str = "[redacted]";
+/// Every event carries this tag so one Sentry project can be filtered.
+pub const COMPONENT_TAG: &str = "component";
+pub const COMPONENT_SERVER: &str = "server";
 
 /// Why the error-reporting configuration is unusable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -70,10 +73,14 @@ impl fmt::Display for SettingsError {
 impl std::error::Error for SettingsError {}
 
 struct Configured {
-    dsn: Dsn,
+    /// DSN of the server's own SDK; may be absent when only a frontend DSN is set.
+    server_dsn: Option<Dsn>,
+    /// DSN handed to the web and Android apps: the frontend DSN, else the server DSN.
+    client_dsn: Dsn,
     environment: String,
     traces_sample_rate: f32,
-    client: reqwest::Client,
+    /// `None` when the HTTP client could not be built; forwarding then fails.
+    client: Option<reqwest::Client>,
     slots: Semaphore,
 }
 
@@ -99,22 +106,54 @@ impl fmt::Debug for ErrorReportingSettings {
     }
 }
 
+/// An envelope ready to forward, with the Sentry URL of the DSN it names.
+#[derive(Debug, PartialEq, Eq)]
+pub struct PreparedEnvelope {
+    pub body: Vec<u8>,
+    pub target: Url,
+}
+
+/// `stricknani-server@<version>+<commit>`; the commit comes from the build
+/// environment (`STRICKNANI_GIT_REVISION`) when available.
+pub fn release_name() -> String {
+    let base = format!("{}@{}", "stricknani-server", env!("CARGO_PKG_VERSION"));
+    match option_env!("STRICKNANI_GIT_REVISION") {
+        Some(revision) if !revision.trim().is_empty() => format!("{base}+{}", revision.trim()),
+        _ => base,
+    }
+}
+
+fn read_dsn(
+    get: &mut impl FnMut(&str) -> Option<String>,
+    file_key: &str,
+    value_key: &str,
+) -> Result<Option<String>, SettingsError> {
+    let raw = match get(file_key).filter(|value| !value.trim().is_empty()) {
+        Some(path) => Some(read_dsn_file(&path, file_key)?),
+        None => get(value_key),
+    };
+    Ok(raw
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty()))
+}
+
 impl ErrorReportingSettings {
-    /// Read `RUST_SENTRY_DSN_FILE` (preferred) or `RUST_SENTRY_DSN`, plus
-    /// `RUST_SENTRY_ENVIRONMENT` and `RUST_SENTRY_TRACES_SAMPLE_RATE`.
+    /// Read `RUST_SENTRY_DSN_FILE` / `RUST_SENTRY_DSN` (server), the optional
+    /// `RUST_SENTRY_FRONTEND_DSN_FILE` / `RUST_SENTRY_FRONTEND_DSN` (web and
+    /// Android; falls back to the server DSN), plus `RUST_SENTRY_ENVIRONMENT`
+    /// and `RUST_SENTRY_TRACES_SAMPLE_RATE`.
     pub fn from_lookup(
         get: &mut impl FnMut(&str) -> Option<String>,
     ) -> Result<Self, SettingsError> {
-        let dsn = match get("RUST_SENTRY_DSN_FILE").filter(|value| !value.trim().is_empty()) {
-            Some(path) => Some(read_dsn_file(&path)?),
-            None => get("RUST_SENTRY_DSN"),
-        };
-        let Some(dsn) = dsn
-            .map(|value| value.trim().to_owned())
-            .filter(|v| !v.is_empty())
-        else {
+        let backend = read_dsn(get, "RUST_SENTRY_DSN_FILE", "RUST_SENTRY_DSN")?;
+        let frontend = read_dsn(
+            get,
+            "RUST_SENTRY_FRONTEND_DSN_FILE",
+            "RUST_SENTRY_FRONTEND_DSN",
+        )?;
+        if backend.is_none() && frontend.is_none() {
             return Ok(Self::default());
-        };
+        }
         let environment = get("RUST_SENTRY_ENVIRONMENT")
             .map(|value| value.trim().to_owned())
             .filter(|value| !value.is_empty())
@@ -130,7 +169,12 @@ impl ErrorReportingSettings {
                     "RUST_SENTRY_TRACES_SAMPLE_RATE must be a number from 0 to 1",
                 ))?,
         };
-        Self::new(&dsn, environment, traces_sample_rate)
+        Self::with_dsns(
+            backend.as_deref(),
+            frontend.as_deref(),
+            environment,
+            traces_sample_rate,
+        )
     }
 
     /// Read the settings from the process environment.
@@ -138,15 +182,32 @@ impl ErrorReportingSettings {
         Self::from_lookup(&mut |key| std::env::var(key).ok())
     }
 
-    /// Build configured settings from a DSN string.
+    /// Build configured settings from one DSN used for everything.
     pub fn new(
         dsn: &str,
         environment: String,
         traces_sample_rate: f32,
     ) -> Result<Self, SettingsError> {
-        let dsn: Dsn = dsn
-            .parse()
-            .map_err(|_| SettingsError("the Sentry DSN is invalid"))?;
+        Self::with_dsns(Some(dsn), None, environment, traces_sample_rate)
+    }
+
+    /// Build configured settings from the server and optional frontend DSNs.
+    pub fn with_dsns(
+        backend: Option<&str>,
+        frontend: Option<&str>,
+        environment: String,
+        traces_sample_rate: f32,
+    ) -> Result<Self, SettingsError> {
+        let parse = |value: &str| {
+            value
+                .parse::<Dsn>()
+                .map_err(|_| SettingsError("a Sentry DSN is invalid"))
+        };
+        let server_dsn = backend.map(parse).transpose()?;
+        let frontend_dsn = frontend.map(parse).transpose()?;
+        let client_dsn = frontend_dsn
+            .or_else(|| server_dsn.clone())
+            .ok_or(SettingsError("no Sentry DSN is configured"))?;
         if environment.len() > MAX_ENVIRONMENT_BYTES
             || environment
                 .chars()
@@ -166,35 +227,45 @@ impl ErrorReportingSettings {
                 "/",
                 env!("CARGO_PKG_VERSION")
             ));
-        if dsn.scheme() == sentry::types::Scheme::Http {
+        let plain_http = [server_dsn.as_ref(), Some(&client_dsn)]
+            .into_iter()
+            .flatten()
+            .all(|dsn| dsn.scheme() == sentry::types::Scheme::Http);
+        if plain_http {
             // Plain-HTTP DSNs only exist for local test servers. They never
             // negotiate TLS, so do not require system CA certificates, which
             // the Nix build sandbox lacks.
             builder = builder.tls_certs_only(Vec::new());
         }
-        let client = builder
-            .build()
-            .map_err(|_| SettingsError("cannot build the Sentry tunnel client"))?;
         Ok(Self {
             configured: Some(Arc::new(Configured {
-                dsn,
+                server_dsn,
+                client_dsn,
                 environment,
                 traces_sample_rate,
-                client,
+                client: builder.build().ok(),
                 slots: Semaphore::new(MAX_CONCURRENT_FORWARDS),
             })),
         })
     }
 
-    /// Whether the operator configured a DSN.
+    /// Whether the clients (web, Android) may report: some DSN is configured.
     pub fn is_available(&self) -> bool {
         self.configured.is_some()
     }
 
-    /// The DSN without any secret key, safe to give to clients (it is the
-    /// public key by design).
+    /// Whether the server's own SDK runs (a server DSN is configured).
+    pub fn server_reporting(&self) -> bool {
+        self.configured
+            .as_ref()
+            .is_some_and(|c| c.server_dsn.is_some())
+    }
+
+    /// The DSN for web and Android without any secret key, safe to give to
+    /// clients (it is the public key by design): the frontend DSN, else the
+    /// server DSN.
     pub fn public_dsn(&self) -> Option<String> {
-        self.configured.as_ref().map(|c| public_dsn(&c.dsn))
+        self.configured.as_ref().map(|c| public_dsn(&c.client_dsn))
     }
 
     /// The configured environment name.
@@ -202,17 +273,14 @@ impl ErrorReportingSettings {
         self.configured.as_ref().map(|c| c.environment.as_str())
     }
 
-    /// Initialise the server SDK. `None` when no DSN is configured. Keep the
+    /// Initialise the server SDK. `None` without a server DSN. Keep the
     /// returned guard alive for the life of the process: dropping it flushes
     /// pending events.
     pub fn init_sdk(&self) -> Option<sentry::ClientInitGuard> {
         let configured = self.configured.as_ref()?;
+        let dsn = configured.server_dsn.clone()?;
         let mut options = sentry::ClientOptions::new()
-            .release(concat!(
-                env!("CARGO_PKG_NAME"),
-                "@",
-                env!("CARGO_PKG_VERSION")
-            ))
+            .release(release_name())
             .environment(configured.environment.clone())
             .server_name("stricknani")
             .send_default_pii(false)
@@ -221,21 +289,30 @@ impl ErrorReportingSettings {
             .traces_sample_rate(configured.traces_sample_rate)
             .before_send(scrub_event)
             .before_breadcrumb(scrub_breadcrumb);
-        options.dsn = Some(configured.dsn.clone());
-        Some(sentry::init(options))
+        options.dsn = Some(dsn);
+        let guard = sentry::init(options);
+        sentry::configure_scope(|scope| scope.set_tag(COMPONENT_TAG, COMPONENT_SERVER));
+        Some(guard)
     }
 
     /// Whether the tracing integration should start transactions.
     pub fn traces_enabled(&self) -> bool {
-        self.configured
-            .as_ref()
-            .is_some_and(|c| c.traces_sample_rate > 0.0)
+        self.server_reporting()
+            && self
+                .configured
+                .as_ref()
+                .is_some_and(|c| c.traces_sample_rate > 0.0)
     }
 
-    /// Validate and re-scrub a tunnelled envelope. The result is the body to
-    /// forward. Wrong DSN, malformed envelopes, forbidden item types and
+    /// Validate and re-scrub a tunnelled envelope. Its DSN must match the
+    /// server or the frontend DSN; it is forwarded to that DSN's own host and
+    /// project. Wrong DSN, malformed envelopes, forbidden item types and
     /// oversize payloads are rejected.
-    pub fn prepare_envelope(&self, body: &[u8], gzip: bool) -> Result<Vec<u8>, EnvelopeError> {
+    pub fn prepare_envelope(
+        &self,
+        body: &[u8],
+        gzip: bool,
+    ) -> Result<PreparedEnvelope, EnvelopeError> {
         let configured = self.configured.as_ref().ok_or(EnvelopeError::Unavailable)?;
         let decoded;
         let body = if gzip {
@@ -253,25 +330,31 @@ impl ErrorReportingSettings {
             .and_then(Value::as_str)
             .and_then(|dsn| dsn.parse::<Dsn>().ok())
             .ok_or(EnvelopeError::WrongDsn)?;
-        if !same_project(&claimed, &configured.dsn) {
-            return Err(EnvelopeError::WrongDsn);
-        }
-        Ok(serialize_envelope(&header, &items))
+        let target = [Some(&configured.client_dsn), configured.server_dsn.as_ref()]
+            .into_iter()
+            .flatten()
+            .find(|dsn| same_project(&claimed, dsn))
+            .ok_or(EnvelopeError::WrongDsn)?
+            .envelope_api_url();
+        Ok(PreparedEnvelope {
+            body: serialize_envelope(&header, &items),
+            target,
+        })
     }
 
-    /// Forward a prepared envelope to the configured Sentry host. The target
-    /// URL comes only from the operator's DSN, never from the request.
-    pub async fn forward(&self, envelope: Vec<u8>) -> Result<(), ForwardError> {
+    /// Forward a prepared envelope. The target URL comes only from the
+    /// operator's DSNs, never from the request.
+    pub async fn forward(&self, envelope: PreparedEnvelope) -> Result<(), ForwardError> {
         let configured = self.configured.as_ref().ok_or(ForwardError::Failed)?;
+        let client = configured.client.as_ref().ok_or(ForwardError::Failed)?;
         let _slot = configured
             .slots
             .try_acquire()
             .map_err(|_| ForwardError::Busy)?;
-        let response = configured
-            .client
-            .post(configured.dsn.envelope_api_url())
+        let response = client
+            .post(envelope.target)
             .header("content-type", "application/x-sentry-envelope")
-            .body(envelope)
+            .body(envelope.body)
             .send()
             .await
             .map_err(|_| ForwardError::Failed)?;
@@ -300,15 +383,15 @@ pub enum ForwardError {
     Failed,
 }
 
-fn read_dsn_file(path: &str) -> Result<String, SettingsError> {
-    let file = std::fs::File::open(path)
-        .map_err(|_| SettingsError("RUST_SENTRY_DSN_FILE cannot be read"))?;
+fn read_dsn_file(path: &str, _key: &str) -> Result<String, SettingsError> {
+    let file =
+        std::fs::File::open(path).map_err(|_| SettingsError("a Sentry DSN file cannot be read"))?;
     let mut contents = String::new();
     file.take(MAX_DSN_FILE_BYTES as u64 + 1)
         .read_to_string(&mut contents)
-        .map_err(|_| SettingsError("RUST_SENTRY_DSN_FILE cannot be read"))?;
+        .map_err(|_| SettingsError("a Sentry DSN file cannot be read"))?;
     if contents.len() > MAX_DSN_FILE_BYTES {
-        return Err(SettingsError("RUST_SENTRY_DSN_FILE is too large"));
+        return Err(SettingsError("a Sentry DSN file is too large"));
     }
     Ok(contents)
 }
@@ -331,14 +414,12 @@ fn public_dsn(dsn: &Dsn) -> String {
     )
 }
 
-/// Two DSNs name the same project when everything but the secret key matches.
+/// Two DSNs name the same project when key and project id match. The host and
+/// path are ignored on purpose: the Android SDK has no tunnel option, so it is
+/// given a DSN that points at this server (`.../api/v2/telemetry/sentry/<id>`).
+/// Where an envelope is forwarded to never comes from the envelope.
 fn same_project(left: &Dsn, right: &Dsn) -> bool {
-    left.scheme() == right.scheme()
-        && left.public_key() == right.public_key()
-        && left.host().eq_ignore_ascii_case(right.host())
-        && left.port() == right.port()
-        && left.path() == right.path()
-        && left.project_id() == right.project_id()
+    left.public_key() == right.public_key() && left.project_id() == right.project_id()
 }
 
 // ---------------------------------------------------------------------------
@@ -377,6 +458,10 @@ pub fn scrub_event(mut event: Event<'static>) -> Option<Event<'static>> {
     if event.tags.remove(OPT_OUT_TAG).is_some() {
         return None;
     }
+    event
+        .tags
+        .entry(COMPONENT_TAG.to_owned())
+        .or_insert_with(|| COMPONENT_SERVER.to_owned());
     event.server_name = None;
     event.modules.clear();
     event.extra.clear();
@@ -664,6 +749,15 @@ pub fn scrub_json_event(event: &mut Value) {
     for key in ["user", "extra", "server_name", "modules", "culprit"] {
         object.remove(key);
     }
+    // Clients tag their component; anything untagged is still filterable.
+    if let Some(tags) = object
+        .entry("tags")
+        .or_insert_with(|| Value::Object(Map::new()))
+        .as_object_mut()
+    {
+        tags.entry(COMPONENT_TAG)
+            .or_insert_with(|| Value::String("unknown".to_owned()));
+    }
     if let Some(request) = object.get_mut("request").and_then(Value::as_object_mut) {
         for key in ["headers", "cookies", "data", "query_string", "env"] {
             request.remove(key);
@@ -860,11 +954,19 @@ mod tests {
             settings.prepare_envelope(&other_project, false),
             Err(EnvelopeError::WrongDsn)
         );
-        let other_host = envelope("https://abc123publickey@evil.example.test/42", "{}");
+        let other_key = envelope("https://otherkey@sentry.example.test/42", "{}");
         assert_eq!(
-            settings.prepare_envelope(&other_host, false),
+            settings.prepare_envelope(&other_key, false),
             Err(EnvelopeError::WrongDsn)
         );
+        // A client DSN pointing at this server (Android) is accepted but is
+        // still forwarded to the configured host.
+        let tunnel_dsn = envelope(
+            "https://abc123publickey@knit.example.test/api/v2/telemetry/sentry/42",
+            "{}",
+        );
+        let prepared = settings.prepare_envelope(&tunnel_dsn, false).unwrap();
+        assert_eq!(prepared.target.host_str(), Some("sentry.example.test"));
         assert_eq!(
             settings.prepare_envelope(b"{}\n{\"type\":\"event\"}\n{}\n", false),
             Err(EnvelopeError::WrongDsn)
@@ -902,7 +1004,7 @@ mod tests {
             "{\"message\":\"hi bob@example.test\",\"user\":{\"email\":\"bob@example.test\"},\"request\":{\"url\":\"https://s.test/p?token=abc\",\"cookies\":\"a=b\"}}",
         );
         let forwarded =
-            String::from_utf8(settings.prepare_envelope(&body, false).unwrap()).unwrap();
+            String::from_utf8(settings.prepare_envelope(&body, false).unwrap().body).unwrap();
         assert!(!forwarded.contains("bob@example.test"));
         assert!(!forwarded.contains("token=abc"));
         assert!(!forwarded.contains("cookies"));
@@ -942,6 +1044,81 @@ mod tests {
         assert!(with("not a dsn", None).is_err());
         assert!(with(DSN, Some("2")).is_err());
         assert!(with(DSN, Some("0.25")).is_ok());
+    }
+
+    #[test]
+    fn every_server_event_carries_the_component_tag_and_clients_keep_theirs() {
+        let event = scrub_event(Event::new()).expect("kept");
+        assert_eq!(
+            event.tags.get(COMPONENT_TAG).map(String::as_str),
+            Some("server")
+        );
+        let settings = settings();
+        let tagged = envelope(DSN, "{\"tags\":{\"component\":\"web\"}}");
+        let body = settings.prepare_envelope(&tagged, false).unwrap().body;
+        assert!(
+            String::from_utf8(body)
+                .unwrap()
+                .contains("\"component\":\"web\"")
+        );
+        let untagged = envelope(DSN, "{\"message\":\"x\"}");
+        let body = settings.prepare_envelope(&untagged, false).unwrap().body;
+        assert!(
+            String::from_utf8(body)
+                .unwrap()
+                .contains("\"component\":\"unknown\"")
+        );
+    }
+
+    #[test]
+    fn frontend_dsn_falls_back_to_the_server_dsn_and_each_is_forwarded_to_its_own_project() {
+        // Only a server DSN: clients get it.
+        assert_eq!(
+            settings().public_dsn().as_deref(),
+            Some("https://abc123publickey@sentry.example.test/42")
+        );
+        let frontend = "https://webkey@sentry.example.test/43";
+        let both =
+            ErrorReportingSettings::with_dsns(Some(DSN), Some(frontend), "t".to_owned(), 0.0)
+                .unwrap();
+        assert_eq!(
+            both.public_dsn().as_deref(),
+            Some("https://webkey@sentry.example.test/43")
+        );
+        let to_frontend = both
+            .prepare_envelope(&envelope(frontend, "{}"), false)
+            .unwrap();
+        assert_eq!(to_frontend.target.path(), "/api/43/envelope/");
+        let to_server = both.prepare_envelope(&envelope(DSN, "{}"), false).unwrap();
+        assert_eq!(to_server.target.path(), "/api/42/envelope/");
+        assert_eq!(
+            both.prepare_envelope(&envelope("https://x@sentry.example.test/44", "{}"), false),
+            Err(EnvelopeError::WrongDsn)
+        );
+        // Frontend DSN alone: no server SDK, but the tunnel works.
+        let only_frontend =
+            ErrorReportingSettings::with_dsns(None, Some(frontend), "t".to_owned(), 0.0).unwrap();
+        assert!(only_frontend.is_available() && !only_frontend.server_reporting());
+    }
+
+    #[test]
+    fn frontend_dsn_is_read_from_its_own_variables() {
+        let settings = ErrorReportingSettings::from_lookup(&mut |key| match key {
+            "RUST_SENTRY_DSN" => Some(DSN.to_owned()),
+            "RUST_SENTRY_FRONTEND_DSN" => Some("https://webkey@sentry.example.test/43".to_owned()),
+            _ => None,
+        })
+        .unwrap();
+        assert_eq!(
+            settings.public_dsn().as_deref(),
+            Some("https://webkey@sentry.example.test/43")
+        );
+        assert!(settings.server_reporting());
+    }
+
+    #[test]
+    fn release_names_the_server_and_version() {
+        assert!(release_name().starts_with("stricknani-server@"));
     }
 
     #[test]

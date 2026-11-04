@@ -3,6 +3,8 @@
   rustPlatform,
   rustfmt,
   clippy,
+  # Short commit (plus -dirty) reported as the Sentry release suffix; the Nix source has no .git.
+  gitRevision ? "",
 }:
 
 let
@@ -24,6 +26,7 @@ rustPlatform.buildRustPackage {
   src = rustSource;
   sourceRoot = "source/rust";
   cargoLock.lockFile = "${rustSource}/rust/Cargo.lock";
+  env.STRICKNANI_GIT_REVISION = gitRevision;
   STATIC_ROOT = "${rustSource}/rust/static";
 
   nativeCheckInputs = [

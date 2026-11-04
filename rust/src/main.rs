@@ -321,7 +321,7 @@ async fn serve() -> Result<(), &'static str> {
         ai,
         ocr,
     );
-    let app = if config.error_reporting.is_available() {
+    let app = if config.error_reporting.server_reporting() {
         // One Sentry hub per request: the signed-in user's opt-out marker and
         // identity stay scoped to that request.
         let http = sentry::integrations::tower::SentryHttpLayer::new();

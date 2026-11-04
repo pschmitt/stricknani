@@ -240,8 +240,8 @@ Optional, operator-configured Sentry reporting (`RUST_SENTRY_DSN_FILE`; NixOS
   and `error_reporting_available`. `PATCH /account` with
   `{error_reporting_enabled}` stores the choice (`users.error_reporting`,
   migration `0021`).
-- **Tunnel.** `POST /api/v2/telemetry/sentry` takes a Sentry envelope (optionally
-  gzip) of at most 256 KiB whose header `dsn` names the configured project and
+- **Tunnel.** `POST /api/v2/telemetry/sentry` (and `.../sentry/api/{project}/envelope/`, for SDKs given a DSN that points at this server) takes a Sentry envelope (optionally
+  gzip) of at most 256 KiB whose header `dsn` has the key and project id of the server or frontend DSN and
   whose items are `event`, `transaction`, `session`, `sessions` or
   `client_report`. It answers `204` after forwarding, `204` without forwarding for
   a signed-in user who opted out, `403 wrong_dsn`, `400 invalid_request`, `413`,

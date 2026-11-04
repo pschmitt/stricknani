@@ -202,15 +202,20 @@ in
         default = null;
         description = "Absolute runtime path of a file holding the Sentry DSN (never a Nix value). Setting it turns on optional error reporting (RUST_SENTRY_DSN_FILE); without it nothing is sent anywhere. Users can opt out in their account settings.";
       };
+      frontendDsnFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Optional absolute runtime path of a file holding a separate Sentry DSN for the web and Android apps (RUST_SENTRY_FRONTEND_DSN_FILE). Defaults to the dsnFile DSN, so one project can serve everything; events carry a component tag (server, web, android).";
+      };
       environment = lib.mkOption {
         type = lib.types.str;
         default = "production";
-        description = "Sentry environment name (RUST_SENTRY_ENVIRONMENT). Only used with dsnFile.";
+        description = "Sentry environment name (RUST_SENTRY_ENVIRONMENT). Only used with a DSN file.";
       };
       tracesSampleRate = lib.mkOption {
         type = lib.types.numbers.between 0 1;
         default = 0;
-        description = "Share of requests traced for performance monitoring (RUST_SENTRY_TRACES_SAMPLE_RATE); 0 reports errors only. Only used with dsnFile.";
+        description = "Share of requests traced for performance monitoring (RUST_SENTRY_TRACES_SAMPLE_RATE); 0 reports errors only. Only used with a DSN file.";
       };
     };
 
@@ -374,8 +379,11 @@ in
         message = "services.stricknani.oidc.clientSecretFile must be an absolute runtime path.";
       }
       {
-        assertion = cfg.sentry.dsnFile == null || lib.hasPrefix "/" cfg.sentry.dsnFile;
-        message = "services.stricknani.sentry.dsnFile must be an absolute runtime path.";
+        assertion = lib.all (file: file == null || lib.hasPrefix "/" file) [
+          cfg.sentry.dsnFile
+          cfg.sentry.frontendDsnFile
+        ];
+        message = "services.stricknani.sentry.dsnFile and frontendDsnFile must be absolute runtime paths.";
       }
       {
         assertion = !(cfg.extraConfig ? RUST_SENTRY_DSN);
@@ -416,6 +424,11 @@ in
         }
         // lib.optionalAttrs (cfg.sentry.dsnFile != null) {
           RUST_SENTRY_DSN_FILE = cfg.sentry.dsnFile;
+        }
+        // lib.optionalAttrs (cfg.sentry.frontendDsnFile != null) {
+          RUST_SENTRY_FRONTEND_DSN_FILE = cfg.sentry.frontendDsnFile;
+        }
+        // lib.optionalAttrs (cfg.sentry.dsnFile != null || cfg.sentry.frontendDsnFile != null) {
           RUST_SENTRY_ENVIRONMENT = cfg.sentry.environment;
           RUST_SENTRY_TRACES_SAMPLE_RATE = toString cfg.sentry.tracesSampleRate;
         }
