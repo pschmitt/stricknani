@@ -281,8 +281,8 @@
     <string name="settings_category_account_subtitle">Serververbindung und Abmelden</string>
     <string name="settings_category_appearance_title">Erscheinungsbild</string>
     <string name="settings_category_appearance_subtitle">Design</string>
-    <string name="settings_category_navigation_title">Navigation</string>
-    <string name="settings_category_navigation_subtitle">Ziele und ihre Reihenfolge wählen</string>
+    <string name="settings_category_navigation_title">Untere Leiste</string>
+    <string name="settings_category_navigation_subtitle">Wähle, welche Tabs sie zeigt und in welcher Reihenfolge</string>
     <string name="settings_category_categories_title">Kategorien</string>
     <string name="settings_category_categories_subtitle">Projekt- und Wollkategorien verwalten</string>
     <string name="settings_category_detail_cards_title">Detailkarten</string>
@@ -302,6 +302,7 @@
     <string name="more_about_subtitle">Version, Links und Danksagungen.</string>
     <string name="more_account_title">Kontoeinstellungen</string>
     <string name="more_settings_header">Einstellungen</string>
+    <string name="more_data_header">Daten</string>
     <string name="create_heading">Was möchtest du hinzufügen?</string>
     <string name="create_intro">Fang etwas Neues an oder hol dir eine Anleitung, die du schon hast.</string>
     <string name="create_import_project_title">Projekt importieren</string>

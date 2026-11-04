@@ -101,6 +101,21 @@ fun SettingsScreen(
                 }
             }
             item {
+                Text(
+                    stringResource(R.string.more_data_header),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp).semantics { heading() },
+                )
+            }
+            item {
+                SettingsSingleItemCard {
+                    layout.data.forEach { category ->
+                        SettingsCategoryRow(category, profile, onCategoryClick)
+                    }
+                }
+            }
+            item {
                 SettingsSingleItemCard {
                     layout.footer.forEach { category ->
                         SettingsCategoryRow(category, profile, onCategoryClick)

@@ -282,8 +282,8 @@
     <string name="settings_category_account_subtitle">Server connection and sign-out</string>
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_appearance_subtitle">Theme</string>
-    <string name="settings_category_navigation_title">Navigation</string>
-    <string name="settings_category_navigation_subtitle">Choose destinations and their order</string>
+    <string name="settings_category_navigation_title">Bottom bar</string>
+    <string name="settings_category_navigation_subtitle">Choose which tabs it shows and their order</string>
     <string name="settings_category_categories_title">Categories</string>
     <string name="settings_category_categories_subtitle">Manage project and yarn categories</string>
     <string name="settings_category_detail_cards_title">Detail cards</string>
@@ -303,6 +303,7 @@
     <string name="more_about_subtitle">Version, links and credits.</string>
     <string name="more_account_title">Account settings</string>
     <string name="more_settings_header">Settings</string>
+    <string name="more_data_header">Data</string>
     <string name="create_heading">What would you like to add?</string>
     <string name="create_intro">Start something new, or bring in a pattern you already have.</string>
     <string name="create_import_project_title">Import a project</string>

@@ -14,18 +14,28 @@ class MoreLayoutTest {
     }
 
     @Test
-    fun `Settings has Admin first for administrators, after Account which the screen draws`() {
+    fun `Settings holds the Android-only settings after Account, which the screen draws`() {
         val android =
             listOf(
                 SettingsCategory.Appearance,
                 SettingsCategory.Navigation,
                 SettingsCategory.DetailCards,
-                SettingsCategory.Sync,
-                SettingsCategory.Backup,
             )
-        assertEquals(listOf(SettingsCategory.Admin) + android, moreLayout(isAdmin = true).settings)
+        assertEquals(android, moreLayout(isAdmin = true).settings)
         assertEquals(android, moreLayout(isAdmin = false).settings)
         assertFalse(SettingsCategory.Account in moreLayout(isAdmin = true).settings)
+    }
+
+    @Test
+    fun `Data holds keeping up to date, backup and Admin for administrators`() {
+        assertEquals(
+            listOf(SettingsCategory.Sync, SettingsCategory.Backup, SettingsCategory.Admin),
+            moreLayout(isAdmin = true).data,
+        )
+        assertEquals(
+            listOf(SettingsCategory.Sync, SettingsCategory.Backup),
+            moreLayout(isAdmin = false).data,
+        )
     }
 
     @Test
@@ -40,6 +50,7 @@ class MoreLayoutTest {
         val shown =
             layout.links.filterIsInstance<MoreLink.Category>().map { it.category } +
                 layout.settings +
+                layout.data +
                 layout.footer +
                 SettingsCategory.Account
         assertEquals(SettingsCategory.entries.toSet(), shown.toSet())
