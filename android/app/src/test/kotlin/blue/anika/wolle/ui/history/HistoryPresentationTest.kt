@@ -2,7 +2,9 @@ package blue.anika.wolle.ui.history
 
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditDetailEnvelopeDto
+import blue.anika.wolle.data.api.dto.AuditDetailDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.AuditPageDto
 import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.ChangeSetDto
@@ -188,5 +190,47 @@ class HistoryPresentationTest {
         assertNull(detail.data.changes)
         assertEquals("not_recorded", detail.data.unavailableReason)
         assertEquals(JsonPrimitive("x").content, "x")
+    }
+
+    // --- History entry -> details sheet body ---------------------------------------------------
+
+    private fun loaded(event: AuditEventDto, changes: ChangeSetDto?, reason: String? = null) =
+        HistoryDetailState.Loaded(AuditDetailDto(event, changes, reason))
+
+    @Test
+    fun `an entry with nothing recorded says so without loading`() {
+        val e = event(1, hasChanges = false)
+        assertEquals(HistoryDetailBody.NoDetails, historyDetailBody(e, null))
+        assertEquals(HistoryDetailBody.NoDetails, historyDetailBody(e, HistoryDetailState.Loading))
+    }
+
+    @Test
+    fun `an upload shows its file whatever the detail state`() {
+        val media = AuditMediaDto(kind = "image", id = 3, name = "front.png", isImage = true)
+        val e = event(2, "image_uploaded", hasChanges = false).copy(media = media)
+        assertEquals(HistoryDetailBody.Media(media), historyDetailBody(e, null))
+        assertEquals(HistoryDetailBody.Media(media), historyDetailBody(e, HistoryDetailState.Failed))
+    }
+
+    @Test
+    fun `an entry with changes loads then shows its field diff`() {
+        val e = event(3)
+        assertEquals(HistoryDetailBody.Loading, historyDetailBody(e, null))
+        assertEquals(HistoryDetailBody.Loading, historyDetailBody(e, HistoryDetailState.Loading))
+        assertEquals(HistoryDetailBody.Failed, historyDetailBody(e, HistoryDetailState.Failed))
+        val items = listOf(text("project.name", "a", "b"))
+        assertEquals(
+            HistoryDetailBody.Changes(items),
+            historyDetailBody(e, loaded(e, set(*items.toTypedArray()))),
+        )
+    }
+
+    @Test
+    fun `an unavailable snapshot keeps its reason`() {
+        val e = event(4)
+        assertEquals(
+            HistoryDetailBody.Unavailable("too_large"),
+            historyDetailBody(e, loaded(e, null, "too_large")),
+        )
     }
 }

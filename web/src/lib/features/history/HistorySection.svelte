@@ -5,8 +5,7 @@
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-  import ChangeList from "./ChangeList.svelte";
-  import AuditMediaPreview from "#lib/features/admin/AuditMediaPreview.svelte";
+    import HistoryEventDetail from "./HistoryEventDetail.svelte";
   import {
     getHistoryDetail,
     historyUnsupported,
@@ -20,6 +19,7 @@
     actionTone,
     eventHeadline,
     fullDate,
+    historyDetailKind,
     relativeTime,
   } from "./history-summary";
 
@@ -191,7 +191,8 @@
   function toggle(event: HistoryEvent) {
     const open = !expanded[event.id];
     expanded[event.id] = open;
-    if (open) requestDetail(event.id, true);
+    if (open && historyDetailKind(event) === "changes")
+      requestDetail(event.id, true);
   }
 
   function headline(event: HistoryEvent): string {
@@ -208,22 +209,6 @@
   function byOther(event: HistoryEvent): string | null {
     if (!event.actor_email) return null;
     return event.actor_email === currentEmail ? null : event.actor_email;
-  }
-
-  function unavailableText(detail: HistoryDetail): string {
-    switch (detail.unavailable_reason) {
-      case "not_recorded":
-        return t("No change snapshot was recorded for this event.", locale);
-      case "too_large":
-        return t(
-          "The recorded change snapshot is too large to display.",
-          locale,
-        );
-      case "malformed":
-        return t("The recorded change snapshot is unavailable.", locale);
-      default:
-        return t("No changes are available for this event.", locale);
-    }
   }
 </script>
 
@@ -300,70 +285,27 @@
               </span>
             </span>
           {/snippet}
-          {#if event.has_changes || event.media}
-            <button
-              type="button"
-              class="entry-row"
-              aria-expanded={open}
-              aria-controls={`${sectionId}-event-${event.id}`}
-              onclick={() => toggle(event)}
+          <button
+            type="button"
+            class="entry-row"
+            aria-expanded={open}
+            aria-controls={`${sectionId}-event-${event.id}`}
+            onclick={() => toggle(event)}
+          >
+            {@render summary()}
+            <span class="entry-chevron" class:entry-chevron--open={open}
+              ><NavIcon name="chevron-down" /></span
             >
-              {@render summary()}
-              <span class="entry-chevron" class:entry-chevron--open={open}
-                ><NavIcon name="chevron-down" /></span
-              >
-            </button>
-            {#if open}
-              <div
-                class="entry-detail"
-                id={`${sectionId}-event-${event.id}`}
-                role="region"
-                aria-label={headline(event)}
-              >
-                <p class="entry-date">{fullDate(event.created_at, locale)}</p>
-                {#if event.media}
-                  <div class="entry-media">
-                    <AuditMediaPreview
-                      media={event.media}
-                      {locale}
-                      variant="note"
-                    />
-                    <AuditMediaPreview media={event.media} {locale} />
-                  </div>
-                {:else if !entry || entry.state === "loading"}
-                  <p class="history-muted" aria-live="polite">
-                    {t("Loading recorded changes…", locale)}
-                  </p>
-                {:else if entry.state === "error"}
-                  <div class="history-note" role="alert">
-                    <p>{t("These changes could not be loaded.", locale)}</p>
-                    <button
-                      type="button"
-                      class="history-link"
-                      onclick={() => requestDetail(event.id, true)}
-                    >
-                      <NavIcon name="reset" />{t("Try again", locale)}
-                    </button>
-                  </div>
-                {:else if entry.detail.changes}
-                  <ChangeList
-                    changes={entry.detail.changes}
-                    {locale}
-                    headingTag="h3"
-                    label={t("Recorded changes", locale)}
-                  />
-                {:else}
-                  <p class="history-muted">{unavailableText(entry.detail)}</p>
-                {/if}
-              </div>
-            {/if}
-          {:else}
-            <div class="entry-row entry-row--static">
-              {@render summary()}
-              <span class="history-muted" data-history-no-details
-                >{t("No details recorded", locale)}</span
-              >
-            </div>
+          </button>
+          {#if open}
+            <HistoryEventDetail
+              {event}
+              {locale}
+              id={`${sectionId}-event-${event.id}`}
+              label={headline(event)}
+              detail={entry}
+              onretry={() => requestDetail(event.id, true)}
+            />
           {/if}
         </li>
       {/each}
@@ -418,14 +360,6 @@
     border-radius: var(--radius-sm);
     padding: clamp(1rem, 3vw, 1.4rem);
     background: var(--surface);
-  }
-
-  .entry-media {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
   }
 
   .history[hidden] {
@@ -556,15 +490,15 @@
     text-align: left;
   }
 
-  button.entry-row {
+  .entry-row {
     cursor: pointer;
   }
 
-  button.entry-row:hover {
+  .entry-row:hover {
     background: var(--surface-raised);
   }
 
-  button.entry-row:focus-visible,
+  .entry-row:focus-visible,
   .history-link:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
@@ -628,32 +562,10 @@
       transition: transform 160ms ease;
     }
 
-    .entry-detail {
-      animation: history-reveal 180ms ease-out;
-    }
   }
 
   .entry-chevron--open {
     transform: rotate(180deg);
-  }
-
-  @keyframes history-reveal {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-  }
-
-  .entry-detail {
-    display: grid;
-    gap: 0.7rem;
-    margin: 0.2rem 0 0.8rem;
-  }
-
-  .entry-date {
-    margin: 0;
-    color: var(--ink-muted);
-    font-size: 0.85rem;
   }
 
   .history-muted {

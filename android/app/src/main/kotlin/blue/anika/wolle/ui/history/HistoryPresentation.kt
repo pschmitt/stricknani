@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.history
 
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.ChangeSetDto
 import blue.anika.wolle.data.api.dto.ChangeValue
@@ -144,4 +145,42 @@ fun otherActor(actorEmail: String?, currentEmail: String?): String? = actorEmail
 fun mergeEvents(existing: List<AuditEventDto>, next: List<AuditEventDto>): List<AuditEventDto> {
     val seen = existing.mapTo(HashSet()) { it.id }
     return existing + next.filter { seen.add(it.id) }
+}
+
+/** What the details sheet of one history entry shows, mirroring `HistoryEventDetail.svelte`. */
+sealed interface HistoryDetailBody {
+    /** An upload or removal: the picture or file (owner-scoped URLs from the history API). */
+    data class Media(val media: AuditMediaDto) : HistoryDetailBody
+
+    /** Nothing was recorded for this event: "No details recorded". */
+    data object NoDetails : HistoryDetailBody
+
+    data object Loading : HistoryDetailBody
+
+    data object Failed : HistoryDetailBody
+
+    /** Recorded field changes; an empty list reads "No changes". */
+    data class Changes(val items: List<ChangeItemDto>) : HistoryDetailBody
+
+    /** The snapshot cannot be shown (`not_recorded`, `too_large`, `malformed` or unknown). */
+    data class Unavailable(val reason: String?) : HistoryDetailBody
+}
+
+/**
+ * Maps a history entry and its (possibly not yet loaded) detail to what its sheet shows. Every
+ * entry is openable: one with no media and no recorded changes says so without a request.
+ */
+fun historyDetailBody(event: AuditEventDto, detail: HistoryDetailState?): HistoryDetailBody {
+    event.media?.let {
+        return HistoryDetailBody.Media(it)
+    }
+    if (!event.hasChanges) return HistoryDetailBody.NoDetails
+    return when (detail) {
+        null,
+        HistoryDetailState.Loading -> HistoryDetailBody.Loading
+        HistoryDetailState.Failed -> HistoryDetailBody.Failed
+        is HistoryDetailState.Loaded ->
+            detail.detail.changes?.let { HistoryDetailBody.Changes(it.items) }
+                ?: HistoryDetailBody.Unavailable(detail.detail.unavailableReason)
+    }
 }

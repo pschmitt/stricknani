@@ -577,6 +577,31 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     "the Rust API did not persist the reordered project steps",
   );
   await page.waitForURL(`**${editorPath}`);
+
+  markStage("opening a Recent changes entry to see its recorded diff");
+  const historySection = page.locator("[data-history-section]");
+  await historySection.scrollIntoViewIfNeeded();
+  const historyRows = historySection.locator("button.entry-row");
+  await historyRows.first().waitFor({ state: "visible" });
+  await historyRows.first().click();
+  check(
+    (await historyRows.first().getAttribute("aria-expanded")) === "true",
+    "a Recent changes entry did not open when clicked",
+  );
+  const historyDetail = historySection.getByRole("region").first();
+  await historyDetail.getByText("Before", { exact: true }).first().waitFor({
+    state: "visible",
+  });
+  check(
+    (await historyDetail.getByText("After", { exact: true }).count()) > 0,
+    "an opened Recent changes entry did not show the before and after values",
+  );
+  await historyRows.first().click();
+  check(
+    (await historyRows.first().getAttribute("aria-expanded")) === "false",
+    "a Recent changes entry did not close when clicked again",
+  );
+
   await openSavedEditor();
 
   const imageAsset = join(REPO_ROOT, "demo_assets", "demo_image_3.jpg");

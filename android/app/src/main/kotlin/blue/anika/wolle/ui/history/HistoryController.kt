@@ -137,7 +137,8 @@ class HistoryController(
 
     fun open(event: AuditEventDto) {
         _state.update { it.copy(selected = event) }
-        loadDetail(event.id, force = true)
+        // An event with no recorded changes (and no file) has nothing to fetch.
+        if (event.hasChanges && event.media == null) loadDetail(event.id, force = true)
     }
 
     fun close() = _state.update { it.copy(selected = null) }

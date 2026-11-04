@@ -221,3 +221,14 @@ export function fullDate(iso: string, locale: Locale): string {
         timeStyle: "short",
       }).format(date);
 }
+
+/** What the details of a history event can show: its file, recorded field changes, or nothing. */
+export type HistoryDetailKind = "media" | "changes" | "none";
+
+export function historyDetailKind(event: {
+  has_changes: boolean;
+  media: unknown | null;
+}): HistoryDetailKind {
+  if (event.media) return "media";
+  return event.has_changes ? "changes" : "none";
+}

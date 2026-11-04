@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -329,7 +330,6 @@ private fun HistoryRow(
     val byText = other?.let { stringResource(R.string.history_by, it) }
     val description = listOfNotNull(headline, action, date, byText).joinToString(", ")
     val surface = MaterialTheme.colorScheme.surfaceContainer
-    val expandable = event.hasChanges || event.media != null
     val rowModifier =
         Modifier.fillMaxWidth()
             .height(IntrinsicSize.Min)
@@ -337,10 +337,9 @@ private fun HistoryRow(
             .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
                 enabled = true,
-                role = if (expandable) Role.Button else null,
-                onClickLabel =
-                    if (expandable) stringResource(R.string.history_open_changes) else null,
-                onClick = { if (expandable) onOpen() },
+                role = Role.Button,
+                onClickLabel = stringResource(R.string.history_open_changes),
+                onClick = onOpen,
                 onLongClick = { Toast.makeText(context, date, Toast.LENGTH_SHORT).show() },
                 onLongClickLabel = stringResource(R.string.history_show_date),
             )
@@ -384,14 +383,12 @@ private fun HistoryRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (expandable) {
-                Icon(
-                    Icons.Filled.ExpandMore,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, end = 4.dp),
-                )
-            }
+            Icon(
+                Icons.Filled.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp),
+            )
         }
     }
 }
@@ -455,43 +452,43 @@ private fun HistoryEventSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (event.media != null) {
-                AuditMediaBlock(event.media)
-            } else
-                when (detail) {
-                    null,
-                    HistoryDetailState.Loading ->
-                        Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) {
-                            YarnLoader(size = 56.dp)
-                        }
-                    HistoryDetailState.Failed ->
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                stringResource(R.string.history_detail_failed),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                            TextButton(
-                                onClick = onRetry,
-                                modifier = Modifier.heightIn(min = 48.dp),
-                            ) {
-                                Text(stringResource(R.string.admin_try_again))
-                            }
-                        }
-                    is HistoryDetailState.Loaded -> {
-                        val changes = detail.detail.changes
-                        if (changes != null && changes.items.isNotEmpty()) {
-                            changes.items.forEach { item -> ChangeCard(item) }
-                        } else {
-                            Text(
-                                stringResource(
-                                    if (changes != null) R.string.admin_changes_none
-                                    else unavailableReasonRes(detail.detail.unavailableReason)
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+            when (val body = historyDetailBody(event, detail)) {
+                is HistoryDetailBody.Media -> AuditMediaBlock(body.media)
+                HistoryDetailBody.NoDetails ->
+                    Text(
+                        stringResource(R.string.admin_no_details),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("history-no-details"),
+                    )
+                HistoryDetailBody.Loading ->
+                    Box(Modifier.fillMaxWidth().padding(24.dp), Alignment.Center) {
+                        YarnLoader(size = 56.dp)
+                    }
+                HistoryDetailBody.Failed ->
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(R.string.history_detail_failed),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        TextButton(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.admin_try_again))
                         }
                     }
-                }
+                is HistoryDetailBody.Changes ->
+                    if (body.items.isEmpty()) {
+                        Text(
+                            stringResource(R.string.admin_changes_none),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        body.items.forEach { item -> ChangeCard(item) }
+                    }
+                is HistoryDetailBody.Unavailable ->
+                    Text(
+                        stringResource(unavailableReasonRes(body.reason)),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+            }
         }
     }
 }
