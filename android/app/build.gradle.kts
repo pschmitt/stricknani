@@ -37,7 +37,11 @@ val selfUpdateEnabled =
 // dependency, no source set); the toggle never shows there. `-PerrorReporting=true|false`
 // overrides the detection.
 val errorReportingEnabled =
-    providers.gradleProperty("errorReporting").map { it.toBoolean() }.orElse(!isBuildingBundle).get()
+    providers
+        .gradleProperty("errorReporting")
+        .map { it.toBoolean() }
+        .orElse(!isBuildingBundle)
+        .get()
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
