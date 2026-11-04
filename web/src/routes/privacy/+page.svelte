@@ -225,6 +225,12 @@
         locale,
       )}
     </p>
+    <p>
+      {t(
+        "Error reports are sent only over an encrypted HTTPS connection. If your server address starts with http:// (a server on a home network, for example), the Android app does not send error reports, and the web app does not either when its page is served over plain HTTP, except on the same device (localhost) for development.",
+        locale,
+      )}
+    </p>
   </section>
 
   <section>
@@ -237,7 +243,16 @@
     </p>
     <p>
       {t(
-        "You can manage your content and revoke personal access tokens through the available features. To request deletion or an export of account data, contact the instance operator. Deleting content or an account does not necessarily remove copies already retained in backups, logs, or external services.",
+        "You can manage your content and revoke personal access tokens through the available features. You can also delete your account yourself, in the web app or the Android app, under Account. You confirm it is you with your password or your login provider, and the server then permanently deletes your projects, yarns, photos, attachments, favourites, profile picture, sessions, connected apps, linked logins, and the edit history of your content, together with the account itself.",
+        locale,
+      )}
+      <a href={resolve("/delete-account")}
+        >{t("How to delete your account", locale)}</a
+      >.
+    </p>
+    <p>
+      {t(
+        "After a deletion the server keeps only an anonymous record that an account was deleted, with no name or email address. Copies may remain in the operator's backups until they are rotated out, according to the operator's retention period, and in logs or external services that already received information. To request an export of your data, or if you cannot sign in, contact the instance operator.",
         locale,
       )}
     </p>

@@ -99,6 +99,8 @@
     }
     resume = takePendingReauth(
       typeof sessionStorage === "undefined" ? undefined : sessionStorage,
+      Date.now(),
+      (action) => action !== "delete_account",
     );
     const controller = new AbortController();
     void getAuthOptions(controller.signal)

@@ -20,7 +20,9 @@ use serde::Deserialize;
 use zeroize::Zeroizing;
 
 use crate::{
-    account_service::{self, AccountError, BearerCaller, BearerStepUp, CreateTokenOptions},
+    account_service::{
+        self, AccountError, BearerCaller, BearerStepUp, CreateTokenOptions, DeleteProof,
+    },
     auth,
     auth_stepup_service::{self, StepupError},
     media,
@@ -46,6 +48,7 @@ pub(super) fn router() -> Router<ApiV2State> {
             axum::routing::delete(revoke_token),
         )
         .route("/account/password", axum::routing::put(change_password))
+        .route("/account/delete", post(delete_account))
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024));
     let avatar_routes = Router::new()
         .route("/account/avatar", post(upload_avatar).delete(delete_avatar))
@@ -434,6 +437,101 @@ async fn change_password(
     }
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DeleteAccountRequest {
+    /// `DELETE` or the account email.
+    confirmation: String,
+    /// Re-authentication by password. Without it a cookie session needs a
+    /// fresh OIDC/password step-up stamp and a bearer PAT an `X-Reauth-Token`.
+    current_password: Option<String>,
+}
+
+/// Permanently delete the caller's account and all of its data. Requires
+/// re-authentication on top of the session or token (see the contract doc).
+async fn delete_account(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    peer: Option<Extension<ConnectInfo<SocketAddr>>>,
+    request: Result<Json<DeleteAccountRequest>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Json(mut request) = match request {
+        Ok(request) => request,
+        Err(error) => return json_rejection(error),
+    };
+    if request.confirmation.trim().is_empty() || request.confirmation.len() > 320 {
+        return field_error(
+            "confirmation",
+            "Type DELETE or your email address to confirm",
+        );
+    }
+    let credential = match auth_stepup_service::current_credential(
+        &state.app.pool,
+        &headers,
+        user_id,
+        state.app.secure_cookies,
+    )
+    .await
+    {
+        Ok(credential) => credential,
+        Err(error) => return stepup_error(error),
+    };
+    let password = request
+        .current_password
+        .take()
+        .map(Zeroizing::new)
+        .filter(|password| !password.is_empty());
+    let bearer = is_bearer(&headers);
+    let proof = if let Some(password) = password {
+        if password.len() > account_service::MAX_PASSWORD_BYTES {
+            return field_error("current_password", "Current password is invalid");
+        }
+        if let Some(response) = reserve_password_attempt(&state, peer) {
+            return response;
+        }
+        if let Err(error) =
+            auth_stepup_service::verify_current_password(&state.app.pool, user_id, password).await
+        {
+            return stepup_error(error);
+        }
+        DeleteProof::PasswordVerified
+    } else if !bearer {
+        DeleteProof::BrowserSession {
+            token_id: credential.token_id,
+        }
+    } else if headers.contains_key("x-reauth-token") {
+        match auth_stepup_service::native_proof_hash(&headers) {
+            Ok(proof_hash) => DeleteProof::NativeProof {
+                token_id: credential.token_id,
+                proof_hash,
+            },
+            Err(error) => return stepup_error(error),
+        }
+    } else {
+        return reauth_required();
+    };
+    match account_service::delete_account(&state.app, user_id, proof, &request.confirmation).await {
+        Ok(()) => {
+            let mut response = StatusCode::NO_CONTENT.into_response();
+            if !bearer {
+                super::append_set_cookie(
+                    &mut response,
+                    super::clear_cookie(
+                        auth::session_cookie_name(state.app.secure_cookies),
+                        state.app.secure_cookies,
+                    ),
+                );
+            }
+            response
+        }
+        Err(error) => account_error(error),
+    }
+}
+
 async fn upload_avatar(
     State(state): State<ApiV2State>,
     headers: HeaderMap,
@@ -535,6 +633,15 @@ fn account_error(error: AccountError) -> Response {
             "Sign in to continue",
         ),
         AccountError::ReauthRequired => reauth_required(),
+        AccountError::ConfirmationMismatch => field_error(
+            "confirmation",
+            "Type DELETE or your email address to confirm",
+        ),
+        AccountError::LastAdministrator => super::api_error(
+            StatusCode::CONFLICT,
+            "last_admin",
+            "You are the last administrator. Make someone else an administrator first",
+        ),
         AccountError::InvalidAvatar(media::UploadError::TooLarge) => super::api_error(
             StatusCode::PAYLOAD_TOO_LARGE,
             "payload_too_large",

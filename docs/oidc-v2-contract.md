@@ -121,12 +121,13 @@ session plus Origin/CSRF, or explicit PAT. Valid password verification returns:
   it only in `X-Reauth-Token` for the matching operation.
 
 Actions are `link_identity`, `unlink_identity`, `admin_unlink_identity`,
-`change_password`, `create_api_token` and `revoke_api_token`. Targets contain
+`change_password`, `create_api_token`, `revoke_api_token` and `delete_account`. Targets contain
 only the applicable `provider`, `identity_id` and administrative `user_id`.
 Exact target shapes are `{provider}` for `link_identity`, `{identity_id}` for
 `unlink_identity`, `{user_id, identity_id}` for `admin_unlink_identity`, and
 `{token_id}` for `revoke_api_token`. Password changes and token creation take
-no target. Unrelated action/target combinations are rejected.
+no target, and neither does `delete_account` (send no `target` at all, not an empty
+object). Unrelated action/target combinations are rejected.
 
 OIDC reauthentication uses `POST /account/reauth/oidc/start` with
 `{provider, action, target?, client, return_to?, ...native start fields when applicable}`.

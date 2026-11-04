@@ -176,6 +176,7 @@ consume that quota.
 | `PATCH /account/api-tokens/current` | JSON `{name}` (1 to 100 characters after trimming) | bearer PAT only: `200 {data: {id, name, created_at, expires_at, last_used_at}}`; renames the calling token. A cookie session gets `403 forbidden`; an empty, blank or over-long name gets `422 validation_error` with `error.fields.name`; an invalid or revoked PAT gets `401 session_expired`. Not audit-logged: the auth audit has a closed action set and no fitting event |
 | `DELETE /account/api-tokens/{id}` | —                                       | browser: `204`; bearer: `200 {data: {id, revoked: true, current_token}}`; only owned API-purpose tokens can be revoked; repeat revoke is idempotent |
 | `PUT /account/password`           | JSON `{current_password, new_password}` | `204`; revokes every browser session and PAT and clears the current cookie after commit |
+| `POST /account/delete`            | JSON `{confirmation, current_password?}` | `204`; permanently deletes the account and all its data, see [Account deletion](#account-deletion) |
 | `POST /account/avatar`            | Multipart `file`                        | `{data: {avatar_url}}`                                                           |
 | `DELETE /account/avatar`          | —                                       | `204`                                                                            |
 
@@ -251,6 +252,45 @@ Optional, operator-configured Sentry reporting (`RUST_SENTRY_DSN_FILE`; NixOS
 - **Server events.** Panics and `error!` events go to Sentry with headers, cookies,
   bodies, query strings, emails, IPs and tokens removed; the only user field is
   the numeric id, and events from requests of opted-out users are dropped.
+
+### Account deletion
+
+`POST /api/v2/account/delete` deletes the caller's own account for good. It is a
+POST with a JSON body (not `DELETE`) so clients that cannot send a body with
+`DELETE` need no special case. Body: `{confirmation, current_password?}`, unknown
+fields rejected.
+
+- **Confirmation.** `confirmation` must be the literal `DELETE` or the account
+  email (case-insensitive, trimmed); otherwise `422 validation_error` with
+  `error.fields.confirmation`.
+- **Cookie sessions** need the usual Origin/CSRF checks (`403 csrf_failed`) and
+  fresh authentication: either `current_password` in the body, or a session
+  stamp from `POST /account/reauth` (password) or the OIDC browser step-up, both
+  with action `delete_account` and no target. Without either: `403
+  reauth_required`. On success the session cookie is cleared.
+- **Bearer PATs** need `current_password` in the body or a single-use
+  `X-Reauth-Token` proof for action `delete_account` (from `POST /account/reauth`
+  or `POST /account/reauth/oidc/start` + `/exchange`), bound to the calling PAT.
+  Without either: `403 reauth_required`. A wrong password is `401
+  invalid_credentials`; passwords share the reauthentication attempt budget
+  (`429 rate_limited`). A failed or refused attempt does not consume the proof.
+- **Last administrator.** The only remaining active administrator gets `409
+  last_admin` and nothing is deleted.
+- **What is deleted**, in one transaction: the user row and, by cascade, projects,
+  steps, yarns, photos, attachments (all media rows), favourites, categories,
+  deletion tombstones, sync state, archive jobs, avatar, OIDC identities, API
+  tokens and browser sessions, pending reauth proofs; plus the resource audit
+  history authored by the account (it carries titles and change sets). Media and
+  avatar files are removed from disk right after the commit through the durable
+  `media_gc`/`avatar_gc` queue (a failure stays queued for the background
+  sweeper).
+- **What is kept.** An `account_deleted` row in the authentication audit with no
+  actor, no target and only a timestamp, so an operator can see that a deletion
+  happened but not whose. Administrator audit rows that merely mention the
+  account keep only its numeric id (names and change sets are cleared).
+  Backups are the operator's to rotate.
+- **Public page.** `/app/delete-account` explains all of this and works signed
+  out; it is the Play Console "Delete account URL".
 
 ### Bearer PAT access to the account routes
 

@@ -102,4 +102,5 @@ pub enum ReauthAction {
     ChangePassword,
     CreateApiToken,
     RevokeApiToken,
+    DeleteAccount,
 }

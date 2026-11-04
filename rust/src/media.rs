@@ -2840,6 +2840,30 @@ pub async fn cleanup_pending(state: &AppState) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
+/// Run the durable media deletion queue until it is empty, a round makes no
+/// progress, or a generous round limit is hit. Failures stay queued for the
+/// background sweeper.
+pub async fn drain_pending(state: &AppState) {
+    let mut previous = i64::MAX;
+    for _ in 0..1000 {
+        if cleanup_pending(state).await.is_err() {
+            return;
+        }
+        let Ok(remaining) = sqlx::query_scalar::<_, i64>(
+            "SELECT (SELECT count(*) FROM media_gc) + (SELECT count(*) FROM avatar_gc)",
+        )
+        .fetch_one(&state.pool)
+        .await
+        else {
+            return;
+        };
+        if remaining == 0 || remaining >= previous {
+            return;
+        }
+        previous = remaining;
+    }
+}
+
 fn image_dto(row: &MediaRow) -> ImageResponse {
     let project_id = row.project_id.unwrap_or_default();
     ImageResponse {

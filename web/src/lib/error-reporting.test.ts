@@ -15,6 +15,7 @@ import {
   parseErrorReporting,
   releaseName,
   reportingConfig,
+  secureTransport,
   resetErrorReportingForTests,
   scrubEvent,
   scrubText,
@@ -53,6 +54,23 @@ describe("error reporting gating", () => {
       reportingConfig(info({ tunnel_path: "https://evil.test/x" })),
     ).toBeNull();
     expect(reportingConfig(info({ tunnel_path: "//evil.test/x" }))).toBeNull();
+  });
+
+  it("reports only from HTTPS pages, or plain HTTP on this machine", () => {
+    const https = { protocol: "https:", hostname: "wolle.example.test" };
+    expect(reportingConfig(info(), https)).not.toBeNull();
+    for (const hostname of ["localhost", "127.0.0.1", "[::1]"])
+      expect(
+        reportingConfig(info(), { protocol: "http:", hostname }),
+      ).not.toBeNull();
+    for (const page of [
+      { protocol: "http:", hostname: "wolle.example.test" },
+      { protocol: "http:", hostname: "192.168.1.20" },
+      { protocol: "ftp:", hostname: "localhost" },
+    ]) {
+      expect(secureTransport(page)).toBe(false);
+      expect(reportingConfig(info(), page)).toBeNull();
+    }
   });
 
   it("ignores malformed server payloads", () => {

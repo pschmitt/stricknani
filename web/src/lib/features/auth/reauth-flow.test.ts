@@ -156,6 +156,28 @@ describe("pending provider reauth", () => {
     expect(takePendingReauth(storage, 2_000)).toBeNull();
   });
 
+  it("leaves a request for its owner when the filter rejects it", () => {
+    const storage = memoryStorage();
+    const deletion = { action: "delete_account" as const };
+    savePendingReauth(storage, deletion, 1_000);
+    expect(
+      takePendingReauth(
+        storage,
+        2_000,
+        (action) => action !== "delete_account",
+      ),
+    ).toBeNull();
+    expect(storage.data.has(PENDING_REAUTH_KEY)).toBe(true);
+    expect(
+      takePendingReauth(
+        storage,
+        2_000,
+        (action) => action === "delete_account",
+      ),
+    ).toEqual(deletion);
+    expect(storage.data.has(PENDING_REAUTH_KEY)).toBe(false);
+  });
+
   it("expires with the ten minute window", () => {
     const storage = memoryStorage();
     savePendingReauth(storage, request, 0);

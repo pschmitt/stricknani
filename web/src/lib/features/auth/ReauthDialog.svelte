@@ -31,12 +31,15 @@
     locale,
     oidcProvider = null,
     passwordEnabled = true,
+    message,
     onconfirmed,
   }: {
     locale: Locale;
     /** Offered as "Confirm with ..." when the user already has a linked login. */
     oidcProvider?: OidcProvider | null;
     passwordEnabled?: boolean;
+    /** Replaces the default explanation above the password field. */
+    message?: string;
     onconfirmed: (request: ReauthRequest) => void | Promise<void>;
   } = $props();
 
@@ -136,10 +139,11 @@
   onclose={reset}
 >
   <p>
-    {t(
-      "For your security, confirm your identity before changing how you sign in.",
-      locale,
-    )}
+    {message ??
+      t(
+        "For your security, confirm your identity before changing how you sign in.",
+        locale,
+      )}
   </p>
   {#if failure}
     <p class="reauth-error" role="alert">{failureMessage(failure)}</p>

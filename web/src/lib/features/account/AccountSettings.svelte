@@ -9,6 +9,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import ConnectAppDialog from "./ConnectAppDialog.svelte";
+  import DeleteAccountDialog from "./DeleteAccountDialog.svelte";
   import { formatLastUsed } from "./connect-app.ts";
   import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
@@ -18,6 +19,7 @@
     patchSessionErrorReporting,
     refreshSession,
     session,
+    endSessionAfterDeletion,
     signOut,
   } from "#lib/session.svelte.ts";
   import { theme, setTheme } from "#lib/theme.svelte.ts";
@@ -258,6 +260,15 @@
     revealedToken = null;
     if (avatarInput) avatarInput.value = "";
   });
+
+  let deleteDialog = $state<ReturnType<typeof DeleteAccountDialog>>();
+
+  /** The server deleted the account: drop the session and say goodbye. */
+  async function afterAccountDeleted() {
+    allowSignOutNavigation = true;
+    await endSessionAfterDeletion();
+    await goto(`${resolve("/login")}?goodbye=1`, { replaceState: true });
+  }
 
   async function signOutFromAccount() {
     const activeSession = session.data;
@@ -1362,6 +1373,37 @@
     {/if}
   </section>
 
+  <section class="card card--danger" aria-labelledby="delete-account-heading">
+    <header class="card__header">
+      <div class="card__title">
+        <span class="card__icon card__icon--danger" aria-hidden="true"
+          ><NavIcon name="action-delete" /></span
+        >
+        <h2 id="delete-account-heading">{t("Delete account", locale)}</h2>
+      </div>
+    </header>
+    <p class="card__intro">
+      {t(
+        "Permanently delete your account and everything in it. You will be asked to confirm it is you first.",
+        locale,
+      )}
+      <a class="inline-link" href={resolve("/delete-account")}
+        >{t("What gets deleted?", locale)}</a
+      >
+    </p>
+    <SharedButton
+      variant="danger"
+      type="button"
+      disabled={signOutBusy ||
+        session.status !== "ready" ||
+        !session.data?.user}
+      onclick={() => deleteDialog?.open()}
+      icon="action-delete"
+    >
+      {t("Delete my account", locale)}
+    </SharedButton>
+  </section>
+
   <section class="card card--footer" aria-label={t("Sign out", locale)}>
     {#if signOutError}
       <p class="field-error" role="alert">{signOutError}</p>
@@ -1380,6 +1422,15 @@
     </SharedButton>
   </section>
 </section>
+
+{#if session.data?.user}
+  <DeleteAccountDialog
+    bind:this={deleteDialog}
+    {locale}
+    email={session.data.user.email}
+    ondeleted={afterAccountDeleted}
+  />
+{/if}
 
 <ConnectAppDialog
   bind:this={connectDialog}
@@ -1646,6 +1697,15 @@
   .card__icon--security {
     color: var(--tone-audit);
     background: var(--tone-audit-wash);
+  }
+
+  .card__icon--danger {
+    color: var(--danger, #b3261e);
+    background: color-mix(in srgb, var(--danger, #b3261e) 14%, transparent);
+  }
+
+  .card--danger {
+    border-color: color-mix(in srgb, var(--danger, #b3261e) 45%, var(--line));
   }
 
   .card__icon--apps,

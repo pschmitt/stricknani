@@ -28,6 +28,10 @@ pub(crate) enum AccountError {
     CallerTokenInvalid,
     /// A sensitive action lacks a valid, unconsumed step-up proof.
     ReauthRequired,
+    /// The confirmation text is neither the account email nor `DELETE`.
+    ConfirmationMismatch,
+    /// The last active administrator cannot delete their own account.
+    LastAdministrator,
 }
 
 /// How a bearer caller proved recent authentication for token creation.
@@ -543,6 +547,135 @@ fn format_timestamp(timestamp: i64) -> String {
     chrono::DateTime::from_timestamp(timestamp, 0)
         .unwrap_or(chrono::DateTime::UNIX_EPOCH)
         .to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
+}
+
+/// How the caller proved recent authentication for account deletion.
+pub(crate) enum DeleteProof {
+    /// The handler already verified the current password.
+    PasswordVerified,
+    /// The browser session carries a fresh server-side `reauth_at` stamp.
+    BrowserSession { token_id: i64 },
+    /// SHA-256 of an `X-Reauth-Token` proof, consumed with the deletion.
+    NativeProof { token_id: i64, proof_hash: String },
+}
+
+/// Whether `confirmation` is the literal `DELETE` or the account email.
+fn confirmation_matches(confirmation: &str, email: &str) -> bool {
+    let confirmation = confirmation.trim();
+    !confirmation.is_empty()
+        && (confirmation == "DELETE" || confirmation.eq_ignore_ascii_case(email))
+}
+
+/// Permanently delete an account and everything it owns.
+///
+/// One transaction removes the account, its sessions and API tokens, OIDC
+/// identities, favourites, avatar, projects, yarns, steps and media rows (the
+/// schema cascades; media rows queue their files in `media_gc`). Resource audit
+/// history authored by the account is deleted too, and a PII-free
+/// `account_deleted` auth-audit row is recorded. Files are removed after the
+/// commit; anything that fails stays queued for the background sweeper.
+pub(crate) async fn delete_account(
+    state: &crate::db::AppState,
+    user_id: i64,
+    proof: DeleteProof,
+    confirmation: &str,
+) -> Result<(), AccountError> {
+    let now = chrono::Utc::now().timestamp();
+    let mut tx = state
+        .pool
+        .begin()
+        .await
+        .map_err(|_| AccountError::Database)?;
+    // The no-op write takes SQLite's write lock before the guards run, so two
+    // concurrent deletions of the last two administrators cannot both pass.
+    let active = sqlx::query("UPDATE users SET id = id WHERE id = ? AND active = 1")
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if active.rows_affected() != 1 {
+        return Err(AccountError::TokenNotFound);
+    }
+    let (email, is_admin): (String, bool) =
+        sqlx::query_as("SELECT email, is_admin = 1 FROM users WHERE id = ?")
+            .bind(user_id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|_| AccountError::Database)?;
+    if !confirmation_matches(confirmation, &email) {
+        return Err(AccountError::ConfirmationMismatch);
+    }
+    match &proof {
+        DeleteProof::PasswordVerified => {}
+        DeleteProof::BrowserSession { token_id } => {
+            oidc_identity_service::consume_recent_auth_tx(
+                &mut tx,
+                RecentAuth::BrowserSession {
+                    token_id: *token_id,
+                },
+                user_id,
+                user_id,
+                RecentAction::DeleteAccount,
+                now,
+            )
+            .await
+            .map_err(|_| AccountError::ReauthRequired)?;
+        }
+        DeleteProof::NativeProof {
+            token_id,
+            proof_hash,
+        } => {
+            oidc_identity_service::consume_recent_auth_tx(
+                &mut tx,
+                RecentAuth::NativeProof {
+                    token_id: *token_id,
+                    proof_hash,
+                },
+                user_id,
+                user_id,
+                RecentAction::DeleteAccount,
+                now,
+            )
+            .await
+            .map_err(|_| AccountError::ReauthRequired)?;
+        }
+    }
+    if is_admin {
+        let other_admins: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM users WHERE is_admin = 1 AND active = 1 AND id <> ?",
+        )
+        .bind(user_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|_| AccountError::Database)?;
+        if other_admins == 0 {
+            return Err(AccountError::LastAdministrator);
+        }
+    }
+    for statement in [
+        // Resource history authored by the account (titles, change sets).
+        "DELETE FROM audit_events WHERE actor_user_id = ?1",
+        // Administrator events about the account itself keep only the id.
+        "UPDATE audit_events SET resource_name_snapshot = NULL, details = NULL, \
+             safe_changes = NULL WHERE entity_type = 'user' AND entity_id = ?1",
+        // Tokens and identities first: no ON DELETE SET NULL update can then
+        // trip the token-origin triggers while the rows cascade away.
+        "DELETE FROM api_tokens WHERE user_id = ?1",
+        "DELETE FROM oidc_identities WHERE user_id = ?1",
+        "DELETE FROM users WHERE id = ?1",
+    ] {
+        sqlx::query(statement)
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|_| AccountError::Database)?;
+    }
+    oidc_identity_service::record_account_deleted_tx(&mut tx, now)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    tx.commit().await.map_err(|_| AccountError::Database)?;
+    media::drain_pending(state).await;
+    Ok(())
 }
 
 #[cfg(test)]

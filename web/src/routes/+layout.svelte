@@ -49,7 +49,12 @@
   const publicGauge = $derived(
     showPublicPage(
       pathname,
-      [linkTo("/gauge"), linkTo("/privacy"), linkTo("/about")],
+      [
+        linkTo("/gauge"),
+        linkTo("/privacy"),
+        linkTo("/about"),
+        linkTo("/delete-account"),
+      ],
       session.status,
       user !== null,
     ),
@@ -142,6 +147,7 @@
     | "/gauge"
     | "/privacy"
     | "/about"
+    | "/delete-account"
     | "/account"
     | "/admin/users"
     | "/admin/audit";

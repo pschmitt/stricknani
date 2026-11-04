@@ -213,3 +213,19 @@ export async function setErrorReporting(
   if (!record(payload)) throw invalidResponse();
   return parseProfile(payload.data);
 }
+
+/**
+ * Permanently delete the signed-in account and all of its data. The server
+ * answers `403 reauth_required` until the session has a fresh step-up (see
+ * the shared re-authentication dialog); the caller retries after that.
+ */
+export async function deleteAccount(
+  confirmation: string,
+  currentSession: SessionData,
+): Promise<void> {
+  await apiRequest("/api/v2/account/delete", {
+    method: "POST",
+    csrfToken: currentSession.csrf_token,
+    body: { confirmation },
+  });
+}

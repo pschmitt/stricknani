@@ -64,13 +64,34 @@ export function parseErrorReporting(value: unknown): ErrorReportingInfo | null {
   };
 }
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+/**
+ * Reports only travel over an encrypted connection: the page must be HTTPS,
+ * or plain HTTP on this machine (local development). Anything else is skipped
+ * silently.
+ */
+export function secureTransport(page: {
+  protocol: string;
+  hostname: string;
+}): boolean {
+  if (page.protocol === "https:") return true;
+  return page.protocol === "http:" && LOOPBACK_HOSTS.has(page.hostname);
+}
+
 /**
  * Whether error reporting may run, and with which settings. Reporting needs an
- * instance DSN and tunnel, and the person must not have opted out.
+ * instance DSN and tunnel, the person must not have opted out, and the page
+ * must be served over HTTPS (or be a local development page).
  */
 export function reportingConfig(
   info: ErrorReportingInfo | null | undefined,
+  page: { protocol: string; hostname: string } | undefined = typeof location ===
+  "undefined"
+    ? undefined
+    : location,
 ): ReportingConfig | null {
+  if (page && !secureTransport(page)) return null;
   if (!info || !info.available || !info.enabled) return null;
   const { dsn, tunnel_path: tunnel } = info;
   if (!dsn || !tunnel) return null;

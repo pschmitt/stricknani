@@ -231,6 +231,7 @@ enum ActionName {
     ChangePassword,
     CreateApiToken,
     RevokeApiToken,
+    DeleteAccount,
 }
 
 #[derive(Clone, Deserialize)]
@@ -249,6 +250,7 @@ enum OwnedAction {
     ChangePassword,
     CreateApiToken,
     RevokeApiToken(i64),
+    DeleteAccount,
 }
 
 impl OwnedAction {
@@ -270,6 +272,7 @@ impl OwnedAction {
             Self::RevokeApiToken(token_id) => RecentAction::RevokeApiToken {
                 token_id: *token_id,
             },
+            Self::DeleteAccount => RecentAction::DeleteAccount,
         }
     }
 
@@ -288,6 +291,7 @@ impl OwnedAction {
             Self::ChangePassword => ReauthAction::ChangePassword,
             Self::CreateApiToken => ReauthAction::CreateApiToken,
             Self::RevokeApiToken(_) => ReauthAction::RevokeApiToken,
+            Self::DeleteAccount => ReauthAction::DeleteAccount,
         }
     }
 
@@ -313,7 +317,9 @@ impl OwnedAction {
                 token_id: Some(*token_id),
                 ..OidcActionTarget::default()
             },
-            Self::ChangePassword | Self::CreateApiToken => OidcActionTarget::default(),
+            Self::ChangePassword | Self::CreateApiToken | Self::DeleteAccount => {
+                OidcActionTarget::default()
+            }
         }
     }
 }
@@ -406,6 +412,10 @@ fn parse_action(
         ActionName::CreateApiToken => {
             none_target(target)?;
             Ok(OwnedAction::CreateApiToken)
+        }
+        ActionName::DeleteAccount => {
+            none_target(target)?;
+            Ok(OwnedAction::DeleteAccount)
         }
         ActionName::RevokeApiToken => {
             let Some(target) = target else {
@@ -1156,7 +1166,9 @@ fn target_matches_reauth_action(target: &OidcActionTarget, action: ReauthAction)
         ReauthAction::AdminUnlinkIdentity => {
             target.identity_id.is_some() && target.user_id.is_some()
         }
-        ReauthAction::ChangePassword | ReauthAction::CreateApiToken => {
+        ReauthAction::ChangePassword
+        | ReauthAction::CreateApiToken
+        | ReauthAction::DeleteAccount => {
             target.provider.is_none()
                 && target.identity_id.is_none()
                 && target.user_id.is_none()
@@ -1520,6 +1532,7 @@ fn action_from_context(action: ReauthAction, context: &OidcFlowContext) -> Resul
         }
         ReauthAction::ChangePassword if empty => Ok(OwnedAction::ChangePassword),
         ReauthAction::CreateApiToken if empty => Ok(OwnedAction::CreateApiToken),
+        ReauthAction::DeleteAccount if empty => Ok(OwnedAction::DeleteAccount),
         ReauthAction::RevokeApiToken
             if target.token_id.is_some()
                 && target.provider.is_none()
@@ -1547,6 +1560,7 @@ fn reauth_action_name(action: ReauthAction) -> &'static str {
         ReauthAction::ChangePassword => "change_password",
         ReauthAction::CreateApiToken => "create_api_token",
         ReauthAction::RevokeApiToken => "revoke_api_token",
+        ReauthAction::DeleteAccount => "delete_account",
     }
 }
 

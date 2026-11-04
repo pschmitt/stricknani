@@ -116,6 +116,18 @@ export async function signOut(): Promise<void> {
   await refreshSession();
 }
 
+/**
+ * The account was deleted on the server, which also cleared the session
+ * cookie. Drop the local session and fetch a fresh signed-out one.
+ */
+export async function endSessionAfterDeletion(): Promise<void> {
+  ++sessionGeneration;
+  advanceAuthEpoch();
+  session.data = anonymousSession;
+  session.status = "ready";
+  await refreshSession();
+}
+
 /** Update the current user's avatar without resetting the authenticated app tree. */
 export function patchSessionAvatar(
   expectedSession: SessionData,

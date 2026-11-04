@@ -119,17 +119,32 @@ const ACTIONS = new Set([
   "change_password",
   "create_api_token",
   "revoke_api_token",
+  "delete_account",
 ]);
 
+/**
+ * Read and clear the pending request. When `accept` is given, a stored
+ * request it rejects is left in place for the component that owns it (the
+ * Account page has two: linked logins and account deletion).
+ */
 export function takePendingReauth(
   storage: ReauthStorage | undefined,
   now: number = Date.now(),
+  accept: (action: ReauthRequest["action"]) => boolean = () => true,
 ): ReauthRequest | null {
   try {
     const raw = storage?.getItem(PENDING_REAUTH_KEY);
     if (!raw) return null;
-    storage?.removeItem(PENDING_REAUTH_KEY);
     const value: unknown = JSON.parse(raw);
+    const stored = (value as { request?: { action?: unknown } } | null)?.request
+      ?.action;
+    if (
+      typeof stored === "string" &&
+      ACTIONS.has(stored) &&
+      !accept(stored as ReauthRequest["action"])
+    )
+      return null;
+    storage?.removeItem(PENDING_REAUTH_KEY);
     if (typeof value !== "object" || value === null) return null;
     const { request, at } = value as { request?: unknown; at?: unknown };
     if (typeof at !== "number" || now - at > REAUTH_WINDOW_MS || now < at)

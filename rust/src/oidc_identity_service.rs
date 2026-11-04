@@ -55,6 +55,7 @@ pub(crate) enum RecentAction<'a> {
     RevokeApiToken {
         token_id: i64,
     },
+    DeleteAccount,
 }
 
 #[derive(Clone, Copy)]
@@ -65,6 +66,7 @@ enum AuthAuditAction {
     OidcLoginSucceeded,
     OidcTokenMinted,
     ApiTokenCreated,
+    AccountDeleted,
 }
 
 impl AuthAuditAction {
@@ -76,6 +78,7 @@ impl AuthAuditAction {
             Self::OidcLoginSucceeded => "oidc_login_succeeded",
             Self::OidcTokenMinted => "oidc_token_minted",
             Self::ApiTokenCreated => "api_token_created",
+            Self::AccountDeleted => "account_deleted",
         }
     }
 }
@@ -159,6 +162,7 @@ impl<'a> RecentAction<'a> {
             Self::ChangePassword => "change_password",
             Self::CreateApiToken => "create_api_token",
             Self::RevokeApiToken { .. } => "revoke_api_token",
+            Self::DeleteAccount => "delete_account",
         }
     }
 
@@ -196,7 +200,7 @@ impl<'a> RecentAction<'a> {
                 }
                 actor_user_id
             }
-            Self::ChangePassword | Self::CreateApiToken => actor_user_id,
+            Self::ChangePassword | Self::CreateApiToken | Self::DeleteAccount => actor_user_id,
             Self::RevokeApiToken { token_id } => {
                 if token_id <= 0 {
                     return Err(OidcIdentityError::InvalidIdentity);
@@ -217,7 +221,7 @@ impl<'a> RecentAction<'a> {
             Self::UnlinkIdentity { identity_id }
             | Self::AdminUnlinkIdentity { identity_id, .. } => (None, Some(identity_id), None),
             Self::RevokeApiToken { token_id } => (None, None, Some(token_id)),
-            Self::ChangePassword | Self::CreateApiToken => (None, None, None),
+            Self::ChangePassword | Self::CreateApiToken | Self::DeleteAccount => (None, None, None),
         }
     }
 }
@@ -901,7 +905,8 @@ async fn validate_action_target_tx(
         }
         RecentAction::LinkIdentity { .. }
         | RecentAction::ChangePassword
-        | RecentAction::CreateApiToken => true,
+        | RecentAction::CreateApiToken
+        | RecentAction::DeleteAccount => true,
     };
     if visible {
         Ok(())
@@ -993,6 +998,20 @@ pub(crate) async fn record_api_token_created_tx(
     .bind(now)
     .execute(&mut **tx)
     .await?;
+    Ok(())
+}
+
+/// Record an account deletion in the caller's transaction. The row has no
+/// actor and no target: the account is gone and the event must not identify it.
+pub(crate) async fn record_account_deleted_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    now: i64,
+) -> Result<(), OidcIdentityError> {
+    sqlx::query("INSERT INTO auth_audit_events (action, created_at) VALUES (?, ?)")
+        .bind(AuthAuditAction::AccountDeleted.as_str())
+        .bind(now)
+        .execute(&mut **tx)
+        .await?;
     Ok(())
 }
 
@@ -1684,6 +1703,7 @@ mod tests {
             RecentAction::ChangePassword,
             RecentAction::CreateApiToken,
             RecentAction::RevokeApiToken { token_id: 13 },
+            RecentAction::DeleteAccount,
         ];
         let purposes: Vec<&str> = actions.iter().map(|action| action.purpose()).collect();
         assert_eq!(
@@ -1695,6 +1715,7 @@ mod tests {
                 "change_password",
                 "create_api_token",
                 "revoke_api_token",
+                "delete_account",
             ]
         );
         assert!(actions[0].ensure_target(1, 1).is_ok());

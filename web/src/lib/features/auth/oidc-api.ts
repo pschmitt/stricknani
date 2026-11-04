@@ -42,7 +42,8 @@ export type ReauthAction =
   | "admin_unlink_identity"
   | "change_password"
   | "create_api_token"
-  | "revoke_api_token";
+  | "revoke_api_token"
+  | "delete_account";
 
 export interface ReauthTarget {
   provider?: string;

@@ -193,6 +193,7 @@ fn is_known_route(path: &str) -> bool {
         | ["categories"]
         | ["imports"]
         | ["privacy"]
+        | ["delete-account"]
         | ["about"]
         | ["account"]
         | ["more"]

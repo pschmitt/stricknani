@@ -25,6 +25,7 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const accountCreated = $derived(page.url.searchParams.get("created") === "1");
+  const accountDeleted = $derived(page.url.searchParams.get("goodbye") === "1");
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
@@ -81,6 +82,15 @@
         <div class="form-success" role="status">
           {t(
             "Your account is ready. Sign in with your email and password.",
+            locale,
+          )}
+        </div>
+      {/if}
+
+      {#if accountDeleted}
+        <div class="form-success" role="status">
+          {t(
+            "Your account and everything in it have been deleted. Goodbye, and thank you for knitting with us.",
             locale,
           )}
         </div>

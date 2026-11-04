@@ -186,6 +186,17 @@
       external: false,
     },
     {
+      icon: "action-delete",
+      tone: "privacy",
+      label: t("Delete your account", locale),
+      description: t(
+        "How to delete your account and what happens to your data.",
+        locale,
+      ),
+      href: resolve("/delete-account"),
+      external: false,
+    },
+    {
       icon: "flag",
       tone: "bug",
       label: t("Report a problem", locale),
