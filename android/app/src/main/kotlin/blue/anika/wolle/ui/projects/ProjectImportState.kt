@@ -87,13 +87,18 @@ class ProjectImportController(
     /**
      * Saves the preview; [selectedImages] replaces the pictures to attach when not null, and
      * [reviewed] (the request with the user's yarn choices and notes applied) replaces the imported
-     * one.
+     * one, and [selectedAssets] keeps only the diagrams and PDFs (by URL) in it when not null.
      */
-    fun confirm(selectedImages: List<String>? = null, reviewed: ProjectWriteRequest? = null) {
+    fun confirm(
+        selectedImages: List<String>? = null,
+        reviewed: ProjectWriteRequest? = null,
+        selectedAssets: List<String>? = null,
+    ) {
         val confirmation = _state.value as? ProjectImportState.AwaitingConfirmation ?: return
         val reviewedPreview =
             reviewed?.let { confirmation.preview.copy(request = it) } ?: confirmation.preview
-        val preview = selectedImages?.let { reviewedPreview.withImages(it) } ?: reviewedPreview
+        val withImages = selectedImages?.let { reviewedPreview.withImages(it) } ?: reviewedPreview
+        val preview = selectedAssets?.let { withImages.withAssets(it) } ?: withImages
         activeJob?.cancel()
         _state.value = ProjectImportState.Saving
         activeJob = scope.launch {

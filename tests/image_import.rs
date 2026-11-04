@@ -409,3 +409,74 @@ async fn yarn_create_without_external_imports_ignores_image_urls() {
     assert_eq!(response.status(), StatusCode::CREATED);
     assert!(harness.fetcher.requested.lock().unwrap().is_empty());
 }
+
+#[tokio::test]
+async fn create_stores_diagram_and_pdf_assets_as_labelled_attachments() {
+    let harness = harness(true).await;
+    let pdf = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n".to_vec();
+    harness
+        .fetcher
+        .responses
+        .lock()
+        .unwrap()
+        .extend(HashMap::from([
+            (
+                "https://images.example.test/drops/22-chart.jpg".to_owned(),
+                // The server may mislabel the type; the bytes decide.
+                FetchedImage {
+                    content_type: Some("application/octet-stream".to_owned()),
+                    bytes: image_bytes(9, 9, 9),
+                },
+            ),
+            (
+                "https://images.example.test/files/pattern.pdf".to_owned(),
+                FetchedImage {
+                    content_type: Some("application/pdf".to_owned()),
+                    bytes: pdf,
+                },
+            ),
+            (
+                "https://images.example.test/files/fake.pdf".to_owned(),
+                FetchedImage {
+                    content_type: Some("application/pdf".to_owned()),
+                    bytes: b"<html>not a pdf</html>".to_vec(),
+                },
+            ),
+        ]));
+    let response = harness
+        .app
+        .clone()
+        .oneshot(request(
+            "POST",
+            "/api/v1/projects",
+            serde_json::json!({
+                "name": "Wave sweater",
+                "attachment_urls": [
+                    {"url": "https://images.example.test/drops/22-chart.jpg",
+                     "kind": "diagram", "label": "Diagram for DROPS 273-22"},
+                    {"url": "https://images.example.test/files/pattern.pdf", "kind": "pdf"},
+                    {"url": "https://images.example.test/files/fake.pdf", "kind": "pdf"},
+                    {"url": "https://images.example.test/missing.jpg", "kind": "diagram"}
+                ]
+            }),
+        ))
+        .await
+        .expect("API should respond");
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let project = json_body(response).await;
+    let names: Vec<String> = sqlx::query_scalar(
+        "SELECT original_filename FROM media_files \
+         WHERE project_id = ? AND kind = 'attachment' ORDER BY id",
+    )
+    .bind(project["id"].as_i64().unwrap())
+    .fetch_all(&harness.pool)
+    .await
+    .unwrap();
+    assert_eq!(names, vec!["Diagram for DROPS 273-22.png", "pattern.pdf"]);
+    let attachments = project["attachments"].as_array().unwrap();
+    assert_eq!(attachments.len(), 2);
+    assert_eq!(attachments[0]["content_type"], "image/png");
+    assert_eq!(attachments[1]["content_type"], "application/pdf");
+    assert_eq!(project["images"].as_array().unwrap().len(), 0);
+    let _ = harness.user_id;
+}

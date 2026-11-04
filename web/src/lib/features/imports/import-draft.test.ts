@@ -65,6 +65,18 @@ const preview: ImportPreview = {
         },
       ],
       imageUrls: ["https://images.example.test/cover.jpg"],
+      assets: [
+        {
+          url: "https://images.example.test/drops/22-chart.jpg",
+          kind: "diagram",
+          label: "Diagram for DROPS 273-22",
+        },
+        {
+          url: "https://patterns.example.test/shawl.pdf",
+          kind: "pdf",
+          label: null,
+        },
+      ],
       link: "https://patterns.example.test/shawl",
       brand: null,
       extras: { designer_note: "Work loosely" },
@@ -108,6 +120,53 @@ describe("import review mapping", () => {
       "https://images.example.test/step.jpg",
     ]);
     expect(write.is_ai_enhanced).toBe(true);
+  });
+
+  it("saves selected diagrams and PDFs as attachments and keeps the rest as links", () => {
+    const editor = importProjectEditor(preview);
+    expect(editor.assets.map((asset) => asset.selected)).toEqual([true, true]);
+    const write = createProjectWrite(
+      editor,
+      false,
+      true,
+      (number) => `Step ${number}`,
+    );
+    expect(write.attachment_urls).toEqual([
+      {
+        url: "https://images.example.test/drops/22-chart.jpg",
+        kind: "diagram",
+        label: "Diagram for DROPS 273-22",
+      },
+      {
+        url: "https://patterns.example.test/shawl.pdf",
+        kind: "pdf",
+        label: null,
+      },
+    ]);
+    expect(write.notes ?? "").not.toContain("not attached: Diagram");
+
+    editor.assets[1]!.selected = false;
+    const partial = createProjectWrite(
+      editor,
+      false,
+      true,
+      (number) => `Step ${number}`,
+    );
+    expect(partial.attachment_urls).toHaveLength(1);
+    expect(partial.notes).toContain(
+      "PDF link not attached: https://patterns.example.test/shawl.pdf",
+    );
+
+    const offline = createProjectWrite(
+      editor,
+      false,
+      false,
+      (number) => `Step ${number}`,
+    );
+    expect(offline.attachment_urls).toBeUndefined();
+    expect(offline.notes).toContain(
+      "Diagram URL not attached: Diagram for DROPS 273-22 - https://images.example.test/drops/22-chart.jpg",
+    );
   });
 
   it("maps yarn facts to the yarn choice and keeps them out of the notes", () => {

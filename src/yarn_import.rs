@@ -607,7 +607,9 @@ pub fn accept_ai_yarns(
         .filter_map(|link| link.image_url.as_deref())
         .collect();
     let (grounded, page_url) = match grounding {
-        ai_merge::Grounding::PageText => (true, draft.source_url.clone()),
+        ai_merge::Grounding::PageText | ai_merge::Grounding::TextAndBrowser { .. } => {
+            (true, draft.source_url.clone())
+        }
         ai_merge::Grounding::Browsed { page_url } => (false, Some(page_url.to_owned())),
     };
     let evidence = format!(

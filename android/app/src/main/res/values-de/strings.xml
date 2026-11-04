@@ -204,6 +204,9 @@
     <string name="import_note_care">Pflege</string>
     <string name="import_note_price">Preis</string>
     <string name="import_pick_photos">Wähle die Fotos aus, die bleiben sollen</string>
+    <string name="import_pick_assets">Wähle die Diagramme und Dokumente aus, die als Anhänge gespeichert werden sollen</string>
+    <string name="import_asset_kind_diagram">Diagramm</string>
+    <string name="import_asset_kind_pdf">PDF</string>
     <string name="import_ai_filled_hint">Die KI hat einige Angaben ergänzt. Prüfe sie, bevor du dich darauf verlässt.</string>
     <string name="import_warning_looks_like_yarn">Das sieht nach einer Garnseite aus. Importiere sie lieber über den Reiter Garne.</string>
     <string name="import_warning_looks_like_pattern">Das sieht nach einer Anleitung aus, nicht nach einem Garn. Prüfe die Angaben.</string>

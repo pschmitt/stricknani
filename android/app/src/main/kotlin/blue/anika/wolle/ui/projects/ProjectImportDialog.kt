@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.projects
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.repository.ImportDetailKind
@@ -42,7 +45,7 @@ fun ProjectImportDialog(
     visible: Boolean,
     state: ProjectImportState,
     onStart: (String) -> Unit,
-    onConfirm: (List<String>, ProjectWriteRequest) -> Unit,
+    onConfirm: (List<String>, ProjectWriteRequest, List<String>) -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
     availability: ImportAvailability = ImportAvailability(),
@@ -71,6 +74,18 @@ fun ProjectImportDialog(
     val preselected =
         (state as? ProjectImportState.AwaitingConfirmation)?.preview?.request?.imageUrls
     var selectedImages by remember(state) { mutableStateOf(preselected.orEmpty().toSet()) }
+    // Diagrams and PDFs all start out selected.
+    var selectedAssets by
+        remember(state) {
+            mutableStateOf(
+                (state as? ProjectImportState.AwaitingConfirmation)
+                    ?.preview
+                    ?.assets
+                    .orEmpty()
+                    .map { it.url }
+                    .toSet()
+            )
+        }
 
     if (!visible) {
         return
@@ -186,6 +201,24 @@ fun ProjectImportDialog(
                                 thumbnailUrl = thumbnailUrl,
                             )
                         }
+                        if (state.preview.assets.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.import_pick_assets),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            state.preview.assets.forEach { asset ->
+                                ImportAssetRow(
+                                    asset = asset,
+                                    selected = asset.url in selectedAssets,
+                                    onToggle = {
+                                        selectedAssets =
+                                            if (asset.url in selectedAssets)
+                                                selectedAssets - asset.url
+                                            else selectedAssets + asset.url
+                                    },
+                                )
+                            }
+                        }
                         if (state.preview.aiFallback) {
                             Text(
                                 text = stringResource(R.string.project_import_ai_fallback),
@@ -242,7 +275,11 @@ fun ProjectImportDialog(
                             val reviewed =
                                 review?.applyTo(state.preview.request, amountLabel)
                                     ?: state.preview.request
-                            onConfirm(order.filter { it in selectedImages }, reviewed)
+                            onConfirm(
+                                order.filter { it in selectedImages },
+                                reviewed,
+                                state.preview.assets.map { it.url }.filter { it in selectedAssets },
+                            )
                         },
                     ) {
                         Text(stringResource(R.string.project_import_confirm_save))
@@ -277,6 +314,33 @@ fun ProjectImportDialog(
             }
         },
     )
+}
+
+/** One diagram or PDF of the imported page with its kind, label and a checkbox. */
+@Composable
+private fun ImportAssetRow(asset: ImportAssetDto, selected: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle).testTag("import-asset"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = selected, onCheckedChange = { onToggle() })
+        Column {
+            Text(
+                text =
+                    stringResource(
+                        if (asset.isPdf) R.string.import_asset_kind_pdf
+                        else R.string.import_asset_kind_diagram
+                    ),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = asset.label?.takeIf { it.isNotBlank() } ?: asset.url.substringAfterLast('/'),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
 }
 
 @Composable

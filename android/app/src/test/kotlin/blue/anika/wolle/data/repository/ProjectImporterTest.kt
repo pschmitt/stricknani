@@ -107,7 +107,10 @@ class ProjectImporterTest {
             "colorway":null,"weightCategory":null,
             "steps":[{"stepNumber":0,"title":null,"description":"Cast on","images":["https://e.com/s.jpg"]},
                      {"stepNumber":2,"title":"Body","description":null,"images":[]}],
-            "imageUrls":["https://e.com/a.jpg"],"link":null,"brand":null,"extras":{"k":1}},
+            "imageUrls":["https://e.com/a.jpg"],
+            "assets":[{"url":"https://e.com/22-chart.jpg","kind":"diagram","label":"Diagram for DROPS 273-22"},
+                      {"url":"https://e.com/p.pdf","kind":"pdf"}],
+            "link":null,"brand":null,"extras":{"k":1}},
             "image":null},"content_sha256":"x","ai_requested":true,"is_ai_enhanced":false,
             "ai_fallback":true}}"""
         val importer =
@@ -141,6 +144,44 @@ class ProjectImporterTest {
         assertEquals(listOf("https://e.com/s.jpg"), result.request.steps[0].imageUrls)
         assertTrue(result.aiFallback)
         assertTrue(!result.request.isAiEnhanced)
+        // Diagrams and PDFs all start out selected as attachments and keep their kind and label.
+        assertEquals(
+            listOf("diagram", "pdf"),
+            result.request.attachmentUrls.map { it.kind },
+        )
+        assertEquals("Diagram for DROPS 273-22", result.request.attachmentUrls[0].label)
+        assertTrue(result.request.attachmentUrls[1].isPdf)
+        // Deselecting one in the review step leaves only the chosen attachment.
+        assertEquals(
+            listOf("https://e.com/22-chart.jpg"),
+            result.withAssets(listOf("https://e.com/22-chart.jpg")).request.attachmentUrls.map {
+                it.url
+            },
+        )
+    }
+
+    @Test
+    fun `the write request sends attachment urls with their snake case name`() {
+        val body =
+            Json { encodeDefaults = true }
+                .encodeToString(
+                    blue.anika.wolle.data.api.dto.ProjectWriteRequest(
+                        name = "x",
+                        attachmentUrls =
+                            listOf(
+                                blue.anika.wolle.data.api.dto.ImportAssetDto(
+                                    url = "https://e.com/p.pdf",
+                                    kind = "pdf",
+                                )
+                            ),
+                    )
+                )
+        assertTrue(
+            body,
+            body.contains(
+                """"attachment_urls":[{"url":"https://e.com/p.pdf","kind":"pdf","label":null}]"""
+            ),
+        )
     }
 
     @Test

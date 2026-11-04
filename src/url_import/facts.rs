@@ -42,6 +42,8 @@ pub struct PageFacts {
     pub meta: BTreeMap<String, String>,
     pub nodes: Vec<SchemaNode>,
     pub images: Vec<ImageCandidate>,
+    /// Diagram images and PDF links, kept apart from the photo gallery.
+    pub assets: Vec<crate::import_document::ImportAsset>,
     /// Visible text, one logical line per block, `label: value` for table and definition rows.
     pub text: String,
     pub keywords: Vec<String>,
@@ -77,7 +79,7 @@ pub fn has_type(node: &SchemaNode, types: &[&str]) -> bool {
     }
 }
 
-fn sel(css: &str) -> Selector {
+pub(super) fn sel(css: &str) -> Selector {
     Selector::parse(css).expect("static CSS selector is valid")
 }
 
@@ -154,6 +156,7 @@ pub fn collect(html: &str, base: Option<&Url>) -> PageFacts {
 
     facts.images = image_candidates(&document, &facts.meta, base);
     facts.links = page_links(&document, base);
+    facts.assets = super::assets::collect(&document, base);
     facts.text = visible_text(&document);
     facts
 }
@@ -304,7 +307,7 @@ fn microdata_value(element: ElementRef<'_>) -> String {
 
 // ---------------------------------------------------------------- images
 
-const IMAGE_REJECT: &[&str] = &[
+pub(super) const IMAGE_REJECT: &[&str] = &[
     "logo",
     "icon",
     "sprite",

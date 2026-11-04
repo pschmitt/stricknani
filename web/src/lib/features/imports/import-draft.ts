@@ -6,6 +6,7 @@ import type { YarnWrite } from "../yarns/yarn-api.ts";
 import { t } from "#lib/i18n.svelte.ts";
 import type {
   ImportPreview,
+  ImportedAsset,
   ImportedProjectDraft,
   ImportedStepDraft,
   ImportedYarnDetails,
@@ -17,6 +18,13 @@ const PRESELECTED_IMAGES = 3;
 
 export interface ImportImageChoice {
   url: string;
+  selected: boolean;
+}
+
+export interface ImportAssetChoice {
+  url: string;
+  kind: ImportedAsset["kind"];
+  label: string;
   selected: boolean;
 }
 
@@ -62,6 +70,7 @@ export interface ImportProjectEditor {
   notes: string;
   link: string;
   imageUrls: ImportImageChoice[];
+  assets: ImportAssetChoice[];
   steps: ImportStepEditor[];
   yarns: ImportYarnEditor[];
   /** Stash yarns the user linked in addition to the ones the import found. */
@@ -102,6 +111,12 @@ export function importProjectEditor(
     imageUrls: project.imageUrls.map((url, index) => ({
       url,
       selected: index < PRESELECTED_IMAGES,
+    })),
+    assets: project.assets.map((asset) => ({
+      url: asset.url,
+      kind: asset.kind,
+      label: asset.label ?? "",
+      selected: true,
     })),
     steps: project.steps.map(importStepEditor),
     yarns: yarns.map((yarn, index) =>
@@ -148,6 +163,14 @@ export function createProjectWrite(
     .filter((image) => image.selected && allowExternalImages)
     .map((image) => image.url.trim())
     .filter(Boolean);
+  const attachmentUrls = draft.assets
+    .filter((asset) => asset.selected && allowExternalImages)
+    .map((asset) => ({
+      url: asset.url.trim(),
+      kind: asset.kind,
+      label: optionalText(asset.label),
+    }))
+    .filter((asset) => asset.url);
   return {
     name: draft.name.trim(),
     category: optionalText(draft.category),
@@ -167,6 +190,7 @@ export function createProjectWrite(
       ),
     steps,
     ...(imageUrls.length ? { image_urls: imageUrls } : {}),
+    ...(attachmentUrls.length ? { attachment_urls: attachmentUrls } : {}),
   };
 }
 
@@ -301,6 +325,16 @@ function unattachedImageNotes(
           `${t("Step image URL not attached")} (${step.stepNumber}): ${image.url}`,
         );
     }
+  }
+  // Diagrams and PDFs that are not stored stay reachable as links.
+  for (const asset of draft.assets) {
+    if (asset.selected && allowExternalImages) continue;
+    const prefix =
+      asset.kind === "pdf"
+        ? t("PDF link not attached")
+        : t("Diagram URL not attached");
+    const label = asset.label ? `${asset.label} - ` : "";
+    lines.push(`${prefix}: ${label}${asset.url}`);
   }
   return lines.join("\n");
 }

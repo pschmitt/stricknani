@@ -6,6 +6,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import AssetChoices from "./AssetChoices.svelte";
   import ImageChoices from "./ImageChoices.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
   import { getYarn, type YarnSummary } from "#lib/features/yarns/yarn-api.ts";
@@ -685,6 +686,12 @@
         {#if draft.imageUrls.length}<ImageChoices
             title={t("Suggested project images", locale)}
             images={draft.imageUrls}
+            disabled={!allowExternal || busy}
+            {locale}
+          />{/if}
+
+        {#if draft.assets.length}<AssetChoices
+            assets={draft.assets}
             disabled={!allowExternal || busy}
             {locale}
           />{/if}

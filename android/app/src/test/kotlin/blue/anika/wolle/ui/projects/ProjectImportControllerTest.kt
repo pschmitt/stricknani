@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.projects
 
+import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.repository.ImportedProjectPreview
 import blue.anika.wolle.data.repository.ProjectImporter
@@ -95,6 +96,39 @@ class ProjectImportControllerTest {
             assertEquals("Reviewed notes", saved?.request?.notes)
             assertEquals(listOf("https://example.com/b.jpg"), saved?.request?.imageUrls)
         }
+
+    @Test
+    fun `confirming with an asset selection saves only those attachments`() = runTest {
+        val preview =
+            preview()
+                .copy(
+                    assets =
+                        listOf(
+                            ImportAssetDto(url = "https://example.com/chart.jpg"),
+                            ImportAssetDto(url = "https://example.com/p.pdf", kind = "pdf"),
+                        )
+                )
+        var saved: ImportedProjectPreview? = null
+        val controller =
+            ProjectImportController(
+                scope = this,
+                importer = FakeImporter { preview },
+                save = {
+                    saved = it
+                    9
+                },
+            )
+        controller.start("https://example.com/pattern")
+        advanceUntilIdle()
+
+        controller.confirm(selectedAssets = listOf("https://example.com/p.pdf"))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf("https://example.com/p.pdf"),
+            saved?.request?.attachmentUrls?.map { it.url },
+        )
+    }
 
     @Test
     fun `cancelling an in-flight import returns to idle and never saves`() = runTest {

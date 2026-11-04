@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.api.v2
 
+import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectImportStepDto
 import blue.anika.wolle.data.api.dto.ProjectImportYarnDto
@@ -76,6 +77,7 @@ data class ImportDraftProjectDto(
     val stitchSample: String? = null,
     val steps: List<ImportDraftStepDto> = emptyList(),
     val imageUrls: List<String> = emptyList(),
+    val assets: List<ImportAssetDto> = emptyList(),
     val link: String? = null,
     val designer: String? = null,
     val sizes: String? = null,
@@ -115,6 +117,7 @@ fun ImportPreviewDto.toV1(): ProjectImportResponseDto =
         yarns = draft.project.yarns,
         yarnMatches = yarnMatches,
         imageUrls = draft.project.imageUrls,
+        assets = draft.project.assets,
         steps =
             draft.project.steps.map {
                 ProjectImportStepDto(

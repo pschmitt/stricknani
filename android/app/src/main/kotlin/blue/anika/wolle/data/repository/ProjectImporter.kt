@@ -2,6 +2,7 @@ package blue.anika.wolle.data.repository
 
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ProjectImportApi
+import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
@@ -44,6 +45,8 @@ data class ImportedProjectPreview(
     val sourceUrl: String,
     val request: ProjectWriteRequest,
     val imageUrls: List<String>,
+    /** Diagrams and PDFs found on the page; all start out selected (see [request]). */
+    val assets: List<ImportAssetDto> = emptyList(),
     val aiFallback: Boolean,
     /** Designer, sizes and difficulty; the caller turns them into localized note lines. */
     val details: List<ImportDetail> = emptyList(),
@@ -56,6 +59,10 @@ data class ImportedProjectPreview(
     /** The same preview with only [selected] pictures attached when it is saved. */
     fun withImages(selected: List<String>): ImportedProjectPreview =
         copy(request = request.copy(imageUrls = selected))
+
+    /** The same preview with only the diagrams and PDFs whose URL is in [selected] attached. */
+    fun withAssets(selected: List<String>): ImportedProjectPreview =
+        copy(request = request.copy(attachmentUrls = assets.filter { it.url in selected }))
 }
 
 /** Boundary for importing project data, kept small so the UI state machine is unit-testable. */
@@ -123,8 +130,10 @@ internal fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProj
                 steps = importedSteps,
                 // The review step starts with the first few pictures selected.
                 imageUrls = imageUrls.take(PRESELECTED_IMAGES),
+                attachmentUrls = assets,
             ),
         imageUrls = imageUrls,
+        assets = assets,
         aiFallback = aiFallback,
         details = details,
         warnings = warnings,

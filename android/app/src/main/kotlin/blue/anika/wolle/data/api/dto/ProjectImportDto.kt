@@ -13,6 +13,20 @@ data class ProjectImportStepDto(
 )
 
 /**
+ * A diagram image (`kind` "diagram") or PDF ("pdf") found on the imported page. The server stores
+ * selected ones as project attachments when the project is created.
+ */
+@Serializable
+data class ImportAssetDto(
+    val url: String,
+    val kind: String = "diagram",
+    val label: String? = null,
+) {
+    val isPdf: Boolean
+        get() = kind == "pdf"
+}
+
+/**
  * JSON returned by `POST /projects/import` for a URL import.
  *
  * Unknown fields are intentionally ignored by the app's shared JSON configuration: the web importer
@@ -46,6 +60,7 @@ data class ProjectImportResponseDto(
     val yarns: List<ProjectImportYarnDto> = emptyList(),
     /** Suggested stash yarn per entry of [yarns] (v2 only). */
     @SerialName("yarn_matches") val yarnMatches: List<ProjectImportYarnMatchDto> = emptyList(),
+    val assets: List<ImportAssetDto> = emptyList(),
 )
 
 /** One yarn of an imported pattern. [weight] and [length] are text such as "50 g" and "105 m". */

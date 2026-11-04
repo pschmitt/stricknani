@@ -7,6 +7,7 @@
 //! * [`ai_merge`] fills gaps with a validated, grounded model answer.
 
 pub mod ai_merge;
+pub mod assets;
 pub mod charset;
 pub mod extract;
 pub mod facts;

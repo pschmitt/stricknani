@@ -58,6 +58,15 @@ const response = {
         weightCategory: null,
         steps: [],
         imageUrls: [],
+        assets: [
+          {
+            url: "https://img.example/chart.jpg",
+            kind: "diagram",
+            label: "Chart",
+          },
+          { url: "https://img.example/a.pdf", kind: "pdf" },
+          { url: "https://img.example/x.zip", kind: "zip" },
+        ],
         link: null,
         brand: null,
         extras: {},
@@ -89,6 +98,11 @@ describe("import preview API", () => {
     });
     expect(result.draft.project.name).toBe("Fixture pattern");
     expect(result.ai_fallback).toBe(false);
+    // Well-formed assets are kept (a missing label becomes null); unknown kinds are dropped.
+    expect(result.draft.project.assets).toEqual([
+      { url: "https://img.example/chart.jpg", kind: "diagram", label: "Chart" },
+      { url: "https://img.example/a.pdf", kind: "pdf", label: null },
+    ]);
   });
 
   it("sends a file as multipart form data and rejects files over 5 MiB before fetch", async () => {

@@ -108,6 +108,14 @@ export interface ProjectWrite {
   steps: ProjectStepWrite[];
   /** Optional project image URLs used only during project creation/import. */
   image_urls?: string[];
+  /** Diagrams and PDFs found by an import; the server stores them as attachments on create. */
+  attachment_urls?: ProjectAttachmentUrl[];
+}
+
+export interface ProjectAttachmentUrl {
+  url: string;
+  kind: "diagram" | "pdf";
+  label?: string | null;
 }
 
 export interface ProjectFilters {

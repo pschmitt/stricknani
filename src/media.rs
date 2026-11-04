@@ -1568,31 +1568,68 @@ pub(crate) async fn upload_project_attachment(
         Ok(false) => return Err(MediaOperationError::NotFound("Project not found")),
         Err(_) => return Err(MediaOperationError::Database),
     }
-    let root = match media_root(state) {
-        Ok(root) => root,
-        Err(_) => return Err(MediaOperationError::ServiceUnavailable),
-    };
     let upload = match read_upload(multipart, false).await {
         Ok(upload) => upload,
         Err(error) => return Err(MediaOperationError::Upload(error)),
     };
-    let claimed_type = safe_mime_type(upload.claimed_content_type.as_deref())
-        .unwrap_or_else(|| "application/octet-stream".to_owned());
-    let original_extension = safe_extension(&upload.original_filename);
-    let (content_type, extension, is_safe_inline, dimensions) =
-        classify_attachment(&upload.bytes, &claimed_type).await;
-    let extension = extension.unwrap_or(original_extension);
-    let filename = opaque_filename(&extension);
-    let files = match save_files(
-        &root,
-        "projects",
+    store_project_attachment(
+        state,
+        user_id,
         project_id,
-        &filename,
-        &upload.bytes,
-        None,
+        upload.original_filename,
+        upload.claimed_content_type.as_deref(),
+        upload.bytes,
     )
     .await
-    {
+}
+
+/// Store an imported file (a diagram image or a PDF) as a project attachment. The bytes must
+/// really be a decodable image or a PDF; anything else is refused.
+pub(crate) async fn persist_imported_attachment(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    original_filename: String,
+    claimed_content_type: Option<&str>,
+    bytes: Vec<u8>,
+) -> Result<AttachmentResponse, MediaOperationError> {
+    let claimed = safe_mime_type(claimed_content_type)
+        .unwrap_or_else(|| "application/octet-stream".to_owned());
+    let (_, _, is_safe_inline, _) = classify_attachment(&bytes, &claimed).await;
+    if !is_safe_inline {
+        return Err(MediaOperationError::NotFound("Unsupported attachment"));
+    }
+    store_project_attachment(
+        state,
+        user_id,
+        project_id,
+        original_filename,
+        claimed_content_type,
+        bytes,
+    )
+    .await
+}
+
+async fn store_project_attachment(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    original_filename: String,
+    claimed_content_type: Option<&str>,
+    bytes: Vec<u8>,
+) -> Result<AttachmentResponse, MediaOperationError> {
+    let root = match media_root(state) {
+        Ok(root) => root,
+        Err(_) => return Err(MediaOperationError::ServiceUnavailable),
+    };
+    let claimed_type = safe_mime_type(claimed_content_type)
+        .unwrap_or_else(|| "application/octet-stream".to_owned());
+    let original_extension = safe_extension(&original_filename);
+    let (content_type, extension, is_safe_inline, dimensions) =
+        classify_attachment(&bytes, &claimed_type).await;
+    let extension = extension.unwrap_or(original_extension);
+    let filename = opaque_filename(&extension);
+    let files = match save_files(&root, "projects", project_id, &filename, &bytes, None).await {
         Ok(files) => files,
         Err(_) => return Err(MediaOperationError::Database),
     };
@@ -1642,9 +1679,9 @@ pub(crate) async fn upload_project_attachment(
     .bind(project_id)
     .bind(public_id)
     .bind(&files.filename)
-    .bind(&upload.original_filename)
+    .bind(&original_filename)
     .bind(&content_type)
-    .bind(upload.bytes.len() as i64)
+    .bind(bytes.len() as i64)
     .bind(dimensions.map(|(width, _)| width as i64))
     .bind(dimensions.map(|(_, height)| height as i64))
     .bind(is_safe_inline)
@@ -1686,9 +1723,9 @@ pub(crate) async fn upload_project_attachment(
         step_id: None,
         kind: "attachment".to_owned(),
         filename: files.filename,
-        original_filename: upload.original_filename,
+        original_filename,
         content_type: content_type.to_owned(),
-        size_bytes: upload.bytes.len() as i64,
+        size_bytes: bytes.len() as i64,
         alt_text: String::new(),
         is_primary: false,
         position: 0,

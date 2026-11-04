@@ -242,8 +242,11 @@ constructor(
 
     fun retryImport() = importController.retry()
 
-    fun confirmImport(selectedImages: List<String>, reviewed: ProjectWriteRequest) =
-        importController.confirm(selectedImages, reviewed)
+    fun confirmImport(
+        selectedImages: List<String>,
+        reviewed: ProjectWriteRequest,
+        selectedAssets: List<String>,
+    ) = importController.confirm(selectedImages, reviewed, selectedAssets)
 
     /** The user's own yarns, for the stash picker of the import review. */
     val stashYarns: StateFlow<List<YarnEntity>> =

@@ -569,3 +569,42 @@ fn api_key_can_come_from_a_file() {
         AiError::MissingApiKey
     );
 }
+
+#[test]
+fn drops_page_gives_the_lazy_diagram_and_pdf_as_assets_not_gallery_photos() {
+    use stricknani_server::import_document::AssetKind;
+    let draft = draft_from(
+        "pattern_drops_diagram.html",
+        "https://www.garnstudio.com/pattern.php?id=12752&cid=9",
+    );
+    let project = &draft.project;
+    assert_eq!(project.assets.len(), 2, "{:?}", project.assets);
+    assert_eq!(project.assets[0].kind, AssetKind::Diagram);
+    assert_eq!(
+        project.assets[0].url,
+        "https://images.garnstudio.com/drops/mag/273/22/22-chart.jpg"
+    );
+    assert_eq!(
+        project.assets[0].label.as_deref(),
+        Some("Diagram for DROPS 273-22")
+    );
+    assert_eq!(project.assets[1].kind, AssetKind::Pdf);
+    assert_eq!(
+        project.assets[1].url,
+        "https://www.garnstudio.com/downloads/273-22.pdf"
+    );
+    assert!(
+        project.image_urls.iter().all(|url| !url.contains("chart")),
+        "{:?}",
+        project.image_urls
+    );
+    assert!(!project.image_urls.is_empty());
+}
+
+#[test]
+fn bot_protection_page_has_no_assets() {
+    let html = "<html><head><title>Just a moment...</title></head><body>Checking your browser</body></html>";
+    let url = Url::parse("https://www.garnstudio.com/pattern.php?id=12752&cid=9").unwrap();
+    let extraction = extract_html(html, Some(&url), None);
+    assert!(extraction.project.assets.is_empty());
+}

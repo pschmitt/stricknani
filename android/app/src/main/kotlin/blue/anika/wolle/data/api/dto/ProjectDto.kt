@@ -112,6 +112,8 @@ data class ProjectWriteRequest(
     @SerialName("new_yarns") val newYarns: List<YarnWriteRequest> = emptyList(),
     val steps: List<StepWriteRequest> = emptyList(),
     @SerialName("image_urls") val imageUrls: List<String> = emptyList(),
+    /** Diagrams and PDFs of a URL import; the server stores them as attachments on create. */
+    @SerialName("attachment_urls") val attachmentUrls: List<ImportAssetDto> = emptyList(),
     /**
      * SNA-33: the `updatedAt` this edit was based on. When set, the server rejects the write with
      * 409 (current server state in the body) if the project has since changed - see

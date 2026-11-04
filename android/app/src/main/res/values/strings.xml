@@ -204,6 +204,9 @@
     <string name="import_note_care">Care</string>
     <string name="import_note_price">Price</string>
     <string name="import_pick_photos">Choose the photos to keep</string>
+    <string name="import_pick_assets">Choose the diagrams and documents to save as attachments</string>
+    <string name="import_asset_kind_diagram">Diagram</string>
+    <string name="import_asset_kind_pdf">PDF</string>
     <string name="import_ai_filled_hint">AI helped fill some details. Check them before relying on them.</string>
     <string name="import_warning_looks_like_yarn">This looks like a yarn page. You may want to import it from the Yarns tab instead.</string>
     <string name="import_warning_looks_like_pattern">This looks like a pattern page, not a yarn. Check the details.</string>

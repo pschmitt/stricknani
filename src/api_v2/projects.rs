@@ -389,6 +389,7 @@ async fn update_project(
         );
     }
     if !payload.image_urls.is_empty()
+        || !payload.attachment_urls.is_empty()
         || payload.steps.iter().any(|step| !step.image_urls.is_empty())
     {
         return validation_error(

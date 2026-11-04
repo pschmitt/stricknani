@@ -48,6 +48,13 @@ export interface ImportedYarnDetails {
   imageUrls: string[];
 }
 
+/** A diagram image or PDF found on the imported page, stored as a project attachment. */
+export interface ImportedAsset {
+  url: string;
+  kind: "diagram" | "pdf";
+  label: string | null;
+}
+
 export interface ImportedProjectDraft {
   designer: string | null;
   difficulty: string | null;
@@ -68,6 +75,7 @@ export interface ImportedProjectDraft {
   weightCategory: string | null;
   steps: ImportedStepDraft[];
   imageUrls: string[];
+  assets: ImportedAsset[];
   link: string | null;
   brand: string | null;
   extras: Record<string, unknown>;
@@ -327,10 +335,33 @@ function parseProjectDraft(
     weightCategory: value.weightCategory,
     steps: value.steps.map(parseStepDraft),
     imageUrls: value.imageUrls,
+    assets: parseAssets(value.assets),
     link: value.link,
     brand: value.brand,
     extras: value.extras,
   };
+}
+
+/** Older servers send no assets; ignore anything that is not a well-formed entry. */
+function parseAssets(value: unknown): ImportedAsset[] {
+  if (!Array.isArray(value)) return [];
+  const assets: ImportedAsset[] = [];
+  for (const item of value) {
+    if (
+      isRecord(item) &&
+      typeof item.url === "string" &&
+      (item.kind === "diagram" || item.kind === "pdf")
+    )
+      assets.push({
+        url: item.url,
+        kind: item.kind,
+        label:
+          typeof item.label === "string" && item.label.trim()
+            ? item.label
+            : null,
+      });
+  }
+  return assets;
 }
 
 function parseYarnDraft(value: unknown): ImportedYarnDraft {

@@ -504,6 +504,33 @@ fn classify_import(
     }
 }
 
+/// Fallback for pages where neither the HTML nor the browsing model yielded a diagram: DROPS
+/// patterns keep it next to the photos (`{n}-chart.jpg`), so derive that address from a photo and
+/// add it when it really serves a picture. The check goes through the SSRF-safe fetcher.
+pub(crate) async fn complete_assets_fallback(draft: &mut ImportDocumentDraft) {
+    use crate::{import_document::AssetKind, url_import::assets};
+    if draft
+        .project
+        .assets
+        .iter()
+        .any(|asset| asset.kind == AssetKind::Diagram)
+    {
+        return;
+    }
+    let added = assets::complete_drops_diagram(&mut draft.project, |url| async move {
+        imports::fetch_url(&url)
+            .await
+            .is_ok_and(|fetched| image::guess_format(&fetched.body).is_ok())
+    })
+    .await;
+    if added > 0 {
+        draft.provenance.insert(
+            "project.assets".into(),
+            crate::import_document::FieldSource::Site,
+        );
+    }
+}
+
 /// Optional AI pass for URL imports. Returns whether the model contributed.
 pub(crate) async fn normalize_with_ai(
     ai: Option<&AiClient>,
@@ -523,21 +550,21 @@ pub(crate) async fn normalize_with_ai(
         &BrowseState::Off
     };
     let missing = source_text.trim().is_empty();
-    let (context, browsed_url) = match browse {
-        BrowseState::Off => (None, None),
+    let (context, grounding) = match browse {
+        BrowseState::Off => (None, Grounding::PageText),
         BrowseState::Allowed { url } => (
             Some(BrowseContext {
                 url,
                 text_missing: false,
             }),
-            None,
+            Grounding::TextAndBrowser { page_url: url },
         ),
         BrowseState::Thin { url } | BrowseState::Blocked { url, .. } => (
             Some(BrowseContext {
                 url,
                 text_missing: missing,
             }),
-            Some(url.as_str()),
+            Grounding::Browsed { page_url: url },
         ),
     };
     if missing && context.is_none() {
@@ -547,9 +574,6 @@ pub(crate) async fn normalize_with_ai(
     let Ok(answer) = client.complete_json(&system, &user).await else {
         return false;
     };
-    let grounding = browsed_url.map_or(Grounding::PageText, |page_url| Grounding::Browsed {
-        page_url,
-    });
     ai_merge::apply_with(draft, &answer, source_text, target, grounding) > 0
 }
 
@@ -1513,7 +1537,9 @@ mod browse_tests {
         assert_eq!(yarn.colorway.as_deref(), Some("Frost"));
         assert_eq!(yarn.weight_grams, None, "ungrounded number rejected");
         assert_eq!(yarn.fiber_content, None, "ungrounded number rejected");
-        assert!(yarn.image_urls.is_empty(), "images only in browsed mode");
+        // The browser is the primary reader, so its pictures fill an empty gallery even when the
+        // server had page text; quantities stay grounded and no "browsed" warning is added.
+        assert_eq!(yarn.image_urls, vec!["https://shop.example/img/1.jpg"]);
         assert!(!draft.warnings.iter().any(|w| w == "ai_browsed"));
     }
 

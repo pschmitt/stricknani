@@ -206,6 +206,9 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         {
             return import_error(ImportFailure::Fetch(*error));
         }
+        if ai_target == ImportTarget::Project {
+            import_service::complete_assets_fallback(&mut draft).await;
+        }
         enhanced
     } else {
         import_service::enhance_draft(

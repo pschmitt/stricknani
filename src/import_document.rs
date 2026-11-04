@@ -73,7 +73,31 @@ pub struct ProjectImportDraft {
     pub sizes: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>,
+    /// Supporting files of a pattern that are not gallery photos: diagrams and PDFs.
+    #[serde(default)]
+    pub assets: Vec<ImportAsset>,
     pub extras: BTreeMap<String, Value>,
+}
+
+/// What kind of supporting file an [`ImportAsset`] is.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AssetKind {
+    /// A diagram, chart, schematic or measurement drawing (an image).
+    #[default]
+    Diagram,
+    /// A downloadable pattern PDF.
+    Pdf,
+}
+
+/// A diagram image or PDF found on an imported page, stored as a project attachment.
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportAsset {
+    pub url: String,
+    pub kind: AssetKind,
+    #[serde(default)]
+    pub label: Option<String>,
 }
 
 /// What a page turned out to be about.

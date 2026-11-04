@@ -74,6 +74,9 @@ pub(crate) struct ProjectWriteRequest {
     pub(crate) steps: Vec<StepWriteRequest>,
     #[serde(default)]
     pub(crate) image_urls: Vec<String>,
+    /// Diagram images and PDFs of an import, downloaded and stored as attachments on create.
+    #[serde(default)]
+    pub(crate) attachment_urls: Vec<crate::import_document::ImportAsset>,
     #[serde(default)]
     pub(crate) expected_updated_at: Option<String>,
 }
@@ -436,17 +439,20 @@ async fn create_project_with_yarn_ids(
         .iter()
         .map(|step| step.image_urls.clone())
         .collect::<Vec<_>>();
-    let prepared_images = if state.external_imports && state.media_root.is_some() {
-        crate::image_import::prepare_project_images(
-            state,
-            payload.name.trim(),
-            &payload.image_urls,
-            &step_image_urls,
-        )
-        .await
-    } else {
-        Vec::new()
-    };
+    let (prepared_images, prepared_attachments) =
+        if state.external_imports && state.media_root.is_some() {
+            tokio::join!(
+                crate::image_import::prepare_project_images(
+                    state,
+                    payload.name.trim(),
+                    &payload.image_urls,
+                    &step_image_urls,
+                ),
+                crate::image_import::prepare_project_attachments(state, &payload.attachment_urls),
+            )
+        } else {
+            (Vec::new(), Vec::new())
+        };
     let name = payload.name.trim().to_owned();
     let mut transaction = state
         .pool
@@ -547,6 +553,15 @@ async fn create_project_with_yarn_ids(
             project_id,
             &step_ids,
             prepared_images,
+        )
+        .await;
+    }
+    if !prepared_attachments.is_empty() {
+        crate::image_import::persist_project_attachments(
+            state,
+            user_id,
+            project_id,
+            prepared_attachments,
         )
         .await;
     }
@@ -1419,7 +1434,9 @@ async fn replace_steps(
 }
 
 fn payload_has_image_urls(payload: &ProjectWriteRequest) -> bool {
-    !payload.image_urls.is_empty() || payload.steps.iter().any(|step| !step.image_urls.is_empty())
+    !payload.image_urls.is_empty()
+        || !payload.attachment_urls.is_empty()
+        || payload.steps.iter().any(|step| !step.image_urls.is_empty())
 }
 
 fn cleaned_optional(value: Option<String>) -> Option<String> {

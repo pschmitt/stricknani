@@ -32,7 +32,7 @@ class ProjectImportDialogTest {
                     visible = true,
                     state = ProjectImportState.Idle,
                     onStart = { startedUrl = it },
-                    onConfirm = {},
+                    onConfirm = { _, _, _ -> },
                     onCancel = { cancelled = true },
                     onRetry = {},
                 )
@@ -65,7 +65,7 @@ class ProjectImportDialogTest {
                     visible = true,
                     state = ProjectImportState.AwaitingConfirmation(preview),
                     onStart = {},
-                    onConfirm = { confirmed = true },
+                    onConfirm = { _, _, _ -> confirmed = true },
                     onCancel = {},
                     onRetry = {},
                 )

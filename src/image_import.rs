@@ -5,7 +5,12 @@ use std::{collections::HashSet, future::Future, pin::Pin, time::Duration};
 use sha2::{Digest, Sha256};
 use url::Url;
 
-use crate::{db::AppState, media};
+use crate::{
+    db::AppState,
+    import_document::{AssetKind, ImportAsset},
+    media,
+    url_import::assets::diagram_hint,
+};
 
 const MAX_URL_BYTES: usize = 2_048;
 const MAX_IMAGE_BYTES: usize = 5 * 1024 * 1024;
@@ -182,6 +187,133 @@ pub(crate) async fn persist_project_images(
     }
 }
 
+const MAX_ATTACHMENTS: usize = 8;
+const MAX_ATTACHMENT_BYTES: usize = 5 * 1024 * 1024;
+const MAX_LABEL_CHARS: usize = 120;
+
+/// A downloaded and content-checked diagram image or PDF, ready to be stored as an attachment.
+pub(crate) struct PreparedAttachment {
+    original_filename: String,
+    content_type: &'static str,
+    bytes: Vec<u8>,
+}
+
+/// The attachment name the user sees. A label like "Diagram for DROPS 273-22" is used as is
+/// (diagram images without a diagram word in it get a "Diagram - " prefix), otherwise the name
+/// of the downloaded file is used.
+pub(crate) fn attachment_filename(
+    kind: AssetKind,
+    label: Option<&str>,
+    url: &Url,
+    extension: &str,
+) -> String {
+    let cleaned: String = label
+        .unwrap_or_default()
+        .chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\') || c.is_control() {
+                ' '
+            } else {
+                c
+            }
+        })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(MAX_LABEL_CHARS)
+        .collect();
+    let file_stem = url
+        .path_segments()
+        .and_then(|mut segments| segments.next_back())
+        .map(|name| name.rsplit_once('.').map_or(name, |(stem, _)| stem))
+        .filter(|stem| !stem.is_empty())
+        .unwrap_or("file");
+    let stem = match (kind, cleaned.is_empty()) {
+        (AssetKind::Diagram, true) => format!("Diagram - {file_stem}"),
+        (AssetKind::Diagram, false) if !diagram_hint(&cleaned) => format!("Diagram - {cleaned}"),
+        (AssetKind::Pdf, true) => file_stem.to_owned(),
+        (_, _) => cleaned,
+    };
+    media::safe_original_filename(&format!("{stem}.{extension}"))
+}
+
+/// Download diagram images and PDFs of an import (before any database transaction), with the same
+/// SSRF-safe fetcher and limits as photos. Files that are not what they claim to be are dropped.
+pub(crate) async fn prepare_project_attachments(
+    state: &AppState,
+    assets: &[ImportAsset],
+) -> Vec<PreparedAttachment> {
+    let deadline = tokio::time::Instant::now() + TOTAL_DEADLINE;
+    let mut seen = HashSet::new();
+    let mut prepared = Vec::new();
+    for asset in assets.iter().take(MAX_ATTACHMENTS) {
+        if tokio::time::Instant::now() >= deadline {
+            break;
+        }
+        let Some(url) = parse_import_url(&asset.url) else {
+            continue;
+        };
+        let fetched = match tokio::time::timeout_at(deadline, state.image_fetcher.fetch(&url)).await
+        {
+            Ok(Ok(fetched)) => fetched,
+            Ok(Err(_)) | Err(_) => continue,
+        };
+        if fetched.bytes.is_empty() || fetched.bytes.len() > MAX_ATTACHMENT_BYTES {
+            continue;
+        }
+        let (content_type, extension) = match asset.kind {
+            AssetKind::Diagram => match image::guess_format(&fetched.bytes) {
+                Ok(image::ImageFormat::Jpeg) => ("image/jpeg", "jpg"),
+                Ok(image::ImageFormat::Png) => ("image/png", "png"),
+                Ok(image::ImageFormat::WebP) => ("image/webp", "webp"),
+                Ok(image::ImageFormat::Gif) => ("image/gif", "gif"),
+                _ => continue,
+            },
+            AssetKind::Pdf if fetched.bytes.starts_with(b"%PDF-") => ("application/pdf", "pdf"),
+            AssetKind::Pdf => continue,
+        };
+        if !seen.insert(Sha256::digest(&fetched.bytes).to_vec()) {
+            continue;
+        }
+        prepared.push(PreparedAttachment {
+            original_filename: attachment_filename(
+                asset.kind,
+                asset.label.as_deref(),
+                &url,
+                extension,
+            ),
+            content_type,
+            bytes: fetched.bytes,
+        });
+    }
+    prepared
+}
+
+/// Store prepared diagrams and PDFs as project attachments after project creation.
+pub(crate) async fn persist_project_attachments(
+    state: &AppState,
+    user_id: i64,
+    project_id: i64,
+    attachments: Vec<PreparedAttachment>,
+) {
+    for attachment in attachments {
+        let result = media::persist_imported_attachment(
+            state,
+            user_id,
+            project_id,
+            attachment.original_filename,
+            Some(attachment.content_type),
+            attachment.bytes,
+        )
+        .await;
+        if result.is_err() {
+            tracing::debug!("project attachment import storage skipped");
+        }
+    }
+}
+
 /// Download and decode bounded yarn photo candidates before the yarn exists.
 pub(crate) async fn prepare_yarn_images(
     state: &AppState,
@@ -252,7 +384,37 @@ fn allowed_image_type(url: &Url, content_type: Option<&str>) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_import_url;
+    use super::{attachment_filename, parse_import_url};
+    use crate::import_document::AssetKind;
+    use url::Url;
+
+    #[test]
+    fn attachment_names_carry_the_label_and_kind() {
+        let url =
+            Url::parse("https://images.garnstudio.com/drops/mag/273/22/22-chart.jpg").unwrap();
+        assert_eq!(
+            attachment_filename(
+                AssetKind::Diagram,
+                Some("Diagram for DROPS 273-22"),
+                &url,
+                "jpg"
+            ),
+            "Diagram for DROPS 273-22.jpg"
+        );
+        assert_eq!(
+            attachment_filename(AssetKind::Diagram, Some("Front / back"), &url, "jpg"),
+            "Diagram - Front back.jpg"
+        );
+        assert_eq!(
+            attachment_filename(AssetKind::Diagram, None, &url, "jpg"),
+            "Diagram - 22-chart.jpg"
+        );
+        let pdf = Url::parse("https://example.test/files/pattern.pdf?x=1").unwrap();
+        assert_eq!(
+            attachment_filename(AssetKind::Pdf, None, &pdf, "pdf"),
+            "pattern.pdf"
+        );
+    }
 
     #[test]
     fn import_urls_reject_unsafe_schemes_and_userinfo() {

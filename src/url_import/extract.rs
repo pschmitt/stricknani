@@ -1028,9 +1028,14 @@ fn build_project(
         .and_then(|n| n.get("image"))
         .map(|value| image_urls_of(value, source_url))
         .unwrap_or_default();
+    project.assets = facts.assets.clone();
     project.image_urls = select_images(facts, structured_images, MAX_PROJECT_IMAGES);
+    super::assets::remove_diagrams_from_gallery(&mut project);
     if !project.image_urls.is_empty() {
         prov.mark("project.imageUrls", structured);
+    }
+    if !project.assets.is_empty() {
+        prov.mark("project.assets", guess);
     }
     project
 }
