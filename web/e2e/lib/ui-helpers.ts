@@ -154,6 +154,10 @@ export async function assertAndroidAppDialog(page: Page): Promise<void> {
   const dialog = page.getByRole("dialog", { name: "Get the Android app" });
   await dialog.waitFor({ state: "visible", timeout: 10_000 });
   const download = dialog.getByRole("link", { name: "Download APK" });
+  // The menu plays a short exit animation before it unmounts; wait for that.
+  await page
+    .locator(".account-menu-panel")
+    .waitFor({ state: "detached", timeout: 10_000 });
   check(
     (await page.locator(".account-menu-panel").count()) === 0 &&
       (await dialog.locator("svg.qr-code").count()) === 1 &&
@@ -165,8 +169,24 @@ export async function assertAndroidAppDialog(page: Page): Promise<void> {
   );
   await page.keyboard.press("Escape");
   await dialog.waitFor({ state: "hidden", timeout: 10_000 });
+  // The dialog's close event (which restores focus) is dispatched in a task
+  // after the dialog stops being visible; wait for it instead of reading once.
+  const focusReturned = await trigger
+    .evaluate(
+      (node) =>
+        new Promise<boolean>((resolve) => {
+          const deadline = Date.now() + 5_000;
+          const poll = (): void => {
+            if (node === document.activeElement) resolve(true);
+            else if (Date.now() > deadline) resolve(false);
+            else requestAnimationFrame(poll);
+          };
+          poll();
+        }),
+    )
+    .catch(() => false);
   check(
-    await trigger.evaluate((node) => node === document.activeElement),
+    focusReturned,
     "closing the Android app dialog did not return focus to the account button",
   );
 }
@@ -1469,7 +1489,7 @@ export async function exerciseYarnServiceTools(
   }
 
   markStage("opening OCR controls for a stored yarn photo");
-  const ocr = page.locator(".reorder-item .ocr-control").first();
+  const ocr = page.locator(".photo-strip__tile .ocr-control").first();
   await ocr.waitFor({ state: "visible", timeout: 5_000 });
   await ocr.locator("summary").click();
   const recognize = ocr.getByRole("button", {

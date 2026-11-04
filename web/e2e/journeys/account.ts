@@ -128,9 +128,11 @@ export async function runAccountJourney(
       markStage("navigate to account route");
       await page.goto(`${origin}/app/account`, { waitUntil: "networkidle" });
       markStage("wait for account heading");
-      await page.getByRole("heading", { name: "Account" }).waitFor({
-        state: "visible",
-      });
+      await page
+        .getByRole("heading", { name: "Account", exact: true })
+        .waitFor({
+          state: "visible",
+        });
       markStage("wait for profile heading");
       await page.getByRole("heading", { name: "Profile" }).waitFor({
         state: "visible",

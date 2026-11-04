@@ -764,23 +764,29 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await page
     .getByRole("heading", { name: "What would you like to add?", exact: true })
     .waitFor({ state: "visible" });
-  const createOptions = page.locator(".create-options > a");
+  // Four tiles: New project, New yarn, Import a project, Import a yarn. The
+  // yarn import tile is a greyed-out, non-link card (with its reason) when the
+  // server has link imports turned off, so it is not always an anchor.
+  const createCards = page.locator(".create-options > .create-card");
   check(
-    (await createOptions.count()) === 4 &&
+    (await createCards.count()) === 4 &&
       (await page
-        .locator(
-          ".create-options .ui-navigation-tile__icon svg[aria-hidden='true']",
-        )
+        .locator(".create-options .create-card__icon svg[aria-hidden='true']")
         .count()) === 4,
     "Create choices are missing the import tiles or decorative icons",
   );
+  const yarnImportCard = createCards.nth(3);
+  const yarnImportIsLink =
+    (await yarnImportCard.evaluate((card) => card.tagName)) === "A";
   check(
-    (await createOptions.nth(0).getAttribute("href")) === "/app/projects/new" &&
-      (await createOptions.nth(1).getAttribute("href")) === "/app/yarns/new" &&
-      (await createOptions.nth(2).getAttribute("href")) === "/app/imports" &&
-      (await createOptions.nth(3).getAttribute("href")) ===
-        "/app/imports/yarn" &&
-      (await visibleHeights(page, ".create-options > a")).every(
+    (await createCards.nth(0).getAttribute("href")) === "/app/projects/new" &&
+      (await createCards.nth(1).getAttribute("href")) === "/app/yarns/new" &&
+      (await createCards.nth(2).getAttribute("href")) === "/app/imports" &&
+      (yarnImportIsLink
+        ? (await yarnImportCard.getAttribute("href")) === "/app/imports/yarn"
+        : (await yarnImportCard.getAttribute("aria-disabled")) === "true" &&
+          (await yarnImportCard.locator(".create-card__note").isVisible())) &&
+      (await visibleHeights(page, ".create-options > .create-card")).every(
         (height) => height >= 44,
       ),
     "Create choices do not expose all four destinations as touch targets",

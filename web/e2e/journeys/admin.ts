@@ -1901,7 +1901,17 @@ async function runAcceptance(
       pending.push(
         (async () => {
           try {
-            const code = asRecord(asRecord(await response.json())?.error)?.code;
+            // A cancelled request (the app aborts obsolete loads) never
+            // delivers a body, so a plain `response.json()` would stay
+            // pending until the browser closes and block every later
+            // `settle()`. The body is only a diagnostic aid: give it 5 s.
+            const body = await Promise.race([
+              response.json(),
+              new Promise<undefined>((resolve) =>
+                setTimeout(() => resolve(undefined), 5_000),
+              ),
+            ]);
+            const code = asRecord(asRecord(body)?.error)?.code;
             if (
               typeof code === "string" &&
               ["admin_required", "not_found", "internal_error"].includes(code)
@@ -2369,7 +2379,13 @@ async function runAcceptance(
         `(entity=${restoredEntity}, action=${restoredAction}, ` +
         `scroll_restored=${scrollRestored})`,
     );
-    mark("return from audit to More with native browser history");
+    // Admin is one area with Users and Audit log tabs: More -> Users -> Audit
+    // log are separate history entries (the audit filters replace theirs), so
+    // Back from the audit log lands on the Users tab and one more Back on More.
+    mark("return from audit to Users with native browser history");
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await page.waitForURL("**/app/admin/users");
+    mark("return from Users to More with native browser history");
     await page.goBack({ waitUntil: "domcontentloaded" });
     await page.waitForURL("**/app/more");
     await page

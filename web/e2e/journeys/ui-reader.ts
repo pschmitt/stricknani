@@ -770,12 +770,16 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
             .count()) === 0,
         "the create page showed stale preview copy or missing creation links",
       );
-      const importsLink = page.getByRole("link", { name: /^Imports(?:\s|$)/ });
+      // Create has four tiles; the project import tile is a link whatever
+      // the server's import settings are (only the yarn tile can be disabled).
+      const importsLink = page.getByRole("link", {
+        name: /^Import a project(?:\s|$)/,
+      });
       check(
         (await importsLink.count()) === 1 &&
           (await importsLink.isVisible()) &&
           (await importsLink.getAttribute("href")) === "/app/imports",
-        "Create does not expose one visible Imports destination",
+        "Create does not expose one visible project Imports destination",
       );
       markStage("opening Imports from Create navigation");
       await importsLink.click();

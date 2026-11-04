@@ -31,6 +31,9 @@ export const REQUIRED_OFFLINE_ASSETS: ReadonlySet<string> = new Set([
   "/app/favicon.svg",
   "/app/icons/icon-192.png",
   "/app/icons/icon-512.png",
+  // The manifest's maskable icon is part of the offline install since the
+  // Winky Pom icon set (9e5f3b20); static/service-worker.js precaches it.
+  "/app/icons/icon-maskable-512.png",
 ]);
 
 export function sha256Hex(data: string | Uint8Array): string {

@@ -124,7 +124,7 @@ export async function runImportJourney(
       }
     }
     if (status >= 400 && isImportApi(p)) {
-      resourceFailures.push(`HTTP ${status} API resource`);
+      resourceFailures.push(`HTTP ${status} ${p}`);
     }
   };
 
@@ -238,12 +238,17 @@ export async function runImportJourney(
       await page.getByRole("button", { name: "From a link" }).isDisabled(),
       "URL import was not disabled for the fixture capability",
     );
+    // The AI opt-in stays on the page but greyed out, with the reason, when
+    // the server has no AI capability (it used to be hidden).
     await page
-      .getByText("AI enhancement is unavailable.")
+      .getByText("AI import is turned off on this server.")
       .waitFor({ state: "visible" });
+    const aiOptIn = page.getByLabel("Ask AI to improve extraction");
     check(
-      (await page.getByLabel("Ask AI to improve extraction").count()) === 0,
-      "AI opt-in appeared without the AI capability",
+      (await aiOptIn.count()) === 1 &&
+        (await aiOptIn.isDisabled()) &&
+        !(await aiOptIn.isChecked()),
+      "AI opt-in was usable without the AI capability",
     );
 
     markStage("previewing text and checking review fields");
@@ -535,7 +540,7 @@ export async function runImportJourney(
     check(pageErrors === 0, "browser reported an uncaught page exception");
     check(
       resourceFailures.length === 0,
-      "an API resource returned an unexpected error",
+      `an API resource returned an unexpected error (${resourceFailures.join(", ")})`,
     );
     return screenshots;
   } finally {
