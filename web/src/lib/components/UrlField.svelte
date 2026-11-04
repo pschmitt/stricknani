@@ -101,8 +101,7 @@
       oninput={onInput}
       onkeydown={onKeydown}
       onfocus={() => (focused = true)}
-      onblur={() => (focused = false)}
-    ></textarea>
+      onblur={() => (focused = false)}></textarea>
     <div class="url-actions">
       {#if showClear}
         <!-- Keep focus in the field so the button survives the blur it would cause. -->

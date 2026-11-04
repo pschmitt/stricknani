@@ -340,8 +340,7 @@
           <label class="field wide"
             ><span>{t("Notes", locale)}</span><textarea
               bind:value={draft.notes}
-              rows="3"
-            ></textarea></label
+              rows="3"></textarea></label
           >
         </div>
         {#if draft.images.length}<ImageChoices

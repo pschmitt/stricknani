@@ -168,7 +168,7 @@
                     statix
                     nixfmt
                     ktfmt
-                    nodejs
+                    nodejs_26
                     poppler-utils
                     tesseract
                   ]);

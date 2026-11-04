@@ -1348,8 +1348,7 @@
                     <textarea
                       id="project-description"
                       bind:value={draft.description}
-                      rows="10"
-                    ></textarea>
+                      rows="10"></textarea>
                   </div>
                   <div class="field field-wide">
                     <label for="project-notes">{t("Notes", locale)}</label>
@@ -1357,8 +1356,7 @@
                       id="project-notes"
                       use:focusOnHash
                       bind:value={draft.notes}
-                      rows="5"
-                    ></textarea>
+                      rows="5"></textarea>
                   </div>
                   <div class="field field-wide">
                     <label for="project-materials"
@@ -1367,8 +1365,7 @@
                     <textarea
                       id="project-materials"
                       bind:value={draft.otherMaterials}
-                      rows="4"
-                    ></textarea>
+                      rows="4"></textarea>
                   </div>
                 </div>
               </section>
@@ -1484,8 +1481,7 @@
                           <textarea
                             id={`step-description-${step.key}`}
                             bind:value={step.description}
-                            rows="4"
-                          ></textarea>
+                            rows="4"></textarea>
                         </div>
                       </li>
                     {/each}

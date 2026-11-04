@@ -491,8 +491,7 @@
           placeholder={t(
             "Paste pattern instructions, notes, or a recipe…",
             locale,
-          )}
-        ></textarea><small
+          )}></textarea><small
           >{t("Text and files are limited to 5 MiB.", locale)}</small
         ></label
       >
@@ -697,8 +696,7 @@
                 <label class="field"
                   ><span>{t("Instructions", locale)}</span><textarea
                     bind:value={step.description}
-                    rows="4"
-                  ></textarea></label
+                    rows="4"></textarea></label
                 >
                 {#if step.images.length}<ImageChoices
                     title={t("Suggested step images", locale)}
@@ -800,8 +798,7 @@
         <label class="field"
           ><span>{t("Notes", locale)}</span><textarea
             bind:value={draft.notes}
-            rows="3"
-          ></textarea></label
+            rows="3"></textarea></label
         >
         {#if draft.additionalDetails}<details class="details">
             <summary>{t("Other extracted details", locale)}</summary><label

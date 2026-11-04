@@ -849,8 +849,7 @@
                 maxlength="20000"
                 value={draft.notes}
                 oninput={(event) =>
-                  setDraft("notes", event.currentTarget.value)}
-              ></textarea>
+                  setDraft("notes", event.currentTarget.value)}></textarea>
             </label>
             <div class="field wide">
               <label for={fieldId("link")}>{t("Yarn source URL", locale)}</label
