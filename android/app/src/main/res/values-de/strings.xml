@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Stricknani</string>
+    <string name="launcher_name">Stricknani</string>
 
     <!-- Common / shared -->
     <string name="common_back">Zurück</string>

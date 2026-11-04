@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Stricknani</string>
+    <!-- The launcher label; debug builds override it (src/debug/res). -->
+    <string name="launcher_name">Stricknani</string>
 
     <!-- Common / shared -->
     <string name="common_back">Back</string>
