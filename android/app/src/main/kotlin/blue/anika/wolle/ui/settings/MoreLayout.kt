@@ -10,21 +10,23 @@ sealed interface MoreLink {
 }
 
 /**
- * The More screen's order, like the website's More page: Create, Categories, Gauge calculator,
- * (Admin for administrators), About, then the Account row, the Android-only Settings group and
- * finally Sign out (always last, drawn by the screen).
+ * The More screen's order: Create, Categories, Gauge calculator; then the Settings group (Account
+ * settings first, drawn by the screen, then the Android-only [settings]); then [footer] (Admin for
+ * administrators, About last). Sign out lives only in Account settings.
  */
-data class MoreLayout(val links: List<MoreLink>, val settings: List<SettingsCategory>)
+data class MoreLayout(
+    val links: List<MoreLink>,
+    val settings: List<SettingsCategory>,
+    val footer: List<SettingsCategory>,
+)
 
 fun moreLayout(isAdmin: Boolean): MoreLayout =
     MoreLayout(
         links =
-            listOfNotNull(
+            listOf(
                 MoreLink.Create,
                 MoreLink.Category(SettingsCategory.Categories),
                 MoreLink.Gauge,
-                MoreLink.Category(SettingsCategory.Admin).takeIf { isAdmin },
-                MoreLink.Category(SettingsCategory.About),
             ),
         settings =
             listOf(
@@ -34,4 +36,5 @@ fun moreLayout(isAdmin: Boolean): MoreLayout =
                 SettingsCategory.Sync,
                 SettingsCategory.Backup,
             ),
+        footer = listOfNotNull(SettingsCategory.Admin.takeIf { isAdmin }, SettingsCategory.About),
     )

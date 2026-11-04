@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -17,9 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -51,11 +47,9 @@ fun SettingsScreen(
     onGaugeClick: () -> Unit,
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
-    settings: SettingsViewModel = hiltViewModel(),
 ) {
     val profile by accountAvatar.profile.collectAsStateWithLifecycle()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
-    var showSignOutDialog by rememberSaveable { mutableStateOf(false) }
     val layout = moreLayout(isAdmin)
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.more_title)) }) }) {
         innerPadding ->
@@ -91,11 +85,6 @@ fun SettingsScreen(
                 }
             }
             item {
-                SettingsSingleItemCard {
-                    MoreAccountRow(profile) { onCategoryClick(SettingsCategory.Account) }
-                }
-            }
-            item {
                 Text(
                     stringResource(R.string.more_settings_header),
                     style = MaterialTheme.typography.titleSmall,
@@ -105,6 +94,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsSingleItemCard {
+                    MoreAccountRow(profile) { onCategoryClick(SettingsCategory.Account) }
                     layout.settings.forEach { category ->
                         SettingsCategoryRow(category, profile, onCategoryClick)
                     }
@@ -112,27 +102,12 @@ fun SettingsScreen(
             }
             item {
                 SettingsSingleItemCard {
-                    MoreActionRow(
-                        icon = Icons.AutoMirrored.Filled.Logout,
-                        title = stringResource(R.string.settings_sign_out),
-                        subtitle = null,
-                        tag = "more-sign-out",
-                        onClick = { showSignOutDialog = true },
-                        showArrow = false,
-                    )
+                    layout.footer.forEach { category ->
+                        SettingsCategoryRow(category, profile, onCategoryClick)
+                    }
                 }
             }
         }
-    }
-
-    if (showSignOutDialog) {
-        SignOutDialog(
-            onConfirm = {
-                showSignOutDialog = false
-                settings.signOut()
-            },
-            onDismiss = { showSignOutDialog = false },
-        )
     }
 }
 

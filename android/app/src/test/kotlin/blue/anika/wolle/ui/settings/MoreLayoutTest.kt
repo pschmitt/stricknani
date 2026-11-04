@@ -6,27 +6,15 @@ import org.junit.Test
 
 class MoreLayoutTest {
     @Test
-    fun `links follow the website order, Create first`() {
+    fun `links start with Create, then Categories and the gauge calculator`() {
         assertEquals(
-            listOf(
-                MoreLink.Create,
-                MoreLink.Category(SettingsCategory.Categories),
-                MoreLink.Gauge,
-                MoreLink.Category(SettingsCategory.About),
-            ),
-            moreLayout(isAdmin = false).links,
+            listOf(MoreLink.Create, MoreLink.Category(SettingsCategory.Categories), MoreLink.Gauge),
+            moreLayout(isAdmin = true).links,
         )
     }
 
     @Test
-    fun `administrators get Admin right before About`() {
-        val links = moreLayout(isAdmin = true).links
-        assertEquals(MoreLink.Category(SettingsCategory.Admin), links[links.size - 2])
-        assertEquals(MoreLink.Category(SettingsCategory.About), links.last())
-    }
-
-    @Test
-    fun `the Android-only settings sit in their own group without Account`() {
+    fun `the Android-only settings follow Account, which the screen draws first`() {
         val settings = moreLayout(isAdmin = true).settings
         assertEquals(
             listOf(
@@ -42,11 +30,21 @@ class MoreLayoutTest {
     }
 
     @Test
+    fun `Admin and About close the screen, About last`() {
+        assertEquals(
+            listOf(SettingsCategory.Admin, SettingsCategory.About),
+            moreLayout(isAdmin = true).footer,
+        )
+        assertEquals(listOf(SettingsCategory.About), moreLayout(isAdmin = false).footer)
+    }
+
+    @Test
     fun `every category is reachable from More`() {
         val layout = moreLayout(isAdmin = true)
         val shown =
             layout.links.filterIsInstance<MoreLink.Category>().map { it.category } +
                 layout.settings +
+                layout.footer +
                 SettingsCategory.Account
         assertEquals(SettingsCategory.entries.toSet(), shown.toSet())
     }
