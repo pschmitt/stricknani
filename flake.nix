@@ -31,10 +31,11 @@
               "";
 
           stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { inherit gitRevision; };
-          stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix { inherit gitRevision; };
+          stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix { };
           stricknaniRust = pkgs.callPackage ./nix/rust-package.nix {
             corePackage = stricknaniRustCore;
             webPackage = stricknaniWeb;
+            inherit gitRevision;
           };
 
           rustContainerConfig = {

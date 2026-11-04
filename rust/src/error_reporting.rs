@@ -113,12 +113,17 @@ pub struct PreparedEnvelope {
     pub target: Url,
 }
 
-/// `stricknani-server@<version>+<commit>`; the commit comes from the build
-/// environment (`STRICKNANI_GIT_REVISION`) when available.
+/// `stricknani-server@<version>+<commit>`. The commit comes from the runtime
+/// environment (`STRICKNANI_GIT_REVISION`, set by the Nix package wrapper) so the
+/// compiled server does not change, and need not be rebuilt, on every commit.
 pub fn release_name() -> String {
+    release_name_for(std::env::var("STRICKNANI_GIT_REVISION").ok().as_deref())
+}
+
+fn release_name_for(revision: Option<&str>) -> String {
     let base = format!("{}@{}", "stricknani-server", env!("CARGO_PKG_VERSION"));
-    match option_env!("STRICKNANI_GIT_REVISION") {
-        Some(revision) if !revision.trim().is_empty() => format!("{base}+{}", revision.trim()),
+    match revision.map(str::trim) {
+        Some(revision) if !revision.is_empty() => format!("{base}+{revision}"),
         _ => base,
     }
 }
@@ -1119,6 +1124,9 @@ mod tests {
     #[test]
     fn release_names_the_server_and_version() {
         assert!(release_name().starts_with("stricknani-server@"));
+        assert!(release_name_for(Some(" abc1234 ")).ends_with("+abc1234"));
+        assert!(!release_name_for(Some("")).contains('+'));
+        assert!(!release_name_for(None).contains('+'));
     }
 
     #[test]
