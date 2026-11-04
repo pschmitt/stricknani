@@ -204,10 +204,9 @@ jobs:
           for image in screenshot-captures/*.png
           do
             basename="$(basename "$image")"
-            # These two extra review-only states exercise the rich Stitch sample and Notes card.
-            # Keep them in diagnostics without exceeding Play's eight-image bucket limit.
+            # Onboarding and the Home-duplicating activity frame stay in diagnostics only.
             case "$basename" in
-              *-final-state.png|*-project-stitch-sample.png|*-project-notes.png)
+              *-final-state.png|*-onboarding.png|*-activity.png)
                 continue
                 ;;
             esac

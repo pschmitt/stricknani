@@ -8,14 +8,13 @@ capture_watch_pid=''
 capture_names=(
   onboarding
   home
+  activity
   project-list
   project
-  project-stitch-sample
-  project-notes
+  project-details
   yarn-list
   yarn
-  settings
-  offline
+  gauge
   final-state
 )
 
