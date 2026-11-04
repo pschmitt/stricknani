@@ -332,6 +332,7 @@ internal fun AccountSettingsScreen(
                         }
                 }
             }
+            item { DeleteAccountCard(onDeleted = viewModel::accountDeleted) }
             item {
                 SettingsSingleItemCard {
                     OutlinedButton(

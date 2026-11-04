@@ -10,7 +10,20 @@
     "completed_in_play_console": false,
     "collects_data_for_developer": true,
     "shares_data_with_third_parties": false,
-    "notes": "Optional, operator-configured Sentry error reporting in every build. Sent only through the user's own Stricknani server (never straight to Sentry), only when the server offers it and the user has not turned Send error reports off. Errors only, no tokens or PII. Console form must match; set completed_in_play_console to true once it does.",
+    "encrypted_in_transit": true,
+    "account_creation": {
+      "methods": [
+        "Username, email address and password",
+        "OAuth"
+      ],
+      "notes": "The app signs in with the email address and password of an account on the user's own Stricknani server, and can create one there when the server allows registration. If the operator enables it, it also signs in through an OpenID Connect provider (such as Authelia), which is OAuth. Confirm the exact option labels in the Play Console form."
+    },
+    "delete_account_url": "https://wolle.anika.blue/app/delete-account",
+    "data_deletion": {
+      "in_app": true,
+      "notes": "Account > Delete account in the app (and the web app) permanently deletes the account and all its data after re-authentication and a typed confirmation. The public page explains it, also signed out. Partial data deletion (individual items) is available in the app."
+    },
+    "notes": "Optional, operator-configured Sentry error reporting in every build. Sent only through the user's own Stricknani server (never straight to Sentry), only over HTTPS (silently skipped for a plain-HTTP server URL), only when the server offers it and the user has not turned Send error reports off. Errors only, no tokens or PII. Console form must match; set completed_in_play_console to true once it does.",
     "data_types": [
       {
         "category": "App info and performance",

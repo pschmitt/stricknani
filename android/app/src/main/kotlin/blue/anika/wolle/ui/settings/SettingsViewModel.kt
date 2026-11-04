@@ -38,8 +38,10 @@ import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.ReadingTextSize
 import blue.anika.wolle.ui.navigation.NavbarCustomization
+import coil3.SingletonImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -383,6 +385,26 @@ constructor(
     fun signOut() {
         settingsRepository.signOut()
         viewModelScope.launch { withContext(Dispatchers.IO) { database.clearAllTables() } }
+    }
+
+    /**
+     * The server deleted this account. Wipes everything the app kept for it - credentials, the Room
+     * cache, queued uploads and the image cache - and, like [signOut], flips `isConfigured` so the
+     * app returns to onboarding.
+     */
+    fun accountDeleted() {
+        signOut()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                runCatching { File(context.filesDir, "pending-uploads").deleteRecursively() }
+                runCatching {
+                    SingletonImageLoader.get(context).let {
+                        it.memoryCache?.clear()
+                        it.diskCache?.clear()
+                    }
+                }
+            }
+        }
     }
 
     // --- SNA-15: backup/restore ---

@@ -53,6 +53,21 @@ class ErrorReportingTest {
     }
 
     @Test
+    fun neverReportsOverPlainHttp() {
+        // A LAN or development server: silently no reports, whatever else allows them.
+        assertNull(config(serverUrl = "http://knit.example.test/"))
+        assertNull(config(serverUrl = "http://192.168.1.20:7674"))
+        assertNull(config(serverUrl = "http://localhost:7674"))
+        assertNull(config(serverUrl = "ftp://knit.example.test"))
+        assertNull(config(serverUrl = "knit.example.test"))
+        // The scheme is case-insensitive and surrounding space is ignored.
+        assertEquals(
+            "https://pub@knit.example.test/api/v2/telemetry/sentry/7",
+            config(serverUrl = " HTTPS://knit.example.test/ ")?.dsn,
+        )
+    }
+
+    @Test
     fun theSwitchShowsOnOnlyWhenBothChoicesAreOn() {
         assertTrue(ErrorReportingGate.switchOn(meta, localEnabled = true))
         assertFalse(ErrorReportingGate.switchOn(meta, localEnabled = false))
@@ -110,11 +125,18 @@ class ErrorReportingTest {
     @Test
     fun theSdkIsGivenADsnThatPointsAtTheServersTunnel() {
         assertEquals(
-            "http://k@10.0.0.2:7674/api/v2/telemetry/sentry/12",
+            "https://k@knit.example.test:7674/api/v2/telemetry/sentry/12",
+            ErrorReportingGate.tunnelDsn(
+                "https://k:secret@o1.ingest.sentry.test/12",
+                "https://knit.example.test:7674/api/v2/telemetry/sentry",
+            ),
+        )
+        // No DSN is ever built for a plain HTTP tunnel.
+        assertNull(
             ErrorReportingGate.tunnelDsn(
                 "https://k:secret@o1.ingest.sentry.test/12",
                 "http://10.0.0.2:7674/api/v2/telemetry/sentry",
-            ),
+            )
         )
         assertNull(ErrorReportingGate.tunnelDsn("not a dsn", "https://x.test/t"))
         assertNull(config(meta = meta.copy(dsn = "https://sentry.example.test/7")))

@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.oidc
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,6 +52,7 @@ fun ReauthSheet(
     onSubmitPassword: (String) -> Unit,
     onUseProvider: () -> Unit,
     onDismiss: () -> Unit,
+    @StringRes message: Int = R.string.oidc_reauth_text,
 ) {
     val request = state.request
     var password by remember { mutableStateOf("") }
@@ -79,7 +81,7 @@ fun ReauthSheet(
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
-                stringResource(R.string.oidc_reauth_text),
+                stringResource(message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

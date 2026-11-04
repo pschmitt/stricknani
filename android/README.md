@@ -87,12 +87,21 @@ store updates those installs.
 Sentry, Account settings shows **Send error reports** (on by default; turning it off also stops it at
 once and is saved to the account, so the web app follows). Nothing is sent unless the server offers
 reporting and you have not turned it off. The app has no DSN of its own: it reads the public DSN
-from `GET /api/v2/meta` and reports through the server's tunnel, so Sentry never sees the phone. It
-sends errors only (message, stack trace, app version, device and OS), tagged `component:android`,
+from `GET /api/v2/meta` and reports through the server's tunnel, so Sentry never sees the phone.
+Reports travel only over HTTPS: with a plain `http://` server URL (a LAN or development server) the
+app silently sends nothing. It sends errors only (message, stack trace, app version, device and OS), tagged `component:android`,
 with tokens, emails and queries redacted; the on-device crash report is unchanged. The Play data
 safety form declares this as optional crash logs and diagnostics. The SDK's auto-init is disabled; the
 app starts it itself once reporting is allowed. `-PerrorReporting=false` builds without the SDK and
 the toggle; it is independent of `-PselfUpdate`.
+
+**Delete account.** Account settings ends with **Delete account**: type `DELETE` or your email, then
+confirm it is you (password, or the linked login provider through the same sheet as linking a login).
+The server then permanently deletes the account and everything in it (`POST /api/v2/account/delete`,
+see `docs/web-v2-contract.md`), and the app wipes its local data (credentials, offline cache, queued
+uploads, image cache) and returns to onboarding. The public page
+`https://wolle.anika.blue/app/delete-account` is the Play "Delete account URL". An older server without
+the endpoint answers with a message to ask its operator.
 
 [obtainium-link]: https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22blue.anika.wolle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fpschmitt%2Fstricknani%22%2C%22author%22%3A%22pschmitt%22%2C%22name%22%3A%22Stricknani%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22.%2A-release%5C%5C%5C%5C.apk%24%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22trackOnly%5C%22%3Afalse%7D%22%7D
 

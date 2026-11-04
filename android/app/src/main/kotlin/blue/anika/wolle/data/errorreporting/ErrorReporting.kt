@@ -49,6 +49,10 @@ object ErrorReportingGate {
      * A config only when the build includes the SDK, the server says error reporting is available,
      * both the user's server-side choice and this device's choice are on, and the DSN and tunnel
      * path are usable. Anything else means "do not report".
+     *
+     * Reports only ever travel over HTTPS: when the configured server URL is plain HTTP (a LAN or
+     * development server) the app silently does not report, so "encrypted in transit" is always
+     * true of what leaves the device.
      */
     fun config(
         compiledIn: Boolean,
@@ -63,10 +67,14 @@ object ErrorReportingGate {
         val base = serverUrl.trim().trimEnd('/')
         if (dsn.isEmpty() || base.isEmpty()) return null
         if (!path.startsWith("/") || path.startsWith("//")) return null
-        if (!base.startsWith("https://") && !base.startsWith("http://")) return null
+        if (!isHttps(base)) return null
         val tunnelDsn = tunnelDsn(dsn, base + path) ?: return null
         return ErrorReportingConfig(tunnelDsn, meta.environment ?: "production")
     }
+
+    /** Whether [url] is an `https://` URL (the scheme is case-insensitive). */
+    internal fun isHttps(url: String): Boolean =
+        url.trim().startsWith("https://", ignoreCase = true)
 
     /**
      * The Sentry Android SDK has no tunnel option, so it gets a DSN with the real key and project
@@ -77,8 +85,9 @@ object ErrorReportingGate {
     internal fun tunnelDsn(dsn: String, tunnelUrl: String): String? {
         val match = Regex("^https?://([^@/:]+)(?::[^@/]*)?@[^/]+/(?:.*/)?([0-9]+)/?$").find(dsn)
         val (key, project) = match?.destructured ?: return null
-        val scheme = if (tunnelUrl.startsWith("https://")) "https://" else "http://"
-        return "$scheme$key@${tunnelUrl.removePrefix(scheme).trimEnd('/')}/$project"
+        if (!isHttps(tunnelUrl)) return null
+        val host = tunnelUrl.trim().substring("https://".length).trimEnd('/')
+        return "https://$key@$host/$project"
     }
 
     /** What the Settings switch shows: reporting is on only when both choices are on. */

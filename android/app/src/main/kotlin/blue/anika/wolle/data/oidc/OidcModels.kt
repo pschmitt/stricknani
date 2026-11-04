@@ -129,11 +129,18 @@ enum class ReauthAction(val wire: String) {
     LINK_IDENTITY("link_identity"),
     UNLINK_IDENTITY("unlink_identity"),
     ADMIN_UNLINK_IDENTITY("admin_unlink_identity"),
+    DELETE_ACCOUNT("delete_account"),
 }
 
 /** What a reauthentication proof is bound to; the server rejects any other combination. */
 sealed interface ReauthTarget {
-    fun toDto(): ReauthTargetDto
+    /** Null for an action that takes no target (the server rejects an empty `target` object). */
+    fun toDto(): ReauthTargetDto?
+
+    /** Actions on the account itself: nothing to point at. */
+    data object None : ReauthTarget {
+        override fun toDto(): ReauthTargetDto? = null
+    }
 
     data class Provider(val provider: String) : ReauthTarget {
         override fun toDto() = ReauthTargetDto(provider = provider)

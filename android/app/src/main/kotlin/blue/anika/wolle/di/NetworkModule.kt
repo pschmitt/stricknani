@@ -1,6 +1,9 @@
 package blue.anika.wolle.di
 
 import blue.anika.wolle.BuildConfig
+import blue.anika.wolle.data.account.AccountDeletionApi
+import blue.anika.wolle.data.account.AccountDeletionGateway
+import blue.anika.wolle.data.account.AccountDeletionRepository
 import blue.anika.wolle.data.account.AccountGateway
 import blue.anika.wolle.data.account.AccountRepository
 import blue.anika.wolle.data.account.AccountV2Api
@@ -223,6 +226,17 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAccountGateway(repository: AccountRepository): AccountGateway = repository
+
+    @Provides
+    @Singleton
+    fun provideAccountDeletionApi(retrofit: Retrofit): AccountDeletionApi =
+        retrofit.create(AccountDeletionApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAccountDeletionGateway(
+        repository: AccountDeletionRepository
+    ): AccountDeletionGateway = repository
 
     @Provides
     @Singleton

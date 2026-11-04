@@ -425,6 +425,24 @@ class OidcCoordinatorTest {
     }
 
     @Test
+    fun `account deletion reauth sends no target at all`() = runTest {
+        session.hasSession = true
+        session.sessionServerUrl = "https://s"
+        val c = coordinator()
+        val result =
+            c.reauthWithPassword("pw", ReauthAction.DELETE_ACCOUNT, ReauthTarget.None).getOrNull()
+        val request = account.passwordReauths.single()
+        assertEquals("delete_account", request.action)
+        // An empty target object would be refused by the server: it must be left out.
+        assertNull(request.target)
+        assertEquals(ReauthAction.DELETE_ACCOUNT, result?.action)
+        assertNull(c.startReauth("authelia", ReauthAction.DELETE_ACCOUNT, ReauthTarget.None))
+        val start = account.reauthStarts.single()
+        assertEquals("delete_account", start.action)
+        assertNull(start.target)
+    }
+
+    @Test
     fun `password reauth sends the action and target and returns a proof`() = runTest {
         val c = coordinator()
         val result =
