@@ -1047,8 +1047,8 @@ def run_acceptance(
             )
             page.get_by_role("heading", name="Winky lost the thread").wait_for()
             _require(
-                page.get_by_text("Winky hat den Faden verloren").is_visible(),
-                "German offline copy is missing",
+                not page.get_by_text("Winky hat den Faden verloren").is_visible(),
+                "offline page shows a second language next to the user's",
             )
             _require(
                 page.get_by_text("are not stored offline.").is_visible(),

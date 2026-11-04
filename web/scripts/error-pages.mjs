@@ -1,7 +1,7 @@
 // Self-contained playful error pages: 404 (served by the Rust server for unknown paths)
 // and 502/503/504 (served by nginx when the server is down). Each page is one HTML file
-// with inline CSS, the inline mascot, and a tiny inline script that picks English or
-// German from the browser language. Without JavaScript both languages are shown.
+// with inline CSS, the inline mascot, and a tiny inline script that shows only the user's
+// language: the one the web app stored, else the browser's, else (also without JavaScript) English.
 //
 // They are written into the build as `errors/<status>.html` before the CSP manifest is
 // computed, so their inline style and script are covered by the same hash list.
@@ -242,7 +242,7 @@ const STYLE = `
 }
 :root[data-theme="light"] { color-scheme: light; }
 * { box-sizing: border-box; }
-html[data-lang="en"] [lang="de"], html[data-lang="de"] [lang="en"] { display: none; }
+html:not([data-lang="de"]) [lang="de"], html[data-lang="de"] [lang="en"] { display: none; }
 body {
   min-width: 320px;
   min-height: 100vh;
@@ -269,7 +269,6 @@ main {
   text-align: center;
 }
 section { display: grid; justify-items: center; gap: 0.7rem; }
-html:not([data-lang]) section + section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--line); width: 100%; }
 .kicker {
   margin: 0;
   padding: 0.25rem 0.85rem;
@@ -317,7 +316,8 @@ p { margin: 0; }
 `;
 
 const SCRIPT = `try {
-  var l = ((navigator.language || "en") + "").slice(0, 2) === "de" ? "de" : "en";
+  var l = localStorage.getItem("stricknani.locale");
+  if (l !== "de" && l !== "en") l = ((navigator.language || "en") + "").slice(0, 2) === "de" ? "de" : "en";
   var d = document.documentElement;
   d.setAttribute("data-lang", l);
   d.lang = l;

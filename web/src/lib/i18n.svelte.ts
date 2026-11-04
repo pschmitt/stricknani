@@ -32,6 +32,12 @@ export async function loadCatalog(signal?: AbortSignal): Promise<void> {
 /** Translate an English source message; use that source text until a locale entry exists. */
 export function setLocale(locale: Locale): void {
   activeLocale = locale;
+  // The offline and 50x pages are static and can't ask the server; they read this.
+  try {
+    localStorage.setItem("stricknani.locale", locale);
+  } catch {
+    // Storage can be unavailable (private mode); the static pages then fall back.
+  }
 }
 
 export function t(message: string, locale: Locale = activeLocale): string {
