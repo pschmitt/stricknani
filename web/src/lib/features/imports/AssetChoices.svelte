@@ -6,10 +6,14 @@
   let {
     assets,
     disabled,
+    external,
     locale,
   }: {
     assets: ImportAssetChoice[];
+    /** Locks the choices (for example while saving). */
     disabled: boolean;
+    /** Whether this server may fetch external images; if not there are no previews. */
+    external: boolean;
     locale: "en" | "de";
   } = $props();
 
@@ -29,7 +33,7 @@
       <li class:selected={asset.selected}>
         <label>
           <input type="checkbox" bind:checked={asset.selected} {disabled} />
-          {#if asset.kind === "diagram"}
+          {#if asset.kind === "diagram" && external}
             <img
               src={importImageSrc(asset.url)}
               alt=""
@@ -53,7 +57,7 @@
   <p class="supporting">
     {t("Selected files are saved as attachments of the project.", locale)}
   </p>
-  {#if disabled}
+  {#if !external}
     <p class="supporting">
       {t(
         "External images are disabled. Links will be kept in notes and never attached.",

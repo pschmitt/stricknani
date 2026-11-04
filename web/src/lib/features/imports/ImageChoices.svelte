@@ -7,11 +7,15 @@
     title,
     images,
     disabled,
+    external,
     locale,
   }: {
     title: string;
     images: ImportImageChoice[];
+    /** Locks the choices (for example while saving). */
     disabled: boolean;
+    /** Whether this server may fetch external images; if not there are no previews. */
+    external: boolean;
     locale: "en" | "de";
   } = $props();
 </script>
@@ -22,17 +26,18 @@
     {#each images as image, index (image.url + index)}
       <label class="image-choice" class:selected={image.selected}>
         <input type="checkbox" bind:checked={image.selected} {disabled} />
-        <img
-          src={importImageSrc(image.url)}
-          alt=""
-          loading="lazy"
-          decoding="async"
-        />
+        <!-- With external images off the proxy answers 503: show no preview. -->
+        {#if external}<img
+            src={importImageSrc(image.url)}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />{/if}
         <span class="image-source">{new URL(image.url).hostname}</span>
       </label>
     {/each}
   </div>
-  {#if disabled}
+  {#if !external}
     <p class="supporting">
       {t(
         "External images are disabled. Links will be kept in notes and never attached.",

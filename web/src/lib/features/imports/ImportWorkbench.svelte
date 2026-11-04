@@ -676,6 +676,7 @@
                     title={t("Suggested step images", locale)}
                     images={step.images}
                     disabled={!allowExternal || busy}
+                    external={allowExternal}
                     {locale}
                   />{/if}
               </fieldset>
@@ -687,12 +688,14 @@
             title={t("Suggested project images", locale)}
             images={draft.imageUrls}
             disabled={!allowExternal || busy}
+            external={allowExternal}
             {locale}
           />{/if}
 
         {#if draft.assets.length}<AssetChoices
             assets={draft.assets}
             disabled={!allowExternal || busy}
+            external={allowExternal}
             {locale}
           />{/if}
 

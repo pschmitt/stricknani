@@ -353,6 +353,7 @@
             title={t("Photos to add", locale)}
             images={draft.images}
             disabled={!allowExternal || saving}
+            external={allowExternal}
             {locale}
           />{/if}
       </fieldset>
