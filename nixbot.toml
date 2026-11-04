@@ -2,5 +2,5 @@
 # builds on GitHub's arm runners, see the nix-aarch64 job of nix.yaml).
 attribute = "hydraJobs"
 
-# Configure extra push branches on the default branch.
-build_branches = ["rust"]
+# Extra push branches built besides the default branch (none).
+build_branches = []

@@ -145,19 +145,17 @@ Use this file as the operational source of truth for working in Stricknani.
   and lockfile; matching formatter versions alone do not prove matching settings.
   Before evaluating a source snapshot, exclude Git metadata, generated outputs,
   and dependency/cache symlinks. Use an explicit `path:` flake reference.
-- Run Python helper lint from the frozen project root with its `pyproject.toml`
-  and locked tool version. Default-config diagnostics and baseline comparisons
-  do not establish that the repository lint gate passed.
-- For Python browser runners, run both `ruff check` and `ruff format --check`
-  on the changed files. The Rust-first `just check` does not run the Python
-  formatter; a passing lint check alone does not satisfy the Nix format gate.
+- Run the e2e type check (`npm run check:e2e`) and `prettier --check` from the
+  frozen `web/` root with its `package-lock.json` and locked tool versions.
+  Default-config diagnostics and baseline comparisons do not establish that the
+  repository gate passed. `web/e2e` is part of `just web-check`.
 - In Svelte effects, compute new filter/draft objects in local variables before
   assigning reactive state. Reading an object immediately after replacing it
   in the same effect can create a dependency loop.
 - Abort obsolete loads and guard asynchronous results with the captured user
   and resource identity, or a request generation. This includes mutation
   success, failure and cleanup: dynamic routes may reuse the same component.
-- Keep `wait_for_function` predicates synchronous. The pinned Playwright treats
+- Keep `page.waitForFunction` predicates synchronous. The pinned Playwright treats
   a returned Promise as truthy before its boolean result resolves. For async
   conditions such as worker registration or CacheStorage, use a bounded helper
   that awaits `page.evaluate` and checks the resolved boolean. Cover both an
@@ -167,7 +165,7 @@ Use this file as the operational source of truth for working in Stricknani.
   may return a callable that Playwright invokes. Keep `const` and `let`
   declarations inside that function body or a scoped IIFE to avoid repeated
   top-level lexical declarations. Pass an explicitly synchronous arrow
-  predicate to `wait_for_function` (for example, `() => Boolean(window.ready)`);
+  predicate to `waitForFunction` (for example, `() => Boolean(window.ready)`);
   do not use an async predicate or an assignment expression that returns a
   callable.
 - Browser URL changes and API responses do not prove that controls or data
@@ -205,10 +203,9 @@ Use this file as the operational source of truth for working in Stricknani.
   comparing copies, or compare their files directly.
 - Before launching a browser acceptance run, verify the checksum of the actual
   runner file at its execution path, not just a synchronized source copy.
-  For Python module runners, change into the intended source root and assert
-  the imported module's resolved `__file__` and checksum in that same process
-  environment. `PYTHONPATH` alone does not prevent an older working directory
-  from shadowing the intended package.
+  For the Playwright suite, run from the intended `web/` root with its own
+  `node_modules` and `playwright.config.ts`, and record the checksum of the
+  spec and journey files under `web/e2e/` executed in that same environment.
   Freeze the runner and static root together; check that the generated worker
   matches its source template and manifest substitutions. Record these hashes
   with the receipt so stale runners or builds cannot be mistaken for failures
@@ -283,8 +280,8 @@ Use this file as the operational source of truth for working in Stricknani.
   - `just i18n-update`
   - `just i18n-compile`
   - `just i18n-check`
-- `just i18n-*` run the Python (Babel) generators under `scripts/` through
-  the Nix dev shell; they produce `locales/messages.json` and
+- `just i18n-*` run the Node generators under `web/scripts/i18n/`
+  (`npm --prefix web run i18n:*`) through the Nix dev shell; they produce `locales/messages.json` and
   `web/static/messages.json`, which are committed with the `.po` files.
 
 ### Database Migrations
@@ -307,8 +304,9 @@ Use this file as the operational source of truth for working in Stricknani.
     `just rust-test` (`cargo test --all-targets`)
   - Web: `just web-check` (`svelte-check`, Prettier), `just web-test`
     (Vitest) and `just web-build`
-  - Python tooling (`scripts/`, `ci/`): `just lint-ruff`,
-    `just lint-mypy`, `just test-harness` (pytest)
+  - Browser acceptance tooling (`web/e2e`): type-checked by `just web-check`,
+    unit-tested by `just web-test`; the Playwright suite itself is
+    `just web-e2e` (see "Frontend integration checks")
   - Nix: `just lint-nix` (`statix check`); format Nix with `nixfmt`
   - i18n: `just i18n-check`
   - Format: `just fmt`
@@ -350,8 +348,8 @@ Use this file as the operational source of truth for working in Stricknani.
   workflow/action interface before editing callers. Use
   `pschmitt/ci-workflows/...@main`, preserving caller triggers, permissions,
   checks, artifacts and publish gates. Keep application-specific checks here.
-- `just check` runs the Python tooling lint (Ruff, MyPy), Nix lint, strict Rust checks, the Rust suite, the Python tooling
-  tests, i18n checks and the web checks and build. CI runs it as
+- `just check` runs Nix lint, strict Rust checks, the Rust suite,
+  i18n checks and the web checks (including the e2e type check), tests and build. CI runs it as
   `test.yaml`; `web-ui.yaml` adds the packaged-web browser acceptance and
   `android-*.yaml` the Android lanes.
 - When touching build/deploy/release paths, also run:
@@ -361,31 +359,36 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ## Handy Commands
 
-- Python tooling: enter `nix develop` (or `nix develop '.#tooling'` for the Python-only shell); no setup step
+- Node tooling: enter `nix develop` (or `nix develop '.#tooling'` for the Node-only shell); run `just web-install` once
 - Dev server: `just run`
 - Lint: `just lint` (tooling), `just rust-lint`, `just web-check`, `just lint-nix`
 - Format: `just fmt`
-- Tests: `just test` (Rust plus Python tooling), `just web-test`
+- Tests: `just test` (Rust plus Vitest), `just web-test`
+- Browser acceptance: `just web-e2e` (Playwright against the packaged fixture)
 - i18n Update: `just i18n-update`
 - i18n Compile: `just i18n-compile`
 - Full checks: `just check`
 
-## Python tooling lane
+## Node tooling lane
 
-The product is Rust, `web/` and `android/`. The Python left in the repository
-is development tooling: `scripts/` (i18n generators, `check_translations`,
-`todo.sh` and friends) and `ci/stricknani/` (Playwright browser harnesses,
-fixture runner, importer verifier), with their tests in `ci/tests/`. It is
-provided by the Nix dev shells (`babel`, `pytest`, `mypy`, `playwright`, `ruff`,
-and the matching Playwright browsers); `pyproject.toml` only holds the ruff,
-mypy and pytest configuration.
-The legacy Python application is gone; its last release is the signed tag
-`v0.1.0`.
+The product is Rust, `web/` and `android/`. The development tooling is
+TypeScript/Node under `web/`: the i18n generators (`web/scripts/i18n/`, no
+dependencies) and the Playwright browser acceptance suite (`web/e2e/`:
+`*.e2e.ts` specs, `journeys/`, shared `lib/` with Vitest tests, fixture,
+seed, replay, summarize and import-verifier CLIs). It is provided by the Nix dev
+shells (Node and the Playwright browsers); `@playwright/test` in
+`web/package.json` is pinned to the exact version of nixpkgs'
+`playwright-driver`, so keep them equal when bumping either. The only Python
+left is the one-off asset generator `branding/build.py` (`just branding`,
+through a throwaway `nix-shell`). The legacy Python application is gone; its
+last release is the signed tag `v0.1.0`.
 
-The Python-only shell is `nix develop '.#tooling'`; the Rust shell includes the
-same tools. Run them directly there (`ruff check .`, `mypy .`, `pytest`) or via
-`just lint`, `just test` and `just i18n-*`. There is no virtualenv or lock file:
-bump the tooling with `nix flake update`.
+Run the suite with `npm --prefix web run e2e` (or `just web-e2e`); it needs
+`STRICKNANI_SERVER_BINARY`, `STRICKNANI_WEB_ROOT` and, for the optional-service
+specs, `STRICKNANI_FIXTURE_BINARY`. Each spec creates a fresh, nonexistent
+private directory under `STRICKNANI_E2E_DIR` (default: the system temp dir),
+starts and seeds the fixture, and always stops it and removes the directory.
+The Nix dev shells provide the browsers through `PLAYWRIGHT_BROWSERS_PATH`.
 
 For remote Nix evaluation, create a small filtered snapshot from the current
 source and evaluate the dev shell there; run checks from a separate cached
@@ -397,7 +400,7 @@ expensive.
 
 - Repository layout: the Rust server crate lives at the repository root (`Cargo.toml`, `src/`,
   `tests/`, `migrations/`, `templates/`, `examples/`, `locales/`); `web/`, `android/`, `ci/`
-  and `scripts/` sit beside it. The Python tooling tests are in `ci/tests/`.
+  and `scripts/` sit beside it. The Node tooling lives in `web/` (`web/e2e`, `web/scripts`); `ci/` only holds the Android replay wrappers.
 - Operational rules: `AGENTS.md`
 - Work queue: `TODO.md`
 - User/developer runbook: `README.md`, `docs/install.md`, `docs/maintaining.md`

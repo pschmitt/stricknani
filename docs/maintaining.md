@@ -96,8 +96,9 @@ just i18n-check      # fail on missing, fuzzy or stale catalogs
 ```
 
 `web/static/messages.json` and `locales/messages.json` are generated;
-commit them with the `.po` files. The generators are Python (Babel), run from the
-Nix dev shell (`nix develop`).
+commit them with the `.po` files. The generators are Node scripts in `web/scripts/i18n/`
+(`npm run i18n:*`), run from the Nix dev shell (`nix develop`) after
+`npm ci --prefix web`.
 
 ## Dependencies and vendoring
 

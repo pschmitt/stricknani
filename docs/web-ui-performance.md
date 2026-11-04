@@ -145,15 +145,15 @@ idle-host comparison.
 
 ## Reproduction
 
-Run from the source checkout with an existing Playwright environment and its
-matching browser cache. Keep the synthetic fixture directory new and outside
+Run from the source checkout after `npm ci --prefix web`, with an existing
+Playwright browser cache. Keep the synthetic fixture directory new and outside
 the source tree:
 
 ```sh
-python3 -m ci.stricknani.web_performance_browser \
-  --binary <frozen-rust-server> \
-  --web-root <frozen-web-root> \
-  --private-dir <new-private-run-directory>
+STRICKNANI_SERVER_BINARY=<frozen-rust-server> \
+STRICKNANI_WEB_ROOT=<frozen-web-root> \
+STRICKNANI_E2E_DIR=<new-private-run-directory> \
+  npm --prefix web run e2e -- e2e/performance.e2e.ts
 ```
 
 The runner creates and removes its synthetic fixture data; retain only the

@@ -42,7 +42,7 @@ accessibility events. Its SHA-256 is
 
 An initial diagnostic runner placed outside the source tree derived an
 incorrect worker `PYTHONPATH` from its file location. The corrected private
-copy was placed under `source/ci/stricknani`, where the runner’s existing path
+copy was placed under `source/ci/stricknani` (the former Python harness location), where the runner’s existing path
 logic resolves the source root; the shim was copied unchanged to the private
 build-root location that the runner derives. Exact executable/library checks,
 runner import, and isolated Xvfb/D-Bus startup passed before the accepted run.

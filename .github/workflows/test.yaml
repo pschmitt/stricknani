@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ main, rust ]
+    branches: [ main ]
     paths:
       - "Cargo.toml"
       - "Cargo.lock"
@@ -14,10 +14,7 @@ on:
       - "locales/**"
       - "web/**"
       - "nix/**"
-      - "ci/**"
-      - "scripts/**"
       - "stricknani/locales/**"
-      - "pyproject.toml"
       - "justfile"
       - "flake.nix"
       - "flake.lock"
@@ -35,10 +32,7 @@ on:
       - "locales/**"
       - "web/**"
       - "nix/**"
-      - "ci/**"
-      - "scripts/**"
       - "stricknani/locales/**"
-      - "pyproject.toml"
       - "justfile"
       - "flake.nix"
       - "flake.lock"

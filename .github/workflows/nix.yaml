@@ -2,7 +2,7 @@ name: Nix Build
 
 on:
   push:
-    branches: [ main, rust ]
+    branches: [ main ]
     paths:
       - "web/**"
       - "Cargo.toml"

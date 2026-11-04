@@ -2,7 +2,7 @@
 
 The `Android Rust Replay` workflow runs the app's Room replay instrumentation
 against a disposable build of the Rust candidate. It runs on pushes to branch
-`rust` when Android, Rust, replay harness, or workflow inputs change. It can
+`rust` when Android, Rust, the replay harness (`web/e2e/`, `ci/run-rust-*.sh`), or workflow inputs change. It can
 also be started with `workflow_dispatch` from GitHub Actions.
 
 The job builds the Rust server with the `stricknani-rust` flake package, then
@@ -23,9 +23,10 @@ step. No fixture credentials, server logs, screenshots, or raw logcat are
 uploaded. On failure, the workflow retains only the replay runner's bounded,
 sanitized instrumentation diagnostic.
 
-The small fixture helper can be exercised without Nix, Gradle, an emulator, or
-network access with:
+The small fixture helper (`npm --prefix web run fixture -- start|stop|run-replay`) can be
+exercised without Nix, Gradle, an emulator, or network access with:
 
 ```sh
-pytest tests/test_rust_fixture.py
+npm ci --prefix web
+npm --prefix web test
 ```

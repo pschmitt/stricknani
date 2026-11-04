@@ -2,7 +2,6 @@
 .claude/worktrees/
 
 # Python
-__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -26,7 +25,6 @@ wheels/
 *.egg
 
 # Virtual environments
-.venv/
 venv/
 ENV/
 env/
@@ -39,7 +37,6 @@ env/
 *~
 
 # Testing
-.pytest_cache/
 
 # Database
 *.db
@@ -57,13 +54,6 @@ env/
 result
 result-*
 
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Ruff
-.ruff_cache/
 # Compiled translations
 *.mo
 .direnv

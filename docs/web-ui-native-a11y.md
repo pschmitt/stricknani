@@ -30,7 +30,8 @@ and the matching raw server from
 `/nix/store/z1v66gbfzm2ax4y4n8cjmnkr347cpsdf-stricknani-server-0.1.0`.
 
 The private copy of
-[`web_native_a11y_browser.py`](../ci/stricknani/web_native_a11y_browser.py)
+`web_native_a11y_browser.py` (the accessibility checks now live in
+[`web/e2e/accessibility.e2e.ts`](../web/e2e/accessibility.e2e.ts))
 had SHA-256
 `329f95ca088d879aceb7aa474bf84a2f27fdc2bc06d1f89dffe7de109bb81f17`.
 Playwright 1.64.1 used its matched Firefox build in a private Xvfb, Openbox

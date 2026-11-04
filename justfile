@@ -1,12 +1,12 @@
 # Stricknani justfile
 #
 # The product is the Rust server (repository root), the Svelte web app (web/) and the
-# Android app (android/). The Python in this repository is development tooling
-# only: i18n catalog generators (scripts/) and browser/CI harnesses (ci/).
+# Android app (android/). The development tooling is TypeScript/Node under web/:
+# the i18n catalog generators (web/scripts/i18n) and the Playwright browser
+# acceptance suite (web/e2e).
 #
 # Tooling model: every recipe runs inside the Nix dev shell, which provides
-# cargo/clippy/rustfmt, node/npm, python (babel, pytest, mypy, playwright and
-# shapely), ruff, statix, nixfmt and resvg. Inside `nix develop`
+# cargo/clippy/rustfmt, node/npm, the Playwright browsers, statix, nixfmt and resvg. Inside `nix develop`
 # (or direnv's `use flake`) recipes run as they are; anywhere else
 # scripts/just-shell re-executes each recipe line through `nix develop`
 # (STRICKNANI_NIX_SHELL picks the shell, default `.#rust`). Add missing tools to
@@ -32,58 +32,34 @@ run *args:
   : "${RUST_MEDIA_ROOT:?Set RUST_MEDIA_ROOT to a Rust-owned media directory}"
   BIND_PORT="${BIND_PORT:-{{ dev_port }}}" cargo run -- serve {{ args }}
 
-# Lint the Python tooling (scripts/, ci/) and the Rust server's static
-# CSS. Rust, web and Nix lint recipes are `rust-lint`, `web-check` and
-# `lint-nix`.
+# Lint the repository tooling. Rust, web and Nix lint recipes are `rust-lint`,
+# `web-check` and `lint-nix`.
 [group: 'lint']
-lint: lint-ruff lint-mypy
-
-[group: 'lint']
-lint-ruff:
-  ruff check .
-
-[group: 'lint']
-lint-mypy:
-  mypy .
+lint: lint-nix web-check
 
 # Check translations
 [group: 'i18n']
 i18n-check:
-  python -m scripts.check_translations
-  python -m scripts.generate_rust_i18n --check
-  python -m scripts.generate_web_i18n --check
+  npm --prefix web run --silent i18n:check
 
-# Rebuild the POT template from the Rust and web sources. Babel only writes the
-# empty template (babel.cfg has no gettext sources left); the Rust and web
-# extractors then fill it.
+# Rebuild the POT template from the Rust and web sources.
 [group: 'i18n']
 i18n-extract:
-  python -m babel.messages.frontend extract \
-    -F babel.cfg \
-    -o stricknani/locales/messages.pot scripts
-  python -m scripts.extract_rust_i18n
-  python -m scripts.generate_web_i18n --extract
+  npm --prefix web run --silent i18n:extract
 
-# Update translation catalogs from the template
+# Update translation catalogs from the sources
 [group: 'i18n']
-i18n-update: i18n-extract
-  python -m babel.messages.frontend update \
-    -i stricknani/locales/messages.pot \
-    -d stricknani/locales
-  python -m scripts.generate_rust_i18n --seed-german
-  python -m scripts.generate_rust_i18n
-  python -m scripts.generate_web_i18n --update
+i18n-update:
+  npm --prefix web run --silent i18n:update
 
 # Compile catalogs after edits
 [group: 'i18n']
 i18n-compile:
-  python -m babel.messages.frontend compile -d stricknani/locales
-  python -m scripts.generate_rust_i18n
-  python -m scripts.generate_web_i18n
+  npm --prefix web run --silent i18n:compile
 
 # Format code
 [group: 'fmt']
-fmt: fmt-ruff fmt-nix fmt-rust
+fmt: fmt-web fmt-nix fmt-rust
 
 # Cargo formatting is fast; cargo builds and tests should run on the remote
 # build host described in AGENTS.md.
@@ -92,9 +68,8 @@ fmt-rust:
   cargo fmt
 
 [group: 'fmt']
-fmt-ruff:
-  ruff format .
-  ruff check --fix .
+fmt-web: web-install
+  npm --prefix web exec -- prettier --write .
 
 [group: 'fmt']
 fmt-nix:
@@ -126,14 +101,9 @@ todo-wip:
 todo-todo:
   ./scripts/todo.sh --todo
 
-# Python tooling tests: i18n generators and the browser/CI harness helpers.
+# Native Rust suite plus the web (Vitest) suite.
 [group: 'test']
-test-harness:
-  pytest -q
-
-# Native Rust suite plus the Python tooling tests.
-[group: 'test']
-test: rust-test test-harness
+test: rust-test web-test
 
 # Run Rust tests on the remote build host described in AGENTS.md.
 [group: 'test']
@@ -146,8 +116,9 @@ rust-lint:
   cargo fmt --check
   cargo clippy --all-targets --all-features -- -D warnings
 
-# Run every repository check: Python tooling, Rust, web, Nix and i18n.
-check: lint lint-nix rust-lint test i18n-check web-check web-test web-build
+# Run every repository check: Rust, web, Nix and i18n. The browser acceptance
+# suite (`web-e2e`) needs built binaries and runs separately.
+check: lint-nix rust-lint rust-test i18n-check web-check web-test web-build
 
 # Browser dependencies are locked and installed only for development/builds.
 [group: 'web']
@@ -166,6 +137,13 @@ web-test: web-install
 [group: 'web']
 web-build: web-install
   npm --prefix web run build
+
+# Playwright browser acceptance suite against the packaged fixture. Set
+# STRICKNANI_SERVER_BINARY, STRICKNANI_WEB_ROOT and (for the optional-service
+# specs) STRICKNANI_FIXTURE_BINARY; pass Playwright arguments such as a spec path.
+[group: 'web']
+web-e2e *args: web-install
+  npm --prefix web run e2e -- {{ args }}
 
 # Lint Nix files
 [group: 'lint']
@@ -214,6 +192,8 @@ deploy *args:
 renovate *args:
   ./scripts/renovate.sh {{ args }}
 
-# Regenerate derived brand assets (PNGs, favicon, Android vectors) from branding/*.svg
+# Regenerate derived brand assets (PNGs, favicon, Android vectors) from branding/*.svg.
+# The generator is the repository's only Python (geometry via shapely); it runs
+# through a one-off nix-shell and is not part of any dev shell.
 branding:
-  python branding/build.py
+  nix-shell -I nixpkgs=flake:nixpkgs -p resvg 'python3.withPackages (ps: [ ps.shapely ])' --run 'python branding/build.py'

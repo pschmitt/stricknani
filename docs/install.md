@@ -76,12 +76,13 @@ just test
 just check
 ```
 
-`just check` runs the tooling lint (Ruff, MyPy), Nix lint, strict Clippy, native tests, the tooling tests, web checks and
-translation checks. The web app has its own commands in
+`just check` runs Nix lint, strict Clippy, native tests, web checks and translation checks. The web app has its own commands in
 [`web/README.md`](../web/README.md). `just run` starts the Rust dev server.
 
-The Python in this repository is tooling only: `scripts/` holds the i18n
-catalog generators and `ci/stricknani/` the Playwright browser and fixture
-harnesses. The Nix dev shell (`nix develop`) provides it. The legacy
-Python application is the signed tag `v0.1.0` on `main`. The root
-`Dockerfile` builds the Rust runtime.
+There is no Python in this repository any more. The i18n catalog generators
+live in `web/scripts/i18n/` (`npm run i18n:*`, wrapped by `just i18n-*`) and the
+Playwright browser acceptance suite and fixture CLIs in `web/e2e/`
+(`npm --prefix web run e2e`, `fixture`, `seed`, `summarize-e2e`,
+`verify-import`; run `npm ci --prefix web` first). The legacy Python
+application is the signed tag `v0.1.0` on `main`. The root `Dockerfile` builds
+the Rust runtime.

@@ -2,7 +2,7 @@ name: Web UI
 
 on:
   push:
-    branches: [main, rust]
+    branches: [main]
     paths:
       - "web/**"
       - "nix/web-package.nix"
@@ -15,23 +15,13 @@ on:
       - "templates/**"
       - "examples/**"
       - "locales/**"
-      - "ci/stricknani/**"
       - "stricknani/locales/**"
-      - "scripts/generate_web_i18n.py"
-      - "ci/tests/test_rust_e2e_seed.py"
-      - "ci/tests/test_rust_fixture.py"
-      - "ci/tests/test_web_i18n.py"
-      - "ci/tests/test_web_ui_browser.py"
-      - "ci/tests/test_web_accessibility_browser.py"
-      - "ci/tests/test_web_pwa_browser.py"
-      - "ci/tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
-      - "pyproject.toml"
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/web-ui.yaml"
   pull_request:
-    branches: [main, rust]
+    branches: [main]
     paths:
       - "web/**"
       - "nix/web-package.nix"
@@ -44,18 +34,8 @@ on:
       - "templates/**"
       - "examples/**"
       - "locales/**"
-      - "ci/stricknani/**"
       - "stricknani/locales/**"
-      - "scripts/generate_web_i18n.py"
-      - "ci/tests/test_rust_e2e_seed.py"
-      - "ci/tests/test_rust_fixture.py"
-      - "ci/tests/test_web_i18n.py"
-      - "ci/tests/test_web_ui_browser.py"
-      - "ci/tests/test_web_accessibility_browser.py"
-      - "ci/tests/test_web_pwa_browser.py"
-      - "ci/tests/test_web_performance_browser.py"
       - "docs/web-v2-contract.md"
-      - "pyproject.toml"
       - "flake.nix"
       - "flake.lock"
       - ".github/workflows/web-ui.yaml"
@@ -141,110 +121,23 @@ jobs:
       - name: Build server and dev-only fixture example
         run: cargo build --locked --bin stricknani-server --example optional_browser_fixture
 
-      - name: Run core browser journey with optional services disabled
+      - name: Run browser acceptance suite (Playwright)
         shell: bash
+        env:
+          # Every spec creates a fresh private directory below this one and
+          # removes it again; the fixtures are stopped by the specs themselves.
+          STRICKNANI_E2E_DIR: ${{ runner.temp }}/stricknani-web-browser
         run: |
           set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-core-disabled"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_ui_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
-
-      - name: Run accessibility browser journey
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-accessibility"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_accessibility_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
-
-      - name: Run app-scoped offline and update journey
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-pwa"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_pwa_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
-
-      - name: Run signup and optional service success journeys
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-services-success"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_ui_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir" \
-            --service-fixture-binary "$STRICKNANI_FIXTURE_BINARY" \
-            --ocr-mode success \
-            --archive-mode success \
-            --signup-enabled
-
-      - name: Run optional service failure journeys
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-services-failure"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_ui_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir" \
-            --service-fixture-binary "$STRICKNANI_FIXTURE_BINARY" \
-            --ocr-mode failure \
-            --archive-mode failure \
-            --signup-enabled
-
-      - name: Run account browser journey
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-account"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_account_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
-
-      - name: Run administrator and audit browser journey
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-admin"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_admin_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
-
-      - name: Run import browser journey
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-imports"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_import_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
-
-      - name: Run yarn and category browser journey
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          private_dir="$RUNNER_TEMP/stricknani-web-browser-yarns"
-          nix develop '.#tooling' --command python -m ci.stricknani.web_yarn_browser \
-            --binary "$STRICKNANI_SERVER_BINARY" \
-            --web-root "$STRICKNANI_WEB_ROOT" \
-            --private-dir "$private_dir"
+          mkdir -p "$STRICKNANI_E2E_DIR"
+          nix develop '.#tooling' --command npm --prefix web run e2e
 
       - name: Stop remaining browser fixtures and remove private test data
         if: always()
         shell: bash
         run: |
           set -Eeuo pipefail
-          for private_dir in "$RUNNER_TEMP"/stricknani-web-browser-*
+          for private_dir in "$RUNNER_TEMP"/stricknani-web-browser/*
           do
             if [[ ! -d "$private_dir" ]]
             then
@@ -253,7 +146,7 @@ jobs:
             state_file="$private_dir/fixture-state.json"
             if [[ -f "$state_file" ]]
             then
-              nix develop '.#tooling' --command python -m ci.stricknani.rust_fixture stop \
+              nix develop '.#tooling' --command npm --prefix web run fixture -- stop \
                 --state-file "$state_file" || true
             fi
             rm -rf -- "$private_dir"

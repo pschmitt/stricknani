@@ -33,7 +33,7 @@ the accepted current result.
 ## Historical deployed 522 result
 
 The runner
-[`web_contrast_browser.py`](../ci/stricknani/web_contrast_browser.py) passed
+`web_contrast_browser.py` (since ported to [`web/e2e/contrast.e2e.ts`](../web/e2e/contrast.e2e.ts)) passed
 against the deployed 522 package. Its SHA-256 is
 `c36534c5c33aab95814f59dca9037d3979306bb8b34de742a680515bb1f36f10`. The web
 root was `/nix/store/v2dd2d6jjn2v168flw2k1yr8xvq1pvmx-stricknani-web-0.1.0` and
@@ -95,14 +95,13 @@ artifact.
 
 ## Reproduction
 
-Run from the repository checkout with an existing Playwright environment and
-its matching browser cache. Keep the private fixture directory new and outside
-the source tree:
+Run from the repository checkout after `npm ci --prefix web`, with an existing
+Playwright browser cache. Point the run at a frozen server and web root; keep
+the private output directory new and outside the source tree:
 
 ```sh
-python3 -m ci.stricknani.web_contrast_browser \
-  --browser-cache <matched-playwright-browser-cache> \
-  --binary <frozen-rust-server> \
-  --web-root <frozen-web-root> \
-  --private-dir <new-private-run-directory>
+STRICKNANI_SERVER_BINARY=<frozen-rust-server> \
+STRICKNANI_WEB_ROOT=<frozen-web-root> \
+STRICKNANI_E2E_DIR=<new-private-run-directory> \
+  npm --prefix web run e2e -- e2e/contrast.e2e.ts
 ```

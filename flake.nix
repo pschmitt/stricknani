@@ -19,21 +19,12 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          # Python development tooling (i18n generators, browser harnesses and
-          # their tests). The playwright wheel and the browsers come from the
-          # same nixpkgs, so their versions always match.
-          pythonTooling = pkgs.python313.withPackages (
-            ps: with ps; [
-              babel
-              mypy
-              playwright
-              pytest
-              shapely
-            ]
-          );
-          pythonToolingPackages = [
-            pythonTooling
-            pkgs.ruff
+          # Node/TypeScript development tooling (i18n generators and the Playwright
+          # browser acceptance suite under web/). The browsers come from the same
+          # nixpkgs as the pinned @playwright/test version in web/package.json
+          # (keep them equal), so their versions always match.
+          toolingPackages = [
+            pkgs.nodejs_26
             pkgs.just
             pkgs.resvg
           ];
@@ -97,10 +88,6 @@
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
-              # Python tooling (scripts/, ci/)
-              ruff.enable = true;
-              ruff-format.enable = true;
-
               # Nix
               statix.enable = true;
 
@@ -149,13 +136,13 @@
             # `nix develop .#ktfmt` supplies the binary used by Android lint.
             ktfmt = pkgs.mkShell { packages = [ pkgs.ktfmt ]; };
 
-            # Python tooling only: `nix develop .#tooling -c just lint-ruff`.
-            tooling = pkgs.mkShell ({ packages = pythonToolingPackages; } // playwrightEnv);
+            # Node tooling only: `nix develop .#tooling -c just i18n-check`.
+            tooling = pkgs.mkShell ({ packages = toolingPackages; } // playwrightEnv);
 
             rust = pkgs.mkShell (
               {
                 packages =
-                  pythonToolingPackages
+                  toolingPackages
                   ++ (with pkgs; [
                     cargo
                     cargo-audit
@@ -168,7 +155,6 @@
                     statix
                     nixfmt
                     ktfmt
-                    nodejs_26
                     poppler-utils
                     tesseract
                   ]);
