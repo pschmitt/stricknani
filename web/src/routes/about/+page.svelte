@@ -239,27 +239,29 @@
       </div>
       {#if commit}
         <div class="fact fact--commit">
-          <button
-            type="button"
-            class="commit-press"
-            aria-label={`${t("Commit", locale)}: ${commit.display}. ${t("Build number", locale)}`}
-            onclick={pressCommit}
-          >
-            <span class="commit-press__label">{t("Commit", locale)}</span>
-            <span class="commit-press__value">{commit.display}</span>
-          </button>
-          <a
-            class="commit-link"
-            href={commit.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t("Open commit on GitHub", locale)}
-          >
-            <NavIcon name="github" />
-            <span class="visually-hidden"
-              >{t("(opens in a new tab)", locale)}</span
+          <span class="commit-label">{t("Commit", locale)}</span>
+          <span class="commit-value">
+            <a
+              class="commit-link"
+              href={commit.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("Open commit on GitHub", locale)}
             >
-          </a>
+              <NavIcon name="github" />
+              <span class="visually-hidden"
+                >{t("(opens in a new tab)", locale)}</span
+              >
+            </a>
+            <button
+              type="button"
+              class="commit-press"
+              aria-label={`${t("Commit", locale)}: ${commit.display}. ${t("Build number", locale)}`}
+              onclick={pressCommit}
+            >
+              <span class="commit-press__value">{commit.display}</span>
+            </button>
+          </span>
         </div>
       {/if}
     </dl>
@@ -546,26 +548,31 @@
     align-items: center;
   }
 
+  .commit-label {
+    color: var(--ink-muted);
+  }
+
+  .commit-value {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.35rem;
+    margin-block: -0.65rem;
+  }
+
+  /* The commit itself is the 7-tap developer-mode target. */
   .commit-press {
-    display: flex;
+    display: inline-flex;
     min-height: 44px;
     min-width: 0;
-    flex: 1;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
     border: 0;
     border-radius: var(--radius-sm);
     padding: 0;
     background: none;
     color: inherit;
     font: inherit;
-    text-align: start;
     cursor: pointer;
-  }
-
-  .commit-press__label {
-    color: var(--ink-muted);
   }
 
   .commit-press__value {
@@ -591,8 +598,8 @@
   }
 
   .commit-link :global(svg) {
-    width: 1.6rem;
-    height: 1.6rem;
+    width: 1.3rem;
+    height: 1.3rem;
   }
 
   .switch-row {
