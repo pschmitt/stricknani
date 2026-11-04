@@ -190,6 +190,12 @@ in
       description = "Let the server fetch Gravatar images (SHA-256 of the account email) for users without an uploaded avatar. Clients never contact Gravatar. Sets RUST_GRAVATAR_ENABLED; users can still opt out individually.";
     };
 
+    registration.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Allow anyone who can reach the instance to create their own account (web and Android). Sets RUST_SIGNUP_ENABLED. Leave this off for a private instance; accounts are then created by an administrator or with stricknani-cli create-user.";
+    };
+
     oidc = {
       enable = lib.mkEnableOption "OIDC sign-in for the Rust backend";
       providerId = lib.mkOption {
@@ -380,6 +386,7 @@ in
           TRUSTED_HOSTS = trustedHosts;
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
           RUST_GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
+          RUST_SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
         }
         // oidcEnvironment
         // cfg.extraConfig;

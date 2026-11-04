@@ -30,6 +30,7 @@ The initial implementation exposes the following routes, mounted below
 | `GET /session`      | None required                            | Current session or anonymous bootstrap, capabilities, locale, and CSRF token |
 | `POST /auth/login`  | Pre-auth CSRF                            | Creates a browser-purpose session and sets its cookie                        |
 | `POST /auth/signup` | Pre-auth CSRF; signup capability enabled | Creates a member account; does not create a session                          |
+| `POST /auth/register` | None; signup capability enabled        | Native clients: creates a member account and returns `{data:{token}}` (201)  |
 | `POST /auth/logout` | Browser session and CSRF                 | Revokes that session and clears its cookie; returns 204                      |
 
 `GET /session` returns HTTP 200 for both authenticated and anonymous users:
@@ -117,10 +118,31 @@ The server applies the existing password policy and signup rate limit and
 creates an ordinary member. Success returns HTTP 201 with
 `{ "data": { "id": 42, "email": "knitter@example.test", "is_admin": false } }`
 and clears the pre-authentication CSRF cookie. Signup does not sign the new
-member in; the client must call `GET /api/v2/session` again to bootstrap a fresh
-CSRF token before sign-in. Disabled signup returns HTTP 404 with
-`error.code = "signup_disabled"`; the session capability is false in that
-configuration.
+member in; the web app then calls `GET /api/v2/session` again to bootstrap a
+fresh CSRF token and signs in with `POST /api/v2/auth/login`. An email that is
+already registered answers HTTP 409 `registration_failed` with the same generic
+message as any other refusal, so the reply never names the cause. Registration
+is off unless the operator sets `RUST_SIGNUP_ENABLED=true`
+(`services.stricknani.registration.enable` on NixOS). Disabled signup returns
+HTTP 404 with `error.code = "signup_disabled"` and creates nothing; the session
+capability `signup` and `registration_enabled` in `GET /api/v2/meta` are false
+in that configuration.
+
+Native clients use `POST /api/v2/auth/register` instead, which has no cookies,
+CSRF or origin check:
+
+```json
+{
+  "email": "knitter@example.test",
+  "password": "a-long-password",
+  "device_name": "Pixel 9"
+}
+```
+
+It shares the body limit, validation, rate limit and error codes of
+`/auth/signup`, and on success returns HTTP 201 with `{ "data": { "token": "…" } }`,
+an API-purpose PAT named like the one `POST /auth/token` would mint. Creating
+the account is not an audited event, as with the admin console and CLI.
 
 On secure deployments the session cookie is named
 `__Host-stricknani_session`; otherwise it is `stricknani_session`. Both use
@@ -684,7 +706,7 @@ self-service account routes additionally accept a PAT, see
 [Bearer PAT access to the account routes](#bearer-pat-access-to-the-account-routes).
 
 Android can discover server metadata and its current user through
-`GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, user, current_token_id}}`.
+`GET /api/v2/meta`, returning `{data: {version, build_id, is_admin, registration_enabled, user, current_token_id}}`.
 `current_token_id` is the id of the calling PAT, or absent for browser sessions.
 `user` is `{id, email, is_admin, avatar_url, avatar_source}` for a valid session or PAT; anonymous or
 invalid-cookie requests return `user: null` and `is_admin: false`.

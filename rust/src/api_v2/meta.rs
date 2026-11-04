@@ -20,6 +20,8 @@ struct MetaData {
     version: &'static str,
     build_id: String,
     is_admin: bool,
+    /// Whether public self-service registration is enabled on this instance.
+    registration_enabled: bool,
     user: Option<MetaUser>,
     /// Id of the bearer PAT making this request; absent for browser sessions
     /// and anonymous callers. Never the token value or hash.
@@ -114,6 +116,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
             version: env!("CARGO_PKG_VERSION"),
             build_id: state.app.build_id,
             is_admin,
+            registration_enabled: state.app.signup_enabled,
             user,
             current_token_id,
             auth: AuthDiscovery {

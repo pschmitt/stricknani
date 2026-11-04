@@ -504,7 +504,8 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
     assert!(anonymous_data["build_id"].is_string());
     assert_eq!(anonymous_data["auth"]["password"], true);
     assert_eq!(anonymous_data["auth"]["oidc"], serde_json::json!([]));
-    assert_eq!(anonymous_data.as_object().unwrap().len(), 5);
+    assert_eq!(anonymous_data["registration_enabled"], false);
+    assert_eq!(anonymous_data.as_object().unwrap().len(), 6);
 
     let browser_admin = fixture
         .app

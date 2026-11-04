@@ -309,7 +309,7 @@ async fn signup_validates_email_password_and_duplicate_accounts() {
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(&body(response).await).expect("response is JSON")
             ["error"]["code"],
-        "account_exists"
+        "registration_failed"
     );
     assert_eq!(user_count(&pool).await, 1);
 }
@@ -347,5 +347,151 @@ async fn signup_uses_the_existing_shared_auth_limiter() {
             ["error"]["code"],
         "rate_limited"
     );
+    assert_eq!(user_count(&pool).await, 0);
+}
+
+fn register_request(body: String) -> Request<Body> {
+    Request::post("/auth/register")
+        .header("content-type", "application/json")
+        .body(Body::from(body))
+        .expect("request is valid")
+}
+
+async fn meta_json(app: &axum::Router, bearer: Option<&str>) -> serde_json::Value {
+    let mut request = Request::get("/meta");
+    if let Some(token) = bearer {
+        request = request.header("authorization", format!("Bearer {token}"));
+    }
+    let response = app
+        .clone()
+        .oneshot(request.body(Body::empty()).expect("request is valid"))
+        .await
+        .expect("router should respond");
+    assert_eq!(response.status(), StatusCode::OK);
+    serde_json::from_str(&body(response).await).expect("response is JSON")
+}
+
+#[tokio::test]
+async fn meta_advertises_registration_and_it_is_off_by_default() {
+    let (enabled, _pool) = fixture(true).await;
+    assert_eq!(
+        meta_json(&enabled, None).await["data"]["registration_enabled"],
+        true
+    );
+    let (disabled, _pool) = fixture(false).await;
+    assert_eq!(
+        meta_json(&disabled, None).await["data"]["registration_enabled"],
+        false
+    );
+    let pool = db::connect("sqlite::memory:")
+        .await
+        .expect("in-memory database should migrate");
+    let default_app = api_v2::router(db::AppState::new(pool), false);
+    assert_eq!(
+        meta_json(&default_app, None).await["data"]["registration_enabled"],
+        false
+    );
+}
+
+#[tokio::test]
+async fn native_register_creates_a_member_and_returns_a_working_token() {
+    let (app, pool) = fixture(true).await;
+    let response = app
+        .clone()
+        .oneshot(register_request(
+            serde_json::json!({
+                "email": " New-Member@Example.Test ",
+                "password": PASSWORD,
+                "device_name": "Pixel 9",
+            })
+            .to_string(),
+        ))
+        .await
+        .expect("router should respond");
+    assert_eq!(response.status(), StatusCode::CREATED);
+    assert!(response.headers().get("set-cookie").is_none());
+    let json: serde_json::Value =
+        serde_json::from_str(&body(response).await).expect("response is JSON");
+    let token = json["data"]["token"].as_str().expect("token is returned");
+    let is_admin: bool = sqlx::query_scalar("SELECT is_admin FROM users WHERE email = ?")
+        .bind(EMAIL)
+        .fetch_one(&pool)
+        .await
+        .expect("created member should exist");
+    assert!(!is_admin);
+    let meta = meta_json(&app, Some(token)).await;
+    assert_eq!(meta["data"]["user"]["email"], EMAIL);
+    assert_eq!(meta["data"]["is_admin"], false);
+}
+
+#[tokio::test]
+async fn native_register_is_refused_when_disabled_and_creates_nothing() {
+    let (app, pool) = fixture(false).await;
+    let response = app
+        .oneshot(register_request(signup_body(EMAIL, PASSWORD)))
+        .await
+        .expect("router should respond");
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let json: serde_json::Value =
+        serde_json::from_str(&body(response).await).expect("response is JSON");
+    assert_eq!(json["error"]["code"], "signup_disabled");
+    assert_eq!(user_count(&pool).await, 0);
+}
+
+#[tokio::test]
+async fn native_register_validates_input_and_gives_a_generic_duplicate_error() {
+    let (app, pool) = fixture(true).await;
+    for (email, password, field) in [
+        ("not-an-email", PASSWORD, "email"),
+        (EMAIL, "short", "password"),
+        (EMAIL, "password123", "password"),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(register_request(signup_body(email, password)))
+            .await
+            .expect("router should respond");
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        let json: serde_json::Value =
+            serde_json::from_str(&body(response).await).expect("response is JSON");
+        assert!(json["error"]["fields"][field].is_string());
+    }
+    db::create_user(&pool, EMAIL, PASSWORD.to_owned())
+        .await
+        .expect("existing member should be created");
+    let response = app
+        .oneshot(register_request(signup_body(EMAIL, PASSWORD)))
+        .await
+        .expect("router should respond");
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    let text = body(response).await;
+    let json: serde_json::Value = serde_json::from_str(&text).expect("response is JSON");
+    assert_eq!(json["error"]["code"], "registration_failed");
+    assert!(!text.to_lowercase().contains("exist"));
+    assert_eq!(user_count(&pool).await, 1);
+}
+
+#[tokio::test]
+async fn native_register_is_rate_limited() {
+    let (app, pool) = fixture(true).await;
+    for attempt in 0..5 {
+        let response = app
+            .clone()
+            .oneshot(register_request(signup_body(
+                "rate-limited@example.test",
+                &format!("invalid-{attempt}"),
+            )))
+            .await
+            .expect("router should respond");
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+    let limited = app
+        .oneshot(register_request(signup_body(
+            "rate-limited@example.test",
+            "invalid-next",
+        )))
+        .await
+        .expect("router should respond");
+    assert_eq!(limited.status(), StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(user_count(&pool).await, 0);
 }

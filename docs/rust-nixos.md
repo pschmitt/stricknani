@@ -39,6 +39,10 @@ this backend. Rust SQLite URLs may use either `sqlite:/absolute/path` or
 `sqlite:///absolute/path`; scheduled backups normalize both forms before
 calling `sqlite3`.
 
+`registration.enable` (default `false`) sets `RUST_SIGNUP_ENABLED`: when `true`,
+anyone who can reach the instance can create a member account on the web or in
+the Android app. Leave it off for a private instance.
+
 `sessionCookieSecure` defaults to the module's HTTPS virtual-host setting. Set
 it to `true` when HTTPS terminates at an external proxy. A non-loopback Rust
 listener also requires secure cookies and an explicit trusted-host allowlist;

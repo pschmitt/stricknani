@@ -38,6 +38,11 @@ For a public deployment, terminate HTTPS at a trusted reverse proxy, set
 `SESSION_COOKIE_SECURE=true`, and set `TRUSTED_HOSTS` to the exact host
 authority clients use. Do not expose the app directly to the Internet.
 Registration, external imports, AI, OCR, and Wayback are disabled by default.
+To let people create their own accounts (web and Android), set
+`RUST_SIGNUP_ENABLED=true`. While it is off, the sign-in page and the Android
+app show a card that points to this repository and offers a setup prompt for an
+AI coding agent. Without self-service registration, add accounts with
+`stricknani-server create-user EMAIL`.
 
 ## Nix package
 

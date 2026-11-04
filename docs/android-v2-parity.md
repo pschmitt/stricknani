@@ -72,6 +72,7 @@ Pinned by `meta_probe_reports_the_pat_owner_and_rejects_bad_bearers_without_cook
 | --- | --- | --- | --- | --- |
 | `GET /api/v2/meta` | `MetaV2Api.getMeta` -> `MetaV2Dto` | `meta.rs` | **match**, one optional gap | `{data:{version, build_id, is_admin, user:{id,email,is_admin}\|null}}`. Android also reads `user.avatar_url` (optional); the server does not emit it here (see gap 3). |
 | `POST /api/v2/auth/token` | none; `PasswordTokenMinter` still calls `POST /api/v1/auth/token` and reads `{token}` | `native_auth.rs` | **server-only** | v2 body is `{email, password, token_name?}` and the answer is wrapped: `{data:{token}}`. 401 `invalid_credentials`, 422 `validation_error` (`fields`), 429 `rate_limited` + `Retry-After`. The app maps 401 and 403 to "invalid credentials" and everything else to `ServerError`. Pinned by `native_token_login_mints_a_pat_...`. |
+| `POST /api/v2/auth/register` | none; `RegistrationClient` | `signup.rs` | **match** | Only offered when `GET /api/v2/meta` says `registration_enabled`. Body `{email, password, device_name?}`, answer `{data:{token}}` (201); 404 `signup_disabled`, 409 `registration_failed` (generic), 422 `validation_error`, 429 `rate_limited`. Pinned by `native_register_*` and `RegistrationClientTest`. |
 | `GET /api/v1/meta` (onboarding), `GET /api/v1/categories` (token check) | `OnboardingValidator` | v1 router | client on v1 | The v2 equivalent is the `meta` probe above (200 for anyone, 401 for a bad Bearer). |
 
 ### Projects (`ProjectsV2Api`, `projects.rs`, `media.rs`)
