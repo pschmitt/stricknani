@@ -1,8 +1,8 @@
 package blue.anika.wolle.ui.common
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,7 +11,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,21 +73,26 @@ fun EveryoneFilterChips(
 ) {
     if (!state.available) return
     val label = stringResource(R.string.owner_filter_label)
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.semantics { contentDescription = label }.testTag("everyone-filter"),
+    // A segmented control on its own line, like the website's ScopeFilter: it chooses whose
+    // items the list shows and must not read as one more category chip.
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier.semantics { contentDescription = label }.testTag("everyone-filter")
     ) {
-        FilterChip(
+        SegmentedButton(
             selected = !state.enabled,
             onClick = { onSelect(false) },
-            label = { Text(stringResource(R.string.owner_filter_mine)) },
+            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
             modifier = Modifier.testTag("everyone-filter-mine"),
-        )
-        FilterChip(
+        ) {
+            Text(stringResource(R.string.owner_filter_mine))
+        }
+        SegmentedButton(
             selected = state.enabled,
             onClick = { onSelect(true) },
-            label = { Text(stringResource(R.string.owner_filter_everyone)) },
+            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
             modifier = Modifier.testTag("everyone-filter-everyone"),
-        )
+        ) {
+            Text(stringResource(R.string.owner_filter_everyone))
+        }
     }
 }

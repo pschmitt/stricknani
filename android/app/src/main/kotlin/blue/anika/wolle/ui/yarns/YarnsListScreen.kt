@@ -131,11 +131,13 @@ fun YarnsListScreen(
                     placeholder = stringResource(R.string.yarns_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
+                EveryoneFilterChips(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
-                    EveryoneFilterChips()
                     FilterChip(
                         selected = favoritesOnly,
                         onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },

@@ -157,12 +157,14 @@ fun ProjectsListScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
 
+                EveryoneFilterChips(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     modifier = Modifier.testTag("projects-list-category-filters"),
                 ) {
-                    item { EveryoneFilterChips() }
                     item {
                         FilterChip(
                             selected = selectedCategory == null,
