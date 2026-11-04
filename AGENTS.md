@@ -80,6 +80,12 @@ Use this file as the operational source of truth for working in Stricknani.
   `CARGO_TARGET_DIR` per worker, e.g. `~/cargo-target`) and run focused tests;
   run the full Nix build (`.#stricknani`, `.#stricknani-web`,
   `.#checks.x86_64-linux.pre-commit-check`) once per landing, not per edit.
+- Workers carry no secrets, so they cannot read nixbot's authenticated binary
+  cache: a `nix build` started on a worker compiles every Rust dependency
+  crate again (25+ minutes). Start the Nix build on a fleet build host and lend
+  it the worker instead: `nix build --max-jobs 0 --builders "$(rworker builder
+  "$w")" path:.#stricknani ...` (see the `rworker` skill). The host substitutes
+  everything nixbot already built and the worker only compiles what changed.
 - On every worker, `mkdir -p ~/tmp && export TMPDIR=~/tmp` before builds:
   older worker images keep `/tmp` on a small RAM disk, and Nix fails with a
   misleading error when `TMPDIR` points at a directory that does not exist.
