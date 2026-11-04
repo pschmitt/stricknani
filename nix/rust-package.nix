@@ -48,7 +48,11 @@ stdenvNoCC.mkDerivation {
       "$out/bin/stricknani-server" \
       --set STATIC_ROOT "$out/share/stricknani/static" \
       --set WEB_ROOT "$out/share/stricknani/web" \
-      ${lib.optionalString (gitRevision != "") ''--set STRICKNANI_GIT_REVISION "${gitRevision}" \''}
+      ${
+        lib.optionalString (
+          gitRevision != ""
+        ) "--set STRICKNANI_GIT_REVISION ${lib.escapeShellArg gitRevision}"
+      } \
       --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt" \
       --prefix PATH : "${lib.makeBinPath [ ocrEngine ]}"
 
