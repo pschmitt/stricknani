@@ -11,7 +11,7 @@ buildNpmPackage {
   version = "1.1.0";
   src = ../web;
   nodejs = nodejs_26;
-  npmDepsHash = "sha256-Ra4AbiIvJPcerdPcTtOk798dw4lU8EpIReHs7ZphsEU=";
+  npmDepsHash = "sha256-cpJhfT49kpNvbqrQx2N8TxQW2tDDfPicx3Y9QpquUtw=";
   npmBuildScript = "build";
   env.STRICKNANI_GIT_REVISION = gitRevision;
   doCheck = true;
@@ -19,7 +19,9 @@ buildNpmPackage {
     runHook preCheck
     npm run format:check
     npm run check
-    npm test
+    # The e2e/lib tests need the whole repository (sources, catalogs), which the
+    # sandbox does not have; `just web-test` runs them in CI.
+    npx vitest run src
     runHook postCheck
   '';
 

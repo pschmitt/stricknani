@@ -1,7 +1,7 @@
 {
   "extends": "$app/tsconfig",
   "include": ["src", "scripts", "vite.config.ts"],
-  "exclude": ["src/service-worker"],
+  "exclude": ["src/service-worker", "scripts/i18n"],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
