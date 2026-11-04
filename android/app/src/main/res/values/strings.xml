@@ -208,6 +208,8 @@
     <string name="import_warning_looks_like_yarn">This looks like a yarn page. You may want to import it from the Yarns tab instead.</string>
     <string name="import_warning_looks_like_pattern">This looks like a pattern page, not a yarn. Check the details.</string>
     <string name="import_warning_little_text">This page has little readable text, so some details may be missing.</string>
+    <string name="import_warning_ai_browsed">The AI read this page in a browser. Check the fields marked as AI before saving.</string>
+    <string name="import_progress_slow_hint">Some pages take a minute when the AI opens them in a browser.</string>
     <string name="import_error_blocked">That website refused Stricknani’s request. Try another link, or add it by hand.</string>
     <string name="import_error_not_found">That page wasn’t found. Check the link.</string>
     <string name="import_error_disabled">Importing from a link is switched off on this server.</string>

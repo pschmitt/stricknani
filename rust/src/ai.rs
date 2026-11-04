@@ -22,6 +22,7 @@ const MAX_IMAGE_BYTES: usize = 2_000_000;
 const MAX_IMAGES: usize = 3;
 const MAX_RESPONSE_BYTES: usize = 1024 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
+const DEFAULT_BROWSE_TIMEOUT: Duration = Duration::from_secs(180);
 const MAX_DRAFT_BYTES: usize = 128 * 1024;
 const MAX_NORMALIZE_CHARS: usize = 40_000;
 
@@ -102,6 +103,8 @@ pub struct AiConfig {
     model: String,
     api_key: ApiKey,
     timeout: Duration,
+    browse: bool,
+    browse_timeout: Duration,
 }
 
 impl fmt::Debug for AiConfig {
@@ -166,12 +169,25 @@ impl AiConfig {
             .map_or(REQUEST_TIMEOUT, |seconds| {
                 Duration::from_secs(seconds.clamp(5, 300))
             });
+        let browse = lookup("AI_BROWSE").is_some_and(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        });
+        let browse_timeout = lookup("AI_BROWSE_TIMEOUT_SECONDS")
+            .and_then(|value| value.trim().parse::<u64>().ok())
+            .map_or(DEFAULT_BROWSE_TIMEOUT, |seconds| {
+                Duration::from_secs(seconds.clamp(30, 200))
+            });
         Ok(Some(Self {
             provider,
             endpoint,
             model,
             api_key: ApiKey::new(api_key),
             timeout,
+            browse,
+            browse_timeout,
         }))
     }
 
@@ -380,9 +396,11 @@ pub struct AiClient {
 
 impl AiClient {
     pub fn new(config: AiConfig) -> Result<Self, AiError> {
+        // The HTTP client only needs to be as patient as the longest request; each call enforces
+        // its own, shorter limit in `post_bounded`.
         let transport = Arc::new(ReqwestAiTransport::for_endpoint(
             &config.endpoint,
-            config.timeout,
+            config.timeout.max(config.browse_timeout),
         )?);
         Ok(Self { config, transport })
     }
@@ -443,9 +461,29 @@ impl AiClient {
 }
 
 impl AiClient {
+    /// Whether the operator allows the model to use browser tools (`AI_BROWSE`).
+    pub fn browse_enabled(&self) -> bool {
+        self.config.browse
+    }
+
     /// Ask the model for a JSON object answering `system` and `user`. Returns the parsed object.
-    /// Text-only; used by the URL import normaliser.
+    /// Text-only; used by the URL import normaliser. With `AI_BROWSE` on, the longer browse
+    /// timeout applies because the gateway may drive a browser before it answers.
     pub async fn complete_json(&self, system: &str, user: &str) -> Result<Value, AiError> {
+        let timeout = if self.config.browse {
+            self.config.browse_timeout
+        } else {
+            self.config.timeout
+        };
+        self.complete_json_within(system, user, timeout).await
+    }
+
+    async fn complete_json_within(
+        &self,
+        system: &str,
+        user: &str,
+        timeout: Duration,
+    ) -> Result<Value, AiError> {
         if user.chars().count() > MAX_NORMALIZE_CHARS {
             return Err(AiError::InputTooLarge);
         }
@@ -459,10 +497,13 @@ impl AiClient {
             "temperature": 0.0,
             "response_format": {"type": "json_object"}
         });
-        let response = self
-            .transport
-            .post(&self.config.endpoint, &self.config.api_key, &body)
-            .await?;
+        let response = tokio::time::timeout(
+            timeout,
+            self.transport
+                .post(&self.config.endpoint, &self.config.api_key, &body),
+        )
+        .await
+        .map_err(|_| AiError::Timeout)??;
         let raw = response
             .pointer("/choices/0/message/content")
             .and_then(Value::as_str)

@@ -173,12 +173,13 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideImportsV2Api(retrofit: Retrofit, okHttpClient: OkHttpClient): ImportsV2Api {
-        // Same long timeouts as the v1 import: fetching and parsing a pattern page is slow.
+        // Fetching and parsing a page is slow, and with AI browsing (up to 200 s on the server) the
+        // answer can take over three minutes.
         val importClient =
             okHttpClient
                 .newBuilder()
-                .readTimeout(65, TimeUnit.SECONDS)
-                .callTimeout(75, TimeUnit.SECONDS)
+                .readTimeout(235, TimeUnit.SECONDS)
+                .callTimeout(245, TimeUnit.SECONDS)
                 .build()
         return retrofit.newBuilder().client(importClient).build().create(ImportsV2Api::class.java)
     }

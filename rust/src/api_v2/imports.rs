@@ -16,7 +16,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ai::AiImage,
+    ai::{AiClient, AiImage},
     document_worker::WorkerError,
     import_document::ImportDocumentDraft,
     import_service::{self, ImportFailure},
@@ -131,6 +131,7 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
     };
     let mut ai_target = ImportTarget::Project;
     let mut url_import = false;
+    let mut browse = import_service::BrowseState::Off;
     let (mut draft, source_text, ai_requested) = match request {
         PreviewRequest::Url {
             url,
@@ -149,8 +150,19 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
             if url.trim().is_empty() || url.len() > 2048 {
                 return validation_error("URL is required and must be at most 2048 bytes", "url");
             }
-            match import_service::import_url(&imports.worker_path, &url, target).await {
-                Ok((draft, source_text)) => (draft, source_text, use_ai),
+            let may_browse = use_ai && imports.ai.as_deref().is_some_and(AiClient::browse_enabled);
+            match import_service::import_url_browsing(
+                &imports.worker_path,
+                &url,
+                target,
+                may_browse,
+            )
+            .await
+            {
+                Ok(imported) => {
+                    browse = imported.browse;
+                    (imported.draft, imported.source_text, use_ai)
+                }
                 Err(error) => return import_error(error),
             }
         }
@@ -177,14 +189,22 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         }
     };
     let is_ai_enhanced = if url_import {
-        import_service::normalize_with_ai(
+        let enhanced = import_service::normalize_with_ai(
             imports.ai.as_deref(),
             &mut draft,
             ai_requested,
             &source_text,
             ai_target,
+            &browse,
         )
-        .await
+        .await;
+        // A refused page gave the AI nothing to start from, so its failure is the fetch failure.
+        if let import_service::BrowseState::Blocked { error, .. } = &browse
+            && !enhanced
+        {
+            return import_error(ImportFailure::Fetch(*error));
+        }
+        enhanced
     } else {
         import_service::enhance_draft(
             imports.ai.as_deref(),

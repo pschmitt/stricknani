@@ -244,7 +244,14 @@ private fun ImportProgress(text: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CircularProgressIndicator()
-        Text(text)
+        Column {
+            Text(text)
+            Text(
+                text = stringResource(R.string.import_progress_slow_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

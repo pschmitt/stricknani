@@ -109,7 +109,9 @@ fn provider_key_precedence_and_model_override_are_explicit_and_redacted() {
             "AI_API_KEY",
             "AI_MODEL",
             "AI_BASE_URL",
-            "AI_TIMEOUT_SECONDS"
+            "AI_TIMEOUT_SECONDS",
+            "AI_BROWSE",
+            "AI_BROWSE_TIMEOUT_SECONDS"
         ]
     );
     assert!(!format!("{config:?}").contains("fixture-key"));
@@ -138,7 +140,9 @@ fn provider_key_precedes_compatibility_fallback() {
             "GROQ_API_KEY",
             "AI_MODEL",
             "AI_BASE_URL",
-            "AI_TIMEOUT_SECONDS"
+            "AI_TIMEOUT_SECONDS",
+            "AI_BROWSE",
+            "AI_BROWSE_TIMEOUT_SECONDS"
         ]
     );
 }
