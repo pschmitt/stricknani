@@ -1,18 +1,20 @@
 package blue.anika.wolle.ui.projects
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
+import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectImporter
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -23,7 +25,6 @@ import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,10 +78,10 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
     private val projectImporter: ProjectImporter,
+    yarnRepository: YarnRepository,
     private val apiCapabilities: ApiCapabilities,
     private val syncScheduler: SyncScheduler,
     private val settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -160,11 +161,8 @@ constructor(
             scope = viewModelScope,
             importer = projectImporter,
         ) { preview ->
-            val request =
-                preview.request.copy(
-                    notes = projectImportNotes(context, preview.request.notes, preview.details)
-                )
-            val projectId = projectRepository.createProject(request)
+            // The dialog's review already holds the final notes and yarn choices.
+            val projectId = projectRepository.createProject(preview.request)
             syncScheduler.replayThenSyncNow()
             mutationFeedback.show(
                 R.string.mutation_project_imported_queued,
@@ -244,7 +242,20 @@ constructor(
 
     fun retryImport() = importController.retry()
 
-    fun confirmImport(selectedImages: List<String>) = importController.confirm(selectedImages)
+    fun confirmImport(selectedImages: List<String>, reviewed: ProjectWriteRequest) =
+        importController.confirm(selectedImages, reviewed)
+
+    /** The user's own yarns, for the stash picker of the import review. */
+    val stashYarns: StateFlow<List<YarnEntity>> =
+        yarnRepository
+            .observeAll()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
+
+    fun stashYarnPreviewUrl(yarn: YarnEntity): String? = mediaUrlResolver.resolve(yarn.previewUrl)
 
     /** The server's thumbnail proxy for a picture of the imported page, as a loadable URL. */
     fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))

@@ -21,6 +21,9 @@ const MAX_YARN_IMAGES: usize = 8;
 const MAX_STEPS: usize = 80;
 pub const MAX_PAGE_TEXT: usize = 40_000;
 
+/// Internal extra with the page's links; removed again before a draft reaches a client.
+pub const PAGE_LINKS_EXTRA: &str = "page_links";
+
 pub struct Extraction {
     pub project: ProjectImportDraft,
     pub yarn: Option<YarnDetails>,
@@ -76,6 +79,10 @@ pub fn extract_html(
     project.extras.insert(
         "page_text".into(),
         Value::String(facts.text.chars().take(MAX_PAGE_TEXT).collect()),
+    );
+    project.extras.insert(
+        PAGE_LINKS_EXTRA.into(),
+        crate::yarn_import::links_to_extra(&facts.links),
     );
     let mut warnings = Vec::new();
     if facts.nodes.is_empty() {
@@ -1001,6 +1008,8 @@ fn build_project(
                         .or_else(|| text("link"))
                         .and_then(|url| resolve_url(source_url, &url)),
                     image_url: text("image").and_then(|url| resolve_url(source_url, &url)),
+                    amount: text("amount").or_else(|| text("quantity")),
+                    notes: None,
                 };
                 if yarn.name.is_some() || yarn.brand.is_some() {
                     project.yarns.push(yarn);

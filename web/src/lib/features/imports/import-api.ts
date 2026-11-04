@@ -14,6 +14,10 @@ export interface ImportedYarnDraft {
   fiberContent: string | null;
   link: string | null;
   imageUrl: string | null;
+  /** Quantity the pattern asks for, per size when it says so. */
+  amount?: string | null;
+  /** Remarks moved out of the name, such as the yarn group. */
+  notes?: string | null;
 }
 
 export interface ImportedStepDraft {
@@ -95,6 +99,15 @@ export interface ImportPreview {
   ai_requested: boolean;
   is_ai_enhanced: boolean;
   ai_fallback: boolean;
+  /** The server's suggested stash yarn for an imported yarn (index into project.yarns). */
+  yarn_matches?: ImportedYarnMatch[];
+}
+
+export interface ImportedYarnMatch {
+  index: number;
+  yarn_id: number;
+  score: number;
+  exact: boolean;
 }
 
 export const MAX_IMPORT_SOURCE_BYTES = 5 * 1024 * 1024;
@@ -201,6 +214,7 @@ export function parseImportPreview(value: unknown): ImportPreview {
     ai_requested: data.ai_requested,
     is_ai_enhanced: data.is_ai_enhanced,
     ai_fallback: data.ai_fallback,
+    yarn_matches: parseYarnMatches(data.yarn_matches),
   };
 }
 
@@ -343,7 +357,29 @@ function parseYarnDraft(value: unknown): ImportedYarnDraft {
     fiberContent: value.fiberContent,
     link: value.link,
     imageUrl: value.imageUrl,
+    amount: typeof value.amount === "string" ? value.amount : null,
+    notes: typeof value.notes === "string" ? value.notes : null,
   };
+}
+
+function parseYarnMatches(value: unknown): ImportedYarnMatch[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) =>
+    isRecord(item) &&
+    isNonnegativeInteger(item.index) &&
+    isNonnegativeInteger(item.yarn_id) &&
+    typeof item.score === "number" &&
+    typeof item.exact === "boolean"
+      ? [
+          {
+            index: item.index,
+            yarn_id: item.yarn_id,
+            score: item.score,
+            exact: item.exact,
+          },
+        ]
+      : [],
+  );
 }
 
 function parseStepDraft(value: unknown): ImportedStepDraft {

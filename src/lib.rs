@@ -38,6 +38,7 @@ pub mod sync;
 pub mod url_import;
 pub mod wayback;
 mod web;
+pub mod yarn_import;
 pub mod yarns;
 use std::path::PathBuf;
 use std::sync::Arc;

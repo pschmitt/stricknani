@@ -104,6 +104,29 @@ the object are tolerated) and then validated:
 - Every accepted field is marked `ai` in `draft.provenance`, which the clients
   show as an "AI" badge next to the field.
 
+## Yarns of a project import
+
+A pattern page names the yarns it needs. `src/yarn_import.rs` turns whatever the sources found
+(markup, rules, the model's `project.yarns[]`, the page's own yarn links, and as a last resort the
+loose `project.yarn` text) into one clean list of at most eight yarns:
+
+- Names are normalised: "DROPS MERINO EXTRA FINE von Garnstudio (gehört zur Garngruppe B)" becomes
+  name "DROPS Merino Extra Fine", brand "Garnstudio" and the note "Garngruppe B".
+- The model may return `{name, brand, colorway, amount, url, imageUrl}` per yarn. Names, colours and
+  amounts must be supported by the page text; `url` and `imageUrl` are accepted only when the page
+  links to them (or, when the model browsed, when they are on the page's own site).
+- Each yarn with a product link is enriched with the same yarn-from-link import the "From a link"
+  flow uses (safe fetch, isolated parser, AI step when requested). At most four product pages run in
+  parallel, each with a 30 second budget; a failed or slow page leaves the pattern's data in place
+  and adds the warning `yarn_enrichment_failed`. The pattern's colour and amount are kept; the
+  product page fills grams, meters, fibre, weight category, picture and link.
+- The preview response carries `yarn_matches`: for each imported yarn the best yarn of the user's
+  own stash (brand and name, normalised, fuzzy), or none.
+- The review offers per yarn "use a yarn from my stash", "create a new yarn" or "don't add this
+  yarn", plus extra stash yarns. `POST /api/v2/projects` accepts `new_yarns[]` (create only) next to
+  `yarn_ids`: the server creates those yarns (their `image_urls` go through the SSRF-safe fetch) and
+  links them with the project; if the project cannot be saved the yarns are removed again.
+
 ## Browse mode
 
 `AI_BROWSE=true` (NixOS: `services.stricknani.ai.browse`) is for an agent

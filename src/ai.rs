@@ -737,7 +737,9 @@ fn fill_yarn_gaps(target: &mut YarnImportDraft, existing: YarnImportDraft) {
         weight_category,
         fiber_content,
         link,
-        image_url
+        image_url,
+        amount,
+        notes
     );
 }
 
@@ -782,6 +784,8 @@ impl AiYarn {
             fiber_content: self.fiber_content,
             link: self.link,
             image_url: self.image_url,
+            amount: None,
+            notes: None,
         }
     }
 }

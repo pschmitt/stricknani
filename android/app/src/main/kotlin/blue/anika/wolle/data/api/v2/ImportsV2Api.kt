@@ -2,6 +2,8 @@ package blue.anika.wolle.data.api.v2
 
 import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectImportStepDto
+import blue.anika.wolle.data.api.dto.ProjectImportYarnDto
+import blue.anika.wolle.data.api.dto.ProjectImportYarnMatchDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.Body
@@ -28,6 +30,8 @@ data class ImportPreviewDto(
     val draft: ImportDraftDto,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
     @SerialName("ai_fallback") val aiFallback: Boolean = false,
+    /** Suggested stash yarn per imported yarn (index into `draft.project.yarns`). */
+    @SerialName("yarn_matches") val yarnMatches: List<ProjectImportYarnMatchDto> = emptyList(),
 )
 
 /** `ImportDocumentDraft` (camelCase). */
@@ -76,6 +80,7 @@ data class ImportDraftProjectDto(
     val designer: String? = null,
     val sizes: String? = null,
     val difficulty: String? = null,
+    val yarns: List<ProjectImportYarnDto> = emptyList(),
 )
 
 /** `StepImportDraft`. */
@@ -107,6 +112,8 @@ fun ImportPreviewDto.toV1(): ProjectImportResponseDto =
         warnings = draft.warnings,
         isAiEnhanced = isAiEnhanced,
         aiFallback = aiFallback,
+        yarns = draft.project.yarns,
+        yarnMatches = yarnMatches,
         imageUrls = draft.project.imageUrls,
         steps =
             draft.project.steps.map {

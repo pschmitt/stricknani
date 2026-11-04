@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { focusOnHash } from "#lib/components/focus-on-hash.ts";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
+  import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onMount, tick, untrack } from "svelte";
@@ -1352,12 +1352,12 @@
                       rows="10"></textarea>
                   </div>
                   <div class="field field-wide">
-                    <label for="project-notes">{t("Notes", locale)}</label>
-                    <textarea
+                    <StickyNoteField
                       id="project-notes"
-                      use:focusOnHash
+                      label={t("Notes", locale)}
                       bind:value={draft.notes}
-                      rows="5"></textarea>
+                      rows={5}
+                    />
                   </div>
                   <div class="field field-wide">
                     <label for="project-materials"

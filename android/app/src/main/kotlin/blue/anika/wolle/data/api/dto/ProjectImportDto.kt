@@ -42,4 +42,33 @@ data class ProjectImportResponseDto(
     @SerialName("ai_fallback") val aiFallback: Boolean = false,
     @SerialName("image_urls") val imageUrls: List<String> = emptyList(),
     val steps: List<ProjectImportStepDto> = emptyList(),
+    /** Yarns the pattern needs, cleaned by the server (v2 only). */
+    val yarns: List<ProjectImportYarnDto> = emptyList(),
+    /** Suggested stash yarn per entry of [yarns] (v2 only). */
+    @SerialName("yarn_matches") val yarnMatches: List<ProjectImportYarnMatchDto> = emptyList(),
+)
+
+/** One yarn of an imported pattern. [weight] and [length] are text such as "50 g" and "105 m". */
+@Serializable
+data class ProjectImportYarnDto(
+    val name: String? = null,
+    val brand: String? = null,
+    val colorway: String? = null,
+    val weight: String? = null,
+    val length: String? = null,
+    val weightCategory: String? = null,
+    val fiberContent: String? = null,
+    val link: String? = null,
+    val imageUrl: String? = null,
+    val amount: String? = null,
+    val notes: String? = null,
+)
+
+/** The stash yarn the server suggests for the imported yarn at [index]. */
+@Serializable
+data class ProjectImportYarnMatchDto(
+    val index: Int,
+    @SerialName("yarn_id") val yarnId: Int,
+    val score: Double = 0.0,
+    val exact: Boolean = false,
 )

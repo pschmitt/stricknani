@@ -348,14 +348,12 @@ export async function runImportJourney(
     markStage("restoring project title after validation");
     await projectName.fill("Reviewed import swatch");
     markStage("saving import notes before project create");
-    const noteFields = page.locator(".review-fields > label.field textarea");
+    const noteFields = page.getByLabel("Notes", { exact: true });
     check(
-      (await noteFields.count()) > 0,
-      "review page rendered without editable text areas",
+      (await noteFields.count()) === 1,
+      "review page must render exactly one notes field",
     );
-    await noteFields
-      .last()
-      .fill("Created after checking every imported field.");
+    await noteFields.fill("Created after checking every imported field.");
     for (const width of [320, 390, 1280]) {
       await page.setViewportSize({ width, height: 844 });
       await assertNoOverflow(page, width);
@@ -488,7 +486,7 @@ export async function runImportJourney(
     markStage("checking extracted yarn in HTML review");
     try {
       await page
-        .getByRole("heading", { name: "Yarn from this import" })
+        .getByRole("heading", { name: "Yarn for this project" })
         .waitFor({ state: "visible" });
     } catch (error) {
       if (!(error instanceof errors.TimeoutError)) {
@@ -503,7 +501,9 @@ export async function runImportJourney(
       );
     }
     markStage("checking the extracted yarn name field");
-    const importedYarnName = page.locator(".yarn-card input").first();
+    const importedYarnName = page
+      .locator(".yarn-card input:not([type='radio']):not([type='search'])")
+      .first();
     await importedYarnName.waitFor({ state: "visible" });
     check(
       (await importedYarnName.inputValue()) === "Fixture blue wool",
@@ -513,23 +513,22 @@ export async function runImportJourney(
       (await page.getByText("External images are disabled.").count()) > 0,
       "disabled external image capability was not explained",
     );
-    await page.getByRole("button", { name: "Save yarn to library" }).click();
-    await page
-      .getByRole("status")
-      .filter({ hasText: "Yarn added to your library" })
-      .waitFor({ state: "visible" });
+    check(
+      await page
+        .getByRole("radio", { name: "Create a new yarn" })
+        .first()
+        .isChecked(),
+      "a yarn without a stash match did not default to creating it",
+    );
     await page.getByRole("button", { name: "Create project" }).click();
     await page
       .getByRole("link", { name: "Open created project" })
       .waitFor({ state: "visible" });
     check(
-      importResponses.some(
-        ([p, status]) => p === "/api/v2/yarns" && status === 201,
-      ) &&
-        importResponses.filter(
-          ([p, status]) => p === "/api/v2/projects" && status === 201,
-        ).length >= 2,
-      "imported yarn and project were not created through normal v2 APIs",
+      importResponses.filter(
+        ([p, status]) => p === "/api/v2/projects" && status === 201,
+      ).length >= 2,
+      "imported project (with its new yarn) was not created through API v2",
     );
 
     check(cspErrors === 0, "browser reported a CSP violation");

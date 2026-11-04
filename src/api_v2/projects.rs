@@ -382,6 +382,12 @@ async fn update_project(
     if let Some(response) = validate_project(&payload) {
         return response;
     }
+    if !payload.new_yarns.is_empty() {
+        return validation_error(
+            "New yarns can only be created with a new project",
+            Some("new_yarns"),
+        );
+    }
     if !payload.image_urls.is_empty()
         || payload.steps.iter().any(|step| !step.image_urls.is_empty())
     {

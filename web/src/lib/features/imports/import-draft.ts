@@ -27,43 +27,45 @@ export interface ImportStepEditor {
   images: ImportImageChoice[];
 }
 
+/** What to do with a yarn the import found. */
+export type YarnChoice = "stash" | "new" | "skip";
+
 export interface ImportYarnEditor {
   source: ImportedYarnDraft;
+  /** Use a stash yarn, create a new one from these fields, or leave the yarn out. */
+  choice: YarnChoice;
+  /** The stash yarn to link when the choice is "stash". */
+  stashId: number | null;
+  /** The server's suggested match, if any, for the "Suggested" badge. */
+  suggestedId: number | null;
   name: string;
   brand: string;
   colorway: string;
+  amount: string;
   fiberContent: string;
   weightCategory: string;
   link: string;
   weightGrams: string;
   lengthMeters: string;
   notes: string;
-  createdId: number | null;
-  selectedForProject: boolean;
+  imageUrl: string;
 }
 
 export interface ImportProjectEditor {
-  designer: string;
-  sizes: string;
-  difficulty: string;
   name: string;
   description: string;
   category: string;
   needles: string;
   stitchSample: string;
   otherMaterials: string;
+  /** The one notes field: it starts with the extracted details that have no field of their own. */
   notes: string;
-  additionalDetails: string;
-  brand: string;
-  fiberContent: string;
-  colorway: string;
-  weightCategory: string;
-  gaugeWidth: number | null;
-  gaugeHeight: number | null;
   link: string;
   imageUrls: ImportImageChoice[];
   steps: ImportStepEditor[];
   yarns: ImportYarnEditor[];
+  /** Stash yarns the user linked in addition to the ones the import found. */
+  extraStashIds: number[];
 }
 
 export function importProjectEditor(
@@ -71,48 +73,50 @@ export function importProjectEditor(
 ): ImportProjectEditor {
   const project = preview.draft.project;
   const yarns = [...project.yarns];
-  if (
-    project.yarn?.trim() &&
-    !yarns.some((yarn) => yarn.name === project.yarn)
-  ) {
-    yarns.unshift({
+  // Servers that predate the clean yarn list only send the loose "yarn" text.
+  if (!yarns.length && project.yarn?.trim()) {
+    yarns.push({
       name: project.yarn,
-      brand: null,
-      colorway: null,
+      brand: project.brand,
+      colorway: project.colorway,
       weight: null,
       length: null,
-      weightCategory: null,
+      weightCategory: project.weightCategory,
       fiberContent: project.fiberContent,
       link: null,
       imageUrl: null,
     });
   }
+  const matches = new Map(
+    (preview.yarn_matches ?? []).map((match) => [match.index, match.yarn_id]),
+  );
   return {
-    designer: project.designer ?? "",
-    sizes: project.sizes ?? "",
-    difficulty: project.difficulty ?? "",
     name: project.name ?? "",
     description: project.description ?? "",
     category: project.category ?? "",
     needles: project.needles ?? "",
     stitchSample: project.stitchSample ?? "",
     otherMaterials: project.otherMaterials ?? "",
-    notes: "",
-    additionalDetails: additionalProjectDetails(project),
-    brand: project.brand ?? "",
-    fiberContent: project.fiberContent ?? "",
-    colorway: project.colorway ?? "",
-    weightCategory: project.weightCategory ?? "",
-    gaugeWidth: project.gaugeWidth,
-    gaugeHeight: project.gaugeHeight,
+    notes: leftoverDetails(project),
     link: project.link ?? preview.draft.sourceUrl ?? "",
     imageUrls: project.imageUrls.map((url, index) => ({
       url,
       selected: index < PRESELECTED_IMAGES,
     })),
     steps: project.steps.map(importStepEditor),
-    yarns: yarns.map(importYarnEditor),
+    yarns: yarns.map((yarn, index) =>
+      importYarnEditor(yarn, matches.get(index) ?? null),
+    ),
+    extraStashIds: [],
   };
+}
+
+/** Stash yarns to link: the chosen ones for imported yarns plus the extra ones, once each. */
+export function linkedStashIds(draft: ImportProjectEditor): number[] {
+  const ids = draft.yarns
+    .filter((yarn) => yarn.choice === "stash" && yarn.stashId !== null)
+    .map((yarn) => yarn.stashId as number);
+  return [...new Set([...ids, ...draft.extraStashIds])];
 }
 
 export function createProjectWrite(
@@ -120,6 +124,7 @@ export function createProjectWrite(
   isAiEnhanced: boolean,
   allowExternalImages: boolean,
   fallbackStepTitle: (number: number) => string,
+  amountLabel = "Amount",
 ): ProjectWrite {
   const stepImages = draft.steps.map((step) =>
     step.images
@@ -127,11 +132,10 @@ export function createProjectWrite(
       .map((image) => image.url.trim())
       .filter(Boolean),
   );
-  const extraNotes = [
-    draft.additionalDetails.trim(),
+  const notes = [
+    draft.notes.trim(),
     unattachedImageNotes(draft, allowExternalImages),
-  ].filter(Boolean);
-  const notes = [draft.notes.trim(), ...extraNotes]
+  ]
     .filter(Boolean)
     .join("\n\n");
   const steps: ProjectStepWrite[] = draft.steps.map((step, index) => ({
@@ -155,9 +159,12 @@ export function createProjectWrite(
     tags: [],
     link: optionalText(draft.link),
     is_ai_enhanced: isAiEnhanced,
-    yarn_ids: draft.yarns
-      .filter((yarn) => yarn.createdId !== null && yarn.selectedForProject)
-      .map((yarn) => yarn.createdId as number),
+    yarn_ids: linkedStashIds(draft),
+    new_yarns: draft.yarns
+      .filter((yarn) => yarn.choice === "new" && yarn.name.trim())
+      .map((yarn) =>
+        createYarnWrite(yarn, isAiEnhanced, allowExternalImages, amountLabel),
+      ),
     steps,
     ...(imageUrls.length ? { image_urls: imageUrls } : {}),
   };
@@ -166,10 +173,16 @@ export function createProjectWrite(
 export function createYarnWrite(
   draft: ImportYarnEditor,
   isAiEnhanced: boolean,
+  allowExternalImages = true,
+  amountLabel = "Amount",
 ): YarnWrite {
-  const notes = [draft.notes.trim(), sourceYarnNotes(draft.source)]
+  const notes = [
+    draft.notes.trim(),
+    draft.amount.trim() ? `${amountLabel}: ${draft.amount.trim()}` : "",
+  ]
     .filter(Boolean)
     .join("\n\n");
+  const imageUrl = draft.imageUrl.trim();
   return {
     name: draft.name.trim(),
     description: null,
@@ -184,6 +197,9 @@ export function createYarnWrite(
     notes: optionalText(notes),
     link: optionalText(draft.link),
     is_ai_enhanced: isAiEnhanced,
+    ...(allowExternalImages && isHttpUrl(imageUrl)
+      ? { image_urls: [imageUrl] }
+      : {}),
   };
 }
 
@@ -222,24 +238,34 @@ function importStepEditor(step: ImportedStepDraft): ImportStepEditor {
   };
 }
 
-function importYarnEditor(source: ImportedYarnDraft): ImportYarnEditor {
+function importYarnEditor(
+  source: ImportedYarnDraft,
+  suggestedId: number | null,
+): ImportYarnEditor {
   return {
     source,
+    choice: suggestedId !== null ? "stash" : "new",
+    stashId: suggestedId,
+    suggestedId,
     name: source.name ?? "",
     brand: source.brand ?? "",
     colorway: source.colorway ?? "",
+    amount: source.amount ?? "",
     fiberContent: source.fiberContent ?? "",
     weightCategory: source.weightCategory ?? "",
     link: source.link ?? "",
     weightGrams: parseMeasurement(source.weight, "g"),
     lengthMeters: parseMeasurement(source.length, "m"),
-    notes: "",
-    createdId: null,
-    selectedForProject: true,
+    notes: source.notes ?? "",
+    imageUrl: source.imageUrl ?? "",
   };
 }
 
-function additionalProjectDetails(project: ImportedProjectDraft): string {
+/**
+ * Extracted details that have no field of their own. Yarn facts (name, brand, fibre, weight)
+ * belong to the yarn section; designer, sizes and similar stay here as plain lines.
+ */
+function leftoverDetails(project: ImportedProjectDraft): string {
   const lines: string[] = [];
   const add = (label: string, value: string | number | null) => {
     if (value !== null && String(value).trim())
@@ -248,47 +274,16 @@ function additionalProjectDetails(project: ImportedProjectDraft): string {
   add(t("Designer"), project.designer);
   add(t("Sizes"), project.sizes);
   add(t("Difficulty"), project.difficulty);
-  add(t("Imported yarn"), project.yarn);
-  add(t("Brand"), project.brand);
-  add(t("Fiber content"), project.fiberContent);
-  add(t("Colorway"), project.colorway);
-  add(t("Weight category"), project.weightCategory);
   add(t("Gauge width"), project.gaugeWidth);
   add(t("Gauge height"), project.gaugeHeight);
-  for (const yarn of project.yarns) {
-    const facts = [
-      yarn.name,
-      yarn.brand,
-      yarn.colorway,
-      yarn.weight,
-      yarn.length,
-      yarn.weightCategory,
-      yarn.fiberContent,
-      yarn.link,
-      yarn.imageUrl,
-    ].filter((value): value is string => Boolean(value?.trim()));
-    if (facts.length)
-      lines.push(`${t("Imported yarn details")}: ${facts.join(" · ")}`);
-  }
   for (const [key, value] of Object.entries(project.extras)) {
-    if (key === "page_text" || key === "structured_data") continue;
+    if (INTERNAL_EXTRAS.has(key)) continue;
     lines.push(`${key}: ${formatExtra(value)}`);
   }
   return lines.join("\n");
 }
 
-function sourceYarnNotes(source: ImportedYarnDraft): string {
-  const lines = [];
-  if (source.weight?.trim())
-    lines.push(`${t("Imported weight text")}: ${source.weight}`);
-  if (source.length?.trim())
-    lines.push(`${t("Imported length text")}: ${source.length}`);
-  if (source.imageUrl?.trim())
-    lines.push(
-      `${t("Imported image URL suggestion (not attached)")}: ${source.imageUrl}`,
-    );
-  return lines.join("\n");
-}
+const INTERNAL_EXTRAS = new Set(["page_text", "structured_data", "page_links"]);
 
 function unattachedImageNotes(
   draft: ImportProjectEditor,
@@ -457,6 +452,11 @@ export function importWarningMessage(
     case "ai_browsed":
       return t(
         "The AI read this page in a browser. Check the fields marked Guessed before saving.",
+        locale,
+      );
+    case "yarn_enrichment_failed":
+      return t(
+        "Some yarn details could not be loaded from their product pages. Check the yarns below.",
         locale,
       );
     case "little_page_text":

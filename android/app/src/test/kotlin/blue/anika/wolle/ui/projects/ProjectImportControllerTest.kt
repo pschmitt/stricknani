@@ -69,6 +69,34 @@ class ProjectImportControllerTest {
     }
 
     @Test
+    fun `confirming saves the reviewed yarns and notes instead of the imported request`() =
+        runTest {
+            val preview = preview()
+            var saved: ImportedProjectPreview? = null
+            val controller =
+                ProjectImportController(
+                    scope = this,
+                    importer = FakeImporter { preview },
+                    save = {
+                        saved = it
+                        7
+                    },
+                )
+            controller.start("https://example.com/pattern")
+            advanceUntilIdle()
+
+            controller.confirm(
+                selectedImages = listOf("https://example.com/b.jpg"),
+                reviewed = preview.request.copy(yarnIds = listOf(3), notes = "Reviewed notes"),
+            )
+            advanceUntilIdle()
+
+            assertEquals(listOf(3), saved?.request?.yarnIds)
+            assertEquals("Reviewed notes", saved?.request?.notes)
+            assertEquals(listOf("https://example.com/b.jpg"), saved?.request?.imageUrls)
+        }
+
+    @Test
     fun `cancelling an in-flight import returns to idle and never saves`() = runTest {
         val request = CompletableDeferred<Unit>()
         var saveCalls = 0

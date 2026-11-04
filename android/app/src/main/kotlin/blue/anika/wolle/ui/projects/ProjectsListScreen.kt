@@ -74,6 +74,7 @@ fun ProjectsListScreen(
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
     val importAvailability by viewModel.importAvailability.collectAsStateWithLifecycle()
+    val stashYarns by viewModel.stashYarns.collectAsStateWithLifecycle()
     var showAddCategoryDialog by rememberSaveable { mutableStateOf(false) }
     var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -255,6 +256,8 @@ fun ProjectsListScreen(
         onStart = viewModel::startImport,
         onConfirm = viewModel::confirmImport,
         thumbnailUrl = viewModel::importThumbnailUrl,
+        stashYarns = stashYarns,
+        stashYarnPreviewUrl = viewModel::stashYarnPreviewUrl,
         onCancel = {
             showImportDialog = false
             viewModel.cancelImport()

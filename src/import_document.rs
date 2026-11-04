@@ -136,6 +136,12 @@ pub struct YarnImportDraft {
     pub fiber_content: Option<String>,
     pub link: Option<String>,
     pub image_url: Option<String>,
+    /// Quantity the pattern asks for, per size when the page says so ("250-300-350 g").
+    #[serde(default)]
+    pub amount: Option<String>,
+    /// Free text worth keeping, for example the DROPS yarn group.
+    #[serde(default)]
+    pub notes: Option<String>,
 }
 
 /// One instruction step from schema.org recipe metadata.

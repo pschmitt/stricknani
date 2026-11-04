@@ -24,27 +24,49 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.dto.ProjectWriteRequest
+import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.repository.ImportDetailKind
 import blue.anika.wolle.ui.common.ImportAvailabilityNotes
 import blue.anika.wolle.ui.common.ImportImagePicker
+import blue.anika.wolle.ui.common.StickyNoteField
 
 @Composable
 fun ProjectImportDialog(
     visible: Boolean,
     state: ProjectImportState,
     onStart: (String) -> Unit,
-    onConfirm: (List<String>) -> Unit,
+    onConfirm: (List<String>, ProjectWriteRequest) -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
     availability: ImportAvailability = ImportAvailability(),
     thumbnailUrl: (String) -> String? = { null },
+    stashYarns: List<YarnEntity> = emptyList(),
+    stashYarnPreviewUrl: (YarnEntity) -> String? = { null },
 ) {
     var url by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val amountLabel = stringResource(R.string.yarn_detail_field_amount)
+    // One review per preview: a decision per yarn, extra stash yarns and the single notes text,
+    // which starts with the extracted details that have no field of their own.
+    val awaiting = state as? ProjectImportState.AwaitingConfirmation
+    var review by
+        remember(awaiting?.preview) {
+            mutableStateOf(
+                awaiting?.preview?.let {
+                    ProjectImportReview.from(
+                        it,
+                        projectImportNotes(context, it.request.notes, it.details).orEmpty(),
+                    )
+                }
+            )
+        }
     // The pictures that start out selected come from the preview; the user can change them.
     val preselected =
         (state as? ProjectImportState.AwaitingConfirmation)?.preview?.request?.imageUrls
@@ -118,18 +140,6 @@ fun ProjectImportDialog(
                                 ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        state.preview.details.forEach { detail ->
-                            Text(
-                                text =
-                                    stringResource(
-                                        R.string.import_detail_line,
-                                        stringResource(importDetailLabel(detail.kind)),
-                                        detail.value,
-                                    ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                         state.preview.warnings
                             .mapNotNull { importWarningRes(it) }
                             .forEach { res ->
@@ -144,6 +154,20 @@ fun ProjectImportDialog(
                                 text = stringResource(R.string.import_ai_filled_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        review?.let { current ->
+                            ProjectImportYarns(
+                                review = current,
+                                onReview = { review = it },
+                                stash = stashYarns,
+                                previewUrl = stashYarnPreviewUrl,
+                            )
+                            StickyNoteField(
+                                value = current.notes,
+                                onValueChange = { review = current.withNotes(it) },
+                                label = stringResource(R.string.project_detail_notes_title),
+                                modifier = Modifier.testTag("project-import-notes"),
                             )
                         }
                         if (state.preview.imageUrls.isNotEmpty()) {
@@ -215,7 +239,10 @@ fun ProjectImportDialog(
                         onClick = {
                             val order =
                                 (state as ProjectImportState.AwaitingConfirmation).preview.imageUrls
-                            onConfirm(order.filter { it in selectedImages })
+                            val reviewed =
+                                review?.applyTo(state.preview.request, amountLabel)
+                                    ?: state.preview.request
+                            onConfirm(order.filter { it in selectedImages }, reviewed)
                         },
                     ) {
                         Text(stringResource(R.string.project_import_confirm_save))
@@ -301,5 +328,6 @@ internal fun importWarningRes(code: String): Int? =
         "not_a_yarn_page" -> R.string.import_warning_looks_like_pattern
         "little_page_text" -> R.string.import_warning_little_text
         "ai_browsed" -> R.string.import_warning_ai_browsed
+        "yarn_enrichment_failed" -> R.string.import_warning_yarn_enrichment
         else -> null
     }

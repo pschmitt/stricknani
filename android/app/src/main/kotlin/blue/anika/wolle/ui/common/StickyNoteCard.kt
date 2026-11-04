@@ -13,10 +13,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +50,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -207,6 +212,45 @@ internal fun DrawScope.drawPin(tape: Color, center: Offset, r: Float) {
 /** [this] with its colour channels scaled by [factor] (alpha kept). */
 private fun Color.darkened(factor: Float) =
     Color(red * factor, green * factor, blue * factor, alpha)
+
+/**
+ * The editable sticky note: the same paper, pin, fold and tilt as [StickyNoteCard] around one
+ * labelled text field (the label is the field's accessible name). Ink-coloured text and outline
+ * keep the contrast of the paper in both themes.
+ */
+@Composable
+internal fun StickyNoteField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    fieldModifier: Modifier = Modifier,
+    minLines: Int = 4,
+    keyboardOptions: KeyboardOptions =
+        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+) {
+    StickyNoteSurface(modifier) {
+        val ink = LocalContentColor.current
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            modifier = fieldModifier.fillMaxWidth().testTag("sticky-note-field"),
+            minLines = minLines,
+            keyboardOptions = keyboardOptions,
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = ink,
+                    unfocusedTextColor = ink,
+                    focusedBorderColor = ink,
+                    unfocusedBorderColor = ink.copy(alpha = 0.55f),
+                    focusedLabelColor = ink,
+                    unfocusedLabelColor = ink.copy(alpha = 0.8f),
+                    cursorColor = ink,
+                ),
+        )
+    }
+}
 
 /** A titled sticky note; the title is a heading in the display face. */
 @Composable

@@ -105,6 +105,11 @@ data class ProjectWriteRequest(
     val link: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
     @SerialName("yarn_ids") val yarnIds: List<Int> = emptyList(),
+    /**
+     * Yarns the server creates together with a new project and links to it (imports). Create only;
+     * omitted from the JSON when empty.
+     */
+    @SerialName("new_yarns") val newYarns: List<YarnWriteRequest> = emptyList(),
     val steps: List<StepWriteRequest> = emptyList(),
     @SerialName("image_urls") val imageUrls: List<String> = emptyList(),
     /**

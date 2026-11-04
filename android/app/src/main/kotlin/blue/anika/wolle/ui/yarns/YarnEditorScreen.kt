@@ -54,6 +54,7 @@ import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
 import blue.anika.wolle.ui.common.PhotoReorder
+import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
 import blue.anika.wolle.ui.common.UrlTextField
@@ -419,20 +420,14 @@ fun YarnEditorScreen(
                                         capitalization = KeyboardCapitalization.Sentences
                                     ),
                             )
-                            OutlinedTextField(
+                            StickyNoteField(
                                 value = form.notes,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(notes = value) }
                                 },
-                                label = {
-                                    Text(stringResource(R.string.project_detail_notes_title))
-                                },
-                                modifier = Modifier.fillMaxWidth().focusRequester(notesFocus),
+                                label = stringResource(R.string.project_detail_notes_title),
+                                fieldModifier = Modifier.focusRequester(notesFocus),
                                 minLines = 3,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences
-                                    ),
                             )
                             UrlTextField(
                                 value = form.link,

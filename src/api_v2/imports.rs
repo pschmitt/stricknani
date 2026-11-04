@@ -91,6 +91,8 @@ struct PreviewData {
     ai_requested: bool,
     is_ai_enhanced: bool,
     ai_fallback: bool,
+    /// Suggested stash yarn per imported yarn (by index into `draft.project.yarns`).
+    yarn_matches: Vec<crate::yarn_import::StashMatch>,
 }
 
 #[derive(Serialize)]
@@ -215,7 +217,18 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         )
         .await
     };
-    preview_response(draft, ai_requested, is_ai_enhanced)
+    let enrich = url_import && ai_target == ImportTarget::Project && state.app.external_imports;
+    finish_preview(
+        &state.app.pool,
+        user_id,
+        &imports,
+        draft,
+        ai_requested,
+        is_ai_enhanced,
+        ai_target == ImportTarget::Project,
+        enrich,
+    )
+    .await
 }
 
 #[derive(Deserialize)]
@@ -380,13 +393,56 @@ async fn preview_file(
         images,
     )
     .await;
-    preview_response(draft, use_ai, is_ai_enhanced)
+    finish_preview(
+        &state.app.pool,
+        user_id,
+        &imports,
+        draft,
+        use_ai,
+        is_ai_enhanced,
+        true,
+        false,
+    )
+    .await
+}
+
+/// Last step of every preview: one clean yarn list, product-page enrichment for link imports,
+/// and the suggested stash match for each yarn.
+#[allow(clippy::too_many_arguments)]
+async fn finish_preview(
+    pool: &sqlx::SqlitePool,
+    user_id: i64,
+    imports: &import_service::ImportContext,
+    mut draft: ImportDocumentDraft,
+    ai_requested: bool,
+    is_ai_enhanced: bool,
+    project: bool,
+    enrich: bool,
+) -> Response {
+    let mut yarn_matches = Vec::new();
+    if project {
+        crate::yarn_import::finalize_project_yarns(&mut draft);
+        if enrich {
+            crate::yarn_import::enrich_project_yarns(
+                &imports.worker_path,
+                imports.ai.clone(),
+                ai_requested,
+                &mut draft,
+            )
+            .await;
+        }
+        let stash = crate::yarn_import::load_stash(pool, user_id).await;
+        yarn_matches = crate::yarn_import::match_stash(&draft.project.yarns, &stash);
+    }
+    crate::yarn_import::strip_internal_extras(&mut draft);
+    preview_response(draft, ai_requested, is_ai_enhanced, yarn_matches)
 }
 
 fn preview_response(
     draft: ImportDocumentDraft,
     ai_requested: bool,
     is_ai_enhanced: bool,
+    yarn_matches: Vec<crate::yarn_import::StashMatch>,
 ) -> Response {
     let content_sha256 = draft.sha256.clone();
     Json(Envelope {
@@ -396,6 +452,7 @@ fn preview_response(
             ai_requested,
             is_ai_enhanced,
             ai_fallback: ai_requested && !is_ai_enhanced,
+            yarn_matches,
         },
     })
     .into_response()

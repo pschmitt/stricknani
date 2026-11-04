@@ -16,6 +16,15 @@ const MAX_IMAGES_SCANNED: usize = 400;
 /// A schema.org node flattened out of JSON-LD or microdata.
 pub type SchemaNode = Map<String, Value>;
 
+/// One hyperlink on the page, with the text and picture inside it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PageLinkFact {
+    pub url: String,
+    pub text: String,
+    pub image_url: Option<String>,
+    pub image_alt: Option<String>,
+}
+
 /// One `<img>` or social-preview image with a quality score.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ImageCandidate {
@@ -36,6 +45,8 @@ pub struct PageFacts {
     /// Visible text, one logical line per block, `label: value` for table and definition rows.
     pub text: String,
     pub keywords: Vec<String>,
+    /// Distinct `http(s)` links in document order (bounded).
+    pub links: Vec<PageLinkFact>,
 }
 
 impl PageFacts {
@@ -142,8 +153,52 @@ pub fn collect(html: &str, base: Option<&Url>) -> PageFacts {
     }
 
     facts.images = image_candidates(&document, &facts.meta, base);
+    facts.links = page_links(&document, base);
     facts.text = visible_text(&document);
     facts
+}
+
+const MAX_LINKS_SCANNED: usize = 600;
+const MAX_LINKS_KEPT: usize = 200;
+
+fn page_links(document: &Html, base: Option<&Url>) -> Vec<PageLinkFact> {
+    let mut seen = std::collections::HashSet::new();
+    let mut links = Vec::new();
+    for anchor in document.select(&sel("a[href]")).take(MAX_LINKS_SCANNED) {
+        let Some(url) = anchor
+            .value()
+            .attr("href")
+            .and_then(|href| resolve_url(base, href))
+        else {
+            continue;
+        };
+        let image = anchor.select(&sel("img")).next();
+        let text = collapse(&anchor.text().collect::<String>());
+        let image_alt = image
+            .and_then(|img| img.value().attr("alt"))
+            .map(collapse)
+            .filter(|alt| !alt.is_empty());
+        let image_url = image
+            .and_then(|img| {
+                img.value()
+                    .attr("src")
+                    .or_else(|| img.value().attr("data-src"))
+            })
+            .and_then(|src| resolve_url(base, src));
+        if !seen.insert(url.clone()) {
+            continue;
+        }
+        links.push(PageLinkFact {
+            url,
+            text: text.chars().take(160).collect(),
+            image_url,
+            image_alt: image_alt.map(|alt| alt.chars().take(160).collect()),
+        });
+        if links.len() >= MAX_LINKS_KEPT {
+            break;
+        }
+    }
+    links
 }
 
 fn parse_json_lenient(raw: &str) -> Option<Value> {

@@ -1,5 +1,6 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import type { YarnWrite } from "../yarns/yarn-api.ts";
 
 export interface ProjectSummary {
   id: number;
@@ -102,6 +103,8 @@ export interface ProjectWrite {
   link: string | null;
   is_ai_enhanced: boolean;
   yarn_ids: number[];
+  /** Yarns created together with a new project and linked to it (imports). */
+  new_yarns?: YarnWrite[];
   steps: ProjectStepWrite[];
   /** Optional project image URLs used only during project creation/import. */
   image_urls?: string[];

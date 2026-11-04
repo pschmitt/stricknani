@@ -8,20 +8,24 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ImageChoices from "./ImageChoices.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
-  import { createYarn } from "#lib/features/yarns/yarn-api.ts";
+  import { getYarn, type YarnSummary } from "#lib/features/yarns/yarn-api.ts";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
+  import StickyNoteField from "#lib/components/StickyNoteField.svelte";
+  import YarnStashPicker from "./YarnStashPicker.svelte";
   import {
     previewImportFile,
     previewImportText,
     previewImportUrl,
+    importImageSrc,
     type ImportPreview,
   } from "./import-api";
   import {
     createProjectWrite,
-    createYarnWrite,
     fieldHint,
     importProjectEditor,
     importWarningMessage,
     isHttpUrl,
+    linkedStashIds,
     type ImportProjectEditor,
   } from "./import-draft";
   import {
@@ -41,8 +45,9 @@
   let useAi = $state(true);
   let preview = $state<ImportPreview | null>(null);
   let draft = $state<ImportProjectEditor | null>(null);
+  /** Stash yarns shown on the review (suggested matches and picked ones), by id. */
+  let stashYarns = $state<Record<number, YarnSummary>>({});
   let busy = $state(false);
-  let busyYarn = $state<number | null>(null);
   let errorMessage = $state("");
   let successMessage = $state("");
   let createdProjectId = $state<number | null>(null);
@@ -59,7 +64,7 @@
   const allowPreview = $derived(
     session.data?.capabilities.import_preview === true,
   );
-  const sourceDisabled = $derived(busy || busyYarn !== null || !allowPreview);
+  const sourceDisabled = $derived(busy || !allowPreview);
   const hasDirtyDraft = $derived(
     Boolean(draft && preview && !createdProjectId),
   );
@@ -84,6 +89,11 @@
     ai: msg("AI"),
     guessed: msg("Guessed"),
   } as const;
+  const choiceLabels = {
+    stash: msg("Use a yarn from my stash"),
+    new: msg("Create a new yarn"),
+    skip: msg("Don't add this yarn"),
+  } as const;
   const documentKindLabels = {
     html: msg("HTML page"),
     plain_text: msg("Plain text"),
@@ -95,7 +105,7 @@
   onMount(() =>
     registerPwaUpdateGuard(() => ({
       dirty: hasDirtyDraft || hasSourceDraft,
-      busy: busy || busyYarn !== null,
+      busy: busy,
     })),
   );
 
@@ -111,7 +121,6 @@
     controller = null;
     writeController = null;
     busy = false;
-    busyYarn = null;
     preview = null;
     draft = null;
     createdProjectId = null;
@@ -172,7 +181,7 @@
 
   async function runPreview() {
     const currentSession = session.data;
-    if (!currentSession?.user || busy || busyYarn !== null) return;
+    if (!currentSession?.user || busy) return;
     errorMessage = "";
     if (!allowPreview) {
       errorMessage = t(
@@ -244,9 +253,12 @@
               );
       if (!isCurrentOperation(identity, generation)) return;
       preview = result;
-      draft = importProjectEditor(result);
+      const editor = importProjectEditor(result);
+      draft = editor;
+      stashYarns = {};
       createdProjectId = null;
       busy = false;
+      void loadSuggestedYarns(editor, activeController.signal);
     } catch (error) {
       if (!isCurrentOperation(identity, generation) || isAbort(error)) return;
       errorMessage = formatError(error);
@@ -258,68 +270,42 @@
     }
   }
 
-  async function saveYarn(index: number) {
-    const currentSession = session.data;
-    const currentDraft = draft;
-    const currentPreview = preview;
-    if (
-      !currentDraft ||
-      !currentPreview ||
-      !currentSession?.user ||
-      busy ||
-      busyYarn !== null
-    )
-      return;
-    const yarn = currentDraft.yarns[index];
-    if (!yarn || yarn.createdId !== null) return;
-    if (!yarn.name.trim()) {
-      errorMessage = t("Add a name before creating this yarn.", locale);
-      return;
-    }
-    busyYarn = index;
-    errorMessage = "";
-    const operation = ++mutationGeneration;
-    const identity: ImportOperationIdentity = {
-      userId: currentSession.user.id,
-      userGeneration,
-      operationGeneration: operation,
-      draft: currentDraft,
-      preview: currentPreview,
-    };
-    try {
-      const saved = await createYarn(
-        createYarnWrite(yarn, currentPreview.is_ai_enhanced),
-        currentSession,
-      );
-      if (
-        !isCurrentOperation(identity, mutationGeneration) ||
-        currentDraft.yarns[index] !== yarn
-      )
-        return;
-      yarn.createdId = saved.id;
-      successMessage = t(
-        "Yarn added to your library and linked for this project.",
-        locale,
-      );
-    } catch (error) {
-      if (isCurrentOperation(identity, mutationGeneration))
-        errorMessage = formatError(error);
-    } finally {
-      if (isCurrentOperation(identity, mutationGeneration)) busyYarn = null;
-    }
+  /** Show the suggested stash yarns as cards; a suggestion that cannot be loaded is dropped. */
+  async function loadSuggestedYarns(
+    editor: ImportProjectEditor,
+    signal: AbortSignal,
+  ) {
+    const ids = [
+      ...new Set(
+        editor.yarns
+          .map((yarn) => yarn.suggestedId)
+          .filter((id): id is number => id !== null),
+      ),
+    ];
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const yarn = await getYarn(id, signal);
+          if (draft === editor) stashYarns[id] = yarn;
+        } catch (error) {
+          if (isAbort(error) || draft !== editor) return;
+          for (const entry of editor.yarns) {
+            if (entry.suggestedId === id) {
+              entry.suggestedId = null;
+              entry.stashId = null;
+              entry.choice = "new";
+            }
+          }
+        }
+      }),
+    );
   }
 
   async function saveProject() {
     const currentSession = session.data;
     const currentDraft = draft;
     const currentPreview = preview;
-    if (
-      !currentDraft ||
-      !currentPreview ||
-      !currentSession?.user ||
-      busy ||
-      busyYarn !== null
-    )
+    if (!currentDraft || !currentPreview || !currentSession?.user || busy)
       return;
     if (!currentDraft.name.trim()) {
       errorMessage = t("Add a project name before creating it.", locale);
@@ -347,6 +333,7 @@
           allowExternal,
           (number) =>
             t("Step {number}", locale).replace("{number}", String(number)),
+          t("Amount", locale),
         ),
         currentSession,
         activeController.signal,
@@ -613,7 +600,7 @@
           {t("pixels", locale)}
         </p>
       {/if}
-      <fieldset class="review-fields" disabled={busy || busyYarn !== null}>
+      <fieldset class="review-fields" disabled={busy}>
         <div class="form-grid">
           <label class="field wide"
             ><span
@@ -629,21 +616,6 @@
             ><span
               >{t("Category", locale)} {@render hint("project.category")}</span
             ><input bind:value={draft.category} /></label
-          >
-          <label class="field"
-            ><span
-              >{t("Designer", locale)} {@render hint("project.designer")}</span
-            ><input bind:value={draft.designer} /></label
-          >
-          <label class="field"
-            ><span>{t("Sizes", locale)} {@render hint("project.sizes")}</span
-            ><input bind:value={draft.sizes} /></label
-          >
-          <label class="field"
-            ><span
-              >{t("Difficulty", locale)}
-              {@render hint("project.difficulty")}</span
-            ><input bind:value={draft.difficulty} /></label
           >
           <label class="field"
             ><span>{t("Pattern source", locale)}</span><input
@@ -702,7 +674,7 @@
                 {#if step.images.length}<ImageChoices
                     title={t("Suggested step images", locale)}
                     images={step.images}
-                    disabled={!allowExternal || busy || busyYarn !== null}
+                    disabled={!allowExternal || busy}
                     {locale}
                   />{/if}
               </fieldset>
@@ -713,22 +685,98 @@
         {#if draft.imageUrls.length}<ImageChoices
             title={t("Suggested project images", locale)}
             images={draft.imageUrls}
-            disabled={!allowExternal || busy || busyYarn !== null}
+            disabled={!allowExternal || busy}
             {locale}
           />{/if}
 
-        {#if draft.yarns.length}
-          <div class="subsection">
-            <h3>{t("Yarn from this import", locale)}</h3>
+        <div class="subsection" aria-labelledby="import-yarn-heading">
+          <h3 id="import-yarn-heading">{t("Yarn for this project", locale)}</h3>
+          {#if draft.yarns.length}
             <p class="supporting">
               {t(
-                "Create yarn separately. It will be linked to this project only after it is saved.",
+                "For each yarn the import found, use one from your stash, create a new one, or leave it out.",
                 locale,
               )}
             </p>
-            {#each draft.yarns as yarn, index (index)}
-              <fieldset class="step-card yarn-card">
-                <legend>{t("Imported yarn", locale)}</legend>
+          {/if}
+          {#each draft.yarns as yarn, index (index)}
+            {@const cardId = `import-yarn-${index}`}
+            <fieldset class="step-card yarn-card">
+              <legend>{yarn.name || t("Imported yarn", locale)}</legend>
+              {#if yarn.amount}<p class="supporting">
+                  {t("Amount", locale)}: {yarn.amount}
+                </p>{/if}
+              <div class="choices">
+                {#each ["stash", "new", "skip"] as const as value (value)}
+                  <label class="choice">
+                    <input
+                      type="radio"
+                      name={`${cardId}-choice`}
+                      {value}
+                      checked={yarn.choice === value}
+                      onchange={() => (yarn.choice = value)}
+                    />
+                    <span>{t(choiceLabels[value], locale)}</span>
+                  </label>
+                {/each}
+              </div>
+              {#if yarn.choice === "stash"}
+                {#if yarn.stashId !== null && stashYarns[yarn.stashId]}
+                  <div class="picked">
+                    <ResourceCard
+                      kind="yarn"
+                      href={null}
+                      imageUrl={stashYarns[yarn.stashId].preview_url}
+                      name={stashYarns[yarn.stashId].name}
+                      subtitle={[
+                        stashYarns[yarn.stashId].brand,
+                        stashYarns[yarn.stashId].colorway,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      badge={yarn.stashId === yarn.suggestedId
+                        ? t("Suggested match", locale)
+                        : null}
+                    />
+                    {#if yarn.stashId === yarn.suggestedId}<p
+                        class="supporting"
+                      >
+                        {t("Suggested match", locale)}
+                      </p>{/if}
+                  </div>
+                {:else if yarn.stashId === null}
+                  <p class="supporting">
+                    {t("Pick a yarn from your stash.", locale)}
+                  </p>
+                {/if}
+                <YarnStashPicker
+                  {locale}
+                  inputId={`${cardId}-search`}
+                  label={yarn.stashId === null
+                    ? t("Find a yarn in your stash", locale)
+                    : t("Pick a different yarn", locale)}
+                  exclude={yarn.stashId === null ? [] : [yarn.stashId]}
+                  disabled={busy}
+                  onPick={(picked) => {
+                    stashYarns[picked.id] = picked;
+                    yarn.stashId = picked.id;
+                  }}
+                />
+              {:else if yarn.choice === "new"}
+                <p class="supporting">
+                  {t(
+                    "This yarn is created with the project and linked to it.",
+                    locale,
+                  )}
+                </p>
+                {#if yarn.imageUrl && allowExternal}
+                  <img
+                    class="yarn-photo"
+                    src={importImageSrc(yarn.imageUrl)}
+                    alt=""
+                    loading="lazy"
+                  />
+                {/if}
                 <label class="field"
                   ><span>{t("Yarn name", locale)}</span><input
                     bind:value={yarn.name}
@@ -772,47 +820,63 @@
                     /></label
                   >
                 </div>
-                {#if yarn.source.imageUrl}<p class="supporting">
-                    {t("Image URL suggestion (not fetched):", locale)}
-                    <code>{yarn.source.imageUrl}</code>
-                  </p>{/if}
-                {#if yarn.createdId !== null}<p class="notice" role="status">
-                    {t("Saved and ready to link to this project.", locale)}
-                  </p>
-                {:else}<Button
-                    class="secondary"
-                    variant="secondary"
-                    icon="save"
-                    type="button"
-                    disabled={busyYarn !== null || !yarn.name.trim()}
-                    onclick={() => saveYarn(index)}
-                  >
-                    {busyYarn === index
-                      ? t("Saving yarn…", locale)
-                      : t("Save yarn to library", locale)}
-                  </Button>{/if}
-              </fieldset>
-            {/each}
-          </div>
-        {/if}
+              {:else}
+                <p class="supporting">
+                  {t("This yarn will not be added to the project.", locale)}
+                </p>
+              {/if}
+            </fieldset>
+          {/each}
 
-        <label class="field"
-          ><span>{t("Notes", locale)}</span><textarea
-            bind:value={draft.notes}
-            rows="3"></textarea></label
-        >
-        {#if draft.additionalDetails}<details class="details">
-            <summary>{t("Other extracted details", locale)}</summary><label
-              class="field"
-              ><span
-                >{t(
-                  "Review and edit these details; they will be kept in project notes.",
-                  locale,
-                )}</span
-              ><textarea bind:value={draft.additionalDetails} rows="5"
-              ></textarea></label
-            >
-          </details>{/if}
+          <fieldset class="step-card yarn-card">
+            <legend>{t("More yarn from my stash", locale)}</legend>
+            {#each draft.extraStashIds as id (id)}
+              <div class="picked">
+                {#if stashYarns[id]}<ResourceCard
+                    kind="yarn"
+                    href={null}
+                    imageUrl={stashYarns[id].preview_url}
+                    name={stashYarns[id].name}
+                    subtitle={[stashYarns[id].brand, stashYarns[id].colorway]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  />{/if}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  icon="action-delete"
+                  disabled={busy}
+                  aria-label={`${t("Remove", locale)} ${stashYarns[id]?.name ?? ""}`}
+                  onclick={() =>
+                    (draft!.extraStashIds = draft!.extraStashIds.filter(
+                      (other) => other !== id,
+                    ))}
+                >
+                  {t("Remove", locale)}
+                </Button>
+              </div>
+            {/each}
+            <YarnStashPicker
+              {locale}
+              inputId="import-extra-yarn-search"
+              label={t("Add another yarn from my stash", locale)}
+              exclude={linkedStashIds(draft)}
+              disabled={busy}
+              onPick={(picked) => {
+                stashYarns[picked.id] = picked;
+                draft!.extraStashIds = [...draft!.extraStashIds, picked.id];
+              }}
+            />
+          </fieldset>
+        </div>
+
+        <StickyNoteField
+          id="import-notes"
+          label={t("Notes", locale)}
+          bind:value={draft.notes}
+          rows={5}
+          disabled={busy}
+        />
       </fieldset>
 
       <div class="review-actions">
@@ -844,7 +908,7 @@
             variant="primary"
             icon="create"
             type="button"
-            disabled={busy || busyYarn !== null}
+            disabled={busy}
             onclick={saveProject}
           >
             {busy
@@ -1068,14 +1132,33 @@
     color: var(--accent-strong);
     font-weight: 720;
   }
-  .details {
-    margin: 1rem 0;
+  .choices {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.4rem 0 0.8rem;
   }
-  .details summary {
-    min-height: 2.75rem;
-    padding: 0.65rem 0;
-    font-weight: 650;
-    cursor: pointer;
+  .choice {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 620;
+  }
+  .choice input {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+  }
+  .picked {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0.4rem 0 0.8rem;
+  }
+  .yarn-photo {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: var(--radius-xs);
+    object-fit: cover;
   }
   .review-actions {
     display: flex;

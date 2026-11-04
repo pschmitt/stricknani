@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.projects
 
+import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.repository.ImportedProjectPreview
 import blue.anika.wolle.data.repository.ProjectImporter
 import java.io.IOException
@@ -83,11 +84,16 @@ class ProjectImportController(
         start(failed.url)
     }
 
-    /** Saves the preview; [selectedImages] replaces the pictures to attach when not null. */
-    fun confirm(selectedImages: List<String>? = null) {
+    /**
+     * Saves the preview; [selectedImages] replaces the pictures to attach when not null, and
+     * [reviewed] (the request with the user's yarn choices and notes applied) replaces the imported
+     * one.
+     */
+    fun confirm(selectedImages: List<String>? = null, reviewed: ProjectWriteRequest? = null) {
         val confirmation = _state.value as? ProjectImportState.AwaitingConfirmation ?: return
-        val preview =
-            selectedImages?.let { confirmation.preview.withImages(it) } ?: confirmation.preview
+        val reviewedPreview =
+            reviewed?.let { confirmation.preview.copy(request = it) } ?: confirmation.preview
+        val preview = selectedImages?.let { reviewedPreview.withImages(it) } ?: reviewedPreview
         activeJob?.cancel()
         _state.value = ProjectImportState.Saving
         activeJob = scope.launch {

@@ -77,8 +77,8 @@ describe("import review mapping", () => {
     const editor = importProjectEditor(preview);
     expect(editor.name).toBe("Winter shawl");
     expect(editor.steps[0]?.stepNumber).toBe(3);
-    expect(editor.additionalDetails).toContain("Gauge width: 18");
-    expect(editor.additionalDetails).toContain("designer_note: Work loosely");
+    expect(editor.notes).toContain("Gauge width: 18");
+    expect(editor.notes).toContain("designer_note: Work loosely");
 
     const write = createProjectWrite(
       editor,
@@ -110,16 +110,107 @@ describe("import review mapping", () => {
     expect(write.is_ai_enhanced).toBe(true);
   });
 
-  it("keeps unparsed yarn measurements and suggested image URLs in notes", () => {
+  it("maps yarn facts to the yarn choice and keeps them out of the notes", () => {
+    const editor = importProjectEditor({
+      ...preview,
+      draft: {
+        ...preview.draft,
+        project: {
+          ...preview.draft.project,
+          designer: "DROPS Design",
+          sizes: "S - M - L",
+          brand: "DROPS Design",
+          fiberContent: "100% Schurwolle",
+          yarn: "DROPS MERINO EXTRA FINE von Garnstudio",
+        },
+      },
+    });
+    expect(editor.notes).toContain("Designer: DROPS Design");
+    expect(editor.notes).toContain("Sizes: S - M - L");
+    for (const yarnFact of ["Brand", "Fiber content", "Imported yarn"])
+      expect(editor.notes).not.toContain(yarnFact);
+    expect(editor.notes).not.toContain("Schurwolle");
+    expect(editor.notes).not.toContain("Merino");
+    const write = createProjectWrite(editor, false, true, (n) => `Step ${n}`);
+    expect(write.notes).not.toContain("Schurwolle");
+    expect(editor.yarns).toHaveLength(1);
+  });
+
+  it("defaults a yarn without a match to creating it, with its details", () => {
     const yarn = importProjectEditor(preview).yarns[0]!;
+    expect(yarn.choice).toBe("new");
+    expect(yarn.stashId).toBeNull();
     expect(yarn.weightGrams).toBe("100");
     expect(yarn.lengthMeters).toBe("210");
-    expect(createYarnWrite(yarn, false)).toMatchObject({
-      weight_grams: 100,
-      length_meters: 210,
-      notes: expect.stringContaining("Imported image URL suggestion"),
-    });
     expect(parseMeasurement("about 100 g", "g")).toBe("");
+  });
+
+  it("pre-selects the suggested stash yarn", () => {
+    const editor = importProjectEditor({
+      ...preview,
+      yarn_matches: [{ index: 0, yarn_id: 42, score: 1, exact: true }],
+    });
+    expect(editor.yarns[0]).toMatchObject({
+      choice: "stash",
+      stashId: 42,
+      suggestedId: 42,
+    });
+    const write = createProjectWrite(editor, false, true, (n) => `Step ${n}`);
+    expect(write.yarn_ids).toEqual([42]);
+    expect(write.new_yarns).toEqual([]);
+  });
+
+  it("writes the chosen stash yarns, new yarns and extra stash yarns, and none for skip", () => {
+    const base = importProjectEditor(preview);
+    const second = { ...base.yarns[0]!, name: "Second yarn" };
+    const third = { ...base.yarns[0]!, name: "Third yarn" };
+    const editor = {
+      ...base,
+      yarns: [
+        { ...base.yarns[0]!, choice: "stash" as const, stashId: 5 },
+        { ...second, choice: "new" as const, amount: "250-300 g" },
+        { ...third, choice: "skip" as const },
+      ],
+      extraStashIds: [5, 9],
+    };
+    const write = createProjectWrite(
+      editor,
+      true,
+      true,
+      (n) => `Step ${n}`,
+      "Amount",
+    );
+    expect(write.yarn_ids).toEqual([5, 9]);
+    expect(write.new_yarns).toHaveLength(1);
+    expect(write.new_yarns![0]).toMatchObject({
+      name: "Second yarn",
+      weight_grams: 100,
+      is_ai_enhanced: true,
+      image_urls: ["https://images.example.test/skein.jpg"],
+      notes: "Amount: 250-300 g",
+    });
+    const skipped = {
+      ...editor,
+      yarns: editor.yarns.map((yarn) => ({ ...yarn, choice: "skip" as const })),
+      extraStashIds: [],
+    };
+    const none = createProjectWrite(skipped, false, true, (n) => `S${n}`);
+    expect(none.yarn_ids).toEqual([]);
+    expect(none.new_yarns).toEqual([]);
+  });
+
+  it("fetches a new yarn's photo only when external images are allowed", () => {
+    const yarn = importProjectEditor(preview).yarns[0]!;
+    expect(createYarnWrite(yarn, false, false).image_urls).toBeUndefined();
+    expect(createYarnWrite(yarn, false, true).image_urls).toEqual([
+      "https://images.example.test/skein.jpg",
+    ]);
+  });
+
+  it("explains a failed yarn enrichment", () => {
+    expect(importWarningMessage("yarn_enrichment_failed", "en")).toContain(
+      "yarn",
+    );
   });
 
   it("accepts only credential-free HTTP(S) URLs", () => {

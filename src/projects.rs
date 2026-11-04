@@ -67,6 +67,9 @@ pub(crate) struct ProjectWriteRequest {
     pub(crate) is_ai_enhanced: bool,
     #[serde(default)]
     pub(crate) yarn_ids: Vec<i64>,
+    /// Yarns to create together with the project and link to it (imports). Create only.
+    #[serde(default)]
+    pub(crate) new_yarns: Vec<crate::yarns::YarnWriteRequest>,
     #[serde(default)]
     pub(crate) steps: Vec<StepWriteRequest>,
     #[serde(default)]
@@ -372,7 +375,50 @@ pub(crate) async fn create_for_owner(
     create_for_owner_with_tag_policy(state, user_id, payload, TagPolicy::Legacy).await
 }
 
+pub(crate) const MAX_NEW_YARNS: usize = 8;
+
 pub(crate) async fn create_for_owner_with_tag_policy(
+    state: &AppState,
+    user_id: i64,
+    mut payload: ProjectWriteRequest,
+    tag_policy: TagPolicy,
+) -> Result<ProjectResponse, ProjectError> {
+    // Yarns first, so the project insert links them like any other owned yarn. When the project
+    // cannot be saved afterwards they are removed again, so a failed import leaves no strays.
+    let new_yarns = std::mem::take(&mut payload.new_yarns);
+    if new_yarns.len() > MAX_NEW_YARNS {
+        return Err(ProjectError::Invalid("Too many new yarns"));
+    }
+    if new_yarns.iter().any(|yarn| yarn.name.trim().is_empty()) {
+        return Err(ProjectError::Invalid("A new yarn needs a name"));
+    }
+    let mut created_yarn_ids = Vec::new();
+    for yarn in new_yarns {
+        match crate::yarns::create_for_owner(state, user_id, yarn).await {
+            Ok(created) => {
+                created_yarn_ids.push(created.id);
+                payload.yarn_ids.push(created.id);
+            }
+            Err(_) => {
+                remove_created_yarns(state, user_id, &created_yarn_ids).await;
+                return Err(ProjectError::Database);
+            }
+        }
+    }
+    let result = create_project_with_yarn_ids(state, user_id, payload, tag_policy).await;
+    if result.is_err() {
+        remove_created_yarns(state, user_id, &created_yarn_ids).await;
+    }
+    result
+}
+
+async fn remove_created_yarns(state: &AppState, user_id: i64, ids: &[i64]) {
+    for id in ids {
+        let _ = crate::yarns::delete_for_owner(state, user_id, *id).await;
+    }
+}
+
+async fn create_project_with_yarn_ids(
     state: &AppState,
     user_id: i64,
     payload: ProjectWriteRequest,

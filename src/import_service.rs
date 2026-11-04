@@ -280,7 +280,9 @@ pub(crate) async fn parse_url_with_source(
     worker_path: &std::path::Path,
     input: &str,
 ) -> Result<(ImportDocumentDraft, String), ImportFailure> {
-    import_url(worker_path, input, ImportTarget::Project).await
+    let (mut draft, text) = import_url(worker_path, input, ImportTarget::Project).await?;
+    crate::yarn_import::strip_internal_extras(&mut draft);
+    Ok((draft, text))
 }
 
 /// Fetch a page and turn it into a draft: safe fetch, structured extraction in the isolated

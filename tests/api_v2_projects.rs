@@ -484,3 +484,143 @@ async fn v2_project_tags_preserve_each_json_label_across_unrelated_updates() {
             .collect::<Vec<_>>()
     );
 }
+
+async fn create_project_json(
+    app: &axum::Router,
+    session: &str,
+    csrf: &str,
+    body: serde_json::Value,
+) -> (StatusCode, serde_json::Value) {
+    let response = app
+        .clone()
+        .oneshot(browser_request(
+            "POST",
+            "/projects",
+            session,
+            Some(csrf),
+            Some(body.to_string()),
+        ))
+        .await
+        .unwrap();
+    let status = response.status();
+    (status, json(response).await)
+}
+
+async fn yarn_count(pool: &SqlitePool, owner_id: i64) -> i64 {
+    sqlx::query_scalar("SELECT COUNT(*) FROM yarns WHERE owner_id = ?")
+        .bind(owner_id)
+        .fetch_one(pool)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn project_create_links_a_stash_yarn_creates_a_new_one_or_links_none() {
+    let (app, pool) = fixture().await;
+    let owner_id = db::create_user(&pool, "yarn@example.test", "owner-password-long".to_owned())
+        .await
+        .unwrap();
+    let other_id = db::create_user(
+        &pool,
+        "other@example.test",
+        "other-password-long".to_owned(),
+    )
+    .await
+    .unwrap();
+    let (session, csrf) = signed_in(&app, "yarn@example.test", "owner-password-long").await;
+    let stash_id: i64 = sqlx::query_scalar(
+        "INSERT INTO yarns (owner_id, name, brand, created_at, updated_at) \
+         VALUES (?, 'Merino Extra Fine', 'DROPS', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z') \
+         RETURNING id",
+    )
+    .bind(owner_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let foreign_id: i64 = sqlx::query_scalar(
+        "INSERT INTO yarns (owner_id, name, created_at, updated_at) \
+         VALUES (?, 'Foreign', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z') RETURNING id",
+    )
+    .bind(other_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    // 1. A stash yarn is linked, nothing new is created.
+    let (status, body) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({"name": "Stash cardigan", "yarn_ids": [stash_id]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(body["data"]["yarn_ids"], serde_json::json!([stash_id]));
+    assert_eq!(yarn_count(&pool, owner_id).await, 1);
+
+    // 2. A new yarn is created and linked in the same request, next to a stash yarn.
+    let (status, body) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({
+            "name": "New cardigan",
+            "yarn_ids": [stash_id],
+            "new_yarns": [{
+                "name": "DROPS Air", "brand": "DROPS", "weight_grams": 50,
+                "length_meters": 150, "notes": "Garngruppe C"
+            }]
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let ids = body["data"]["yarn_ids"].as_array().unwrap().clone();
+    assert_eq!(ids.len(), 2);
+    assert_eq!(yarn_count(&pool, owner_id).await, 2);
+    let (name, grams): (String, Option<i64>) =
+        sqlx::query_as("SELECT name, weight_grams FROM yarns WHERE owner_id = ? AND id != ?")
+            .bind(owner_id)
+            .bind(stash_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!((name.as_str(), grams), ("DROPS Air", Some(50)));
+
+    // 3. Choosing no yarn at all links nothing and creates nothing.
+    let (status, body) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({"name": "No yarn", "yarn_ids": [], "new_yarns": []}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(body["data"]["yarn_ids"], serde_json::json!([]));
+    assert_eq!(yarn_count(&pool, owner_id).await, 2);
+
+    // 4. Someone else's yarn is never linked; only the new yarn of that request is.
+    let (_, body) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({
+            "name": "Foreign link", "yarn_ids": [foreign_id],
+            "new_yarns": [{"name": "Orphan check"}]
+        }),
+    )
+    .await;
+    assert_eq!(body["data"]["yarn_ids"].as_array().map(Vec::len), Some(1));
+    assert_ne!(body["data"]["yarn_ids"][0], serde_json::json!(foreign_id));
+
+    // 5. A nameless new yarn is rejected before anything is created.
+    let before = yarn_count(&pool, owner_id).await;
+    let (status, _) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({"name": "Bad", "new_yarns": [{"name": "  "}]}),
+    )
+    .await;
+    assert!(status.is_client_error());
+    assert_eq!(yarn_count(&pool, owner_id).await, before);
+}

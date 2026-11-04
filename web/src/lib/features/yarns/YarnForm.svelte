@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { focusOnHash } from "#lib/components/focus-on-hash.ts";
+  import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import UrlField from "#lib/components/UrlField.svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
@@ -840,17 +840,16 @@
                   setDraft("description", event.currentTarget.value)}
               ></textarea>
             </label>
-            <label class="field wide" for={fieldId("notes")}>
-              <span>{t("Notes", locale)}</span>
-              <textarea
+            <div class="field wide">
+              <StickyNoteField
                 id={fieldId("notes")}
-                use:focusOnHash
-                rows="4"
-                maxlength="20000"
+                label={t("Notes", locale)}
+                rows={4}
+                maxlength={20000}
                 value={draft.notes}
-                oninput={(event) =>
-                  setDraft("notes", event.currentTarget.value)}></textarea>
-            </label>
+                onInput={(value) => setDraft("notes", value)}
+              />
+            </div>
             <div class="field wide">
               <label for={fieldId("link")}>{t("Yarn source URL", locale)}</label
               >

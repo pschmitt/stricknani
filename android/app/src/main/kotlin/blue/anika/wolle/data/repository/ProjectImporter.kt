@@ -20,6 +20,25 @@ enum class ImportDetailKind {
 
 data class ImportDetail(val kind: ImportDetailKind, val value: String)
 
+/**
+ * A yarn the pattern page needs, as the server cleaned and enriched it. [suggestedStashId] is the
+ * server's best match among the user's own yarns (brand and name, normalised, fuzzy), if any.
+ */
+data class ImportedYarn(
+    val name: String,
+    val brand: String? = null,
+    val colorway: String? = null,
+    val amount: String? = null,
+    val fiberContent: String? = null,
+    val weightCategory: String? = null,
+    val weightGrams: Int? = null,
+    val lengthMeters: Int? = null,
+    val link: String? = null,
+    val imageUrl: String? = null,
+    val notes: String? = null,
+    val suggestedStashId: Int? = null,
+)
+
 /** Data that can be confirmed and then written through the normal offline project outbox. */
 data class ImportedProjectPreview(
     val sourceUrl: String,
@@ -31,6 +50,8 @@ data class ImportedProjectPreview(
     val warnings: List<String> = emptyList(),
     /** Field paths (`project.needles`) the AI model supplied; shown as a hint, not saved. */
     val aiFields: List<String> = emptyList(),
+    /** The yarns the page needs; the review picks a stash yarn, a new one or none for each. */
+    val yarns: List<ImportedYarn> = emptyList(),
 ) {
     /** The same preview with only [selected] pictures attached when it is saved. */
     fun withImages(selected: List<String>): ImportedProjectPreview =
@@ -108,8 +129,41 @@ internal fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProj
         details = details,
         warnings = warnings,
         aiFields = aiFields,
+        yarns = importedYarns(),
     )
 }
+
+internal fun ProjectImportResponseDto.importedYarns(): List<ImportedYarn> {
+    val suggestions = yarnMatches.associate { it.index to it.yarnId }
+    return yarns.mapIndexedNotNull { index, yarn ->
+        val name = yarn.name.clean() ?: return@mapIndexedNotNull null
+        ImportedYarn(
+            name = name,
+            brand = yarn.brand.clean(),
+            colorway = yarn.colorway.clean(),
+            amount = yarn.amount.clean(),
+            fiberContent = yarn.fiberContent.clean(),
+            weightCategory = yarn.weightCategory.clean(),
+            weightGrams = yarn.weight.leadingNumber(),
+            lengthMeters = yarn.length.leadingNumber(),
+            link = yarn.link.clean(),
+            imageUrl = yarn.imageUrl.clean(),
+            notes = yarn.notes.clean(),
+            suggestedStashId = suggestions[index],
+        )
+    }
+}
+
+/** "50 g" -> 50; text that is not a plain number with a unit is not a measurement. */
+private fun String?.leadingNumber(): Int? =
+    this?.trim()
+        ?.let {
+            Regex("^(\\d{1,6})\\s*(?:g|gram|grams|m|meter|meters)?$", RegexOption.IGNORE_CASE)
+                .find(it)
+        }
+        ?.groupValues
+        ?.get(1)
+        ?.toIntOrNull()
 
 private fun String?.clean(): String? = this?.trim()?.ifBlank { null }
 
