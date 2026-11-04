@@ -1,9 +1,7 @@
 use axum::{body::Body, http::Request};
 use http_body_util::BodyExt;
-use scraper::{Html, Selector};
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
-use std::path::PathBuf;
 use stricknani_server::{app_with_state, db};
 use tower::ServiceExt;
 
@@ -14,7 +12,6 @@ const ADMIN_PAT: &str = "sna_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 struct TestApp {
     router: axum::Router,
     pool: SqlitePool,
-    admin_id: i64,
 }
 
 async fn test_app() -> TestApp {
@@ -43,16 +40,8 @@ async fn test_app() -> TestApp {
     add_session(&pool, admin_id, ADMIN_SESSION).await;
     add_session(&pool, member_id, MEMBER_SESSION).await;
     add_api_token(&pool, admin_id, ADMIN_PAT).await;
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
-    let router = app_with_state(
-        static_root,
-        db::AppState::new(pool.clone()).with_secure_cookies(true),
-    );
-    TestApp {
-        router,
-        pool,
-        admin_id,
-    }
+    let router = app_with_state(db::AppState::new(pool.clone()).with_secure_cookies(true));
+    TestApp { router, pool }
 }
 
 async fn add_session(pool: &SqlitePool, user_id: i64, token: &str) {
@@ -77,39 +66,6 @@ async fn add_api_token(pool: &SqlitePool, user_id: i64, token: &str) {
     .execute(pool)
     .await
     .expect("API token should be stored");
-}
-
-async fn get(app: &TestApp, path: &str, token: Option<&str>) -> axum::response::Response {
-    let mut request = Request::get(path);
-    if let Some(token) = token {
-        request = request.header("cookie", format!("__Host-stricknani_session={token}"));
-    }
-    app.router
-        .clone()
-        .oneshot(request.body(Body::empty()).expect("request should build"))
-        .await
-        .expect("router should handle request")
-}
-
-async fn html(response: axum::response::Response) -> String {
-    String::from_utf8(
-        response
-            .into_body()
-            .collect()
-            .await
-            .expect("response body should collect")
-            .to_bytes()
-            .to_vec(),
-    )
-    .expect("page should be UTF-8")
-}
-
-fn parse_selector(selector: &str) -> Selector {
-    Selector::parse(selector).expect("test selector should be valid")
-}
-
-fn visible_text(document: &Html) -> String {
-    document.root_element().text().collect::<String>()
 }
 
 async fn api(
@@ -166,191 +122,6 @@ async fn event_actions(pool: &SqlitePool, entity: &str, target_id: i64) -> Vec<S
     .fetch_all(pool)
     .await
     .expect("audit actions should be readable")
-}
-
-#[tokio::test]
-async fn admin_view_is_protected_and_inactive_admin_is_denied() {
-    let app = test_app().await;
-    let anonymous = get(&app, "/admin/audit", None).await;
-    assert_eq!(anonymous.status(), axum::http::StatusCode::SEE_OTHER);
-    assert_eq!(anonymous.headers()["location"], "/login");
-
-    let member = get(&app, "/admin/audit", Some(MEMBER_SESSION)).await;
-    assert_eq!(member.status(), axum::http::StatusCode::FORBIDDEN);
-
-    let admin = get(&app, "/admin/audit", Some(ADMIN_SESSION)).await;
-    assert_eq!(admin.status(), axum::http::StatusCode::OK);
-    let cache_control = admin.headers()["cache-control"]
-        .to_str()
-        .expect("cache policy should be valid header text");
-    assert!(
-        cache_control
-            .split(',')
-            .map(str::trim)
-            .any(|directive| directive.eq_ignore_ascii_case("no-store")),
-        "admin audit pages must not be stored: {cache_control:?}"
-    );
-
-    sqlx::query("UPDATE users SET active = 0 WHERE id = ?")
-        .bind(app.admin_id)
-        .execute(&app.pool)
-        .await
-        .expect("admin should deactivate");
-    let inactive = get(&app, "/admin/audit", Some(ADMIN_SESSION)).await;
-    assert_eq!(inactive.status(), axum::http::StatusCode::SEE_OTHER);
-}
-
-#[tokio::test]
-async fn view_escapes_legacy_text_and_never_renders_details_json() {
-    let app = test_app().await;
-    sqlx::query(
-        "INSERT INTO audit_events \
-         (actor_user_id, entity_type, entity_id, action, details, created_at) \
-         VALUES (?, 'project', 73, '<img src=x onerror=alert(1)>', \
-                 '{\"notes\":\"secret-note-must-not-render\"}', '2026-01-01T00:00:00.000000Z')",
-    )
-    .bind(app.admin_id)
-    .execute(&app.pool)
-    .await
-    .expect("legacy event should be inserted");
-    sqlx::query(
-        "INSERT INTO audit_events \
-         (actor_user_id, legacy_actor_user_id, entity_type, entity_id, action, details, created_at) \
-         VALUES (NULL, 987, 'yarn', 42, 'deleted', '{\"name\":\"private\"}', \
-                 '2026-01-02T00:00:00.000000Z')",
-    )
-    .execute(&app.pool)
-    .await
-    .expect("event with missing legacy actor should be inserted");
-
-    let response = get(&app, "/admin/audit", Some(ADMIN_SESSION)).await;
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
-    let page = html(response).await;
-    let document = Html::parse_document(&page);
-    let visible = visible_text(&document);
-
-    let strong = document
-        .select(&parse_selector("p strong"))
-        .next()
-        .expect("signed-in account should be visible");
-    assert_eq!(
-        strong.text().collect::<String>(),
-        "<script>alert(1)</script>@example.test"
-    );
-    let action_cells = document
-        .select(&parse_selector("tbody tr td:nth-child(4)"))
-        .map(|cell| cell.text().collect::<String>())
-        .collect::<Vec<_>>();
-    assert!(
-        action_cells
-            .iter()
-            .any(|action| { action == "<img src=x onerror=alert(1)>" })
-    );
-    assert!(
-        document
-            .select(&parse_selector("table img"))
-            .next()
-            .is_none()
-    );
-    assert!(
-        document
-            .select(&parse_selector("script:not([src])"))
-            .next()
-            .is_none(),
-        "untrusted account text must not create executable script elements"
-    );
-    assert!(visible.contains("Legacy account #987"));
-    assert!(!visible.contains("secret-note-must-not-render"));
-    assert!(!visible.contains("private"));
-}
-
-#[tokio::test]
-async fn entity_action_filters_and_pagination_are_bounded_and_preserved() {
-    let app = test_app().await;
-    for target_id in 1000..1052 {
-        sqlx::query(
-            "INSERT INTO audit_events \
-             (actor_user_id, entity_type, entity_id, action, created_at) \
-             VALUES (?, 'project', ?, 'created', '2026-02-01T00:00:00.000000Z')",
-        )
-        .bind(app.admin_id)
-        .bind(target_id)
-        .execute(&app.pool)
-        .await
-        .expect("project audit row should be inserted");
-    }
-    sqlx::query(
-        "INSERT INTO audit_events \
-         (actor_user_id, entity_type, entity_id, action, created_at) \
-         VALUES (?, 'yarn', 55, 'created', '2026-02-02T00:00:00.000000Z')",
-    )
-    .bind(app.admin_id)
-    .execute(&app.pool)
-    .await
-    .expect("yarn audit row should be inserted");
-
-    let first_page = get(
-        &app,
-        "/admin/audit?entity=project&action=created",
-        Some(ADMIN_SESSION),
-    )
-    .await;
-    assert_eq!(first_page.status(), axum::http::StatusCode::OK);
-    let first_page = html(first_page).await;
-    let first_document = Html::parse_document(&first_page);
-    let first_text = visible_text(&first_document);
-    assert!(first_text.contains("#1051"));
-    assert!(!first_text.contains("#1000"));
-    let next_href = first_document
-        .select(&parse_selector("nav.pagination a[href*='page=2']"))
-        .filter_map(|anchor| anchor.value().attr("href"))
-        .next()
-        .expect("next page link should be present");
-    assert_eq!(
-        next_href,
-        "/admin/audit?page=2&entity=project&action=created"
-    );
-
-    let second_page = get(
-        &app,
-        "/admin/audit?page=2&entity=project&action=created",
-        Some(ADMIN_SESSION),
-    )
-    .await;
-    assert_eq!(second_page.status(), axum::http::StatusCode::OK);
-    let second_page = html(second_page).await;
-    let second_text = visible_text(&Html::parse_document(&second_page));
-    assert!(second_text.contains("#1000"));
-    assert!(!second_text.contains("#1051"));
-
-    assert_eq!(
-        get(&app, "/admin/audit?page=0", Some(ADMIN_SESSION))
-            .await
-            .status(),
-        axum::http::StatusCode::BAD_REQUEST
-    );
-    assert_eq!(
-        get(&app, "/admin/audit?entity=untrusted", Some(ADMIN_SESSION))
-            .await
-            .status(),
-        axum::http::StatusCode::BAD_REQUEST
-    );
-    assert_eq!(
-        get(
-            &app,
-            &format!("/admin/audit?action={}", "a".repeat(513)),
-            Some(ADMIN_SESSION),
-        )
-        .await
-        .status(),
-        axum::http::StatusCode::BAD_REQUEST
-    );
-    assert_eq!(
-        get(&app, "/admin/audit?page=1&page=2", Some(ADMIN_SESSION),)
-            .await
-            .status(),
-        axum::http::StatusCode::BAD_REQUEST
-    );
 }
 
 #[tokio::test]

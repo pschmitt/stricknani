@@ -200,7 +200,6 @@ async fn run() -> Result<(), Box<dyn Error>> {
     });
 
     let app = stricknani_server::app_with_services(
-        config.static_root,
         state,
         options.worker,
         false,

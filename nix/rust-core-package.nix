@@ -24,7 +24,6 @@ rustPlatform.buildRustPackage {
   src = rustSource;
   sourceRoot = "source/rust";
   cargoLock.lockFile = "${rustSource}/rust/Cargo.lock";
-  STATIC_ROOT = "${rustSource}/rust/static";
 
   nativeCheckInputs = [
     rustfmt

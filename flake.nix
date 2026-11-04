@@ -171,8 +171,6 @@
                     nodejs
                     poppler-utils
                     tesseract
-                    vendir
-                    biome
                   ]);
 
                 shellHook = ''

@@ -7,12 +7,10 @@ on:
       - "ci/**"
       - "scripts/**"
       - "tests/**"
-      - "rust/static/**"
       - "pyproject.toml"
       - "flake.nix"
       - "flake.lock"
       - "justfile"
-      - "biome.json"
       - ".github/workflows/lint.yaml"
   pull_request:
     branches: [ main ]
@@ -20,12 +18,10 @@ on:
       - "ci/**"
       - "scripts/**"
       - "tests/**"
-      - "rust/static/**"
       - "pyproject.toml"
       - "flake.nix"
       - "flake.lock"
       - "justfile"
-      - "biome.json"
       - ".github/workflows/lint.yaml"
 
 jobs:
@@ -47,19 +43,3 @@ jobs:
 
       - name: Run MyPy
         run: nix develop '.#tooling' --command just lint-mypy
-
-  css:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Set up Biome
-        uses: biomejs/setup-biome@v2
-        with:
-          version: "2.6.4"
-
-      - name: Run CSS lint
-        run: just lint-css

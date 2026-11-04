@@ -16,7 +16,7 @@ async fn security_headers_cache_static_assets_and_protect_dynamic_and_media_resp
         .route("/media/image", get(|| async { "media" }))
         .route("/app/messages.json", get(|| async { "{}" }))
         .route(
-            "/static/app.css",
+            "/app/_app/immutable/app.css",
             get(|| async { "body { color: black; }" }),
         )
         .layer(middleware::from_fn(security_headers));
@@ -60,7 +60,11 @@ async fn security_headers_cache_static_assets_and_protect_dynamic_and_media_resp
     assert_eq!(media.headers()["cache-control"], "private, no-store");
     let static_asset = app
         .clone()
-        .oneshot(Request::get("/static/app.css").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::get("/app/_app/immutable/app.css")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(static_asset.status(), StatusCode::OK);

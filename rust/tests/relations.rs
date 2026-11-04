@@ -46,7 +46,7 @@ async fn category_changes_update_project_projection_and_sync_timestamp() {
         .execute(&pool)
         .await
         .unwrap();
-    let app = app_with_state(std::env::temp_dir(), db::AppState::new(pool));
+    let app = app_with_state(db::AppState::new(pool));
     let (status, project) = request(
         &app,
         "POST",

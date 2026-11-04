@@ -3040,27 +3040,7 @@ async fn process_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
 static IMAGE_PROCESSING: LazyLock<Arc<tokio::sync::Semaphore>> =
     LazyLock::new(|| Arc::new(tokio::sync::Semaphore::new(2)));
 
-/// Read and validate the first multipart field before a handler reads file bytes.
-pub(crate) async fn read_avatar_csrf(multipart: &mut Multipart) -> Result<String, UploadError> {
-    let mut field = multipart
-        .next_field()
-        .await
-        .map_err(map_multipart_error)?
-        .ok_or(UploadError::BadMultipart)?;
-    if field.name() != Some("csrf") {
-        return Err(UploadError::BadMultipart);
-    }
-    let mut bytes = Vec::new();
-    while let Some(chunk) = field.chunk().await.map_err(map_multipart_error)? {
-        if bytes.len().saturating_add(chunk.len()) > 128 {
-            return Err(UploadError::TooLarge);
-        }
-        bytes.extend_from_slice(&chunk);
-    }
-    String::from_utf8(bytes).map_err(|_| UploadError::BadMultipart)
-}
-
-/// Read the remaining avatar upload after the caller has validated its CSRF field.
+/// Read the avatar upload from a multipart body.
 pub(crate) async fn read_avatar_upload(
     mut multipart: Multipart,
 ) -> Result<AvatarUpload, UploadError> {

@@ -24,7 +24,6 @@ pub struct Config {
     pub database_url: String,
     pub media_root: PathBuf,
     pub bind_address: SocketAddr,
-    pub static_root: PathBuf,
     pub secure_cookies: bool,
     pub external_imports: bool,
     pub ocr_enabled: bool,
@@ -49,7 +48,6 @@ impl fmt::Debug for Config {
             .field("database_url", &"[REDACTED]")
             .field("media_root", &self.media_root)
             .field("bind_address", &self.bind_address)
-            .field("static_root", &self.static_root)
             .field("trusted_hosts", &"[CONFIGURED]")
             .finish()
     }
@@ -206,15 +204,11 @@ impl Config {
                 "SESSION_COOKIE_SECURE must be true when BIND_HOST is not loopback",
             ));
         }
-        let static_root = get("STATIC_ROOT")
-            .map(PathBuf::from)
-            .unwrap_or_else(default_static_root);
 
         Ok(Self {
             database_url,
             media_root,
             bind_address: SocketAddr::new(bind_ip, port),
-            static_root,
             secure_cookies,
             external_imports,
             ocr_enabled,
@@ -405,16 +399,11 @@ fn resolved_path(path: &std::path::Path) -> PathBuf {
     result
 }
 
-fn default_static_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static")
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
     use std::fs;
     use std::net::SocketAddr;
-    use std::path::PathBuf;
 
     use super::{Config, DEFAULT_OIDC_PAT_TTL_SECONDS};
 
@@ -531,10 +520,6 @@ mod tests {
         assert_eq!(
             config.bind_address,
             "127.0.0.1:9001".parse().expect("socket address")
-        );
-        assert_eq!(
-            config.static_root,
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static")
         );
 
         let config = parse(&[

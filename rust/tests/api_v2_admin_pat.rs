@@ -57,7 +57,7 @@ async fn fixture() -> Fixture {
         .with_secure_cookies(true)
         .with_media_root(static_root.path().to_path_buf());
     Fixture {
-        app: app_with_state(static_root.path().to_path_buf(), state),
+        app: app_with_state(state),
         pool,
         admin_id,
         member_id,

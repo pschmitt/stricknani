@@ -80,27 +80,6 @@ pub(crate) async fn require_active_admin(
     require_admin(pool, actor_id).await
 }
 
-pub(crate) async fn list_users(
-    pool: &SqlitePool,
-    actor_id: i64,
-    gravatar_enabled: bool,
-) -> Result<Vec<AdminUser>, AdminError> {
-    require_admin(pool, actor_id).await?;
-    let rows = sqlx::query(
-        "SELECT users.id, users.email, users.active, users.is_admin, \
-         users.use_gravatar, user_avatars.filename AS avatar_filename FROM users \
-         LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
-         ORDER BY users.email COLLATE NOCASE, users.id",
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|_| AdminError::Database)?;
-    Ok(rows
-        .into_iter()
-        .map(decode_user(gravatar_enabled))
-        .collect())
-}
-
 pub(crate) async fn list_users_page(
     pool: &SqlitePool,
     actor_id: i64,

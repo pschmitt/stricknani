@@ -76,8 +76,7 @@ just test
 just check
 ```
 
-`just check` runs the tooling lint (Ruff, MyPy, Biome on the Rust server's
-CSS), Nix lint, strict Clippy, native tests, the tooling tests, web checks and
+`just check` runs the tooling lint (Ruff, MyPy), Nix lint, strict Clippy, native tests, the tooling tests, web checks and
 translation checks. The web app has its own commands in
 [`web/README.md`](../web/README.md). `just run` starts the Rust dev server.
 

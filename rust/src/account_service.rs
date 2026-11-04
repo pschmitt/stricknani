@@ -102,14 +102,6 @@ pub(crate) async fn list_tokens(
         .collect())
 }
 
-pub(crate) async fn create_token(
-    pool: &SqlitePool,
-    user_id: i64,
-    requested_name: Option<String>,
-) -> Result<CreatedToken, AccountError> {
-    create_token_with(pool, user_id, requested_name, CreateTokenOptions::default()).await
-}
-
 /// Create an API token. A token created by a bearer caller is stepped up
 /// inside the insert transaction and never outlives the caller's own token.
 pub(crate) async fn create_token_with(

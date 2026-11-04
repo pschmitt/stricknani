@@ -6,7 +6,7 @@
 #
 # Tooling model: every recipe runs inside the Nix dev shell, which provides
 # cargo/clippy/rustfmt, node/npm, python (babel, pytest, mypy, playwright and
-# shapely), ruff, biome, statix, nixfmt, vendir and resvg. Inside `nix develop`
+# shapely), ruff, statix, nixfmt and resvg. Inside `nix develop`
 # (or direnv's `use flake`) recipes run as they are; anywhere else
 # scripts/just-shell re-executes each recipe line through `nix develop`
 # (STRICKNANI_NIX_SHELL picks the shell, default `.#rust`). Add missing tools to
@@ -36,7 +36,7 @@ run *args:
 # CSS. Rust, web and Nix lint recipes are `rust-lint`, `web-check` and
 # `lint-nix`.
 [group: 'lint']
-lint: lint-ruff lint-mypy lint-css
+lint: lint-ruff lint-mypy
 
 [group: 'lint']
 lint-ruff:
@@ -45,12 +45,6 @@ lint-ruff:
 [group: 'lint']
 lint-mypy:
   mypy .
-
-biome_action := if env('CI', '') != '' { 'ci' } else { 'lint' }
-
-[group: 'lint']
-lint-css:
-  biome "{{ biome_action }}" rust/static/css
 
 # Check translations
 [group: 'i18n']
@@ -89,7 +83,7 @@ i18n-compile:
 
 # Format code
 [group: 'fmt']
-fmt: fmt-ruff fmt-nix fmt-css fmt-rust
+fmt: fmt-ruff fmt-nix fmt-rust
 
 # Cargo formatting is fast; cargo builds and tests should run on the remote
 # build host described in AGENTS.md.
@@ -106,10 +100,6 @@ fmt-ruff:
 fmt-nix:
   statix fix flake.nix
   statix fix nix/
-
-[group: 'fmt']
-fmt-css:
-  biome format --write rust/static/css
 
 # Trim trailing whitespace
 [group: 'fmt']
@@ -155,18 +145,6 @@ rust-test:
 rust-lint:
   cargo fmt --manifest-path rust/Cargo.toml --check
   cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings
-
-# Sync vendored assets
-alias vendor-sync := vendir-sync
-[group: 'vendir']
-vendir-sync *args:
-  vendir sync {{ args }}
-
-# Ensure vendored assets are up to date
-alias vendor-check := vendir-check
-[group: 'vendir']
-vendir-check: vendir-sync
-  git diff --exit-code -- vendir.lock.yml rust/static/vendor
 
 # Run every repository check: Python tooling, Rust, web, Nix and i18n.
 check: lint lint-nix rust-lint test i18n-check web-check web-test web-build

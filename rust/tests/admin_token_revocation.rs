@@ -44,10 +44,7 @@ async fn fixture() -> Fixture {
     add_token(&pool, member_id, MEMBER_SESSION, "browser").await;
     add_token(&pool, member_id, MEMBER_PAT, "api").await;
     let static_root = tempfile::tempdir().unwrap();
-    let app = app_with_state(
-        static_root.path().to_path_buf(),
-        db::AppState::new(pool.clone()).with_secure_cookies(true),
-    );
+    let app = app_with_state(db::AppState::new(pool.clone()).with_secure_cookies(true));
     Fixture {
         app,
         pool,
@@ -72,13 +69,6 @@ async fn add_token(pool: &SqlitePool, user_id: i64, token: &str, purpose: &str) 
 
 fn token_hash(token: &str) -> String {
     hex::encode(Sha256::digest(token.as_bytes()))
-}
-
-fn browser_csrf(token: &str) -> String {
-    let mut hash = Sha256::new();
-    hash.update(b"stricknani browser csrf v1\0");
-    hash.update(token.as_bytes());
-    hex::encode(hash.finalize())
 }
 
 fn request(method: &str, path: &str, token: &str, purpose: &str, body: &str) -> Request<Body> {
@@ -396,48 +386,6 @@ async fn rejected_reset_and_last_admin_disable_leave_password_and_tokens_unchang
         .await
         .unwrap();
         assert_eq!(revoked, None);
-    }
-}
-
-#[tokio::test]
-async fn browser_admin_reset_uses_the_shared_revocation_service() {
-    let fixture = fixture().await;
-    let response = fixture
-        .app
-        .clone()
-        .oneshot(
-            Request::post(format!("/admin/users/{}/reset-password", fixture.member_id))
-                .header("content-type", "application/x-www-form-urlencoded")
-                .header(
-                    "cookie",
-                    format!("__Host-stricknani_session={ADMIN_SESSION}"),
-                )
-                .body(Body::from(format!(
-                    "csrf={}&new_password=browser-reset-password-long",
-                    browser_csrf(ADMIN_SESSION)
-                )))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::SEE_OTHER);
-
-    let active: i64 = sqlx::query_scalar("SELECT active FROM users WHERE id = ?")
-        .bind(fixture.member_id)
-        .fetch_one(&fixture.pool)
-        .await
-        .unwrap();
-    assert_eq!(active, 1);
-    for token in [MEMBER_SESSION, MEMBER_PAT] {
-        let revoked: Option<i64> = sqlx::query_scalar(
-            "SELECT revoked_at FROM api_tokens WHERE user_id = ? AND token_hash = ?",
-        )
-        .bind(fixture.member_id)
-        .bind(token_hash(token))
-        .fetch_one(&fixture.pool)
-        .await
-        .unwrap();
-        assert!(revoked.is_some());
     }
 }
 

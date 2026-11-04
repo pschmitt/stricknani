@@ -9,7 +9,7 @@ use axum::{
     extract::{DefaultBodyLimit, Multipart, State, rejection::FormRejection},
     http::{HeaderMap, Method, Request, StatusCode, header},
     response::{Html, IntoResponse, Redirect, Response},
-    routing::{get, post},
+    routing::post,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -92,7 +92,6 @@ pub(crate) fn router_with_shared_ai(
             "/projects/import",
             post(android_import).layer(DefaultBodyLimit::max(8 * 1024)),
         )
-        .route("/imports", get(import_page))
         .route(
             "/imports/preview",
             post(preview_form).layer(DefaultBodyLimit::max(MAX_FORM_BYTES)),
@@ -704,29 +703,6 @@ impl ImportLabels {
             fiber_content: tr("Fiber content", "Faserzusammensetzung"),
         }
     }
-}
-
-async fn import_page(State(state): State<ImportState>, headers: HeaderMap) -> Response {
-    let session = match web::session(
-        &web::WebState {
-            api: state.api.clone(),
-            app: state.app.clone(),
-        },
-        &headers,
-    )
-    .await
-    {
-        Ok(session) => session,
-        Err(auth::AuthError::Unauthorized) => return Redirect::to("/login").into_response(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    render_import_page(
-        &headers,
-        &session.token,
-        ImportPreview::default(),
-        None,
-        false,
-    )
 }
 
 #[derive(Debug, Deserialize)]

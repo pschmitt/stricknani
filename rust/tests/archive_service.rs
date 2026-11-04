@@ -90,13 +90,6 @@ async fn create_yarn(pool: &SqlitePool, owner_id: i64) -> i64 {
     .expect("fixture yarn should be created")
 }
 
-fn csrf() -> String {
-    let mut hash = Sha256::new();
-    hash.update(b"stricknani browser csrf v1\0");
-    hash.update(BROWSER_TOKEN.as_bytes());
-    hex::encode(hash.finalize())
-}
-
 fn api_request(path: &str, token: Option<&str>) -> Request<Body> {
     let mut request = Request::post(path);
     if let Some(token) = token {
@@ -105,14 +98,6 @@ fn api_request(path: &str, token: Option<&str>) -> Request<Body> {
     request
         .body(Body::empty())
         .expect("API request should build")
-}
-
-fn browser_request(path: &str, token: &str, csrf: &str) -> Request<Body> {
-    Request::post(path)
-        .header("cookie", format!("stricknani_session={token}"))
-        .header("content-type", "application/x-www-form-urlencoded")
-        .body(Body::from(format!("csrf={csrf}")))
-        .expect("browser request should build")
 }
 
 async fn json_body(response: axum::response::Response) -> Value {
@@ -148,17 +133,6 @@ async fn disabled_feature_authenticates_then_returns_503_without_enqueueing() {
         .expect("API should respond");
     assert_eq!(api.status(), StatusCode::SERVICE_UNAVAILABLE);
 
-    let browser = harness
-        .app
-        .clone()
-        .oneshot(browser_request(
-            &format!("/projects/{}/archive", harness.project_id),
-            BROWSER_TOKEN,
-            &csrf(),
-        ))
-        .await
-        .expect("browser route should respond");
-    assert_eq!(browser.status(), StatusCode::SERVICE_UNAVAILABLE);
     assert_eq!(job_count(&harness.pool).await, 0);
 
     let anonymous = harness
@@ -188,19 +162,6 @@ async fn api_is_bearer_only_and_foreign_entities_are_not_found() {
         .expect("API should respond");
     assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
 
-    let browser_anonymous = harness
-        .app
-        .clone()
-        .oneshot(browser_request(
-            &format!("/projects/{}/archive", harness.project_id),
-            "",
-            &csrf(),
-        ))
-        .await
-        .expect("browser route should respond");
-    assert_eq!(browser_anonymous.status(), StatusCode::SEE_OTHER);
-    assert_eq!(browser_anonymous.headers()["location"], "/login");
-
     let foreign = harness
         .app
         .clone()
@@ -212,50 +173,6 @@ async fn api_is_bearer_only_and_foreign_entities_are_not_found() {
         .expect("API should respond");
     assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
     assert_eq!(job_count(&harness.pool).await, 0);
-}
-
-#[tokio::test]
-async fn browser_requires_csrf_and_uses_idempotent_303_enqueue() {
-    let harness = harness(true).await;
-    let path = format!("/projects/{}/archive", harness.project_id);
-    let invalid = harness
-        .app
-        .clone()
-        .oneshot(browser_request(&path, BROWSER_TOKEN, "invalid"))
-        .await
-        .expect("browser route should respond");
-    assert_eq!(invalid.status(), StatusCode::FORBIDDEN);
-    assert_eq!(job_count(&harness.pool).await, 0);
-
-    for _ in 0..2 {
-        let response = harness
-            .app
-            .clone()
-            .oneshot(browser_request(&path, BROWSER_TOKEN, &csrf()))
-            .await
-            .expect("browser route should respond");
-        assert_eq!(response.status(), StatusCode::SEE_OTHER);
-        assert_eq!(
-            response.headers()["location"]
-                .to_str()
-                .expect("redirect location should be valid header text"),
-            format!("/projects/{}", harness.project_id)
-        );
-    }
-    assert_eq!(job_count(&harness.pool).await, 1);
-
-    let foreign = harness
-        .app
-        .clone()
-        .oneshot(browser_request(
-            &format!("/projects/{}/archive", harness.foreign_project_id),
-            BROWSER_TOKEN,
-            &csrf(),
-        ))
-        .await
-        .expect("browser route should respond");
-    assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
-    assert_eq!(job_count(&harness.pool).await, 1);
 }
 
 #[tokio::test]

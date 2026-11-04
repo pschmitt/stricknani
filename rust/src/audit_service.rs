@@ -32,15 +32,6 @@ impl AuditEntity {
         }
     }
 
-    pub(crate) const fn value(self) -> &'static str {
-        match self {
-            Self::All => "all",
-            Self::Project => "project",
-            Self::Yarn => "yarn",
-            Self::Category => "category",
-        }
-    }
-
     const fn sql_value(self) -> Option<&'static str> {
         match self {
             Self::All => None,
@@ -108,10 +99,6 @@ impl AuditFilter {
         })
     }
 
-    pub(crate) const fn entity(&self) -> AuditEntity {
-        self.entity
-    }
-
     pub(crate) fn action(&self) -> Option<&str> {
         self.action.as_deref()
     }
@@ -159,7 +146,6 @@ pub(crate) struct AuditDetail {
 pub(crate) struct AuditPage {
     pub(crate) events: Vec<AuditEvent>,
     pub(crate) page: u32,
-    pub(crate) page_count: u32,
     pub(crate) per_page: u32,
     pub(crate) has_more: bool,
 }
@@ -292,7 +278,6 @@ pub(crate) async fn list_events(
     Ok(AuditPage {
         events,
         page,
-        page_count,
         per_page: PAGE_SIZE as u32,
         has_more: page < page_count,
     })
@@ -423,7 +408,6 @@ pub(crate) async fn list_resource_events(
     Ok(Some(AuditPage {
         events,
         page,
-        page_count,
         per_page: page_size as u32,
         has_more: page < page_count,
     }))

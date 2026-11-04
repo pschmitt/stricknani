@@ -71,7 +71,7 @@ proxy address allowlist before forwarded headers can affect security decisions.
 Responses set a same-origin CSP, `X-Content-Type-Options: nosniff`, frame and
 referrer restrictions, and a restrictive Permissions Policy. Dynamic, API,
 authentication, health, and media responses use `private, no-store`; successful
-`/static/` assets use a one-hour public cache with stale revalidation.
+`/app/_app/` assets use a one-hour public cache with stale revalidation.
 
 ## Remaining release work
 

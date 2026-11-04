@@ -145,10 +145,10 @@ def rasters() -> None:
     # the platform masks itself (maskable PWA icon, Play icon).
     icon = BRANDING / "icon.svg"
     square = BRANDING / "icon-square.svg"
-    for web in (ROOT / "web/static", ROOT / "rust/static"):
-        shutil.copy(icon, web / "favicon.svg")
-        resvg(icon, web / "icons/icon-192.png", 192)
-        resvg(icon, web / "icons/icon-512.png", 512)
+    web = ROOT / "web/static"
+    shutil.copy(icon, web / "favicon.svg")
+    resvg(icon, web / "icons/icon-192.png", 192)
+    resvg(icon, web / "icons/icon-512.png", 512)
     resvg(square, ROOT / "web/static/icons/icon-maskable-512.png", 512)
     resvg(square, BRANDING / "playstore/icon-512.png", 512)
     shutil.copy(BRANDING / "mascot.svg", ROOT / "web/static/mascot.svg")

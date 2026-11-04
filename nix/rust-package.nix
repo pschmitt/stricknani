@@ -12,11 +12,6 @@
 }:
 
 let
-  staticSource = lib.fileset.toSource {
-    root = ../rust/static;
-    fileset = ../rust/static;
-  };
-
   ocrEngine = tesseract.override {
     enableLanguages = [
       "deu"
@@ -34,19 +29,15 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
 
     install -d "$out/bin"
-    install -d "$out/share/stricknani/static"
     install -d "$out/share/stricknani/web"
 
     install -m 0555 ${corePackage}/bin/stricknani-server \
       "$out/bin/.stricknani-server-wrapped"
-    cp -a --no-preserve=mode ${staticSource}/. \
-      "$out/share/stricknani/static/"
     cp -a --no-preserve=mode ${webPackage}/. \
       "$out/share/stricknani/web/"
 
     makeWrapper "$out/bin/.stricknani-server-wrapped" \
       "$out/bin/stricknani-server" \
-      --set STATIC_ROOT "$out/share/stricknani/static" \
       --set WEB_ROOT "$out/share/stricknani/web" \
       ${
         lib.optionalString (

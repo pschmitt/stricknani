@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -37,12 +35,8 @@ async fn fixture() -> Fixture {
         .execute(&pool)
         .await
         .unwrap();
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     Fixture {
-        app: app_with_state(
-            static_root,
-            db::AppState::new(pool.clone()).with_secure_cookies(true),
-        ),
+        app: app_with_state(db::AppState::new(pool.clone()).with_secure_cookies(true)),
         pool,
         owner_id,
         other_id,

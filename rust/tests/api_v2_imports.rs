@@ -47,7 +47,6 @@ async fn fixture_with_ai(external_imports: bool, ai: Option<AiClient>) -> Fixtur
     let root = tempfile::tempdir().expect("static root should be created");
     let state = db::AppState::new(pool.clone()).with_secure_cookies(true);
     let app = app_with_services(
-        root.path().to_path_buf(),
         state,
         std::path::PathBuf::from(env!("CARGO_BIN_EXE_stricknani-server")),
         external_imports,

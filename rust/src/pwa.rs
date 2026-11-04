@@ -6,7 +6,6 @@ use std::{
     sync::Arc,
 };
 
-use askama::Template;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
@@ -15,9 +14,11 @@ use axum::http::{HeaderValue, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::get;
 
-const SERVICE_WORKER: &str = include_str!("../assets/service-worker.js");
-const REGISTRATION_SCRIPT: &str = include_str!("../assets/register-pwa.js");
-const MANIFEST: &str = include_str!("../assets/manifest.webmanifest");
+/// Retires the root-scoped worker that the removed server-rendered UI used to register.
+///
+/// Browsers that still hold that registration re-fetch `/sw.js` on their update checks. This
+/// replacement drops its caches and unregisters itself so stale legacy pages are never served.
+const LEGACY_WORKER_RETIREMENT: &str = "self.addEventListener(\"install\", () => self.skipWaiting());\nself.addEventListener(\"activate\", (event) => {\n\tevent.waitUntil(\n\t\t(async () => {\n\t\t\tfor (const key of await caches.keys()) {\n\t\t\t\tawait caches.delete(key);\n\t\t\t}\n\t\t\tawait self.registration.unregister();\n\t\t})(),\n\t);\n});\n";
 const MAX_APP_WORKER_BYTES: u64 = 512 * 1024;
 const MAX_APP_MANIFEST_BYTES: u64 = 32 * 1024;
 const MAX_APP_OFFLINE_HTML_BYTES: u64 = 64 * 1024;
@@ -48,9 +49,6 @@ pub fn router_with_web_root(web_root: Option<PathBuf>) -> Router {
     let state = web_root.map(load_app_pwa_assets).unwrap_or_default();
     Router::new()
         .route("/sw.js", get(service_worker))
-        .route("/register-pwa.js", get(registration_script))
-        .route("/manifest.webmanifest", get(manifest))
-        .route("/offline", get(offline))
         .route("/app/sw.js", get(app_service_worker))
         .route("/app/manifest.webmanifest", get(app_manifest))
         .route("/app/offline.html", get(app_offline_html))
@@ -96,44 +94,13 @@ fn read_bounded_file(path: &Path, max_bytes: u64) -> Option<Arc<Vec<u8>>> {
 
 async fn service_worker() -> Response<Body> {
     let mut response = asset_response(
-        SERVICE_WORKER,
+        LEGACY_WORKER_RETIREMENT,
         "application/javascript; charset=utf-8",
         "no-cache",
     );
     response
         .headers_mut()
         .insert("service-worker-allowed", HeaderValue::from_static("/"));
-    response
-}
-
-async fn registration_script() -> Response<Body> {
-    asset_response(
-        REGISTRATION_SCRIPT,
-        "application/javascript; charset=utf-8",
-        "public, max-age=3600",
-    )
-}
-
-async fn manifest() -> Response<Body> {
-    asset_response(
-        MANIFEST,
-        "application/manifest+json; charset=utf-8",
-        "public, max-age=3600",
-    )
-}
-
-async fn offline() -> Response<Body> {
-    let template = OfflineTemplate {
-        labels: OfflineLabels::new(),
-    };
-    let body = match template.render() {
-        Ok(body) => body,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    let mut response = asset_response(&body, "text/html; charset=utf-8", "no-store");
-    response
-        .headers_mut()
-        .insert(CONTENT_LANGUAGE, HeaderValue::from_static("en, de"));
     response
 }
 
@@ -268,45 +235,4 @@ fn asset_response(
         HeaderValue::from_static("nosniff"),
     );
     response
-}
-
-#[derive(Template)]
-#[template(path = "offline.html")]
-struct OfflineTemplate {
-    labels: OfflineLabels,
-}
-
-struct OfflineLabels {
-    heading: LabelPair,
-    status: LabelPair,
-    reason: LabelPair,
-    message: LabelPair,
-    action: LabelPair,
-}
-
-impl OfflineLabels {
-    fn new() -> Self {
-        Self {
-            heading: tr("You are offline", "Du bist offline"),
-            status: tr("Offline", "Offline"),
-            reason: tr("No connection", "Keine Verbindung"),
-            message: tr(
-                "This page is not available while you're offline. Private pages, API responses, and media are not cached.",
-                "Diese Seite ist offline nicht verfügbar. Private Seiten, API-Antworten und Medien werden nicht zwischengespeichert.",
-            ),
-            action: tr("Try Again", "Erneut versuchen"),
-        }
-    }
-}
-
-struct LabelPair {
-    en: &'static str,
-    de: &'static str,
-}
-
-fn tr(english: &'static str, german: &'static str) -> LabelPair {
-    LabelPair {
-        en: crate::i18n::text(crate::Language::English, english, german),
-        de: crate::i18n::text(crate::Language::German, english, german),
-    }
 }

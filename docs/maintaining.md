@@ -101,14 +101,8 @@ Nix dev shell (`nix develop`).
 
 ## Dependencies and vendoring
 
-Rust server pages (`rust/static/`): the few third-party browser assets they
-need (currently the Space Grotesk font files) are vendored with `vendir`. Add
-it to `vendir.yml`, run `just vendor-sync`, and commit `vendir.lock.yml`
-together with `rust/static/vendor/**`. CI runs `just vendor-check` and fails
-when the vendored files differ from the lock. No CDN links.
-
 Svelte web app (`web/`): dependencies are npm packages with a committed
-`package-lock.json`, bundled by Vite. They do not need `vendir.yml` entries.
+`package-lock.json`, bundled by Vite. There is no CDN link and no other vendoring tool.
 After changing `web/package.json` or the lockfile, update `npmDepsHash` in
 `nix/web-package.nix`, or the Nix build of the web app fails:
 

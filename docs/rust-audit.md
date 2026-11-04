@@ -6,11 +6,11 @@ transaction. It stores no free-form details, project or yarn notes, passwords,
 tokens, hashes, or debug output. A failed domain transaction therefore also
 rolls back its event.
 
-The administrator view at `/admin/audit` reads both native events and imported
+The administrator audit view in the web app (`/app/admin/audit`) reads both native events and imported
 legacy rows. It is restricted to active browser-session administrators,
 supports bounded entity/action filters and 50-row pages, and never renders the
 legacy `details` JSON. Actor names and imported action/type strings are
-HTML-escaped by Askama. A missing legacy actor is shown using its retained
+escaped when the web app renders them. A missing legacy actor is shown using its retained
 source ID when available.
 
 Project, yarn, and category create/update/delete handlers and media upload or

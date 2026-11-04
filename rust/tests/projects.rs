@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
@@ -17,9 +15,8 @@ async fn app_and_users() -> (axum::Router, SqlitePool, i64, i64) {
         .expect("in-memory database should migrate");
     let owner_id = seed_user(&pool, "owner@example.test", OWNER_TOKEN).await;
     let other_id = seed_user(&pool, "other@example.test", OTHER_TOKEN).await;
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     (
-        app_with_state(static_root, db::AppState::new(pool.clone())),
+        app_with_state(db::AppState::new(pool.clone())),
         pool,
         owner_id,
         other_id,

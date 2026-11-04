@@ -199,16 +199,12 @@ impl HostAuthority {
 /// Add browser response headers while keeping successful static assets cacheable.
 pub async fn security_headers(request: axum::extract::Request, next: Next) -> Response {
     let path = request.uri().path();
-    let is_static = path.starts_with("/static/")
-        || path.starts_with("/app/_app/")
+    let is_static = path.starts_with("/app/_app/")
         || path.starts_with("/app/icons/")
         || path == "/app/favicon.svg";
     let is_public_pwa = matches!(
         request.uri().path(),
         "/sw.js"
-            | "/register-pwa.js"
-            | "/manifest.webmanifest"
-            | "/offline"
             | "/app/sw.js"
             | "/app/manifest.webmanifest"
             | "/app/offline.html"

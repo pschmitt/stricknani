@@ -255,20 +255,16 @@ Use this file as the operational source of truth for working in Stricknani.
   loopback hostname, not just a new port: cookies are shared across ports.
   Create an owned tab and clear only that test origin during cleanup.
 
-### Vendored Web Dependencies
+### Web Dependencies
 
-- The web app (`web/`) is a SvelteKit project. Use npm packages with the committed
-  `web/package-lock.json`, reproducible installs and locally bundled assets.
-  These bundled dependencies do not need `vendir.yml` entries. After changing
-  `web/package.json` or its lockfile, update `npmDepsHash` in
-  `nix/web-package.nix`.
-- The Rust server's own pages (`rust/static/`, `rust/templates/`) are the only
-  other browser code. Any third-party JS/CSS/font file they need is vendored
-  via `vendir.yml` into `rust/static/vendor/` (no new CDN links). After
-  changing `vendir.yml`, run `just vendor-sync` and commit `vendir.lock.yml`
-  and `rust/static/vendor/**`.
-- Do not add new dependencies to the legacy Rust pages when the same feature
-  can live in `web/`.
+- The web app (`web/`) is a SvelteKit project and the only browser UI; the Rust server serves
+  its build under `/app/` and has no server-rendered pages of its own.
+- Add dependencies as npm packages in `web/package.json` with the committed
+  `web/package-lock.json`, reproducible installs and locally bundled assets (no CDN links).
+  There is no `vendir` and no vendored `static/` tree. After changing `web/package.json` or its
+  lockfile, update `npmDepsHash` in `nix/web-package.nix`.
+- Old non-API page paths (`/projects`, `/login`, ...) only redirect to `/app/`; see
+  `rust/src/legacy_redirects.rs`. New pages belong in `web/`.
 
 ### Translations (UI text)
 
@@ -313,7 +309,6 @@ Use this file as the operational source of truth for working in Stricknani.
     (Vitest) and `just web-build`
   - Python tooling (`scripts/`, `ci/`, `tests/`): `just lint-ruff`,
     `just lint-mypy`, `just test-harness` (pytest)
-  - Rust server CSS: `just lint-css` (Biome)
   - Nix: `just lint-nix` (`statix check`); format Nix with `nixfmt`
   - i18n: `just i18n-check`
   - Format: `just fmt`
@@ -355,8 +350,7 @@ Use this file as the operational source of truth for working in Stricknani.
   workflow/action interface before editing callers. Use
   `pschmitt/ci-workflows/...@main`, preserving caller triggers, permissions,
   checks, artifacts and publish gates. Keep application-specific checks here.
-- `just check` runs the Python tooling lint (Ruff, MyPy), Biome on the Rust
-  server CSS, Nix lint, strict Rust checks, the Rust suite, the Python tooling
+- `just check` runs the Python tooling lint (Ruff, MyPy), Nix lint, strict Rust checks, the Rust suite, the Python tooling
   tests, i18n checks and the web checks and build. CI runs it as
   `test.yaml`; `web-ui.yaml` adds the packaged-web browser acceptance and
   `android-*.yaml` the Android lanes.

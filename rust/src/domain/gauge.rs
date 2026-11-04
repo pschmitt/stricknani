@@ -76,11 +76,6 @@ pub(crate) struct GaugeInput {
 }
 
 impl GaugeInput {
-    /// Calculate with both swatches measured at the default 10 cm.
-    pub(crate) fn calculate(self) -> GaugeResult {
-        self.calculate_with_swatches(SwatchSizes::default())
-    }
-
     /// Compare stitch and row densities per centimetre, so a swatch measured at
     /// any size gives the same answer as the equivalent 10 cm gauge.
     pub(crate) fn calculate_with_swatches(self, sizes: SwatchSizes) -> GaugeResult {

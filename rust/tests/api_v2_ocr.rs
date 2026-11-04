@@ -124,14 +124,7 @@ async fn make_fixture(ocr_enabled: bool, service_enabled: bool) -> Fixture {
         .with_secure_cookies(true)
         .with_media_root(root.path().to_path_buf())
         .with_ocr_enabled(ocr_enabled);
-    let app = app_with_services(
-        root.path().to_path_buf(),
-        state,
-        std::path::PathBuf::new(),
-        false,
-        None,
-        service,
-    );
+    let app = app_with_services(state, std::path::PathBuf::new(), false, None, service);
     Fixture {
         _root: root,
         app,

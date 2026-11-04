@@ -11,8 +11,6 @@
 //! repeat the exhaustive cookie/CSRF, ownership and validation coverage of the other
 //! `api_v2_*.rs` suites.
 
-use std::path::PathBuf;
-
 use axum::{
     Router,
     body::Body,
@@ -148,12 +146,11 @@ async fn fixture() -> Fixture {
     )
     .await;
     let media_root = tempfile::tempdir().expect("media root is created");
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     let state = db::AppState::new(pool.clone())
         .with_secure_cookies(true)
         .with_media_root(media_root.path().to_path_buf());
     Fixture {
-        app: app_with_state(static_root, state),
+        app: app_with_state(state),
         pool,
         owner_id,
         other_id,

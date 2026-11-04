@@ -388,7 +388,6 @@ async fn imports_all_legacy_records_and_media_without_mutating_the_snapshot() {
     insert_test_token(&target, 8, foreign_token).await;
 
     let app = app_with_state(
-        fixture.destination.join("static"),
         db::AppState::new(target.clone()).with_media_root(fixture.destination.join("media")),
     );
     let (project_status, project) =
@@ -497,7 +496,6 @@ async fn imports_top_level_false_title_flag_into_the_project_api_dto() {
     let token = "importer-top-level-false-test-only-token";
     insert_test_token(&target, 7, token).await;
     let app = app_with_state(
-        fixture.destination.join("static"),
         db::AppState::new(target.clone()).with_media_root(fixture.destination.join("media")),
     );
     let (status, project) = authenticated_json(&app, "/api/v1/projects/19", token).await;

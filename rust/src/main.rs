@@ -13,7 +13,7 @@ use stricknani_server::error_reporting::ErrorReportingSettings;
 use stricknani_server::importer::{ImportOptions, import_snapshot};
 use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    STATIC_ROOT        Static asset directory\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    RUST_SENTRY_DSN_FILE   File holding a Sentry DSN (or RUST_SENTRY_DSN); error reporting is off without one\n    RUST_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    RUST_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    RUST_DATABASE_URL  SQLite database URL\n    RUST_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    RUST_SENTRY_DSN_FILE   File holding a Sentry DSN (or RUST_SENTRY_DSN); error reporting is off without one\n    RUST_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    RUST_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n";
 
 fn main() -> ExitCode {
     if std::env::args_os()
@@ -313,14 +313,8 @@ async fn serve() -> Result<(), &'static str> {
     let ocr = config
         .ocr_enabled
         .then(stricknani_server::ocr::OcrService::new);
-    let app = stricknani_server::app_with_services(
-        config.static_root,
-        state,
-        worker_path,
-        config.external_imports,
-        ai,
-        ocr,
-    );
+    let app =
+        stricknani_server::app_with_services(state, worker_path, config.external_imports, ai, ocr);
     let app = if config.error_reporting.server_reporting() {
         // One Sentry hub per request: the signed-in user's opt-out marker and
         // identity stay scoped to that request.

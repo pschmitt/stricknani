@@ -12,28 +12,6 @@
         "digest"
       ],
       "automerge": true
-    },
-    {
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchFileNames": [
-        "vendir.yml"
-      ],
-      "commitMessageTopic": "vendored dependencies"
-    }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Update vendir npm dependencies",
-      "fileMatch": [
-        "^vendir\\.yml$"
-      ],
-      "matchStrings": [
-        "# renovate: datasource=npm depName=(?<depName>[^\\s]+)\\n\\s*- path:[^\\n]+\\n\\s*http:\\n\\s*url: https://registry\\.npmjs\\.org/(?:@[^/]+/)?[^/]+/-/[^-\\n]+-(?<currentValue>[^/\\s]+)\\.tgz"
-      ],
-      "datasourceTemplate": "npm"
     }
   ],
   "nix": {

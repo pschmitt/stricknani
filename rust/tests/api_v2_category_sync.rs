@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -28,12 +26,8 @@ async fn fixture() -> Fixture {
     let owner_id = seed_user(&pool, "category-sync-owner@example.test", OWNER_PAT).await;
     seed_token(&pool, owner_id, OWNER_SESSION, "browser").await;
     let other_id = seed_user(&pool, "category-sync-other@example.test", OTHER_PAT).await;
-    let static_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
     Fixture {
-        app: app_with_state(
-            static_root,
-            db::AppState::new(pool.clone()).with_secure_cookies(true),
-        ),
+        app: app_with_state(db::AppState::new(pool.clone()).with_secure_cookies(true)),
         pool,
         owner_id,
         other_id,
