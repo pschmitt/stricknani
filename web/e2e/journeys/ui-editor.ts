@@ -582,19 +582,27 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   const historySection = page.locator("[data-history-section]");
   await historySection.scrollIntoViewIfNeeded();
   const historyRows = historySection.locator("button.entry-row");
+  markStage("history: waiting for the first entry row");
   await historyRows.first().waitFor({ state: "visible" });
   await historyRows.first().click();
   check(
     (await historyRows.first().getAttribute("aria-expanded")) === "true",
     "a Recent changes entry did not open when clicked",
   );
+  markStage("history: reading the opened entry");
   const historyDetail = historySection.getByRole("region").first();
-  await historyDetail.getByText("Before", { exact: true }).first().waitFor({
-    state: "visible",
-  });
+  await historyDetail.waitFor({ state: "visible" });
+  await historyDetail
+    .getByText(/Before/)
+    .first()
+    .waitFor({ state: "visible" });
+  const historyText = ((await historyDetail.textContent()) ?? "").replace(
+    /\s+/g,
+    " ",
+  );
   check(
-    (await historyDetail.getByText("After", { exact: true }).count()) > 0,
-    "an opened Recent changes entry did not show the before and after values",
+    /Before/.test(historyText) && /After/.test(historyText),
+    `an opened Recent changes entry did not show a before/after diff: ${historyText.slice(0, 80)}`,
   );
   await historyRows.first().click();
   check(
