@@ -140,7 +140,13 @@ fun ProjectDetailScreen(
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     LaunchedEffect(deleted) { if (deleted) onDeleted() }
 
-    RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
+    // The full-screen error panel already says it; no snackbar on top of its buttons.
+    RefreshFeedbackEffect(
+        refreshState,
+        snackbarHostState,
+        viewModel::dismissRefreshFeedback,
+        problemsShownInline = uiState is ProjectDetailUiState.NotFound,
+    )
 
     val state = uiState
     val refreshFailure = rememberRefreshFailure(refreshState)

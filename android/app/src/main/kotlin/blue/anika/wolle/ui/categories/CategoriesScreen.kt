@@ -65,6 +65,11 @@ fun CategoriesScreen(
         state = refreshState,
         snackbarHostState = snackbarHostState,
         onConsumed = viewModel::dismissRefreshFeedback,
+        // The full-screen error panel already says it; no snackbar on top of its buttons.
+        problemsShownInline =
+            uiState.content is CategoriesContentState.Offline ||
+                uiState.content is CategoriesContentState.Unreachable ||
+                uiState.content is CategoriesContentState.Error,
     )
 
     Scaffold(
