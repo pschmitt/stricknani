@@ -61,6 +61,8 @@ import blue.anika.wolle.data.settings.YarnDetailCard
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
+import blue.anika.wolle.ui.common.ErrorKind
+import blue.anika.wolle.ui.common.ErrorState
 import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
@@ -79,6 +81,7 @@ import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
+import blue.anika.wolle.ui.common.rememberRefreshFailure
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.history.HistoryPhase
@@ -94,6 +97,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun YarnDetailScreen(
     onBack: () -> Unit,
+    onHome: (() -> Unit)? = null,
     onProjectClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onDeleted: () -> Unit,
@@ -137,6 +141,7 @@ fun YarnDetailScreen(
     RefreshFeedbackEffect(refreshState, snackbarHostState, viewModel::dismissRefreshFeedback)
 
     val state = uiState
+    val refreshFailure = rememberRefreshFailure(refreshState)
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
@@ -241,19 +246,14 @@ fun YarnDetailScreen(
                         }
                     }
                 is YarnDetailUiState.NotFound ->
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        item {
-                            Box(
-                                Modifier.fillMaxWidth().height(400.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    stringResource(R.string.yarn_detail_not_found),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
+                    ErrorState(
+                        kind = refreshFailure ?: ErrorKind.YarnMissing,
+                        seed = "yarn-${viewModel.yarnId}",
+                        onRetry = if (refreshFailure != null) viewModel::refresh else null,
+                        onBack = onBack,
+                        backLabel = stringResource(R.string.error_back_yarns),
+                        onHome = onHome,
+                    )
                 is YarnDetailUiState.Loaded ->
                     ReadingTextScale(textStep) {
                         YarnDetailContent(

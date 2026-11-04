@@ -118,7 +118,7 @@ fun AdminAuditScreen(onBack: () -> Unit, viewModel: AdminAuditViewModel = hiltVi
                         YarnLoader()
                     }
                 phase is AuditPhase.Failed ->
-                    AdminFailureState(phase.failure, onRetry = viewModel::retry)
+                    AdminFailureState(phase.failure, onRetry = viewModel::retry, onBack = onBack)
                 else ->
                     PullToRefreshBox(
                         isRefreshing = state.isRefreshing,

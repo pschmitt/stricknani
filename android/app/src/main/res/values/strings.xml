@@ -165,11 +165,6 @@
     <string name="categories_title">Categories</string>
     <string name="categories_empty_title">No categories yet</string>
     <string name="categories_empty_subtitle">Your categories will show up here.</string>
-    <string name="categories_offline_title">Categories need internet</string>
-    <string name="categories_offline_subtitle">Connect to the internet to see your categories.</string>
-    <string name="categories_error_title">Couldn’t load categories</string>
-    <string name="categories_error_subtitle">Something went wrong while loading categories. Try again.</string>
-    <string name="categories_retry">Retry</string>
     <string name="categories_name_label">Category name</string>
     <string name="categories_rename_description">Rename category</string>
     <string name="categories_delete_description">Delete category</string>
@@ -1019,4 +1014,53 @@
     <string name="selfhost_card_hide_prompt">Hide prompt</string>
     <!-- The same text as the README section "Set it up with an AI agent"; kept in English. -->
     <string name="setup_prompt" translatable="false">Set up a private Stricknani instance for me. Stricknani is a self-hosted knitting project manager: https://github.com/pschmitt/stricknani\n\n1. Clone the repository and read README.md and docs/install.md first. Follow them.\n2. Deploy it with Docker (build the image from the Dockerfile and keep the data volume), or with the NixOS module services.stricknani if this machine runs NixOS.\n3. Create the first administrator with \"stricknani-server create-admin EMAIL\" (stricknani-cli on NixOS). Pass the password on standard input, at least 12 characters, never on the command line.\n4. Set TRUSTED_HOSTS to the exact host name people will open, for example stricknani.example.com.\n5. Put it behind an HTTPS reverse proxy and set SESSION_COOKIE_SECURE=true. Do not expose port 7674 directly.\n6. Leave public registration off (RUST_SIGNUP_ENABLED unset). Create accounts for other people with \"create-user EMAIL\".\n7. Check /healthz, sign in at https://stricknani.example.com/app/, then tell me what you did and what is left for me (DNS, backups).</string>
+
+    <!-- Playful error states (ErrorState); the copy mirrors web/src/lib/error-copy.ts -->
+    <string name="error_not_found_kicker">404 · Page not found</string>
+    <string name="error_not_found_title">This page dropped a stitch</string>
+    <string name="error_not_found_body">We checked the whole basket: under the sofa, behind the cat, inside that suspiciously lumpy sock. Nothing. Whatever lived here has been frogged.</string>
+    <string name="error_not_found_quip_1">Knit one, purl none.</string>
+    <string name="error_not_found_quip_2">In the great ball of yarn that is the internet, this is a loose end.</string>
+    <string name="error_not_found_quip_3">Rumour has it a cat was involved.</string>
+    <string name="error_not_found_quip_4">Tip: a missing page is just a very large yarn over.</string>
+    <string name="error_project_missing_kicker">404 · Project not found</string>
+    <string name="error_project_missing_title">This project has unravelled</string>
+    <string name="error_project_missing_body">We pulled and pulled, but there is no project at the end of this thread. It may have been frogged, or it lives in someone else’s basket.</string>
+    <string name="error_project_missing_quip_1">Do not worry, ripping back is a perfectly respectable hobby.</string>
+    <string name="error_project_missing_quip_2">Somewhere, a tension swatch is laughing.</string>
+    <string name="error_yarn_missing_kicker">404 · Yarn not found</string>
+    <string name="error_yarn_missing_title">This yarn rolled away</string>
+    <string name="error_yarn_missing_body">It probably rolled under the sofa. Cats are suspects. It may also have been used up, or it was never in your stash.</string>
+    <string name="error_yarn_missing_quip_1">Stash rule one: you can never have too much, only too little.</string>
+    <string name="error_yarn_missing_quip_2">Check the pockets of your other cardigan.</string>
+    <string name="error_forbidden_kicker">403 · Not allowed</string>
+    <string name="error_forbidden_title">Hands off the stash!</string>
+    <string name="error_forbidden_body">This basket belongs to someone else. You will need an invitation, or at least a very good cookie.</string>
+    <string name="error_forbidden_quip_1">Looking is free. Touching the wool is not.</string>
+    <string name="error_server_kicker">Something went wrong</string>
+    <string name="error_server_title">Well, that got tangled</string>
+    <string name="error_server_body">Something went wrong on our side. The yarn ball rolled off the table and the server got itself wrapped up in it. Give it a moment, then try again.</string>
+    <string name="error_server_quip_1">Have you tried turning the yarn off and on again?</string>
+    <string name="error_server_quip_2">Do not worry, your projects are safe in the basket.</string>
+    <string name="error_offline_kicker">No connection</string>
+    <string name="error_offline_title">Winky lost the thread</string>
+    <string name="error_offline_body">We cannot reach Stricknani right now. Check your connection, because Wi-Fi loves hiding in the yarn basket.</string>
+    <string name="error_offline_quip_1">Wi-Fi is just invisible yarn. Check that it has not snapped.</string>
+    <string name="error_bad_gateway_kicker">502 · Bad gateway</string>
+    <string name="error_bad_gateway_title">Our server dropped the yarn</string>
+    <string name="error_bad_gateway_body">Something at the back of the shop answered with pure wool salad. It is probably tangled. We are untangling it, so try again in a minute. Your projects are safe in the basket.</string>
+    <string name="error_bad_gateway_quip_1">Have you tried turning the yarn off and on again?</string>
+    <string name="error_unavailable_kicker">503 · Service unavailable</string>
+    <string name="error_unavailable_title">Stricknani is on a yarn break</string>
+    <string name="error_unavailable_body">The server is catching its breath, or getting a fresh update. Back in a few minutes. Your projects and yarn are safe in the basket.</string>
+    <string name="error_unavailable_quip_1">Even the best knitters need a cup of tea.</string>
+    <string name="error_timeout_kicker">504 · Gateway timeout</string>
+    <string name="error_timeout_title">The server nodded off mid-row</string>
+    <string name="error_timeout_body">We waited and waited, but it fell asleep halfway through the row. Give it a gentle poke in a moment.</string>
+    <string name="error_timeout_quip_1">Zzz… knit… zzz… purl…</string>
+    <string name="error_try_again">Try again</string>
+    <string name="error_back_home">Back to Home</string>
+    <string name="error_back_projects">Back to projects</string>
+    <string name="error_back_yarns">Back to yarns</string>
+    <string name="error_go_back">Go back</string>
 </resources>

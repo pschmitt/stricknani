@@ -30,6 +30,9 @@ sealed interface CategoriesContentState {
 
     data object Offline : CategoriesContentState
 
+    /** The internet works, but the server could not be reached. */
+    data object Unreachable : CategoriesContentState
+
     data object Error : CategoriesContentState
 }
 
@@ -56,9 +59,9 @@ internal fun categoriesContentState(
             CategoriesContentState.Loading
         !initialSyncComplete && refreshState is RefreshState.Offline ->
             CategoriesContentState.Offline
-        !initialSyncComplete &&
-            (refreshState is RefreshState.Error ||
-                refreshState is RefreshState.ServerUnreachable) -> CategoriesContentState.Error
+        !initialSyncComplete && refreshState is RefreshState.ServerUnreachable ->
+            CategoriesContentState.Unreachable
+        !initialSyncComplete && refreshState is RefreshState.Error -> CategoriesContentState.Error
         !initialSyncComplete -> CategoriesContentState.Loading
         else -> CategoriesContentState.Empty
     }

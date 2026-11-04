@@ -2,7 +2,6 @@ package blue.anika.wolle.ui.categories
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,6 +42,8 @@ import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.ErrorKind
+import blue.anika.wolle.ui.common.ErrorState
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -167,26 +166,27 @@ fun CategoriesContent(
                 )
             }
         }
-        CategoriesContentState.Offline -> {
-            CategoriesStatus(
-                icon = PhosphorIcons.CloudSlash,
-                title = stringResource(R.string.categories_offline_title),
-                message = stringResource(R.string.categories_offline_subtitle),
-                retryLabel = stringResource(R.string.categories_retry),
+        CategoriesContentState.Offline ->
+            ErrorState(
+                kind = ErrorKind.Offline,
+                seed = "categories",
                 onRetry = onRetry,
-                testTag = "categories-offline",
+                modifier = Modifier.testTag("categories-offline"),
             )
-        }
-        CategoriesContentState.Error -> {
-            CategoriesStatus(
-                icon = PhosphorIcons.Tag,
-                title = stringResource(R.string.categories_error_title),
-                message = stringResource(R.string.categories_error_subtitle),
-                retryLabel = stringResource(R.string.categories_retry),
+        CategoriesContentState.Unreachable ->
+            ErrorState(
+                kind = ErrorKind.Unavailable,
+                seed = "categories",
                 onRetry = onRetry,
-                testTag = "categories-error",
+                modifier = Modifier.testTag("categories-unreachable"),
             )
-        }
+        CategoriesContentState.Error ->
+            ErrorState(
+                kind = ErrorKind.Server,
+                seed = "categories",
+                onRetry = onRetry,
+                modifier = Modifier.testTag("categories-error"),
+            )
     }
 }
 
@@ -257,40 +257,4 @@ private fun RenameCategoryDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
     )
-}
-
-@Composable
-private fun CategoriesStatus(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    message: String,
-    retryLabel: String,
-    onRetry: () -> Unit,
-    testTag: String,
-) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp).testTag(testTag),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 16.dp),
-        )
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        Button(onClick = onRetry, modifier = Modifier.padding(top = 20.dp)) { Text(retryLabel) }
-    }
 }

@@ -134,7 +134,7 @@ fun AdminAccountsScreen(
                         YarnLoader()
                     }
                 is AccountsPhase.Failed ->
-                    AdminFailureState(phase.failure, onRetry = viewModel::retry)
+                    AdminFailureState(phase.failure, onRetry = viewModel::retry, onBack = onBack)
                 AccountsPhase.Ready ->
                     PullToRefreshBox(
                         isRefreshing = state.isRefreshing,

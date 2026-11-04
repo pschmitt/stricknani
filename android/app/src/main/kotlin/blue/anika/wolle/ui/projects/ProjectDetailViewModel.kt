@@ -72,7 +72,7 @@ constructor(
     historyRepository: HistoryRepository,
 ) : ViewModel() {
 
-    private val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
+    val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()

@@ -21,8 +21,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
@@ -275,6 +277,7 @@ internal fun MascotCanvas(
     sway: () -> Float,
     busy: Boolean = false,
     cue: MascotCue? = null,
+    mood: MascotMood = MascotMood.Happy,
 ) {
     val rand = remember { Random.Default.let { r -> { r.nextFloat() } } }
     val anim = remember { MascotAnim(rand) }
@@ -356,6 +359,18 @@ internal fun MascotCanvas(
                 delay(650)
                 droop.animateTo(0f, tween(450))
             }
+        }
+    }
+
+    // A lasting mood loops slowly (tilt, droop, breathing, drifting Zs and tears). Reduced motion
+    // keeps the face and the extras but holds them at rest.
+    val moodPhase = remember { Animatable(0f) }
+    LaunchedEffect(mood, reduced) {
+        moodPhase.snapTo(0f)
+        if (mood == MascotMood.Happy || reduced) return@LaunchedEffect
+        while (isActive) {
+            moodPhase.snapTo(0f)
+            moodPhase.animateTo(1f, tween(mood.periodMillis, easing = LinearEasing))
         }
     }
 
@@ -471,15 +486,25 @@ internal fun MascotCanvas(
                     val sad = droop.value
                     rotate -= 7f * sad
                     lift += 4.dp.toPx() * sad - 14.dp.toPx() * hop.value
+                    val moodT = moodPhase.value
+                    rotate += moodTilt(mood, moodT)
+                    lift += 2.5.dp.toPx() * moodDroop(mood, moodT)
                     rotationZ = rotate
                     translationY = lift
                     transformOrigin = TransformOrigin(0.5f, 0.85f)
-                    scaleY = 1f - 0.1f * sad
+                    scaleY = 1f - 0.1f * sad + moodBreath(mood, moodT)
                     scaleX = 1f + 0.05f * sad
                 }
                 .then(interaction)
     ) {
-        drawMascot(anim, density.density, size.toPx() / 108f, 1f - 0.4f * flash.value)
+        drawMascot(
+            anim,
+            density.density,
+            size.toPx() / 108f,
+            1f - 0.4f * flash.value,
+            mood,
+            moodPhase.value,
+        )
     }
 }
 
@@ -487,7 +512,14 @@ private const val BUSY_LOOP_MILLIS = 1100
 
 private fun HapticFeedback.tick() = performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
-private fun DrawScope.drawMascot(anim: MascotAnim, dpScale: Float, u: Float, alpha: Float) {
+private fun DrawScope.drawMascot(
+    anim: MascotAnim,
+    dpScale: Float,
+    u: Float,
+    alpha: Float,
+    mood: MascotMood,
+    moodT: Float,
+) {
     val reaction = anim.reaction
     val t = anim.reactionT
     // Reaction motion in 108-units.
@@ -543,12 +575,13 @@ private fun DrawScope.drawMascot(anim: MascotAnim, dpScale: Float, u: Float, alp
         scale(scaleX, scaleY, ground)
         rotate(rotation, pivot)
     }) {
-        drawBall(alpha, lx, ly, anim, giggle, eyes = eyePose(reaction, t, anim.dizzy))
+        drawBall(alpha, lx, ly, anim, giggle, eyePose(reaction, t, anim.dizzy), mood)
     }
 
     withTransform({ scale(u, u, Offset.Zero) }) {
         if (reaction == MascotReaction.Hearts) drawHearts(anim.hearts, t)
         if (anim.confettiT >= 0f) drawConfetti(anim.confettiT)
+        if (mood != MascotMood.Happy) drawMoodExtra(mood, moodT, alpha)
     }
 }
 
@@ -559,6 +592,7 @@ private fun DrawScope.drawBall(
     anim: MascotAnim,
     giggle: Float,
     eyes: Eyes,
+    mood: MascotMood,
 ) {
     val center = Offset(CENTER, CENTER)
     drawCircle(Ball, RADIUS, center, alpha)
@@ -587,29 +621,33 @@ private fun DrawScope.drawBall(
         }
     }
 
-    // Eyes.
     val ex = lx * 3.2f
     val ey = ly * 2.4f
-    drawEye(
-        eyes.left,
-        45f + ex,
-        51f + ey,
-        alpha,
-        if (eyes.left == EyeShape.Dot) 1f - 0.88f * anim.blink else 1f,
-    )
-    drawEye(eyes.right, 62.5f + ex, 51f + ey, alpha, 1f)
-
-    // Smile.
     val mx = lx * 2.2f
     val my = ly * 1.6f
-    val smile =
-        Path().apply {
-            moveTo(45f - 2f * giggle + mx, 60f + my)
-            quadraticTo(54f + mx, 74f + 5f * giggle + my, 63f + 2f * giggle + mx, 60f + my)
-            close()
-        }
-    drawPath(smile, Ink, alpha, Fill)
-    drawPath(smile, Ink, alpha, Stroke(2f, join = StrokeJoin.Round))
+    if (mood != MascotMood.Happy) {
+        translate(ex, ey) { drawMoodEyes(mood, alpha) }
+        translate(mx, my) { drawMoodMouth(mood, alpha) }
+    } else {
+        drawEye(
+            eyes.left,
+            45f + ex,
+            51f + ey,
+            alpha,
+            if (eyes.left == EyeShape.Dot) 1f - 0.88f * anim.blink else 1f,
+        )
+        drawEye(eyes.right, 62.5f + ex, 51f + ey, alpha, 1f)
+
+        // Smile.
+        val smile =
+            Path().apply {
+                moveTo(45f - 2f * giggle + mx, 60f + my)
+                quadraticTo(54f + mx, 74f + 5f * giggle + my, 63f + 2f * giggle + mx, 60f + my)
+                close()
+            }
+        drawPath(smile, Ink, alpha, Fill)
+        drawPath(smile, Ink, alpha, Stroke(2f, join = StrokeJoin.Round))
+    }
 
     // Cheeks, rosier when giggling.
     val cx = lx * 1.6f
@@ -703,3 +741,182 @@ private fun DrawScope.drawConfetti(tt: Float) {
         )
     }
 }
+
+private fun DrawScope.moodStroke(path: Path, width: Float, alpha: Float, color: Color = Ink) =
+    drawPath(path, color, alpha, Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+private fun DrawScope.moodDot(cx: Float, cy: Float, r: Float, alpha: Float) =
+    drawCircle(Ink, r, Offset(cx, cy), alpha)
+
+private fun line(x1: Float, y1: Float, x2: Float, y2: Float) =
+    Path().apply {
+        moveTo(x1, y1)
+        lineTo(x2, y2)
+    }
+
+private fun curve(x1: Float, y1: Float, cx: Float, cy: Float, x2: Float, y2: Float) =
+    Path().apply {
+        moveTo(x1, y1)
+        quadraticTo(cx, cy, x2, y2)
+    }
+
+private fun cross(cx: Float, cy: Float) =
+    Path().apply {
+        moveTo(cx - 3f, cy - 3f)
+        lineTo(cx + 3f, cy + 3f)
+        moveTo(cx + 3f, cy - 3f)
+        lineTo(cx - 3f, cy + 3f)
+    }
+
+/** The eyes of a non-happy mood, in the same 108-unit frame as the happy ones. */
+private fun DrawScope.drawMoodEyes(mood: MascotMood, alpha: Float) {
+    when (mood) {
+        MascotMood.Confused -> {
+            moodDot(45f, 51f, 4.4f, alpha)
+            moodDot(62.5f, 51.5f, 2.6f, alpha)
+            moodStroke(curve(57f, 44f, 62f, 41f, 67f, 45f), 2.4f, alpha)
+        }
+        MascotMood.Dizzy -> {
+            moodStroke(cross(45f, 51f), 2.6f, alpha)
+            moodStroke(cross(62.5f, 51f), 2.6f, alpha)
+        }
+        MascotMood.Sad -> {
+            moodDot(45f, 52f, 3.8f, alpha)
+            moodDot(63f, 52f, 3.8f, alpha)
+            moodStroke(line(39.5f, 49f, 49f, 45.5f), 2.4f, alpha)
+            moodStroke(line(68.5f, 49f, 59f, 45.5f), 2.4f, alpha)
+        }
+        MascotMood.Sleepy -> {
+            moodStroke(curve(40.5f, 51f, 45f, 56f, 49.5f, 51f), 3.6f, alpha)
+            moodStroke(curve(58f, 51f, 62.5f, 56f, 67f, 51f), 3.6f, alpha)
+        }
+        MascotMood.Tired -> {
+            moodStroke(line(41f, 52f, 49f, 52f), 3.6f, alpha)
+            moodStroke(line(58f, 52f, 67f, 52f), 3.6f, alpha)
+        }
+        MascotMood.Happy -> Unit
+    }
+}
+
+private fun DrawScope.drawMoodMouth(mood: MascotMood, alpha: Float) {
+    when (mood) {
+        MascotMood.Confused ->
+            moodStroke(
+                Path().apply {
+                    moveTo(47f, 66f)
+                    quadraticTo(50.5f, 62f, 54f, 66f)
+                    quadraticTo(57.5f, 70f, 61f, 66f)
+                },
+                2.6f,
+                alpha,
+            )
+        MascotMood.Dizzy ->
+            moodStroke(
+                Path().apply {
+                    moveTo(46f, 65f)
+                    quadraticTo(50f, 61f, 54f, 65f)
+                    quadraticTo(58f, 69f, 62f, 65f)
+                },
+                2.8f,
+                alpha,
+            )
+        MascotMood.Sad -> moodStroke(curve(46f, 67f, 54f, 59f, 62f, 67f), 2.8f, alpha)
+        MascotMood.Sleepy -> drawOval(Ink, Offset(51f, 61.4f), Size(6f, 7.2f), alpha)
+        MascotMood.Tired -> moodStroke(line(48f, 65f, 60f, 65f), 2.8f, alpha)
+        MascotMood.Happy -> Unit
+    }
+}
+
+private fun teardrop(cx: Float, top: Float) =
+    Path().apply {
+        moveTo(cx, top)
+        quadraticTo(cx - 3.5f, top + 5f, cx, top + 7.5f)
+        quadraticTo(cx + 3.5f, top + 5f, cx, top)
+        close()
+    }
+
+private val TearBlue = Color(0xFF7FD0FF)
+
+/**
+ * What hovers beside the ball for a mood, in 108-units and unrotated: a question mark, a loose
+ * thread, a tear, floating Zs or a sweat drop. [t] is the loop position `0..1`.
+ */
+private fun DrawScope.drawMoodExtra(mood: MascotMood, t: Float, alpha: Float) {
+    val wave = sin(2f * PI.toFloat() * t)
+    // A drop falls over the first part of the loop, then fades before it starts again.
+    val fall = (t / 0.8f).coerceIn(0f, 1f)
+    val dropAlpha = if (t < 0.8f) 1f else (1f - (t - 0.8f) / 0.2f)
+    when (mood) {
+        MascotMood.Confused -> {
+            val pulse = 1f + 0.06f * wave
+            withTransform({ scale(pulse, pulse, Offset(76.5f, 30f)) }) {
+                moodStroke(
+                    Path().apply {
+                        moveTo(71f, 26f)
+                        cubicTo(71f, 19.5f, 82f, 19.5f, 82f, 26f)
+                        cubicTo(82f, 30.5f, 76.5f, 31f, 76.5f, 35.5f)
+                    },
+                    3.4f,
+                    alpha,
+                    Wrap,
+                )
+                drawCircle(Wrap, 2f, Offset(76.5f, 40.5f), alpha)
+            }
+        }
+        MascotMood.Dizzy ->
+            translate(left = 2f * wave) {
+                moodStroke(
+                    Path().apply {
+                        moveTo(66f, 78f)
+                        quadraticTo(80f, 82f, 76f, 92f)
+                        quadraticTo(72f, 100f, 62f, 100f)
+                        quadraticTo(66f, 104f, 74f, 108f)
+                    },
+                    3.4f,
+                    alpha,
+                    Wrap,
+                )
+            }
+        MascotMood.Sad -> {
+            translate(top = 9f * fall * fall) {
+                drawPath(teardrop(40f, 57f), TearBlue, alpha * dropAlpha.coerceIn(0f, 1f))
+            }
+            drawPath(
+                curve(70f, 79f, 76f, 84f, 74f, 90f),
+                Wrap,
+                alpha,
+                Stroke(
+                    3.4f,
+                    cap = StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f, 5.5f)),
+                ),
+            )
+        }
+        MascotMood.Tired ->
+            translate(top = 7f * fall * fall) {
+                drawPath(teardrop(72f, 39f), TearBlue, alpha * dropAlpha.coerceIn(0f, 1f))
+            }
+        MascotMood.Sleepy -> {
+            val rise = -3f * (1f - cos(2f * PI.toFloat() * t)) / 2f
+            val fade = 0.65f + 0.35f * (1f + wave) / 2f
+            translate(top = rise) {
+                drawZ(72f, 36f, 5f, alpha * fade)
+                drawZ(80f, 27f, 3.6f, alpha * fade)
+            }
+        }
+        MascotMood.Happy -> Unit
+    }
+}
+
+private fun DrawScope.drawZ(cx: Float, cy: Float, half: Float, alpha: Float) =
+    moodStroke(
+        Path().apply {
+            moveTo(cx - half, cy - half)
+            lineTo(cx + half, cy - half)
+            lineTo(cx - half, cy + half)
+            lineTo(cx + half, cy + half)
+        },
+        2.4f,
+        alpha,
+        Wrap,
+    )

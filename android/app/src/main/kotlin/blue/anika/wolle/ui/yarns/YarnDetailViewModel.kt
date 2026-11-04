@@ -71,7 +71,7 @@ constructor(
     historyRepository: HistoryRepository,
 ) : ViewModel() {
 
-    private val yarnId = savedStateHandle.toRoute<Route.YarnDetail>().yarnId
+    val yarnId = savedStateHandle.toRoute<Route.YarnDetail>().yarnId
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()

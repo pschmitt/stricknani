@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.mascot.MascotCanvas
 import blue.anika.wolle.ui.common.mascot.MascotCue
+import blue.anika.wolle.ui.common.mascot.MascotMood
 
 /**
  * A dashed "running stitch" just inside the edge, like a patch sewn onto fabric - the app's
@@ -87,6 +88,8 @@ fun Mascot(
     busy: Boolean = false,
     // A one-off emotion; each new instance plays once.
     cue: MascotCue? = null,
+    // A lasting expression (error screens); Happy is the normal face.
+    mood: MascotMood = MascotMood.Happy,
 ) {
     val reduced = animationsDisabled()
     val transition = rememberInfiniteTransition(label = "mascot")
@@ -108,6 +111,7 @@ fun Mascot(
         sway = { sway },
         busy = busy,
         cue = cue,
+        mood = mood,
     )
 }
 

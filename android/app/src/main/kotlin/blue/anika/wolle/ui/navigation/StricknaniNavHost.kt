@@ -352,6 +352,12 @@ fun StricknaniNavHost(
                 screen<Route.ProjectDetail>(motion) {
                     ProjectDetailScreen(
                         onBack = { navController.navigateUp() },
+                        onHome = {
+                            navController.navigate(Route.Home) {
+                                popUpTo(Route.Home) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onEditClick = { id -> navController.navigate(Route.ProjectEditor(id)) },
                         onEditSection = { id, focus ->
@@ -367,6 +373,12 @@ fun StricknaniNavHost(
                 screen<Route.YarnDetail>(motion) {
                     YarnDetailScreen(
                         onBack = { navController.navigateUp() },
+                        onHome = {
+                            navController.navigate(Route.Home) {
+                                popUpTo(Route.Home) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onEditClick = { id -> navController.navigate(Route.YarnEditor(id)) },
                         onEditSection = { id, focus ->

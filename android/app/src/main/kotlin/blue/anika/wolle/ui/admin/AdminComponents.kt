@@ -2,15 +2,9 @@ package blue.anika.wolle.ui.admin
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,16 +14,13 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.repository.AdminFailure
-import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.ErrorState
+import blue.anika.wolle.ui.common.errorKind
 import coil3.compose.SubcomposeAsyncImage
 
 @StringRes
@@ -47,13 +38,6 @@ fun AdminFailure.messageRes(): Int =
         AdminFailure.Other -> R.string.admin_error_other
     }
 
-fun AdminFailure.icon(): ImageVector =
-    when (this) {
-        AdminFailure.Offline -> PhosphorIcons.CloudSlash
-        AdminFailure.NotAllowed -> PhosphorIcons.LockKey
-        else -> PhosphorIcons.SmileySad
-    }
-
 /** The colour an [AuditTone] resolves to in the current (light or dark) theme. */
 @Composable
 fun AuditTone.color(): Color {
@@ -69,34 +53,24 @@ fun AuditTone.color(): Color {
 }
 
 /**
- * A friendly full-area message with a retry button, for a screen that could not load: offline, no
- * permission or a server hiccup.
+ * The full-area panel for a screen that could not load: offline, no permission, a missing record or
+ * a server hiccup. A retry button shows where retrying can help; [onBack] always offers a way out.
  */
 @Composable
-fun AdminFailureState(failure: AdminFailure, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            failure.icon(),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(48.dp),
-        )
-        Text(
-            stringResource(failure.messageRes()),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 16.dp),
-        )
-        if (failure != AdminFailure.NotAllowed) {
-            Button(onClick = onRetry, modifier = Modifier.padding(top = 20.dp)) {
-                Text(stringResource(R.string.admin_try_again))
-            }
-        }
-    }
+fun AdminFailureState(
+    failure: AdminFailure,
+    onRetry: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val kind = failure.errorKind()
+    ErrorState(
+        kind = kind,
+        seed = failure::class.simpleName ?: kind.name,
+        modifier = modifier,
+        onRetry = if (kind.retryable) onRetry else null,
+        onBack = onBack,
+    )
 }
 
 /**

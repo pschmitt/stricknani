@@ -42,7 +42,7 @@ class CategoriesScreenTest {
             }
         }
         composeRule.onNodeWithTag("categories-offline").assertIsDisplayed()
-        composeRule.onNodeWithText("Retry").performClick()
+        composeRule.onNodeWithText("Try again").performClick()
         assertTrue(retries == 1)
 
         composeRule.setContent {
@@ -51,7 +51,7 @@ class CategoriesScreenTest {
             }
         }
         composeRule.onNodeWithTag("categories-error").assertIsDisplayed()
-        composeRule.onNodeWithText("Retry").performClick()
+        composeRule.onNodeWithText("Try again").performClick()
         assertTrue(retries == 2)
     }
 

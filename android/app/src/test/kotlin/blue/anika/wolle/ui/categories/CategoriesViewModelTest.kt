@@ -28,6 +28,10 @@ class CategoriesViewModelTest {
             categoriesContentState(emptyList(), false, RefreshState.Offline),
         )
         assertEquals(
+            CategoriesContentState.Unreachable,
+            categoriesContentState(emptyList(), false, RefreshState.ServerUnreachable),
+        )
+        assertEquals(
             CategoriesContentState.Error,
             categoriesContentState(emptyList(), false, RefreshState.Error),
         )
