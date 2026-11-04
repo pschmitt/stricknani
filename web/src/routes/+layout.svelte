@@ -22,7 +22,6 @@
   import SignInForm from "#lib/components/SignInForm.svelte";
   import SharedButton from "#lib/components/Button.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
-  import AccountMenu from "#lib/components/AccountMenu.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { isMoreActive, isPathActive } from "#lib/more-nav.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
@@ -293,13 +292,20 @@
         {/each}
       </nav>
       <nav class="secondary-nav rail-footer" aria-label={t("Account", locale)}>
-        <AccountMenu
-          email={user.email}
-          {avatarUrl}
-          isAdmin={user.is_admin === true}
-          {canManageAdmin}
-          {locale}
-        />
+        <a
+          class="rail-account"
+          aria-label={t("Account", locale)}
+          class:active={isActive("/account")}
+          aria-current={isActive("/account") ? "page" : undefined}
+          data-tone="account"
+          href={linkTo("/account")}
+        >
+          <UserAvatar {avatarUrl} name={user.email} />
+          <span class="rail-account-text">
+            <span class="rail-account-title">{t("Account", locale)}</span>
+            <span class="rail-account-email">{user.email}</span>
+          </span>
+        </a>
         {#if canManageAdmin}
           <a
             class:active={isActive("/admin/users") || isActive("/admin/audit")}
@@ -385,6 +391,63 @@
 {/if}
 
 <style>
+  .rail-account {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.35rem 0.5rem 0.35rem 12px;
+    border: 0;
+    border-radius: var(--radius-xs);
+    color: var(--ink);
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .rail-account:hover {
+    background: var(--accent-wash);
+  }
+
+  .rail-account:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .rail-account.active :global(.user-avatar) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+
+  .rail-account :global(.user-avatar) {
+    flex-basis: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.8rem;
+  }
+
+  .rail-account-text {
+    display: grid;
+    min-width: 0;
+  }
+
+  .rail-account-title {
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .rail-account-email {
+    overflow: hidden;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .public-tool-shell {
     min-height: 100svh;
     background: var(--canvas);

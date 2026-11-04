@@ -23,7 +23,7 @@ import {
   REMOVE_PICTURE_BUTTON_NAME,
   UPLOAD_PICTURE_BUTTON_NAME,
   accountSignOutButton,
-  assertAccountMenuTrigger,
+  assertAccountLink,
   assertHeaderParentLink,
   assertMobileAppHeader,
   assertShellAvatar,
@@ -31,7 +31,6 @@ import {
   exerciseGaugeCalculator,
   measureLibraryDensity,
   openAccountFromProfile,
-  openAccountMenu,
   prepareScreenshot,
   saveRemoteProjectVersion,
   visibleHeights,
@@ -432,10 +431,9 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   );
   await page.setViewportSize({ width: 1280, height: 844 });
   await projectName.fill("Account navigation draft");
-  await assertAccountMenuTrigger(page, "desktop");
-  const accountLink = await openAccountMenu(page);
+  const accountEntry = await assertAccountLink(page, "desktop");
   markStage("checking the dirty-editor guard on Account navigation");
-  await clickAndHandleDialog(page, accountLink, { accept: false });
+  await clickAndHandleDialog(page, accountEntry, { accept: false });
   check(
     urlPath(page.url()).endsWith(`${editorPath}/edit`) &&
       (await projectName.inputValue()) === "Account navigation draft",

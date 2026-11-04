@@ -21,6 +21,8 @@
     type ServerBuild,
   } from "#lib/about.ts";
   import Button from "#lib/components/Button.svelte";
+  import ActionLabel from "#lib/components/ActionLabel.svelte";
+  import QrCode from "#lib/components/QrCode.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
   import {
@@ -167,17 +169,6 @@
       external: true,
     },
     {
-      icon: "download",
-      tone: "app",
-      label: t("Get the Android app", locale),
-      description: t(
-        "Knit offline with the Stricknani app for Android.",
-        locale,
-      ),
-      href: androidApp.url,
-      external: true,
-    },
-    {
       icon: "help",
       tone: "privacy",
       label: t("Privacy Policy", locale),
@@ -294,6 +285,41 @@
           )}
         {/if}
       </p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="android-title">
+    <header class="card__header">
+      <span class="card__icon card__icon--version" aria-hidden="true"
+        ><NavIcon name="download" /></span
+      >
+      <h2 id="android-title">{t("Get the Android app", locale)}</h2>
+    </header>
+    <p class="card__intro">
+      {t("Knit offline with the Stricknani app for Android.", locale)}
+    </p>
+    <div class="android-qr">
+      <QrCode
+        value={androidApp.url}
+        label={t("QR code for the Android app download", locale)}
+      />
+    </div>
+    <p class="android-hint">
+      {t("Scan with your phone to get the app.", locale)}
+    </p>
+    <div class="copy-row">
+      <a
+        class="ui-button ui-button--primary ui-button--md"
+        href={androidApp.url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <ActionLabel icon="download">
+          {androidApp.kind === "play"
+            ? t("Get it on Google Play", locale)
+            : t("Download APK", locale)}
+        </ActionLabel>
+      </a>
     </div>
   </section>
 
@@ -417,6 +443,22 @@
 </article>
 
 <style>
+  .android-qr {
+    box-sizing: border-box;
+    width: min(100%, 14rem);
+    margin: 0.75rem auto 0;
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+  }
+
+  .android-hint {
+    margin: 0.75rem 0 0;
+    color: var(--ink-muted);
+    text-align: center;
+  }
+
   .about {
     display: grid;
     width: 100%;

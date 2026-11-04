@@ -12,7 +12,7 @@ import {
 } from "../lib/common";
 import {
   HOME_GREETING_NAME,
-  assertAndroidAppDialog,
+  assertAndroidAppCard,
   assertHeaderParentLink,
   assertMobileAppHeader,
   assertStepInUsableViewport,
@@ -801,11 +801,6 @@ async function checkMoreRoute(ctx: UiCtx): Promise<void> {
     ["Categories", "/categories"],
     ["Gauge calculator", "/gauge"],
   ];
-  const androidCard = moreLinks.locator("a[target='_blank']", {
-    has: page.locator(".ui-navigation-tile__title", {
-      hasText: "Android app",
-    }),
-  });
   const adminCards: Array<[string, string]> = [["Admin", "/admin/users"]];
   const adminCardCounts: number[] = [];
   for (const [, href] of adminCards) {
@@ -863,18 +858,19 @@ async function checkMoreRoute(ctx: UiCtx): Promise<void> {
   });
   const profileLinks =
     (await page
-      .locator(".desktop-rail button.rail-account[aria-haspopup='dialog']")
+      .locator(".desktop-rail a.rail-account[href$='/app/account']")
       .count()) === 1;
   const duplicateAccounts =
     (await accountLink.count()) +
-    (await page.locator(".secondary-nav a[href$='/account']").count());
+    (await page
+      .locator(".secondary-nav a[href$='/account']:not(.rail-account)")
+      .count());
   const staleNotices = await page
     .getByText("This area is not connected yet.")
     .count();
   if (
     (await moreLinks.locator("a").count()) < moreCards.length + 1 ||
-    (await androidCard.count()) !== 1 ||
-    !((await androidCard.getAttribute("rel")) ?? "").includes("noopener") ||
+    (await moreLinks.locator("a[target='_blank']").count()) !== 0 ||
     iconFailures !== 0 ||
     !profileLinks ||
     duplicateAccounts !== 0 ||
@@ -894,10 +890,9 @@ async function checkMoreRoute(ctx: UiCtx): Promise<void> {
         `stale_notice=${staleNotices})`,
     );
   }
-  // The Android app dialog belongs to the desktop account menu in the sidebar;
-  // phones have no such menu (the More tab and page carry the account).
+  // The Android app QR code lives on the About page (desktop sidebar link).
   const viewport = page.viewportSize();
   await page.setViewportSize({ width: 1280, height: 800 });
-  await assertAndroidAppDialog(page);
+  await assertAndroidAppCard(page);
   if (viewport) await page.setViewportSize(viewport);
 }

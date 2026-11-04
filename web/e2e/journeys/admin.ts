@@ -1030,12 +1030,12 @@ async function assertMoreNavigation(
   ];
   if (opts.isAdmin) expectedCards.push(["Admin", "/admin/users"]);
   expectedCards.push(["About", "/about"]);
-  // The external Android app link is the one tile without a sidebar entry; the
-  // Privacy Policy is linked from About only. About is always the last tile.
+  // The Android app lives on About only, as does the Privacy Policy. About is
+  // always the last tile.
   check(
-    // Plus the Android tile and the Create tile (Create is first and has no
-    // sidebar entry of its own in this group: it is in the primary group).
-    (await cards.locator("a").count()) === expectedCards.length + 2 &&
+    // Plus the Create tile (Create is first and has no sidebar entry of its
+    // own in this group: it is in the primary group).
+    (await cards.locator("a").count()) === expectedCards.length + 1 &&
       (
         (await cards
           .locator("a")
@@ -1054,7 +1054,7 @@ async function assertMoreNavigation(
       (await cards.locator("a[href$='/admin/audit']").count()) === 0 &&
       (await cards.locator("a[href$='/privacy']").count()) === 0 &&
       (await cards.locator("a[href$='/about']").count()) === 1 &&
-      (await cards.locator("a[target='_blank']").count()) === 1 &&
+      (await cards.locator("a[target='_blank']").count()) === 0 &&
       (await cards.locator("a[href$='/imports']").count()) === 0 &&
       (await page.locator(".secondary-nav a[href$='/imports']").count()) === 0,
     "More or the sidebar More section contains unexpected links",
@@ -1063,12 +1063,14 @@ async function assertMoreNavigation(
     (await cards
       .getByRole("link", { name: "Account", exact: true })
       .count()) === 0 &&
-      (await page.locator(".secondary-nav a[href$='/account']").count()) === 0,
+      (await page
+        .locator(".secondary-nav a[href$='/account']:not(.rail-account)")
+        .count()) === 0,
     "More or the sidebar More section contains a duplicate Account link",
   );
   check(
     (await page
-      .locator(".desktop-rail button.rail-account[aria-haspopup='dialog']")
+      .locator(".desktop-rail a.rail-account[href$='/app/account']")
       .count()) === 1,
     "Account is unavailable from the profile links",
   );

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
-  import { androidAction } from "#lib/app-links.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
@@ -8,7 +7,6 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
-  const androidApp = androidAction();
   const user = $derived(session.data?.user ?? null);
 </script>
 
@@ -41,17 +39,6 @@
       title={t("Gauge calculator", locale)}
       description={t(
         "Turn swatch measurements into stitch and row counts.",
-        locale,
-      )}
-    />
-    <NavigationTile
-      href={androidApp.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      icon="download"
-      title={t("Android app", locale)}
-      description={t(
-        "Knit offline with the Stricknani app for Android.",
         locale,
       )}
     />

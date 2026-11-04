@@ -104,12 +104,12 @@ export const UPLOAD_PICTURE_BUTTON_NAME = /^(?:Upload picture|Bild hochladen)$/;
 export const REMOVE_PICTURE_BUTTON_NAME = /^(?:Remove picture|Bild entfernen)$/;
 
 /**
- * The desktop sidebar's Account entry, which opens the account menu. Phones
- * have no such control: the More tab carries the avatar instead.
+ * The desktop sidebar's Account entry: a plain link to the Account page.
+ * Phones have no such control: the More tab carries the avatar instead.
  * Synchronous (no browser round trip), unlike the other helpers.
  */
-export function accountMenuTrigger(page: Page): Locator {
-  return page.locator(".desktop-rail .rail-account");
+export function accountLink(page: Page): Locator {
+  return page.locator(".desktop-rail a.rail-account");
 }
 
 /** The phone bottom bar's More tab (carries the avatar when one exists). */
@@ -117,92 +117,52 @@ export function phoneMoreTab(page: Page): Locator {
   return page.locator(".mobile-navigation a.more-tab");
 }
 
-export async function assertAccountMenuTrigger(
+export async function assertAccountLink(
   page: Page,
   context: string,
 ): Promise<Locator> {
-  const trigger = accountMenuTrigger(page);
+  const link = accountLink(page);
   check(
-    (await trigger.isVisible()) &&
-      (await trigger.evaluate((element) => element.tagName === "BUTTON")) &&
+    (await link.isVisible()) &&
+      ((await link.getAttribute("href")) ?? "").endsWith("/app/account") &&
       ACCOUNT_HEADING_NAME.test(
-        (await trigger.getAttribute("aria-label")) ?? "",
+        (await link.getAttribute("aria-label")) ?? "",
       ) &&
-      (await trigger.getAttribute("aria-haspopup")) === "dialog" &&
-      (await trigger.getAttribute("aria-expanded")) === "false",
-    `the ${context} Account entry is not an accessible account menu button`,
+      (await link.getAttribute("aria-haspopup")) === null,
+    `the ${context} Account entry is not a plain link to the Account page`,
   );
-  return trigger;
+  return link;
 }
 
-/** Open the header account menu and return its Account settings item. */
-export async function openAccountMenu(page: Page): Promise<Locator> {
-  const trigger = accountMenuTrigger(page);
-  await trigger.click();
-  check(
-    (await trigger.getAttribute("aria-expanded")) === "true",
-    "the profile button did not open the account menu",
-  );
-  const item = page.getByRole("menuitem", { name: ACCOUNT_SETTINGS_ITEM_NAME });
-  await item.waitFor({ state: "visible", timeout: 10_000 });
-  return item;
-}
-
-/** The account menu has no About link or inline QR; the app item opens a dialog. */
-export async function assertAndroidAppDialog(page: Page): Promise<void> {
-  const trigger = accountMenuTrigger(page);
-  await openAccountMenu(page);
+/**
+ * The About page shows the Android app QR code and APK link inline (no
+ * dialog), and the sidebar has no Android app entry.
+ */
+export async function assertAndroidAppCard(page: Page): Promise<void> {
   check(
     (await page
-      .getByRole("menuitem", { name: "About", exact: true })
-      .count()) === 0 &&
-      (await page.locator(".account-menu-panel svg.qr-code").count()) === 0,
-    "the account menu still has an About link or an inline QR code",
+      .locator(".desktop-rail")
+      .getByText("Android app", { exact: false })
+      .count()) === 0,
+    "the sidebar still has an Android app entry",
   );
-  await page.getByRole("menuitem", { name: "Get the Android app" }).click();
-  const dialog = page.getByRole("dialog", { name: "Get the Android app" });
-  await dialog.waitFor({ state: "visible", timeout: 10_000 });
-  const download = dialog.getByRole("link", { name: "Download APK" });
-  // The menu plays a short exit animation before it unmounts; wait for that.
-  await page
-    .locator(".account-menu-panel")
-    .waitFor({ state: "detached", timeout: 10_000 });
+  await page.locator(".desktop-rail a[href$='/app/about']").click();
+  await page.waitForURL("**/app/about", { timeout: 10_000 });
+  const card = page.locator("section.card", {
+    has: page.getByRole("heading", { name: "Get the Android app" }),
+  });
+  await card.waitFor({ state: "visible", timeout: 10_000 });
+  const download = card.getByRole("link", { name: "Download APK" });
   check(
-    (await page.locator(".account-menu-panel").count()) === 0 &&
-      (await dialog.locator("svg.qr-code").count()) === 1 &&
-      ((await download.getAttribute("href")) ?? "").includes("github.com") &&
-      (await dialog
-        .getByRole("button", { name: "Connect the app" })
-        .count()) === 1,
-    "the Android app dialog lacks its QR code, APK link or Connect action",
-  );
-  await page.keyboard.press("Escape");
-  await dialog.waitFor({ state: "hidden", timeout: 10_000 });
-  // The dialog's close event (which restores focus) is dispatched in a task
-  // after the dialog stops being visible; wait for it instead of reading once.
-  const focusReturned = await trigger
-    .evaluate(
-      (node) =>
-        new Promise<boolean>((resolve) => {
-          const deadline = Date.now() + 5_000;
-          const poll = (): void => {
-            if (node === document.activeElement) resolve(true);
-            else if (Date.now() > deadline) resolve(false);
-            else requestAnimationFrame(poll);
-          };
-          poll();
-        }),
-    )
-    .catch(() => false);
-  check(
-    focusReturned,
-    "closing the Android app dialog did not return focus to the account button",
+    (await card.locator("svg.qr-code").count()) === 1 &&
+      ((await download.getAttribute("href")) ?? "").includes("github.com"),
+    "the About page lacks the Android app QR code or APK link",
   );
 }
 
 export async function openAccountSettings(page: Page): Promise<void> {
-  if (await accountMenuTrigger(page).isVisible()) {
-    await (await openAccountMenu(page)).click();
+  if (await accountLink(page).isVisible()) {
+    await accountLink(page).click();
   } else {
     // Phones: More tab, then the Account settings entry on the More page.
     await phoneMoreTab(page).click();
@@ -1000,7 +960,7 @@ export async function assertMobileAppHeader(page: Page): Promise<void> {
 }
 
 export async function assertDesktopAccountTarget(page: Page): Promise<void> {
-  const accountTarget = await assertAccountMenuTrigger(page, "desktop");
+  const accountTarget = await assertAccountLink(page, "desktop");
   const dimensions: unknown = await accountTarget.evaluate((node) => ({
     width: node.getBoundingClientRect().width,
     height: node.getBoundingClientRect().height,
