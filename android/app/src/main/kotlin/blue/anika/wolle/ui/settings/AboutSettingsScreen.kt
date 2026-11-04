@@ -203,7 +203,8 @@ internal fun AboutSettingsScreen(
 
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
     val serverVersion = serverMeta?.let { "${it.version} (${it.buildId})" } ?: unavailable
-    val appVersion = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+    // The version code only orders Play uploads; it lives on the developer card.
+    val appVersion = "v${BuildConfig.VERSION_NAME}"
     val revision = BuildRevision.parse(BuildConfig.GIT_REVISION)
     val build = revision?.display
     val copyText = buildString {
