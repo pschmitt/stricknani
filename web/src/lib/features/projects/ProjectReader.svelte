@@ -1248,10 +1248,14 @@
           >
           {#if safeExternalUrl(project.link)}
             <a
+              class="source-link"
               href={safeExternalUrl(project.link)}
               target="_blank"
               rel="noopener noreferrer"
             >
+              <span class="source-link__icon" aria-hidden="true"
+                ><NavIcon name="notebook" /></span
+              >
               {t("Open original pattern", locale)} ↗
             </a>
           {:else}
@@ -1261,10 +1265,14 @@
           {/if}
           {#if safeExternalUrl(project.link_archive)}
             <a
+              class="source-link"
               href={safeExternalUrl(project.link_archive)}
               target="_blank"
               rel="noopener noreferrer"
             >
+              <span class="source-link__icon" aria-hidden="true"
+                ><NavIcon name="history" /></span
+              >
               {t("Open archived copy", locale)} ↗
             </a>
           {/if}
@@ -2175,5 +2183,28 @@
     :global(.step-image) {
       transition: none;
     }
+  }
+
+  /* Pattern source links get the same tinted icon chips as the headings. */
+  .source-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .source-link__icon {
+    display: inline-grid;
+    width: 1.8rem;
+    height: 1.8rem;
+    flex: none;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--tone-projects);
+    background: color-mix(in srgb, var(--tone-projects) 16%, transparent);
+  }
+
+  .source-link__icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
   }
 </style>
