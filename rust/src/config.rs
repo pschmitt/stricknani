@@ -7,6 +7,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 
 use crate::ai::AiConfig;
+use crate::error_reporting::ErrorReportingSettings;
 use crate::oidc::ProviderConfig;
 use crate::security::TrustedHosts;
 use zeroize::Zeroizing;
@@ -30,6 +31,8 @@ pub struct Config {
     pub signup_enabled: bool,
     pub gravatar_enabled: bool,
     pub archive_enabled: bool,
+    /// Optional operator-configured error reporting (Sentry); inactive without a DSN.
+    pub error_reporting: ErrorReportingSettings,
     /// Validated provider configuration, absent unless `RUST_AI_ENABLED=true`.
     pub ai: Option<AiConfig>,
     /// Validated OIDC provider configuration, absent unless explicitly enabled.
@@ -158,6 +161,8 @@ impl Config {
             Some("false" | "0") => false,
             _ => return Err(ConfigError("RUST_GRAVATAR_ENABLED must be true or false")),
         };
+        let error_reporting = ErrorReportingSettings::from_lookup(&mut get)
+            .map_err(|_| ConfigError("Sentry error reporting configuration is invalid"))?;
         let ocr_enabled = match get("RUST_OCR_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
@@ -211,6 +216,7 @@ impl Config {
             signup_enabled,
             gravatar_enabled,
             archive_enabled,
+            error_reporting,
             ai,
             oidc,
             oidc_pat_ttl_seconds,

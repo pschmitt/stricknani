@@ -225,6 +225,33 @@ one exists. Lookups are lazy: payloads never wait for Gravatar.
   `services.stricknani.gravatar.enable`) switches the feature off for the whole
   instance. Migration `0019_user_gravatar.sql` adds `users.use_gravatar`.
 
+### Error reporting
+
+Optional, operator-configured Sentry reporting (`RUST_SENTRY_DSN_FILE`; NixOS
+`services.stricknani.sentry.*`; see `rust-nixos.md`).
+
+- **Availability.** `GET /session` (`data.error_reporting`) and `GET /meta`
+  (`data.error_reporting`) return `{available, dsn, tunnel_path, environment,
+  enabled}`. Without a configured DSN, `available` is `false`, `dsn`,
+  `tunnel_path` and `environment` are `null`, and clients must not report or show
+  the setting. `dsn` is the public DSN (never a secret key). `enabled` is the
+  signed-in user's choice, or the instance default (`true`) when signed out.
+- **Setting.** `GET /account` returns `error_reporting_enabled` (default `true`)
+  and `error_reporting_available`. `PATCH /account` with
+  `{error_reporting_enabled}` stores the choice (`users.error_reporting`,
+  migration `0021`).
+- **Tunnel.** `POST /api/v2/telemetry/sentry` takes a Sentry envelope (optionally
+  gzip) of at most 256 KiB whose header `dsn` names the configured project and
+  whose items are `event`, `transaction`, `session`, `sessions` or
+  `client_report`. It answers `204` after forwarding, `204` without forwarding for
+  a signed-in user who opted out, `403 wrong_dsn`, `400 invalid_request`, `413`,
+  `429` or `502`, and `404` when error reporting is not configured. Cookie and
+  bearer callers are both accepted; signed-out callers follow the default. Events
+  are scrubbed again on the server.
+- **Server events.** Panics and `error!` events go to Sentry with headers, cookies,
+  bodies, query strings, emails, IPs and tokens removed; the only user field is
+  the numeric id, and events from requests of opted-out users are dropped.
+
 ### Bearer PAT access to the account routes
 
 All seven routes above accept a bearer PAT with these rules (T121.8):

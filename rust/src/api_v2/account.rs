@@ -58,7 +58,14 @@ async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    match account_service::account_dto(&state.app.pool, user_id, state.app.gravatar.enabled).await {
+    match account_service::account_dto(
+        &state.app.pool,
+        user_id,
+        state.app.gravatar.enabled,
+        state.app.error_reporting.is_available(),
+    )
+    .await
+    {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => account_error(error),
     }
@@ -68,6 +75,7 @@ async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
 #[serde(deny_unknown_fields)]
 struct UpdateAccountRequest {
     use_gravatar: Option<bool>,
+    error_reporting_enabled: Option<bool>,
 }
 
 async fn update_account(
@@ -89,7 +97,20 @@ async fn update_account(
     {
         return account_error(error);
     }
-    match account_service::account_dto(&state.app.pool, user_id, state.app.gravatar.enabled).await {
+    if let Some(enabled) = request.error_reporting_enabled
+        && let Err(error) =
+            account_service::set_error_reporting(&state.app.pool, user_id, enabled).await
+    {
+        return account_error(error);
+    }
+    match account_service::account_dto(
+        &state.app.pool,
+        user_id,
+        state.app.gravatar.enabled,
+        state.app.error_reporting.is_available(),
+    )
+    .await
+    {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => account_error(error),
     }

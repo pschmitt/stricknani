@@ -28,6 +28,7 @@ struct MetaData {
     #[serde(skip_serializing_if = "Option::is_none")]
     current_token_id: Option<i64>,
     auth: AuthDiscovery,
+    error_reporting: super::telemetry::ErrorReportingInfo,
 }
 
 #[derive(Serialize)]
@@ -111,6 +112,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
         .into_iter()
         .collect();
 
+    let error_reporting = super::telemetry::ErrorReportingInfo::load(&state, user_id).await;
     Json(MetaEnvelope {
         data: MetaData {
             version: env!("CARGO_PKG_VERSION"),
@@ -123,6 +125,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
                 password: true,
                 oidc,
             },
+            error_reporting,
         },
     })
     .into_response()

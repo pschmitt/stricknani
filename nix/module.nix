@@ -196,6 +196,24 @@ in
       description = "Allow anyone who can reach the instance to create their own account (web and Android). Sets RUST_SIGNUP_ENABLED. Leave this off for a private instance; accounts are then created by an administrator or with stricknani-cli create-user.";
     };
 
+    sentry = {
+      dsnFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Absolute runtime path of a file holding the Sentry DSN (never a Nix value). Setting it turns on optional error reporting (RUST_SENTRY_DSN_FILE); without it nothing is sent anywhere. Users can opt out in their account settings.";
+      };
+      environment = lib.mkOption {
+        type = lib.types.str;
+        default = "production";
+        description = "Sentry environment name (RUST_SENTRY_ENVIRONMENT). Only used with dsnFile.";
+      };
+      tracesSampleRate = lib.mkOption {
+        type = lib.types.numbers.between 0 1;
+        default = 0;
+        description = "Share of requests traced for performance monitoring (RUST_SENTRY_TRACES_SAMPLE_RATE); 0 reports errors only. Only used with dsnFile.";
+      };
+    };
+
     oidc = {
       enable = lib.mkEnableOption "OIDC sign-in for the Rust backend";
       providerId = lib.mkOption {
@@ -356,6 +374,14 @@ in
         message = "services.stricknani.oidc.clientSecretFile must be an absolute runtime path.";
       }
       {
+        assertion = cfg.sentry.dsnFile == null || lib.hasPrefix "/" cfg.sentry.dsnFile;
+        message = "services.stricknani.sentry.dsnFile must be an absolute runtime path.";
+      }
+      {
+        assertion = !(cfg.extraConfig ? RUST_SENTRY_DSN);
+        message = "Set the Sentry DSN with services.stricknani.sentry.dsnFile, not extraConfig.";
+      }
+      {
         assertion = !cfg.oidc.enable || cfg.oidc.providerId == "authelia";
         message = "services.stricknani.oidc.providerId must be authelia.";
       }
@@ -387,6 +413,11 @@ in
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
           RUST_GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
           RUST_SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
+        }
+        // lib.optionalAttrs (cfg.sentry.dsnFile != null) {
+          RUST_SENTRY_DSN_FILE = cfg.sentry.dsnFile;
+          RUST_SENTRY_ENVIRONMENT = cfg.sentry.environment;
+          RUST_SENTRY_TRACES_SAMPLE_RATE = toString cfg.sentry.tracesSampleRate;
         }
         // oidcEnvironment
         // cfg.extraConfig;

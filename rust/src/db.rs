@@ -15,6 +15,7 @@ pub struct AppState {
     pub archive_enabled: bool,
     pub ocr_enabled: bool,
     pub gravatar: crate::gravatar::GravatarSettings,
+    pub error_reporting: crate::error_reporting::ErrorReportingSettings,
     pub auth_limiter: Arc<crate::auth::RateLimiter>,
     pub external_imports: bool,
     pub image_fetcher: Arc<dyn crate::image_import::ImageFetcher>,
@@ -31,6 +32,15 @@ impl AppState {
     /// the server binary enables it from `RUST_GRAVATAR_ENABLED`).
     pub fn with_gravatar(mut self, gravatar: crate::gravatar::GravatarSettings) -> Self {
         self.gravatar = gravatar;
+        self
+    }
+
+    /// Configure the optional Sentry error reporting (inactive by default).
+    pub fn with_error_reporting(
+        mut self,
+        error_reporting: crate::error_reporting::ErrorReportingSettings,
+    ) -> Self {
+        self.error_reporting = error_reporting;
         self
     }
 
@@ -86,6 +96,7 @@ impl AppState {
             archive_enabled: false,
             ocr_enabled: false,
             gravatar: crate::gravatar::GravatarSettings::default(),
+            error_reporting: crate::error_reporting::ErrorReportingSettings::default(),
             build_id: format!("{:032x}", rand::random::<u128>()),
             auth_limiter: Arc::new(crate::auth::RateLimiter::default()),
             external_imports: false,

@@ -46,6 +46,7 @@ mod projects;
 mod resource_history;
 mod signup;
 mod sync;
+mod telemetry;
 mod tools;
 mod yarns;
 
@@ -136,6 +137,7 @@ fn router_with_context(
         .merge(ocr::router())
         .merge(archive::router())
         .merge(meta::router())
+        .merge(telemetry::router())
         .merge(tools::router())
         .merge(account::router())
         .merge(admin::router())
@@ -156,6 +158,7 @@ struct SessionData {
     user: Option<UserSummary>,
     csrf_token: String,
     capabilities: Capabilities,
+    error_reporting: telemetry::ErrorReportingInfo,
     locale: &'static str,
 }
 
@@ -282,11 +285,13 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
         Ok(Some((user, token))) => {
             let csrf_token = crate::web::csrf(&token);
             let capabilities = Capabilities::from_state(&state, Some(&user));
+            let error_reporting = telemetry::ErrorReportingInfo::load(&state, Some(user.id)).await;
             return Json(Envelope {
                 data: SessionData {
                     user: Some(user),
                     csrf_token,
                     capabilities,
+                    error_reporting,
                     locale: locale(&headers),
                 },
             })
@@ -310,11 +315,13 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
         );
     };
     let capabilities = Capabilities::from_state(&state, user.as_ref());
+    let error_reporting = telemetry::ErrorReportingInfo::load(&state, None).await;
     let mut response = Json(Envelope {
         data: SessionData {
             user,
             csrf_token: token.clone(),
             capabilities,
+            error_reporting,
             locale: locale(&headers),
         },
     })
@@ -437,11 +444,13 @@ async fn login(
     };
     let csrf_token = crate::web::csrf(&token.token);
     let capabilities = Capabilities::from_state(&state, Some(&user));
+    let error_reporting = telemetry::ErrorReportingInfo::load(&state, Some(user.id)).await;
     let mut response = Json(Envelope {
         data: SessionData {
             user: Some(user),
             csrf_token,
             capabilities,
+            error_reporting,
             locale: locale(&headers),
         },
     })

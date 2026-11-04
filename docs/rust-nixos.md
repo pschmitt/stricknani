@@ -79,3 +79,32 @@ The Rust module backup archives the configured SQLite database and media root.
 PostgreSQL URLs are rejected (the legacy module's PostgreSQL backup went away
 with the Python backend). A backup does not make legacy Python data usable in
 the Rust schema.
+
+## Error reporting (Sentry)
+
+Error reporting is optional and off unless the operator configures a DSN. With
+none, the server never starts the Sentry SDK, the clients are told it is
+unavailable (and hide their settings), and the tunnel route answers 404.
+
+| NixOS option | Environment variable | Meaning |
+| --- | --- | --- |
+| `sentry.dsnFile` | `RUST_SENTRY_DSN_FILE` | Absolute runtime path of a file holding the DSN. Preferred; keep the DSN out of the Nix store. `RUST_SENTRY_DSN` is the plain-value alternative for containers. |
+| `sentry.environment` | `RUST_SENTRY_ENVIRONMENT` | Environment name (default `production`). |
+| `sentry.tracesSampleRate` | `RUST_SENTRY_TRACES_SAMPLE_RATE` | 0 to 1 (default `0`: errors only). |
+
+The service user must be able to read the file (for example through
+`LoadCredential`). Use a current-style DSN without a secret key; the public
+part is handed to the web app and the Android app, which send their reports
+through the server's same-origin tunnel `POST /api/v2/telemetry/sentry` and
+never contact the Sentry host themselves. The tunnel only forwards envelopes
+addressed to the configured DSN, caps them at 256 KiB, scrubs them again, and
+drops them when the signed-in user turned error reporting off.
+
+What is reported: panics and `error!` log events from the server, plus errors
+from the web and Android apps (message, stack trace, app version, browser or OS
+version). Request headers, cookies, bodies, query strings, IP addresses, emails
+and tokens are removed before anything leaves the server; the only user field is
+the numeric account id. Users opt out under Account, Preferences ("Send error
+reports"), and in the Android app's settings; errors raised while serving an
+opted-out user's request are dropped. The privacy policy page describes this to
+users.

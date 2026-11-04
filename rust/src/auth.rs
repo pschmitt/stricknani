@@ -192,9 +192,10 @@ async fn token_user(
     purpose: Option<&str>,
 ) -> Result<i64, AuthError> {
     let hash = token_hash(token.as_bytes());
-    let (user_id, token_id, last_used_at, token_purpose) =
-        sqlx::query_as::<_, (i64, i64, Option<i64>, String)>(
-            "SELECT users.id, api_tokens.id, api_tokens.last_used_at, api_tokens.purpose \
+    let (user_id, token_id, last_used_at, token_purpose, error_reporting) =
+        sqlx::query_as::<_, (i64, i64, Option<i64>, String, i64)>(
+            "SELECT users.id, api_tokens.id, api_tokens.last_used_at, api_tokens.purpose, \
+         users.error_reporting \
          FROM api_tokens \
          JOIN users ON users.id = api_tokens.user_id \
          WHERE api_tokens.token_hash = ? \
@@ -217,6 +218,7 @@ async fn token_user(
     if token_purpose == "api" {
         touch_last_used(pool, token_id, last_used_at);
     }
+    crate::error_reporting::bind_user(user_id, error_reporting != 0);
     Ok(user_id)
 }
 

@@ -44,6 +44,9 @@ app show a card that points to this repository and offers a setup prompt for an
 AI coding agent. Without self-service registration, add accounts with
 `stricknani-server create-user EMAIL`.
 
+Optional Sentry error reporting stays off unless `RUST_SENTRY_DSN_FILE` (or
+`RUST_SENTRY_DSN`) is set; see [rust-nixos.md](rust-nixos.md#error-reporting-sentry).
+
 ## Nix package
 
 The default flake package is the Rust server. Configure a database and media

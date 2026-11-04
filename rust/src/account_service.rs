@@ -439,11 +439,12 @@ pub(crate) async fn account_dto(
     pool: &SqlitePool,
     user_id: i64,
     gravatar_enabled: bool,
+    error_reporting_available: bool,
 ) -> Result<AccountDto, AccountError> {
     use sqlx::Row;
     let row = sqlx::query(
         "SELECT users.id, users.email, users.is_admin, users.use_gravatar, \
-         user_avatars.filename \
+         users.error_reporting, user_avatars.filename \
          FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ? AND users.active = 1",
     )
@@ -463,6 +464,8 @@ pub(crate) async fn account_dto(
         avatar_url: avatar.map(|(url, _)| url),
         use_gravatar,
         gravatar_enabled,
+        error_reporting_enabled: row.get::<i64, _>("error_reporting") != 0,
+        error_reporting_available,
     })
 }
 
@@ -485,6 +488,38 @@ pub(crate) async fn set_use_gravatar(
     }
 }
 
+/// Store the per-user error-reporting preference.
+pub(crate) async fn set_error_reporting(
+    pool: &SqlitePool,
+    user_id: i64,
+    enabled: bool,
+) -> Result<(), AccountError> {
+    let result = sqlx::query("UPDATE users SET error_reporting = ? WHERE id = ? AND active = 1")
+        .bind(i64::from(enabled))
+        .bind(user_id)
+        .execute(pool)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(AccountError::TokenNotFound)
+    }
+}
+
+/// The user's error-reporting preference; the default for unknown users.
+pub(crate) async fn error_reporting_enabled(pool: &SqlitePool, user_id: i64) -> bool {
+    sqlx::query_scalar::<_, i64>("SELECT error_reporting FROM users WHERE id = ? AND active = 1")
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+        .map_or(crate::error_reporting::DEFAULT_USER_ENABLED, |value| {
+            value != 0
+        })
+}
+
 #[derive(serde::Serialize)]
 pub(crate) struct AccountDto {
     pub(crate) id: i64,
@@ -497,6 +532,11 @@ pub(crate) struct AccountDto {
     pub(crate) use_gravatar: bool,
     /// Whether the server offers the Gravatar fallback at all.
     pub(crate) gravatar_enabled: bool,
+    /// The user's error-reporting preference (default true). Only has an effect
+    /// when `error_reporting_available`.
+    pub(crate) error_reporting_enabled: bool,
+    /// Whether the operator configured error reporting for this instance.
+    pub(crate) error_reporting_available: bool,
 }
 
 fn format_timestamp(timestamp: i64) -> String {
