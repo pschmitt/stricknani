@@ -4957,25 +4957,23 @@ def run_acceptance(
             ).wait_for(state="visible")
             create_options = page.locator(".create-options > a")
             _require(
-                create_options.count() == 3
+                create_options.count() == 4
                 and page.locator(
                     ".create-options .ui-navigation-tile__icon svg[aria-hidden='true']"
                 ).count()
-                == 3,
-                "Create choices are missing the Imports tile or decorative icons",
+                == 4,
+                "Create choices are missing the import tiles or decorative icons",
             )
             _require(
                 create_options.nth(0).get_attribute("href") == "/app/projects/new"
                 and create_options.nth(1).get_attribute("href") == "/app/yarns/new"
-                and page.get_by_role(
-                    "link", name=re.compile(r"^Imports(?:\s|$)")
-                ).get_attribute("href")
-                == "/app/imports"
+                and create_options.nth(2).get_attribute("href") == "/app/imports"
+                and create_options.nth(3).get_attribute("href") == "/app/imports/yarn"
                 and all(
                     height >= 44
                     for height in _visible_heights(page, ".create-options > a")
                 ),
-                "Create choices do not expose both destinations as touch targets",
+                "Create choices do not expose all four destinations as touch targets",
             )
 
             page.goto(f"{origin}/app/projects", wait_until="networkidle")
