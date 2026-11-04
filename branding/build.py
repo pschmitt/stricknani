@@ -3,8 +3,8 @@
 
 Run `just branding` (it provides resvg and shapely through nix). The masters are:
 
-  icon.svg             full icon, rounded square (web favicon, README)
-  icon-square.svg      full icon, full-bleed square (legacy launcher PNGs)
+  icon.svg             the launcher icon: round ball on the launcher blue (favicon, PWA)
+  icon-square.svg      the same on a full-bleed square (maskable PWA icon, Play icon)
   icon-foreground.svg  ball and face on transparent (Android adaptive foreground)
   icon-monochrome.svg  single-colour ball with the face cut out (themed icon)
   mascot.svg           the ball cropped to its bounds (web Mascot component)
@@ -139,73 +139,32 @@ def android_vectors() -> None:
 # --- rasters ---------------------------------------------------------------------------------
 
 
-def round_svg(tmp: Path) -> Path:
-    src = (BRANDING / "icon-square.svg").read_text()
-    wrapped = src.replace(
-        '<rect width="108" height="108" fill="#ffe2ae"/>',
-        '<clipPath id="round"><circle cx="54" cy="54" r="54"/></clipPath>'
-        '<g clip-path="url(#round)"><rect width="108" height="108" fill="#ffe2ae"/>',
-    ).replace("</svg>", "</g></svg>")
-    out = tmp / "icon-round.svg"
-    out.write_text(wrapped)
-    return out
-
-
-LAUNCHER_BG = "#8cb8ff"
-
-
-def launcher_svgs(tmp: Path) -> tuple[Path, Path]:
-    """The Android launcher icon as PWA icons: the scaled ball on its own blue.
-
-    Returns (round, maskable). `round` is what the launcher's circle mask shows
-    (the 72 unit visible circle of the 108 unit canvas), for the "any" icons;
-    `maskable` is the full-bleed canvas the OS masks itself.
-    """
-    src = (BRANDING / "icon-foreground.svg").read_text()
-    inner = src.split("<svg", 1)[1].split(">", 1)[1].rsplit("</svg>", 1)[0]
-    round_icon = tmp / "launcher-round.svg"
-    round_icon.write_text(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72">'
-        '<clipPath id="mask"><circle cx="54" cy="54" r="36"/></clipPath>'
-        f'<g clip-path="url(#mask)"><rect width="108" height="108" fill="{LAUNCHER_BG}"/>'
-        f"{inner}</g></svg>"
-    )
-    maskable = tmp / "launcher-maskable.svg"
-    maskable.write_text(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">'
-        f'<rect width="108" height="108" fill="{LAUNCHER_BG}"/>{inner}</svg>'
-    )
-    return round_icon, maskable
-
-
 def rasters() -> None:
+    # Everything shows the Android launcher icon: icon.svg is the round ball on
+    # the launcher blue, icon-square.svg the same on a full-bleed square that
+    # the platform masks itself (maskable PWA icon, Play icon).
     icon = BRANDING / "icon.svg"
-    with tempfile.TemporaryDirectory() as t:
-        # PWA icons match the Android launcher icon (no padding, blue ground).
-        launcher_round, launcher_maskable = launcher_svgs(Path(t))
-        for web in (ROOT / "web/static", ROOT / "rust/static"):
-            shutil.copy(icon, web / "favicon.svg")
-            resvg(launcher_round, web / "icons/icon-192.png", 192)
-            resvg(launcher_round, web / "icons/icon-512.png", 512)
-        resvg(launcher_maskable, ROOT / "web/static/icons/icon-maskable-512.png", 512)
-        # Play's 512 px icon is the launcher icon too: full-bleed blue square, Play masks it.
-        resvg(launcher_maskable, BRANDING / "playstore/icon-512.png", 512)
-        feature_graphic(Path(t), launcher_round)
+    square = BRANDING / "icon-square.svg"
+    for web in (ROOT / "web/static", ROOT / "rust/static"):
+        shutil.copy(icon, web / "favicon.svg")
+        resvg(icon, web / "icons/icon-192.png", 192)
+        resvg(icon, web / "icons/icon-512.png", 512)
+    resvg(square, ROOT / "web/static/icons/icon-maskable-512.png", 512)
+    resvg(square, BRANDING / "playstore/icon-512.png", 512)
     shutil.copy(BRANDING / "mascot.svg", ROOT / "web/static/mascot.svg")
-
     with tempfile.TemporaryDirectory() as t:
-        tmp = Path(t)
-        round_icon = round_svg(tmp)
-        for density, px in (
-            ("m", 48),
-            ("h", 72),
-            ("xh", 96),
-            ("xxh", 144),
-            ("xxxh", 192),
-        ):
-            d = RES / f"mipmap-{density}dpi"
-            resvg(icon, d / "ic_launcher.png", px)
-            resvg(round_icon, d / "ic_launcher_round.png", px)
+        feature_graphic(Path(t), icon)
+    # Legacy launcher PNGs (pre-adaptive-icon launchers): the round icon for both.
+    for density, px in (
+        ("m", 48),
+        ("h", 72),
+        ("xh", 96),
+        ("xxh", 144),
+        ("xxxh", 192),
+    ):
+        d = RES / f"mipmap-{density}dpi"
+        resvg(icon, d / "ic_launcher.png", px)
+        resvg(icon, d / "ic_launcher_round.png", px)
 
 
 def feature_graphic(tmp: Path, launcher_round: Path) -> None:

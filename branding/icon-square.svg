@@ -1,10 +1,12 @@
 <!--
   Stricknani brand mark: "Winky Pom". Master artwork; see branding/README.md for how the
   PNGs, the web favicon and the Android vectors are derived from it.
+  This is the Android launcher icon as one picture: the scaled ball on the full-bleed
+  launcher blue (Play icon, maskable icon); the platform applies its own mask.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
-  <rect width="108" height="108" fill="#ffe2ae"/>
-  <g transform="rotate(-8 54 54)">
+  <rect width="108" height="108" fill="#8cb8ff"/>
+  <g transform="translate(54 54) scale(1.36) translate(-54 -54) rotate(-8 54 54)">
     <clipPath id="ball"><circle cx="54" cy="54" r="27"/></clipPath>
     <circle cx="54" cy="54" r="27" fill="#8cb8ff"/>
     <g clip-path="url(#ball)" fill="none" stroke="#2f6fed" stroke-width="7" stroke-linecap="round">
