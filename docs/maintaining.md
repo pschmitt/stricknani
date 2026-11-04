@@ -51,9 +51,6 @@ APKs are not signed with the release key and upgrades over an installed app
 fail. The Play workflow also needs `PLAY_SERVICE_ACCOUNT_JSON` and the
 repository variable `PLAY_PUBLISH_ENABLED=true`.
 
-Production stays on the legacy Python release (tag `v0.1.0` on `main`) until the cutover in
-[production-cutover-checklist.md](production-cutover-checklist.md) is approved.
-Do not move production to the Rust runtime as part of a release.
 
 ## Deploying
 
@@ -126,5 +123,5 @@ requests for all of the above.
 
 The Rust server owns its SQLite schema in `rust/migrations/`; add a numbered
 SQL file for every schema change and cover it with a test. The legacy Python
-app (tag `v0.1.0`) used Alembic; its schema only matters to the snapshot
-importer, which is described in the [migration plan](rust-migration-plan.md).
+app (tag `v0.1.0`) used Alembic; its schema only matters to the one-way
+`stricknani-server import-snapshot` command.

@@ -1,6 +1,6 @@
 # T120 shared UI decisions
 
-Implementation starts from `WEB-UI-REWRITE.md`. These decisions fix the shared
+These decisions fix the shared
 interfaces for the first Luna wave; they do not mark feature work complete.
 
 ## Application routes and navigation

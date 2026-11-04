@@ -1,9 +1,7 @@
 # Install and run
 
-The Rust server is the only runtime on the `rust` branch. It needs its own
-SQLite database and media directory. It does not fall back to the legacy
-`DATABASE_URL` or `MEDIA_ROOT` and does not migrate legacy data on its own. The
-snapshot importer is described in the [migration plan](rust-migration-plan.md).
+The server needs its own SQLite database (`RUST_DATABASE_URL`) and media
+directory (`RUST_MEDIA_ROOT`).
 
 ## Container
 
@@ -57,8 +55,8 @@ nix run '.#stricknani'
 ```
 
 Set `BIND_HOST`, `BIND_PORT`, and `TRUSTED_HOSTS` for a different listener.
-The [runtime guide](rust-runtime-transition.md) lists all settings. Startup
-behavior is in the [CLI notes](rust-candidate.md#storage-and-startup).
+`stricknani-server --help` lists the commands and settings; the NixOS options
+are in [rust-nixos.md](rust-nixos.md).
 
 ## Development
 

@@ -61,10 +61,8 @@ Rust startup migrates only its own empty Rust database. It does not upgrade the
 Python/Alembic schema, bootstrap an administrator from Python's
 `INITIAL_ADMIN_*` environment variables, or import Python records. Create the
 first administrator explicitly with `stricknani-cli create-admin EMAIL` and
-provide the password on standard input. A data migration must use a protected,
-quiescent copy and the Rust `import-snapshot` command as described in
-[the migration plan](rust-migration-plan.md). Keep the Python service and its
-database/media paths in place until a separately approved cutover.
+provide the password on standard input. Importing data from the legacy Python
+app uses a protected, quiescent copy and the `import-snapshot` command.
 
 For example, use a protected password file rather than placing the password in
 the command line:

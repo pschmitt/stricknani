@@ -39,7 +39,7 @@ sealed interface OidcEvent {
 
 /**
  * Drives the three native OIDC flows (login, link, reauthentication) end to end, per
- * `docs/oidc-v2-contract.md` and the Android section of `docs/oidc-plan.md`:
+ * `docs/oidc-v2-contract.md`:
  * 1. a start call hands back the provider's authorization URL, emitted on [browserRequests] for the
  *    activity to open in a Custom Tab (the PKCE verifier and `app_state` wait in [PendingOidcFlow],
  *    in memory only);

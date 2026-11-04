@@ -27,10 +27,11 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ## Critical Requirements
 
-### Rust rewrite workflow
+### Engineering workflow
 
-- Follow [`REWRITE.md`](REWRITE.md) and track progress under T119 in `TODO.md`.
-- Keep rewrite work in the dedicated `rust` branch/worktree; preserve unrelated changes in the primary checkout.
+- `main` is the product branch; production (wolle.anika.blue) follows it. Work in
+  your own worktree off `origin/main` and preserve unrelated changes in the
+  primary checkout.
 - Delegate isolated implementation and inventory tasks to GPT-6 Luna (`gpt-6-luna`) agents with explicit file ownership. The coordinator integrates their work and reviews API contracts, authorization, and data migration safety.
 - When spawning a Codex subagent, select `model="gpt-6-luna"` and `fork_turns="none"` explicitly.
 - The coordinator claims each delegated file scope before handoff. If Concord
@@ -62,24 +63,19 @@ Use this file as the operational source of truth for working in Stricknani.
   directory outside Cargo's target directory and record its source revision and
   checksum. `cargo test` can rebuild executable and example targets too; a shared
   target path is not a frozen artifact, even without an explicit build command.
-- Prioritize a usable, styled Rust preview. Pixel-perfect matching and the planned full UI redesign are out of scope.
-- The Rust preview uses its own application login. Do not add Authelia or another extra login layer unless the user requests it; keep public signup disabled when serving copied data.
-- Keep legacy (Python `v0.1.0`) production and Rust candidate storage separate. Production migration and cutover require the explicit approval described in `REWRITE.md`.
 - Investigate credential-scanner alerts before recording an incident; distinguish intentional public test fixtures, validation blacklists, and source identifiers from actual credential values.
 - Delegated agents report scanner alerts to the coordinator without opening
   incident queues. The coordinator handles triage and any required targeted
   record; never read unrelated incident entries to confirm a write.
 
-### Web UI rewrite workflow
+### UI workflow
 
-- Follow [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md) and track implementation under
-  T120. The T119 limit on visual redesign applied to the Rust rewrite, not T120.
 - Prioritize usable phone layouts and compact navigation. Keep mobile language
   preferences in Account settings instead of a dedicated global toolbar; retain
   compact signed-out language access. Use blue accents and neutral surfaces in
   both themes, with readable button foregrounds and restrained motion.
 - Claude Code owns all web and Android UI implementation, UI helper fixes, and
-  UI preview deployments. Codex coordinates backend/API/data work, operations,
+  UI deployments. Codex coordinates backend/API/data work, operations,
   and independent acceptance review; delegate scoped non-UI work to GPT-6 Luna.
   Freeze shared interfaces before parallel work and give each writer
   non-overlapping files.
@@ -88,18 +84,14 @@ Use this file as the operational source of truth for working in Stricknani.
   website links before changing native calls; preserve offline caches, queued
   writes and account isolation. Browser sessions and CSRF are not a native
   authentication replacement. Coordinate shared backend changes explicitly.
-- Planning does not start implementation or authorize production cutover.
-  Keep the existing preview usable while building and reviewing the new UI.
-- The UI owner deploys verified UI milestones to the authorized isolated Rust
-  preview so progress is visible. Review the exact candidate pin, checks and
-  isolation before switching it. Coordinate backend checkpoints with that owner
-  so neither deployment rolls back the other's changes.
-  Do not wait for the entire UI rewrite to deploy useful increments. Production
-  cutover remains a separate decision.
+- The UI owner deploys verified UI milestones to production so progress is
+  visible: build the exact commit on a build host first, back up the database,
+  then bump the pin. Coordinate backend changes with that owner so neither
+  deployment rolls back the other's changes.
 - The user explicitly requests a Signal notification after every successful
-  preview version rollout. The deployment agent loads `signal-notify`, verifies
+  production rollout. The deployment agent loads `signal-notify`, verifies
   the deployed version and HTTPS route, then sends a short change summary with
-  the working clickable preview link. Send one notification per deployed
+  the working clickable link. Send one notification per deployed
   version; do not announce a deployment before it is verified.
 - During substantial active work, also send high-level Signal checklists with
   **Done / WIP / Next** at milestones and about every 15 minutes during long
@@ -108,12 +100,11 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Native API v2 migration
 
-- Follow T121 in `TODO.md` and [`docs/android-v2-migration.md`](docs/android-v2-migration.md).
-  Codex owns server changes and API/data review; Claude owns Android migration
+- Track remaining work under T121 in `TODO.md`. Codex owns server changes and API/data review; Claude owns Android migration
   and all UI work. Send the client owner each tested server checkpoint.
 - Keep API v1 available and unchanged until a separate retirement decision.
   Inventory installed clients and internal callers, including legacy HTML
-  handlers, before proposing removal. Production cutover stays separately gated.
+  handlers, before proposing removal.
 - Explicit Bearer credentials select strict API-purpose PAT authentication;
   invalid credentials never fall back to a cookie. Cookie mutations retain
   same-origin and CSRF checks. Preserve owner/admin checks in shared services.
@@ -257,7 +248,7 @@ Use this file as the operational source of truth for working in Stricknani.
   a click can finish before SvelteKit's navigation guard opens its dialog.
   Prove this against an actual app link, since a synchronous synthetic
   `window.confirm()` does not exercise that race.
-- Before triggering a preview host upgrade, copy the reviewed, realized system
+- Before triggering a production host upgrade, copy the reviewed, realized system
   closure from the build host to the deployment target and verify its presence.
   Keep compilation on the designated build hosts.
 - Device checks in an existing browser profile must use a unique per-run
@@ -266,8 +257,7 @@ Use this file as the operational source of truth for working in Stricknani.
 
 ### Vendored Web Dependencies
 
-- The web app (`web/`) is a SvelteKit project tracked under T120 in
-  [`WEB-UI-REWRITE.md`](WEB-UI-REWRITE.md). Use npm packages with the committed
+- The web app (`web/`) is a SvelteKit project. Use npm packages with the committed
   `web/package-lock.json`, reproducible installs and locally bundled assets.
   These bundled dependencies do not need `vendir.yml` entries. After changing
   `web/package.json` or its lockfile, update `npmDepsHash` in
@@ -308,7 +298,7 @@ Use this file as the operational source of truth for working in Stricknani.
   `rust/tests/`.
 - The legacy Python schema (Alembic, tag `v0.1.0`) only matters to the
   snapshot importer (`stricknani-server import-snapshot`); keep the importer and
-  its fixtures working until the cutover is complete.
+  its fixtures working.
 
 ### Code Quality
 
@@ -393,8 +383,8 @@ is development tooling: `scripts/` (i18n generators, `check_translations`,
 `todo.sh` and friends) and `ci/stricknani/` (Playwright browser harnesses,
 fixture runner, importer verifier), with their tests in `tests/`. It is
 installed from `pyproject.toml`/`uv.lock` (dependency group `dev`, no package).
-The legacy Python application is gone from this branch; its last release is
-the signed tag `v0.1.0` on `main`, which is also the cutover rollback.
+The legacy Python application is gone; its last release is the signed tag
+`v0.1.0`.
 
 Inside the Rust dev shell, set `UV_PYTHON=python3.13` before `uv sync` or
 `uv run`; this selects the supported Nix Python and its available wheels.
@@ -410,7 +400,6 @@ expensive. Keep `UV_PYTHON=python3.13` in the dev-shell command environment so
 
 - Operational rules: `AGENTS.md`
 - Work queue: `TODO.md`
-- New web UI brief and implementation checklist: `WEB-UI-REWRITE.md` (T120)
 - User/developer runbook: `README.md`, `docs/install.md`, `docs/maintaining.md`
 - Product spec: `docs/spec-and-implementation.md` (its implementation snapshot describes the legacy Python app, tag `v0.1.0`)
 - Android app (offline-first native client, `android/`, package `blue.anika.wolle`): its own

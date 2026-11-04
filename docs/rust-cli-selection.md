@@ -19,8 +19,8 @@ offers a browser or API workflow and where behavior is intentionally different.
 | `api projects`, `api yarns` | Authenticated `GET /api/v1/projects` and `GET /api/v1/yarns` expose the versioned API. | No Rust command-line HTTP client. Call the documented API directly from automation. |
 | `alembic ...` | Embedded SQLx migrations apply to a fresh Rust-owned database at startup. `import-snapshot` imports a separate copied legacy snapshot. | Deliberately replaced by native schema migrations and the one-time importer; Alembic compatibility is out of scope. |
 
-Rust command documentation is in [candidate development](rust-candidate.md)
-and the [NixOS module guide](rust-nixos.md). The actual command dispatch is in
+Rust command documentation is in `stricknani-server --help` and the
+[NixOS module guide](rust-nixos.md). The actual command dispatch is in
 [`rust/src/main.rs`](../rust/src/main.rs); command behavior tests are in
 [`rust/tests/cli.rs`](../rust/tests/cli.rs). Browser and API alternatives are
 implemented in [`rust/src/web.rs`](../rust/src/web.rs),

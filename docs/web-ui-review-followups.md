@@ -98,8 +98,7 @@ deployed preview. These are reviewer measurements, not a fresh run in this doc:
   Cancel behavior differed. Editor Save sat below a long form beside Delete.
 - Input sizes and shapes differed; several text controls were below 16px.
 
-Follow T120.16–T120.21 in the order recorded in
-[the rewrite brief](../WEB-UI-REWRITE.md#ordered-review-work-queue), then finish
+Follow T120.16–T120.21 in order, then finish
 T120.15's reading presentation. Re-run the shared
 [ui-audit inventory and motion checks](https://github.com/pschmitt/nixos-config/tree/7a9f685dc/home-manager/devel/skills/ui-audit)
 after each step. Expected checks include stable H1 positions per page type,
