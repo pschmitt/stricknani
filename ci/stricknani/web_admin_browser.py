@@ -723,6 +723,14 @@ def _assert_user_avatar(avatar: Locator, *, initial: str, image_expected: bool) 
     )
 
 
+def _wait_admin_tab(page: Page, tab: str) -> None:
+    """Wait for the combined Admin page with the given tab selected."""
+    page.get_by_role("heading", name="Admin", exact=True).wait_for(state="visible")
+    page.locator(".admin-tabs a[aria-current='page']").filter(
+        has_text=re.compile(rf"^{re.escape(tab)}$")
+    ).wait_for(state="visible")
+
+
 def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
     origin = f"{urlsplit(page.url).scheme}://{urlsplit(page.url).netloc}"
     page.goto(f"{origin}/app/create")
@@ -736,7 +744,7 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
     )
     _require(
         page.locator(".secondary-nav a[href$='/imports']").count() == 0,
-        "Imports is duplicated in Workspace navigation",
+        "Imports is duplicated in the sidebar More section",
     )
 
     page.goto(f"{origin}/app/more")
@@ -747,24 +755,32 @@ def _assert_more_navigation(page: Page, *, is_admin: bool) -> None:
         ("Gauge calculator", "/gauge"),
     ]
     if is_admin:
-        expected_cards.extend(
-            (("Admin", "/admin/users"), ("Audit log", "/admin/audit"))
-        )
-    # About and the external Android app link are workspace-less tiles; the
-    # Privacy Policy is linked from About only.
+        expected_cards.append(("Admin", "/admin/users"))
+    expected_cards.append(("About", "/about"))
+    # The external Android app link is the one tile without a sidebar entry; the
+    # Privacy Policy is linked from About only. About is always the last tile.
     _require(
-        cards.locator("a").count() == len(expected_cards) + 2
+        cards.locator("a").count() == len(expected_cards) + 1
+        and cards.locator("a")
+        .last.get_attribute("href", timeout=1000)
+        .endswith("/about")
+        and page.locator(".secondary-nav a")
+        .last.get_attribute("href", timeout=1000)
+        .endswith("/about")
+        and page.locator(".nav-caption").inner_text().strip() == "More"
+        and page.locator(".secondary-nav a[href$='/admin/audit']").count() == 0
+        and cards.locator("a[href$='/admin/audit']").count() == 0
         and cards.locator("a[href$='/privacy']").count() == 0
         and cards.locator("a[href$='/about']").count() == 1
         and cards.locator("a[target='_blank']").count() == 1
         and cards.locator("a[href$='/imports']").count() == 0
         and page.locator(".secondary-nav a[href$='/imports']").count() == 0,
-        "More or Workspace contains unexpected links",
+        "More or the sidebar More section contains unexpected links",
     )
     _require(
         cards.get_by_role("link", name="Account", exact=True).count() == 0
         and page.locator(".secondary-nav a[href$='/account']").count() == 0,
-        "More or Workspace contains a duplicate Account link",
+        "More or the sidebar More section contains a duplicate Account link",
     )
     _require(
         page.locator(
@@ -1142,7 +1158,7 @@ def run_acceptance(
             _guard_loopback(page, origin)
             mark("sign in administrator")
             _sign_in(page, origin, admin_email, admin_password)
-            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+            _wait_admin_tab(page, "Users")
 
             mark("check logical parent link preserves dirty-navigation confirmation")
             page.set_viewport_size({"width": 390, "height": 900})
@@ -1273,7 +1289,7 @@ def run_acceptance(
             # Restore desktop width after the mobile dirty-navigation check.
             page.set_viewport_size({"width": 1280, "height": 900})
             page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
-            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+            _wait_admin_tab(page, "Users")
 
             mark("check admin More cards and profile-only Account")
             _assert_more_navigation(page, is_admin=True)
@@ -1282,7 +1298,7 @@ def run_acceptance(
             _open_account(page)
             _upload_account_avatar(page)
             page.goto(f"{origin}/app/admin/users", wait_until="networkidle")
-            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+            _wait_admin_tab(page, "Users")
 
             mark("create member")
             _create_user(
@@ -1373,7 +1389,7 @@ def run_acceptance(
             )
             _sign_out(page)
             _sign_in(page, origin, admin_email, admin_password)
-            page.get_by_role("heading", name="User accounts").wait_for(state="visible")
+            _wait_admin_tab(page, "Users")
             member_row = page.locator(".user-row").filter(has_text=member_email)
             _assert_user_avatar(
                 member_row.locator(".user-identity .user-avatar"),
@@ -1467,7 +1483,7 @@ def run_acceptance(
 
             page.on("response", record_admin_image_response)
             page.goto(f"{origin}/app/admin/audit", wait_until="networkidle")
-            page.get_by_role("heading", name="Audit log").wait_for(state="visible")
+            _wait_admin_tab(page, "Audit log")
             page.wait_for_function(
                 "() => { const chevron = document.querySelector("
                 "'.app-header .brand-chevron'); return chevron "
@@ -2012,12 +2028,12 @@ def run_acceptance(
             )
             mark("open Audit from More")
             page.locator(".more-links").get_by_role(
-                "link", name="Audit log", exact=False
+                "link", name="Admin", exact=False
             ).click()
+            page.wait_for_url("**/app/admin/users")
+            page.get_by_role("link", name="Audit log", exact=True).click()
             page.wait_for_url("**/app/admin/audit")
-            page.get_by_role("heading", name="Audit log", exact=True).wait_for(
-                state="visible"
-            )
+            _wait_admin_tab(page, "Audit log")
             page.get_by_label("Entity").select_option("project")
             page.get_by_label("Action").fill("updated")
             page.get_by_role("button", name="Filter").click()
@@ -2225,9 +2241,7 @@ def run_acceptance(
                 f"{origin}/app/admin/audit?page=9999&entity=project&action=created",
                 wait_until="networkidle",
             )
-            await_page.get_by_role("heading", name="Audit log").wait_for(
-                state="visible"
-            )
+            _wait_admin_tab(await_page, "Audit log")
             # Page controls only render when there is more than one page, so
             # a clamped, short filtered list shows its rows and no pager.
             await_page.locator(".event-row").first.wait_for(state="visible")
@@ -2470,13 +2484,13 @@ def run_acceptance(
             page.remove_listener("response", record_deleted_event)
 
             mark("responsive layout and sensitive data check")
-            for route, heading in (
-                ("users", "User accounts"),
+            for route, tab in (
+                ("users", "Users"),
                 ("audit", "Audit log"),
             ):
                 mark(f"measure admin {route} responsive layout")
                 page.goto(f"{origin}/app/admin/{route}", wait_until="networkidle")
-                page.get_by_role("heading", name=heading).wait_for(state="visible")
+                _wait_admin_tab(page, tab)
                 for width in (320, 390, 768, 1280):
                     page.set_viewport_size({"width": width, "height": 900})
                     _assert_no_horizontal_overflow(page, route)
@@ -2499,9 +2513,7 @@ def run_acceptance(
                 f"{origin}/app/admin/audit",
             )
             fresh_page.wait_for_url("**/app/admin/audit")
-            fresh_page.get_by_role("heading", name="Audit log", exact=True).wait_for(
-                state="visible"
-            )
+            _wait_admin_tab(fresh_page, "Audit log")
             fresh_page.wait_for_function(
                 "() => { const chevron = document.querySelector("
                 "'.app-header .brand-chevron'); return chevron "

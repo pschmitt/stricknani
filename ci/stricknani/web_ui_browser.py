@@ -121,6 +121,34 @@ def _open_account_menu(page: Page) -> Locator:
     return item
 
 
+def _assert_android_app_dialog(page: Page) -> None:
+    """The account menu has no About link or inline QR; the app item opens a dialog."""
+    trigger = _account_menu_trigger(page)
+    _open_account_menu(page)
+    _require(
+        page.get_by_role("menuitem", name="About", exact=True).count() == 0
+        and page.locator(".account-menu-panel svg.qr-code").count() == 0,
+        "the account menu still has an About link or an inline QR code",
+    )
+    page.get_by_role("menuitem", name="Get the Android app").click()
+    dialog = page.get_by_role("dialog", name="Get the Android app")
+    dialog.wait_for(state="visible", timeout=10_000)
+    download = dialog.get_by_role("link", name="Download APK")
+    _require(
+        page.locator(".account-menu-panel").count() == 0
+        and dialog.locator("svg.qr-code").count() == 1
+        and "github.com" in (download.get_attribute("href") or "")
+        and dialog.get_by_role("button", name="Connect the app").count() == 1,
+        "the Android app dialog lacks its QR code, APK link or Connect action",
+    )
+    page.keyboard.press("Escape")
+    dialog.wait_for(state="hidden", timeout=10_000)
+    _require(
+        trigger.evaluate("node => node === document.activeElement"),
+        "closing the Android app dialog did not return focus to the account button",
+    )
+
+
 def _open_account_settings(page: Page) -> None:
     _open_account_menu(page).click()
     page.wait_for_url("**/app/account", timeout=10_000)
@@ -4109,20 +4137,26 @@ def run_acceptance(
                             ".ui-navigation-tile__title", has_text="Android app"
                         ),
                     )
-                    admin_cards = (
-                        ("Admin", "/admin/users"),
-                        ("Audit log", "/admin/audit"),
-                    )
+                    admin_cards = (("Admin", "/admin/users"),)
                     admin_card_counts = [
                         more_links.locator(f"a[href$='{href}']").count()
                         for _, href in admin_cards
                     ]
                     _require(
-                        admin_card_counts in ([0, 0], [1, 1]),
-                        "More has only one of its paired Admin and Audit tiles",
+                        admin_card_counts in ([0], [1])
+                        and more_links.locator("a[href$='/admin/audit']").count() == 0
+                        and page.locator(
+                            ".secondary-nav a[href$='/admin/audit']"
+                        ).count()
+                        == 0
+                        and more_links.locator("a")
+                        .last.get_attribute("href")
+                        .endswith("/about"),
+                        "More must show one Admin tile, no Audit tile and About last",
                     )
-                    if admin_card_counts == [1, 1]:
+                    if admin_card_counts == [1]:
                         more_cards.extend(admin_cards)
+                    more_cards.append(("About", "/about"))
                     icon_failures = 0
                     for label, href in more_cards:
                         card = more_links.locator(f"a[href$='{href}']")
@@ -4193,6 +4227,7 @@ def run_acceptance(
                             f"duplicate_accounts={duplicate_accounts}, "
                             f"stale_notice={stale_notices})"
                         )
+                    _assert_android_app_dialog(page)
                 if route == "/app/create":
                     _require(
                         page.locator(".create-options a[href$='/projects/new']").count()
