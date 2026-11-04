@@ -2,6 +2,7 @@
   import { onMount, untrack } from "svelte";
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import SectionHeading from "#lib/components/SectionHeading.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import ChangeList from "./ChangeList.svelte";
@@ -231,23 +232,9 @@
   data-history-section
 >
   <div class="history-heading">
-    <h2 id={`${sectionId}-title`}>
-      <svg
-        class="history-clock"
-        aria-hidden="true"
-        focusable="false"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="M12 7.5V12l3 2" />
-      </svg>
-      {t("Recent changes", locale)}
-    </h2>
+    <SectionHeading id={`${sectionId}-title`} icon="history" tone="audit"
+      >{t("Recent changes", locale)}</SectionHeading
+    >
   </div>
 
   {#if loading || !started}
@@ -427,20 +414,8 @@
     }
   }
 
-  .history-heading h2 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 0.9rem;
-    font-size: 1.1rem;
-    letter-spacing: -0.02em;
-  }
-
-  .history-clock {
-    flex: 0 0 1.3rem;
-    width: 1.3rem;
-    height: 1.3rem;
-    color: var(--tone-audit);
+  .history-heading :global(.section-heading) {
+    margin-bottom: 0.9rem;
   }
 
   .visually-hidden {

@@ -10,6 +10,7 @@
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import SectionHeading from "#lib/components/SectionHeading.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
@@ -453,7 +454,9 @@
       <div class="detail-main">
         {#if yarn.description_html}
           <section class="detail-section">
-            <h2>{t("Description", locale)}</h2>
+            <SectionHeading icon="notebook" tone="yarns"
+              >{t("Description", locale)}</SectionHeading
+            >
             <div class="rich-text {textSizeClass}">
               {@html yarn.description_html}
             </div>
@@ -484,7 +487,9 @@
         {/if}
         {#if yarn.project_ids.length > 0}
           <section class="detail-section" aria-labelledby="used-in-title">
-            <h2 id="used-in-title">{t("Used in projects", locale)}</h2>
+            <SectionHeading id="used-in-title" icon="projects" tone="yarns"
+              >{t("Used in projects", locale)}</SectionHeading
+            >
             {#if linkedProjectsLoading}
               <p class="muted" aria-live="polite">
                 {t("Loading linked projects…", locale)}
@@ -513,14 +518,18 @@
           </section>
         {:else}
           <section class="detail-section">
-            <h2>{t("Used in projects", locale)}</h2>
+            <SectionHeading icon="projects" tone="yarns"
+              >{t("Used in projects", locale)}</SectionHeading
+            >
             <p class="muted">{t("No projects use this yarn yet.", locale)}</p>
           </section>
         {/if}
       </div>
 
       <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
-        <h2>{t("At a glance", locale)}</h2>
+        <SectionHeading icon="info" tone="yarns"
+          >{t("At a glance", locale)}</SectionHeading
+        >
         <dl class={textSizeClass}>
           {#if yarn.brand}<div>
               <dt>{t("Brand", locale)}</dt>
@@ -656,8 +665,9 @@
 <style>
   .yarn-detail,
   .detail-error {
+    --stack-gap: 1.25rem;
     display: grid;
-    gap: 1.2rem;
+    gap: var(--stack-gap);
   }
 
   .identity,
@@ -678,13 +688,19 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
     align-items: start;
-    gap: 1rem;
+    gap: var(--stack-gap);
   }
 
   .detail-main {
     display: grid;
-    gap: 1rem;
+    gap: var(--stack-gap);
     min-width: 0;
+  }
+
+  /* The placed sticky note is only a wrapper for its fixed-position button. Taken out of
+     the grid flow it no longer adds a second gap between the cards around it. */
+  .detail-main > :global(.notes--placed) {
+    position: absolute;
   }
 
   .detail-section,
@@ -696,10 +712,9 @@
     background: var(--card-fill);
   }
 
-  .detail-section h2,
-  .spec-panel h2 {
-    margin: 0 0 0.8rem;
-    font-size: 1.1rem;
+  .detail-section :global(.section-heading),
+  .spec-panel :global(.section-heading) {
+    margin-bottom: 0.9rem;
   }
 
   .photo-strip-wrap {

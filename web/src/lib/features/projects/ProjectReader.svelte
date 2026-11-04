@@ -12,6 +12,7 @@
   import Disclosure from "#lib/components/Disclosure.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import SectionHeading from "#lib/components/SectionHeading.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
@@ -915,7 +916,9 @@
         </PhotoStrip>
       {/if}
       <section class="reader-facts-card" aria-labelledby="reader-facts-title">
-        <h2 id="reader-facts-title">{t("Project details", locale)}</h2>
+        <SectionHeading id="reader-facts-title" icon="info"
+          >{t("Project details", locale)}</SectionHeading
+        >
         <dl class="reader-keyfacts">
           <div>
             <dt>{t("Yarn", locale)}</dt>
@@ -1066,7 +1069,9 @@
       <div class="pattern-column">
         <section class="pattern-section" aria-labelledby="pattern-heading">
           <div class="section-heading-row">
-            <h2 id="pattern-heading">{t("Pattern and notes", locale)}</h2>
+            <SectionHeading id="pattern-heading" icon="notebook"
+              >{t("Pattern and notes", locale)}</SectionHeading
+            >
             <span>{t("Your reference", locale)}</span>
           </div>
           <div class="reading-copy {textSizeClass}">
@@ -1117,7 +1122,9 @@
 
         <section class="steps-section" aria-labelledby="steps-heading">
           <div class="section-heading-row">
-            <h2 id="steps-heading">{t("Steps", locale)}</h2>
+            <SectionHeading id="steps-heading" icon="list-bullets"
+              >{t("Steps", locale)}</SectionHeading
+            >
             <span>{orderedSteps.length}</span>
           </div>
           {#if orderedSteps.length}
@@ -1238,8 +1245,13 @@
       </div>
 
       <aside class="details-column" aria-label={t("Project details", locale)}>
-        <section class="details-card source-card">
-          <h2>{t("Pattern source", locale)}</h2>
+        <section
+          class="details-card source-card"
+          aria-labelledby="source-heading"
+        >
+          <SectionHeading id="source-heading" icon="link"
+            >{t("Pattern source", locale)}</SectionHeading
+          >
           {#if safeExternalUrl(project.link)}
             <a
               href={safeExternalUrl(project.link)}
@@ -1277,8 +1289,13 @@
           {/if}
         </section>
 
-        <section class="details-card attachments-card">
-          <h2>{t("Attachments", locale)}</h2>
+        <section
+          class="details-card attachments-card"
+          aria-labelledby="attachments-heading"
+        >
+          <SectionHeading id="attachments-heading" icon="paperclip"
+            >{t("Attachments", locale)}</SectionHeading
+          >
           {#if project.attachments.length}
             <ul>
               {#each project.attachments as attachment (attachment.id)}
@@ -1435,9 +1452,13 @@
     color: var(--ink-muted);
   }
 
+  /* One gap for every stack of cards: the page, the overview, and both columns. The
+     .reader-columns wrapper used to have none, so the aside's first card butted against
+     the steps card above it. */
   .reader {
+    --stack-gap: 1.25rem;
     display: grid;
-    gap: 1.5rem;
+    gap: var(--stack-gap);
   }
 
   .text-size-reset {
@@ -1482,7 +1503,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    gap: 1rem;
+    gap: var(--stack-gap);
     min-width: 0;
   }
 
@@ -1494,9 +1515,9 @@
     background: var(--card-fill);
   }
 
-  .reader-facts-card h2 {
-    margin: 0 0 0.8rem;
-    font-size: 1.1rem;
+  .reader-facts-card :global(.section-heading),
+  .details-card :global(.section-heading) {
+    margin-bottom: 0.9rem;
   }
 
   .reader-keyfacts {
@@ -1587,17 +1608,10 @@
 
   .section-heading-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
     margin-bottom: 0.9rem;
-  }
-
-  .section-heading-row h2,
-  .details-card h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    letter-spacing: -0.02em;
   }
 
   :global(.materials-card) .materials-body {
@@ -1723,13 +1737,14 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
+    gap: var(--stack-gap);
   }
 
   .pattern-column,
   .details-column {
     display: grid;
     min-width: 0;
-    gap: 1.1rem;
+    gap: var(--stack-gap);
   }
 
   .details-column {
@@ -1852,10 +1867,6 @@
     aspect-ratio: 1.2;
   }
 
-  .details-card h2 {
-    margin-bottom: 0.9rem;
-  }
-
   .materials-body {
     display: grid;
     gap: 0.8rem;
@@ -1915,10 +1926,6 @@
   .source-card {
     display: grid;
     gap: 0.35rem;
-  }
-
-  .source-card h2 {
-    margin-bottom: 0.25rem;
   }
 
   .source-card p {
@@ -2008,7 +2015,7 @@
     }
 
     .reader {
-      gap: 1rem;
+      --stack-gap: 1rem;
     }
 
     .step-navigation {
