@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          nix build --no-link --print-out-paths '.#stricknani-rust' > "$RUNNER_TEMP/rust-out-path"
+          nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'RUST_SERVER_BINARY=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_ENV"
 
       - name: Build debug and instrumentation APKs

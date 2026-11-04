@@ -2,6 +2,7 @@ package blue.anika.wolle.screenshots
 
 import android.Manifest
 import android.os.Build
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -11,7 +12,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -64,7 +64,8 @@ class StricknaniScreenshotTest {
         capture("onboarding")
 
         connectToFixture()
-        // Home: greeting, mascot, Continue card. Let the greeting settle and the activity feed load.
+        // Home: greeting, mascot, Continue card. Let the greeting settle and the activity feed
+        // load.
         // The first sync fills Home asynchronously; wait for the Continue card, then let the
         // greeting and the activity feed settle.
         composeRule.waitUntil(180_000) { hasTag("home-continue-card") }
@@ -90,9 +91,7 @@ class StricknaniScreenshotTest {
         Thread.sleep(1_000)
         capture("project-details")
 
-        composeRule
-            .onNodeWithContentDescription(string(R.string.settings_nav_back))
-            .performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.settings_nav_back)).performClick()
         composeRule.onNodeWithText(string(R.string.destination_label_home)).performClick()
         composeRule.onNodeWithTag("home-stash-card").performScrollTo().performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
@@ -104,12 +103,8 @@ class StricknaniScreenshotTest {
         Thread.sleep(2_000)
         capture("yarn")
 
-        composeRule
-            .onNodeWithContentDescription(string(R.string.settings_nav_back))
-            .performClick()
-        composeRule
-            .onNodeWithContentDescription(string(R.string.settings_nav_back))
-            .performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.settings_nav_back)).performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.settings_nav_back)).performClick()
         composeRule.onNodeWithText(string(R.string.destination_label_home)).performClick()
         composeRule
             .onNodeWithContentDescription(string(R.string.home_gauge_calculator_description))

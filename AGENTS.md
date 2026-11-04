@@ -362,7 +362,7 @@ Use this file as the operational source of truth for working in Stricknani.
   `android-*.yaml` the Android lanes.
 - When touching build/deploy/release paths, also run:
   - `nix flake check`
-  - `nix build .#stricknani-rust .#stricknani-web`
+  - `nix build .#stricknani .#stricknani-web`
   - `just build-image`
 
 ## Handy Commands

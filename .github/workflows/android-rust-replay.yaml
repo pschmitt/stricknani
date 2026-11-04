@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          nix build --no-link --print-out-paths '.#stricknani-rust' > "$RUNNER_TEMP/rust-out-path"
+          nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'binary=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_OUTPUT"
 
       # Keep Gradle away from the emulator's CPU and memory during boot and tests.

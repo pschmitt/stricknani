@@ -47,15 +47,15 @@ jobs:
       - name: Build Nix container
         run: just build-container
 
-      - name: Build Rust candidate image
-        run: nix build '.#stricknani-rust-docker' --out-link result-rust-image
+      - name: Build server image
+        run: nix build '.#stricknani-docker' --out-link result-rust-image
 
-      - name: Verify Rust candidate image
+      - name: Verify server image
         run: |
           set -Eeuo pipefail
 
-          image_name="ghcr.io/pschmitt/stricknani-rust-candidate:latest"
-          container_name="stricknani-rust-candidate-test"
+          image_name="ghcr.io/pschmitt/stricknani:latest"
+          container_name="stricknani-image-test"
           health_url="http://127.0.0.1:7674/healthz"
 
           cleanup() {

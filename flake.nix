@@ -95,20 +95,7 @@
           packages = {
             default = stricknaniRust;
             stricknani = stricknaniRust;
-            stricknani-rust = stricknaniRust;
             stricknani-web = stricknaniWeb;
-
-            stricknani-rust-docker = pkgs.dockerTools.buildLayeredImage {
-              name = "ghcr.io/pschmitt/stricknani-rust-candidate";
-              tag = "latest";
-              contents = [ stricknaniRust ];
-              fakeRootCommands = ''
-                mkdir -p ./tmp ./var/lib/stricknani
-                chmod 1777 ./tmp
-                chown 65532:65532 ./var/lib/stricknani
-              '';
-              config = rustContainerConfig;
-            };
 
             stricknani-docker = pkgs.dockerTools.buildLayeredImage {
               name = "ghcr.io/pschmitt/stricknani";
@@ -130,7 +117,6 @@
               meta.description = "Run the Rust Stricknani server";
             };
             stricknani = self.apps.${system}.default;
-            stricknani-rust = self.apps.${system}.default;
           };
 
           # These shells keep Android lint and the Rust/web/tooling development
