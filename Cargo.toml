@@ -33,7 +33,7 @@ sha2 = "0.11"
 hmac = "0.13.0"
 hex = "0.4"
 thiserror = "2"
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
 askama = "0.16"
 axum = { version = "0.8", features = ["form", "multipart"] }
 serde = { version = "1", features = ["derive"] }
