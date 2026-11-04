@@ -33,7 +33,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="34">
 
-        <!-- Sentry (GitHub APK builds only) is started by ErrorReportingController once the server
+        <!-- Sentry is started by ErrorReportingController once the server
              offers it and the user allows it, never by the SDK's own content provider. The entry
              is inert in builds without the SDK. -->
         <meta-data android:name="io.sentry.auto-init" android:value="false" />

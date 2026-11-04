@@ -221,7 +221,7 @@
     </p>
     <p>
       {t(
-        "In the Android app, error reporting is part of the builds installed from GitHub only. The Google Play build does not contain it and never sends error reports.",
+        "The Android app behaves the same way whether you install it from Google Play or from GitHub: it sends nothing unless the server offers error reporting and you have not turned Send error reports off in the app settings.",
         locale,
       )}
     </p>

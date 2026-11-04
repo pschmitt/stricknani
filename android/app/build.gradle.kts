@@ -32,16 +32,12 @@ val gitRevision =
 val isBuildingBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
 val selfUpdateEnabled =
     providers.gradleProperty("selfUpdate").map { it.toBoolean() }.orElse(!isBuildingBundle).get()
-// Optional Sentry error reporting follows the same rule: GitHub APK builds only. Google Play's data
-// safety form says the app collects no crash data, so the SDK is not in the Play bundle at all (no
-// dependency, no source set); the toggle never shows there. `-PerrorReporting=true|false`
-// overrides the detection.
+// Optional Sentry error reporting is in every variant, Google Play bundles included: it is
+// operator-configured, goes through the server's tunnel and the user can switch it off, and the Play
+// data safety form declares it. It is independent of self-update. `-PerrorReporting=false` opts out
+// of the SDK, its source set and the toggle.
 val errorReportingEnabled =
-    providers
-        .gradleProperty("errorReporting")
-        .map { it.toBoolean() }
-        .orElse(!isBuildingBundle)
-        .get()
+    providers.gradleProperty("errorReporting").map { it.toBoolean() }.orElse(true).get()
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
@@ -86,8 +82,8 @@ android {
         }
     }
 
-    // The Sentry-backed reporter lives in its own source set, compiled only when error reporting is
-    // in the build (GitHub APKs). Shared code sees the ErrorReporter interface and, without it,
+    // The Sentry-backed reporter lives in its own source set, compiled unless error reporting is
+    // opted out of with -PerrorReporting=false. Shared code sees the ErrorReporter interface and, without it,
     // NoErrorReporter.
     if (errorReportingEnabled) {
         listOf("debug", "release").forEach { name ->
@@ -230,7 +226,7 @@ dependencies {
 
     implementation(libs.timber)
 
-    // Optional error reporting: GitHub APK builds only, never in the Play bundle.
+    // Optional error reporting, in every variant (opt out with -PerrorReporting=false).
     if (errorReportingEnabled) {
         implementation(libs.sentry.android)
     }

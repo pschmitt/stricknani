@@ -78,19 +78,21 @@ phone is charging and idle, only once silent installs are possible, never in bat
 is not supported (see `TODO.md` SNA-88). Debug builds (`blue.anika.wolle.debug`) keep the browser
 download, since a release APK is a different package.
 
-**Play Store build.** It includes none of this: the check and updater are compiled out when
+**Play Store build.** It includes no self-update: the check and updater are compiled out when
 building the bundle, and the `REQUEST_INSTALL_PACKAGES` permission and updater receivers live in
 `app/src/selfupdate/AndroidManifest.xml`, which is merged into non-bundle release builds only. The
 store updates those installs.
 
-**Error reporting (GitHub APK builds only).** When the server's operator configures Sentry, Account
-settings shows **Send error reports** (on by default; turning it off also stops it at once and is
-saved to the account, so the web app follows). The app has no DSN of its own: it reads the public DSN
+**Error reporting (all builds, including Google Play).** When the server's operator configures
+Sentry, Account settings shows **Send error reports** (on by default; turning it off also stops it at
+once and is saved to the account, so the web app follows). Nothing is sent unless the server offers
+reporting and you have not turned it off. The app has no DSN of its own: it reads the public DSN
 from `GET /api/v2/meta` and reports through the server's tunnel, so Sentry never sees the phone. It
 sends errors only (message, stack trace, app version, device and OS), tagged `component:android`,
-with tokens, emails and queries redacted; the on-device crash report is unchanged. The Play bundle
-contains none of this (no SDK, no toggle), so its data safety declaration stays "no data collected";
-`-PerrorReporting=true|false` overrides the build detection like `-PselfUpdate`.
+with tokens, emails and queries redacted; the on-device crash report is unchanged. The Play data
+safety form declares this as optional crash logs and diagnostics. The SDK's auto-init is disabled; the
+app starts it itself once reporting is allowed. `-PerrorReporting=false` builds without the SDK and
+the toggle; it is independent of `-PselfUpdate`.
 
 [obtainium-link]: https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22blue.anika.wolle%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fpschmitt%2Fstricknani%22%2C%22author%22%3A%22pschmitt%22%2C%22name%22%3A%22Stricknani%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22.%2A-release%5C%5C%5C%5C.apk%24%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22trackOnly%5C%22%3Afalse%7D%22%7D
 

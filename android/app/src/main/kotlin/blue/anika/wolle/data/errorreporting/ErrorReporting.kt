@@ -19,8 +19,9 @@ import retrofit2.http.PATCH
  * The app has no DSN of its own. The server tells it (`error_reporting` in `GET /api/v2/meta`)
  * whether its operator set up Sentry and, if so, the public DSN and the server's own tunnel path.
  * Reports go to that tunnel on the user's Stricknani server, never straight to a Sentry host. The
- * Sentry SDK is compiled only into GitHub APK builds ([BuildConfig.ERROR_REPORTING_COMPILED]); the
- * Google Play bundle has none of it, so its data safety declaration stays "no data collected".
+ * Sentry SDK is compiled into every variant, Google Play included, unless the build opts out with
+ * `-PerrorReporting=false` ([BuildConfig.ERROR_REPORTING_COMPILED]). Nothing is sent unless the
+ * server offers reporting and the user has not turned it off.
  */
 const val ERROR_REPORTING_DEFAULT_ENABLED = true
 
