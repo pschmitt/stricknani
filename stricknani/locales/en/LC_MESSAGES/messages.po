@@ -73,13 +73,13 @@ msgid "Review the extracted details"
 msgstr ""
 
 #: src/import_service.rs:713
-#: web/src/lib/features/imports/ImportWorkbench.svelte:926
+#: web/src/lib/features/imports/ImportWorkbench.svelte:934
 #: web/src/lib/features/projects/ProjectEditor.svelte:1720
 msgid "Create project"
 msgstr "Create project"
 
 #: src/import_service.rs:714
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:392
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:397
 msgid "Create yarn"
 msgstr "Create yarn"
 
@@ -93,7 +93,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:433
 #: web/src/lib/features/admin/DiffPanel.svelte:93
 #: web/src/lib/features/history/change-format.ts:104
-#: web/src/lib/features/imports/ImportWorkbench.svelte:618
+#: web/src/lib/features/imports/ImportWorkbench.svelte:626
 #: web/src/lib/features/projects/ProjectEditor.svelte:1225
 #: web/src/lib/features/projects/ProjectLibrary.svelte:254
 msgid "Category"
@@ -102,7 +102,7 @@ msgstr "Category"
 #: src/import_service.rs:717
 #: web/src/lib/features/admin/AdminResource.svelte:441
 #: web/src/lib/features/history/change-format.ts:107
-#: web/src/lib/features/imports/ImportWorkbench.svelte:636
+#: web/src/lib/features/imports/ImportWorkbench.svelte:644
 #: web/src/lib/features/projects/ProjectEditor.svelte:1246
 #: web/src/lib/features/projects/ProjectReader.svelte:946
 #: web/src/lib/features/projects/ProjectReader.svelte:1049
@@ -112,7 +112,7 @@ msgstr "Needles"
 #: src/import_service.rs:718
 #: web/src/lib/features/admin/AdminResource.svelte:445
 #: web/src/lib/features/history/change-format.ts:108
-#: web/src/lib/features/imports/ImportWorkbench.svelte:641
+#: web/src/lib/features/imports/ImportWorkbench.svelte:649
 #: web/src/lib/features/projects/ProjectEditor.svelte:1251
 #: web/src/lib/features/projects/ProjectEditor.svelte:1601
 msgid "Stitch sample"
@@ -121,7 +121,7 @@ msgstr "Stitch sample"
 #: src/import_service.rs:719
 #: web/src/lib/features/admin/AdminResource.svelte:496
 #: web/src/lib/features/history/change-format.ts:111
-#: web/src/lib/features/imports/ImportWorkbench.svelte:647
+#: web/src/lib/features/imports/ImportWorkbench.svelte:655
 #: web/src/lib/features/projects/ProjectEditor.svelte:1383
 #: web/src/lib/features/projects/ProjectReader.svelte:1119
 msgid "Other materials"
@@ -138,6 +138,7 @@ msgstr "Other materials"
 #: web/src/lib/features/projects/ProjectReader.svelte:1016
 #: web/src/lib/features/projects/ProjectReader.svelte:1021
 #: web/src/lib/features/projects/ProjectReader.svelte:1028
+#: web/src/routes/share/+page.svelte:79
 msgid "Yarn"
 msgstr "Yarn"
 
@@ -146,8 +147,8 @@ msgstr "Yarn"
 #: web/src/lib/features/admin/AdminResource.svelte:681
 #: web/src/lib/features/history/change-format.ts:109
 #: web/src/lib/features/history/change-format.ts:125
-#: web/src/lib/features/imports/ImportWorkbench.svelte:629
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:341
+#: web/src/lib/features/imports/ImportWorkbench.svelte:637
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:346
 #: web/src/lib/features/yarns/YarnDetail.svelte:478
 #: web/src/lib/features/yarns/YarnForm.svelte:842
 msgid "Description"
@@ -158,15 +159,15 @@ msgid "Name"
 msgstr ""
 
 #: src/import_service.rs:723
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:334
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:339
 msgid "Link"
 msgstr "Link"
 
 #: src/import_service.rs:724
 #: web/src/lib/features/admin/AdminResource.svelte:608
 #: web/src/lib/features/history/change-format.ts:126
-#: web/src/lib/features/imports/ImportWorkbench.svelte:797
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:286
+#: web/src/lib/features/imports/ImportWorkbench.svelte:805
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:291
 #: web/src/lib/features/yarns/YarnDetail.svelte:555
 #: web/src/lib/features/yarns/YarnForm.svelte:738
 msgid "Brand"
@@ -175,8 +176,8 @@ msgstr "Brand"
 #: src/import_service.rs:725
 #: web/src/lib/features/admin/AdminResource.svelte:612
 #: web/src/lib/features/history/change-format.ts:127
-#: web/src/lib/features/imports/ImportWorkbench.svelte:802
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:290
+#: web/src/lib/features/imports/ImportWorkbench.svelte:810
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:295
 #: web/src/lib/features/yarns/YarnDetail.svelte:559
 #: web/src/lib/features/yarns/YarnForm.svelte:747
 msgid "Colorway"
@@ -197,16 +198,16 @@ msgstr "Length"
 #: src/import_service.rs:728
 #: web/src/lib/features/admin/AdminResource.svelte:624
 #: web/src/lib/features/history/change-format.ts:130
-#: web/src/lib/features/imports/ImportWorkbench.svelte:812
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:301
+#: web/src/lib/features/imports/ImportWorkbench.svelte:820
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:306
 msgid "Weight category"
 msgstr "Weight category"
 
 #: src/import_service.rs:729
 #: web/src/lib/features/admin/AdminResource.svelte:620
 #: web/src/lib/features/history/change-format.ts:129
-#: web/src/lib/features/imports/ImportWorkbench.svelte:807
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:295
+#: web/src/lib/features/imports/ImportWorkbench.svelte:815
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:300
 #: web/src/lib/features/yarns/YarnDetail.svelte:567
 #: web/src/lib/features/yarns/YarnForm.svelte:771
 msgid "Fiber content"
@@ -274,8 +275,8 @@ msgstr "A quiet place to keep your knitting projects and yarn close."
 msgid "A reference photo could not be prepared for printing. Try again."
 msgstr "A reference photo could not be prepared for printing. Try again."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:90
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:53
+#: web/src/lib/features/imports/ImportWorkbench.svelte:91
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:54
 msgid "AI"
 msgstr "AI"
 
@@ -289,8 +290,8 @@ msgstr "AI enhanced"
 msgid "AI enhancement"
 msgstr "AI enhancement"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:532
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:265
+#: web/src/lib/features/imports/ImportWorkbench.svelte:540
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:270
 msgid ""
 "AI enhancement was unavailable, so this preview uses the original "
 "extraction."
@@ -298,14 +299,14 @@ msgstr ""
 "AI enhancement was unavailable, so this preview uses the original "
 "extraction."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:429
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:191
+#: web/src/lib/features/imports/ImportWorkbench.svelte:437
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:196
 #: web/src/routes/create/+page.svelte:49 web/src/routes/create/+page.svelte:62
 msgid "AI import is turned off on this server."
 msgstr "AI import is turned off on this server."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:581
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:249
+#: web/src/lib/features/imports/ImportWorkbench.svelte:589
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:254
 msgid "AI-assisted extraction. Check every detail before saving."
 msgstr "AI-assisted extraction. Check every detail before saving."
 
@@ -382,7 +383,7 @@ msgstr "Active API tokens"
 msgid "Add a category above to make your project library easier to browse."
 msgstr "Add a category above to make your project library easier to browse."
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:134
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:139
 msgid "Add a name before creating this yarn."
 msgstr "Add a name before creating this yarn."
 
@@ -395,7 +396,7 @@ msgstr "Add a note"
 msgid "Add a project"
 msgstr "Add a project"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:312
+#: web/src/lib/features/imports/ImportWorkbench.svelte:320
 msgid "Add a project name before creating it."
 msgstr "Add a project name before creating it."
 
@@ -403,7 +404,7 @@ msgstr "Add a project name before creating it."
 msgid "Add a skein to keep its details and project links together."
 msgstr "Add a skein to keep its details and project links together."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:872
+#: web/src/lib/features/imports/ImportWorkbench.svelte:880
 msgid "Add another yarn from my stash"
 msgstr "Add another yarn from my stash"
 
@@ -555,8 +556,8 @@ msgstr "All entities"
 msgid "Already have an account?"
 msgstr "Already have an account?"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:337
-#: web/src/lib/features/imports/ImportWorkbench.svelte:717
+#: web/src/lib/features/imports/ImportWorkbench.svelte:345
+#: web/src/lib/features/imports/ImportWorkbench.svelte:725
 msgid "Amount"
 msgstr "Amount"
 
@@ -648,8 +649,8 @@ msgstr "Archived source"
 msgid "Archiving is unavailable right now."
 msgstr "Archiving is unavailable right now."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:427
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:189
+#: web/src/lib/features/imports/ImportWorkbench.svelte:435
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:194
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
@@ -925,8 +926,8 @@ msgstr "Check the highlighted fields and try again."
 msgid "Check the pockets of your other cardigan."
 msgstr "Check the pockets of your other cardigan."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:399
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:161
+#: web/src/lib/features/imports/ImportWorkbench.svelte:407
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:166
 msgid "Check this value"
 msgstr "Check this value"
 
@@ -939,11 +940,11 @@ msgstr "Checking archive status…"
 msgid "Choose a different password."
 msgstr "Choose a different password."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:207
+#: web/src/lib/features/imports/ImportWorkbench.svelte:215
 msgid "Choose a document to preview."
 msgstr "Choose a document to preview."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:496
+#: web/src/lib/features/imports/ImportWorkbench.svelte:504
 msgid "Choose a file"
 msgstr "Choose a file"
 
@@ -961,7 +962,7 @@ msgstr "Choose a password that is not commonly used."
 msgid "Choose a profile picture"
 msgstr "Choose a profile picture"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:418
+#: web/src/lib/features/imports/ImportWorkbench.svelte:426
 msgid "Choose a source"
 msgstr "Choose a source"
 
@@ -1170,11 +1171,11 @@ msgid "Cover picture"
 msgstr "Cover picture"
 
 #: web/src/routes/+layout.svelte:78 web/src/routes/create/+page.svelte:67
-#: web/src/routes/more/+page.svelte:24
+#: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:85
 msgid "Create"
 msgstr "Create"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:95
+#: web/src/lib/features/imports/ImportWorkbench.svelte:96
 msgid "Create a new yarn"
 msgstr "Create a new yarn"
 
@@ -1220,7 +1221,7 @@ msgstr "Created"
 msgid "Creating account…"
 msgstr "Creating account…"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:925
+#: web/src/lib/features/imports/ImportWorkbench.svelte:933
 msgid "Creating project…"
 msgstr "Creating project…"
 
@@ -1403,7 +1404,7 @@ msgstr "Do not worry, ripping back is a perfectly respectable hobby."
 msgid "Do not worry, your projects are safe in the basket."
 msgstr "Do not worry, your projects are safe in the basket."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:96
+#: web/src/lib/features/imports/ImportWorkbench.svelte:97
 msgid "Don't add this yarn"
 msgstr "Don't add this yarn"
 
@@ -1518,8 +1519,8 @@ msgstr "Enter a size above 0 and up to 100 cm."
 msgid "Enter a temporary password."
 msgstr "Enter a temporary password."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:199
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:92
+#: web/src/lib/features/imports/ImportWorkbench.svelte:207
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:97
 msgid "Enter a valid HTTP or HTTPS URL."
 msgstr "Enter a valid HTTP or HTTPS URL."
 
@@ -1692,7 +1693,7 @@ msgstr "Filter"
 msgid "Filter audit events"
 msgstr "Filter audit events"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:766
+#: web/src/lib/features/imports/ImportWorkbench.svelte:774
 msgid "Find a yarn in your stash"
 msgstr "Find a yarn in your stash"
 
@@ -1714,7 +1715,7 @@ msgstr ""
 " installation is the controller of the data stored there. The Stricknani "
 "project does not receive data from independent self-hosted instances."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:706
+#: web/src/lib/features/imports/ImportWorkbench.svelte:714
 msgid ""
 "For each yarn the import found, use one from your stash, create a new "
 "one, or leave it out."
@@ -1754,7 +1755,7 @@ msgstr "For your security, confirm your identity before changing how you sign in
 msgid "Found a bug or have an idea? Tell us on GitHub."
 msgstr "Found a bug or have an idea? Tell us on GitHub."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:473
+#: web/src/lib/features/imports/ImportWorkbench.svelte:481
 msgid "From a link"
 msgstr "From a link"
 
@@ -1823,16 +1824,16 @@ msgstr "Gravatar disabled."
 msgid "Gravatar enabled."
 msgstr "Gravatar enabled."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:91
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:54
+#: web/src/lib/features/imports/ImportWorkbench.svelte:92
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:55
 msgid "Guessed"
 msgstr "Guessed"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:99
+#: web/src/lib/features/imports/ImportWorkbench.svelte:100
 msgid "HTML page"
 msgstr "HTML page"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:498
+#: web/src/lib/features/imports/ImportWorkbench.svelte:506
 msgid "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 msgstr "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 
@@ -1950,7 +1951,7 @@ msgstr ""
 "about access, deletion, retention, or other privacy requests. Questions "
 "about the Stricknani software can be reported through the"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:103
+#: web/src/lib/features/imports/ImportWorkbench.svelte:104
 msgid "Image"
 msgstr "Image"
 
@@ -1966,22 +1967,26 @@ msgstr "Image deleted"
 msgid "Images"
 msgstr "Images"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:409
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:261
+#: web/src/routes/share/+page.svelte:46
+msgid "Import a link"
+msgstr "Import a link"
+
+#: web/src/lib/features/imports/ImportWorkbench.svelte:417
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:266
 #: web/src/routes/create/+page.svelte:42
 msgid "Import a project"
 msgstr "Import a project"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:593
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:154
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:171
+#: web/src/lib/features/imports/ImportWorkbench.svelte:601
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:159
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:176
 #: web/src/routes/create/+page.svelte:55
 msgid "Import a yarn"
 msgstr "Import a yarn"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:363
-#: web/src/lib/features/imports/ImportWorkbench.svelte:375
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:84
+#: web/src/lib/features/imports/ImportWorkbench.svelte:371
+#: web/src/lib/features/imports/ImportWorkbench.svelte:383
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:89
 msgid "Import failed. Your source and edits are still here."
 msgstr "Import failed. Your source and edits are still here."
 
@@ -1990,20 +1995,24 @@ msgid "Import from a link"
 msgstr "Import from a link"
 
 #: web/src/lib/api.ts:323
-#: web/src/lib/features/imports/ImportWorkbench.svelte:188
-#: web/src/lib/features/imports/ImportWorkbench.svelte:528
+#: web/src/lib/features/imports/ImportWorkbench.svelte:196
+#: web/src/lib/features/imports/ImportWorkbench.svelte:536
 msgid "Import preview is unavailable right now. Try again later."
 msgstr "Import preview is unavailable right now. Try again later."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:437
+#: web/src/lib/features/imports/ImportWorkbench.svelte:445
 msgid "Import source"
 msgstr "Import source"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:715
+#: web/src/routes/share/+page.svelte:59
+msgid "Import this link as a project or as a yarn?"
+msgstr "Import this link as a project or as a yarn?"
+
+#: web/src/lib/features/imports/ImportWorkbench.svelte:723
 msgid "Imported yarn"
 msgstr "Imported yarn"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:393
+#: web/src/lib/features/imports/ImportWorkbench.svelte:401
 msgid "Imports"
 msgstr "Imports"
 
@@ -2020,8 +2029,8 @@ msgstr "Increase text size"
 msgid "Information handled by the web app"
 msgstr "Information handled by the web app"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:656
-#: web/src/lib/features/imports/ImportWorkbench.svelte:671
+#: web/src/lib/features/imports/ImportWorkbench.svelte:664
+#: web/src/lib/features/imports/ImportWorkbench.svelte:679
 msgid "Instructions"
 msgstr "Instructions"
 
@@ -2128,8 +2137,8 @@ msgstr "Leave administrator settings without saving the password?"
 msgid "Leave this account page without saving your changes?"
 msgstr "Leave this account page without saving your changes?"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:156
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:68
+#: web/src/lib/features/imports/ImportWorkbench.svelte:164
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:73
 msgid "Leave this import review? Your changes will be lost."
 msgstr "Leave this import review? Your changes will be lost."
 
@@ -2145,8 +2154,8 @@ msgstr "Leave without saving your yarn changes?"
 msgid "Legacy user"
 msgstr "Legacy user"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:825
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:318
+#: web/src/lib/features/imports/ImportWorkbench.svelte:833
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:323
 msgid "Length in meters"
 msgstr "Length in meters"
 
@@ -2163,11 +2172,15 @@ msgstr "Like Stricknani? Support its development."
 msgid "Link copied."
 msgstr "Link copied."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:195
-#: web/src/lib/features/imports/ImportWorkbench.svelte:469
+#: web/src/routes/share/+page.svelte:54
+msgid "Link import is off"
+msgstr "Link import is off"
+
+#: web/src/lib/features/imports/ImportWorkbench.svelte:203
 #: web/src/lib/features/imports/ImportWorkbench.svelte:477
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:213
-#: web/src/routes/create/+page.svelte:59
+#: web/src/lib/features/imports/ImportWorkbench.svelte:485
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:218
+#: web/src/routes/create/+page.svelte:59 web/src/routes/share/+page.svelte:55
 msgid "Link imports are turned off on this server."
 msgstr "Link imports are turned off on this server."
 
@@ -2352,7 +2365,7 @@ msgstr "Manage users and audit log"
 msgid "Manage your profile and sign-in security."
 msgstr "Manage your profile and sign-in security."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:101
+#: web/src/lib/features/imports/ImportWorkbench.svelte:102
 msgid "Markdown file"
 msgstr "Markdown file"
 
@@ -2415,7 +2428,7 @@ msgstr "More project details"
 msgid "More yarn details"
 msgstr "More yarn details"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:842
+#: web/src/lib/features/imports/ImportWorkbench.svelte:850
 msgid "More yarn from my stash"
 msgstr "More yarn from my stash"
 
@@ -2572,6 +2585,10 @@ msgstr "No connection"
 msgid "No details recorded"
 msgstr "No details recorded"
 
+#: web/src/routes/share/+page.svelte:83
+msgid "No link found"
+msgstr "No link found"
+
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:144
 #: web/src/lib/features/auth/LinkedLogins.svelte:276
 msgid "No logins are linked yet."
@@ -2673,8 +2690,8 @@ msgstr "Not recorded"
 #: web/src/lib/features/admin/AdminResource.svelte:687
 #: web/src/lib/features/history/change-format.ts:110
 #: web/src/lib/features/history/change-format.ts:134
-#: web/src/lib/features/imports/ImportWorkbench.svelte:885
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:347
+#: web/src/lib/features/imports/ImportWorkbench.svelte:893
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:352
 #: web/src/lib/features/projects/ProjectEditor.svelte:1376
 #: web/src/lib/features/projects/ProjectReader.svelte:1090
 #: web/src/lib/features/projects/ProjectReader.svelte:1108
@@ -2753,11 +2770,11 @@ msgstr "Open archived copy"
 msgid "Open commit on GitHub"
 msgstr "Open commit on GitHub"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:898
+#: web/src/lib/features/imports/ImportWorkbench.svelte:906
 msgid "Open created project"
 msgstr "Open created project"
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:366
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:371
 msgid "Open created yarn"
 msgstr "Open created yarn"
 
@@ -2864,7 +2881,7 @@ msgstr "Owner"
 msgid "PDF"
 msgstr "PDF"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:102
+#: web/src/lib/features/imports/ImportWorkbench.svelte:103
 msgid "PDF document"
 msgstr "PDF document"
 
@@ -2900,19 +2917,19 @@ msgstr "Password sign-in is not enabled for your account."
 msgid "Passwords must be 1024 bytes or fewer."
 msgstr "Passwords must be 1024 bytes or fewer."
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:180
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:185
 msgid "Paste a link to the yarn"
 msgstr "Paste a link to the yarn"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:486
+#: web/src/lib/features/imports/ImportWorkbench.svelte:494
 msgid "Paste pattern instructions, notes, or a recipe…"
 msgstr "Paste pattern instructions, notes, or a recipe…"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:448
+#: web/src/lib/features/imports/ImportWorkbench.svelte:456
 msgid "Paste text"
 msgstr "Paste text"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:203
+#: web/src/lib/features/imports/ImportWorkbench.svelte:211
 msgid "Paste text to preview."
 msgstr "Paste text to preview."
 
@@ -2937,11 +2954,11 @@ msgstr "Pattern Gauge (per 10cm)"
 msgid "Pattern and notes"
 msgstr "Pattern and notes"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:511
+#: web/src/lib/features/imports/ImportWorkbench.svelte:519
 msgid "Pattern page URL"
 msgstr "Pattern page URL"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:622
+#: web/src/lib/features/imports/ImportWorkbench.svelte:630
 #: web/src/lib/features/projects/ProjectReader.svelte:1255
 msgid "Pattern source"
 msgstr "Pattern source"
@@ -2958,7 +2975,7 @@ msgstr "Pattern step navigation"
 msgid "Pattern steps"
 msgstr "Pattern steps"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:481
+#: web/src/lib/features/imports/ImportWorkbench.svelte:489
 msgid "Pattern text or instructions"
 msgstr "Pattern text or instructions"
 
@@ -3017,15 +3034,15 @@ msgstr "Photo {position} of {total}"
 msgid "Photos"
 msgstr "Photos"
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:353
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:358
 msgid "Photos to add"
 msgstr "Photos to add"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:767
+#: web/src/lib/features/imports/ImportWorkbench.svelte:775
 msgid "Pick a different yarn"
 msgstr "Pick a different yarn"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:759
+#: web/src/lib/features/imports/ImportWorkbench.svelte:767
 msgid "Pick a yarn from your stash."
 msgstr "Pick a yarn from your stash."
 
@@ -3045,7 +3062,7 @@ msgstr "Picture deleted"
 msgid "Picture order"
 msgstr "Picture order"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:100
+#: web/src/lib/features/imports/ImportWorkbench.svelte:101
 msgid "Plain text"
 msgstr "Plain text"
 
@@ -3062,13 +3079,13 @@ msgstr "Preferences"
 msgid "Preparing full-resolution photos…"
 msgstr "Preparing full-resolution photos…"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:544
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:222
+#: web/src/lib/features/imports/ImportWorkbench.svelte:552
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:227
 msgid "Preparing preview…"
 msgstr "Preparing preview…"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:544
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:222
+#: web/src/lib/features/imports/ImportWorkbench.svelte:552
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:227
 msgid "Preview and review"
 msgstr "Preview and review"
 
@@ -3152,6 +3169,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:331
 #: web/src/lib/features/admin/AdminResource.svelte:233
 #: web/src/lib/features/admin/DiffPanel.svelte:89
+#: web/src/routes/share/+page.svelte:71
 msgid "Project"
 msgstr "Project"
 
@@ -3177,7 +3195,7 @@ msgstr "Project cover"
 msgid "Project created."
 msgstr "Project created."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:344
+#: web/src/lib/features/imports/ImportWorkbench.svelte:352
 msgid "Project created. Your reviewed import is saved."
 msgstr "Project created. Your reviewed import is saved."
 
@@ -3196,7 +3214,7 @@ msgid "Project media updated."
 msgstr "Project media updated."
 
 #: web/src/lib/features/history/change-format.ts:103
-#: web/src/lib/features/imports/ImportWorkbench.svelte:608
+#: web/src/lib/features/imports/ImportWorkbench.svelte:616
 #: web/src/lib/features/projects/ProjectEditor.svelte:1205
 msgid "Project name"
 msgstr "Project name"
@@ -3259,8 +3277,8 @@ msgstr "Read the code, follow along or contribute."
 msgid "Read-only view"
 msgstr "Read-only view"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:553
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:228
+#: web/src/lib/features/imports/ImportWorkbench.svelte:561
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:233
 msgid ""
 "Reading the page… some pages take a minute when the AI opens them in a "
 "browser."
@@ -3268,8 +3286,8 @@ msgstr ""
 "Reading the page… some pages take a minute when the AI opens them in a "
 "browser."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:547
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:225
+#: web/src/lib/features/imports/ImportWorkbench.svelte:555
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:230
 msgid "Reading the source and preparing a draft…"
 msgstr "Reading the source and preparing a draft…"
 
@@ -3335,7 +3353,7 @@ msgstr "Recognizing…"
 
 #: web/src/lib/features/admin/AdminResource.svelte:628
 #: web/src/lib/features/history/change-format.ts:131
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:329
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:334
 #: web/src/lib/features/yarns/YarnDetail.svelte:575
 #: web/src/lib/features/yarns/YarnForm.svelte:791
 msgid "Recommended needles"
@@ -3364,7 +3382,7 @@ msgstr ""
 msgid "Reload"
 msgstr "Reload"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:865
+#: web/src/lib/features/imports/ImportWorkbench.svelte:873
 #: web/src/lib/features/projects/ProjectEditor.svelte:1302
 #: web/src/lib/features/projects/ProjectEditor.svelte:1472
 #: web/src/lib/features/projects/ProjectEditor.svelte:1787
@@ -3447,8 +3465,8 @@ msgstr "Removing…"
 msgid "Rename"
 msgstr "Rename"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:213
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:99
+#: web/src/lib/features/imports/ImportWorkbench.svelte:221
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:104
 msgid "Replace this import review? Your edits will be lost."
 msgstr "Replace this import review? Your edits will be lost."
 
@@ -3519,13 +3537,13 @@ msgstr "Resource owner"
 msgid "Resource unavailable"
 msgstr "Resource unavailable"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:573
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:244
+#: web/src/lib/features/imports/ImportWorkbench.svelte:581
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:249
 msgid "Review and correct"
 msgstr "Review and correct"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:585
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:253
+#: web/src/lib/features/imports/ImportWorkbench.svelte:593
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:258
 msgid ""
 "Review the extracted fields. Nothing is created until you choose a save "
 "action."
@@ -3628,7 +3646,7 @@ msgstr "Save your yarn changes before editing photos."
 msgid "Saved"
 msgstr "Saved"
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:392
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:397
 msgid "Saving yarn…"
 msgstr "Saving yarn…"
 
@@ -3914,7 +3932,7 @@ msgstr "Somewhere, a tension swatch is laughing."
 msgid "Source code on GitHub"
 msgstr "Source code on GitHub"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:598
+#: web/src/lib/features/imports/ImportWorkbench.svelte:606
 msgid "Source image details"
 msgstr "Source image details"
 
@@ -3926,8 +3944,8 @@ msgstr "Sponsor on GitHub"
 msgid "Start a project or a yarn, or import one."
 msgstr "Start a project or a yarn, or import one."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:913
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:381
+#: web/src/lib/features/imports/ImportWorkbench.svelte:921
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:386
 msgid "Start another import"
 msgstr "Start another import"
 
@@ -3959,13 +3977,13 @@ msgstr "Status checks pause in the background."
 msgid "Step"
 msgstr "Step"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:417
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:179
+#: web/src/lib/features/imports/ImportWorkbench.svelte:425
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:184
 msgid "Step 1"
 msgstr "Step 1"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:572
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:243
+#: web/src/lib/features/imports/ImportWorkbench.svelte:580
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:248
 msgid "Step 2"
 msgstr "Step 2"
 
@@ -4001,7 +4019,7 @@ msgstr "Step photos"
 msgid "Step picture order"
 msgstr "Step picture order"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:666
+#: web/src/lib/features/imports/ImportWorkbench.svelte:674
 #: web/src/lib/features/projects/ProjectEditor.svelte:1478
 msgid "Step title"
 msgstr "Step title"
@@ -4010,8 +4028,8 @@ msgstr "Step title"
 msgid "Step updated"
 msgstr "Step updated"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:336
-#: web/src/lib/features/imports/ImportWorkbench.svelte:660
+#: web/src/lib/features/imports/ImportWorkbench.svelte:344
+#: web/src/lib/features/imports/ImportWorkbench.svelte:668
 #, python-brace-format
 msgid "Step {number}"
 msgstr "Step {number}"
@@ -4089,16 +4107,16 @@ msgstr ""
 msgid "Stricknani was updated."
 msgstr "Stricknani was updated."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:748
-#: web/src/lib/features/imports/ImportWorkbench.svelte:754
+#: web/src/lib/features/imports/ImportWorkbench.svelte:756
+#: web/src/lib/features/imports/ImportWorkbench.svelte:762
 msgid "Suggested match"
 msgstr "Suggested match"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:688
+#: web/src/lib/features/imports/ImportWorkbench.svelte:696
 msgid "Suggested project images"
 msgstr "Suggested project images"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:676
+#: web/src/lib/features/imports/ImportWorkbench.svelte:684
 msgid "Suggested step images"
 msgstr "Suggested step images"
 
@@ -4137,7 +4155,7 @@ msgstr "Tap ♥ on a project or yarn to keep it here."
 msgid "Temporary password"
 msgstr "Temporary password"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:490
+#: web/src/lib/features/imports/ImportWorkbench.svelte:498
 msgid "Text and files are limited to 5 MiB."
 msgstr "Text and files are limited to 5 MiB."
 
@@ -4529,7 +4547,7 @@ msgstr "The server could not complete this request. Try again."
 msgid "The server fetches it from Gravatar using your email address."
 msgstr "The server fetches it from Gravatar using your email address."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:520
+#: web/src/lib/features/imports/ImportWorkbench.svelte:528
 msgid ""
 "The server reads the page securely and shows thumbnails of the pictures "
 "it found; this browser never contacts the site."
@@ -4537,7 +4555,7 @@ msgstr ""
 "The server reads the page securely and shows thumbnails of the pictures "
 "it found; this browser never contacts the site."
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:207
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:212
 msgid ""
 "The server reads the page securely: shop data, Ravelry and common yarn "
 "fields are filled in for you to review."
@@ -4880,7 +4898,7 @@ msgstr "This value needs attention."
 msgid "This yarn changed elsewhere. Your edits are still here."
 msgstr "This yarn changed elsewhere. Your edits are still here."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:777
+#: web/src/lib/features/imports/ImportWorkbench.svelte:785
 msgid "This yarn is created with the project and linked to it."
 msgstr "This yarn is created with the project and linked to it."
 
@@ -4888,7 +4906,7 @@ msgstr "This yarn is created with the project and linked to it."
 msgid "This yarn rolled away"
 msgstr "This yarn rolled away"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:835
+#: web/src/lib/features/imports/ImportWorkbench.svelte:843
 msgid "This yarn will not be added to the project."
 msgstr "This yarn will not be added to the project."
 
@@ -4939,13 +4957,13 @@ msgstr "Too many archive requests. Try again later."
 msgid "Too many attempts. Wait a moment and try again."
 msgstr "Too many attempts. Wait a moment and try again."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:368
+#: web/src/lib/features/imports/ImportWorkbench.svelte:376
 #, python-brace-format
 msgid "Too many requests. Try again in {seconds} seconds."
 msgstr "Too many requests. Try again in {seconds} seconds."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:367
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:79
+#: web/src/lib/features/imports/ImportWorkbench.svelte:375
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:84
 msgid "Too many requests. Wait a moment, then try again."
 msgstr "Too many requests. Wait a moment, then try again."
 
@@ -5057,7 +5075,7 @@ msgstr "Up already?"
 msgid "Updated"
 msgstr "Updated"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:459
+#: web/src/lib/features/imports/ImportWorkbench.svelte:467
 msgid "Upload file"
 msgstr "Upload file"
 
@@ -5103,7 +5121,7 @@ msgstr ""
 "Use a token for a trusted app or device. You can only see a new token "
 "once."
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:94
+#: web/src/lib/features/imports/ImportWorkbench.svelte:95
 msgid "Use a yarn from my stash"
 msgstr "Use a yarn from my stash"
 
@@ -5210,8 +5228,8 @@ msgstr ""
 msgid "Web app"
 msgstr "Web app"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:817
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:307
+#: web/src/lib/features/imports/ImportWorkbench.svelte:825
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:312
 msgid "Weight in grams"
 msgstr "Weight in grams"
 
@@ -5309,7 +5327,7 @@ msgstr "Yarn deleted."
 msgid "Yarn details"
 msgstr "Yarn details"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:703
+#: web/src/lib/features/imports/ImportWorkbench.svelte:711
 #: web/src/lib/features/projects/ProjectEditor.svelte:1394
 msgid "Yarn for this project"
 msgstr "Yarn for this project"
@@ -5319,8 +5337,8 @@ msgid "Yarn information"
 msgstr "Yarn information"
 
 #: web/src/lib/features/history/change-format.ts:124
-#: web/src/lib/features/imports/ImportWorkbench.svelte:791
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:277
+#: web/src/lib/features/imports/ImportWorkbench.svelte:799
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:282
 #: web/src/lib/features/yarns/YarnForm.svelte:719
 msgid "Yarn name"
 msgstr "Yarn name"
@@ -5329,7 +5347,7 @@ msgstr "Yarn name"
 msgid "Yarn options could not be loaded."
 msgstr "Yarn options could not be loaded."
 
-#: web/src/lib/features/imports/YarnImportWorkbench.svelte:197
+#: web/src/lib/features/imports/YarnImportWorkbench.svelte:202
 msgid "Yarn page URL"
 msgstr "Yarn page URL"
 
@@ -5772,7 +5790,7 @@ msgstr "photos"
 msgid "picture order"
 msgstr "picture order"
 
-#: web/src/lib/features/imports/ImportWorkbench.svelte:601
+#: web/src/lib/features/imports/ImportWorkbench.svelte:609
 msgid "pixels"
 msgstr "pixels"
 

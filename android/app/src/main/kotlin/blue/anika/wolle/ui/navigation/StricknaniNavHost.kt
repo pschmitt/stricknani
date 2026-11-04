@@ -38,6 +38,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import blue.anika.wolle.data.api.ImportAvailability
 import blue.anika.wolle.ui.admin.AdminAccountsScreen
 import blue.anika.wolle.ui.admin.AdminAuditScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
@@ -60,6 +61,9 @@ import blue.anika.wolle.ui.settings.LibrariesScreen
 import blue.anika.wolle.ui.settings.SettingsCategory
 import blue.anika.wolle.ui.settings.SettingsCategoryScreen
 import blue.anika.wolle.ui.settings.SettingsScreen
+import blue.anika.wolle.ui.share.ShareImportChooser
+import blue.anika.wolle.ui.share.ShareImportKind
+import blue.anika.wolle.ui.share.shareStage
 import blue.anika.wolle.ui.signin.SignInAgainScreen
 import blue.anika.wolle.ui.signin.SignedOutBanner
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
@@ -121,6 +125,10 @@ internal fun navigateToTopLevelRoot(
  *   it through the same [blue.anika.wolle.ui.onboarding.OnboardingViewModel.connectFromScannedText]
  *   path the in-app scanner uses, then cleared via [onSetupUriConsumed]. `null` means nothing
  *   pending - only meaningful pre-onboarding, see [MainActivity]'s call site.
+ * @param pendingSharedUrl a link another app shared to this one. It waits through onboarding, then a
+ *   chooser asks whether to import it as a project or a yarn; [onSharedUrlConsumed] clears it.
+ *   Choosing only opens the import dialog with the link filled in - nothing is imported until the
+ *   user confirms there.
  */
 @Composable
 fun StricknaniNavHost(
@@ -132,6 +140,9 @@ fun StricknaniNavHost(
     onDeepLinkConsumed: () -> Unit = {},
     pendingSetupUri: String? = null,
     onSetupUriConsumed: () -> Unit = {},
+    pendingSharedUrl: String? = null,
+    onSharedUrlConsumed: () -> Unit = {},
+    importAvailability: ImportAvailability = ImportAvailability(),
     mutationFeedback: MutationFeedback,
 ) {
     val navController = rememberNavController()
@@ -164,6 +175,20 @@ fun StricknaniNavHost(
             onDeepLinkConsumed()
         }
     }
+
+    ShareImportChooser(
+        stage =
+            shareStage(
+                pendingSharedUrl,
+                isConfigured = startDestination != Route.Onboarding,
+                availability = importAvailability,
+            ),
+        onChoose = { kind, url ->
+            navController.navigate(Route.CreateImport(kind.name, url))
+            onSharedUrlConsumed()
+        },
+        onDismiss = onSharedUrlConsumed,
+    )
 
     Scaffold(
         modifier = modifier,
@@ -352,6 +377,16 @@ fun StricknaniNavHost(
                         onBack = { navController.navigateUp() },
                         onNewProject = { navController.navigate(Route.ProjectEditor()) },
                         onNewYarn = { navController.navigate(Route.YarnEditor()) },
+                    )
+                }
+                screen<Route.CreateImport>(motion) { backStackEntry ->
+                    val route: Route.CreateImport = backStackEntry.toRoute()
+                    CreateScreen(
+                        onBack = { navController.navigateUp() },
+                        onNewProject = { navController.navigate(Route.ProjectEditor()) },
+                        onNewYarn = { navController.navigate(Route.YarnEditor()) },
+                        initialImportKind = ShareImportKind.entries.firstOrNull { it.name == route.kind },
+                        initialImportUrl = route.url,
                     )
                 }
                 screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->

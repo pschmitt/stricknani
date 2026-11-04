@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.crash.CrashReportStore
 import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
 import blue.anika.wolle.data.oidc.OidcFailure
@@ -47,6 +48,8 @@ import blue.anika.wolle.ui.navigation.StricknaniNavHost
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.showOidcFailure
 import blue.anika.wolle.ui.settings.SettingsCategory
+import blue.anika.wolle.ui.share.ShareIntake
+import blue.anika.wolle.ui.share.SharedLink
 import blue.anika.wolle.ui.theme.StricknaniTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -80,6 +83,10 @@ class MainActivity : ComponentActivity() {
     // already uses instead - see `StricknaniNavHost`/`OnboardingScreen`.
     private var pendingSetupUri by mutableStateOf<String?>(null)
     private var pendingCrashReport by mutableStateOf<String?>(null)
+    // A link shared to the app (ACTION_SEND text/plain). Kept here, not in the nav graph, so it
+    // survives onboarding (which recreates the graph), rotation and process death
+    // (onSaveInstanceState). The chooser asks before anything is imported.
+    private var pendingSharedUrl by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -89,6 +96,14 @@ class MainActivity : ComponentActivity() {
         pendingDeepLink = routeFor(intent)
         pendingSetupUri = intent?.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
         pendingCrashReport = CrashReportStore(applicationContext).takePending()
+        // A recreated activity (rotation, process death) still holds the original share intent:
+        // restore the saved pending link instead of reading the intent again, or a link the user
+        // already answered would come back. Relaunching from Recents replays it too.
+        if (savedInstanceState != null) {
+            pendingSharedUrl = savedInstanceState.getString(STATE_PENDING_SHARE)
+        } else if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) {
+            handleShare(intent)
+        }
         // A recreated activity (rotation) still holds the original intent: only a fresh launch may
         // process an OIDC callback, a one-time link that must not run twice.
         if (savedInstanceState == null) handleOidcCallback(intent)
@@ -149,6 +164,9 @@ class MainActivity : ComponentActivity() {
                         // QR scanned again, say) has nothing useful to do.
                         pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
                         onSetupUriConsumed = { pendingSetupUri = null },
+                        pendingSharedUrl = pendingSharedUrl,
+                        onSharedUrlConsumed = { pendingSharedUrl = null },
+                        importAvailability = apiState.importAvailability(),
                         mutationFeedback = mutationFeedback,
                     )
                 }
@@ -173,6 +191,35 @@ class MainActivity : ComponentActivity() {
         pendingDeepLink = routeFor(intent)
         pendingSetupUri = intent.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
         handleOidcCallback(intent)
+        handleShare(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingSharedUrl?.let { outState.putString(STATE_PENDING_SHARE, it) }
+    }
+
+    /**
+     * A share of plain text: keep its first http(s) link for the chooser, or say there is none. The
+     * share is dropped from the intent so nothing can handle it twice.
+     */
+    private fun handleShare(intent: Intent?) {
+        if (intent == null) return
+        when (
+            val intake =
+                SharedLink.intake(
+                    intent.action,
+                    intent.type,
+                    intent.getCharSequenceExtra(Intent.EXTRA_TEXT),
+                )
+        ) {
+            ShareIntake.NotAShare -> return
+            ShareIntake.NoLink ->
+                Toast.makeText(this, getString(R.string.share_no_link), Toast.LENGTH_SHORT).show()
+            is ShareIntake.Link -> pendingSharedUrl = intake.url
+        }
+        intent.action = null
+        intent.removeExtra(Intent.EXTRA_TEXT)
     }
 
     /** A web link, or the "update available" notification, which opens Settings -> About. */
@@ -235,6 +282,8 @@ class MainActivity : ComponentActivity() {
         finishAffinity()
     }
 }
+
+private const val STATE_PENDING_SHARE = "pending_shared_url"
 
 /** The same translucent navigation-bar scrims androidx uses by default for button navigation. */
 private val LIGHT_NAV_SCRIM = AndroidColor.argb(0xe6, 0xFF, 0xFF, 0xFF)

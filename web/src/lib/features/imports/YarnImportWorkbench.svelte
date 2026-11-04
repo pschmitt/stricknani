@@ -1,6 +1,7 @@
 <script lang="ts">
   import { importAvailability } from "./import-availability.ts";
   import { beforeNavigate } from "$app/navigation";
+  import { prefillUrlFromSearch } from "./shared-link";
   import { resolve } from "$app/paths";
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
@@ -54,12 +55,16 @@
     guessed: msg("Guessed"),
   } as const;
 
-  onMount(() =>
-    registerPwaUpdateGuard(() => ({
+  onMount(() => {
+    // A shared or linked page (`?url=`) arrives with the link filled in. The
+    // import only starts when the user presses the button.
+    const prefill = prefillUrlFromSearch(window.location.search);
+    if (prefill) sourceUrl = prefill;
+    return registerPwaUpdateGuard(() => ({
       dirty: hasDirtyDraft || sourceUrl.trim().length > 0,
       busy: busy || saving,
-    })),
-  );
+    }));
+  });
 
   beforeNavigate(({ cancel }) => {
     if (!hasDirtyDraft || typeof window === "undefined") return;

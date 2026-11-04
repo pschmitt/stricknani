@@ -251,6 +251,82 @@ export async function runImportJourney(
       "AI opt-in was usable without the AI capability",
     );
 
+    markStage("sharing a link to the app with link imports off");
+    const sharedLink = "https://www.garnstudio.com/pattern.php?id=12752&cid=9";
+    const shareText = `Cosy pattern ${sharedLink}`;
+    await page.goto(
+      `${origin}/app/share?text=${encodeURIComponent(shareText)}`,
+      { waitUntil: "networkidle" },
+    );
+    await page
+      .getByRole("heading", { name: "Link import is off" })
+      .waitFor({ state: "visible" });
+    check(
+      (await page.getByTestId("share-project").count()) === 0,
+      "the share chooser was offered with link imports off",
+    );
+    await page.goto(
+      `${origin}/app/share?text=${encodeURIComponent("no link here")}`,
+      { waitUntil: "networkidle" },
+    );
+    await page
+      .getByRole("heading", { name: "No link found" })
+      .waitFor({ state: "visible" });
+
+    markStage("sharing a link with link imports on prefills the import page");
+    // The fixture server has link imports off: report them on for this check.
+    await page.route("**/api/v2/session", async (route) => {
+      const upstream = await route.fetch();
+      const body = (await upstream.json()) as {
+        data?: { capabilities?: Record<string, boolean> };
+      };
+      if (body.data?.capabilities) {
+        body.data.capabilities.external_imports = true;
+      }
+      await route.fulfill({ response: upstream, json: body });
+    });
+    await page.goto(
+      `${origin}/app/share?text=${encodeURIComponent(shareText)}`,
+      { waitUntil: "networkidle" },
+    );
+    await page
+      .getByRole("heading", {
+        name: "Import this link as a project or as a yarn?",
+      })
+      .waitFor({ state: "visible" });
+    check(
+      (await page.getByTestId("share-host").innerText()) === "garnstudio.com",
+      "the share chooser did not show the link's host",
+    );
+    await page.getByTestId("share-project").click();
+    await page
+      .getByRole("heading", { name: "Import a project" })
+      .waitFor({ state: "visible" });
+    const prefilled = page.getByLabel("Pattern page URL");
+    await prefilled.waitFor({ state: "visible" });
+    check(
+      (await prefilled.inputValue()) === sharedLink,
+      "the shared link did not prefill the project import",
+    );
+    check(
+      importResponses.filter(([p]) => p === "/api/v2/imports/preview")
+        .length === 0,
+      "choosing a share started an import without confirmation",
+    );
+    await page.goto(
+      `${origin}/app/share?url=${encodeURIComponent(sharedLink)}`,
+      { waitUntil: "networkidle" },
+    );
+    await page.getByTestId("share-yarn").click();
+    const yarnPrefilled = page.getByLabel("Yarn page URL");
+    await yarnPrefilled.waitFor({ state: "visible" });
+    check(
+      (await yarnPrefilled.inputValue()) === sharedLink,
+      "the shared link did not prefill the yarn import",
+    );
+    await page.unroute("**/api/v2/session");
+    await page.goto(`${origin}/app/imports`, { waitUntil: "networkidle" });
+
     markStage("previewing text and checking review fields");
     const sourceText =
       "Cozy import fixture\n" +

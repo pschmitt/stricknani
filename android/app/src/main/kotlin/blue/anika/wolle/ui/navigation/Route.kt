@@ -34,6 +34,9 @@ sealed interface Route {
     /** Create (new project/yarn, imports) - opened from the first row of More. */
     @Serializable data object Create : Route
 
+    /** Create with the import dialog of [kind] ("Project" or "Yarn") open and [url] filled in. */
+    @Serializable data class CreateImport(val kind: String, val url: String) : Route
+
     @Serializable data class ProjectDetail(val projectId: Int) : Route
 
     @Serializable data class YarnDetail(val yarnId: Int) : Route
@@ -137,6 +140,7 @@ enum class TopLevelDestination(
         setOf(
             Route.Settings::class,
             Route.Create::class,
+            Route.CreateImport::class,
             Route.SettingsCategoryRoute::class,
             Route.Libraries::class,
             Route.AdminAudit::class,

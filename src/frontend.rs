@@ -192,6 +192,8 @@ fn is_known_route(path: &str) -> bool {
         | ["yarns", "new"]
         | ["categories"]
         | ["imports"]
+        | ["imports", "yarn"]
+        | ["share"]
         | ["privacy"]
         | ["delete-account"]
         | ["about"]

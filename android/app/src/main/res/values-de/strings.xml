@@ -1188,4 +1188,9 @@
     <string name="owner_filter_label">Anzeigen</string>
     <string name="owner_filter_mine">Meine</string>
     <string name="owner_filter_everyone">Alle</string>
+    <string name="share_import_title">Diesen Link als Projekt oder als Garn importieren?</string>
+    <string name="share_import_project">Projekt</string>
+    <string name="share_import_yarn">Garn</string>
+    <string name="share_import_unavailable_title">Link-Import ist aus</string>
+    <string name="share_no_link">Kein Link gefunden</string>
 </resources>

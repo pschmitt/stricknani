@@ -92,6 +92,13 @@
                 <data android:scheme="http" android:host="*" android:pathPattern="/app/projects/.*" />
                 <data android:scheme="http" android:host="*" android:pathPattern="/app/yarns/.*" />
             </intent-filter>
+            <!-- Share a link to Stricknani from a browser or any app: the app asks whether to import
+                 it as a project or a yarn and opens that import dialog with the link filled in. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
             <!-- Setup QR payloads (SNA-13) are self-identifying custom-scheme URIs, so a generic
                  camera app's own QR auto-detection can hand them back to this app too, not just
                  the in-app scanner - matches nyetbox's `nyetbox://setup` registration. -->

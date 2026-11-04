@@ -33,6 +33,7 @@
     isCurrentImportOperation,
     type ImportOperationIdentity,
   } from "./import-operation";
+  import { prefillUrlFromSearch } from "./shared-link";
   import { resolve } from "$app/paths";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -103,12 +104,19 @@
     image: msg("Image"),
   } as const;
 
-  onMount(() =>
-    registerPwaUpdateGuard(() => ({
+  onMount(() => {
+    // A shared or linked page (`?url=`) arrives with the link filled in. The
+    // import only starts when the user presses the button.
+    const prefill = prefillUrlFromSearch(window.location.search);
+    if (prefill) {
+      sourceKind = "url";
+      sourceUrl = prefill;
+    }
+    return registerPwaUpdateGuard(() => ({
       dirty: hasDirtyDraft || hasSourceDraft,
       busy: busy,
-    })),
-  );
+    }));
+  });
 
   $effect(() => {
     const currentUserId = session.data?.user?.id ?? null;

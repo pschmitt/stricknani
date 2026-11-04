@@ -50,6 +50,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.projects.ProjectImportDialog
+import blue.anika.wolle.ui.share.ShareImportKind
 import blue.anika.wolle.ui.projects.ProjectsListViewModel
 import blue.anika.wolle.ui.yarns.YarnImportDialog
 import blue.anika.wolle.ui.yarns.YarnsListViewModel
@@ -65,6 +66,8 @@ fun CreateScreen(
     onBack: () -> Unit,
     onNewProject: () -> Unit,
     onNewYarn: () -> Unit,
+    initialImportKind: ShareImportKind? = null,
+    initialImportUrl: String? = null,
     projects: ProjectsListViewModel = hiltViewModel(),
     yarns: YarnsListViewModel = hiltViewModel(),
 ) {
@@ -72,8 +75,14 @@ fun CreateScreen(
     val projectImportState by projects.importState.collectAsStateWithLifecycle()
     val yarnImportState by yarns.importState.collectAsStateWithLifecycle()
     val stashYarns by projects.stashYarns.collectAsStateWithLifecycle()
-    var showProjectImport by rememberSaveable { mutableStateOf(false) }
-    var showYarnImport by rememberSaveable { mutableStateOf(false) }
+    // A shared link opens the matching import dialog with the link filled in. The user still has to
+    // confirm there: nothing is imported from here.
+    var showProjectImport by rememberSaveable {
+        mutableStateOf(initialImportKind == ShareImportKind.Project)
+    }
+    var showYarnImport by rememberSaveable {
+        mutableStateOf(initialImportKind == ShareImportKind.Yarn)
+    }
 
     Scaffold(
         topBar = {
@@ -126,6 +135,7 @@ fun CreateScreen(
 
     ProjectImportDialog(
         visible = showProjectImport,
+        initialUrl = initialImportUrl.takeIf { initialImportKind == ShareImportKind.Project }.orEmpty(),
         state = projectImportState,
         availability = availability,
         onStart = projects::startImport,
@@ -141,6 +151,7 @@ fun CreateScreen(
     )
     YarnImportDialog(
         visible = showYarnImport,
+        initialUrl = initialImportUrl.takeIf { initialImportKind == ShareImportKind.Yarn }.orEmpty(),
         state = yarnImportState,
         availability = availability,
         onStart = yarns::startImport,

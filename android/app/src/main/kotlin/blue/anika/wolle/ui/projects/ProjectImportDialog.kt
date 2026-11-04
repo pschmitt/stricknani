@@ -43,6 +43,7 @@ import blue.anika.wolle.ui.common.StickyNoteField
 @Composable
 fun ProjectImportDialog(
     visible: Boolean,
+    initialUrl: String = "",
     state: ProjectImportState,
     onStart: (String) -> Unit,
     onConfirm: (List<String>, ProjectWriteRequest, List<String>) -> Unit,
@@ -53,7 +54,7 @@ fun ProjectImportDialog(
     stashYarns: List<YarnEntity> = emptyList(),
     stashYarnPreviewUrl: (YarnEntity) -> String? = { null },
 ) {
-    var url by rememberSaveable { mutableStateOf("") }
+    var url by rememberSaveable(initialUrl) { mutableStateOf(initialUrl) }
     val context = LocalContext.current
     val amountLabel = stringResource(R.string.yarn_detail_field_amount)
     // One review per preview: a decision per yarn, extra stash yarns and the single notes text,

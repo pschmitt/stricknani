@@ -38,6 +38,7 @@ import blue.anika.wolle.ui.projects.importWarningRes
 @Composable
 fun YarnImportDialog(
     visible: Boolean,
+    initialUrl: String = "",
     state: YarnImportState,
     onStart: (String) -> Unit,
     onConfirm: (List<String>) -> Unit,
@@ -46,7 +47,7 @@ fun YarnImportDialog(
     availability: ImportAvailability = ImportAvailability(),
     thumbnailUrl: (String) -> String? = { null },
 ) {
-    var url by rememberSaveable { mutableStateOf("") }
+    var url by rememberSaveable(initialUrl) { mutableStateOf(initialUrl) }
     val preselected = (state as? YarnImportState.AwaitingConfirmation)?.preview?.request?.imageUrls
     var selectedImages by remember(state) { mutableStateOf(preselected.orEmpty().toSet()) }
 
