@@ -414,6 +414,7 @@ private fun ProjectDetailContent(
                     ProjectDetailCard.ATTACHMENTS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_attachments_title),
+                            icon = PhosphorIcons.Paperclip,
                             onEdit = { onEditSection(ProjectEditorFocus.ATTACHMENTS) },
                             copyText =
                                 detail.attachments.joinToString("\n") { it.originalFilename },
@@ -448,6 +449,7 @@ private fun ProjectDetailContent(
                     ProjectDetailCard.DETAILS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_details_title),
+                            icon = PhosphorIcons.Info,
                             onEdit = { onEditSection(ProjectEditorFocus.DETAILS) },
                             copyText =
                                 copyLines(
@@ -495,6 +497,7 @@ private fun ProjectDetailContent(
                     ProjectDetailCard.STITCH_SAMPLE ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.common_field_stitch_sample),
+                            icon = PhosphorIcons.Ruler,
                             onEdit = { onEditSection(ProjectEditorFocus.STITCH_SAMPLE) },
                             copyText = detail.stitchSample,
                             cardKey = cardKey,
@@ -538,6 +541,7 @@ private fun ProjectDetailContent(
                     ProjectDetailCard.LINKED_YARNS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_linked_yarns_title),
+                            icon = MdiIcons.YarnBall,
                             onEdit = { onEditSection(ProjectEditorFocus.LINKED_YARNS) },
                             copyText = linkedYarns.joinToString("\n") { it.name },
                             cardKey = cardKey,
@@ -561,6 +565,7 @@ private fun ProjectDetailContent(
                     ProjectDetailCard.DESCRIPTION ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_description_title),
+                            icon = PhosphorIcons.NotePencil,
                             onEdit = { onEditSection(ProjectEditorFocus.DESCRIPTION) },
                             copyText = detail.description,
                             cardKey = cardKey,
@@ -580,6 +585,7 @@ private fun ProjectDetailContent(
                     ProjectDetailCard.STEPS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_steps_title),
+                            icon = PhosphorIcons.ListNumbers,
                             cardKey = cardKey,
                             cardIndex = cardIndex,
                             listState = listState,

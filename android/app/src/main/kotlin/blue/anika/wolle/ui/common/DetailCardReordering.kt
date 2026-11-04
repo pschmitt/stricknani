@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -18,7 +19,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DragHandle
@@ -38,9 +41,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -147,6 +153,8 @@ internal fun ReorderableDetailCard(
     onEdit: (() -> Unit)? = null,
     copyText: String? = null,
     sticky: Boolean = false,
+    icon: ImageVector? = null,
+    accent: Color = MaterialTheme.colorScheme.primary,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val titleDescription = stringResource(R.string.detail_card_reorder_title_description, title)
@@ -187,7 +195,25 @@ internal fun ReorderableDetailCard(
             .offset { reorderState.offsetFor(cardKey) }
             .zIndex(if (reorderState.offsetFor(cardKey) != IntOffset.Zero) 1f else 0f)
     val body: @Composable ColumnScope.() -> Unit = {
-        Row(modifier = titleModifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = titleModifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (icon != null) {
+                // The same icon chip as Home's SectionTitle, so a card heading reads alike.
+                Box(
+                    Modifier.size(30.dp).clip(CircleShape).background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
             Text(
                 title,
                 style = MaterialTheme.typography.titleMedium,

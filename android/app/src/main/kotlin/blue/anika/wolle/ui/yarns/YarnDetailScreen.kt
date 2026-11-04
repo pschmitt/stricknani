@@ -400,6 +400,8 @@ private fun YarnDetailContent(
                     YarnDetailCard.DETAILS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.yarn_detail_details_title),
+                            icon = PhosphorIcons.Info,
+                            accent = MaterialTheme.colorScheme.secondary,
                             onEdit = { onEditSection(YarnEditorFocus.DETAILS) },
                             copyText =
                                 copyLines(
@@ -465,6 +467,8 @@ private fun YarnDetailContent(
                     YarnDetailCard.DESCRIPTION ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_description_title),
+                            icon = PhosphorIcons.NotePencil,
+                            accent = MaterialTheme.colorScheme.secondary,
                             onEdit = { onEditSection(YarnEditorFocus.DESCRIPTION) },
                             copyText = detail.description,
                             cardKey = cardKey,
@@ -484,6 +488,8 @@ private fun YarnDetailContent(
                     YarnDetailCard.USED_IN ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.yarn_detail_used_in_title),
+                            icon = PhosphorIcons.Hoodie,
+                            accent = MaterialTheme.colorScheme.secondary,
                             cardKey = cardKey,
                             cardIndex = cardIndex,
                             listState = listState,
