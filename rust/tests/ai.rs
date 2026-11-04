@@ -104,7 +104,13 @@ fn provider_key_precedence_and_model_override_are_explicit_and_redacted() {
     assert_eq!(config.model(), "fixture-model");
     assert_eq!(
         looked_up,
-        ["AI_PROVIDER", "AI_API_KEY", "AI_MODEL", "AI_BASE_URL"]
+        [
+            "AI_PROVIDER",
+            "AI_API_KEY",
+            "AI_MODEL",
+            "AI_BASE_URL",
+            "AI_TIMEOUT_SECONDS"
+        ]
     );
     assert!(!format!("{config:?}").contains("fixture-key"));
 }
@@ -128,9 +134,11 @@ fn provider_key_precedes_compatibility_fallback() {
         [
             "AI_PROVIDER",
             "AI_API_KEY",
+            "AI_API_KEY_FILE",
             "GROQ_API_KEY",
             "AI_MODEL",
-            "AI_BASE_URL"
+            "AI_BASE_URL",
+            "AI_TIMEOUT_SECONDS"
         ]
     );
 }

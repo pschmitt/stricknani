@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   MAX_IMPORT_SOURCE_BYTES,
+  importImageSrc,
   previewImportFile,
   previewImportText,
+  previewImportUrl,
 } from "./import-api";
 
 const session = {
@@ -112,5 +114,49 @@ describe("import preview API", () => {
       ),
     ).rejects.toMatchObject({ status: 413, code: "payload_too_large" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends the import target for links and reads yarn details and provenance", async () => {
+    const withYarn = structuredClone(response);
+    Object.assign(withYarn.data.draft, {
+      pageKind: "yarn",
+      provenance: { "yarn.brand": "structured", "yarn.care": "ai", bad: "x" },
+      warnings: ["no_structured_data"],
+      yarn: { name: "Air", brand: "Drops", weightGrams: 50, imageUrls: [] },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(withYarn));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await previewImportUrl(
+      "https://shop.example.test/air",
+      true,
+      session,
+      undefined,
+      "yarn",
+    );
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toEqual({
+      type: "url",
+      url: "https://shop.example.test/air",
+      use_ai: true,
+      target: "yarn",
+    });
+    expect(result.draft.pageKind).toBe("yarn");
+    expect(result.draft.yarn?.weightGrams).toBe(50);
+    expect(result.draft.yarn?.care).toBeNull();
+    expect(result.draft.provenance).toEqual({
+      "yarn.brand": "structured",
+      "yarn.care": "ai",
+    });
+    expect(result.draft.warnings).toEqual(["no_structured_data"]);
+    // Older servers omit the new fields.
+    expect(result.draft.project.designer).toBeNull();
+  });
+
+  it("builds a same-origin thumbnail URL", () => {
+    expect(importImageSrc("https://a.example/x.jpg?w=1&h=2")).toBe(
+      "/api/v2/imports/image?url=https%3A%2F%2Fa.example%2Fx.jpg%3Fw%3D1%26h%3D2",
+    );
   });
 });

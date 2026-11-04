@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 use std::io::Cursor;
 
 use image::ImageReader;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -17,8 +16,6 @@ use url::Url;
 
 const MAX_DOCUMENT_BYTES: usize = 5 * 1024 * 1024;
 const MAX_EXTRACTED_TEXT_CHARS: usize = 200_000;
-const MAX_IMAGE_URLS: usize = 10;
-const MAX_JSON_LD_BLOCKS: usize = 16;
 const MAX_PDF_PAGES: usize = 30;
 const MAX_PDF_STREAM_BYTES: usize = 1024 * 1024;
 const MAX_PDF_PAGE_TEXT_BYTES: usize = 256 * 1024;
@@ -66,7 +63,64 @@ pub struct ProjectImportDraft {
     pub image_urls: Vec<String>,
     pub link: Option<String>,
     pub brand: Option<String>,
+    /// Pattern designer or publisher, when the page names one.
+    #[serde(default)]
+    pub designer: Option<String>,
+    #[serde(default)]
+    pub difficulty: Option<String>,
+    /// Available sizes, for example "S, M, L, XL".
+    #[serde(default)]
+    pub sizes: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
     pub extras: BTreeMap<String, Value>,
+}
+
+/// What a page turned out to be about.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PageKind {
+    Yarn,
+    Pattern,
+    #[default]
+    Unknown,
+}
+
+/// Where a field value came from. Higher-trust sources win when merging.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FieldSource {
+    /// Guessed from visible page text by pattern matching.
+    Text,
+    /// Written by an AI model from the page text.
+    Ai,
+    /// schema.org, microdata or OpenGraph markup.
+    Structured,
+    /// A site-specific extractor or API (Ravelry, Drops).
+    Site,
+}
+
+/// A yarn product as found on a shop or yarn database page.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YarnDetails {
+    pub name: Option<String>,
+    pub brand: Option<String>,
+    pub colorway: Option<String>,
+    pub description: Option<String>,
+    pub fiber_content: Option<String>,
+    pub weight_category: Option<String>,
+    /// Skein or ball weight in grams.
+    pub weight_grams: Option<i64>,
+    /// Length of one skein in meters.
+    pub length_meters: Option<i64>,
+    pub recommended_needles: Option<String>,
+    pub gauge: Option<String>,
+    pub care: Option<String>,
+    /// Shop price as text, for example "7.95 EUR".
+    pub price: Option<String>,
+    pub link: Option<String>,
+    pub image_urls: Vec<String>,
 }
 
 /// Yarn details extracted from structured metadata when a source provides them.
@@ -112,6 +166,17 @@ pub struct ImportDocumentDraft {
     pub source_url: Option<String>,
     pub project: ProjectImportDraft,
     pub image: Option<ImageFacts>,
+    /// Yarn details, present for yarn pages and for yarn-target imports.
+    #[serde(default)]
+    pub yarn: Option<YarnDetails>,
+    #[serde(default)]
+    pub page_kind: PageKind,
+    /// Field path (for example `yarn.brand`) to the source it came from.
+    #[serde(default)]
+    pub provenance: BTreeMap<String, FieldSource>,
+    /// Short machine codes such as `no_structured_data` for the UI to explain.
+    #[serde(default)]
+    pub warnings: Vec<String>,
 }
 
 /// Stable, non-sensitive parser errors.
@@ -134,8 +199,23 @@ pub fn parse_document(input: DocumentInput<'_>) -> Result<ImportDocumentDraft, D
     let sha256 = hex::encode(Sha256::digest(input.bytes));
     let source_url = input.source_url.and_then(safe_web_url).map(Url::to_string);
 
+    let mut yarn = None;
+    let mut page_kind = PageKind::Unknown;
+    let mut provenance = BTreeMap::new();
+    let mut warnings = Vec::new();
     let (project, image) = match kind {
-        DocumentKind::Html => (parse_html(&input), None),
+        DocumentKind::Html => {
+            let extraction = crate::url_import::extract_html(
+                &decode_html(input.bytes, input.content_type),
+                input.source_url,
+                input.fetched_title,
+            );
+            yarn = extraction.yarn;
+            page_kind = extraction.kind;
+            provenance = extraction.provenance;
+            warnings = extraction.warnings;
+            (extraction.project, None)
+        }
         DocumentKind::PlainText => (parse_text(&input, false), None),
         DocumentKind::Markdown => (parse_text(&input, true), None),
         DocumentKind::Pdf => (parse_pdf(&input)?, None),
@@ -148,6 +228,10 @@ pub fn parse_document(input: DocumentInput<'_>) -> Result<ImportDocumentDraft, D
         source_url,
         project,
         image,
+        yarn,
+        page_kind,
+        provenance,
+        warnings,
     })
 }
 
@@ -189,109 +273,8 @@ fn detect_kind(
     kind.ok_or(DocumentParseError::UnsupportedType)
 }
 
-fn parse_html(input: &DocumentInput<'_>) -> ProjectImportDraft {
-    let html = String::from_utf8_lossy(input.bytes);
-    let document = Html::parse_document(&html);
-    let mut project = ProjectImportDraft::default();
-    let json_ld_selector = selector("script[type='application/ld+json']");
-    let title_selector = selector("title");
-    let meta_selector = selector("meta");
-    let link_selector = selector("link[rel='canonical']");
-    let image_selector = selector("img[src]");
-    let text_selector = selector("p, h1, h2, h3, li");
-
-    let metadata = document
-        .select(&meta_selector)
-        .fold(BTreeMap::new(), |mut map, node| {
-            let key = node
-                .value()
-                .attr("property")
-                .or_else(|| node.value().attr("name"))
-                .unwrap_or_default()
-                .to_ascii_lowercase();
-            let value = node.value().attr("content").and_then(nonempty);
-            if !key.is_empty()
-                && let Some(value) = value
-            {
-                map.entry(key).or_insert_with(|| value.to_owned());
-            }
-            map
-        });
-
-    let json_ld: Vec<Value> = document
-        .select(&json_ld_selector)
-        .take(MAX_JSON_LD_BLOCKS)
-        .filter_map(|script| serde_json::from_str(&script.text().collect::<String>()).ok())
-        .collect();
-    let schema_objects = schema_objects(&json_ld);
-
-    project.name = input
-        .fetched_title
-        .and_then(nonempty)
-        .map(str::to_owned)
-        .or_else(|| metadata_value(&metadata, &["og:title", "twitter:title"]))
-        .or_else(|| {
-            document
-                .select(&title_selector)
-                .next()
-                .map(|node| node.text().collect::<String>())
-                .and_then(|value| nonempty(&value).map(str::to_owned))
-        })
-        .or_else(|| schema_string(&schema_objects, &["name", "headline"]));
-    project.description = metadata_value(
-        &metadata,
-        &["description", "og:description", "twitter:description"],
-    )
-    .or_else(|| schema_string(&schema_objects, &["description"]))
-    .or_else(|| input.fetched_text.and_then(nonempty).map(short_text))
-    .or_else(|| {
-        let visible_text = document
-            .select(&text_selector)
-            .map(|node| node.text().collect::<String>())
-            .filter_map(|text| nonempty(&text).map(str::to_owned))
-            .collect::<Vec<_>>()
-            .join("\n");
-        nonempty(&visible_text).map(short_text)
-    });
-    project.link = document
-        .select(&link_selector)
-        .next()
-        .and_then(|node| node.value().attr("href"))
-        .and_then(|href| resolve_url(input.source_url, href))
-        .or_else(|| input.source_url.and_then(safe_web_url).map(Url::to_string))
-        .or_else(|| schema_string(&schema_objects, &["url"]));
-    project.brand = metadata_value(&metadata, &["og:site_name", "application-name"])
-        .or_else(|| schema_name(&schema_objects, &["brand", "author", "publisher"]));
-    project.category = schema_string(&schema_objects, &["recipeCategory", "category"]);
-    project.yarn = schema_string(&schema_objects, &["yarn", "yarnDescription"]);
-    project.yarns = schema_yarns(&schema_objects, input.source_url);
-    project.needles = schema_string(&schema_objects, &["needles", "needleSize"]);
-    project.stitch_sample = metadata_value(&metadata, &["stitch_sample", "stitch-sample"]);
-    project.fiber_content = schema_string(&schema_objects, &["fiberContent", "material"]);
-    project.colorway = schema_string(&schema_objects, &["colorway"]);
-    project.weight_category = schema_string(&schema_objects, &["weightCategory"]);
-    project.gauge_width = metadata_value(&metadata, &["gauge_width", "gauge-width"])
-        .and_then(|value| value.parse().ok());
-    project.gauge_height = metadata_value(&metadata, &["gauge_height", "gauge-height"])
-        .and_then(|value| value.parse().ok());
-    let ingredients = schema_strings(&schema_objects, &["recipeIngredient"]);
-    project.other_materials = (!ingredients.is_empty()).then(|| ingredients.join("\n"));
-    project.steps = recipe_steps(&schema_objects, input.source_url);
-    project.image_urls = metadata_value(&metadata, &["og:image", "twitter:image"])
-        .into_iter()
-        .chain(schema_strings(&schema_objects, &["image"]))
-        .chain(
-            document
-                .select(&image_selector)
-                .filter_map(|node| node.value().attr("src").map(str::to_owned)),
-        )
-        .filter_map(|url| resolve_url(input.source_url, &url))
-        .take(MAX_IMAGE_URLS)
-        .collect();
-    project
-        .extras
-        .insert("structured_data".into(), Value::Array(json_ld));
-    project
+fn decode_html(bytes: &[u8], content_type: Option<&str>) -> String {
+    crate::url_import::charset::decode_html(bytes, content_type)
 }
 
 fn parse_text(input: &DocumentInput<'_>, markdown: bool) -> ProjectImportDraft {
@@ -400,170 +383,7 @@ fn image_facts(bytes: &[u8]) -> Result<ImageFacts, DocumentParseError> {
     })
 }
 
-fn schema_objects(values: &[Value]) -> Vec<&serde_json::Map<String, Value>> {
-    fn visit<'a>(value: &'a Value, output: &mut Vec<&'a serde_json::Map<String, Value>>) {
-        match value {
-            Value::Array(values) => values.iter().for_each(|value| visit(value, output)),
-            Value::Object(map) => {
-                if map.contains_key("@type") {
-                    output.push(map);
-                }
-                if let Some(graph) = map.get("@graph") {
-                    visit(graph, output);
-                }
-            }
-            _ => {}
-        }
-    }
-    let mut objects = Vec::new();
-    values.iter().for_each(|value| visit(value, &mut objects));
-    objects
-}
-
-fn schema_string(objects: &[&serde_json::Map<String, Value>], keys: &[&str]) -> Option<String> {
-    objects.iter().find_map(|object| {
-        keys.iter()
-            .find_map(|key| object.get(*key).and_then(value_string))
-    })
-}
-
-fn schema_name(objects: &[&serde_json::Map<String, Value>], keys: &[&str]) -> Option<String> {
-    objects.iter().find_map(|object| {
-        keys.iter().find_map(|key| {
-            object
-                .get(*key)
-                .and_then(|value| match value {
-                    Value::Object(map) => map.get("name"),
-                    value => Some(value),
-                })
-                .and_then(value_string)
-        })
-    })
-}
-
-fn schema_strings(objects: &[&serde_json::Map<String, Value>], keys: &[&str]) -> Vec<String> {
-    objects
-        .iter()
-        .flat_map(|object| keys.iter().filter_map(|key| object.get(*key)))
-        .flat_map(|value| match value {
-            Value::Array(values) => values.iter().collect::<Vec<_>>(),
-            value => vec![value],
-        })
-        .filter_map(value_string)
-        .collect()
-}
-
-fn schema_yarns(
-    objects: &[&serde_json::Map<String, Value>],
-    source_url: Option<&Url>,
-) -> Vec<YarnImportDraft> {
-    objects
-        .iter()
-        .flat_map(|object| ["yarn", "yarns"].iter().filter_map(|key| object.get(*key)))
-        .flat_map(|value| match value {
-            Value::Array(values) => values.iter().collect::<Vec<_>>(),
-            value => vec![value],
-        })
-        .filter_map(|value| {
-            let Value::Object(fields) = value else {
-                return value_string(value).map(|name| YarnImportDraft {
-                    name: Some(name),
-                    ..YarnImportDraft::default()
-                });
-            };
-            let text = |key: &str| fields.get(key).and_then(value_string);
-            let link = text("url")
-                .or_else(|| text("link"))
-                .and_then(|value| resolve_url(source_url, &value));
-            let yarn = YarnImportDraft {
-                name: text("name"),
-                brand: schema_name_from_value(fields.get("brand")),
-                colorway: text("colorway"),
-                weight: text("weight"),
-                length: text("length"),
-                weight_category: text("weightCategory").or_else(|| text("weight_category")),
-                fiber_content: text("fiberContent").or_else(|| text("fiber_content")),
-                link,
-                image_url: text("image").and_then(|value| resolve_url(source_url, &value)),
-            };
-            (yarn.name.is_some() || yarn.brand.is_some()).then_some(yarn)
-        })
-        .collect()
-}
-
-fn schema_name_from_value(value: Option<&Value>) -> Option<String> {
-    value.and_then(|value| match value {
-        Value::Object(map) => map.get("name").and_then(value_string),
-        value => value_string(value),
-    })
-}
-
-fn recipe_steps(
-    objects: &[&serde_json::Map<String, Value>],
-    source_url: Option<&Url>,
-) -> Vec<StepImportDraft> {
-    let Some(instructions) = objects
-        .iter()
-        .find_map(|object| object.get("recipeInstructions"))
-    else {
-        return Vec::new();
-    };
-    let values = match instructions {
-        Value::Array(values) => values.iter().collect::<Vec<_>>(),
-        value => vec![value],
-    };
-    values
-        .into_iter()
-        .enumerate()
-        .filter_map(|(index, value)| {
-            let (title, description, images) = match value {
-                Value::Object(map) => (
-                    map.get("name").and_then(value_string),
-                    map.get("text")
-                        .or_else(|| map.get("description"))
-                        .and_then(value_string),
-                    map.get("image")
-                        .map(value_strings)
-                        .unwrap_or_default()
-                        .into_iter()
-                        .filter_map(|url| resolve_url(source_url, &url))
-                        .collect(),
-                ),
-                value => (None, value_string(value), Vec::new()),
-            };
-            (title.is_some() || description.is_some()).then_some(StepImportDraft {
-                step_number: index + 1,
-                title,
-                description,
-                images,
-            })
-        })
-        .collect()
-}
-
-fn value_strings(value: &Value) -> Vec<String> {
-    match value {
-        Value::Array(values) => values.iter().filter_map(value_string).collect(),
-        value => value_string(value).into_iter().collect(),
-    }
-}
-
-fn value_string(value: &Value) -> Option<String> {
-    match value {
-        Value::String(value) => nonempty(value).map(str::to_owned),
-        Value::Object(map) => map
-            .get("url")
-            .or_else(|| map.get("name"))
-            .and_then(value_string),
-        _ => None,
-    }
-}
-
-fn metadata_value(metadata: &BTreeMap<String, String>, keys: &[&str]) -> Option<String> {
-    keys.iter().find_map(|key| metadata.get(*key).cloned())
-}
-
-fn resolve_url(base: Option<&Url>, candidate: &str) -> Option<String> {
+pub(crate) fn resolve_url(base: Option<&Url>, candidate: &str) -> Option<String> {
     let candidate = candidate.trim();
     if candidate.is_empty()
         || candidate.starts_with("data:")
@@ -578,7 +398,7 @@ fn resolve_url(base: Option<&Url>, candidate: &str) -> Option<String> {
     safe_web_url(&url).map(Url::to_string)
 }
 
-fn safe_web_url(url: &Url) -> Option<&Url> {
+pub(crate) fn safe_web_url(url: &Url) -> Option<&Url> {
     (matches!(url.scheme(), "http" | "https")
         && url.username().is_empty()
         && url.password().is_none()
@@ -592,15 +412,11 @@ fn filename_stem(filename: &str) -> Option<String> {
     nonempty(stem).map(str::to_owned)
 }
 
-fn nonempty(value: &str) -> Option<&str> {
+pub(crate) fn nonempty(value: &str) -> Option<&str> {
     let trimmed = value.trim();
     (!trimmed.is_empty()).then_some(trimmed)
 }
 
 fn short_text(text: &str) -> String {
     text.chars().take(2_000).collect()
-}
-
-fn selector(value: &str) -> Selector {
-    Selector::parse(value).expect("static CSS selector is valid")
 }

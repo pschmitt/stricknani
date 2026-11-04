@@ -169,6 +169,12 @@
     </p>
     <p>
       {t(
+        "Link imports: when you import a pattern or yarn from a link, the server fetches that web page and its pictures for you, so the website sees the server's address. For Ravelry links the server may also query the Ravelry API. If AI assistance is enabled and you choose it, the page text is sent to the configured AI provider, which can be an OpenAI-compatible service or a gateway run by the operator under the operator's own provider account.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
         "Profile pictures: if you have not uploaded one, the server may look up your Gravatar. It sends Gravatar a SHA-256 hash of your email address (never the address itself), receives the image, and keeps a copy for up to 24 hours. Your browser and the Android app never contact Gravatar, so only the server's address is visible to it. Gravatar processes the request under its own privacy policy. You can turn this off in your account settings, and the instance operator can disable it for the whole instance.",
         locale,
       )}

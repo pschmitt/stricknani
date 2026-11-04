@@ -17,7 +17,9 @@
   import {
     createProjectWrite,
     createYarnWrite,
+    fieldHint,
     importProjectEditor,
+    importWarningMessage,
     isHttpUrl,
     type ImportProjectEditor,
   } from "./import-draft";
@@ -25,16 +27,17 @@
     isCurrentImportOperation,
     type ImportOperationIdentity,
   } from "./import-operation";
+  import { resolve } from "$app/paths";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
 
   const locale = $derived(session.data?.locale ?? "en");
-  let sourceKind = $state<"url" | "text" | "file">("text");
+  let sourceKind = $state<"url" | "text" | "file">("url");
   let sourceUrl = $state("");
   let sourceText = $state("");
   let selectedFile = $state<File | null>(null);
-  let useAi = $state(false);
+  let useAi = $state(true);
   let preview = $state<ImportPreview | null>(null);
   let draft = $state<ImportProjectEditor | null>(null);
   let busy = $state(false);
@@ -63,9 +66,21 @@
   const hasSourceDraft = $derived(
     sourceText.trim().length > 0 ||
       sourceUrl.trim().length > 0 ||
-      selectedFile !== null ||
-      useAi,
+      selectedFile !== null,
   );
+  const provenance = $derived(preview?.draft.provenance ?? {});
+  const warnings = $derived(
+    (preview?.draft.warnings ?? [])
+      .map((code) => ({ code, message: importWarningMessage(code, locale) }))
+      .filter(
+        (entry): entry is { code: string; message: string } =>
+          entry.message !== null,
+      ),
+  );
+  const hintLabels = {
+    ai: msg("AI"),
+    guessed: msg("Guessed"),
+  } as const;
   const documentKindLabels = {
     html: msg("HTML page"),
     plain_text: msg("Plain text"),
@@ -100,9 +115,15 @@
     sourceText = "";
     sourceUrl = "";
     selectedFile = null;
-    useAi = false;
+    useAi = true;
     errorMessage = "";
     successMessage = "";
+  });
+
+  $effect(() => {
+    // Link import is the default; fall back to pasted text when it is unavailable.
+    if (session.data && !allowExternal && sourceKind === "url")
+      sourceKind = "text";
   });
 
   $effect(() => {
@@ -380,6 +401,14 @@
 
 <svelte:head><title>Stricknani · {t("Imports", locale)}</title></svelte:head>
 
+{#snippet hint(key: string)}
+  {@const kind = fieldHint(provenance, key)}
+  {#if kind}<small
+      class="hint hint-{kind}"
+      title={t("Check this value", locale)}>{t(hintLabels[kind], locale)}</small
+    >{/if}
+{/snippet}
+
 <section
   class="imports-page page-container page-container--standard"
   aria-labelledby="import-page-title"
@@ -492,7 +521,7 @@
       >
       <p class="supporting">
         {t(
-          "The server reads the page securely. Suggested image links are never fetched by this browser.",
+          "The server reads the page securely and shows thumbnails of the pictures it found; this browser never contacts the site.",
           locale,
         )}
       </p>
@@ -558,6 +587,12 @@
               locale,
             )}
       </p>
+      {#each warnings as warning (warning.code)}<p class="notice" role="status">
+          {warning.message}
+          {#if warning.code === "looks_like_yarn_page"}
+            <a href={resolve("/imports/yarn")}>{t("Import a yarn", locale)}</a>
+          {/if}
+        </p>{/each}
       {#if imageFacts}
         <p class="notice" role="status">
           {t("Source image details", locale)}:
@@ -569,7 +604,9 @@
       <fieldset class="review-fields" disabled={busy || busyYarn !== null}>
         <div class="form-grid">
           <label class="field wide"
-            ><span>{t("Project name", locale)} <b aria-hidden="true">*</b></span
+            ><span
+              >{t("Project name", locale)} <b aria-hidden="true">*</b>
+              {@render hint("project.name")}</span
             ><input
               bind:value={draft.name}
               required
@@ -577,9 +614,24 @@
             /></label
           >
           <label class="field"
-            ><span>{t("Category", locale)}</span><input
-              bind:value={draft.category}
-            /></label
+            ><span
+              >{t("Category", locale)} {@render hint("project.category")}</span
+            ><input bind:value={draft.category} /></label
+          >
+          <label class="field"
+            ><span
+              >{t("Designer", locale)} {@render hint("project.designer")}</span
+            ><input bind:value={draft.designer} /></label
+          >
+          <label class="field"
+            ><span>{t("Sizes", locale)} {@render hint("project.sizes")}</span
+            ><input bind:value={draft.sizes} /></label
+          >
+          <label class="field"
+            ><span
+              >{t("Difficulty", locale)}
+              {@render hint("project.difficulty")}</span
+            ><input bind:value={draft.difficulty} /></label
           >
           <label class="field"
             ><span>{t("Pattern source", locale)}</span><input
@@ -588,25 +640,28 @@
             /></label
           >
           <label class="field wide"
-            ><span>{t("Description", locale)}</span><textarea
-              bind:value={draft.description}
-              rows="3"
+            ><span
+              >{t("Description", locale)}
+              {@render hint("project.description")}</span
+            ><textarea bind:value={draft.description} rows="3"
             ></textarea></label
           >
           <label class="field"
-            ><span>{t("Needles", locale)}</span><input
-              bind:value={draft.needles}
-            /></label
+            ><span
+              >{t("Needles", locale)} {@render hint("project.needles")}</span
+            ><input bind:value={draft.needles} /></label
           >
           <label class="field"
-            ><span>{t("Stitch sample", locale)}</span><input
-              bind:value={draft.stitchSample}
-            /></label
+            ><span
+              >{t("Stitch sample", locale)}
+              {@render hint("project.stitchSample")}</span
+            ><input bind:value={draft.stitchSample} /></label
           >
           <label class="field wide"
-            ><span>{t("Other materials", locale)}</span><textarea
-              bind:value={draft.otherMaterials}
-              rows="2"
+            ><span
+              >{t("Other materials", locale)}
+              {@render hint("project.otherMaterials")}</span
+            ><textarea bind:value={draft.otherMaterials} rows="2"
             ></textarea></label
           >
         </div>
@@ -938,6 +993,23 @@
   }
   .success {
     border-left: 3px solid var(--accent);
+  }
+  .hint {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 650;
+    vertical-align: middle;
+  }
+  .hint-ai {
+    color: var(--accent-strong);
+    background: var(--accent-wash);
+  }
+  .hint-guessed {
+    color: var(--ink-muted);
+    background: var(--surface-raised);
   }
   .source-kind {
     padding: 0.25rem 0.6rem;

@@ -252,6 +252,7 @@ fun ProjectsListScreen(
         state = importState,
         onStart = viewModel::startImport,
         onConfirm = viewModel::confirmImport,
+        thumbnailUrl = viewModel::importThumbnailUrl,
         onCancel = {
             showImportDialog = false
             viewModel.cancelImport()

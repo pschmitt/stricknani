@@ -626,6 +626,18 @@
       {/snippet}
     </PageHeader>
 
+    {#if yarnId === null && session.data?.capabilities.external_imports}
+      <p class="import-link">
+        <a
+          class="ui-button ui-button--secondary"
+          href={resolve("/imports/yarn")}
+          ><ActionLabel icon="link"
+            >{t("Import from a link", locale)}</ActionLabel
+          ></a
+        >
+      </p>
+    {/if}
+
     {#if conflictYarn}
       <section class="conflict-panel" aria-labelledby="conflict-title">
         <h2 id="conflict-title">{t("A newer version was saved", locale)}</h2>
@@ -1272,5 +1284,8 @@
     .conflict-actions {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+  .import-link {
+    margin: 0 0 1rem;
   }
 </style>

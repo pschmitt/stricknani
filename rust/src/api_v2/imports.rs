@@ -11,7 +11,7 @@ use axum::{
     },
     http::{HeaderMap, Request, StatusCode},
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
 
@@ -21,6 +21,7 @@ use crate::{
     import_document::ImportDocumentDraft,
     import_service::{self, ImportFailure},
     imports::FetchError,
+    url_import::ImportTarget,
 };
 
 use super::{
@@ -59,6 +60,7 @@ pub(super) fn router() -> Router<ApiV2State> {
             "/imports/preview",
             post(preview).layer(DefaultBodyLimit::max(MAX_PREVIEW_JSON_BYTES)),
         )
+        .route("/imports/image", get(preview_image))
         .route(
             "/imports/preview-file",
             post(preview_file).layer(DefaultBodyLimit::max(MAX_PREVIEW_MULTIPART_BYTES)),
@@ -72,6 +74,8 @@ enum PreviewRequest {
         url: String,
         #[serde(default)]
         use_ai: bool,
+        #[serde(default)]
+        target: ImportTarget,
     },
     Text {
         text: String,
@@ -125,8 +129,16 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         Ok(request) => request,
         Err(_) => return validation_error("Request JSON is invalid", "body"),
     };
+    let mut ai_target = ImportTarget::Project;
+    let mut url_import = false;
     let (mut draft, source_text, ai_requested) = match request {
-        PreviewRequest::Url { url, use_ai } => {
+        PreviewRequest::Url {
+            url,
+            use_ai,
+            target,
+        } => {
+            ai_target = target;
+            url_import = true;
             if !state.app.external_imports {
                 return api_error(
                     StatusCode::SERVICE_UNAVAILABLE,
@@ -137,7 +149,7 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
             if url.trim().is_empty() || url.len() > 2048 {
                 return validation_error("URL is required and must be at most 2048 bytes", "url");
             }
-            match import_service::parse_url_with_source(&imports.worker_path, &url).await {
+            match import_service::import_url(&imports.worker_path, &url, target).await {
                 Ok((draft, source_text)) => (draft, source_text, use_ai),
                 Err(error) => return import_error(error),
             }
@@ -164,15 +176,93 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
             }
         }
     };
-    let is_ai_enhanced = import_service::enhance_draft(
-        imports.ai.as_deref(),
-        &mut draft,
-        ai_requested,
-        source_text,
-        Vec::new(),
-    )
-    .await;
+    let is_ai_enhanced = if url_import {
+        import_service::normalize_with_ai(
+            imports.ai.as_deref(),
+            &mut draft,
+            ai_requested,
+            &source_text,
+            ai_target,
+        )
+        .await
+    } else {
+        import_service::enhance_draft(
+            imports.ai.as_deref(),
+            &mut draft,
+            ai_requested,
+            source_text,
+            Vec::new(),
+        )
+        .await
+    };
     preview_response(draft, ai_requested, is_ai_enhanced)
+}
+
+#[derive(Deserialize)]
+struct ImageQuery {
+    url: String,
+}
+
+/// Same-origin thumbnail of a picture found on an imported page, so the review step can show it
+/// without the browser or app contacting the remote site. Goes through the safe fetcher.
+async fn preview_image(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    axum::extract::Query(query): axum::extract::Query<ImageQuery>,
+) -> Response {
+    let user_id = match access::resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(response) => return *response,
+    };
+    if !state.app.external_imports || state.imports.is_none() {
+        return api_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "feature_disabled",
+            "Remote URL imports are disabled",
+        );
+    }
+    if let Err(retry_after) = state.import_image_limiter.reserve(user_id) {
+        return rate_limited(retry_after);
+    }
+    if query.url.len() > 2048 {
+        return validation_error("URL must be at most 2048 bytes", "url");
+    }
+    let fetched =
+        match crate::imports::fetch_url(&crate::imports::normalize_input_url(&query.url)).await {
+            Ok(fetched) => fetched,
+            Err(error) => return import_error(ImportFailure::Fetch(error)),
+        };
+    const MAX_IMAGE_BYTES: usize = 3 * 1024 * 1024;
+    let media_type = match image::guess_format(&fetched.body) {
+        Ok(image::ImageFormat::Jpeg) => "image/jpeg",
+        Ok(image::ImageFormat::Png) => "image/png",
+        Ok(image::ImageFormat::WebP) => "image/webp",
+        Ok(image::ImageFormat::Gif) => "image/gif",
+        _ => {
+            return api_error(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "unsupported_document",
+                "This document type is not supported",
+            );
+        }
+    };
+    if fetched.body.len() > MAX_IMAGE_BYTES {
+        return payload_too_large();
+    }
+    (
+        StatusCode::OK,
+        [
+            (axum::http::header::CONTENT_TYPE, media_type),
+            (axum::http::header::CACHE_CONTROL, "private, max-age=3600"),
+            (axum::http::header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
+            (
+                axum::http::header::CONTENT_SECURITY_POLICY,
+                "default-src 'none'; sandbox",
+            ),
+        ],
+        fetched.body,
+    )
+        .into_response()
 }
 
 async fn preview_file(
@@ -336,6 +426,16 @@ fn import_error(error: ImportFailure) -> Response {
             StatusCode::UNPROCESSABLE_ENTITY,
             "unsafe_url",
             "Remote URL is not allowed",
+        ),
+        ImportFailure::Fetch(FetchError::HttpStatus(401 | 403 | 429 | 503)) => api_error(
+            StatusCode::BAD_GATEWAY,
+            "import_blocked",
+            "The website refused the request. Try the page text instead",
+        ),
+        ImportFailure::Fetch(FetchError::HttpStatus(404 | 410)) => api_error(
+            StatusCode::BAD_GATEWAY,
+            "import_not_found",
+            "The page was not found. Check the link",
         ),
         ImportFailure::Fetch(_) => api_error(
             StatusCode::BAD_GATEWAY,

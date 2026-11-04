@@ -8,8 +8,12 @@ import type {
   ImportPreview,
   ImportedProjectDraft,
   ImportedStepDraft,
+  ImportedYarnDetails,
   ImportedYarnDraft,
 } from "./import-api";
+
+/** How many suggested pictures start out selected. */
+const PRESELECTED_IMAGES = 3;
 
 export interface ImportImageChoice {
   url: string;
@@ -39,6 +43,9 @@ export interface ImportYarnEditor {
 }
 
 export interface ImportProjectEditor {
+  designer: string;
+  sizes: string;
+  difficulty: string;
   name: string;
   description: string;
   category: string;
@@ -81,6 +88,9 @@ export function importProjectEditor(
     });
   }
   return {
+    designer: project.designer ?? "",
+    sizes: project.sizes ?? "",
+    difficulty: project.difficulty ?? "",
     name: project.name ?? "",
     description: project.description ?? "",
     category: project.category ?? "",
@@ -96,9 +106,9 @@ export function importProjectEditor(
     gaugeWidth: project.gaugeWidth,
     gaugeHeight: project.gaugeHeight,
     link: project.link ?? preview.draft.sourceUrl ?? "",
-    imageUrls: project.imageUrls.map((url) => ({
+    imageUrls: project.imageUrls.map((url, index) => ({
       url,
-      selected: false,
+      selected: index < PRESELECTED_IMAGES,
     })),
     steps: project.steps.map(importStepEditor),
     yarns: yarns.map(importYarnEditor),
@@ -235,6 +245,9 @@ function additionalProjectDetails(project: ImportedProjectDraft): string {
     if (value !== null && String(value).trim())
       lines.push(`${label}: ${value}`);
   };
+  add(t("Designer"), project.designer);
+  add(t("Sizes"), project.sizes);
+  add(t("Difficulty"), project.difficulty);
   add(t("Imported yarn"), project.yarn);
   add(t("Brand"), project.brand);
   add(t("Fiber content"), project.fiberContent);
@@ -258,6 +271,7 @@ function additionalProjectDetails(project: ImportedProjectDraft): string {
       lines.push(`${t("Imported yarn details")}: ${facts.join(" · ")}`);
   }
   for (const [key, value] of Object.entries(project.extras)) {
+    if (key === "page_text" || key === "structured_data") continue;
     lines.push(`${key}: ${formatExtra(value)}`);
   }
   return lines.join("\n");
@@ -315,4 +329,135 @@ function parseNonnegativeInteger(value: string): number | null {
 function optionalText(value: string): string | null {
   const trimmed = value.trim();
   return trimmed || null;
+}
+
+/** Review state for a yarn import (the "From a link" yarn flow). */
+export interface YarnImportEditor {
+  name: string;
+  brand: string;
+  colorway: string;
+  description: string;
+  fiberContent: string;
+  weightCategory: string;
+  weightGrams: string;
+  lengthMeters: string;
+  recommendedNeedles: string;
+  notes: string;
+  link: string;
+  images: ImportImageChoice[];
+}
+
+export function yarnImportEditor(
+  preview: ImportPreview,
+  fallbackLink = "",
+): YarnImportEditor {
+  const yarn: ImportedYarnDetails = preview.draft.yarn ?? {
+    name: preview.draft.project.name,
+    brand: null,
+    colorway: null,
+    description: null,
+    fiberContent: null,
+    weightCategory: null,
+    weightGrams: null,
+    lengthMeters: null,
+    recommendedNeedles: null,
+    gauge: null,
+    care: null,
+    price: null,
+    link: null,
+    imageUrls: [],
+  };
+  const notes = [
+    yarn.gauge ? `${t("Gauge")}: ${yarn.gauge}` : "",
+    yarn.care ? `${t("Care")}: ${yarn.care}` : "",
+    yarn.price ? `${t("Price")}: ${yarn.price}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return {
+    name: yarn.name ?? "",
+    brand: yarn.brand ?? "",
+    colorway: yarn.colorway ?? "",
+    description: yarn.description ?? "",
+    fiberContent: yarn.fiberContent ?? "",
+    weightCategory: yarn.weightCategory ?? "",
+    weightGrams: yarn.weightGrams === null ? "" : String(yarn.weightGrams),
+    lengthMeters: yarn.lengthMeters === null ? "" : String(yarn.lengthMeters),
+    recommendedNeedles: yarn.recommendedNeedles ?? "",
+    notes,
+    link: yarn.link ?? preview.draft.sourceUrl ?? fallbackLink,
+    images: yarn.imageUrls.map((url, index) => ({
+      url,
+      selected: index < PRESELECTED_IMAGES,
+    })),
+  };
+}
+
+export function createYarnImportWrite(
+  draft: YarnImportEditor,
+  isAiEnhanced: boolean,
+  allowExternalImages: boolean,
+): YarnWrite {
+  const imageUrls = allowExternalImages
+    ? draft.images
+        .filter((image) => image.selected)
+        .map((image) => image.url.trim())
+        .filter(Boolean)
+    : [];
+  return {
+    name: draft.name.trim(),
+    description: optionalText(draft.description),
+    brand: optionalText(draft.brand),
+    colorway: optionalText(draft.colorway),
+    dye_lot: null,
+    fiber_content: optionalText(draft.fiberContent),
+    weight_category: optionalText(draft.weightCategory),
+    recommended_needles: optionalText(draft.recommendedNeedles),
+    weight_grams: parseNonnegativeInteger(draft.weightGrams),
+    length_meters: parseNonnegativeInteger(draft.lengthMeters),
+    notes: optionalText(draft.notes),
+    link: optionalText(draft.link),
+    is_ai_enhanced: isAiEnhanced,
+    ...(imageUrls.length ? { image_urls: imageUrls } : {}),
+  };
+}
+
+export type FieldHint = "ai" | "guessed" | "";
+
+/** Where a value came from, for the small badge next to a field. Markup and site data get none. */
+export function fieldHint(
+  provenance: Record<string, string>,
+  key: string,
+): FieldHint {
+  const source = provenance[key];
+  if (source === "ai") return "ai";
+  if (source === "text") return "guessed";
+  return "";
+}
+
+/** Explanations for the machine codes in `draft.warnings`. */
+export function importWarningMessage(
+  code: string,
+  locale: "en" | "de",
+): string | null {
+  switch (code) {
+    case "looks_like_yarn_page":
+      return t(
+        "This looks like a yarn page. Import it as a yarn instead?",
+        locale,
+      );
+    case "looks_like_pattern_page":
+    case "not_a_yarn_page":
+      return t(
+        "This looks like a pattern page, not a yarn. Check the fields below.",
+        locale,
+      );
+    case "little_page_text":
+      return t(
+        "This page has little readable text. It may load its content with JavaScript, so some details can be missing.",
+        locale,
+      );
+    default:
+      return null;
+  }
 }

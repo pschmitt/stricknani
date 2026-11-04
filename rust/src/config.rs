@@ -175,6 +175,11 @@ impl Config {
         };
         let ai = AiConfig::from_lookup(ai_enabled, &mut get)
             .map_err(|_| ConfigError("AI provider configuration is invalid"))?;
+        if get("RAVELRY_USERNAME").is_some() != get("RAVELRY_PASSWORD").is_some() {
+            return Err(ConfigError(
+                "RAVELRY_USERNAME and RAVELRY_PASSWORD must be set together",
+            ));
+        }
         let oidc_enabled = match get("RUST_OIDC_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,

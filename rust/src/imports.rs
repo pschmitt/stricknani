@@ -16,7 +16,54 @@ use url::{Host, Url};
 
 const MAX_REDIRECTS: usize = 5;
 const MAX_BODY_BYTES: usize = 5 * 1024 * 1024;
-const TOTAL_TIMEOUT: Duration = Duration::from_secs(10);
+const TOTAL_TIMEOUT: Duration = Duration::from_secs(15);
+
+/// Many shop and pattern sites reject unknown clients, so requests look like an ordinary desktop
+/// browser. Nothing here weakens the address and redirect checks.
+const BROWSER_USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+
+fn browser_headers() -> reqwest::header::HeaderMap {
+    use reqwest::header::{ACCEPT, ACCEPT_LANGUAGE, HeaderName, HeaderValue};
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        ACCEPT,
+        HeaderValue::from_static(
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        ),
+    );
+    headers.insert(
+        ACCEPT_LANGUAGE,
+        HeaderValue::from_static("de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7"),
+    );
+    for (name, value) in [
+        ("upgrade-insecure-requests", "1"),
+        ("sec-fetch-dest", "document"),
+        ("sec-fetch-mode", "navigate"),
+        ("sec-fetch-site", "none"),
+        ("sec-fetch-user", "?1"),
+    ] {
+        headers.insert(
+            HeaderName::from_static(name),
+            HeaderValue::from_static(value),
+        );
+    }
+    headers
+}
+
+/// Make pasted text a fetchable URL: trim it, add `https://` to a bare host and drop the
+/// fragment, which carries no server-side meaning but is rejected by [`fetch_url`].
+pub fn normalize_input_url(input: &str) -> String {
+    let trimmed = input.trim();
+    let with_scheme = if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    };
+    match with_scheme.split_once('#') {
+        Some((before, _)) => before.to_owned(),
+        None => with_scheme,
+    }
+}
 
 /// A redacted error from URL validation, DNS, HTTP, or response decoding.
 #[derive(Clone, Copy, Debug, Error, Eq, PartialEq)]
@@ -130,11 +177,8 @@ impl HttpTransport for ReqwestTransport {
             .timeout(timeout)
             .connect_timeout(timeout)
             .referer(false)
-            .user_agent(concat!(
-                env!("CARGO_PKG_NAME"),
-                "/",
-                env!("CARGO_PKG_VERSION")
-            ));
+            .user_agent(BROWSER_USER_AGENT)
+            .default_headers(browser_headers());
 
         if let Some(host) = host {
             builder = builder.resolve_to_addrs(host, approved_addresses);
@@ -387,12 +431,13 @@ fn extract_text(content_type: Option<&str>, body: &[u8]) -> (Option<String>, Opt
         .trim()
         .to_ascii_lowercase();
     if media_type == "text/plain" {
-        return (None, Some(String::from_utf8_lossy(body).trim().to_owned()));
+        let text = crate::url_import::charset::decode_html(body, Some(content_type));
+        return (None, Some(text.trim().to_owned()));
     }
     if media_type != "text/html" && media_type != "application/xhtml+xml" {
         return (None, None);
     }
-    let html = String::from_utf8_lossy(body);
+    let html = crate::url_import::charset::decode_html(body, Some(content_type));
     let (title, html_without_title) = remove_title(&html);
     let sanitized = HtmlSanitizer::default()
         .clean(&html_without_title)

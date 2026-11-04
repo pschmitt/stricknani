@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,17 +28,24 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.data.repository.ImportDetailKind
+import blue.anika.wolle.ui.common.ImportImagePicker
 
 @Composable
 fun ProjectImportDialog(
     visible: Boolean,
     state: ProjectImportState,
     onStart: (String) -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (List<String>) -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
+    thumbnailUrl: (String) -> String? = { null },
 ) {
     var url by rememberSaveable { mutableStateOf("") }
+    // The pictures that start out selected come from the preview; the user can change them.
+    val preselected =
+        (state as? ProjectImportState.AwaitingConfirmation)?.preview?.request?.imageUrls
+    var selectedImages by remember(state) { mutableStateOf(preselected.orEmpty().toSet()) }
 
     if (!visible) {
         return
@@ -104,19 +112,48 @@ fun ProjectImportDialog(
                                 ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (state.preview.imageUrls.isNotEmpty()) {
+                        state.preview.details.forEach { detail ->
                             Text(
                                 text =
                                     stringResource(
-                                        R.string.project_import_images_summary,
-                                        state.preview.imageUrls.size,
+                                        R.string.import_detail_line,
+                                        stringResource(importDetailLabel(detail.kind)),
+                                        detail.value,
                                     ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                text = stringResource(R.string.project_import_images_not_supported),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        state.preview.warnings
+                            .mapNotNull { importWarningRes(it) }
+                            .forEach { res ->
+                                Text(
+                                    text = stringResource(res),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        if (state.preview.aiFields.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.import_ai_filled_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (state.preview.imageUrls.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.import_pick_photos),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            ImportImagePicker(
+                                urls = state.preview.imageUrls,
+                                selected = selectedImages,
+                                onToggle = { url ->
+                                    selectedImages =
+                                        if (url in selectedImages) selectedImages - url
+                                        else selectedImages + url
+                                },
+                                thumbnailUrl = thumbnailUrl,
                             )
                         }
                         if (state.preview.aiFallback) {
@@ -168,7 +205,11 @@ fun ProjectImportDialog(
                 is ProjectImportState.AwaitingConfirmation ->
                     TextButton(
                         modifier = Modifier.testTag("project-import-confirm"),
-                        onClick = onConfirm,
+                        onClick = {
+                            val order =
+                                (state as ProjectImportState.AwaitingConfirmation).preview.imageUrls
+                            onConfirm(order.filter { it in selectedImages })
+                        },
                     ) {
                         Text(stringResource(R.string.project_import_confirm_save))
                     }
@@ -223,7 +264,27 @@ private fun importFailureMessage(reason: ProjectImportFailure): String =
             ProjectImportFailure.InvalidUrl -> R.string.project_import_error_invalid_url
             ProjectImportFailure.Offline -> R.string.project_import_error_offline
             ProjectImportFailure.RateLimited -> R.string.project_import_error_rate_limited
+            ProjectImportFailure.Blocked -> R.string.import_error_blocked
+            ProjectImportFailure.NotFound -> R.string.import_error_not_found
+            ProjectImportFailure.Disabled -> R.string.import_error_disabled
             ProjectImportFailure.Server -> R.string.project_import_error_server
             ProjectImportFailure.Unknown -> R.string.project_import_error_unknown
         }
     )
+
+internal fun importDetailLabel(kind: ImportDetailKind): Int =
+    when (kind) {
+        ImportDetailKind.Designer -> R.string.import_detail_designer
+        ImportDetailKind.Sizes -> R.string.import_detail_sizes
+        ImportDetailKind.Difficulty -> R.string.import_detail_difficulty
+    }
+
+/** The explanation for a server warning code, or null for codes the user does not need. */
+internal fun importWarningRes(code: String): Int? =
+    when (code) {
+        "looks_like_yarn_page" -> R.string.import_warning_looks_like_yarn
+        "looks_like_pattern_page",
+        "not_a_yarn_page" -> R.string.import_warning_looks_like_pattern
+        "little_page_text" -> R.string.import_warning_little_text
+        else -> null
+    }

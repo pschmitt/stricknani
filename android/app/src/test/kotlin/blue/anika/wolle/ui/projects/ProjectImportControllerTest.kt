@@ -47,6 +47,28 @@ class ProjectImportControllerTest {
     }
 
     @Test
+    fun `confirming with a photo selection saves only those photos`() = runTest {
+        val preview = preview()
+        var saved: ImportedProjectPreview? = null
+        val controller =
+            ProjectImportController(
+                scope = this,
+                importer = FakeImporter { preview },
+                save = {
+                    saved = it
+                    7
+                },
+            )
+        controller.start("https://example.com/pattern")
+        advanceUntilIdle()
+
+        controller.confirm(selectedImages = listOf("https://example.com/b.jpg"))
+        advanceUntilIdle()
+
+        assertEquals(listOf("https://example.com/b.jpg"), saved?.request?.imageUrls)
+    }
+
+    @Test
     fun `cancelling an in-flight import returns to idle and never saves`() = runTest {
         val request = CompletableDeferred<Unit>()
         var saveCalls = 0
@@ -131,8 +153,16 @@ class ProjectImportControllerTest {
             failureOf(http(503, body("import_unavailable"))),
         )
         assertEquals(
-            ProjectImportFailure.Server,
+            ProjectImportFailure.Disabled,
             failureOf(http(503, body("feature_disabled"))),
+        )
+        assertEquals(
+            ProjectImportFailure.Blocked,
+            failureOf(http(502, body("import_blocked"))),
+        )
+        assertEquals(
+            ProjectImportFailure.NotFound,
+            failureOf(http(502, body("import_not_found"))),
         )
         assertEquals(
             ProjectImportFailure.Server,

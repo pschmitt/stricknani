@@ -182,6 +182,39 @@ pub(crate) async fn persist_project_images(
     }
 }
 
+/// Download and decode bounded yarn photo candidates before the yarn exists.
+pub(crate) async fn prepare_yarn_images(
+    state: &AppState,
+    yarn_name: &str,
+    urls: &[String],
+) -> Vec<PreparedCandidate> {
+    prepare_project_images(state, yarn_name, urls, &[]).await
+}
+
+/// Store prepared images as yarn photos; the first becomes the primary photo.
+pub(crate) async fn persist_yarn_images(
+    state: &AppState,
+    user_id: i64,
+    yarn_id: i64,
+    yarn_name: &str,
+    candidates: Vec<PreparedCandidate>,
+) {
+    for candidate in candidates {
+        let result = media::persist_imported_yarn_photo(
+            state,
+            user_id,
+            yarn_id,
+            yarn_name,
+            &candidate.original_filename,
+            &candidate.image,
+        )
+        .await;
+        if result.is_err() {
+            tracing::debug!("yarn image import storage skipped");
+        }
+    }
+}
+
 fn parse_import_url(value: &str) -> Option<Url> {
     if value.len() > MAX_URL_BYTES {
         return None;

@@ -190,6 +190,62 @@ in
       description = "Let the server fetch Gravatar images (SHA-256 of the account email) for users without an uploaded avatar. Clients never contact Gravatar. Sets RUST_GRAVATAR_ENABLED; users can still opt out individually.";
     };
 
+    imports.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Let the server fetch public web pages for importing projects and yarns from a link, and download the pictures found there. Sets RUST_EXTERNAL_IMPORTS_ENABLED. Pages are fetched with address checks that block private networks.";
+    };
+
+    ai = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Let users ask an AI model to fill gaps in an import draft. Sets RUST_AI_ENABLED. Needs ai.apiKeyFile or an API key in secretKeyFile. Without it imports still work with rule-based extraction. The page text of imported links is sent to the model.";
+      };
+
+      provider = lib.mkOption {
+        type = lib.types.enum [
+          "openai"
+          "openrouter"
+          "groq"
+          "custom"
+        ];
+        default = "openai";
+        description = "Provider for the chat-completions API. Use custom for any other OpenAI-compatible endpoint, such as a local agent gateway, together with ai.baseUrl.";
+      };
+
+      apiKeyFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = "Path to a file containing only the API key, readable by the service user. Sets AI_API_KEY_FILE.";
+      };
+
+      baseUrl = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "http://127.0.0.1:8642/v1";
+        description = "Base URL of an OpenAI-compatible API (AI_BASE_URL). Required for provider custom. Plain HTTP is accepted only for localhost.";
+      };
+
+      model = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Model name (AI_MODEL). Defaults to the provider default; hermes-agent for custom.";
+      };
+
+      timeoutSeconds = lib.mkOption {
+        type = lib.types.nullOr lib.types.ints.positive;
+        default = null;
+        description = "Timeout for one AI request (AI_TIMEOUT_SECONDS, 5 to 300). Agent gateways can need a minute.";
+      };
+    };
+
+    ravelry.credentialsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Environment file with RAVELRY_USERNAME and RAVELRY_PASSWORD, the read-only Basic-auth key pair of a Ravelry API app. Enables clean gauge, needle, yarn and fiber data when importing Ravelry pattern and yarn links.";
+    };
+
     registration.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -349,6 +405,14 @@ in
         message = "services.stricknani requires a hostname or server alias for non-loopback listeners.";
       }
       {
+        assertion = !cfg.ai.enable || cfg.ai.apiKeyFile != null || cfg.secretKeyFile != null;
+        message = "services.stricknani.ai.enable requires ai.apiKeyFile (or an API key in secretKeyFile).";
+      }
+      {
+        assertion = !cfg.ai.enable || cfg.ai.provider != "custom" || cfg.ai.baseUrl != null;
+        message = "services.stricknani.ai.provider = \"custom\" requires ai.baseUrl.";
+      }
+      {
         assertion = !(cfg.extraConfig ? RUST_DATABASE_URL) && !(cfg.extraConfig ? RUST_MEDIA_ROOT);
         message = "Set Rust database and media paths with databaseUrl and mediaRoot, not extraConfig.";
       }
@@ -421,6 +485,8 @@ in
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
           RUST_GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
           RUST_SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
+          RUST_EXTERNAL_IMPORTS_ENABLED = lib.boolToString cfg.imports.enable;
+          RUST_AI_ENABLED = lib.boolToString cfg.ai.enable;
         }
         // lib.optionalAttrs (cfg.sentry.dsnFile != null) {
           RUST_SENTRY_DSN_FILE = cfg.sentry.dsnFile;
@@ -432,6 +498,17 @@ in
           RUST_SENTRY_ENVIRONMENT = cfg.sentry.environment;
           RUST_SENTRY_TRACES_SAMPLE_RATE = toString cfg.sentry.tracesSampleRate;
         }
+        // lib.optionalAttrs cfg.ai.enable (
+          {
+            AI_PROVIDER = cfg.ai.provider;
+          }
+          // lib.optionalAttrs (cfg.ai.apiKeyFile != null) { AI_API_KEY_FILE = toString cfg.ai.apiKeyFile; }
+          // lib.optionalAttrs (cfg.ai.baseUrl != null) { AI_BASE_URL = cfg.ai.baseUrl; }
+          // lib.optionalAttrs (cfg.ai.model != null) { AI_MODEL = cfg.ai.model; }
+          // lib.optionalAttrs (cfg.ai.timeoutSeconds != null) {
+            AI_TIMEOUT_SECONDS = toString cfg.ai.timeoutSeconds;
+          }
+        )
         // oidcEnvironment
         // cfg.extraConfig;
 
@@ -471,6 +548,7 @@ in
             ++ lib.optionals (cfg.oidc.enable && cfg.oidc.environmentFile != null) [
               cfg.oidc.environmentFile
             ]
+            ++ lib.optional (cfg.ravelry.credentialsFile != null) cfg.ravelry.credentialsFile
             ++ [ oidcEnabledEnvironmentFile ];
         };
       };

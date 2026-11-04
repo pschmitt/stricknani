@@ -33,11 +33,18 @@
       href: resolve("/imports"),
       icon: "imports",
       tone: "create",
-      title: t("Imports", locale),
+      title: t("Import a project", locale),
       description: t(
         "Create a project draft from text, a file, or a pattern link.",
         locale,
       ),
+    },
+    {
+      href: resolve("/imports/yarn"),
+      icon: "imports",
+      tone: "yarns",
+      title: t("Import a yarn", locale),
+      description: t("Fill in a yarn from a shop or Ravelry link.", locale),
     },
   ]);
 </script>

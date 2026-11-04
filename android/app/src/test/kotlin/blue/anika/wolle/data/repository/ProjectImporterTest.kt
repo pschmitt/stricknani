@@ -146,7 +146,7 @@ class ProjectImporterTest {
     @Test
     fun `the request body is the documented json`() {
         assertEquals(
-            """{"type":"url","url":"https://e.com","use_ai":false}""",
+            """{"type":"url","url":"https://e.com","use_ai":false,"target":"project"}""",
             Json { encodeDefaults = true }
                 .encodeToString(ImportPreviewRequest(url = "https://e.com")),
         )
