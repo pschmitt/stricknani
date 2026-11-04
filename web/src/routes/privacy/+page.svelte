@@ -23,7 +23,7 @@
   <header class="privacy-header">
     <p class="section-mark">{t("Privacy", locale)}</p>
     <h1 id="privacy-title">{t("Privacy Policy", locale)}</h1>
-    <p class="effective">{t("Effective date: 19 August 2026", locale)}</p>
+    <p class="effective">{t("Effective date: 4 November 2026", locale)}</p>
   </header>
 
   <section>
@@ -123,7 +123,7 @@
     </p>
     <p>
       {t(
-        "The Android app has no analytics, advertising, tracking, or crash-reporting service of its own. Data sent during synchronization goes to the server you configured.",
+        "The Android app has no analytics, advertising, or tracking service. Data sent during synchronization goes to the server you configured. Error reports are optional and described under Error reporting below.",
         locale,
       )}
     </p>
@@ -147,7 +147,7 @@
     </p>
     <p>
       {t(
-        "If the app crashes, it saves a diagnostic report on the device (time, app version, device model, Android version, and a stack trace, with access tokens redacted) and shows it at the next launch. The report is not sent anywhere unless you copy and share it yourself.",
+        "If the app crashes, it saves a diagnostic report on the device (time, app version, device model, Android version, and a stack trace, with access tokens redacted) and shows it at the next launch. The report stays on the device unless you copy and share it yourself or error reporting is on.",
         locale,
       )}
     </p>
@@ -181,7 +181,41 @@
     </p>
     <p>
       {t(
-        "The web interface itself uses locally served assets and does not require an analytics or advertising network.",
+        "The web interface itself uses locally served assets and does not require an analytics or advertising network. It loads nothing from third-party servers.",
+        locale,
+      )}
+    </p>
+  </section>
+
+  <section>
+    <h2>{t("Error reporting", locale)}</h2>
+    <p>
+      {t(
+        "Error reporting is optional and configured by the instance operator. If the operator has not set it up, nothing is reported and no setting appears.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "When it is on, the server, the web app, and the Android app report errors: the error message, a stack trace, the app version, and your browser or operating system version. They do not report account contents such as projects, yarns, photos, or notes, and they remove access tokens, cookies, email addresses, and IP addresses before sending. The only account detail attached to a report from the server is your numeric account ID.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "Reports go to the operator's own Sentry error tracker, through your Stricknani server. Your browser and the Android app never contact the error tracker directly.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "You can turn it off at any time with Send error reports in your account settings (Preferences) or in the Android app settings. The server then drops errors that occur while handling your requests. Errors that have no connection to a signed-in user, such as a server start-up failure, are governed by the operator's setting.",
+        locale,
+      )}
+    </p>
+    <p>
+      {t(
+        "In the Android app, error reporting is part of the builds installed from GitHub only. The Google Play build does not contain it and never sends error reports.",
         locale,
       )}
     </p>

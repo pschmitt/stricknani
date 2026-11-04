@@ -1,3 +1,4 @@
+import type { ErrorReportingInfo } from "./error-reporting";
 import { t } from "./i18n.svelte";
 
 export type Capability =
@@ -29,6 +30,8 @@ export interface SessionData {
   user: SessionUser | null;
   csrf_token: string;
   capabilities: Record<Capability, boolean>;
+  /** Optional error reporting; absent on servers that predate it. */
+  error_reporting?: ErrorReportingInfo;
   locale: "en" | "de";
 }
 

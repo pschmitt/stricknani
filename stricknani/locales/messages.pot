@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 10:00+0100\n"
+"POT-Creation-Date: 2026-11-04 11:07+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,7 +22,7 @@ msgid "Import a pattern"
 msgstr ""
 
 #: rust/src/import_service.rs:422 rust/src/web_accounts.rs:843
-#: web/src/routes/+layout.svelte:248 web/src/routes/+layout.svelte:328
+#: web/src/routes/+layout.svelte:258 web/src/routes/+layout.svelte:338
 msgid "Main navigation"
 msgstr ""
 
@@ -30,7 +30,7 @@ msgstr ""
 #: rust/src/web_accounts.rs:844 rust/src/web_audit.rs:129
 #: web/src/lib/features/projects/ProjectLibrary.svelte:207
 #: web/src/lib/features/projects/ProjectLibrary.svelte:218
-#: web/src/routes/+layout.svelte:60
+#: web/src/routes/+layout.svelte:70
 msgid "Projects"
 msgstr ""
 
@@ -39,14 +39,14 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:286
 #: web/src/lib/features/yarns/YarnLibrary.svelte:153
 #: web/src/lib/features/yarns/YarnLibrary.svelte:164
-#: web/src/routes/+layout.svelte:61
+#: web/src/routes/+layout.svelte:71
 msgid "Yarns"
 msgstr ""
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
 #: rust/src/web_accounts.rs:849 web/src/lib/components/AccountMenu.svelte:325
-#: web/src/lib/features/account/AccountSettings.svelte:1284
-#: web/src/lib/features/account/AccountSettings.svelte:1298
+#: web/src/lib/features/account/AccountSettings.svelte:1365
+#: web/src/lib/features/account/AccountSettings.svelte:1379
 msgid "Sign out"
 msgstr ""
 
@@ -234,7 +234,7 @@ msgstr ""
 #: rust/src/web.rs:2159 web/src/lib/components/AuthFooter.svelte:20
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/routes/+layout.svelte:72 web/src/routes/more/+page.svelte:33
+#: web/src/routes/+layout.svelte:82 web/src/routes/more/+page.svelte:33
 msgid "Gauge calculator"
 msgstr ""
 
@@ -245,7 +245,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:149
 #: web/src/lib/features/projects/ProjectEditor.svelte:1115
-#: web/src/routes/+layout.svelte:179 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:189 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr ""
 
@@ -265,7 +265,7 @@ msgstr ""
 
 #: rust/src/web.rs:2164 rust/src/web_signup.rs:274
 #: web/src/lib/components/SignInForm.svelte:119
-#: web/src/lib/features/account/AccountSettings.svelte:1005
+#: web/src/lib/features/account/AccountSettings.svelte:1086
 #: web/src/lib/features/auth/ReauthDialog.svelte:149
 #: web/src/lib/features/auth/SignupForm.svelte:216
 msgid "Password"
@@ -320,7 +320,7 @@ msgstr ""
 
 #: rust/src/web.rs:2179 web/src/lib/features/admin/AdminResource.svelte:577
 #: web/src/lib/features/projects/ProjectEditor.svelte:1641
-#: web/src/lib/features/projects/ProjectReader.svelte:1291
+#: web/src/lib/features/projects/ProjectReader.svelte:1299
 msgid "Attachments"
 msgstr ""
 
@@ -330,7 +330,7 @@ msgid "Original source"
 msgstr ""
 
 #: rust/src/web.rs:2181 rust/src/web_accounts.rs:865
-#: web/src/routes/+layout.svelte:62 web/src/routes/create/+page.svelte:45
+#: web/src/routes/+layout.svelte:72 web/src/routes/create/+page.svelte:45
 msgid "Create"
 msgstr ""
 
@@ -363,9 +363,9 @@ msgstr ""
 msgid "Delete this item?"
 msgstr ""
 
-#: rust/src/web.rs:2188 web/src/lib/features/account/AccountSettings.svelte:929
-#: web/src/lib/features/account/AccountSettings.svelte:1119
-#: web/src/lib/features/account/AccountSettings.svelte:1207
+#: rust/src/web.rs:2188 web/src/lib/features/account/AccountSettings.svelte:978
+#: web/src/lib/features/account/AccountSettings.svelte:1200
+#: web/src/lib/features/account/AccountSettings.svelte:1288
 #: web/src/lib/features/admin/AdminUsers.svelte:768
 #: web/src/lib/features/admin/AdminUsers.svelte:828
 #: web/src/lib/features/admin/AdminUsers.svelte:904
@@ -375,7 +375,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1708
 #: web/src/lib/features/projects/ProjectEditor.svelte:1754
 #: web/src/lib/features/projects/ProjectEditor.svelte:1795
-#: web/src/lib/features/projects/ProjectReader.svelte:1372
+#: web/src/lib/features/projects/ProjectReader.svelte:1380
 #: web/src/lib/features/yarns/YarnForm.svelte:915
 #: web/src/lib/features/yarns/YarnForm.svelte:978
 msgid "Cancel"
@@ -452,8 +452,8 @@ msgstr ""
 #: web/src/lib/components/AccountMenu.svelte:220
 #: web/src/lib/components/AccountMenu.svelte:246
 #: web/src/lib/components/AccountMenu.svelte:284
-#: web/src/lib/features/account/AccountSettings.svelte:765
-#: web/src/lib/features/account/AccountSettings.svelte:773
+#: web/src/lib/features/account/AccountSettings.svelte:814
+#: web/src/lib/features/account/AccountSettings.svelte:822
 msgid "Account"
 msgstr ""
 
@@ -539,13 +539,13 @@ msgid "Disabled"
 msgstr ""
 
 #: rust/src/web_accounts.rs:858
-#: web/src/lib/features/account/AccountSettings.svelte:862
+#: web/src/lib/features/account/AccountSettings.svelte:911
 #: web/src/lib/features/admin/AdminUsers.svelte:632
 msgid "Administrator"
 msgstr ""
 
 #: rust/src/web_accounts.rs:859
-#: web/src/lib/features/account/AccountSettings.svelte:863
+#: web/src/lib/features/account/AccountSettings.svelte:912
 #: web/src/lib/features/admin/AdminUsers.svelte:633
 msgid "Member"
 msgstr ""
@@ -561,7 +561,7 @@ msgid "Enable"
 msgstr ""
 
 #: rust/src/web_accounts.rs:862
-#: web/src/lib/features/account/AccountSettings.svelte:1058
+#: web/src/lib/features/account/AccountSettings.svelte:1139
 msgid "New password"
 msgstr ""
 
@@ -576,7 +576,7 @@ msgid "API tokens"
 msgstr ""
 
 #: rust/src/web_accounts.rs:872 rust/src/web_audit.rs:145
-#: web/src/lib/features/account/AccountSettings.svelte:1251
+#: web/src/lib/features/account/AccountSettings.svelte:1332
 #: web/src/lib/features/admin/AdminResource.svelte:449
 #: web/src/lib/features/admin/AdminResource.svelte:650
 #: web/src/lib/features/admin/audit-action.ts:26
@@ -584,7 +584,7 @@ msgid "Created"
 msgstr ""
 
 #: rust/src/web_accounts.rs:873
-#: web/src/lib/features/account/AccountSettings.svelte:1273
+#: web/src/lib/features/account/AccountSettings.svelte:1354
 msgid "Revoke"
 msgstr ""
 
@@ -593,12 +593,12 @@ msgid "Create API token"
 msgstr ""
 
 #: rust/src/web_accounts.rs:875
-#: web/src/lib/features/account/AccountSettings.svelte:1024
+#: web/src/lib/features/account/AccountSettings.svelte:1105
 msgid "Change password"
 msgstr ""
 
 #: rust/src/web_accounts.rs:876
-#: web/src/lib/features/account/AccountSettings.svelte:1038
+#: web/src/lib/features/account/AccountSettings.svelte:1119
 msgid "Current password"
 msgstr ""
 
@@ -709,7 +709,7 @@ msgstr ""
 msgid "A place for your projects and yarn."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:159
+#: web/src/routes/+layout.svelte:169
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr ""
 
@@ -740,15 +740,15 @@ msgstr ""
 msgid "AI-assisted extraction. Check every detail before saving."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1390
+#: web/src/lib/features/account/AccountSettings.svelte:1471
 msgid "API access"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:452
+#: web/src/lib/features/account/AccountSettings.svelte:459
 msgid "API token revoked."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:303 web/src/routes/about/+page.svelte:200
+#: web/src/routes/+layout.svelte:313 web/src/routes/about/+page.svelte:200
 #: web/src/routes/more/+page.svelte:61
 msgid "About"
 msgstr ""
@@ -757,7 +757,7 @@ msgstr ""
 msgid "About this policy"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:312
+#: web/src/routes/+layout.svelte:322
 msgid "Account access"
 msgstr ""
 
@@ -776,11 +776,11 @@ msgstr ""
 msgid "Account registration is unavailable."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1332
+#: web/src/lib/features/account/AccountSettings.svelte:1413
 msgid "Acknowledge that you saved the token before closing this dialog."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1243
+#: web/src/lib/features/account/AccountSettings.svelte:1324
 msgid "Active API tokens"
 msgstr ""
 
@@ -888,7 +888,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:317
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:571
-#: web/src/routes/+layout.svelte:293 web/src/routes/more/+page.svelte:54
+#: web/src/routes/+layout.svelte:303 web/src/routes/more/+page.svelte:54
 msgid "Admin"
 msgstr ""
 
@@ -980,15 +980,15 @@ msgstr ""
 msgid "App version"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:963
+#: web/src/lib/features/account/AccountSettings.svelte:1012
 msgid "Appearance"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1135
+#: web/src/lib/features/account/AccountSettings.svelte:1216
 msgid "Apps and devices"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1393
+#: web/src/lib/features/account/AccountSettings.svelte:1474
 msgid "Apps using this token will no longer be able to connect."
 msgstr ""
 
@@ -1014,7 +1014,7 @@ msgstr ""
 msgid "Archived source"
 msgstr ""
 
-#: web/src/lib/api.ts:332
+#: web/src/lib/api.ts:335
 msgid "Archiving is unavailable right now."
 msgstr ""
 
@@ -1022,7 +1022,7 @@ msgstr ""
 msgid "Ask AI to improve extraction"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:316
+#: web/src/routes/+layout.svelte:326
 msgid "Ask an administrator if you need access."
 msgstr ""
 
@@ -1034,7 +1034,7 @@ msgstr ""
 msgid "At a glance"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1071
+#: web/src/lib/features/account/AccountSettings.svelte:1152
 msgid "At least 12 characters. Avoid common passwords."
 msgstr ""
 
@@ -1076,7 +1076,7 @@ msgid ""
 "verification."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:236
+#: web/src/routes/+layout.svelte:246
 msgid "Back"
 msgstr ""
 
@@ -1097,7 +1097,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:690
 #: web/src/lib/features/projects/ProjectReader.svelte:701
 #: web/src/lib/features/projects/ProjectReader.svelte:707
-#: web/src/routes/+layout.svelte:318
+#: web/src/routes/+layout.svelte:328
 msgid "Back to projects"
 msgstr ""
 
@@ -1165,7 +1165,7 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/routes/+layout.svelte:71 web/src/routes/more/+page.svelte:24
+#: web/src/routes/+layout.svelte:81 web/src/routes/more/+page.svelte:24
 msgid "Categories"
 msgstr ""
 
@@ -1210,15 +1210,15 @@ msgstr ""
 msgid "Changed {fields}"
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:242
+#: web/src/routes/privacy/+page.svelte:276
 msgid "Changes to this policy"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1110
+#: web/src/lib/features/account/AccountSettings.svelte:1191
 msgid "Changing password…"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1007
+#: web/src/lib/features/account/AccountSettings.svelte:1088
 msgid "Changing your password signs out this browser and other sessions."
 msgstr ""
 
@@ -1227,8 +1227,8 @@ msgstr ""
 msgid "Check archive status again"
 msgstr ""
 
-#: web/src/lib/api.ts:295
-#: web/src/lib/features/account/AccountSettings.svelte:755
+#: web/src/lib/api.ts:298
+#: web/src/lib/features/account/AccountSettings.svelte:804
 #: web/src/lib/features/auth/SignupForm.svelte:59
 #: web/src/lib/features/auth/SignupForm.svelte:61
 #: web/src/lib/features/auth/SignupForm.svelte:134
@@ -1264,13 +1264,13 @@ msgstr ""
 msgid "Choose a less common password."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:668
+#: web/src/lib/features/account/AccountSettings.svelte:717
 #: web/src/lib/features/auth/SignupForm.svelte:49
 #: web/src/lib/features/auth/SignupForm.svelte:53
 msgid "Choose a password that is not commonly used."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:842
+#: web/src/lib/features/account/AccountSettings.svelte:891
 msgid "Choose a profile picture"
 msgstr ""
 
@@ -1278,11 +1278,11 @@ msgstr ""
 msgid "Choose a source"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:741
+#: web/src/lib/features/account/AccountSettings.svelte:790
 msgid "Choose a supported image file."
 msgstr ""
 
-#: web/src/lib/api.ts:318
+#: web/src/lib/api.ts:321
 msgid "Choose a supported language for text recognition."
 msgstr ""
 
@@ -1298,12 +1298,12 @@ msgstr ""
 msgid "Choose an email and a strong password to get started."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:492
-#: web/src/lib/features/account/AccountSettings.svelte:739
+#: web/src/lib/features/account/AccountSettings.svelte:499
+#: web/src/lib/features/account/AccountSettings.svelte:788
 msgid "Choose an image smaller than 25 MiB."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:837
+#: web/src/lib/features/account/AccountSettings.svelte:886
 msgid "Choose image"
 msgstr ""
 
@@ -1362,11 +1362,11 @@ msgstr ""
 msgid "Confirm it is you"
 msgstr ""
 
-#: web/src/lib/api.ts:337
+#: web/src/lib/api.ts:340
 msgid "Confirm it is you to continue."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1083
+#: web/src/lib/features/account/AccountSettings.svelte:1164
 msgid "Confirm new password"
 msgstr ""
 
@@ -1384,7 +1384,7 @@ msgid "Confirming…"
 msgstr ""
 
 #: web/src/lib/components/GetAppCard.svelte:92
-#: web/src/lib/features/account/AccountSettings.svelte:1146
+#: web/src/lib/features/account/AccountSettings.svelte:1227
 #: web/src/lib/features/account/AndroidAppDialog.svelte:69
 #: web/src/lib/features/account/ConnectAppDialog.svelte:82
 msgid "Connect the app"
@@ -1402,7 +1402,7 @@ msgstr ""
 msgid "Continue unlinking"
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:61
+#: web/src/lib/components/SelfHostCard.svelte:63
 msgid "Copied."
 msgstr ""
 
@@ -1414,11 +1414,11 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:61
+#: web/src/lib/components/SelfHostCard.svelte:63
 msgid "Copy failed. Select the text instead."
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:58
+#: web/src/lib/components/SelfHostCard.svelte:60
 msgid "Copy prompt"
 msgstr ""
 
@@ -1426,17 +1426,17 @@ msgstr ""
 msgid "Copy recognized text"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1326
+#: web/src/lib/features/account/AccountSettings.svelte:1407
 msgid ""
 "Copy this token now. It will not be shown again after you close this "
 "message."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1356
+#: web/src/lib/features/account/AccountSettings.svelte:1437
 msgid "Copy token"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:693
+#: web/src/lib/features/account/AccountSettings.svelte:742
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr ""
 
@@ -1449,8 +1449,8 @@ msgid "Cosy evening?"
 msgstr ""
 
 #: web/src/lib/components/AccountMenu.svelte:187
-#: web/src/lib/features/account/AccountSettings.svelte:279
 #: web/src/lib/features/account/AccountSettings.svelte:286
+#: web/src/lib/features/account/AccountSettings.svelte:293
 msgid "Could not sign out."
 msgstr ""
 
@@ -1470,7 +1470,7 @@ msgstr ""
 msgid "Create a user account"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1199
+#: web/src/lib/features/account/AccountSettings.svelte:1280
 msgid "Create token"
 msgstr ""
 
@@ -1505,7 +1505,7 @@ msgstr ""
 msgid "Credits and licences"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:664
+#: web/src/lib/features/account/AccountSettings.svelte:713
 msgid "Current password is incorrect."
 msgstr ""
 
@@ -1514,7 +1514,7 @@ msgid "Danger zone"
 msgstr ""
 
 #: web/src/lib/components/ThemeSwitcher.svelte:14
-#: web/src/lib/features/account/AccountSettings.svelte:123
+#: web/src/lib/features/account/AccountSettings.svelte:130
 msgid "Dark"
 msgstr ""
 
@@ -1523,7 +1523,7 @@ msgstr ""
 msgid "Decrease text size"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:128
+#: web/src/lib/features/account/AccountSettings.svelte:135
 msgid "Default"
 msgstr ""
 
@@ -1538,12 +1538,12 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1516
 #: web/src/lib/features/projects/ProjectEditor.svelte:1764
 #: web/src/lib/features/projects/ProjectReader.svelte:870
-#: web/src/lib/features/projects/ProjectReader.svelte:1381
+#: web/src/lib/features/projects/ProjectReader.svelte:1389
 msgid "Delete project"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:157
-#: web/src/lib/features/projects/ProjectReader.svelte:1352
+#: web/src/lib/features/projects/ProjectReader.svelte:1360
 msgid "Delete this project? This cannot be undone."
 msgstr ""
 
@@ -1658,7 +1658,7 @@ msgid "Edits to this yarn will show up here."
 msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:26
-msgid "Effective date: 19 August 2026"
+msgid "Effective date: 4 November 2026"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:724
@@ -1747,8 +1747,27 @@ msgstr ""
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:631
+#: web/src/lib/features/account/AccountSettings.svelte:680
 msgid "Enter your current password."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:191
+msgid "Error reporting"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:193
+msgid ""
+"Error reporting is optional and configured by the instance operator. If "
+"the operator has not set it up, nothing is reported and no setting "
+"appears."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:649
+msgid "Error reports are off."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:648
+msgid "Error reports are on."
 msgstr ""
 
 #: web/src/lib/features/home/greeting.ts:29
@@ -1759,11 +1778,11 @@ msgstr ""
 msgid "Evening, knitter!"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1262
+#: web/src/lib/features/account/AccountSettings.svelte:1343
 msgid "Expires"
 msgstr ""
 
-#: web/src/lib/api.ts:333
+#: web/src/lib/api.ts:336
 msgid "External image importing is not available right now."
 msgstr ""
 
@@ -1822,11 +1841,11 @@ msgstr ""
 msgid "For example, DK or fingering"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1183
+#: web/src/lib/features/account/AccountSettings.svelte:1264
 msgid "For example, my tablet"
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:231
+#: web/src/routes/privacy/+page.svelte:265
 msgid ""
 "For software questions or privacy concerns that relate to the project, "
 "use the"
@@ -1879,7 +1898,7 @@ msgid "Get the Android app"
 msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:59
-#: web/src/routes/privacy/+page.svelte:236
+#: web/src/routes/privacy/+page.svelte:270
 msgid "GitHub issue tracker"
 msgstr ""
 
@@ -1891,11 +1910,11 @@ msgstr ""
 msgid "Good morning!"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:600
+#: web/src/lib/features/account/AccountSettings.svelte:607
 msgid "Gravatar disabled."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:599
+#: web/src/lib/features/account/AccountSettings.svelte:606
 msgid "Gravatar enabled."
 msgstr ""
 
@@ -1943,12 +1962,12 @@ msgstr ""
 msgid "Hey, night is near!"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1373
+#: web/src/lib/features/account/AccountSettings.svelte:1454
 msgid "Hide token"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:114
-#: web/src/routes/+layout.svelte:59
+#: web/src/routes/+layout.svelte:69
 msgid "Home"
 msgstr ""
 
@@ -1968,7 +1987,7 @@ msgstr ""
 msgid "Howdy, knitter!"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1363
+#: web/src/lib/features/account/AccountSettings.svelte:1444
 msgid "I saved this token somewhere safe."
 msgstr ""
 
@@ -1982,8 +2001,8 @@ msgstr ""
 msgid ""
 "If the app crashes, it saves a diagnostic report on the device (time, app"
 " version, device model, Android version, and a stack trace, with access "
-"tokens redacted) and shows it at the next launch. The report is not sent "
-"anywhere unless you copy and share it yourself."
+"tokens redacted) and shows it at the next launch. The report stays on the"
+" device unless you copy and share it yourself or error reporting is on."
 msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:54
@@ -2022,7 +2041,7 @@ msgstr ""
 msgid "Import failed. Your source and edits are still here."
 msgstr ""
 
-#: web/src/lib/api.ts:320
+#: web/src/lib/api.ts:323
 #: web/src/lib/features/imports/ImportWorkbench.svelte:154
 #: web/src/lib/features/imports/ImportWorkbench.svelte:502
 msgid "Import preview is unavailable right now. Try again later."
@@ -2035,6 +2054,13 @@ msgstr ""
 #: web/src/lib/features/imports/ImportWorkbench.svelte:665
 #: web/src/lib/features/imports/import-draft.ts:238
 msgid "Imported yarn"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:217
+msgid ""
+"In the Android app, error reporting is part of the builds installed from "
+"GitHub only. The Google Play build does not contain it and never sends "
+"error reports."
 msgstr ""
 
 #: web/src/lib/error-copy.ts:32
@@ -2081,7 +2107,7 @@ msgstr ""
 msgid "Keep photo"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1403
+#: web/src/lib/features/account/AccountSettings.svelte:1484
 msgid "Keep token"
 msgstr ""
 
@@ -2115,20 +2141,20 @@ msgstr ""
 
 #: web/src/lib/components/AccountMenu.svelte:272
 #: web/src/lib/components/LocaleSwitcher.svelte:25
-#: web/src/lib/features/account/AccountSettings.svelte:950
-#: web/src/lib/features/account/AccountSettings.svelte:956
+#: web/src/lib/features/account/AccountSettings.svelte:999
+#: web/src/lib/features/account/AccountSettings.svelte:1005
 msgid "Language"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:129
+#: web/src/lib/features/account/AccountSettings.svelte:136
 msgid "Large"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1337
+#: web/src/lib/features/projects/ProjectReader.svelte:1345
 msgid "Last updated"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1254
+#: web/src/lib/features/account/AccountSettings.svelte:1335
 msgid "Last used"
 msgstr ""
 
@@ -2145,8 +2171,8 @@ msgstr ""
 msgid "Leave administrator settings without saving the password?"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:167
-#: web/src/lib/features/account/AccountSettings.svelte:268
+#: web/src/lib/features/account/AccountSettings.svelte:174
+#: web/src/lib/features/account/AccountSettings.svelte:275
 msgid "Leave this account page without saving your changes?"
 msgstr ""
 
@@ -2167,7 +2193,7 @@ msgid "Legacy user"
 msgstr ""
 
 #: web/src/lib/components/ThemeSwitcher.svelte:13
-#: web/src/lib/features/account/AccountSettings.svelte:122
+#: web/src/lib/features/account/AccountSettings.svelte:129
 msgid "Light"
 msgstr ""
 
@@ -2233,11 +2259,11 @@ msgstr ""
 msgid "Load latest values"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1224
+#: web/src/lib/features/account/AccountSettings.svelte:1305
 msgid "Loading API tokens…"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:807
+#: web/src/lib/features/account/AccountSettings.svelte:856
 msgid "Loading account details…"
 msgstr ""
 
@@ -2313,7 +2339,7 @@ msgstr ""
 msgid "Long-press and drag to move"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:786
+#: web/src/lib/features/account/AccountSettings.svelte:835
 msgid "Looking for the admin page?"
 msgstr ""
 
@@ -2329,11 +2355,11 @@ msgstr ""
 msgid "Manage accounts and review the audit log."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:789
+#: web/src/lib/features/account/AccountSettings.svelte:838
 msgid "Manage users and audit log"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:768
+#: web/src/lib/features/account/AccountSettings.svelte:817
 msgid "Manage your profile and sign-in security."
 msgstr ""
 
@@ -2345,8 +2371,8 @@ msgstr ""
 msgid "Materials"
 msgstr ""
 
-#: web/src/lib/api.ts:308
-#: web/src/lib/features/account/AccountSettings.svelte:743
+#: web/src/lib/api.ts:311
+#: web/src/lib/features/account/AccountSettings.svelte:792
 #: web/src/lib/features/projects/ProjectEditor.svelte:1534
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:381
 msgid "Media storage is unavailable. Try again later."
@@ -2356,8 +2382,8 @@ msgstr ""
 msgid "Mooorning!"
 msgstr ""
 
-#: web/src/lib/components/AuthFooter.svelte:15 web/src/routes/+layout.svelte:63
-#: web/src/routes/+layout.svelte:266 web/src/routes/more/+page.svelte:13
+#: web/src/lib/components/AuthFooter.svelte:15 web/src/routes/+layout.svelte:73
+#: web/src/routes/+layout.svelte:276 web/src/routes/more/+page.svelte:13
 #: web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr ""
@@ -2371,7 +2397,7 @@ msgstr ""
 msgid "More changes could not be loaded."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:267
+#: web/src/routes/+layout.svelte:277
 msgid "More navigation"
 msgstr ""
 
@@ -2413,11 +2439,11 @@ msgstr ""
 msgid "Name, notes, yarn, or tag"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1258
+#: web/src/lib/features/account/AccountSettings.svelte:1339
 msgid "Never used"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1346
+#: web/src/lib/features/account/AccountSettings.svelte:1427
 msgid "New API token"
 msgstr ""
 
@@ -2444,7 +2470,7 @@ msgstr ""
 msgid "New to Stricknani?"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1159
+#: web/src/lib/features/account/AccountSettings.svelte:1240
 msgid "New token"
 msgstr ""
 
@@ -2470,11 +2496,11 @@ msgstr ""
 msgid "Next step"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1240
+#: web/src/lib/features/account/AccountSettings.svelte:1321
 msgid "No API tokens yet. Create one when an app needs access."
 msgstr ""
 
-#: web/src/lib/api.ts:338
+#: web/src/lib/api.ts:341
 msgid ""
 "No Stricknani account is linked to this login yet. Sign in with your "
 "password, then link it in your account settings."
@@ -2487,7 +2513,7 @@ msgid ""
 "your password, then link {name} in your account settings."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1320
+#: web/src/lib/features/projects/ProjectReader.svelte:1328
 msgid "No attachments have been added yet."
 msgstr ""
 
@@ -2526,7 +2552,7 @@ msgstr ""
 msgid "No need, you are already a developer."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1259
+#: web/src/lib/features/projects/ProjectReader.svelte:1263
 msgid "No pattern link has been saved."
 msgstr ""
 
@@ -2555,7 +2581,7 @@ msgstr ""
 msgid "No projects yet."
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:215
+#: web/src/routes/privacy/+page.svelte:249
 msgid ""
 "No software can guarantee absolute security. The security and "
 "confidentiality of a self-hosted installation also depend on the "
@@ -2649,11 +2675,11 @@ msgid ""
 "created on the device, and syncing does not depend on it."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1323
+#: web/src/lib/features/account/AccountSettings.svelte:1404
 msgid "One-time display"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1268
+#: web/src/lib/features/projects/ProjectReader.svelte:1276
 msgid "Open archived copy"
 msgstr ""
 
@@ -2682,7 +2708,7 @@ msgstr ""
 msgid "Open on this phone"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1255
+#: web/src/lib/features/projects/ProjectReader.svelte:1259
 msgid "Open original pattern"
 msgstr ""
 
@@ -2708,7 +2734,7 @@ msgstr ""
 msgid "Opening your pattern…"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:195
+#: web/src/routes/+layout.svelte:205
 msgid "Opening your workspace…"
 msgstr ""
 
@@ -2769,7 +2795,7 @@ msgstr ""
 msgid "Password sign-in is not enabled for your account."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:635
+#: web/src/lib/features/account/AccountSettings.svelte:684
 #: web/src/lib/features/auth/SignupForm.svelte:44
 #: web/src/lib/features/auth/SignupForm.svelte:93
 msgid "Passwords must be 1024 bytes or fewer."
@@ -2787,7 +2813,7 @@ msgstr ""
 msgid "Paste text to preview."
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:49
+#: web/src/lib/components/SelfHostCard.svelte:51
 msgid "Paste this into Claude Code, Codex or opencode. The prompt is in English."
 msgstr ""
 
@@ -2879,7 +2905,7 @@ msgstr ""
 msgid "Plan the next thing you want to knit."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:945
+#: web/src/lib/features/account/AccountSettings.svelte:994
 msgid "Preferences"
 msgstr ""
 
@@ -2926,20 +2952,21 @@ msgid "Privacy"
 msgstr ""
 
 #: web/src/lib/components/AuthFooter.svelte:16
+#: web/src/lib/features/account/AccountSettings.svelte:1052
 #: web/src/routes/about/+page.svelte:183 web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
 msgid "Privacy Policy"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:803
+#: web/src/lib/features/account/AccountSettings.svelte:852
 msgid "Profile"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:559
+#: web/src/lib/features/account/AccountSettings.svelte:566
 msgid "Profile picture removed."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:509
+#: web/src/lib/features/account/AccountSettings.svelte:516
 msgid "Profile picture updated."
 msgstr ""
 
@@ -3132,7 +3159,7 @@ msgstr ""
 msgid "Recorded field"
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:34
+#: web/src/lib/components/SelfHostCard.svelte:36
 msgid ""
 "Registrations are closed here, but you can set up your own private "
 "Stricknani!"
@@ -3163,7 +3190,7 @@ msgstr ""
 msgid "Remove photo"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:878
+#: web/src/lib/features/account/AccountSettings.svelte:927
 msgid "Remove picture"
 msgstr ""
 
@@ -3211,7 +3238,7 @@ msgstr ""
 msgid "Removed {n} steps"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:877
+#: web/src/lib/features/account/AccountSettings.svelte:926
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:499
 msgid "Removing…"
 msgstr ""
@@ -3231,6 +3258,13 @@ msgstr ""
 
 #: web/src/routes/about/+page.svelte:191
 msgid "Report a problem"
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:205
+msgid ""
+"Reports go to the operator's own Sentry error tracker, through your "
+"Stricknani server. Your browser and the Android app never contact the "
+"error tracker directly."
 msgstr ""
 
 #: web/src/lib/features/media/ArchiveControl.svelte:474
@@ -3294,16 +3328,16 @@ msgstr ""
 msgid "Review the project steps."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1391
+#: web/src/lib/features/account/AccountSettings.svelte:1472
 msgid "Revoke this token?"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1272
-#: web/src/lib/features/account/AccountSettings.svelte:1414
+#: web/src/lib/features/account/AccountSettings.svelte:1353
+#: web/src/lib/features/account/AccountSettings.svelte:1495
 msgid "Revoke token"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1413
+#: web/src/lib/features/account/AccountSettings.svelte:1494
 msgid "Revoking…"
 msgstr ""
 
@@ -3338,7 +3372,7 @@ msgstr ""
 msgid "Save my draft over latest"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1111
+#: web/src/lib/features/account/AccountSettings.svelte:1192
 msgid "Save new password"
 msgstr ""
 
@@ -3418,7 +3452,7 @@ msgstr ""
 msgid "Search your yarn"
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:207
+#: web/src/routes/privacy/+page.svelte:241
 msgid "Security"
 msgstr ""
 
@@ -3429,6 +3463,16 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:152
 msgid "Selected yarn is unavailable."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:1045
+msgid "Send error reports"
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:1048
+msgid ""
+"Sends technical details of errors, never your content, to the instance "
+"operator."
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:321
@@ -3443,7 +3487,7 @@ msgstr ""
 msgid "Service worker"
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:47
+#: web/src/lib/components/SelfHostCard.svelte:49
 msgid "Set it up with an AI coding agent"
 msgstr ""
 
@@ -3487,8 +3531,8 @@ msgstr ""
 msgid "Sign in to manage categories."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:203
-#: web/src/lib/features/account/AccountSettings.svelte:204
+#: web/src/lib/features/account/AccountSettings.svelte:210
+#: web/src/lib/features/account/AccountSettings.svelte:211
 msgid "Sign in to manage your account."
 msgstr ""
 
@@ -3526,7 +3570,7 @@ msgstr ""
 msgid "Sign in with {name}"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1000
+#: web/src/lib/features/account/AccountSettings.svelte:1081
 msgid "Sign-in and security"
 msgstr ""
 
@@ -3566,11 +3610,11 @@ msgstr ""
 msgid "Skein weight in grams"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:167
+#: web/src/routes/+layout.svelte:177
 msgid "Skip to content"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:127
+#: web/src/lib/features/account/AccountSettings.svelte:134
 msgid "Small"
 msgstr ""
 
@@ -3707,7 +3751,7 @@ msgstr ""
 msgid "Stitches to cast on"
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:191
+#: web/src/routes/privacy/+page.svelte:225
 msgid "Storage, retention, and deletion"
 msgstr ""
 
@@ -3723,11 +3767,11 @@ msgid ""
 " is not a promise about every deployment."
 msgstr ""
 
-#: web/src/lib/components/SelfHostCard.svelte:44
+#: web/src/lib/components/SelfHostCard.svelte:46
 msgid "Stricknani on GitHub"
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:209
+#: web/src/routes/privacy/+page.svelte:243
 msgid ""
 "Stricknani uses password hashing, access checks, CSRF protection, upload "
 "validation, and security response headers. Operators should use HTTPS, "
@@ -3752,7 +3796,7 @@ msgstr ""
 msgid "Swatch size"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:120
+#: web/src/lib/features/account/AccountSettings.svelte:127
 msgid "System"
 msgstr ""
 
@@ -3783,7 +3827,7 @@ msgstr ""
 msgid "Text copied"
 msgstr ""
 
-#: web/src/lib/api.ts:315
+#: web/src/lib/api.ts:318
 msgid "Text recognition could not complete. You can enter the text manually."
 msgstr ""
 
@@ -3792,7 +3836,7 @@ msgstr ""
 msgid "Text recognition could not connect. Check your connection and try again."
 msgstr ""
 
-#: web/src/lib/api.ts:309
+#: web/src/lib/api.ts:312
 msgid ""
 "Text recognition is unavailable right now. You can enter the text "
 "manually."
@@ -3803,18 +3847,18 @@ msgstr ""
 msgid "Text recognition returned an unreadable response."
 msgstr ""
 
-#: web/src/lib/api.ts:312
+#: web/src/lib/api.ts:315
 msgid "Text recognition took too long. Try again or enter the text manually."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:977
-#: web/src/lib/features/account/AccountSettings.svelte:987
+#: web/src/lib/features/account/AccountSettings.svelte:1026
+#: web/src/lib/features/account/AccountSettings.svelte:1036
 #: web/src/lib/features/projects/ProjectReader.svelte:791
 #: web/src/lib/features/yarns/YarnDetail.svelte:359
 msgid "Text size"
 msgstr ""
 
-#: web/src/lib/api.ts:296 web/src/lib/features/media/media-tools-api.ts:155
+#: web/src/lib/api.ts:299 web/src/lib/features/media/media-tools-api.ts:155
 msgid "That item could not be found."
 msgstr ""
 
@@ -3822,7 +3866,7 @@ msgstr ""
 msgid "That password is not correct."
 msgstr ""
 
-#: web/src/lib/api.ts:348
+#: web/src/lib/api.ts:351
 msgid "That sign-in attempt expired or could not be verified. Start again."
 msgstr ""
 
@@ -3830,11 +3874,11 @@ msgstr ""
 msgid "That user could not be found."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:419
+#: web/src/lib/features/account/AccountSettings.svelte:426
 msgid "The API token could not be created."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:458
+#: web/src/lib/features/account/AccountSettings.svelte:465
 msgid "The API token could not be revoked."
 msgstr ""
 
@@ -3858,12 +3902,12 @@ msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:125
 msgid ""
-"The Android app has no analytics, advertising, tracking, or crash-"
-"reporting service of its own. Data sent during synchronization goes to "
-"the server you configured."
+"The Android app has no analytics, advertising, or tracking service. Data "
+"sent during synchronization goes to the server you configured. Error "
+"reports are optional and described under Error reporting below."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:606
+#: web/src/lib/features/account/AccountSettings.svelte:613
 msgid "The Gravatar setting could not be saved."
 msgstr ""
 
@@ -3928,8 +3972,12 @@ msgstr ""
 msgid "The category could not be saved."
 msgstr ""
 
-#: web/src/lib/api.ts:282
+#: web/src/lib/api.ts:285
 msgid "The email or password is incorrect."
+msgstr ""
+
+#: web/src/lib/features/account/AccountSettings.svelte:655
+msgid "The error report setting could not be saved."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:191
@@ -3945,7 +3993,7 @@ msgid ""
 "change the order."
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:193
+#: web/src/routes/privacy/+page.svelte:227
 msgid ""
 "The instance stores account data and content in its configured database "
 "and media storage. There is no universal retention period: the operator "
@@ -3962,7 +4010,7 @@ msgstr ""
 msgid "The link could not be shared."
 msgstr ""
 
-#: web/src/lib/api.ts:351 web/src/lib/features/auth/ReauthDialog.svelte:121
+#: web/src/lib/api.ts:354 web/src/lib/features/auth/ReauthDialog.svelte:121
 msgid ""
 "The login provider is unavailable right now. Try again later or use your "
 "password."
@@ -3972,11 +4020,11 @@ msgstr ""
 msgid "The login was unlinked."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:669
+#: web/src/lib/features/account/AccountSettings.svelte:718
 msgid "The new password could not be accepted."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:646
+#: web/src/lib/features/account/AccountSettings.svelte:695
 msgid "The new passwords do not match."
 msgstr ""
 
@@ -3984,7 +4032,7 @@ msgstr ""
 msgid "The new photo order could not be saved. The previous order was restored."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:673
+#: web/src/lib/features/account/AccountSettings.svelte:722
 msgid "The password could not be changed."
 msgstr ""
 
@@ -4021,11 +4069,11 @@ msgstr ""
 msgid "The photo will be removed from this yarn."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:565
+#: web/src/lib/features/account/AccountSettings.svelte:572
 msgid "The profile picture could not be removed."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:515
+#: web/src/lib/features/account/AccountSettings.svelte:522
 msgid "The profile picture could not be uploaded."
 msgstr ""
 
@@ -4065,7 +4113,7 @@ msgstr ""
 msgid "The recorded change snapshot is unavailable."
 msgstr ""
 
-#: web/src/lib/api.ts:355
+#: web/src/lib/api.ts:358
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:49
 #: web/src/lib/features/auth/LinkedLogins.svelte:84
 #: web/src/lib/features/auth/LinkedLogins.svelte:148
@@ -4073,7 +4121,7 @@ msgstr ""
 msgid "The request could not be completed."
 msgstr ""
 
-#: web/src/lib/api.ts:302 web/src/lib/features/admin/AdminUsers.svelte:211
+#: web/src/lib/api.ts:305 web/src/lib/features/admin/AdminUsers.svelte:211
 msgid "The request could not be read. Refresh and try again."
 msgstr ""
 
@@ -4085,15 +4133,15 @@ msgstr ""
 msgid "The result appears automatically as soon as every field is filled in"
 msgstr ""
 
-#: web/src/lib/api.ts:176
+#: web/src/lib/api.ts:179
 msgid "The server could not be reached. Check your connection and try again."
 msgstr ""
 
-#: web/src/lib/api.ts:336
+#: web/src/lib/api.ts:339
 msgid "The server could not complete this request. Try again."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:896
+#: web/src/lib/features/account/AccountSettings.svelte:945
 msgid "The server fetches it from Gravatar using your email address."
 msgstr ""
 
@@ -4107,7 +4155,7 @@ msgstr ""
 msgid "The server returned an unexpected import response."
 msgstr ""
 
-#: web/src/lib/api.ts:433 web/src/lib/features/account/account-api.ts:49
+#: web/src/lib/api.ts:436 web/src/lib/features/account/account-api.ts:53
 #: web/src/lib/features/admin/admin-api.ts:123
 #: web/src/lib/features/auth/oidc-api.ts:72
 #: web/src/lib/features/auth/signup-api.ts:46
@@ -4118,7 +4166,7 @@ msgstr ""
 msgid "The server returned an unexpected response."
 msgstr ""
 
-#: web/src/lib/session.svelte.ts:145 web/src/routes/+layout.svelte:208
+#: web/src/lib/session.svelte.ts:164 web/src/routes/+layout.svelte:218
 msgid "The session could not be loaded."
 msgstr ""
 
@@ -4126,7 +4174,7 @@ msgstr ""
 msgid "The session token is missing. Refresh and try again."
 msgstr ""
 
-#: web/src/lib/api.ts:324
+#: web/src/lib/api.ts:327
 msgid "The source could not be downloaded. Check the link and try again."
 msgstr ""
 
@@ -4134,15 +4182,15 @@ msgstr ""
 msgid "The source link changed; request a new archive."
 msgstr ""
 
-#: web/src/lib/api.ts:323
+#: web/src/lib/api.ts:326
 msgid "The source took too long to import. Try again later."
 msgstr ""
 
-#: web/src/lib/api.ts:304
+#: web/src/lib/api.ts:307
 msgid "The uploaded form could not be read. Choose the file again."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:745
+#: web/src/lib/features/account/AccountSettings.svelte:794
 msgid "The uploaded image could not be read. Choose it again."
 msgstr ""
 
@@ -4173,7 +4221,8 @@ msgstr ""
 #: web/src/routes/privacy/+page.svelte:183
 msgid ""
 "The web interface itself uses locally served assets and does not require "
-"an analytics or advertising network."
+"an analytics or advertising network. It loads nothing from third-party "
+"servers."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:226
@@ -4198,7 +4247,7 @@ msgstr ""
 
 #: web/src/lib/components/AccountMenu.svelte:276
 #: web/src/lib/components/ThemeSwitcher.svelte:22
-#: web/src/lib/features/account/AccountSettings.svelte:969
+#: web/src/lib/features/account/AccountSettings.svelte:1018
 msgid "Theme"
 msgstr ""
 
@@ -4229,7 +4278,7 @@ msgid ""
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1737
-#: web/src/lib/features/projects/ProjectReader.svelte:1356
+#: web/src/lib/features/projects/ProjectReader.svelte:1364
 #: web/src/lib/features/yarns/YarnDetail.svelte:641
 #: web/src/lib/features/yarns/YarnForm.svelte:938
 #: web/src/lib/features/yarns/YarnForm.svelte:1001
@@ -4246,7 +4295,7 @@ msgid ""
 "administrator."
 msgstr ""
 
-#: web/src/lib/api.ts:331
+#: web/src/lib/api.ts:334
 msgid "This document could not be read. Try another file."
 msgstr ""
 
@@ -4255,21 +4304,21 @@ msgstr ""
 msgid "This document is larger than the 5 MiB import limit."
 msgstr ""
 
-#: web/src/lib/api.ts:328
+#: web/src/lib/api.ts:331
 msgid ""
 "This document type is not supported. Try a web page, text, Markdown, PDF,"
 " or image."
 msgstr ""
 
-#: web/src/lib/api.ts:303
+#: web/src/lib/api.ts:306
 msgid "This feature is not enabled for this account."
 msgstr ""
 
-#: web/src/lib/api.ts:319
+#: web/src/lib/api.ts:322
 msgid "This image is not available for text recognition."
 msgstr ""
 
-#: web/src/lib/api.ts:307
+#: web/src/lib/api.ts:310
 msgid "This is not a valid image. Choose a different file."
 msgstr ""
 
@@ -4282,11 +4331,11 @@ msgstr ""
 msgid "This is your only way to sign in, so it cannot be unlinked."
 msgstr ""
 
-#: web/src/lib/api.ts:345
+#: web/src/lib/api.ts:348
 msgid "This is your only way to sign in. Set up another sign-in method first."
 msgstr ""
 
-#: web/src/lib/api.ts:298
+#: web/src/lib/api.ts:301
 msgid "This item changed in another window. Your unsaved changes are still here."
 msgstr ""
 
@@ -4294,11 +4343,11 @@ msgstr ""
 msgid "This language is not available for recognition. Try another language."
 msgstr ""
 
-#: web/src/lib/api.ts:327
+#: web/src/lib/api.ts:330
 msgid "This link cannot be imported for security reasons."
 msgstr ""
 
-#: web/src/lib/api.ts:342
+#: web/src/lib/api.ts:345
 msgid "This login is already linked to a Stricknani account."
 msgstr ""
 
@@ -4320,7 +4369,7 @@ msgid ""
 "Stricknani web instance or the companion Android app."
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:244
+#: web/src/routes/privacy/+page.svelte:278
 msgid ""
 "This policy may be updated when Stricknani behavior or integrations "
 "change. The current version is published at this URL. Check the effective"
@@ -4352,7 +4401,7 @@ msgstr ""
 msgid "This project is no longer available."
 msgstr ""
 
-#: web/src/lib/api.ts:341
+#: web/src/lib/api.ts:344
 msgid "This sign-in method is not available."
 msgstr ""
 
@@ -4360,7 +4409,7 @@ msgstr ""
 msgid "This upload is larger than the 25 MiB limit."
 msgstr ""
 
-#: web/src/lib/api.ts:301
+#: web/src/lib/api.ts:304
 msgid "This upload is larger than the allowed size."
 msgstr ""
 
@@ -4393,15 +4442,15 @@ msgstr ""
 msgid "Today"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:690
+#: web/src/lib/features/account/AccountSettings.svelte:739
 msgid "Token copied. Keep it somewhere safe."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1175
+#: web/src/lib/features/account/AccountSettings.svelte:1256
 msgid "Token name"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:415
+#: web/src/lib/features/account/AccountSettings.svelte:422
 msgid "Token names must be 255 bytes or fewer."
 msgstr ""
 
@@ -4409,7 +4458,7 @@ msgstr ""
 msgid "Too many archive requests. Try again later."
 msgstr ""
 
-#: web/src/lib/api.ts:297 web/src/lib/features/auth/ReauthDialog.svelte:119
+#: web/src/lib/api.ts:300 web/src/lib/features/auth/ReauthDialog.svelte:119
 msgid "Too many attempts. Wait a moment and try again."
 msgstr ""
 
@@ -4430,7 +4479,7 @@ msgstr ""
 msgid "Too many text recognition requests. Wait a moment and try again."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:734
+#: web/src/lib/features/account/AccountSettings.svelte:783
 #: web/src/lib/features/account/ConnectAppDialog.svelte:41
 msgid "Too many tokens were created recently. Try again later."
 msgstr ""
@@ -4440,8 +4489,8 @@ msgid "Try a different name, category, or tag."
 msgstr ""
 
 #: web/src/lib/components/ErrorPanel.svelte:55
-#: web/src/lib/features/account/AccountSettings.svelte:817
-#: web/src/lib/features/account/AccountSettings.svelte:1235
+#: web/src/lib/features/account/AccountSettings.svelte:866
+#: web/src/lib/features/account/AccountSettings.svelte:1316
 #: web/src/lib/features/admin/AdminAudit.svelte:372
 #: web/src/lib/features/admin/AdminResource.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:607
@@ -4461,7 +4510,7 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:318
 #: web/src/lib/features/yarns/YarnForm.svelte:605
 #: web/src/lib/features/yarns/YarnLibrary.svelte:206
-#: web/src/routes/+layout.svelte:216
+#: web/src/routes/+layout.svelte:226
 msgid "Try again"
 msgstr ""
 
@@ -4527,7 +4576,7 @@ msgstr ""
 msgid "Upload file"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:918
+#: web/src/lib/features/account/AccountSettings.svelte:967
 msgid "Upload picture"
 msgstr ""
 
@@ -4544,7 +4593,7 @@ msgstr ""
 msgid "Uploading photo…"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:917
+#: web/src/lib/features/account/AccountSettings.svelte:966
 msgid "Uploading…"
 msgstr ""
 
@@ -4553,7 +4602,7 @@ msgstr ""
 msgid "Use 256 characters or fewer."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:894
+#: web/src/lib/features/account/AccountSettings.svelte:943
 msgid "Use Gravatar when no picture is uploaded"
 msgstr ""
 
@@ -4561,13 +4610,13 @@ msgstr ""
 msgid "Use a password with at least 12 characters."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1164
+#: web/src/lib/features/account/AccountSettings.svelte:1245
 msgid ""
 "Use a token for a trusted app or device. You can only see a new token "
 "once."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:639
+#: web/src/lib/features/account/AccountSettings.svelte:688
 msgid "Use at least 12 characters for your new password."
 msgstr ""
 
@@ -4588,7 +4637,7 @@ msgstr ""
 msgid "Used in projects"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:980
+#: web/src/lib/features/account/AccountSettings.svelte:1029
 msgid "Used when reading projects and yarns."
 msgstr ""
 
@@ -4669,6 +4718,17 @@ msgstr ""
 msgid "What would you like to add?"
 msgstr ""
 
+#: web/src/routes/privacy/+page.svelte:199
+msgid ""
+"When it is on, the server, the web app, and the Android app report "
+"errors: the error message, a stack trace, the app version, and your "
+"browser or operating system version. They do not report account contents "
+"such as projects, yarns, photos, or notes, and they remove access tokens,"
+" cookies, email addresses, and IP addresses before sending. The only "
+"account detail attached to a report from the server is your numeric "
+"account ID."
+msgstr ""
+
 #: web/src/routes/privacy/+page.svelte:46
 msgid "Who is responsible for your data?"
 msgstr ""
@@ -4690,8 +4750,8 @@ msgid "Winky lost the thread"
 msgstr ""
 
 #: web/src/lib/components/AccountMenu.svelte:325
-#: web/src/lib/features/account/AccountSettings.svelte:1198
-#: web/src/lib/features/account/AccountSettings.svelte:1298
+#: web/src/lib/features/account/AccountSettings.svelte:1279
+#: web/src/lib/features/account/AccountSettings.svelte:1379
 #: web/src/lib/features/account/ConnectAppDialog.svelte:89
 msgid "Working…"
 msgstr ""
@@ -4812,13 +4872,22 @@ msgstr ""
 msgid "You are now a developer!"
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:199
+#: web/src/routes/privacy/+page.svelte:233
 msgid ""
 "You can manage your content and revoke personal access tokens through the"
 " available features. To request deletion or an export of account data, "
 "contact the instance operator. Deleting content or an account does not "
 "necessarily remove copies already retained in backups, logs, or external "
 "services."
+msgstr ""
+
+#: web/src/routes/privacy/+page.svelte:211
+msgid ""
+"You can turn it off at any time with Send error reports in your account "
+"settings (Preferences) or in the Android app settings. The server then "
+"drops errors that occur while handling your requests. Errors that have no"
+" connection to a signed-in user, such as a server start-up failure, are "
+"governed by the operator's setting."
 msgstr ""
 
 #: web/src/lib/features/home/activity.ts:159
@@ -4840,15 +4909,15 @@ msgstr ""
 msgid "You deleted {name}"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:314
+#: web/src/routes/+layout.svelte:324
 msgid "You do not have access to this page."
 msgstr ""
 
-#: web/src/lib/api.ts:294
+#: web/src/lib/api.ts:297
 msgid "You do not have permission to do that."
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:225
+#: web/src/routes/privacy/+page.svelte:259
 msgid ""
 "You may choose what to enter, upload, synchronize, or send to optional "
 "integrations. You may stop using the Android app, clear its local data, "
@@ -4872,8 +4941,8 @@ msgid ""
 "again later."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:236
-#: web/src/lib/features/account/AccountSettings.svelte:335
+#: web/src/lib/features/account/AccountSettings.svelte:243
+#: web/src/lib/features/account/AccountSettings.svelte:342
 msgid "Your API tokens could not be loaded."
 msgstr ""
 
@@ -4881,12 +4950,12 @@ msgstr ""
 msgid "Your Gauge (per 10cm)"
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:750
+#: web/src/lib/features/account/AccountSettings.svelte:799
 msgid "Your account changed in another window. Refresh and try again."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:220
-#: web/src/lib/features/account/AccountSettings.svelte:314
+#: web/src/lib/features/account/AccountSettings.svelte:227
+#: web/src/lib/features/account/AccountSettings.svelte:321
 msgid "Your account details could not be loaded."
 msgstr ""
 
@@ -4894,7 +4963,7 @@ msgstr ""
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 
-#: web/src/routes/privacy/+page.svelte:223
+#: web/src/routes/privacy/+page.svelte:257
 msgid "Your choices and contact"
 msgstr ""
 
@@ -4920,7 +4989,7 @@ msgstr ""
 msgid "Your favorite projects and yarns, together."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:249
+#: web/src/routes/+layout.svelte:259
 msgid "Your library"
 msgstr ""
 
@@ -4928,7 +4997,7 @@ msgstr ""
 msgid "Your login was linked to your account."
 msgstr ""
 
-#: web/src/lib/features/account/AccountSettings.svelte:1324
+#: web/src/lib/features/account/AccountSettings.svelte:1405
 msgid "Your new API token"
 msgstr ""
 
@@ -4940,7 +5009,7 @@ msgstr ""
 msgid "Your reference"
 msgstr ""
 
-#: web/src/lib/api.ts:286
+#: web/src/lib/api.ts:289
 msgid "Your session check failed. Refresh the page and try again."
 msgstr ""
 
@@ -4948,17 +5017,17 @@ msgstr ""
 msgid "Your session expired. Sign in again to continue."
 msgstr ""
 
-#: web/src/lib/api.ts:292
-#: web/src/lib/features/account/AccountSettings.svelte:732
+#: web/src/lib/api.ts:295
+#: web/src/lib/features/account/AccountSettings.svelte:781
 #: web/src/lib/features/account/ConnectAppDialog.svelte:47
 msgid "Your session expired. Sign in again."
 msgstr ""
 
-#: web/src/lib/api.ts:283 web/src/lib/api.ts:289
+#: web/src/lib/api.ts:286 web/src/lib/api.ts:292
 msgid "Your session has expired. Refresh the page and try again."
 msgstr ""
 
-#: web/src/lib/api.ts:293
+#: web/src/lib/api.ts:296
 msgid "Your session has expired. Sign in again."
 msgstr ""
 
@@ -4970,7 +5039,7 @@ msgstr ""
 msgid "Your stash is empty"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:204
+#: web/src/routes/+layout.svelte:214
 msgid "Your workspace is taking a moment."
 msgstr ""
 

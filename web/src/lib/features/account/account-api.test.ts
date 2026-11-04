@@ -6,6 +6,7 @@ import {
   getAccount,
   listApiTokens,
   revokeApiToken,
+  setErrorReporting,
   setUseGravatar,
   uploadAvatar,
 } from "./account-api";
@@ -42,6 +43,8 @@ const account = {
   avatar_source: "upload",
   use_gravatar: true,
   gravatar_enabled: true,
+  error_reporting_enabled: true,
+  error_reporting_available: true,
 };
 
 const token = {
@@ -141,6 +144,39 @@ describe("account v2 API contract", () => {
     expect(init.method).toBe("PATCH");
     expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
     expect(JSON.parse(String(init.body))).toEqual({ use_gravatar: false });
+  });
+
+  it("defaults the error-reporting fields for older servers and patches the choice", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            id: 17,
+            email: "knitter@example.test",
+            is_admin: false,
+            avatar_url: null,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: { ...account, error_reporting_enabled: false } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(getAccount()).resolves.toMatchObject({
+      error_reporting_enabled: true,
+      error_reporting_available: false,
+    });
+    await expect(setErrorReporting(false, session)).resolves.toMatchObject({
+      error_reporting_enabled: false,
+    });
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe("/api/v2/account");
+    expect(init.method).toBe("PATCH");
+    expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
+    expect(JSON.parse(String(init.body))).toEqual({
+      error_reporting_enabled: false,
+    });
   });
 
   it("sends same-origin CSRF on create, revoke, password, and avatar operations", async () => {

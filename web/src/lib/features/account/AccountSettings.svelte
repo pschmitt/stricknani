@@ -15,6 +15,7 @@
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
     patchSessionAvatar,
+    patchSessionErrorReporting,
     refreshSession,
     session,
     signOut,
@@ -29,6 +30,7 @@
     getAccount,
     listApiTokens,
     revokeApiToken,
+    setErrorReporting,
     setUseGravatar,
     uploadAvatar,
     type AccountProfile,
@@ -38,7 +40,12 @@
 
   type PageLoad = "loading" | "ready" | "error";
   type Operation =
-    "token" | "avatar-upload" | "avatar-delete" | "gravatar" | "password";
+    | "token"
+    | "avatar-upload"
+    | "avatar-delete"
+    | "gravatar"
+    | "error-reporting"
+    | "password";
 
   let profile = $state<AccountProfile | null>(null);
   let tokens = $state<ApiToken[]>([]);
@@ -611,6 +618,48 @@
     }
   }
 
+  let errorReportingError = $state("");
+
+  async function changeErrorReporting(enabled: boolean) {
+    const activeSession = session.data;
+    const capturedUserId = activeSession?.user?.id;
+    if (
+      !accountActionsEnabled ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      operation !== null
+    )
+      return;
+    errorReportingError = "";
+    pageStatus = "";
+    operation = "error-reporting";
+    const mutationId = ++operationGeneration;
+    try {
+      const next = await setErrorReporting(enabled, activeSession);
+      if (
+        userId !== capturedUserId ||
+        mutationId !== operationGeneration ||
+        !profile
+      )
+        return;
+      profile = next;
+      patchSessionErrorReporting(activeSession, next.error_reporting_enabled);
+      pageStatus = next.error_reporting_enabled
+        ? t("Error reports are on.", locale)
+        : t("Error reports are off.", locale);
+    } catch (error) {
+      if (userId !== capturedUserId || mutationId !== operationGeneration)
+        return;
+      errorReportingError = errorMessage(
+        error,
+        t("The error report setting could not be saved.", locale),
+      );
+    } finally {
+      if (userId === capturedUserId && mutationId === operationGeneration)
+        operation = null;
+    }
+  }
+
   async function submitPassword(event: SubmitEvent) {
     event.preventDefault();
     const activeSession = session.data;
@@ -989,6 +1038,38 @@
           />
         </div>
       </div>
+      {#if profile?.error_reporting_available}
+        <div class="row">
+          <div class="row__text">
+            <label class="row__label" for="pref-error-reports"
+              >{t("Send error reports", locale)}</label
+            >
+            <p class="row__hint" id="pref-error-reports-hint">
+              {t(
+                "Sends technical details of errors, never your content, to the instance operator.",
+                locale,
+              )}
+              <a href={resolve("/privacy")}>{t("Privacy Policy", locale)}</a>
+            </p>
+            {#if errorReportingError}<p class="field-error" role="alert">
+                {errorReportingError}
+              </p>{/if}
+          </div>
+          <div class="row__control">
+            <input
+              id="pref-error-reports"
+              type="checkbox"
+              role="switch"
+              class="switch"
+              aria-describedby="pref-error-reports-hint"
+              checked={profile.error_reporting_enabled}
+              disabled={operation !== null || !accountActionsEnabled}
+              onchange={(event) =>
+                void changeErrorReporting(event.currentTarget.checked)}
+            />
+          </div>
+        </div>
+      {/if}
     </div>
   </section>
 
@@ -1763,6 +1844,57 @@
   .gravatar-toggle__copy {
     display: grid;
     gap: 0.15rem;
+  }
+
+  .switch {
+    appearance: none;
+    position: relative;
+    width: 3rem;
+    height: 1.75rem;
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-raised);
+    cursor: pointer;
+  }
+
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    transform: translateY(-50%);
+    transition: left 0.15s;
+  }
+
+  .switch:checked {
+    border-color: var(--accent-strong);
+    background: var(--surface-raised);
+  }
+
+  .switch:checked::after {
+    left: 1.5rem;
+    background: var(--accent-strong);
+  }
+
+  .switch:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+  }
+
+  .switch:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .switch::after {
+      transition: none;
+    }
   }
 
   .selected-file {

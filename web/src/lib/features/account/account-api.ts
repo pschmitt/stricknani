@@ -17,6 +17,10 @@ export interface AccountProfile {
   use_gravatar: boolean;
   /** Whether the server offers the Gravatar fallback at all. */
   gravatar_enabled: boolean;
+  /** The user's "send error reports" choice (default true). */
+  error_reporting_enabled: boolean;
+  /** Whether the operator configured error reporting at all. */
+  error_reporting_available: boolean;
 }
 
 export interface ApiToken {
@@ -66,7 +70,9 @@ function parseProfile(value: unknown): AccountProfile {
       value.avatar_source === "gravatar"
     ) ||
     !optionalBoolean(value.use_gravatar) ||
-    !optionalBoolean(value.gravatar_enabled)
+    !optionalBoolean(value.gravatar_enabled) ||
+    !optionalBoolean(value.error_reporting_enabled) ||
+    !optionalBoolean(value.error_reporting_available)
   )
     throw invalidResponse();
   return {
@@ -77,6 +83,8 @@ function parseProfile(value: unknown): AccountProfile {
     avatar_source: value.avatar_source ?? null,
     use_gravatar: value.use_gravatar ?? true,
     gravatar_enabled: value.gravatar_enabled ?? false,
+    error_reporting_enabled: value.error_reporting_enabled ?? true,
+    error_reporting_available: value.error_reporting_available ?? false,
   };
 }
 
@@ -187,6 +195,20 @@ export async function setUseGravatar(
     method: "PATCH",
     csrfToken: currentSession.csrf_token,
     body: { use_gravatar: enabled },
+  });
+  if (!record(payload)) throw invalidResponse();
+  return parseProfile(payload.data);
+}
+
+/** Set the per-user "send error reports" preference. */
+export async function setErrorReporting(
+  enabled: boolean,
+  currentSession: SessionData,
+): Promise<AccountProfile> {
+  const payload: unknown = await apiRequest("/api/v2/account", {
+    method: "PATCH",
+    csrfToken: currentSession.csrf_token,
+    body: { error_reporting_enabled: enabled },
   });
   if (!record(payload)) throw invalidResponse();
   return parseProfile(payload.data);

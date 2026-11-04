@@ -139,6 +139,25 @@ export function patchSessionAvatar(
   return true;
 }
 
+/** Mirror the person's error-reporting choice into the session after saving it. */
+export function patchSessionErrorReporting(
+  expectedSession: SessionData,
+  enabled: boolean,
+): boolean {
+  if (
+    session.status !== "ready" ||
+    session.data !== expectedSession ||
+    expectedSession.user === null ||
+    !expectedSession.error_reporting
+  )
+    return false;
+  session.data = {
+    ...expectedSession,
+    error_reporting: { ...expectedSession.error_reporting, enabled },
+  };
+  return true;
+}
+
 function asError(error: unknown): Error {
   return error instanceof Error
     ? error

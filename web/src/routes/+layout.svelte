@@ -9,6 +9,10 @@
   } from "#lib/app-shell.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import ActionFeedback from "#lib/components/ActionFeedback.svelte";
+  import {
+    parseErrorReporting,
+    syncErrorReporting,
+  } from "#lib/error-reporting.ts";
   import { clearFeedback, feedback } from "#lib/feedback.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -35,6 +39,12 @@
     untrack(() => {
       if ($feedback && $feedback.ownerId !== ownerId) clearFeedback();
     });
+  });
+  // Optional error reporting: starts only when the server offers it and the
+  // person has not turned it off; an opt-out stops it right away.
+  $effect(() => {
+    const info = parseErrorReporting(session.data?.error_reporting);
+    void syncErrorReporting(info).catch(() => {});
   });
   const publicGauge = $derived(
     showPublicPage(
