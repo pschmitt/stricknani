@@ -294,7 +294,7 @@ async fn populate(f: &Fixture, user_id: i64, tag: &str) -> Files {
     Files(files)
 }
 
-async fn count(pool: &SqlitePool, sql: &str, user_id: i64) -> i64 {
+async fn count(pool: &SqlitePool, sql: &'static str, user_id: i64) -> i64 {
     sqlx::query_scalar(sql)
         .bind(user_id)
         .fetch_one(pool)

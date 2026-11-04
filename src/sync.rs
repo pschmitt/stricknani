@@ -560,23 +560,23 @@ async fn load_deletions(
         })
 }
 
-fn push_position_filter<'a>(
-    query: &mut QueryBuilder<'a, Sqlite>,
+fn push_position_filter(
+    query: &mut QueryBuilder<Sqlite>,
     timestamp_column: &str,
     id_column: &str,
-    since: Option<&'a str>,
-    position: Option<&'a CursorPosition>,
+    since: Option<&str>,
+    position: Option<&CursorPosition>,
 ) {
     if let Some(position) = position {
         query
             .push(" AND (")
             .push(timestamp_column)
             .push(" > ")
-            .push_bind(position.at.as_str())
+            .push_bind(position.at.clone())
             .push(" OR (")
             .push(timestamp_column)
             .push(" = ")
-            .push_bind(position.at.as_str())
+            .push_bind(position.at.clone())
             .push(" AND ")
             .push(id_column)
             .push(" > ")
@@ -587,7 +587,7 @@ fn push_position_filter<'a>(
             .push(" AND ")
             .push(timestamp_column)
             .push(" > ")
-            .push_bind(since);
+            .push_bind(since.to_owned());
     }
 }
 

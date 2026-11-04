@@ -840,10 +840,11 @@ async fn deleting_an_owner_cascades_categories_without_sync_rows() {
         "category_sync_clock",
         "category_deletion_events",
     ] {
-        let count: i64 = sqlx::query_scalar(&format!("SELECT count(*) FROM {table}"))
-            .fetch_one(&fx.pool)
-            .await
-            .unwrap();
+        let count: i64 =
+            sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT count(*) FROM {table}")))
+                .fetch_one(&fx.pool)
+                .await
+                .unwrap();
         assert_eq!(count, 0, "{table} is empty after owner deletion");
     }
 }

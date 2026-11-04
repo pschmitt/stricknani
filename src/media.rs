@@ -480,7 +480,7 @@ async fn registered_media(
                  AND media_files.yarn_id = media_url_aliases.parent_id)) \
          AND media_url_aliases.{alias_column} = ?"
     );
-    sqlx::query_as::<_, MediaRow>(&query)
+    sqlx::query_as::<_, MediaRow>(sqlx::AssertSqlSafe(query.as_str()))
         .bind(subdir)
         .bind(parent_id)
         .bind(requested_name)

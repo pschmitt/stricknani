@@ -926,7 +926,7 @@ async fn import_rows(
              AND archive_requested_at IS NOT NULL AND archive_failed = 0 \
              AND (link_archive IS NULL OR trim(link_archive) = '')"
         );
-        report.pending_archive_jobs += sqlx::query(&statement)
+        report.pending_archive_jobs += sqlx::query(sqlx::AssertSqlSafe(statement.as_str()))
             .bind(kind)
             .execute(&mut *tx)
             .await

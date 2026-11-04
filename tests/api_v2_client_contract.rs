@@ -167,10 +167,10 @@ async fn add_token(
     revoked: bool,
 ) {
     let revoked_sql = if revoked { "unixepoch()" } else { "NULL" };
-    sqlx::query(&format!(
+    sqlx::query(sqlx::AssertSqlSafe(format!(
         "INSERT INTO api_tokens (user_id, name, token_hash, created_at, expires_at, purpose, revoked_at) \
          VALUES (?, 'client contract fixture', ?, unixepoch(), {expires_sql}, ?, {revoked_sql})"
-    ))
+    )))
     .bind(user_id)
     .bind(hex::encode(Sha256::digest(token.as_bytes())))
     .bind(purpose)

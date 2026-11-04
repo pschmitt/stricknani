@@ -278,7 +278,7 @@ async fn insert_token(
         "INSERT INTO api_tokens (user_id, name, token_hash, created_at, revoked_at, expires_at) \
          VALUES (?, 'test', ?, unixepoch(), {revoked_at}, {expires_at})"
     );
-    sqlx::query(&query)
+    sqlx::query(sqlx::AssertSqlSafe(query))
         .bind(user_id)
         .bind(hash)
         .execute(pool)

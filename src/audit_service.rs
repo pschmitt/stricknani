@@ -367,7 +367,7 @@ pub(crate) async fn list_resource_events(
            AND EXISTS (SELECT 1 FROM {table} AS resource \
                        WHERE resource.id = e.entity_id AND resource.{owner_column} = ?)"
     );
-    let total: i64 = sqlx::query_scalar(&count_sql)
+    let total: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(count_sql.as_str()))
         .bind(entity_type)
         .bind(resource_id)
         .bind(owner_id)
@@ -388,7 +388,7 @@ pub(crate) async fn list_resource_events(
                        WHERE resource.id = e.entity_id AND resource.{owner_column} = ?) \
          ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?"
     );
-    let rows = sqlx::query(&list_sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(list_sql.as_str()))
         .bind(entity_type)
         .bind(resource_id)
         .bind(owner_id)
@@ -439,7 +439,7 @@ pub(crate) async fn get_resource_event_detail(
            AND EXISTS (SELECT 1 FROM {table} AS resource \
                        WHERE resource.id = e.entity_id AND resource.{owner_column} = ?)"
     );
-    let row = sqlx::query(&query)
+    let row = sqlx::query(sqlx::AssertSqlSafe(query.as_str()))
         .bind(entity_type)
         .bind(resource_id)
         .bind(event_id)
@@ -668,7 +668,7 @@ pub(crate) async fn list_activity(
     let mut items: Vec<ActivityItem> = Vec::new();
     let mut has_more = false;
     'batches: loop {
-        let rows = sqlx::query(&sql)
+        let rows = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
             .bind(user_id)
             .bind(cursor.as_ref().map(|(created_at, _)| created_at.clone()))
             .bind(cursor.as_ref().map(|(_, id)| *id))

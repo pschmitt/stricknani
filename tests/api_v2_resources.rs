@@ -524,10 +524,11 @@ async fn resource_routes_require_cookie_sessions_and_reject_csrf_or_cross_origin
             assert_eq!(response.status(), StatusCode::FORBIDDEN, "{path}");
             assert_eq!(json(response).await["error"]["code"], "csrf_failed");
         }
-        let count: i64 = sqlx::query_scalar(&format!("SELECT COUNT(*) FROM {table}"))
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+        let count: i64 =
+            sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT COUNT(*) FROM {table}")))
+                .fetch_one(&pool)
+                .await
+                .unwrap();
         assert_eq!(count, 0, "rejected writes must not mutate {table}");
     }
 }
