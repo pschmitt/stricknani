@@ -33,9 +33,9 @@ val isBuildingBundle = gradle.startParameter.taskNames.any { it.lowercase().cont
 val selfUpdateEnabled =
     providers.gradleProperty("selfUpdate").map { it.toBoolean() }.orElse(!isBuildingBundle).get()
 // Optional Sentry error reporting is in every variant, Google Play bundles included: it is
-// operator-configured, goes through the server's tunnel and the user can switch it off, and the Play
-// data safety form declares it. It is independent of self-update. `-PerrorReporting=false` opts out
-// of the SDK, its source set and the toggle.
+// operator-configured, goes through the server's tunnel, the user can switch it off, and the Play
+// data safety form declares it. It is independent of self-update. `-PerrorReporting=false` opts
+// out of the SDK, its source set and the toggle.
 val errorReportingEnabled =
     providers.gradleProperty("errorReporting").map { it.toBoolean() }.orElse(true).get()
 val inferredVersionName =
@@ -83,8 +83,8 @@ android {
     }
 
     // The Sentry-backed reporter lives in its own source set, compiled unless error reporting is
-    // opted out of with -PerrorReporting=false. Shared code sees the ErrorReporter interface and, without it,
-    // NoErrorReporter.
+    // opted out of with -PerrorReporting=false. Shared code sees the ErrorReporter interface and,
+    // without it, NoErrorReporter.
     if (errorReportingEnabled) {
         listOf("debug", "release").forEach { name ->
             sourceSets.getByName(name).kotlin.directories.add("src/errorreporting/kotlin")
