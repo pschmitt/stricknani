@@ -330,15 +330,6 @@
         <a
           class="account-menu-item"
           role="menuitem"
-          href={resolve("/privacy")}
-          onclick={() => closeMenu(false)}
-        >
-          <NavIcon name="help" />
-          <span>{t("Privacy Policy", locale)}</span>
-        </a>
-        <a
-          class="account-menu-item"
-          role="menuitem"
           href={resolve("/about")}
           onclick={() => closeMenu(false)}
         >
@@ -515,6 +506,19 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+  }
+
+  /* Compact segmented controls in the menu: they are secondary settings, and
+     the full 44px rows made the preferences block taller than the menu items. */
+  .account-menu-pref :global(.theme-switcher .theme-option),
+  .account-menu-pref :global(.locale-switcher .locale-option) {
+    min-height: 32px;
+    padding-block: 0;
+  }
+
+  .account-menu-pref :global(.theme-switcher),
+  .account-menu-pref :global(.locale-switcher) {
+    padding: 0.1rem;
   }
 
   .account-menu-label {

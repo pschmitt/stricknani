@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Stricknani 0.1.0\n"
 "Report-Msgid-Bugs-To: philipp@schmitt.co\n"
-"POT-Creation-Date: 2026-11-04 07:18+0100\n"
+"POT-Creation-Date: 2026-11-04 07:29+0100\n"
 "PO-Revision-Date: 2025-10-12 19:00+0000\n"
 "Last-Translator: Philipp Schmitt <philipp@schmitt.co>\n"
 "Language: de\n"
@@ -44,7 +44,7 @@ msgid "Yarns"
 msgstr "Garne"
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
-#: rust/src/web_accounts.rs:849 web/src/lib/components/AccountMenu.svelte:357
+#: rust/src/web_accounts.rs:849 web/src/lib/components/AccountMenu.svelte:348
 #: web/src/lib/features/account/AccountSettings.svelte:1262
 #: web/src/lib/features/account/AccountSettings.svelte:1276
 msgid "Sign out"
@@ -669,7 +669,7 @@ msgstr "Keine Audit-Einträge gefunden."
 msgid "Create account"
 msgstr "Konto erstellen"
 
-#: web/src/routes/about/+page.svelte:260 web/src/routes/about/+page.svelte:363
+#: web/src/routes/about/+page.svelte:253 web/src/routes/about/+page.svelte:365
 msgid "(opens in a new tab)"
 msgstr "(öffnet in neuem Tab)"
 
@@ -743,7 +743,7 @@ msgstr "API-Zugriff"
 msgid "API token revoked."
 msgstr "API-Token widerrufen."
 
-#: web/src/lib/components/AccountMenu.svelte:346
+#: web/src/lib/components/AccountMenu.svelte:337
 #: web/src/routes/+layout.svelte:73 web/src/routes/about/+page.svelte:200
 #: web/src/routes/more/+page.svelte:42
 msgid "About"
@@ -1355,7 +1355,7 @@ msgstr "Notizen schließen"
 msgid "Close photo"
 msgstr "Foto schließen"
 
-#: web/src/routes/about/+page.svelte:248 web/src/routes/about/+page.svelte:323
+#: web/src/routes/about/+page.svelte:242 web/src/routes/about/+page.svelte:325
 msgid "Commit"
 msgstr "Commit"
 
@@ -1406,11 +1406,11 @@ msgstr "Verknüpfung fortsetzen"
 msgid "Continue unlinking"
 msgstr "Trennen fortsetzen"
 
-#: web/src/routes/about/+page.svelte:276
+#: web/src/routes/about/+page.svelte:278
 msgid "Copied. Paste it into your bug report."
 msgstr "Kopiert. Füge es in deinen Fehlerbericht ein."
 
-#: web/src/routes/about/+page.svelte:272
+#: web/src/routes/about/+page.svelte:274
 msgid "Copy"
 msgstr "Kopieren"
 
@@ -1434,7 +1434,7 @@ msgstr "Token kopieren"
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr "Das Kopieren wurde blockiert. Markiere und kopiere das Token manuell."
 
-#: web/src/routes/about/+page.svelte:278
+#: web/src/routes/about/+page.svelte:280
 msgid "Copy was blocked. Select the version and copy it manually."
 msgstr "Kopieren wurde blockiert. Markiere die Version und kopiere sie manuell."
 
@@ -1497,7 +1497,7 @@ msgstr "Projekt wird erstellt…"
 msgid "Creating…"
 msgstr "Wird erstellt …"
 
-#: web/src/routes/about/+page.svelte:381
+#: web/src/routes/about/+page.svelte:383
 msgid "Credits and licences"
 msgstr "Danksagungen und Lizenzen"
 
@@ -1573,11 +1573,11 @@ msgstr "Wird gelöscht …"
 msgid "Details to add"
 msgstr "Angaben zum Ergänzen"
 
-#: web/src/routes/about/+page.svelte:301
+#: web/src/routes/about/+page.svelte:303
 msgid "Developer"
 msgstr "Entwickler"
 
-#: web/src/routes/about/+page.svelte:304
+#: web/src/routes/about/+page.svelte:306
 msgid "Developer mode"
 msgstr "Entwicklermodus"
 
@@ -2216,7 +2216,7 @@ msgstr "Verknüpfte Garne"
 msgid "Linking the login did not work. Try again."
 msgstr "Das Verknüpfen der Anmeldung hat nicht geklappt. Versuche es noch einmal."
 
-#: web/src/routes/about/+page.svelte:340
+#: web/src/routes/about/+page.svelte:342
 msgid "Links"
 msgstr "Links"
 
@@ -2307,7 +2307,7 @@ msgstr "Lädt…"
 msgid "Long-press and drag to move"
 msgstr "Gedrückt halten und ziehen zum Verschieben"
 
-#: web/src/routes/about/+page.svelte:403
+#: web/src/routes/about/+page.svelte:405
 msgid "Made with wool and love."
 msgstr "Mit Wolle und Liebe gemacht."
 
@@ -2652,7 +2652,7 @@ msgstr "Einmalige Anzeige"
 msgid "Open archived copy"
 msgstr "Archivierte Kopie öffnen"
 
-#: web/src/routes/about/+page.svelte:256
+#: web/src/routes/about/+page.svelte:249
 msgid "Open commit on GitHub"
 msgstr "Commit auf GitHub öffnen"
 
@@ -2921,7 +2921,6 @@ msgstr "Garn drucken"
 msgid "Privacy"
 msgstr "Datenschutz"
 
-#: web/src/lib/components/AccountMenu.svelte:337
 #: web/src/lib/components/AuthFooter.svelte:16
 #: web/src/routes/about/+page.svelte:183 web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
@@ -3447,15 +3446,15 @@ msgstr "Alle anzeigen"
 msgid "Selected yarn is unavailable."
 msgstr "Das ausgewählte Garn ist nicht verfügbar."
 
-#: web/src/routes/about/+page.svelte:319
+#: web/src/routes/about/+page.svelte:321
 msgid "Server build ID"
 msgstr "Server-Build-ID"
 
-#: web/src/routes/about/+page.svelte:315
+#: web/src/routes/about/+page.svelte:317
 msgid "Server version"
 msgstr "Serverversion"
 
-#: web/src/routes/about/+page.svelte:331
+#: web/src/routes/about/+page.svelte:333
 msgid "Service worker"
 msgstr "Service Worker"
 
@@ -3714,7 +3713,7 @@ msgstr "Anschlagmaschen"
 msgid "Storage, retention, and deletion"
 msgstr "Speicherung, Aufbewahrung und Löschung"
 
-#: web/src/routes/about/+page.svelte:384
+#: web/src/routes/about/+page.svelte:386
 msgid "Stricknani is free software, licensed under the"
 msgstr "Stricknani ist freie Software unter der"
 
@@ -4569,8 +4568,8 @@ msgstr "Berechne Maschen- und Reihenzahlen aus deiner Maschenprobe."
 msgid "URL imports are disabled for this account."
 msgstr "URL-Importe sind für dieses Konto deaktiviert."
 
-#: web/src/routes/about/+page.svelte:316 web/src/routes/about/+page.svelte:320
-#: web/src/routes/about/+page.svelte:324 web/src/routes/about/+page.svelte:332
+#: web/src/routes/about/+page.svelte:318 web/src/routes/about/+page.svelte:322
+#: web/src/routes/about/+page.svelte:326 web/src/routes/about/+page.svelte:334
 msgid "Unknown"
 msgstr "Unbekannt"
 
@@ -4731,7 +4730,7 @@ msgstr ""
 "Stricknani ist gerade nicht erreichbar. Projekte, Wolle, Fotos und "
 "Änderungen werden nicht offline gespeichert."
 
-#: web/src/routes/about/+page.svelte:237 web/src/routes/about/+page.svelte:327
+#: web/src/routes/about/+page.svelte:237 web/src/routes/about/+page.svelte:329
 msgid "Web app"
 msgstr "Web-App"
 
@@ -4759,7 +4758,7 @@ msgstr "Warum diese Informationen verwendet werden"
 msgid "Width"
 msgstr "Breite"
 
-#: web/src/lib/components/AccountMenu.svelte:357
+#: web/src/lib/components/AccountMenu.svelte:348
 #: web/src/lib/features/account/AccountSettings.svelte:1176
 #: web/src/lib/features/account/AccountSettings.svelte:1276
 #: web/src/lib/features/account/ConnectAppDialog.svelte:89

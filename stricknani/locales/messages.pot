@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-04 07:18+0100\n"
+"POT-Creation-Date: 2026-11-04 07:29+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,7 +44,7 @@ msgid "Yarns"
 msgstr ""
 
 #: rust/src/import_service.rs:425 rust/src/web.rs:2162
-#: rust/src/web_accounts.rs:849 web/src/lib/components/AccountMenu.svelte:357
+#: rust/src/web_accounts.rs:849 web/src/lib/components/AccountMenu.svelte:348
 #: web/src/lib/features/account/AccountSettings.svelte:1262
 #: web/src/lib/features/account/AccountSettings.svelte:1276
 msgid "Sign out"
@@ -669,7 +669,7 @@ msgstr ""
 msgid "Create account"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:260 web/src/routes/about/+page.svelte:363
+#: web/src/routes/about/+page.svelte:253 web/src/routes/about/+page.svelte:365
 msgid "(opens in a new tab)"
 msgstr ""
 
@@ -732,7 +732,7 @@ msgstr ""
 msgid "API token revoked."
 msgstr ""
 
-#: web/src/lib/components/AccountMenu.svelte:346
+#: web/src/lib/components/AccountMenu.svelte:337
 #: web/src/routes/+layout.svelte:73 web/src/routes/about/+page.svelte:200
 #: web/src/routes/more/+page.svelte:42
 msgid "About"
@@ -1321,7 +1321,7 @@ msgstr ""
 msgid "Close photo"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:248 web/src/routes/about/+page.svelte:323
+#: web/src/routes/about/+page.svelte:242 web/src/routes/about/+page.svelte:325
 msgid "Commit"
 msgstr ""
 
@@ -1372,11 +1372,11 @@ msgstr ""
 msgid "Continue unlinking"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:276
+#: web/src/routes/about/+page.svelte:278
 msgid "Copied. Paste it into your bug report."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:272
+#: web/src/routes/about/+page.svelte:274
 msgid "Copy"
 msgstr ""
 
@@ -1398,7 +1398,7 @@ msgstr ""
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:278
+#: web/src/routes/about/+page.svelte:280
 msgid "Copy was blocked. Select the version and copy it manually."
 msgstr ""
 
@@ -1459,7 +1459,7 @@ msgstr ""
 msgid "Creating…"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:381
+#: web/src/routes/about/+page.svelte:383
 msgid "Credits and licences"
 msgstr ""
 
@@ -1533,11 +1533,11 @@ msgstr ""
 msgid "Details to add"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:301
+#: web/src/routes/about/+page.svelte:303
 msgid "Developer"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:304
+#: web/src/routes/about/+page.svelte:306
 msgid "Developer mode"
 msgstr ""
 
@@ -2144,7 +2144,7 @@ msgstr ""
 msgid "Linking the login did not work. Try again."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:340
+#: web/src/routes/about/+page.svelte:342
 msgid "Links"
 msgstr ""
 
@@ -2235,7 +2235,7 @@ msgstr ""
 msgid "Long-press and drag to move"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:403
+#: web/src/routes/about/+page.svelte:405
 msgid "Made with wool and love."
 msgstr ""
 
@@ -2562,7 +2562,7 @@ msgstr ""
 msgid "Open archived copy"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:256
+#: web/src/routes/about/+page.svelte:249
 msgid "Open commit on GitHub"
 msgstr ""
 
@@ -2826,7 +2826,6 @@ msgstr ""
 msgid "Privacy"
 msgstr ""
 
-#: web/src/lib/components/AccountMenu.svelte:337
 #: web/src/lib/components/AuthFooter.svelte:16
 #: web/src/routes/about/+page.svelte:183 web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
@@ -3331,15 +3330,15 @@ msgstr ""
 msgid "Selected yarn is unavailable."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:319
+#: web/src/routes/about/+page.svelte:321
 msgid "Server build ID"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:315
+#: web/src/routes/about/+page.svelte:317
 msgid "Server version"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:331
+#: web/src/routes/about/+page.svelte:333
 msgid "Service worker"
 msgstr ""
 
@@ -3589,7 +3588,7 @@ msgstr ""
 msgid "Storage, retention, and deletion"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:384
+#: web/src/routes/about/+page.svelte:386
 msgid "Stricknani is free software, licensed under the"
 msgstr ""
 
@@ -4339,8 +4338,8 @@ msgstr ""
 msgid "URL imports are disabled for this account."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:316 web/src/routes/about/+page.svelte:320
-#: web/src/routes/about/+page.svelte:324 web/src/routes/about/+page.svelte:332
+#: web/src/routes/about/+page.svelte:318 web/src/routes/about/+page.svelte:322
+#: web/src/routes/about/+page.svelte:326 web/src/routes/about/+page.svelte:334
 msgid "Unknown"
 msgstr ""
 
@@ -4495,7 +4494,7 @@ msgid ""
 "not stored offline."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:237 web/src/routes/about/+page.svelte:327
+#: web/src/routes/about/+page.svelte:237 web/src/routes/about/+page.svelte:329
 msgid "Web app"
 msgstr ""
 
@@ -4523,7 +4522,7 @@ msgstr ""
 msgid "Width"
 msgstr ""
 
-#: web/src/lib/components/AccountMenu.svelte:357
+#: web/src/lib/components/AccountMenu.svelte:348
 #: web/src/lib/features/account/AccountSettings.svelte:1176
 #: web/src/lib/features/account/AccountSettings.svelte:1276
 #: web/src/lib/features/account/ConnectAppDialog.svelte:89
