@@ -757,9 +757,9 @@ mod tests {
         Audience, EmptyAdditionalClaims, EndUserEmail, JsonWebKeyId, PrivateSigningKey,
         StandardClaims, SubjectIdentifier,
     };
-    use rand::rngs::OsRng;
     use rsa::RsaPrivateKey;
     use rsa::pkcs1::{EncodeRsaPrivateKey, LineEnding};
+    use rsa::rand_core::OsRng;
     use serde_json::Value;
     use sha2::{Digest, Sha256};
     use tokio::net::TcpListener;

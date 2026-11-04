@@ -11,8 +11,8 @@ use std::path::{Component, Path, PathBuf};
 
 use chrono::{DateTime, NaiveDateTime, SecondsFormat, Utc};
 use image::{DynamicImage, ImageFormat, ImageReader, Limits};
-use rand::RngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
@@ -1651,7 +1651,9 @@ fn new_physical_filename(
     let directory = target_root.join(subdir).join(parent_id.to_string());
     for _ in 0..8 {
         let mut random = [0_u8; 24];
-        OsRng.fill_bytes(&mut random);
+        SysRng
+            .try_fill_bytes(&mut random)
+            .expect("the operating system random number generator failed");
         let candidate = format!("{}.{}", hex::encode(random), extension);
         if !directory.join(&candidate).exists() {
             return Ok(candidate);

@@ -14,8 +14,8 @@ use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use chrono::{DateTime, SecondsFormat, Utc};
 use image::{DynamicImage, ImageFormat, ImageReader, Limits};
-use rand::RngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::{FromRow, QueryBuilder, Sqlite, SqlitePool, Transaction};
@@ -3316,7 +3316,9 @@ fn newer_timestamp(current: &str) -> String {
 
 fn opaque_filename(extension: &str) -> String {
     let mut random = [0_u8; 16];
-    OsRng.fill_bytes(&mut random);
+    SysRng
+        .try_fill_bytes(&mut random)
+        .expect("the operating system random number generator failed");
     format!("{}{}", hex::encode(random), extension)
 }
 

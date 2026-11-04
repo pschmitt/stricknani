@@ -12,7 +12,7 @@ use std::{
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, TimeDelta, Utc};
-use rand::{RngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
 use url::Url;
@@ -415,7 +415,7 @@ impl OidcRuntime {
             .ok_or(OidcRuntimeError::InvalidFlow)?;
         let flow_kind = flow_kind(binding.purpose);
         let mut random = [0_u8; 32];
-        OsRng
+        SysRng
             .try_fill_bytes(&mut random)
             .map_err(|_| OidcRuntimeError::Unavailable)?;
         let code = Zeroizing::new(URL_SAFE_NO_PAD.encode(random));

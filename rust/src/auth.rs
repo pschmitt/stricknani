@@ -9,8 +9,8 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use axum::{Json, Router};
-use rand::RngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
@@ -647,7 +647,7 @@ fn is_bcrypt_hash(hash: &str) -> bool {
 
 pub(crate) fn generate_token() -> Result<String, ()> {
     let mut token_bytes = [0_u8; 32];
-    OsRng.try_fill_bytes(&mut token_bytes).map_err(|_| ())?;
+    SysRng.try_fill_bytes(&mut token_bytes).map_err(|_| ())?;
     let token = format!("{TOKEN_PREFIX}{}", hex::encode(token_bytes));
     token_bytes.zeroize();
     Ok(token)

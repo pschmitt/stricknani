@@ -16,7 +16,7 @@ use axum::{
     routing::{get, post},
 };
 use hmac::{Hmac, KeyInit, Mac};
-use rand::{RngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use sqlx::SqlitePool;
@@ -105,7 +105,7 @@ fn router_with_context(
     ocr_service: Option<crate::ocr::OcrService>,
 ) -> Router {
     let mut csrf_key = [0_u8; 32];
-    let csrf_key = OsRng.try_fill_bytes(&mut csrf_key).ok().map(|()| csrf_key);
+    let csrf_key = SysRng.try_fill_bytes(&mut csrf_key).ok().map(|()| csrf_key);
     let state = ApiV2State {
         app,
         csrf_key,
@@ -603,7 +603,7 @@ fn signed_login_csrf(state: &ApiV2State) -> Option<String> {
     let key = state.csrf_key.as_ref()?;
     let issued = now_seconds()?;
     let mut nonce = [0_u8; 32];
-    OsRng.try_fill_bytes(&mut nonce).ok()?;
+    SysRng.try_fill_bytes(&mut nonce).ok()?;
     let nonce = hex::encode(nonce);
     let signature = hex::encode(hmac_sha256(key, &login_csrf_payload(issued, &nonce))?);
     Some(format!("{issued}.{nonce}.{signature}"))

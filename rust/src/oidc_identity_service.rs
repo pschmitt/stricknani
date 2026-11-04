@@ -6,8 +6,8 @@
 
 use std::collections::HashSet;
 
-use rand::RngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 use sha2::{Digest, Sha256};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use zeroize::{Zeroize, Zeroizing};
@@ -127,7 +127,7 @@ pub(crate) async fn issue_native_proof(
         .execute(&mut *tx)
         .await?;
     let mut proof_bytes = [0_u8; 32];
-    OsRng
+    SysRng
         .try_fill_bytes(&mut proof_bytes)
         .map_err(|_| OidcIdentityError::TokenGeneration)?;
     let proof = Zeroizing::new(format!("reauth_{}", hex::encode(proof_bytes)));
@@ -637,7 +637,7 @@ pub(crate) async fn mint_login_token(
         }
     }
     let mut token_bytes = [0_u8; 32];
-    OsRng
+    SysRng
         .try_fill_bytes(&mut token_bytes)
         .map_err(|_| OidcIdentityError::TokenGeneration)?;
     let token = Zeroizing::new(format!("sna_{}", hex::encode(token_bytes)));

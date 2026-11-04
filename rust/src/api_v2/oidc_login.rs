@@ -11,7 +11,7 @@ use axum::{
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
-use rand::{RngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
@@ -662,7 +662,7 @@ fn valid_app_proof(verifier: &str, expected: Option<&str>) -> bool {
 
 fn random_secret() -> Result<Zeroizing<String>, ()> {
     let mut bytes = [0_u8; 32];
-    OsRng.try_fill_bytes(&mut bytes).map_err(|_| ())?;
+    SysRng.try_fill_bytes(&mut bytes).map_err(|_| ())?;
     let encoded = URL_SAFE_NO_PAD.encode(bytes);
     bytes.zeroize();
     Ok(Zeroizing::new(encoded))

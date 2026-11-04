@@ -22,7 +22,7 @@ use openidconnect::{
         CoreRsaPrivateSigningKey,
     },
 };
-use rand::rngs::OsRng;
+use rsa::rand_core::OsRng;
 use rsa::{
     RsaPrivateKey,
     pkcs1::{EncodeRsaPrivateKey, LineEnding},
