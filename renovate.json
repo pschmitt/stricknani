@@ -12,6 +12,13 @@
         "digest"
       ],
       "automerge": true
+    },
+    {
+      "description": "TypeScript 7 (the native port) is not supported by SvelteKit 3.1 (typescript ^6) or svelte-check (^5 || ^6) yet; lift this once they support it.",
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "allowedVersions": "<7"
     }
   ],
   "nix": {
