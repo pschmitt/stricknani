@@ -14,9 +14,9 @@
   // Keep offline-page copy in the generated public catalogue for build-time substitution.
   const offlinePageMessages = [
     msg("No connection"),
-    msg("Your workspace is waiting online."),
+    msg("Winky lost the thread"),
     msg(
-      "We couldn’t reach Stricknani. Your projects, yarn, photos, and edits are not stored offline.",
+      "We couldn’t reach Stricknani. Check your connection, because Wi-Fi loves hiding in the yarn basket. Your projects, yarn, photos, and edits are not stored offline.",
     ),
   ];
   void offlinePageMessages;

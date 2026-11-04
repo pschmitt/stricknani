@@ -35,6 +35,12 @@ impl BuildFixture {
             "export const app = true;",
         )
         .expect("script should be written");
+        fs::create_dir_all(root.path().join("errors")).expect("error pages dir should be created");
+        fs::write(
+            root.path().join("errors/404.html"),
+            "<!doctype html><title>404</title><p>dropped a stitch</p>",
+        )
+        .expect("404 page should be written");
         fs::write(root.path().join("messages.json"), "{}")
             .expect("public translations should be written");
         fs::write(root.path().join("favicon.svg"), "<svg></svg>")
@@ -286,4 +292,84 @@ async fn missing_or_invalid_build_does_not_make_a_shell_route() {
         response.status(),
         axum::http::StatusCode::SERVICE_UNAVAILABLE
     );
+}
+
+async fn request_accepting(app: Router, uri: &str, accept: &str) -> axum::response::Response {
+    app.oneshot(
+        Request::get(uri)
+            .header("accept", accept)
+            .body(Body::empty())
+            .expect("request should be valid"),
+    )
+    .await
+    .expect("router should respond")
+}
+
+#[tokio::test]
+async fn browsers_get_the_playful_404_page_for_unknown_paths() {
+    let fixture = BuildFixture::new();
+    for path in [
+        "/no/such/page",
+        "/app/admin/unknown",
+        "/app/projects/not-an-id",
+    ] {
+        let response = request_accepting(
+            fixture.router(),
+            path,
+            "text/html,application/xhtml+xml,*/*;q=0.8",
+        )
+        .await;
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::NOT_FOUND,
+            "{path}"
+        );
+        assert_eq!(
+            response.headers()["content-type"],
+            "text/html; charset=utf-8",
+            "{path}"
+        );
+        assert_eq!(response.headers()["cache-control"], "private, no-store");
+        let csp = response.headers()["content-security-policy"]
+            .to_str()
+            .unwrap();
+        assert!(
+            csp.contains("sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+            "{csp}"
+        );
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        assert!(String::from_utf8_lossy(&body).contains("dropped a stitch"));
+    }
+}
+
+#[tokio::test]
+async fn api_media_and_non_html_clients_keep_the_plain_404() {
+    let fixture = BuildFixture::new();
+    for (path, accept) in [
+        ("/api/v2/no-such-route", "text/html"),
+        ("/media/unknown", "text/html"),
+        ("/no/such/page", "application/json"),
+        ("/no/such/page", "*/*"),
+        ("/app/admin/unknown", "*/*"),
+    ] {
+        let response = request_accepting(fixture.router(), path, accept).await;
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::NOT_FOUND,
+            "{path}"
+        );
+        assert!(response.headers().get("content-type").is_none(), "{path}");
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        assert!(body.is_empty(), "{path}");
+    }
+}
+
+#[tokio::test]
+async fn the_playful_404_needs_a_valid_csp_manifest() {
+    let fixture = BuildFixture::new();
+    fs::write(fixture.root.path().join("csp.json"), "not json").unwrap();
+    let response = request_accepting(fixture.router(), "/no/such/page", "text/html").await;
+    assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert!(body.is_empty());
 }

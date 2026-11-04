@@ -1045,13 +1045,9 @@ def run_acceptance(
                 offline_response is not None and offline_response.status == 200,
                 "offline page did not load",
             )
-            page.get_by_role(
-                "heading", name="Your workspace is waiting online."
-            ).wait_for()
+            page.get_by_role("heading", name="Winky lost the thread").wait_for()
             _require(
-                page.get_by_text(
-                    "Dein Arbeitsbereich ist online wieder da."
-                ).is_visible(),
+                page.get_by_text("Winky hat den Faden verloren").is_visible(),
                 "German offline copy is missing",
             )
             _require(

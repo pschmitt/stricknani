@@ -8,6 +8,12 @@ let
   cfg = config.services.stricknani;
   user = "stricknani";
   group = user;
+  # Statuses nginx generates itself when the backend is down or unreachable.
+  downStatuses = [
+    "502"
+    "503"
+    "504"
+  ];
   oidcEnabledEnvironmentFile = pkgs.writeText "stricknani-oidc-enabled.env" ''
     RUST_OIDC_ENABLED=${lib.boolToString cfg.oidc.enable}
   '';
@@ -465,6 +471,14 @@ in
       "${cfg.hostName}" = {
         inherit (cfg.nginx) forceSSL enableACME;
         inherit (cfg) serverAliases;
+        # When the backend is down nginx answers 502/503/504 itself. Those get the
+        # playful static pages shipped in the web package instead of nginx's grey
+        # default. Backend responses (including its own 5xx) pass through untouched,
+        # because proxy_intercept_errors stays off, and the maintenance page of the
+        # deployment (a `return 503 '<html>'`) is unaffected for the same reason.
+        extraConfig = lib.concatMapStringsSep "\n" (
+          status: "error_page ${status} @stricknani_down_${status};"
+        ) downStatuses;
         locations = {
           "/" = {
             proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
@@ -472,6 +486,24 @@ in
             proxyWebsockets = true;
           };
         }
+        // lib.genAttrs (map (status: "@stricknani_down_${status}") downStatuses) (name: {
+          # A static file only answers GET and HEAD (nginx would turn a POST into a 405),
+          # so every other method gets a short plain-text body with the original status.
+          # The body matters: a bare `return 502;` would be sent through error_page again.
+          extraConfig =
+            let
+              status = lib.removePrefix "@stricknani_down_" name;
+            in
+            ''
+              default_type text/plain;
+              if ($request_method !~ ^(GET|HEAD)$) {
+                return ${status} "${status}\n";
+              }
+              root ${cfg.package}/share/stricknani/web;
+              rewrite ^ /errors/${status}.html break;
+              add_header Cache-Control "no-store" always;
+            '';
+        })
         // lib.optionalAttrs cfg.oidc.enable {
           "/api/v2/auth/oidc/callback/" = {
             proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";

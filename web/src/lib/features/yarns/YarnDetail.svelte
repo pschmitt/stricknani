@@ -1,5 +1,6 @@
 <script lang="ts">
   import StickyNote from "#lib/components/StickyNote.svelte";
+  import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { untrack } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -20,7 +21,7 @@
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { t } from "#lib/i18n.svelte.ts";
+  import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
   import {
@@ -34,7 +35,7 @@
 
   let { id }: { id: number } = $props();
 
-  type LoadState = "loading" | "ready" | "error";
+  type LoadState = "loading" | "ready" | "not-found" | "error";
 
   let loadState = $state<LoadState>("loading");
   let yarn = $state<Yarn | null>(null);
@@ -96,8 +97,7 @@
     linkedProjects = [];
     linkedProjectsError = false;
     if (!Number.isSafeInteger(id) || id <= 0) {
-      loadState = "error";
-      errorMessage = t("This yarn could not be found.", locale);
+      loadState = "not-found";
       return () => controller.abort();
     }
     if (currentUserId === null) {
@@ -140,14 +140,16 @@
       }
     } catch (error) {
       if (signal.aborted) return;
+      linkedProjectsLoading = false;
+      if (error instanceof ApiError && error.status === 404) {
+        loadState = "not-found";
+        return;
+      }
       loadState = "error";
       errorMessage =
-        error instanceof ApiError && error.status === 404
-          ? t("This yarn is no longer available.", locale)
-          : error instanceof Error
-            ? error.message
-            : t("The yarn could not be loaded.", locale);
-      linkedProjectsLoading = false;
+        error instanceof Error
+          ? error.message
+          : t("The yarn could not be loaded.", locale);
     }
   }
 
@@ -290,6 +292,15 @@
     <div class="loading-mark" aria-hidden="true"></div>
     <p>{t("Loading yarn details…", locale)}</p>
   </main>
+{:else if loadState === "not-found"}
+  <div class="page-container page-container--standard">
+    <ErrorPanel
+      kind="yarn-missing"
+      seed={String(id)}
+      backHref={resolve("/yarns")}
+      backLabel={msg("Back to yarns")}
+    />
+  </div>
 {:else if loadState === "error"}
   <section
     class="detail-error page-container page-container--standard"

@@ -1,4 +1,7 @@
 <script lang="ts" module>
+  export type MascotMood =
+    "happy" | "confused" | "dizzy" | "sad" | "sleepy" | "tired";
+
   import { clampEyeOffset, EYE_MAX, lookDirection } from "./mascot/physics.ts";
 
   // The easter egg plays once per page session.
@@ -90,18 +93,23 @@
   // idle fidgets. `interactive` chooses how: "button" is a real button with a
   // label; "decorative" has no tab stop and no drag, for use inside a link
   // that is itself the one focus target (the click still bubbles to the link).
+  // `mood` gives it a lasting expression for error screens: "confused" (a
+  // question mark), "dizzy" (tangled, trailing a loose thread), "sad" (a tear
+  // and a snapped thread), "sleepy" (Zzz) or "tired" (a sweat drop).
   let {
     size = 96,
     bob = false,
     roll = false,
     reactive = true,
     interactive = "button",
+    mood = "happy",
   }: {
     size?: number;
     bob?: boolean;
     roll?: boolean;
     reactive?: boolean;
     interactive?: "button" | "decorative";
+    mood?: MascotMood;
   } = $props();
 
   const uid = $props.id();
@@ -116,6 +124,7 @@
 
   const asButton = $derived(reactive && interactive === "button");
   const label = $derived(t("Say hi to the yarn ball"));
+  const moodClass = $derived(mood === "happy" ? "" : `mascot--mood-${mood}`);
 
   let root: HTMLElement | undefined = $state();
   let ballEl: SVGGElement | undefined = $state();
@@ -517,7 +526,30 @@
             stroke-width="3.6"
             stroke-linecap="round"
           >
-            {#if eyeMode === "normal" || eyeMode === "swap" || eyeMode === "blink"}
+            {#if mood === "confused"}
+              <circle cx="45" cy="51" r="4.4" fill="#16233f" stroke="none" />
+              <circle
+                cx="62.5"
+                cy="51.5"
+                r="2.6"
+                fill="#16233f"
+                stroke="none"
+              />
+              <path d="M57 44Q62 41 67 45" stroke-width="2.4" />
+            {:else if mood === "dizzy"}
+              <path d="M42 48L48 54M48 48L42 54" stroke-width="2.6" />
+              <path d="M59.5 48L65.5 54M65.5 48L59.5 54" stroke-width="2.6" />
+            {:else if mood === "sad"}
+              <circle cx="45" cy="52" r="3.8" fill="#16233f" stroke="none" />
+              <circle cx="63" cy="52" r="3.8" fill="#16233f" stroke="none" />
+              <path d="M39.5 49L49 45.5M68.5 49L59 45.5" stroke-width="2.4" />
+            {:else if mood === "sleepy"}
+              <path d="M40.5 51Q45 56 49.5 51" />
+              <path d="M58 51Q62.5 56 67 51" />
+            {:else if mood === "tired"}
+              <path d="M41 52H49" />
+              <path d="M58 52H67" />
+            {:else if eyeMode === "normal" || eyeMode === "swap" || eyeMode === "blink"}
               {#if eyeMode === "swap"}
                 <path d="M40.5 52Q45 46 49.5 52" />
               {:else if eyeMode === "blink"}
@@ -544,13 +576,49 @@
               <path d="M59.5 48L65.5 54M65.5 48L59.5 54" stroke-width="2.6" />
             {/if}
           </g>
-          <path
-            d="M45 60Q54 74 63 60Z"
-            fill="#16233f"
-            stroke="#16233f"
-            stroke-width="2"
-            stroke-linejoin="round"
-          />
+          {#if mood === "confused"}
+            <path
+              d="M47 66Q50.5 62 54 66T61 66"
+              fill="none"
+              stroke="#16233f"
+              stroke-width="2.6"
+              stroke-linecap="round"
+            />
+          {:else if mood === "dizzy"}
+            <path
+              d="M46 65Q50 61 54 65T62 65"
+              fill="none"
+              stroke="#16233f"
+              stroke-width="2.8"
+              stroke-linecap="round"
+            />
+          {:else if mood === "sad"}
+            <path
+              d="M46 67Q54 59 62 67"
+              fill="none"
+              stroke="#16233f"
+              stroke-width="2.8"
+              stroke-linecap="round"
+            />
+          {:else if mood === "sleepy"}
+            <ellipse cx="54" cy="65" rx="3" ry="3.6" fill="#16233f" />
+          {:else if mood === "tired"}
+            <path
+              d="M48 65H60"
+              fill="none"
+              stroke="#16233f"
+              stroke-width="2.8"
+              stroke-linecap="round"
+            />
+          {:else}
+            <path
+              d="M45 60Q54 74 63 60Z"
+              fill="#16233f"
+              stroke="#16233f"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          {/if}
           <circle
             class="mascot-cheek"
             cx="38"
@@ -568,6 +636,61 @@
         </g>
       </g>
     </g>
+    {#if mood !== "happy"}
+      <g class="mascot-extra mascot-extra--{mood}">
+        {#if mood === "confused"}
+          <text
+            class="mascot-mark"
+            x="76"
+            y="34"
+            font-size="19"
+            font-weight="800"
+            fill="#2f6fed"
+            text-anchor="middle">?</text
+          >
+        {:else if mood === "dizzy"}
+          <path
+            class="mascot-thread"
+            d="M66 78Q80 82 76 92T62 100T74 108"
+            fill="none"
+            stroke="#2f6fed"
+            stroke-width="3.4"
+            stroke-linecap="round"
+          />
+        {:else if mood === "sad"}
+          <path
+            class="mascot-tear"
+            d="M40 57Q36.5 62 40 64.5Q43.5 62 40 57Z"
+            fill="#7fd0ff"
+          />
+          <path
+            class="mascot-thread"
+            d="M70 79Q76 84 74 90"
+            fill="none"
+            stroke="#2f6fed"
+            stroke-width="3.4"
+            stroke-linecap="round"
+            stroke-dasharray="1 5.5"
+          />
+        {:else if mood === "sleepy"}
+          <g
+            class="mascot-zzz"
+            fill="#2f6fed"
+            font-weight="800"
+            text-anchor="middle"
+          >
+            <text x="72" y="36" font-size="12">z</text>
+            <text x="80" y="27" font-size="9">z</text>
+          </g>
+        {:else if mood === "tired"}
+          <path
+            class="mascot-tear"
+            d="M72 39Q68.5 44 72 46.5Q75.5 44 72 39Z"
+            fill="#7fd0ff"
+          />
+        {/if}
+      </g>
+    {/if}
     {#each particles as p (p.id)}
       <g transform="translate({p.x0} {p.kind === 'heart' ? 36 : 54})">
         <g
@@ -603,7 +726,7 @@
   <button
     bind:this={root}
     type="button"
-    class="mascot mascot--live"
+    class={["mascot mascot--live", moodClass]}
     class:mascot--bob={bob}
     class:mascot--roll={roll}
     class:mascot--blink={blinking}
@@ -620,7 +743,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
   <span
     bind:this={root}
-    class="mascot"
+    class={["mascot", moodClass]}
     class:mascot--decorative={reactive}
     class:mascot--bob={bob}
     class:mascot--roll={roll}
@@ -724,10 +847,158 @@
     }
   }
 
+  .mascot-thread {
+    stroke-dasharray: 90;
+    animation: mascot-unspool 2600ms ease-in-out infinite alternate;
+  }
+
+  .mascot-extra--sad .mascot-thread {
+    stroke-dasharray: 1 5.5;
+    animation: none;
+  }
+
+  .mascot-mark {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: mascot-question 2200ms ease-in-out infinite;
+  }
+
+  .mascot-zzz {
+    animation: mascot-zzz 2600ms ease-in-out infinite;
+  }
+
+  .mascot-tear {
+    animation: mascot-drip 2400ms ease-in infinite;
+  }
+
+  .mascot--mood-confused .mascot-art {
+    animation: mascot-tilt 3200ms ease-in-out infinite;
+    transform-origin: 50% 90%;
+  }
+
+  .mascot--mood-dizzy .mascot-art {
+    animation: mascot-woozy 2800ms ease-in-out infinite;
+    transform-origin: 50% 90%;
+  }
+
+  .mascot--mood-sad .mascot-art,
+  .mascot--mood-tired .mascot-art {
+    animation: mascot-droop 3400ms ease-in-out infinite;
+    transform-origin: 50% 90%;
+  }
+
+  .mascot--mood-sleepy .mascot-art {
+    animation: mascot-breathe 3600ms ease-in-out infinite;
+    transform-origin: 50% 95%;
+  }
+
+  @keyframes mascot-unspool {
+    from {
+      stroke-dashoffset: 70;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes mascot-question {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-8deg);
+    }
+    50% {
+      transform: translateY(-3px) rotate(8deg);
+    }
+  }
+
+  @keyframes mascot-zzz {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: translateY(2px);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes mascot-drip {
+    0%,
+    55% {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+    65% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(9px);
+    }
+  }
+
+  @keyframes mascot-tilt {
+    0%,
+    100% {
+      transform: rotate(-5deg);
+    }
+    50% {
+      transform: rotate(7deg);
+    }
+  }
+
+  @keyframes mascot-woozy {
+    0%,
+    100% {
+      transform: rotate(-7deg) translateX(-2px);
+    }
+    50% {
+      transform: rotate(7deg) translateX(2px);
+    }
+  }
+
+  @keyframes mascot-droop {
+    0%,
+    100% {
+      transform: scale(1, 1);
+    }
+    50% {
+      transform: scale(1.03, 0.95);
+    }
+  }
+
+  @keyframes mascot-breathe {
+    0%,
+    100% {
+      transform: scale(1, 1);
+    }
+    50% {
+      transform: scale(1.04, 0.96);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .mascot--bob .mascot-art,
-    .mascot--roll .mascot-art {
+    .mascot--roll .mascot-art,
+    .mascot--mood-confused .mascot-art,
+    .mascot--mood-dizzy .mascot-art,
+    .mascot--mood-sad .mascot-art,
+    .mascot--mood-tired .mascot-art,
+    .mascot--mood-sleepy .mascot-art,
+    .mascot-mark,
+    .mascot-zzz,
+    .mascot-tear,
+    .mascot-thread {
       animation: none;
+    }
+
+    .mascot-thread {
+      stroke-dashoffset: 0;
+    }
+
+    .mascot-tear {
+      opacity: 1;
     }
 
     .mascot--live,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import StickyNote from "#lib/components/StickyNote.svelte";
   import { onDestroy, tick, untrack } from "svelte";
+  import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -23,7 +24,7 @@
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { t } from "#lib/i18n.svelte.ts";
+  import { msg, t } from "#lib/i18n.svelte.ts";
   import { extraCount, plainTextSummary } from "./facts-summary.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
@@ -692,21 +693,14 @@
     <p>{t("Opening your pattern…", locale)}</p>
   </section>
 {:else if loadState === "not-found"}
-  <section class="reader-state" aria-labelledby="reader-state-title">
-    <a class="back-link" href={resolve("/projects")}
-      >‹ {t("Back to projects", locale)}</a
-    >
-    <div class="state-card">
-      <span class="state-mark" aria-hidden="true">⌕</span>
-      <h1 id="reader-state-title">{t("Project not found", locale)}</h1>
-      <p>
-        {t(
-          "This project may have been removed or may not belong to your account.",
-          locale,
-        )}
-      </p>
-    </div>
-  </section>
+  <div class="page-container page-container--standard">
+    <ErrorPanel
+      kind="project-missing"
+      seed={String(id)}
+      backHref={resolve("/projects")}
+      backLabel={msg("Back to projects")}
+    />
+  </div>
 {:else if loadState === "error"}
   <section class="reader-state" aria-labelledby="reader-state-title">
     <a class="back-link" href={resolve("/projects")}

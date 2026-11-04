@@ -18,7 +18,7 @@
   } = $props();
 </script>
 
-<!-- A real h2 with a tinted icon chip, the same treatment as Home's section titles. -->
+<!-- A real h2 with a tinted icon chip, the same treatment as the Home section titles. -->
 <h2 {id} class="section-heading">
   <span class="section-heading__chip" data-tone={tone} aria-hidden="true"
     ><NavIcon name={icon} /></span

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { focusOnHash } from "#lib/components/focus-on-hash.ts";
   import UrlField from "#lib/components/UrlField.svelte";
+  import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onMount, tick, untrack } from "svelte";
@@ -11,7 +12,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { t } from "#lib/i18n.svelte.ts";
+  import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
@@ -73,7 +74,9 @@
     yarnId: number | null;
   } = $props();
 
-  let loadState = $state<"loading" | "ready" | "error">("loading");
+  let loadState = $state<"loading" | "ready" | "not-found" | "error">(
+    "loading",
+  );
   let loadedYarn = $state<YarnDetail | null>(null);
   let draft = $state<Draft>(blankDraft());
   let savedSnapshot = $state(JSON.stringify(blankDraft()));
@@ -191,13 +194,15 @@
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
+        if (error instanceof ApiError && error.status === 404) {
+          loadState = "not-found";
+          return;
+        }
         loadState = "error";
         loadError =
-          error instanceof ApiError && error.status === 404
-            ? t("This yarn is no longer available.", locale)
-            : error instanceof Error
-              ? error.message
-              : t("The yarn could not be loaded.", locale);
+          error instanceof Error
+            ? error.message
+            : t("The yarn could not be loaded.", locale);
       });
     return () => {
       controller.abort();
@@ -577,6 +582,15 @@
   <main class="form-loading" aria-busy="true" aria-live="polite">
     <p>{t("Loading yarn details…", locale)}</p>
   </main>
+{:else if loadState === "not-found"}
+  <div class="page-container page-container--standard">
+    <ErrorPanel
+      kind="yarn-missing"
+      seed={String(yarnId)}
+      backHref={resolve("/yarns")}
+      backLabel={msg("Back to yarns")}
+    />
+  </div>
 {:else if loadState === "error"}
   <section class="form-error" aria-labelledby="form-error-title">
     <h1 id="form-error-title">{loadError}</h1>

@@ -6,7 +6,7 @@ use axum::{
     Router,
     body::Body,
     extract::{Path, State},
-    http::{HeaderValue, StatusCode, header},
+    http::{HeaderMap, HeaderValue, Method, StatusCode, Uri, header},
     response::{IntoResponse, Redirect, Response},
     routing::get,
 };
@@ -18,12 +18,15 @@ use crate::security::FrontendCsp;
 const MAX_SHELL_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_CSP_MANIFEST_BYTES: u64 = 64 * 1024;
 const MAX_FAVICON_BYTES: u64 = 64 * 1024;
+const MAX_ERROR_PAGE_BYTES: u64 = 128 * 1024;
 
 #[derive(Clone)]
 struct FrontendState {
     fallback: Option<Arc<Vec<u8>>>,
     csp: Option<FrontendCsp>,
     favicon_svg: Option<Arc<Vec<u8>>>,
+    /// The playful static 404 page (`errors/404.html`), when the build has one.
+    not_found_page: Option<Arc<Vec<u8>>>,
 }
 
 #[derive(Deserialize)]
@@ -46,10 +49,15 @@ pub fn router(web_root: PathBuf) -> Router {
         .map(Arc::new);
     let favicon_svg =
         read_bounded_file(&web_root.join("favicon.svg"), MAX_FAVICON_BYTES).map(Arc::new);
+    let not_found_page = csp
+        .as_ref()
+        .and_then(|_| read_bounded_file(&web_root.join("errors/404.html"), MAX_ERROR_PAGE_BYTES))
+        .map(Arc::new);
     let state = FrontendState {
         fallback,
         csp,
         favicon_svg,
+        not_found_page,
     };
 
     Router::new()
@@ -63,6 +71,7 @@ pub fn router(web_root: PathBuf) -> Router {
         .route("/app/favicon.svg", get(app_favicon))
         .route("/app/{*path}", get(app_path))
         .nest_service("/app/_app", ServeDir::new(web_root.join("_app")))
+        .fallback(unknown_path)
         .with_state(state)
 }
 
@@ -99,11 +108,57 @@ async fn app_favicon(State(state): State<FrontendState>) -> Response {
     response
 }
 
-async fn app_path(State(state): State<FrontendState>, Path(path): Path<String>) -> Response {
+async fn app_path(
+    State(state): State<FrontendState>,
+    method: Method,
+    headers: HeaderMap,
+    Path(path): Path<String>,
+) -> Response {
     if !is_known_route(&path) {
-        return StatusCode::NOT_FOUND.into_response();
+        return not_found(&state, &method, &format!("/app/{path}"), &headers);
     }
     app_shell(state)
+}
+
+/// Every path no route claims: browsers get the playful 404 page, everything else stays a bare 404.
+async fn unknown_path(
+    State(state): State<FrontendState>,
+    method: Method,
+    uri: Uri,
+    headers: HeaderMap,
+) -> Response {
+    not_found(&state, &method, uri.path(), &headers)
+}
+
+/// A 404 that is an HTML page only for a browser navigation (a GET/HEAD that accepts
+/// `text/html`). API and media paths, other methods and clients that do not ask for HTML
+/// (fetch with `*/*`, curl, the apps) keep the plain empty 404 they always had.
+fn not_found(state: &FrontendState, method: &Method, path: &str, headers: &HeaderMap) -> Response {
+    let navigation = matches!(*method, Method::GET | Method::HEAD)
+        && !path.starts_with("/api/")
+        && !path.starts_with("/media/")
+        && headers
+            .get(header::ACCEPT)
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|accept| accept.contains("text/html"));
+    let Some(page) = state.not_found_page.as_ref().filter(|_| navigation) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let mut response = Response::new(Body::from(page.as_ref().clone()));
+    *response.status_mut() = StatusCode::NOT_FOUND;
+    let headers = response.headers_mut();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/html; charset=utf-8"),
+    );
+    headers.insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_static("private, no-store"),
+    );
+    if let Some(csp) = state.csp.clone() {
+        response.extensions_mut().insert(csp);
+    }
+    response
 }
 
 fn app_shell(state: FrontendState) -> Response {

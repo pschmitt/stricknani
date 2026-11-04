@@ -2,10 +2,14 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MASCOT_CSS, mascotSvg, renderErrorPages } from "./error-pages.mjs";
 import { svelteKitAnnouncerStyle } from "./sveltekit-announcer-style.mjs";
 
 const buildRoot = fileURLToPath(new URL("../build/", import.meta.url));
 await renderOfflinePage(buildRoot);
+// The playful 404 and 50x pages carry inline style and script, so they must exist
+// before the hash scan below.
+await renderErrorPages(buildRoot);
 const htmlFiles = await listHtmlFiles(buildRoot);
 const scriptHashes = new Set();
 const styleHashes = new Set();
@@ -109,12 +113,18 @@ async function renderOfflinePage(directory) {
   );
   const msgids = {
     STATUS: "No connection",
-    TITLE: "Your workspace is waiting online.",
+    TITLE: "Winky lost the thread",
     DESCRIPTION:
-      "We couldn’t reach Stricknani. Your projects, yarn, photos, and edits are not stored offline.",
+      "We couldn’t reach Stricknani. Check your connection, because Wi-Fi loves hiding in the yarn basket. Your projects, yarn, photos, and edits are not stored offline.",
     RETRY: "Try again",
   };
   let html = await readFile(join(directory, "offline.html"), "utf8");
+  html = html.replace("<!-- __MASCOT__ -->", mascotSvg("sad"));
+  const css = await readFile(join(directory, "offline.css"), "utf8");
+  await writeFile(
+    join(directory, "offline.css"),
+    css.replace("/* __MASCOT_CSS__ */", MASCOT_CSS),
+  );
   for (const [name, msgid] of Object.entries(msgids)) {
     for (const locale of ["en", "de"]) {
       const translation = catalog?.[locale]?.[msgid];

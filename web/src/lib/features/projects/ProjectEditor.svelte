@@ -1,5 +1,6 @@
 <script lang="ts">
   import { focusOnHash } from "#lib/components/focus-on-hash.ts";
+  import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onMount, tick, untrack } from "svelte";
@@ -10,7 +11,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { t } from "#lib/i18n.svelte.ts";
+  import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { listCategories } from "../categories/category-api";
@@ -1118,10 +1119,12 @@
       {t("Loading project details…", locale)}
     </div>
   {:else if loadState === "not-found"}
-    <div class="notice notice-error" role="alert">
-      <p>{t("This project could not be found.", locale)}</p>
-      <a href={resolve("/projects")}>{t("Back to projects", locale)}</a>
-    </div>
+    <ErrorPanel
+      kind="project-missing"
+      seed={String(projectId)}
+      backHref={resolve("/projects")}
+      backLabel={msg("Back to projects")}
+    />
   {:else if loadState === "error"}
     <div class="notice notice-error" role="alert">
       <p>{loadError}</p>
