@@ -51,6 +51,7 @@
     <string name="destination_label_categories">Kategorien</string>
     <string name="destination_label_yarns">Wolle</string>
     <string name="destination_label_search">Suche</string>
+    <string name="destination_label_more">Mehr</string>
     <string name="destination_label_gauge">Maschenprobe</string>
 
     <!-- Home -->
@@ -294,7 +295,10 @@
     <string name="settings_category_about_subtitle">Anwendungs- und Serverinformationen</string>
 
     <!-- Settings root / navigation -->
-    <string name="settings_root_title">Einstellungen</string>
+    <string name="more_title">Mehr</string>
+    <string name="more_create_project_subtitle">Plane dein nächstes Strickprojekt.</string>
+    <string name="more_create_yarn_subtitle">Notiere ein Garn aus deinem Vorrat.</string>
+    <string name="more_gauge_subtitle">Berechne Maschen- und Reihenzahlen aus deiner Maschenprobe.</string>
     <string name="settings_nav_back">Zurück</string>
     <string name="settings_navigation_bottom_bar_title">Untere Leiste</string>
     <string name="settings_navigation_bottom_bar_description">Wähle aus, welche Ziele in der unteren Leiste erscheinen und in welcher Reihenfolge.</string>

@@ -52,6 +52,7 @@
     <string name="destination_label_categories">Categories</string>
     <string name="destination_label_yarns">Yarns</string>
     <string name="destination_label_search">Search</string>
+    <string name="destination_label_more">More</string>
     <string name="destination_label_gauge">Gauge</string>
 
     <!-- Home -->
@@ -295,7 +296,10 @@
     <string name="settings_category_about_subtitle">Application and server information</string>
 
     <!-- Settings root / navigation -->
-    <string name="settings_root_title">Settings</string>
+    <string name="more_title">More</string>
+    <string name="more_create_project_subtitle">Plan the next thing you want to knit.</string>
+    <string name="more_create_yarn_subtitle">Keep a note of a yarn you own.</string>
+    <string name="more_gauge_subtitle">Turn swatch measurements into stitch and row counts.</string>
     <string name="settings_nav_back">Back</string>
     <string name="settings_navigation_bottom_bar_title">Bottom bar</string>
     <string name="settings_navigation_bottom_bar_description">Choose which destinations appear in the bottom bar, and in what order.</string>

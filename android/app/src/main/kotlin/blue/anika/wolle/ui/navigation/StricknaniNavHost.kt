@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -40,6 +41,7 @@ import androidx.navigation.toRoute
 import blue.anika.wolle.ui.admin.AdminAccountsScreen
 import blue.anika.wolle.ui.admin.AdminAuditScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
+import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.MutationFeedbackEffect
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -52,6 +54,7 @@ import blue.anika.wolle.ui.projects.ProjectDetailScreen
 import blue.anika.wolle.ui.projects.ProjectEditorScreen
 import blue.anika.wolle.ui.projects.ProjectsListScreen
 import blue.anika.wolle.ui.search.SearchScreen
+import blue.anika.wolle.ui.settings.AccountAvatarViewModel
 import blue.anika.wolle.ui.settings.LibrariesScreen
 import blue.anika.wolle.ui.settings.SettingsCategory
 import blue.anika.wolle.ui.settings.SettingsCategoryScreen
@@ -123,6 +126,7 @@ fun StricknaniNavHost(
     modifier: Modifier = Modifier,
     startDestination: Route = Route.Home,
     navBarViewModel: NavBarViewModel = hiltViewModel(),
+    accountAvatarViewModel: AccountAvatarViewModel = hiltViewModel(),
     pendingDeepLinkRoute: Route? = null,
     onDeepLinkConsumed: () -> Unit = {},
     pendingSetupUri: String? = null,
@@ -181,13 +185,12 @@ fun StricknaniNavHost(
             if (startDestination != Route.Onboarding && !inEditor) {
                 val visibleDestinations by
                     navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
+                val accountProfile by accountAvatarViewModel.profile.collectAsStateWithLifecycle()
 
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                     visibleDestinations.forEach { destination ->
                         val selected =
-                            currentDestination?.hierarchy?.any {
-                                destination.routeTypes.any { routeType -> it.hasRoute(routeType) }
-                            } ?: false
+                            isTabSelected(currentDestination, destination, visibleDestinations)
                         val tone = destination.tone()
                         NavigationBarItem(
                             selected = selected,
@@ -221,15 +224,29 @@ fun StricknaniNavHost(
                                             ),
                                         label = "nav-hop",
                                     )
-                                Icon(
-                                    destination.icon,
-                                    contentDescription = destination.label(),
-                                    modifier =
-                                        Modifier.graphicsLayer {
-                                            scaleX = hop
-                                            scaleY = hop
-                                        },
-                                )
+                                val hopModifier = Modifier.graphicsLayer {
+                                    scaleX = hop
+                                    scaleY = hop
+                                }
+                                val avatarUrl = accountProfile.avatarUrl
+                                if (
+                                    destination == TopLevelDestination.SETTINGS && avatarUrl != null
+                                ) {
+                                    // The More tab shows the account avatar; it is decorative, the
+                                    // tab is still named "More" by its label.
+                                    AccountAvatar(
+                                        avatarUrl,
+                                        accountProfile.email,
+                                        size = 24.dp,
+                                        modifier = hopModifier,
+                                    )
+                                } else {
+                                    Icon(
+                                        destination.icon,
+                                        contentDescription = destination.label(),
+                                        modifier = hopModifier,
+                                    )
+                                }
                             },
                             label = { Text(destination.label()) },
                         )
@@ -324,7 +341,10 @@ fun StricknaniNavHost(
                     SettingsScreen(
                         onCategoryClick = { category ->
                             navController.navigate(Route.SettingsCategoryRoute(category.name))
-                        }
+                        },
+                        onNewProject = { navController.navigate(Route.ProjectEditor()) },
+                        onNewYarn = { navController.navigate(Route.YarnEditor()) },
+                        onGaugeClick = { navController.navigate(Route.Gauge) },
                     )
                 }
                 screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->
@@ -445,4 +465,23 @@ private fun TopLevelDestination.tone(): NavTone {
         TopLevelDestination.CATEGORIES ->
             NavTone(c.secondary, c.secondaryContainer, c.onSecondaryContainer)
     }
+}
+
+/**
+ * Whether [destination] is the current tab. More also owns the pages opened from it (Gauge), but
+ * only when no other visible tab claims the current page, so two tabs never look selected.
+ */
+private fun isTabSelected(
+    current: androidx.navigation.NavDestination?,
+    destination: TopLevelDestination,
+    visible: List<TopLevelDestination>,
+): Boolean {
+    fun owns(candidate: TopLevelDestination) =
+        current?.hierarchy?.any { node ->
+            candidate.routeTypes.any { routeType -> node.hasRoute(routeType) }
+        } == true
+    if (destination != TopLevelDestination.SETTINGS) return owns(destination)
+    return owns(destination) ||
+        (visible.none { it != destination && owns(it) } &&
+            current?.hasRoute(Route.Gauge::class) == true)
 }

@@ -827,14 +827,20 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   );
   const mobileLinks = page.locator(".mobile-navigation a");
   check(
-    (await mobileLinks.count()) === 5,
+    (await mobileLinks.count()) === 4,
     "signed-in mobile navigation is incomplete",
+  );
+  check(
+    (await page
+      .locator(".mobile-navigation a")
+      .filter({ hasText: "Create" })
+      .count()) === 0,
+    "Create must live under More, not in the phone bar",
   );
   const expectedLinks: Array<[string, string]> = [
     ["Home", "/app"],
     ["Projects", "/app/projects"],
     ["Yarns", "/app/yarns"],
-    ["Create", "/app/create"],
     ["More", "/app/more"],
   ];
   for (const [label, href] of expectedLinks) {
@@ -1158,7 +1164,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     const selector =
       width <= 760
         ? ".mobile-navigation a"
-        : ".primary-nav a, .secondary-nav a";
+        : ".primary-nav a, .secondary-nav a, .rail-account";
     const heights = await visibleHeights(page, selector);
     if (heights.length === 0) {
       st.responsiveFailures.push(

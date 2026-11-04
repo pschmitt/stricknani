@@ -1,6 +1,6 @@
-import { closeBrowser } from "../lib/common";
 // Administrator users and audit journey against a disposable Rust server.
 // Port of ci/stricknani/web_admin_browser.py.
+import { closeBrowser } from "../lib/common";
 import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -37,12 +37,12 @@ import {
   type E2eConfig,
   type LiveFixture,
 } from "../lib/harness";
+import { openAccountSettings } from "../lib/ui-helpers";
 
 type Json = Record<string, unknown>;
 type Mark = (stage: string) => void;
 
 const ACCOUNT_HEADING_NAME = /^(?:Account|Konto)$/;
-const ACCOUNT_SETTINGS_ITEM_NAME = /^(?:Account settings|Kontoeinstellungen)$/;
 const SIGN_OUT_BUTTON_NAME = /^(?:Sign out|Abmelden)$/;
 const UPLOAD_PICTURE_BUTTON_NAME = /^(?:Upload picture|Bild hochladen)$/;
 
@@ -226,13 +226,7 @@ async function createUser(
 }
 
 async function openAccount(page: Page): Promise<void> {
-  const profile = page.locator(".app-header .header-account");
-  await profile.waitFor({ state: "visible" });
-  await profile.click();
-  await page
-    .getByRole("menuitem", { name: ACCOUNT_SETTINGS_ITEM_NAME })
-    .click();
-  await page.waitForURL("**/app/account");
+  await openAccountSettings(page);
   await page
     .getByRole("heading", { name: ACCOUNT_HEADING_NAME })
     .waitFor({ state: "visible" });
@@ -947,7 +941,9 @@ async function assertMoreNavigation(
   // The external Android app link is the one tile without a sidebar entry; the
   // Privacy Policy is linked from About only. About is always the last tile.
   check(
-    (await cards.locator("a").count()) === expectedCards.length + 1 &&
+    // Plus the Android tile and the Create tile (Create is first and has no
+    // sidebar entry of its own in this group: it is in the primary group).
+    (await cards.locator("a").count()) === expectedCards.length + 2 &&
       (
         (await cards
           .locator("a")
@@ -980,7 +976,7 @@ async function assertMoreNavigation(
   );
   check(
     (await page
-      .locator(".app-header button.header-account[aria-haspopup='dialog']")
+      .locator(".desktop-rail button.rail-account[aria-haspopup='dialog']")
       .count()) === 1,
     "Account is unavailable from the profile links",
   );
@@ -1193,8 +1189,7 @@ export async function assertMobileHeaderAlignment(
     const mark = brand?.querySelector(".brand-mark-wrap");
     const chevron = brand?.querySelector(".brand-chevron");
     const icon = chevron?.querySelector("svg");
-    const account = document.querySelector(".app-header .header-account");
-    if (!header || !brand || !mark || !chevron || !account) return null;
+    if (!header || !brand || !mark || !chevron) return null;
     const rect = (element: Element) => {
       const box = element.getBoundingClientRect();
       return {
@@ -1215,7 +1210,6 @@ export async function assertMobileHeaderAlignment(
         : null,
       parentLabel: brand.getAttribute("aria-label"),
       chevronOpacity: getComputedStyle(chevron).opacity,
-      account: rect(account),
     };
   });
   check(
@@ -1232,9 +1226,8 @@ export async function assertMobileHeaderAlignment(
         (alignment.parentLabel === "Stricknani" &&
           alignment.chevronOpacity === "0")) &&
       alignment.mark.left >= alignment.header.left - 1 &&
-      alignment.mark.right <= alignment.account.left + 1 &&
-      alignment.account.right <= alignment.header.right + 1,
-    "mobile parent-link brand and account controls are misaligned",
+      alignment.mark.right <= alignment.header.right + 1,
+    "mobile parent-link brand is misaligned",
   );
 }
 
@@ -1410,7 +1403,9 @@ async function runAcceptance(
     await page.setViewportSize({ width: 390, height: 900 });
     await page.locator('a[href="/app/projects"]:visible').first().click();
     await page.waitForURL("**/app/projects");
-    await page.locator('.mobile-navigation a[href="/app/create"]').click();
+    await page.locator(".mobile-navigation a.more-tab").click();
+    await page.waitForURL("**/app/more");
+    await page.locator('.more-links a[href="/app/create"]').click();
     await page.waitForURL("**/app/create");
     await page.locator('.create-options a[href="/app/projects/new"]').click();
     await page.waitForURL("**/app/projects/new");

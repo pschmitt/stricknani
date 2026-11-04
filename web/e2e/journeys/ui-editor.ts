@@ -107,13 +107,19 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   if (await desktopNewProject.isVisible()) {
     await desktopNewProject.click();
   } else {
-    const createNavigation = page.locator(
-      ".mobile-navigation a[href='/app/create']",
+    // Phones: Create lives under the More tab, as its first entry.
+    const moreTab = page.locator(".mobile-navigation a.more-tab");
+    check(
+      (await moreTab.count()) === 1 && (await moreTab.isVisible()),
+      "mobile More navigation is missing before project creation",
     );
+    await moreTab.click();
+    await page.waitForURL("**/app/more");
+    const createNavigation = page.locator(".more-links a[href='/app/create']");
     check(
       (await createNavigation.count()) === 1 &&
         (await createNavigation.isVisible()),
-      "mobile Create navigation is missing before project creation",
+      "mobile Create entry is missing from More before project creation",
     );
     await createNavigation.click();
     await page.waitForURL("**/app/create");

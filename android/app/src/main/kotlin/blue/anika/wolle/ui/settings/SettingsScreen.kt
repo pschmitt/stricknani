@@ -16,6 +16,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -29,32 +30,67 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.repository.AccountProfile
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
 import blue.anika.wolle.ui.common.AccountAvatar
+import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.PhosphorIcons
 
 /**
- * Settings hub (SNA-21): a card of category rows, each navigating to its own dedicated screen
- * (`SettingsCategoryScreen`) - matches syncwich's Settings UX rather than SNA-18's original single
- * flat scrolling list. The SNA-21 redesign dropped the page header along with the old flat list -
- * every other top-level destination (Home's `TopAppBar`, Projects'/Yarns' search field) has some
- * visual anchor confirming which screen you're on; this one didn't (user-reported, 2026-08-18).
+ * More hub (SNA-21; the Settings hub, now the "More" tab): a card of category rows, each navigating
+ * to its own dedicated screen (`SettingsCategoryScreen`) - matches syncwich's Settings UX rather
+ * than SNA-18's original single flat scrolling list. The SNA-21 redesign dropped the page header
+ * along with the old flat list - every other top-level destination (Home's `TopAppBar`,
+ * Projects'/Yarns' search field) has some visual anchor confirming which screen you're on; this one
+ * didn't (user-reported, 2026-08-18).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onCategoryClick: (SettingsCategory) -> Unit,
+    onNewProject: () -> Unit,
+    onNewYarn: () -> Unit,
+    onGaugeClick: () -> Unit,
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
 ) {
     val profile by accountAvatar.profile.collectAsStateWithLifecycle()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
-    val categories = SettingsCategory.entries.filter { it != SettingsCategory.Admin || isAdmin }
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_root_title)) }) }
-    ) { innerPadding ->
+    // Same order as the website's More page: Create, Gauge calculator, then the settings rows with
+    // Admin and About near the end and the Account entry (avatar, settings, sign-out) last.
+    val categories =
+        (SettingsCategory.entries.filter { it != SettingsCategory.Account } +
+                SettingsCategory.Account)
+            .filter { it != SettingsCategory.Admin || isAdmin }
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.more_title)) }) }) {
+        innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("settings-list"),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            item {
+                SettingsSingleItemCard {
+                    MoreActionRow(
+                        icon = PhosphorIcons.Hoodie,
+                        title = stringResource(R.string.project_new_label),
+                        subtitle = stringResource(R.string.more_create_project_subtitle),
+                        tag = "more-new-project",
+                        onClick = onNewProject,
+                    )
+                    MoreActionRow(
+                        icon = MdiIcons.YarnBall,
+                        title = stringResource(R.string.yarns_list_new_yarn_fab),
+                        subtitle = stringResource(R.string.more_create_yarn_subtitle),
+                        tag = "more-new-yarn",
+                        onClick = onNewYarn,
+                    )
+                    MoreActionRow(
+                        icon = PhosphorIcons.Ruler,
+                        title = stringResource(R.string.gauge_calculator_title),
+                        subtitle = stringResource(R.string.more_gauge_subtitle),
+                        tag = "more-gauge",
+                        onClick = onGaugeClick,
+                    )
+                }
+            }
             item {
                 SettingsSingleItemCard {
                     categories.forEach { category ->
@@ -64,6 +100,29 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun MoreActionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    tag: String,
+    onClick: () -> Unit,
+) {
+    SettingsListItem(
+        modifier =
+            Modifier.testTag(tag).clickable(role = Role.Button, onClick = onClick).semantics {
+                contentDescription = "$title: $subtitle"
+                role = Role.Button
+            },
+        leadingContent = { Icon(icon, contentDescription = null) },
+        headlineContent = { Text(title) },
+        supportingContent = { Text(subtitle) },
+        trailingContent = {
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+        },
+    )
 }
 
 @Composable

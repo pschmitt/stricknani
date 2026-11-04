@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
-  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
@@ -15,8 +14,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import AndroidAppDialog from "#lib/features/account/AndroidAppDialog.svelte";
-  import { publishFeedback } from "#lib/feedback.ts";
-  import { session, signOut } from "#lib/session.svelte.ts";
+  import { signOutFromApp } from "#lib/sign-out.ts";
 
   let {
     email,
@@ -42,8 +40,8 @@
   let open = $state(false);
   let sheet = $state(false);
   let appDialog = $state<ReturnType<typeof AndroidAppDialog>>();
-  let anchorTop = $state(0);
-  let anchorRight = $state(0);
+  let anchorLeft = $state(0);
+  let anchorBottom = $state(0);
   let dragY = $state(0);
   let dragging = $state(false);
   let dragStart: { y: number; at: number } | null = null;
@@ -75,8 +73,9 @@
     clearTimeout(closeTimer);
     sheet = window.matchMedia(SHEET_MEDIA_QUERY).matches;
     const anchor = trigger.getBoundingClientRect();
-    anchorTop = anchor.bottom + 6;
-    anchorRight = Math.max(8, window.innerWidth - anchor.right);
+    // The trigger lives in the sidebar: open beside it, growing upwards.
+    anchorLeft = anchor.right + 8;
+    anchorBottom = Math.max(8, window.innerHeight - anchor.bottom);
     dragY = 0;
     mounted = true;
     open = true;
@@ -174,21 +173,8 @@
   async function handleSignOut() {
     if (signOutBusy) return;
     signOutBusy = true;
-    const ownerId = session.data?.user?.id;
-    const origin = page.url.pathname + page.url.search + page.url.hash;
     try {
-      // Leave the current page first so its own unsaved-changes confirm runs.
-      // A cancelled navigation keeps the page, the draft and the session.
-      await goto(resolve("/login"));
-      if (page.url.pathname !== resolve("/login")) return;
-      try {
-        await signOut();
-      } catch {
-        const message = t("Could not sign out.", locale);
-        if (ownerId !== undefined)
-          publishFeedback({ ownerId, kind: "error", message });
-        await goto(origin, { replaceState: true });
-      }
+      await signOutFromApp(locale);
     } finally {
       signOutBusy = false;
     }
@@ -212,20 +198,23 @@
   });
 </script>
 
-<div class="account-menu">
-  <button
-    bind:this={trigger}
-    class="header-account"
-    type="button"
-    aria-label={t("Account", locale)}
-    aria-haspopup="dialog"
-    aria-expanded={open}
-    onclick={toggle}
-    onkeydown={handleTriggerKeydown}
-  >
-    <UserAvatar {avatarUrl} name={email} />
-  </button>
-</div>
+<button
+  bind:this={trigger}
+  class="rail-account"
+  type="button"
+  aria-label={t("Account", locale)}
+  aria-haspopup="dialog"
+  aria-expanded={open}
+  data-tone="account"
+  onclick={toggle}
+  onkeydown={handleTriggerKeydown}
+>
+  <UserAvatar {avatarUrl} name={email} />
+  <span class="rail-account-text">
+    <span class="rail-account-title">{t("Account", locale)}</span>
+    <span class="rail-account-email">{email}</span>
+  </span>
+</button>
 
 {#if mounted}
   <div use:portal class="account-menu-layer">
@@ -244,8 +233,8 @@
       data-state={open ? "open" : "closed"}
       role="dialog"
       aria-label={t("Account", locale)}
-      style:top={sheet ? undefined : `${anchorTop}px`}
-      style:right={sheet ? undefined : `${anchorRight}px`}
+      style:left={sheet ? undefined : `${anchorLeft}px`}
+      style:bottom={sheet ? undefined : `${anchorBottom}px`}
       style:transform={dragY > 0 ? `translateY(${dragY}px)` : undefined}
     >
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -330,36 +319,75 @@
   </div>
 {/if}
 
-<AndroidAppDialog
-  bind:this={appDialog}
-  {locale}
-  onclose={() => trigger?.focus({ preventScroll: true })}
-/>
+<!-- Moved to the body so its links are not part of the sidebar navigation. -->
+<div use:portal>
+  <AndroidAppDialog
+    bind:this={appDialog}
+    {locale}
+    onclose={() => trigger?.focus({ preventScroll: true })}
+  />
+</div>
 
 <style>
-  .account-menu {
-    display: inline-flex;
-    flex: 0 0 44px;
-    margin-left: auto;
-  }
-
-  .header-account {
-    margin-left: 0;
-    padding: 0;
+  .rail-account {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.35rem 0.5rem 0.35rem 12px;
     border: 0;
+    border-radius: var(--radius-xs);
+    color: var(--ink);
     background: transparent;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .header-account:focus-visible {
+  .rail-account:hover {
+    background: var(--accent-wash);
+  }
+
+  .rail-account:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
   }
 
-  .header-account[aria-expanded="true"] :global(.user-avatar) {
+  .rail-account[aria-expanded="true"] {
+    background: var(--accent-wash);
+  }
+
+  .rail-account[aria-expanded="true"] :global(.user-avatar) {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+
+  .rail-account :global(.user-avatar) {
+    flex-basis: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.8rem;
+  }
+
+  .rail-account-text {
+    display: grid;
+    min-width: 0;
+  }
+
+  .rail-account-title {
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .rail-account-email {
+    overflow: hidden;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .account-menu-backdrop {
@@ -383,7 +411,7 @@
     z-index: 41;
     box-sizing: border-box;
     width: min(20rem, calc(100vw - 1rem));
-    max-height: calc(100dvh - 5rem);
+    max-height: calc(100dvh - 1rem);
     overflow: auto;
     overscroll-behavior: contain;
     padding: 0.75rem;
@@ -394,7 +422,7 @@
     box-shadow:
       0 2px 6px rgb(63 20 80 / 8%),
       var(--shadow);
-    transform-origin: top right;
+    transform-origin: bottom left;
     animation: popover-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
   }
 

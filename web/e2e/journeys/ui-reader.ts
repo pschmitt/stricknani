@@ -863,7 +863,7 @@ async function checkMoreRoute(ctx: UiCtx): Promise<void> {
   });
   const profileLinks =
     (await page
-      .locator(".app-header button.header-account[aria-haspopup='dialog']")
+      .locator(".desktop-rail button.rail-account[aria-haspopup='dialog']")
       .count()) === 1;
   const duplicateAccounts =
     (await accountLink.count()) +
@@ -894,5 +894,10 @@ async function checkMoreRoute(ctx: UiCtx): Promise<void> {
         `stale_notice=${staleNotices})`,
     );
   }
+  // The Android app dialog belongs to the desktop account menu in the sidebar;
+  // phones have no such menu (the More tab and page carry the account).
+  const viewport = page.viewportSize();
+  await page.setViewportSize({ width: 1280, height: 800 });
   await assertAndroidAppDialog(page);
+  if (viewport) await page.setViewportSize(viewport);
 }

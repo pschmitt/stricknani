@@ -21,8 +21,10 @@
   import { routeParent } from "#lib/route-parent.ts";
   import SignInForm from "#lib/components/SignInForm.svelte";
   import SharedButton from "#lib/components/Button.svelte";
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
   import AccountMenu from "#lib/components/AccountMenu.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
+  import { isMoreActive, isPathActive } from "#lib/more-nav.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import { initTheme } from "#lib/theme.svelte.ts";
   import "../app.css";
@@ -75,11 +77,14 @@
     { href: "/projects", label: msg("Projects"), icon: "projects" },
     { href: "/yarns", label: msg("Yarns"), icon: "yarns" },
     { href: "/create", label: msg("Create"), icon: "create" },
-    { href: "/more", label: msg("More"), icon: "more" },
   ] as const;
 
-  const desktopNavigation = mainNavigation.filter(
-    (item) => item.href !== "/more",
+  /** Phones: Create lives under More, so the bar has four tabs. */
+  const phoneNavigation = mainNavigation.filter(
+    (item) => item.href !== "/create",
+  );
+  const moreActive = $derived(
+    isMoreActive(pathname, (path) => resolve(path as "/more")),
   );
 
   const secondaryNavigation = [
@@ -158,8 +163,7 @@
 
   function isActive(path: AppPath): boolean {
     if (path === "/") return pathname === linkTo("/");
-    const fullPath = linkTo(path);
-    return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
+    return isPathActive(pathname, linkTo(path));
   }
 </script>
 
@@ -252,18 +256,11 @@
         parentLabel={t("Back", locale)}
         reserveParentSlot={true}
       />
-      <AccountMenu
-        email={user.email}
-        {avatarUrl}
-        isAdmin={user.is_admin === true}
-        {canManageAdmin}
-        {locale}
-      />
     </header>
 
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
       <nav class="primary-nav" aria-label={t("Your library", locale)}>
-        {#each desktopNavigation as item}
+        {#each mainNavigation as item}
           <a
             class:active={isActive(item.href)}
             aria-current={isActive(item.href) ? "page" : undefined}
@@ -318,6 +315,13 @@
           <span class="nav-icon" data-tone="info"><NavIcon name="info" /></span>
           <span>{t("About", locale)}</span>
         </a>
+        <AccountMenu
+          email={user.email}
+          {avatarUrl}
+          isAdmin={user.is_admin === true}
+          {canManageAdmin}
+          {locale}
+        />
       </nav>
     </aside>
 
@@ -342,7 +346,7 @@
       {/if}
 
       <nav class="mobile-navigation" aria-label={t("Main navigation", locale)}>
-        {#each mainNavigation as item}
+        {#each phoneNavigation as item}
           <a
             class:active={isActive(item.href)}
             aria-current={isActive(item.href) ? "page" : undefined}
@@ -355,6 +359,24 @@
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
+        <!-- The avatar replaces the "more" glyph: it is decorative (the
+             link is named "More"); without an avatar the glyph shows. -->
+        <a
+          class="more-tab"
+          class:active={moreActive}
+          aria-current={moreActive ? "page" : undefined}
+          data-tone="more"
+          href={linkTo("/more")}
+        >
+          <span class="nav-icon" data-tone="more">
+            {#if avatarUrl}
+              <UserAvatar {avatarUrl} name={user.email} />
+            {:else}
+              <NavIcon name="more" />
+            {/if}
+          </span>
+          <span>{t("More", locale)}</span>
+        </a>
       </nav>
     </div>
   </div>

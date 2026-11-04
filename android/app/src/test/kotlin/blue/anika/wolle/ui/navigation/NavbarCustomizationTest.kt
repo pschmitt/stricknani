@@ -25,6 +25,19 @@ class NavbarCustomizationTest {
     }
 
     @Test
+    fun `default bar is Home, Projects, Yarns and More like the website`() {
+        assertEquals(
+            listOf(
+                TopLevelDestination.HOME,
+                TopLevelDestination.PROJECTS,
+                TopLevelDestination.YARNS,
+                TopLevelDestination.SETTINGS,
+            ),
+            NavbarCustomization.visibleDestinations(NavbarCustomization.sanitize(null)),
+        )
+    }
+
+    @Test
     fun `unknown ids are dropped`() {
         val sanitized =
             NavbarCustomization.sanitize(

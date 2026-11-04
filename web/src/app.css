@@ -667,17 +667,6 @@ button:disabled {
   }
 }
 
-.header-account {
-  display: inline-flex;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  align-items: center;
-  justify-content: center;
-  margin-left: auto;
-  border-radius: 50%;
-}
-
 .desktop-rail {
   position: sticky;
   top: var(--app-header-height);
@@ -881,14 +870,6 @@ a[data-tone="more"] {
   padding-top: 2rem;
 }
 
-/* The avatar floats over the content column's top-right corner: keep the
-   page's right edge clear of it unless the page is centred away from it. */
-@media (min-width: 761px) and (max-width: 100rem) {
-  .content-main {
-    padding-right: max(clamp(1.25rem, 4vw, 3rem), 4.5rem);
-  }
-}
-
 .page-container {
   width: 100%;
   max-width: var(--page-width-wide);
@@ -1081,7 +1062,7 @@ textarea::placeholder {
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     padding: 0 max(0.35rem, env(safe-area-inset-right))
       var(--app-mobile-nav-bottom-inset) max(0.35rem, env(safe-area-inset-left));
     background: var(--surface-container);
@@ -1129,6 +1110,24 @@ textarea::placeholder {
   .mobile-navigation a.active .nav-icon {
     color: var(--tone);
     background: var(--tone-wash);
+  }
+
+  /* The More tab shows the avatar in place of the glyph: 24px, ringed when current. */
+  .mobile-navigation .more-tab .nav-icon {
+    display: grid;
+    place-items: center;
+  }
+
+  .mobile-navigation .more-tab .user-avatar {
+    flex-basis: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.7rem;
+  }
+
+  .mobile-navigation .more-tab.active .user-avatar {
+    border-color: var(--tone);
+    box-shadow: 0 0 0 2px var(--tone-wash);
   }
 }
 

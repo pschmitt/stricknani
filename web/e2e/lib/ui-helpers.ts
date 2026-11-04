@@ -103,9 +103,18 @@ export const HOME_GREETING_NAME = new RegExp(
 export const UPLOAD_PICTURE_BUTTON_NAME = /^(?:Upload picture|Bild hochladen)$/;
 export const REMOVE_PICTURE_BUTTON_NAME = /^(?:Remove picture|Bild entfernen)$/;
 
-/** Synchronous (no browser round trip), unlike the other helpers. */
+/**
+ * The desktop sidebar's Account entry, which opens the account menu. Phones
+ * have no such control: the More tab carries the avatar instead.
+ * Synchronous (no browser round trip), unlike the other helpers.
+ */
 export function accountMenuTrigger(page: Page): Locator {
-  return page.locator(".app-header .header-account");
+  return page.locator(".desktop-rail .rail-account");
+}
+
+/** The phone bottom bar's More tab (carries the avatar when one exists). */
+export function phoneMoreTab(page: Page): Locator {
+  return page.locator(".mobile-navigation a.more-tab");
 }
 
 export async function assertAccountMenuTrigger(
@@ -121,7 +130,7 @@ export async function assertAccountMenuTrigger(
       ) &&
       (await trigger.getAttribute("aria-haspopup")) === "dialog" &&
       (await trigger.getAttribute("aria-expanded")) === "false",
-    `the ${context} profile control is not an accessible account menu button`,
+    `the ${context} Account entry is not an accessible account menu button`,
   );
   return trigger;
 }
@@ -192,7 +201,14 @@ export async function assertAndroidAppDialog(page: Page): Promise<void> {
 }
 
 export async function openAccountSettings(page: Page): Promise<void> {
-  await (await openAccountMenu(page)).click();
+  if (await accountMenuTrigger(page).isVisible()) {
+    await (await openAccountMenu(page)).click();
+  } else {
+    // Phones: More tab, then the Account settings entry on the More page.
+    await phoneMoreTab(page).click();
+    await page.waitForURL("**/app/more", { timeout: 10_000 });
+    await page.getByRole("link", { name: ACCOUNT_SETTINGS_ITEM_NAME }).click();
+  }
   await page.waitForURL("**/app/account", { timeout: 10_000 });
 }
 
@@ -953,31 +969,33 @@ export async function assertMobileAppHeader(page: Page): Promise<void> {
     (await page.locator(".app-header .locale-switcher").count()) === 0,
     "the compact mobile header still reserves space for language controls",
   );
-  const accountTarget = await assertAccountMenuTrigger(page, "mobile");
-  const dimensions: unknown = await accountTarget.evaluate((node) => {
+  check(
+    (await page.locator(".app-header .header-account").count()) === 0 &&
+      (await page.locator(".app-header button").count()) === 0,
+    "the phone header still has an account avatar button",
+  );
+  const tabs = page.locator(".mobile-navigation a");
+  const labels = await tabs.evaluateAll((nodes) =>
+    nodes.map((node) => node.lastElementChild?.textContent?.trim() ?? ""),
+  );
+  check(
+    sameJson(labels, ["Home", "Projects", "Yarns", "More"]) ||
+      sameJson(labels, ["Start", "Projekte", "Garne", "Mehr"]),
+    `the phone bar must have Home, Projects, Yarns and More, found ${labels.join("/")}`,
+  );
+  const more = phoneMoreTab(page);
+  const dimensions: unknown = await more.evaluate((node) => {
     const rect = node.getBoundingClientRect();
-    const wordmark = document.querySelector(".app-header .brand-lockup");
-    const header = document.querySelector(".app-header");
-    const wordmarkRight = wordmark?.getBoundingClientRect().right ?? -1;
-    const headerRight = header?.getBoundingClientRect().right ?? -1;
-    return {
-      width: rect.width,
-      height: rect.height,
-      left: rect.left,
-      right: rect.right,
-      wordmarkRight,
-      headerRight,
-    };
+    return { width: rect.width, height: rect.height };
   });
-  const value = (key: string): number =>
-    isRecord(dimensions) && isNumber(dimensions[key]) ? dimensions[key] : 0;
   check(
     isRecord(dimensions) &&
-      value("width") >= 44 &&
-      value("height") >= 44 &&
-      value("left") >= value("wordmarkRight") &&
-      value("right") >= value("headerRight") - 32,
-    "the compact profile target is too small or not at the right edge",
+      isNumber(dimensions.width) &&
+      isNumber(dimensions.height) &&
+      dimensions.width >= 44 &&
+      dimensions.height >= 44 &&
+      (await more.getAttribute("href"))?.endsWith("/app/more") === true,
+    "the More tab is too small or does not point to the More page",
   );
 }
 
@@ -1068,9 +1086,11 @@ export interface ShellAvatarOptions {
 
 export async function assertShellAvatar(
   page: Page,
-  { present }: ShellAvatarOptions,
+  { mobile, present }: ShellAvatarOptions,
 ): Promise<void> {
-  const target = ".app-header .header-account";
+  const target = mobile
+    ? ".mobile-navigation a.more-tab"
+    : ".desktop-rail .rail-account";
   const image = page.locator(`${target} .user-avatar img`);
   if (!present) {
     check(
@@ -1199,7 +1219,9 @@ export async function exerciseProjectServiceTools(
         ocrControls: document.querySelectorAll(".ocr-control").length,
         routeReady: document.querySelectorAll(".reader-columns").length > 0,
         authenticated:
-          document.querySelectorAll(".app-header .header-account").length > 0,
+          document.querySelectorAll(
+            ".desktop-rail .rail-account, .mobile-navigation a.more-tab",
+          ).length > 0,
         viewportVisible: document.visibilityState === "visible",
       }));
     } catch (queryError) {

@@ -1,6 +1,8 @@
 package blue.anika.wolle.ui.navigation
 
 import androidx.annotation.StringRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -102,29 +104,33 @@ enum class TopLevelDestination(
         R.string.destination_label_yarns,
         MdiIcons.YarnBall,
         setOf(Route.Yarns::class, Route.YarnDetail::class, Route.YarnEditor::class),
-        // Hidden by default: Home's "Your yarn stash" card opens the list, and Settings ->
-        // Navigation can bring the tab back.
-        defaultVisible = false,
     ),
     SEARCH(
         Route.Search,
         R.string.destination_label_search,
         PhosphorIcons.MagnifyingGlass,
         setOf(Route.Search::class),
+        // Hidden by default so the bar matches the website's four tabs (Home, Projects, Yarns,
+        // More); More -> Navigation can bring it back.
+        defaultVisible = false,
     ),
     GAUGE(
         Route.Gauge,
         R.string.destination_label_gauge,
         PhosphorIcons.Ruler,
         setOf(Route.Gauge::class),
-        // Hidden by default to keep the bar at five destinations; Home's title bar opens the
-        // calculator, and Settings -> Navigation can add it back.
+        // Hidden by default to keep the bar at four destinations; More and Home's title bar open
+        // the calculator, and More -> Navigation can add it back.
         defaultVisible = false,
     ),
+    /**
+     * The "More" tab (the id stays `SETTINGS`: it is stored in saved navbar preferences). It shows
+     * the account avatar in the bar when there is one, otherwise the [icon].
+     */
     SETTINGS(
         Route.Settings,
-        R.string.settings_root_title,
-        PhosphorIcons.GearSix,
+        R.string.destination_label_more,
+        Icons.Default.MoreHoriz,
         setOf(
             Route.Settings::class,
             Route.SettingsCategoryRoute::class,
