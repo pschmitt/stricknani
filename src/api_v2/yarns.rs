@@ -40,6 +40,8 @@ struct YarnPageQuery {
     page: Option<i64>,
     favorite: Option<bool>,
     q: Option<String>,
+    scope: Option<String>,
+    owner_id: Option<i64>,
 }
 
 #[derive(Serialize)]
@@ -53,6 +55,7 @@ struct PageMeta {
     page: i64,
     per_page: i64,
     has_more: bool,
+    scope: crate::resource_access::Scope,
 }
 
 #[derive(Serialize)]
@@ -80,6 +83,7 @@ pub(super) struct YarnDto {
     project_ids: Vec<i64>,
     photos: Vec<serde_json::Value>,
     preview_url: Option<String>,
+    owner: Option<crate::resource_access::OwnerInfo>,
 }
 
 impl From<YarnResponse> for YarnDto {
@@ -108,6 +112,7 @@ impl From<YarnResponse> for YarnDto {
             project_ids: yarn.project_ids,
             photos: yarn.photos,
             preview_url: None,
+            owner: yarn.owner,
         }
     }
 }
@@ -124,8 +129,9 @@ pub(super) async fn yarn_dto_v2(
         .await
         .map_err(|_| sqlx::Error::Protocol("yarn projection capacity closed".into()))?;
     let yarn_id = yarn.id;
+    let media_owner = yarn.owner.as_ref().map_or(user_id, |owner| owner.id);
     let (photos, preview_url) =
-        crate::media::yarn_photos_v2(&state.app.pool, user_id, yarn_id).await?;
+        crate::media::yarn_photos_v2(&state.app.pool, media_owner, yarn_id).await?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         yarn_dto_v2_with_media(yarn, photos, preview_url)
@@ -235,6 +241,8 @@ async fn list_yarns(
             page: query.page,
             favorite: query.favorite,
             q: query.q,
+            scope: query.scope,
+            owner_id: query.owner_id,
         },
     )
     .await
@@ -260,6 +268,7 @@ async fn list_yarns(
                     page: page.page,
                     per_page: page.per_page,
                     has_more: page.has_more,
+                    scope: page.scope,
                 },
             })
             .into_response()

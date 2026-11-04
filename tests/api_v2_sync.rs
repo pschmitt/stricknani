@@ -354,7 +354,8 @@ async fn v2_project_and_yarn_sync_return_owner_scoped_dtos_and_tombstones() {
         assert_eq!(response.status(), StatusCode::OK);
         let body = json(response).await;
         let data = &body["data"];
-        assert_eq!(data.as_object().unwrap().len(), 6);
+        assert_eq!(data.as_object().unwrap().len(), 7);
+        assert_eq!(data["scope"], "mine");
         assert_eq!(data["updated"].as_array().map(Vec::len), Some(1));
         assert_eq!(data["updated"][0]["id"], own_id);
         assert_eq!(data["deleted_ids"], serde_json::json!([own_deleted]));

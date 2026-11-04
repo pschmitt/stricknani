@@ -299,3 +299,33 @@ fn model_yarns_need_page_support_for_links_and_numbers() {
     strip_internal_extras(&mut draft);
     assert!(!draft.project.extras.contains_key(PAGE_LINKS_EXTRA));
 }
+
+#[tokio::test]
+async fn stash_only_contains_the_importing_users_own_yarns() {
+    let pool = crate::db::connect("sqlite::memory:").await.unwrap();
+    let admin: i64 = sqlx::query_scalar(
+        "INSERT INTO users (email, password_hash, is_admin) VALUES ('a@x.test','h',1) RETURNING id",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let other: i64 = sqlx::query_scalar(
+        "INSERT INTO users (email, password_hash) VALUES ('o@x.test','h') RETURNING id",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    for (owner, name) in [(admin, "Admin wool"), (other, "Other wool")] {
+        sqlx::query(
+            "INSERT INTO yarns (owner_id,name,created_at,updated_at) VALUES (?,?,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')",
+        )
+        .bind(owner)
+        .bind(name)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+    let stash = load_stash(&pool, admin).await;
+    assert_eq!(stash.len(), 1);
+    assert_eq!(stash[0].name, "Admin wool");
+}

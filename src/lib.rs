@@ -33,6 +33,7 @@ pub mod oidc_http_state;
 pub(crate) mod oidc_identity_service;
 pub mod projects;
 pub mod pwa;
+pub(crate) mod resource_access;
 pub mod security;
 pub mod sync;
 pub mod url_import;

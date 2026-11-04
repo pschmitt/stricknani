@@ -289,7 +289,6 @@ async fn owner_history_auth_and_parent_scope_hide_foreign_resources_even_from_ad
 
     for (token, path) in [
         (OWNER_PAT, format!("/projects/{foreign_project}/history")),
-        (ADMIN_PAT, own_path.clone()),
         (OTHER_PAT, format!("/projects/{own_project}/history")),
         (OWNER_PAT, "/projects/999999/history".to_owned()),
     ] {
@@ -302,6 +301,15 @@ async fn owner_history_auth_and_parent_scope_hide_foreign_resources_even_from_ad
         assert_eq!(response.status(), StatusCode::NOT_FOUND, "{path}");
         assert_eq!(json(response).await["error"]["code"], "not_found");
     }
+
+    // Administrators read the history of any owner's resource.
+    let admin_history = fixture
+        .app
+        .clone()
+        .oneshot(bearer(&own_path, ADMIN_PAT))
+        .await
+        .unwrap();
+    assert_eq!(admin_history.status(), StatusCode::OK);
 
     let foreign_event_detail = fixture
         .app

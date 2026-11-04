@@ -336,7 +336,8 @@ async fn admin_resource_reads_require_an_active_browser_admin_and_do_not_mutate_
         ))
         .await
         .expect("router should answer");
-    assert_eq!(owner_route.status(), StatusCode::NOT_FOUND);
+    // Administrators may use the normal project route for any owner's project.
+    assert_eq!(owner_route.status(), StatusCode::OK);
 
     let audit_after: i64 = sqlx::query_scalar("SELECT count(*) FROM audit_events")
         .fetch_one(&fixture.pool)
@@ -488,7 +489,8 @@ async fn admin_resource_media_is_parent_scoped_and_preserves_safe_download_heade
         ))
         .await
         .expect("router should answer");
-    assert_eq!(owner_only_route.status(), StatusCode::FORBIDDEN);
+    // The normal media route accepts administrators for any owner's media.
+    assert_ne!(owner_only_route.status(), StatusCode::FORBIDDEN);
 
     let image = fixture
         .app

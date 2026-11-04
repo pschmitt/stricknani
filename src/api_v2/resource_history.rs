@@ -84,9 +84,15 @@ async fn list_history(
     resource_id: i64,
     raw_query: Option<&str>,
 ) -> Response {
-    let owner_id = match access::resource_user(&state.app, headers).await {
-        Ok(owner_id) => owner_id,
+    let actor_id = match access::resource_user(&state.app, headers).await {
+        Ok(actor_id) => actor_id,
         Err(response) => return *response,
+    };
+    // Owners and active administrators read the history of the resource's real owner.
+    let owner_id = match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return not_found(),
+        Err(_) => return internal_error(),
     };
     let page = match parse_page(raw_query) {
         Ok(page) => page,
@@ -140,9 +146,15 @@ async fn event_detail(
     resource_id: i64,
     event_id: i64,
 ) -> Response {
-    let owner_id = match access::resource_user(&state.app, headers).await {
-        Ok(owner_id) => owner_id,
+    let actor_id = match access::resource_user(&state.app, headers).await {
+        Ok(actor_id) => actor_id,
         Err(response) => return *response,
+    };
+    // Owners and active administrators read the history of the resource's real owner.
+    let owner_id = match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return not_found(),
+        Err(_) => return internal_error(),
     };
     match audit_service::get_resource_event_detail(
         &state.app.pool,
@@ -198,4 +210,18 @@ fn internal_error() -> Response {
         "internal_error",
         "Request failed",
     )
+}
+
+async fn resource_owner(
+    pool: &sqlx::SqlitePool,
+    actor_id: i64,
+    entity: AuditEntity,
+    resource_id: i64,
+) -> Result<Option<i64>, sqlx::Error> {
+    match entity {
+        AuditEntity::Project => {
+            crate::resource_access::project_owner(pool, actor_id, resource_id).await
+        }
+        _ => crate::resource_access::yarn_owner(pool, actor_id, resource_id).await,
+    }
 }

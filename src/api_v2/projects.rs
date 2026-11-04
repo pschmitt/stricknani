@@ -43,6 +43,8 @@ struct ProjectPageQuery {
     tag: Option<String>,
     favorite: Option<bool>,
     q: Option<String>,
+    scope: Option<String>,
+    owner_id: Option<i64>,
 }
 
 #[derive(Serialize)]
@@ -56,6 +58,7 @@ struct PageMeta {
     page: i64,
     per_page: i64,
     has_more: bool,
+    scope: crate::resource_access::Scope,
 }
 
 #[derive(Serialize)]
@@ -85,6 +88,7 @@ pub(super) struct ProjectDto {
     steps: Vec<StepDto>,
     images: Vec<serde_json::Value>,
     attachments: Vec<serde_json::Value>,
+    owner: Option<crate::resource_access::OwnerInfo>,
 }
 
 #[derive(Serialize)]
@@ -137,6 +141,7 @@ impl From<ProjectResponse> for ProjectDto {
                 .collect(),
             images: project.images,
             attachments: project.attachments,
+            owner: project.owner,
         }
     }
 }
@@ -153,8 +158,9 @@ pub(super) async fn project_dto_v2(
         .await
         .map_err(|_| sqlx::Error::Protocol("project projection capacity closed".into()))?;
     let project_id = project.id;
+    let media_owner = project.owner.as_ref().map_or(user_id, |owner| owner.id);
     let (images, attachments, preview_url) =
-        crate::media::project_media_v2(&state.app.pool, user_id, project_id).await?;
+        crate::media::project_media_v2(&state.app.pool, media_owner, project_id).await?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         project_dto_v2_with_media(project, images, attachments, preview_url)
@@ -275,6 +281,8 @@ async fn list_projects(
             tag: query.tag,
             favorite: query.favorite,
             q: query.q,
+            scope: query.scope,
+            owner_id: query.owner_id,
         },
         TagPolicy::PreserveLabels,
     )
@@ -302,6 +310,7 @@ async fn list_projects(
             page: page.page,
             per_page: page.per_page,
             has_more: page.has_more,
+            scope: page.scope,
         },
     })
     .into_response()

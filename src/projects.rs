@@ -42,6 +42,12 @@ pub(crate) struct ListQuery {
     pub(crate) tag: Option<String>,
     pub(crate) favorite: Option<bool>,
     pub(crate) q: Option<String>,
+    /// `mine` or `all`; administrators default to `all`, everyone else is always `mine`.
+    #[serde(default)]
+    pub(crate) scope: Option<String>,
+    /// Administrator-only restriction to one owner's projects.
+    #[serde(default)]
+    pub(crate) owner_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -100,6 +106,7 @@ pub(crate) struct ProjectPage {
     pub(crate) page: i64,
     pub(crate) per_page: i64,
     pub(crate) has_more: bool,
+    pub(crate) scope: crate::resource_access::Scope,
 }
 
 #[derive(Debug, Serialize)]
@@ -111,6 +118,7 @@ pub(crate) struct ProjectListItem {
     pub(crate) is_favorite: bool,
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
+    pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -136,6 +144,7 @@ pub(crate) struct ProjectResponse {
     // Media upload/import routes land in a later slice; this DTO returns empty arrays meanwhile.
     pub(crate) images: Vec<Value>,
     pub(crate) attachments: Vec<Value>,
+    pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -195,6 +204,7 @@ struct ProjectRow {
 #[derive(Debug, FromRow)]
 struct ProjectListRow {
     id: i64,
+    owner_id: i64,
     name: String,
     category: Option<String>,
     tags: String,
@@ -267,13 +277,27 @@ pub(crate) async fn list_for_owner_with_tag_policy(
         .filter(|value| !value.is_empty());
     let search_pattern = search.as_deref().map(literal_like_pattern);
     let favorite = query.favorite.map(i64::from);
+    let requested_scope = match query.scope.as_deref() {
+        None => None,
+        Some(value) => Some(
+            crate::resource_access::Scope::parse(value)
+                .ok_or(ProjectError::Invalid("Invalid scope"))?,
+        ),
+    };
+    let scope = crate::resource_access::effective_scope(&state.pool, user_id, requested_scope)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let owner_filter = match scope {
+        crate::resource_access::Scope::Mine => Some(user_id),
+        crate::resource_access::Scope::All => query.owner_id,
+    };
     let rows = sqlx::query_as::<_, ProjectListRow>(
-        "SELECT p.id, p.name, c.name AS category, p.tags, \
+        "SELECT p.id, p.owner_id, p.name, c.name AS category, p.tags, \
                 EXISTS(SELECT 1 FROM user_favorites f \
                        WHERE f.user_id = ? AND f.project_id = p.id) AS is_favorite, \
                 p.updated_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
-         WHERE p.owner_id = ? \
+         WHERE (? IS NULL OR p.owner_id = ?) \
            AND (? IS NULL OR c.name = ?) \
            AND (? IS NULL OR instr(lower(p.tags), lower(?)) > 0) \
            AND (? IS NULL OR p.name LIKE ? ESCAPE '!' \
@@ -285,7 +309,8 @@ pub(crate) async fn list_for_owner_with_tag_policy(
          ORDER BY p.updated_at DESC, p.id DESC LIMIT ? OFFSET ?",
     )
     .bind(user_id)
-    .bind(user_id)
+    .bind(owner_filter)
+    .bind(owner_filter)
     .bind(category.as_deref())
     .bind(category.as_deref())
     .bind(tag.as_deref())
@@ -305,12 +330,27 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     let rows = rows.map_err(|_| ProjectError::Database)?;
     let has_more = rows.len() > PAGE_SIZE as usize;
     let mut items = Vec::new();
+    let mut owners = std::collections::HashMap::new();
     for row in rows.into_iter().take(PAGE_SIZE as usize) {
-        let (images, _) = match crate::media::project_media(&state.pool, user_id, row.id).await {
+        let (images, _) = match crate::media::project_media(&state.pool, row.owner_id, row.id).await
+        {
             Ok(media) => media,
             Err(_) => return Err(ProjectError::Database),
         };
+        if let std::collections::hash_map::Entry::Vacant(entry) = owners.entry(row.owner_id) {
+            entry.insert(
+                crate::resource_access::owner_info(
+                    &state.pool,
+                    user_id,
+                    row.owner_id,
+                    state.gravatar.enabled,
+                )
+                .await
+                .map_err(|_| ProjectError::Database)?,
+            );
+        }
         items.push(ProjectListItem {
+            owner: owners.get(&row.owner_id).cloned().flatten(),
             id: row.id,
             name: row.name,
             category: row.category,
@@ -326,6 +366,7 @@ pub(crate) async fn list_for_owner_with_tag_policy(
         page,
         per_page: PAGE_SIZE,
         has_more,
+        scope,
     })
 }
 
@@ -604,6 +645,11 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     payload: ProjectWriteRequest,
     tag_policy: TagPolicy,
 ) -> Result<ProjectResponse, ProjectError> {
+    let actor_id = user_id;
+    let user_id = crate::resource_access::project_owner(&state.pool, actor_id, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::NotFound)?;
     let name = payload.name.trim().to_owned();
     let expected_updated_at = match payload.expected_updated_at.as_deref() {
         Some(value) => Some(
@@ -611,7 +657,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
         ),
         None => None,
     };
-    let current = load_project_with_tag_policy(state, user_id, project_id, tag_policy)
+    let current = load_project_with_tag_policy(state, actor_id, project_id, tag_policy)
         .await
         .map_err(|_| ProjectError::Database)?
         .ok_or(ProjectError::NotFound)?;
@@ -684,7 +730,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => {
             let _ = transaction.rollback().await;
-            return match load_project_with_tag_policy(state, user_id, project_id, tag_policy).await
+            return match load_project_with_tag_policy(state, actor_id, project_id, tag_policy).await
             {
                 Ok(Some(project)) => Err(ProjectError::Conflict(Box::new(project))),
                 Ok(None) => Err(ProjectError::NotFound),
@@ -713,7 +759,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     }
     if crate::audit::record_with_data(
         &mut transaction,
-        user_id,
+        actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Updated,
@@ -740,7 +786,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     if transaction.commit().await.is_err() {
         return Err(ProjectError::Database);
     }
-    load_project_with_tag_policy(state, user_id, project_id, tag_policy)
+    load_project_with_tag_policy(state, actor_id, project_id, tag_policy)
         .await
         .map_err(|_| ProjectError::Database)?
         .ok_or(ProjectError::NotFound)
@@ -766,6 +812,11 @@ pub(crate) async fn delete_for_owner(
     user_id: i64,
     project_id: i64,
 ) -> Result<(), ProjectError> {
+    let actor_id = user_id;
+    let user_id = crate::resource_access::project_owner(&state.pool, actor_id, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::NotFound)?;
     let mut transaction = state
         .pool
         .begin()
@@ -826,7 +877,7 @@ pub(crate) async fn delete_for_owner(
     }
     if crate::audit::record_with_data(
         &mut transaction,
-        user_id,
+        actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Deleted,
@@ -894,11 +945,7 @@ pub(crate) async fn set_favorite_for_owner_with_tag_policy(
     tag_policy: TagPolicy,
 ) -> Result<ProjectResponse, ProjectError> {
     let project_exists =
-        sqlx::query_scalar::<_, i64>("SELECT id FROM projects WHERE id = ? AND owner_id = ?")
-            .bind(project_id)
-            .bind(user_id)
-            .fetch_optional(&state.pool)
-            .await;
+        crate::resource_access::project_owner(&state.pool, user_id, project_id).await;
     match project_exists {
         Ok(Some(_)) => {}
         Ok(None) => return Err(ProjectError::NotFound),
@@ -943,6 +990,12 @@ pub(crate) async fn load_project_with_tag_policy(
     project_id: i64,
     tag_policy: TagPolicy,
 ) -> Result<Option<ProjectResponse>, sqlx::Error> {
+    let actor_id = user_id;
+    let Some(user_id) =
+        crate::resource_access::project_owner(&state.pool, actor_id, project_id).await?
+    else {
+        return Ok(None);
+    };
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
                 p.description, p.notes, p.other_materials, p.tags, p.link, \
@@ -976,10 +1029,13 @@ pub(crate) async fn load_project_with_tag_policy(
     let is_favorite = sqlx::query_scalar::<_, bool>(
         "SELECT EXISTS(SELECT 1 FROM user_favorites WHERE user_id = ? AND project_id = ?)",
     )
-    .bind(user_id)
+    .bind(actor_id)
     .bind(project_id)
     .fetch_one(&state.pool)
     .await?;
+    let owner =
+        crate::resource_access::owner_info(&state.pool, actor_id, user_id, state.gravatar.enabled)
+            .await?;
 
     let (images, attachments) =
         crate::media::project_media(&state.pool, user_id, project_id).await?;
@@ -1013,6 +1069,7 @@ pub(crate) async fn load_project_with_tag_policy(
             .collect(),
         images,
         attachments,
+        owner,
     }))
 }
 

@@ -71,11 +71,18 @@ pub(crate) struct ListQuery {
     pub(crate) page: Option<i64>,
     pub(crate) favorite: Option<bool>,
     pub(crate) q: Option<String>,
+    /// `mine` or `all`; administrators default to `all`, everyone else is always `mine`.
+    #[serde(default)]
+    pub(crate) scope: Option<String>,
+    /// Administrator-only restriction to one owner's yarns.
+    #[serde(default)]
+    pub(crate) owner_id: Option<i64>,
 }
 
 #[derive(Debug, FromRow)]
 struct YarnRow {
     id: i64,
+    owner_id: i64,
     name: String,
     description: Option<String>,
     brand: Option<String>,
@@ -116,6 +123,7 @@ pub(crate) struct YarnResponse {
     pub(crate) updated_at: String,
     pub(crate) project_ids: Vec<i64>,
     pub(crate) photos: Vec<serde_json::Value>,
+    pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
 }
 
 #[derive(Debug, Serialize)]
@@ -128,6 +136,7 @@ pub(crate) struct YarnListItemResponse {
     pub(crate) is_favorite: bool,
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
+    pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
 }
 
 #[derive(Debug, Serialize)]
@@ -136,6 +145,7 @@ pub(crate) struct YarnPage {
     pub(crate) page: i64,
     pub(crate) per_page: i64,
     pub(crate) has_more: bool,
+    pub(crate) scope: crate::resource_access::Scope,
 }
 
 pub(crate) enum YarnError {
@@ -205,10 +215,24 @@ pub(crate) async fn list_for_owner(
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty());
     let search_pattern = search.as_deref().map(literal_like_pattern);
+    let requested_scope = match query.scope.as_deref() {
+        None => None,
+        Some(value) => Some(
+            crate::resource_access::Scope::parse(value)
+                .ok_or(YarnError::Invalid("Invalid scope"))?,
+        ),
+    };
+    let scope = crate::resource_access::effective_scope(&state.pool, user_id, requested_scope)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    let owner_filter = match scope {
+        crate::resource_access::Scope::Mine => Some(user_id),
+        crate::resource_access::Scope::All => query.owner_id,
+    };
 
     let rows = sqlx::query_as::<_, YarnRow>(
         "SELECT yarns.* FROM yarns \
-         WHERE owner_id = ? \
+         WHERE (? IS NULL OR owner_id = ?) \
            AND (? IS NULL OR EXISTS (SELECT 1 FROM user_favorite_yarns f \
                                      WHERE f.user_id = ? AND f.yarn_id = yarns.id) = ?) \
            AND (? IS NULL OR yarns.name LIKE ? ESCAPE '!' \
@@ -218,7 +242,8 @@ pub(crate) async fn list_for_owner(
                 OR COALESCE(yarns.notes, '') LIKE ? ESCAPE '!') \
          ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?",
     )
-    .bind(user_id)
+    .bind(owner_filter)
+    .bind(owner_filter)
     .bind(
         query
             .favorite
@@ -246,12 +271,26 @@ pub(crate) async fn list_for_owner(
         .await
         .map_err(|_| YarnError::Database)?;
     let mut items = Vec::new();
+    let mut owners = std::collections::HashMap::new();
     for yarn in rows.into_iter().take(PAGE_SIZE as usize) {
-        let photos = match crate::media::yarn_photos(&state.pool, user_id, yarn.id).await {
+        let photos = match crate::media::yarn_photos(&state.pool, yarn.owner_id, yarn.id).await {
             Ok(photos) => photos,
             Err(_) => return Err(YarnError::Database),
         };
+        if let std::collections::hash_map::Entry::Vacant(entry) = owners.entry(yarn.owner_id) {
+            entry.insert(
+                crate::resource_access::owner_info(
+                    &state.pool,
+                    user_id,
+                    yarn.owner_id,
+                    state.gravatar.enabled,
+                )
+                .await
+                .map_err(|_| YarnError::Database)?,
+            );
+        }
         items.push(YarnListItemResponse {
+            owner: owners.get(&yarn.owner_id).cloned().flatten(),
             id: yarn.id,
             name: yarn.name,
             brand: yarn.brand,
@@ -268,6 +307,7 @@ pub(crate) async fn list_for_owner(
         page,
         per_page: PAGE_SIZE,
         has_more,
+        scope,
     })
 }
 
@@ -413,6 +453,11 @@ pub(crate) async fn update_for_owner(
     yarn_id: i64,
     payload: YarnWriteRequest,
 ) -> Result<YarnResponse, YarnError> {
+    let actor_id = user_id;
+    let user_id = crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id)
+        .await
+        .map_err(|_| YarnError::Database)?
+        .ok_or(YarnError::NotFound)?;
     let name = clean_name(&payload.name);
     let expected = match payload.expected_updated_at.as_deref() {
         Some(value) => match parse_timestamp(value) {
@@ -434,7 +479,7 @@ pub(crate) async fn update_for_owner(
         .is_some_and(|value| value != current.updated_at)
     {
         let _ = tx.rollback().await;
-        let current = current_for_conflict(state, user_id, yarn_id).await?;
+        let current = current_for_conflict(state, actor_id, yarn_id).await?;
         return Err(YarnError::Conflict(Box::new(current)));
     }
 
@@ -477,7 +522,7 @@ pub(crate) async fn update_for_owner(
         Ok(_) => {
             let _ = tx.rollback().await;
             return if expected.is_some() {
-                match current_for_conflict(state, user_id, yarn_id).await {
+                match current_for_conflict(state, actor_id, yarn_id).await {
                     Ok(current) => Err(YarnError::Conflict(Box::new(current))),
                     Err(error) => Err(error),
                 }
@@ -500,7 +545,7 @@ pub(crate) async fn update_for_owner(
     }
     if audit::record_with_data(
         &mut tx,
-        user_id,
+        actor_id,
         Entity::Yarn,
         yarn_id,
         Action::Updated,
@@ -528,7 +573,7 @@ pub(crate) async fn update_for_owner(
     if tx.commit().await.is_err() {
         return Err(YarnError::Database);
     }
-    load_for_owner(state, user_id, yarn_id)
+    load_for_owner(state, actor_id, yarn_id)
         .await
         .map_err(|_| YarnError::Database)?
         .ok_or(YarnError::NotFound)
@@ -554,6 +599,11 @@ pub(crate) async fn delete_for_owner(
     user_id: i64,
     yarn_id: i64,
 ) -> Result<(), YarnError> {
+    let actor_id = user_id;
+    let user_id = crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id)
+        .await
+        .map_err(|_| YarnError::Database)?
+        .ok_or(YarnError::NotFound)?;
     let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     let old_name = match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
         Ok(Some(yarn)) => yarn.name,
@@ -606,7 +656,7 @@ pub(crate) async fn delete_for_owner(
     }
     if audit::record_with_data(
         &mut tx,
-        user_id,
+        actor_id,
         Entity::Yarn,
         yarn_id,
         Action::Deleted,
@@ -660,7 +710,7 @@ pub(crate) async fn set_favorite_for_owner(
     yarn_id: i64,
     favorite: bool,
 ) -> Result<YarnResponse, YarnError> {
-    match get_owned_yarn(&state.pool, user_id, yarn_id).await {
+    match crate::resource_access::yarn_owner(&state.pool, user_id, yarn_id).await {
         Ok(Some(_)) => {}
         Ok(None) => return Err(YarnError::NotFound),
         Err(_) => return Err(YarnError::Database),
@@ -701,7 +751,7 @@ pub(crate) async fn load_for_owner(
     user_id: i64,
     yarn_id: i64,
 ) -> Result<Option<YarnResponse>, sqlx::Error> {
-    get_yarn_response(&state.pool, user_id, yarn_id).await
+    get_yarn_response(&state.pool, user_id, yarn_id, state.gravatar.enabled).await
 }
 
 async fn current_for_conflict(
@@ -717,14 +767,22 @@ async fn current_for_conflict(
 
 async fn get_yarn_response(
     pool: &SqlitePool,
-    user_id: i64,
+    actor_id: i64,
     yarn_id: i64,
+    gravatar_enabled: bool,
 ) -> Result<Option<YarnResponse>, sqlx::Error> {
-    let Some(yarn) = get_owned_yarn(pool, user_id, yarn_id).await? else {
+    let Some(owner_id) = crate::resource_access::yarn_owner(pool, actor_id, yarn_id).await? else {
         return Ok(None);
     };
-    let favorite = is_favorite(pool, user_id, yarn_id).await?;
-    yarn_response(pool, user_id, yarn, favorite).await.map(Some)
+    let Some(yarn) = get_owned_yarn(pool, owner_id, yarn_id).await? else {
+        return Ok(None);
+    };
+    let favorite = is_favorite(pool, actor_id, yarn_id).await?;
+    let owner =
+        crate::resource_access::owner_info(pool, actor_id, owner_id, gravatar_enabled).await?;
+    let mut response = yarn_response(pool, owner_id, yarn, favorite).await?;
+    response.owner = owner;
+    Ok(Some(response))
 }
 
 async fn get_owned_yarn_in(
@@ -798,6 +856,7 @@ async fn yarn_response(
         updated_at: yarn.updated_at,
         project_ids,
         photos,
+        owner: None,
     })
 }
 
@@ -957,7 +1016,7 @@ pub(crate) async fn sync_value(
     user_id: i64,
     yarn_id: i64,
 ) -> Result<Option<serde_json::Value>, sqlx::Error> {
-    get_yarn_response(&state.pool, user_id, yarn_id)
+    get_yarn_response(&state.pool, user_id, yarn_id, state.gravatar.enabled)
         .await?
         .map(serde_json::to_value)
         .transpose()

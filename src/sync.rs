@@ -14,6 +14,7 @@ use sqlx::{Connection, QueryBuilder, Sqlite, SqlitePool};
 
 use crate::auth::bearer_user;
 use crate::db::AppState;
+use crate::resource_access::Scope;
 
 pub(crate) const MAX_PAGE_SIZE: i64 = 50;
 pub(crate) const MAX_CURSOR_BYTES: usize = 4096;
@@ -91,10 +92,13 @@ struct CursorPayload {
     updated: Option<CursorPosition>,
     deleted: Option<CursorPosition>,
     limit: i64,
+    #[serde(default)]
+    scope: Scope,
 }
 
 #[derive(Debug, Clone)]
 struct PageState {
+    scope: Scope,
     protocol: CursorProtocol,
     since: Option<String>,
     snapshot: String,
@@ -104,13 +108,14 @@ struct PageState {
 }
 
 #[derive(Clone, Copy)]
-struct SyncPageRequest<'a> {
-    kind: EntityKind,
-    user_id: i64,
-    since: Option<&'a str>,
-    limit: Option<i64>,
-    raw_cursor: Option<&'a str>,
-    protocol: CursorProtocol,
+pub(crate) struct SyncPageRequest<'a> {
+    pub(crate) kind: EntityKind,
+    pub(crate) user_id: i64,
+    pub(crate) since: Option<&'a str>,
+    pub(crate) limit: Option<i64>,
+    pub(crate) raw_cursor: Option<&'a str>,
+    pub(crate) protocol: CursorProtocol,
+    pub(crate) scope: Scope,
 }
 
 #[derive(Debug)]
@@ -149,6 +154,8 @@ pub(crate) struct SyncPage {
 pub(crate) enum SyncPageError {
     MutuallyExclusive,
     InvalidCursor,
+    /// The cursor was issued for a different scope; restart without it.
+    ScopeMismatch,
     Internal,
 }
 
@@ -236,12 +243,15 @@ async fn sync_entities(
 
     let page = match sync_page(
         &state,
-        kind,
-        user_id,
-        since.as_deref(),
-        limit,
-        query.cursor.as_deref(),
-        CursorProtocol::V1,
+        SyncPageRequest {
+            kind,
+            user_id,
+            since: since.as_deref(),
+            limit,
+            raw_cursor: query.cursor.as_deref(),
+            protocol: CursorProtocol::V1,
+            scope: Scope::Mine,
+        },
     )
     .await
     {
@@ -252,7 +262,7 @@ async fn sync_entities(
                 "Use either since or cursor, not both",
             );
         }
-        Err(SyncPageError::InvalidCursor) => {
+        Err(SyncPageError::InvalidCursor | SyncPageError::ScopeMismatch) => {
             return error_response(StatusCode::BAD_REQUEST, "Invalid sync cursor");
         }
         Err(SyncPageError::Internal) => {
@@ -281,11 +291,12 @@ async fn legacy_sync(
     since: Option<&str>,
 ) -> Result<SyncResponse, SyncPageError> {
     let snapshot = format_timestamp(now_utc_micros());
-    let updated_events = load_updates(&state.pool, kind, user_id, since, None, None, None).await?;
+    let updated_events =
+        load_updates(&state.pool, kind, Some(user_id), since, None, None, None).await?;
     let updated_ids: Vec<i64> = updated_events.iter().map(|event| event.id).collect();
     let updated = serialize_ids(state, kind, user_id, &updated_ids).await?;
     let deleted_ids = if let Some(since) = since {
-        load_deletions(&state.pool, kind, user_id, since, None, None, None)
+        load_deletions(&state.pool, kind, Some(user_id), since, None, None, None)
             .await?
             .into_iter()
             .map(|event| event.entity_id)
@@ -308,27 +319,10 @@ async fn legacy_sync(
 /// response DTOs, and error encoding.
 pub(crate) async fn sync_page(
     state: &AppState,
-    kind: EntityKind,
-    user_id: i64,
-    since: Option<&str>,
-    limit: Option<i64>,
-    raw_cursor: Option<&str>,
-    protocol: CursorProtocol,
+    request: SyncPageRequest<'_>,
 ) -> Result<SyncPage, SyncPageError> {
     let snapshot = format_timestamp(now_utc_micros());
-    sync_page_at(
-        state,
-        SyncPageRequest {
-            kind,
-            user_id,
-            since,
-            limit,
-            raw_cursor,
-            protocol,
-        },
-        snapshot.as_str(),
-    )
-    .await
+    sync_page_at(state, request, snapshot.as_str()).await
 }
 
 /// Run category sync against a watermark advanced under SQLite's writer lock.
@@ -356,6 +350,7 @@ pub(crate) async fn sync_category_page(
             limit,
             raw_cursor,
             protocol: CursorProtocol::V2,
+            scope: Scope::Mine,
         },
         snapshot.as_str(),
     )
@@ -391,18 +386,10 @@ async fn sync_page_at(
     request: SyncPageRequest<'_>,
     snapshot: &str,
 ) -> Result<SyncPage, SyncPageError> {
-    let page = resolve_page(
-        request.raw_cursor,
-        request.since,
-        request.limit,
-        request.kind,
-        request.user_id,
-        snapshot,
-        request.protocol,
-    )
-    .map_err(|error| match error {
+    let page = resolve_page(&request, snapshot).map_err(|error| match error {
         PageError::MutuallyExclusive => SyncPageError::MutuallyExclusive,
         PageError::InvalidCursor => SyncPageError::InvalidCursor,
+        PageError::ScopeMismatch => SyncPageError::ScopeMismatch,
     })?;
     match page {
         Some(page) => bounded_page(state, request.kind, request.user_id, page).await,
@@ -419,7 +406,7 @@ async fn bounded_page(
     let updates = load_updates(
         &state.pool,
         kind,
-        user_id,
+        owner_filter(page.scope, user_id),
         page.since.as_deref(),
         Some(&page.snapshot),
         page.updated.as_ref(),
@@ -429,7 +416,7 @@ async fn bounded_page(
     let deletions = load_deletions(
         &state.pool,
         kind,
-        user_id,
+        owner_filter(page.scope, user_id),
         page.since.as_deref().unwrap_or(""),
         Some(&page.snapshot),
         page.deleted.as_ref(),
@@ -447,6 +434,7 @@ async fn bounded_page(
             updated: events.updated_position.or(page.updated),
             deleted: events.deleted_position.or(page.deleted),
             limit: page.limit,
+            scope: page.scope,
         })?)
     } else {
         None
@@ -464,7 +452,7 @@ async fn bounded_page(
 async fn load_updates(
     pool: &SqlitePool,
     kind: EntityKind,
-    user_id: i64,
+    owner: Option<i64>,
     since: Option<&str>,
     snapshot: Option<&str>,
     position: Option<&CursorPosition>,
@@ -481,11 +469,15 @@ async fn load_updates(
         ),
         _ => {
             let mut query = QueryBuilder::<Sqlite>::new("SELECT id, updated_at FROM ");
-            query.push(kind.table()).push(" WHERE owner_id = ");
+            query.push(kind.table()).push(" WHERE (");
+            query.push_bind(owner).push(" IS NULL OR owner_id = ");
             query
         }
     };
-    query.push_bind(user_id);
+    query.push_bind(owner);
+    if !matches!(kind, EntityKind::Category) {
+        query.push(")");
+    }
     if let Some(snapshot) = snapshot {
         query.push(" AND updated_at <= ").push_bind(snapshot);
     }
@@ -516,7 +508,7 @@ async fn load_updates(
 async fn load_deletions(
     pool: &SqlitePool,
     kind: EntityKind,
-    user_id: i64,
+    owner: Option<i64>,
     since: &str,
     snapshot: Option<&str>,
     position: Option<&CursorPosition>,
@@ -526,11 +518,18 @@ async fn load_deletions(
         EntityKind::Category => QueryBuilder::<Sqlite>::new(
             "SELECT category_id, id, changed_at FROM category_deletion_events WHERE owner_id = ",
         ),
-        _ => QueryBuilder::<Sqlite>::new(
-            "SELECT entity_id, id, changed_at FROM deletion_events WHERE owner_id = ",
-        ),
+        _ => {
+            let mut query = QueryBuilder::<Sqlite>::new(
+                "SELECT entity_id, id, changed_at FROM deletion_events WHERE (",
+            );
+            query.push_bind(owner).push(" IS NULL OR owner_id = ");
+            query
+        }
     };
-    query.push_bind(user_id);
+    query.push_bind(owner);
+    if !matches!(kind, EntityKind::Category) {
+        query.push(")");
+    }
     if !matches!(kind, EntityKind::Category) {
         query.push(" AND entity_type = ").push_bind(kind.as_str());
     }
@@ -665,17 +664,30 @@ async fn serialize_ids(
 enum PageError {
     MutuallyExclusive,
     InvalidCursor,
+    ScopeMismatch,
+}
+
+/// Owner restriction for a scope: `None` means every owner.
+fn owner_filter(scope: Scope, user_id: i64) -> Option<i64> {
+    match scope {
+        Scope::Mine => Some(user_id),
+        Scope::All => None,
+    }
 }
 
 fn resolve_page(
-    raw_cursor: Option<&str>,
-    since: Option<&str>,
-    limit: Option<i64>,
-    kind: EntityKind,
-    user_id: i64,
+    request: &SyncPageRequest<'_>,
     snapshot: &str,
-    protocol: CursorProtocol,
 ) -> Result<Option<PageState>, PageError> {
+    let SyncPageRequest {
+        kind,
+        user_id,
+        since,
+        limit,
+        raw_cursor,
+        protocol,
+        scope,
+    } = *request;
     if let Some(raw_cursor) = raw_cursor {
         if since.is_some() {
             return Err(PageError::MutuallyExclusive);
@@ -683,6 +695,9 @@ fn resolve_page(
         let mut cursor = decode_cursor(raw_cursor)?;
         if cursor.v != protocol.version() || cursor.entity != kind || cursor.user_id != user_id {
             return Err(PageError::InvalidCursor);
+        }
+        if cursor.scope != scope {
+            return Err(PageError::ScopeMismatch);
         }
         if !(1..=MAX_PAGE_SIZE).contains(&cursor.limit) {
             return Err(PageError::InvalidCursor);
@@ -709,6 +724,7 @@ fn resolve_page(
             .transpose()
             .map_err(|_| PageError::InvalidCursor)?;
         return Ok(Some(PageState {
+            scope,
             protocol,
             since: cursor.since,
             snapshot: cursor.snapshot,
@@ -719,6 +735,7 @@ fn resolve_page(
     }
 
     Ok(limit.map(|limit| PageState {
+        scope,
         protocol,
         since: since.map(str::to_owned),
         snapshot: snapshot.to_owned(),

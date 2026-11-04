@@ -719,13 +719,27 @@ pub(crate) async fn reorder_yarn_photos(
 
 async fn reorder_media(
     state: &AppState,
-    user_id: i64,
+    actor_id: i64,
     group: MediaOrderGroup,
     ids: Vec<i64>,
 ) -> Result<MediaOrderResult, MediaOrderError> {
     if ids.len() > MAX_ORDERED_MEDIA_COUNT {
         return Err(MediaOrderError::Invalid);
     }
+    let owner = match group {
+        MediaOrderGroup::ProjectTitles(project_id)
+        | MediaOrderGroup::ProjectSteps { project_id, .. } => {
+            crate::resource_access::project_owner(&state.pool, actor_id, project_id).await
+        }
+        MediaOrderGroup::YarnPhotos(yarn_id) => {
+            crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id).await
+        }
+    };
+    let user_id = match owner {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return Err(MediaOrderError::NotFound),
+        Err(_) => return Err(MediaOrderError::Database),
+    };
     let mut tx = state
         .pool
         .begin()
@@ -792,7 +806,7 @@ async fn reorder_media(
             }
         }
         .map_err(|_| MediaOrderError::Database)?;
-        if record_order_change(&mut tx, user_id, group).await.is_err() {
+        if record_order_change(&mut tx, actor_id, group).await.is_err() {
             let _ = tx.rollback().await;
             return Err(MediaOrderError::Database);
         }
@@ -1120,12 +1134,24 @@ async fn upload_step_image(
 
 pub(crate) async fn upload_project_image(
     state: &AppState,
-    user_id: i64,
+    actor_id: i64,
     project_id: i64,
     step_id: Option<i64>,
     kind: &'static str,
     multipart: Multipart,
 ) -> Result<ImageResponse, MediaOperationError> {
+    let user_id =
+        match crate::resource_access::project_owner(&state.pool, actor_id, project_id).await {
+            Ok(Some(owner_id)) => owner_id,
+            Ok(None) => {
+                return Err(MediaOperationError::NotFound(if step_id.is_some() {
+                    "Step not found"
+                } else {
+                    "Project not found"
+                }));
+            }
+            Err(_) => return Err(MediaOperationError::Database),
+        };
     match step_id {
         Some(step_id) => {
             match step_belongs_to_project(&state.pool, user_id, project_id, step_id).await {
@@ -1273,7 +1299,7 @@ pub(crate) async fn upload_project_image(
     };
     if crate::audit::record(
         &mut tx,
-        user_id,
+        actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Uploaded,
@@ -1559,10 +1585,16 @@ async fn upload_attachment(
 
 pub(crate) async fn upload_project_attachment(
     state: &AppState,
-    user_id: i64,
+    actor_id: i64,
     project_id: i64,
     multipart: Multipart,
 ) -> Result<AttachmentResponse, MediaOperationError> {
+    let user_id =
+        match crate::resource_access::project_owner(&state.pool, actor_id, project_id).await {
+            Ok(Some(owner_id)) => owner_id,
+            Ok(None) => return Err(MediaOperationError::NotFound("Project not found")),
+            Err(_) => return Err(MediaOperationError::Database),
+        };
     match project_exists(&state.pool, user_id, project_id).await {
         Ok(true) => {}
         Ok(false) => return Err(MediaOperationError::NotFound("Project not found")),
@@ -1574,6 +1606,7 @@ pub(crate) async fn upload_project_attachment(
     };
     store_project_attachment(
         state,
+        actor_id,
         user_id,
         project_id,
         upload.original_filename,
@@ -1602,6 +1635,7 @@ pub(crate) async fn persist_imported_attachment(
     store_project_attachment(
         state,
         user_id,
+        user_id,
         project_id,
         original_filename,
         claimed_content_type,
@@ -1612,6 +1646,7 @@ pub(crate) async fn persist_imported_attachment(
 
 async fn store_project_attachment(
     state: &AppState,
+    actor_id: i64,
     user_id: i64,
     project_id: i64,
     original_filename: String,
@@ -1698,7 +1733,7 @@ async fn store_project_attachment(
     };
     if crate::audit::record(
         &mut tx,
-        user_id,
+        actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Uploaded,
@@ -1756,10 +1791,15 @@ async fn upload_yarn_photo(
 
 pub(crate) async fn upload_yarn_photo_for_owner(
     state: &AppState,
-    user_id: i64,
+    actor_id: i64,
     yarn_id: i64,
     multipart: Multipart,
 ) -> Result<YarnPhotoResponse, MediaOperationError> {
+    let user_id = match crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id).await {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return Err(MediaOperationError::NotFound("Yarn not found")),
+        Err(_) => return Err(MediaOperationError::Database),
+    };
     let yarn_name = match yarn_name(&state.pool, user_id, yarn_id).await {
         Ok(Some(name)) => name,
         Ok(None) => return Err(MediaOperationError::NotFound("Yarn not found")),
@@ -1884,7 +1924,7 @@ pub(crate) async fn upload_yarn_photo_for_owner(
     };
     if crate::audit::record(
         &mut tx,
-        user_id,
+        actor_id,
         AuditEntity::Yarn,
         yarn_id,
         AuditAction::Uploaded,
@@ -1964,11 +2004,25 @@ async fn delete_project_attachment(
 
 pub(crate) async fn delete_project_media(
     state: &AppState,
-    user_id: i64,
+    actor_id: i64,
     project_id: i64,
     media_id: i64,
     namespace: Namespace,
 ) -> Result<(), MediaOperationError> {
+    let user_id =
+        match crate::resource_access::project_owner(&state.pool, actor_id, project_id).await {
+            Ok(Some(owner_id)) => owner_id,
+            Ok(None) => {
+                return Err(MediaOperationError::NotFound(
+                    if namespace == Namespace::Attachment {
+                        "Attachment not found"
+                    } else {
+                        "Image not found"
+                    },
+                ));
+            }
+            Err(_) => return Err(MediaOperationError::Database),
+        };
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
         Err(_) => return Err(MediaOperationError::Database),
@@ -2041,7 +2095,7 @@ pub(crate) async fn delete_project_media(
     }
     if crate::audit::record(
         &mut tx,
-        user_id,
+        actor_id,
         AuditEntity::Project,
         project_id,
         AuditAction::Removed,
@@ -2076,10 +2130,15 @@ async fn delete_yarn_photo(
 
 pub(crate) async fn delete_yarn_photo_for_owner(
     state: &AppState,
-    user_id: i64,
+    actor_id: i64,
     yarn_id: i64,
     photo_id: i64,
 ) -> Result<(), MediaOperationError> {
+    let user_id = match crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id).await {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return Err(MediaOperationError::NotFound("Photo not found")),
+        Err(_) => return Err(MediaOperationError::Database),
+    };
     let mut tx = match state.pool.begin().await {
         Ok(tx) => tx,
         Err(_) => return Err(MediaOperationError::Database),
@@ -2157,7 +2216,7 @@ pub(crate) async fn delete_yarn_photo_for_owner(
     }
     if crate::audit::record(
         &mut tx,
-        user_id,
+        actor_id,
         AuditEntity::Yarn,
         yarn_id,
         AuditAction::Removed,
@@ -2480,7 +2539,11 @@ async fn serve_registered(
             Err(_) => return database_error(),
         };
     if row.owner_id != user_id {
-        return StatusCode::FORBIDDEN.into_response();
+        match crate::resource_access::is_active_admin(&state.pool, user_id).await {
+            Ok(true) => {}
+            Ok(false) => return StatusCode::FORBIDDEN.into_response(),
+            Err(_) => return database_error(),
+        }
     }
     let root = match media_root(state) {
         Ok(root) => root,
@@ -2712,9 +2775,13 @@ pub(crate) async fn project_previews_v2(
         return Ok(HashMap::new());
     }
     let mut query = QueryBuilder::<Sqlite>::new(
-        "SELECT project_id,filename FROM media_files WHERE owner_id = ",
+        "SELECT project_id,filename FROM media_files WHERE (owner_id = ",
     );
-    query.push_bind(user_id).push(" AND project_id IN (");
+    query
+        .push_bind(user_id)
+        .push(" OR EXISTS(SELECT 1 FROM users WHERE id = ")
+        .push_bind(user_id)
+        .push(" AND is_admin = 1 AND active = 1)) AND project_id IN (");
     let mut separated = query.separated(",");
     for project_id in project_ids {
         separated.push_bind(project_id);
@@ -2800,8 +2867,12 @@ pub(crate) async fn yarn_previews_v2(
         return Ok(HashMap::new());
     }
     let mut query =
-        QueryBuilder::<Sqlite>::new("SELECT yarn_id,filename FROM media_files WHERE owner_id = ");
-    query.push_bind(user_id).push(" AND yarn_id IN (");
+        QueryBuilder::<Sqlite>::new("SELECT yarn_id,filename FROM media_files WHERE (owner_id = ");
+    query
+        .push_bind(user_id)
+        .push(" OR EXISTS(SELECT 1 FROM users WHERE id = ")
+        .push_bind(user_id)
+        .push(" AND is_admin = 1 AND active = 1)) AND yarn_id IN (");
     let mut separated = query.separated(",");
     for yarn_id in yarn_ids {
         separated.push_bind(yarn_id);

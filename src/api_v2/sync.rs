@@ -39,10 +39,13 @@ struct SyncData<T> {
     full_resync_required: bool,
     has_more: bool,
     next_cursor: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scope: Option<crate::resource_access::Scope>,
 }
 
 #[derive(Default)]
 struct SyncQuery {
+    scope: Option<String>,
     since: Option<String>,
     limit: Option<i64>,
     cursor: Option<String>,
@@ -80,20 +83,28 @@ async fn sync_projects(
     {
         return cursor_error();
     }
+    let scope = match resolve_scope(&state, owner_id, query.scope.as_deref()).await {
+        Ok(scope) => scope,
+        Err(response) => return *response,
+    };
     let page = match sync_service::sync_page(
         &state.app,
-        sync_service::EntityKind::Project,
-        owner_id,
-        query.since.as_deref(),
-        query.limit,
-        query.cursor.as_deref(),
-        sync_service::CursorProtocol::V2,
+        sync_service::SyncPageRequest {
+            kind: sync_service::EntityKind::Project,
+            user_id: owner_id,
+            since: query.since.as_deref(),
+            limit: query.limit,
+            raw_cursor: query.cursor.as_deref(),
+            protocol: sync_service::CursorProtocol::V2,
+            scope,
+        },
     )
     .await
     {
         Ok(page) => page,
         Err(sync_service::SyncPageError::MutuallyExclusive) => return invalid_query(),
         Err(sync_service::SyncPageError::InvalidCursor) => return cursor_error(),
+        Err(sync_service::SyncPageError::ScopeMismatch) => return scope_mismatch(),
         Err(sync_service::SyncPageError::Internal) => return internal_error(),
     };
 
@@ -109,6 +120,7 @@ async fn sync_projects(
             full_resync_required: false,
             has_more: page.has_more,
             next_cursor: page.next_cursor,
+            scope: Some(scope),
         },
     })
     .into_response()
@@ -134,20 +146,28 @@ async fn sync_yarns(
     {
         return cursor_error();
     }
+    let scope = match resolve_scope(&state, owner_id, query.scope.as_deref()).await {
+        Ok(scope) => scope,
+        Err(response) => return *response,
+    };
     let page = match sync_service::sync_page(
         &state.app,
-        sync_service::EntityKind::Yarn,
-        owner_id,
-        query.since.as_deref(),
-        query.limit,
-        query.cursor.as_deref(),
-        sync_service::CursorProtocol::V2,
+        sync_service::SyncPageRequest {
+            kind: sync_service::EntityKind::Yarn,
+            user_id: owner_id,
+            since: query.since.as_deref(),
+            limit: query.limit,
+            raw_cursor: query.cursor.as_deref(),
+            protocol: sync_service::CursorProtocol::V2,
+            scope,
+        },
     )
     .await
     {
         Ok(page) => page,
         Err(sync_service::SyncPageError::MutuallyExclusive) => return invalid_query(),
         Err(sync_service::SyncPageError::InvalidCursor) => return cursor_error(),
+        Err(sync_service::SyncPageError::ScopeMismatch) => return scope_mismatch(),
         Err(sync_service::SyncPageError::Internal) => return internal_error(),
     };
 
@@ -163,6 +183,7 @@ async fn sync_yarns(
             full_resync_required: false,
             has_more: page.has_more,
             next_cursor: page.next_cursor,
+            scope: Some(scope),
         },
     })
     .into_response()
@@ -200,6 +221,7 @@ async fn sync_categories(
         Ok(page) => page,
         Err(sync_service::SyncPageError::MutuallyExclusive) => return invalid_query(),
         Err(sync_service::SyncPageError::InvalidCursor) => return cursor_error(),
+        Err(sync_service::SyncPageError::ScopeMismatch) => return cursor_error(),
         Err(sync_service::SyncPageError::Internal) => return internal_error(),
     };
 
@@ -219,6 +241,7 @@ async fn sync_categories(
             full_resync_required: false,
             has_more: page.has_more,
             next_cursor: page.next_cursor,
+            scope: None,
         },
     })
     .into_response()
@@ -228,7 +251,7 @@ fn parse_query(raw_query: Option<&str>) -> Result<SyncQuery, QueryError> {
     let mut params = BTreeMap::new();
     if let Some(raw_query) = raw_query {
         for (key, value) in form_urlencoded::parse(raw_query.as_bytes()) {
-            if !matches!(key.as_ref(), "since" | "limit" | "cursor")
+            if !matches!(key.as_ref(), "since" | "limit" | "cursor" | "scope")
                 || params
                     .insert(key.into_owned(), value.into_owned())
                     .is_some()
@@ -259,6 +282,7 @@ fn parse_query(raw_query: Option<&str>) -> Result<SyncQuery, QueryError> {
         .transpose()?;
     let cursor = params.remove("cursor");
     Ok(SyncQuery {
+        scope: params.remove("scope"),
         since,
         limit: if cursor.is_none() && limit.is_none() {
             Some(DEFAULT_PAGE_SIZE)
@@ -294,10 +318,13 @@ async fn load_project_dtos(
         .await
         {
             Ok(Some(project)) => {
-                let (images, attachments, preview_url) =
-                    crate::media::project_media_v2(&state.app.pool, owner_id, project.id)
-                        .await
-                        .map_err(|_| ProjectionError::Internal)?;
+                let (images, attachments, preview_url) = crate::media::project_media_v2(
+                    &state.app.pool,
+                    project.owner.as_ref().map_or(owner_id, |owner| owner.id),
+                    project.id,
+                )
+                .await
+                .map_err(|_| ProjectionError::Internal)?;
                 project_responses.push((project, images, attachments, preview_url));
             }
             Ok(None) => {}
@@ -340,10 +367,13 @@ async fn load_yarn_dtos(
     for id in ids {
         match yarns::load_for_owner(&state.app, owner_id, *id).await {
             Ok(Some(yarn)) => {
-                let (photos, preview_url) =
-                    crate::media::yarn_photos_v2(&state.app.pool, owner_id, yarn.id)
-                        .await
-                        .map_err(|_| ProjectionError::Internal)?;
+                let (photos, preview_url) = crate::media::yarn_photos_v2(
+                    &state.app.pool,
+                    yarn.owner.as_ref().map_or(owner_id, |owner| owner.id),
+                    yarn.id,
+                )
+                .await
+                .map_err(|_| ProjectionError::Internal)?;
                 yarn_responses.push((yarn, photos, preview_url));
             }
             Ok(None) => {}
@@ -379,6 +409,32 @@ fn validation_error(field: &'static str, message: &'static str) -> Response {
         "validation_error",
         "Sync query is invalid",
         fields,
+    )
+}
+
+/// Sync is opt-in per scope: the default is `mine`, and only administrators
+/// get `all` (anyone else is served `mine`; the response echoes the scope).
+async fn resolve_scope(
+    state: &ApiV2State,
+    user_id: i64,
+    requested: Option<&str>,
+) -> Result<crate::resource_access::Scope, Box<Response>> {
+    let requested = match requested {
+        None => crate::resource_access::Scope::Mine,
+        Some(value) => {
+            crate::resource_access::Scope::parse(value).ok_or_else(|| Box::new(invalid_query()))?
+        }
+    };
+    crate::resource_access::effective_scope(&state.app.pool, user_id, Some(requested))
+        .await
+        .map_err(|_| Box::new(internal_error()))
+}
+
+fn scope_mismatch() -> Response {
+    super::api_error(
+        StatusCode::CONFLICT,
+        "scope_mismatch",
+        "Sync cursor was issued for a different scope; restart without it",
     )
 }
 
