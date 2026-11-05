@@ -23,12 +23,10 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import dagger.hilt.android.EntryPointAccessors
 import java.io.File
-import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -75,7 +73,7 @@ class RustBackendReplayIntegrationTest {
         val nonce = UUID.randomUUID().toString().take(12)
         val projectPrefix = "Rust replay $nonce project"
         val yarnPrefix = "Rust replay $nonce yarn"
-        var browserSession: BrowserSession? = null
+        var apiToken: String? = null
         val projectIds = mutableSetOf<Int>()
         val yarnIds = mutableSetOf<Int>()
         val temporaryProjectIds = mutableSetOf<Int>()
@@ -85,12 +83,12 @@ class RustBackendReplayIntegrationTest {
         val originalYarnCursor = syncStateDao.getCursor(YARN_SYNC_TYPE)
 
         try {
-            browserSession = loginForRevocableSession(http, baseUrl, email, password)
-            settings.save(baseUrl, browserSession.apiToken)
+            apiToken = mintApiToken(http, baseUrl, email, password)
+            settings.save(baseUrl, apiToken)
 
             // Repository mutations are local-only. Pointing the app at an unreachable URL during
             // this phase makes any accidental eager network write fail immediately.
-            settings.save(OFFLINE_URL, browserSession.apiToken)
+            settings.save(OFFLINE_URL, apiToken)
             val yarnRepository = graph.yarnRepository()
             val projectRepository = graph.projectRepository()
             val pendingDao = graph.pendingMutationDao()
@@ -131,7 +129,7 @@ class RustBackendReplayIntegrationTest {
             assertTrue(queuedBeforeReplay.any { it.entityType == MutationEntityType.YARN })
             assertTrue(queuedBeforeReplay.any { it.entityType == MutationEntityType.PROJECT })
 
-            settings.save(baseUrl, browserSession.apiToken)
+            settings.save(baseUrl, apiToken)
             assertEquals(WorkInfo.State.SUCCEEDED, runReplay(context))
 
             assertNull(projectDao.getById(tempProjectId))
@@ -213,9 +211,9 @@ class RustBackendReplayIntegrationTest {
         } finally {
             var cleanupFailed = false
             try {
-                if (browserSession != null) {
+                if (apiToken != null) {
                     try {
-                        settings.save(baseUrl, browserSession.apiToken)
+                        settings.save(baseUrl, apiToken)
                         cleanupRemote(
                             graph.projectsApi(),
                             graph.yarnsApi(),
@@ -224,11 +222,6 @@ class RustBackendReplayIntegrationTest {
                             projectIds,
                             yarnIds,
                         )
-                    } catch (_: Exception) {
-                        cleanupFailed = true
-                    }
-                    try {
-                        logout(http, baseUrl, browserSession)
                     } catch (_: Exception) {
                         cleanupFailed = true
                     }
@@ -297,58 +290,11 @@ class RustBackendReplayIntegrationTest {
         error("Write replay did not finish before the timeout")
     }
 
-    private fun loginForRevocableSession(
-        client: OkHttpClient,
-        baseUrl: String,
-        email: String,
-        password: String,
-    ): BrowserSession {
-        val loginUrl = "$baseUrl/login"
-        val csrfCookie =
-            client.newCall(Request.Builder().url(loginUrl).get().build()).execute().use { response
-                ->
-                assertEquals(200, response.code)
-                response
-                    .headers("Set-Cookie")
-                    .firstOrNull { it.substringBefore('=').endsWith("stricknani_login_csrf") }
-                    ?.substringBefore(';') ?: error("Rust login omitted its CSRF cookie")
-            }
-        val csrfToken = csrfCookie.substringAfter('=')
-        val sessionCookie =
-            client
-                .newCall(
-                    Request.Builder()
-                        .url(loginUrl)
-                        .header("Cookie", csrfCookie)
-                        .post(
-                            FormBody.Builder()
-                                .add("email", email)
-                                .add("password", password)
-                                .add("csrf", csrfToken)
-                                .build()
-                        )
-                        .build()
-                )
-                .execute()
-                .use { response ->
-                    assertTrue(response.code in 300..399)
-                    response
-                        .headers("Set-Cookie")
-                        .firstOrNull { it.substringBefore('=').endsWith("stricknani_session") }
-                        ?.substringBefore(';') ?: error("Rust login omitted its session cookie")
-                }
-        val token = sessionCookie.substringAfter('=')
-        return BrowserSession(
-            sessionCookie,
-            csrfFor(token),
-            mintApiToken(client, baseUrl, email, password),
-        )
-    }
-
     /**
      * The app authenticates with an API PAT. `/api/v2` rejects a browser session token used as a
      * Bearer (401), and the capability probe no longer falls back to v1 on a 401, so the fixture
-     * login must mint a real API token the way the app's password login does.
+     * login must mint a real API token the way the app's password login does. The legacy HTML
+     * `/login` form is gone (it redirects to the SPA), so no browser session is involved.
      */
     private fun mintApiToken(
         client: OkHttpClient,
@@ -370,26 +316,6 @@ class RustBackendReplayIntegrationTest {
                 assertEquals(200, response.code)
                 return JSONObject(response.body!!.string()).getJSONObject("data").getString("token")
             }
-    }
-
-    private fun logout(client: OkHttpClient, baseUrl: String, session: BrowserSession) {
-        client
-            .newCall(
-                Request.Builder()
-                    .url("$baseUrl/logout")
-                    .header("Cookie", session.cookie)
-                    .post(FormBody.Builder().add("csrf", session.csrf).build())
-                    .build()
-            )
-            .execute()
-            .use { response -> assertTrue(response.code in 300..399) }
-    }
-
-    private fun csrfFor(token: String): String {
-        val value = "stricknani browser csrf v1\u0000$token"
-        return MessageDigest.getInstance("SHA-256")
-            .digest(value.toByteArray(Charsets.UTF_8))
-            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
     private suspend fun cleanupRemote(
@@ -513,8 +439,6 @@ class RustBackendReplayIntegrationTest {
         } catch (failure: HttpException) {
             failure
         }
-
-    private data class BrowserSession(val cookie: String, val csrf: String, val apiToken: String)
 
     private companion object {
         const val FIXTURE_FILENAME = "rust-replay-fixture.json"
