@@ -92,7 +92,7 @@ abstract class StricknaniE2eTest {
                                 nodes.count { SemanticsProperties.Disabled in it.config }
                             "$tag=${nodes.size}/disabled$disabled"
                         }
-                throw AssertionError("Manual onboarding fields never appeared. Tags: $tags", failure)
+                throw AssertionError("Manual onboarding fields never appeared: $tags", failure)
             }
             composeRule
                 .onNodeWithTag("e2e-onboarding-server-url")
@@ -185,6 +185,10 @@ abstract class StricknaniE2eTest {
         composeRule.onNodeWithText("More").performClick()
         waitForText("Settings")
         composeRule.onNodeWithTag("more-account").performScrollTo().performClick()
+        // The Account page is a long lazy list: the connection card exists only once scrolled to.
+        composeRule
+            .onNodeWithTag("account-settings-list")
+            .performScrollToNode(hasTextMatcher("Server URL"))
         waitForText("Server URL")
         waitForText(baseUrl)
     }
