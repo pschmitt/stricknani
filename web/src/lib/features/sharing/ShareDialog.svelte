@@ -188,7 +188,8 @@
     error = "";
     const outcome = await onsharelink();
     if (outcome === "copied") status = t("Link copied.", locale);
-    else if (outcome === "failed") error = t("The link could not be shared.", locale);
+    else if (outcome === "failed")
+      error = t("The link could not be shared.", locale);
     else status = "";
   }
 </script>

@@ -610,7 +610,10 @@ export async function runSharingJourney(
       /Shared by bea · Can edit/i.test(editorLine),
       `the previous owner is not an editor: ${editorLine}`,
     );
-    await assertShareHasNoDialog(olgaPage, "the previous owner still saw Share");
+    await assertShareHasNoDialog(
+      olgaPage,
+      "the previous owner still saw Share",
+    );
     const kept = dataOf(
       await api(olgaPage, "GET", `/api/v2/yarns/${yarnA}`),
       200,
@@ -698,9 +701,7 @@ export async function runSharingJourney(
       waitUntil: "networkidle",
     });
     await dePage.locator('summary[aria-label="Weitere Aktionen"]').click();
-    await dePage
-      .getByRole("menuitem", { name: "Teilen", exact: true })
-      .click();
+    await dePage.getByRole("menuitem", { name: "Teilen", exact: true }).click();
     const deDialog = dePage.getByRole("dialog", { name: "Teilen" });
     await deDialog.waitFor({ state: "visible" });
     await deDialog
