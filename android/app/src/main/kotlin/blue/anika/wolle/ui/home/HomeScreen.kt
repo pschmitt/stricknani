@@ -726,7 +726,11 @@ private fun CreateCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(PhosphorIcons.Sparkle, contentDescription = null, modifier = Modifier.size(24.dp))
+                Icon(
+                    PhosphorIcons.Sparkle,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                )
             }
             Column(Modifier.weight(1f)) {
                 Text(
