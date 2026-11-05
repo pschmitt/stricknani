@@ -31,6 +31,7 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
+import blue.anika.wolle.data.timer.ProjectTimerReminderScheduler
 import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateCheckResult
 import blue.anika.wolle.data.update.UpdateChecker
@@ -79,6 +80,7 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val capabilities: ApiCapabilities,
     private val updateChecker: UpdateChecker,
+    private val timerReminderScheduler: ProjectTimerReminderScheduler,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -437,6 +439,8 @@ constructor(
      * rather than left to leak the previous account's cached projects/yarns into a fresh sign-in.
      */
     fun signOut() {
+        timerReminderScheduler.cancelAll()
+        viewModelScope.launch { timerReminderScheduler.clearSavedDeadlines() }
         settingsRepository.signOut()
         viewModelScope.launch { withContext(Dispatchers.IO) { database.clearAllTables() } }
     }

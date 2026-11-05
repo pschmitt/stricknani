@@ -42,6 +42,7 @@ the owner, an active administrator, or an editor share. Viewers receive
 same-origin and CSRF checks; API-purpose Bearer PATs use the standard v2
 authentication rules.
 
-The server-side timer keeps time while the app is closed. A future Android
-background reminder is a client notification feature; it does not own or
-advance a separate timer and must use this shared project state.
+The server-side timer keeps time while the app is closed. The web reminder is
+shown only while the project page is open. Android schedules a background
+notification and checks this API before showing it. These reminders are client
+notifications; neither client owns or advances a separate timer.

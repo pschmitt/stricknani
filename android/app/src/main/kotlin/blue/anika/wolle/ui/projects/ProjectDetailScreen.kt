@@ -18,11 +18,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,9 +35,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -50,9 +58,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
@@ -61,6 +73,7 @@ import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.ProjectDetailCard
+import blue.anika.wolle.data.timer.ProjectTimerReminderInterval
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
@@ -103,6 +116,7 @@ import blue.anika.wolle.ui.sharing.rememberSharingDialogs
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,6 +132,17 @@ fun ProjectDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val textStep by viewModel.textStep.collectAsStateWithLifecycle()
+    val timer by viewModel.timerState.collectAsStateWithLifecycle()
+    val timerSeconds by viewModel.timerSeconds.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel.projectId) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                viewModel.refreshTimer()
+                delay(15_000)
+            }
+        }
+    }
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val cardOrder by
@@ -335,6 +360,13 @@ fun ProjectDetailScreen(
                         ProjectDetailContent(
                             detail = state.detail,
                             linkedYarns = state.linkedYarns,
+                            timer = timer,
+                            timerSeconds = timerSeconds,
+                            canEditTimer = access.canEdit,
+                            onTimerRunningChange = viewModel::setTimerRunning,
+                            onTimerEdit = { total, done -> viewModel.setTimerTotal(total, done) },
+                            onTimerReminderChange = viewModel::setTimerReminderInterval,
+                            onTimerReminderSnooze = viewModel::snoozeTimerReminder,
                             cardOrder = cardOrder,
                             onCardOrderChanged = viewModel::saveCardOrder,
                             resolveMediaUrl = viewModel::resolveMediaUrl,
@@ -414,6 +446,13 @@ fun ProjectDetailScreen(
 private fun ProjectDetailContent(
     detail: ProjectDto,
     linkedYarns: List<LinkedYarn>,
+    timer: ProjectDetailViewModel.TimerState,
+    timerSeconds: Long,
+    canEditTimer: Boolean,
+    onTimerRunningChange: (Boolean, (Boolean) -> Unit) -> Unit,
+    onTimerEdit: (Long, (Boolean) -> Unit) -> Unit,
+    onTimerReminderChange: (Int) -> Unit,
+    onTimerReminderSnooze: () -> Unit,
     cardOrder: List<String>,
     onCardOrderChanged: (List<String>) -> Unit,
     resolveMediaUrl: (String?) -> String?,
@@ -473,6 +512,17 @@ private fun ProjectDetailContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            item {
+                ProjectTimerCard(
+                    timer = timer,
+                    seconds = timerSeconds,
+                    canEdit = canEditTimer,
+                    onRunningChange = onTimerRunningChange,
+                    onEdit = onTimerEdit,
+                    onReminderChange = onTimerReminderChange,
+                    onReminderSnooze = onTimerReminderSnooze,
+                )
+            }
             if (detail.images.isNotEmpty()) {
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -754,6 +804,263 @@ private fun ProjectDetailContent(
             onDismiss = { viewerIndex = null },
         )
     }
+}
+
+@Composable
+private fun ProjectTimerCard(
+    timer: ProjectDetailViewModel.TimerState,
+    seconds: Long,
+    canEdit: Boolean,
+    onRunningChange: (Boolean, (Boolean) -> Unit) -> Unit,
+    onEdit: (Long, (Boolean) -> Unit) -> Unit,
+    onReminderChange: (Int) -> Unit,
+    onReminderSnooze: () -> Unit,
+) {
+    var showEditDialog by remember { mutableStateOf(false) }
+    var saveFailed by remember { mutableStateOf(false) }
+    var reminderMenu by remember { mutableStateOf(false) }
+    val reminderDue =
+        timer.running &&
+            timer.reminderDeadlineMillis?.let { System.currentTimeMillis() >= it } == true
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Filled.AccessTime,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.project_timer_title),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(
+                    formatTimer(seconds),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(
+                        if (timer.running) R.string.project_timer_running_caption
+                        else R.string.project_timer_ready_caption
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (timer.error)
+                    Text(
+                        stringResource(R.string.project_timer_error),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+            }
+            if (canEdit) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (timer.running) {
+                        OutlinedButton(
+                            enabled = !timer.saving && !timer.loading && !timer.error,
+                            onClick = { onRunningChange(false) {} },
+                        ) {
+                            Text(stringResource(R.string.project_timer_stop))
+                        }
+                    } else {
+                        Button(
+                            enabled = !timer.saving && !timer.loading && !timer.error,
+                            onClick = { onRunningChange(true) {} },
+                        ) {
+                            Text(stringResource(R.string.project_timer_start))
+                        }
+                    }
+                    TextButton(
+                        enabled = !timer.saving && !timer.loading && !timer.error,
+                        onClick = {
+                            saveFailed = false
+                            showEditDialog = true
+                        },
+                    ) {
+                        Text(stringResource(R.string.project_timer_edit))
+                    }
+                    if (timer.running) {
+                        TextButton(
+                            enabled = !timer.saving && !timer.loading && !timer.error,
+                            onClick = { reminderMenu = true },
+                        ) {
+                            Text(
+                                "${stringResource(R.string.project_timer_reminder)}: ${stringResource(reminderIntervalLabel(timer.reminderIntervalMinutes))}"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = reminderMenu,
+                            onDismissRequest = { reminderMenu = false },
+                        ) {
+                            ProjectTimerReminderInterval.choices.forEach { interval ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(stringResource(reminderIntervalLabel(interval)))
+                                    },
+                                    onClick = {
+                                        reminderMenu = false
+                                        onReminderChange(interval)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (showEditDialog) {
+        ProjectTimerEditDialog(
+            totalSeconds = seconds,
+            isSaving = timer.saving,
+            saveFailed = saveFailed || timer.error,
+            onDismiss = { if (!timer.saving) showEditDialog = false },
+            onSave = { total ->
+                onEdit(total) { success ->
+                    saveFailed = !success
+                    if (success) showEditDialog = false
+                }
+            },
+        )
+    }
+    if (reminderDue) {
+        AlertDialog(
+            onDismissRequest = onReminderSnooze,
+            title = { Text(stringResource(R.string.project_timer_reminder_title)) },
+            text = { Text(stringResource(R.string.project_timer_reminder_body)) },
+            confirmButton = {
+                TextButton(
+                    enabled = !timer.saving,
+                    onClick = {
+                        onRunningChange(false) { success -> if (success) saveFailed = false }
+                    },
+                ) {
+                    Text(stringResource(R.string.project_timer_stop))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onReminderSnooze) {
+                    Text(stringResource(R.string.project_timer_reminder_keep))
+                }
+            },
+        )
+    }
+}
+
+@androidx.annotation.StringRes
+private fun reminderIntervalLabel(minutes: Int): Int =
+    when (minutes) {
+        ProjectTimerReminderInterval.OFF -> R.string.project_timer_reminder_off
+        ProjectTimerReminderInterval.MINUTES_30 -> R.string.project_timer_reminder_30m
+        ProjectTimerReminderInterval.HOURS_2 -> R.string.project_timer_reminder_2h
+        else -> R.string.project_timer_reminder_1h
+    }
+
+@Composable
+private fun ProjectTimerEditDialog(
+    totalSeconds: Long,
+    isSaving: Boolean,
+    saveFailed: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (Long) -> Unit,
+) {
+    var hours by remember { mutableStateOf((totalSeconds / 3600).toString()) }
+    var minutes by remember { mutableStateOf(((totalSeconds % 3600) / 60).toString()) }
+    var seconds by remember { mutableStateOf((totalSeconds % 60).toString()) }
+    val parsed = listOf(hours, minutes, seconds).map { it.toLongOrNull() }
+    val valid =
+        parsed.all { it != null } &&
+            (parsed[1] ?: 60) in 0..59 &&
+            (parsed[2] ?: 60) in 0..59 &&
+            ((parsed[0] ?: Long.MAX_VALUE) * 3600 + (parsed[1] ?: 0) * 60 + (parsed[2] ?: 0)) <=
+                315_576_000L
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.project_timer_edit_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TimerField(
+                        hours,
+                        { hours = it },
+                        R.string.project_timer_hours,
+                        Modifier.weight(1f),
+                    )
+                    TimerField(
+                        minutes,
+                        { minutes = it },
+                        R.string.project_timer_minutes,
+                        Modifier.weight(1f),
+                    )
+                    TimerField(
+                        seconds,
+                        { seconds = it },
+                        R.string.project_timer_seconds,
+                        Modifier.weight(1f),
+                    )
+                }
+                if (!valid || saveFailed)
+                    Text(
+                        stringResource(
+                            if (saveFailed) R.string.project_timer_error
+                            else R.string.project_timer_invalid
+                        ),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = valid && !isSaving,
+                onClick = {
+                    val h = parsed[0]!!
+                    val m = parsed[1]!!
+                    val s = parsed[2]!!
+                    onSave(h * 3600 + m * 60 + s)
+                },
+            ) {
+                Text(stringResource(R.string.common_save))
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !isSaving, onClick = onDismiss) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun TimerField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: Int,
+    modifier: Modifier,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { if (it.length <= 6 && it.all(Char::isDigit)) onValueChange(it) },
+        label = { Text(stringResource(label)) },
+        modifier = modifier,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+    )
+}
+
+private fun formatTimer(totalSeconds: Long): String {
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return "%02d:%02d:%02d".format(hours, minutes, seconds)
 }
 
 @Composable
