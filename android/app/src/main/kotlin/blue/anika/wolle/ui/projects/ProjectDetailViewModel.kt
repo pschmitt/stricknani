@@ -172,27 +172,6 @@ constructor(
         }
     }
 
-    init {
-        viewModelScope.launch {
-            combine(settingsRepository.credentials, capabilities.state) { credentials, state ->
-                    "${credentials.serverUrl}\n${credentials.apiToken}\n${state.user?.id}\n${state.currentTokenId}"
-                }
-                .distinctUntilChanged()
-                .collectLatest { identity ->
-                    val userId = currentUserId.first()
-                    val configured = identity.substringBefore('\n').isNotBlank()
-                    _timer.value = TimerState(loading = configured && userId != null)
-                    if (!configured || userId == null || !capabilities.useV2()) return@collectLatest
-                    val accountKey = reminderPreferences.currentAccountKey()
-                    val interval =
-                        accountKey?.let { reminderPreferences.interval(it, projectId) }
-                            ?: ProjectTimerReminderInterval.HOUR_1
-                    _timer.value = _timer.value.copy(reminderIntervalMinutes = interval)
-                    loadTimer()
-                }
-        }
-    }
-
     suspend fun refreshTimer() {
         if (
             currentUserId.first() != null &&
@@ -610,6 +589,30 @@ constructor(
                 )
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PrintOptions())
+
+    // This collector can run synchronously on Main.immediate as soon as its input flows emit.
+    // Keep it after currentUserId, uiState, and every other property used by loadTimer() and
+    // applyTimerResponse() have been initialized.
+    init {
+        viewModelScope.launch {
+            combine(settingsRepository.credentials, capabilities.state) { credentials, state ->
+                    "${credentials.serverUrl}\n${credentials.apiToken}\n${state.user?.id}\n${state.currentTokenId}"
+                }
+                .distinctUntilChanged()
+                .collectLatest { identity ->
+                    val userId = currentUserId.first()
+                    val configured = identity.substringBefore('\n').isNotBlank()
+                    _timer.value = TimerState(loading = configured && userId != null)
+                    if (!configured || userId == null || !capabilities.useV2()) return@collectLatest
+                    val accountKey = reminderPreferences.currentAccountKey()
+                    val interval =
+                        accountKey?.let { reminderPreferences.interval(it, projectId) }
+                            ?: ProjectTimerReminderInterval.HOUR_1
+                    _timer.value = _timer.value.copy(reminderIntervalMinutes = interval)
+                    loadTimer()
+                }
+        }
+    }
 
     /**
      * The printable HTML for the loaded project, or null while it is not loaded. Remembers
