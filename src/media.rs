@@ -4082,3 +4082,26 @@ mod admin_avatar_url_tests {
         assert!(upload.ends_with(".jpg"));
     }
 }
+
+#[cfg(test)]
+mod people_avatar_url_tests {
+    use super::people_avatar;
+
+    #[test]
+    fn people_avatar_urls_never_carry_an_email_hash() {
+        // The URL every signed-in user can see names the account id and a fixed
+        // word; the server fetches and caches the Gravatar image itself, so the
+        // email hash never reaches other users.
+        let gravatar = people_avatar(7, None, true, true).map(|(url, _)| url);
+        assert_eq!(
+            gravatar.as_deref(),
+            Some("/api/v2/people/7/avatar/gravatar")
+        );
+        assert!(people_avatar(7, None, false, true).is_none());
+        assert!(people_avatar(7, None, true, false).is_none());
+        let upload = people_avatar(7, Some("0123456789abcdef0123456789abcdef.png"), true, true)
+            .map(|(url, _)| url)
+            .expect("upload url");
+        assert!(upload.starts_with("/api/v2/people/7/avatar/thumb_"));
+    }
+}

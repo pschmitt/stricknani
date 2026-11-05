@@ -173,11 +173,41 @@ async function openShareDialog(page: Page): Promise<Locator> {
 
 async function pickPerson(dialog: Locator, name: string): Promise<void> {
   await dialog.getByLabel("Find people").fill(name);
-  const person = dialog
-    .getByRole("list", { name: "People", exact: true })
-    .getByRole("button", { name: new RegExp(name, "i") });
-  await person.click();
-  await expect(person).toHaveAttribute("aria-pressed", "true");
+  const list = dialog.getByRole("list", { name: "People", exact: true });
+  const person = list.getByRole("button", { name: new RegExp(name, "i") });
+  await person.first().waitFor();
+  // Right after typing, only matches are listed (no stale directory under the query).
+  const names = await list.getByRole("button").allTextContents();
+  check(
+    names.length > 0 &&
+      names.every((value) => value.toLowerCase().includes(name.toLowerCase())),
+    `the picker listed non-matches for "${name}": ${names.join(", ")}`,
+  );
+  await person.first().click();
+  // A chosen person replaces the list, with a way to change the choice.
+  await dialog.getByText("Selected person").waitFor();
+  check(
+    (await dialog
+      .getByRole("list", { name: "People", exact: true })
+      .count()) === 0,
+    "the list stayed under the chosen person",
+  );
+  await dialog.getByRole("button", { name: "Change" }).waitFor();
+}
+
+/** A recipient who cannot edit must find no way into an editor. */
+async function assertNoEditorEntry(page: Page, what: string): Promise<void> {
+  const editLinks = await page.locator('a[href*="/edit"]').count();
+  check(editLinks === 0, `${what} had ${editLinks} link(s) into an editor`);
+  check(
+    (await page.getByText("Add a note").count()) === 0,
+    `${what} offered Add a note`,
+  );
+  check(
+    (await page.getByRole("button", { name: /archive|recognize/i }).count()) ===
+      0,
+    `${what} offered an owner-only media action`,
+  );
 }
 
 async function shareWith(
@@ -379,6 +409,7 @@ export async function runSharingJourney(
       (await beaPage.getByRole("link", { name: "Edit project" }).count()) === 0,
       "a viewer saw Edit project",
     );
+    await assertNoEditorEntry(beaPage, "a project viewer");
     check(
       (await beaPage.getByTestId("share-control").count()) === 0,
       "a viewer saw Share",
@@ -415,6 +446,7 @@ export async function runSharingJourney(
       (await beaPage.getByRole("link", { name: "Edit yarn" }).count()) === 0,
       "a derived yarn offered Edit yarn",
     );
+    await assertNoEditorEntry(beaPage, "a derived yarn viewer");
     check(
       (await beaPage.getByTestId("share-control").count()) === 0,
       "a derived yarn offered Share",
@@ -603,6 +635,91 @@ export async function runSharingJourney(
       "the moved yarn did not leave an editor share",
     );
     await assertNoHorizontalOverflow(olgaPage, PHONE.width);
+
+    // Desktop width and German text on the phone-width dialogs.
+    mark("desktop and german");
+    const project3 = idOf(
+      dataOf(
+        await api(
+          olgaPage,
+          "POST",
+          "/api/v2/projects",
+          projectBody("Desktop Check", []),
+        ),
+        201,
+        "project 3",
+      ),
+      "project 3",
+    );
+    await olgaPage.setViewportSize({ width: 1280, height: 900 });
+    await olgaPage.goto(`${origin}/app/projects/${project3}`, {
+      waitUntil: "networkidle",
+    });
+    dialog = await openShareDialog(olgaPage);
+    await assertNoHorizontalOverflow(olgaPage, 1280);
+    await shoot(olgaPage, "share-dialog-desktop.png");
+    await dialog.getByRole("button", { name: "Done" }).click();
+    await olgaPage.setViewportSize(PHONE);
+
+    const germanContext = await browser.newContext({
+      storageState: await olgaContext.storageState(),
+      locale: "de-DE",
+      viewport: { width: 320, height: 640 },
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: "block",
+    });
+    const dePage = await phonePage(f, germanContext);
+    await germanContext.addCookies([
+      { name: "language", value: "de", url: origin },
+    ]);
+    await dePage.goto(`${origin}/app/projects/${project3}`, {
+      waitUntil: "networkidle",
+    });
+    await dePage.getByTestId("share-control").getByRole("button").click();
+    const deDialog = dePage.getByRole("dialog", { name: "Teilen" });
+    await deDialog.waitFor({ state: "visible" });
+    await deDialog
+      .getByRole("list", { name: /Personen mit Zugriff/ })
+      .waitFor();
+    await deDialog.getByLabel("Personen suchen").fill("bea");
+    await deDialog
+      .getByRole("list", { name: "Personen", exact: true })
+      .getByRole("button")
+      .first()
+      .click();
+    const dialogOverflow = async (label: string): Promise<void> => {
+      await waitTwoAnimationFrames(dePage);
+      const widths = await dePage.evaluate(
+        fn(`() => {
+          const open = document.querySelector("dialog[open]:last-of-type");
+          return {
+            dialog: open ? open.scrollWidth - open.clientWidth : -1,
+            page: document.documentElement.scrollWidth - window.innerWidth,
+          };
+        }`),
+      );
+      check(
+        widths.dialog <= 0 && widths.page <= 0,
+        `German ${label} overflowed: ${JSON.stringify(widths)}`,
+      );
+    };
+    await dialogOverflow("share dialog");
+    await shoot(dePage, "share-dialog-de-320.png");
+    await deDialog.getByRole("button", { name: "Besitz übertragen" }).click();
+    const deTransfer = dePage.getByRole("dialog", {
+      name: "Besitz übertragen",
+    });
+    await deTransfer.waitFor({ state: "visible" });
+    await deTransfer.getByLabel("Personen suchen").fill("carl");
+    await deTransfer
+      .getByRole("list", { name: "Personen", exact: true })
+      .getByRole("button")
+      .first()
+      .click();
+    await dialogOverflow("transfer dialog");
+    await shoot(dePage, "transfer-confirmation-de-320.png");
+    await germanContext.close();
 
     mark("done");
     await olgaContext.close();

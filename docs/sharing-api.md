@@ -137,6 +137,20 @@ Without `q` the whole directory is paged.
 `GET /people/{id}/avatar/{filename}` serves the thumbnail from a `Person`'s
 `avatar_url` to any signed-in user (404 for disabled or unknown accounts).
 
+### Editors and categories
+
+An editor's `PUT` may set `category`. The server resolves the name in the
+*owner's* categories (case-insensitive, created there when missing), so the
+project keeps one category of the owner. Clients show the field as free text
+without suggestions: the category list belongs to the caller's own account and
+there is no route to list the owner's.
+
+### OCR and link archives
+
+`POST /utils/ocr` and the archive routes are scoped to the caller's own items.
+Recipients and administrators get 404, so clients show those controls to the
+owner only.
+
 ## Writes by role
 
 | Route | viewer | editor | owner / admin |

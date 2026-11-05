@@ -362,7 +362,8 @@
     margin: 0.8rem 0 0;
     border-radius: var(--radius-xs);
     padding: 0.55rem 0.75rem;
-    background: var(--accent-wash);
+    border: 1px solid var(--line);
+    background: var(--surface-raised);
     font-size: 0.9rem;
     line-height: 1.4;
   }

@@ -120,6 +120,8 @@
   const textSizeClass = $derived(textSize.cssClass);
   const canEdit = $derived(mayEdit(project?.access));
   const canManage = $derived(mayManage(project?.access));
+  // OCR and link archiving are owner-scoped on the server: nobody else gets them.
+  const ownsIt = $derived(!project?.access || project.access.role === "owner");
   // Linked yarns the project's owner owns: the ones a transfer can move along.
   const movableYarnCount = $derived(
     project?.owner
@@ -982,7 +984,7 @@
           onopen={(item) => (selectedImageId = item.id)}
         >
           {#snippet tile(item)}
-            {#if !adminData}
+            {#if !adminData && ownsIt}
               <OcrControl
                 src={item.url}
                 label={t("Recognized text from project photo", locale)}
@@ -1180,7 +1182,7 @@
                 <div class="rich-text">{@html project.notes_html}</div>
               </div>
             </StickyNote>
-          {:else if !adminData}
+          {:else if !adminData && canEdit}
             <StickyNote
               title={t("Notes", locale)}
               headingId="notes-heading"
@@ -1295,7 +1297,7 @@
                                 onerror={handlePrintImageError}
                               />
                             </Button>
-                            {#if !adminData}
+                            {#if !adminData && ownsIt}
                               <OcrControl
                                 src={image.url}
                                 label={t(
@@ -1361,7 +1363,7 @@
               {t("Open archived copy", locale)} ↗
             </a>
           {/if}
-          {#if !adminData && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
+          {#if !adminData && ownsIt && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
             <ArchiveControl
               entity="projects"
               id={project.id}

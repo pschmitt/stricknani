@@ -93,6 +93,8 @@
   const textSizeClass = $derived(textSize.cssClass);
   const canEdit = $derived(mayEdit(yarn?.access));
   const canManage = $derived(mayManage(yarn?.access));
+  // OCR and link archiving are owner-scoped on the server: nobody else gets them.
+  const ownsIt = $derived(!yarn?.access || yarn.access.role === "owner");
 
   $effect(() => {
     const id = yarnId;
@@ -529,13 +531,15 @@
           onopen={(item) => (selectedPhotoId = item.id)}
         >
           {#snippet tile(item)}
-            <OcrControl
-              src={item.url}
-              label={t("Recognized text from yarn photo", locale)}
-              ownerId={userId}
-              {locale}
-              enabled={canUseOcr}
-            />
+            {#if ownsIt}
+              <OcrControl
+                src={item.url}
+                label={t("Recognized text from yarn photo", locale)}
+                ownerId={userId}
+                {locale}
+                enabled={canUseOcr}
+              />
+            {/if}
           {/snippet}
         </PhotoStrip>
       </div>
@@ -568,7 +572,7 @@
           >
             <div class="rich-text {textSizeClass}">{@html yarn.notes_html}</div>
           </StickyNote>
-        {:else}
+        {:else if canEdit}
           <StickyNote
             title={t("Notes", locale)}
             headingId="yarn-notes-heading"
@@ -679,7 +683,7 @@
             rel="noopener noreferrer">{t("Archived source", locale)}</a
           >
         {/if}
-        {#if safeExternalHref(yarn.link) && (canArchive || canReadArchiveState)}
+        {#if ownsIt && safeExternalHref(yarn.link) && (canArchive || canReadArchiveState)}
           <ArchiveControl
             entity="yarns"
             id={yarn.id}

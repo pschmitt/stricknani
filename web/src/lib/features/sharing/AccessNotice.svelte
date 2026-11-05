@@ -139,10 +139,10 @@
     min-width: 0;
     align-items: center;
     gap: 0.65rem;
-    border: 1px solid color-mix(in srgb, var(--accent-strong) 35%, var(--line));
+    border: 1px solid var(--line);
     border-radius: var(--radius-sm, 12px);
     padding: 0.4rem 0.6rem;
-    background: var(--accent-wash);
+    background: var(--surface-raised);
   }
 
   .access-notice :global(.user-avatar) {

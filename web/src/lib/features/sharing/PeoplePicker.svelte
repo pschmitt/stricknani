@@ -2,9 +2,9 @@
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
+  import { visiblePeople } from "./people-filter.ts";
   import {
     SEARCH_QUERY_LIMIT,
     searchPeople,
@@ -37,10 +37,7 @@
   let controller: AbortController | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
-  const excluded = $derived(new Set(excludeIds));
-  const visible = $derived(
-    results.filter((person) => !excluded.has(person.id)),
-  );
+  const visible = $derived(visiblePeople(results, excludeIds, query));
 
   async function load(reset: boolean) {
     const current = ++generation;
@@ -82,75 +79,85 @@
   });
 </script>
 
-<div class="people-picker">
-  <label for={inputId}>{t("Find people", locale)}</label>
-  <input
-    id={inputId}
-    type="search"
-    value={query}
-    maxlength={SEARCH_QUERY_LIMIT}
-    autocomplete="off"
-    placeholder={t("Search by name", locale)}
-    oninput={(event) => {
-      query = event.currentTarget.value;
-      schedule();
-    }}
-  />
-  {#if error}
-    <p class="people-picker__error" role="alert">
-      {error}
-      <button
-        type="button"
-        class="people-picker__retry"
-        onclick={() => void load(true)}>{t("Try again", locale)}</button
-      >
-    </p>
-  {/if}
-  {#if visible.length}
-    <ul class="people-picker__list" aria-label={t("People", locale)}>
-      {#each visible as person (person.id)}
-        {@const active = selected?.id === person.id}
-        <li>
-          <button
-            type="button"
-            class="people-picker__person"
-            class:is-selected={active}
-            aria-pressed={active}
-            onclick={() => onselect(active ? null : person)}
-          >
-            <UserAvatar avatarUrl={person.avatar_url} name={person.name} />
-            <span class="people-picker__name">{person.name}</span>
-            {#if active}
-              <span class="people-picker__check" aria-hidden="true"
-                ><NavIcon name="check" /></span
-              >
-            {/if}
-          </button>
-        </li>
-      {/each}
-    </ul>
-    {#if hasMore}
+{#if selected}
+  <div class="people-picker">
+    <span class="people-picker__label">{t("Selected person", locale)}</span>
+    <div class="people-picker__selected">
+      <UserAvatar avatarUrl={selected.avatar_url} name={selected.name} />
+      <span class="people-picker__name">{selected.name}</span>
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        disabled={loading}
-        onclick={() => void load(false)}
+        onclick={() => onselect(null)}
       >
-        {t("Show more", locale)}
+        {t("Change", locale)}
       </Button>
+    </div>
+  </div>
+{:else}
+  <div class="people-picker">
+    <label for={inputId}>{t("Find people", locale)}</label>
+    <input
+      id={inputId}
+      type="search"
+      value={query}
+      maxlength={SEARCH_QUERY_LIMIT}
+      autocomplete="off"
+      placeholder={t("Search by name", locale)}
+      oninput={(event) => {
+        query = event.currentTarget.value;
+        schedule();
+      }}
+    />
+    {#if error}
+      <p class="people-picker__error" role="alert">
+        {error}
+        <button
+          type="button"
+          class="people-picker__retry"
+          onclick={() => void load(true)}>{t("Try again", locale)}</button
+        >
+      </p>
     {/if}
-  {:else if !loading && !error}
-    <p class="people-picker__empty" role="status">
-      {query.trim()
-        ? t("No one matches that search.", locale)
-        : t("There is no one else to share with yet.", locale)}
-    </p>
-  {/if}
-  {#if loading && !visible.length}
-    <p class="people-picker__empty" role="status">{t("Loading…", locale)}</p>
-  {/if}
-</div>
+    {#if visible.length}
+      <ul class="people-picker__list" aria-label={t("People", locale)}>
+        {#each visible as person (person.id)}
+          <li>
+            <button
+              type="button"
+              class="people-picker__person"
+              onclick={() => onselect(person)}
+            >
+              <UserAvatar avatarUrl={person.avatar_url} name={person.name} />
+              <span class="people-picker__name">{person.name}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+      {#if hasMore}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={loading}
+          onclick={() => void load(false)}
+        >
+          {t("Show more", locale)}
+        </Button>
+      {/if}
+    {:else if !loading && !error}
+      <p class="people-picker__empty" role="status">
+        {query.trim()
+          ? t("No one matches that search.", locale)
+          : t("There is no one else to share with yet.", locale)}
+      </p>
+    {/if}
+    {#if loading && !visible.length}
+      <p class="people-picker__empty" role="status">{t("Loading…", locale)}</p>
+    {/if}
+  </div>
+{/if}
 
 <style>
   .people-picker {
@@ -159,8 +166,21 @@
     gap: 0.5rem;
   }
 
-  .people-picker label {
+  .people-picker label,
+  .people-picker__label {
     font-weight: 600;
+  }
+
+  .people-picker__selected {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.7rem;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent-strong);
+    border-radius: var(--radius-xs);
+    padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+    background: var(--surface-raised);
   }
 
   .people-picker input {
@@ -200,11 +220,6 @@
     background: var(--surface-raised);
   }
 
-  .people-picker__person.is-selected {
-    background: var(--accent-wash);
-    box-shadow: inset 3px 0 0 var(--accent-strong);
-  }
-
   .people-picker__person:focus-visible {
     outline: 2px solid var(--accent-strong);
     outline-offset: -2px;
@@ -214,16 +229,6 @@
     min-width: 0;
     flex: 1;
     overflow-wrap: anywhere;
-  }
-
-  .people-picker__check {
-    display: inline-flex;
-    color: var(--accent-strong);
-  }
-
-  .people-picker__check :global(svg) {
-    width: 1.2rem;
-    height: 1.2rem;
   }
 
   .people-picker__empty,
