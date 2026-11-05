@@ -24,9 +24,12 @@ import blue.anika.wolle.data.api.v2.CategoriesV2Api
 import blue.anika.wolle.data.api.v2.ImportsV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.api.v2.SharingV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
+import blue.anika.wolle.data.media.CoilMediaCacheEvictor
+import blue.anika.wolle.data.media.MediaCacheEvictor
 import blue.anika.wolle.data.repository.ApiProjectImporter
 import blue.anika.wolle.data.repository.ApiYarnImporter
 import blue.anika.wolle.data.repository.ProjectImporter
@@ -243,6 +246,15 @@ object NetworkModule {
     @Singleton
     fun provideProjectsV2Api(retrofit: Retrofit): ProjectsV2Api =
         retrofit.create(ProjectsV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMediaCacheEvictor(impl: CoilMediaCacheEvictor): MediaCacheEvictor = impl
+
+    @Provides
+    @Singleton
+    fun provideSharingV2Api(retrofit: Retrofit): SharingV2Api =
+        retrofit.create(SharingV2Api::class.java)
 
     @Provides
     @Singleton

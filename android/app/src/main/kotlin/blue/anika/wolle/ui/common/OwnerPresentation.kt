@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.common
 import androidx.compose.runtime.staticCompositionLocalOf
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.repository.ItemAccess
 
 /*
  * Admin scope: an administrator also sees (and may edit) other people's projects and yarns. The
@@ -48,6 +49,28 @@ fun YarnEntity.ownerBadge(currentUserId: Long?): OwnerBadgeData? =
 fun ownerBannerOf(badge: OwnerBadgeData?, kind: OwnedKind): OwnerBannerData? = badge?.let {
     OwnerBannerData(it.name, kind)
 }
+
+/**
+ * What the banner under the top bar of a project or yarn says (sharing and admin scope), most
+ * specific first: a yarn read only through a shared project; an item somebody shared with the user
+ * ("Shared by Anna · Can view"); an administrator's view of someone else's item; nothing for the
+ * user's own items.
+ */
+sealed interface ItemBanner {
+    data object Derived : ItemBanner
+
+    data class SharedBy(val owner: OwnerBadgeData, val role: String) : ItemBanner
+
+    data class Owned(val banner: OwnerBannerData) : ItemBanner
+}
+
+fun itemBannerOf(badge: OwnerBadgeData?, access: ItemAccess, kind: OwnedKind): ItemBanner? =
+    when {
+        access.derived -> ItemBanner.Derived
+        access.isShared && badge != null -> ItemBanner.SharedBy(badge, access.role)
+        badge != null -> ItemBanner.Owned(OwnerBannerData(badge.name, kind))
+        else -> null
+    }
 
 /**
  * The yarns [ownerId] owns. A null [ownerId] means the signed-in user (a new project, or an old row

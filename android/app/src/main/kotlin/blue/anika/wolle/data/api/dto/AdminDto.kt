@@ -102,7 +102,17 @@ data class AuditEventDto(
     val resource: AuditResourceDto = AuditResourceDto(),
     @SerialName("has_changes") val hasChanges: Boolean = false,
     val media: AuditMediaDto? = null,
+    /** The other account of a sharing event; absent on every other event (never an email). */
+    val subject: AuditSubjectDto? = null,
 )
+
+/**
+ * `subject` of `shared`, `share_role_changed`, `share_revoked`, `share_left` and
+ * `ownership_transferred` events: [id] and [name] are null once that account was deleted, [role] is
+ * the share role and absent for transfers.
+ */
+@Serializable
+data class AuditSubjectDto(val id: Long? = null, val name: String? = null, val role: String? = null)
 
 @Serializable data class AuditPageDto(val data: List<AuditEventDto>, val meta: AdminPageMetaDto)
 

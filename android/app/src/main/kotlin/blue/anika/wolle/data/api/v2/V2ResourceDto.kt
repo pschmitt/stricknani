@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.api.v2
 
+import blue.anika.wolle.data.api.dto.AccessDto
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.OwnerDto
@@ -53,6 +54,7 @@ data class ProjectV2Dto(
     val images: List<ImageDto> = emptyList(),
     val attachments: List<AttachmentDto> = emptyList(),
     val owner: OwnerDto? = null,
+    val access: AccessDto? = null,
 )
 
 /** `YarnDto` in `api_v2/yarns.rs`. */
@@ -81,6 +83,7 @@ data class YarnV2Dto(
     @SerialName("project_ids") val projectIds: List<Int> = emptyList(),
     val photos: List<YarnPhotoDto> = emptyList(),
     val owner: OwnerDto? = null,
+    val access: AccessDto? = null,
 )
 
 /** Body of the three media-order routes: the complete desired order, no version or If-Match. */

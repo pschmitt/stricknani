@@ -94,11 +94,15 @@ constructor(
                     anyFailure = true
                     break
                 }
-                // An administrator's queued edit of someone else's item, replayed after the role
-                // was withdrawn: resolved as a conflict like any other rejected write, so it does
-                // not block the queue behind it. The cached copy goes with the next sync.
+                // A queued edit of somebody else's item, replayed after the role was lowered or
+                // withdrawn (an editor became a viewer, an administrator lost the role): resolved
+                // as a visible conflict like any other rejected write, so it neither blocks the
+                // queue nor is retried. The draft stays in the conflict record; the cache adopts
+                // the server's copy (or drops the row when access ended entirely). Nothing is
+                // re-shared or re-linked on the user's behalf.
                 Timber.i("Replay of mutation ${mutation.id} refused (403)")
                 pendingMutationDao.markConflict(mutation.id, NOT_ALLOWED_MESSAGE)
+                adoptServerCopy(mutation)
             } catch (failure: Exception) {
                 Timber.w(
                     failure,
@@ -114,6 +118,14 @@ constructor(
             }
         }
         return if (anyFailure) Result.retry() else Result.success()
+    }
+
+    private suspend fun adoptServerCopy(mutation: PendingMutationEntity) {
+        if (mutation.localId <= 0) return
+        when (mutation.entityType) {
+            MutationEntityType.PROJECT -> projectRepository.adoptServerCopy(mutation.localId)
+            MutationEntityType.YARN -> yarnRepository.adoptServerCopy(mutation.localId)
+        }
     }
 
     private suspend fun handleReplayFailure(mutation: PendingMutationEntity, failure: Exception) {
@@ -147,7 +159,7 @@ constructor(
                         404 -> {
                             projectRepository.dropDeletedProject(mutation.localId)
                             throw ConflictException(
-                                "This project was deleted on another device - your change wasn't applied."
+                                "This project is gone or no longer shared with you - your change wasn't applied."
                             )
                         }
                         409 -> {
@@ -212,7 +224,7 @@ constructor(
                         404 -> {
                             yarnRepository.dropDeletedYarn(mutation.localId)
                             throw ConflictException(
-                                "This yarn was deleted on another device - your change wasn't applied."
+                                "This yarn is gone or no longer shared with you - your change wasn't applied."
                             )
                         }
                         409 -> {
@@ -247,7 +259,7 @@ constructor(
 }
 
 private const val NOT_ALLOWED_MESSAGE =
-    "You are no longer allowed to change this item - your change was discarded."
+    "Your access to this item changed - your change was not saved. Your draft is kept here."
 
 private fun HttpException.errorBodyText(): String = response()?.errorBody()?.string().orEmpty()
 

@@ -44,6 +44,7 @@ fun ProjectV2Dto.toV1(): ProjectDto =
         images = images,
         attachments = attachments,
         owner = owner,
+        access = access,
     )
 
 fun YarnV2Dto.toV1(): YarnDto =
@@ -69,6 +70,7 @@ fun YarnV2Dto.toV1(): YarnDto =
         projectIds = projectIds,
         photos = photos,
         owner = owner,
+        access = access,
     )
 
 /** `{data, meta}` -> v1's flat `{items, page, per_page, has_more}`. */

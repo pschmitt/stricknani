@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -12,6 +13,8 @@ import blue.anika.wolle.data.repository.HistoryKind
 import blue.anika.wolle.data.repository.HistoryRepository
 import blue.anika.wolle.data.repository.ItemLoad
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.SharedKind
+import blue.anika.wolle.data.repository.SharingRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
@@ -25,6 +28,7 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.errorKindForStatus
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
+import blue.anika.wolle.ui.common.yarnsOwnedBy
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.print.PrintContent
@@ -32,6 +36,7 @@ import blue.anika.wolle.ui.print.PrintImageLoader
 import blue.anika.wolle.ui.print.PrintOptions
 import blue.anika.wolle.ui.projects.print.PrintLabels
 import blue.anika.wolle.ui.projects.print.ProjectPrintDocument
+import blue.anika.wolle.ui.sharing.SharingController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -41,6 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -77,6 +83,8 @@ constructor(
     private val printImageLoader: PrintImageLoader,
     private val appPreferences: AppPreferencesRepository,
     historyRepository: HistoryRepository,
+    sharingRepository: SharingRepository,
+    capabilities: ApiCapabilities,
 ) : ViewModel() {
 
     val projectId = savedStateHandle.toRoute<Route.ProjectDetail>().projectId
@@ -87,6 +95,53 @@ constructor(
     /** The "Recent changes" section's state; online-only and loaded when it scrolls into view. */
     val history =
         HistoryController(viewModelScope, HistoryKind.Project, projectId, historyRepository)
+
+    /**
+     * Share sheet, Transfer and Leave (online only). Leaving closes the screen like a delete does,
+     * since the project is gone for this user.
+     */
+    val sharing =
+        SharingController(
+            scope = viewModelScope,
+            kind = SharedKind.Project,
+            id = projectId,
+            repository = sharingRepository,
+            onLeft = {
+                mutationFeedback.show(R.string.sharing_left)
+                _deleted.value = true
+            },
+        )
+
+    init {
+        viewModelScope.launch {
+            sharing.transferred.filterNotNull().collect { person ->
+                mutationFeedback.show(R.string.sharing_transferred, person.name)
+                sharing.consumeTransferred()
+            }
+        }
+    }
+
+    private val currentUserId: Flow<Long?> =
+        capabilities.state.map { it.user?.id }.distinctUntilChanged()
+
+    /**
+     * How many of this project's linked yarns its owner owns: the transfer dialog offers to move
+     * exactly those (yarns of anyone else stay where they are).
+     */
+    val ownedLinkedYarnCount: StateFlow<Int> =
+        combine(
+                yarnRepository.observeAllIncludingForeign(),
+                projectRepository.observeById(projectId).distinctUntilChanged(),
+                currentUserId,
+            ) { yarns, project, me ->
+                if (project == null) 0
+                else {
+                    val linked = projectRepository.decodeDetail(project).yarnIds.toSet()
+                    yarnsOwnedBy(yarns.filter { it.id in linked }, project.ownerId, me).size
+                }
+            }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
 
     val cardOrder = detailCardOrderRepository.projectOrder
 

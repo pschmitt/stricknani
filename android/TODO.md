@@ -41,6 +41,49 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-93: Sharing and ownership transfer of projects and yarns
+
+**Status:** code complete; unit tests, debug and release builds, lint and androidTest compile passed on a build worker, not verified on a device or against a deployed server (2026-11-05)
+
+Client for `docs/sharing-api.md` (T-122, frozen contract). The web counterpart is built in parallel
+from the same spec (same flow, order and wording). The server routes are not deployed yet.
+
+- [x] Room 4 -> 5 (`MIGRATION_4_5`, schema 5): `accessRole`, `accessDerived`, `canEdit`,
+      `canManage` on projects and yarns, reusing the owner columns of SNA-89. Existing rows read as
+      the user's own; `AppDatabaseMigrationTest` covers 4 -> 5 and the 3 -> 5 chain.
+- [x] Sync: `access` on every DTO; `deleted_ids` are applied before `updated`, so an item that left
+      and came back ends up present; shared and derived rows arrive even when older than the cursor;
+      a tombstone removes the row and its cached media (`MediaCacheEvictor`, Coil disk and memory
+      cache) and nothing else. A member keeps shared/derived rows; only administrator-only leftovers
+      are purged. Mine view of an administrator keeps shared items.
+- [x] Queued writes: a 403 on replay (role lowered or withdrawn) is a visible conflict, the draft
+      stays in the conflict record, the cache adopts the server copy (404 drops the row). Nothing is
+      re-shared or re-linked.
+- [x] Detail screens: "Share" row with avatars for owner/admin (`can_manage`), one Share sheet
+      (owner, people with role choice and remove, searchable people picker, role default "Can
+      view"), linked-yarns note for projects, quiet "Transfer ownership" with its own confirmation
+      ("Transfer to Anna", optional "Also move N linked yarns"), "Shared by Anna · Can view"
+      banner, Leave with confirmation, derived yarns "Visible through a shared project" without
+      Leave. Viewers get no edit, media or delete controls; editors no Share/Transfer/Delete.
+- [x] Sharing needs the network: offline the sheet and dialog are disabled with an explanation.
+- [x] Editors pick yarns from the owner's yarns (`GET /projects/{id}/yarn-candidates`).
+- [x] EN/DE strings (Share/Teilen, Can view/Kann ansehen, ...). The old link-share menu item is
+      now "Share link" / "Link teilen".
+- [x] Backups: the app's backup contains settings and credentials only, no project or yarn data, so
+      nothing shared is exported. A data backup is a separate decision (see hand-off).
+- [x] History events `shared`, `share_role_changed`, `share_revoked`, `share_left` and
+      `ownership_transferred` name the person and role (`subject`), a deleted account reads "a
+      deleted account".
+- [x] Review fixes: read-only detail screens audited (no note invitation, edit, section menu, media
+      or delete for viewers and derived yarns; editors lose Share/Transfer/Delete), editors close
+      themselves for a reader; people picker collapses to the chosen person with Change and shows
+      only matches (request generation guards stale answers); notes and banners use a neutral
+      surface. `SharingSheetTest` (instrumented) compiles; it was not run.
+- [ ] On-device verification against a server with the sharing routes.
+
+Verification: ktfmt, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:assembleRelease`,
+`:app:lintDebug`, `:app:compileDebugAndroidTestKotlin` on a build worker (results in the commit).
+
 ## SNA-92: Home Create card replaces the yarn stash card
 
 **Status:** done (2026-11-05)

@@ -24,7 +24,7 @@ import blue.anika.wolle.data.db.entity.YarnEntity
             SyncStateEntity::class,
             PendingMutationEntity::class,
         ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -57,5 +57,28 @@ internal val MIGRATION_3_4_STATEMENTS: List<String> =
             "ALTER TABLE `$table` ADD COLUMN `ownerId` INTEGER",
             "ALTER TABLE `$table` ADD COLUMN `ownerName` TEXT",
             "ALTER TABLE `$table` ADD COLUMN `ownerAvatarUrl` TEXT",
+        )
+    }
+
+/**
+ * 4 -> 5 (sharing): projects and yarns remember the caller's access (`access.role`, `derived`,
+ * `can_edit`, `can_manage`). Existing rows keep NULL / 0, which means "the signed-in user's own" -
+ * exactly what they were before - so no cached item, cursor or queued write changes. Owner columns
+ * (added in 3 -> 4) are reused for the owner of a shared item.
+ */
+val MIGRATION_4_5: Migration =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_4_5_STATEMENTS.forEach(db::execSQL)
+        }
+    }
+
+internal val MIGRATION_4_5_STATEMENTS: List<String> =
+    listOf("projects", "yarns").flatMap { table ->
+        listOf(
+            "ALTER TABLE `$table` ADD COLUMN `accessRole` TEXT",
+            "ALTER TABLE `$table` ADD COLUMN `accessDerived` INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE `$table` ADD COLUMN `canEdit` INTEGER",
+            "ALTER TABLE `$table` ADD COLUMN `canManage` INTEGER",
         )
     }

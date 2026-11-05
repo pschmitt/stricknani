@@ -29,3 +29,37 @@ class MigrationStatementsTest {
         assertEquals(4, MIGRATION_3_4.endVersion)
     }
 }
+
+/** The 4 -> 5 migration (sharing) only adds columns whose defaults mean "the user's own". */
+class MigrationStatements45Test {
+    @Test
+    fun `adds role, derived and the two capability flags to projects and yarns, nothing else`() {
+        assertEquals(8, MIGRATION_4_5_STATEMENTS.size)
+        assertTrue(MIGRATION_4_5_STATEMENTS.all { it.startsWith("ALTER TABLE ") })
+        for (table in listOf("projects", "yarns")) {
+            for (column in listOf("accessRole", "accessDerived", "canEdit", "canManage")) {
+                assertTrue(
+                    "$table.$column",
+                    MIGRATION_4_5_STATEMENTS.any {
+                        it.contains("`$table`") && it.contains("ADD COLUMN `$column`")
+                    },
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `existing rows read as the user's own, so nothing cached or queued changes`() {
+        val derived = MIGRATION_4_5_STATEMENTS.filter { it.contains("`accessDerived`") }
+        assertTrue(derived.all { it.contains("NOT NULL DEFAULT 0") })
+        val others = MIGRATION_4_5_STATEMENTS.filterNot { it.contains("`accessDerived`") }
+        assertTrue(others.none { it.contains("NOT NULL") })
+        assertTrue(MIGRATION_4_5_STATEMENTS.none { it.contains("DROP") || it.contains("DELETE") })
+    }
+
+    @Test
+    fun `the migration is 4 to 5`() {
+        assertEquals(4, MIGRATION_4_5.startVersion)
+        assertEquals(5, MIGRATION_4_5.endVersion)
+    }
+}

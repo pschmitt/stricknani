@@ -56,6 +56,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.data.repository.ItemAccess
+import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.ProjectDetailCard
@@ -68,12 +70,12 @@ import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
+import blue.anika.wolle.ui.common.ItemBannerView
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
-import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
@@ -85,9 +87,9 @@ import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
+import blue.anika.wolle.ui.common.itemBannerOf
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.ownerBadge
-import blue.anika.wolle.ui.common.ownerBannerOf
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.rememberRefreshFailure
 import blue.anika.wolle.ui.common.shareUrl
@@ -96,6 +98,9 @@ import blue.anika.wolle.ui.history.HistoryPhase
 import blue.anika.wolle.ui.history.HistorySection
 import blue.anika.wolle.ui.print.PrintDialog
 import blue.anika.wolle.ui.projects.print.PrintLabels
+import blue.anika.wolle.ui.sharing.ShareRow
+import blue.anika.wolle.ui.sharing.SharingDialogHost
+import blue.anika.wolle.ui.sharing.rememberSharingDialogs
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
@@ -157,10 +162,20 @@ fun ProjectDetailScreen(
 
     val state = uiState
     val ownerContext = LocalOwnerContext.current
+    val access = (state as? ProjectDetailUiState.Loaded)?.entity?.access() ?: ItemAccess.Own
     val banner =
         (state as? ProjectDetailUiState.Loaded)?.let {
-            ownerBannerOf(it.entity.ownerBadge(ownerContext.currentUserId), OwnedKind.Project)
+            itemBannerOf(
+                it.entity.ownerBadge(ownerContext.currentUserId),
+                access,
+                OwnedKind.Project,
+            )
         }
+    val sharingDialogs = rememberSharingDialogs()
+    val sharingState by viewModel.sharing.state.collectAsStateWithLifecycle()
+    LaunchedEffect(access.canManage, state is ProjectDetailUiState.Loaded) {
+        if (access.canManage && state is ProjectDetailUiState.Loaded) viewModel.sharing.preload()
+    }
     val refreshFailure = rememberRefreshFailure(refreshState)
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
@@ -187,11 +202,13 @@ fun ProjectDetailScreen(
                                 isFavorite = state.entity.isFavorite,
                                 onClick = viewModel::toggleFavorite,
                             )
-                            IconButton(onClick = { onEditClick(state.entity.id) }) {
-                                Icon(
-                                    Icons.Filled.Edit,
-                                    contentDescription = stringResource(R.string.common_edit),
-                                )
+                            if (access.canEdit) {
+                                IconButton(onClick = { onEditClick(state.entity.id) }) {
+                                    Icon(
+                                        Icons.Filled.Edit,
+                                        contentDescription = stringResource(R.string.common_edit),
+                                    )
+                                }
                             }
                             IconButton(onClick = { menuExpanded = true }) {
                                 Icon(
@@ -222,7 +239,7 @@ fun ProjectDetailScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.common_share)) },
+                                    text = { Text(stringResource(R.string.common_share_link)) },
                                     leadingIcon = {
                                         Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
                                     },
@@ -231,28 +248,52 @@ fun ProjectDetailScreen(
                                         viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
                                     },
                                 )
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            stringResource(R.string.common_delete),
-                                            color = MaterialTheme.colorScheme.error,
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        DestructiveDeleteIcon(contentDescription = null)
-                                    },
-                                    onClick = {
-                                        menuExpanded = false
-                                        showDeleteDialog = true
-                                    },
-                                )
+                                if (access.canLeave || access.canManage) HorizontalDivider()
+                                if (access.canLeave) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.sharing_leave)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                PhosphorIcons.UsersThree,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            sharingDialogs.leave = true
+                                        },
+                                    )
+                                }
+                                if (access.canManage) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(R.string.common_delete),
+                                                color = MaterialTheme.colorScheme.error,
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            DestructiveDeleteIcon(contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            showDeleteDialog = true
+                                        },
+                                    )
+                                }
                             }
                         }
                     },
                 )
                 banner?.let {
-                    OwnerBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    ItemBannerView(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                }
+                if (access.canManage && state is ProjectDetailUiState.Loaded) {
+                    ShareRow(
+                        state = sharingState,
+                        onClick = { sharingDialogs.sheet = true },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
                 }
             }
         },
@@ -303,11 +344,24 @@ fun ProjectDetailScreen(
                             onYarnClick = onYarnClick,
                             onDeleteAttachment = { attachmentToDelete = it },
                             onEditSection = { focus -> onEditSection(state.entity.id, focus) },
+                            canEdit = access.canEdit,
                             history = viewModel.history,
                         )
                     }
             }
         }
+    }
+
+    if (state is ProjectDetailUiState.Loaded) {
+        val ownedLinkedYarnCount by viewModel.ownedLinkedYarnCount.collectAsStateWithLifecycle()
+        SharingDialogHost(
+            dialogs = sharingDialogs,
+            controller = viewModel.sharing,
+            isProject = true,
+            itemName = state.entity.name,
+            linkedYarnCount = state.detail.yarnIds.distinct().size,
+            ownedLinkedYarnCount = ownedLinkedYarnCount,
+        )
     }
 
     if (showPrintDialog && state is ProjectDetailUiState.Loaded) {
@@ -368,9 +422,12 @@ private fun ProjectDetailContent(
     onYarnClick: (Int) -> Unit,
     onDeleteAttachment: (AttachmentDto) -> Unit,
     onEditSection: (focus: String) -> Unit,
+    canEdit: Boolean,
     history: HistoryController,
     modifier: Modifier = Modifier,
 ) {
+    // A viewer (or a derived yarn) reads only: no Edit action, no section menu entry.
+    val edit: ((String) -> Unit)? = if (canEdit) onEditSection else null
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     val historyState by history.state.collectAsStateWithLifecycle()
     val viewerImages =
@@ -449,7 +506,7 @@ private fun ProjectDetailContent(
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_attachments_title),
                             icon = PhosphorIcons.Paperclip,
-                            onEdit = { onEditSection(ProjectEditorFocus.ATTACHMENTS) },
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.ATTACHMENTS) } },
                             copyText =
                                 detail.attachments.joinToString("\n") { it.originalFilename },
                             cardKey = cardKey,
@@ -468,14 +525,16 @@ private fun ProjectDetailContent(
                                         style = MaterialTheme.typography.bodyLarge,
                                         modifier = Modifier.weight(1f),
                                     )
-                                    IconButton(onClick = { onDeleteAttachment(attachment) }) {
-                                        DestructiveDeleteIcon(
-                                            contentDescription =
-                                                stringResource(
-                                                    R.string
-                                                        .project_detail_delete_attachment_description
-                                                )
-                                        )
+                                    if (canEdit) {
+                                        IconButton(onClick = { onDeleteAttachment(attachment) }) {
+                                            DestructiveDeleteIcon(
+                                                contentDescription =
+                                                    stringResource(
+                                                        R.string
+                                                            .project_detail_delete_attachment_description
+                                                    )
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -484,7 +543,7 @@ private fun ProjectDetailContent(
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_details_title),
                             icon = PhosphorIcons.Info,
-                            onEdit = { onEditSection(ProjectEditorFocus.DETAILS) },
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.DETAILS) } },
                             copyText =
                                 copyLines(
                                     stringResource(R.string.common_field_category) to
@@ -532,7 +591,7 @@ private fun ProjectDetailContent(
                         ReorderableDetailCard(
                             title = stringResource(R.string.common_field_stitch_sample),
                             icon = PhosphorIcons.Ruler,
-                            onEdit = { onEditSection(ProjectEditorFocus.STITCH_SAMPLE) },
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.STITCH_SAMPLE) } },
                             copyText = detail.stitchSample,
                             cardKey = cardKey,
                             cardIndex = cardIndex,
@@ -576,7 +635,7 @@ private fun ProjectDetailContent(
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_linked_yarns_title),
                             icon = MdiIcons.YarnBall,
-                            onEdit = { onEditSection(ProjectEditorFocus.LINKED_YARNS) },
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.LINKED_YARNS) } },
                             copyText = linkedYarns.joinToString("\n") { it.name },
                             cardKey = cardKey,
                             cardIndex = cardIndex,
@@ -600,7 +659,7 @@ private fun ProjectDetailContent(
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_description_title),
                             icon = PhosphorIcons.NotePencil,
-                            onEdit = { onEditSection(ProjectEditorFocus.DESCRIPTION) },
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.DESCRIPTION) } },
                             copyText = detail.description,
                             cardKey = cardKey,
                             cardIndex = cardIndex,
@@ -640,7 +699,8 @@ private fun ProjectDetailContent(
                                     copyText =
                                         listOfNotNull(stepHeading, step.description)
                                             .joinToString("\n\n"),
-                                    onEdit = { onEditSection(ProjectEditorFocus.step(step.id)) },
+                                    onEdit =
+                                        edit?.let { e -> { e(ProjectEditorFocus.step(step.id)) } },
                                 ) {
                                     Text(
                                         "${step.stepNumber}. ${step.title}",
@@ -659,7 +719,7 @@ private fun ProjectDetailContent(
                         }
                 }
             }
-            if (detail.notes == null) {
+            if (detail.notes == null && canEdit) {
                 item(key = "notes-empty") {
                     StickyNoteEmpty(
                         label = stringResource(R.string.notes_add_empty),

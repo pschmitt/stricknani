@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -33,4 +34,16 @@ data class ProjectEntity(
     val ownerId: Long? = null,
     val ownerName: String? = null,
     val ownerAvatarUrl: String? = null,
+    /**
+     * Sharing: the caller's access as the server reported it (`access.role`). Null = the signed-in
+     * user's own item (and rows from before sharing). Shared rows carry `viewer`/`editor`; an
+     * administrator's view of someone else's item carries `admin`.
+     */
+    val accessRole: String? = null,
+    /** True for a yarn read only through a shared project. */
+    @ColumnInfo(defaultValue = "0") val accessDerived: Boolean = false,
+    /** `access.can_edit`; null = not reported (treated as the owner's full access). */
+    val canEdit: Boolean? = null,
+    /** `access.can_manage`: may share, transfer and delete; null = not reported. */
+    val canManage: Boolean? = null,
 )

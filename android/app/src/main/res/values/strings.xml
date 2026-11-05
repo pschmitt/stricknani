@@ -1190,4 +1190,57 @@
     <string name="share_import_yarn">Yarn</string>
     <string name="share_import_unavailable_title">Link import is off</string>
     <string name="share_no_link">No link found</string>
+    <!-- Sharing and ownership transfer (SNA-93) -->
+    <string name="common_share_link">Share link</string>
+    <string name="sharing_share">Share</string>
+    <string name="sharing_owner">Owner</string>
+    <string name="sharing_role_viewer">Can view</string>
+    <string name="sharing_role_editor">Can edit</string>
+    <string name="sharing_remove">Remove</string>
+    <string name="sharing_leave">Leave</string>
+    <string name="sharing_transfer">Transfer ownership</string>
+    <string name="sharing_shared_by">Shared by %1$s</string>
+    <string name="sharing_shared_by_role">Shared by %1$s · %2$s</string>
+    <string name="sharing_derived_banner">Visible through a shared project</string>
+    <string name="sharing_avatars_description">Shared with %1$s</string>
+    <string name="sharing_share_with">Share with</string>
+    <string name="sharing_people_search">Search people</string>
+    <string name="sharing_people_none">No people found</string>
+    <string name="sharing_nobody_yet">Not shared with anyone yet</string>
+    <string name="sharing_role_label">Role for new people</string>
+    <string name="sharing_role_of">Role of %1$s</string>
+    <string name="sharing_remove_description">Remove %1$s</string>
+    <string name="sharing_offline">Sharing needs a connection. Connect to the internet to share, change or remove access.</string>
+    <string name="sharing_load_failed">The people could not be loaded.</string>
+    <string name="sharing_error_forbidden">You are not allowed to do that.</string>
+    <string name="sharing_error_not_found">This is no longer available to you.</string>
+    <string name="sharing_error_conflict">It is already shared, or it changed owner meanwhile. Reload and try again.</string>
+    <string name="sharing_error_invalid">That person cannot be added.</string>
+    <string name="sharing_error_other">Something went wrong. Try again.</string>
+    <plurals name="sharing_linked_yarns_note">
+        <item quantity="one">People you share this with can also see its linked yarn, read-only.</item>
+        <item quantity="other">People you share this with can also see its %1$d linked yarns, read-only.</item>
+    </plurals>
+    <string name="sharing_linked_yarns_note_none">People you share this with can also see its linked yarns, read-only.</string>
+    <string name="sharing_transfer_title">Transfer ownership</string>
+    <string name="sharing_transfer_pick">Choose the new owner</string>
+    <string name="sharing_transfer_text">The transfer applies immediately. You stay an editor and can leave later.</string>
+    <plurals name="sharing_transfer_move_yarns">
+        <item quantity="one">Also move %1$d linked yarn</item>
+        <item quantity="other">Also move %1$d linked yarns</item>
+    </plurals>
+    <string name="sharing_transfer_confirm">Transfer to %1$s</string>
+    <string name="sharing_transferred">Transferred to %1$s</string>
+    <string name="sharing_leave_title">Leave “%1$s”?</string>
+    <string name="sharing_leave_text">You will no longer see it. Ask the owner to share it again if you need it back.</string>
+    <string name="sharing_left">You no longer have access.</string>
+    <string name="yarn_picker_owner_yarns">Yarns of the project owner</string>
+    <string name="yarn_picker_owner_offline">Connect to the internet to pick from the owner\'s yarns.</string>
+    <string name="history_shared">Shared with %1$s · %2$s</string>
+    <string name="history_share_role_changed">Role of %1$s changed to %2$s</string>
+    <string name="history_share_revoked">Stopped sharing with %1$s</string>
+    <string name="history_share_left">%1$s left</string>
+    <string name="history_ownership_transferred">Transferred to %1$s</string>
+    <string name="history_deleted_account">a deleted account</string>
+    <string name="sharing_change">Change</string>
 </resources>

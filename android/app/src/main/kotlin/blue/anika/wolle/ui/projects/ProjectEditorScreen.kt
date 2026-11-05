@@ -115,6 +115,12 @@ fun ProjectEditorScreen(
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    val canDelete by viewModel.canDelete.collectAsStateWithLifecycle()
+    val canEdit by viewModel.canEdit.collectAsStateWithLifecycle()
+    // A reader (viewer, derived yarn) has no editor: a stale link or back stack leaves at once.
+    LaunchedEffect(canEdit) { if (viewModel.isEditing && !canEdit) onBack() }
+    val picksFromOwner by viewModel.picksFromOwner.collectAsStateWithLifecycle()
+    val candidates by viewModel.candidates.collectAsStateWithLifecycle()
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
@@ -226,7 +232,7 @@ fun ProjectEditorScreen(
                             }
                         },
                         actions = {
-                            if (viewModel.isEditing) {
+                            if (viewModel.isEditing && canDelete) {
                                 IconButton(
                                     onClick = { showDeleteDialog = true },
                                     enabled = !isSaving,
@@ -652,6 +658,12 @@ fun ProjectEditorScreen(
             previewUrl = viewModel::previewUrl,
             onToggle = viewModel::toggleYarnSelected,
             onDismiss = { showYarnPicker = false },
+            ownerNote =
+                if (picksFromOwner) {
+                    if (candidates.offline) stringResource(R.string.yarn_picker_owner_offline)
+                    else stringResource(R.string.yarn_picker_owner_yarns)
+                } else null,
+            onQueryChange = if (picksFromOwner) viewModel::searchYarnCandidates else null,
         )
     }
 
