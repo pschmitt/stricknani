@@ -56,6 +56,10 @@ scoped to this directory, not mixed into the root one.
   explanation was found. Use `just build-fetch` (or `just deploy-all`, which
   call it) whenever you need the on-device result to reflect the latest source - never bare
   `just build` followed by a manual install step.
+- **Debug builds via `just` are signed with the CI keystore** (`export ENABLE_DEBUG_SIGNING` in
+  `android/justfile`, staged from rbw like release signing, so rbw must be unlocked), sharing the
+  signing key of the rolling `latest` release's debug APKs. A debug build signed with any other key
+  cannot be updated in-app and an install over it fails (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
 - **ktfmt is nix-only** (SNA-69): the root `flake.nix` pre-commit hook, `just lint`/`just format`
   and CI's `Android Lint` ktfmt job (shared workflow, `nix develop .#ktfmt`) all run the same
   nixpkgs `ktfmt` (kotlinlang style) from the root `flake.lock`. The app does not use the ktfmt

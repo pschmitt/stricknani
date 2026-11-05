@@ -53,6 +53,10 @@ keystore_jks_attachment := "stricknani-android-ci.jks"
 keystore_env_attachment := "stricknani-android-ci-keystore.env"
 ci_tmp_dir_name := ".stricknani-android-ci-tmp"
 
+# Debug builds are signed with the same CI keystore (opt-in switch read by the shared `build`
+# recipe), so a hand-deployed debug build can update to/from the `latest` release's debug APKs.
+export ENABLE_DEBUG_SIGNING := "true"
+
 # List all available recipes. Must stay the first recipe in this file (not just the first line
 # overall) - `just` only considers recipes written directly here, not ones pulled in via the
 # import below, when deciding what a bare `just` invocation runs.

@@ -141,6 +141,10 @@ builds remotely and copies the debug APK to `./dist`. The debug application id i
 `blue.anika.wolle.debug` (package `blue.anika.wolle` - a separate, personal namespace from the
 "Stricknani" app/product name, chosen before this repo existed).
 
+Debug builds made with `just` are signed with the CI keystore (fetched from rbw, so unlock it
+first), so they share their signing key with the debug APKs of the `latest` release and can update
+in-app; a debug build signed with another key cannot be installed over them (or vice versa).
+
 `just deploy-all [variant]` builds, fetches, and installs on the fleet's shared physical test
 devices (Zenfone 10, Mi Pad 4, Pixel 5) - see [AGENTS.md](AGENTS.md).
 
