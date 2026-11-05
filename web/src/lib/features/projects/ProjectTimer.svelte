@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { session } from "#lib/session.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import {
@@ -310,7 +311,7 @@
 
 <section class="project-timer" aria-labelledby="project-timer-title">
   <div class="timer-face" aria-live="off">
-    <span class="timer-watch" aria-hidden="true">⌚</span>
+    <span class="timer-watch"><NavIcon name="audit" /></span>
     <div>
       <h2 id="project-timer-title">{t("Knitting time", locale)}</h2>
       <p
@@ -486,6 +487,11 @@
     border-radius: var(--radius-xs);
     background: var(--accent-wash);
     font-size: 1.55rem;
+  }
+  .timer-watch :global(svg) {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--accent-strong);
   }
   h2 {
     margin: 0;
