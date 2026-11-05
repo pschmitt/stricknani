@@ -87,8 +87,6 @@
     <string name="home_greeting_updated">Neuigkeiten!</string>
     <string name="home_scroll_to_top">Nach oben</string>
     <string name="home_continue_title">Weiterstricken</string>
-    <string name="home_stash_title">Dein Garnvorrat</string>
-    <string name="home_stash_subtitle">Garne ansehen, hinzufügen und finden</string>
 
     <!-- Search -->
     <string name="search_placeholder">Projekte und Wolle durchsuchen</string>

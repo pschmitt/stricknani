@@ -41,6 +41,18 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-92: Home Create card replaces the yarn stash card
+
+**Status:** done (2026-11-05)
+
+- [x] Home's "Your yarn stash" card is now a "Create" / "Erstellen" card that opens the Create
+      screen (the same one More opens). Yarns stay one tap away in the bottom bar. The
+      `home_stash_*` strings are gone; the card reuses `more_create_*`.
+- [x] E2E and screenshot journeys open Yarns through the tab; a focused test taps the card.
+- [x] Web: same swap on the Home dashboard (card links to `/create`).
+
+Verification: see the commit message.
+
 ## SNA-91: About version row and real newer check
 
 **Status:** done (2026-11-05)

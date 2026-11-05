@@ -93,7 +93,7 @@ class StricknaniScreenshotTest {
 
         composeRule.onNodeWithContentDescription(string(R.string.settings_nav_back)).performClick()
         composeRule.onNodeWithText(string(R.string.destination_label_home)).performClick()
-        composeRule.onNodeWithTag("home-stash-card").performScrollTo().performClick()
+        composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
         Thread.sleep(1_500)
         capture("yarn-list")

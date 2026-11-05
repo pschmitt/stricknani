@@ -247,23 +247,22 @@
       {/if}
     </section>
 
-    <!-- The way to the yarn list, matching the stash card on the Android Home screen (the app no longer has a
-         Yarns tab by default). -->
+    <!-- The way to the Create page, matching the Create card on the Android Home screen. -->
     <a
-      class="stash-card"
-      href={resolve("/yarns")}
-      data-testid="home-stash-card"
+      class="create-card"
+      href={resolve("/create")}
+      data-testid="home-create-card"
     >
-      <span class="stash-card__icon" aria-hidden="true"
-        ><NavIcon name="yarns" /></span
+      <span class="create-card__icon" aria-hidden="true"
+        ><NavIcon name="create" /></span
       >
-      <span class="stash-card__copy">
-        <span class="stash-card__title">{t("Your yarn stash", locale)}</span>
-        <span class="stash-card__hint"
-          >{t("Browse, add and find your yarns", locale)}</span
+      <span class="create-card__copy">
+        <span class="create-card__title">{t("Create", locale)}</span>
+        <span class="create-card__hint"
+          >{t("Start a project or a yarn, or import one.", locale)}</span
         >
       </span>
-      <span class="stash-card__go" aria-hidden="true"
+      <span class="create-card__go" aria-hidden="true"
         ><NavIcon name="next" /></span
       >
     </a>
@@ -518,7 +517,7 @@
     display: grid;
     gap: 0.7rem;
   }
-  .stash-card {
+  .create-card {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
@@ -530,60 +529,60 @@
     text-decoration: none;
     transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
   }
-  .stash-card:hover {
+  .create-card:hover {
     transform: translateY(-2px);
   }
-  .stash-card:active {
+  .create-card:active {
     transform: scale(0.98);
   }
-  .stash-card:focus-visible {
+  .create-card:focus-visible {
     outline: 3px solid var(--tone-yarns);
     outline-offset: 3px;
   }
-  .stash-card__icon,
-  .stash-card__go {
+  .create-card__icon,
+  .create-card__go {
     display: grid;
     place-items: center;
     border-radius: 999px;
     color: var(--tone-yarns);
     background: color-mix(in srgb, var(--tone-yarns) 16%, transparent);
   }
-  .stash-card__icon {
+  .create-card__icon {
     width: 2.75rem;
     height: 2.75rem;
   }
-  .stash-card__go {
+  .create-card__go {
     width: 2.1rem;
     height: 2.1rem;
   }
-  .stash-card__icon :global(svg) {
+  .create-card__icon :global(svg) {
     width: 1.4rem;
     height: 1.4rem;
   }
-  .stash-card__go :global(svg) {
+  .create-card__go :global(svg) {
     width: 1.1rem;
     height: 1.1rem;
   }
-  .stash-card__copy {
+  .create-card__copy {
     display: grid;
     gap: 0.1rem;
     min-width: 0;
   }
-  .stash-card__title {
+  .create-card__title {
     font-family: var(--font-display);
     font-size: 1.12rem;
     font-weight: 650;
   }
-  .stash-card__hint {
+  .create-card__hint {
     color: var(--ink-muted);
     font-size: 0.9rem;
   }
   @media (prefers-reduced-motion: reduce) {
-    .stash-card {
+    .create-card {
       transition: none;
     }
-    .stash-card:hover,
-    .stash-card:active {
+    .create-card:hover,
+    .create-card:active {
       transform: none;
     }
   }

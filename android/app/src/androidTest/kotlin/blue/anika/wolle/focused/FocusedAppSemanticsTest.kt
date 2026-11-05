@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -91,6 +92,14 @@ class FocusedAppSemanticsTest {
             .onNodeWithContentDescription("Search projects and yarns")
             .performTextInput("focused-no-search-match")
         waitForText("Nothing found")
+    }
+
+    @Test
+    fun homeCreateCardOpensTheCreateScreen() {
+        ensureConfigured()
+        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithTag("home-create-card").performScrollTo().performClick()
+        waitForText("Plan the next thing you want to knit.", timeoutMillis = 30_000)
     }
 
     @Test

@@ -117,7 +117,7 @@ fun HomeScreen(
     onSignIn: () -> Unit,
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
-    onYarnsClick: () -> Unit,
+    onCreateClick: () -> Unit,
     onGaugeClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -329,8 +329,8 @@ fun HomeScreen(
                         }
                     }
                     spacedItem {
-                        StashCard(
-                            onClick = onYarnsClick,
+                        CreateCard(
+                            onClick = onCreateClick,
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     }
@@ -705,18 +705,15 @@ private fun relativeDay(millis: Long): String =
         )
         .toString()
 
-/**
- * The way into the yarn list now that Yarns is not a default tab: a lagoon card with the sheep,
- * right under "Continue knitting".
- */
+/** The way into the Create screen: a lagoon card right under "Continue knitting". */
 @Composable
-private fun StashCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun CreateCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        modifier = modifier.fillMaxWidth().testTag("home-stash-card"),
+        modifier = modifier.fillMaxWidth().testTag("home-create-card"),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -729,15 +726,15 @@ private fun StashCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(MdiIcons.YarnBall, contentDescription = null, modifier = Modifier.size(24.dp))
+                Icon(PhosphorIcons.Sparkle, contentDescription = null, modifier = Modifier.size(24.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(
-                    stringResource(R.string.home_stash_title),
+                    stringResource(R.string.more_create_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    stringResource(R.string.home_stash_subtitle),
+                    stringResource(R.string.more_create_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

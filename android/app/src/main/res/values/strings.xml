@@ -88,8 +88,6 @@
     <string name="home_greeting_updated">Fresh updates!</string>
     <string name="home_scroll_to_top">Scroll to top</string>
     <string name="home_continue_title">Continue knitting</string>
-    <string name="home_stash_title">Your yarn stash</string>
-    <string name="home_stash_subtitle">Browse, add and find your yarns</string>
 
     <!-- Search -->
     <string name="search_placeholder">Search projects and yarns</string>

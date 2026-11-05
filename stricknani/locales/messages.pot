@@ -136,7 +136,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:1016
 #: web/src/lib/features/projects/ProjectReader.svelte:1021
 #: web/src/lib/features/projects/ProjectReader.svelte:1028
-#: web/src/routes/share/+page.svelte:79
+#: web/src/routes/share/+page.svelte:82
 msgid "Yarn"
 msgstr ""
 
@@ -759,10 +759,6 @@ msgstr ""
 msgid "Browse the yarns connected to your projects."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:263
-msgid "Browse, add and find your yarns"
-msgstr ""
-
 #: web/src/routes/about/+page.svelte:234
 msgid "Build"
 msgstr ""
@@ -1137,8 +1133,9 @@ msgstr ""
 msgid "Cover picture"
 msgstr ""
 
+#: web/src/lib/features/home/HomeDashboard.svelte:260
 #: web/src/routes/+layout.svelte:78 web/src/routes/create/+page.svelte:67
-#: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:85
+#: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:88
 msgid "Create"
 msgstr ""
 
@@ -1414,11 +1411,11 @@ msgstr ""
 msgid "Edit yarn"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:266
+#: web/src/lib/features/history/HistorySection.svelte:251
 msgid "Edits to this project will show up here."
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:267
+#: web/src/lib/features/history/HistorySection.svelte:252
 msgid "Edits to this yarn will show up here."
 msgstr ""
 
@@ -1598,19 +1595,19 @@ msgid ""
 "attached."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:278
+#: web/src/lib/features/home/HomeDashboard.svelte:277
 msgid "Favorite projects"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:278
+#: web/src/lib/features/home/HomeDashboard.svelte:277
 msgid "Favorite projects could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:278
+#: web/src/lib/features/home/HomeDashboard.svelte:277
 msgid "Favorite yarns"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:278
+#: web/src/lib/features/home/HomeDashboard.svelte:277
 msgid "Favorite yarns could not be loaded."
 msgstr ""
 
@@ -1901,7 +1898,7 @@ msgstr ""
 msgid "Images"
 msgstr ""
 
-#: web/src/routes/share/+page.svelte:46
+#: web/src/routes/share/+page.svelte:48
 msgid "Import a link"
 msgstr ""
 
@@ -1938,7 +1935,7 @@ msgstr ""
 msgid "Import source"
 msgstr ""
 
-#: web/src/routes/share/+page.svelte:59
+#: web/src/routes/share/+page.svelte:62
 msgid "Import this link as a project or as a yarn?"
 msgstr ""
 
@@ -2101,7 +2098,7 @@ msgstr ""
 msgid "Link copied."
 msgstr ""
 
-#: web/src/routes/share/+page.svelte:54
+#: web/src/routes/share/+page.svelte:57
 msgid "Link import is off"
 msgstr ""
 
@@ -2109,7 +2106,7 @@ msgstr ""
 #: web/src/lib/features/imports/ImportWorkbench.svelte:477
 #: web/src/lib/features/imports/ImportWorkbench.svelte:485
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:218
-#: web/src/routes/create/+page.svelte:59 web/src/routes/share/+page.svelte:55
+#: web/src/routes/create/+page.svelte:59 web/src/routes/share/+page.svelte:58
 msgid "Link imports are turned off on this server."
 msgstr ""
 
@@ -2215,7 +2212,7 @@ msgstr ""
 msgid "Loading recent activity…"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:249
+#: web/src/lib/features/history/HistorySection.svelte:234
 msgid "Loading recent changes…"
 msgstr ""
 
@@ -2224,7 +2221,7 @@ msgid "Loading recent projects…"
 msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:120
-#: web/src/lib/features/history/HistorySection.svelte:335
+#: web/src/lib/features/history/HistoryEventDetail.svelte:62
 msgid "Loading recorded changes…"
 msgstr ""
 
@@ -2250,7 +2247,7 @@ msgstr ""
 msgid "Loading your home…"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:397
+#: web/src/lib/features/history/HistorySection.svelte:339
 msgid "Loading…"
 msgstr ""
 
@@ -2330,7 +2327,7 @@ msgstr ""
 msgid "More actions"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:374
+#: web/src/lib/features/history/HistorySection.svelte:316
 msgid "More changes could not be loaded."
 msgstr ""
 
@@ -2481,16 +2478,15 @@ msgid "No categories yet."
 msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:181
-#: web/src/lib/features/history/HistorySection.svelte:216
 msgid "No change snapshot was recorded for this event."
 msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:187
-#: web/src/lib/features/history/HistorySection.svelte:225
+#: web/src/lib/features/history/HistoryEventDetail.svelte:44
 msgid "No changes are available for this event."
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:262
+#: web/src/lib/features/history/HistorySection.svelte:247
 msgid "No changes recorded yet"
 msgstr ""
 
@@ -2499,11 +2495,12 @@ msgid "No connection"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:433
-#: web/src/lib/features/history/HistorySection.svelte:364
+#: web/src/lib/features/history/HistoryEventDetail.svelte:35
+#: web/src/lib/features/history/HistoryEventDetail.svelte:58
 msgid "No details recorded"
 msgstr ""
 
-#: web/src/routes/share/+page.svelte:83
+#: web/src/routes/share/+page.svelte:86
 msgid "No link found"
 msgstr ""
 
@@ -3063,7 +3060,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:331
 #: web/src/lib/features/admin/AdminResource.svelte:233
 #: web/src/lib/features/admin/DiffPanel.svelte:89
-#: web/src/routes/share/+page.svelte:71
+#: web/src/routes/share/+page.svelte:74
 msgid "Project"
 msgstr ""
 
@@ -3187,17 +3184,17 @@ msgstr ""
 msgid "Recent activity could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:240
-#: web/src/lib/features/history/HistorySection.svelte:271
+#: web/src/lib/features/history/HistorySection.svelte:225
+#: web/src/lib/features/history/HistorySection.svelte:256
 msgid "Recent changes"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:253
+#: web/src/lib/features/history/HistorySection.svelte:238
 msgid "Recent changes could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:345
-#: web/src/lib/features/home/HomeDashboard.svelte:351
+#: web/src/lib/features/home/HomeDashboard.svelte:344
+#: web/src/lib/features/home/HomeDashboard.svelte:350
 msgid "Recent projects"
 msgstr ""
 
@@ -3249,7 +3246,7 @@ msgstr ""
 #: web/src/lib/features/admin/DiffPanel.svelte:109
 #: web/src/lib/features/admin/DiffPanel.svelte:116
 #: web/src/lib/features/history/ChangeList.svelte:28
-#: web/src/lib/features/history/HistorySection.svelte:353
+#: web/src/lib/features/history/HistoryEventDetail.svelte:76
 msgid "Recorded changes"
 msgstr ""
 
@@ -3580,8 +3577,8 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:299
-#: web/src/lib/features/home/HomeDashboard.svelte:348
+#: web/src/lib/features/home/HomeDashboard.svelte:298
+#: web/src/lib/features/home/HomeDashboard.svelte:347
 msgid "See all"
 msgstr ""
 
@@ -3631,7 +3628,7 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:386
+#: web/src/lib/features/history/HistorySection.svelte:328
 msgid "Show all changes"
 msgstr ""
 
@@ -3639,7 +3636,7 @@ msgstr ""
 msgid "Show diff"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:406
+#: web/src/lib/features/history/HistorySection.svelte:348
 msgid "Show fewer"
 msgstr ""
 
@@ -3647,7 +3644,7 @@ msgstr ""
 msgid "Show more"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:398
+#: web/src/lib/features/history/HistorySection.svelte:340
 msgid "Show older changes"
 msgstr ""
 
@@ -3808,6 +3805,7 @@ msgstr ""
 msgid "Sponsor on GitHub"
 msgstr ""
 
+#: web/src/lib/features/home/HomeDashboard.svelte:262
 #: web/src/routes/more/+page.svelte:25
 msgid "Start a project or a yarn, or import one."
 msgstr ""
@@ -4006,7 +4004,7 @@ msgstr ""
 msgid "Tap a photo to see it larger."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:275
+#: web/src/lib/features/home/HomeDashboard.svelte:274
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr ""
 
@@ -4326,12 +4324,12 @@ msgid "The project version is missing. Reload the page and try again."
 msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:183
-#: web/src/lib/features/history/HistorySection.svelte:218
+#: web/src/lib/features/history/HistoryEventDetail.svelte:37
 msgid "The recorded change snapshot is too large to display."
 msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:185
-#: web/src/lib/features/history/HistorySection.svelte:223
+#: web/src/lib/features/history/HistoryEventDetail.svelte:42
 msgid "The recorded change snapshot is unavailable."
 msgstr ""
 
@@ -4483,7 +4481,7 @@ msgstr ""
 msgid "There is no way to confirm your identity right now."
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:339
+#: web/src/lib/features/history/HistoryEventDetail.svelte:66
 msgid "These changes could not be loaded."
 msgstr ""
 
@@ -4778,12 +4776,12 @@ msgstr ""
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:141
 #: web/src/lib/features/auth/LinkedLogins.svelte:267
 #: web/src/lib/features/categories/CategoryManager.svelte:230
-#: web/src/lib/features/history/HistorySection.svelte:255
-#: web/src/lib/features/history/HistorySection.svelte:345
+#: web/src/lib/features/history/HistoryEventDetail.svelte:68
+#: web/src/lib/features/history/HistorySection.svelte:240
 #: web/src/lib/features/home/ActivityFeed.svelte:112
 #: web/src/lib/features/home/ActivityFeed.svelte:200
 #: web/src/lib/features/home/HomeDashboard.svelte:193
-#: web/src/lib/features/home/HomeDashboard.svelte:283
+#: web/src/lib/features/home/HomeDashboard.svelte:282
 #: web/src/lib/features/media/ArchiveControl.svelte:445
 #: web/src/lib/features/projects/ProjectLibrary.svelte:297
 #: web/src/lib/features/projects/ProjectReader.svelte:724
@@ -5398,10 +5396,6 @@ msgstr ""
 msgid "Your workspace is taking a moment."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:261
-msgid "Your yarn stash"
-msgstr ""
-
 #: web/src/lib/features/imports/YarnStashPicker.svelte:101
 msgid "Your yarns could not be loaded."
 msgstr ""
@@ -5426,7 +5420,7 @@ msgstr ""
 msgid "brand"
 msgstr ""
 
-#: web/src/lib/features/history/HistorySection.svelte:297
+#: web/src/lib/features/history/HistorySection.svelte:282
 msgid "by"
 msgstr ""
 
