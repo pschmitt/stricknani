@@ -33,6 +33,7 @@
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
+  import ProjectTimer from "./ProjectTimer.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { extraCount, plainTextSummary } from "./facts-summary.ts";
@@ -975,6 +976,10 @@
     {/if}
     {#if printError}
       <p class="print-error" role="alert">{printError}</p>
+    {/if}
+
+    {#if !adminData && userId !== null}
+      <ProjectTimer projectId={currentProject.id} {locale} {canEdit} />
     {/if}
 
     <div class="reader-overview">
