@@ -208,9 +208,26 @@ yarns. Delta semantics:
 - Categories: a recipient sees a shared project's `category` as the owner's
   category name; category sync stays per account.
 
-## Not shared
+## Backup and export
 
-Backup and export, archive jobs (link snapshots), OCR and URL import keep
-working on owned items only. Deleting an account removes the shares it gave
-and received; its owned items disappear for recipients through the tombstones
-above.
+The server has no per-user backup or export feature today (the only backup is
+the operator's whole-database and media archive from the NixOS module, which
+contains the share tables as they are). The product requirement for a future
+per-user export is recorded here so that it is built on the central permission
+function:
+
+- Authorize at export time with `resource_access::grant` (API v2 surface):
+  owned items, direct shares (viewer or editor) and yarns reachable through
+  derived access, with media and links. A share revoked earlier leaves nothing
+  in the export. Derived access stays non-transitive: other projects linked to a
+  derived yarn are not exported.
+- Mark each shared item with its original owner and the caller's role.
+- Restore never writes to another account's resource: shared items restore as
+  new copies owned by the restoring user, and an archive never recreates a
+  share or grants access. Owner and role fields in an archive are informational
+  and untrusted.
+- A job and its download belong to the user who requested it.
+
+Archive jobs (link snapshots), OCR and URL import keep working on owned items
+only. Deleting an account removes the shares it gave and received; its owned
+items disappear for recipients through the tombstones above.
