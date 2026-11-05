@@ -88,8 +88,7 @@ abstract class StricknaniE2eTest {
                                 composeRule
                                     .onAllNodesWithTag(tag, useUnmergedTree = true)
                                     .fetchSemanticsNodes()
-                            val disabled =
-                                nodes.count { SemanticsProperties.Disabled in it.config }
+                            val disabled = nodes.count { SemanticsProperties.Disabled in it.config }
                             "$tag=${nodes.size}/disabled$disabled"
                         }
                 throw AssertionError("Manual onboarding fields never appeared: $tags", failure)
