@@ -21,6 +21,7 @@ import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.media.MediaCacheEvictor
 import blue.anika.wolle.data.uploads.PendingGalleryImageDelete
 import blue.anika.wolle.data.uploads.PendingMediaOrder
 import blue.anika.wolle.data.uploads.PendingUpload
@@ -61,11 +62,12 @@ constructor(
     private val pendingUploadStore: PendingUploadStore,
     private val json: Json,
     private val everyoneScope: EveryoneScope,
+    private val mediaCacheEvictor: MediaCacheEvictor,
 ) {
     /** What the lists show: an administrator on Mine sees only their own rows (cache untouched). */
     fun observeAll(): Flow<List<YarnEntity>> =
         combine(yarnDao.observeAll(), everyoneScope.listFilter) { rows, me ->
-            rows.visibleTo(me) { it.ownerId }
+            rows.visibleTo(me, { it.ownerId }) { isSharedWithMe(it.accessRole, it.accessDerived) }
         }
 
     /** Every cached row regardless of the Mine filter, for detail screens resolving links by id. */
@@ -174,29 +176,26 @@ constructor(
         return changed
     }
 
-    /** Applies one batch of server changes to Room; returns whether it carried any change. */
-    private suspend fun applyDelta(updated: List<YarnDto>, deletedIds: List<Int>): Boolean {
-        val pendingUpdatedIds =
-            updated
-                .map { it.id }
-                .takeIf { it.isNotEmpty() }
-                ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
-                ?: emptySet()
-        val pendingDeletedIds =
-            deletedIds
-                .takeIf { it.isNotEmpty() }
-                ?.let { pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, it).toSet() }
-                ?: emptySet()
-        updated
-            .filterNot { it.id in pendingUpdatedIds }
-            .takeIf { it.isNotEmpty() }
-            ?.let { yarnDao.upsertAll(it.map { item -> item.toEntity(json) }) }
-        deletedIds
-            .filterNot { it in pendingDeletedIds }
-            .takeIf { it.isNotEmpty() }
-            ?.let { yarnDao.deleteByIds(it) }
-        return updated.isNotEmpty() || deletedIds.isNotEmpty()
-    }
+    /** Applies one batch of server changes to Room; see [applyItemDelta]. */
+    private suspend fun applyDelta(updated: List<YarnDto>, deletedIds: List<Int>): Boolean =
+        applyItemDelta(
+            updated = updated,
+            deletedIds = deletedIds,
+            idOf = { it.id },
+            toEntity = { it.toEntity(json) },
+            pendingIds = { ids ->
+                pendingMutationDao.getReplayableLocalIds(ENTITY_TYPE, ids).toSet()
+            },
+            upsert = { yarnDao.upsertAll(it) },
+            load = { yarnDao.getById(it) },
+            delete = { yarnDao.deleteByIds(it) },
+            evictMedia = { row ->
+                mediaCacheEvictor.evict(
+                    json.decodeFromString<YarnDto>(row.detailJson).mediaPaths() +
+                        listOfNotNull(row.previewUrl)
+                )
+            },
+        )
 
     /** See `ProjectRepository.createProject`'s kdoc - same placeholder-row-plus-queue pattern. */
     suspend fun createYarn(request: YarnWriteRequest): Int {
@@ -350,6 +349,37 @@ constructor(
         runCatching { refreshOne(id) }
     }
 
+    /**
+     * The caller left (or otherwise lost) this item: drops the local row and its cached media at
+     * once, as the sync tombstone would. Queued writes are kept; their replay learns the 404.
+     */
+    suspend fun forgetLocally(id: Int) {
+        yarnDao.getById(id)?.let { row ->
+            runCatching {
+                mediaCacheEvictor.evict(
+                    json.decodeFromString<YarnDto>(row.detailJson).mediaPaths() +
+                        listOfNotNull(row.previewUrl)
+                )
+            }
+        }
+        yarnDao.deleteByIds(listOf(id))
+    }
+
+    /**
+     * After a refused write (403, role lowered): shows the server's copy instead of the refused
+     * edit. A 404 means access ended entirely, so the local row goes; anything else (offline) is
+     * left to the next sync.
+     */
+    suspend fun adoptServerCopy(id: Int) {
+        try {
+            refreshOne(id)
+        } catch (e: HttpException) {
+            if (e.code() == 404) yarnDao.deleteByIds(listOf(id))
+        } catch (e: java.io.IOException) {
+            Timber.i("Could not refresh yarn $id after a refused write")
+        }
+    }
+
     /** Called only by `WriteReplayWorker` once a queued create actually reaches the server. */
     suspend fun replayCreate(tempId: Int, request: YarnWriteRequest): Int {
         val created =
@@ -440,6 +470,10 @@ internal fun YarnDto.toEntity(json: Json): YarnEntity =
         ownerId = owner?.id,
         ownerName = owner?.name?.ifBlank { null } ?: owner?.email?.ifBlank { null },
         ownerAvatarUrl = owner?.avatarUrl,
+        accessRole = access?.role,
+        accessDerived = access?.derived ?: false,
+        canEdit = access?.canEdit,
+        canManage = access?.canManage,
     )
 
 internal fun removeYarnPhoto(yarn: YarnDto, photoId: Int): YarnDto =

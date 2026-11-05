@@ -22,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -104,21 +105,40 @@ internal fun YarnPickerSheet(
     previewUrl: (YarnEntity) -> String?,
     onToggle: (Int) -> Unit,
     onDismiss: () -> Unit,
+    /**
+     * An editor picks from the owner's yarns, fetched online: says so, or that it needs a
+     * connection.
+     */
+    ownerNote: String? = null,
+    /** Asks the server for a search term (editors only); the local filter still applies. */
+    onQueryChange: ((String) -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var query by rememberSaveable { mutableStateOf("") }
     // Keep the order stable while ticking boxes; re-sort only when the search changes.
     val initialSelection = remember { selected }
     val shown = remember(yarns, query) { filterYarnsForPicker(yarns, query, initialSelection) }
+    LaunchedEffect(Unit) { onQueryChange?.invoke("") }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.padding(horizontal = 20.dp)) {
             Text(
                 stringResource(R.string.project_editor_pick_yarns_title),
                 style = MaterialTheme.typography.titleLarge,
             )
+            ownerNote?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp).testTag("yarn-picker-owner-note"),
+                )
+            }
             OutlinedTextField(
                 value = query,
-                onValueChange = { query = it },
+                onValueChange = {
+                    query = it
+                    onQueryChange?.invoke(it)
+                },
                 placeholder = { Text(stringResource(R.string.project_editor_pick_yarns_search)) },
                 leadingIcon = { Icon(PhosphorIcons.MagnifyingGlass, contentDescription = null) },
                 singleLine = true,

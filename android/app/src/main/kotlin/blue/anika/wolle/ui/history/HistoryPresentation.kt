@@ -189,3 +189,33 @@ fun historyDetailBody(event: AuditEventDto, detail: HistoryDetailState?): Histor
                 else HistoryDetailBody.Unavailable(detail.detail.unavailableReason)
     }
 }
+
+/**
+ * One line of a sharing event, for the history of a project or yarn: which sentence, and who and
+ * what role it names. [name] is null when that account was deleted ("a deleted account").
+ */
+data class SharingEventLine(
+    @androidx.annotation.StringRes val textRes: Int,
+    val name: String?,
+    /** `viewer` or `editor` when the sentence names the role, else null. */
+    val role: String?,
+)
+
+/** The sentence for a sharing action with its [subject], or null for any other action. */
+fun sharingEventLine(
+    action: String,
+    subject: blue.anika.wolle.data.api.dto.AuditSubjectDto?,
+): SharingEventLine? {
+    val name = subject?.name?.takeIf { it.isNotBlank() }
+    val role = subject?.role
+    val res =
+        when (action) {
+            "shared" -> R.string.history_shared
+            "share_role_changed" -> R.string.history_share_role_changed
+            "share_revoked" -> R.string.history_share_revoked
+            "share_left" -> R.string.history_share_left
+            "ownership_transferred" -> R.string.history_ownership_transferred
+            else -> return null
+        }
+    return SharingEventLine(res, name, role)
+}

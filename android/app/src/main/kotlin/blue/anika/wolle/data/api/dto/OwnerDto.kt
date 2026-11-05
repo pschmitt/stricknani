@@ -15,3 +15,22 @@ data class OwnerDto(
     val name: String = "",
     @SerialName("avatar_url") val avatarUrl: String? = null,
 )
+
+/**
+ * `access` of a project or yarn (sharing contract, `docs/sharing-api.md`): what the caller may do
+ * with it. [role] is `owner`, `admin`, `editor` or `viewer`; [derived] marks a yarn read only
+ * through a shared project. Enable controls from [canEdit]/[canManage], never from the role string;
+ * the server stays the final authority.
+ */
+@Serializable
+data class AccessDto(
+    val role: String = ACCESS_OWNER,
+    val derived: Boolean = false,
+    @SerialName("can_edit") val canEdit: Boolean = true,
+    @SerialName("can_manage") val canManage: Boolean = true,
+)
+
+const val ACCESS_OWNER = "owner"
+const val ACCESS_ADMIN = "admin"
+const val ACCESS_EDITOR = "editor"
+const val ACCESS_VIEWER = "viewer"

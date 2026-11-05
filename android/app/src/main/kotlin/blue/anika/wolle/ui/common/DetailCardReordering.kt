@@ -227,7 +227,7 @@ internal fun ReorderableDetailCard(
                 )
             }
         }
-        if (onEdit == null) {
+        if (onEdit == null && copyText.isNullOrBlank()) {
             content()
         } else {
             // Long-pressing the title reorders the cards; long-pressing the content opens the
@@ -305,15 +305,15 @@ private fun DetailCardReorderBar(onDone: () -> Unit) {
 
 /**
  * Long-press on a section or step opens a small menu at the press point: Edit (the editor at this
- * section) and, when there is text, Copy text. A haptic tick confirms the press; copying confirms
- * itself (Android 13+ shows its clipboard note, older versions get a toast). TalkBack offers both
- * as named actions.
+ * section; absent when [onEdit] is null, a read-only item) and, when there is text, Copy text. A
+ * haptic tick confirms the press; copying confirms itself (Android 13+ shows its clipboard note,
+ * older versions get a toast). TalkBack offers both as named actions.
  */
 @Composable
 fun SectionActions(
     what: String,
     copyText: String?,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -347,9 +347,11 @@ fun SectionActions(
                     .semantics {
                         customActions =
                             listOfNotNull(
-                                CustomAccessibilityAction(editLabel) {
-                                    onEdit()
-                                    true
+                                onEdit?.let { edit ->
+                                    CustomAccessibilityAction(editLabel) {
+                                        edit()
+                                        true
+                                    }
                                 },
                                 copyText?.let { text ->
                                     CustomAccessibilityAction(copyLabel) {
@@ -367,14 +369,16 @@ fun SectionActions(
             onDismissRequest = { menuOffset = null },
             offset = menuOffset ?: DpOffset.Zero,
         ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.common_edit)) },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = {
-                    menuOffset = null
-                    onEdit()
-                },
-            )
+            if (onEdit != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.common_edit)) },
+                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                    onClick = {
+                        menuOffset = null
+                        onEdit()
+                    },
+                )
+            }
             if (!copyText.isNullOrBlank()) {
                 DropdownMenuItem(
                     text = { Text(copyLabel) },

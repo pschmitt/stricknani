@@ -8,16 +8,22 @@ import androidx.navigation.toRoute
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiGeneration
+import blue.anika.wolle.data.api.dto.ACCESS_EDITOR
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
+import blue.anika.wolle.data.api.dto.YarnCandidateDto
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.SharingError
+import blue.anika.wolle.data.repository.SharingException
+import blue.anika.wolle.data.repository.SharingRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.repository.movedItem
 import blue.anika.wolle.data.repository.reorderedIdsOrNull
 import blue.anika.wolle.data.repository.stepImages
@@ -35,6 +41,9 @@ import blue.anika.wolle.ui.common.yarnsOwnedBy
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,6 +55,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ProjectEditorFormState(
@@ -88,6 +98,7 @@ constructor(
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
     capabilities: ApiCapabilities,
+    private val sharingRepository: SharingRepository,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
@@ -146,23 +157,88 @@ constructor(
         capabilities.state.map { it.user?.id }.distinctUntilChanged()
 
     /**
+     * An editor of somebody else's shared project links only the owner's yarns, which the editor's
+     * device does not hold (it only has the ones already linked): the picker asks the server
+     * (`yarn-candidates`). The owner and administrators pick from the local stash as before.
+     */
+    val picksFromOwner: StateFlow<Boolean> =
+        editedProject
+            .map { project ->
+                project?.access()?.let { it.role == ACCESS_EDITOR && !it.canManage } == true
+            }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
+    private val _candidates = MutableStateFlow(YarnCandidates())
+
+    /** What the picker of an editor shows besides the note: the fetched candidates and status. */
+    val candidates: StateFlow<YarnCandidates> = _candidates.asStateFlow()
+
+    private var candidateJob: Job? = null
+
+    /** The picker opened (or its search changed): fetches the owner's yarns, online only. */
+    fun searchYarnCandidates(query: String = "") {
+        val projectId = route.projectId ?: return
+        candidateJob?.cancel()
+        candidateJob = viewModelScope.launch {
+            if (query.isNotBlank()) delay(CANDIDATE_SEARCH_DEBOUNCE_MILLIS)
+            _candidates.update { it.copy(loading = true) }
+            try {
+                val page = sharingRepository.yarnCandidates(projectId, query)
+                _candidates.value = YarnCandidates(items = page.items, loaded = true)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: SharingException) {
+                _candidates.update {
+                    it.copy(
+                        loading = false,
+                        offline = failure.error == SharingError.Offline,
+                        failed = failure.error != SharingError.Offline,
+                    )
+                }
+            }
+        }
+    }
+
+    /**
      * The yarns that can be linked: the project owner's. On someone else's project (an
      * administrator editing it) that is the owner's stash, not the editor's, because the server
-     * only links yarns of the project's owner.
+     * only links yarns of the project's owner. An editor sees the owner's yarns the server offers
+     * plus the ones already linked.
      */
     val yarns: StateFlow<List<YarnEntity>> =
         combine(
                 yarnRepository.observeAllIncludingForeign(),
                 editedProject.map { it?.ownerId }.distinctUntilChanged(),
                 currentUserId,
-            ) { all, ownerId, me ->
-                yarnsOwnedBy(all, ownerId, me)
+                picksFromOwner,
+                _candidates,
+            ) { all, ownerId, me, fromOwner, fetched ->
+                val owned = yarnsOwnedBy(all, ownerId, me)
+                if (fromOwner) {
+                    val known = owned.map { it.id }.toSet()
+                    owned + fetched.items.filter { it.id !in known }.map { it.toEntity(ownerId) }
+                } else owned
             }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 emptyList(),
             )
+
+    /** False when the user may only read this project (a viewer): the editor is not for them. */
+    val canEdit: StateFlow<Boolean> =
+        editedProject
+            .map { it?.access()?.canEdit ?: true }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), true)
+
+    /** Whether the editor may delete the project: owners and administrators only. */
+    val canDelete: StateFlow<Boolean> =
+        editedProject
+            .map { it?.access()?.canManage ?: true }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), true)
 
     /** Banner for an administrator editing someone else's project; null for the user's own. */
     val ownerBanner: StateFlow<OwnerBannerData?> =
@@ -497,6 +573,7 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val CANDIDATE_SEARCH_DEBOUNCE_MILLIS = 300L
     }
 }
 
@@ -511,3 +588,27 @@ internal fun parseTagInput(input: String): List<String> =
 
 private fun <T> List<T>.inserted(index: Int, item: T): List<T> =
     toMutableList().apply { add(index.coerceIn(0, size), item) }
+
+/** The owner's yarns an editor may link, as the server offers them (`yarn-candidates`). */
+data class YarnCandidates(
+    val items: List<YarnCandidateDto> = emptyList(),
+    val loading: Boolean = false,
+    val loaded: Boolean = false,
+    val offline: Boolean = false,
+    val failed: Boolean = false,
+)
+
+/** A picker row for a candidate: only what the server lists (no photos before the link exists). */
+internal fun YarnCandidateDto.toEntity(ownerId: Long?): YarnEntity =
+    YarnEntity(
+        id = id,
+        name = name,
+        brand = brand,
+        colorway = colorway,
+        weightCategory = weightCategory,
+        isFavorite = false,
+        updatedAt = 0,
+        previewUrl = null,
+        detailJson = "{}",
+        ownerId = ownerId,
+    )

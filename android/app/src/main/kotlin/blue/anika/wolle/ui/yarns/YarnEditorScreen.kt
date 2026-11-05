@@ -99,6 +99,10 @@ fun YarnEditorScreen(
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val saved by viewModel.saved.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    val canDelete by viewModel.canDelete.collectAsStateWithLifecycle()
+    val canEdit by viewModel.canEdit.collectAsStateWithLifecycle()
+    // A reader (viewer, derived yarn) has no editor: a stale link or back stack leaves at once.
+    LaunchedEffect(canEdit) { if (viewModel.isEditing && !canEdit) onBack() }
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
     val banner by viewModel.ownerBanner.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
@@ -175,7 +179,7 @@ fun YarnEditorScreen(
                             }
                         },
                         actions = {
-                            if (viewModel.isEditing) {
+                            if (viewModel.isEditing && canDelete) {
                                 IconButton(
                                     onClick = { showDeleteDialog = true },
                                     enabled = !isSaving,

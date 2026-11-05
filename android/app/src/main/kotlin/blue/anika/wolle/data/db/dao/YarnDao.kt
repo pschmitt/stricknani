@@ -25,9 +25,17 @@ interface YarnDao {
     @Query("DELETE FROM yarns WHERE id IN (:ids)") suspend fun deleteByIds(ids: List<Int>)
 
     /**
-     * Ids of rows owned by someone other than [currentUserId] (admin scope). Rows without owner
-     * info are the user's own and never match.
+     * Ids of rows owned by someone other than [currentUserId] that were not shared with the user
+     * (an administrator's view of other people's items). Rows without owner info are the user's
+     * own, and shared or derived rows (`viewer`/`editor`) are legitimately cached for everybody;
+     * neither ever matches.
      */
-    @Query("SELECT id FROM yarns WHERE ownerId IS NOT NULL AND ownerId != :currentUserId")
+    @Query(
+        """
+        SELECT id FROM yarns
+        WHERE ownerId IS NOT NULL AND ownerId != :currentUserId
+          AND accessDerived = 0 AND (accessRole IS NULL OR accessRole NOT IN ('viewer', 'editor'))
+        """
+    )
     suspend fun getForeignIds(currentUserId: Long): List<Int>
 }

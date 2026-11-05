@@ -1187,4 +1187,57 @@
     <string name="share_import_yarn">Garn</string>
     <string name="share_import_unavailable_title">Link-Import ist aus</string>
     <string name="share_no_link">Kein Link gefunden</string>
+    <!-- Teilen und Besitz uebertragen (SNA-93) -->
+    <string name="common_share_link">Link teilen</string>
+    <string name="sharing_share">Teilen</string>
+    <string name="sharing_owner">Besitzer</string>
+    <string name="sharing_role_viewer">Kann ansehen</string>
+    <string name="sharing_role_editor">Kann bearbeiten</string>
+    <string name="sharing_remove">Entfernen</string>
+    <string name="sharing_leave">Verlassen</string>
+    <string name="sharing_transfer">Besitz übertragen</string>
+    <string name="sharing_shared_by">Geteilt von %1$s</string>
+    <string name="sharing_shared_by_role">Geteilt von %1$s · %2$s</string>
+    <string name="sharing_derived_banner">Sichtbar über ein geteiltes Projekt</string>
+    <string name="sharing_avatars_description">Geteilt mit %1$s</string>
+    <string name="sharing_share_with">Teilen mit</string>
+    <string name="sharing_people_search">Personen suchen</string>
+    <string name="sharing_people_none">Keine Personen gefunden</string>
+    <string name="sharing_nobody_yet">Noch mit niemandem geteilt</string>
+    <string name="sharing_role_label">Rolle für neue Personen</string>
+    <string name="sharing_role_of">Rolle von %1$s</string>
+    <string name="sharing_remove_description">%1$s entfernen</string>
+    <string name="sharing_offline">Teilen braucht eine Verbindung. Verbinde dich mit dem Internet, um Zugriff zu teilen, zu ändern oder zu entfernen.</string>
+    <string name="sharing_load_failed">Die Personen konnten nicht geladen werden.</string>
+    <string name="sharing_error_forbidden">Das darfst du nicht.</string>
+    <string name="sharing_error_not_found">Das ist für dich nicht mehr verfügbar.</string>
+    <string name="sharing_error_conflict">Es ist bereits geteilt oder hat inzwischen den Besitzer gewechselt. Neu laden und erneut versuchen.</string>
+    <string name="sharing_error_invalid">Diese Person kann nicht hinzugefügt werden.</string>
+    <string name="sharing_error_other">Etwas ist schiefgegangen. Versuche es erneut.</string>
+    <plurals name="sharing_linked_yarns_note">
+        <item quantity="one">Personen, mit denen du das teilst, sehen auch das verknüpfte Garn, nur lesend.</item>
+        <item quantity="other">Personen, mit denen du das teilst, sehen auch die %1$d verknüpften Garne, nur lesend.</item>
+    </plurals>
+    <string name="sharing_linked_yarns_note_none">Personen, mit denen du das teilst, sehen auch die verknüpften Garne, nur lesend.</string>
+    <string name="sharing_transfer_title">Besitz übertragen</string>
+    <string name="sharing_transfer_pick">Neuen Besitzer wählen</string>
+    <string name="sharing_transfer_text">Die Übertragung gilt sofort. Du bleibst Bearbeiter und kannst später verlassen.</string>
+    <plurals name="sharing_transfer_move_yarns">
+        <item quantity="one">Auch %1$d verknüpftes Garn verschieben</item>
+        <item quantity="other">Auch %1$d verknüpfte Garne verschieben</item>
+    </plurals>
+    <string name="sharing_transfer_confirm">An %1$s übertragen</string>
+    <string name="sharing_transferred">An %1$s übertragen</string>
+    <string name="sharing_leave_title">„%1$s“ verlassen?</string>
+    <string name="sharing_leave_text">Du siehst es danach nicht mehr. Bitte den Besitzer, es erneut zu teilen, falls du es zurück brauchst.</string>
+    <string name="sharing_left">Du hast keinen Zugriff mehr.</string>
+    <string name="yarn_picker_owner_yarns">Garne des Projektbesitzers</string>
+    <string name="yarn_picker_owner_offline">Verbinde dich mit dem Internet, um aus den Garnen des Besitzers zu wählen.</string>
+    <string name="history_shared">Geteilt mit %1$s · %2$s</string>
+    <string name="history_share_role_changed">Rolle von %1$s geändert auf %2$s</string>
+    <string name="history_share_revoked">Teilen mit %1$s beendet</string>
+    <string name="history_share_left">%1$s hat verlassen</string>
+    <string name="history_ownership_transferred">An %1$s übertragen</string>
+    <string name="history_deleted_account">ein gelöschtes Konto</string>
+    <string name="sharing_change">Ändern</string>
 </resources>

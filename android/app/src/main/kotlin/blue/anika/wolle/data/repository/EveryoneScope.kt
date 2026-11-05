@@ -44,9 +44,18 @@ fun syncScopeFor(isAdmin: Boolean): SyncScope = if (isAdmin) SyncScope.ALL else 
 /** Whether lists show everybody's items: administrators until they pick Mine; never others. */
 fun viewsEveryone(isAdmin: Boolean, stored: String?): Boolean = isAdmin && stored != "0"
 
-/** Keeps [this] rows that [hiddenFor]'s user may see: everything when null, else own rows only. */
-fun <T> List<T>.visibleTo(hiddenFor: Long?, ownerOf: (T) -> Long?): List<T> =
-    if (hiddenFor == null) this else filter { ownerOf(it).let { o -> o == null || o == hiddenFor } }
+/**
+ * Keeps [this] rows that [hiddenFor]'s user may see: everything when null, else the user's own rows
+ * plus items somebody shared with them ([sharedWithMe]). An administrator's Mine view hides other
+ * people's items they only see as an administrator, never ones shared with them.
+ */
+fun <T> List<T>.visibleTo(
+    hiddenFor: Long?,
+    ownerOf: (T) -> Long?,
+    sharedWithMe: (T) -> Boolean = { false },
+): List<T> =
+    if (hiddenFor == null) this
+    else filter { ownerOf(it).let { o -> o == null || o == hiddenFor } || sharedWithMe(it) }
 
 /** What the Mine/Everyone chip shows: [available] only for administrators. */
 data class EveryoneFilterState(val available: Boolean = false, val enabled: Boolean = false)
@@ -141,7 +150,11 @@ internal constructor(
 
     private suspend fun storedChoice(): String? = syncStateDao.getCursor(EVERYONE_FILTER_KEY)
 
-    /** Removes cached projects and yarns of other users, except rows with queued local writes. */
+    /**
+     * Removes cached projects and yarns of other users that are not shared with the user (a demoted
+     * administrator's leftovers), except rows with queued local writes. Shared and derived rows are
+     * visible to everybody and stay; sync tombstones remove them when access ends.
+     */
     internal suspend fun purgeForeign(currentUserId: Long) {
         purge(MutationEntityType.PROJECT, projectDao.getForeignIds(currentUserId)) {
             projectDao.deleteByIds(it)

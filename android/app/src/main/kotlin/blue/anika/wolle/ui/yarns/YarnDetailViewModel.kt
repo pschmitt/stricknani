@@ -12,6 +12,8 @@ import blue.anika.wolle.data.repository.HistoryKind
 import blue.anika.wolle.data.repository.HistoryRepository
 import blue.anika.wolle.data.repository.ItemLoad
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.SharedKind
+import blue.anika.wolle.data.repository.SharingRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
@@ -29,6 +31,7 @@ import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.print.PrintImageLoader
 import blue.anika.wolle.ui.print.PrintOptions
+import blue.anika.wolle.ui.sharing.SharingController
 import blue.anika.wolle.ui.yarns.print.YarnPrintDocument
 import blue.anika.wolle.ui.yarns.print.YarnPrintLabels
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -76,6 +80,7 @@ constructor(
     private val printImageLoader: PrintImageLoader,
     private val appPreferences: AppPreferencesRepository,
     historyRepository: HistoryRepository,
+    sharingRepository: SharingRepository,
 ) : ViewModel() {
 
     val yarnId = savedStateHandle.toRoute<Route.YarnDetail>().yarnId
@@ -85,6 +90,28 @@ constructor(
 
     /** The "Recent changes" section's state; online-only and loaded when it scrolls into view. */
     val history = HistoryController(viewModelScope, HistoryKind.Yarn, yarnId, historyRepository)
+
+    /** Share sheet, Transfer and Leave (online only); leaving closes the screen. */
+    val sharing =
+        SharingController(
+            scope = viewModelScope,
+            kind = SharedKind.Yarn,
+            id = yarnId,
+            repository = sharingRepository,
+            onLeft = {
+                mutationFeedback.show(R.string.sharing_left)
+                _deleted.value = true
+            },
+        )
+
+    init {
+        viewModelScope.launch {
+            sharing.transferred.filterNotNull().collect { person ->
+                mutationFeedback.show(R.string.sharing_transferred, person.name)
+                sharing.consumeTransferred()
+            }
+        }
+    }
 
     val cardOrder = detailCardOrderRepository.yarnOrder
 

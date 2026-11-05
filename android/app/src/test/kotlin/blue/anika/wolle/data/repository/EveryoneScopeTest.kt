@@ -68,7 +68,13 @@ class EveryoneScopeTest {
         }
 
         override suspend fun getForeignIds(currentUserId: Long) =
-            rows.filter { it.ownerId != null && it.ownerId != currentUserId }.map { it.id }
+            rows
+                .filter {
+                    it.ownerId != null &&
+                        it.ownerId != currentUserId &&
+                        !isSharedWithMe(it.accessRole, it.accessDerived)
+                }
+                .map { it.id }
     }
 
     private class FakeYarns(initial: List<YarnEntity>) : YarnDao {
@@ -95,10 +101,16 @@ class EveryoneScopeTest {
         }
 
         override suspend fun getForeignIds(currentUserId: Long) =
-            rows.filter { it.ownerId != null && it.ownerId != currentUserId }.map { it.id }
+            rows
+                .filter {
+                    it.ownerId != null &&
+                        it.ownerId != currentUserId &&
+                        !isSharedWithMe(it.accessRole, it.accessDerived)
+                }
+                .map { it.id }
     }
 
-    private fun project(id: Int, ownerId: Long?) =
+    private fun project(id: Int, ownerId: Long?, role: String? = null, derived: Boolean = false) =
         ProjectEntity(
             id = id,
             name = "P$id",
@@ -110,9 +122,11 @@ class EveryoneScopeTest {
             detailJson = "{}",
             ownerId = ownerId,
             ownerName = ownerId?.let { "Owner$it" },
+            accessRole = role,
+            accessDerived = derived,
         )
 
-    private fun yarn(id: Int, ownerId: Long?) =
+    private fun yarn(id: Int, ownerId: Long?, role: String? = null, derived: Boolean = false) =
         YarnEntity(
             id = id,
             name = "Y$id",
@@ -124,6 +138,8 @@ class EveryoneScopeTest {
             previewUrl = null,
             detailJson = "{}",
             ownerId = ownerId,
+            accessRole = role,
+            accessDerived = derived,
         )
 
     private class Fixture(
@@ -257,8 +273,50 @@ class EveryoneScopeTest {
     fun `lists only drop foreign rows on Mine`() {
         val rows = listOf(project(1, 1), project(2, 7), project(3, null))
 
-        assertEquals(listOf(1, 3), rows.visibleTo(hiddenFor = 1L) { it.ownerId }.map { it.id })
-        assertEquals(listOf(1, 2, 3), rows.visibleTo(hiddenFor = null) { it.ownerId }.map { it.id })
+        assertEquals(listOf(1, 3), rows.visibleTo(hiddenFor = 1L, { it.ownerId }).map { it.id })
+        assertEquals(
+            listOf(1, 2, 3),
+            rows.visibleTo(hiddenFor = null, { it.ownerId }).map { it.id },
+        )
+    }
+
+    @Test
+    fun `an administrator's Mine view hides what they only see as admin, not what is shared`() {
+        val rows =
+            listOf(
+                project(1, 1),
+                project(2, 7, role = "admin"),
+                project(3, 7, role = "viewer"),
+                project(4, 7, role = "viewer", derived = true),
+            )
+
+        val shown =
+            rows.visibleTo(hiddenFor = 1L, { it.ownerId }) {
+                isSharedWithMe(it.accessRole, it.accessDerived)
+            }
+
+        assertEquals(listOf(1, 3, 4), shown.map { it.id })
+    }
+
+    @Test
+    fun `a member keeps shared and derived rows, only admin leftovers are purged`() = runTest {
+        val f =
+            fixture(
+                member,
+                projects =
+                    listOf(
+                        project(1, 1),
+                        project(2, 7, role = "editor"),
+                        project(3, 7, role = "admin"),
+                        project(4, 7),
+                    ),
+                yarns = listOf(yarn(10, 7, role = "viewer", derived = true), yarn(11, 7)),
+            )
+
+        f.scope.forSync()
+
+        assertEquals(listOf(1, 2), f.projects.rows.map { it.id })
+        assertEquals(listOf(10), f.yarns.rows.map { it.id })
     }
 
     @Test

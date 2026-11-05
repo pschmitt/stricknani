@@ -12,6 +12,7 @@ import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.repository.movedItem
 import blue.anika.wolle.data.repository.photosSortedByPosition
 import blue.anika.wolle.data.repository.reorderedIdsOrNull
@@ -110,6 +111,20 @@ constructor(
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 capabilities.current.generation == ApiGeneration.V2,
             )
+
+    /** False when the user may only read this yarn (a viewer, a derived yarn). */
+    val canEdit: StateFlow<Boolean> =
+        (route.yarnId?.let { yarnRepository.observeById(it) } ?: flowOf(null))
+            .map { it?.access()?.canEdit ?: true }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), true)
+
+    /** Whether the editor may delete the yarn: owners and administrators only. */
+    val canDelete: StateFlow<Boolean> =
+        (route.yarnId?.let { yarnRepository.observeById(it) } ?: flowOf(null))
+            .map { it?.access()?.canManage ?: true }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), true)
 
     /** Banner for an administrator editing someone else's yarn; null for the user's own. */
     val ownerBanner: StateFlow<OwnerBannerData?> =

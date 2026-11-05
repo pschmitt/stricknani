@@ -247,6 +247,15 @@ private fun actionLabel(action: String): String {
 /** The summary of what changed once the details are in, else the plain action name. */
 @Composable
 private fun historyHeadline(event: AuditEventDto, state: HistoryUiState): String {
+    sharingEventLine(event.action, event.subject)?.let { line ->
+        val person = line.name ?: stringResource(R.string.history_deleted_account)
+        val role =
+            stringResource(
+                if (line.role == "editor") R.string.sharing_role_editor
+                else R.string.sharing_role_viewer
+            )
+        return stringResource(line.textRes, person, role)
+    }
     event.media?.displayName()?.let { name ->
         return "${actionLabel(event.action)}: $name"
     }
