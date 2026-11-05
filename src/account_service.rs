@@ -644,6 +644,10 @@ pub(crate) async fn delete_account(
             return Err(AccountError::LastAdministrator);
         }
     }
+    // Recipients of what the account owns lose it with the account.
+    let share_watch = crate::sharing::watch_account_deletion(&mut tx, user_id)
+        .await
+        .map_err(|_| AccountError::Database)?;
     for statement in [
         // Resource history authored by the account (titles, change sets).
         "DELETE FROM audit_events WHERE actor_user_id = ?1",
@@ -662,6 +666,9 @@ pub(crate) async fn delete_account(
             .await
             .map_err(|_| AccountError::Database)?;
     }
+    crate::sharing::settle(&mut tx, share_watch, false)
+        .await
+        .map_err(|_| AccountError::Database)?;
     oidc_identity_service::record_account_deleted_tx(&mut tx, now)
         .await
         .map_err(|_| AccountError::Database)?;

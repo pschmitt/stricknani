@@ -44,6 +44,7 @@ mod oidc_login;
 mod project_preview;
 mod projects;
 mod resource_history;
+mod sharing;
 mod signup;
 mod sync;
 mod telemetry;
@@ -129,6 +130,7 @@ fn router_with_context(
         .merge(oidc_login::router())
         .merge(projects::router())
         .merge(resource_history::router())
+        .merge(sharing::router())
         .merge(activity::router())
         .merge(sync::router())
         .merge(project_preview::router())

@@ -151,6 +151,17 @@ pub(crate) struct AuditEvent {
     pub(crate) resource: AuditResource,
     pub(crate) has_changes: bool,
     pub(crate) media: Option<AuditMedia>,
+    /// The other account of a share, role change, revoke, leave or transfer.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) subject: Option<AuditSubject>,
+}
+
+/// The other account a sharing event is about. Never carries an email.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditSubject {
+    pub(crate) id: Option<i64>,
+    pub(crate) name: Option<String>,
+    pub(crate) role: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -198,6 +209,8 @@ macro_rules! resource_event_columns {
         u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
         e.entity_type, e.entity_id, e.action, e.created_at, \
         e.resource_name_snapshot, e.change_version, \
+        e.subject_user_id, e.subject_role, \
+        (SELECT email FROM users WHERE id = e.subject_user_id) AS subject_email, \
         CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
         CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
         COALESCE(length(e.safe_changes) > 262144, 0) AS safe_changes_too_large, \
@@ -854,6 +867,21 @@ fn make_event(
         resource,
         has_changes,
         media,
+        subject: row
+            .get::<Option<String>, _>("subject_role")
+            .map(Some)
+            .or_else(|| {
+                row.get::<Option<i64>, _>("subject_user_id")
+                    .is_some()
+                    .then_some(None)
+            })
+            .map(|role| AuditSubject {
+                id: row.get("subject_user_id"),
+                name: row
+                    .get::<Option<String>, _>("subject_email")
+                    .map(|email| crate::resource_access::display_name(&email)),
+                role,
+            }),
     }
 }
 

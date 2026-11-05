@@ -2187,3 +2187,11 @@ Execution-oriented backlog for Stricknani.
 - **Status**: not started
 - **Category**: feat
 - **Scope**: Android Home dropped its sync status card: the greeting subtitle shows "Checking for news…" while refreshing and "All caught up!" for about 3 seconds afterwards, the mascot plays a busy loop and a happy or sad reaction, and only a failed refresh adds an error card with Retry. Web Home has no sync card, so mirror the subtitle and mascot states there (parity rule in AGENTS.md).
+
+## T-122: Share projects and yarns, transfer ownership (server)
+
+- **Priority**: P1
+- **Status**: wip (PID: n/a, AGENT: claude, branch `claude/sharing`, review before merge)
+- **Category**: feat
+- **Scope**: API v2 only. Viewer and editor shares on projects and yarns, derived read-only access to the yarns of a shared project, leave, ownership transfer (`move_linked_yarns`), people search, sync (shared resources, role changes, tombstones for lost access), media/history read access, audit events. Contract for the web and Android clients: `docs/sharing-api.md`. API v1 is unchanged.
+- **Open**: web and Android clients (parity rule), review of `src/resource_access.rs`, `src/sharing.rs` and `src/sync.rs`.

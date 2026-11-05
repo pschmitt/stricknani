@@ -365,7 +365,14 @@ async fn load_yarn_dtos(
         .map_err(|_| ProjectionError::Internal)?;
     let mut yarn_responses = Vec::with_capacity(ids.len());
     for id in ids {
-        match yarns::load_for_owner(&state.app, owner_id, *id).await {
+        match yarns::load_for_owner(
+            &state.app,
+            owner_id,
+            *id,
+            crate::resource_access::Surface::V2,
+        )
+        .await
+        {
             Ok(Some(yarn)) => {
                 let (photos, preview_url) = crate::media::yarn_photos_v2(
                     &state.app.pool,

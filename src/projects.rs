@@ -119,6 +119,9 @@ pub(crate) struct ProjectListItem {
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
+    /// The caller's role; set on API v2 only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) access: Option<crate::resource_access::AccessInfo>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -145,6 +148,9 @@ pub(crate) struct ProjectResponse {
     pub(crate) images: Vec<Value>,
     pub(crate) attachments: Vec<Value>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
+    /// The caller's role; set on API v2 only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) access: Option<crate::resource_access::AccessInfo>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -157,6 +163,8 @@ pub(crate) struct StepResponse {
 
 pub(crate) enum ProjectError {
     NotFound,
+    /// The caller can read the project but may not do this to it.
+    Forbidden,
     Database,
     Invalid(&'static str),
     Conflict(Box<ProjectResponse>),
@@ -164,17 +172,52 @@ pub(crate) enum ProjectError {
 }
 
 /// Tag parsing mode at the API boundary: v1 keeps its tokenized labels while
-/// browser v2 preserves each JSON array item as a label.
+/// browser v2 preserves each JSON array item as a label. The policy also
+/// identifies the API generation: only v2 (`PreserveLabels`) sees shares.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum TagPolicy {
     Legacy,
     PreserveLabels,
 }
 
+impl TagPolicy {
+    fn surface(self) -> crate::resource_access::Surface {
+        match self {
+            Self::Legacy => crate::resource_access::Surface::V1,
+            Self::PreserveLabels => crate::resource_access::Surface::V2,
+        }
+    }
+}
+
+async fn project_grant(
+    state: &AppState,
+    actor_id: i64,
+    project_id: i64,
+    tag_policy: TagPolicy,
+    need: crate::resource_access::Need,
+) -> Result<crate::resource_access::Grant, ProjectError> {
+    use crate::resource_access::Denied;
+    crate::resource_access::require(
+        &state.pool,
+        actor_id,
+        crate::resource_access::ResourceKind::Project,
+        project_id,
+        tag_policy.surface(),
+        need,
+    )
+    .await
+    .map_err(|denied| match denied {
+        Denied::NotFound => ProjectError::NotFound,
+        Denied::Forbidden => ProjectError::Forbidden,
+        Denied::Database => ProjectError::Database,
+    })
+}
+
 impl ProjectError {
     fn into_v1_response(self) -> Response {
         match self {
-            Self::NotFound => not_found(),
+            // API v1 never grants read-only access; fail closed as absent.
+            Self::NotFound | Self::Forbidden => not_found(),
             Self::Database => database_error(),
             Self::Invalid(detail) => invalid_project(detail),
             Self::Conflict(project) => conflict(*project),
@@ -210,6 +253,7 @@ struct ProjectListRow {
     tags: String,
     is_favorite: bool,
     updated_at: String,
+    share_role: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -291,13 +335,20 @@ pub(crate) async fn list_for_owner_with_tag_policy(
         crate::resource_access::Scope::Mine => Some(user_id),
         crate::resource_access::Scope::All => query.owner_id,
     };
+    let v2 = matches!(tag_policy, TagPolicy::PreserveLabels);
+    // API v2 lists what is shared with the caller next to their own projects.
+    let share_user = (v2 && scope == crate::resource_access::Scope::Mine).then_some(user_id);
     let rows = sqlx::query_as::<_, ProjectListRow>(
         "SELECT p.id, p.owner_id, p.name, c.name AS category, p.tags, \
                 EXISTS(SELECT 1 FROM user_favorites f \
                        WHERE f.user_id = ? AND f.project_id = p.id) AS is_favorite, \
-                p.updated_at \
+                p.updated_at, \
+                (SELECT s.role FROM resource_shares s WHERE s.kind = 'project' \
+                 AND s.resource_id = p.id AND s.user_id = ?) AS share_role \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
-         WHERE (? IS NULL OR p.owner_id = ?) \
+         WHERE ((? IS NULL OR p.owner_id = ?) OR (? IS NOT NULL AND EXISTS( \
+                SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
+                AND s.resource_id = p.id AND s.user_id = ?))) \
            AND (? IS NULL OR c.name = ?) \
            AND (? IS NULL OR instr(lower(p.tags), lower(?)) > 0) \
            AND (? IS NULL OR p.name LIKE ? ESCAPE '!' \
@@ -309,8 +360,11 @@ pub(crate) async fn list_for_owner_with_tag_policy(
          ORDER BY p.updated_at DESC, p.id DESC LIMIT ? OFFSET ?",
     )
     .bind(user_id)
+    .bind(user_id)
     .bind(owner_filter)
     .bind(owner_filter)
+    .bind(share_user)
+    .bind(share_user)
     .bind(category.as_deref())
     .bind(category.as_deref())
     .bind(tag.as_deref())
@@ -331,7 +385,20 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     let has_more = rows.len() > PAGE_SIZE as usize;
     let mut items = Vec::new();
     let mut owners = std::collections::HashMap::new();
+    let admin = v2
+        && crate::resource_access::is_active_admin(&state.pool, user_id)
+            .await
+            .map_err(|_| ProjectError::Database)?;
     for row in rows.into_iter().take(PAGE_SIZE as usize) {
+        let access = v2.then(|| {
+            crate::resource_access::list_access(
+                user_id,
+                row.owner_id,
+                admin,
+                row.share_role.as_deref(),
+                false,
+            )
+        });
         let (images, _) = match crate::media::project_media(&state.pool, row.owner_id, row.id).await
         {
             Ok(media) => media,
@@ -358,6 +425,7 @@ pub(crate) async fn list_for_owner_with_tag_policy(
             is_favorite: row.is_favorite,
             updated_at: row.updated_at,
             preview_url: crate::media::project_preview(&images),
+            access,
         });
     }
 
@@ -500,7 +568,7 @@ async fn create_project_with_yarn_ids(
         .begin()
         .await
         .map_err(|_| ProjectError::Database)?;
-    let yarn_ids = owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids)
+    let yarn_ids = owned_yarn_ids(&mut transaction, user_id, 0, &payload.yarn_ids)
         .await
         .map_err(|_| ProjectError::Database)?;
     let audit_yarn_names = yarn_names_for_audit(&mut transaction, user_id, &yarn_ids)
@@ -549,7 +617,7 @@ async fn create_project_with_yarn_ids(
     if insert_project_yarns(&mut transaction, project_id, &yarn_ids)
         .await
         .is_err()
-        || bump_yarn_timestamps(&mut transaction, user_id, &yarn_ids)
+        || bump_yarn_timestamps(&mut transaction, &yarn_ids)
             .await
             .is_err()
     {
@@ -646,10 +714,15 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     tag_policy: TagPolicy,
 ) -> Result<ProjectResponse, ProjectError> {
     let actor_id = user_id;
-    let user_id = crate::resource_access::project_owner(&state.pool, actor_id, project_id)
-        .await
-        .map_err(|_| ProjectError::Database)?
-        .ok_or(ProjectError::NotFound)?;
+    let grant = project_grant(
+        state,
+        actor_id,
+        project_id,
+        tag_policy,
+        crate::resource_access::Need::Edit,
+    )
+    .await?;
+    let user_id = grant.owner_id;
     let name = payload.name.trim().to_owned();
     let expected_updated_at = match payload.expected_updated_at.as_deref() {
         Some(value) => Some(
@@ -681,9 +754,24 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     let old_audit_yarn_names = yarn_names_for_audit(&mut transaction, user_id, &old_yarn_ids)
         .await
         .map_err(|_| ProjectError::Database)?;
-    let yarn_ids = owned_yarn_ids(&mut transaction, user_id, &payload.yarn_ids)
+    let yarn_ids = owned_yarn_ids(&mut transaction, user_id, project_id, &payload.yarn_ids)
         .await
         .map_err(|_| ProjectError::Database)?;
+    // An editor links only the owner's yarns (or keeps existing links); asking
+    // for anything else is an error rather than a silent no-op.
+    if grant.access == crate::resource_access::Access::Editor {
+        let requested: HashSet<i64> = payload
+            .yarn_ids
+            .iter()
+            .copied()
+            .filter(|id| *id > 0)
+            .collect();
+        if requested.len() != yarn_ids.len() {
+            return Err(ProjectError::Invalid(
+                "Yarn is not available for this project",
+            ));
+        }
+    }
     let new_audit_yarn_names = yarn_names_for_audit(&mut transaction, user_id, &yarn_ids)
         .await
         .map_err(|_| ProjectError::Database)?;
@@ -741,10 +829,29 @@ pub(crate) async fn update_for_owner_with_tag_policy(
         Err(_) => return Err(ProjectError::Database),
     }
     let changed_yarn_ids = changed_ids(&old_yarn_ids, &yarn_ids);
+    // Recipients of the project see a yarn exactly while it is linked: unlinked
+    // yarns get a tombstone for them, newly linked ones appear in their delta.
+    let link_watch = if changed_yarn_ids.is_empty() {
+        None
+    } else {
+        let candidates = crate::sharing::project_candidates(
+            &mut transaction,
+            project_id,
+            user_id,
+            &changed_yarn_ids,
+        )
+        .await
+        .map_err(|_| ProjectError::Database)?;
+        Some(
+            crate::sharing::watch(&mut transaction, candidates)
+                .await
+                .map_err(|_| ProjectError::Database)?,
+        )
+    };
     if replace_project_yarns(&mut transaction, project_id, &yarn_ids)
         .await
         .is_err()
-        || bump_yarn_timestamps(&mut transaction, user_id, &changed_yarn_ids)
+        || bump_yarn_timestamps(&mut transaction, &changed_yarn_ids)
             .await
             .is_err()
         || replace_steps(
@@ -755,6 +862,13 @@ pub(crate) async fn update_for_owner_with_tag_policy(
         )
         .await
         .is_err()
+    {
+        return Err(ProjectError::Database);
+    }
+    if let Some(link_watch) = link_watch
+        && crate::sharing::settle(&mut transaction, link_watch, false)
+            .await
+            .is_err()
     {
         return Err(ProjectError::Database);
     }
@@ -816,10 +930,16 @@ pub(crate) async fn delete_for_owner(
     project_id: i64,
 ) -> Result<(), ProjectError> {
     let actor_id = user_id;
-    let user_id = crate::resource_access::project_owner(&state.pool, actor_id, project_id)
-        .await
-        .map_err(|_| ProjectError::Database)?
-        .ok_or(ProjectError::NotFound)?;
+    // Deleting is owner/administrator only, also for editors of a share.
+    let user_id = project_grant(
+        state,
+        actor_id,
+        project_id,
+        TagPolicy::PreserveLabels,
+        crate::resource_access::Need::Manage,
+    )
+    .await?
+    .owner_id;
     let mut transaction = state
         .pool
         .begin()
@@ -840,12 +960,25 @@ pub(crate) async fn delete_for_owner(
         Ok(ids) => ids,
         Err(_) => return Err(ProjectError::Database),
     };
-    if bump_yarn_timestamps(&mut transaction, user_id, &linked_yarn_ids)
+    if bump_yarn_timestamps(&mut transaction, &linked_yarn_ids)
         .await
         .is_err()
     {
         return Err(ProjectError::Database);
     }
+    let delete_watch = match crate::sharing::project_candidates(
+        &mut transaction,
+        project_id,
+        user_id,
+        &[],
+    )
+    .await
+    {
+        Ok(candidates) => crate::sharing::watch(&mut transaction, candidates)
+            .await
+            .map_err(|_| ProjectError::Database)?,
+        Err(_) => return Err(ProjectError::Database),
+    };
     let changed_at = timestamp(Utc::now());
     if sqlx::query(
         "INSERT INTO deletion_events (owner_id, entity_type, entity_id, changed_at) \
@@ -877,6 +1010,13 @@ pub(crate) async fn delete_for_owner(
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => return Err(ProjectError::NotFound),
         Err(_) => return Err(ProjectError::Database),
+    }
+    // Recipients and viewers of derived yarns learn of the removal.
+    if crate::sharing::settle(&mut transaction, delete_watch, false)
+        .await
+        .is_err()
+    {
+        return Err(ProjectError::Database);
     }
     if crate::audit::record_with_data(
         &mut transaction,
@@ -947,13 +1087,15 @@ pub(crate) async fn set_favorite_for_owner_with_tag_policy(
     favorite: bool,
     tag_policy: TagPolicy,
 ) -> Result<ProjectResponse, ProjectError> {
-    let project_exists =
-        crate::resource_access::project_owner(&state.pool, user_id, project_id).await;
-    match project_exists {
-        Ok(Some(_)) => {}
-        Ok(None) => return Err(ProjectError::NotFound),
-        Err(_) => return Err(ProjectError::Database),
-    }
+    // Favourites are personal: any reader may set one.
+    project_grant(
+        state,
+        user_id,
+        project_id,
+        tag_policy,
+        crate::resource_access::Need::Read,
+    )
+    .await?;
     let result = if favorite {
         sqlx::query(
             "INSERT INTO user_favorites (user_id, project_id) VALUES (?, ?) \
@@ -994,11 +1136,18 @@ pub(crate) async fn load_project_with_tag_policy(
     tag_policy: TagPolicy,
 ) -> Result<Option<ProjectResponse>, sqlx::Error> {
     let actor_id = user_id;
-    let Some(user_id) =
-        crate::resource_access::project_owner(&state.pool, actor_id, project_id).await?
+    let Some(grant) = crate::resource_access::grant(
+        &state.pool,
+        actor_id,
+        crate::resource_access::ResourceKind::Project,
+        project_id,
+        tag_policy.surface(),
+    )
+    .await?
     else {
         return Ok(None);
     };
+    let user_id = grant.owner_id;
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
                 p.description, p.notes, p.other_materials, p.tags, p.link, \
@@ -1016,10 +1165,9 @@ pub(crate) async fn load_project_with_tag_policy(
     let yarns = sqlx::query_as::<_, (i64, String)>(
         "SELECT y.id, y.name FROM project_yarns py \
          JOIN yarns y ON y.id = py.yarn_id \
-         WHERE py.project_id = ? AND y.owner_id = ? ORDER BY py.rowid",
+         WHERE py.project_id = ? ORDER BY py.rowid",
     )
     .bind(project_id)
-    .bind(user_id)
     .fetch_all(&state.pool)
     .await?;
     let steps = sqlx::query_as::<_, StepRow>(
@@ -1073,6 +1221,7 @@ pub(crate) async fn load_project_with_tag_policy(
         images,
         attachments,
         owner,
+        access: matches!(tag_policy, TagPolicy::PreserveLabels).then(|| grant.into()),
     }))
 }
 
@@ -1100,17 +1249,15 @@ async fn project_step_ids(state: &AppState, project_id: i64) -> Result<HashSet<i
 
 async fn yarn_names_for_audit(
     tx: &mut Transaction<'_, Sqlite>,
-    owner_id: i64,
+    _owner_id: i64,
     yarn_ids: &[i64],
 ) -> Result<Vec<String>, sqlx::Error> {
     let mut names = Vec::with_capacity(yarn_ids.len());
     for id in yarn_ids {
-        if let Some(name) =
-            sqlx::query_scalar::<_, String>("SELECT name FROM yarns WHERE id = ? AND owner_id = ?")
-                .bind(id)
-                .bind(owner_id)
-                .fetch_optional(&mut **tx)
-                .await?
+        if let Some(name) = sqlx::query_scalar::<_, String>("SELECT name FROM yarns WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&mut **tx)
+            .await?
         {
             names.push(name);
         }
@@ -1316,9 +1463,14 @@ async fn ensure_category(
     .await
 }
 
+/// Yarns a project may link: the project owner's own, plus any yarn the
+/// project already links (after a transfer without `move_linked_yarns` the old
+/// owner's yarns stay linked, and keeping them in a save must keep working).
+/// Nobody links a yarn of their own stash into someone else's project.
 async fn owned_yarn_ids(
     transaction: &mut Transaction<'_, Sqlite>,
     user_id: i64,
+    project_id: i64,
     requested_ids: &[i64],
 ) -> Result<Vec<i64>, sqlx::Error> {
     let mut found_ids = Vec::new();
@@ -1327,12 +1479,15 @@ async fn owned_yarn_ids(
         if *yarn_id <= 0 || !seen.insert(*yarn_id) {
             continue;
         }
-        let found_id =
-            sqlx::query_scalar::<_, i64>("SELECT id FROM yarns WHERE id = ? AND owner_id = ?")
-                .bind(yarn_id)
-                .bind(user_id)
-                .fetch_optional(&mut **transaction)
-                .await?;
+        let found_id = sqlx::query_scalar::<_, i64>(
+            "SELECT y.id FROM yarns y WHERE y.id = ?1 AND (y.owner_id = ?2 OR EXISTS( \
+             SELECT 1 FROM project_yarns py WHERE py.yarn_id = y.id AND py.project_id = ?3))",
+        )
+        .bind(yarn_id)
+        .bind(user_id)
+        .bind(project_id)
+        .fetch_optional(&mut **transaction)
+        .await?;
         if let Some(found_id) = found_id {
             found_ids.push(found_id);
         }
@@ -1363,27 +1518,22 @@ fn changed_ids(old_ids: &[i64], new_ids: &[i64]) -> Vec<i64> {
 
 async fn bump_yarn_timestamps(
     transaction: &mut Transaction<'_, Sqlite>,
-    user_id: i64,
     yarn_ids: &[i64],
 ) -> Result<(), sqlx::Error> {
     for yarn_id in yarn_ids {
-        let current = sqlx::query_scalar::<_, String>(
-            "SELECT updated_at FROM yarns WHERE id = ? AND owner_id = ?",
-        )
-        .bind(yarn_id)
-        .bind(user_id)
-        .fetch_optional(&mut **transaction)
-        .await?
-        .ok_or(sqlx::Error::RowNotFound)?;
+        let current = sqlx::query_scalar::<_, String>("SELECT updated_at FROM yarns WHERE id = ?")
+            .bind(yarn_id)
+            .fetch_optional(&mut **transaction)
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let updated_at = next_timestamp(&current).ok_or_else(|| {
             sqlx::Error::Decode(Box::new(std::io::Error::other(
                 "invalid yarn update timestamp",
             )))
         })?;
-        let result = sqlx::query("UPDATE yarns SET updated_at = ? WHERE id = ? AND owner_id = ?")
+        let result = sqlx::query("UPDATE yarns SET updated_at = ? WHERE id = ?")
             .bind(updated_at)
             .bind(yarn_id)
-            .bind(user_id)
             .execute(&mut **transaction)
             .await?;
         if result.rows_affected() != 1 {

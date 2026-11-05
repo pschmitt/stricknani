@@ -101,6 +101,14 @@ struct YarnRow {
     updated_at: String,
 }
 
+#[derive(Debug, FromRow)]
+struct YarnListRow {
+    #[sqlx(flatten)]
+    yarn: YarnRow,
+    share_role: Option<String>,
+    is_derived: bool,
+}
+
 #[derive(Debug, Serialize)]
 pub(crate) struct YarnResponse {
     pub(crate) id: i64,
@@ -124,6 +132,9 @@ pub(crate) struct YarnResponse {
     pub(crate) project_ids: Vec<i64>,
     pub(crate) photos: Vec<serde_json::Value>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
+    /// The caller's role; set on API v2 only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) access: Option<crate::resource_access::AccessInfo>,
 }
 
 #[derive(Debug, Serialize)]
@@ -137,6 +148,9 @@ pub(crate) struct YarnListItemResponse {
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
+    /// The caller's role; set on API v2 only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) access: Option<crate::resource_access::AccessInfo>,
 }
 
 #[derive(Debug, Serialize)]
@@ -150,15 +164,42 @@ pub(crate) struct YarnPage {
 
 pub(crate) enum YarnError {
     NotFound,
+    /// The caller can read the yarn but may not do this to it.
+    Forbidden,
     Database,
     Invalid(&'static str),
     Conflict(Box<YarnResponse>),
 }
 
+async fn yarn_grant(
+    state: &AppState,
+    actor_id: i64,
+    yarn_id: i64,
+    surface: crate::resource_access::Surface,
+    need: crate::resource_access::Need,
+) -> Result<crate::resource_access::Grant, YarnError> {
+    use crate::resource_access::Denied;
+    crate::resource_access::require(
+        &state.pool,
+        actor_id,
+        crate::resource_access::ResourceKind::Yarn,
+        yarn_id,
+        surface,
+        need,
+    )
+    .await
+    .map_err(|denied| match denied {
+        Denied::NotFound => YarnError::NotFound,
+        Denied::Forbidden => YarnError::Forbidden,
+        Denied::Database => YarnError::Database,
+    })
+}
+
 impl YarnError {
     fn into_v1_response(self) -> Response {
         match self {
-            Self::NotFound => yarn_not_found(),
+            // API v1 never grants read-only access; fail closed as absent.
+            Self::NotFound | Self::Forbidden => yarn_not_found(),
             Self::Database => database_error(),
             Self::Invalid(detail) => {
                 error_response(StatusCode::UNPROCESSABLE_ENTITY, json!(detail))
@@ -189,7 +230,7 @@ async fn list_yarns(
         Ok(query) => query,
         Err(_) => return error_response(StatusCode::UNPROCESSABLE_ENTITY, json!("Invalid query")),
     };
-    match list_for_owner(&state, user_id, query).await {
+    match list_for_owner(&state, user_id, query, crate::resource_access::Surface::V1).await {
         Ok(page) => Json(page).into_response(),
         Err(YarnError::Invalid(detail)) => {
             error_response(StatusCode::UNPROCESSABLE_ENTITY, json!(detail))
@@ -202,6 +243,7 @@ pub(crate) async fn list_for_owner(
     state: &AppState,
     user_id: i64,
     query: ListQuery,
+    surface: crate::resource_access::Surface,
 ) -> Result<YarnPage, YarnError> {
     let page = query.page.unwrap_or(1);
     if page < 1 {
@@ -230,49 +272,69 @@ pub(crate) async fn list_for_owner(
         crate::resource_access::Scope::All => query.owner_id,
     };
 
-    let rows = sqlx::query_as::<_, YarnRow>(
-        "SELECT yarns.* FROM yarns \
-         WHERE (? IS NULL OR owner_id = ?) \
-           AND (? IS NULL OR EXISTS (SELECT 1 FROM user_favorite_yarns f \
-                                     WHERE f.user_id = ? AND f.yarn_id = yarns.id) = ?) \
-           AND (? IS NULL OR yarns.name LIKE ? ESCAPE '!' \
-                OR COALESCE(yarns.brand, '') LIKE ? ESCAPE '!' \
-                OR COALESCE(yarns.colorway, '') LIKE ? ESCAPE '!' \
-                OR COALESCE(yarns.fiber_content, '') LIKE ? ESCAPE '!' \
-                OR COALESCE(yarns.notes, '') LIKE ? ESCAPE '!') \
-         ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?",
-    )
-    .bind(owner_filter)
-    .bind(owner_filter)
-    .bind(
-        query
-            .favorite
-            .map(|favorite| if favorite { 1_i64 } else { 0_i64 }),
-    )
-    .bind(user_id)
-    .bind(
-        query
-            .favorite
-            .map(|favorite| if favorite { 1_i64 } else { 0_i64 }),
-    )
-    .bind(search_pattern.as_deref())
-    .bind(search_pattern.as_deref())
-    .bind(search_pattern.as_deref())
-    .bind(search_pattern.as_deref())
-    .bind(search_pattern.as_deref())
-    .bind(search_pattern.as_deref())
-    .bind(PAGE_SIZE + 1)
-    .bind((page - 1).saturating_mul(PAGE_SIZE))
-    .fetch_all(&state.pool)
-    .await
-    .map_err(|_| YarnError::Database)?;
+    let v2 = surface == crate::resource_access::Surface::V2;
+    // API v2 lists what is shared with the caller, directly or through a
+    // shared project, next to their own yarns.
+    let share_user = (v2 && scope == crate::resource_access::Scope::Mine).then_some(user_id);
+    let derived = crate::resource_access::derived_yarn_sql("yarns", 1);
+    let list_sql = format!(
+        "SELECT yarns.*, \
+                (SELECT s.role FROM resource_shares s WHERE s.kind = 'yarn' \
+                 AND s.resource_id = yarns.id AND s.user_id = ?1) AS share_role, \
+                {derived} AS is_derived \
+         FROM yarns \
+         WHERE ((?2 IS NULL OR owner_id = ?2) OR (?3 IS NOT NULL AND (EXISTS( \
+                SELECT 1 FROM resource_shares s WHERE s.kind = 'yarn' \
+                AND s.resource_id = yarns.id AND s.user_id = ?3) OR {derived}))) \
+           AND (?4 IS NULL OR EXISTS (SELECT 1 FROM user_favorite_yarns f \
+                                     WHERE f.user_id = ?1 AND f.yarn_id = yarns.id) = ?4) \
+           AND (?5 IS NULL OR yarns.name LIKE ?5 ESCAPE '!' \
+                OR COALESCE(yarns.brand, '') LIKE ?5 ESCAPE '!' \
+                OR COALESCE(yarns.colorway, '') LIKE ?5 ESCAPE '!' \
+                OR COALESCE(yarns.fiber_content, '') LIKE ?5 ESCAPE '!' \
+                OR COALESCE(yarns.notes, '') LIKE ?5 ESCAPE '!') \
+         ORDER BY updated_at DESC, id DESC LIMIT ?6 OFFSET ?7"
+    );
+    let rows = sqlx::query_as::<_, YarnListRow>(sqlx::AssertSqlSafe(list_sql.as_str()))
+        .bind(user_id)
+        .bind(owner_filter)
+        .bind(share_user)
+        .bind(
+            query
+                .favorite
+                .map(|favorite| if favorite { 1_i64 } else { 0_i64 }),
+        )
+        .bind(search_pattern.as_deref())
+        .bind(PAGE_SIZE + 1)
+        .bind((page - 1).saturating_mul(PAGE_SIZE))
+        .fetch_all(&state.pool)
+        .await
+        .map_err(|_| YarnError::Database)?;
     let has_more = rows.len() > PAGE_SIZE as usize;
     let favorite_ids = favorite_ids(&state.pool, user_id)
         .await
         .map_err(|_| YarnError::Database)?;
     let mut items = Vec::new();
     let mut owners = std::collections::HashMap::new();
-    for yarn in rows.into_iter().take(PAGE_SIZE as usize) {
+    let admin = v2
+        && crate::resource_access::is_active_admin(&state.pool, user_id)
+            .await
+            .map_err(|_| YarnError::Database)?;
+    for row in rows.into_iter().take(PAGE_SIZE as usize) {
+        let YarnListRow {
+            yarn,
+            share_role,
+            is_derived,
+        } = row;
+        let access = v2.then(|| {
+            crate::resource_access::list_access(
+                user_id,
+                yarn.owner_id,
+                admin,
+                share_role.as_deref(),
+                is_derived,
+            )
+        });
         let photos = match crate::media::yarn_photos(&state.pool, yarn.owner_id, yarn.id).await {
             Ok(photos) => photos,
             Err(_) => return Err(YarnError::Database),
@@ -299,6 +361,7 @@ pub(crate) async fn list_for_owner(
             is_favorite: favorite_ids.contains(&yarn.id),
             updated_at: yarn.updated_at,
             preview_url: crate::media::yarn_preview(&photos),
+            access,
         });
     }
 
@@ -330,7 +393,14 @@ async fn get_yarn(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    match load_for_owner(&state, user_id, yarn_id).await {
+    match load_for_owner(
+        &state,
+        user_id,
+        yarn_id,
+        crate::resource_access::Surface::V1,
+    )
+    .await
+    {
         Ok(Some(yarn)) => Json(yarn).into_response(),
         Ok(None) => yarn_not_found(),
         Err(_) => database_error(),
@@ -425,7 +495,7 @@ pub(crate) async fn create_for_owner(
     if !prepared_images.is_empty() {
         crate::image_import::persist_yarn_images(state, user_id, id, &name, prepared_images).await;
     }
-    load_for_owner(state, user_id, id)
+    load_for_owner(state, user_id, id, crate::resource_access::Surface::V1)
         .await
         .map_err(|_| YarnError::Database)?
         .ok_or(YarnError::Database)
@@ -441,7 +511,15 @@ async fn update_yarn(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    match update_for_owner(&state, user_id, yarn_id, payload).await {
+    match update_for_owner(
+        &state,
+        user_id,
+        yarn_id,
+        payload,
+        crate::resource_access::Surface::V1,
+    )
+    .await
+    {
         Ok(yarn) => Json(yarn).into_response(),
         Err(error) => error.into_v1_response(),
     }
@@ -452,12 +530,19 @@ pub(crate) async fn update_for_owner(
     user_id: i64,
     yarn_id: i64,
     payload: YarnWriteRequest,
+    surface: crate::resource_access::Surface,
 ) -> Result<YarnResponse, YarnError> {
     let actor_id = user_id;
-    let user_id = crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id)
-        .await
-        .map_err(|_| YarnError::Database)?
-        .ok_or(YarnError::NotFound)?;
+    // Editors of a direct share may edit; derived read-only access never does.
+    let user_id = yarn_grant(
+        state,
+        actor_id,
+        yarn_id,
+        surface,
+        crate::resource_access::Need::Edit,
+    )
+    .await?
+    .owner_id;
     let name = clean_name(&payload.name);
     let expected = match payload.expected_updated_at.as_deref() {
         Some(value) => match parse_timestamp(value) {
@@ -480,7 +565,7 @@ pub(crate) async fn update_for_owner(
         .is_some_and(|value| value != current.updated_at)
     {
         let _ = tx.rollback().await;
-        let current = current_for_conflict(state, actor_id, yarn_id).await?;
+        let current = current_for_conflict(state, actor_id, yarn_id, surface).await?;
         return Err(YarnError::Conflict(Box::new(current)));
     }
 
@@ -523,7 +608,7 @@ pub(crate) async fn update_for_owner(
         Ok(_) => {
             let _ = tx.rollback().await;
             return if expected.is_some() {
-                match current_for_conflict(state, actor_id, yarn_id).await {
+                match current_for_conflict(state, actor_id, yarn_id, surface).await {
                     Ok(current) => Err(YarnError::Conflict(Box::new(current))),
                     Err(error) => Err(error),
                 }
@@ -576,7 +661,7 @@ pub(crate) async fn update_for_owner(
     if tx.commit().await.is_err() {
         return Err(YarnError::Database);
     }
-    load_for_owner(state, actor_id, yarn_id)
+    load_for_owner(state, actor_id, yarn_id, surface)
         .await
         .map_err(|_| YarnError::Database)?
         .ok_or(YarnError::NotFound)
@@ -603,10 +688,16 @@ pub(crate) async fn delete_for_owner(
     yarn_id: i64,
 ) -> Result<(), YarnError> {
     let actor_id = user_id;
-    let user_id = crate::resource_access::yarn_owner(&state.pool, actor_id, yarn_id)
-        .await
-        .map_err(|_| YarnError::Database)?
-        .ok_or(YarnError::NotFound)?;
+    // Deleting is owner/administrator only, also for editors of a share.
+    let user_id = yarn_grant(
+        state,
+        actor_id,
+        yarn_id,
+        crate::resource_access::Surface::V2,
+        crate::resource_access::Need::Manage,
+    )
+    .await?
+    .owner_id;
     let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
     let old_name = match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
         Ok(Some(yarn)) => yarn.name,
@@ -626,6 +717,14 @@ pub(crate) async fn delete_for_owner(
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
     }
+    // Recipients and viewers through shared projects learn of the removal.
+    let delete_watch = match crate::sharing::yarn_candidates(&mut tx, yarn_id, user_id).await {
+        Ok(candidates) => match crate::sharing::watch(&mut tx, candidates).await {
+            Ok(watched) => watched,
+            Err(_) => return Err(YarnError::Database),
+        },
+        Err(_) => return Err(YarnError::Database),
+    };
     let deleted_at = timestamp(Utc::now());
     if sqlx::query(
         "INSERT INTO deletion_events (owner_id, entity_type, entity_id, changed_at) \
@@ -656,6 +755,13 @@ pub(crate) async fn delete_for_owner(
             let _ = tx.rollback().await;
             return Err(YarnError::Database);
         }
+    }
+    if crate::sharing::settle(&mut tx, delete_watch, false)
+        .await
+        .is_err()
+    {
+        let _ = tx.rollback().await;
+        return Err(YarnError::Database);
     }
     if audit::record_with_data(
         &mut tx,
@@ -701,7 +807,15 @@ async fn set_favorite(
         Ok(user_id) => user_id,
         Err(error) => return error.into_response(),
     };
-    match set_favorite_for_owner(&state, user_id, yarn_id, favorite).await {
+    match set_favorite_for_owner(
+        &state,
+        user_id,
+        yarn_id,
+        favorite,
+        crate::resource_access::Surface::V1,
+    )
+    .await
+    {
         Ok(yarn) => Json(yarn).into_response(),
         Err(error) => error.into_v1_response(),
     }
@@ -712,12 +826,17 @@ pub(crate) async fn set_favorite_for_owner(
     user_id: i64,
     yarn_id: i64,
     favorite: bool,
+    surface: crate::resource_access::Surface,
 ) -> Result<YarnResponse, YarnError> {
-    match crate::resource_access::yarn_owner(&state.pool, user_id, yarn_id).await {
-        Ok(Some(_)) => {}
-        Ok(None) => return Err(YarnError::NotFound),
-        Err(_) => return Err(YarnError::Database),
-    }
+    // Favourites are personal: any reader may set one.
+    yarn_grant(
+        state,
+        user_id,
+        yarn_id,
+        surface,
+        crate::resource_access::Need::Read,
+    )
+    .await?;
     let result = if favorite {
         sqlx::query("INSERT INTO user_favorite_yarns (user_id, yarn_id) VALUES (?, ?) ON CONFLICT DO NOTHING")
             .bind(user_id).bind(yarn_id).execute(&state.pool).await
@@ -731,7 +850,7 @@ pub(crate) async fn set_favorite_for_owner(
     if result.is_err() {
         return Err(YarnError::Database);
     }
-    load_for_owner(state, user_id, yarn_id)
+    load_for_owner(state, user_id, yarn_id, surface)
         .await
         .map_err(|_| YarnError::Database)?
         .ok_or(YarnError::NotFound)
@@ -753,16 +872,25 @@ pub(crate) async fn load_for_owner(
     state: &AppState,
     user_id: i64,
     yarn_id: i64,
+    surface: crate::resource_access::Surface,
 ) -> Result<Option<YarnResponse>, sqlx::Error> {
-    get_yarn_response(&state.pool, user_id, yarn_id, state.gravatar.enabled).await
+    get_yarn_response(
+        &state.pool,
+        user_id,
+        yarn_id,
+        state.gravatar.enabled,
+        surface,
+    )
+    .await
 }
 
 async fn current_for_conflict(
     state: &AppState,
     user_id: i64,
     yarn_id: i64,
+    surface: crate::resource_access::Surface,
 ) -> Result<YarnResponse, YarnError> {
-    load_for_owner(state, user_id, yarn_id)
+    load_for_owner(state, user_id, yarn_id, surface)
         .await
         .map_err(|_| YarnError::Database)?
         .ok_or(YarnError::NotFound)
@@ -773,18 +901,29 @@ async fn get_yarn_response(
     actor_id: i64,
     yarn_id: i64,
     gravatar_enabled: bool,
+    surface: crate::resource_access::Surface,
 ) -> Result<Option<YarnResponse>, sqlx::Error> {
-    let Some(owner_id) = crate::resource_access::yarn_owner(pool, actor_id, yarn_id).await? else {
+    let Some(grant) = crate::resource_access::grant(
+        pool,
+        actor_id,
+        crate::resource_access::ResourceKind::Yarn,
+        yarn_id,
+        surface,
+    )
+    .await?
+    else {
         return Ok(None);
     };
+    let owner_id = grant.owner_id;
     let Some(yarn) = get_owned_yarn(pool, owner_id, yarn_id).await? else {
         return Ok(None);
     };
     let favorite = is_favorite(pool, actor_id, yarn_id).await?;
     let owner =
         crate::resource_access::owner_info(pool, actor_id, owner_id, gravatar_enabled).await?;
-    let mut response = yarn_response(pool, owner_id, yarn, favorite).await?;
+    let mut response = yarn_response(pool, actor_id, grant, yarn, favorite, surface).await?;
     response.owner = owner;
+    response.access = (surface == crate::resource_access::Surface::V2).then(|| grant.into());
     Ok(Some(response))
 }
 
@@ -824,19 +963,30 @@ async fn favorite_ids(
 
 async fn yarn_response(
     pool: &SqlitePool,
-    user_id: i64,
+    actor_id: i64,
+    grant: crate::resource_access::Grant,
     yarn: YarnRow,
     is_favorite: bool,
+    surface: crate::resource_access::Surface,
 ) -> Result<YarnResponse, sqlx::Error> {
-    let project_ids = sqlx::query_scalar::<_, i64>(
+    let user_id = grant.owner_id;
+    // The owner (and administrators) see the owner's projects. On v2 every
+    // reader also sees the linked projects they can open themselves; sharing a
+    // yarn never reveals the projects that use it.
+    let project_sql = format!(
         "SELECT p.id FROM projects p \
          JOIN project_yarns py ON py.project_id = p.id \
-         WHERE p.owner_id = ? AND py.yarn_id = ? ORDER BY p.id",
-    )
-    .bind(user_id)
-    .bind(yarn.id)
-    .fetch_all(pool)
-    .await?;
+         WHERE py.yarn_id = ?1 AND ((?3 AND p.owner_id = ?2) OR (?4 AND {})) ORDER BY p.id",
+        crate::resource_access::visible_sql(crate::resource_access::ResourceKind::Project, "p", 5)
+    );
+    let project_ids = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(project_sql.as_str()))
+        .bind(yarn.id)
+        .bind(user_id)
+        .bind(grant.access.can_manage())
+        .bind(surface == crate::resource_access::Surface::V2)
+        .bind(actor_id)
+        .fetch_all(pool)
+        .await?;
     let photos = crate::media::yarn_photos(pool, user_id, yarn.id).await?;
     Ok(YarnResponse {
         id: yarn.id,
@@ -860,6 +1010,7 @@ async fn yarn_response(
         project_ids,
         photos,
         owner: None,
+        access: None,
     })
 }
 
@@ -985,6 +1136,9 @@ fn yarn_audit_changes(
     items
 }
 
+/// Re-stamp the yarn owner's projects that link the yarn, because their
+/// summaries show the yarn's name. Projects of other accounts that link the
+/// yarn (possible after a transfer) are left alone, as before sharing existed.
 async fn bump_linked_project_timestamps(
     tx: &mut Transaction<'_, Sqlite>,
     owner_id: i64,
@@ -1019,11 +1173,17 @@ pub(crate) async fn sync_value(
     user_id: i64,
     yarn_id: i64,
 ) -> Result<Option<serde_json::Value>, sqlx::Error> {
-    get_yarn_response(&state.pool, user_id, yarn_id, state.gravatar.enabled)
-        .await?
-        .map(serde_json::to_value)
-        .transpose()
-        .map_err(|error| sqlx::Error::Protocol(error.to_string()))
+    get_yarn_response(
+        &state.pool,
+        user_id,
+        yarn_id,
+        state.gravatar.enabled,
+        crate::resource_access::Surface::V1,
+    )
+    .await?
+    .map(serde_json::to_value)
+    .transpose()
+    .map_err(|error| sqlx::Error::Protocol(error.to_string()))
 }
 
 fn clean_name(value: &str) -> String {

@@ -1,4 +1,4 @@
-//! Owner-scoped project and yarn audit history.
+//! Project and yarn audit history for everyone who may read the resource.
 
 use axum::{
     Json, Router,
@@ -88,7 +88,7 @@ async fn list_history(
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };
-    // Owners and active administrators read the history of the resource's real owner.
+    // Anyone who may read the resource reads its history.
     let owner_id = match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
         Ok(Some(owner_id)) => owner_id,
         Ok(None) => return not_found(),
@@ -150,7 +150,7 @@ async fn event_detail(
         Ok(actor_id) => actor_id,
         Err(response) => return *response,
     };
-    // Owners and active administrators read the history of the resource's real owner.
+    // Anyone who may read the resource reads its history.
     let owner_id = match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
         Ok(Some(owner_id)) => owner_id,
         Ok(None) => return not_found(),
@@ -212,16 +212,26 @@ fn internal_error() -> Response {
     )
 }
 
+/// The owner whose history is read, when the actor may read the resource at
+/// all: the owner, an active administrator, a share recipient or the viewer of
+/// a yarn derived from a shared project.
 async fn resource_owner(
     pool: &sqlx::SqlitePool,
     actor_id: i64,
     entity: AuditEntity,
     resource_id: i64,
 ) -> Result<Option<i64>, sqlx::Error> {
-    match entity {
-        AuditEntity::Project => {
-            crate::resource_access::project_owner(pool, actor_id, resource_id).await
-        }
-        _ => crate::resource_access::yarn_owner(pool, actor_id, resource_id).await,
-    }
+    let kind = match entity {
+        AuditEntity::Project => crate::resource_access::ResourceKind::Project,
+        _ => crate::resource_access::ResourceKind::Yarn,
+    };
+    Ok(crate::resource_access::grant(
+        pool,
+        actor_id,
+        kind,
+        resource_id,
+        crate::resource_access::Surface::V2,
+    )
+    .await?
+    .map(|grant| grant.owner_id))
 }

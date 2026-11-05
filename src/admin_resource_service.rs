@@ -146,10 +146,15 @@ pub(crate) async fn load(
             .ok_or(ResourceError::NotFound)?,
         ),
         ResourceKind::Yarn => ResourceData::Yarn(
-            yarns::load_for_owner(state, owner_id, resource_id)
-                .await
-                .map_err(|_| ResourceError::Database)?
-                .ok_or(ResourceError::NotFound)?,
+            yarns::load_for_owner(
+                state,
+                owner_id,
+                resource_id,
+                crate::resource_access::Surface::V1,
+            )
+            .await
+            .map_err(|_| ResourceError::Database)?
+            .ok_or(ResourceError::NotFound)?,
         ),
         ResourceKind::Category => {
             let row = sqlx::query_as::<_, (i64, String)>(

@@ -76,6 +76,11 @@ fn media_order_error(error: media::MediaOrderError) -> Response {
         media::MediaOrderError::NotFound => {
             super::api_error(StatusCode::NOT_FOUND, "not_found", "Media group not found")
         }
+        media::MediaOrderError::Forbidden => super::api_error(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "You may view this resource but not change it",
+        ),
         media::MediaOrderError::Invalid => super::api_error(
             StatusCode::UNPROCESSABLE_ENTITY,
             "validation_error",
@@ -182,6 +187,11 @@ fn media_error(error: MediaOperationError) -> Response {
         MediaOperationError::NotFound(_) => {
             super::api_error(StatusCode::NOT_FOUND, "not_found", "Media item not found")
         }
+        MediaOperationError::Forbidden => super::api_error(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "You may view this resource but not change it",
+        ),
         MediaOperationError::ServiceUnavailable => super::api_error(
             StatusCode::SERVICE_UNAVAILABLE,
             "media_unavailable",
@@ -240,8 +250,16 @@ async fn upload_title_image(
         Ok(multipart) => multipart,
         Err(error) => return multipart_error(error),
     };
-    match media::upload_project_image(&state.app, user_id, project_id, None, "title", multipart)
-        .await
+    match media::upload_project_image(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        project_id,
+        None,
+        "title",
+        multipart,
+    )
+    .await
     {
         Ok(data) => (StatusCode::CREATED, Json(Envelope { data })).into_response(),
         Err(error) => media_error(error),
@@ -265,6 +283,7 @@ async fn upload_step_image(
     match media::upload_project_image(
         &state.app,
         user_id,
+        crate::resource_access::Surface::V2,
         project_id,
         Some(step_id),
         "step",
@@ -291,7 +310,15 @@ async fn upload_attachment(
         Ok(multipart) => multipart,
         Err(error) => return multipart_error(error),
     };
-    match media::upload_project_attachment(&state.app, user_id, project_id, multipart).await {
+    match media::upload_project_attachment(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        project_id,
+        multipart,
+    )
+    .await
+    {
         Ok(data) => (StatusCode::CREATED, Json(Envelope { data })).into_response(),
         Err(error) => media_error(error),
     }
@@ -311,7 +338,15 @@ async fn upload_yarn_photo(
         Ok(multipart) => multipart,
         Err(error) => return multipart_error(error),
     };
-    match media::upload_yarn_photo_for_owner(&state.app, user_id, yarn_id, multipart).await {
+    match media::upload_yarn_photo_for_owner(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        yarn_id,
+        multipart,
+    )
+    .await
+    {
         Ok(data) => (StatusCode::CREATED, Json(Envelope { data })).into_response(),
         Err(error) => media_error(error),
     }
@@ -351,7 +386,16 @@ async fn delete_project_media(
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    match media::delete_project_media(&state, user_id, project_id, media_id, namespace).await {
+    match media::delete_project_media(
+        &state,
+        user_id,
+        crate::resource_access::Surface::V2,
+        project_id,
+        media_id,
+        namespace,
+    )
+    .await
+    {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
         Err(error) => media_error(error),
     }
@@ -366,7 +410,15 @@ async fn delete_yarn_photo(
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    match media::delete_yarn_photo_for_owner(&state.app, user_id, yarn_id, photo_id).await {
+    match media::delete_yarn_photo_for_owner(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        yarn_id,
+        photo_id,
+    )
+    .await
+    {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
         Err(error) => media_error(error),
     }

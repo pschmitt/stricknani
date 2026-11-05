@@ -84,6 +84,8 @@ pub(super) struct YarnDto {
     photos: Vec<serde_json::Value>,
     preview_url: Option<String>,
     owner: Option<crate::resource_access::OwnerInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    access: Option<crate::resource_access::AccessInfo>,
 }
 
 impl From<YarnResponse> for YarnDto {
@@ -113,6 +115,7 @@ impl From<YarnResponse> for YarnDto {
             photos: yarn.photos,
             preview_url: None,
             owner: yarn.owner,
+            access: yarn.access,
         }
     }
 }
@@ -172,6 +175,13 @@ fn yarn_error(error: YarnError) -> Response {
             StatusCode::NOT_FOUND,
             "not_found",
             "Yarn not found",
+            None,
+            None,
+        ),
+        YarnError::Forbidden => (
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "You may view this yarn but not change it",
             None,
             None,
         ),
@@ -244,16 +254,16 @@ async fn list_yarns(
             scope: query.scope,
             owner_id: query.owner_id,
         },
+        crate::resource_access::Surface::V2,
     )
     .await
     {
         Ok(page) => {
             let ids: Vec<_> = page.items.iter().map(|yarn| yarn.id).collect();
-            let previews =
-                match crate::media::yarn_previews_v2(&state.app.pool, user_id, &ids).await {
-                    Ok(previews) => previews,
-                    Err(_) => return yarn_error(YarnError::Database),
-                };
+            let previews = match crate::media::yarn_previews_v2(&state.app.pool, &ids).await {
+                Ok(previews) => previews,
+                Err(_) => return yarn_error(YarnError::Database),
+            };
             let data: Vec<YarnListItemResponse> = page
                 .items
                 .into_iter()
@@ -286,7 +296,14 @@ async fn get_yarn(
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    match yarn_service::load_for_owner(&state.app, user_id, yarn_id).await {
+    match yarn_service::load_for_owner(
+        &state.app,
+        user_id,
+        yarn_id,
+        crate::resource_access::Surface::V2,
+    )
+    .await
+    {
         Ok(Some(yarn)) => match yarn_dto_v2(&state, user_id, yarn).await {
             Ok(yarn) => Json(Envelope { data: yarn }).into_response(),
             Err(_) => yarn_error(YarnError::Database),
@@ -313,10 +330,13 @@ async fn create_yarn(
         return response;
     }
     match yarn_service::create_for_owner(&state.app, user_id, payload).await {
-        Ok(yarn) => match yarn_dto_v2(&state, user_id, yarn).await {
-            Ok(yarn) => (StatusCode::CREATED, Json(Envelope { data: yarn })).into_response(),
-            Err(_) => yarn_error(YarnError::Database),
-        },
+        Ok(mut yarn) => {
+            yarn.access = Some(crate::resource_access::AccessInfo::OWNER);
+            match yarn_dto_v2(&state, user_id, yarn).await {
+                Ok(yarn) => (StatusCode::CREATED, Json(Envelope { data: yarn })).into_response(),
+                Err(_) => yarn_error(YarnError::Database),
+            }
+        }
         Err(error) => yarn_error(error),
     }
 }
@@ -338,7 +358,15 @@ async fn update_yarn(
     if let Some(response) = validate_yarn(&payload) {
         return response;
     }
-    match yarn_service::update_for_owner(&state.app, user_id, yarn_id, payload).await {
+    match yarn_service::update_for_owner(
+        &state.app,
+        user_id,
+        yarn_id,
+        payload,
+        crate::resource_access::Surface::V2,
+    )
+    .await
+    {
         Ok(yarn) => match yarn_dto_v2(&state, user_id, yarn).await {
             Ok(yarn) => Json(Envelope { data: yarn }).into_response(),
             Err(_) => yarn_error(YarnError::Database),
@@ -388,7 +416,15 @@ async fn set_favorite(
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
-    match yarn_service::set_favorite_for_owner(&state.app, user_id, yarn_id, favorite).await {
+    match yarn_service::set_favorite_for_owner(
+        &state.app,
+        user_id,
+        yarn_id,
+        favorite,
+        crate::resource_access::Surface::V2,
+    )
+    .await
+    {
         Ok(yarn) => match yarn_dto_v2(&state, user_id, yarn).await {
             Ok(yarn) => Json(Envelope { data: yarn }).into_response(),
             Err(_) => yarn_error(YarnError::Database),
