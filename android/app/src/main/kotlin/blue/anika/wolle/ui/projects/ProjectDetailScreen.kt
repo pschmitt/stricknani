@@ -134,8 +134,10 @@ fun ProjectDetailScreen(
     val textStep by viewModel.textStep.collectAsStateWithLifecycle()
     val timer by viewModel.timerState.collectAsStateWithLifecycle()
     val timerSeconds by viewModel.timerSeconds.collectAsStateWithLifecycle()
+    val projectTimersEnabled by viewModel.projectTimersEnabled.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(viewModel.projectId) {
+    LaunchedEffect(viewModel.projectId, projectTimersEnabled) {
+        if (!projectTimersEnabled) return@LaunchedEffect
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
                 viewModel.refreshTimer()
@@ -362,6 +364,7 @@ fun ProjectDetailScreen(
                             linkedYarns = state.linkedYarns,
                             timer = timer,
                             timerSeconds = timerSeconds,
+                            projectTimersEnabled = projectTimersEnabled,
                             canEditTimer = access.canEdit,
                             onTimerRunningChange = viewModel::setTimerRunning,
                             onTimerEdit = { total, done -> viewModel.setTimerTotal(total, done) },
@@ -448,6 +451,7 @@ private fun ProjectDetailContent(
     linkedYarns: List<LinkedYarn>,
     timer: ProjectDetailViewModel.TimerState,
     timerSeconds: Long,
+    projectTimersEnabled: Boolean,
     canEditTimer: Boolean,
     onTimerRunningChange: (Boolean, (Boolean) -> Unit) -> Unit,
     onTimerEdit: (Long, (Boolean) -> Unit) -> Unit,
@@ -512,16 +516,18 @@ private fun ProjectDetailContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item {
-                ProjectTimerCard(
-                    timer = timer,
-                    seconds = timerSeconds,
-                    canEdit = canEditTimer,
-                    onRunningChange = onTimerRunningChange,
-                    onEdit = onTimerEdit,
-                    onReminderChange = onTimerReminderChange,
-                    onReminderSnooze = onTimerReminderSnooze,
-                )
+            if (projectTimersEnabled) {
+                item {
+                    ProjectTimerCard(
+                        timer = timer,
+                        seconds = timerSeconds,
+                        canEdit = canEditTimer,
+                        onRunningChange = onTimerRunningChange,
+                        onEdit = onTimerEdit,
+                        onReminderChange = onTimerReminderChange,
+                        onReminderSnooze = onTimerReminderSnooze,
+                    )
+                }
             }
             if (detail.images.isNotEmpty()) {
                 item {
@@ -851,7 +857,19 @@ private fun ProjectTimerCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (timer.error)
+                if (timer.unavailable)
+                    Text(
+                        stringResource(R.string.project_timer_unavailable),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                else if (timer.projectMissing)
+                    Text(
+                        stringResource(R.string.project_detail_not_found),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                else if (timer.error)
                     Text(
                         stringResource(R.string.project_timer_error),
                         style = MaterialTheme.typography.bodySmall,
@@ -865,21 +883,36 @@ private fun ProjectTimerCard(
                 ) {
                     if (timer.running) {
                         OutlinedButton(
-                            enabled = !timer.saving && !timer.loading && !timer.error,
+                            enabled =
+                                !timer.saving &&
+                                    !timer.loading &&
+                                    !timer.error &&
+                                    !timer.unavailable &&
+                                    !timer.projectMissing,
                             onClick = { onRunningChange(false) {} },
                         ) {
                             Text(stringResource(R.string.project_timer_stop))
                         }
                     } else {
                         Button(
-                            enabled = !timer.saving && !timer.loading && !timer.error,
+                            enabled =
+                                !timer.saving &&
+                                    !timer.loading &&
+                                    !timer.error &&
+                                    !timer.unavailable &&
+                                    !timer.projectMissing,
                             onClick = { onRunningChange(true) {} },
                         ) {
                             Text(stringResource(R.string.project_timer_start))
                         }
                     }
                     TextButton(
-                        enabled = !timer.saving && !timer.loading && !timer.error,
+                        enabled =
+                            !timer.saving &&
+                                !timer.loading &&
+                                !timer.error &&
+                                !timer.unavailable &&
+                                !timer.projectMissing,
                         onClick = {
                             saveFailed = false
                             showEditDialog = true
@@ -889,7 +922,12 @@ private fun ProjectTimerCard(
                     }
                     if (timer.running) {
                         TextButton(
-                            enabled = !timer.saving && !timer.loading && !timer.error,
+                            enabled =
+                                !timer.saving &&
+                                    !timer.loading &&
+                                    !timer.error &&
+                                    !timer.unavailable &&
+                                    !timer.projectMissing,
                             onClick = { reminderMenu = true },
                         ) {
                             Text(

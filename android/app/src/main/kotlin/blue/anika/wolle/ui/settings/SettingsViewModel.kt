@@ -96,6 +96,20 @@ constructor(
             ThemeMode.SYSTEM,
         )
 
+    val projectTimersEnabled: StateFlow<Boolean> =
+        appPreferencesRepository.projectTimersEnabled.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            true,
+        )
+
+    fun setProjectTimersEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            appPreferencesRepository.setProjectTimersEnabled(enabled)
+            if (!enabled) timerReminderScheduler.cancelAll()
+        }
+    }
+
     /**
      * Most recent of the per-entity-type sync cursors (SNA-7's `SyncStateEntity`), or null if
      * nothing has synced yet.

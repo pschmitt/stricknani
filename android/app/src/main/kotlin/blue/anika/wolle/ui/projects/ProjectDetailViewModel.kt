@@ -25,9 +25,11 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrderRepository
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.data.timer.ProjectTimerLoadFailure
 import blue.anika.wolle.data.timer.ProjectTimerReminderInterval
 import blue.anika.wolle.data.timer.ProjectTimerReminderRepository
 import blue.anika.wolle.data.timer.ProjectTimerReminderScheduler
+import blue.anika.wolle.data.timer.classifyProjectTimerLoadFailure
 import blue.anika.wolle.data.timer.projectTimerReminderDeadline
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.ErrorKind
@@ -65,6 +67,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 data class LinkedYarn(val id: Int, val name: String, val previewUrl: String?)
 
@@ -114,6 +117,8 @@ constructor(
         val loading: Boolean = true,
         val saving: Boolean = false,
         val error: Boolean = false,
+        val unavailable: Boolean = false,
+        val projectMissing: Boolean = false,
         val reminderIntervalMinutes: Int = ProjectTimerReminderInterval.HOUR_1,
         val reminderDeadlineMillis: Long? = null,
     ) {
@@ -129,6 +134,12 @@ constructor(
         }
     }
     val timerState: StateFlow<TimerState> = _timer.asStateFlow()
+    val projectTimersEnabled: StateFlow<Boolean> =
+        appPreferences.projectTimersEnabled.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            false,
+        )
     val timerSeconds: StateFlow<Long> =
         combine(_timer, timerTicks) { timer, now ->
                 if (timer.running && !timer.loading)
@@ -139,6 +150,8 @@ constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
 
     private var timerRequestInFlight = false
+    private val timersEnabledNow: Boolean
+        get() = projectTimersEnabled.value
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
@@ -174,7 +187,9 @@ constructor(
 
     suspend fun refreshTimer() {
         if (
-            currentUserId.first() != null &&
+            appPreferences.projectTimersEnabled.first() &&
+                !_timer.value.unavailable &&
+                currentUserId.first() != null &&
                 reminderPreferences.currentAccountKey() != null &&
                 capabilities.useV2()
         )
@@ -182,26 +197,33 @@ constructor(
     }
 
     private suspend fun loadTimer() {
-        if (timerRequestInFlight) return
+        if (
+            timerRequestInFlight ||
+                !appPreferences.projectTimersEnabled.first() ||
+                _timer.value.unavailable
+        )
+            return
         val userId = currentUserId.first() ?: return
         val accountKey = reminderPreferences.currentAccountKey() ?: return
         try {
             val response = projectsV2Api.getProjectTimer(projectId).data
             if (
                 !timerRequestInFlight &&
+                    appPreferences.projectTimersEnabled.first() &&
                     currentUserId.first() == userId &&
                     reminderPreferences.currentAccountKey() == accountKey
             )
                 applyTimerResponse(response, accountKey)
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (_: Exception) {
+        } catch (failure: Exception) {
             if (
                 !timerRequestInFlight &&
+                    appPreferences.projectTimersEnabled.first() &&
                     currentUserId.first() == userId &&
                     reminderPreferences.currentAccountKey() == accountKey
             )
-                _timer.value = _timer.value.copy(loading = false, error = true)
+                _timer.value = _timer.value.withTimerFailure(failure)
         }
     }
 
@@ -220,20 +242,46 @@ constructor(
             loading = false,
         )
 
+    private fun TimerState.withTimerFailure(failure: Exception): TimerState {
+        val classification =
+            if (failure is HttpException)
+                classifyProjectTimerLoadFailure(
+                    failure.code(),
+                    runCatching { failure.response()?.errorBody()?.string() }.getOrNull(),
+                )
+            else ProjectTimerLoadFailure.RequestFailed
+        return copy(
+            loading = false,
+            saving = false,
+            error = classification == ProjectTimerLoadFailure.RequestFailed,
+            unavailable = classification == ProjectTimerLoadFailure.UnsupportedServer,
+            projectMissing = classification == ProjectTimerLoadFailure.ProjectMissing,
+        )
+    }
+
     private suspend fun applyTimerResponse(
         response: ProjectTimerDto,
         expectedAccountKey: String,
         resetReminderDeadline: Boolean = false,
     ): Boolean {
+        if (!appPreferences.projectTimersEnabled.first()) return false
         val userId = currentUserId.first() ?: return false
         val accountKey = reminderPreferences.currentAccountKey() ?: return false
         if (accountKey != expectedAccountKey) return false
         val previous = _timer.value
         val interval = reminderPreferences.interval(accountKey, projectId)
-        if (reminderPreferences.currentAccountKey() != accountKey) return false
+        if (
+            reminderPreferences.currentAccountKey() != accountKey ||
+                !appPreferences.projectTimersEnabled.first()
+        )
+            return false
         val canEditTimer =
             projectRepository.observeById(projectId).first()?.access()?.canEdit == true
-        if (reminderPreferences.currentAccountKey() != accountKey) return false
+        if (
+            reminderPreferences.currentAccountKey() != accountKey ||
+                !appPreferences.projectTimersEnabled.first()
+        )
+            return false
         if (response.startedAt == null) {
             reminderScheduler.cancel(projectId, accountKey)
             if (
@@ -264,7 +312,11 @@ constructor(
         var deadline = if (sameSession) previous.reminderDeadlineMillis else null
         if (deadline == null && storedSession == startedAt)
             deadline = reminderPreferences.deadline(accountKey, projectId)
-        if (reminderPreferences.currentAccountKey() != accountKey) return false
+        if (
+            reminderPreferences.currentAccountKey() != accountKey ||
+                !appPreferences.projectTimersEnabled.first()
+        )
+            return false
         if (interval == ProjectTimerReminderInterval.OFF) {
             reminderScheduler.cancel(projectId, accountKey)
             deadline = null
@@ -312,14 +364,19 @@ constructor(
     }
 
     fun setTimerRunning(running: Boolean, onComplete: (Boolean) -> Unit = {}) {
-        if (timerRequestInFlight) return
+        if (timerRequestInFlight || _timer.value.unavailable || !timersEnabledNow) return
         timerRequestInFlight = true
         viewModelScope.launch {
             val userId = currentUserId.first()
             val accountKey = reminderPreferences.currentAccountKey()
             _timer.value = _timer.value.copy(saving = true, error = false)
             try {
-                if (userId == null || accountKey == null || !capabilities.useV2())
+                if (
+                    !appPreferences.projectTimersEnabled.first() ||
+                        userId == null ||
+                        accountKey == null ||
+                        !capabilities.useV2()
+                )
                     throw IllegalStateException("No active v2 account")
                 val action = if (running) "start" else "stop"
                 val response =
@@ -331,21 +388,28 @@ constructor(
                         .data
                 if (
                     currentUserId.first() == userId &&
+                        appPreferences.projectTimersEnabled.first() &&
                         reminderPreferences.currentAccountKey() == accountKey
                 ) {
                     val applied = applyTimerResponse(response, accountKey)
-                    if (reminderPreferences.currentAccountKey() == accountKey) onComplete(applied)
+                    if (
+                        appPreferences.projectTimersEnabled.first() &&
+                            reminderPreferences.currentAccountKey() == accountKey
+                    )
+                        onComplete(applied)
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
                 if (
-                    currentUserId.first() == userId &&
+                    appPreferences.projectTimersEnabled.first() &&
+                        currentUserId.first() == userId &&
                         reminderPreferences.currentAccountKey() == accountKey
                 )
-                    _timer.value = _timer.value.copy(saving = false, error = true)
+                    _timer.value = _timer.value.withTimerFailure(failure)
                 if (
-                    currentUserId.first() == userId &&
+                    appPreferences.projectTimersEnabled.first() &&
+                        currentUserId.first() == userId &&
                         reminderPreferences.currentAccountKey() == accountKey
                 )
                     onComplete(false)
@@ -357,14 +421,25 @@ constructor(
     }
 
     fun setTimerTotal(totalSeconds: Long, onComplete: (Boolean) -> Unit) {
-        if (timerRequestInFlight || totalSeconds !in 0..MAX_TIMER_SECONDS) return
+        if (
+            timerRequestInFlight ||
+                _timer.value.unavailable ||
+                !timersEnabledNow ||
+                totalSeconds !in 0..MAX_TIMER_SECONDS
+        )
+            return
         timerRequestInFlight = true
         viewModelScope.launch {
             val userId = currentUserId.first()
             val accountKey = reminderPreferences.currentAccountKey()
             _timer.value = _timer.value.copy(saving = true, error = false)
             try {
-                if (userId == null || accountKey == null || !capabilities.useV2())
+                if (
+                    !appPreferences.projectTimersEnabled.first() ||
+                        userId == null ||
+                        accountKey == null ||
+                        !capabilities.useV2()
+                )
                     throw IllegalStateException("No active v2 account")
                 val response =
                     projectsV2Api
@@ -375,20 +450,26 @@ constructor(
                         .data
                 val matchesAccount =
                     currentUserId.first() == userId &&
+                        appPreferences.projectTimersEnabled.first() &&
                         reminderPreferences.currentAccountKey() == accountKey
                 val applied =
                     if (matchesAccount)
                         applyTimerResponse(response, accountKey, resetReminderDeadline = true)
                     else false
-                if (matchesAccount && reminderPreferences.currentAccountKey() == accountKey)
+                if (
+                    matchesAccount &&
+                        appPreferences.projectTimersEnabled.first() &&
+                        reminderPreferences.currentAccountKey() == accountKey
+                )
                     onComplete(applied)
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
                 val matchesAccount =
-                    currentUserId.first() == userId &&
+                    appPreferences.projectTimersEnabled.first() &&
+                        currentUserId.first() == userId &&
                         reminderPreferences.currentAccountKey() == accountKey
-                if (matchesAccount) _timer.value = _timer.value.copy(saving = false, error = true)
+                if (matchesAccount) _timer.value = _timer.value.withTimerFailure(failure)
                 if (matchesAccount) onComplete(false)
             } finally {
                 timerRequestInFlight = false
@@ -398,8 +479,9 @@ constructor(
     }
 
     fun setTimerReminderInterval(intervalMinutes: Int) {
-        if (intervalMinutes !in ProjectTimerReminderInterval.choices) return
+        if (!timersEnabledNow || intervalMinutes !in ProjectTimerReminderInterval.choices) return
         viewModelScope.launch {
+            if (!appPreferences.projectTimersEnabled.first()) return@launch
             val accountKey = reminderPreferences.currentAccountKey() ?: return@launch
             reminderPreferences.setInterval(accountKey, projectId, intervalMinutes)
             val current = _timer.value
@@ -435,11 +517,13 @@ constructor(
     }
 
     fun snoozeTimerReminder() {
+        if (!timersEnabledNow) return
         val current = _timer.value
         val startedAt = current.startedAt ?: return
         val interval = current.reminderIntervalMinutes
         if (interval == ProjectTimerReminderInterval.OFF) return
         viewModelScope.launch {
+            if (!appPreferences.projectTimersEnabled.first()) return@launch
             val accountKey = reminderPreferences.currentAccountKey() ?: return@launch
             val deadline = System.currentTimeMillis() + interval * 60_000L
             reminderScheduler.snooze(projectId, startedAt, interval, deadline, accountKey)
@@ -595,14 +679,25 @@ constructor(
     // applyTimerResponse() have been initialized.
     init {
         viewModelScope.launch {
-            combine(settingsRepository.credentials, capabilities.state) { credentials, state ->
-                    "${credentials.serverUrl}\n${credentials.apiToken}\n${state.user?.id}\n${state.currentTokenId}"
+            combine(
+                    settingsRepository.credentials,
+                    capabilities.state,
+                    appPreferences.projectTimersEnabled,
+                ) { credentials, state, timersEnabled ->
+                    Pair(
+                        "${credentials.serverUrl}\n${credentials.apiToken}\n${state.user?.id}\n${state.currentTokenId}",
+                        timersEnabled,
+                    )
                 }
                 .distinctUntilChanged()
-                .collectLatest { identity ->
+                .collectLatest { (identity, enabled) ->
                     val userId = currentUserId.first()
                     val configured = identity.substringBefore('\n').isNotBlank()
-                    _timer.value = TimerState(loading = configured && userId != null)
+                    _timer.value = TimerState(loading = enabled && configured && userId != null)
+                    if (!enabled) {
+                        reminderScheduler.cancelAll()
+                        return@collectLatest
+                    }
                     if (!configured || userId == null || !capabilities.useV2()) return@collectLatest
                     val accountKey = reminderPreferences.currentAccountKey()
                     val interval =

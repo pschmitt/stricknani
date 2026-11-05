@@ -4,14 +4,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -47,9 +50,11 @@ fun SettingsScreen(
     onGaugeClick: () -> Unit,
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val profile by accountAvatar.profile.collectAsStateWithLifecycle()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
+    val projectTimersEnabled by settingsViewModel.projectTimersEnabled.collectAsStateWithLifecycle()
     val layout = moreLayout(isAdmin)
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.more_title)) }) }) {
         innerPadding ->
@@ -98,6 +103,10 @@ fun SettingsScreen(
                     layout.settings.forEach { category ->
                         SettingsCategoryRow(category, profile, onCategoryClick)
                     }
+                    ProjectTimersRow(
+                        projectTimersEnabled,
+                        settingsViewModel::setProjectTimersEnabled,
+                    )
                 }
             }
             item {
@@ -124,6 +133,18 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ProjectTimersRow(checked: Boolean, onChange: (Boolean) -> Unit) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        headlineContent = { Text(stringResource(R.string.settings_project_timers_title)) },
+        supportingContent = { Text(stringResource(R.string.settings_project_timers_help)) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+    )
 }
 
 @Composable

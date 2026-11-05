@@ -1,6 +1,24 @@
 package blue.anika.wolle.data.timer
 
+import blue.anika.wolle.data.oidc.errorCodeOf
 import java.time.Instant
+
+enum class ProjectTimerLoadFailure {
+    UnsupportedServer,
+    ProjectMissing,
+    RequestFailed,
+}
+
+/**
+ * Only a bare 404 means the timer route is missing; a structured 404 can mean the project is gone.
+ */
+fun classifyProjectTimerLoadFailure(status: Int?, errorBody: String?): ProjectTimerLoadFailure =
+    when {
+        status != 404 -> ProjectTimerLoadFailure.RequestFailed
+        errorBody.isNullOrBlank() -> ProjectTimerLoadFailure.UnsupportedServer
+        errorCodeOf(errorBody) == "not_found" -> ProjectTimerLoadFailure.ProjectMissing
+        else -> ProjectTimerLoadFailure.RequestFailed
+    }
 
 /** Converts the server's start and sample times into a device-local reminder deadline. */
 fun projectTimerReminderDeadline(
@@ -32,8 +50,10 @@ fun shouldShowProjectTimerReminder(
     intervalMinutes: Int,
     deadlineMillis: Long?,
     nowMillis: Long,
+    featureEnabled: Boolean = true,
 ): Boolean =
-    expectedAccountKey == currentAccountKey &&
+    featureEnabled &&
+        expectedAccountKey == currentAccountKey &&
         expectedStartedAt == currentStartedAt &&
         expectedStartedAt == scheduledStartedAt &&
         intervalMinutes > 0 &&

@@ -7,6 +7,33 @@ import org.junit.Test
 
 class ProjectTimerReminderPolicyTest {
     @Test
+    fun `only a bare 404 identifies an unsupported timer endpoint`() {
+        assertEquals(
+            ProjectTimerLoadFailure.UnsupportedServer,
+            classifyProjectTimerLoadFailure(404, ""),
+        )
+        assertEquals(
+            ProjectTimerLoadFailure.RequestFailed,
+            classifyProjectTimerLoadFailure(404, "{\"error\":{\"code\":\"unavailable\"}}"),
+        )
+        assertEquals(
+            ProjectTimerLoadFailure.ProjectMissing,
+            classifyProjectTimerLoadFailure(
+                404,
+                "{\"error\":{\"code\":\"not_found\",\"message\":\"Not found\"}}",
+            ),
+        )
+        assertEquals(
+            ProjectTimerLoadFailure.RequestFailed,
+            classifyProjectTimerLoadFailure(401, ""),
+        )
+        assertEquals(
+            ProjectTimerLoadFailure.RequestFailed,
+            classifyProjectTimerLoadFailure(403, ""),
+        )
+    }
+
+    @Test
     fun `reminder deadline follows continuous run instead of lifetime accumulated time`() {
         val now = 1_000_000L
         val deadline =
@@ -51,6 +78,19 @@ class ProjectTimerReminderPolicyTest {
         assertFalse(shouldShow("account-a", "2026-11-05T11:00:00Z"))
         assertFalse(shouldShow("account-a", null))
         assertFalse(shouldShow("account-a", "2026-11-05T10:00:00Z", interval = 0))
+        assertFalse(
+            shouldShowProjectTimerReminder(
+                expectedAccountKey = "account-a",
+                currentAccountKey = "account-a",
+                expectedStartedAt = "2026-11-05T10:00:00Z",
+                currentStartedAt = "2026-11-05T10:00:00Z",
+                scheduledStartedAt = "2026-11-05T10:00:00Z",
+                intervalMinutes = 60,
+                deadlineMillis = 50L,
+                nowMillis = 50L,
+                featureEnabled = false,
+            )
+        )
     }
 
     @Test

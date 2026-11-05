@@ -32,6 +32,7 @@ import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.canPostNotifications
 import dagger.assisted.Assisted
@@ -220,6 +221,7 @@ constructor(
     @Assisted params: WorkerParameters,
     private val api: ProjectsV2Api,
     private val preferences: ProjectTimerReminderRepository,
+    private val appPreferences: AppPreferencesRepository,
     private val notifier: ProjectTimerReminderNotifier,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
@@ -231,6 +233,10 @@ constructor(
         if (projectId <= 0 || interval !in ProjectTimerReminderInterval.choices || interval == 0)
             return Result.failure()
         try {
+            if (!appPreferences.projectTimersEnabled.first()) {
+                notifier.cancelAll()
+                return Result.success()
+            }
             if (preferences.currentAccountKey() != expectedAccount) return Result.success()
             if (preferences.interval(expectedAccount, projectId) != interval)
                 return Result.success()
@@ -239,19 +245,29 @@ constructor(
             if (preferences.scheduledStartedAt(expectedAccount, projectId) != expectedStartedAt)
                 return Result.success()
             val timer = api.getProjectTimer(projectId).data
+            if (!appPreferences.projectTimersEnabled.first()) {
+                notifier.cancelAll()
+                return Result.success()
+            }
             if (timer.startedAt != expectedStartedAt) {
                 preferences.setDeadline(expectedAccount, projectId, null)
                 return Result.success()
             }
             val project = api.getProject(projectId).data
+            if (!appPreferences.projectTimersEnabled.first()) {
+                notifier.cancelAll()
+                return Result.success()
+            }
             if (project.access?.canEdit != true) {
                 preferences.setDeadline(expectedAccount, projectId, null)
                 notifier.cancel(projectId)
                 return Result.success()
             }
             val latestAccount = preferences.currentAccountKey() ?: return Result.success()
+            val timersEnabled = appPreferences.projectTimersEnabled.first()
             if (
                 !shouldShowProjectTimerReminder(
+                    featureEnabled = timersEnabled,
                     expectedAccountKey = expectedAccount,
                     currentAccountKey = latestAccount,
                     expectedStartedAt = expectedStartedAt,
@@ -263,6 +279,17 @@ constructor(
                 ) || expectedDeadline != preferences.deadline(expectedAccount, projectId)
             )
                 return Result.success()
+            if (
+                preferences.currentAccountKey() != expectedAccount ||
+                    preferences.interval(expectedAccount, projectId) != interval ||
+                    preferences.deadline(expectedAccount, projectId) != expectedDeadline ||
+                    preferences.scheduledStartedAt(expectedAccount, projectId) != expectedStartedAt
+            )
+                return Result.success()
+            if (!appPreferences.projectTimersEnabled.first()) {
+                notifier.cancelAll()
+                return Result.success()
+            }
             notifier.show(projectId)
             return Result.success()
         } catch (cancellation: CancellationException) {

@@ -120,6 +120,7 @@
     <string name="project_timer_seconds">Sekunden</string>
     <string name="project_timer_invalid">Gib eine gültige Zeit ein (Minuten und Sekunden von 0 bis 59).</string>
     <string name="project_timer_error">Zeit konnte nicht gespeichert werden. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="project_timer_unavailable">Timer sind auf diesem Server noch nicht verfügbar.</string>
     <string name="project_timer_reminder">Erinnerung bei laufendem Timer</string>
     <string name="project_timer_reminder_off">Aus</string>
     <string name="project_timer_reminder_30m">30 Minuten</string>
@@ -132,6 +133,8 @@
     <string name="project_timer_notification_description">Erinnert dich, wenn ein Projekttimer schon länger läuft.</string>
     <string name="project_timer_notification_title">Der Projekttimer läuft noch</string>
     <string name="project_timer_notification_text">Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.</string>
+    <string name="settings_project_timers_title">Projekt-Timer</string>
+    <string name="settings_project_timers_help">Blendet Timer aus und schaltet Erinnerungen auf diesem Gerät ab. Laufende Timer, auch geteilte, laufen weiter, bis sie gestoppt werden.</string>
     <string name="notes_close">Notizen schließen</string>
     <string name="notes_state_expanded">Notizen, geöffnet</string>
     <string name="notes_state_collapsed">Notizen, zugeklappt</string>
