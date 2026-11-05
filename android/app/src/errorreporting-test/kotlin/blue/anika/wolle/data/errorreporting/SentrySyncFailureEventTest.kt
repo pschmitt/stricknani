@@ -1,12 +1,36 @@
 package blue.anika.wolle.data.errorreporting
 
+import io.sentry.JsonSerializer
+import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryLevel
+import io.sentry.SentryOptions
+import java.io.StringWriter
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SentrySyncFailureEventTest {
+    @Test
+    fun serializesTunnelDsnInEnvelopeUnknownFieldsAndPreservesExistingFields() {
+        val dsn = "https://public-key@fixture.invalid/api/v2/telemetry/sentry/7"
+        val header =
+            SentryEnvelopeHeader().apply {
+                setUnknown(mutableMapOf<String, Any>("preserved" to "value"))
+            }
+
+        attachTunnelDsn(header, dsn)
+        val writer = StringWriter()
+        JsonSerializer(SentryOptions()).serialize(header, writer)
+        val serialized = Json.parseToJsonElement(writer.toString()).jsonObject
+
+        assertEquals(dsn, serialized["dsn"]?.jsonPrimitive?.content)
+        assertEquals("value", serialized["preserved"]?.jsonPrimitive?.content)
+    }
+
     @Test
     fun buildsAnEventFromOnlyStaticCopyAndSanitizedTags() {
         val event =

@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.sentry.Breadcrumb
 import io.sentry.Sentry
+import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.android.core.SentryAndroid
@@ -81,7 +82,16 @@ class SentryErrorReporter @Inject constructor(@ApplicationContext private val co
         options.tracesSampleRate = null
         options.setBeforeSend { event, _ -> SentryEventScrubber.scrub(event) }
         options.setBeforeBreadcrumb { crumb: Breadcrumb, _ -> null }
+        options.setBeforeEnvelopeCallback { envelope, _ ->
+            attachTunnelDsn(envelope.header, config.dsn)
+        }
     }
+}
+
+internal fun attachTunnelDsn(header: SentryEnvelopeHeader, dsn: String) {
+    val unknown = header.unknown?.toMutableMap() ?: mutableMapOf()
+    unknown["dsn"] = dsn
+    header.unknown = unknown
 }
 
 internal fun syncFailureEvent(report: SyncFailureReport): SentryEvent {

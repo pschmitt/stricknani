@@ -159,7 +159,10 @@ constructor(
             SyncFailureReportSanitizer.sanitize(
                 SyncFailureReport(
                     kind = SyncFailureKind.QUEUED_WRITE,
-                    operation = "${mutation.entityType}_${mutation.operation}",
+                    operation =
+                        if (mutation.operation.startsWith("${mutation.entityType}_"))
+                            mutation.operation
+                        else "${mutation.entityType}_${mutation.operation}",
                     failureClass = failureClass,
                     httpStatus = httpStatus,
                     stackTrace = stackTrace,
