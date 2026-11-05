@@ -1,4 +1,4 @@
-name: Android Rust E2E
+name: Android E2E
 
 on:
   push:
@@ -61,7 +61,7 @@ permissions:
 
 jobs:
   e2e:
-    name: Rust server + Android emulator
+    name: Server + Android emulator
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     env:
@@ -95,7 +95,7 @@ jobs:
         uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
       # Compile the Rust candidate and both APKs before emulator startup.
-      - name: Build Rust candidate
+      - name: Build server
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -106,7 +106,7 @@ jobs:
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
         working-directory: android
 
-      - name: Start disposable native Rust fixture
+      - name: Start disposable server fixture
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -135,7 +135,7 @@ jobs:
           const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
           const token = fixture !== null && typeof fixture === "object" ? fixture.token : undefined;
           if (typeof token !== "string" || !token || /[\r\n]/.test(token)) {
-            console.error("Rust E2E token fixture is invalid");
+            console.error("Android E2E token fixture is invalid");
             process.exit(1);
           }
           console.log(`::add-mask::${token}`);
@@ -172,7 +172,7 @@ jobs:
       - name: Enable KVM
         uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
 
-      - name: Run existing Android journeys against Rust
+      - name: Run Android journeys
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -199,7 +199,7 @@ jobs:
             --fixture-file "$RUST_FIXTURE_FILE" \
             --token-file "$RUST_E2E_TOKEN_FILE"
 
-      - name: Stop and remove disposable Rust fixture
+      - name: Stop and remove server fixture
         if: ${{ always() }}
         shell: bash
         run: |

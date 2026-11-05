@@ -66,7 +66,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # The screenshots run against the same disposable native Rust fixture as the Android Rust E2E
+      # The screenshots run against the same disposable server fixture as the Android E2E
       # lane; the former Python Docker image is not built on this branch any more.
       - name: Prepare private fixture paths
         shell: bash
@@ -93,7 +93,7 @@ jobs:
 
       # Build the server and both APKs before booting the emulator: compiling while the emulator
       # is starting makes the tablet profiles especially likely to time out on hosted runners.
-      - name: Build Rust candidate
+      - name: Build server
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -105,7 +105,7 @@ jobs:
         run: ./gradlew assembleDebug assembleDebugAndroidTest -PdebugExtras=false --stacktrace
         working-directory: android
 
-      - name: Start disposable native Rust fixture
+      - name: Start disposable server fixture
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -236,7 +236,7 @@ jobs:
           if-no-files-found: error
           path: play-store-screenshots/${{ matrix.bucket }}/
 
-      - name: Stop and remove disposable Rust fixture
+      - name: Stop and remove server fixture
         if: ${{ always() }}
         shell: bash
         run: |

@@ -1,6 +1,6 @@
 # Rust backend Android replay CI
 
-The `Android Rust Replay` workflow runs the app's Room replay instrumentation
+The `Android Replay` workflow runs the app's Room replay instrumentation
 against a disposable build of the Rust candidate. It runs on pushes to branch
 `rust` when Android, Rust, the replay harness (`web/e2e/`, `ci/run-rust-*.sh`), or workflow inputs change. It can
 also be started with `workflow_dispatch` from GitHub Actions.

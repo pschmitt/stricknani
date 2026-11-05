@@ -82,7 +82,7 @@ jobs:
           retention-days: 1
 
   browser:
-    name: Rust-backed browser acceptance
+    name: Browser acceptance
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 45

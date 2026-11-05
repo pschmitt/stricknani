@@ -1,4 +1,4 @@
-name: Android Rust Replay
+name: Android Replay
 
 on:
   push:
@@ -33,7 +33,7 @@ permissions:
 
 jobs:
   replay:
-    name: Rust server and Android Room replay
+    name: Server and Android Room replay
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     steps:
@@ -56,7 +56,7 @@ jobs:
       - name: Set up Android SDK and Gradle
         uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
-      - name: Build Rust candidate
+      - name: Build server
         id: rust
         shell: bash
         run: |
@@ -69,7 +69,7 @@ jobs:
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
         working-directory: android
 
-      - name: Start disposable Rust fixture
+      - name: Start disposable server fixture
         shell: bash
         env:
           RUST_SERVER_BINARY: ${{ steps.rust.outputs.binary }}
@@ -101,7 +101,7 @@ jobs:
           working-directory: android
           script: bash ../ci/run-rust-replay-ci.sh
 
-      - name: Stop and remove disposable Rust fixture
+      - name: Stop and remove server fixture
         if: ${{ always() }}
         shell: bash
         run: |
