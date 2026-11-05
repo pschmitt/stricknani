@@ -89,6 +89,8 @@ pub(super) struct ProjectDto {
     images: Vec<serde_json::Value>,
     attachments: Vec<serde_json::Value>,
     owner: Option<crate::resource_access::OwnerInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    access: Option<crate::resource_access::AccessInfo>,
 }
 
 #[derive(Serialize)]
@@ -142,6 +144,7 @@ impl From<ProjectResponse> for ProjectDto {
             images: project.images,
             attachments: project.attachments,
             owner: project.owner,
+            access: project.access,
         }
     }
 }
@@ -203,6 +206,13 @@ fn project_error(error: ProjectError) -> Response {
             StatusCode::NOT_FOUND,
             "not_found",
             "Project not found",
+            None,
+            None,
+        ),
+        ProjectError::Forbidden => (
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "You may view this project but not change it",
             None,
             None,
         ),
@@ -292,7 +302,7 @@ async fn list_projects(
         Err(error) => return project_error(error),
     };
     let ids: Vec<_> = page.items.iter().map(|project| project.id).collect();
-    let previews = match crate::media::project_previews_v2(&state.app.pool, user_id, &ids).await {
+    let previews = match crate::media::project_previews_v2(&state.app.pool, &ids).await {
         Ok(previews) => previews,
         Err(_) => return project_error(ProjectError::Database),
     };

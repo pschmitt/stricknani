@@ -43,14 +43,6 @@ pub(crate) enum EntityKind {
 }
 
 impl EntityKind {
-    fn table(self) -> &'static str {
-        match self {
-            Self::Project => "projects",
-            Self::Yarn => "yarns",
-            Self::Category => "category_sync_metadata",
-        }
-    }
-
     fn as_str(self) -> &'static str {
         match self {
             Self::Project => "project",
@@ -291,16 +283,34 @@ async fn legacy_sync(
     since: Option<&str>,
 ) -> Result<SyncResponse, SyncPageError> {
     let snapshot = format_timestamp(now_utc_micros());
-    let updated_events =
-        load_updates(&state.pool, kind, Some(user_id), since, None, None, None).await?;
+    let updated_events = load_updates(
+        &state.pool,
+        kind,
+        Some(user_id),
+        None,
+        since,
+        None,
+        None,
+        None,
+    )
+    .await?;
     let updated_ids: Vec<i64> = updated_events.iter().map(|event| event.id).collect();
     let updated = serialize_ids(state, kind, user_id, &updated_ids).await?;
     let deleted_ids = if let Some(since) = since {
-        load_deletions(&state.pool, kind, Some(user_id), since, None, None, None)
-            .await?
-            .into_iter()
-            .map(|event| event.entity_id)
-            .collect()
+        load_deletions(
+            &state.pool,
+            kind,
+            Some(user_id),
+            false,
+            since,
+            None,
+            None,
+            None,
+        )
+        .await?
+        .into_iter()
+        .map(|event| event.entity_id)
+        .collect()
     } else {
         Vec::new()
     };
@@ -403,10 +413,14 @@ async fn bounded_page(
     user_id: i64,
     page: PageState,
 ) -> Result<SyncPage, SyncPageError> {
+    // Shared and derived resources are part of a v2 "mine" delta only.
+    let shared_user = (matches!(page.protocol, CursorProtocol::V2) && page.scope == Scope::Mine)
+        .then_some(user_id);
     let updates = load_updates(
         &state.pool,
         kind,
         owner_filter(page.scope, user_id),
+        shared_user,
         page.since.as_deref(),
         Some(&page.snapshot),
         page.updated.as_ref(),
@@ -417,6 +431,7 @@ async fn bounded_page(
         &state.pool,
         kind,
         owner_filter(page.scope, user_id),
+        shared_user.is_some(),
         page.since.as_deref().unwrap_or(""),
         Some(&page.snapshot),
         page.deleted.as_ref(),
@@ -449,53 +464,76 @@ async fn bounded_page(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn load_updates(
     pool: &SqlitePool,
     kind: EntityKind,
     owner: Option<i64>,
+    shared_user: Option<i64>,
     since: Option<&str>,
     snapshot: Option<&str>,
     position: Option<&CursorPosition>,
     row_limit: Option<i64>,
 ) -> Result<Vec<UpdateEvent>, sqlx::Error> {
-    let id_column = if matches!(kind, EntityKind::Category) {
-        "category_id"
-    } else {
-        "id"
-    };
-    let mut query = match kind {
-        EntityKind::Category => QueryBuilder::<Sqlite>::new(
+    if matches!(kind, EntityKind::Category) {
+        let mut query = QueryBuilder::<Sqlite>::new(
             "SELECT category_id AS id, updated_at FROM category_sync_metadata WHERE owner_id = ",
-        ),
-        _ => {
-            let mut query = QueryBuilder::<Sqlite>::new("SELECT id, updated_at FROM ");
-            query.push(kind.table()).push(" WHERE (");
-            query.push_bind(owner).push(" IS NULL OR owner_id = ");
-            query
+        );
+        query.push_bind(owner);
+        if let Some(snapshot) = snapshot {
+            query.push(" AND updated_at <= ").push_bind(snapshot);
         }
+        push_position_filter(&mut query, "updated_at", "category_id", since, position);
+        query.push(" ORDER BY updated_at ASC, category_id ASC");
+        if let Some(row_limit) = row_limit {
+            query.push(" LIMIT ").push_bind(row_limit);
+        }
+        return query
+            .build_query_as::<(i64, String)>()
+            .fetch_all(pool)
+            .await
+            .map(|rows| {
+                rows.into_iter()
+                    .map(|(id, at)| UpdateEvent { id, at })
+                    .collect()
+            });
+    }
+    // ?1 owner filter (NULL: every owner), ?2 user whose shares and access
+    // events count (NULL: none), ?3 snapshot, ?4/?5 cursor position, ?6 since,
+    // ?7 row limit. A resource's position in the stream is the later of its own
+    // `updated_at` and the user's latest access event for it, so a resource
+    // that entered the visible set appears even when it is older than the
+    // client's cursor.
+    let resource = match kind {
+        EntityKind::Project => crate::resource_access::ResourceKind::Project,
+        _ => crate::resource_access::ResourceKind::Yarn,
     };
-    query.push_bind(owner);
-    if !matches!(kind, EntityKind::Category) {
-        query.push(")");
-    }
-    if let Some(snapshot) = snapshot {
-        query.push(" AND updated_at <= ").push_bind(snapshot);
-    }
-    push_position_filter(&mut query, "updated_at", id_column, since, position);
-    if let Some(row_limit) = row_limit {
-        query
-            .push(" ORDER BY updated_at ASC, ")
-            .push(id_column)
-            .push(" ASC LIMIT ")
-            .push_bind(row_limit);
-    } else {
-        query
-            .push(" ORDER BY updated_at ASC, ")
-            .push(id_column)
-            .push(" ASC");
-    }
-    query
-        .build_query_as::<(i64, String)>()
+    let sql = format!(
+        "SELECT x.id, x.at FROM ( \
+           SELECT r.id AS id, \
+                  max(r.updated_at, COALESCE(ev.changed_at, r.updated_at)) AS at \
+           FROM {table} r \
+           LEFT JOIN access_events ev ON ev.user_id = ?2 \
+                AND ev.entity_type = '{kind}' AND ev.entity_id = r.id \
+           WHERE (?1 IS NULL OR r.owner_id = ?1 \
+                  OR (?2 IS NOT NULL AND {visible})) \
+         ) x \
+         WHERE (?3 IS NULL OR x.at <= ?3) \
+           AND (CASE WHEN ?4 IS NOT NULL THEN (x.at > ?4 OR (x.at = ?4 AND x.id > ?5)) \
+                     WHEN ?6 IS NOT NULL THEN x.at > ?6 ELSE 1 END) \
+         ORDER BY x.at ASC, x.id ASC LIMIT COALESCE(?7, -1)",
+        table = resource.table(),
+        kind = resource.as_str(),
+        visible = crate::resource_access::visible_sql(resource, "r", 2),
+    );
+    sqlx::query_as::<_, (i64, String)>(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(owner)
+        .bind(shared_user)
+        .bind(snapshot)
+        .bind(position.map(|position| position.at.clone()))
+        .bind(position.map(|position| position.id))
+        .bind(since)
+        .bind(row_limit)
         .fetch_all(pool)
         .await
         .map(|rows| {
@@ -505,10 +543,12 @@ async fn load_updates(
         })
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn load_deletions(
     pool: &SqlitePool,
     kind: EntityKind,
     owner: Option<i64>,
+    include_shared: bool,
     since: &str,
     snapshot: Option<&str>,
     position: Option<&CursorPosition>,
@@ -532,6 +572,12 @@ async fn load_deletions(
     }
     if !matches!(kind, EntityKind::Category) {
         query.push(" AND entity_type = ").push_bind(kind.as_str());
+        // Tombstones for lost access are addressed to the one user that lost
+        // it: only that user's v2 delta carries them, never v1 or an
+        // administrator's all-scope sync.
+        if !include_shared {
+            query.push(" AND shared = 0");
+        }
     }
     if let Some(snapshot) = snapshot {
         query.push(" AND changed_at <= ").push_bind(snapshot);

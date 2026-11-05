@@ -45,6 +45,13 @@ pub(crate) enum Action {
     Deleted,
     Uploaded,
     Removed,
+    /// A project or yarn was shared with another account.
+    Shared,
+    ShareRoleChanged,
+    ShareRevoked,
+    /// A recipient left a share of their own accord.
+    ShareLeft,
+    OwnershipTransferred,
 }
 
 impl Action {
@@ -55,6 +62,11 @@ impl Action {
             Self::Deleted => "deleted",
             Self::Uploaded => "uploaded",
             Self::Removed => "removed",
+            Self::Shared => "shared",
+            Self::ShareRoleChanged => "share_role_changed",
+            Self::ShareRevoked => "share_revoked",
+            Self::ShareLeft => "share_left",
+            Self::OwnershipTransferred => "ownership_transferred",
         }
     }
 }
@@ -543,6 +555,48 @@ pub(crate) async fn record_with_media(
         Some(media),
     )
     .await
+}
+
+/// The other account a sharing event is about, and the role involved.
+pub(crate) struct SharingSubject<'a> {
+    pub(crate) user_id: i64,
+    pub(crate) role: Option<&'a str>,
+}
+
+/// Record a share, role change, revoke, leave or transfer with its subject.
+pub(crate) async fn record_sharing(
+    conn: &mut sqlx::SqliteConnection,
+    actor_id: i64,
+    entity: Entity,
+    target_id: i64,
+    action: Action,
+    subject: &SharingSubject<'_>,
+) -> Result<(), sqlx::Error> {
+    let name_query = match entity {
+        Entity::Project => "SELECT name FROM projects WHERE id = ?",
+        Entity::Yarn => "SELECT name FROM yarns WHERE id = ?",
+        Entity::Category => "SELECT name FROM categories WHERE id = ?",
+    };
+    let resource_name = sqlx::query_scalar::<_, String>(name_query)
+        .bind(target_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+    sqlx::query(
+        "INSERT INTO audit_events \
+         (actor_user_id, entity_type, entity_id, action, created_at, \
+          resource_name_snapshot, subject_user_id, subject_role) \
+         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?)",
+    )
+    .bind(actor_id)
+    .bind(entity.as_str())
+    .bind(target_id)
+    .bind(action.as_str())
+    .bind(resource_name)
+    .bind(subject.user_id)
+    .bind(subject.role)
+    .execute(conn)
+    .await?;
+    Ok(())
 }
 
 /// Record a resource snapshot and optional typed diff with the domain write.

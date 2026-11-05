@@ -36,6 +36,7 @@ pub mod projects;
 pub mod pwa;
 pub(crate) mod resource_access;
 pub mod security;
+pub(crate) mod sharing;
 pub mod sync;
 pub mod url_import;
 pub mod wayback;

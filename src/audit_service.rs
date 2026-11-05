@@ -142,6 +142,10 @@ pub(crate) struct AuditMedia {
 pub(crate) struct AuditEvent {
     pub(crate) id: i64,
     pub(crate) actor_email: Option<String>,
+    /// Display name of the actor; the only identity readers without
+    /// `can_manage` get (their `actor_email` is blank).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) actor_name: Option<String>,
     pub(crate) actor_avatar_url: Option<String>,
     pub(crate) legacy_actor_user_id: Option<i64>,
     pub(crate) entity_type: String,
@@ -151,6 +155,17 @@ pub(crate) struct AuditEvent {
     pub(crate) resource: AuditResource,
     pub(crate) has_changes: bool,
     pub(crate) media: Option<AuditMedia>,
+    /// The other account of a share, role change, revoke, leave or transfer.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) subject: Option<AuditSubject>,
+}
+
+/// The other account a sharing event is about. Never carries an email.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditSubject {
+    pub(crate) id: Option<i64>,
+    pub(crate) name: Option<String>,
+    pub(crate) role: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -170,7 +185,11 @@ pub(crate) struct AuditPage {
 #[derive(Clone, Copy)]
 enum AuditAudience {
     Administrator,
-    Owner { owner_id: i64 },
+    Owner {
+        viewer_id: i64,
+        /// Only owners and administrators see other accounts' emails.
+        reveal_email: bool,
+    },
 }
 
 macro_rules! media_event_columns {
@@ -198,6 +217,8 @@ macro_rules! resource_event_columns {
         u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
         e.entity_type, e.entity_id, e.action, e.created_at, \
         e.resource_name_snapshot, e.change_version, \
+        e.subject_user_id, e.subject_role, \
+        (SELECT email FROM users WHERE id = e.subject_user_id) AS subject_email, \
         CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
         CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
         COALESCE(length(e.safe_changes) > 262144, 0) AS safe_changes_too_large, \
@@ -339,9 +360,17 @@ pub(crate) async fn get_event_detail(
     }))
 }
 
+/// Who reads a resource's history.
+#[derive(Clone, Copy)]
+pub(crate) struct ResourceViewer {
+    pub(crate) id: i64,
+    pub(crate) reveal_email: bool,
+}
+
 pub(crate) async fn list_resource_events(
     pool: &SqlitePool,
     owner_id: i64,
+    viewer: ResourceViewer,
     entity: AuditEntity,
     resource_id: i64,
     page: u32,
@@ -398,7 +427,16 @@ pub(crate) async fn list_resource_events(
         .map_err(|_| AuditError::Database)?;
     let events = rows
         .into_iter()
-        .map(|row| make_event(&row, AuditAudience::Owner { owner_id }, gravatar_enabled))
+        .map(|row| {
+            make_event(
+                &row,
+                AuditAudience::Owner {
+                    viewer_id: viewer.id,
+                    reveal_email: viewer.reveal_email,
+                },
+                gravatar_enabled,
+            )
+        })
         .collect();
     transaction
         .commit()
@@ -415,6 +453,7 @@ pub(crate) async fn list_resource_events(
 pub(crate) async fn get_resource_event_detail(
     pool: &SqlitePool,
     owner_id: i64,
+    viewer: ResourceViewer,
     entity: AuditEntity,
     resource_id: i64,
     event_id: i64,
@@ -449,7 +488,14 @@ pub(crate) async fn get_resource_event_detail(
     let Some(row) = row else {
         return Ok(None);
     };
-    let event = make_event(&row, AuditAudience::Owner { owner_id }, gravatar_enabled);
+    let event = make_event(
+        &row,
+        AuditAudience::Owner {
+            viewer_id: viewer.id,
+            reveal_email: viewer.reveal_email,
+        },
+        gravatar_enabled,
+    );
     let (changes, unavailable_reason) = project_changes(&row);
     transaction
         .commit()
@@ -523,7 +569,10 @@ fn activity_item(
 ) -> ActivityItem {
     let event = make_event(
         row,
-        AuditAudience::Owner { owner_id: user_id },
+        AuditAudience::Owner {
+            viewer_id: user_id,
+            reveal_email: true,
+        },
         gravatar_enabled,
     );
     let snapshot: Option<String> = row.get("resource_name_snapshot");
@@ -821,7 +870,18 @@ fn make_event(
         || row.get::<bool, _>("legacy_details_present");
     AuditEvent {
         id: row.get("id"),
-        actor_email: row.get("actor_email"),
+        actor_email: match audience {
+            AuditAudience::Owner {
+                reveal_email: false,
+                ..
+            } => row
+                .get::<Option<String>, _>("actor_email")
+                .map(|_| String::new()),
+            _ => row.get("actor_email"),
+        },
+        actor_name: row
+            .get::<Option<String>, _>("actor_email")
+            .map(|email| crate::resource_access::display_name(&email)),
         actor_avatar_url: {
             let actor_user_id = row.get::<Option<i64>, _>("actor_user_id");
             let filename = row.get::<Option<String>, _>("actor_avatar_filename");
@@ -834,15 +894,31 @@ fn make_event(
                     gravatar_enabled,
                 )
                 .map(|(url, _)| url),
-                (AuditAudience::Owner { owner_id }, Some(actor_id)) if actor_id == owner_id => {
+                (AuditAudience::Owner { viewer_id, .. }, Some(actor_id))
+                    if actor_id == viewer_id =>
+                {
                     crate::media::self_avatar(
-                        owner_id,
+                        actor_id,
                         filename.as_deref(),
                         use_gravatar,
                         gravatar_enabled,
                     )
                     .map(|(url, _)| url)
                 }
+                // Readers without manage rights get the readable avatar path.
+                (
+                    AuditAudience::Owner {
+                        reveal_email: false,
+                        ..
+                    },
+                    Some(actor_id),
+                ) => crate::media::people_avatar(
+                    actor_id,
+                    filename.as_deref(),
+                    use_gravatar,
+                    gravatar_enabled,
+                )
+                .map(|(url, _)| url),
                 _ => None,
             }
         },
@@ -854,6 +930,21 @@ fn make_event(
         resource,
         has_changes,
         media,
+        subject: row
+            .get::<Option<String>, _>("subject_role")
+            .map(Some)
+            .or_else(|| {
+                row.get::<Option<i64>, _>("subject_user_id")
+                    .is_some()
+                    .then_some(None)
+            })
+            .map(|role| AuditSubject {
+                id: row.get("subject_user_id"),
+                name: row
+                    .get::<Option<String>, _>("subject_email")
+                    .map(|email| crate::resource_access::display_name(&email)),
+                role,
+            }),
     }
 }
 
