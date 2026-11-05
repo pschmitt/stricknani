@@ -25,6 +25,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.printToLog
+import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -63,7 +64,13 @@ abstract class StricknaniE2eTest {
             // Onboarding opens in password mode, and its mode chips sit below the fold on the
             // small CI emulator: scroll to the chip, or the click lands off-screen and is lost.
             composeRule.onNodeWithTag("onboarding-mode-manual").performScrollTo().performClick()
-            composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
+            try {
+                composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
+            } catch (failure: ComposeTimeoutException) {
+                // Pre-credential UI tree only: nothing secret has been typed yet.
+                val tree = composeRule.onRoot(useUnmergedTree = true).printToString(4_000)
+                throw AssertionError("Manual onboarding fields never appeared. Tree: $tree", failure)
+            }
             composeRule
                 .onNodeWithTag("e2e-onboarding-server-url")
                 .performScrollTo()
