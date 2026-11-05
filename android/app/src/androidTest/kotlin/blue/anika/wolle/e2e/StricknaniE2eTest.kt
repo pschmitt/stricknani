@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
@@ -25,7 +26,6 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.printToLog
-import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -68,8 +68,25 @@ abstract class StricknaniE2eTest {
                 composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
             } catch (failure: ComposeTimeoutException) {
                 // Pre-credential UI tree only: nothing secret has been typed yet.
-                val tree = composeRule.onRoot(useUnmergedTree = true).printToString(4_000)
-                throw AssertionError("Manual onboarding fields never appeared. Tree: $tree", failure)
+                val tags =
+                    listOf(
+                            "onboarding-mode-manual",
+                            "onboarding-mode-password",
+                            "onboarding-mode-qr",
+                            "onboarding-email",
+                            "e2e-onboarding-server-url",
+                            "e2e-onboarding-api-token",
+                        )
+                        .joinToString(" ") { tag ->
+                            val nodes =
+                                composeRule
+                                    .onAllNodesWithTag(tag, useUnmergedTree = true)
+                                    .fetchSemanticsNodes()
+                            val disabled =
+                                nodes.count { SemanticsProperties.Disabled in it.config }
+                            "$tag=${nodes.size}/disabled$disabled"
+                        }
+                throw AssertionError("Manual onboarding fields never appeared. Tags: $tags", failure)
             }
             composeRule
                 .onNodeWithTag("e2e-onboarding-server-url")
