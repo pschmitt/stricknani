@@ -58,12 +58,16 @@ repo's URL and adjust the APK filter regex/prerelease settings, or just grab the
 the [Releases page](https://github.com/pschmitt/stricknani/releases).
 
 Sideloaded APK installs also check GitHub Releases themselves: when a newer build exists, Home
-shows an "Update available" card and About a version row, each with an **Update** button. Tagged
-builds follow the newest stable release, `latest` builds follow the `latest` pre-release.
+shows an "Update available" card and About's app version row gets an **Update** button. That row is
+the only update status on About: a spinner while checking, a check mark when up to date, a cloud
+icon when the check failed. Pull down on About to check again. Tagged builds follow the newest
+stable release, `latest` builds follow the `latest` pre-release.
 
 **Update channel (About, GitHub builds only).** *Stable* (default) follows the newest `vX.Y.Z`
 release by semver; *Latest* follows the rolling `latest` pre-release, compared by the commit its
-body names. Switching from Latest to Stable never downgrades: a build ahead of the newest stable
+body names: only a `latest` commit ahead of the installed one is an update, so a build at or past
+`latest` is up to date, and a commit GitHub does not know (a local build) is never compared.
+Switching from Latest to Stable never downgrades: a build ahead of the newest stable
 reports "You're ahead of the latest stable release" until a newer stable exists.
 
 **In-app update (GitHub APKs, release and debug).** **Update** downloads the APK for your device's

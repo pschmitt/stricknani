@@ -41,6 +41,25 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-91: About version row and real newer check
+
+**Status:** done (2026-11-05)
+
+- [x] About shows one row for updates, the app version: spinner while checking, check mark when up
+      to date, Update button when a newer build exists, cloud-off icon on a failed check, Play
+      button on Play builds. Install progress and failure sit under the version line.
+- [x] Pull to refresh on About re-runs the update check and reloads the server version; the check
+      on open stays free of the pull indicator.
+- [x] Latest channel: a different commit is no longer an update. Same commit is up to date without
+      an API call; only a `latest` commit ahead of the install is offered. Identical or behind is
+      up to date, diverged or unknown to GitHub (HTTP 404, a local build) is not eligible.
+- [x] Debug label is "(debug)".
+
+Web has no matching surface: APK updates are Android-only.
+
+Verification: ktfmt, `:app:testDebugUnitTest` (743 tests, 0 failures), `:app:assembleDebug`,
+`:app:assembleRelease` and `:app:lintDebug` passed on a build worker.
+
 ## SNA-90: Update flow tweaks and debug build identity
 
 **Status:** mostly done (2026-11-05)

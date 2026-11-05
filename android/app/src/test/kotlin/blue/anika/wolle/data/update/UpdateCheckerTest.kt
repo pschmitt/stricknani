@@ -87,6 +87,7 @@ class UpdateCheckerTest {
     @Test
     fun `rolling build behind latest prerelease gets update`() {
         server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("ahead")))
 
         val update = check(revision = "b".repeat(12), channel = UpdateChannel.LATEST)
 
@@ -94,18 +95,83 @@ class UpdateCheckerTest {
         assertEquals("https://example.test/arm64.apk", update?.downloadUrl)
         assertNull(update?.stableVersion)
         assertEquals("/repos/x/y/releases/tags/latest", server.takeRequest().path)
+        assertEquals(
+            "/repos/x/y/compare/${"b".repeat(12)}...$remoteCommit?per_page=1",
+            server.takeRequest().path,
+        )
     }
 
     @Test
-    fun `rolling build on latest commit gets nothing`() {
+    fun `rolling build on latest commit gets nothing and makes no compare request`() {
         server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
 
-        assertNull(check(revision = remoteCommit.take(12), channel = UpdateChannel.LATEST))
+        assertEquals(
+            UpdateCheckResult.UpToDate,
+            detailed(remoteCommit.take(12), channel = UpdateChannel.LATEST),
+        )
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `rolling build ahead of latest is up to date, not offered the older latest`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("behind")))
+        assertEquals(
+            UpdateCheckResult.UpToDate,
+            detailed("b".repeat(12), channel = UpdateChannel.LATEST),
+        )
+
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("identical")))
+        assertEquals(
+            UpdateCheckResult.UpToDate,
+            detailed("b".repeat(12), channel = UpdateChannel.LATEST),
+        )
+    }
+
+    @Test
+    fun `rolling build diverged from latest is not eligible`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("diverged")))
+
+        assertEquals(
+            UpdateCheckResult.NotEligible,
+            detailed("b".repeat(12), channel = UpdateChannel.LATEST),
+        )
+    }
+
+    @Test
+    fun `a commit unknown to github is not eligible on either channel`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setResponseCode(404))
+        assertEquals(
+            UpdateCheckResult.NotEligible,
+            detailed("b".repeat(12), channel = UpdateChannel.LATEST),
+        )
+
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setResponseCode(404))
+        assertEquals(UpdateCheckResult.NotEligible, detailed("b".repeat(12)))
+    }
+
+    @Test
+    fun `other compare errors stay failed`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setResponseCode(403))
+        assertEquals(
+            UpdateCheckResult.Failed,
+            detailed("b".repeat(12), channel = UpdateChannel.LATEST),
+        )
+
+        server.enqueue(MockResponse().setBody(releaseJson("v1.2.0")))
+        server.enqueue(MockResponse().setResponseCode(500))
+        assertEquals(UpdateCheckResult.Failed, detailed("b".repeat(12)))
     }
 
     @Test
     fun `debug build gets the debug apk`() {
         server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("ahead")))
 
         assertEquals(
             "https://example.test/arm64-debug.apk",

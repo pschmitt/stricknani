@@ -50,9 +50,37 @@ fun aboutUpdateState(
 
 /**
  * The update the version row offers a button for: an available update with no install running and
- * no failed install to report. Otherwise the update row owns the progress or failure.
+ * no failed install to report. Otherwise the version row shows the progress or failure.
  */
 fun aboutUpdateOffer(state: AboutUpdateState, install: UpdateInstallState): AppUpdate? =
     (state as? AboutUpdateState.Available)?.update?.takeIf {
         !install.isBusy && install !is UpdateInstallState.Failed
+    }
+
+/** What the version row shows in its trailing slot. */
+enum class AboutUpdateTrailing {
+    /** Nothing: a development build, or an install whose progress or failure shows below. */
+    None,
+    Checking,
+    UpToDate,
+    AheadOfStable,
+    /** The Update button. */
+    Offer,
+    Failed,
+    /** The button that opens the Play listing. */
+    Play,
+}
+
+/** Maps the update state and install state to the version row's trailing slot. */
+fun aboutUpdateTrailing(state: AboutUpdateState, install: UpdateInstallState): AboutUpdateTrailing =
+    when (state) {
+        AboutUpdateState.Checking -> AboutUpdateTrailing.Checking
+        AboutUpdateState.UpToDate -> AboutUpdateTrailing.UpToDate
+        AboutUpdateState.AheadOfStable -> AboutUpdateTrailing.AheadOfStable
+        is AboutUpdateState.Available ->
+            if (aboutUpdateOffer(state, install) != null) AboutUpdateTrailing.Offer
+            else AboutUpdateTrailing.None
+        AboutUpdateState.Failed -> AboutUpdateTrailing.Failed
+        AboutUpdateState.DevBuild -> AboutUpdateTrailing.None
+        AboutUpdateState.Play -> AboutUpdateTrailing.Play
     }

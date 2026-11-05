@@ -38,6 +38,8 @@ import blue.anika.wolle.data.update.checkCurrentBuild
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.ReadingTextSize
+import blue.anika.wolle.ui.common.RefreshController
+import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.navigation.NavbarCustomization
 import coil3.SingletonImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,6 +48,7 @@ import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -135,15 +138,47 @@ constructor(
 
     /** Runs a GitHub Releases check unless one is already in flight (or Play handles updates). */
     fun checkForUpdate() {
-        if (!BuildConfig.SELF_UPDATE_ENABLED || updateCheckJob?.isActive == true) return
-        updateChecking.value = true
-        updateCheckJob = viewModelScope.launch {
-            try {
-                updateResult.value =
-                    updateChecker.checkCurrentBuild(appPreferencesRepository.updateChannel.first())
-            } finally {
-                updateChecking.value = false
+        startUpdateCheck()
+    }
+
+    /** The running check, a new one, or null when Play handles updates. */
+    private fun startUpdateCheck(): Job? {
+        if (!BuildConfig.SELF_UPDATE_ENABLED) return null
+        updateCheckJob
+            ?.takeIf { it.isActive }
+            ?.let {
+                return it
             }
+        updateChecking.value = true
+        return viewModelScope
+            .launch {
+                try {
+                    updateResult.value =
+                        updateChecker.checkCurrentBuild(
+                            appPreferencesRepository.updateChannel.first()
+                        )
+                } finally {
+                    updateChecking.value = false
+                }
+            }
+            .also { updateCheckJob = it }
+    }
+
+    private val aboutRefresh = RefreshController(viewModelScope)
+
+    /** True while a pull to refresh on the About screen runs; the automatic check never sets it. */
+    val aboutRefreshing: StateFlow<Boolean> =
+        aboutRefresh.state
+            .map { it.isUserInitiatedRefresh() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
+    /** Pull to refresh on About: the update check and the server version, both awaited. */
+    fun refreshAbout() {
+        aboutRefresh.refresh {
+            val meta = viewModelScope.async { runCatching { metaApi.getMeta() }.getOrNull() }
+            startUpdateCheck()?.join()
+            meta.await()?.let { _serverMeta.value = it }
+            true
         }
     }
 

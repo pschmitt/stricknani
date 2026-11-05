@@ -152,8 +152,13 @@ internal enum class CompareStatus {
  *   ahead of stable (or identical) and nothing is offered. Switching LATEST to STABLE therefore
  *   never downgrades by itself.
  * - LATEST, installed rolling build: the commit the `latest` release body names (the only reliable
- *   build identity; a release body without one fails the check) against the installed commit. A
- *   different commit is an update, since `latest` is by definition the head of main.
+ *   build identity; a release body without one fails the check) against the installed commit. The
+ *   same commit is up to date and costs no API call. Otherwise the compare API decides: only a
+ *   `latest` commit ahead of the install is an update; identical or behind means the install is at
+ *   or past `latest`, and diverged is not eligible (nothing can be claimed).
+ * - A compare answered with HTTP 404 means GitHub does not know the installed commit (a local,
+ *   unpushed build): [UpdateCheckResult.NotEligible], in STABLE and LATEST alike. Other HTTP errors
+ *   are [UpdateCheckResult.Failed].
  * - LATEST, installed tagged build: compare API again; the rolling build is offered when its commit
  *   is ahead of the tag. Local or dirty builds are never offered an update. The APK picked is
  *   always for this package and variant (release, or debug when running the debug build), so
@@ -238,6 +243,7 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
             }
             is InstalledBuild.Rolling ->
                 when (compare(installed.commit, release.tagName)) {
+                    null -> UpdateCheckResult.NotEligible
                     CompareStatus.AHEAD -> available
                     CompareStatus.IDENTICAL -> UpdateCheckResult.UpToDate
                     CompareStatus.BEHIND,
@@ -270,9 +276,17 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
             InstalledBuild.Unknown -> UpdateCheckResult.NotEligible
             is InstalledBuild.Rolling ->
                 if (remoteCommit.startsWith(installed.commit)) UpdateCheckResult.UpToDate
-                else available
+                else
+                    when (compare(installed.commit, remoteCommit)) {
+                        null -> UpdateCheckResult.NotEligible
+                        CompareStatus.AHEAD -> available
+                        CompareStatus.IDENTICAL,
+                        CompareStatus.BEHIND -> UpdateCheckResult.UpToDate
+                        CompareStatus.DIVERGED -> UpdateCheckResult.NotEligible
+                    }
             InstalledBuild.Tagged ->
                 when (compare(gitRevision, remoteCommit)) {
+                    null -> UpdateCheckResult.NotEligible
                     CompareStatus.AHEAD -> available
                     // The rolling build is the same as, or behind, the tagged one.
                     else -> UpdateCheckResult.UpToDate
@@ -280,20 +294,31 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
         }
     }
 
-    /** What [head] is relative to [base] (hashes or tag names). */
-    private fun compare(base: String, head: String): CompareStatus =
-        CompareStatus.parse(
-            fetchJson<GithubCompare>("$apiBaseUrl/compare/$base...$head?per_page=1").status
-        )
+    /**
+     * What [head] is relative to [base] (hashes or tag names), or null when GitHub answers 404: it
+     * does not know [base], a local build that was never pushed.
+     */
+    private fun compare(base: String, head: String): CompareStatus? =
+        fetchJsonOrNull<GithubCompare>("$apiBaseUrl/compare/$base...$head?per_page=1")?.let {
+            CompareStatus.parse(it.status)
+        }
 
     private fun fetch(url: String): GithubRelease = fetchJson(url)
 
-    private inline fun <reified T> fetchJson(url: String): T {
+    private inline fun <reified T> fetchJson(url: String): T =
+        fetchJsonOrNull(url, notFoundIsNull = false)!!
+
+    /** Like [fetchJson], but returns null for HTTP 404 when [notFoundIsNull]. */
+    private inline fun <reified T> fetchJsonOrNull(
+        url: String,
+        notFoundIsNull: Boolean = true,
+    ): T? {
         val request =
             Request.Builder().url(url).header("Accept", "application/vnd.github+json").build()
         client.newCall(request).execute().use { response ->
+            if (notFoundIsNull && response.code == HTTP_NOT_FOUND) return null
             check(response.isSuccessful) { "GitHub returned ${response.code}" }
-            return json.decodeFromString(response.body.string())
+            return json.decodeFromString<T>(response.body.string())
         }
     }
 
@@ -317,6 +342,7 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
     internal companion object {
         private val FULL_COMMIT_HASH = Regex("""\b[0-9a-f]{40}\b""")
         private const val SHORT_HASH_LENGTH = 7
+        private const val HTTP_NOT_FOUND = 404
         const val CHECKSUMS_ASSET = "SHA256SUMS"
 
         /** Numeric dotted-version comparison; a missing or non-numeric part counts as 0. */

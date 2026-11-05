@@ -469,14 +469,12 @@
     <!-- Settings: About -->
     <string name="about_settings_version_title">Version</string>
     <string name="about_settings_app_version_label">App-Version</string>
-    <string name="about_settings_app_version_debug">%1$s (Debug-Build)</string>
+    <string name="about_settings_app_version_debug">%1$s (debug)</string>
     <string name="about_update_checking">Suche nach Updates …</string>
     <string name="about_update_up_to_date">Aktuell auf %1$s</string>
     <string name="about_update_available_stable">Stable %1$s verfügbar</string>
     <string name="about_update_available_latest">Latest-Build %1$s verfügbar</string>
     <string name="about_update_failed">Updates konnten nicht geprüft werden</string>
-    <string name="about_update_dev_build">Entwicklungs-Build: Updates werden nicht geprüft</string>
-    <string name="about_update_play">Updates kommen über Google Play</string>
     <string name="about_update_ahead_of_stable">Du bist der neuesten stabilen Version voraus</string>
     <string name="about_update_channel_title">Update-Kanal</string>
     <string name="about_update_channel_stable">Stabil</string>
@@ -484,8 +482,6 @@
     <string name="about_update_channel_stable_help">Nur getaggte Releases. Der Wechsel von „Aktuell“ führt nie zu einem Downgrade.</string>
     <string name="about_update_channel_latest_help">Jeder Build von main (fortlaufend), nur Release-APK.</string>
     <string name="about_update_button">Aktualisieren</string>
-    <string name="about_update_check_again">Erneut prüfen</string>
-    <string name="about_update_check">Nach Updates suchen</string>
     <string name="about_update_open_play">Play Store öffnen</string>
     <string name="about_settings_build_label">Build</string>
     <string name="about_settings_server_version_label">Serverversion</string>

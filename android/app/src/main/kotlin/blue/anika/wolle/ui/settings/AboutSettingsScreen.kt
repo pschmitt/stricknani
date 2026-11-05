@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -62,6 +61,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,6 +79,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -185,6 +187,7 @@ internal fun AboutSettingsScreen(
     }
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val updateChannel by viewModel.updateChannel.collectAsStateWithLifecycle()
+    val refreshing by viewModel.aboutRefreshing.collectAsStateWithLifecycle()
     val installViewModel: UpdateInstallViewModel = hiltViewModel()
     val installState by installViewModel.state.collectAsStateWithLifecycle()
     val autoUpdate by installViewModel.autoUpdate.collectAsStateWithLifecycle()
@@ -216,6 +219,12 @@ internal fun AboutSettingsScreen(
     val revision = BuildRevision.parse(BuildConfig.GIT_REVISION)
     val build = revision?.display
     val offer = aboutUpdateOffer(updateState, installState)
+    val trailing = aboutUpdateTrailing(updateState, installState)
+    val availableUpdate = (updateState as? AboutUpdateState.Available)?.update
+    // An install in flight, or one that just failed, belongs to the offered update.
+    val installing = availableUpdate != null && installState.isBusy
+    val failedInstall =
+        (installState as? UpdateInstallState.Failed)?.takeIf { availableUpdate != null }
     val copyText = buildString {
         append("Stricknani $appVersion")
         if (build != null) append("\nBuild: $build")
@@ -238,279 +247,292 @@ internal fun AboutSettingsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = viewModel::refreshAbout,
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            item { AboutHero(mascotCue) }
-            item {
-                SettingsGroupCard(
-                    title = stringResource(R.string.about_settings_version_title),
-                    icon = PhosphorIcons.Info,
-                ) {
-                    SettingsListItem(
-                        headlineContent = {
-                            Text(stringResource(R.string.about_settings_app_version_label))
-                        },
-                        supportingContent = {
-                            Column {
-                                Text(appVersion)
-                                if (offer != null) {
-                                    Text(availableText(offer, updateChannel))
-                                    if (!offer.canInstallInApp()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                item { AboutHero(mascotCue) }
+                item {
+                    SettingsGroupCard(
+                        title = stringResource(R.string.about_settings_version_title),
+                        icon = PhosphorIcons.Info,
+                    ) {
+                        SettingsListItem(
+                            headlineContent = {
+                                Text(stringResource(R.string.about_settings_app_version_label))
+                            },
+                            supportingContent = {
+                                Column {
+                                    Text(appVersion)
+                                    if (installing) {
+                                        updateInstallStatusText(installState)?.let { Text(it) }
+                                        UpdateInstallProgress(
+                                            installState,
+                                            Modifier.padding(top = 8.dp),
+                                        )
+                                    }
+                                    if (failedInstall != null) {
+                                        updateInstallStatusText(installState)?.let { Text(it) }
+                                        UpdateFailureActions(
+                                            failedInstall.failure,
+                                            onTryAgain = {
+                                                installViewModel.dismissFailure()
+                                                availableUpdate?.let(installViewModel::start)
+                                            },
+                                            onOpenBrowser = {
+                                                installViewModel.dismissFailure()
+                                                availableUpdate?.let {
+                                                    uriHandler.openUri(it.downloadUrl)
+                                                }
+                                            },
+                                        )
+                                    }
+                                    if (offer != null && !offer.canInstallInApp()) {
                                         Text(stringResource(R.string.about_update_browser_hint))
                                     }
                                 }
-                            }
-                        },
-                        trailingContent =
-                            offer?.let {
-                                {
-                                    Button(
-                                        onClick = {
-                                            // In-app install where the build supports it, else the
-                                            // browser download.
-                                            if (it.canInstallInApp()) installViewModel.start(it)
-                                            else uriHandler.openUri(it.downloadUrl)
-                                        },
-                                        modifier = Modifier.testTag("about-update-button"),
-                                    ) {
-                                        Icon(
-                                            Icons.Filled.SystemUpdate,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(ButtonDefaults.IconSize),
-                                        )
-                                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                                        Text(stringResource(R.string.about_update_button))
-                                    }
-                                }
                             },
-                    )
-                    if (offer == null) {
-                        AboutUpdateRow(
-                            state = updateState,
-                            channel = updateChannel,
-                            install = installState,
-                            onTryAgain = {
-                                installViewModel.dismissFailure()
-                                (updateState as? AboutUpdateState.Available)
-                                    ?.update
-                                    ?.let(installViewModel::start)
-                            },
-                            onOpenBrowser = {
-                                installViewModel.dismissFailure()
-                                (updateState as? AboutUpdateState.Available)?.update?.let {
-                                    uriHandler.openUri(it.downloadUrl)
-                                }
-                            },
-                            onRetry = viewModel::checkForUpdate,
-                            onOpenPlay = { uriHandler.openUri(PLAY_URL) },
-                        )
-                    }
-                    // Debug builds always follow Latest: debug APKs exist only on that release.
-                    if (
-                        BuildConfig.SELF_UPDATE_ENABLED &&
-                            !BuildConfig.DEBUG &&
-                            installDeveloperMode
-                    ) {
-                        UpdateChannelRow(
-                            selected = updateChannel,
-                            onSelect = viewModel::setUpdateChannel,
-                        )
-                    }
-                    val shizukuUi =
-                        shizukuStatusUi(
-                            developerMode = installDeveloperMode,
-                            supported = installViewModel.shizukuSupported,
-                            state = shizukuState,
-                        )
-                    if (shizukuUi.visible) {
-                        ShizukuStatusRow(
-                            ui = shizukuUi,
-                            onAllow = installViewModel::requestShizukuPermission,
-                            onOpenShizuku = { openShizuku(context, installViewModel) },
-                        )
-                    }
-                    if (backgroundUpdatesAvailable) {
-                        AutoUpdateRow(
-                            checked = autoUpdate,
-                            silentPossible = silentPossible,
-                            onChange = installViewModel::setAutoUpdate,
-                        )
-                    }
-                    if (backgroundUpdatesAvailable) {
-                        NotifyUpdatesRow(
-                            checked = notifyUpdates,
-                            onChange = installViewModel::setNotifyUpdates,
-                        )
-                    }
-                    val buildHint = stringResource(R.string.about_settings_build_hint)
-                    SettingsListItem(
-                        modifier =
-                            Modifier.clickable(
-                                onClickLabel = buildHint,
-                                role = Role.Button,
-                                onClick = viewModel::onBuildRowTap,
-                            ),
-                        headlineContent = {
-                            Text(stringResource(R.string.about_settings_build_label))
-                        },
-                        supportingContent = {
-                            Text(build ?: stringResource(R.string.about_settings_build_unknown))
-                        },
-                        trailingContent =
-                            revision?.let {
-                                {
-                                    IconButton(onClick = { uriHandler.openUri(it.commitUrl) }) {
-                                        Icon(
-                                            PhosphorIcons.GithubLogo,
-                                            contentDescription =
-                                                stringResource(R.string.about_open_commit),
+                            trailingContent =
+                                if (trailing == AboutUpdateTrailing.None) null
+                                else {
+                                    {
+                                        AboutUpdateTrailingContent(
+                                            trailing = trailing,
+                                            offer = offer,
+                                            channel = updateChannel,
+                                            onUpdate = {
+                                                // In-app install where the build supports it, else
+                                                // the
+                                                // browser download.
+                                                offer?.let {
+                                                    if (it.canInstallInApp())
+                                                        installViewModel.start(it)
+                                                    else uriHandler.openUri(it.downloadUrl)
+                                                }
+                                            },
+                                            onOpenPlay = { uriHandler.openUri(PLAY_URL) },
                                         )
                                     }
-                                }
-                            },
-                    )
-                    if (serverMeta != null)
+                                },
+                        )
+                        // Debug builds always follow Latest: debug APKs exist only on that release.
+                        if (
+                            BuildConfig.SELF_UPDATE_ENABLED &&
+                                !BuildConfig.DEBUG &&
+                                installDeveloperMode
+                        ) {
+                            UpdateChannelRow(
+                                selected = updateChannel,
+                                onSelect = viewModel::setUpdateChannel,
+                            )
+                        }
+                        val shizukuUi =
+                            shizukuStatusUi(
+                                developerMode = installDeveloperMode,
+                                supported = installViewModel.shizukuSupported,
+                                state = shizukuState,
+                            )
+                        if (shizukuUi.visible) {
+                            ShizukuStatusRow(
+                                ui = shizukuUi,
+                                onAllow = installViewModel::requestShizukuPermission,
+                                onOpenShizuku = { openShizuku(context, installViewModel) },
+                            )
+                        }
+                        if (backgroundUpdatesAvailable) {
+                            AutoUpdateRow(
+                                checked = autoUpdate,
+                                silentPossible = silentPossible,
+                                onChange = installViewModel::setAutoUpdate,
+                            )
+                        }
+                        if (backgroundUpdatesAvailable) {
+                            NotifyUpdatesRow(
+                                checked = notifyUpdates,
+                                onChange = installViewModel::setNotifyUpdates,
+                            )
+                        }
+                        val buildHint = stringResource(R.string.about_settings_build_hint)
                         SettingsListItem(
+                            modifier =
+                                Modifier.clickable(
+                                    onClickLabel = buildHint,
+                                    role = Role.Button,
+                                    onClick = viewModel::onBuildRowTap,
+                                ),
                             headlineContent = {
-                                Text(stringResource(R.string.about_settings_server_version_label))
+                                Text(stringResource(R.string.about_settings_build_label))
                             },
-                            supportingContent = { Text(serverVersion) },
+                            supportingContent = {
+                                Text(build ?: stringResource(R.string.about_settings_build_unknown))
+                            },
+                            trailingContent =
+                                revision?.let {
+                                    {
+                                        IconButton(onClick = { uriHandler.openUri(it.commitUrl) }) {
+                                            Icon(
+                                                PhosphorIcons.GithubLogo,
+                                                contentDescription =
+                                                    stringResource(R.string.about_open_commit),
+                                            )
+                                        }
+                                    }
+                                },
                         )
-                    TextButton(
-                        onClick = {
-                            copyToClipboard(context, copyText, copiedMessage)
-                        },
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .heightIn(min = 48.dp)
-                                .padding(horizontal = 8.dp),
+                        if (serverMeta != null)
+                            SettingsListItem(
+                                headlineContent = {
+                                    Text(
+                                        stringResource(R.string.about_settings_server_version_label)
+                                    )
+                                },
+                                supportingContent = { Text(serverVersion) },
+                            )
+                        TextButton(
+                            onClick = {
+                                copyToClipboard(context, copyText, copiedMessage)
+                            },
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .padding(horizontal = 8.dp),
+                        ) {
+                            Icon(
+                                Icons.Filled.ContentCopy,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                stringResource(R.string.about_copy_button),
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+                item {
+                    val motion = !animationsDisabled()
+                    AnimatedVisibility(
+                        visible = developerMode,
+                        enter = if (motion) fadeIn() + expandVertically() else fadeIn(snap()),
+                        exit = if (motion) fadeOut() + shrinkVertically() else fadeOut(snap()),
                     ) {
-                        Icon(
-                            Icons.Filled.ContentCopy,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Text(
-                            stringResource(R.string.about_copy_button),
-                            modifier = Modifier.padding(start = 8.dp),
+                        DeveloperCard(
+                            serverUrl = serverUrl,
+                            serverMeta = serverMeta,
+                            apiState = apiState,
+                            lastSyncedMillis = lastSyncedMillis,
+                            pendingWrites = pendingWrites,
+                            onDeveloperModeChange = viewModel::setDeveloperMode,
+                            onAddToObtainium = { rolling -> addToObtainium(rolling) },
+                            onReinstallViaShizuku =
+                                if (
+                                    installViewModel.shizukuSupported &&
+                                        shizukuState == PrivilegedState.READY
+                                ) {
+                                    installViewModel::reinstallThisBuild
+                                } else null,
+                            onTestUpdateNotification =
+                                if (BuildConfig.SELF_UPDATE_ENABLED) {
+                                    installViewModel::postTestUpdateNotification
+                                } else null,
                         )
                     }
                 }
-            }
-            item {
-                val motion = !animationsDisabled()
-                AnimatedVisibility(
-                    visible = developerMode,
-                    enter = if (motion) fadeIn() + expandVertically() else fadeIn(snap()),
-                    exit = if (motion) fadeOut() + shrinkVertically() else fadeOut(snap()),
-                ) {
-                    DeveloperCard(
-                        serverUrl = serverUrl,
-                        serverMeta = serverMeta,
-                        apiState = apiState,
-                        lastSyncedMillis = lastSyncedMillis,
-                        pendingWrites = pendingWrites,
-                        onDeveloperModeChange = viewModel::setDeveloperMode,
-                        onAddToObtainium = { rolling -> addToObtainium(rolling) },
-                        onReinstallViaShizuku =
-                            if (
-                                installViewModel.shizukuSupported &&
-                                    shizukuState == PrivilegedState.READY
-                            ) {
-                                installViewModel::reinstallThisBuild
-                            } else null,
-                        onTestUpdateNotification =
-                            if (BuildConfig.SELF_UPDATE_ENABLED) {
-                                installViewModel::postTestUpdateNotification
-                            } else null,
+                item {
+                    SettingsSingleItemCard {
+                        AboutLinkRow(
+                            icon = Icons.Filled.Code,
+                            title = stringResource(R.string.about_link_source_title),
+                            description = stringResource(R.string.about_link_source_description),
+                            onClick = { uriHandler.openUri(GITHUB_URL) },
+                        )
+                        AboutLinkRow(
+                            icon = PhosphorIcons.Heart,
+                            title = stringResource(R.string.about_link_sponsor_title),
+                            description = stringResource(R.string.about_link_sponsor_description),
+                            warm = true,
+                            onClick = { uriHandler.openUri(SPONSOR_URL) },
+                        )
+                        AboutLinkRow(
+                            icon = PhosphorIcons.ShieldCheck,
+                            title = stringResource(R.string.about_settings_privacy_label),
+                            description =
+                                stringResource(R.string.about_settings_privacy_description),
+                            chevron = true,
+                            onClick = { uriHandler.openUri(privacyPolicyUrl(serverUrl)) },
+                        )
+                        AboutLinkRow(
+                            icon = Icons.Filled.BugReport,
+                            title = stringResource(R.string.about_link_issues_title),
+                            description = stringResource(R.string.about_link_issues_description),
+                            onClick = { uriHandler.openUri(ISSUES_URL) },
+                        )
+                    }
+                }
+                item {
+                    SettingsGroupCard(
+                        title = stringResource(R.string.about_credits_title),
+                        icon = PhosphorIcons.Sparkle,
+                    ) {
+                        AboutCreditRow(
+                            title = stringResource(R.string.about_credits_license_prefix),
+                            detail = null,
+                            onClick = { uriHandler.openUri(LICENSE_URL) },
+                        )
+                        AboutCreditRow(
+                            title = stringResource(R.string.about_credit_icons_title),
+                            detail = stringResource(R.string.about_credit_icons_detail),
+                            onClick = { uriHandler.openUri("https://phosphoricons.com") },
+                        )
+                        AboutCreditRow(
+                            title = stringResource(R.string.about_credit_display_title),
+                            detail = stringResource(R.string.about_credit_display_detail),
+                            onClick = {
+                                uriHandler.openUri("https://github.com/undercasetype/Fraunces")
+                            },
+                        )
+                        AboutCreditRow(
+                            title = stringResource(R.string.about_credit_text_title),
+                            detail = stringResource(R.string.about_credit_text_detail),
+                            onClick = {
+                                uriHandler.openUri("https://github.com/googlefonts/nunito")
+                            },
+                        )
+                        SettingsListItem(
+                            modifier =
+                                Modifier.clickable(
+                                    onClickLabel = stringResource(R.string.libraries_title),
+                                    role = Role.Button,
+                                    onClick = onShowLibraries,
+                                ),
+                            leadingContent = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.LibraryBooks,
+                                    contentDescription = null,
+                                )
+                            },
+                            headlineContent = { Text(stringResource(R.string.libraries_title)) },
+                            supportingContent = {
+                                Text(stringResource(R.string.about_settings_libraries_description))
+                            },
+                        )
+                    }
+                }
+                item {
+                    Text(
+                        stringResource(R.string.about_footer),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     )
                 }
-            }
-            item {
-                SettingsSingleItemCard {
-                    AboutLinkRow(
-                        icon = Icons.Filled.Code,
-                        title = stringResource(R.string.about_link_source_title),
-                        description = stringResource(R.string.about_link_source_description),
-                        onClick = { uriHandler.openUri(GITHUB_URL) },
-                    )
-                    AboutLinkRow(
-                        icon = PhosphorIcons.Heart,
-                        title = stringResource(R.string.about_link_sponsor_title),
-                        description = stringResource(R.string.about_link_sponsor_description),
-                        warm = true,
-                        onClick = { uriHandler.openUri(SPONSOR_URL) },
-                    )
-                    AboutLinkRow(
-                        icon = PhosphorIcons.ShieldCheck,
-                        title = stringResource(R.string.about_settings_privacy_label),
-                        description = stringResource(R.string.about_settings_privacy_description),
-                        chevron = true,
-                        onClick = { uriHandler.openUri(privacyPolicyUrl(serverUrl)) },
-                    )
-                    AboutLinkRow(
-                        icon = Icons.Filled.BugReport,
-                        title = stringResource(R.string.about_link_issues_title),
-                        description = stringResource(R.string.about_link_issues_description),
-                        onClick = { uriHandler.openUri(ISSUES_URL) },
-                    )
-                }
-            }
-            item {
-                SettingsGroupCard(
-                    title = stringResource(R.string.about_credits_title),
-                    icon = PhosphorIcons.Sparkle,
-                ) {
-                    AboutCreditRow(
-                        title = stringResource(R.string.about_credits_license_prefix),
-                        detail = null,
-                        onClick = { uriHandler.openUri(LICENSE_URL) },
-                    )
-                    AboutCreditRow(
-                        title = stringResource(R.string.about_credit_icons_title),
-                        detail = stringResource(R.string.about_credit_icons_detail),
-                        onClick = { uriHandler.openUri("https://phosphoricons.com") },
-                    )
-                    AboutCreditRow(
-                        title = stringResource(R.string.about_credit_display_title),
-                        detail = stringResource(R.string.about_credit_display_detail),
-                        onClick = {
-                            uriHandler.openUri("https://github.com/undercasetype/Fraunces")
-                        },
-                    )
-                    AboutCreditRow(
-                        title = stringResource(R.string.about_credit_text_title),
-                        detail = stringResource(R.string.about_credit_text_detail),
-                        onClick = { uriHandler.openUri("https://github.com/googlefonts/nunito") },
-                    )
-                    SettingsListItem(
-                        modifier =
-                            Modifier.clickable(
-                                onClickLabel = stringResource(R.string.libraries_title),
-                                role = Role.Button,
-                                onClick = onShowLibraries,
-                            ),
-                        leadingContent = {
-                            Icon(Icons.AutoMirrored.Filled.LibraryBooks, contentDescription = null)
-                        },
-                        headlineContent = { Text(stringResource(R.string.libraries_title)) },
-                        supportingContent = {
-                            Text(stringResource(R.string.about_settings_libraries_description))
-                        },
-                    )
-                }
-            }
-            item {
-                Text(
-                    stringResource(R.string.about_footer),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                )
             }
         }
     }
@@ -563,107 +585,71 @@ private fun availableText(update: AppUpdate, channel: UpdateChannel): String =
         update.version,
     )
 
-/**
- * Update status right under the app version. An update on offer gets its button on the version row
- * instead, so this row covers every other state plus install progress and failure; nothing is
- * claimed for builds that cannot be compared against a release.
- */
+/** The version row's trailing slot: a spinner, a status icon, the Update button or Play. */
 @Composable
-private fun AboutUpdateRow(
-    state: AboutUpdateState,
+private fun AboutUpdateTrailingContent(
+    trailing: AboutUpdateTrailing,
+    offer: AppUpdate?,
     channel: UpdateChannel,
-    install: UpdateInstallState,
-    onTryAgain: () -> Unit,
-    onOpenBrowser: () -> Unit,
-    onRetry: () -> Unit,
+    onUpdate: () -> Unit,
     onOpenPlay: () -> Unit,
 ) {
-    // An install in flight (or just failed) takes over the row of the update it belongs to.
-    val installing = state is AboutUpdateState.Available && install.isBusy
-    val failed =
-        (install as? UpdateInstallState.Failed)?.takeIf { state is AboutUpdateState.Available }
-    val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    SettingsListItem(
-        modifier = Modifier.testTag("about-update-row"),
-        leadingContent = {
-            when (state) {
-                AboutUpdateState.Checking ->
-                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                AboutUpdateState.UpToDate,
-                AboutUpdateState.AheadOfStable ->
-                    Icon(
-                        Icons.Filled.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                is AboutUpdateState.Available ->
-                    Icon(
-                        Icons.Filled.SystemUpdate,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                AboutUpdateState.Failed ->
-                    Icon(Icons.Filled.CloudOff, contentDescription = null, tint = muted)
-                AboutUpdateState.DevBuild,
-                AboutUpdateState.Play ->
-                    Icon(Icons.Filled.SystemUpdate, contentDescription = null, tint = muted)
-            }
-        },
-        supportingContent =
-            when {
-                installing -> {
-                    { UpdateInstallProgress(install, Modifier.padding(top = 8.dp)) }
-                }
-                failed != null -> {
-                    {
-                        UpdateFailureActions(failed.failure, onTryAgain, onOpenBrowser)
-                    }
-                }
-                else -> null
-            },
-        headlineContent = {
-            Text(
-                updateInstallStatusText(install)?.takeIf { installing || failed != null }
-                    ?: when (state) {
-                        AboutUpdateState.Checking -> stringResource(R.string.about_update_checking)
-                        AboutUpdateState.UpToDate ->
-                            stringResource(
-                                R.string.about_update_up_to_date,
-                                stringResource(channel.labelRes()),
-                            )
-                        AboutUpdateState.AheadOfStable ->
-                            stringResource(R.string.about_update_ahead_of_stable)
-                        is AboutUpdateState.Available -> availableText(state.update, channel)
-                        AboutUpdateState.Failed -> stringResource(R.string.about_update_failed)
-                        AboutUpdateState.DevBuild -> stringResource(R.string.about_update_dev_build)
-                        AboutUpdateState.Play -> stringResource(R.string.about_update_play)
-                    }
+    val statusTag = Modifier.testTag("about-update-status")
+    when (trailing) {
+        AboutUpdateTrailing.None -> Unit
+        AboutUpdateTrailing.Checking -> {
+            val checking = stringResource(R.string.about_update_checking)
+            CircularProgressIndicator(
+                statusTag.size(24.dp).semantics { contentDescription = checking },
+                strokeWidth = 2.dp,
             )
-        },
-        trailingContent = {
-            when (state) {
-                AboutUpdateState.UpToDate,
-                AboutUpdateState.AheadOfStable ->
-                    TextButton(onClick = onRetry) {
-                        Text(stringResource(R.string.about_update_check))
-                    }
-                AboutUpdateState.Failed ->
-                    TextButton(onClick = onRetry) {
-                        Text(stringResource(R.string.about_update_check_again))
-                    }
-                AboutUpdateState.Play ->
-                    TextButton(onClick = onOpenPlay) {
-                        Text(stringResource(R.string.about_update_open_play))
-                    }
-                AboutUpdateState.Checking,
-                AboutUpdateState.DevBuild,
-                is AboutUpdateState.Available -> Unit
+        }
+        AboutUpdateTrailing.UpToDate ->
+            Icon(
+                Icons.Filled.CheckCircle,
+                contentDescription =
+                    stringResource(
+                        R.string.about_update_up_to_date,
+                        stringResource(channel.labelRes()),
+                    ),
+                modifier = statusTag,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        AboutUpdateTrailing.AheadOfStable ->
+            Icon(
+                Icons.Filled.CheckCircle,
+                contentDescription = stringResource(R.string.about_update_ahead_of_stable),
+                modifier = statusTag,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        AboutUpdateTrailing.Offer ->
+            Button(onClick = onUpdate, modifier = Modifier.testTag("about-update-button")) {
+                Icon(
+                    Icons.Filled.SystemUpdate,
+                    // Keeps the target version audible to screen readers.
+                    contentDescription = offer?.let { availableText(it, channel) },
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                )
+                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                Text(stringResource(R.string.about_update_button))
             }
-        },
-    )
+        AboutUpdateTrailing.Failed ->
+            Icon(
+                Icons.Filled.CloudOff,
+                contentDescription = stringResource(R.string.about_update_failed),
+                modifier = statusTag,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        AboutUpdateTrailing.Play ->
+            IconButton(onClick = onOpenPlay) {
+                Icon(
+                    PhosphorIcons.ArrowSquareOut,
+                    contentDescription = stringResource(R.string.about_update_open_play),
+                )
+            }
+    }
 }
 
-@StringRes
 private fun UpdateChannel.labelRes(): Int =
     when (this) {
         UpdateChannel.STABLE -> R.string.about_update_channel_stable

@@ -75,4 +75,30 @@ class AboutUpdateStateTest {
     fun `no offer when up to date`() {
         assertNull(aboutUpdateOffer(AboutUpdateState.UpToDate, UpdateInstallState.Idle))
     }
+
+    @Test
+    fun `trailing slot follows the state`() {
+        val idle = UpdateInstallState.Idle
+        fun trailing(state: AboutUpdateState) = aboutUpdateTrailing(state, idle)
+
+        assertEquals(AboutUpdateTrailing.Checking, trailing(AboutUpdateState.Checking))
+        assertEquals(AboutUpdateTrailing.UpToDate, trailing(AboutUpdateState.UpToDate))
+        assertEquals(AboutUpdateTrailing.AheadOfStable, trailing(AboutUpdateState.AheadOfStable))
+        assertEquals(AboutUpdateTrailing.Offer, trailing(AboutUpdateState.Available(update)))
+        assertEquals(AboutUpdateTrailing.Failed, trailing(AboutUpdateState.Failed))
+        assertEquals(AboutUpdateTrailing.None, trailing(AboutUpdateState.DevBuild))
+        assertEquals(AboutUpdateTrailing.Play, trailing(AboutUpdateState.Play))
+    }
+
+    @Test
+    fun `trailing slot is empty while an offered update installs or failed`() {
+        val available = AboutUpdateState.Available(update)
+        val failed = UpdateInstallState.Failed(UpdateFailure.entries.first())
+
+        assertEquals(
+            AboutUpdateTrailing.None,
+            aboutUpdateTrailing(available, UpdateInstallState.Downloading(10, 100)),
+        )
+        assertEquals(AboutUpdateTrailing.None, aboutUpdateTrailing(available, failed))
+    }
 }

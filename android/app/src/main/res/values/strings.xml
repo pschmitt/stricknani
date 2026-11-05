@@ -470,14 +470,12 @@
     <!-- Settings: About -->
     <string name="about_settings_version_title">Version</string>
     <string name="about_settings_app_version_label">App version</string>
-    <string name="about_settings_app_version_debug">%1$s (debug build)</string>
+    <string name="about_settings_app_version_debug">%1$s (debug)</string>
     <string name="about_update_checking">Checking for updates…</string>
     <string name="about_update_up_to_date">Up to date on %1$s</string>
     <string name="about_update_available_stable">Stable %1$s available</string>
     <string name="about_update_available_latest">Latest build %1$s available</string>
     <string name="about_update_failed">Couldn\'t check for updates</string>
-    <string name="about_update_dev_build">Development build: updates are not checked</string>
-    <string name="about_update_play">Updates come through Google Play</string>
     <string name="about_update_ahead_of_stable">You\'re ahead of the latest stable release</string>
     <string name="about_update_channel_title">Update channel</string>
     <string name="about_update_channel_stable">Stable</string>
@@ -485,8 +483,6 @@
     <string name="about_update_channel_stable_help">Tagged releases only. Switching from Latest never downgrades.</string>
     <string name="about_update_channel_latest_help">Every build of main (rolling), release APK only.</string>
     <string name="about_update_button">Update</string>
-    <string name="about_update_check_again">Check again</string>
-    <string name="about_update_check">Check for updates</string>
     <string name="about_update_open_play">Open Play Store</string>
     <string name="about_settings_build_label">Build</string>
     <string name="about_settings_server_version_label">Server version</string>
