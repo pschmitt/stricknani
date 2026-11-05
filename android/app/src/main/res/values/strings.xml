@@ -1243,4 +1243,5 @@
     <string name="history_ownership_transferred">Transferred to %1$s</string>
     <string name="history_deleted_account">a deleted account</string>
     <string name="sharing_change">Change</string>
+    <string name="sharing_link_hint">Opens for people who already have access. Pick someone below to give them access.</string>
 </resources>

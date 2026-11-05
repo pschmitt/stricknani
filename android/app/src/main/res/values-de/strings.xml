@@ -1240,4 +1240,5 @@
     <string name="history_ownership_transferred">An %1$s übertragen</string>
     <string name="history_deleted_account">ein gelöschtes Konto</string>
     <string name="sharing_change">Ändern</string>
+    <string name="sharing_link_hint">Öffnet sich für Personen, die bereits Zugriff haben. Wähle unten eine Person aus, um ihr Zugriff zu geben.</string>
 </resources>

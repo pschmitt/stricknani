@@ -98,7 +98,6 @@ import blue.anika.wolle.ui.history.HistoryPhase
 import blue.anika.wolle.ui.history.HistorySection
 import blue.anika.wolle.ui.print.PrintDialog
 import blue.anika.wolle.ui.projects.print.PrintLabels
-import blue.anika.wolle.ui.sharing.ShareRow
 import blue.anika.wolle.ui.sharing.SharingDialogHost
 import blue.anika.wolle.ui.sharing.rememberSharingDialogs
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
@@ -172,7 +171,6 @@ fun ProjectDetailScreen(
             )
         }
     val sharingDialogs = rememberSharingDialogs()
-    val sharingState by viewModel.sharing.state.collectAsStateWithLifecycle()
     LaunchedEffect(access.canManage, state is ProjectDetailUiState.Loaded) {
         if (access.canManage && state is ProjectDetailUiState.Loaded) viewModel.sharing.preload()
     }
@@ -239,13 +237,19 @@ fun ProjectDetailScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.common_share_link)) },
+                                    text = { Text(stringResource(R.string.sharing_share)) },
                                     leadingIcon = {
                                         Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
                                     },
                                     onClick = {
                                         menuExpanded = false
-                                        viewModel.shareUrl()?.let { url -> context.shareUrl(url) }
+                                        // Managers choose between the link and people in the sheet;
+                                        // everyone else just shares the link.
+                                        if (access.canManage) sharingDialogs.sheet = true
+                                        else
+                                            viewModel.shareUrl()?.let { url ->
+                                                context.shareUrl(url)
+                                            }
                                     },
                                 )
                                 if (access.canLeave || access.canManage) HorizontalDivider()
@@ -287,13 +291,6 @@ fun ProjectDetailScreen(
                 )
                 banner?.let {
                     ItemBannerView(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                }
-                if (access.canManage && state is ProjectDetailUiState.Loaded) {
-                    ShareRow(
-                        state = sharingState,
-                        onClick = { sharingDialogs.sheet = true },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
                 }
             }
         },
@@ -361,6 +358,7 @@ fun ProjectDetailScreen(
             itemName = state.entity.name,
             linkedYarnCount = state.detail.yarnIds.distinct().size,
             ownedLinkedYarnCount = ownedLinkedYarnCount,
+            onShareLink = { viewModel.shareUrl()?.let { url -> activityContext.shareUrl(url) } },
         )
     }
 

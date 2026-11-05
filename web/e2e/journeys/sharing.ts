@@ -161,10 +161,8 @@ function projectBody(name: string, yarnIds: number[]): Json {
 }
 
 async function openShareDialog(page: Page): Promise<Locator> {
-  await page
-    .getByTestId("share-control")
-    .getByRole("button", { name: "Share", exact: true })
-    .click();
+  const menu = await actionsMenu(page);
+  await menu.getByRole("menuitem", { name: "Share", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Share", exact: true });
   await dialog.waitFor({ state: "visible" });
   await dialog.getByRole("list", { name: "People with access" }).waitFor();
@@ -234,6 +232,21 @@ async function actionsMenu(page: Page): Promise<Locator> {
 
 async function closeMenu(page: Page): Promise<void> {
   await page.keyboard.press("Escape");
+}
+
+/** Without manage rights, Share has no dialog to open: it only shares the link. */
+async function assertShareHasNoDialog(
+  page: Page,
+  message: string,
+): Promise<void> {
+  const menu = await actionsMenu(page);
+  await menu.getByRole("menuitem", { name: "Share", exact: true }).click();
+  await page.waitForTimeout(400);
+  check(
+    (await page.getByRole("dialog", { name: "Share", exact: true }).count()) ===
+      0,
+    message,
+  );
 }
 
 export async function runSharingJourney(
@@ -351,8 +364,11 @@ export async function runSharingJourney(
     await olgaPage.goto(`${origin}/app/projects/${project1}`, {
       waitUntil: "networkidle",
     });
-    await olgaPage.getByTestId("share-control").waitFor({ state: "visible" });
     let dialog = await openShareDialog(olgaPage);
+    await dialog.getByRole("button", { name: "Share link" }).waitFor();
+    await dialog
+      .getByText("Opens for people who already have access.", { exact: false })
+      .waitFor();
     await dialog
       .getByText(
         "People you share this with can also see its linked yarns, read-only.",
@@ -382,9 +398,26 @@ export async function runSharingJourney(
     );
     await assertNoHorizontalOverflow(olgaPage, PHONE.width);
     await dialog.getByRole("button", { name: "Done" }).click();
-    await olgaPage
-      .locator(".share-control__avatars")
-      .waitFor({ state: "visible" });
+    // The dialog closed from a menu item that is gone: focus returns to the
+    // menu button, and the page no longer carries a standalone Share button.
+    check(
+      await olgaPage.evaluate(
+        fn(
+          `() => document.activeElement?.getAttribute("aria-label") === "More actions"`,
+        ),
+      ),
+      "focus did not return to the More actions button",
+    );
+    check(
+      (await olgaPage
+        .getByRole("button", { name: "Share", exact: true })
+        .count()) === 0,
+      "the standalone Share button is still on the page",
+    );
+    await shoot(olgaPage, "project-without-share-button.png");
+    await olgaPage.locator('summary[aria-label="More actions"]').click();
+    await shoot(olgaPage, "project-menu.png");
+    await closeMenu(olgaPage);
 
     // 2. The viewer sees a read-only project and can leave.
     mark("viewer view");
@@ -410,10 +443,7 @@ export async function runSharingJourney(
       "a viewer saw Edit project",
     );
     await assertNoEditorEntry(beaPage, "a project viewer");
-    check(
-      (await beaPage.getByTestId("share-control").count()) === 0,
-      "a viewer saw Share",
-    );
+    await assertShareHasNoDialog(beaPage, "a viewer saw Share");
     let menu = await actionsMenu(beaPage);
     check(
       (await menu.getByRole("menuitem", { name: "Delete project" }).count()) ===
@@ -447,10 +477,7 @@ export async function runSharingJourney(
       "a derived yarn offered Edit yarn",
     );
     await assertNoEditorEntry(beaPage, "a derived yarn viewer");
-    check(
-      (await beaPage.getByTestId("share-control").count()) === 0,
-      "a derived yarn offered Share",
-    );
+    await assertShareHasNoDialog(beaPage, "a derived yarn offered Share");
     menu = await actionsMenu(beaPage);
     check(
       (await menu.getByRole("menuitem", { name: "Delete yarn" }).count()) === 0,
@@ -486,10 +513,7 @@ export async function runSharingJourney(
       ).includes("Can edit"),
       "the editor line is wrong",
     );
-    check(
-      (await beaPage.getByTestId("share-control").count()) === 0,
-      "an editor saw Share",
-    );
+    await assertShareHasNoDialog(beaPage, "an editor saw Share");
     menu = await actionsMenu(beaPage);
     check(
       (await menu.getByRole("menuitem", { name: "Delete project" }).count()) ===
@@ -586,10 +610,7 @@ export async function runSharingJourney(
       /Shared by bea · Can edit/i.test(editorLine),
       `the previous owner is not an editor: ${editorLine}`,
     );
-    check(
-      (await olgaPage.getByTestId("share-control").count()) === 0,
-      "the previous owner still saw Share",
-    );
+    await assertShareHasNoDialog(olgaPage, "the previous owner still saw Share");
     const kept = dataOf(
       await api(olgaPage, "GET", `/api/v2/yarns/${yarnA}`),
       200,
@@ -676,7 +697,10 @@ export async function runSharingJourney(
     await dePage.goto(`${origin}/app/projects/${project3}`, {
       waitUntil: "networkidle",
     });
-    await dePage.getByTestId("share-control").getByRole("button").click();
+    await dePage.locator('summary[aria-label="Weitere Aktionen"]').click();
+    await dePage
+      .getByRole("menuitem", { name: "Teilen", exact: true })
+      .click();
     const deDialog = dePage.getByRole("dialog", { name: "Teilen" });
     await deDialog.waitFor({ state: "visible" });
     await deDialog

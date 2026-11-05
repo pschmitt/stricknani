@@ -72,6 +72,7 @@
 
   let { id, adminData }: Props = $props();
   let loadState = $state<LoadState>("loading");
+  let shareControl = $state<ShareControl | undefined>(undefined);
   let project = $state<ProjectDetail | null>(null);
   let currentStepId = $state<number | null>(null);
   let yarns = $state<ProjectYarn[]>([]);
@@ -894,6 +895,9 @@
                     ownerId={userId}
                     {locale}
                     {close}
+                    ondialog={canManage && currentProject.access?.can_manage
+                      ? () => shareControl?.open()
+                      : undefined}
                   />
                 {/if}
                 <button
@@ -957,6 +961,7 @@
     {/if}
     {#if !adminData && canManage && currentProject.access?.can_manage}
       <ShareControl
+        bind:this={shareControl}
         kind="projects"
         resourceId={currentProject.id}
         name={currentProject.name}

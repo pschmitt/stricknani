@@ -27,7 +27,7 @@ let
 in
 rustPlatform.buildRustPackage {
   pname = "stricknani-server-core";
-  version = "1.1.2";
+  version = "1.2.1";
   src = rustSource;
   cargoLock.lockFile = "${rustSource}/Cargo.lock";
 

@@ -48,6 +48,7 @@
   type LoadState = "loading" | "ready" | "not-found" | "error";
 
   let loadState = $state<LoadState>("loading");
+  let shareControl = $state<ShareControl | undefined>(undefined);
   let yarn = $state<Yarn | null>(null);
   let linkedProjects = $state<LinkedProject[]>([]);
   let linkedProjectsLoading = $state(false);
@@ -455,6 +456,9 @@
                   ownerId={userId}
                   {locale}
                   {close}
+                  ondialog={canManage && currentYarn.access?.can_manage
+                    ? () => shareControl?.open()
+                    : undefined}
                 />
                 <button
                   class="action-overflow__item print-button"
@@ -507,6 +511,7 @@
     {/if}
     {#if canManage && currentYarn.access?.can_manage}
       <ShareControl
+        bind:this={shareControl}
         kind="yarns"
         resourceId={currentYarn.id}
         name={currentYarn.name}

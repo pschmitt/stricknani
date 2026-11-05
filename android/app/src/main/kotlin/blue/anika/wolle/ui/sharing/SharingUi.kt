@@ -152,6 +152,7 @@ fun SharingSheet(
     linkedYarnCount: Int,
     onDismiss: () -> Unit,
     onTransfer: () -> Unit,
+    onShareLink: () -> Unit = {},
 ) {
     val state by controller.state.collectAsStateWithLifecycle()
     val search by controller.people.state.collectAsStateWithLifecycle()
@@ -171,6 +172,17 @@ fun SharingSheet(
                 Text(
                     stringResource(R.string.sharing_share),
                     style = MaterialTheme.typography.titleLarge,
+                )
+            }
+            item {
+                TextButton(onClick = onShareLink) {
+                    Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
+                    Text(stringResource(R.string.common_share_link), Modifier.padding(start = 8.dp))
+                }
+                Text(
+                    stringResource(R.string.sharing_link_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (state.offline) {
@@ -634,6 +646,7 @@ fun SharingDialogHost(
     itemName: String,
     linkedYarnCount: Int,
     ownedLinkedYarnCount: Int,
+    onShareLink: () -> Unit,
 ) {
     val state by controller.state.collectAsStateWithLifecycle()
     val transfer by controller.transfer.collectAsStateWithLifecycle()
@@ -648,6 +661,7 @@ fun SharingDialogHost(
             controller = controller,
             isProject = isProject,
             linkedYarnCount = linkedYarnCount,
+            onShareLink = onShareLink,
             onDismiss = { dialogs.sheet = false },
             onTransfer = {
                 controller.openTransfer()
