@@ -2191,7 +2191,8 @@ Execution-oriented backlog for Stricknani.
 ## T-122: Share projects and yarns, transfer ownership (server)
 
 - **Priority**: P1
-- **Status**: wip (PID: n/a, AGENT: claude, branch `claude/sharing`, review before merge)
+- **Status**: wip (PID: n/a, AGENT: claude, merged to main; awaits deployment and device testing)
 - **Category**: feat
 - **Scope**: API v2 only. Viewer and editor shares on projects and yarns, derived read-only access to the yarns of a shared project, leave, ownership transfer (`move_linked_yarns`), people search, sync (shared resources, role changes, tombstones for lost access), media/history read access, audit events. Contract for the web and Android clients: `docs/sharing-api.md`. API v1 is unchanged.
 - **Open**: web and Android clients (parity rule), review of `src/resource_access.rs`, `src/sharing.rs` and `src/sync.rs`.
+- **Note**: Data backup is deferred: Android backups hold only settings and credentials. Requirement when built: backups contain everything shared with the user, and restoring never touches the original or grants access. See `docs/sharing-api.md`.

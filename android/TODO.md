@@ -80,6 +80,7 @@ from the same spec (same flow, order and wording). The server routes are not dep
       only matches (request generation guards stale answers); notes and banners use a neutral
       surface. `SharingSheetTest` (instrumented) compiles; it was not run.
 - [ ] On-device verification against a server with the sharing routes.
+- [ ] Data backup is deferred: Android backups hold only settings and credentials. Requirement when built: backups contain everything shared with the user, and restoring never touches the original or grants access. See `docs/sharing-api.md`.
 
 Verification: ktfmt, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:assembleRelease`,
 `:app:lintDebug`, `:app:compileDebugAndroidTestKotlin` on a build worker (results in the commit).
