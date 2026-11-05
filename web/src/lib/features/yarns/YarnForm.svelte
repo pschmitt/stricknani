@@ -12,6 +12,12 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
+  import {
+    isAccessLost,
+    isAccessLowered,
+    mayEdit,
+    mayManage,
+  } from "#lib/access.ts";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
@@ -384,6 +390,16 @@
           "This yarn changed elsewhere. Your edits are still here.",
           locale,
         );
+      } else if (isAccessLost(error)) {
+        serverError = t(
+          "You no longer have access to this yarn. Your changes are still here.",
+          locale,
+        );
+      } else if (isAccessLowered(error)) {
+        serverError = t(
+          "You can no longer edit this yarn. Your changes are still here.",
+          locale,
+        );
       } else if (error instanceof ApiError && error.fields) {
         for (const [field, message] of Object.entries(error.fields)) {
           fieldErrors[field] =
@@ -609,6 +625,19 @@
       <a
         class="primary-action ui-button ui-button--primary ui-button--md"
         href={resolve("/yarns")}>{t("Back to yarns", locale)}</a
+      >
+    </div>
+  </section>
+{:else if loadedYarn && !mayEdit(loadedYarn.access)}
+  <section class="form-error" aria-labelledby="form-readonly-title">
+    <h1 id="form-readonly-title">
+      {t("You can view this yarn but not edit it.", locale)}
+    </h1>
+    <div class="form-actions">
+      <a
+        class="primary-action ui-button ui-button--primary ui-button--md"
+        href={`${resolve("/yarns")}/${loadedYarn.id}`}
+        >{t("Back to the yarn", locale)}</a
       >
     </div>
   </section>
@@ -950,7 +979,7 @@
         {/snippet}
       </StickyActionBar>
     </form>
-    {#if loadedYarn}
+    {#if loadedYarn && mayManage(loadedYarn.access)}
       <section class="danger-zone" aria-labelledby="yarn-danger-zone-title">
         <div>
           <h2 id="yarn-danger-zone-title">{t("Delete yarn", locale)}</h2>

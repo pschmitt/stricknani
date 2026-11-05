@@ -1396,12 +1396,12 @@ export async function assertNoHorizontalOverflow(
   );
 }
 
-interface AdminCredentials {
+export interface AdminCredentials {
   email: string;
   password: string;
 }
 
-async function createFixtureAdmin(
+export async function createFixtureAdmin(
   f: LiveFixture,
   cfg: E2eConfig,
 ): Promise<AdminCredentials> {

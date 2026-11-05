@@ -1,5 +1,6 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import { accessField, type ResourceAccess } from "#lib/access.ts";
 import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
 import {
@@ -18,6 +19,8 @@ export interface ProjectSummary {
   preview_url: string | null;
   /** Who owns the project; absent on responses that predate owner info. */
   owner?: ResourceOwner | null;
+  /** What the signed-in user may do with it; absent on responses that predate sharing. */
+  access?: ResourceAccess | null;
 }
 
 export interface ProjectStep {
@@ -61,6 +64,8 @@ export interface ProjectYarn {
   notes_html: string | null;
   link: string | null;
   preview_url: string | null;
+  /** Who owns the yarn (decides which linked yarns a transfer can move). */
+  owner?: ResourceOwner | null;
 }
 
 export interface ProjectCategory {
@@ -429,6 +434,7 @@ export async function getYarn(
       photos.find((photo) => photo.is_primary)?.thumbnail_url ??
       photos[0]?.thumbnail_url ??
       null,
+    ...ownerField(yarn.owner),
   };
 }
 
@@ -480,6 +486,7 @@ function parseProjectSummary(value: unknown): ProjectSummary {
     updated_at: value.updated_at,
     preview_url: value.preview_url,
     ...ownerField(value.owner),
+    ...accessField(value.access),
   };
 }
 
@@ -554,6 +561,7 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     images,
     attachments,
     ...ownerField(value.owner),
+    ...accessField(value.access),
   };
 }
 

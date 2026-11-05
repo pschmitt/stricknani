@@ -43,5 +43,5 @@
   onclick={() => void share()}
 >
   <NavIcon name="share" />
-  <span>{t("Share", locale)}</span>
+  <span>{t("Share link", locale)}</span>
 </button>
