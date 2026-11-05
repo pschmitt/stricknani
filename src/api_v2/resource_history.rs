@@ -89,11 +89,12 @@ async fn list_history(
         Err(response) => return *response,
     };
     // Anyone who may read the resource reads its history.
-    let owner_id = match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
-        Ok(Some(owner_id)) => owner_id,
-        Ok(None) => return not_found(),
-        Err(_) => return internal_error(),
-    };
+    let (owner_id, viewer) =
+        match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
+            Ok(Some(found)) => found,
+            Ok(None) => return not_found(),
+            Err(_) => return internal_error(),
+        };
     let page = match parse_page(raw_query) {
         Ok(page) => page,
         Err(()) => return invalid_query(),
@@ -101,6 +102,7 @@ async fn list_history(
     match audit_service::list_resource_events(
         &state.app.pool,
         owner_id,
+        viewer,
         entity,
         resource_id,
         page,
@@ -151,14 +153,16 @@ async fn event_detail(
         Err(response) => return *response,
     };
     // Anyone who may read the resource reads its history.
-    let owner_id = match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
-        Ok(Some(owner_id)) => owner_id,
-        Ok(None) => return not_found(),
-        Err(_) => return internal_error(),
-    };
+    let (owner_id, viewer) =
+        match resource_owner(&state.app.pool, actor_id, entity, resource_id).await {
+            Ok(Some(found)) => found,
+            Ok(None) => return not_found(),
+            Err(_) => return internal_error(),
+        };
     match audit_service::get_resource_event_detail(
         &state.app.pool,
         owner_id,
+        viewer,
         entity,
         resource_id,
         event_id,
@@ -220,7 +224,7 @@ async fn resource_owner(
     actor_id: i64,
     entity: AuditEntity,
     resource_id: i64,
-) -> Result<Option<i64>, sqlx::Error> {
+) -> Result<Option<(i64, audit_service::ResourceViewer)>, sqlx::Error> {
     let kind = match entity {
         AuditEntity::Project => crate::resource_access::ResourceKind::Project,
         _ => crate::resource_access::ResourceKind::Yarn,
@@ -233,5 +237,13 @@ async fn resource_owner(
         crate::resource_access::Surface::V2,
     )
     .await?
-    .map(|grant| grant.owner_id))
+    .map(|grant| {
+        (
+            grant.owner_id,
+            audit_service::ResourceViewer {
+                id: actor_id,
+                reveal_email: grant.access.can_manage(),
+            },
+        )
+    }))
 }

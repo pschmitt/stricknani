@@ -210,22 +210,26 @@ yarns. Delta semantics:
 
 ## Backup and export
 
-The server has no per-user backup or export feature today (the only backup is
-the operator's whole-database and media archive from the NixOS module, which
-contains the share tables as they are). The product requirement for a future
-per-user export is recorded here so that it is built on the central permission
-function:
+The server has no per-user export. The only per-user backup is the Android
+app's `data/backup/BackupManager.kt` (owned by the Android agent); today it
+stores credentials and settings only and deliberately leaves out the Room
+cache, so shared items are not part of it and need no server work. The
+operator's whole-database archive (NixOS module) contains the share tables as
+they are.
 
-- Authorize at export time with `resource_access::grant` (API v2 surface):
-  owned items, direct shares (viewer or editor) and yarns reachable through
-  derived access, with media and links. A share revoked earlier leaves nothing
-  in the export. Derived access stays non-transitive: other projects linked to a
-  derived yarn are not exported.
+The sync data is sufficient for a client that later backs up shared items: each
+`updated` entry carries `owner`, `access`, media URLs and the yarn links, and a
+revoked share arrives as a tombstone. Rules for any such backup (Android or a
+future server export), to be kept:
+
+- Build it from what the caller can read at backup time (sync output or the
+  permission function), so a revoked share leaves nothing in it. Derived access
+  stays non-transitive: other projects linked to a derived yarn are not in it.
 - Mark each shared item with its original owner and the caller's role.
 - Restore never writes to another account's resource: shared items restore as
   new copies owned by the restoring user, and an archive never recreates a
   share or grants access. Owner and role fields in an archive are informational
-  and untrusted.
+  and untrusted; old archives stay importable.
 - A job and its download belong to the user who requested it.
 
 Archive jobs (link snapshots), OCR and URL import keep working on owned items

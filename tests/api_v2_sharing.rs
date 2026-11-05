@@ -2037,3 +2037,204 @@ async fn migration_creates_the_share_tables_and_cleans_up_after_deletes() {
         .unwrap();
     assert_eq!(events, 0);
 }
+
+// --- history emails and re-sharing through links ------------------------------
+
+#[tokio::test]
+async fn only_managers_see_emails_in_history_and_other_responses() {
+    let f = fx().await;
+    // eddie (editor) changes the project; anika changes a derived yarn.
+    let (status, _) = call(
+        &f.app,
+        "PUT",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("eddie"),
+        Some(json!({"name": "Shawl 2", "yarn_ids": [f.y1]})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    call(
+        &f.app,
+        "PUT",
+        &format!("/api/v2/yarns/{}", f.y1),
+        Some("anika"),
+        Some(json!({"name": "Merino 2"})),
+    )
+    .await;
+    assert_eq!(
+        share(&f, "project", f.p1, "anika", f.ben, "viewer").await,
+        StatusCode::CREATED
+    );
+    let project_history = format!("/api/v2/projects/{}/history", f.p1);
+    let yarn_history = format!("/api/v2/yarns/{}/history", f.y1);
+    for (who, path) in [
+        ("vera", &project_history),
+        ("eddie", &project_history),
+        ("ben", &project_history),
+        ("vera", &yarn_history),
+        ("eddie", &yarn_history),
+    ] {
+        let (status, body) = call(&f.app, "GET", path, Some(who), None).await;
+        assert_eq!(status, StatusCode::OK);
+        let text = body.to_string();
+        assert!(!text.contains("example.test"), "{who} {path}: {text}");
+        for event in body["data"].as_array().unwrap() {
+            assert_eq!(event["actor_email"], "", "{who} {path}");
+            assert!(event["actor_name"].is_string());
+        }
+        let first = body["data"][0]["id"].as_i64().unwrap();
+        let (status, detail) =
+            call(&f.app, "GET", &format!("{path}/{first}"), Some(who), None).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(!detail.to_string().contains("example.test"), "{who} detail");
+    }
+    // Owner and administrator see them.
+    for who in ["anika", "admin"] {
+        let (_, body) = call(&f.app, "GET", &project_history, Some(who), None).await;
+        let emails: Vec<&str> = body["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["actor_email"].as_str().unwrap())
+            .collect();
+        assert!(emails.contains(&"eddie@example.test"), "{who}: {emails:?}");
+    }
+    // Avatars of other actors use the readable people path, never the self path.
+    let (_, body) = call(&f.app, "GET", &project_history, Some("vera"), None).await;
+    assert!(!body.to_string().contains("/media/thumbnails/users/"));
+    // Sharing responses, candidates and sync entries carry no email either.
+    for (who, path) in [
+        (
+            "eddie",
+            format!("/api/v2/projects/{}/yarn-candidates", f.p1),
+        ),
+        ("vera", "/api/v2/projects".to_owned()),
+        ("vera", "/api/v2/yarns".to_owned()),
+        ("ben", "/api/v2/sync/projects?limit=50".to_owned()),
+        ("vera", "/api/v2/sync/yarns?limit=50".to_owned()),
+        ("vera", format!("/api/v2/yarns/{}", f.y1)),
+        ("vera", format!("/api/v2/projects/{}", f.p1)),
+    ] {
+        let (status, body) = call(&f.app, "GET", &path, Some(who), None).await;
+        assert_eq!(status, StatusCode::OK, "{path}");
+        assert!(!body.to_string().contains("example.test"), "{who} {path}");
+    }
+    let (_, body) = call(
+        &f.app,
+        "POST",
+        &format!("/api/v2/projects/{}/transfer", f.q1),
+        Some("anika"),
+        Some(json!({"new_owner_id": f.nora})),
+    )
+    .await;
+    assert!(!body.to_string().contains("example.test"));
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        &format!("/api/v2/projects/{}/history", f.q1),
+        Some("anika"),
+        None,
+    )
+    .await;
+    assert!(body.to_string().contains("ownership_transferred"));
+    assert!(
+        !body.to_string().contains("example.test"),
+        "transfer event leaks"
+    );
+}
+
+#[tokio::test]
+async fn recipients_cannot_reshare_a_yarn_through_a_link() {
+    let f = fx().await;
+    // Bob (nora) owns a yarn and shares it with Alice (nick); Carol is ben.
+    for role in ["viewer", "editor"] {
+        let bob_yarn = yarn(&f.pool, f.nora, "Bob's yarn").await;
+        assert_eq!(
+            share(&f, "yarn", bob_yarn, "nora", f.nick, role).await,
+            StatusCode::CREATED
+        );
+        // Alice links it on create ...
+        let (status, created) = call(
+            &f.app,
+            "POST",
+            "/api/v2/projects",
+            Some("nick"),
+            Some(json!({"name": "Alice's project", "yarn_ids": [bob_yarn]})),
+        )
+        .await;
+        assert!(status.is_success() || status == StatusCode::UNPROCESSABLE_ENTITY);
+        let alice_project = if status.is_success() {
+            created["data"]["id"].as_i64().unwrap()
+        } else {
+            project(&f.pool, f.nick, "Alice's project").await
+        };
+        // ... and on update.
+        let (status, _) = call(
+            &f.app,
+            "PUT",
+            &format!("/api/v2/projects/{alice_project}"),
+            Some("nick"),
+            Some(json!({"name": "Alice's project", "yarn_ids": [bob_yarn]})),
+        )
+        .await;
+        assert!(status.is_success() || status == StatusCode::UNPROCESSABLE_ENTITY);
+        let links: i64 = sqlx::query_scalar("SELECT count(*) FROM project_yarns WHERE yarn_id = ?")
+            .bind(bob_yarn)
+            .fetch_one(&f.pool)
+            .await
+            .unwrap();
+        assert_eq!(links, 0, "{role}: the link must not exist");
+        // Sharing Alice's project with Carol gives Carol nothing of Bob's.
+        assert_eq!(
+            share(&f, "project", alice_project, "nick", f.ben, "editor").await,
+            StatusCode::CREATED
+        );
+        let (status, _) = call(
+            &f.app,
+            "GET",
+            &format!("/api/v2/yarns/{bob_yarn}"),
+            Some("ben"),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{role}");
+        let (_, list) = call(&f.app, "GET", "/api/v2/yarns", Some("ben"), None).await;
+        assert!(!ids(&list).contains(&bob_yarn));
+        // Carol, as editor, cannot link it either.
+        let (status, _) = call(
+            &f.app,
+            "PUT",
+            &format!("/api/v2/projects/{alice_project}"),
+            Some("ben"),
+            Some(json!({"name": "Alice's project", "yarn_ids": [bob_yarn]})),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    }
+    // A stranger linking a guessed yarn id gets no link and no access.
+    let mine = project(&f.pool, f.ben, "Ben's project").await;
+    let (status, _) = call(
+        &f.app,
+        "PUT",
+        &format!("/api/v2/projects/{mine}"),
+        Some("ben"),
+        Some(json!({"name": "Ben's project", "yarn_ids": [f.y3]})),
+    )
+    .await;
+    assert!(status.is_success());
+    let links: i64 = sqlx::query_scalar("SELECT count(*) FROM project_yarns WHERE yarn_id = ?")
+        .bind(f.y3)
+        .fetch_one(&f.pool)
+        .await
+        .unwrap();
+    assert_eq!(links, 0);
+    let (status, _) = call(
+        &f.app,
+        "GET",
+        &format!("/api/v2/yarns/{}", f.y3),
+        Some("ben"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
