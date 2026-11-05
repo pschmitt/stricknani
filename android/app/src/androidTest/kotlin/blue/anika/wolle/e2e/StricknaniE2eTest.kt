@@ -23,6 +23,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.printToLog
@@ -63,7 +64,12 @@ abstract class StricknaniE2eTest {
         if (hasTag("e2e-onboarding-server-url")) {
             // Onboarding opens in password mode, and its mode chips sit below the fold on the
             // small CI emulator: scroll to the chip, or the click lands off-screen and is lost.
-            composeRule.onNodeWithTag("onboarding-mode-manual").performScrollTo().performClick()
+            // Invoke the chip's click action directly: a touch click on it was observed to be
+            // swallowed on the CI emulator, leaving onboarding in password mode.
+            composeRule
+                .onNodeWithTag("onboarding-mode-manual")
+                .performScrollTo()
+                .performSemanticsAction(SemanticsActions.OnClick)
             try {
                 composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
             } catch (failure: ComposeTimeoutException) {
