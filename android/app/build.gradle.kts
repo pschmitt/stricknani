@@ -98,6 +98,15 @@ android {
     // Room's exported schemas (one JSON per database version) feed the migration test.
     sourceSets.getByName("androidTest").assets.directories.add("schemas")
 
+    // The minified release instrumentation suite intentionally excludes debug-only integration
+    // fixtures. Debug keeps the regular androidTest sources unchanged.
+    if (instrumentationBuildType == "release") {
+        sourceSets.getByName("androidTest").kotlin.directories.apply {
+            clear()
+            add("src/minifiedAndroidTest/kotlin")
+        }
+    }
+
     signingConfigs {
         // Only overridden in CI (see .github/workflows/release.yaml, once it exists - SNA-12),
         // which decodes a persistent keystore from a secret and exports CI_KEYSTORE_PATH - local
