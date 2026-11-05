@@ -38,6 +38,9 @@ val selfUpdateEnabled =
 // out of the SDK, its source set and the toggle.
 val errorReportingEnabled =
     providers.gradleProperty("errorReporting").map { it.toBoolean() }.orElse(true).get()
+// Debug builds carry the extras (purple branding, debug version label, developer mode on by
+// default). `-PdebugExtras=false` turns them off on a debug build, for Play screenshots.
+val debugExtras = providers.gradleProperty("debugExtras").map { it.toBoolean() }.orElse(true).get()
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
@@ -68,11 +71,8 @@ android {
     }
 
     // The install permissions and receivers of the in-app updater live in their own manifest,
-    // merged
-    // into the release build only when self-update is on. The Play bundle (-PselfUpdate=false or
-    // any `bundle` task) and debug builds (which keep the open-in-browser update) never get them.
-    // Debug gets it too: that is where the Shizuku install path is exercised on a device (the
-    // in-app update UI itself stays release-only, see inAppUpdateAvailable).
+    // merged into the debug and release builds whenever self-update is on. The Play bundle
+    // (-PselfUpdate=false or any `bundle` task) never gets them.
     if (selfUpdateEnabled) {
         listOf("debug", "release").forEach { name ->
             sourceSets.getByName(name).apply {
@@ -117,8 +117,10 @@ android {
         // phone that already has the real debug app signed in.
         named("debug") {
             applicationIdSuffix = (project.findProperty("appIdSuffix") as String?) ?: ".debug"
+            buildConfigField("boolean", "DEBUG_EXTRAS", debugExtras.toString())
         }
         named("release") {
+            buildConfigField("boolean", "DEBUG_EXTRAS", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

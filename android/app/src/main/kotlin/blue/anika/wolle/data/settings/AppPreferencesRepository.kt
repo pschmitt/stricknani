@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.data.backup.BackupFrequency
 import blue.anika.wolle.data.errorreporting.ERROR_REPORTING_DEFAULT_ENABLED
 import blue.anika.wolle.data.errorreporting.ErrorReportingDto
@@ -86,8 +87,12 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_BACKUP_FREQUENCY] = frequency.name }
     }
 
-    /** SNA-34's tap-to-unlock easter egg, matching syncwich's `developer_mode` flag. */
-    val developerMode = dataStore.data.map { prefs -> prefs[KEY_DEVELOPER_MODE] ?: false }
+    /**
+     * SNA-34's tap-to-unlock easter egg, matching syncwich's `developer_mode` flag. Debug builds
+     * start with it on; an explicit off is kept.
+     */
+    val developerMode =
+        dataStore.data.map { prefs -> prefs[KEY_DEVELOPER_MODE] ?: DEVELOPER_MODE_DEFAULT }
 
     suspend fun setDeveloperMode(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[KEY_DEVELOPER_MODE] = enabled }
@@ -119,7 +124,8 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
             .map { prefs ->
                 effectiveUpdateChannel(
                     UpdateChannel.fromName(prefs[KEY_UPDATE_CHANNEL]),
-                    prefs[KEY_DEVELOPER_MODE] ?: false,
+                    prefs[KEY_DEVELOPER_MODE] ?: DEVELOPER_MODE_DEFAULT,
+                    debugBuild = BuildConfig.DEBUG,
                 )
             }
             .distinctUntilChanged()
@@ -170,13 +176,6 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
             prefs.remove(KEY_NOTICE_AT)
             prefs.remove(KEY_NOTICE_INSTALLED)
         }
-    }
-
-    /** "Install updates silently with Shizuku" (GitHub APK builds only): off until switched on. */
-    val shizukuInstall = dataStore.data.map { prefs -> prefs[KEY_SHIZUKU_INSTALL] ?: false }
-
-    suspend fun setShizukuInstall(enabled: Boolean) {
-        dataStore.edit { prefs -> prefs[KEY_SHIZUKU_INSTALL] = enabled }
     }
 
     /** Use the wallpaper's Material You colours instead of Stricknani's own palette. */
@@ -247,6 +246,9 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
     }
 
     private companion object {
+        /** Debug builds start in developer mode; the stored choice wins when there is one. */
+        val DEVELOPER_MODE_DEFAULT = BuildConfig.DEBUG_EXTRAS
+
         val KEY_ERROR_REPORTING_ENABLED = booleanPreferencesKey("error_reporting_enabled")
         val KEY_ERROR_REPORTING_SERVER = stringPreferencesKey("error_reporting_server")
         val KEY_NOTES_FAB_SIDE = stringPreferencesKey("notes_fab_side")
@@ -263,7 +265,6 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_NOTICE_CHANNEL = stringPreferencesKey("update_notice_channel")
         val KEY_NOTICE_AT = longPreferencesKey("update_notice_at")
         val KEY_NOTICE_INSTALLED = stringPreferencesKey("update_notice_installed")
-        val KEY_SHIZUKU_INSTALL = booleanPreferencesKey("shizuku_install")
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
         val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")

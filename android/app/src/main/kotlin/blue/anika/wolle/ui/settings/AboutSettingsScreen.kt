@@ -26,11 +26,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
@@ -47,6 +49,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -89,8 +92,8 @@ import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.PrivilegedState
 import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateInstallState
+import blue.anika.wolle.data.update.backgroundUpdatesAvailable
 import blue.anika.wolle.data.update.canInstallInApp
-import blue.anika.wolle.data.update.inAppUpdateAvailable
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.animationsDisabled
@@ -187,7 +190,6 @@ internal fun AboutSettingsScreen(
     val autoUpdate by installViewModel.autoUpdate.collectAsStateWithLifecycle()
     val notifyUpdates by installViewModel.notifyUpdates.collectAsStateWithLifecycle()
     val shizukuState by installViewModel.shizukuState.collectAsStateWithLifecycle()
-    val shizukuEnabled by installViewModel.shizukuEnabled.collectAsStateWithLifecycle()
     val silentPossible by installViewModel.silentInstallPossible.collectAsStateWithLifecycle()
     val installDeveloperMode by installViewModel.developerMode.collectAsStateWithLifecycle()
     // Starting Shizuku or allowing the app happens elsewhere; re-read the state on return.
@@ -204,9 +206,16 @@ internal fun AboutSettingsScreen(
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
     val serverVersion = serverMeta?.let { "${it.version} (${it.buildId})" } ?: unavailable
     // The version code only orders Play uploads; it lives on the developer card.
-    val appVersion = "v${BuildConfig.VERSION_NAME}"
+    val versionName = "v${BuildConfig.VERSION_NAME}"
+    val appVersion =
+        if (BuildConfig.DEBUG_EXTRAS) {
+            stringResource(R.string.about_settings_app_version_debug, versionName)
+        } else {
+            versionName
+        }
     val revision = BuildRevision.parse(BuildConfig.GIT_REVISION)
     val build = revision?.display
+    val offer = aboutUpdateOffer(updateState, installState)
     val copyText = buildString {
         append("Stricknani $appVersion")
         if (build != null) append("\nBuild: $build")
@@ -245,63 +254,92 @@ internal fun AboutSettingsScreen(
                             Text(stringResource(R.string.about_settings_app_version_label))
                         },
                         supportingContent = {
-                            Text(appVersion)
-                        },
-                    )
-                    AboutUpdateRow(
-                        state = updateState,
-                        channel = updateChannel,
-                        install = installState,
-                        onDownload = {
-                            // Release APKs install themselves; debug builds (another package id)
-                            // keep the browser download.
-                            if (it.canInstallInApp()) installViewModel.start(it)
-                            else uriHandler.openUri(it.downloadUrl)
-                        },
-                        onTryAgain = {
-                            installViewModel.dismissFailure()
-                            (updateState as? AboutUpdateState.Available)
-                                ?.update
-                                ?.let(installViewModel::start)
-                        },
-                        onOpenBrowser = {
-                            installViewModel.dismissFailure()
-                            (updateState as? AboutUpdateState.Available)?.update?.let {
-                                uriHandler.openUri(it.downloadUrl)
+                            Column {
+                                Text(appVersion)
+                                if (offer != null) {
+                                    Text(availableText(offer, updateChannel))
+                                    if (!offer.canInstallInApp()) {
+                                        Text(stringResource(R.string.about_update_browser_hint))
+                                    }
+                                }
                             }
                         },
-                        onRetry = viewModel::checkForUpdate,
-                        onOpenPlay = { uriHandler.openUri(PLAY_URL) },
+                        trailingContent =
+                            offer?.let {
+                                {
+                                    Button(
+                                        onClick = {
+                                            // In-app install where the build supports it, else the
+                                            // browser download.
+                                            if (it.canInstallInApp()) installViewModel.start(it)
+                                            else uriHandler.openUri(it.downloadUrl)
+                                        },
+                                        modifier = Modifier.testTag("about-update-button"),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.SystemUpdate,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(ButtonDefaults.IconSize),
+                                        )
+                                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                                        Text(stringResource(R.string.about_update_button))
+                                    }
+                                }
+                            },
                     )
-                    if (BuildConfig.SELF_UPDATE_ENABLED && installDeveloperMode) {
+                    if (offer == null) {
+                        AboutUpdateRow(
+                            state = updateState,
+                            channel = updateChannel,
+                            install = installState,
+                            onTryAgain = {
+                                installViewModel.dismissFailure()
+                                (updateState as? AboutUpdateState.Available)
+                                    ?.update
+                                    ?.let(installViewModel::start)
+                            },
+                            onOpenBrowser = {
+                                installViewModel.dismissFailure()
+                                (updateState as? AboutUpdateState.Available)?.update?.let {
+                                    uriHandler.openUri(it.downloadUrl)
+                                }
+                            },
+                            onRetry = viewModel::checkForUpdate,
+                            onOpenPlay = { uriHandler.openUri(PLAY_URL) },
+                        )
+                    }
+                    // Debug builds always follow Latest: debug APKs exist only on that release.
+                    if (
+                        BuildConfig.SELF_UPDATE_ENABLED &&
+                            !BuildConfig.DEBUG &&
+                            installDeveloperMode
+                    ) {
                         UpdateChannelRow(
                             selected = updateChannel,
                             onSelect = viewModel::setUpdateChannel,
                         )
                     }
                     val shizukuUi =
-                        shizukuToggleUi(
+                        shizukuStatusUi(
                             developerMode = installDeveloperMode,
                             supported = installViewModel.shizukuSupported,
-                            preferenceOn = shizukuEnabled,
                             state = shizukuState,
                         )
                     if (shizukuUi.visible) {
-                        ShizukuInstallRow(
+                        ShizukuStatusRow(
                             ui = shizukuUi,
-                            onChange = installViewModel::setShizukuEnabled,
                             onAllow = installViewModel::requestShizukuPermission,
                             onOpenShizuku = { openShizuku(context, installViewModel) },
                         )
                     }
-                    if (inAppUpdateAvailable) {
+                    if (backgroundUpdatesAvailable) {
                         AutoUpdateRow(
                             checked = autoUpdate,
                             silentPossible = silentPossible,
                             onChange = installViewModel::setAutoUpdate,
                         )
                     }
-                    if (inAppUpdateAvailable) {
+                    if (backgroundUpdatesAvailable) {
                         NotifyUpdatesRow(
                             checked = notifyUpdates,
                             onChange = installViewModel::setNotifyUpdates,
@@ -375,7 +413,6 @@ internal fun AboutSettingsScreen(
                         apiState = apiState,
                         lastSyncedMillis = lastSyncedMillis,
                         pendingWrites = pendingWrites,
-                        revision = revision,
                         onDeveloperModeChange = viewModel::setDeveloperMode,
                         onAddToObtainium = { rolling -> addToObtainium(rolling) },
                         onReinstallViaShizuku =
@@ -515,16 +552,27 @@ private fun AboutHero(cue: MascotCue?) {
     }
 }
 
+/** "Stable X available" or "Latest X available", following the channel the update came from. */
+@Composable
+private fun availableText(update: AppUpdate, channel: UpdateChannel): String =
+    stringResource(
+        when (channel) {
+            UpdateChannel.STABLE -> R.string.about_update_available_stable
+            UpdateChannel.LATEST -> R.string.about_update_available_latest
+        },
+        update.version,
+    )
+
 /**
- * Update status right under the app version. The download button opens the same URL as the Home
- * update card; nothing is claimed for builds that cannot be compared against a release.
+ * Update status right under the app version. An update on offer gets its button on the version row
+ * instead, so this row covers every other state plus install progress and failure; nothing is
+ * claimed for builds that cannot be compared against a release.
  */
 @Composable
 private fun AboutUpdateRow(
     state: AboutUpdateState,
     channel: UpdateChannel,
     install: UpdateInstallState,
-    onDownload: (AppUpdate) -> Unit,
     onTryAgain: () -> Unit,
     onOpenBrowser: () -> Unit,
     onRetry: () -> Unit,
@@ -571,9 +619,6 @@ private fun AboutUpdateRow(
                         UpdateFailureActions(failed.failure, onTryAgain, onOpenBrowser)
                     }
                 }
-                state is AboutUpdateState.Available && !state.update.canInstallInApp() -> {
-                    { Text(stringResource(R.string.about_update_browser_hint)) }
-                }
                 else -> null
             },
         headlineContent = {
@@ -588,14 +633,7 @@ private fun AboutUpdateRow(
                             )
                         AboutUpdateState.AheadOfStable ->
                             stringResource(R.string.about_update_ahead_of_stable)
-                        is AboutUpdateState.Available ->
-                            stringResource(
-                                when (channel) {
-                                    UpdateChannel.STABLE -> R.string.about_update_available_stable
-                                    UpdateChannel.LATEST -> R.string.about_update_available_latest
-                                },
-                                state.update.version,
-                            )
+                        is AboutUpdateState.Available -> availableText(state.update, channel)
                         AboutUpdateState.Failed -> stringResource(R.string.about_update_failed)
                         AboutUpdateState.DevBuild -> stringResource(R.string.about_update_dev_build)
                         AboutUpdateState.Play -> stringResource(R.string.about_update_play)
@@ -604,11 +642,6 @@ private fun AboutUpdateRow(
         },
         trailingContent = {
             when (state) {
-                is AboutUpdateState.Available ->
-                    if (!installing && failed == null)
-                        Button(onClick = { onDownload(state.update) }) {
-                            Text(stringResource(R.string.about_update_button))
-                        }
                 AboutUpdateState.UpToDate,
                 AboutUpdateState.AheadOfStable ->
                     TextButton(onClick = onRetry) {
@@ -623,7 +656,8 @@ private fun AboutUpdateRow(
                         Text(stringResource(R.string.about_update_open_play))
                     }
                 AboutUpdateState.Checking,
-                AboutUpdateState.DevBuild -> Unit
+                AboutUpdateState.DevBuild,
+                is AboutUpdateState.Available -> Unit
             }
         },
     )
@@ -678,26 +712,17 @@ private fun openShizuku(context: Context, viewModel: UpdateInstallViewModel) {
 }
 
 /**
- * "Install updates silently with Shizuku" (developer mode): one switch plus the state it is in. The
- * switch is disabled, and off, whenever Shizuku is missing, stopped or has denied the app.
+ * "Updates through Shizuku". Updates use Shizuku automatically whenever it is ready; this row only
+ * reports the state and offers the step that gets it there.
  */
 @Composable
-private fun ShizukuInstallRow(
-    ui: ShizukuToggleUi,
-    onChange: (Boolean) -> Unit,
+private fun ShizukuStatusRow(
+    ui: ShizukuStatusUi,
     onAllow: () -> Unit,
     onOpenShizuku: () -> Unit,
 ) {
     SettingsListItem(
-        modifier =
-            Modifier.fillMaxWidth()
-                .testTag("about-shizuku-row")
-                .toggleable(
-                    value = ui.checked,
-                    enabled = ui.enabled,
-                    role = Role.Switch,
-                    onValueChange = onChange,
-                ),
+        modifier = Modifier.fillMaxWidth().testTag("about-shizuku-row"),
         headlineContent = { Text(stringResource(R.string.about_shizuku_title)) },
         supportingContent = {
             Column {
@@ -726,9 +751,6 @@ private fun ShizukuInstallRow(
                     else -> Unit
                 }
             }
-        },
-        trailingContent = {
-            Switch(checked = ui.checked, enabled = ui.enabled, onCheckedChange = null)
         },
     )
 }
@@ -841,8 +863,9 @@ private fun AboutCreditRow(title: String, detail: String?, onClick: () -> Unit) 
 }
 
 /**
- * Debugging facts, revealed by the Build row easter egg. The switch is the only control; every row
- * below it is read-only.
+ * Debugging facts, revealed by the Build row easter egg. The switch turns developer mode off again;
+ * the action rows (Obtainium, Shizuku reinstall, test notification) do what they say, every other
+ * row is read-only.
  */
 @Composable
 private fun DeveloperCard(
@@ -851,7 +874,6 @@ private fun DeveloperCard(
     apiState: blue.anika.wolle.data.api.ApiCapabilitiesState?,
     lastSyncedMillis: Long?,
     pendingWrites: Int,
-    revision: BuildRevision?,
     onDeveloperModeChange: (Boolean) -> Unit,
     onAddToObtainium: (rolling: Boolean) -> Unit,
     onReinstallViaShizuku: (() -> Unit)?,
@@ -911,10 +933,6 @@ private fun DeveloperCard(
         DeveloperRow(
             stringResource(R.string.developer_card_app_version),
             "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-        )
-        DeveloperRow(
-            stringResource(R.string.developer_card_revision),
-            revision?.full ?: stringResource(R.string.about_settings_build_unknown),
         )
         // Play builds update through the store; Obtainium only makes sense for sideloaded APKs.
         if (BuildConfig.SELF_UPDATE_ENABLED) {

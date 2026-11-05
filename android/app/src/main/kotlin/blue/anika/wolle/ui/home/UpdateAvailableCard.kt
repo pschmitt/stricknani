@@ -33,9 +33,9 @@ import blue.anika.wolle.ui.update.updateInstallStatusText
 
 /**
  * Prominent Home card shown when GitHub Releases has a newer build. "Update" starts the in-app
- * download and install (release APKs from GitHub); builds that cannot install themselves (debug)
- * hand the APK URL to the browser instead. While an install runs the card shows its progress, and a
- * failure offers "Try again" and the browser download.
+ * download and install when the release has this build's APK and checksums; otherwise the release
+ * page opens in the browser. While an install runs the card shows its progress, and a failure
+ * offers "Try again" and the browser download.
  */
 @Composable
 fun UpdateAvailableCard(

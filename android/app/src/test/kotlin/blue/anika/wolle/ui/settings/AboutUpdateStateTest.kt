@@ -2,7 +2,10 @@ package blue.anika.wolle.ui.settings
 
 import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.UpdateCheckResult
+import blue.anika.wolle.data.update.UpdateFailure
+import blue.anika.wolle.data.update.UpdateInstallState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class AboutUpdateStateTest {
@@ -42,5 +45,34 @@ class AboutUpdateStateTest {
             AboutUpdateState.Play,
             map(self = false, checking = true, r = UpdateCheckResult.Available(update)),
         )
+    }
+
+    @Test
+    fun `an available idle update is offered`() {
+        assertEquals(
+            update,
+            aboutUpdateOffer(AboutUpdateState.Available(update), UpdateInstallState.Idle),
+        )
+    }
+
+    @Test
+    fun `no offer while the install runs`() {
+        assertNull(
+            aboutUpdateOffer(
+                AboutUpdateState.Available(update),
+                UpdateInstallState.Downloading(10, 100),
+            )
+        )
+    }
+
+    @Test
+    fun `no offer after a failed install`() {
+        val failed = UpdateInstallState.Failed(UpdateFailure.entries.first())
+        assertNull(aboutUpdateOffer(AboutUpdateState.Available(update), failed))
+    }
+
+    @Test
+    fun `no offer when up to date`() {
+        assertNull(aboutUpdateOffer(AboutUpdateState.UpToDate, UpdateInstallState.Idle))
     }
 }

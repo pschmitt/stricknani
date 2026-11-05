@@ -27,8 +27,15 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** In-app updating exists in release APKs from GitHub only: not in Play builds, not in debug. */
+/** In-app updating exists in the GitHub APK builds (release and debug), not in Play builds. */
 val inAppUpdateAvailable: Boolean
+    get() = BuildConfig.SELF_UPDATE_ENABLED
+
+/**
+ * Background checks, notifications and auto-update exist in release APKs from GitHub only. A debug
+ * build is deployed by hand or by CI and must not be replaced behind its owner's back.
+ */
+val backgroundUpdatesAvailable: Boolean
     get() = BuildConfig.SELF_UPDATE_ENABLED && !BuildConfig.DEBUG
 
 /** True when the in-app installer can take this update (an APK and checksums exist). */
@@ -100,7 +107,7 @@ constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (!inAppUpdateAvailable) return Result.success()
+        if (!backgroundUpdatesAvailable) return Result.success()
         val auto = preferences.autoUpdate.first()
         val notify = preferences.notifyAppUpdates.first()
         if (!auto && !notify) return Result.success()
@@ -204,10 +211,11 @@ constructor(
 
     /**
      * Keeps the one periodic check in line with the two settings that need it: it runs when either
-     * "Update automatically" or "Notify me about app updates" is on, never outside in-app builds.
+     * "Update automatically" or "Notify me about app updates" is on, never outside release APKs
+     * from GitHub.
      */
     fun syncChecks(autoUpdate: Boolean, notify: Boolean) {
-        if (!inAppUpdateAvailable || !(autoUpdate || notify)) {
+        if (!backgroundUpdatesAvailable || !(autoUpdate || notify)) {
             workManager.cancelUniqueWork(CHECK_WORK_NAME)
             workManager.cancelUniqueWork(AUTO_WORK_NAME)
             return

@@ -9,7 +9,7 @@ private val PLAIN_SHA = Regex("""[0-9a-f]{7,40}""")
  * The commit an APK was built from, parsed from `BuildConfig.GIT_REVISION`: a bare SHA (local
  * builds), `git describe` output (`v1.2.3-5-g9a7bfc70abcd`, CI) or an exact tag (`v1.2.3`).
  */
-internal data class BuildRevision(val ref: String, val dirty: Boolean, val full: String) {
+internal data class BuildRevision(val ref: String, val dirty: Boolean) {
     /** `9a7bfc70` or `9a7bfc70-dirty`; a tag is shown as it is. */
     val display: String
         get() = (if (PLAIN_SHA.matches(ref)) ref.take(8) else ref) + if (dirty) DIRTY_SUFFIX else ""
@@ -27,7 +27,7 @@ internal data class BuildRevision(val ref: String, val dirty: Boolean, val full:
             val clean = trimmed.removeSuffix(DIRTY_SUFFIX)
             if (clean.isEmpty()) return null
             val ref = DESCRIBE_SHA.matchEntire(clean)?.groupValues?.get(1) ?: clean
-            return BuildRevision(ref, dirty, trimmed)
+            return BuildRevision(ref, dirty)
         }
     }
 }

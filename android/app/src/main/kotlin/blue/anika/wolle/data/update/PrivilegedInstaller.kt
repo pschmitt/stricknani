@@ -55,16 +55,9 @@ internal fun privilegedState(
         else -> PrivilegedState.UNAVAILABLE
     }
 
-/**
- * Shizuku is used only in developer mode, when the user switched it on and it is ready right now.
- */
-internal fun chooseInstallPath(
-    enabled: Boolean,
-    state: PrivilegedState,
-    developerMode: Boolean = true,
-): InstallPath =
-    if (developerMode && enabled && state == PrivilegedState.READY) InstallPath.PRIVILEGED
-    else InstallPath.PACKAGE_INSTALLER
+/** Updates go through Shizuku whenever it is ready right now, with no setting involved. */
+internal fun chooseInstallPath(state: PrivilegedState): InstallPath =
+    if (state == PrivilegedState.READY) InstallPath.PRIVILEGED else InstallPath.PACKAGE_INSTALLER
 
 /**
  * Installs an APK through a privileged binder (Shizuku), so no confirmation is ever needed. The

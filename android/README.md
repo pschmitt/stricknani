@@ -66,17 +66,19 @@ release by semver; *Latest* follows the rolling `latest` pre-release, compared b
 body names. Switching from Latest to Stable never downgrades: a build ahead of the newest stable
 reports "You're ahead of the latest stable release" until a newer stable exists.
 
-**In-app update (release APKs only).** **Update** downloads the APK for your device's ABI from this
-repository's GitHub release over HTTPS, checks it against the release's `SHA256SUMS`, checks that it
+**In-app update (GitHub APKs, release and debug).** **Update** downloads the APK for your device's
+ABI from this repository's GitHub release over HTTPS, checks it against the release's `SHA256SUMS`,
+checks that it
 is the same package signed with the same certificate and not older than the installed version, and
 installs it through Android's `PackageInstaller`. The first update asks once in the system dialog
 (and for the "Install unknown apps" permission); because Stricknani then is its own installer of
 record, later updates install without a confirmation on Android 12+. Errors (checksum mismatch,
 failed download, low storage, installer failure) are shown with **Try again** and **Download in
 browser**. **Update automatically** (About, off by default) checks twice a day and installs while the
-phone is charging and idle, only once silent installs are possible, never in battery saver. Shizuku
-is not supported (see `TODO.md` SNA-88). Debug builds (`blue.anika.wolle.debug`) keep the browser
-download, since a release APK is a different package.
+phone is charging and idle, only once silent installs are possible, never in battery saver. When
+Shizuku is ready the update always installs through it, without any confirmation. Debug builds
+(`blue.anika.wolle.debug`) update in-app too and always follow Latest, since debug APKs exist only
+on the rolling `latest` release; they get no background checks or auto-update.
 
 **Play Store build.** It includes no self-update: the check and updater are compiled out when
 building the bundle, and the `REQUEST_INSTALL_PACKAGES` permission and updater receivers live in

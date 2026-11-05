@@ -470,6 +470,7 @@
     <!-- Settings: About -->
     <string name="about_settings_version_title">Version</string>
     <string name="about_settings_app_version_label">App version</string>
+    <string name="about_settings_app_version_debug">%1$s (debug build)</string>
     <string name="about_update_checking">Checking for updates…</string>
     <string name="about_update_up_to_date">Up to date on %1$s</string>
     <string name="about_update_available_stable">Stable %1$s available</string>
@@ -683,7 +684,6 @@
     <string name="developer_obtainium_missing_title">Obtainium not found</string>
     <string name="developer_obtainium_missing_message">Install Obtainium to track Stricknani updates straight from GitHub.</string>
     <string name="developer_obtainium_missing_get">Get Obtainium</string>
-    <string name="developer_card_revision">Git revision</string>
 
     <!-- Settings: backup export/import messages -->
     <string name="backup_error_open_file_write">Could not open the selected file for writing</string>
@@ -1104,7 +1104,7 @@
     <string name="about_auto_update_title">Update automatically</string>
     <string name="about_auto_update_help">Installs new versions in the background while the phone is charging and idle.</string>
     <string name="about_auto_update_help_first">Installs new versions in the background while charging and idle, once the first in-app update has been confirmed.</string>
-    <string name="about_shizuku_title">Install updates silently with Shizuku</string>
+    <string name="about_shizuku_title">Updates through Shizuku</string>
     <string name="about_shizuku_state_ready">Ready: updates install without any prompt.</string>
     <string name="about_shizuku_state_permission">Permission needed: allow Stricknani in Shizuku.</string>
     <string name="about_shizuku_state_denied">Permission denied. Open Shizuku and allow Stricknani there, then come back.</string>

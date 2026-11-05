@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.settings
 
 import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.UpdateCheckResult
+import blue.anika.wolle.data.update.UpdateInstallState
 
 /** What the About screen's version section says about updates. */
 sealed interface AboutUpdateState {
@@ -45,4 +46,13 @@ fun aboutUpdateState(
                 UpdateCheckResult.NotEligible -> AboutUpdateState.DevBuild
                 UpdateCheckResult.Failed -> AboutUpdateState.Failed
             }
+    }
+
+/**
+ * The update the version row offers a button for: an available update with no install running and
+ * no failed install to report. Otherwise the update row owns the progress or failure.
+ */
+fun aboutUpdateOffer(state: AboutUpdateState, install: UpdateInstallState): AppUpdate? =
+    (state as? AboutUpdateState.Available)?.update?.takeIf {
+        !install.isBusy && install !is UpdateInstallState.Failed
     }

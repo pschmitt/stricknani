@@ -276,8 +276,9 @@ fun HomeScreen(
                                     update = update,
                                     install = installState,
                                     onDownload = {
-                                        // Release APKs install themselves; debug builds (another
-                                        // package id) keep the browser download.
+                                        // Installs in-app when the release has this build's APK
+                                        // and checksums; otherwise the browser gets the release
+                                        // page.
                                         if (update.canInstallInApp()) installViewModel.start(update)
                                         else uriHandler.openUri(update.downloadUrl)
                                     },

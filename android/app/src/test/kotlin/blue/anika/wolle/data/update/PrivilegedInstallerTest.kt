@@ -44,14 +44,6 @@ class PrivilegedInstallerTest {
     }
 
     @Test
-    fun `outside developer mode Shizuku never takes the install`() {
-        assertEquals(
-            InstallPath.PACKAGE_INSTALLER,
-            chooseInstallPath(true, PrivilegedState.READY, developerMode = false),
-        )
-    }
-
-    @Test
     fun `Sui has a binder without any manager app`() {
         assertEquals(PrivilegedState.READY, privilegedState(false, true, true))
         assertEquals(PrivilegedState.PERMISSION_NEEDED, privilegedState(false, true, false))
@@ -66,24 +58,11 @@ class PrivilegedInstallerTest {
     }
 
     @Test
-    fun `only an enabled and ready Shizuku takes the install`() {
-        assertEquals(
-            InstallPath.PRIVILEGED,
-            chooseInstallPath(true, PrivilegedState.READY),
-        )
-        assertEquals(
-            InstallPath.PACKAGE_INSTALLER,
-            chooseInstallPath(false, PrivilegedState.READY),
-        )
-        listOf(
-                PrivilegedState.UNAVAILABLE,
-                PrivilegedState.NOT_RUNNING,
-                PrivilegedState.PERMISSION_NEEDED,
-                PrivilegedState.PERMISSION_DENIED,
-            )
-            .forEach {
-                assertEquals(InstallPath.PACKAGE_INSTALLER, chooseInstallPath(true, it))
-            }
+    fun `only a ready Shizuku takes the install`() {
+        assertEquals(InstallPath.PRIVILEGED, chooseInstallPath(PrivilegedState.READY))
+        PrivilegedState.entries
+            .filter { it != PrivilegedState.READY }
+            .forEach { assertEquals(InstallPath.PACKAGE_INSTALLER, chooseInstallPath(it)) }
     }
 
     @Test

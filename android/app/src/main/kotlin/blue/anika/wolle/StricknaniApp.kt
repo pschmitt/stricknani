@@ -8,7 +8,7 @@ import blue.anika.wolle.data.errorreporting.ErrorReportingController
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.data.update.UpdateScheduler
-import blue.anika.wolle.data.update.inAppUpdateAvailable
+import blue.anika.wolle.data.update.backgroundUpdatesAvailable
 import blue.anika.wolle.data.update.installedBuildId
 import blue.anika.wolle.di.MediaClient
 import blue.anika.wolle.sync.SyncNotifier
@@ -77,7 +77,7 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         // pre-onboarding) so it's safe to call unconditionally on every process start.
         syncScheduler.schedulePeriodic()
         syncScheduler.syncNow()
-        if (inAppUpdateAvailable) {
+        if (backgroundUpdatesAvailable) {
             // Keeps the periodic update check in line with "Update automatically" after a restart.
             CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
                 updateScheduler.syncChecks(

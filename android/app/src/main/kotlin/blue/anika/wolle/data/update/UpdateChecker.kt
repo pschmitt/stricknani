@@ -83,11 +83,20 @@ enum class UpdateChannel {
 }
 
 /**
- * The channel updates really follow: Latest is a developer-mode option, so with developer mode off
- * a stored Latest is ignored and updates come from Stable.
+ * The channel updates really follow. Latest is a developer-mode option, so with developer mode off
+ * a stored Latest is ignored and updates come from Stable. A debug build always follows Latest:
+ * debug APKs are attached to the rolling `latest` release only, tagged releases carry none.
  */
-fun effectiveUpdateChannel(stored: UpdateChannel, developerMode: Boolean): UpdateChannel =
-    if (developerMode) stored else UpdateChannel.STABLE
+fun effectiveUpdateChannel(
+    stored: UpdateChannel,
+    developerMode: Boolean,
+    debugBuild: Boolean = false,
+): UpdateChannel =
+    when {
+        debugBuild -> UpdateChannel.LATEST
+        developerMode -> stored
+        else -> UpdateChannel.STABLE
+    }
 
 /** What `BuildConfig.GIT_REVISION` says about the running build. */
 internal sealed interface InstalledBuild {

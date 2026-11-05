@@ -101,7 +101,8 @@ jobs:
           printf 'RUST_SERVER_BINARY=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_ENV"
 
       - name: Build debug and instrumentation APKs
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace
+        # Play screenshots must show release branding, not the debug extras.
+        run: ./gradlew assembleDebug assembleDebugAndroidTest -PdebugExtras=false --stacktrace
         working-directory: android
 
       - name: Start disposable native Rust fixture

@@ -28,7 +28,6 @@ class BuildRevisionTest {
         assertEquals("9a7bfc70-dirty", revision.display)
         assertTrue(revision.dirty)
         assertEquals("9a7bfc70", revision.ref)
-        assertEquals("9a7bfc70-dirty", revision.full)
     }
 
     @Test

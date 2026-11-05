@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.burstParticles
 import java.util.concurrent.atomic.AtomicBoolean
@@ -71,8 +72,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-private val Ball = Color(0xFF8CB8FF)
-private val Wrap = Color(0xFF2F6FED)
+// Debug extras builds use the purple of the debug launcher icon.
+private val Ball = if (BuildConfig.DEBUG_EXTRAS) Color(0xFFC9A7FF) else Color(0xFF8CB8FF)
+private val Wrap = if (BuildConfig.DEBUG_EXTRAS) Color(0xFF7B3FE4) else Color(0xFF2F6FED)
 private val Ink = Color(0xFF16233F)
 private val Pink = Color(0xFFFF6F9F)
 private val Cream = Color(0xFFFFF1C9)

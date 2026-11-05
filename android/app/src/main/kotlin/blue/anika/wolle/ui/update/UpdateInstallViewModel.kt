@@ -18,6 +18,7 @@ import blue.anika.wolle.data.update.installRunningBuild
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -47,10 +48,17 @@ constructor(
     val notifyUpdates: StateFlow<Boolean> =
         preferences.notifyAppUpdates.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    private var startJob: Job? = null
+
     fun start(update: AppUpdate) {
         notifier.cancel()
         availableNotifier.cancel()
-        scheduler.startInstall(update)
+        // A second tap while the Shizuku permission dialog is up must not queue another start.
+        if (startJob?.isActive == true) return
+        startJob = viewModelScope.launch {
+            resolver.askForShizukuIfNeeded()
+            scheduler.startInstall(update)
+        }
     }
 
     /** Clears a failure so the plain update offer shows again. */
@@ -92,41 +100,11 @@ constructor(
 
     val shizukuState: StateFlow<PrivilegedState> = resolver.privileged.state
 
-    val shizukuEnabled: StateFlow<Boolean> =
-        preferences.shizukuInstall.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    /** Silent installs through Shizuku are a developer-mode feature. */
+    /** Whether developer mode is on; the Shizuku status shows "not installed" only then. */
     val developerMode: StateFlow<Boolean> =
         preferences.developerMode.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    init {
-        // A denied permission leaves the switch off; it stays off until Shizuku grants it again.
-        viewModelScope.launch {
-            resolver.privileged.state.collect { state ->
-                if (state == PrivilegedState.PERMISSION_DENIED && shizukuEnabled.value) {
-                    preferences.setShizukuInstall(false)
-                }
-            }
-        }
-    }
-
     fun refreshShizuku() = resolver.privileged.refresh()
-
-    /**
-     * Switches silent installs through Shizuku on or off; on, it asks for the permission right
-     * away. The answer arrives through [shizukuState]; a denial switches this off again.
-     */
-    fun setShizukuEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            preferences.setShizukuInstall(enabled)
-            if (enabled) {
-                resolver.privileged.refresh()
-                if (resolver.privileged.state.value == PrivilegedState.PERMISSION_NEEDED) {
-                    resolver.privileged.requestPermission()
-                }
-            }
-        }
-    }
 
     fun requestShizukuPermission() {
         resolver.privileged.refresh()

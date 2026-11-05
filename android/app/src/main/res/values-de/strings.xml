@@ -469,6 +469,7 @@
     <!-- Settings: About -->
     <string name="about_settings_version_title">Version</string>
     <string name="about_settings_app_version_label">App-Version</string>
+    <string name="about_settings_app_version_debug">%1$s (Debug-Build)</string>
     <string name="about_update_checking">Suche nach Updates …</string>
     <string name="about_update_up_to_date">Aktuell auf %1$s</string>
     <string name="about_update_available_stable">Stable %1$s verfügbar</string>
@@ -682,7 +683,6 @@
     <string name="developer_obtainium_missing_title">Obtainium nicht gefunden</string>
     <string name="developer_obtainium_missing_message">Installiere Obtainium, um Stricknani-Updates direkt von GitHub zu beziehen.</string>
     <string name="developer_obtainium_missing_get">Obtainium holen</string>
-    <string name="developer_card_revision">Git-Revision</string>
 
     <!-- Settings: backup export/import messages -->
     <string name="backup_error_open_file_write">Die ausgewählte Datei konnte nicht zum Schreiben geöffnet werden</string>
@@ -1103,7 +1103,7 @@
     <string name="about_auto_update_title">Automatisch aktualisieren</string>
     <string name="about_auto_update_help">Installiert neue Versionen im Hintergrund, während das Handy lädt und ruht.</string>
     <string name="about_auto_update_help_first">Installiert neue Versionen im Hintergrund, während das Handy lädt und ruht, sobald das erste In-App-Update bestätigt wurde.</string>
-    <string name="about_shizuku_title">Updates still mit Shizuku installieren</string>
+    <string name="about_shizuku_title">Updates über Shizuku</string>
     <string name="about_shizuku_state_ready">Bereit: Updates werden ohne Rückfrage installiert.</string>
     <string name="about_shizuku_state_permission">Berechtigung nötig: Stricknani in Shizuku erlauben.</string>
     <string name="about_shizuku_state_denied">Berechtigung verweigert. Öffne Shizuku und erlaube Stricknani dort, dann komm zurück.</string>

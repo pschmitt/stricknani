@@ -41,6 +41,28 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-90: Update flow tweaks and debug build identity
+
+**Status:** mostly done (2026-11-05)
+
+- [x] Update button beside the app version (the separate update row only shows progress, failure
+      and the other states).
+- [x] Shizuku is always used when ready: no switch, no preference; the row only reports the state.
+- [x] Debug builds install updates in-app and always follow Latest (no channel row).
+- [x] Background checks and auto-update stay release-only.
+- [x] Debug builds default to developer mode.
+- [x] Purple mascot and "(debug build)" version label under `DEBUG_EXTRAS`.
+- [x] Git revision row removed from the developer card.
+
+The screenshot lane passes `-PdebugExtras=false`. Web has no matching surface: APK updates are
+Android-only.
+
+Verification: ktfmt, `:app:testDebugUnitTest` (737 tests, 0 failures), `:app:assembleDebug`,
+`:app:assembleRelease` and `:app:lintDebug` passed on a build worker.
+
+A hand-deployed debug build cannot update in-app from the `latest` release: its signing key differs
+from the CI key, so the update stops with a signature mismatch. Installed f1ac0129, CI 6150524c.
+
 ## SNA-89: Administrators see and edit everybody's projects and yarns
 
 **Status:** in progress (2026-11-04)
