@@ -181,11 +181,10 @@ abstract class StricknaniE2eTest {
     }
 
     protected fun openSettingsAccount() {
-        composeRule.onNodeWithText("Settings").performClick()
+        // Settings live under the More tab (a "Settings" section whose first row is Account).
+        composeRule.onNodeWithText("More").performClick()
         waitForText("Settings")
-        composeRule
-            .onNodeWithContentDescription("Account: Server connection and sign-out")
-            .performClick()
+        composeRule.onNodeWithTag("more-account").performScrollTo().performClick()
         waitForText("Server URL")
         waitForText(baseUrl)
     }
@@ -232,7 +231,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         enterSearchTerm("Riverbend")
         captureE2eScreenshot("full-02-search")
 
-        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithText("More").performClick()
         waitForText("Settings")
         captureE2eScreenshot("full-03-settings")
     }
