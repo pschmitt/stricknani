@@ -20,6 +20,12 @@
 
 use std::{fmt, io::Read, sync::Arc, time::Duration};
 
+use axum::{
+    extract::MatchedPath,
+    http::{Method, Request},
+    middleware::Next,
+    response::Response,
+};
 use sentry::{
     protocol::{Event, User},
     types::Dsn,
@@ -59,6 +65,59 @@ const REDACTED: &str = "[redacted]";
 /// Every event carries this tag so one Sentry project can be filtered.
 pub const COMPONENT_TAG: &str = "component";
 pub const COMPONENT_SERVER: &str = "server";
+const HTTP_STATUS_TAG: &str = "http.status_code";
+const HTTP_METHOD_TAG: &str = "http.method";
+const HTTP_ROUTE_TAG: &str = "http.route";
+const OMIT_REQUEST_TAG: &str = "stricknani.omit_sentry_request";
+
+/// Capture server-side HTTP failures without attaching request data.
+///
+/// The only request fields copied into the event are the status, a standard
+/// method name, and Axum's matched route template. In particular, this does
+/// not include the URL, query string, headers, body, or route parameter values.
+pub async fn report_http_errors(request: Request<axum::body::Body>, next: Next) -> Response {
+    let method = standard_method(request.method());
+    let route = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(MatchedPath::as_str)
+        .unwrap_or("unmatched")
+        .to_owned();
+    let response = next.run(request).await;
+    let status = response.status();
+    if status.is_server_error() {
+        let mut event = Event::new();
+        event.message = Some("http.server.response_error".to_owned());
+        event.level = sentry::Level::Error;
+        event
+            .tags
+            .insert(HTTP_STATUS_TAG.to_owned(), status.as_u16().to_string());
+        event
+            .tags
+            .insert(HTTP_METHOD_TAG.to_owned(), method.to_owned());
+        event.tags.insert(HTTP_ROUTE_TAG.to_owned(), route);
+        event
+            .tags
+            .insert(OMIT_REQUEST_TAG.to_owned(), "1".to_owned());
+        sentry::capture_event(event);
+    }
+    response
+}
+
+fn standard_method(method: &Method) -> &'static str {
+    match method.as_str() {
+        "GET" => "GET",
+        "HEAD" => "HEAD",
+        "POST" => "POST",
+        "PUT" => "PUT",
+        "DELETE" => "DELETE",
+        "CONNECT" => "CONNECT",
+        "OPTIONS" => "OPTIONS",
+        "TRACE" => "TRACE",
+        "PATCH" => "PATCH",
+        _ => "OTHER",
+    }
+}
 
 /// Why the error-reporting configuration is unusable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -462,6 +521,9 @@ pub(crate) fn bind_user(user_id: i64, enabled: bool) {
 pub fn scrub_event(mut event: Event<'static>) -> Option<Event<'static>> {
     if event.tags.remove(OPT_OUT_TAG).is_some() {
         return None;
+    }
+    if event.tags.remove(OMIT_REQUEST_TAG).is_some() {
+        event.request = None;
     }
     event
         .tags

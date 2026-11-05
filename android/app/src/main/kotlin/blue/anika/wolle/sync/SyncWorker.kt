@@ -1,9 +1,15 @@
 package blue.anika.wolle.sync
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import blue.anika.wolle.data.errorreporting.ErrorReportingController
+import blue.anika.wolle.data.errorreporting.SyncFailureClassifier
+import blue.anika.wolle.data.errorreporting.SyncFailureKind
+import blue.anika.wolle.data.errorreporting.SyncFailureReport
+import blue.anika.wolle.data.errorreporting.SyncFailureReportSanitizer
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
@@ -11,7 +17,6 @@ import blue.anika.wolle.data.settings.SettingsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
-import timber.log.Timber
 
 /**
  * Pulls delta-sync updates for categories, yarns, and projects into the Room cache. Never wipes
@@ -36,6 +41,7 @@ constructor(
     private val projectRepository: ProjectRepository,
     private val settingsRepository: SettingsRepository,
     private val syncNotifier: SyncNotifier,
+    private val errorReportingController: ErrorReportingController,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -59,7 +65,6 @@ constructor(
                 ?: runSyncStep("projects") { hasChanges = projectRepository.sync() || hasChanges }
 
         if (failure != null) {
-            Timber.w(failure, "Sync failed")
             return if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
         }
 
@@ -81,7 +86,22 @@ constructor(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Exception) {
-            Timber.w(failure, "Sync step '$name' failed")
+            val safeReport =
+                SyncFailureReportSanitizer.sanitize(
+                    SyncFailureReport(
+                        kind = SyncFailureKind.SYNC,
+                        operation = name,
+                        failureClass = SyncFailureClassifier.classify(failure),
+                        httpStatus = (failure as? retrofit2.HttpException)?.code() ?: 0,
+                        stackTrace = failure.stackTrace.toList(),
+                    )
+                )
+            Log.w(
+                "SyncReplay",
+                "Pull sync failed: operation=${safeReport.operation}, " +
+                    "cause=${safeReport.failureClass.tagValue}, http=${safeReport.httpStatus}",
+            )
+            errorReportingController.reportSyncFailure(safeReport)
             failure
         }
 

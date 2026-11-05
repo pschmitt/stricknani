@@ -1244,4 +1244,19 @@
     <string name="history_deleted_account">a deleted account</string>
     <string name="sharing_change">Change</string>
     <string name="sharing_link_hint">Opens for people who already have access. Pick someone below to give them access.</string>
+    <string name="settings_sync_last_received">Last received from server</string>
+    <string name="settings_sync_pending_count">Changes waiting to upload: %1$d</string>
+    <string name="settings_sync_ready">Send changes from this device and receive updates from your account.</string>
+    <string name="settings_sync_running">Syncing…</string>
+    <string name="settings_sync_waiting">Sync is queued and needs a network connection. Your changes remain on this device.</string>
+    <string name="settings_sync_retry_scheduled">The last upload failed. An automatic retry is scheduled; you can try again now.</string>
+    <string name="settings_sync_complete">Sync complete. No changes waiting to upload.</string>
+    <string name="settings_sync_remaining">Some changes still need to be uploaded. Try again.</string>
+    <string name="settings_sync_failed">Sync failed. Your queued changes remain on this device. Try again.</string>
+    <string name="settings_sync_now">Sync now</string>
+    <string name="settings_sync_error_auth">Your sign-in was rejected. Sign in again to resume uploads.</string>
+    <string name="settings_sync_error_server">The server reported an error. Try again later.</string>
+    <string name="settings_sync_error_rejected">The server rejected this change. Check the item before retrying.</string>
+    <string name="settings_sync_error_network">The connection failed or timed out. Check your connection and try again.</string>
+    <string name="settings_sync_error_unknown">The upload failed without a recognized cause. Try again; your change remains queued.</string>
 </resources>

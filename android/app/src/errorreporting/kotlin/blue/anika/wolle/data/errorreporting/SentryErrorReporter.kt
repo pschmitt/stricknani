@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.errorreporting
 
 import android.content.Context
+import android.util.Log
 import blue.anika.wolle.BuildConfig
 import dagger.Binds
 import dagger.Module
@@ -10,8 +11,10 @@ import dagger.hilt.components.SingletonComponent
 import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.protocol.Message
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,9 +45,19 @@ class SentryErrorReporter @Inject constructor(@ApplicationContext private val co
 
     @Synchronized
     override fun stop() {
-        if (running == null) return
-        Sentry.close()
+        if (running != null) Sentry.close()
         running = null
+    }
+
+    @Synchronized
+    override fun reportSyncFailure(report: SyncFailureReport) {
+        if (running == null) {
+            Log.i("SyncReplay", "Sentry sync failure skipped: reporting disabled or unavailable")
+            return
+        }
+        val safeReport = SyncFailureReportSanitizer.sanitize(report)
+        val eventId = Sentry.captureEvent(syncFailureEvent(safeReport))
+        Log.i("SyncReplay", "Sentry sync failure event queued: id=$eventId")
     }
 
     private fun configure(options: SentryAndroidOptions, config: ErrorReportingConfig) {
@@ -68,6 +81,30 @@ class SentryErrorReporter @Inject constructor(@ApplicationContext private val co
         options.tracesSampleRate = null
         options.setBeforeSend { event, _ -> SentryEventScrubber.scrub(event) }
         options.setBeforeBreadcrumb { crumb: Breadcrumb, _ -> null }
+    }
+}
+
+internal fun syncFailureEvent(report: SyncFailureReport): SentryEvent {
+    val safeReport = SyncFailureReportSanitizer.sanitize(report)
+    val sanitizedException =
+        Throwable(safeReport.kind.eventMessage).apply {
+            stackTrace = safeReport.stackTrace.toTypedArray()
+        }
+    return SentryEvent(sanitizedException).apply {
+        message = Message().apply { message = safeReport.kind.eventMessage }
+        level = SentryLevel.ERROR
+        setTag(ErrorReportRelease.COMPONENT_TAG, ErrorReportRelease.COMPONENT_ANDROID)
+        setTag("operation", safeReport.operation)
+        setTag("failure_class", safeReport.failureClass.tagValue)
+        setTag("http_status", safeReport.httpStatus.toString())
+        fingerprints =
+            listOf(
+                "android-sync-failure",
+                safeReport.kind.tagValue,
+                safeReport.operation,
+                safeReport.failureClass.tagValue,
+                safeReport.httpStatus.toString(),
+            )
     }
 }
 

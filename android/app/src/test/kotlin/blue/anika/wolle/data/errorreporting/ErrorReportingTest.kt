@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.errorreporting
 
+import java.io.IOException
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -120,6 +121,70 @@ class ErrorReportingTest {
         )
         assertEquals("stricknani-android@1.2.3", ErrorReportRelease.name("1.2.3", "unknown"))
         assertEquals("android", ErrorReportRelease.COMPONENT_ANDROID)
+    }
+
+    @Test
+    fun sanitizesSyncFailureDimensionsToFiniteValues() {
+        val report =
+            SyncFailureReportSanitizer.sanitize(
+                SyncFailureReport(
+                    kind = SyncFailureKind.QUEUED_WRITE,
+                    operation = "project_update?token=secret",
+                    failureClass = SyncFailureClass.OTHER,
+                    httpStatus = 999,
+                )
+            )
+
+        assertEquals("other", report.operation)
+        assertEquals(SyncFailureClass.OTHER, report.failureClass)
+        assertEquals(0, report.httpStatus)
+    }
+
+    @Test
+    fun classifiesFailuresByTypeInsteadOfObfuscationSensitiveName() {
+        assertEquals(
+            SyncFailureClass.STATE,
+            SyncFailureClassifier.classify(IllegalStateException()),
+        )
+        assertEquals(SyncFailureClass.IO, SyncFailureClassifier.classify(IOException()))
+        assertEquals(SyncFailureClass.OTHER, SyncFailureClassifier.classify(RuntimeException()))
+    }
+
+    @Test
+    fun syncFailureStackKeepsBoundedJvmFramesAndStripsPaths() {
+        val report =
+            SyncFailureReportSanitizer.sanitize(
+                SyncFailureReport(
+                    kind = SyncFailureKind.SYNC,
+                    operation = "projects",
+                    failureClass = SyncFailureClass.IO,
+                    httpStatus = 0,
+                    stackTrace =
+                        listOf(
+                            StackTraceElement(
+                                "okhttp3.RealCall",
+                                "execute",
+                                "/tmp/private/RealCall.kt",
+                                1,
+                            ),
+                            StackTraceElement("a.b", "c", "Obfuscated.kt", 2),
+                        ) +
+                            (1..70).map {
+                                StackTraceElement(
+                                    "blue.anika.wolle.sync.SyncWorker",
+                                    "runSyncStep",
+                                    "SyncWorker.kt",
+                                    it,
+                                )
+                            },
+                )
+            )
+
+        assertEquals(64, report.stackTrace.size)
+        assertEquals("okhttp3.RealCall", report.stackTrace.first().className)
+        assertEquals("a.b", report.stackTrace[1].className)
+        assertEquals("RealCall.kt", report.stackTrace.first().fileName)
+        assertTrue(report.stackTrace.all { !it.fileName.orEmpty().contains('/') })
     }
 
     @Test

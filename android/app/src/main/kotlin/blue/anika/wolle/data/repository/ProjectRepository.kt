@@ -33,9 +33,11 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -466,8 +468,65 @@ constructor(
      * order. Any other failure propagates and stays queued.
      */
     private suspend fun replayMediaOrder(id: Int, send: suspend () -> Unit) {
-        if (!sendMediaOrder(send)) Timber.i("Dropped queued media order for project $id")
-        runCatching { refreshOne(id) }
+        val queuedUpdate =
+            pendingMutationDao.getReplayable(
+                MutationEntityType.PROJECT,
+                MutationOperation.UPDATE,
+                id,
+            )
+        val before = queuedUpdate?.let { fetchProjectOrNull(id) }
+        if (!sendMediaOrder(send)) {
+            Timber.i("Dropped queued media order for project $id")
+            fetchProjectOrNull(id)?.let { projectDao.upsertAll(listOf(it.toEntity(json))) }
+            return
+        }
+
+        val after = queuedUpdate?.let { fetchProjectOrNull(id) }
+        if (after != null) {
+            if (before != null) rebaseQueuedUpdateAfterMediaOrder(id, before, after)
+            projectDao.upsertAll(listOf(after.toEntity(json)))
+        } else {
+            // The order has already been sent. A failed optional read must not keep it queued;
+            // retain the update's original timestamp so a genuine conflict is still detected.
+            fetchProjectOrNull(id)?.let { projectDao.upsertAll(listOf(it.toEntity(json))) }
+        }
+    }
+
+    private suspend fun fetchProjectOrNull(id: Int): ProjectDto? =
+        try {
+            fetchProject(id)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+
+    private suspend fun rebaseQueuedUpdateAfterMediaOrder(
+        id: Int,
+        before: ProjectDto,
+        after: ProjectDto,
+    ) {
+        database.withTransaction {
+            val latest =
+                pendingMutationDao.getReplayable(
+                    MutationEntityType.PROJECT,
+                    MutationOperation.UPDATE,
+                    id,
+                ) ?: return@withTransaction
+            val request =
+                try {
+                    json.decodeFromString<ProjectWriteRequest>(latest.payloadJson!!)
+                } catch (_: Exception) {
+                    return@withTransaction
+                }
+            val rebased =
+                request.rebaseExpectedUpdatedAtAfterMediaOrder(before, after)
+                    ?: return@withTransaction
+            pendingMutationDao.replacePayload(
+                latest.id,
+                json.encodeToString(rebased),
+            )
+        }
     }
 
     /**

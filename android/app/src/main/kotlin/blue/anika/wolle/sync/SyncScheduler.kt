@@ -8,10 +8,13 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /**
  * Enqueues [SyncWorker] (pulls server changes in) and [WriteReplayWorker] (pushes queued local
@@ -20,6 +23,25 @@ import javax.inject.Singleton
  */
 @Singleton
 class SyncScheduler @Inject constructor(private val workManager: WorkManager) {
+
+    /** Current and recent state of one-off work plus any active periodic sync work. */
+    val syncWorkInfos: Flow<List<WorkInfo>> =
+        combine(
+                workManager.getWorkInfosForUniqueWorkFlow(ONE_OFF_REPLAY_WORK_NAME),
+                workManager.getWorkInfosForUniqueWorkFlow(ONE_OFF_SYNC_WORK_NAME),
+            ) { replay, oneOffSync ->
+                replay + oneOffSync.filter { it.state == WorkInfo.State.RUNNING }
+            }
+            .combine(workManager.getWorkInfosForUniqueWorkFlow(REPLAY_PERIODIC_WORK_NAME)) {
+                oneOff,
+                periodicReplay ->
+                oneOff + periodicReplay.filter { it.state == WorkInfo.State.RUNNING }
+            }
+            .combine(workManager.getWorkInfosForUniqueWorkFlow(SYNC_PERIODIC_WORK_NAME)) {
+                current,
+                periodicSync ->
+                current + periodicSync.filter { it.state == WorkInfo.State.RUNNING }
+            }
 
     private val constraints =
         Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()

@@ -1,6 +1,7 @@
 package blue.anika.wolle.sync
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -16,6 +17,12 @@ import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.entity.MutationEntityType
 import blue.anika.wolle.data.db.entity.MutationOperation
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
+import blue.anika.wolle.data.errorreporting.ErrorReportingController
+import blue.anika.wolle.data.errorreporting.SyncFailureClass
+import blue.anika.wolle.data.errorreporting.SyncFailureClassifier
+import blue.anika.wolle.data.errorreporting.SyncFailureKind
+import blue.anika.wolle.data.errorreporting.SyncFailureReport
+import blue.anika.wolle.data.errorreporting.SyncFailureReportSanitizer
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
@@ -30,7 +37,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import retrofit2.HttpException
-import timber.log.Timber
 
 /**
  * Flushes `PendingMutationDao`'s outbox (SNA-8) once connectivity returns - see
@@ -58,6 +64,7 @@ constructor(
     private val yarnRepository: YarnRepository,
     private val json: Json,
     private val settingsRepository: SettingsRepository,
+    private val errorReportingController: ErrorReportingController,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -83,10 +90,13 @@ constructor(
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (conflict: ConflictException) {
-                Timber.i(
-                    "Resolved conflict for mutation ${mutation.id} (${mutation.entityType}/${mutation.operation}): ${conflict.message}"
-                )
                 pendingMutationDao.markConflict(mutation.id, conflict.message!!)
+                reportHandledFailure(
+                    mutation,
+                    SyncFailureClass.CONFLICT,
+                    conflict.httpStatus,
+                    conflict.stackTrace.toList(),
+                )
                 // Not anyFailure: this mutation is done (resolved, not pending) - nothing to retry.
             } catch (forbidden: HttpException) {
                 if (forbidden.code() != 403) {
@@ -100,15 +110,16 @@ constructor(
                 // queue nor is retried. The draft stays in the conflict record; the cache adopts
                 // the server's copy (or drops the row when access ended entirely). Nothing is
                 // re-shared or re-linked on the user's behalf.
-                Timber.i("Replay of mutation ${mutation.id} refused (403)")
                 pendingMutationDao.markConflict(mutation.id, NOT_ALLOWED_MESSAGE)
+                reportHandledFailure(
+                    mutation,
+                    SyncFailureClass.FORBIDDEN,
+                    403,
+                    forbidden.stackTrace.toList(),
+                )
                 adoptServerCopy(mutation)
             } catch (failure: Exception) {
-                Timber.w(
-                    failure,
-                    "Replay failed for mutation ${mutation.id} (${mutation.entityType}/${mutation.operation})",
-                )
-                pendingMutationDao.setError(mutation.id, failure.message ?: "Sync failed")
+                handleReplayFailure(mutation, failure)
                 anyFailure = true
                 // Later mutations may depend on this one (most notably an UPDATE/DELETE or media
                 // upload following an offline CREATE). Keep insertion order meaningful by leaving
@@ -129,11 +140,37 @@ constructor(
     }
 
     private suspend fun handleReplayFailure(mutation: PendingMutationEntity, failure: Exception) {
-        Timber.w(
-            failure,
-            "Replay failed for mutation ${mutation.id} (${mutation.entityType}/${mutation.operation})",
-        )
         pendingMutationDao.setError(mutation.id, failure.message ?: "Sync failed")
+        reportHandledFailure(
+            mutation,
+            SyncFailureClassifier.classify(failure),
+            (failure as? HttpException)?.code() ?: 0,
+            failure.stackTrace.toList(),
+        )
+    }
+
+    private suspend fun reportHandledFailure(
+        mutation: PendingMutationEntity,
+        failureClass: SyncFailureClass,
+        httpStatus: Int,
+        stackTrace: List<StackTraceElement> = emptyList(),
+    ) {
+        val safeReport =
+            SyncFailureReportSanitizer.sanitize(
+                SyncFailureReport(
+                    kind = SyncFailureKind.QUEUED_WRITE,
+                    operation = "${mutation.entityType}_${mutation.operation}",
+                    failureClass = failureClass,
+                    httpStatus = httpStatus,
+                    stackTrace = stackTrace,
+                )
+            )
+        Log.w(
+            "SyncReplay",
+            "Queued write handled: operation=${safeReport.operation}, " +
+                "cause=${safeReport.failureClass.tagValue}, http=${safeReport.httpStatus}",
+        )
+        errorReportingController.reportSyncFailure(safeReport)
     }
 
     private suspend fun replay(mutation: PendingMutationEntity) {
@@ -159,7 +196,8 @@ constructor(
                         404 -> {
                             projectRepository.dropDeletedProject(mutation.localId)
                             throw ConflictException(
-                                "This project is gone or no longer shared with you - your change wasn't applied."
+                                "This project is gone or no longer shared with you - your change wasn't applied.",
+                                404,
                             )
                         }
                         409 -> {
@@ -167,7 +205,8 @@ constructor(
                                 projectRepository.adoptRemoteProject(it)
                             }
                             throw ConflictException(
-                                "This project was edited elsewhere - your change was discarded and the latest version is now shown."
+                                "This project was edited elsewhere - your change was discarded and the latest version is now shown.",
+                                409,
                             )
                         }
                         else -> throw e
@@ -224,7 +263,8 @@ constructor(
                         404 -> {
                             yarnRepository.dropDeletedYarn(mutation.localId)
                             throw ConflictException(
-                                "This yarn is gone or no longer shared with you - your change wasn't applied."
+                                "This yarn is gone or no longer shared with you - your change wasn't applied.",
+                                404,
                             )
                         }
                         409 -> {
@@ -232,7 +272,8 @@ constructor(
                                 yarnRepository.adoptRemoteYarn(it)
                             }
                             throw ConflictException(
-                                "This yarn was edited elsewhere - your change was discarded and the latest version is now shown."
+                                "This yarn was edited elsewhere - your change was discarded and the latest version is now shown.",
+                                409,
                             )
                         }
                         else -> throw e
@@ -291,4 +332,4 @@ internal inline fun <reified T> parseConflictDetail(json: Json, errorBody: Strin
         .getOrNull()
 
 /** Thrown when a replay hits a resolved SNA-33 conflict - see [WriteReplayWorker]'s kdoc. */
-private class ConflictException(message: String) : Exception(message)
+private class ConflictException(message: String, val httpStatus: Int) : Exception(message)

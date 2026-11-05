@@ -121,11 +121,8 @@ Use this file as the operational source of truth for working in Stricknani.
   preferences in Account settings instead of a dedicated global toolbar; retain
   compact signed-out language access. Use blue accents and neutral surfaces in
   both themes, with readable button foregrounds and restrained motion.
-- Claude Code owns all web and Android UI implementation, UI helper fixes, and
-  UI deployments. Codex coordinates backend/API/data work, operations,
-  and independent acceptance review; delegate scoped non-UI work to GPT-6 Luna.
-  Freeze shared interfaces before parallel work and give each writer
-  non-overlapping files.
+- Agents may implement web and Android UI changes. Freeze shared interfaces
+  before parallel work and give each writer non-overlapping files.
 - Prepare the Android companion alongside the web rewrite under `android/`'s
   own instructions and SNA task queue. Review actual PAT/API contracts and new
   website links before changing native calls; preserve offline caches, queued

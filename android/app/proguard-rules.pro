@@ -6,7 +6,12 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # kotlinx.serialization
--keepattributes *Annotation*, InnerClasses
+# Retrofit reads generic return types (including suspend Continuation types) at runtime.
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+# Retrofit 3's generic-return keep rule sees `Object` for Kotlin suspend functions. Preserve this
+# response model because it is only named in the `Continuation<V2Envelope<MediaOrderDto>>` signature
+# used reflectively when replaying a title-image reorder.
+-keep,allowoptimization,allowobfuscation class blue.anika.wolle.data.api.v2.MediaOrderDto
 -dontnote kotlinx.serialization.AnnotationsKt
 -keepclasseswithmembers class blue.anika.wolle.**$$serializer {
     *** Companion;

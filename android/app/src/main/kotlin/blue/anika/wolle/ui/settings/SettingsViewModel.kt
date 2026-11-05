@@ -236,6 +236,20 @@ constructor(
         viewModelScope.launch { appPreferencesRepository.setDynamicColor(enabled) }
     }
 
+    val syncStatus: StateFlow<SyncWorkStatus> =
+        syncScheduler.syncWorkInfos
+            .map(::syncWorkStatus)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                SyncWorkStatus.IDLE,
+            )
+
+    val pendingSyncCount: StateFlow<Int> =
+        pendingMutationDao
+            .observeCount()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), 0)
+
     fun retryFailedMutations() = syncScheduler.replayThenSyncNow()
 
     /** Removes a conflict notice after the replay worker has already adopted the server version. */

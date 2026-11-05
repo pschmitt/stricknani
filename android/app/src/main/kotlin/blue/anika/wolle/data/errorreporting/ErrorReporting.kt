@@ -5,11 +5,17 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.Optional
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import retrofit2.HttpException
 import retrofit2.http.Body
 import retrofit2.http.PATCH
 
@@ -106,6 +112,99 @@ object ErrorReportRelease {
             if (revision.isBlank() || revision == "unknown") "" else "+$revision"
 }
 
+/** Static message families for sanitized sync-failure events. */
+enum class SyncFailureKind(val eventMessage: String, val tagValue: String) {
+    QUEUED_WRITE("Queued write failed", "queued_write"),
+    SYNC("Sync failed", "sync"),
+}
+
+/** Bounded, non-sensitive dimensions for one handled sync failure. */
+data class SyncFailureReport(
+    val kind: SyncFailureKind,
+    val operation: String,
+    val failureClass: SyncFailureClass,
+    val httpStatus: Int,
+    val stackTrace: List<StackTraceElement> = emptyList(),
+)
+
+/** Stable categories that remain useful when R8 obfuscates JVM class names. */
+enum class SyncFailureClass(val tagValue: String) {
+    HTTP("http"),
+    UNKNOWN_HOST("unknown_host"),
+    TIMEOUT("timeout"),
+    CONNECTION("connection"),
+    IO("io"),
+    SERIALIZATION("serialization"),
+    STATE("state"),
+    ARGUMENT("argument"),
+    SECURITY("security"),
+    FORBIDDEN("forbidden"),
+    CONFLICT("conflict"),
+    OTHER("other"),
+}
+
+object SyncFailureClassifier {
+    fun classify(failure: Throwable): SyncFailureClass =
+        when (failure) {
+            is HttpException -> SyncFailureClass.HTTP
+            is UnknownHostException -> SyncFailureClass.UNKNOWN_HOST
+            is SocketTimeoutException,
+            is java.util.concurrent.TimeoutException -> SyncFailureClass.TIMEOUT
+            is ConnectException -> SyncFailureClass.CONNECTION
+            is SerializationException -> SyncFailureClass.SERIALIZATION
+            is IOException -> SyncFailureClass.IO
+            is IllegalStateException -> SyncFailureClass.STATE
+            is IllegalArgumentException -> SyncFailureClass.ARGUMENT
+            is SecurityException -> SyncFailureClass.SECURITY
+            else -> SyncFailureClass.OTHER
+        }
+}
+
+/** Keeps event tags and fingerprints within fixed, non-sensitive value sets. */
+object SyncFailureReportSanitizer {
+    private const val MAX_STACK_FRAMES = 64
+    private val operations =
+        setOf(
+            "categories",
+            "yarns",
+            "projects",
+            "project_create",
+            "project_update",
+            "project_delete",
+            "project_title_image_upload",
+            "project_step_image_upload",
+            "project_attachment_upload",
+            "project_attachment_delete",
+            "project_image_delete",
+            "project_title_image_order",
+            "project_step_image_order",
+            "yarn_create",
+            "yarn_update",
+            "yarn_delete",
+            "yarn_photo_upload",
+            "yarn_photo_delete",
+            "yarn_photo_order",
+        )
+
+    fun sanitize(report: SyncFailureReport): SyncFailureReport =
+        report.copy(
+            operation = report.operation.takeIf(operations::contains) ?: "other",
+            httpStatus = report.httpStatus.takeIf { it in 400..599 } ?: 0,
+            stackTrace =
+                report.stackTrace
+                    .take(MAX_STACK_FRAMES)
+                    .map { frame ->
+                        StackTraceElement(
+                            frame.className,
+                            frame.methodName,
+                            frame.fileName?.substringAfterLast('/')?.substringAfterLast('\\'),
+                            frame.lineNumber,
+                        )
+                    }
+                    .toList(),
+        )
+}
+
 /** Removes secrets from free text before it can leave the device. */
 object ErrorReportScrubber {
     private val apiToken = Regex("(?i)\\bsna_[A-Za-z0-9_-]+\\b")
@@ -140,6 +239,9 @@ interface ErrorReporter {
     fun start(config: ErrorReportingConfig)
 
     fun stop()
+
+    /** Reports a handled sync failure without attaching its original exception or message. */
+    fun reportSyncFailure(report: SyncFailureReport)
 }
 
 /** Stands in where the build has no SDK (the Google Play bundle). */
@@ -149,6 +251,8 @@ object NoErrorReporter : ErrorReporter {
     override fun start(config: ErrorReportingConfig) = Unit
 
     override fun stop() = Unit
+
+    override fun reportSyncFailure(report: SyncFailureReport) = Unit
 }
 
 /** Marks the real implementation the error-reporting source set binds, when it is in the build. */

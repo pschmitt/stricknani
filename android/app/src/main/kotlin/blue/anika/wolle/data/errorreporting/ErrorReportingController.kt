@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.errorreporting
 
+import android.util.Log
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -76,6 +77,28 @@ constructor(
                 // Offline or an old server: keep the last known answer.
             }
             applyLocked()
+        }
+    }
+
+    /**
+     * Reapplies the cached consent/configuration before reporting, including during startup races.
+     */
+    suspend fun reportSyncFailure(report: SyncFailureReport) {
+        if (!reporter.supported) {
+            Log.i("SyncReplay", "Sync failure reporting unavailable: SDK not included")
+            return
+        }
+        try {
+            sync()
+            reporter.reportSyncFailure(SyncFailureReportSanitizer.sanitize(report))
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            // Reporting is best-effort and must not change the result of the sync operation.
+            Log.w(
+                "SyncReplay",
+                "Sync failure report could not be queued: cause=${SyncFailureClassifier.classify(failure).tagValue}",
+            )
         }
     }
 

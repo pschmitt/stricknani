@@ -1241,4 +1241,19 @@
     <string name="history_deleted_account">ein gelöschtes Konto</string>
     <string name="sharing_change">Ändern</string>
     <string name="sharing_link_hint">Öffnet sich für Personen, die bereits Zugriff haben. Wähle unten eine Person aus, um ihr Zugriff zu geben.</string>
+    <string name="settings_sync_last_received">Zuletzt vom Server empfangen</string>
+    <string name="settings_sync_pending_count">Änderungen zum Hochladen: %1$d</string>
+    <string name="settings_sync_ready">Sende Änderungen von diesem Gerät und empfange Neues aus deinem Konto.</string>
+    <string name="settings_sync_running">Abgleich läuft…</string>
+    <string name="settings_sync_waiting">Der Abgleich ist vorgemerkt und benötigt eine Netzwerkverbindung. Deine Änderungen bleiben auf diesem Gerät.</string>
+    <string name="settings_sync_retry_scheduled">Das letzte Hochladen ist fehlgeschlagen. Ein automatischer Versuch ist geplant; du kannst es jetzt erneut versuchen.</string>
+    <string name="settings_sync_complete">Abgleich abgeschlossen. Keine Änderungen warten auf das Hochladen.</string>
+    <string name="settings_sync_remaining">Einige Änderungen müssen noch hochgeladen werden. Versuche es erneut.</string>
+    <string name="settings_sync_failed">Abgleich fehlgeschlagen. Deine ausstehenden Änderungen bleiben auf diesem Gerät. Versuche es erneut.</string>
+    <string name="settings_sync_now">Jetzt abgleichen</string>
+    <string name="settings_sync_error_auth">Deine Anmeldung wurde abgelehnt. Melde dich erneut an, um Änderungen hochzuladen.</string>
+    <string name="settings_sync_error_server">Der Server hat einen Fehler gemeldet. Versuche es später erneut.</string>
+    <string name="settings_sync_error_rejected">Der Server hat diese Änderung abgelehnt. Prüfe den Eintrag vor einem neuen Versuch.</string>
+    <string name="settings_sync_error_network">Die Verbindung ist fehlgeschlagen oder hat zu lange gedauert. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="settings_sync_error_unknown">Das Hochladen ist aus unbekanntem Grund fehlgeschlagen. Versuche es erneut; deine Änderung bleibt vorgemerkt.</string>
 </resources>

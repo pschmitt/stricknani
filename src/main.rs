@@ -66,6 +66,9 @@ async fn server_main() -> ExitCode {
     match run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(message) => {
+            // `run` returns static operator-facing reasons. Keep the Sentry
+            // event static too; never attach configuration or request data.
+            sentry::capture_message("server.startup.failed", sentry::Level::Error);
             eprintln!("stricknani-server: {message}");
             ExitCode::FAILURE
         }
@@ -295,6 +298,7 @@ async fn serve() -> Result<(), &'static str> {
                 .await
                 .is_err()
             {
+                sentry::capture_message("media.cleanup.failed", sentry::Level::Error);
                 tracing::warn!(
                     component = "media",
                     operation = "cleanup",
@@ -313,6 +317,7 @@ async fn serve() -> Result<(), &'static str> {
                     .await
                     .is_err()
                 {
+                    sentry::capture_message("archive.job.failed", sentry::Level::Error);
                     tracing::warn!(component = "archive", "archive.job.failed");
                 }
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
@@ -339,10 +344,13 @@ async fn serve() -> Result<(), &'static str> {
         } else {
             http
         };
-        app.layer(http)
-            .layer(sentry::integrations::tower::NewSentryLayer::<
-                axum::extract::Request,
-            >::new_from_top())
+        app.layer(axum::middleware::from_fn(
+            stricknani_server::error_reporting::report_http_errors,
+        ))
+        .layer(http)
+        .layer(sentry::integrations::tower::NewSentryLayer::<
+            axum::extract::Request,
+        >::new_from_top())
     } else {
         app
     };

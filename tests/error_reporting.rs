@@ -8,8 +8,9 @@ use axum::{
     body::{Body, Bytes},
     extract::State,
     http::{Request, StatusCode},
+    middleware::from_fn,
     response::Response,
-    routing::post,
+    routing::{get, post},
 };
 use http_body_util::BodyExt;
 use sha2::{Digest, Sha256};
@@ -139,6 +140,91 @@ async fn unconfigured_instance_hides_the_feature() {
     )
     .await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+async fn internal_server_error() -> StatusCode {
+    StatusCode::INTERNAL_SERVER_ERROR
+}
+
+async fn opted_out_server_error() -> StatusCode {
+    sentry::Hub::current().configure_scope(|scope| {
+        scope.set_tag("stricknani.error_reporting_opt_out", "1");
+    });
+    StatusCode::INTERNAL_SERVER_ERROR
+}
+
+async fn client_error() -> StatusCode {
+    StatusCode::BAD_REQUEST
+}
+
+#[test]
+fn reports_only_sanitized_server_errors_and_keeps_request_opt_out_isolated() {
+    let options =
+        sentry::ClientOptions::new().before_send(stricknani_server::error_reporting::scrub_event);
+    let events = sentry::test::with_captured_events_options(
+        || {
+            tokio::runtime::Builder::new_current_thread()
+                .build()
+                .unwrap()
+                .block_on(async {
+                    let app = Router::new()
+                        .route("/items/{item}", get(internal_server_error))
+                        .route("/opt-out/{item}", get(opted_out_server_error))
+                        .route("/client-error/{item}", get(client_error))
+                        .layer(from_fn(
+                            stricknani_server::error_reporting::report_http_errors,
+                        ))
+                        .layer(sentry::integrations::tower::SentryHttpLayer::new())
+                        .layer(sentry::integrations::tower::NewSentryLayer::<
+                            axum::extract::Request,
+                        >::new_from_top());
+
+                    let normal = app.clone().oneshot(request(
+                        "GET",
+                        "/items/alice%40example.test?token=query-secret",
+                        None,
+                        b"body-secret".to_vec(),
+                    ));
+                    let opted_out =
+                        app.clone()
+                            .oneshot(request("GET", "/opt-out/sample-42", None, vec![]));
+                    let client_error =
+                        app.oneshot(request("GET", "/client-error/sample-43", None, vec![]));
+                    let (normal, opted_out, client_error) =
+                        tokio::join!(normal, opted_out, client_error);
+                    assert_eq!(normal.unwrap().status(), StatusCode::INTERNAL_SERVER_ERROR);
+                    assert_eq!(
+                        opted_out.unwrap().status(),
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    );
+                    assert_eq!(client_error.unwrap().status(), StatusCode::BAD_REQUEST);
+                });
+        },
+        options,
+    );
+
+    assert_eq!(events.len(), 1);
+    let event = &events[0];
+    assert_eq!(event.message.as_deref(), Some("http.server.response_error"));
+    assert_eq!(
+        event.tags.get("http.status_code").map(String::as_str),
+        Some("500")
+    );
+    assert_eq!(
+        event.tags.get("http.method").map(String::as_str),
+        Some("GET")
+    );
+    assert_eq!(
+        event.tags.get("http.route").map(String::as_str),
+        Some("/items/{item}")
+    );
+    assert!(event.request.is_none());
+    let event_text = format!("{event:?}");
+    assert!(!event_text.contains("alice@example.test"));
+    assert!(!event_text.contains("query-secret"));
+    assert!(!event_text.contains("body-secret"));
+    assert!(!event_text.contains("sample-42"));
+    assert!(!event_text.contains("sample-43"));
 }
 
 #[tokio::test]

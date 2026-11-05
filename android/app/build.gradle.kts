@@ -38,6 +38,8 @@ val selfUpdateEnabled =
 // out of the SDK, its source set and the toggle.
 val errorReportingEnabled =
     providers.gradleProperty("errorReporting").map { it.toBoolean() }.orElse(true).get()
+val instrumentationBuildType =
+    providers.gradleProperty("instrumentationBuildType").orElse("debug").get()
 // Debug builds carry the extras (purple branding, debug version label, developer mode on by
 // default). `-PdebugExtras=false` turns them off on a debug build, for Play screenshots.
 val debugExtras = providers.gradleProperty("debugExtras").map { it.toBoolean() }.orElse(true).get()
@@ -53,6 +55,7 @@ android {
     namespace = "blue.anika.wolle"
     compileSdk = 37
     buildToolsVersion = "37.0.0"
+    testBuildType = instrumentationBuildType
 
     defaultConfig {
         applicationId = "blue.anika.wolle"
@@ -120,6 +123,7 @@ android {
             buildConfigField("boolean", "DEBUG_EXTRAS", debugExtras.toString())
         }
         named("release") {
+            applicationIdSuffix = project.findProperty("appIdSuffix") as String?
             buildConfigField("boolean", "DEBUG_EXTRAS", "false")
             isMinifyEnabled = true
             isShrinkResources = true
