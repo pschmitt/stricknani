@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 
-import { fn } from "./lib/common";
+import { check, fn } from "./lib/common";
 import { e2eConfig, launchBrowser, withLiveFixture } from "./lib/harness";
 
 test("project timer edits, runs, persists, and reminds", async () => {
@@ -20,6 +20,29 @@ test("project timer edits, runs, persists, and reminds", async () => {
         .getByRole("heading", { name: "Projects" })
         .waitFor({ state: "visible" });
 
+      await page.goto(`${fixture.origin}/app/account`, {
+        waitUntil: "networkidle",
+      });
+      const timerPreference = page.getByRole("switch", {
+        name: "Project timers",
+      });
+      await timerPreference.waitFor({ state: "visible" });
+      check(
+        await timerPreference.isChecked(),
+        "project timers should default to enabled",
+      );
+      await timerPreference.uncheck();
+      let timerGetCount = 0;
+      page.on("request", (request) => {
+        const url = new URL(request.url());
+        if (
+          request.method() === "GET" &&
+          /\/api\/v2\/projects\/\d+\/timer$/.test(url.pathname)
+        ) {
+          timerGetCount += 1;
+        }
+      });
+
       const projectId = await page.evaluate(
         fn(`async () => {
         const response = await fetch("/api/v2/projects", { credentials: "same-origin" });
@@ -33,6 +56,22 @@ test("project timer edits, runs, persists, and reminds", async () => {
       await page.goto(`${fixture.origin}/app/projects/${projectId}`, {
         waitUntil: "networkidle",
       });
+      check(
+        (await page.locator(".project-timer").count()) === 0 &&
+          timerGetCount === 0,
+        "disabled project timers were visible or requested",
+      );
+      await page.goto(`${fixture.origin}/app/account`, {
+        waitUntil: "networkidle",
+      });
+      await page.getByRole("switch", { name: "Project timers" }).check();
+      await page.goto(`${fixture.origin}/app/projects/${projectId}`, {
+        waitUntil: "networkidle",
+      });
+      check(
+        timerGetCount > 0,
+        "enabling project timers did not load the timer",
+      );
       await page
         .getByRole("heading", { name: "Knitting time" })
         .waitFor({ state: "visible" });
@@ -88,6 +127,26 @@ test("project timer edits, runs, persists, and reminds", async () => {
         .getByRole("heading", { name: "Knitting time" })
         .waitFor({ state: "visible" });
       await page.getByText(/^01:02:0[3-9]$/).waitFor({ state: "visible" });
+
+      await page.route(
+        `**/api/v2/projects/${projectId}/timer`,
+        async (route) => {
+          if (route.request().method() !== "GET") return route.continue();
+          await route.fulfill({ status: 404, body: "" });
+        },
+      );
+      await page.reload({ waitUntil: "networkidle" });
+      await page
+        .getByRole("alert")
+        .filter({ hasText: "Timers are not available on this server yet." })
+        .waitFor({ state: "visible" });
+      check(
+        (await page.locator(".project-timer button").count()) === 0,
+        "unsupported server response left timer actions enabled",
+      );
+      await page.unroute(`**/api/v2/projects/${projectId}/timer`);
+      await page.reload({ waitUntil: "networkidle" });
+      await page.getByText(/^01:02:\d{2}$/).waitFor({ state: "visible" });
     } finally {
       await context.close();
       await browser.close();

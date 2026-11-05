@@ -34,6 +34,7 @@
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import ProjectTimer from "./ProjectTimer.svelte";
+  import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { extraCount, plainTextSummary } from "./facts-summary.ts";
@@ -122,6 +123,9 @@
   const textSizeClass = $derived(textSize.cssClass);
   const canEdit = $derived(mayEdit(project?.access));
   const canManage = $derived(mayManage(project?.access));
+  const projectTimersEnabled = $derived(
+    projectTimerPreference.isEnabled(userId),
+  );
   // OCR and link archiving are owner-scoped on the server: nobody else gets them.
   const ownsIt = $derived(!project?.access || project.access.role === "owner");
   // Linked yarns the project's owner owns: the ones a transfer can move along.
@@ -979,7 +983,12 @@
     {/if}
 
     {#if !adminData && userId !== null}
-      <ProjectTimer projectId={currentProject.id} {locale} {canEdit} />
+      <ProjectTimer
+        projectId={currentProject.id}
+        {locale}
+        {canEdit}
+        enabled={projectTimersEnabled}
+      />
     {/if}
 
     <div class="reader-overview">

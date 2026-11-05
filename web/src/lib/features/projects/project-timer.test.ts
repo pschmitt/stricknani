@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { ApiError } from "#lib/api.ts";
 import {
   currentRunSeconds,
   elapsedSeconds,
+  isUnsupportedTimerError,
   MAX_TIMER_SECONDS,
   parseProjectTimer,
   secondsFromParts,
@@ -43,6 +45,22 @@ describe("project timer values", () => {
         server_time: "2026-11-05T12:00:30Z",
       }),
     ).toThrow();
+  });
+
+  it("classifies only a bare missing timer route as unsupported", () => {
+    expect(
+      isUnsupportedTimerError(
+        new ApiError("Invalid response.", 404, "invalid_response"),
+      ),
+    ).toBe(true);
+    expect(
+      isUnsupportedTimerError(
+        new ApiError("Project not found.", 404, "not_found"),
+      ),
+    ).toBe(false);
+    expect(
+      isUnsupportedTimerError(new ApiError("Sign in.", 401, "unauthorized")),
+    ).toBe(false);
   });
 
   it("adds monotonic time since the server sample only while running", () => {

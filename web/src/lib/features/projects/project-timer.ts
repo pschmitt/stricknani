@@ -10,6 +10,15 @@ export interface ProjectTimer {
 
 export type ProjectTimerAction = "start" | "stop" | "set_total";
 
+/** An older server returns a bare 404 for the timer route it does not know. */
+export function isUnsupportedTimerError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 404 &&
+    error.code === "invalid_response"
+  );
+}
+
 export function parseProjectTimer(value: unknown): ProjectTimer {
   if (
     !isRecord(value) ||

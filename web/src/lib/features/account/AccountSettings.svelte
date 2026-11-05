@@ -26,6 +26,7 @@
   import { theme, setTheme } from "#lib/theme.svelte.ts";
   import { themeChoices, type ThemeChoice } from "#lib/theme.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
+  import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
   import {
     changePassword,
     createApiToken,
@@ -1061,6 +1062,36 @@
           />
         </div>
       </div>
+      {#if userId !== null}
+        <div class="row">
+          <div class="row__text">
+            <label class="row__label" for="pref-project-timers">
+              {t("Project timers", locale)}
+            </label>
+            <p class="row__hint" id="pref-project-timers-hint">
+              {t(
+                "Hides timers and turns off reminders on this device. Running timers, including shared timers, continue until stopped.",
+                locale,
+              )}
+            </p>
+          </div>
+          <div class="row__control">
+            <input
+              id="pref-project-timers"
+              type="checkbox"
+              role="switch"
+              class="switch"
+              aria-describedby="pref-project-timers-hint"
+              checked={projectTimerPreference.isEnabled(userId)}
+              onchange={(event) =>
+                projectTimerPreference.setEnabled(
+                  userId!,
+                  event.currentTarget.checked,
+                )}
+            />
+          </div>
+        </div>
+      {/if}
       {#if profile?.error_reporting_available}
         <div class="row">
           <div class="row__text">

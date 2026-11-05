@@ -9,6 +9,7 @@
     elapsedSeconds,
     currentRunSeconds,
     getProjectTimer,
+    isUnsupportedTimerError,
     secondsFromParts,
     timerParts,
     updateProjectTimer,
@@ -19,13 +20,15 @@
     projectId: number;
     locale: "en" | "de";
     canEdit: boolean;
+    enabled: boolean;
   }
 
-  let { projectId, locale, canEdit }: Props = $props();
+  let { projectId, locale, canEdit, enabled }: Props = $props();
   let timer = $state<TimerValue | null>(null);
   let loading = $state(true);
   let busy = $state(false);
   let error = $state("");
+  let unsupported = $state(false);
   let now = $state(Date.now());
   let sampleTime = $state(0);
   let hours = $state("0");
@@ -60,14 +63,17 @@
 
   $effect(() => {
     const id = projectId;
+    const timersEnabled = enabled;
     const userId = session.data?.user?.id;
     const currentSession = session.data;
     const requestGeneration = ++generation;
     controller?.abort();
+    refreshController?.abort();
     const requestController = new AbortController();
     controller = requestController;
     timer = null;
     busy = false;
+    unsupported = false;
     reminderMinutes = 60;
     reminderAfter = null;
     reminderRun = null;
@@ -106,6 +112,10 @@
     }
     error = "";
     loading = true;
+    if (!timersEnabled) {
+      loading = false;
+      return () => requestController.abort();
+    }
     if (!currentSession?.user || userId === undefined) {
       loading = false;
       error = t("Sign in to use the project timer.", locale);
@@ -135,10 +145,15 @@
           requestController.signal.aborted
         )
           return;
-        error =
-          cause instanceof ApiError
-            ? cause.message
-            : t("The project timer could not be loaded.", locale);
+        if (isUnsupportedTimerError(cause)) {
+          unsupported = true;
+          error = t("Timers are not available on this server yet.", locale);
+        } else {
+          error =
+            cause instanceof ApiError
+              ? cause.message
+              : t("The project timer could not be loaded.", locale);
+        }
       })
       .finally(() => {
         if (requestGeneration === generation) loading = false;
@@ -148,7 +163,7 @@
 
   async function refreshTimer() {
     const current = session.data;
-    if (!current?.user || busy || loading) return;
+    if (!enabled || unsupported || !current?.user || busy || loading) return;
     const requestGeneration = generation;
     const requestId = ++refreshGeneration;
     refreshController?.abort();
@@ -174,8 +189,13 @@
       if (!hasDraft) {
         [hours, minutes, seconds] = timerParts(updated.total_seconds);
       }
-    } catch {
+    } catch (cause) {
       // Keep the last known timer visible; the next focus or poll will retry.
+      if (isUnsupportedTimerError(cause) && requestGeneration === generation) {
+        unsupported = true;
+        timer = null;
+        error = t("Timers are not available on this server yet.", locale);
+      }
     }
   }
 
@@ -238,7 +258,7 @@
   }
 
   $effect(() => {
-    if (!timer || loading) return;
+    if (!enabled || unsupported || !timer || loading) return;
     refreshTick = setInterval(() => void refreshTimer(), 15_000);
     window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
@@ -252,7 +272,7 @@
   });
 
   $effect(() => {
-    if (timer?.started_at) {
+    if (enabled && !unsupported && timer?.started_at) {
       tick = setInterval(() => (now = performance.now()), 1000);
     }
     return () => {
@@ -272,7 +292,15 @@
   async function changeTimer(action: "start" | "stop" | "set_total") {
     const currentSession = session.data;
     const requestGeneration = generation;
-    if (!canEdit || !currentSession?.user || busy || !timer) return;
+    if (
+      !enabled ||
+      unsupported ||
+      !canEdit ||
+      !currentSession?.user ||
+      busy ||
+      !timer
+    )
+      return;
     const totalSeconds = action === "set_total" ? proposedTotal : undefined;
     if (action === "set_total" && totalSeconds === null) return;
     busy = true;
@@ -299,167 +327,177 @@
     } catch (cause) {
       if (requestGeneration !== generation || requestController.signal.aborted)
         return;
-      error =
-        cause instanceof ApiError
-          ? cause.message
-          : t("The project timer could not be updated.", locale);
+      if (isUnsupportedTimerError(cause)) {
+        unsupported = true;
+        timer = null;
+        error = t("Timers are not available on this server yet.", locale);
+      } else {
+        error =
+          cause instanceof ApiError
+            ? cause.message
+            : t("The project timer could not be updated.", locale);
+      }
     } finally {
       if (requestGeneration === generation) busy = false;
     }
   }
 </script>
 
-<section class="project-timer" aria-labelledby="project-timer-title">
-  <div class="timer-face" aria-live="off">
-    <span class="timer-watch"><NavIcon name="audit" /></span>
-    <div>
-      <h2 id="project-timer-title">{t("Knitting time", locale)}</h2>
-      <p
-        class="timer-digits"
-        aria-label={`${parts[0]} ${t("Hours", locale)}, ${parts[1]} ${t("Minutes", locale)}, ${parts[2]} ${t("Seconds", locale)}`}
-      >
-        <span>{parts[0].padStart(2, "0")}</span><b>:</b><span
-          >{parts[1].padStart(2, "0")}</span
-        ><b>:</b><span>{parts[2].padStart(2, "0")}</span>
-      </p>
-      <p class="timer-caption">
-        {timer?.started_at
-          ? t("Time spent on this project", locale)
-          : t("Ready when you are", locale)}
-      </p>
-    </div>
-  </div>
-
-  {#if loading}
-    <p class="timer-status" role="status">{t("Loading timer…", locale)}</p>
-  {:else if error}
-    <p class="timer-error" role="alert">{error}</p>
-  {/if}
-
-  {#if canEdit && timer?.started_at}
-    <label class="reminder-setting"
-      >{t("Running reminder", locale)}
-      <select
-        aria-label={t("Running reminder", locale)}
-        value={reminderMinutes}
-        onchange={(event) => setReminderMinutes(event.currentTarget.value)}
-      >
-        <option value="0">{t("Off", locale)}</option>
-        <option value="30">{t("30 minutes", locale)}</option>
-        <option value="60">{t("1 hour", locale)}</option>
-        <option value="120">{t("2 hours", locale)}</option>
-      </select>
-    </label>
-  {/if}
-
-  {#if reminderDue}
-    <div class="reminder-alert" role="alert">
-      <p>{t("Your knitting timer has been running for a while.", locale)}</p>
-      <div class="timer-actions">
-        <Button
-          class="stop-time"
-          variant="primary"
-          disabled={busy}
-          onclick={() => void changeTimer("stop")}
-          >{t("Stop timer", locale)}</Button
-        >
-        <Button class="save-time" variant="secondary" onclick={snoozeReminder}
-          >{t("Keep timing", locale)}</Button
-        >
+{#if enabled}
+  <section class="project-timer" aria-labelledby="project-timer-title">
+    {#if !unsupported}
+      <div class="timer-face" aria-live="off">
+        <span class="timer-watch"><NavIcon name="audit" /></span>
+        <div>
+          <h2 id="project-timer-title">{t("Knitting time", locale)}</h2>
+          <p
+            class="timer-digits"
+            aria-label={`${parts[0]} ${t("Hours", locale)}, ${parts[1]} ${t("Minutes", locale)}, ${parts[2]} ${t("Seconds", locale)}`}
+          >
+            <span>{parts[0].padStart(2, "0")}</span><b>:</b><span
+              >{parts[1].padStart(2, "0")}</span
+            ><b>:</b><span>{parts[2].padStart(2, "0")}</span>
+          </p>
+          <p class="timer-caption">
+            {timer?.started_at
+              ? t("Time spent on this project", locale)
+              : t("Ready when you are", locale)}
+          </p>
+        </div>
       </div>
-    </div>
-  {/if}
+    {/if}
 
-  {#if timer && canEdit && editing}
-    <form
-      class="timer-controls"
-      onsubmit={(event) => {
-        event.preventDefault();
-        void changeTimer("set_total");
-      }}
-    >
-      <fieldset disabled={busy}>
-        <legend>{t("Adjust total time", locale)}</legend>
-        <label
-          >{t("Hours", locale)}<input
-            aria-label={t("Hours", locale)}
-            inputmode="numeric"
-            type="text"
-            maxlength="9"
-            bind:value={hours}
-          /></label
+    {#if loading}
+      <p class="timer-status" role="status">{t("Loading timer…", locale)}</p>
+    {:else if error}
+      <p class="timer-error" role="alert">{error}</p>
+    {/if}
+
+    {#if canEdit && !unsupported && timer?.started_at}
+      <label class="reminder-setting"
+        >{t("Running reminder", locale)}
+        <select
+          aria-label={t("Running reminder", locale)}
+          value={reminderMinutes}
+          onchange={(event) => setReminderMinutes(event.currentTarget.value)}
         >
-        <span aria-hidden="true">:</span>
-        <label
-          >{t("Minutes", locale)}<input
-            aria-label={t("Minutes", locale)}
-            inputmode="numeric"
-            type="text"
-            maxlength="2"
-            bind:value={minutes}
-          /></label
-        >
-        <span aria-hidden="true">:</span>
-        <label
-          >{t("Seconds", locale)}<input
-            aria-label={t("Seconds", locale)}
-            inputmode="numeric"
-            type="text"
-            maxlength="2"
-            bind:value={seconds}
-          /></label
-        >
-      </fieldset>
+          <option value="0">{t("Off", locale)}</option>
+          <option value="30">{t("30 minutes", locale)}</option>
+          <option value="60">{t("1 hour", locale)}</option>
+          <option value="120">{t("2 hours", locale)}</option>
+        </select>
+      </label>
+    {/if}
+
+    {#if reminderDue}
+      <div class="reminder-alert" role="alert">
+        <p>{t("Your knitting timer has been running for a while.", locale)}</p>
+        <div class="timer-actions">
+          <Button
+            class="stop-time"
+            variant="primary"
+            disabled={busy}
+            onclick={() => void changeTimer("stop")}
+            >{t("Stop timer", locale)}</Button
+          >
+          <Button class="save-time" variant="secondary" onclick={snoozeReminder}
+            >{t("Keep timing", locale)}</Button
+          >
+        </div>
+      </div>
+    {/if}
+
+    {#if timer && !unsupported && canEdit && editing}
+      <form
+        class="timer-controls"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void changeTimer("set_total");
+        }}
+      >
+        <fieldset disabled={busy}>
+          <legend>{t("Adjust total time", locale)}</legend>
+          <label
+            >{t("Hours", locale)}<input
+              aria-label={t("Hours", locale)}
+              inputmode="numeric"
+              type="text"
+              maxlength="9"
+              bind:value={hours}
+            /></label
+          >
+          <span aria-hidden="true">:</span>
+          <label
+            >{t("Minutes", locale)}<input
+              aria-label={t("Minutes", locale)}
+              inputmode="numeric"
+              type="text"
+              maxlength="2"
+              bind:value={minutes}
+            /></label
+          >
+          <span aria-hidden="true">:</span>
+          <label
+            >{t("Seconds", locale)}<input
+              aria-label={t("Seconds", locale)}
+              inputmode="numeric"
+              type="text"
+              maxlength="2"
+              bind:value={seconds}
+            /></label
+          >
+        </fieldset>
+        <div class="timer-actions">
+          <Button
+            type="submit"
+            class="save-time"
+            variant="primary"
+            disabled={busy ||
+              proposedTotal === null ||
+              proposedTotal === timer.total_seconds}
+            >{t("Save time", locale)}</Button
+          >
+          <Button
+            class="save-time"
+            variant="secondary"
+            disabled={busy}
+            onclick={cancelEdit}>{t("Cancel", locale)}</Button
+          >
+        </div>
+      </form>
+    {:else if !unsupported && timer?.started_at && canEdit}
       <div class="timer-actions">
-        <Button
-          type="submit"
-          class="save-time"
-          variant="primary"
-          disabled={busy ||
-            proposedTotal === null ||
-            proposedTotal === timer.total_seconds}
-          >{t("Save time", locale)}</Button
-        >
         <Button
           class="save-time"
           variant="secondary"
           disabled={busy}
-          onclick={cancelEdit}>{t("Cancel", locale)}</Button
+          onclick={beginEdit}>{t("Edit time", locale)}</Button
+        >
+        <Button
+          class="stop-time"
+          variant="primary"
+          disabled={busy}
+          onclick={() => void changeTimer("stop")}>{t("Stop", locale)}</Button
         >
       </div>
-    </form>
-  {:else if timer?.started_at && canEdit}
-    <div class="timer-actions">
-      <Button
-        class="save-time"
-        variant="secondary"
-        disabled={busy}
-        onclick={beginEdit}>{t("Edit time", locale)}</Button
-      >
-      <Button
-        class="stop-time"
-        variant="primary"
-        disabled={busy}
-        onclick={() => void changeTimer("stop")}>{t("Stop", locale)}</Button
-      >
-    </div>
-  {:else if timer && canEdit}
-    <div class="timer-actions">
-      <Button
-        class="save-time"
-        variant="secondary"
-        disabled={busy}
-        onclick={beginEdit}>{t("Edit time", locale)}</Button
-      >
-      <Button
-        class="start-time"
-        variant="primary"
-        disabled={busy}
-        onclick={() => void changeTimer("start")}>{t("Start", locale)}</Button
-      >
-    </div>
-  {/if}
-</section>
+    {:else if !unsupported && timer && canEdit}
+      <div class="timer-actions">
+        <Button
+          class="save-time"
+          variant="secondary"
+          disabled={busy}
+          onclick={beginEdit}>{t("Edit time", locale)}</Button
+        >
+        <Button
+          class="start-time"
+          variant="primary"
+          disabled={busy}
+          onclick={() => void changeTimer("start")}>{t("Start", locale)}</Button
+        >
+      </div>
+    {/if}
+  </section>
+{/if}
 
 <style>
   .project-timer {
