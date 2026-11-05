@@ -20,6 +20,14 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
+  import {
+    isAccessLost,
+    isRecipient,
+    mayEdit,
+    mayManage,
+  } from "#lib/access.ts";
+  import AccessNotice from "#lib/features/sharing/AccessNotice.svelte";
+  import ShareControl from "#lib/features/sharing/ShareControl.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
@@ -110,6 +118,14 @@
     session.data?.capabilities.archive_state === true,
   );
   const textSizeClass = $derived(textSize.cssClass);
+  const canEdit = $derived(mayEdit(project?.access));
+  const canManage = $derived(mayManage(project?.access));
+  // Linked yarns the project's owner owns: the ones a transfer can move along.
+  const movableYarnCount = $derived(
+    project?.owner
+      ? yarns.filter((yarn) => yarn.owner?.id === project?.owner?.id).length
+      : 0,
+  );
   const orderedSteps = $derived(
     project
       ? [...project.steps].sort(
@@ -146,6 +162,39 @@
   const currentStepIndex = $derived(
     orderedSteps.findIndex((step) => step.id === currentStepId),
   );
+
+  async function leaveForLostAccess() {
+    if (userId !== null)
+      publishFeedback({
+        ownerId: userId,
+        kind: "error",
+        message: t("You no longer have access to this project.", locale),
+      });
+    await goto(resolve("/projects"));
+  }
+
+  async function leftProject() {
+    if (userId !== null)
+      publishFeedback({
+        ownerId: userId,
+        kind: "success",
+        message: t("You left the project.", locale),
+      });
+    await goto(resolve("/projects"));
+  }
+
+  function transferredProject(result: { new_owner: { name: string } }) {
+    if (userId !== null)
+      publishFeedback({
+        ownerId: userId,
+        kind: "success",
+        message: t(
+          "{name} now owns this project. You are an editor.",
+          locale,
+        ).replace("{name}", result.new_owner.name),
+      });
+    reload += 1;
+  }
 
   function openDeleteDialog() {
     if (adminData || !session.data?.user || !project || deleting) return;
@@ -350,6 +399,10 @@
     } catch (error) {
       if (!isCurrentFavorite(generation, currentProject.id, currentUserId))
         return;
+      if (isAccessLost(error)) {
+        void leaveForLostAccess();
+        return;
+      }
       favoriteError =
         error instanceof ApiError && error.status === 404
           ? t("This project is no longer available.", locale)
@@ -775,6 +828,8 @@
               {locale}
               onclick={() => void toggleFavorite()}
             />
+          {/if}
+          {#if !adminData && canEdit}
             <a
               class="reader-edit-link ui-button ui-button--primary ui-button--md"
               href={resolve("/projects/[id]/edit", {
@@ -857,7 +912,7 @@
                       : t("Print pattern", locale)}</span
                   >
                 </button>
-                {#if !adminData}
+                {#if !adminData && canManage}
                   <hr class="action-overflow__divider" />
                   <button
                     class="action-overflow__item action-overflow__item--danger"
@@ -883,11 +938,33 @@
         </div>
       {/snippet}
     </PageHeader>
-    {#if !adminData && foreignOwner(currentProject.owner, userId)}
+    {#if !adminData && currentProject.owner && currentProject.access && isRecipient(currentProject.access)}
+      <AccessNotice
+        kind="projects"
+        resourceId={currentProject.id}
+        owner={currentProject.owner}
+        access={currentProject.access}
+        {locale}
+        onleft={() => void leftProject()}
+      />
+    {:else if !adminData && foreignOwner(currentProject.owner, userId)}
       {@const foreign = foreignOwner(currentProject.owner, userId)}
       {#if foreign}
         <ForeignOwnerBanner kind="project" owner={foreign} {locale} />
       {/if}
+    {/if}
+    {#if !adminData && canManage && currentProject.access?.can_manage}
+      <ShareControl
+        kind="projects"
+        resourceId={currentProject.id}
+        name={currentProject.name}
+        {locale}
+        ownerId={currentProject.owner?.id ?? userId ?? 0}
+        linkedYarnCount={currentProject.yarn_ids.length}
+        {movableYarnCount}
+        ontransferred={transferredProject}
+        onaccesslost={() => void leaveForLostAccess()}
+      />
     {/if}
     {#if printError}
       <p class="print-error" role="alert">{printError}</p>
@@ -1292,7 +1369,7 @@
               detailHasArchive={project.link_archive !== null}
               ownerId={userId}
               {locale}
-              enabled={canArchive}
+              enabled={canArchive && canManage}
               readStateEnabled={canReadArchiveState}
               onArchived={refreshAfterArchive}
             />

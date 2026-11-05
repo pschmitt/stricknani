@@ -13,6 +13,14 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
+  import {
+    isAccessLost,
+    isRecipient,
+    mayEdit,
+    mayManage,
+  } from "#lib/access.ts";
+  import AccessNotice from "#lib/features/sharing/AccessNotice.svelte";
+  import ShareControl from "#lib/features/sharing/ShareControl.svelte";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -83,6 +91,8 @@
   );
   const yarnId = $derived(id);
   const textSizeClass = $derived(textSize.cssClass);
+  const canEdit = $derived(mayEdit(yarn?.access));
+  const canManage = $derived(mayManage(yarn?.access));
 
   $effect(() => {
     const id = yarnId;
@@ -195,6 +205,39 @@
     await refreshYarn(currentYarn.id, currentOwnerId);
   }
 
+  async function leaveForLostAccess() {
+    if (userId !== null)
+      publishFeedback({
+        ownerId: userId,
+        kind: "error",
+        message: t("You no longer have access to this yarn.", locale),
+      });
+    await goto(resolve("/yarns"));
+  }
+
+  async function leftYarn() {
+    if (userId !== null)
+      publishFeedback({
+        ownerId: userId,
+        kind: "success",
+        message: t("You left the yarn.", locale),
+      });
+    await goto(resolve("/yarns"));
+  }
+
+  function transferredYarn(result: { new_owner: { name: string } }) {
+    if (userId !== null)
+      publishFeedback({
+        ownerId: userId,
+        kind: "success",
+        message: t(
+          "{name} now owns this yarn. You are an editor.",
+          locale,
+        ).replace("{name}", result.new_owner.name),
+      });
+    reload += 1;
+  }
+
   function openDeleteDialog() {
     if (!session.data?.user || !yarn || deleting) return;
     deleteError = "";
@@ -249,6 +292,10 @@
       yarn = updated;
     } catch (error) {
       if (!isCurrentResource(id, ownerId, generation)) return;
+      if (isAccessLost(error)) {
+        void leaveForLostAccess();
+        return;
+      }
       actionError =
         error instanceof Error
           ? error.message
@@ -347,13 +394,15 @@
             {locale}
             onclick={() => void toggleFavorite()}
           />
-          <a
-            class="primary-action ui-button ui-button--primary ui-button--md"
-            href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
-            ><ActionLabel icon="action-update"
-              >{t("Edit yarn", locale)}</ActionLabel
-            ></a
-          >
+          {#if canEdit}
+            <a
+              class="primary-action ui-button ui-button--primary ui-button--md"
+              href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
+              ><ActionLabel icon="action-update"
+                >{t("Edit yarn", locale)}</ActionLabel
+              ></a
+            >
+          {/if}
           <ActionOverflow label={t("More actions", locale)}>
             {#snippet children(close)}
               <div class="action-overflow__section">
@@ -417,19 +466,21 @@
                   <NavIcon name="print" />
                   <span>{t("Print yarn", locale)}</span>
                 </button>
-                <hr class="action-overflow__divider" />
-                <button
-                  class="action-overflow__item action-overflow__item--danger"
-                  role="menuitem"
-                  type="button"
-                  onclick={() => {
-                    close();
-                    openDeleteDialog();
-                  }}
-                >
-                  <NavIcon name="action-delete" />
-                  <span>{t("Delete yarn", locale)}</span>
-                </button>
+                {#if canManage}
+                  <hr class="action-overflow__divider" />
+                  <button
+                    class="action-overflow__item action-overflow__item--danger"
+                    role="menuitem"
+                    type="button"
+                    onclick={() => {
+                      close();
+                      openDeleteDialog();
+                    }}
+                  >
+                    <NavIcon name="action-delete" />
+                    <span>{t("Delete yarn", locale)}</span>
+                  </button>
+                {/if}
               </div>
             {/snippet}
           </ActionOverflow>
@@ -437,11 +488,31 @@
       {/snippet}
     </PageHeader>
 
-    {#if foreignOwner(currentYarn.owner, userId)}
+    {#if currentYarn.owner && currentYarn.access && isRecipient(currentYarn.access)}
+      <AccessNotice
+        kind="yarns"
+        resourceId={currentYarn.id}
+        owner={currentYarn.owner}
+        access={currentYarn.access}
+        {locale}
+        onleft={() => void leftYarn()}
+      />
+    {:else if foreignOwner(currentYarn.owner, userId)}
       {@const foreign = foreignOwner(currentYarn.owner, userId)}
       {#if foreign}
         <ForeignOwnerBanner kind="yarn" owner={foreign} {locale} />
       {/if}
+    {/if}
+    {#if canManage && currentYarn.access?.can_manage}
+      <ShareControl
+        kind="yarns"
+        resourceId={currentYarn.id}
+        name={currentYarn.name}
+        {locale}
+        ownerId={currentYarn.owner?.id ?? userId ?? 0}
+        ontransferred={transferredYarn}
+        onaccesslost={() => void leaveForLostAccess()}
+      />
     {/if}
 
     {#if actionError}<div class="notice-error" role="alert">
@@ -616,7 +687,7 @@
             detailHasArchive={yarn.link_archive !== null}
             ownerId={userId}
             {locale}
-            enabled={canArchive}
+            enabled={canArchive && canManage}
             readStateEnabled={canReadArchiveState}
             onArchived={refreshCurrentYarn}
           />

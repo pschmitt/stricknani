@@ -1,5 +1,6 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import { accessField, type ResourceAccess } from "#lib/access.ts";
 import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
 
@@ -14,6 +15,8 @@ export interface YarnSummary {
   preview_url: string | null;
   /** Who owns the yarn; absent on responses that predate owner info. */
   owner?: ResourceOwner | null;
+  /** What the signed-in user may do with it; absent on responses that predate sharing. */
+  access?: ResourceAccess | null;
 }
 
 export interface YarnPhoto {
@@ -330,6 +333,7 @@ export function parseYarnSummary(value: unknown): YarnSummary {
     updated_at: value.updated_at,
     preview_url: value.preview_url,
     ...ownerField(value.owner),
+    ...accessField(value.access),
   };
 }
 
@@ -394,6 +398,7 @@ export function parseYarnDetail(value: unknown): YarnDetail {
       photos[0]?.thumbnail_url ??
       null,
     ...ownerField(value.owner),
+    ...accessField(value.access),
     description: value.description,
     description_html: value.description_html,
     dye_lot: value.dye_lot,

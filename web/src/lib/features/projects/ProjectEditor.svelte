@@ -21,6 +21,13 @@
   import YarnPicker from "./YarnPicker.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
+  import {
+    isAccessLost,
+    isAccessLowered,
+    mayEdit,
+    mayManage,
+  } from "#lib/access.ts";
+  import { listYarnCandidates } from "#lib/features/sharing/sharing-api.ts";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
   import {
     applyOptimisticReorder,
@@ -262,6 +269,10 @@
   // that owner, never to the administrator.
   const foreignProjectOwner = $derived(foreignOwner(project?.owner, userId));
   const foreignProjectOwnerId = $derived(foreignProjectOwner?.id ?? null);
+  // An editor of a shared project links only the owner's yarns, through a dedicated list.
+  const candidateProjectId = $derived(
+    project?.access?.role === "editor" ? project.id : null,
+  );
 
   $effect(() => {
     const ownerId = userId;
@@ -314,6 +325,7 @@
     const ownerId = userId;
     const query = yarnQuery;
     const foreignId = foreignProjectOwnerId;
+    const candidatesFor = candidateProjectId;
     const generation = ++yarnGeneration;
     if (ownerId === null) {
       yarnResults = [];
@@ -331,22 +343,42 @@
     yarnLoading = true;
     yarnSearchError = "";
     const params = new URLSearchParams({ q: query.trim() });
-    void listYarns(
-      params.toString(),
-      controller.signal,
-      foreignId === null
-        ? { scope: "mine" }
-        : { scope: "all", ownerId: foreignId },
-    )
-      .then((result) => {
+    const search: Promise<YarnSummary[]> =
+      candidatesFor !== null
+        ? listYarnCandidates(
+            candidatesFor,
+            query.trim(),
+            1,
+            controller.signal,
+          ).then((page) =>
+            page.items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              brand: item.brand,
+              colorway: item.colorway,
+              weight_category: item.weight_category,
+              is_favorite: false,
+              updated_at: "",
+              preview_url: null,
+            })),
+          )
+        : listYarns(
+            params.toString(),
+            controller.signal,
+            foreignId === null
+              ? { scope: "mine" }
+              : { scope: "all", ownerId: foreignId },
+          ).then((page) => page.data);
+    void search
+      .then((items) => {
         if (
           controller.signal.aborted ||
           yarnGeneration !== generation ||
           userId !== ownerId
         )
           return;
-        yarnResults = result.data;
-        for (const yarn of result.data) {
+        yarnResults = items;
+        for (const yarn of items) {
           selectedYarnNames[yarn.id] = yarn.name;
         }
       })
@@ -677,6 +709,16 @@
         }
         serverError = t(
           "This project changed elsewhere. Your edits are still here.",
+          locale,
+        );
+      } else if (isAccessLost(error)) {
+        serverError = t(
+          "You no longer have access to this project. Your changes are still here.",
+          locale,
+        );
+      } else if (isAccessLowered(error)) {
+        serverError = t(
+          "You can no longer edit this project. Your changes are still here.",
           locale,
         );
       } else if (error instanceof ApiError && error.status === 422) {
@@ -1150,6 +1192,13 @@
       <p>{loadError}</p>
       <a href={resolve("/projects")}>{t("Back to projects", locale)}</a>
     </div>
+  {:else if project && !mayEdit(project.access)}
+    <div class="notice" role="status">
+      <p>{t("You can view this project but not edit it.", locale)}</p>
+      <a href={resolve("/projects/[id]", { id: String(project.id) })}
+        >{t("Back to the project", locale)}</a
+      >
+    </div>
   {:else}
     {#if conflictProject}
       <section class="conflict-panel" aria-labelledby="conflict-heading">
@@ -1516,7 +1565,7 @@
           </details>
         </fieldset>
 
-        {#if project}
+        {#if project && mayManage(project.access)}
           <section class="danger-zone" aria-labelledby="danger-zone-heading">
             <div>
               <h2 id="danger-zone-heading">{t("Danger zone", locale)}</h2>
