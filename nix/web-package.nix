@@ -8,7 +8,7 @@
 
 buildNpmPackage {
   pname = "stricknani-web";
-  version = "1.2.1";
+  version = "1.2.2";
   src = ../web;
   nodejs = nodejs_26;
   npmDepsHash = "sha256-pJX7hGLc2WBigggYTlJnq5+jpKSml/9Guwo+ybZ1LWI=";

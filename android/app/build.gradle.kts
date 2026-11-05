@@ -140,6 +140,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (instrumentationBuildType == "release") {
+                proguardFiles("src/minifiedAndroidTest/proguard-rules.pro")
+            }
             signingConfig = signingConfigs.getByName("debug")
         }
     }
