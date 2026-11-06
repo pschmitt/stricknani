@@ -27,7 +27,8 @@ let
 in
 rustPlatform.buildRustPackage {
   pname = "stricknani-server-core";
-  version = "1.3.0";
+  # Single source of the release version.
+  version = (lib.importTOML ../Cargo.toml).package.version;
   src = rustSource;
   cargoLock.lockFile = "${rustSource}/Cargo.lock";
 

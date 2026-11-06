@@ -1,3 +1,2 @@
-import packageMetadata from "../../package.json";
-
-export const appVersion = `v${packageMetadata.version}`;
+/** The release version, from Cargo.toml at build time (see vite.config.ts). */
+export const appVersion = `v${__STRICKNANI_VERSION__}`;

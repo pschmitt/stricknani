@@ -6,14 +6,19 @@
   gitRevision ? "",
 }:
 
-buildNpmPackage {
+buildNpmPackage rec {
   pname = "stricknani-web";
-  version = "1.3.0";
+  # Single source of the release version.
+  version = (lib.importTOML ../Cargo.toml).package.version;
   src = ../web;
   nodejs = nodejs_26;
-  npmDepsHash = "sha256-ZKSYmPmTQFZWNnXa+z0GemK8/zAoipgyMaZbzUbzRjM=";
+  npmDepsHash = "sha256-lyOeNhn1waFkyKUFW2q0pYFb7/TRguUnW467RKI6QSQ=";
   npmBuildScript = "build";
-  env.STRICKNANI_GIT_REVISION = gitRevision;
+  env = {
+    STRICKNANI_GIT_REVISION = gitRevision;
+    # web/ alone has no Cargo.toml; vite.config.ts reads the version from here.
+    STRICKNANI_VERSION = version;
+  };
   doCheck = true;
   checkPhase = ''
     runHook preCheck

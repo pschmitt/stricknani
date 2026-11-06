@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import adapter from "@sveltejs/adapter-static";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
@@ -38,12 +39,27 @@ function gitRevision(): string {
   }
 }
 
+/**
+ * The release version. Cargo.toml at the repository root is the single source
+ * for the server, the web app and the Nix packages. The Nix build of web/ has
+ * no Cargo.toml and passes STRICKNANI_VERSION instead.
+ */
+function appVersion(): string {
+  const fromEnv = (process.env.STRICKNANI_VERSION ?? "").trim();
+  if (fromEnv) return fromEnv;
+  const cargo = readFileSync(new URL("../Cargo.toml", import.meta.url), "utf8");
+  const match = /^\[package\][^[]*?^version\s*=\s*"([^"]+)"/ms.exec(cargo);
+  if (!match) throw new Error("Cargo.toml has no [package] version");
+  return match[1];
+}
+
 export default defineConfig({
   test: {
     include: ["src/**/*.{test,spec}.ts", "e2e/lib/**/*.test.ts"],
   },
   define: {
     __STRICKNANI_GIT_REVISION__: JSON.stringify(gitRevision()),
+    __STRICKNANI_VERSION__: JSON.stringify(appVersion()),
   },
   plugins: [
     sveltekit({

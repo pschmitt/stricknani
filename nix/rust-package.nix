@@ -21,7 +21,8 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "stricknani-server";
-  version = "1.3.0";
+  # Single source of the release version.
+  version = (lib.importTOML ../Cargo.toml).package.version;
   dontUnpack = true;
   nativeBuildInputs = [ makeWrapper ];
 

@@ -40,18 +40,22 @@ To cut a release:
      Sentry MCP): go through the unresolved issues. Fix real errors in this
      release; comment on and resolve test or verification events; never leave
      an issue unacknowledged.
-2. Make sure `just check` passes and CI on the default branch is green.
-3. Tag the release commit with a semantic version and push the tag:
+2. Set the version in `Cargo.toml` (`[package] version`), the single source
+   for the server, the web app and the Nix packages, and let cargo update
+   `Cargo.lock` (any cargo command, e.g. `cargo metadata --offline`). Android
+   takes its version name from the tag.
+3. Make sure `just check` passes and CI on the default branch is green.
+4. Tag the release commit with a semantic version and push the tag:
 
    ```sh
    git tag -s v1.2.3 -m "v1.2.3"
    git push origin v1.2.3
    ```
 
-4. Watch the Release and Play Store Release workflows. The APK version name is
+5. Watch the Release and Play Store Release workflows. The APK version name is
    taken from the tag; the Play version resolver rejects tags that are not
    semantic versions.
-5. Check the release page: four release APKs, `SHA256SUMS`, and release notes
+6. Check the release page: four release APKs, `SHA256SUMS`, and release notes
    that list the Android changes since the previous tag.
 
 The release workflow needs the repository secrets `CI_KEYSTORE_BASE64`,
