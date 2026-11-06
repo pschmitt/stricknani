@@ -175,6 +175,10 @@ jobs:
         uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
 
       - name: Run Android journeys
+        # The journeys take a few minutes. The emulator action can hang while shutting the
+        # emulator down after they pass (seen 2026-11-06); fail fast so a rerun is cheap instead
+        # of waiting for the 90-minute job timeout.
+        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34

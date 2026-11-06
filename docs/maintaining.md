@@ -39,7 +39,10 @@ To cut a release:
    - **Sentry** (sentry.io, org `brknlol`, project `stricknani`, through the
      Sentry MCP): go through the unresolved issues. Fix real errors in this
      release; comment on and resolve test or verification events; never leave
-     an issue unacknowledged.
+     an issue unacknowledged. Release checks report with the environment
+     `release-verification`, which is hidden in Sentry's default views; give
+     manual test events that environment too. Release builds upload their R8
+     mapping (secret `SENTRY_AUTH_TOKEN`), so Android stack traces are readable.
 2. Set the version in `Cargo.toml` (`[package] version`), the single source
    for the server, the web app and the Nix packages, and let cargo update
    `Cargo.lock` (any cargo command, e.g. `cargo metadata --offline`). Android

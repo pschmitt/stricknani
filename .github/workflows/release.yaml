@@ -183,6 +183,8 @@ jobs:
           CI_KEYSTORE_PASSWORD: ${{ secrets.CI_KEYSTORE_PASSWORD }}
           CI_KEY_ALIAS: ${{ secrets.CI_KEY_ALIAS }}
           CI_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
+          # Uploads the release R8 mapping to Sentry (see android/app/build.gradle.kts).
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           ./gradlew \
             ${{ steps.params.outputs.include_debug == 'true' && ':app:assembleDebug' || '' }} \

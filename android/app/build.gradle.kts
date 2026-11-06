@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.sentry) apply false
 }
 
 ksp {
@@ -271,4 +272,26 @@ dependencies {
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.fastlane.screengrab)
+}
+
+// R8 mappings for Sentry: in minified builds the plugin embeds a ProGuard UUID, and when CI
+// provides SENTRY_AUTH_TOKEN it uploads the mapping under it, so release stack traces read as
+// source. Everything else it offers (installing the SDK, bytecode instrumentation, source context,
+// dependency reports, telemetry) stays off: the app sets the SDK up itself and sends nothing extra.
+if (errorReportingEnabled) {
+    apply(plugin = "io.sentry.android.gradle")
+    extensions.configure<io.sentry.android.gradle.extensions.SentryPluginExtension> {
+        org.set("brknlol")
+        projectName.set("stricknani")
+        includeProguardMapping.set(true)
+        autoUploadProguardMapping.set(!System.getenv("SENTRY_AUTH_TOKEN").isNullOrBlank())
+        uploadNativeSymbols.set(false)
+        includeNativeSources.set(false)
+        includeSourceContext.set(false)
+        includeDependenciesReport.set(false)
+        telemetry.set(false)
+        ignoredBuildTypes.set(setOf("debug"))
+        tracingInstrumentation { enabled.set(false) }
+        autoInstallation { enabled.set(false) }
+    }
 }

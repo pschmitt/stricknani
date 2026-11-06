@@ -50,6 +50,7 @@ retrofit-kotlinx-serialization-converter = "1.0.0"
 shizuku = "13.1.5"
 # Optional error reporting (GitHub APK builds only; see app/build.gradle.kts errorReporting).
 sentry = "8.63.0"
+sentry-gradle-plugin = "6.24.0"
 timber = "5.0.1"
 zxing-core = "3.5.4"
 
@@ -126,3 +127,4 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+sentry = { id = "io.sentry.android.gradle", version.ref = "sentry-gradle-plugin" }
