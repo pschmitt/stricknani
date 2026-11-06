@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onDestroy, untrack } from "svelte";
+  import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { session } from "#lib/session.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
+  import { webNotifications } from "#lib/web-notifications.svelte.ts";
   import {
     elapsedSeconds,
     currentRunSeconds,
@@ -222,6 +224,23 @@
     reminderAfter = minutesValue ? runSeconds + minutesValue * 60 : null;
     saveReminderSettings();
   }
+
+  // One browser notification per due reminder, when this tab is not in view;
+  // "Keep timing" arms the next one. The in-page alert covers a visible tab.
+  let notifiedReminder: string | null = null;
+  $effect(() => {
+    if (!reminderDue || !timer?.started_at) return;
+    const key = `${projectId}:${timer.started_at}:${reminderAfter ?? reminderMinutes * 60}`;
+    if (notifiedReminder === key) return;
+    notifiedReminder = key;
+    if (document.visibilityState === "visible" && document.hasFocus()) return;
+    void webNotifications.show({
+      title: t("Project timer is still running", locale),
+      body: t("Open the project to stop the timer or keep timing.", locale),
+      tag: `project-timer-${projectId}`,
+      path: resolve("/projects/[id]", { id: String(projectId) }),
+    });
+  });
 
   function snoozeReminder() {
     reminderAfter = runSeconds + reminderMinutes * 60;

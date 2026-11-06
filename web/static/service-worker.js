@@ -50,6 +50,46 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// A notification opens what it is about. An open app tab is focused and
+// navigates in-app (its unsaved-changes guard still applies); without one, a
+// new window opens on that path. Only same-origin app paths are accepted.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const raw = event.notification.data?.path;
+  let target = new URL(APP_PREFIX, self.location.origin);
+  if (typeof raw === "string" && raw.startsWith(APP_PREFIX)) {
+    const candidate = new URL(raw, self.location.origin);
+    if (
+      candidate.origin === self.location.origin &&
+      candidate.pathname.startsWith(APP_PREFIX)
+    ) {
+      target = candidate;
+    }
+  }
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const tab =
+        windows.find((client) => client.focused) ??
+        windows.find((client) =>
+          new URL(client.url).pathname.startsWith(APP_PREFIX),
+        );
+      if (tab) {
+        await tab.focus();
+        tab.postMessage({
+          type: "OPEN_PATH",
+          path: `${target.pathname}${target.search}`,
+        });
+        return;
+      }
+      await self.clients.openWindow(target.href);
+    })(),
+  );
+});
+
 // CacheStorage lists caches in creation order, and install recreates this
 // version's cache, so the last names are the newest versions.
 async function pruneOldCaches() {

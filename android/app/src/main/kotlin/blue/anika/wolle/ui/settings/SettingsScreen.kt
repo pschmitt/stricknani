@@ -1,5 +1,9 @@
 package blue.anika.wolle.ui.settings
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -107,6 +112,7 @@ fun SettingsScreen(
                         projectTimersEnabled,
                         settingsViewModel::setProjectTimersEnabled,
                     )
+                    NotificationsRow()
                 }
             }
             item {
@@ -144,6 +150,37 @@ private fun ProjectTimersRow(checked: Boolean, onChange: (Boolean) -> Unit) {
         headlineContent = { Text(stringResource(R.string.settings_project_timers_title)) },
         supportingContent = { Text(stringResource(R.string.settings_project_timers_help)) },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+    )
+}
+
+/** The web's "Notifications" setting; on Android the system owns it, so this opens it. */
+@Composable
+private fun NotificationsRow() {
+    val context = LocalContext.current
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth().testTag("more-notifications").clickable {
+                val appSettings =
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    context.startActivity(appSettings)
+                } catch (_: ActivityNotFoundException) {
+                    context.startActivity(
+                        Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", context.packageName, null),
+                            )
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }
+            },
+        headlineContent = { Text(stringResource(R.string.settings_notifications_title)) },
+        supportingContent = { Text(stringResource(R.string.settings_notifications_help)) },
+        trailingContent = {
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+        },
     )
 }
 

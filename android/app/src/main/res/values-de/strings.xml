@@ -135,6 +135,8 @@
     <string name="project_timer_notification_text">Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.</string>
     <string name="settings_project_timers_title">Projekt-Timer</string>
     <string name="settings_project_timers_help">Blendet Timer aus und schaltet Erinnerungen auf diesem Gerät ab. Laufende Timer, auch geteilte, laufen weiter, bis sie gestoppt werden.</string>
+    <string name="settings_notifications_title">Benachrichtigungen</string>
+    <string name="settings_notifications_help">Timer-Erinnerungen, Änderungen von deinen anderen Geräten und Updates. Öffnet die Systemeinstellungen.</string>
     <string name="notes_close">Notizen schließen</string>
     <string name="notes_state_expanded">Notizen, geöffnet</string>
     <string name="notes_state_collapsed">Notizen, zugeklappt</string>

@@ -136,6 +136,8 @@
     <string name="project_timer_notification_text">Open the project to stop the timer or keep timing.</string>
     <string name="settings_project_timers_title">Project timers</string>
     <string name="settings_project_timers_help">Hides timers and turns off reminders on this device. Running timers, including shared timers, continue until stopped.</string>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_help">Timer reminders, changes from your other devices and updates. Opens the system settings.</string>
     <string name="notes_close">Close notes</string>
     <string name="notes_state_expanded">Notes, expanded</string>
     <string name="notes_state_collapsed">Notes, collapsed</string>
