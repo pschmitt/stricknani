@@ -4207,7 +4207,7 @@ dependencies = [
  "image",
  "lopdf",
  "openidconnect",
- "p256 0.13.2",
+ "p256 0.14.0",
  "pulldown-cmark",
  "rand 0.10.3",
  "regex",

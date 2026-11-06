@@ -42,7 +42,7 @@ tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "fs", "
 tower-http = { version = "0.7", features = ["fs"] }
 # Web Push: RFC 8291 encryption; VAPID JWTs are signed with p256 (same version).
 http = "1"
-p256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+p256 = { version = "0.14", default-features = false, features = ["ecdsa", "std"] }
 web-push-native = { version = "0.5", default-features = false }
 
 [dev-dependencies]
