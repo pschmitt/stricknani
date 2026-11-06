@@ -812,11 +812,20 @@ async function runAcceptance(
         !workerText.includes("__APP_"),
       "Rust did not serve the generated versioned worker",
     );
+    // A notification click may look for an open app tab to focus; nothing
+    // else in the worker (install, activation, updates) may ask other tabs.
+    const notificationClick =
+      /self\.addEventListener\("notificationclick",[\s\S]*?\n\}\);\n/;
     check(
-      countOccurrences(workerText, "self.skipWaiting()") === 1 &&
-        countOccurrences(workerText, "self.clients.claim()") === 1 &&
-        !workerText.includes("PREPARE_UPDATE") &&
-        !workerText.includes("matchAll("),
+      notificationClick.test(workerText),
+      "app worker has no notification click handler",
+    );
+    const updateText = workerText.replace(notificationClick, "");
+    check(
+      countOccurrences(updateText, "self.skipWaiting()") === 1 &&
+        countOccurrences(updateText, "self.clients.claim()") === 1 &&
+        !updateText.includes("PREPARE_UPDATE") &&
+        !updateText.includes("matchAll("),
       "app worker does not take over on its own or still asks other tabs",
     );
 
