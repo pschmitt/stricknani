@@ -38,6 +38,13 @@ on:
       - "Dockerfile"
       - ".github/workflows/container.yaml"
 
+concurrency:
+  # Pull requests: a newer push cancels this run. main publishes (registry /
+  # cache), so a running publish finishes; GitHub keeps only the newest
+  # pending run, so intermediate commits are skipped.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}

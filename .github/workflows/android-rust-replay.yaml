@@ -25,8 +25,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: android-rust-replay-${{ github.ref }}
-  cancel-in-progress: false
+  # A newer push to the same branch or pull request supersedes this run;
+  # manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -17,6 +17,12 @@ on:
       - '.github/workflows/android-lint.yaml'
   workflow_dispatch:
 
+concurrency:
+  # A newer push to the same branch or pull request supersedes this run;
+  # manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     uses: pschmitt/ci-workflows/.github/workflows/lint.yaml@main

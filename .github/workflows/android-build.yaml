@@ -16,6 +16,12 @@ on:
       - '.github/workflows/android-build.yaml'
   workflow_dispatch:
 
+concurrency:
+  # A newer push to the same branch or pull request supersedes this run;
+  # manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   assemble:
     uses: pschmitt/ci-workflows/.github/workflows/build.yaml@main

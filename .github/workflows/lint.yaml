@@ -28,6 +28,12 @@ on:
       - "justfile"
       - ".github/workflows/lint.yaml"
 
+concurrency:
+  # A newer push to the same branch or pull request supersedes this run;
+  # manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # The browser acceptance suite and the i18n generators are TypeScript/Node
   # development tooling under web/.

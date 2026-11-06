@@ -24,6 +24,12 @@ on:
       - "justfile"
       - ".github/workflows/i18n.yaml"
 
+concurrency:
+  # A newer push to the same branch or pull request supersedes this run;
+  # manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   i18n:
     runs-on: ubuntu-latest
