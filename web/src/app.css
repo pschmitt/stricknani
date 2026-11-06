@@ -608,11 +608,11 @@ button:disabled {
   --app-header-height: calc(4.25rem + env(safe-area-inset-top));
 }
 
-/* The header is two parts. Over the rail (::before) it is the rail's own
-   surface and holds the brand. Over the content (::after) it is frosted
-   glass that fades in once content scrolls under it (--header-glass, 0 to 1,
-   set by the layout). The bar itself ignores the pointer so the transparent
-   part never blocks the content below; its controls opt back in. */
+/* With the rail (desktop) the header is only the brand over the rail
+   (::before, the rail's own surface); the content column starts at the top
+   with no bar over it. Phones show it full width as frosted glass (::after)
+   that fades in once content scrolls under it (--header-glass, 0 to 1, set by
+   the layout). The bar ignores the pointer outside its controls. */
 .app-header {
   --header-rail-width: 16rem;
   position: sticky;
@@ -620,7 +620,7 @@ button:disabled {
   top: 0;
   display: flex;
   min-height: var(--app-header-height);
-  grid-column: 1 / -1;
+  grid-column: 1;
   align-items: center;
   gap: 0.25rem;
   padding: max(0.4rem, env(safe-area-inset-top))
@@ -652,6 +652,7 @@ button:disabled {
 }
 
 .app-header::after {
+  display: none;
   right: 0;
   left: var(--header-rail-width);
   border-bottom: 1px solid var(--line);
@@ -860,8 +861,7 @@ a[data-tone="more"] {
 }
 
 .content-column {
-  /* Content starts up in the header band: only the brand (over the rail) and
-     the avatar (right) live there, and content scrolls under the glass. */
+  /* Content starts at the top, beside the brand over the rail. */
   grid-column: 2;
   grid-row: 2;
   min-width: 0;
@@ -1036,6 +1036,7 @@ textarea::placeholder {
   }
 
   .app-header::after {
+    display: block;
     left: 0;
   }
 
