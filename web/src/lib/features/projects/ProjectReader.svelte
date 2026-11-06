@@ -792,7 +792,7 @@
     class="reader page-container page-container--standard"
     bind:this={readerElement}
   >
-    <PageHeader title={currentProject.name} stackedActions>
+    <PageHeader title={currentProject.name} stackedActions headerActions>
       {#snippet context()}
         <div class="reader-subtitle">
           <span>{currentProject.category ?? t("Knitting project", locale)}</span

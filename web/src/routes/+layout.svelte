@@ -15,6 +15,7 @@
   } from "#lib/error-reporting.ts";
   import { clearFeedback, feedback } from "#lib/feedback.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
+  import { headerSlot } from "#lib/header-slot.svelte.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
   import PwaUpdate from "#lib/components/PwaUpdate.svelte";
@@ -31,6 +32,16 @@
     webNotifications,
   } from "#lib/web-notifications.svelte.ts";
   import "../app.css";
+
+  // The phone header's right side, where a page's actions can move (PageHeader).
+  let headerActionsEl = $state<HTMLElement>();
+  $effect(() => {
+    const element = headerActionsEl ?? null;
+    headerSlot.target = element;
+    return () => {
+      if (headerSlot.target === element) headerSlot.target = null;
+    };
+  });
 
   let { children }: { children: Snippet } = $props();
 
@@ -272,6 +283,7 @@
         parentLabel={t("Back", locale)}
         reserveParentSlot={true}
       />
+      <div class="app-header__actions" bind:this={headerActionsEl}></div>
     </header>
 
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>

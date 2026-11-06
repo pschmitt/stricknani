@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
+  import { headerSlot } from "#lib/header-slot.svelte.ts";
 
   const generatedId = $props.id();
 
@@ -9,27 +11,56 @@
     context,
     actions,
     stackedActions = false,
+    headerActions = false,
   }: {
     title: string;
     titleId?: string;
     context?: Snippet;
     actions?: Snippet;
     stackedActions?: boolean;
+    /** On phones, show the actions in the app header bar instead. */
+    headerActions?: boolean;
   } = $props();
+
+  // Same breakpoint as the layout's rail: without it the header bar spans the
+  // page and has room on its right for the page's actions.
+  const phone = new MediaQuery("max-width: 760px");
+  let headerEl = $state<HTMLElement>();
+  let actionsEl = $state<HTMLDivElement>();
+  const inBar = $derived(
+    headerActions && phone.current && headerSlot.target !== null,
+  );
+
+  // Moves the one actions element (with its state, open menus and dialogs)
+  // between the bar and this header; it is the only node of its block, so
+  // Svelte still removes it wherever it is.
+  $effect(() => {
+    const element = actionsEl;
+    const target = headerSlot.target;
+    const home = headerEl;
+    if (!element || !home || !target || !inBar) return;
+    target.append(element);
+    return () => {
+      if (element.parentNode === target) home.append(element);
+    };
+  });
 </script>
 
 <header
   class="page-header"
-  class:page-header--has-actions={actions}
+  class:page-header--has-actions={actions && !inBar}
   class:page-header--stacked={stackedActions}
   aria-labelledby={titleId}
+  bind:this={headerEl}
 >
   <h1 id={titleId}>{title}</h1>
   {#if context}
     <div class="page-header__context">{@render context()}</div>
   {/if}
   {#if actions}
-    <div class="page-header__actions">{@render actions()}</div>
+    <div class="page-header__actions" bind:this={actionsEl}>
+      {@render actions()}
+    </div>
   {/if}
 </header>
 

@@ -381,7 +381,12 @@
     class="yarn-detail page-container page-container--wide"
     aria-labelledby="yarn-title"
   >
-    <PageHeader title={currentYarn.name} titleId="yarn-title" stackedActions>
+    <PageHeader
+      title={currentYarn.name}
+      titleId="yarn-title"
+      stackedActions
+      headerActions
+    >
       {#snippet context()}
         <p class="identity">
           {[currentYarn.brand, currentYarn.colorway]
@@ -965,20 +970,8 @@
     }
   }
 
+  /* On phones the actions sit in the app header bar (PageHeader headerActions). */
   @media (max-width: 760px) {
-    .heading-actions {
-      width: 100%;
-    }
-
-    .heading-actions > * {
-      flex: 1;
-    }
-
-    .heading-actions > :global(.favorite-button),
-    .heading-actions > :global(.action-overflow) {
-      flex: 0 0 44px;
-    }
-
     .detail-layout {
       grid-template-columns: 1fr;
     }
@@ -1024,17 +1017,6 @@
     .rich-text {
       max-width: none;
       color: #111;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .heading-actions {
-      display: grid;
-      grid-template-columns: 44px minmax(0, 1fr) 44px;
-    }
-
-    .heading-actions > * {
-      min-width: 0;
     }
   }
 </style>

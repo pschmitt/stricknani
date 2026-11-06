@@ -634,6 +634,50 @@ button:disabled {
   pointer-events: auto;
 }
 
+/* Page actions moved into the phone bar (PageHeader headerActions). */
+.app-header__actions {
+  display: flex;
+  min-width: 0;
+  margin-left: auto;
+  align-items: center;
+}
+
+.app-header__actions:empty {
+  display: none;
+}
+
+.app-header__actions .page-header__actions > * {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+/* In the bar the primary action is icon-only (its accessible name stays) and
+   the wordmark gives way; the mark and chevron still lead home or back. */
+.app-header__actions .action-label__text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-header__actions .ui-button:has(.action-label) {
+  min-width: 44px;
+  padding-inline: 0.7rem;
+}
+
+.app-header:has(.app-header__actions:not(:empty)) .brand-copy {
+  display: none;
+}
+
+/* The narrowest phones keep the four 44px targets and drop the timer's time. */
+@media (max-width: 360px) {
+  .app-header__actions .timer-chip__time {
+    display: none;
+  }
+}
+
 .app-header::before,
 .app-header::after {
   position: absolute;
