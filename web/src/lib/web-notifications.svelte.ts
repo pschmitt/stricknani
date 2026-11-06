@@ -7,6 +7,9 @@
  * worker opens a new window on that path.
  */
 
+import { session } from "#lib/session.svelte.ts";
+import { subscribePush, unsubscribePush } from "#lib/web-push.ts";
+
 export const WEB_NOTIFICATIONS_STORAGE_KEY = "stricknani.notifications";
 export const OPEN_PATH_MESSAGE = "OPEN_PATH";
 const APP_PREFIX = "/app/";
@@ -116,11 +119,29 @@ export const webNotifications = {
     }
     permission = result;
     store(result === "granted");
+    if (result === "granted") void this.syncPush();
     return this.state;
   },
 
   disable(): void {
     store(false);
+    const csrf = session.data?.csrf_token;
+    if (csrf) void unsubscribePush(csrf).catch(() => undefined);
+  },
+
+  /**
+   * Keeps this browser's push subscription registered while notifications are
+   * on, so reminders also arrive with no tab open. Best effort: without Web
+   * Push, reminders still show while a tab is open.
+   */
+  async syncPush(): Promise<boolean> {
+    const csrf = session.data?.csrf_token;
+    if (this.state !== "on" || !csrf) return false;
+    try {
+      return await subscribePush(csrf);
+    } catch {
+      return false;
+    }
   },
 
   /** Re-reads the browser permission, which the user can change at any time. */

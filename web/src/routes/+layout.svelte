@@ -26,7 +26,10 @@
   import { isMoreActive, isPathActive } from "#lib/more-nav.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import { initTheme } from "#lib/theme.svelte.ts";
-  import { listenForNotificationOpens } from "#lib/web-notifications.svelte.ts";
+  import {
+    listenForNotificationOpens,
+    webNotifications,
+  } from "#lib/web-notifications.svelte.ts";
   import "../app.css";
 
   let { children }: { children: Snippet } = $props();
@@ -93,6 +96,14 @@
   ] as const;
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
+
+  // Re-register this browser's push subscription for the signed-in user:
+  // endpoints can change, and another account may have signed in here.
+  $effect(() => {
+    const userId = session.data?.user?.id;
+    if (userId === undefined) return;
+    untrack(() => void webNotifications.syncPush());
+  });
 
   onMount(() => {
     void loadCatalog();

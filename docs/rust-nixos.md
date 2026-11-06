@@ -81,6 +81,16 @@ PostgreSQL URLs are rejected (the legacy module's PostgreSQL backup went away
 with the Python backend). A backup does not make legacy Python data usable in
 the Rust schema.
 
+## Web Push
+
+Timer reminders reach browsers through Web Push when a user turns on
+Notifications in Account settings, also with no Stricknani tab open. The
+server creates its VAPID key on first use and keeps it in the database, so
+there is nothing to provision. `STRICKNANI_PUSH_SUBJECT` optionally sets the
+VAPID contact (a `mailto:` or `https:` URI; default: the project page). Pushes
+only go to the browsers' push services (Google, Mozilla, Apple, Microsoft),
+so the server needs outbound HTTPS to them.
+
 ## Error reporting (Sentry)
 
 Error reporting is optional and off unless the operator configures a DSN. With

@@ -21,22 +21,22 @@ msgstr ""
 msgid "Import a pattern"
 msgstr ""
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:266
-#: web/src/routes/+layout.svelte:362
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:277
+#: web/src/routes/+layout.svelte:373
 msgid "Main navigation"
 msgstr ""
 
 #: src/import_service.rs:704
 #: web/src/lib/features/projects/ProjectLibrary.svelte:214
 #: web/src/lib/features/projects/ProjectLibrary.svelte:225
-#: web/src/routes/+layout.svelte:77
+#: web/src/routes/+layout.svelte:80
 msgid "Projects"
 msgstr ""
 
 #: src/import_service.rs:705 web/src/lib/features/yarns/YarnDetail.svelte:338
 #: web/src/lib/features/yarns/YarnLibrary.svelte:160
 #: web/src/lib/features/yarns/YarnLibrary.svelte:171
-#: web/src/routes/+layout.svelte:78
+#: web/src/routes/+layout.svelte:81
 msgid "Yarns"
 msgstr ""
 
@@ -215,7 +215,7 @@ msgstr ""
 msgid "(opens in a new tab)"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:405
+#: web/src/lib/features/projects/ProjectTimer.svelte:432
 msgid "1 hour"
 msgstr ""
 
@@ -223,11 +223,11 @@ msgstr ""
 msgid "1 linked yarn"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:406
+#: web/src/lib/features/projects/ProjectTimer.svelte:433
 msgid "2 hours"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:404
+#: web/src/lib/features/projects/ProjectTimer.svelte:431
 msgid "30 minutes"
 msgstr ""
 
@@ -273,7 +273,7 @@ msgstr ""
 msgid "A place for your projects and yarn."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:184
+#: web/src/routes/+layout.svelte:195
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr ""
 
@@ -324,7 +324,7 @@ msgstr ""
 msgid "API token revoked."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:337 web/src/routes/about/+page.svelte:202
+#: web/src/routes/+layout.svelte:348 web/src/routes/about/+page.svelte:202
 #: web/src/routes/more/+page.svelte:84
 msgid "About"
 msgstr ""
@@ -335,12 +335,12 @@ msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:831
 #: web/src/lib/features/account/AccountSettings.svelte:839
-#: web/src/routes/+layout.svelte:300 web/src/routes/+layout.svelte:303
-#: web/src/routes/+layout.svelte:311 web/src/routes/more/+page.svelte:48
+#: web/src/routes/+layout.svelte:311 web/src/routes/+layout.svelte:314
+#: web/src/routes/+layout.svelte:322 web/src/routes/more/+page.svelte:48
 msgid "Account"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:346
+#: web/src/routes/+layout.svelte:357
 msgid "Account access"
 msgstr ""
 
@@ -489,7 +489,7 @@ msgstr ""
 msgid "Added {n} steps"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:438
+#: web/src/lib/features/projects/ProjectTimer.svelte:465
 msgid "Adjust total time"
 msgstr ""
 
@@ -505,7 +505,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:318
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:571
-#: web/src/routes/+layout.svelte:327 web/src/routes/more/+page.svelte:77
+#: web/src/routes/+layout.svelte:338 web/src/routes/more/+page.svelte:77
 msgid "Admin"
 msgstr ""
 
@@ -669,7 +669,7 @@ msgstr ""
 msgid "Ask AI to improve extraction"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:350
+#: web/src/routes/+layout.svelte:361
 msgid "Ask an administrator if you need access."
 msgstr ""
 
@@ -733,7 +733,7 @@ msgid ""
 "verification."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:261
+#: web/src/routes/+layout.svelte:272
 msgid "Back"
 msgstr ""
 
@@ -758,7 +758,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:753
 #: web/src/lib/features/projects/ProjectReader.svelte:764
 #: web/src/lib/features/projects/ProjectReader.svelte:770
-#: web/src/routes/+layout.svelte:352
+#: web/src/routes/+layout.svelte:363
 msgid "Back to projects"
 msgstr ""
 
@@ -857,7 +857,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1825
 #: web/src/lib/features/projects/ProjectEditor.svelte:1866
 #: web/src/lib/features/projects/ProjectReader.svelte:1486
-#: web/src/lib/features/projects/ProjectTimer.svelte:483
+#: web/src/lib/features/projects/ProjectTimer.svelte:510
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
 #: web/src/lib/features/yarns/YarnForm.svelte:963
@@ -871,7 +871,7 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/routes/+layout.svelte:91 web/src/routes/more/+page.svelte:30
+#: web/src/routes/+layout.svelte:94 web/src/routes/more/+page.svelte:30
 msgid "Categories"
 msgstr ""
 
@@ -1196,7 +1196,7 @@ msgid "Cover picture"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:260
-#: web/src/routes/+layout.svelte:79 web/src/routes/create/+page.svelte:67
+#: web/src/routes/+layout.svelte:82 web/src/routes/create/+page.svelte:67
 #: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:88
 msgid "Create"
 msgstr ""
@@ -1468,8 +1468,8 @@ msgstr ""
 msgid "Edit project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:493
-#: web/src/lib/features/projects/ProjectTimer.svelte:508
+#: web/src/lib/features/projects/ProjectTimer.svelte:520
+#: web/src/lib/features/projects/ProjectTimer.svelte:535
 msgid "Edit time"
 msgstr ""
 
@@ -1782,7 +1782,7 @@ msgstr ""
 #: web/src/lib/components/AuthFooter.svelte:20
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/routes/+layout.svelte:92 web/src/routes/more/+page.svelte:39
+#: web/src/routes/+layout.svelte:95 web/src/routes/more/+page.svelte:39
 msgid "Gauge calculator"
 msgstr ""
 
@@ -1899,12 +1899,12 @@ msgid ""
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:127
-#: web/src/routes/+layout.svelte:76
+#: web/src/routes/+layout.svelte:79
 msgid "Home"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:440
-#: web/src/lib/features/projects/ProjectTimer.svelte:441
+#: web/src/lib/features/projects/ProjectTimer.svelte:467
+#: web/src/lib/features/projects/ProjectTimer.svelte:468
 msgid "Hours"
 msgstr ""
 
@@ -2084,7 +2084,7 @@ msgstr ""
 msgid "Keep photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:423
+#: web/src/lib/features/projects/ProjectTimer.svelte:450
 msgid "Keep timing"
 msgstr ""
 
@@ -2120,7 +2120,7 @@ msgstr ""
 msgid "Knitting project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:371
+#: web/src/lib/features/projects/ProjectTimer.svelte:398
 msgid "Knitting time"
 msgstr ""
 
@@ -2340,7 +2340,7 @@ msgstr ""
 msgid "Loading resource details…"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:390
+#: web/src/lib/features/projects/ProjectTimer.svelte:417
 msgid "Loading timer…"
 msgstr ""
 
@@ -2425,8 +2425,8 @@ msgstr ""
 msgid "Mine"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:450
-#: web/src/lib/features/projects/ProjectTimer.svelte:451
+#: web/src/lib/features/projects/ProjectTimer.svelte:477
+#: web/src/lib/features/projects/ProjectTimer.svelte:478
 msgid "Minutes"
 msgstr ""
 
@@ -2435,7 +2435,7 @@ msgid "Mooorning!"
 msgstr ""
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:284 web/src/routes/+layout.svelte:392
+#: web/src/routes/+layout.svelte:295 web/src/routes/+layout.svelte:403
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr ""
@@ -2453,7 +2453,7 @@ msgstr ""
 msgid "More changes could not be loaded."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:285 web/src/routes/more/+page.svelte:71
+#: web/src/routes/+layout.svelte:296 web/src/routes/more/+page.svelte:71
 msgid "More navigation"
 msgstr ""
 
@@ -2777,7 +2777,7 @@ msgid ""
 " settings."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:403
+#: web/src/lib/features/projects/ProjectTimer.svelte:430
 msgid "Off"
 msgstr ""
 
@@ -2867,7 +2867,7 @@ msgstr ""
 msgid "Open step photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:239
+#: web/src/lib/features/projects/ProjectTimer.svelte:240
 msgid "Open the project to stop the timer or keep timing."
 msgstr ""
 
@@ -2880,7 +2880,7 @@ msgstr ""
 msgid "Opening your pattern…"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:220
+#: web/src/routes/+layout.svelte:231
 msgid "Opening your workspace…"
 msgstr ""
 
@@ -3312,7 +3312,7 @@ msgstr ""
 msgid "Project tags"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:238
+#: web/src/lib/features/projects/ProjectTimer.svelte:239
 msgid "Project timer is still running"
 msgstr ""
 
@@ -3366,7 +3366,7 @@ msgstr ""
 msgid "Reading the source and preparing a draft…"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:383
+#: web/src/lib/features/projects/ProjectTimer.svelte:410
 msgid "Ready when you are"
 msgstr ""
 
@@ -3677,8 +3677,8 @@ msgstr ""
 msgid "Rumour has it a cat was involved."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:397
-#: web/src/lib/features/projects/ProjectTimer.svelte:399
+#: web/src/lib/features/projects/ProjectTimer.svelte:424
+#: web/src/lib/features/projects/ProjectTimer.svelte:426
 msgid "Running reminder"
 msgstr ""
 
@@ -3708,7 +3708,7 @@ msgstr ""
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:477
+#: web/src/lib/features/projects/ProjectTimer.svelte:504
 msgid "Save time"
 msgstr ""
 
@@ -3792,8 +3792,8 @@ msgstr ""
 msgid "Search your yarns"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:460
-#: web/src/lib/features/projects/ProjectTimer.svelte:461
+#: web/src/lib/features/projects/ProjectTimer.svelte:487
+#: web/src/lib/features/projects/ProjectTimer.svelte:488
 msgid "Seconds"
 msgstr ""
 
@@ -3908,8 +3908,8 @@ msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1113
 msgid ""
-"Shows project timer reminders on this device while Stricknani is open in "
-"the background."
+"Shows project timer reminders on this device, even when Stricknani is "
+"closed."
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:59
@@ -3918,7 +3918,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:162
 #: web/src/lib/features/projects/ProjectEditor.svelte:1177
-#: web/src/routes/+layout.svelte:204 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:215 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr ""
 
@@ -3951,7 +3951,7 @@ msgstr ""
 msgid "Sign in to see your favorite projects and yarns."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:123
+#: web/src/lib/features/projects/ProjectTimer.svelte:124
 msgid "Sign in to use the project timer."
 msgstr ""
 
@@ -4021,7 +4021,7 @@ msgstr ""
 msgid "Skein weight in grams"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:192
+#: web/src/routes/+layout.svelte:203
 msgid "Skip to content"
 msgstr ""
 
@@ -4065,7 +4065,7 @@ msgstr ""
 msgid "Sponsor on GitHub"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:514
+#: web/src/lib/features/projects/ProjectTimer.svelte:541
 msgid "Start"
 msgstr ""
 
@@ -4195,11 +4195,11 @@ msgstr ""
 msgid "Stitches to cast on"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:499
+#: web/src/lib/features/projects/ProjectTimer.svelte:526
 msgid "Stop"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:420
+#: web/src/lib/features/projects/ProjectTimer.svelte:447
 msgid "Stop timer"
 msgstr ""
 
@@ -4596,11 +4596,11 @@ msgstr ""
 msgid "The project media could not be updated."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:157
+#: web/src/lib/features/projects/ProjectTimer.svelte:158
 msgid "The project timer could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:357
+#: web/src/lib/features/projects/ProjectTimer.svelte:384
 msgid "The project timer could not be updated."
 msgstr ""
 
@@ -4677,13 +4677,13 @@ msgstr ""
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
-#: web/src/lib/features/projects/project-api.ts:664
+#: web/src/lib/features/projects/project-api.ts:670
 #: web/src/lib/features/sharing/sharing-api.ts:71
 #: web/src/lib/features/yarns/yarn-api.ts:422
 msgid "The server returned an unexpected response."
 msgstr ""
 
-#: web/src/lib/session.svelte.ts:176 web/src/routes/+layout.svelte:233
+#: web/src/lib/session.svelte.ts:176 web/src/routes/+layout.svelte:244
 msgid "The session could not be loaded."
 msgstr ""
 
@@ -5000,7 +5000,7 @@ msgstr ""
 msgid "This yarn will not be added to the project."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:382
+#: web/src/lib/features/projects/ProjectTimer.svelte:409
 msgid "Time spent on this project"
 msgstr ""
 
@@ -5010,9 +5010,9 @@ msgid ""
 "about a minute. No email to write and no waiting for anyone."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:152
-#: web/src/lib/features/projects/ProjectTimer.svelte:199
-#: web/src/lib/features/projects/ProjectTimer.svelte:352
+#: web/src/lib/features/projects/ProjectTimer.svelte:153
+#: web/src/lib/features/projects/ProjectTimer.svelte:200
+#: web/src/lib/features/projects/ProjectTimer.svelte:379
 msgid "Timers are not available on this server yet."
 msgstr ""
 
@@ -5117,7 +5117,7 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:370
 #: web/src/lib/features/yarns/YarnForm.svelte:623
 #: web/src/lib/features/yarns/YarnLibrary.svelte:215
-#: web/src/routes/+layout.svelte:241
+#: web/src/routes/+layout.svelte:252
 msgid "Try again"
 msgstr ""
 
@@ -5585,7 +5585,7 @@ msgstr ""
 msgid "You deleted {name}"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:348
+#: web/src/routes/+layout.svelte:359
 msgid "You do not have access to this page."
 msgstr ""
 
@@ -5709,11 +5709,11 @@ msgstr ""
 msgid "Your favourites and your profile picture."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:413
+#: web/src/lib/features/projects/ProjectTimer.svelte:440
 msgid "Your knitting timer has been running for a while."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:267
+#: web/src/routes/+layout.svelte:278
 msgid "Your library"
 msgstr ""
 
@@ -5773,7 +5773,7 @@ msgstr ""
 msgid "Your stash is empty"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:229
+#: web/src/routes/+layout.svelte:240
 msgid "Your workspace is taking a moment."
 msgstr ""
 

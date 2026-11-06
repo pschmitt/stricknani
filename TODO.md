@@ -102,7 +102,7 @@ Execution-oriented backlog for Stricknani.
 
 | ID | Priority | Status | Area | Category | Summary |
 | -- | -------- | ------ | ---- | -------- | ------- |
-| T128 | P3 | todo | web/notifications | feat | Web Push (VAPID) so timer reminders reach a closed browser; the web notifications so far need an open (background) tab. Server stores push subscriptions per device and schedules reminders for running timers |
+| T128 | P3 | done | web/notifications | feat | Web Push (VAPID) so timer reminders reach a closed browser; the web notifications so far need an open (background) tab. Server stores push subscriptions per device and schedules reminders for running timers |
 | T120.13 | P2 | done | web-rewrite/packaging | refactor | Separate Rust compilation from frontend assembly and pass corePackage/webPackage through the NixOS module default; Luna implementation, coordinator review |
 | T120.14 | P2 | done | web-rewrite/ui | feat | Add shared action icons throughout workflows, compact logo/title/version header and native browser Back; scoped Luna implementation and browser checks |
 | T119 | P1 | done | rust-port | refactor | Rebuild Stricknani as a Rust-first application with Android integration |

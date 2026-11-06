@@ -55,6 +55,7 @@ use serde::Serialize;
 
 mod domain;
 mod time;
+pub mod web_push;
 
 pub fn app() -> Router {
     app_with_web_root(configured_web_root())

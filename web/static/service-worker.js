@@ -50,6 +50,32 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// Web Push: the server sends timer reminders as {title, body, tag, path}.
+// Every push must show a notification (userVisibleOnly); the tag replaces an
+// earlier one for the same timer, and the click handler below opens `path`.
+self.addEventListener("push", (event) => {
+  let message = {};
+  try {
+    message = event.data?.json() ?? {};
+  } catch {
+    message = {};
+  }
+  const title =
+    typeof message.title === "string" && message.title
+      ? message.title
+      : "Stricknani";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: typeof message.body === "string" ? message.body : "",
+      tag: typeof message.tag === "string" ? message.tag : undefined,
+      icon: `${APP_PREFIX}icons/icon-192.png`,
+      data: {
+        path: typeof message.path === "string" ? message.path : APP_PREFIX,
+      },
+    }),
+  );
+});
+
 // A notification opens what it is about. An open app tab is focused and
 // navigates in-app (its unsaved-changes guard still applies); without one, a
 // new window opens on that path. Only same-origin app paths are accepted.

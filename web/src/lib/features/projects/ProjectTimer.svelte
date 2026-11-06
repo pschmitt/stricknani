@@ -7,6 +7,7 @@
   import { session } from "#lib/session.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { webNotifications } from "#lib/web-notifications.svelte.ts";
+  import { saveTimerReminder, timerReminderSchedule } from "#lib/web-push.ts";
   import {
     elapsedSeconds,
     currentRunSeconds,
@@ -239,6 +240,32 @@
       body: t("Open the project to stop the timer or keep timing.", locale),
       tag: `project-timer-${projectId}`,
       path: resolve("/projects/[id]", { id: String(projectId) }),
+    });
+  });
+
+  // The server sends this reminder as a Web Push, so it also arrives with no
+  // tab open. It learns the schedule whenever it changes (start, interval,
+  // "Keep timing") while notifications are on; the run ending drops it.
+  let savedSchedule = "";
+  $effect(() => {
+    const schedule =
+      enabled && canEdit && webNotifications.state === "on"
+        ? timerReminderSchedule(
+            timer?.started_at ?? null,
+            reminderMinutes,
+            reminderAfter,
+            locale,
+          )
+        : null;
+    const key = schedule ? JSON.stringify(schedule) : "";
+    if (key === savedSchedule) return;
+    const previous = savedSchedule;
+    savedSchedule = key;
+    const csrf = untrack(() => session.data?.csrf_token);
+    if (!csrf) return;
+    void saveTimerReminder(projectId, csrf, schedule).catch(() => {
+      // Retried on the next change; reminders still show in an open tab.
+      if (savedSchedule === key) savedSchedule = previous;
     });
   });
 

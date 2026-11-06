@@ -1111,7 +1111,7 @@
               )}
             {:else}
               {t(
-                "Shows project timer reminders on this device while Stricknani is open in the background.",
+                "Shows project timer reminders on this device, even when Stricknani is closed.",
                 locale,
               )}
             {/if}

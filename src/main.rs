@@ -14,7 +14,7 @@ use stricknani_server::importer::{ImportOptions, import_snapshot};
 use stricknani_server::operator_avatar;
 use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server set-avatar EMAIL PATH\n    stricknani-server clear-avatar EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. set-avatar stores the image file at PATH (validated and resized like an app upload) as the avatar of an active user; clear-avatar removes it. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    STRICKNANI_DATABASE_URL  SQLite database URL\n    STRICKNANI_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    STRICKNANI_SENTRY_DSN_FILE   File holding a Sentry DSN (or STRICKNANI_SENTRY_DSN); error reporting is off without one\n    STRICKNANI_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    STRICKNANI_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server set-avatar EMAIL PATH\n    stricknani-server clear-avatar EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. set-avatar stores the image file at PATH (validated and resized like an app upload) as the avatar of an active user; clear-avatar removes it. import-snapshot imports only a copied, self-contained legacy snapshot.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    STRICKNANI_DATABASE_URL  SQLite database URL\n    STRICKNANI_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    STRICKNANI_SENTRY_DSN_FILE   File holding a Sentry DSN (or STRICKNANI_SENTRY_DSN); error reporting is off without one\n    STRICKNANI_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    STRICKNANI_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n    STRICKNANI_PUSH_SUBJECT  Web Push (VAPID) contact, a mailto: or https: URI (default: the project page)\n";
 
 fn main() -> ExitCode {
     if std::env::args_os()
@@ -313,6 +313,24 @@ async fn serve() -> Result<(), &'static str> {
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         }
     });
+    // Web Push timer reminders (see stricknani_server::web_push).
+    let push_pool = state.pool.clone();
+    let push_sender =
+        stricknani_server::web_push::Sender::new(std::env::var("STRICKNANI_PUSH_SUBJECT").ok())
+            .map_err(|_| "cannot initialize web push")?;
+    let push_worker = tokio::spawn(async move {
+        loop {
+            let now = chrono::Utc::now().timestamp();
+            if stricknani_server::web_push::deliver_due(&push_pool, &push_sender, now)
+                .await
+                .is_err()
+            {
+                sentry::capture_message("push.reminders.failed", sentry::Level::Error);
+                tracing::warn!(component = "push", "push.reminders.failed");
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        }
+    });
     let archive_worker = config.archive_enabled.then(|| {
         let pool = state.pool.clone();
         tokio::spawn(async move {
@@ -367,6 +385,7 @@ async fn serve() -> Result<(), &'static str> {
     .with_graceful_shutdown(shutdown_signal())
     .await;
     cleanup.abort();
+    push_worker.abort();
     if let Some(worker) = archive_worker {
         worker.abort();
     }
