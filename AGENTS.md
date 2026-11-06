@@ -400,6 +400,9 @@ Use this file as the operational source of truth for working in Stricknani.
   i18n checks and the web checks (including the e2e type check), tests and build. CI runs it as
   `test.yaml`; `web-ui.yaml` adds the packaged-web browser acceptance and
   `android-*.yaml` the Android lanes.
+- Before a release, merge the green Renovate pull requests (fix or comment
+  on the rest) and triage the unresolved Sentry issues: fix, or comment and
+  resolve. See `docs/maintaining.md`, "Releases".
 - When touching build/deploy/release paths, also run:
   - `nix flake check`
   - `nix build .#stricknani .#stricknani-web`

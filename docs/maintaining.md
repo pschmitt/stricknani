@@ -31,18 +31,27 @@ branch.
 
 To cut a release:
 
-1. Make sure `just check` passes and CI on the default branch is green.
-2. Tag the release commit with a semantic version and push the tag:
+1. Clear the queues first:
+   - **Renovate:** merge the open dependency pull requests that are green.
+     Fix the ones that fail (a stale Nix hash is refreshed by the
+     `nix-hash-fixup` workflow; anything else needs a look). Leave a comment
+     on any you hold back, with the reason.
+   - **Sentry** (sentry.io, org `brknlol`, project `stricknani`, through the
+     Sentry MCP): go through the unresolved issues. Fix real errors in this
+     release; comment on and resolve test or verification events; never leave
+     an issue unacknowledged.
+2. Make sure `just check` passes and CI on the default branch is green.
+3. Tag the release commit with a semantic version and push the tag:
 
    ```sh
    git tag -s v1.2.3 -m "v1.2.3"
    git push origin v1.2.3
    ```
 
-3. Watch the Release and Play Store Release workflows. The APK version name is
+4. Watch the Release and Play Store Release workflows. The APK version name is
    taken from the tag; the Play version resolver rejects tags that are not
    semantic versions.
-4. Check the release page: four release APKs, `SHA256SUMS`, and release notes
+5. Check the release page: four release APKs, `SHA256SUMS`, and release notes
    that list the Android changes since the previous tag.
 
 The release workflow needs the repository secrets `CI_KEYSTORE_BASE64`,
