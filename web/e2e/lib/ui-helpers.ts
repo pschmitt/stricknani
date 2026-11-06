@@ -931,7 +931,10 @@ export async function assertMobileAppHeader(page: Page): Promise<void> {
   );
   check(
     (await page.locator(".app-header .header-account").count()) === 0 &&
-      (await page.locator(".app-header button").count()) === 0,
+      // A project or yarn page's own actions may sit in the bar's slot.
+      (await page
+        .locator(".app-header button:not(.app-header__actions *)")
+        .count()) === 0,
     "the phone header still has an account avatar button",
   );
   const tabs = page.locator(".mobile-navigation a");
