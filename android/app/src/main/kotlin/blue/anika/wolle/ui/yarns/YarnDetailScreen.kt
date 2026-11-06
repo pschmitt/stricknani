@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ACCESS_OWNER
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.primaryFirst
 import blue.anika.wolle.data.repository.ItemAccess
@@ -61,6 +62,8 @@ import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.YarnDetailCard
+import blue.anika.wolle.ui.common.ArchiveControl
+import blue.anika.wolle.ui.common.ArchiveEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
@@ -342,6 +345,10 @@ fun YarnDetailScreen(
                             onProjectClick = onProjectClick,
                             onEditSection = { focus -> onEditSection(state.entity.id, focus) },
                             canEdit = access.canEdit,
+                            // Archiving is owner-scoped on the server, like the web's control.
+                            canArchive =
+                                access.role == ACCESS_OWNER && !access.derived && access.canManage,
+                            onArchived = viewModel::refresh,
                             history = viewModel.history,
                         )
                     }
@@ -403,6 +410,8 @@ private fun YarnDetailContent(
     onProjectClick: (Int) -> Unit,
     onEditSection: (focus: String) -> Unit,
     canEdit: Boolean,
+    canArchive: Boolean,
+    onArchived: () -> Unit,
     history: HistoryController,
     modifier: Modifier = Modifier,
 ) {
@@ -560,6 +569,10 @@ private fun YarnDetailContent(
                                     stringResource(R.string.yarn_detail_source_archive),
                                     it,
                                 )
+                            }
+                            val source = safeExternalUrl(detail.link)
+                            if (canArchive && source != null) {
+                                ArchiveControl(ArchiveEntity.YARN, detail.id, source, onArchived)
                             }
                         }
                     YarnDetailCard.DESCRIPTION ->

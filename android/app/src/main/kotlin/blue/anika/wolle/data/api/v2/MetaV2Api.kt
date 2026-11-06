@@ -26,6 +26,8 @@ data class MetaV2Dto(
     @SerialName("error_reporting") val errorReporting: ErrorReportingDto? = null,
     /** What link imports can do on this server; absent on servers without the feature. */
     val imports: MetaV2ImportsDto? = null,
+    /** Saving source links to the web archive is enabled (the archive control). */
+    val archive: Boolean = false,
 )
 
 /** `meta.imports`: link import and AI availability. */

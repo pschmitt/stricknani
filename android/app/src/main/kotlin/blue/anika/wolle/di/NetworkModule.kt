@@ -20,6 +20,7 @@ import blue.anika.wolle.data.api.SessionExpiryInterceptor
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
 import blue.anika.wolle.data.api.v2.ActivityV2Api
+import blue.anika.wolle.data.api.v2.ArchiveV2Api
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
 import blue.anika.wolle.data.api.v2.ImportsV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Api
@@ -246,6 +247,11 @@ object NetworkModule {
     @Singleton
     fun provideProjectsV2Api(retrofit: Retrofit): ProjectsV2Api =
         retrofit.create(ProjectsV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideArchiveV2Api(retrofit: Retrofit): ArchiveV2Api =
+        retrofit.create(ArchiveV2Api::class.java)
 
     @Provides
     @Singleton

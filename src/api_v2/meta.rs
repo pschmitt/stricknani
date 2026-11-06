@@ -24,6 +24,9 @@ struct MetaData {
     registration_enabled: bool,
     /// What link imports can do on this instance, so clients can hide or enable the entry points.
     imports: MetaImports,
+    /// Saving a source link to the web archive is enabled, so native clients can
+    /// offer the archive control (`/api/v2/{projects,yarns}/{id}/archive`).
+    archive: bool,
     user: Option<MetaUser>,
     /// Id of the bearer PAT making this request; absent for browser sessions
     /// and anonymous callers. Never the token value or hash.
@@ -137,6 +140,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
                         .as_ref()
                         .is_some_and(|imports| imports.ai.is_some()),
             },
+            archive: state.app.archive_enabled,
             user,
             current_token_id,
             auth: AuthDiscovery {

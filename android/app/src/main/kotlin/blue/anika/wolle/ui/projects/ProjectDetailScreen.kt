@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ACCESS_OWNER
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.repository.ItemAccess
@@ -82,6 +83,8 @@ import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.ProjectDetailCard
 import blue.anika.wolle.data.timer.ProjectTimerReminderInterval
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.ui.common.ArchiveControl
+import blue.anika.wolle.ui.common.ArchiveEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
@@ -407,6 +410,10 @@ fun ProjectDetailScreen(
                             onDeleteAttachment = { attachmentToDelete = it },
                             onEditSection = { focus -> onEditSection(state.entity.id, focus) },
                             canEdit = access.canEdit,
+                            // Archiving is owner-scoped on the server, like the web's control.
+                            canArchive =
+                                access.role == ACCESS_OWNER && !access.derived && access.canManage,
+                            onArchived = viewModel::refresh,
                             history = viewModel.history,
                         )
                     }
@@ -486,6 +493,8 @@ private fun ProjectDetailContent(
     onDeleteAttachment: (AttachmentDto) -> Unit,
     onEditSection: (focus: String) -> Unit,
     canEdit: Boolean,
+    canArchive: Boolean,
+    onArchived: () -> Unit,
     history: HistoryController,
     modifier: Modifier = Modifier,
 ) {
@@ -599,6 +608,14 @@ private fun ProjectDetailContent(
                                     PhosphorIcons.ClockCounterClockwise,
                                     stringResource(R.string.project_detail_source_archive),
                                     archived,
+                                )
+                            }
+                            if (canArchive && original != null) {
+                                ArchiveControl(
+                                    ArchiveEntity.PROJECT,
+                                    detail.id,
+                                    original,
+                                    onArchived,
                                 )
                             }
                         }
@@ -756,6 +773,22 @@ private fun ProjectDetailContent(
                                     fallbackIcon = MdiIcons.YarnBall,
                                     onClick = { onYarnClick(yarn.id) },
                                 )
+                                // The web's Materials list: the yarn's notes and its source.
+                                yarn.notes?.let {
+                                    ProjectMarkdown(
+                                        value = it,
+                                        resolveMediaUrl = resolveMediaUrl,
+                                        onImageClick = openViewerImage,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
+                                safeExternalUrl(yarn.link)?.let {
+                                    SourceLinkRow(
+                                        PhosphorIcons.Link,
+                                        stringResource(R.string.yarn_detail_source_open),
+                                        it,
+                                    )
+                                }
                             }
                         }
                     ProjectDetailCard.DESCRIPTION ->

@@ -150,7 +150,7 @@ unchanged. `server_time` is passed back verbatim as `since`. Pinned by
 | `GET /api/v2/session`, `POST /api/v2/auth/login`, `POST /api/v2/auth/logout`, `POST /api/v2/auth/signup` | cookie and CSRF | browser only |
 | `GET`, `POST`, `PUT`, `DELETE /api/v2/account...` (profile, API tokens, password, avatar) | cookie and CSRF only (`browser_user`, `mutation_user`), a PAT is refused | the app cannot manage its own tokens, password or avatar over v2 |
 | `POST /api/v2/projects/preview`, `POST /api/v2/tools/gauge`, `POST /api/v2/utils/ocr` | PAT accepted (`resource_mutation_user`) | no Android client |
-| `GET`, `POST /api/v2/projects/{id}/archive`, `/yarns/{id}/archive` | PAT accepted | no Android client |
+| `GET`, `POST /api/v2/projects/{id}/archive`, `/yarns/{id}/archive` | PAT accepted | `ArchiveV2Api` / `ArchiveControl`, offered when `GET /api/v2/meta` reports `archive` |
 | `POST /api/v2/imports/preview`, `POST /api/v2/imports/preview-file` | PAT accepted | Android imports through `POST /projects/import` instead (gap 5) |
 | `GET /api/v2/admin/resources/...`, `GET /api/v2/admin/users/{id}/avatar/{filename}` | admin | web admin identity views |
 

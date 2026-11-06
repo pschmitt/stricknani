@@ -69,7 +69,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-data class LinkedYarn(val id: Int, val name: String, val previewUrl: String?)
+/** A yarn linked to the project; [notes] and [link] come from its cached detail, like the web. */
+data class LinkedYarn(
+    val id: Int,
+    val name: String,
+    val previewUrl: String?,
+    val notes: String? = null,
+    val link: String? = null,
+)
 
 sealed interface ProjectDetailUiState {
     data object Loading : ProjectDetailUiState
@@ -636,7 +643,17 @@ constructor(
                     val linked =
                         yarns
                             .filter { it.id in detail.yarnIds }
-                            .map { LinkedYarn(it.id, it.name, it.previewUrl) }
+                            .map { yarn ->
+                                val yarnDetail =
+                                    runCatching { yarnRepository.decodeDetail(yarn) }.getOrNull()
+                                LinkedYarn(
+                                    yarn.id,
+                                    yarn.name,
+                                    yarn.previewUrl,
+                                    notes = yarnDetail?.notes?.takeIf { it.isNotBlank() },
+                                    link = yarnDetail?.link,
+                                )
+                            }
                     ProjectDetailUiState.Loaded(entity, detail, linked)
                 }
             }

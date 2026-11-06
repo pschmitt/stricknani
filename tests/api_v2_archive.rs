@@ -315,6 +315,26 @@ async fn archive_api_enforces_csrf_owner_scope_and_reports_safe_current_status()
 }
 
 #[tokio::test]
+async fn meta_reports_whether_archiving_is_enabled() {
+    for enabled in [true, false] {
+        let fixture = fixture(enabled).await;
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(
+                Request::get("/meta")
+                    .header("host", HOST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(json(response).await["data"]["archive"], enabled);
+    }
+}
+
+#[tokio::test]
 async fn disabled_archive_api_does_not_enqueue() {
     let fixture = fixture(false).await;
     let (session, csrf) = signed_in(&fixture.app).await;

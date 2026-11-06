@@ -509,7 +509,8 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
         anonymous_data["imports"],
         serde_json::json!({"url": false, "ai": false})
     );
-    assert_eq!(anonymous_data.as_object().unwrap().len(), 8);
+    assert_eq!(anonymous_data["archive"], false);
+    assert_eq!(anonymous_data.as_object().unwrap().len(), 9);
 
     let browser_admin = fixture
         .app

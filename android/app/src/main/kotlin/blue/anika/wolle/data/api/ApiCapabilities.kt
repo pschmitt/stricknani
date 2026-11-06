@@ -37,6 +37,8 @@ data class ApiCapabilitiesState(
     val importsUrl: Boolean = false,
     /** The server has an AI provider for filling gaps in an import. */
     val importsAi: Boolean = false,
+    /** The server can save source links to the web archive (`meta.archive`). */
+    val archive: Boolean = false,
 )
 
 /**
@@ -139,6 +141,7 @@ internal constructor(private val metaApi: MetaV2Api, private val credentialKey: 
                         meta.currentTokenId,
                         importsUrl = meta.imports?.url == true,
                         importsAi = meta.imports?.ai == true,
+                        archive = meta.archive,
                     ),
             )
         } catch (failure: HttpException) {
