@@ -53,10 +53,12 @@ on:
           - full
 
 concurrency:
-  # A newer push to the same branch or pull request supersedes this run;
-  # manual dispatches keep their own group.
+  # A newer push to a pull request supersedes this run (the pull request's
+  # diff still covers every change). On main every run finishes: the next
+  # push may not match this workflow's paths, so a cancelled run would leave
+  # its commit unchecked. Manual dispatches keep their own group.
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
