@@ -57,7 +57,7 @@ The default flake package is the Rust server. Configure a database and media
 directory before starting it:
 
 ```sh
-export STRICKNANI_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/stricknani-rust"
+export STRICKNANI_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/stricknani"
 mkdir -p "$STRICKNANI_DATA_DIR/media"
 export STRICKNANI_DATABASE_URL="sqlite:$STRICKNANI_DATA_DIR/stricknani.sqlite3"
 export STRICKNANI_MEDIA_ROOT="$STRICKNANI_DATA_DIR/media"

@@ -150,7 +150,7 @@ in
 
     dataDir = lib.mkOption {
       type = lib.types.path;
-      default = "/var/lib/stricknani-rust";
+      default = "/var/lib/stricknani";
       description = "The directory where stricknani stores its data.";
     };
 
@@ -328,7 +328,7 @@ in
 
     databaseUrl = lib.mkOption {
       type = lib.types.str;
-      default = "sqlite:${cfg.dataDir}/rust.sqlite3";
+      default = "sqlite:${cfg.dataDir}/stricknani.sqlite3";
       description = "The database connection string.";
     };
 
@@ -403,10 +403,6 @@ in
       {
         assertion = lib.hasPrefix "/" (toString cfg.mediaRoot);
         message = "services.stricknani requires an absolute mediaRoot.";
-      }
-      {
-        assertion = toString cfg.dataDir != "/var/lib/stricknani";
-        message = "services.stricknani requires a dataDir separate from the legacy Python data directory (/var/lib/stricknani), which holds the pre-cutover snapshot source.";
       }
       {
         assertion = loopbackBind || cfg.sessionCookieSecure;
@@ -530,7 +526,10 @@ in
         serviceConfig = {
           ExecStart = lib.getExe cfg.package;
           WorkingDirectory = cfg.dataDir;
-          StateDirectory = "stricknani-rust";
+          # systemd creates a data directory under /var/lib; others come from tmpfiles.
+          StateDirectory = lib.mkIf (lib.hasPrefix "/var/lib/" (toString cfg.dataDir)) (
+            lib.removePrefix "/var/lib/" (toString cfg.dataDir)
+          );
           StateDirectoryMode = "0750";
           User = user;
           Group = group;

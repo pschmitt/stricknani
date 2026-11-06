@@ -17,18 +17,11 @@ keep evaluating. The legacy Python release is the signed tag `v0.1.0` on
 `main`, and its module revision is the rollback.
 
 The module selects the Rust package by default and uses
-`/var/lib/stricknani-rust` as its data directory. Its default database is
-`rust.sqlite3` and its default media directory is `media` under that data
-directory. The legacy Python service used `/var/lib/stricknani`; the module
-rejects that directory as `dataDir`, so keep Rust paths separate from the
-legacy database and media tree. Do not configure Rust with the legacy data
-paths.
-
-This branch's module default does not change a deployed service whose
-production configuration still imports a separately pinned older module
-revision. Advancing that production input, migrating data, and switching
-traffic remain separate steps that require the documented acceptance and
-approval process.
+`/var/lib/stricknani` as its data directory. Its default database is
+`stricknani.sqlite3` and its default media directory is `media` under that
+data directory, the same layout as the container image. Production ran from
+`/var/lib/stricknani-rust` during the cutover; it moved back to
+`/var/lib/stricknani` once the Python data had been archived.
 
 The module translates its service options into the Rust environment names:
 `STRICKNANI_DATABASE_URL`, `STRICKNANI_MEDIA_ROOT`, `BIND_HOST`, `BIND_PORT`,
