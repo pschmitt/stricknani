@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -64,8 +64,9 @@
   $effect(() => {
     const id = projectId;
     const timersEnabled = enabled;
+    // Only the signed-in user matters here: depending on the whole session would
+    // reset the timer on every session refresh.
     const userId = session.data?.user?.id;
-    const currentSession = session.data;
     const requestGeneration = ++generation;
     controller?.abort();
     refreshController?.abort();
@@ -77,9 +78,8 @@
     reminderMinutes = 60;
     reminderAfter = null;
     reminderRun = null;
-    const currentReminderKey = currentSession?.user
-      ? `stricknani:timer-reminder:${currentSession.user.id}:${id}`
-      : "";
+    const currentReminderKey =
+      userId !== undefined ? `stricknani:timer-reminder:${userId}:${id}` : "";
     reminderKey = currentReminderKey;
     if (currentReminderKey) {
       try {
@@ -116,9 +116,9 @@
       loading = false;
       return () => requestController.abort();
     }
-    if (!currentSession?.user || userId === undefined) {
+    if (userId === undefined) {
       loading = false;
-      error = t("Sign in to use the project timer.", locale);
+      error = untrack(() => t("Sign in to use the project timer.", locale));
       return () => requestController.abort();
     }
     void getProjectTimer(id, requestController.signal)

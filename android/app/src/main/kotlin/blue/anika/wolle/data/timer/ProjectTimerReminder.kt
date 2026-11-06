@@ -150,6 +150,7 @@ constructor(
         intervalMinutes: Int,
         requestedDeadlineMillis: Long? = null,
         expectedAccountKey: String? = null,
+        policy: ExistingWorkPolicy = ExistingWorkPolicy.REPLACE,
     ) {
         val accountKey = preferences.currentAccountKey() ?: return
         if (expectedAccountKey != null && expectedAccountKey != accountKey) return
@@ -181,7 +182,7 @@ constructor(
                 .addTag(TAG)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES)
                 .build()
-        workManager.enqueueUniqueWork(workName(projectId), ExistingWorkPolicy.REPLACE, request)
+        workManager.enqueueUniqueWork(workName(projectId), policy, request)
     }
 
     suspend fun cancel(projectId: Int, accountKey: String?) {
@@ -223,6 +224,7 @@ constructor(
     private val preferences: ProjectTimerReminderRepository,
     private val appPreferences: AppPreferencesRepository,
     private val notifier: ProjectTimerReminderNotifier,
+    private val scheduler: ProjectTimerReminderScheduler,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val projectId = inputData.getInt(KEY_PROJECT_ID, -1)
@@ -291,10 +293,26 @@ constructor(
                 return Result.success()
             }
             notifier.show(projectId)
+            // Remind again after another interval for as long as the same run keeps going,
+            // like the web reminder that stays due until "Keep timing" or Stop.
+            scheduler.schedule(
+                projectId = projectId,
+                startedAt = expectedStartedAt,
+                intervalMinutes = interval,
+                expectedAccountKey = expectedAccount,
+                // Appended behind this running work: REPLACE would cancel the worker itself.
+                policy = ExistingWorkPolicy.APPEND_OR_REPLACE,
+            )
             return Result.success()
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (_: HttpException) {
+        } catch (failure: HttpException) {
+            if (isGoneOrForbidden(failure.code())) {
+                // The project was deleted or is no longer editable: nothing to remind about.
+                preferences.setDeadline(expectedAccount, projectId, null)
+                notifier.cancel(projectId)
+                return Result.success()
+            }
             return if (runAttemptCount < 3) Result.retry() else Result.success()
         } catch (failure: Exception) {
             return if (runAttemptCount < 3) Result.retry() else Result.success()
@@ -309,6 +327,9 @@ constructor(
         const val KEY_INTERVAL = "interval"
     }
 }
+
+internal fun isGoneOrForbidden(httpStatus: Int): Boolean =
+    httpStatus == 403 || httpStatus == 404 || httpStatus == 410
 
 @Singleton
 class ProjectTimerReminderNotifier

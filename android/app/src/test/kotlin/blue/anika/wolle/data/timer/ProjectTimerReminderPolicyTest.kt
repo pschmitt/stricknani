@@ -108,4 +108,13 @@ class ProjectTimerReminderPolicyTest {
 
         assertEquals(now + 60 * 60_000L, deadline)
     }
+
+    @Test
+    fun `a deleted or no longer editable project stops its reminders`() {
+        assertTrue(isGoneOrForbidden(403))
+        assertTrue(isGoneOrForbidden(404))
+        assertTrue(isGoneOrForbidden(410))
+        assertFalse(isGoneOrForbidden(401))
+        assertFalse(isGoneOrForbidden(500))
+    }
 }
