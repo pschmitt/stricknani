@@ -37,6 +37,13 @@
         "patch"
       ],
       "groupName": "npm minor and patch"
+    },
+    {
+      "description": "p256 must stay on web-push-native's version (0.13): their key types are shared. Lift once web-push-native moves to 0.14.",
+      "matchPackageNames": [
+        "p256"
+      ],
+      "allowedVersions": "<0.14"
     }
   ],
   "nix": {
