@@ -219,8 +219,8 @@ export async function runYarnJourney(
   cfg: E2eConfig,
 ): Promise<void> {
   const origin = f.origin;
-  const email = f.env.STRICKNANI_RUST_TEST_EMAIL;
-  const password = f.env.STRICKNANI_RUST_TEST_PASSWORD;
+  const email = f.env.STRICKNANI_TEST_EMAIL;
+  const password = f.env.STRICKNANI_TEST_PASSWORD;
   const screenshots = f.screenshotDir;
   const stage = stageMarker(path.dirname(screenshots));
   const markStage = (value: string): void => stage.mark(value);

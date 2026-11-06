@@ -448,8 +448,8 @@ export async function runAccessibilityJourney(
       await exerciseAccessibility(
         page,
         f.origin,
-        f.env.STRICKNANI_RUST_TEST_EMAIL,
-        f.env.STRICKNANI_RUST_TEST_PASSWORD,
+        f.env.STRICKNANI_TEST_EMAIL,
+        f.env.STRICKNANI_TEST_PASSWORD,
         (value) => stage.mark(value),
       );
     } finally {

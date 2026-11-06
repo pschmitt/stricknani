@@ -41,9 +41,9 @@ export class FixtureError extends Error {
 }
 
 export interface FixtureEnvironment {
-  STRICKNANI_RUST_TEST_URL: string;
-  STRICKNANI_RUST_TEST_EMAIL: string;
-  STRICKNANI_RUST_TEST_PASSWORD: string;
+  STRICKNANI_TEST_URL: string;
+  STRICKNANI_TEST_EMAIL: string;
+  STRICKNANI_TEST_PASSWORD: string;
 }
 
 export interface FixtureProcess {
@@ -177,9 +177,9 @@ export function loadFixtureEnvironment(path: string): FixtureEnvironment {
     throw new FixtureError("fixture file has an invalid format");
   }
   return {
-    STRICKNANI_RUST_TEST_URL: url,
-    STRICKNANI_RUST_TEST_EMAIL: email,
-    STRICKNANI_RUST_TEST_PASSWORD: password,
+    STRICKNANI_TEST_URL: url,
+    STRICKNANI_TEST_EMAIL: email,
+    STRICKNANI_TEST_PASSWORD: password,
   };
 }
 
@@ -429,7 +429,7 @@ export async function startFixture(o: StartFixtureOptions): Promise<void> {
   mkdirSync(base, { mode: 0o700, recursive: true });
   const runtime = join(
     base,
-    `stricknani-rust-${randomBytes(12).toString("hex")}`,
+    `stricknani-fixture-${randomBytes(12).toString("hex")}`,
   );
   mkdirSync(runtime, { mode: 0o700 });
   const owner = randomBytes(24).toString("hex");

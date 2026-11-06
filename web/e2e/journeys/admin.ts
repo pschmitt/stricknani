@@ -1436,7 +1436,7 @@ export async function createFixtureAdmin(
         "fixture runtime owner marker is not private",
       );
     }
-    const port = new URL(fixture.STRICKNANI_RUST_TEST_URL).port;
+    const port = new URL(fixture.STRICKNANI_TEST_URL).port;
     if (port === "") throw new AcceptanceFailure("fixture URL has no port");
     env = serverEnvironment(runtime, Number(port), path.resolve(cfg.webRoot));
   } catch (error) {

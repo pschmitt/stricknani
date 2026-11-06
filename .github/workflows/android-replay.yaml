@@ -16,12 +16,12 @@ on:
       - "web/e2e/**"
       - "web/package.json"
       - "web/package-lock.json"
-      - "ci/run-rust-*.sh"
+      - "ci/run-*.sh"
       - "nix/rust-package.nix"
       - "docs/rust-replay-ci.md"
       - "flake.nix"
       - "flake.lock"
-      - ".github/workflows/android-rust-replay.yaml"
+      - ".github/workflows/android-replay.yaml"
   workflow_dispatch:
 
 concurrency:
@@ -82,8 +82,8 @@ jobs:
           npm --prefix web run --silent fixture -- start \
             --binary "$RUST_SERVER_BINARY" \
             --temp-dir "$RUNNER_TEMP" \
-            --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
-            --state-file "$RUNNER_TEMP/stricknani-rust-fixture-state.json"
+            --fixture-file "$RUNNER_TEMP/stricknani-fixture.json" \
+            --state-file "$RUNNER_TEMP/stricknani-fixture-state.json"
 
       - name: Enable KVM
         uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
@@ -103,22 +103,22 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
-          script: bash ../ci/run-rust-replay-ci.sh
+          script: bash ../ci/run-replay-ci.sh
 
       - name: Stop and remove server fixture
         if: ${{ always() }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          if [[ -f "$RUNNER_TEMP/stricknani-rust-fixture-state.json" ]]; then
+          if [[ -f "$RUNNER_TEMP/stricknani-fixture-state.json" ]]; then
             npm --prefix web run --silent fixture -- stop \
-              --state-file "$RUNNER_TEMP/stricknani-rust-fixture-state.json" || true
+              --state-file "$RUNNER_TEMP/stricknani-fixture-state.json" || true
           fi
 
       - name: Upload sanitized replay failure log
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: android-rust-replay-failure-${{ github.run_id }}
+          name: android-replay-failure-${{ github.run_id }}
           if-no-files-found: ignore
           path: ${{ runner.temp }}/rust-replay-sanitized.log

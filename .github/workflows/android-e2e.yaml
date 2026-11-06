@@ -9,7 +9,7 @@ on:
       - "web/e2e/**"
       - "web/package.json"
       - "web/package-lock.json"
-      - "ci/run-rust-*.sh"
+      - "ci/run-*.sh"
       - "Cargo.toml"
       - "Cargo.lock"
       - "src/**"
@@ -21,14 +21,14 @@ on:
       - "nix/rust-package.nix"
       - "flake.nix"
       - "flake.lock"
-      - ".github/workflows/android-rust-e2e.yaml"
+      - ".github/workflows/android-e2e.yaml"
   pull_request:
     paths:
       - "android/**"
       - "web/e2e/**"
       - "web/package.json"
       - "web/package-lock.json"
-      - "ci/run-rust-*.sh"
+      - "ci/run-*.sh"
       - "Cargo.toml"
       - "Cargo.lock"
       - "src/**"
@@ -40,7 +40,7 @@ on:
       - "nix/rust-package.nix"
       - "flake.nix"
       - "flake.lock"
-      - ".github/workflows/android-rust-e2e.yaml"
+      - ".github/workflows/android-e2e.yaml"
   workflow_dispatch:
     inputs:
       lane:
@@ -78,9 +78,9 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          printf 'RUST_FIXTURE_FILE=%s/stricknani-rust-e2e-fixture.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
-          printf 'RUST_FIXTURE_STATE=%s/stricknani-rust-e2e-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
-          printf 'RUST_E2E_TOKEN_FILE=%s/stricknani-rust-e2e-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'FIXTURE_FILE=%s/stricknani-e2e-fixture.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'FIXTURE_STATE=%s/stricknani-e2e-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'E2E_TOKEN_FILE=%s/stricknani-e2e-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -117,23 +117,23 @@ jobs:
           npm --prefix web run --silent fixture -- start \
             --binary "$RUST_SERVER_BINARY" \
             --temp-dir "$RUNNER_TEMP" \
-            --fixture-file "$RUST_FIXTURE_FILE" \
-            --state-file "$RUST_FIXTURE_STATE"
+            --fixture-file "$FIXTURE_FILE" \
+            --state-file "$FIXTURE_STATE"
 
       - name: Seed Android E2E records
         shell: bash
         run: |
           set -Eeuo pipefail
           npm --prefix web run --silent seed -- \
-            --fixture-file "$RUST_FIXTURE_FILE" \
-            --token-file "$RUST_E2E_TOKEN_FILE"
+            --fixture-file "$FIXTURE_FILE" \
+            --token-file "$E2E_TOKEN_FILE"
 
       # This disposable PAT is masked before the existing script passes it to Gradle.
       - name: Mask and export disposable API token
         shell: bash
         run: |
           set -Eeuo pipefail
-          node - "$RUST_E2E_TOKEN_FILE" "$GITHUB_ENV" <<'JS'
+          node - "$E2E_TOKEN_FILE" "$GITHUB_ENV" <<'JS'
           const { appendFileSync, readFileSync } = require("node:fs");
 
           const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
@@ -150,7 +150,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          port="$(node - "$RUST_FIXTURE_FILE" <<'JS'
+          port="$(node - "$FIXTURE_FILE" <<'JS'
           const { readFileSync } = require("node:fs");
 
           const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
@@ -171,7 +171,7 @@ jobs:
           console.log(parsed.port);
           JS
           )"
-          printf 'RUST_FIXTURE_PORT=%s\n' "$port" >> "$GITHUB_ENV"
+          printf 'FIXTURE_PORT=%s\n' "$port" >> "$GITHUB_ENV"
 
       - name: Enable KVM
         uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
@@ -195,7 +195,7 @@ jobs:
           cores: 4
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
-          script: bash ../ci/run-rust-e2e-ci.sh
+          script: bash ../ci/run-e2e-ci.sh
 
       - name: Summarize Android instrumentation failures
         if: ${{ failure() }}
@@ -204,15 +204,15 @@ jobs:
           set -Eeuo pipefail
           npm --prefix web run --silent summarize-e2e -- \
             --results-dir "$GITHUB_WORKSPACE/android/app/build/outputs/androidTest-results/connected/debug" \
-            --fixture-file "$RUST_FIXTURE_FILE" \
-            --token-file "$RUST_E2E_TOKEN_FILE"
+            --fixture-file "$FIXTURE_FILE" \
+            --token-file "$E2E_TOKEN_FILE"
 
       - name: Stop and remove server fixture
         if: ${{ always() }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          if [[ -f "$RUST_FIXTURE_STATE" ]]; then
-            npm --prefix web run --silent fixture -- stop --state-file "$RUST_FIXTURE_STATE" || true
+          if [[ -f "$FIXTURE_STATE" ]]; then
+            npm --prefix web run --silent fixture -- stop --state-file "$FIXTURE_STATE" || true
           fi
-          rm -f -- "$RUST_E2E_TOKEN_FILE" "$RUST_FIXTURE_FILE" "$RUST_FIXTURE_STATE"
+          rm -f -- "$E2E_TOKEN_FILE" "$FIXTURE_FILE" "$FIXTURE_STATE"

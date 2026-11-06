@@ -11,10 +11,10 @@ test("project timer edits, runs, persists, and reminds", async () => {
     const page = await context.newPage();
     try {
       await page.goto(`${fixture.origin}/app/`, { waitUntil: "networkidle" });
-      await page.locator("#email").fill(fixture.env.STRICKNANI_RUST_TEST_EMAIL);
+      await page.locator("#email").fill(fixture.env.STRICKNANI_TEST_EMAIL);
       await page
         .locator("#password")
-        .fill(fixture.env.STRICKNANI_RUST_TEST_PASSWORD);
+        .fill(fixture.env.STRICKNANI_TEST_PASSWORD);
       await page.getByRole("button", { name: "Sign in" }).click();
       await page
         .getByRole("heading", { name: "Projects" })

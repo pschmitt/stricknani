@@ -35,7 +35,7 @@ main() {
 
   # npm runs the script from web/, so every path below is absolute.
   npm --prefix web run --silent fixture -- run-replay \
-    --fixture-file "$RUNNER_TEMP/stricknani-rust-fixture.json" \
+    --fixture-file "$RUNNER_TEMP/stricknani-fixture.json" \
     --adb "$adb_bin" \
     --serial "${emulators[0]}" \
     --apk "$repo_root/android/app/build/outputs/apk/debug/app-x86_64-debug.apk" \

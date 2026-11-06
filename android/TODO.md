@@ -533,7 +533,7 @@ checks passed (runs 41311349505 and 41311346438).
 **Why:** verify actual Android offline replay and conflict behavior against the Rust candidate,
 beyond the existing Retrofit-only JVM contract test.
 **How to apply:** provision `files/rust-replay-fixture.json` in the debug app's private data from
-the three `STRICKNANI_RUST_TEST_*` environment variables, then run the class with
+the three `STRICKNANI_TEST_*` environment variables, then run the class with
 `blue.anika.wolle.debug.test/androidx.test.runner.AndroidJUnitRunner`.
 
 Status: **done**, 2026-11-01 - instrumentation passed on an API 34 x86_64 disposable
@@ -548,8 +548,8 @@ emulation needed Bluetooth disabled to avoid repeated service crashes and applic
 - [x] Cover categories, yarns, projects, favorites, sync, multipart image/attachment/photo uploads,
       and bearer-protected media reads; clean up created domain records after the test.
 - [x] Run the focused test against the disposable Rust server with fixture URL and credentials
-      supplied through `STRICKNANI_RUST_TEST_URL`, `STRICKNANI_RUST_TEST_EMAIL`, and
-      `STRICKNANI_RUST_TEST_PASSWORD`.
+      supplied through `STRICKNANI_TEST_URL`, `STRICKNANI_TEST_EMAIL`, and
+      `STRICKNANI_TEST_PASSWORD`.
 
 **Why:** verify the actual Kotlin API clients and media authorization against Rust v1 before
 accepting the candidate backend.

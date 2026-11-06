@@ -72,9 +72,9 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          printf 'RUST_FIXTURE_FILE=%s/stricknani-screenshot-fixture.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
-          printf 'RUST_FIXTURE_STATE=%s/stricknani-screenshot-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
-          printf 'RUST_E2E_TOKEN_FILE=%s/stricknani-screenshot-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'FIXTURE_FILE=%s/stricknani-screenshot-fixture.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'FIXTURE_STATE=%s/stricknani-screenshot-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'E2E_TOKEN_FILE=%s/stricknani-screenshot-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -112,23 +112,23 @@ jobs:
           npm --prefix web run --silent fixture -- start \
             --binary "$RUST_SERVER_BINARY" \
             --temp-dir "$RUNNER_TEMP" \
-            --fixture-file "$RUST_FIXTURE_FILE" \
-            --state-file "$RUST_FIXTURE_STATE"
+            --fixture-file "$FIXTURE_FILE" \
+            --state-file "$FIXTURE_STATE"
 
       - name: Seed screenshot records
         shell: bash
         run: |
           set -Eeuo pipefail
           npm --prefix web run --silent seed -- \
-            --fixture-file "$RUST_FIXTURE_FILE" \
-            --token-file "$RUST_E2E_TOKEN_FILE" \
+            --fixture-file "$FIXTURE_FILE" \
+            --token-file "$E2E_TOKEN_FILE" \
             --screenshot-detail
 
       - name: Mask and export disposable API token and fixture port
         shell: bash
         run: |
           set -Eeuo pipefail
-          node - "$RUST_E2E_TOKEN_FILE" "$RUST_FIXTURE_FILE" "$GITHUB_ENV" <<'JS'
+          node - "$E2E_TOKEN_FILE" "$FIXTURE_FILE" "$GITHUB_ENV" <<'JS'
           const { appendFileSync, readFileSync } = require("node:fs");
 
           const token = JSON.parse(readFileSync(process.argv[2], "utf8")).token;
@@ -241,10 +241,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          if [[ -f "$RUST_FIXTURE_STATE" ]]; then
-            npm --prefix web run --silent fixture -- stop --state-file "$RUST_FIXTURE_STATE" || true
+          if [[ -f "$FIXTURE_STATE" ]]; then
+            npm --prefix web run --silent fixture -- stop --state-file "$FIXTURE_STATE" || true
           fi
-          rm -f -- "$RUST_E2E_TOKEN_FILE" "$RUST_FIXTURE_FILE" "$RUST_FIXTURE_STATE"
+          rm -f -- "$E2E_TOKEN_FILE" "$FIXTURE_FILE" "$FIXTURE_STATE"
 
   aggregate-play-store-screenshots:
     needs: capture

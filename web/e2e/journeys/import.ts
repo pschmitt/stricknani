@@ -63,8 +63,8 @@ export async function runImportJourney(
   cfg: E2eConfig,
 ): Promise<string> {
   const origin = f.origin;
-  const email = f.env.STRICKNANI_RUST_TEST_EMAIL;
-  const password = f.env.STRICKNANI_RUST_TEST_PASSWORD;
+  const email = f.env.STRICKNANI_TEST_EMAIL;
+  const password = f.env.STRICKNANI_TEST_PASSWORD;
   const screenshots = f.screenshotDir;
   const stage = stageMarker(f.privateDir);
   const markStage = (value: string): void => stage.mark(value);

@@ -182,6 +182,8 @@ async fn connect_options(options: SqliteConnectOptions) -> Result<SqlitePool, Da
         .fetch_optional(&pool)
         .await
         .map_err(DatabaseError::Connect)?;
+        // The marker written by migration 0001. It keeps its historical value:
+        // applied migrations are checksummed, so it cannot be renamed in place.
         if owned.as_deref() != Some("stricknani-rust") {
             pool.close().await;
             return Err(DatabaseError::ForeignDatabase);

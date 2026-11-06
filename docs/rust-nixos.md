@@ -19,9 +19,7 @@ keep evaluating. The legacy Python release is the signed tag `v0.1.0` on
 The module selects the Rust package by default and uses
 `/var/lib/stricknani` as its data directory. Its default database is
 `stricknani.sqlite3` and its default media directory is `media` under that
-data directory, the same layout as the container image. Production ran from
-`/var/lib/stricknani-rust` during the cutover; it moved back to
-`/var/lib/stricknani` once the Python data had been archived.
+data directory, the same layout as the container image.
 
 The module translates its service options into the Rust environment names:
 `STRICKNANI_DATABASE_URL`, `STRICKNANI_MEDIA_ROOT`, `BIND_HOST`, `BIND_PORT`,

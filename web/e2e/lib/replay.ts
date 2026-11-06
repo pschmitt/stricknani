@@ -106,7 +106,7 @@ function isLoopbackAddress(host: string): boolean {
 
 /** Require a plain loopback HTTP(S) origin suitable for adb reverse. */
 export function validateUrl(value: string): [string, number] {
-  const invalid = "STRICKNANI_RUST_TEST_URL must be a valid loopback URL";
+  const invalid = "STRICKNANI_TEST_URL must be a valid loopback URL";
   if (!value || /[\s\u0000-\u001f]/.test(value)) {
     throw new ReplayError(invalid);
   }
@@ -129,7 +129,7 @@ export function validateUrl(value: string): [string, number] {
   }
   const host = parsed.hostname;
   if (host.toLowerCase() !== "localhost" && !isLoopbackAddress(host)) {
-    throw new ReplayError("STRICKNANI_RUST_TEST_URL must use a loopback host");
+    throw new ReplayError("STRICKNANI_TEST_URL must use a loopback host");
   }
   let port: number;
   if (parsed.port === "") {
@@ -138,7 +138,7 @@ export function validateUrl(value: string): [string, number] {
     port = Number(parsed.port);
   }
   if (!(port >= 1 && port <= 65535)) {
-    throw new ReplayError("STRICKNANI_RUST_TEST_URL has an invalid port");
+    throw new ReplayError("STRICKNANI_TEST_URL has an invalid port");
   }
   const path = parsed.pathname.replace(/\/+$/, "");
   return [`${scheme}://127.0.0.1:${port}${path}`, port];
@@ -148,23 +148,21 @@ export function validateUrl(value: string): [string, number] {
 export function readFixture(
   environment: Record<string, string | undefined> = process.env,
 ): Fixture {
-  const url = environment.STRICKNANI_RUST_TEST_URL ?? "";
-  const email = environment.STRICKNANI_RUST_TEST_EMAIL ?? "";
-  const password = environment.STRICKNANI_RUST_TEST_PASSWORD ?? "";
+  const url = environment.STRICKNANI_TEST_URL ?? "";
+  const email = environment.STRICKNANI_TEST_EMAIL ?? "";
+  const password = environment.STRICKNANI_TEST_PASSWORD ?? "";
   if (!url || !email || !password) {
     throw new ReplayError(
-      "all STRICKNANI_RUST_TEST_URL/EMAIL/PASSWORD variables are required",
+      "all STRICKNANI_TEST_URL/EMAIL/PASSWORD variables are required",
     );
   }
   const [normalizedUrl, port] = validateUrl(url);
   if (Buffer.byteLength(email, "utf-8") > 320 || !email.trim()) {
-    throw new ReplayError("STRICKNANI_RUST_TEST_EMAIL is invalid");
+    throw new ReplayError("STRICKNANI_TEST_EMAIL is invalid");
   }
   const passwordBytes = Buffer.byteLength(password, "utf-8");
   if (passwordBytes < 12 || passwordBytes > 1024) {
-    throw new ReplayError(
-      "STRICKNANI_RUST_TEST_PASSWORD must be 12 to 1024 bytes",
-    );
+    throw new ReplayError("STRICKNANI_TEST_PASSWORD must be 12 to 1024 bytes");
   }
   return new Fixture(normalizedUrl, url, email, password, port);
 }
@@ -436,7 +434,7 @@ export function runReplay(options: ReplayOptions): void {
     run(shell("chmod", "600", TEMP_FIXTURE), { timeout });
     run(shell("mv", "-f", TEMP_FIXTURE, FIXTURE_PATH), { timeout });
     run(shell("chmod", "600", FIXTURE_PATH), { timeout });
-    const tempDir = mkdtempSync(join(tmpdir(), "stricknani-rust-replay-"));
+    const tempDir = mkdtempSync(join(tmpdir(), "stricknani-replay-"));
     try {
       chmodSync(tempDir, 0o700);
       const logPath = join(tempDir, "instrumentation.log");

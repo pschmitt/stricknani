@@ -441,15 +441,15 @@ export async function seedFixture(
   const environment = loadFixtureEnvironment(fixtureFile);
   const tokenTarget = validateTokenPath(tokenFile, fixtureFile);
   const client = new ApiClient(
-    environment.STRICKNANI_RUST_TEST_URL,
+    environment.STRICKNANI_TEST_URL,
     opts.opener ?? defaultOpener(),
   );
 
   const tokenPayload = asObject(
     await client.request("POST", "/api/v1/auth/token", {
       payload: {
-        email: environment.STRICKNANI_RUST_TEST_EMAIL,
-        password: environment.STRICKNANI_RUST_TEST_PASSWORD,
+        email: environment.STRICKNANI_TEST_EMAIL,
+        password: environment.STRICKNANI_TEST_PASSWORD,
         token_name: "Android E2E",
       },
     }),

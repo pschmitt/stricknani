@@ -559,8 +559,8 @@ export async function runMediaTilesJourney(
 ): Promise<void> {
   const browserName = cfg.browser;
   const { origin } = f;
-  const email = f.env.STRICKNANI_RUST_TEST_EMAIL;
-  const password = f.env.STRICKNANI_RUST_TEST_PASSWORD;
+  const email = f.env.STRICKNANI_TEST_EMAIL;
+  const password = f.env.STRICKNANI_TEST_PASSWORD;
   const shotsDir = f.screenshotDir;
   // WebKit's screenshot path injects inline styles that strict CSP blocks.
   const shots: string | null = browserName === "webkit" ? null : shotsDir;

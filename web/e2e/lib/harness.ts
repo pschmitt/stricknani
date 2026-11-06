@@ -81,7 +81,7 @@ export interface LiveFixture {
   stateFile: string;
   screenshotDir: string;
   env: FixtureEnvironment;
-  /** `loopbackOrigin(env.STRICKNANI_RUST_TEST_URL)` */
+  /** `loopbackOrigin(env.STRICKNANI_TEST_URL)` */
   origin: string;
 }
 
@@ -139,7 +139,7 @@ export async function withLiveFixture<T>(
         stateFile,
         screenshotDir,
         env,
-        origin: loopbackOrigin(env.STRICKNANI_RUST_TEST_URL),
+        origin: loopbackOrigin(env.STRICKNANI_TEST_URL),
       });
     } finally {
       try {

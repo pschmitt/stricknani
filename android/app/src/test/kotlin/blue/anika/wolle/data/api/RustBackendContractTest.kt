@@ -37,9 +37,9 @@ class RustBackendContractTest {
     @Test
     fun appApisRoundTripRustV1AndProtectUploadedMedia() =
         runBlocking<Unit> {
-            val serverUrl = System.getenv("STRICKNANI_RUST_TEST_URL")?.trim()?.trimEnd('/')
-            val email = System.getenv("STRICKNANI_RUST_TEST_EMAIL")
-            val password = System.getenv("STRICKNANI_RUST_TEST_PASSWORD")
+            val serverUrl = System.getenv("STRICKNANI_TEST_URL")?.trim()?.trimEnd('/')
+            val email = System.getenv("STRICKNANI_TEST_EMAIL")
+            val password = System.getenv("STRICKNANI_TEST_PASSWORD")
             assumeTrue(
                 "Rust integration fixture environment is not configured",
                 !serverUrl.isNullOrBlank() && !email.isNullOrBlank() && !password.isNullOrBlank(),

@@ -414,7 +414,7 @@ async function prepareBrowserUpdate(p: PrepareUpdate): Promise<string> {
   }
   // Confirm that the replacement server is still on the original origin.
   const fixture = loadFixtureEnvironment(p.fixtureFile);
-  const replacement = parseOrigin(fixture.STRICKNANI_RUST_TEST_URL);
+  const replacement = parseOrigin(fixture.STRICKNANI_TEST_URL);
   check(
     replacement.origin === p.origin && replacement.port === p.port,
     "replacement fixture did not retain the browser origin",
@@ -449,8 +449,8 @@ async function signInThroughApi(
       return response.status;
     },
     {
-      email: current.STRICKNANI_RUST_TEST_EMAIL,
-      password: current.STRICKNANI_RUST_TEST_PASSWORD,
+      email: current.STRICKNANI_TEST_EMAIL,
+      password: current.STRICKNANI_TEST_PASSWORD,
     },
   );
   check(
@@ -517,9 +517,9 @@ async function runAcceptance(
   const binary = cfg.binary;
   const webRoot = cfg.webRoot;
   const fixture = loadFixtureEnvironment(fixtureFile);
-  const { origin, port } = parseOrigin(fixture.STRICKNANI_RUST_TEST_URL);
-  const email = fixture.STRICKNANI_RUST_TEST_EMAIL;
-  const password = fixture.STRICKNANI_RUST_TEST_PASSWORD;
+  const { origin, port } = parseOrigin(fixture.STRICKNANI_TEST_URL);
+  const email = fixture.STRICKNANI_TEST_EMAIL;
+  const password = fixture.STRICKNANI_TEST_PASSWORD;
   const {
     version: expectedVersion,
     appCodeVersion: expectedAppVersion,

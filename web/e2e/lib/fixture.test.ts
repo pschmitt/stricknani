@@ -78,13 +78,13 @@ describe("private files", () => {
     const environment = loadFixtureEnvironment(fixture);
 
     expect(environment).toEqual({
-      STRICKNANI_RUST_TEST_URL: values.url,
-      STRICKNANI_RUST_TEST_EMAIL: values.email,
-      STRICKNANI_RUST_TEST_PASSWORD: values.password,
+      STRICKNANI_TEST_URL: values.url,
+      STRICKNANI_TEST_EMAIL: values.email,
+      STRICKNANI_TEST_PASSWORD: values.password,
     });
     expect({ ...process.env }).toEqual(before);
-    vi.stubEnv("STRICKNANI_RUST_TEST_PASSWORD", "ambient-value");
-    expect(loadFixtureEnvironment(fixture).STRICKNANI_RUST_TEST_PASSWORD).toBe(
+    vi.stubEnv("STRICKNANI_TEST_PASSWORD", "ambient-value");
+    expect(loadFixtureEnvironment(fixture).STRICKNANI_TEST_PASSWORD).toBe(
       values.password,
     );
     vi.unstubAllEnvs();

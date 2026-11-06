@@ -27,10 +27,10 @@ run_e2e() {
     printf '%s\n' 'E2E_TOKEN must contain the masked disposable fixture token.' >&2
     return 2
   fi
-  if [[ ! "${RUST_FIXTURE_PORT:-}" =~ ^[0-9]{1,5}$ ]] \
-    || (( 10#${RUST_FIXTURE_PORT} < 1 || 10#${RUST_FIXTURE_PORT} > 65535 ))
+  if [[ ! "${FIXTURE_PORT:-}" =~ ^[0-9]{1,5}$ ]] \
+    || (( 10#${FIXTURE_PORT} < 1 || 10#${FIXTURE_PORT} > 65535 ))
   then
-    printf '%s\n' 'RUST_FIXTURE_PORT must be a valid TCP port.' >&2
+    printf '%s\n' 'FIXTURE_PORT must be a valid TCP port.' >&2
     return 2
   fi
 
@@ -69,7 +69,7 @@ run_e2e() {
 
   trap cleanup_reverse EXIT
 
-  "$ADB_BIN" -s "$EMULATOR_SERIAL" reverse "tcp:7674" "tcp:${RUST_FIXTURE_PORT}" || return 1
+  "$ADB_BIN" -s "$EMULATOR_SERIAL" reverse "tcp:7674" "tcp:${FIXTURE_PORT}" || return 1
   REVERSE_INSTALLED=1
   ./scripts/run-e2e-tests.sh || return 1
 }

@@ -540,10 +540,10 @@ export async function runContrastJourney(
       markStage("entering synthetic sign-in");
       await page
         .getByLabel("Email", { exact: true })
-        .fill(f.env.STRICKNANI_RUST_TEST_EMAIL);
+        .fill(f.env.STRICKNANI_TEST_EMAIL);
       await page
         .getByLabel("Password", { exact: true })
-        .fill(f.env.STRICKNANI_RUST_TEST_PASSWORD);
+        .fill(f.env.STRICKNANI_TEST_PASSWORD);
       await page.getByRole("button", { name: "Sign in", exact: true }).click();
       markStage("waiting for synthetic Projects route");
       await page.waitForURL("**/app/projects", { timeout: 10_000 });

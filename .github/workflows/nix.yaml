@@ -87,7 +87,7 @@ jobs:
           docker load < result-rust-image
           docker run --detach --publish 7674:7674 --name "$container_name" \
             --env STRICKNANI_DATABASE_URL=sqlite::memory: \
-            --env STRICKNANI_MEDIA_ROOT=/tmp/stricknani-rust-media \
+            --env STRICKNANI_MEDIA_ROOT=/tmp/stricknani-media \
             --env TRUSTED_HOSTS=127.0.0.1,localhost \
             --env SESSION_COOKIE_SECURE=true \
             "$image_name"

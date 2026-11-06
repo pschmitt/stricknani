@@ -50,9 +50,9 @@ interface Call {
 
 function fixtureValues(url = "http://localhost:7674"): Record<string, string> {
   return {
-    STRICKNANI_RUST_TEST_URL: url,
-    STRICKNANI_RUST_TEST_EMAIL: "replay@example.invalid",
-    STRICKNANI_RUST_TEST_PASSWORD: "disposable-test-password",
+    STRICKNANI_TEST_URL: url,
+    STRICKNANI_TEST_EMAIL: "replay@example.invalid",
+    STRICKNANI_TEST_PASSWORD: "disposable-test-password",
   };
 }
 

@@ -85,8 +85,8 @@ export async function runAccountJourney(
   cfg: E2eConfig,
 ): Promise<void> {
   const origin = f.origin;
-  const email = f.env.STRICKNANI_RUST_TEST_EMAIL;
-  const oldPassword = f.env.STRICKNANI_RUST_TEST_PASSWORD;
+  const email = f.env.STRICKNANI_TEST_EMAIL;
+  const oldPassword = f.env.STRICKNANI_TEST_PASSWORD;
   const stage = stageMarker(f.privateDir);
   const markStage = (value: string): void => stage.mark(value);
 

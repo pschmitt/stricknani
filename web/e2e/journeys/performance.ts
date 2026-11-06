@@ -436,8 +436,8 @@ async function authStorageState(
     waitUntil: "domcontentloaded",
   });
   const result: unknown = await page.evaluate(fn(AUTH_SCRIPT), {
-    email: env.STRICKNANI_RUST_TEST_EMAIL,
-    password: env.STRICKNANI_RUST_TEST_PASSWORD,
+    email: env.STRICKNANI_TEST_EMAIL,
+    password: env.STRICKNANI_TEST_PASSWORD,
   });
   const fields =
     typeof result === "object" && result !== null
@@ -779,7 +779,7 @@ async function measure(
   f: LiveFixture,
   cfg: E2eConfig,
 ): Promise<PerformanceReport> {
-  const origin = loadFixtureEnvironment(f.fixtureFile).STRICKNANI_RUST_TEST_URL;
+  const origin = loadFixtureEnvironment(f.fixtureFile).STRICKNANI_TEST_URL;
   const proxy = await LoopbackGzipProxy.start(origin);
   let samples: Sample[] = [];
   try {

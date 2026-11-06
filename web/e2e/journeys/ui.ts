@@ -104,8 +104,8 @@ export async function runUiJourney(
   o: UiJourneyOptions,
 ): Promise<void> {
   const origin = f.origin;
-  const email = f.env.STRICKNANI_RUST_TEST_EMAIL;
-  const password = f.env.STRICKNANI_RUST_TEST_PASSWORD;
+  const email = f.env.STRICKNANI_TEST_EMAIL;
+  const password = f.env.STRICKNANI_TEST_PASSWORD;
   const screenshots = f.screenshotDir;
   const stageFile = join(f.privateDir, "browser-stage.txt");
   const stage = stageMarker(f.privateDir);
