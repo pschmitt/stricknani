@@ -1,5 +1,5 @@
 # x86_64-linux package builds and flake checks run on nixbot (aarch64-linux
-# builds on GitHub's arm runners, see the nix-aarch64 job of nix.yaml).
+# builds on GitHub's arm runners, see the nix-aarch64 job of build.yaml).
 attribute = "hydraJobs"
 
 # Extra push branches built besides the default branch (none).

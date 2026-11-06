@@ -3,7 +3,7 @@ name: Release
 # Hand-written rather than delegating to pschmitt/ci-workflows's reusable release.yaml: that
 # workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
 # android/, alongside the unrelated Python web app at the repo root) - same reason as
-# android-build.yaml/android-lint.yaml (see their header comments). This mirrors that reusable
+# the android jobs of build.yaml/checks.yaml (see their header comments). This mirrors that reusable
 # workflow's logic closely (SNA-12), just with every Gradle/path reference scoped under android/.
 #
 # One pipeline, two release flavors depending on what got pushed:
@@ -19,7 +19,7 @@ name: Release
 
 on:
   push:
-    # Deliberately no `paths:` filter here, unlike android-build.yaml/android-lint.yaml: GitHub
+    # Deliberately no `paths:` filter here, unlike build.yaml/checks.yaml: GitHub
     # combines `paths` with `tags` via AND, and path-diff filtering is unreliable for a brand-new
     # tag ref (no meaningful "previous" commit to diff against) - a silently-skipped release on a
     # real version tag push would be a much worse bug than an occasional unneeded "latest" rebuild

@@ -103,7 +103,7 @@
               statix.enable = true;
 
               # Kotlin (android/): the same nixpkgs ktfmt CI's lint job runs
-              # (android-lint.yaml, ktfmt-runner: nix), so local and CI formatting agree.
+              # (the android-lint job of checks.yaml, ktfmt-runner: nix), so local and CI formatting agree.
               ktfmt = {
                 enable = true;
                 name = "ktfmt";
@@ -192,7 +192,7 @@
     // {
       # x86_64-linux package builds and checks run on the self-hosted nixbot.
       # aarch64-linux builds natively on GitHub's arm runners (the nix-aarch64
-      # job of .github/workflows/nix.yaml); the build nodes could only emulate it.
+      # job of .github/workflows/build.yaml); the build nodes could only emulate it.
       hydraJobs = nixpkgs.lib.genAttrs [ "x86_64-linux" ] (system: {
         packages = self.packages.${system} or { };
         checks = self.checks.${system} or { };

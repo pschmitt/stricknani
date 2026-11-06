@@ -1,11 +1,11 @@
 # Android E2E tests
 
-The `Android E2E` workflow uses a disposable Stricknani container and an API-34 `google_apis`
+The `android-e2e` job of the `E2E` workflow uses a disposable Stricknani container and an API-34 `google_apis`
 emulator. It never points the app at a production server or uses personal data.
 
 Pull requests run `StricknaniSmokeTest`, covering onboarding with the fixture URL/token, seeded
 sync, project detail navigation, and the account settings route. Start the longer
-`StricknaniFullE2eTest` lane with **Actions → Android E2E → Run workflow → full**; it adds cached
+`StricknaniFullE2eTest` lane with **Actions → E2E → Run workflow → full**; it adds cached
 browsing, search, and settings coverage. Both lanes receive the fixture URL and token only as
 instrumentation arguments (`e2e_base_url` and `e2e_token`).
 

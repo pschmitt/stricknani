@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani"><img src="https://nixbot.brkn.lol/repos/github/pschmitt/stricknani/badge.svg?branch=main" alt="nixbot"></a>
-  <a href="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml"><img src="https://github.com/pschmitt/stricknani/actions/workflows/test.yaml/badge.svg?branch=main" alt="Checks"></a>
+  <a href="https://github.com/pschmitt/stricknani/actions/workflows/checks.yaml"><img src="https://github.com/pschmitt/stricknani/actions/workflows/checks.yaml/badge.svg?branch=main" alt="Checks"></a>
 </p>
 
 Stricknani is a Rust server with a SvelteKit web app and an offline-first

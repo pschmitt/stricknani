@@ -1,9 +1,10 @@
 # Rust backend Android replay CI
 
-The `Android Replay` workflow runs the app's Room replay instrumentation
+The `android-replay` job of the `E2E` workflow (`e2e.yaml`) runs the app's Room replay instrumentation
 against a disposable build of the Rust server. It runs on pushes to
 `main` when Android, Rust, the replay harness (`web/e2e/`, `ci/run-*.sh`), or workflow inputs change. It can
-also be started with `workflow_dispatch` from GitHub Actions.
+also be started with `workflow_dispatch` from GitHub Actions (which runs every
+E2E job). Pull requests do not run it.
 
 The job builds the Rust server with the `stricknani` flake package, then
 builds the debug app and instrumentation APKs before starting an x86_64 Android

@@ -1,0 +1,484 @@
+name: E2E
+
+# The end-to-end suites in one workflow, in parallel; each job runs only when
+# its files change.
+# - web-build, then browser: the static app, then Playwright against the
+#   packaged web root and the server.
+# - android-e2e: Android journeys against a disposable server fixture
+#   (smoke; `full` by manual dispatch).
+# - android-replay: Room replay against the server; on pushes to main and
+#   manual dispatches, not on pull requests.
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "web/**"
+      - "nix/web-package.nix"
+      - "nix/rust-package.nix"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
+      - "stricknani/locales/**"
+      - "docs/web-v2-contract.md"
+      - "flake.nix"
+      - "flake.lock"
+      - "android/**"
+      - "ci/run-*.sh"
+      - "docs/rust-replay-ci.md"
+      - ".github/workflows/e2e.yaml"
+  pull_request:
+    branches: [main]
+    paths: *paths
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: Android instrumentation journey to run
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - full
+
+concurrency:
+  # A newer push to a pull request supersedes this run (the pull request's
+  # diff still covers every change). On main every run finishes: the next
+  # push may not match a job's paths, so a cancelled run would leave its
+  # commit unchecked. Manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Which jobs this change needs; a manual dispatch runs them all.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      web: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.web == 'true' }}
+      android: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.android == 'true' }}
+      replay: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.replay == 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: filter
+        if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            web:
+              - 'web/**'
+              - 'nix/web-package.nix'
+              - 'nix/rust-package.nix'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'src/**'
+              - 'tests/**'
+              - 'migrations/**'
+              - 'templates/**'
+              - 'examples/**'
+              - 'locales/**'
+              - 'stricknani/locales/**'
+              - 'docs/web-v2-contract.md'
+              - 'flake.nix'
+              - 'flake.lock'
+              - '.github/workflows/e2e.yaml'
+            android:
+              - 'android/**'
+              - 'web/e2e/**'
+              - 'web/package.json'
+              - 'web/package-lock.json'
+              - 'ci/run-*.sh'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'src/**'
+              - 'tests/**'
+              - 'migrations/**'
+              - 'templates/**'
+              - 'examples/**'
+              - 'locales/**'
+              - 'nix/rust-package.nix'
+              - 'flake.nix'
+              - 'flake.lock'
+              - '.github/workflows/e2e.yaml'
+            replay:
+              - 'android/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'src/**'
+              - 'tests/**'
+              - 'migrations/**'
+              - 'templates/**'
+              - 'examples/**'
+              - 'locales/**'
+              - 'web/e2e/**'
+              - 'web/package.json'
+              - 'web/package-lock.json'
+              - 'ci/run-*.sh'
+              - 'nix/rust-package.nix'
+              - 'docs/rust-replay-ci.md'
+              - 'flake.nix'
+              - 'flake.lock'
+              - '.github/workflows/e2e.yaml'
+
+  web-build:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+      - name: Verify static app contract
+        run: |
+          test -s build/200.html
+          test -s build/csp.json
+          test -d build/_app
+          node -e 'const csp = require("./build/csp.json"); if (!Array.isArray(csp.script_hashes) || !Array.isArray(csp.style_hashes)) process.exit(1);'
+
+      - name: Upload static app for browser acceptance
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-static-build
+          path: web/build/**
+          if-no-files-found: error
+          retention-days: 1
+
+  browser:
+    needs: [changes, web-build]
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    name: Browser acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      STRICKNANI_SERVER_BINARY: ${{ github.workspace }}/target/debug/stricknani-server
+      STRICKNANI_FIXTURE_BINARY: ${{ github.workspace }}/target/debug/examples/optional_browser_fixture
+      STRICKNANI_WEB_ROOT: ${{ github.workspace }}/web/build
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download static app
+        uses: actions/download-artifact@v8
+        with:
+          name: web-static-build
+          path: web/build
+
+      - name: Set up Node for candidate update builds
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install candidate update build dependencies
+        run: npm ci --prefix web
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build server and dev-only fixture example
+        run: cargo build --locked --bin stricknani-server --example optional_browser_fixture
+
+      - name: Run browser acceptance suite (Playwright)
+        shell: bash
+        env:
+          # Every spec creates a fresh private directory below this one and
+          # removes it again; the fixtures are stopped by the specs themselves.
+          STRICKNANI_E2E_DIR: ${{ runner.temp }}/stricknani-web-browser
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$STRICKNANI_E2E_DIR"
+          nix develop '.#tooling' --command npm --prefix web run e2e
+
+      - name: Stop remaining browser fixtures and remove private test data
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for private_dir in "$RUNNER_TEMP"/stricknani-web-browser/*
+          do
+            if [[ ! -d "$private_dir" ]]
+            then
+              continue
+            fi
+            state_file="$private_dir/fixture-state.json"
+            if [[ -f "$state_file" ]]
+            then
+              nix develop '.#tooling' --command npm --prefix web run fixture -- stop \
+                --state-file "$state_file" || true
+            fi
+            rm -rf -- "$private_dir"
+          done
+
+  android-e2e:
+    needs: changes
+    if: ${{ needs.changes.outputs.android == 'true' }}
+    name: Server + Android emulator
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    env:
+      E2E_LANE: ${{ github.event_name == 'workflow_dispatch' && inputs.lane || 'smoke' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Prepare private fixture paths
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf 'FIXTURE_FILE=%s/stricknani-e2e-fixture.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'FIXTURE_STATE=%s/stricknani-e2e-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'E2E_TOKEN_FILE=%s/stricknani-e2e-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci --prefix web
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Set up Android SDK and Gradle
+        uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
+
+      # Compile the Rust candidate and both APKs before emulator startup.
+      - name: Build server
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
+          printf 'RUST_SERVER_BINARY=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_ENV"
+
+      - name: Build debug and instrumentation APKs
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+        working-directory: android
+
+      - name: Start disposable server fixture
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm --prefix web run --silent fixture -- start \
+            --binary "$RUST_SERVER_BINARY" \
+            --temp-dir "$RUNNER_TEMP" \
+            --fixture-file "$FIXTURE_FILE" \
+            --state-file "$FIXTURE_STATE"
+
+      - name: Seed Android E2E records
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm --prefix web run --silent seed -- \
+            --fixture-file "$FIXTURE_FILE" \
+            --token-file "$E2E_TOKEN_FILE"
+
+      # This disposable PAT is masked before the existing script passes it to Gradle.
+      - name: Mask and export disposable API token
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node - "$E2E_TOKEN_FILE" "$GITHUB_ENV" <<'JS'
+          const { appendFileSync, readFileSync } = require("node:fs");
+
+          const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          const token = fixture !== null && typeof fixture === "object" ? fixture.token : undefined;
+          if (typeof token !== "string" || !token || /[\r\n]/.test(token)) {
+            console.error("Android E2E token fixture is invalid");
+            process.exit(1);
+          }
+          console.log(`::add-mask::${token}`);
+          appendFileSync(process.argv[3], `E2E_TOKEN=${token}\n`);
+          JS
+
+      - name: Read native fixture port
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          port="$(node - "$FIXTURE_FILE" <<'JS'
+          const { readFileSync } = require("node:fs");
+
+          const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          const parsed = new URL(fixture.url);
+          if (
+            parsed.protocol !== "http:" ||
+            !["127.0.0.1", "localhost"].includes(parsed.hostname) ||
+            parsed.username ||
+            parsed.password ||
+            !parsed.port ||
+            parsed.pathname !== "/" ||
+            parsed.search ||
+            parsed.hash
+          ) {
+            console.error("Rust fixture URL must be a loopback origin with a port");
+            process.exit(1);
+          }
+          console.log(parsed.port);
+          JS
+          )"
+          printf 'FIXTURE_PORT=%s\n' "$port" >> "$GITHUB_ENV"
+
+      - name: Enable KVM
+        uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
+
+      - name: Run Android journeys
+        # The journeys take a few minutes. The emulator action can hang while shutting the
+        # emulator down after they pass (seen 2026-11-06); fail fast so a rerun is cheap instead
+        # of waiting for the 90-minute job timeout.
+        timeout-minutes: 20
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_2
+          target: google_apis
+          force-avd-creation: true
+          emulator-boot-timeout: 1800
+          disable-animations: true
+          ram-size: 4096M
+          heap-size: 512M
+          cores: 4
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          working-directory: android
+          script: bash ../ci/run-e2e-ci.sh
+
+      - name: Summarize Android instrumentation failures
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm --prefix web run --silent summarize-e2e -- \
+            --results-dir "$GITHUB_WORKSPACE/android/app/build/outputs/androidTest-results/connected/debug" \
+            --fixture-file "$FIXTURE_FILE" \
+            --token-file "$E2E_TOKEN_FILE"
+
+      - name: Stop and remove server fixture
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -f "$FIXTURE_STATE" ]]; then
+            npm --prefix web run --silent fixture -- stop --state-file "$FIXTURE_STATE" || true
+          fi
+          rm -f -- "$E2E_TOKEN_FILE" "$FIXTURE_FILE" "$FIXTURE_STATE"
+
+  android-replay:
+    needs: changes
+    if: ${{ needs.changes.outputs.replay == 'true' && github.event_name != 'pull_request' }}
+    name: Server and Android Room replay
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci --prefix web
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Set up Android SDK and Gradle
+        uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
+
+      - name: Build server
+        id: rust
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
+          printf 'binary=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_OUTPUT"
+
+      # Keep Gradle away from the emulator's CPU and memory during boot and tests.
+      - name: Build x86_64 debug and instrumentation APKs
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+        working-directory: android
+
+      - name: Start disposable server fixture
+        shell: bash
+        env:
+          RUST_SERVER_BINARY: ${{ steps.rust.outputs.binary }}
+        run: |
+          set -Eeuo pipefail
+          npm --prefix web run --silent fixture -- start \
+            --binary "$RUST_SERVER_BINARY" \
+            --temp-dir "$RUNNER_TEMP" \
+            --fixture-file "$RUNNER_TEMP/stricknani-fixture.json" \
+            --state-file "$RUNNER_TEMP/stricknani-fixture-state.json"
+
+      - name: Enable KVM
+        uses: pschmitt/ci-workflows/.github/actions/enable-kvm@main
+
+      - name: Run Room replay on x86_64 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_2
+          target: google_apis
+          force-avd-creation: true
+          emulator-boot-timeout: 1800
+          disable-animations: true
+          ram-size: 4096M
+          heap-size: 512M
+          cores: 4
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          working-directory: android
+          script: bash ../ci/run-replay-ci.sh
+
+      - name: Stop and remove server fixture
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -f "$RUNNER_TEMP/stricknani-fixture-state.json" ]]; then
+            npm --prefix web run --silent fixture -- stop \
+              --state-file "$RUNNER_TEMP/stricknani-fixture-state.json" || true
+          fi
+
+      - name: Upload sanitized replay failure log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-replay-failure-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: ${{ runner.temp }}/rust-replay-sanitized.log

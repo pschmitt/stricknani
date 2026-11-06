@@ -61,20 +61,21 @@ scoped to this directory, not mixed into the root one.
   signing key of the rolling `latest` release's debug APKs. A debug build signed with any other key
   cannot be updated in-app and an install over it fails (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
 - **ktfmt is nix-only** (SNA-69): the root `flake.nix` pre-commit hook, `just lint`/`just format`
-  and CI's `Android Lint` ktfmt job (shared workflow, `nix develop .#ktfmt`) all run the same
+  and CI's `android-lint` ktfmt job (Checks workflow) (shared workflow, `nix develop .#ktfmt`) all run the same
   nixpkgs `ktfmt` (kotlinlang style) from the root `flake.lock`. The app does not use the ktfmt
   Gradle plugin any more. If CI's ktfmt job fails anyway, apply its `ktfmt-diff-patch` artifact.
 - CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
-  `.github/workflows/android-*.yaml`). The build, lint, signed release, and Play bundle lanes call
+  `.github/workflows/`: the `android-lint` job of `checks.yaml`, `android` of `build.yaml`,
+  `android-e2e`/`android-replay` of `e2e.yaml`, plus `release.yaml`, `play-store*.yaml` and
+  `android-screenshots.yaml`). The build, lint, signed release, and Play bundle lanes call
   the fleet's reusable `pschmitt/android-app-ci` workflows with `project-directory: android`,
   while E2E and screenshot capture retain their fixture-specific emulator/test orchestration. The
   shared screenshot-PR tail, JDK/Gradle setup, keystore decoding, KVM setup, and emulator wait
-  helper are reused directly. All callers remain path-filtered to `android/**` (plus their fixture
-  inputs where applicable) so backend/web-only changes don't trigger an Android CI run and vice versa.
-- Android Build and Android Lint push triggers currently target `main`. On the Rust rewrite branch,
-  dispatch both workflows explicitly for the exact candidate revision before marking native work
-  verified. Successful Rust E2E and offline-replay runs cover different checks and do not establish
-  that Android Build or Android Lint passed. Record each workflow's revision and result separately.
+  helper are reused directly. The Android jobs stay path-filtered to `android/**` (plus their fixture
+  inputs where applicable, through each workflow's `changes` job) so backend/web-only changes don't
+  run them and vice versa. A manual dispatch of a workflow runs all of its jobs.
+- E2E and replay runs cover different checks from the build and lint jobs; record each job's
+  revision and result separately.
 
 ## Physical test devices
 

@@ -397,9 +397,11 @@ Use this file as the operational source of truth for working in Stricknani.
   `pschmitt/ci-workflows/...@main`, preserving caller triggers, permissions,
   checks, artifacts and publish gates. Keep application-specific checks here.
 - `just check` runs Nix lint, strict Rust checks, the Rust suite,
-  i18n checks and the web checks (including the e2e type check), tests and build. CI runs it as
-  `test.yaml`; `web-ui.yaml` adds the packaged-web browser acceptance and
-  `android-*.yaml` the Android lanes.
+  i18n checks and the web checks (including the e2e type check), tests and build. CI has
+  three workflows whose jobs run in parallel, each only when its files change:
+  `checks.yaml` (Checks: `just check`, Nix lint, Android lint), `build.yaml`
+  (Build: Nix, aarch64, Docker image, Android APKs) and `e2e.yaml` (E2E: the
+  packaged-web browser acceptance, Android journeys and Android replay).
 - Before a release, merge the green Renovate pull requests (fix or comment
   on the rest) and triage the unresolved Sentry issues: fix, or comment and
   resolve. See `docs/maintaining.md`, "Releases".

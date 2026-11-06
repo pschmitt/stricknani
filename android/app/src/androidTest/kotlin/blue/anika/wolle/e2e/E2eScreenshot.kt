@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
-/** Best-effort named screenshots copied out of the emulator by android-e2e.yaml. */
+/** Best-effort named screenshots copied out of the emulator by the E2E workflow. */
 internal fun captureE2eScreenshot(name: String) {
     runCatching {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

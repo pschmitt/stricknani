@@ -1,0 +1,123 @@
+name: Checks
+
+# Lint and test in one workflow; each job runs only when its files change.
+# - project: `just check` - strict Rust lint and tests, the web checks (which
+#   include the tooling and e2e type checks), i18n and Nix lint, as before in
+#   test.yaml (lint.yaml and i18n.yaml ran subsets of it).
+# - nix-lint and android-lint: the shared ci-workflows lint workflows.
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "migrations/**"
+      - "templates/**"
+      - "examples/**"
+      - "locales/**"
+      - "web/**"
+      - "nix/**"
+      - "stricknani/locales/**"
+      - "justfile"
+      - "flake.nix"
+      - "flake.lock"
+      - "ci/**"
+      - "**.nix"
+      - "android/**"
+      - ".github/workflows/checks.yaml"
+  pull_request:
+    branches: [main]
+    paths: *paths
+  workflow_dispatch:
+
+concurrency:
+  # A newer push to a pull request supersedes this run (the pull request's
+  # diff still covers every change). On main every run finishes: the next
+  # push may not match a job's paths, so a cancelled run would leave its
+  # commit unchecked. Manual dispatches keep their own group.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Which jobs this change needs; a manual dispatch runs them all.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      project: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.project == 'true' }}
+      nix: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.nix == 'true' }}
+      android: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.android == 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: filter
+        if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            project:
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'src/**'
+              - 'tests/**'
+              - 'migrations/**'
+              - 'templates/**'
+              - 'examples/**'
+              - 'locales/**'
+              - 'web/**'
+              - 'nix/**'
+              - 'stricknani/locales/**'
+              - 'justfile'
+              - 'flake.nix'
+              - 'flake.lock'
+              - 'ci/**'
+              - '.github/workflows/checks.yaml'
+            nix:
+              - '**.nix'
+              - 'flake.lock'
+              - '.github/workflows/checks.yaml'
+            android:
+              - 'android/**'
+              - '.github/workflows/checks.yaml'
+
+  project:
+    needs: changes
+    if: ${{ needs.changes.outputs.project == 'true' }}
+    name: Server, web and tooling checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Run project checks
+        run: nix develop '.#rust' --command just check
+
+  nix-lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.nix == 'true' }}
+    uses: pschmitt/ci-workflows/.github/workflows/nix-lint.yaml@main
+
+  # The shared lint workflow owns ktfmt, the diff-patch diagnostic, Android
+  # Lint and the report artifact; Android lives in android/. Auto-fix PRs stay
+  # off: this repository has not opted into workflow-authored commits.
+  android-lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.android == 'true' }}
+    uses: pschmitt/ci-workflows/.github/workflows/lint.yaml@main
+    with:
+      project-directory: android
+      lint-baseline-path: ''
+      enable-auto-fix: false
+      # ktfmt runs from the root flake's `ktfmt` devShell (the shared workflow's default
+      # `.#ktfmt`): the same nixpkgs binary as the pre-commit hook.
+    secrets: inherit
+    permissions:
+      contents: read
