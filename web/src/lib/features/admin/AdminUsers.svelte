@@ -637,18 +637,20 @@
             {user.active ? t("Active", locale) : t("Disabled", locale)}
           </span>
           <div class="row-actions">
-            <SharedButton
-              variant="secondary"
-              size="sm"
-              class={user.active ? "user-action--danger" : ""}
-              type="button"
-              disabled={operation !== null}
-              onclick={(event) =>
-                askActive(user, !user.active, event.currentTarget)}
-              icon={user.active ? "user-disable" : "user-enable"}
-            >
-              {user.active ? t("Disable", locale) : t("Enable", locale)}
-            </SharedButton>
+            {#if user.id !== userId}
+              <SharedButton
+                variant="secondary"
+                size="sm"
+                class={user.active ? "user-action--danger" : ""}
+                type="button"
+                disabled={operation !== null}
+                onclick={(event) =>
+                  askActive(user, !user.active, event.currentTarget)}
+                icon={user.active ? "user-disable" : "user-enable"}
+              >
+                {user.active ? t("Disable", locale) : t("Enable", locale)}
+              </SharedButton>
+            {/if}
             <SharedButton
               variant="ghost"
               size="sm"

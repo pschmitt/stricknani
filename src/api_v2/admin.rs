@@ -246,6 +246,13 @@ fn map_admin_error(error: crate::admin_service::AdminError, field: &'static str)
             "admin_conflict",
             "This change would leave the account system without an active administrator",
         ),
+        // Same code as the last-administrator guard so existing clients keep
+        // mapping it; only the message is specific.
+        AdminError::SelfDeactivation => api_error(
+            StatusCode::CONFLICT,
+            "admin_conflict",
+            "You cannot disable your own account",
+        ),
         AdminError::InvalidEmail => {
             field_error("invalid_email", "Enter a valid email address", "email")
         }
