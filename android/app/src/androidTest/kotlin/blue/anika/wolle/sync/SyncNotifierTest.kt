@@ -30,7 +30,7 @@ class SyncNotifierTest {
         val notifier = SyncNotifier(context)
         notifier.ensureChannel()
         notificationManager.cancelAll()
-        notifier.notifySyncFoundChanges()
+        notifier.notifySyncFoundChanges(SyncChanges.Projects)
 
         assertTrue(
             notificationManager.activeNotifications.any { notification ->
@@ -38,7 +38,8 @@ class SyncNotifierTest {
                     notification.notification.channelId == "sync_updates" &&
                     notification.notification.extras.getCharSequence(
                         android.app.Notification.EXTRA_TITLE
-                    ) == context.getString(R.string.app_name)
+                    ) == context.getString(R.string.app_name) &&
+                    notification.notification.contentIntent != null
             }
         )
 

@@ -612,7 +612,9 @@
     <!-- Background sync notification -->
     <string name="sync_notification_channel_name">Neues von Stricknani</string>
     <string name="sync_notification_channel_description">Wenn etwas Neues von einem anderen Gerät ankommt</string>
-    <string name="sync_notification_content">Es gibt Neues von deinen anderen Geräten</string>
+    <string name="sync_notification_projects">Projekte wurden auf einem anderen Gerät geändert</string>
+    <string name="sync_notification_yarns">Garne wurden auf einem anderen Gerät geändert</string>
+    <string name="sync_notification_projects_and_yarns">Projekte und Garne wurden auf einem anderen Gerät geändert</string>
 
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>

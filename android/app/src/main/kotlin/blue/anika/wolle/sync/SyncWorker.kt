@@ -58,11 +58,13 @@ constructor(
             return Result.success()
         }
 
-        var hasChanges = false
+        var yarnsChanged = false
+        var projectsChanged = false
         val failure =
             runSyncStep("categories") { categoryRepository.sync() }
-                ?: runSyncStep("yarns") { hasChanges = yarnRepository.sync() || hasChanges }
-                ?: runSyncStep("projects") { hasChanges = projectRepository.sync() || hasChanges }
+                ?: runSyncStep("yarns") { yarnsChanged = yarnRepository.sync() }
+                ?: runSyncStep("projects") { projectsChanged = projectRepository.sync() }
+        val changes = SyncChanges.of(projects = projectsChanged, yarns = yarnsChanged)
 
         if (failure != null) {
             return if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
@@ -71,10 +73,10 @@ constructor(
         if (
             shouldNotifySyncCompletion(
                 notifyOnChange = inputData.getBoolean(KEY_NOTIFY_ON_CHANGE, false),
-                hasChanges = hasChanges,
+                hasChanges = changes != SyncChanges.None,
             )
         ) {
-            syncNotifier.notifySyncFoundChanges()
+            syncNotifier.notifySyncFoundChanges(changes)
         }
         return Result.success()
     }

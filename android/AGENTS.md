@@ -90,4 +90,15 @@ data flow, PAT auth (backend: `T74`/`stricknani/routes/api/`), delta-sync (`T77`
 approach, and Material 3 Expressive theming. That section is kept up to date as the app is built
 out - treat it as the living architecture doc, this file as the operational/workflow one.
 
+## Notifications
+
+- Every notification is clickable: set a content intent (`setContentIntent`) that opens the
+  screen the notification is about - the project, the changed list, Settings -> About - routed
+  through `MainActivity`. No notification may only inform. Cover the content intent in the
+  notifier's test.
+- Say what happened in the text ("Projects changed on another device"), not a vague "something
+  new"; notify only for real changes, not for this device's own writes coming back.
+- Web notifications follow the same rule: clicking one focuses the app and opens the same
+  target.
+
 # vim: set ft=markdown et ts=2 sw=2 :

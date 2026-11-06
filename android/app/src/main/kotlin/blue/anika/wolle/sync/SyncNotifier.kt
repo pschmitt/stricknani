@@ -3,12 +3,15 @@ package blue.anika.wolle.sync
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -43,7 +46,8 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
      * No-ops without a crash if the user hasn't granted `POST_NOTIFICATIONS` (Android 13+ requires
      * this at runtime; `MainActivity` requests it once, but the user can always deny it).
      */
-    fun notifySyncFoundChanges() {
+    fun notifySyncFoundChanges(changes: SyncChanges) {
+        if (changes == SyncChanges.None) return
         val permissionGranted =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(
@@ -54,11 +58,31 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
         if (!canPostNotifications(Build.VERSION.SDK_INT, permissionGranted, notificationsEnabled)) {
             return
         }
+        // Every notification opens something: here the list that changed.
+        val open =
+            PendingIntent.getActivity(
+                context,
+                NOTIFICATION_ID,
+                Intent(context, MainActivity::class.java)
+                    .setAction(ACTION_OPEN_SYNCED)
+                    .putExtra(EXTRA_SYNCED, changes.name)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        val text =
+            context.getString(
+                when (changes) {
+                    SyncChanges.Projects -> R.string.sync_notification_projects
+                    SyncChanges.Yarns -> R.string.sync_notification_yarns
+                    else -> R.string.sync_notification_projects_and_yarns
+                }
+            )
         val notification =
             NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_stricknani)
                 .setContentTitle(context.getString(R.string.app_name))
-                .setContentText(context.getString(R.string.sync_notification_content))
+                .setContentText(text)
+                .setContentIntent(open)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setAutoCancel(true)
                 .build()
@@ -69,9 +93,30 @@ class SyncNotifier @Inject constructor(@ApplicationContext private val context: 
         }
     }
 
-    private companion object {
-        const val CHANNEL_ID = "sync_updates"
-        const val NOTIFICATION_ID = 1001
+    companion object {
+        /** Opens the list named by [EXTRA_SYNCED] (a [SyncChanges] name). */
+        const val ACTION_OPEN_SYNCED = "blue.anika.wolle.action.OPEN_SYNCED"
+        const val EXTRA_SYNCED = "synced"
+        private const val CHANNEL_ID = "sync_updates"
+        private const val NOTIFICATION_ID = 1001
+    }
+}
+
+/** What a background sync really changed in the cache. */
+enum class SyncChanges {
+    None,
+    Projects,
+    Yarns,
+    ProjectsAndYarns;
+
+    companion object {
+        fun of(projects: Boolean, yarns: Boolean): SyncChanges =
+            when {
+                projects && yarns -> ProjectsAndYarns
+                projects -> Projects
+                yarns -> Yarns
+                else -> None
+            }
     }
 }
 
