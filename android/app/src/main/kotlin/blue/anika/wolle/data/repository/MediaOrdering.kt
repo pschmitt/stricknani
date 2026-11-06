@@ -23,7 +23,17 @@ fun <T> List<T>.movedItem(from: Int, to: Int): List<T> {
 
 /** The server images shown in the editor's title strip (not a step's, not the stitch sample). */
 fun ProjectDto.titleImages(): List<ImageDto> =
-    images.filter { it.stepId == null && !it.isStitchSample }.sortedByPositionOrKeep()
+    images
+        .filter { it.stepId == null && !it.isStitchSample }
+        .sortedByPositionOrKeep()
+        // The cover always comes first, whatever its stored position.
+        .sortedByDescending { it.isCover() }
+
+/** A project's images as the detail screen shows them: the cover first, then the server order. */
+fun ProjectDto.galleryImages(): List<ImageDto> = images.sortedByDescending { it.isCover() }
+
+/** The server's canonical cover (`is_primary`); the legacy title flag only for older payloads. */
+fun ImageDto.isCover(): Boolean = isPrimary ?: isTitleImage
 
 fun ProjectDto.stepImages(stepId: Int): List<ImageDto> =
     images.filter { it.stepId == stepId }.sortedByPositionOrKeep()

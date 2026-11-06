@@ -70,6 +70,8 @@ import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.repository.ItemAccess
 import blue.anika.wolle.data.repository.access
+import blue.anika.wolle.data.repository.galleryImages
+import blue.anika.wolle.data.repository.isCover
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.ProjectDetailCard
@@ -532,7 +534,9 @@ private fun ProjectDetailContent(
             if (detail.images.isNotEmpty()) {
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        itemsIndexed(detail.images, key = { _, image -> image.id }) { _, image ->
+                        itemsIndexed(detail.galleryImages(), key = { _, image -> image.id }) {
+                            _,
+                            image ->
                             val url = resolveMediaUrl(image.url)
                             AsyncImage(
                                 // SNA-36: reuse the already-remembered imageUrls instead of
@@ -1132,10 +1136,10 @@ private fun projectViewerImages(
 ): List<ImageViewerImage> {
     val images = linkedMapOf<String, ImageViewerImage>()
     val stepsById = detail.steps.associateBy { it.id }
-    detail.images.forEach { image ->
+    detail.galleryImages().forEach { image ->
         val sourceLabel =
             when {
-                image.isTitleImage -> "Project title image"
+                image.isCover() -> "Project title image"
                 image.isStitchSample && image.stepId == null -> "Stitch sample"
                 image.stepId != null ->
                     stepsById[image.stepId]?.let { "Step ${it.stepNumber}: ${it.title}" }

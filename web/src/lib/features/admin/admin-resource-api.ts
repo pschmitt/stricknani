@@ -225,7 +225,13 @@ function parseProjectImage(
     thumbnail_url: value.thumbnail_url,
     alt_text: value.alt_text,
     image_type: value.image_type,
-    is_title_image: value.is_title_image,
+    // The cover is the server's canonical one (`is_primary`, which also picks
+    // `preview_url`). `is_title_image` can be a stale flag from an import, so
+    // it is only the fallback for payloads without `is_primary`.
+    is_title_image:
+      typeof value.is_primary === "boolean"
+        ? value.is_primary
+        : value.is_title_image,
     is_stitch_sample: value.is_stitch_sample,
     step_id: value.step_id,
   };

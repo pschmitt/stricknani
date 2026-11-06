@@ -211,6 +211,21 @@ class MediaOrderingTest {
             sendMediaOrder { throw java.io.IOException("offline") }
         }
     }
+
+    @Test
+    fun `the canonical cover leads the gallery over a stale title flag and its position`() {
+        val stale = image(13, title = true, position = 1).copy(isPrimary = false)
+        val cover = image(24, position = 2).copy(isPrimary = true)
+        val other = image(23, position = 0).copy(isPrimary = false)
+        val detail = project(listOf(other, stale, cover))
+
+        assertEquals(listOf(24, 23, 13), detail.galleryImages().map { it.id })
+        assertEquals(listOf(24, 23, 13), detail.titleImages().map { it.id })
+        assertTrue(cover.isCover())
+        assertFalse(stale.isCover())
+        // Payloads without is_primary fall back to the title flag.
+        assertTrue(image(1, title = true).isCover())
+    }
 }
 
 private suspend inline fun <reified T : Throwable> assertFailsWith(block: suspend () -> Unit) {

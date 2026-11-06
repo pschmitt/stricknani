@@ -289,6 +289,32 @@ describe("project URL state and API DTOs", () => {
     await expect(getProject(42, signal)).rejects.toThrow();
   });
 
+  it("takes the cover from the canonical is_primary over a stale title flag", async () => {
+    const image = detail.images[0];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...detail,
+            images: [
+              { ...image, id: 13, is_title_image: true, is_primary: false },
+              { ...image, id: 24, is_title_image: false, is_primary: true },
+            ],
+          },
+        }),
+      ),
+    );
+
+    const project = await getProject(42, new AbortController().signal);
+    expect(
+      project.images.map((each) => [each.id, each.is_title_image]),
+    ).toEqual([
+      [13, false],
+      [24, true],
+    ]);
+  });
+
   it("sends CSRF on the real favorite route without a body", async () => {
     const fetchMock = vi
       .fn()
