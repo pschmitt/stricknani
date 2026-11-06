@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.StatFs
 import androidx.core.content.pm.PackageInfoCompat
+import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.di.ValidationClient
 import dagger.Binds
 import dagger.Module
@@ -124,7 +125,8 @@ class AndroidApkInspector @Inject constructor(@ApplicationContext private val co
             .getOrNull()
             ?.let(::facts)
 
-    override fun canRequestInstalls(): Boolean = pm.canRequestPackageInstalls()
+    override fun canRequestInstalls(): Boolean =
+        canRequestInstallsSafely(BuildConfig.SELF_UPDATE_ENABLED) { pm.canRequestPackageInstalls() }
 
     override fun canInstallSilently(): Boolean =
         silentInstallPossible(
@@ -163,6 +165,20 @@ class AndroidApkInspector @Inject constructor(@ApplicationContext private val co
             versionCode = PackageInfoCompat.getLongVersionCode(info),
             signerDigests = signatures.orEmpty().map { sha256Hex(it.toByteArray()) }.toSet(),
         )
+    }
+}
+
+/**
+ * `canRequestPackageInstalls()` throws without the `REQUEST_INSTALL_PACKAGES` permission, which
+ * only APK builds with self-update declare (Play bundles compile it out). Those builds can never
+ * install, so they answer false without asking; a revoked or missing permission is also false.
+ */
+internal fun canRequestInstallsSafely(selfUpdateEnabled: Boolean, query: () -> Boolean): Boolean {
+    if (!selfUpdateEnabled) return false
+    return try {
+        query()
+    } catch (_: SecurityException) {
+        false
     }
 }
 
