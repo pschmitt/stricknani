@@ -66,9 +66,14 @@ async fn server_main() -> ExitCode {
     match run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(message) => {
-            // `run` returns static operator-facing reasons. Keep the Sentry
-            // event static too; never attach configuration or request data.
-            sentry::capture_message("server.startup.failed", sentry::Level::Error);
+            // `run` returns static operator-facing reasons (string literals,
+            // never configuration or request data). The event message stays
+            // fixed so failures group; the reason goes into a tag so an
+            // event says which step failed.
+            sentry::with_scope(
+                |scope| scope.set_tag("startup.reason", message),
+                || sentry::capture_message("server.startup.failed", sentry::Level::Error),
+            );
             eprintln!("stricknani-server: {message}");
             ExitCode::FAILURE
         }

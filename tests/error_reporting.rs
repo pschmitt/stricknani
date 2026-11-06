@@ -364,3 +364,32 @@ async fn tunnel_drops_reports_from_opted_out_users_only() {
     assert_eq!(kept.status(), StatusCode::NO_CONTENT);
     assert_eq!(upstream.received.lock().unwrap().len(), 1);
 }
+
+/// A failed `serve` reports one fixed event whose tag says which startup step
+/// failed, so an operator can tell a bind failure from a broken configuration.
+#[tokio::test(flavor = "multi_thread")]
+async fn startup_failure_event_names_the_failed_step() {
+    let (upstream, dsn) = start_upstream().await;
+    let status = tokio::task::spawn_blocking(move || {
+        std::process::Command::new(env!("CARGO_BIN_EXE_stricknani-server"))
+            .arg("serve")
+            .env_clear()
+            .env("STRICKNANI_SENTRY_DSN", dsn)
+            .env("STRICKNANI_SENTRY_ENVIRONMENT", "test")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .unwrap()
+    })
+    .await
+    .unwrap();
+    assert!(!status.success());
+
+    let received = upstream.received.lock().unwrap().clone();
+    let event = received
+        .iter()
+        .map(|(_, body)| String::from_utf8_lossy(body).into_owned())
+        .find(|body| body.contains("server.startup.failed"))
+        .expect("a startup failure event");
+    assert!(event.contains(r#""startup.reason":"invalid server configuration""#));
+}
