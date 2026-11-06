@@ -343,6 +343,28 @@ impl ErrorReportingSettings {
     pub fn init_sdk(&self) -> Option<sentry::ClientInitGuard> {
         let configured = self.configured.as_ref()?;
         let dsn = configured.server_dsn.clone()?;
+        // The SDK's own client loads the system CA certificates and panics
+        // when there are none (the Nix build sandbox, minimal containers).
+        // Build it here instead: plain-HTTP DSNs (local test servers) need no
+        // certificates, and a client that cannot be built only disables
+        // reporting instead of stopping the server.
+        let mut builder = reqwest::Client::builder().user_agent(concat!(
+            env!("CARGO_PKG_NAME"),
+            "/",
+            env!("CARGO_PKG_VERSION")
+        ));
+        if dsn.scheme() == sentry::types::Scheme::Http {
+            builder = builder.tls_certs_only(Vec::new());
+        }
+        let client = match builder.build() {
+            Ok(client) => client,
+            Err(_) => {
+                eprintln!(
+                    "stricknani-server: error reporting is off: no HTTP client (missing CA certificates?)"
+                );
+                return None;
+            }
+        };
         let mut options = sentry::ClientOptions::new()
             .release(release_name())
             .environment(configured.environment.clone())
@@ -354,6 +376,7 @@ impl ErrorReportingSettings {
             .before_send(scrub_event)
             .before_breadcrumb(scrub_breadcrumb);
         options.dsn = Some(dsn);
+        options.transport = Some(Arc::new(SdkTransport(client)));
         let guard = sentry::init(options);
         sentry::configure_scope(|scope| scope.set_tag(COMPONENT_TAG, COMPONENT_SERVER));
         Some(guard)
@@ -891,6 +914,23 @@ pub fn scrub_json_event(event: &mut Value) {
                 "os" | "runtime" | "rust" | "device" | "trace" | "browser" | "app" | "culture"
             )
         });
+    }
+}
+
+/// Sends the server's own events with the client built in
+/// [`ErrorReportingSettings::init_sdk`].
+struct SdkTransport(reqwest::Client);
+
+impl sentry::TransportFactory for SdkTransport {
+    fn create_transport_with_options(
+        &self,
+        options: sentry::TransportOptions,
+    ) -> Arc<dyn sentry::Transport> {
+        Arc::new(
+            sentry::transports::ReqwestHttpTransportOptions::from(options)
+                .with_client(self.0.clone())
+                .build(),
+        )
     }
 }
 

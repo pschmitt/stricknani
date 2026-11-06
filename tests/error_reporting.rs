@@ -370,26 +370,38 @@ async fn tunnel_drops_reports_from_opted_out_users_only() {
 #[tokio::test(flavor = "multi_thread")]
 async fn startup_failure_event_names_the_failed_step() {
     let (upstream, dsn) = start_upstream().await;
-    let status = tokio::task::spawn_blocking(move || {
-        std::process::Command::new(env!("CARGO_BIN_EXE_stricknani-server"))
+    let output = tokio::task::spawn_blocking(move || {
+        let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_stricknani-server"));
+        // Keep the inherited environment (the HTTP transport needs it, e.g. in
+        // the Nix build sandbox); drop only this server's own configuration.
+        for (key, _) in std::env::vars_os() {
+            if key.to_string_lossy().starts_with("STRICKNANI_") {
+                command.env_remove(key);
+            }
+        }
+        command
             .arg("serve")
-            .env_clear()
             .env("STRICKNANI_SENTRY_DSN", dsn)
             .env("STRICKNANI_SENTRY_ENVIRONMENT", "test")
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status()
+            .output()
             .unwrap()
     })
     .await
     .unwrap();
-    assert!(!status.success());
+    assert!(!output.status.success());
 
     let received = upstream.received.lock().unwrap().clone();
     let event = received
         .iter()
         .map(|(_, body)| String::from_utf8_lossy(body).into_owned())
         .find(|body| body.contains("server.startup.failed"))
-        .expect("a startup failure event");
+        .unwrap_or_else(|| {
+            panic!(
+                "no startup failure event among {} envelopes; server stderr:\n{}",
+                received.len(),
+                String::from_utf8_lossy(&output.stderr)
+            )
+        });
     assert!(event.contains(r#""startup.reason":"invalid server configuration""#));
 }
