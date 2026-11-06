@@ -35,6 +35,17 @@
             PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
           };
 
+          # @playwright/test in web/package.json must equal nixpkgs' playwright-driver,
+          # whose browsers the dev shells provide. Renovate does not bump it; the
+          # nix-hash-fixup workflow aligns it when flake.lock moves nixpkgs.
+          playwrightPinned =
+            (builtins.fromJSON (builtins.readFile ./web/package.json)).devDependencies."@playwright/test";
+          playwright-pin =
+            if playwrightPinned == pkgs.playwright-driver.version then
+              pkgs.runCommand "playwright-pin" { } "touch $out"
+            else
+              throw "web/package.json pins @playwright/test ${playwrightPinned}, nixpkgs has playwright-driver ${pkgs.playwright-driver.version}; set them equal";
+
           # Commit of this flake for the About page; empty when the revision is unknown.
           gitRevision =
             if self ? rev then
@@ -172,7 +183,7 @@
           checks = {
             build = stricknaniRust;
             rust-build = stricknaniRust;
-            inherit pre-commit-check;
+            inherit pre-commit-check playwright-pin;
           };
         }
       );

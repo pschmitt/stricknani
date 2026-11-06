@@ -1,0 +1,31 @@
+name: Nix hash fixup
+
+# Dependency-update pull requests (Renovate) that change a lockfile also change
+# a fixed-output hash (npmDepsHash of stricknani-web). This refreshes it and,
+# when flake.lock moves nixpkgs, aligns @playwright/test with playwright-driver,
+# then commits to the pull request branch as the pschmitt-ci app.
+on:
+  pull_request:
+    paths:
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "flake.lock"
+      - ".github/workflows/nix-hash-fixup.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixup:
+    if: startsWith(github.head_ref, 'renovate/')
+    uses: pschmitt/ci-workflows/.github/workflows/nix-hash-fixup.yaml@main
+    with:
+      packages: stricknani-web
+      playwright-dir: web
+    secrets:
+      app_id: ${{ secrets.CI_APP_ID }}
+      app_private_key: ${{ secrets.CI_APP_PRIVATE_KEY }}

@@ -19,6 +19,24 @@
         "typescript"
       ],
       "allowedVersions": "<7"
+    },
+    {
+      "description": "@playwright/test must equal nixpkgs' playwright-driver (flake check playwright-pin). The nix-hash-fixup workflow aligns it when flake.lock moves nixpkgs, so Renovate does not propose it.",
+      "matchPackageNames": [
+        "@playwright/test"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "One pull request for all npm minor and patch updates: each changes npmDepsHash, and separate PRs conflict on the lockfile and the hash.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "npm minor and patch"
     }
   ],
   "nix": {
@@ -27,5 +45,8 @@
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true
-  }
+  },
+  "gitIgnoredAuthors": [
+    "353239591+pschmitt-ci[bot]@users.noreply.github.com"
+  ]
 }
