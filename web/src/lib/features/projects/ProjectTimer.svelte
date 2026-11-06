@@ -61,10 +61,35 @@
       runSeconds >= (reminderAfter ?? reminderMinutes * 60),
   );
   const parts = $derived(timerParts(total));
-  // The hands turn by cumulative degrees, so a minute boundary keeps sweeping forward
-  // instead of spinning back through zero.
-  const secondAngle = $derived(total * 6);
-  const minuteAngle = $derived(((total % 3600) / 60) * 6);
+  // The hands keep cumulative angles so a minute boundary sweeps on instead of
+  // spinning back through zero. Only a one-second tick sweeps linearly; any other
+  // change (back from a hidden tab, a server refresh, an edit) moves each hand
+  // once, the short way round, to where it belongs.
+  let secondAngle = $state(0);
+  let minuteAngle = $state(0);
+  let tickStep = $state(false);
+  let lastTotal: number | null = null;
+  function towards(current: number, target: number): number {
+    const delta = ((((target - current) % 360) + 540) % 360) - 180;
+    return current + delta;
+  }
+  $effect.pre(() => {
+    const next = total;
+    const previous = lastTotal;
+    lastTotal = next;
+    untrack(() => {
+      tickStep = previous !== null && next - previous === 1;
+      if (previous === null) {
+        secondAngle = (next % 60) * 6;
+        minuteAngle = ((next % 3600) / 60) * 6;
+        return;
+      }
+      secondAngle = tickStep
+        ? secondAngle + 6
+        : towards(secondAngle, (next % 60) * 6);
+      minuteAngle = towards(minuteAngle, ((next % 3600) / 60) * 6);
+    });
+  });
   const running = $derived(Boolean(timer?.started_at));
   const ticks = Array.from({ length: 60 }, (_, index) => index);
   // The chip in the action row shows a short "12:34" / "1:02:03"; nothing for an
@@ -494,7 +519,7 @@
 {/snippet}
 
 {#if enabled && !unsupported}
-  <div class="project-timer" class:running>
+  <div class="project-timer" class:running class:tick-step={tickStep}>
     <button
       type="button"
       class="timer-chip"
@@ -870,7 +895,7 @@
   .stopwatch .minute-hand,
   .stopwatch .second-hand {
     transform-box: view-box;
-    transition: transform 650ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .stopwatch .minute-hand {
     transform-origin: 50px 76px;
@@ -898,8 +923,8 @@
   .running .stopwatch .crown {
     transform: translateY(3px);
   }
-  .running .stopwatch .second-hand,
-  .running .stopwatch .minute-hand {
+  .running.tick-step .stopwatch .second-hand,
+  .running.tick-step .stopwatch .minute-hand {
     transition-duration: 1s;
     transition-timing-function: linear;
   }

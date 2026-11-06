@@ -10,7 +10,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -65,22 +64,32 @@ internal fun Stopwatch(
     mini: Boolean = false,
 ) {
     val still = animationsDisabled()
-    // Cumulative degrees, so passing a full minute keeps sweeping forward instead of back.
+    // Cumulative angles, so passing a full minute keeps sweeping forward. Only a one-second tick
+    // sweeps linearly; any other change (back from the background, a server refresh, an edit)
+    // moves each hand once, the short way round, to where it belongs.
+    val hands = remember { StopwatchHands() }
+    hands.update(totalSeconds)
+    val settle = tween<Float>(450, easing = FastOutSlowInEasing)
     val secondAngle by
         animateFloatAsState(
-            targetValue = totalSeconds * 6f,
+            targetValue = hands.second,
             animationSpec =
                 when {
                     still -> snap()
-                    running -> tween(durationMillis = 1000, easing = LinearEasing)
-                    else -> spring(dampingRatio = 0.55f, stiffness = 120f)
+                    running && hands.tickStep -> tween(1000, easing = LinearEasing)
+                    else -> settle
                 },
             label = "stopwatch-second",
         )
     val minuteAngle by
         animateFloatAsState(
-            targetValue = (totalSeconds % 3600) / 10f,
-            animationSpec = if (still) snap() else tween(1000, easing = LinearEasing),
+            targetValue = hands.minute,
+            animationSpec =
+                when {
+                    still -> snap()
+                    running && hands.tickStep -> tween(1000, easing = LinearEasing)
+                    else -> settle
+                },
             label = "stopwatch-minute",
         )
     val crownPress by
@@ -278,4 +287,40 @@ internal fun shortTimerLabel(totalSeconds: Long, running: Boolean): String {
     val seconds = totalSeconds % 60
     return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds)
     else "%d:%02d".format(minutes, seconds)
+}
+
+/** The stopwatch's hand angles in cumulative degrees; see [Stopwatch]. */
+internal class StopwatchHands {
+    private var last: Long? = null
+    var second = 0f
+        private set
+
+    var minute = 0f
+        private set
+
+    /** True when the last change was a plain one-second tick. */
+    var tickStep = false
+        private set
+
+    fun update(totalSeconds: Long) {
+        val previous = last
+        if (previous == totalSeconds) return
+        last = totalSeconds
+        val secondTarget = (totalSeconds % 60) * 6f
+        val minuteTarget = (totalSeconds % 3600) / 10f
+        if (previous == null) {
+            second = secondTarget
+            minute = minuteTarget
+            tickStep = false
+            return
+        }
+        tickStep = totalSeconds - previous == 1L
+        second = if (tickStep) second + 6f else towards(second, secondTarget)
+        minute = towards(minute, minuteTarget)
+    }
+
+    private fun towards(current: Float, target: Float): Float {
+        val delta = ((((target - current) % 360f) + 540f) % 360f) - 180f
+        return current + delta
+    }
 }
