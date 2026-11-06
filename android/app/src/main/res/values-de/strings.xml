@@ -145,6 +145,13 @@
     <string name="notes_fab_move_down">Notizen nach unten verschieben</string>
     <string name="notes_fab_move_side">Notizen auf die andere Seite verschieben</string>
     <string name="notes_add_empty">Notiz hinzufügen</string>
+    <string name="common_field_updated">Aktualisiert</string>
+    <string name="project_detail_source_title">Anleitungsquelle</string>
+    <string name="project_detail_source_open">Originalanleitung öffnen</string>
+    <string name="project_detail_source_archive">Archivierte Kopie öffnen</string>
+    <string name="project_detail_source_none">Es wurde kein Link zur Anleitung gespeichert.</string>
+    <string name="yarn_detail_source_open">Garnquelle</string>
+    <string name="yarn_detail_source_archive">Archivierte Quelle</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
     <string name="project_editor_title_edit">Projekt bearbeiten</string>

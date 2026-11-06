@@ -11,6 +11,7 @@ class DetailCardOrderTest {
             listOf(
                 ProjectDetailCard.NOTES,
                 ProjectDetailCard.ATTACHMENTS,
+                ProjectDetailCard.SOURCE,
                 ProjectDetailCard.DETAILS,
                 ProjectDetailCard.STITCH_SAMPLE,
                 ProjectDetailCard.LINKED_YARNS,
@@ -33,6 +34,7 @@ class DetailCardOrderTest {
     fun `visible order changes do not disturb optional cards that are absent`() {
         assertEquals(
             listOf(
+                ProjectDetailCard.SOURCE,
                 ProjectDetailCard.STEPS,
                 ProjectDetailCard.ATTACHMENTS,
                 ProjectDetailCard.DETAILS,

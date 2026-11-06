@@ -81,6 +81,7 @@ import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.ProjectDetailCard
 import blue.anika.wolle.data.timer.ProjectTimerReminderInterval
+import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
@@ -101,17 +102,20 @@ import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.SectionActions
+import blue.anika.wolle.ui.common.SourceLinkRow
 import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
+import blue.anika.wolle.ui.common.formatUpdatedDate
 import blue.anika.wolle.ui.common.itemBannerOf
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.rememberRefreshFailure
+import blue.anika.wolle.ui.common.safeExternalUrl
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.history.HistoryPhase
@@ -496,13 +500,12 @@ private fun ProjectDetailContent(
     }
     val stitchSampleImages =
         remember(detail.images) { detail.images.filter { it.isStitchSample && it.stepId == null } }
-    val hasDetails =
-        listOf(detail.category, detail.needles, detail.yarn, detail.otherMaterials).any {
-            it != null
-        } || detail.tags.isNotEmpty()
     val availableCardKeys = buildList {
+        // Like the web, the pattern source card is always there (it says when no link is saved).
+        add(ProjectDetailCard.SOURCE)
         if (detail.attachments.isNotEmpty()) add(ProjectDetailCard.ATTACHMENTS)
-        if (hasDetails) add(ProjectDetailCard.DETAILS)
+        // Always: like the web it shows at least when the project was updated.
+        add(ProjectDetailCard.DETAILS)
         if (detail.stitchSample != null) add(ProjectDetailCard.STITCH_SAMPLE)
         if (linkedYarns.isNotEmpty()) add(ProjectDetailCard.LINKED_YARNS)
         if (detail.description != null) add(ProjectDetailCard.DESCRIPTION)
@@ -563,6 +566,42 @@ private fun ProjectDetailContent(
             items(orderedCardKeys, key = { it }) { cardKey ->
                 val cardIndex = orderedCardKeys.indexOf(cardKey)
                 when (cardKey) {
+                    ProjectDetailCard.SOURCE ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.project_detail_source_title),
+                            icon = PhosphorIcons.Link,
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.DETAILS) } },
+                            copyText = detail.link,
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            val original = safeExternalUrl(detail.link)
+                            if (original != null) {
+                                SourceLinkRow(
+                                    PhosphorIcons.Notebook,
+                                    stringResource(R.string.project_detail_source_open),
+                                    original,
+                                )
+                            } else {
+                                Text(
+                                    stringResource(R.string.project_detail_source_none),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            safeExternalUrl(detail.linkArchive)?.let { archived ->
+                                SourceLinkRow(
+                                    PhosphorIcons.ClockCounterClockwise,
+                                    stringResource(R.string.project_detail_source_archive),
+                                    archived,
+                                )
+                            }
+                        }
                     ProjectDetailCard.ATTACHMENTS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_attachments_title),
@@ -636,6 +675,9 @@ private fun ProjectDetailContent(
                             }
                             detail.otherMaterials?.let {
                                 DetailRow(stringResource(R.string.common_field_other_materials), it)
+                            }
+                            updatedDate(detail.updatedAt)?.let {
+                                DetailRow(stringResource(R.string.common_field_updated), it)
                             }
                             if (detail.tags.isNotEmpty()) {
                                 Row(
@@ -1248,3 +1290,7 @@ private fun DetailRow(label: String, value: String) {
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+/** The "Updated" value of a detail card, like the web; null if the timestamp does not parse. */
+internal fun updatedDate(raw: String): String? =
+    runCatching { formatUpdatedDate(DateTimeUtils.parseToEpochMillis(raw)) }.getOrNull()

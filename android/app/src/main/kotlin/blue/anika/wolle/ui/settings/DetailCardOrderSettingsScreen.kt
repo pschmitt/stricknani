@@ -153,6 +153,7 @@ private fun detailCardLabel(domain: DetailCardDomain, id: String): String =
     when (domain) {
         DetailCardDomain.PROJECT ->
             when (id) {
+                ProjectDetailCard.SOURCE -> stringResource(R.string.project_detail_source_title)
                 ProjectDetailCard.ATTACHMENTS ->
                     stringResource(R.string.project_detail_attachments_title)
                 ProjectDetailCard.DETAILS -> stringResource(R.string.project_detail_details_title)

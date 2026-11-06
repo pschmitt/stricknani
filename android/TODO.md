@@ -41,6 +41,20 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-94: Detail pages match the web's sections
+
+**Status:** wip (2026-11-06)
+
+- [x] Projects: a "Pattern source" card (first by default, reorderable): "Open original
+      pattern" or "No pattern link has been saved.", and "Open archived copy" when an archive
+      exists. Opens the browser; only http(s) links.
+- [x] Yarns: "Yarn source" / "Archived source" links under the yarn details.
+- [x] Projects and yarns: an "Updated" row in the details card, like the web.
+- [ ] Archive now: the web's archive control (owner only, `capabilities.archive` /
+      `archive_state`) to create or refresh the archived copy. Needs the archive API in the app.
+- [ ] Linked yarns on a project: each yarn's notes and its "Yarn source" link, like the web's
+      Materials list (the `LinkedYarn` model only carries id, name and photo today).
+
 ## SNA-93: Sharing and ownership transfer of projects and yarns
 
 **Status:** code complete; unit tests, debug and release builds, lint and androidTest compile passed on a build worker, not verified on a device or against a deployed server (2026-11-05)

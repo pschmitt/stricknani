@@ -146,6 +146,13 @@
     <string name="notes_fab_move_down">Move notes down</string>
     <string name="notes_fab_move_side">Move notes to the other side</string>
     <string name="notes_add_empty">Add a note</string>
+    <string name="common_field_updated">Updated</string>
+    <string name="project_detail_source_title">Pattern source</string>
+    <string name="project_detail_source_open">Open original pattern</string>
+    <string name="project_detail_source_archive">Open archived copy</string>
+    <string name="project_detail_source_none">No pattern link has been saved.</string>
+    <string name="yarn_detail_source_open">Yarn source</string>
+    <string name="yarn_detail_source_archive">Archived source</string>
     <string name="project_detail_attachments_title">Attachments</string>
     <string name="project_detail_delete_attachment_description">Delete attachment</string>
     <string name="project_editor_title_edit">Edit project</string>

@@ -79,6 +79,7 @@ import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
+import blue.anika.wolle.ui.common.SourceLinkRow
 import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.TextSizeMenuSection
@@ -90,11 +91,13 @@ import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.rememberRefreshFailure
+import blue.anika.wolle.ui.common.safeExternalUrl
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.history.HistoryPhase
 import blue.anika.wolle.ui.history.HistorySection
 import blue.anika.wolle.ui.print.PrintDialog
+import blue.anika.wolle.ui.projects.updatedDate
 import blue.anika.wolle.ui.sharing.SharingDialogHost
 import blue.anika.wolle.ui.sharing.rememberSharingDialogs
 import blue.anika.wolle.ui.theme.stricknaniMarkdownTypography
@@ -414,21 +417,8 @@ private fun YarnDetailContent(
     }
     val photos = remember(detail.photos) { detail.photos.primaryFirst() }
     val availableCardKeys = buildList {
-        if (
-            listOf(
-                    detail.brand,
-                    detail.colorway,
-                    detail.dyeLot,
-                    detail.fiberContent,
-                    detail.weightCategory,
-                    detail.recommendedNeedles,
-                    detail.weightGrams,
-                    detail.lengthMeters,
-                )
-                .any { it != null }
-        ) {
-            add(YarnDetailCard.DETAILS)
-        }
+        // Always: like the web's "At a glance" it shows at least when the yarn was updated.
+        add(YarnDetailCard.DETAILS)
         if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
         if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
     }
@@ -552,6 +542,24 @@ private fun YarnDetailContent(
                                         )
                                         .joinToString(" / ")
                                 DetailRow(stringResource(R.string.yarn_detail_field_amount), amount)
+                            }
+                            updatedDate(detail.updatedAt)?.let {
+                                DetailRow(stringResource(R.string.common_field_updated), it)
+                            }
+                            // The web's source links under the yarn facts.
+                            safeExternalUrl(detail.link)?.let {
+                                SourceLinkRow(
+                                    PhosphorIcons.Link,
+                                    stringResource(R.string.yarn_detail_source_open),
+                                    it,
+                                )
+                            }
+                            safeExternalUrl(detail.linkArchive)?.let {
+                                SourceLinkRow(
+                                    PhosphorIcons.ClockCounterClockwise,
+                                    stringResource(R.string.yarn_detail_source_archive),
+                                    it,
+                                )
                             }
                         }
                     YarnDetailCard.DESCRIPTION ->

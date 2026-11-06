@@ -16,6 +16,7 @@ enum class DetailCardDomain(val storageName: String) {
 
 /** Stable IDs for the optional sections on a project detail page. */
 object ProjectDetailCard {
+    const val SOURCE = "source"
     const val ATTACHMENTS = "attachments"
     const val DETAILS = "details"
     const val STITCH_SAMPLE = "stitch_sample"
@@ -25,7 +26,7 @@ object ProjectDetailCard {
     const val NOTES = "notes"
 
     val defaultOrder =
-        listOf(ATTACHMENTS, DETAILS, STITCH_SAMPLE, LINKED_YARNS, DESCRIPTION, STEPS, NOTES)
+        listOf(SOURCE, ATTACHMENTS, DETAILS, STITCH_SAMPLE, LINKED_YARNS, DESCRIPTION, STEPS, NOTES)
 }
 
 /** Stable IDs for the sections on a yarn detail page. */
