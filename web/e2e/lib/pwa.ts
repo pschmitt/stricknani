@@ -334,6 +334,18 @@ function runNpmBuild(
   });
 }
 
+/** The release version from the repository's Cargo.toml. */
+function repositoryVersion(): string {
+  const cargo = readFileSync(join(REPO_ROOT, "Cargo.toml"), "utf8");
+  const version = /^\[package\][^[]*?^version\s*=\s*"([^"]+)"/ms.exec(
+    cargo,
+  )?.[1];
+  if (!version) {
+    throw new AcceptanceFailure("Cargo.toml has no [package] version");
+  }
+  return version;
+}
+
 /**
  * Build a second SvelteKit app with a distinct compiled version (`npm run
  * build` in a copy of `web/`, sharing the installed node_modules).
@@ -378,6 +390,8 @@ export async function buildCandidateWebRoot(
   );
   const status = await runNpmBuild(npm, candidateSource, {
     ...process.env,
+    // The copy has no ../Cargo.toml, the version's single source.
+    STRICKNANI_VERSION: process.env.STRICKNANI_VERSION ?? repositoryVersion(),
     STRICKNANI_PWA_TEST_VERSION: appCodeVersion,
   });
   if (status !== 0) {
