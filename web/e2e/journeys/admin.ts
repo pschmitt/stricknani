@@ -1803,26 +1803,17 @@ async function runAcceptance(
       .click();
     await expect(memberRow.locator(".status-pill")).toContainText("Active");
 
-    mark("last active admin guard");
+    mark("own account cannot be disabled");
     let ownRow = page.locator(".user-row").filter({ hasText: adminEmail });
-    const ownDisableButton = ownRow.getByRole("button", { name: "Disable" });
-    await ownDisableButton.click();
-    const ownDialog = page.getByRole("dialog", {
-      name: "Disable this account?",
-    });
-    await ownDialog.getByRole("button", { name: "Disable account" }).click();
-    await ownDialog
-      .getByText(
-        "This change would leave the account system without an active " +
-          "administrator.",
-      )
-      .waitFor({ state: "visible" });
-    await ownDialog.getByRole("button", { name: "Cancel" }).click();
+    await ownRow.locator(".you-marker").waitFor({ state: "visible" });
     check(
-      await ownDisableButton.evaluate(
-        (element) => element === document.activeElement,
-      ),
-      "focus did not return after the rejected self-disable attempt",
+      (await ownRow.getByRole("button", { name: "Disable" }).count()) === 0,
+      "the signed-in administrator's own row offers Disable",
+    );
+    check(
+      (await ownRow.getByRole("button", { name: "Reset password" }).count()) ===
+        1,
+      "the own row lost its other actions",
     );
 
     mark("audit list and filters");

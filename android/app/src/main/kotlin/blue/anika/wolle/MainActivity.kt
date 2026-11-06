@@ -37,6 +37,8 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.update.UpdateAvailableNotifier
+import blue.anika.wolle.sync.SyncNotifier
+import blue.anika.wolle.sync.syncedRoute
 import blue.anika.wolle.ui.common.CrashReportDialog
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -222,12 +224,17 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra(Intent.EXTRA_TEXT)
     }
 
-    /** A web link, or the "update available" notification, which opens Settings -> About. */
+    /**
+     * A web link, or a notification: "update available" opens Settings -> About, "synced from
+     * another device" opens the list that changed.
+     */
     private fun routeFor(intent: Intent?): Route? =
-        if (intent?.action == UpdateAvailableNotifier.ACTION_OPEN_UPDATE) {
-            Route.SettingsCategoryRoute(SettingsCategory.About.name)
-        } else {
-            DeepLinkParser.parse(intent?.dataString)
+        when (intent?.action) {
+            UpdateAvailableNotifier.ACTION_OPEN_UPDATE ->
+                Route.SettingsCategoryRoute(SettingsCategory.About.name)
+            SyncNotifier.ACTION_OPEN_SYNCED ->
+                syncedRoute(intent.getStringExtra(SyncNotifier.EXTRA_SYNCED))
+            else -> DeepLinkParser.parse(intent?.dataString)
         }
 
     /**

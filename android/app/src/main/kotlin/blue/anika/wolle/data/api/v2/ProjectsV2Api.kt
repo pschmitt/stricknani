@@ -4,6 +4,8 @@ import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectListItemDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -34,6 +36,15 @@ interface ProjectsV2Api {
 
     @GET("api/v2/projects/{projectId}")
     suspend fun getProject(@Path("projectId") projectId: Int): V2Envelope<ProjectV2Dto>
+
+    @GET("api/v2/projects/{projectId}/timer")
+    suspend fun getProjectTimer(@Path("projectId") projectId: Int): V2Envelope<ProjectTimerDto>
+
+    @PUT("api/v2/projects/{projectId}/timer")
+    suspend fun updateProjectTimer(
+        @Path("projectId") projectId: Int,
+        @Body request: ProjectTimerRequest,
+    ): V2Envelope<ProjectTimerDto>
 
     @POST("api/v2/projects")
     suspend fun createProject(@Body request: ProjectWriteRequest): V2Envelope<ProjectV2Dto>
@@ -102,3 +113,16 @@ interface ProjectsV2Api {
         @Body request: MediaOrderRequest,
     ): V2Envelope<MediaOrderDto>
 }
+
+@Serializable
+data class ProjectTimerDto(
+    @SerialName("total_seconds") val totalSeconds: Long,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("server_time") val serverTime: String,
+)
+
+@Serializable
+data class ProjectTimerRequest(
+    val action: String,
+    @SerialName("total_seconds") val totalSeconds: Long? = null,
+)

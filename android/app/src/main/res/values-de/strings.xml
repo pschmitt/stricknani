@@ -108,6 +108,35 @@
     <string name="project_detail_description_title">Beschreibung</string>
     <string name="project_detail_steps_title">Schritte</string>
     <string name="project_detail_notes_title">Notizen</string>
+    <string name="project_timer_title">Strickzeit</string>
+    <string name="project_timer_running_caption">Zeitaufwand für dieses Projekt</string>
+    <string name="project_timer_ready_caption">Bereit, wenn du es bist</string>
+    <string name="project_timer_start">Start</string>
+    <string name="project_timer_stop">Timer stoppen</string>
+    <string name="project_timer_edit">Zeit bearbeiten</string>
+    <string name="project_timer_edit_title">Strickzeit bearbeiten</string>
+    <string name="project_timer_hours">Stunden</string>
+    <string name="project_timer_minutes">Minuten</string>
+    <string name="project_timer_seconds">Sekunden</string>
+    <string name="project_timer_invalid">Gib eine gültige Zeit ein (Minuten und Sekunden von 0 bis 59).</string>
+    <string name="project_timer_error">Zeit konnte nicht gespeichert werden. Prüfe die Verbindung und versuche es erneut.</string>
+    <string name="project_timer_unavailable">Timer sind auf diesem Server noch nicht verfügbar.</string>
+    <string name="project_timer_reminder">Erinnerung bei laufendem Timer</string>
+    <string name="project_timer_reminder_off">Aus</string>
+    <string name="project_timer_reminder_30m">30 Minuten</string>
+    <string name="project_timer_reminder_1h">1 Stunde</string>
+    <string name="project_timer_reminder_2h">2 Stunden</string>
+    <string name="project_timer_reminder_title">Noch am Stricken?</string>
+    <string name="project_timer_reminder_body">Dein Stricktimer läuft schon eine Weile.</string>
+    <string name="project_timer_reminder_keep">Weiterstricken</string>
+    <string name="project_timer_notification_channel">Erinnerungen für Projekttimer</string>
+    <string name="project_timer_notification_description">Erinnert dich, wenn ein Projekttimer schon länger läuft.</string>
+    <string name="project_timer_notification_title">Der Projekttimer läuft noch</string>
+    <string name="project_timer_notification_text">Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.</string>
+    <string name="settings_project_timers_title">Projekt-Timer</string>
+    <string name="settings_project_timers_help">Blendet Timer aus und schaltet Erinnerungen auf diesem Gerät ab. Laufende Timer, auch geteilte, laufen weiter, bis sie gestoppt werden.</string>
+    <string name="settings_notifications_title">Benachrichtigungen</string>
+    <string name="settings_notifications_help">Timer-Erinnerungen, Änderungen von deinen anderen Geräten und Updates. Öffnet die Systemeinstellungen.</string>
     <string name="notes_close">Notizen schließen</string>
     <string name="notes_state_expanded">Notizen, geöffnet</string>
     <string name="notes_state_collapsed">Notizen, zugeklappt</string>
@@ -585,7 +614,9 @@
     <!-- Background sync notification -->
     <string name="sync_notification_channel_name">Neues von Stricknani</string>
     <string name="sync_notification_channel_description">Wenn etwas Neues von einem anderen Gerät ankommt</string>
-    <string name="sync_notification_content">Es gibt Neues von deinen anderen Geräten</string>
+    <string name="sync_notification_projects">Projekte wurden auf einem anderen Gerät geändert</string>
+    <string name="sync_notification_yarns">Garne wurden auf einem anderen Gerät geändert</string>
+    <string name="sync_notification_projects_and_yarns">Projekte und Garne wurden auf einem anderen Gerät geändert</string>
 
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>

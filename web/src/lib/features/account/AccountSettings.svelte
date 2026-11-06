@@ -26,6 +26,8 @@
   import { theme, setTheme } from "#lib/theme.svelte.ts";
   import { themeChoices, type ThemeChoice } from "#lib/theme.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
+  import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
+  import { webNotifications } from "#lib/web-notifications.svelte.ts";
   import {
     changePassword,
     createApiToken,
@@ -138,6 +140,9 @@
     { value: 1, label: t("Default", locale) },
     { value: 2, label: t("Large", locale) },
   ]);
+
+  // The browser permission can change outside the app.
+  onMount(() => webNotifications.refresh());
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
@@ -1058,6 +1063,80 @@
             value={textSize.index}
             label={t("Text size", locale)}
             onchange={(next) => textSize.set(next)}
+          />
+        </div>
+      </div>
+      {#if userId !== null}
+        <div class="row">
+          <div class="row__text">
+            <label class="row__label" for="pref-project-timers">
+              {t("Project timers", locale)}
+            </label>
+            <p class="row__hint" id="pref-project-timers-hint">
+              {t(
+                "Hides timers and turns off reminders on this device. Running timers, including shared timers, continue until stopped.",
+                locale,
+              )}
+            </p>
+          </div>
+          <div class="row__control">
+            <input
+              id="pref-project-timers"
+              type="checkbox"
+              role="switch"
+              class="switch"
+              aria-describedby="pref-project-timers-hint"
+              checked={projectTimerPreference.isEnabled(userId)}
+              onchange={(event) =>
+                projectTimerPreference.setEnabled(
+                  userId!,
+                  event.currentTarget.checked,
+                )}
+            />
+          </div>
+        </div>
+      {/if}
+      <div class="row">
+        <div class="row__text">
+          <label class="row__label" for="pref-notifications">
+            {t("Notifications", locale)}
+          </label>
+          <p class="row__hint" id="pref-notifications-hint">
+            {#if webNotifications.state === "unsupported"}
+              {t("This browser cannot show notifications.", locale)}
+            {:else if webNotifications.state === "denied"}
+              {t(
+                "Notifications are blocked for this site. Allow them in the browser's site settings.",
+                locale,
+              )}
+            {:else}
+              {t(
+                "Shows project timer reminders on this device while Stricknani is open in the background.",
+                locale,
+              )}
+            {/if}
+          </p>
+        </div>
+        <div class="row__control">
+          <input
+            id="pref-notifications"
+            type="checkbox"
+            role="switch"
+            class="switch"
+            aria-describedby="pref-notifications-hint"
+            disabled={webNotifications.state === "unsupported" ||
+              webNotifications.state === "denied"}
+            checked={webNotifications.state === "on"}
+            onchange={(event) => {
+              const input = event.currentTarget;
+              if (input.checked) {
+                void webNotifications.enable().then((state) => {
+                  input.checked = state === "on";
+                });
+              } else {
+                webNotifications.disable();
+              }
+            }}
           />
         </div>
       </div>

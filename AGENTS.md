@@ -142,6 +142,10 @@ Use this file as the operational source of truth for working in Stricknani.
   runs. Distinguish pushed source, verified builds and live deployments. Keep
   routine compiler and test debugging out of these summaries.
 
+- Every notification, on Android and on the web, is clickable and opens what it
+  is about (see `android/AGENTS.md`, "Notifications"). A notification that
+  only informs is a bug.
+
 ### Native API v2 migration
 
 - Track remaining work under T121 in `TODO.md`. Codex owns server changes and API/data review; Claude owns Android migration

@@ -488,7 +488,12 @@ async fn admin_mutations_require_csrf_and_self_reset_clears_cookie() {
         .await
         .unwrap();
     assert_eq!(self_disable.status(), StatusCode::CONFLICT);
-    assert_eq!(json(self_disable).await["error"]["code"], "admin_conflict");
+    let self_disable = json(self_disable).await;
+    assert_eq!(self_disable["error"]["code"], "admin_conflict");
+    assert_eq!(
+        self_disable["error"]["message"],
+        "You cannot disable your own account"
+    );
 
     let response = fixture
         .app

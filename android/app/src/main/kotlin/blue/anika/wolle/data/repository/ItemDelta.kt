@@ -14,7 +14,9 @@ import blue.anika.wolle.data.api.dto.YarnDto
  *   nothing of somebody else's item lingers on the device. Tombstoned ids with a queued local write
  *   stay until the replay learns the same (404). Owned data is only ever removed by its own
  *   tombstone (id match), never by a scope or owner heuristic.
- * - Returns whether the batch carried any change.
+ * - Returns whether the batch changed the cache: a row that arrives identical to the cached one
+ *   (typically this device's own write coming back) or a tombstone for a row that is not cached
+ *   does not count, so a background sync does not announce news that is not new.
  */
 internal suspend fun <D, E> applyItemDelta(
     updated: List<D>,
@@ -31,20 +33,30 @@ internal suspend fun <D, E> applyItemDelta(
     val pendingUpdated = if (updatedIds.isEmpty()) emptySet() else pendingIds(updatedIds)
     val pendingDeleted = if (deletedIds.isEmpty()) emptySet() else pendingIds(deletedIds)
     val removable = deletedIds.filterNot { it in pendingDeleted }
+    val returning = updatedIds.toSet()
+    // Rows as cached before this batch, for the "did anything really change" answer.
+    val before = mutableMapOf<Int, E?>()
+    for (id in (removable + updatedIds.filterNot { it in pendingUpdated }).distinct()) {
+        before[id] = load(id)
+    }
+    var changed = false
     if (removable.isNotEmpty()) {
-        val returning = updatedIds.toSet()
         removable
             .filterNot { it in returning }
             .forEach { id ->
-                load(id)?.let { runCatching { evictMedia(it) } }
+                before[id]?.let {
+                    changed = true
+                    runCatching { evictMedia(it) }
+                }
             }
         delete(removable)
     }
-    updated
-        .filterNot { idOf(it) in pendingUpdated }
-        .takeIf { it.isNotEmpty() }
-        ?.let { upsert(it.map(toEntity)) }
-    return updated.isNotEmpty() || deletedIds.isNotEmpty()
+    val incoming = updated.filterNot { idOf(it) in pendingUpdated }.map { idOf(it) to toEntity(it) }
+    if (incoming.isNotEmpty()) {
+        if (incoming.any { (id, entity) -> before[id] != entity }) changed = true
+        upsert(incoming.map { it.second })
+    }
+    return changed
 }
 
 /** Server media paths of a project: images, thumbnails and attachment files. */

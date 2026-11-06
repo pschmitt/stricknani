@@ -17,6 +17,7 @@ Use this index to find the right document quickly.
 ## APIs and contracts
 
 - `web-v2-contract.md`: browser and native API v2
+- [project-timer-api.md](project-timer-api.md): shared project stopwatch contract
 - `web-v2-audit-contract.md`: audit resources and history
 - `oidc-v2-contract.md`: OpenID Connect API v2 flows
 - `android-v2-parity.md`: what the Android app calls against the server routes

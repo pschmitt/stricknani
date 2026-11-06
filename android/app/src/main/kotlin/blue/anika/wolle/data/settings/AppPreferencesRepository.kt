@@ -148,6 +148,14 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_NOTIFY_UPDATES] = enabled }
     }
 
+    /** Whether project timers and their local reminders are shown on this device. */
+    val projectTimersEnabled =
+        dataStore.data.map { prefs -> prefs[KEY_PROJECT_TIMERS_ENABLED] ?: true }
+
+    suspend fun setProjectTimersEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_PROJECT_TIMERS_ENABLED] = enabled }
+    }
+
     /** The last "update available" notification: what, on which channel, when. Null if none. */
     val updateNotice =
         dataStore.data.map { prefs ->
@@ -261,6 +269,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_UPDATE_CHANNEL = stringPreferencesKey("update_channel")
         val KEY_AUTO_UPDATE = booleanPreferencesKey("auto_update")
         val KEY_NOTIFY_UPDATES = booleanPreferencesKey("notify_app_updates")
+        val KEY_PROJECT_TIMERS_ENABLED = booleanPreferencesKey("project_timers_enabled")
         val KEY_NOTICE_VERSION = stringPreferencesKey("update_notice_version")
         val KEY_NOTICE_CHANNEL = stringPreferencesKey("update_notice_channel")
         val KEY_NOTICE_AT = longPreferencesKey("update_notice_at")

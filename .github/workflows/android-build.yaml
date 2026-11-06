@@ -25,6 +25,7 @@ jobs:
       gradle-task: :app:assembleDebug
       apk-dir: app/build/outputs/apk/debug
       artifact-prefix: app
+      compute-version-name: true
     secrets: inherit
     permissions:
       contents: read

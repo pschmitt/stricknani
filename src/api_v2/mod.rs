@@ -42,6 +42,7 @@ mod ocr;
 mod oidc_account;
 mod oidc_login;
 mod project_preview;
+mod project_timer;
 mod projects;
 mod resource_history;
 mod sharing;
@@ -134,6 +135,7 @@ fn router_with_context(
         .merge(activity::router())
         .merge(sync::router())
         .merge(project_preview::router())
+        .merge(project_timer::router())
         .merge(yarns::router())
         .merge(categories::router())
         .merge(media::router())

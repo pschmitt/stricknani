@@ -14,6 +14,8 @@ pub(crate) enum AdminError {
     Forbidden,
     NotFound,
     Conflict,
+    /// An administrator tried to disable their own account.
+    SelfDeactivation,
     InvalidEmail,
     PasswordTooLong,
     PasswordPolicy(auth::NewPasswordError),
@@ -193,7 +195,7 @@ pub(crate) async fn set_user_active(
     let was_active = target.get::<i64, _>("active") != 0;
     let is_admin = target.get::<i64, _>("is_admin") != 0;
     if target_id == actor_id && !active {
-        return Err(AdminError::Conflict);
+        return Err(AdminError::SelfDeactivation);
     }
     if !active && was_active && is_admin {
         let active_admins: i64 =

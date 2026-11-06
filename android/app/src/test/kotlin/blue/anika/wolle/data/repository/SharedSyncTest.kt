@@ -126,6 +126,18 @@ class SharedSyncTest {
     }
 
     @Test
+    fun `only a real difference counts as a change`() = runTest {
+        val device = Device()
+        assertTrue(device.apply(listOf(project(1)), emptyList(), json))
+
+        // This device's own write coming back unchanged, and a tombstone for an uncached row.
+        assertFalse(device.apply(listOf(project(1)), emptyList(), json))
+        assertFalse(device.apply(emptyList(), listOf(9), json))
+
+        assertTrue(device.apply(listOf(project(1, updated = 2)), emptyList(), json))
+    }
+
+    @Test
     fun `an item that left and came back is deleted first and ends up present`() = runTest {
         val device = Device()
         device.apply(listOf(project(2, owner = 7, role = "viewer")), emptyList(), json)

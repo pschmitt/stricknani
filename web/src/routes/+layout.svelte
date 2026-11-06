@@ -26,6 +26,7 @@
   import { isMoreActive, isPathActive } from "#lib/more-nav.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import { initTheme } from "#lib/theme.svelte.ts";
+  import { listenForNotificationOpens } from "#lib/web-notifications.svelte.ts";
   import "../app.css";
 
   let { children }: { children: Snippet } = $props();
@@ -97,6 +98,10 @@
     void loadCatalog();
     void refreshSession();
     const stopTheme = initTheme();
+    // A clicked notification navigates this tab in-app (keeps dirty-form guards).
+    const stopNotificationOpens = listenForNotificationOpens(
+      (path) => void goto(path),
+    );
     // The glass part of the header fades in as content scrolls under it.
     const root = document.documentElement;
     let frame = 0;
@@ -113,6 +118,7 @@
     window.addEventListener("scroll", scheduleGlass, { passive: true });
     return () => {
       stopTheme();
+      stopNotificationOpens();
       window.removeEventListener("scroll", scheduleGlass);
       if (frame) cancelAnimationFrame(frame);
       root.style.removeProperty("--header-glass");
