@@ -400,9 +400,10 @@
           {#if canEdit}
             <a
               class="primary-action ui-button ui-button--primary ui-button--md"
+              aria-label={t("Edit yarn", locale)}
               href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
               ><ActionLabel icon="action-update"
-                >{t("Edit yarn", locale)}</ActionLabel
+                >{t("Edit", locale)}</ActionLabel
               ></a
             >
           {/if}

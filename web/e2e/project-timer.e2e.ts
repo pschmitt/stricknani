@@ -72,6 +72,7 @@ test("project timer edits, runs, persists, and reminds", async () => {
         timerGetCount > 0,
         "enabling project timers did not load the timer",
       );
+      await page.locator(".timer-chip").click();
       await page
         .getByRole("heading", { name: "Knitting time" })
         .waitFor({ state: "visible" });
@@ -123,6 +124,12 @@ test("project timer edits, runs, persists, and reminds", async () => {
         .getByRole("button", { name: "Start", exact: true })
         .waitFor({ state: "visible" });
       await page.reload({ waitUntil: "networkidle" });
+      // The chip in the action row carries the short time; the dialog the full one.
+      await page
+        .locator(".timer-chip")
+        .getByText(/^1:02:0[3-9]$/)
+        .waitFor({ state: "visible" });
+      await page.locator(".timer-chip").click();
       await page
         .getByRole("heading", { name: "Knitting time" })
         .waitFor({ state: "visible" });
@@ -137,16 +144,18 @@ test("project timer edits, runs, persists, and reminds", async () => {
       );
       await page.reload({ waitUntil: "networkidle" });
       await page
-        .getByRole("alert")
-        .filter({ hasText: "Timers are not available on this server yet." })
+        .locator(".reader-heading-actions .action-overflow")
         .waitFor({ state: "visible" });
       check(
-        (await page.locator(".project-timer button").count()) === 0,
-        "unsupported server response left timer actions enabled",
+        (await page.locator(".project-timer").count()) === 0,
+        "an unsupported server still showed the project timer",
       );
       await page.unroute(`**/api/v2/projects/${projectId}/timer`);
       await page.reload({ waitUntil: "networkidle" });
-      await page.getByText(/^01:02:\d{2}$/).waitFor({ state: "visible" });
+      await page
+        .locator(".timer-chip")
+        .getByText(/^1:02:\d{2}$/)
+        .waitFor({ state: "visible" });
     } finally {
       await context.close();
       await browser.close();

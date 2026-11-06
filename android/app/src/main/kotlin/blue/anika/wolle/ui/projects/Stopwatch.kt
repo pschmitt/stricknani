@@ -13,23 +13,41 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.animationsDisabled
 
 /**
@@ -44,6 +62,7 @@ internal fun Stopwatch(
     running: Boolean,
     modifier: Modifier = Modifier,
     size: Dp = 72.dp,
+    mini: Boolean = false,
 ) {
     val still = animationsDisabled()
     // Cumulative degrees, so passing a full minute keeps sweeping forward instead of back.
@@ -71,7 +90,7 @@ internal fun Stopwatch(
             label = "stopwatch-crown",
         )
     val halo =
-        if (running && !still) {
+        if (running && !still && !mini) {
             val transition = rememberInfiniteTransition(label = "stopwatch-halo")
             transition
                 .animateFloat(
@@ -129,8 +148,34 @@ internal fun Stopwatch(
             rotate(42f, pivot = center) {
                 drawRoundRect(case, Offset(46f, 10f), Size(8f, 7f), CornerRadius(2f))
             }
-            drawCircle(case, radius = 41f, center = center)
-            drawCircle(dial, radius = 35f, center = center)
+            drawCircle(case, radius = if (mini) 44f else 41f, center = center)
+            drawCircle(dial, radius = if (mini) 34f else 35f, center = center)
+            if (mini) {
+                // A glance-sized icon: four bold ticks and a thick hand, no subdial.
+                for (tick in 0 until 4) {
+                    rotate(tick * 90f, pivot = center) {
+                        drawLine(
+                            ink,
+                            Offset(50f, 31f),
+                            Offset(50f, 38f),
+                            strokeWidth = 7f,
+                            cap = StrokeCap.Round,
+                            alpha = 0.6f,
+                        )
+                    }
+                }
+                rotate(secondAngle, pivot = center) {
+                    drawLine(
+                        case,
+                        Offset(50f, 66f),
+                        Offset(50f, 34f),
+                        strokeWidth = 9f,
+                        cap = StrokeCap.Round,
+                    )
+                }
+                drawCircle(case, radius = 5f, center = center)
+                return@scale
+            }
             for (tick in 0 until 60) {
                 val major = tick % 5 == 0
                 rotate(tick * 6f, pivot = center) {
@@ -169,4 +214,68 @@ internal fun Stopwatch(
             drawCircle(case, radius = 2.6f, center = center)
         }
     }
+}
+
+/**
+ * The timer's place in the project top bar: a small stopwatch (its hand sweeps while running) and,
+ * once the timer has time on it, a short "12:34" / "1:02:03". Tapping it opens the timer dialog.
+ * [attention] (a due reminder) tints it so it is not missed.
+ */
+@Composable
+internal fun ProjectTimerChip(
+    totalSeconds: Long,
+    running: Boolean,
+    attention: Boolean,
+    onClick: () -> Unit,
+) {
+    val label = shortTimerLabel(totalSeconds, running)
+    val title = stringResource(R.string.project_timer_title)
+    val description = if (label.isEmpty()) title else "$title: $label"
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color =
+            when {
+                attention -> MaterialTheme.colorScheme.tertiaryContainer
+                running -> MaterialTheme.colorScheme.primaryContainer
+                else -> Color.Transparent
+            },
+        contentColor =
+            if (running) MaterialTheme.colorScheme.onPrimaryContainer
+            else MaterialTheme.colorScheme.onSurface,
+        modifier =
+            Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).semantics {
+                contentDescription = description
+                role = Role.Button
+            },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        ) {
+            Stopwatch(totalSeconds = totalSeconds, running = running, size = 22.dp, mini = true)
+            if (label.isNotEmpty())
+                Text(
+                    label,
+                    style =
+                        MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum",
+                        ),
+                    maxLines = 1,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
+        }
+    }
+}
+
+/** "12:34" under an hour, "1:02:03" from then on; empty for an untouched, stopped timer. */
+internal fun shortTimerLabel(totalSeconds: Long, running: Boolean): String {
+    if (totalSeconds <= 0 && !running) return ""
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds)
+    else "%d:%02d".format(minutes, seconds)
 }

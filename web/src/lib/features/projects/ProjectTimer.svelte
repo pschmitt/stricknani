@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import { session } from "#lib/session.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { webNotifications } from "#lib/web-notifications.svelte.ts";
@@ -66,6 +67,41 @@
   const minuteAngle = $derived(((total % 3600) / 60) * 6);
   const running = $derived(Boolean(timer?.started_at));
   const ticks = Array.from({ length: 60 }, (_, index) => index);
+  // The chip in the action row shows a short "12:34" / "1:02:03"; nothing for an
+  // untouched timer, so a fresh project only shows the little stopwatch.
+  const shortTime = $derived(
+    !timer || (total === 0 && !running)
+      ? ""
+      : Number(parts[0]) > 0
+        ? `${parts[0]}:${parts[1].padStart(2, "0")}:${parts[2].padStart(2, "0")}`
+        : `${parts[1]}:${parts[2].padStart(2, "0")}`,
+  );
+  let dialog = $state<HTMLDialogElement>();
+
+  function openDialog() {
+    if (!dialog?.open) dialog?.showModal();
+  }
+
+  function closeDialog() {
+    if (dialog?.open) dialog.close();
+  }
+
+  // A click on the backdrop (the dialog element itself, outside its padded
+  // body) closes the dialog, like tapping outside a sheet.
+  $effect(() => {
+    const element = dialog;
+    if (!element) return;
+    const onBackdrop = (event: MouseEvent) => {
+      if (event.target === element) closeDialog();
+    };
+    element.addEventListener("click", onBackdrop);
+    return () => element.removeEventListener("click", onBackdrop);
+  });
+
+  // A due reminder opens the dialog, so its question is not missed in the chip.
+  $effect(() => {
+    if (reminderDue) untrack(openDialog);
+  });
   const editing = $derived(timer !== null && editMode);
   const proposedTotal = $derived(secondsFromParts(hours, minutes, seconds));
 
@@ -394,58 +430,99 @@
   }
 </script>
 
-{#if enabled}
-  <section class="project-timer" aria-labelledby="project-timer-title">
-    {#if !unsupported}
-      <div class="timer-face" class:running aria-live="off">
-        <svg
-          class="stopwatch"
-          viewBox="0 0 100 112"
-          aria-hidden="true"
-          focusable="false"
+{#snippet stopwatch(mini: boolean)}
+  <svg
+    class={mini ? "stopwatch stopwatch--mini" : "stopwatch"}
+    viewBox="0 0 100 112"
+    aria-hidden="true"
+    focusable="false"
+  >
+    {#if !mini}<circle class="halo" cx="50" cy="62" r="46" />{/if}
+    <g class="crown">
+      <rect x="46.5" y="8" width="7" height="8" rx="1.5" />
+      <rect x="41" y="2" width="18" height="8" rx="3" />
+    </g>
+    <rect
+      class="pusher"
+      x="46"
+      y="10"
+      width="8"
+      height="7"
+      rx="2"
+      transform="rotate(42 50 62)"
+    />
+    <circle class="case" cx="50" cy="62" r={mini ? 44 : 41} />
+    <circle class="dial" cx="50" cy="62" r={mini ? 34 : 35} />
+    {#if mini}
+      {#each [0, 15, 30, 45] as tick (tick)}
+        <line
+          class="tick tick--hour"
+          x1="50"
+          y1="31"
+          x2="50"
+          y2="38"
+          transform={`rotate(${tick * 6} 50 62)`}
+        />
+      {/each}
+    {:else}
+      {#each ticks as tick (tick)}
+        <line
+          class={tick % 5 === 0 ? "tick tick--hour" : "tick"}
+          x1="50"
+          y1="28.5"
+          x2="50"
+          y2={tick % 5 === 0 ? 34 : 31.5}
+          transform={`rotate(${tick * 6} 50 62)`}
+        />
+      {/each}
+      <circle class="subdial" cx="50" cy="76" r="8.5" />
+      <line
+        class="minute-hand"
+        x1="50"
+        y1="76"
+        x2="50"
+        y2="69.5"
+        style={`transform: rotate(${minuteAngle}deg)`}
+      />
+    {/if}
+    <g class="second-hand" style={`transform: rotate(${secondAngle}deg)`}>
+      <line x1="50" y1={mini ? 66 : 70} x2="50" y2={mini ? 34 : 31} />
+      {#if !mini}<circle class="needle-knob" cx="50" cy="71.5" r="3.4" />{/if}
+    </g>
+    <circle class="hub" cx="50" cy="62" r={mini ? 5 : 2.6} />
+  </svg>
+{/snippet}
+
+{#if enabled && !unsupported}
+  <div class="project-timer" class:running>
+    <button
+      type="button"
+      class="timer-chip"
+      class:timer-chip--due={reminderDue}
+      aria-haspopup="dialog"
+      aria-label={shortTime
+        ? `${t("Knitting time", locale)}: ${shortTime}`
+        : t("Knitting time", locale)}
+      onclick={openDialog}
+    >
+      {@render stopwatch(true)}
+      {#if shortTime}<span class="timer-chip__time">{shortTime}</span>{/if}
+    </button>
+
+    <dialog
+      bind:this={dialog}
+      class="timer-dialog"
+      aria-labelledby="project-timer-title"
+    >
+      <div class="timer-dialog__body">
+        <button
+          type="button"
+          class="timer-dialog__close"
+          aria-label={t("Close", locale)}
+          onclick={closeDialog}><NavIcon name="close" /></button
         >
-          <circle class="halo" cx="50" cy="62" r="46" />
-          <g class="crown">
-            <rect x="46.5" y="8" width="7" height="8" rx="1.5" />
-            <rect x="41" y="2" width="18" height="8" rx="3" />
-          </g>
-          <rect
-            class="pusher"
-            x="46"
-            y="10"
-            width="8"
-            height="7"
-            rx="2"
-            transform="rotate(42 50 62)"
-          />
-          <circle class="case" cx="50" cy="62" r="41" />
-          <circle class="dial" cx="50" cy="62" r="35" />
-          {#each ticks as tick (tick)}
-            <line
-              class={tick % 5 === 0 ? "tick tick--hour" : "tick"}
-              x1="50"
-              y1="28.5"
-              x2="50"
-              y2={tick % 5 === 0 ? 34 : 31.5}
-              transform={`rotate(${tick * 6} 50 62)`}
-            />
-          {/each}
-          <circle class="subdial" cx="50" cy="76" r="8.5" />
-          <line
-            class="minute-hand"
-            x1="50"
-            y1="76"
-            x2="50"
-            y2="69.5"
-            style={`transform: rotate(${minuteAngle}deg)`}
-          />
-          <g class="second-hand" style={`transform: rotate(${secondAngle}deg)`}>
-            <line x1="50" y1="70" x2="50" y2="31" />
-            <circle class="needle-knob" cx="50" cy="71.5" r="3.4" />
-          </g>
-          <circle class="hub" cx="50" cy="62" r="2.6" />
-        </svg>
-        <div>
+        <div class="timer-face" aria-live="off">
+          {@render stopwatch(false)}
           <h2 id="project-timer-title">{t("Knitting time", locale)}</h2>
           <p
             class="timer-digits"
@@ -456,170 +533,297 @@
             ><b>:</b><span>{parts[2].padStart(2, "0")}</span>
           </p>
           <p class="timer-caption">
-            {timer?.started_at
+            {running
               ? t("Time spent on this project", locale)
               : t("Ready when you are", locale)}
           </p>
         </div>
-      </div>
-    {/if}
 
-    {#if loading}
-      <p class="timer-status" role="status">{t("Loading timer…", locale)}</p>
-    {:else if error}
-      <p class="timer-error" role="alert">{error}</p>
-    {/if}
+        {#if loading}
+          <p class="timer-status" role="status">
+            {t("Loading timer…", locale)}
+          </p>
+        {:else if error}
+          <p class="timer-error" role="alert">{error}</p>
+        {/if}
 
-    {#if canEdit && !unsupported && timer?.started_at}
-      <label class="reminder-setting"
-        >{t("Running reminder", locale)}
-        <select
-          aria-label={t("Running reminder", locale)}
-          value={reminderMinutes}
-          onchange={(event) => setReminderMinutes(event.currentTarget.value)}
-        >
-          <option value="0">{t("Off", locale)}</option>
-          <option value="30">{t("30 minutes", locale)}</option>
-          <option value="60">{t("1 hour", locale)}</option>
-          <option value="120">{t("2 hours", locale)}</option>
-        </select>
-      </label>
-    {/if}
+        {#if reminderDue}
+          <div class="reminder-alert" role="alert">
+            <p>
+              {t("Your knitting timer has been running for a while.", locale)}
+            </p>
+            <div class="timer-actions">
+              <Button
+                class="stop-time"
+                variant="primary"
+                disabled={busy}
+                onclick={() => void changeTimer("stop")}
+                >{t("Stop timer", locale)}</Button
+              >
+              <Button
+                class="save-time"
+                variant="secondary"
+                onclick={snoozeReminder}>{t("Keep timing", locale)}</Button
+              >
+            </div>
+          </div>
+        {/if}
 
-    {#if reminderDue}
-      <div class="reminder-alert" role="alert">
-        <p>{t("Your knitting timer has been running for a while.", locale)}</p>
-        <div class="timer-actions">
-          <Button
-            class="stop-time"
-            variant="primary"
-            disabled={busy}
-            onclick={() => void changeTimer("stop")}
-            >{t("Stop timer", locale)}</Button
+        {#if timer && canEdit && editing}
+          <form
+            class="timer-controls"
+            onsubmit={(event) => {
+              event.preventDefault();
+              void changeTimer("set_total");
+            }}
           >
-          <Button class="save-time" variant="secondary" onclick={snoozeReminder}
-            >{t("Keep timing", locale)}</Button
-          >
-        </div>
-      </div>
-    {/if}
+            <fieldset disabled={busy}>
+              <legend>{t("Adjust total time", locale)}</legend>
+              <label
+                >{t("Hours", locale)}<input
+                  aria-label={t("Hours", locale)}
+                  inputmode="numeric"
+                  type="text"
+                  maxlength="9"
+                  bind:value={hours}
+                /></label
+              >
+              <span aria-hidden="true">:</span>
+              <label
+                >{t("Minutes", locale)}<input
+                  aria-label={t("Minutes", locale)}
+                  inputmode="numeric"
+                  type="text"
+                  maxlength="2"
+                  bind:value={minutes}
+                /></label
+              >
+              <span aria-hidden="true">:</span>
+              <label
+                >{t("Seconds", locale)}<input
+                  aria-label={t("Seconds", locale)}
+                  inputmode="numeric"
+                  type="text"
+                  maxlength="2"
+                  bind:value={seconds}
+                /></label
+              >
+            </fieldset>
+            <div class="timer-actions">
+              <Button
+                class="save-time"
+                variant="secondary"
+                disabled={busy}
+                onclick={cancelEdit}>{t("Cancel", locale)}</Button
+              >
+              <Button
+                type="submit"
+                class="save-time"
+                variant="primary"
+                disabled={busy ||
+                  proposedTotal === null ||
+                  proposedTotal === timer.total_seconds}
+                >{t("Save time", locale)}</Button
+              >
+            </div>
+          </form>
+        {:else if timer && canEdit}
+          <div class="timer-actions">
+            <Button
+              class="save-time"
+              variant="secondary"
+              disabled={busy}
+              onclick={beginEdit}>{t("Edit time", locale)}</Button
+            >
+            {#if running}
+              <Button
+                class="stop-time"
+                variant="primary"
+                disabled={busy}
+                onclick={() => void changeTimer("stop")}
+                >{t("Stop", locale)}</Button
+              >
+            {:else}
+              <Button
+                class="start-time"
+                variant="primary"
+                disabled={busy}
+                onclick={() => void changeTimer("start")}
+                >{t("Start", locale)}</Button
+              >
+            {/if}
+          </div>
+        {/if}
 
-    {#if timer && !unsupported && canEdit && editing}
-      <form
-        class="timer-controls"
-        onsubmit={(event) => {
-          event.preventDefault();
-          void changeTimer("set_total");
-        }}
-      >
-        <fieldset disabled={busy}>
-          <legend>{t("Adjust total time", locale)}</legend>
-          <label
-            >{t("Hours", locale)}<input
-              aria-label={t("Hours", locale)}
-              inputmode="numeric"
-              type="text"
-              maxlength="9"
-              bind:value={hours}
-            /></label
-          >
-          <span aria-hidden="true">:</span>
-          <label
-            >{t("Minutes", locale)}<input
-              aria-label={t("Minutes", locale)}
-              inputmode="numeric"
-              type="text"
-              maxlength="2"
-              bind:value={minutes}
-            /></label
-          >
-          <span aria-hidden="true">:</span>
-          <label
-            >{t("Seconds", locale)}<input
-              aria-label={t("Seconds", locale)}
-              inputmode="numeric"
-              type="text"
-              maxlength="2"
-              bind:value={seconds}
-            /></label
-          >
-        </fieldset>
-        <div class="timer-actions">
-          <Button
-            type="submit"
-            class="save-time"
-            variant="primary"
-            disabled={busy ||
-              proposedTotal === null ||
-              proposedTotal === timer.total_seconds}
-            >{t("Save time", locale)}</Button
-          >
-          <Button
-            class="save-time"
-            variant="secondary"
-            disabled={busy}
-            onclick={cancelEdit}>{t("Cancel", locale)}</Button
-          >
-        </div>
-      </form>
-    {:else if !unsupported && timer?.started_at && canEdit}
-      <div class="timer-actions">
-        <Button
-          class="save-time"
-          variant="secondary"
-          disabled={busy}
-          onclick={beginEdit}>{t("Edit time", locale)}</Button
-        >
-        <Button
-          class="stop-time"
-          variant="primary"
-          disabled={busy}
-          onclick={() => void changeTimer("stop")}>{t("Stop", locale)}</Button
-        >
+        {#if canEdit && running}
+          <label class="reminder-setting"
+            >{t("Running reminder", locale)}
+            <select
+              aria-label={t("Running reminder", locale)}
+              value={reminderMinutes}
+              onchange={(event) =>
+                setReminderMinutes(event.currentTarget.value)}
+            >
+              <option value="0">{t("Off", locale)}</option>
+              <option value="30">{t("30 minutes", locale)}</option>
+              <option value="60">{t("1 hour", locale)}</option>
+              <option value="120">{t("2 hours", locale)}</option>
+            </select>
+          </label>
+        {/if}
       </div>
-    {:else if !unsupported && timer && canEdit}
-      <div class="timer-actions">
-        <Button
-          class="save-time"
-          variant="secondary"
-          disabled={busy}
-          onclick={beginEdit}>{t("Edit time", locale)}</Button
-        >
-        <Button
-          class="start-time"
-          variant="primary"
-          disabled={busy}
-          onclick={() => void changeTimer("start")}>{t("Start", locale)}</Button
-        >
-      </div>
-    {/if}
-  </section>
+    </dialog>
+  </div>
 {/if}
 
 <style>
   .project-timer {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+  /* The chip: a 44px round button like its Favorite neighbour, growing a time
+     label once the timer has run. */
+  .timer-chip {
+    display: inline-flex;
+    box-sizing: border-box;
+    min-width: 44px;
+    height: 44px;
     align-items: center;
-    gap: 1rem;
-    margin: 1rem 0;
-    padding: 1rem 1.15rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0 0.6rem;
+    border: 1px solid var(--control-border);
+    border-radius: 999px;
+    color: var(--ink);
     background: var(--surface);
+    font: inherit;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .timer-chip:hover {
+    background: var(--accent-wash);
+  }
+  .timer-chip:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .running .timer-chip {
+    border-color: var(--accent);
+    background: var(--accent-wash);
+    color: var(--accent-strong);
+  }
+  .timer-chip--due {
+    animation: chip-nudge 2.4s ease-in-out infinite;
+  }
+  .timer-chip__time {
+    line-height: 1;
+  }
+
+  .timer-dialog {
+    box-sizing: border-box;
+    width: min(22rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    overflow: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius-sm) * 2);
+    color: var(--ink);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .timer-dialog[open] {
+    animation: dialog-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .timer-dialog::backdrop {
+    background: rgb(15 28 44 / 55%);
+  }
+  .timer-dialog__body {
+    position: relative;
+    display: grid;
+    gap: 1rem;
+    padding: 1.4rem 1.2rem 1.2rem;
+  }
+  .timer-dialog__close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    color: var(--ink-muted);
+    background: transparent;
+    cursor: pointer;
+  }
+  .timer-dialog__close:hover {
+    background: var(--accent-wash);
+  }
+  .timer-dialog__close:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .timer-dialog__close :global(svg) {
+    width: 20px;
+    height: 20px;
   }
   .timer-face {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    min-width: 0;
+    display: grid;
+    justify-items: center;
+    gap: 0.2rem;
+    text-align: center;
   }
+  h2 {
+    margin: 0.4rem 0 0;
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .timer-digits {
+    display: flex;
+    align-items: baseline;
+    gap: 0.12rem;
+    margin: 0;
+    color: var(--ink);
+    font-size: 2.4rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 750;
+    letter-spacing: 0.015em;
+    line-height: 1.05;
+  }
+  .timer-digits b {
+    color: var(--ink-muted);
+    font-size: 0.75em;
+    font-weight: 500;
+  }
+  .timer-caption,
+  .timer-status {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+  }
+  .timer-status {
+    text-align: center;
+  }
+
   .stopwatch {
     flex: none;
-    width: 4.6rem;
+    width: 7.5rem;
     height: auto;
     overflow: visible;
     transform-origin: 50% 60%;
+  }
+  .stopwatch--mini {
+    width: 22px;
   }
   .stopwatch .halo {
     fill: var(--accent-wash);
@@ -628,14 +832,14 @@
     transform-origin: 50px 62px;
   }
   .stopwatch .crown,
-  .stopwatch .pusher {
+  .stopwatch .pusher,
+  .stopwatch .case,
+  .stopwatch .needle-knob,
+  .stopwatch .hub {
     fill: var(--accent-strong);
   }
   .stopwatch .crown {
     transition: transform 160ms ease-out;
-  }
-  .stopwatch .case {
-    fill: var(--accent-strong);
   }
   .stopwatch .dial {
     fill: var(--surface);
@@ -650,6 +854,10 @@
     stroke: var(--ink);
     stroke-width: 1.6;
     opacity: 0.8;
+  }
+  .stopwatch--mini .tick--hour {
+    stroke-width: 7;
+    opacity: 0.6;
   }
   .stopwatch .subdial {
     fill: var(--accent-wash);
@@ -675,9 +883,8 @@
     stroke-linecap: round;
     stroke-width: 1.8;
   }
-  .stopwatch .needle-knob,
-  .stopwatch .hub {
-    fill: var(--accent-strong);
+  .stopwatch--mini .second-hand line {
+    stroke-width: 9;
   }
   .stopwatch .hub {
     stroke: var(--surface);
@@ -733,56 +940,52 @@
       opacity: 0.25;
     }
   }
-  h2 {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 650;
+  @keyframes dialog-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.85) translateY(12px);
+    }
   }
-  .timer-digits {
-    display: flex;
-    align-items: baseline;
-    gap: 0.12rem;
-    margin: 0.1rem 0;
-    color: var(--ink);
-    font-size: clamp(1.65rem, 5vw, 2.2rem);
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    letter-spacing: 0.015em;
-    line-height: 1.05;
+  @keyframes chip-nudge {
+    0%,
+    80%,
+    100% {
+      transform: rotate(0);
+    }
+    85% {
+      transform: rotate(-6deg);
+    }
+    90% {
+      transform: rotate(6deg);
+    }
+    95% {
+      transform: rotate(-3deg);
+    }
   }
-  .timer-digits b {
-    color: var(--ink-muted);
-    font-size: 0.75em;
-    font-weight: 500;
-  }
-  .timer-caption,
-  .timer-status {
-    margin: 0;
-    color: var(--ink-muted);
-    font-size: 0.78rem;
-  }
+
   .timer-controls {
     display: grid;
-    gap: 0.6rem;
+    gap: 0.8rem;
   }
   fieldset {
     display: flex;
     align-items: end;
+    justify-content: center;
     gap: 0.35rem;
     margin: 0;
     padding: 0;
     border: 0;
   }
   legend {
-    margin-bottom: 0.3rem;
+    margin: 0 auto 0.4rem;
     color: var(--ink-muted);
-    font-size: 0.72rem;
+    font-size: 0.78rem;
   }
   label {
     display: grid;
     gap: 0.15rem;
     color: var(--ink-muted);
-    font-size: 0.68rem;
+    font-size: 0.7rem;
   }
   input {
     box-sizing: border-box;
@@ -803,17 +1006,17 @@
   }
   .timer-actions {
     display: flex;
-    justify-content: end;
-    gap: 0.45rem;
+    gap: 0.5rem;
+  }
+  .timer-actions :global(.ui-button) {
+    flex: 1;
   }
   .reminder-setting {
-    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    color: var(--ink-muted);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
   }
   select {
     max-width: 10rem;
@@ -826,51 +1029,32 @@
     font: inherit;
   }
   .reminder-alert {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
-    padding: 0.75rem;
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.8rem;
     border-radius: var(--radius-sm);
     background: var(--accent-wash);
     color: var(--ink);
   }
   .reminder-alert p {
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
+    text-align: center;
   }
   .timer-error {
-    grid-column: 1 / -1;
     margin: 0;
     color: var(--danger);
     font-size: 0.84rem;
-  }
-  @media (max-width: 640px) {
-    .project-timer {
-      grid-template-columns: 1fr;
-    }
-    .timer-actions {
-      justify-content: stretch;
-    }
-    .timer-actions :global(.ui-button) {
-      flex: 1;
-    }
-    fieldset {
-      justify-content: center;
-    }
+    text-align: center;
   }
   @media (prefers-reduced-motion: reduce) {
     .stopwatch,
     .stopwatch *,
-    .timer-digits b {
+    .timer-digits b,
+    .timer-chip,
+    .timer-dialog {
       animation: none !important;
       transition: none !important;
-    }
-    *,
-    *::before,
-    *::after {
-      scroll-behavior: auto !important;
     }
   }
 </style>

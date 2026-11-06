@@ -829,6 +829,14 @@
       {/snippet}
       {#snippet actions()}
         <div class="reader-heading-actions">
+          {#if !adminData && userId !== null}
+            <ProjectTimer
+              projectId={currentProject.id}
+              {locale}
+              {canEdit}
+              enabled={projectTimersEnabled}
+            />
+          {/if}
           {#if !adminData}
             <FavoriteButton
               favorite={currentProject.is_favorite}
@@ -840,12 +848,12 @@
           {#if !adminData && canEdit}
             <a
               class="reader-edit-link ui-button ui-button--primary ui-button--md"
+              aria-label={t("Edit project", locale)}
               href={resolve("/projects/[id]/edit", {
                 id: String(currentProject.id),
               })}
             >
-              <ActionLabel icon="action-update"
-                >{t("Edit project", locale)}</ActionLabel
+              <ActionLabel icon="action-update">{t("Edit", locale)}</ActionLabel
               >
             </a>
           {/if}
@@ -980,15 +988,6 @@
     {/if}
     {#if printError}
       <p class="print-error" role="alert">{printError}</p>
-    {/if}
-
-    {#if !adminData && userId !== null}
-      <ProjectTimer
-        projectId={currentProject.id}
-        {locale}
-        {canEdit}
-        enabled={projectTimersEnabled}
-      />
     {/if}
 
     <div class="reader-overview">

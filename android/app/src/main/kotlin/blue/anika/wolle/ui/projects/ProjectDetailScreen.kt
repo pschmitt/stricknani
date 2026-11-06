@@ -21,12 +21,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -59,7 +62,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -157,6 +162,12 @@ fun ProjectDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var attachmentToDelete by remember { mutableStateOf<AttachmentDto?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
+    var showTimerDialog by remember { mutableStateOf(false) }
+    val timerReminderDue =
+        timer.running &&
+            timer.reminderDeadlineMillis?.let { System.currentTimeMillis() >= it } == true
+    // A due reminder opens the timer dialog, which asks whether to keep timing.
+    LaunchedEffect(timerReminderDue) { if (timerReminderDue) showTimerDialog = true }
     val printOptions by viewModel.printOptions.collectAsStateWithLifecycle()
     var isPreparingPrint by remember { mutableStateOf(false) }
     val printScope = rememberCoroutineScope()
@@ -204,6 +215,19 @@ fun ProjectDetailScreen(
         if (access.canManage && state is ProjectDetailUiState.Loaded) viewModel.sharing.preload()
     }
     val refreshFailure = rememberRefreshFailure(refreshState)
+    if (showTimerDialog && projectTimersEnabled && !timer.unavailable) {
+        ProjectTimerDialog(
+            timer = timer,
+            seconds = timerSeconds,
+            canEdit = access.canEdit,
+            reminderDue = timerReminderDue,
+            onDismiss = { showTimerDialog = false },
+            onRunningChange = viewModel::setTimerRunning,
+            onEdit = { total, done -> viewModel.setTimerTotal(total, done) },
+            onReminderChange = viewModel::setTimerReminderInterval,
+            onReminderSnooze = viewModel::snoozeTimerReminder,
+        )
+    }
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
@@ -225,6 +249,14 @@ fun ProjectDetailScreen(
                             val context = LocalContext.current
                             var menuExpanded by remember { mutableStateOf(false) }
                             // The everyday actions sit in the bar; the menu keeps Share and Delete.
+                            if (projectTimersEnabled && !timer.unavailable) {
+                                ProjectTimerChip(
+                                    totalSeconds = timerSeconds,
+                                    running = timer.running,
+                                    attention = timerReminderDue,
+                                    onClick = { showTimerDialog = true },
+                                )
+                            }
                             FavoriteToggleButton(
                                 isFavorite = state.entity.isFavorite,
                                 onClick = viewModel::toggleFavorite,
@@ -364,14 +396,6 @@ fun ProjectDetailScreen(
                         ProjectDetailContent(
                             detail = state.detail,
                             linkedYarns = state.linkedYarns,
-                            timer = timer,
-                            timerSeconds = timerSeconds,
-                            projectTimersEnabled = projectTimersEnabled,
-                            canEditTimer = access.canEdit,
-                            onTimerRunningChange = viewModel::setTimerRunning,
-                            onTimerEdit = { total, done -> viewModel.setTimerTotal(total, done) },
-                            onTimerReminderChange = viewModel::setTimerReminderInterval,
-                            onTimerReminderSnooze = viewModel::snoozeTimerReminder,
                             cardOrder = cardOrder,
                             onCardOrderChanged = viewModel::saveCardOrder,
                             resolveMediaUrl = viewModel::resolveMediaUrl,
@@ -451,14 +475,6 @@ fun ProjectDetailScreen(
 private fun ProjectDetailContent(
     detail: ProjectDto,
     linkedYarns: List<LinkedYarn>,
-    timer: ProjectDetailViewModel.TimerState,
-    timerSeconds: Long,
-    projectTimersEnabled: Boolean,
-    canEditTimer: Boolean,
-    onTimerRunningChange: (Boolean, (Boolean) -> Unit) -> Unit,
-    onTimerEdit: (Long, (Boolean) -> Unit) -> Unit,
-    onTimerReminderChange: (Int) -> Unit,
-    onTimerReminderSnooze: () -> Unit,
     cardOrder: List<String>,
     onCardOrderChanged: (List<String>) -> Unit,
     resolveMediaUrl: (String?) -> String?,
@@ -518,19 +534,6 @@ private fun ProjectDetailContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (projectTimersEnabled) {
-                item {
-                    ProjectTimerCard(
-                        timer = timer,
-                        seconds = timerSeconds,
-                        canEdit = canEditTimer,
-                        onRunningChange = onTimerRunningChange,
-                        onEdit = onTimerEdit,
-                        onReminderChange = onTimerReminderChange,
-                        onReminderSnooze = onTimerReminderSnooze,
-                    )
-                }
-            }
             if (detail.images.isNotEmpty()) {
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -816,11 +819,18 @@ private fun ProjectDetailContent(
     }
 }
 
+/**
+ * The project timer's dialog, opened from the stopwatch chip in the top bar: a big animated
+ * stopwatch with the time, Start/Stop and Edit time, the running reminder, and the reminder's
+ * question when it is due (the screen opens the dialog then).
+ */
 @Composable
-private fun ProjectTimerCard(
+private fun ProjectTimerDialog(
     timer: ProjectDetailViewModel.TimerState,
     seconds: Long,
     canEdit: Boolean,
+    reminderDue: Boolean,
+    onDismiss: () -> Unit,
     onRunningChange: (Boolean, (Boolean) -> Unit) -> Unit,
     onEdit: (Long, (Boolean) -> Unit) -> Unit,
     onReminderChange: (Int) -> Unit,
@@ -829,129 +839,151 @@ private fun ProjectTimerCard(
     var showEditDialog by remember { mutableStateOf(false) }
     var saveFailed by remember { mutableStateOf(false) }
     var reminderMenu by remember { mutableStateOf(false) }
-    val reminderDue =
-        timer.running &&
-            timer.reminderDeadlineMillis?.let { System.currentTimeMillis() >= it } == true
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+    val actionsEnabled =
+        !timer.saving &&
+            !timer.loading &&
+            !timer.error &&
+            !timer.unavailable &&
+            !timer.projectMissing
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
         ) {
-            Stopwatch(totalSeconds = seconds, running = timer.running)
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.project_timer_title),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                Text(
-                    formatTimer(seconds),
-                    style =
-                        MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum",
-                        ),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    stringResource(
-                        if (timer.running) R.string.project_timer_running_caption
-                        else R.string.project_timer_ready_caption
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (timer.unavailable)
-                    Text(
-                        stringResource(R.string.project_timer_unavailable),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box {
+                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.common_close),
                     )
-                else if (timer.projectMissing)
-                    Text(
-                        stringResource(R.string.project_detail_not_found),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                else if (timer.error)
-                    Text(
-                        stringResource(R.string.project_timer_error),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-            }
-            if (canEdit) {
+                }
                 Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (timer.running) {
-                        OutlinedButton(
-                            enabled =
-                                !timer.saving &&
-                                    !timer.loading &&
-                                    !timer.error &&
-                                    !timer.unavailable &&
-                                    !timer.projectMissing,
-                            onClick = { onRunningChange(false) {} },
-                        ) {
-                            Text(stringResource(R.string.project_timer_stop))
-                        }
-                    } else {
-                        Button(
-                            enabled =
-                                !timer.saving &&
-                                    !timer.loading &&
-                                    !timer.error &&
-                                    !timer.unavailable &&
-                                    !timer.projectMissing,
-                            onClick = { onRunningChange(true) {} },
-                        ) {
-                            Text(stringResource(R.string.project_timer_start))
-                        }
+                    Stopwatch(totalSeconds = seconds, running = timer.running, size = 120.dp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            stringResource(R.string.project_timer_title).uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            formatTimer(seconds),
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
+                        )
+                        Text(
+                            stringResource(
+                                if (timer.running) R.string.project_timer_running_caption
+                                else R.string.project_timer_ready_caption
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
-                    TextButton(
-                        enabled =
-                            !timer.saving &&
-                                !timer.loading &&
-                                !timer.error &&
-                                !timer.unavailable &&
-                                !timer.projectMissing,
-                        onClick = {
-                            saveFailed = false
-                            showEditDialog = true
-                        },
-                    ) {
-                        Text(stringResource(R.string.project_timer_edit))
-                    }
-                    if (timer.running) {
-                        TextButton(
-                            enabled =
-                                !timer.saving &&
-                                    !timer.loading &&
-                                    !timer.error &&
-                                    !timer.unavailable &&
-                                    !timer.projectMissing,
-                            onClick = { reminderMenu = true },
-                        ) {
-                            Text(
-                                "${stringResource(R.string.project_timer_reminder)}: ${stringResource(reminderIntervalLabel(timer.reminderIntervalMinutes))}"
-                            )
+                    val problem =
+                        when {
+                            timer.projectMissing -> R.string.project_detail_not_found
+                            timer.error -> R.string.project_timer_error
+                            else -> null
                         }
-                        DropdownMenu(
-                            expanded = reminderMenu,
-                            onDismissRequest = { reminderMenu = false },
+                    if (problem != null)
+                        Text(
+                            stringResource(problem),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                        )
+                    if (reminderDue) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         ) {
-                            ProjectTimerReminderInterval.choices.forEach { interval ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(stringResource(reminderIntervalLabel(interval)))
-                                    },
-                                    onClick = {
-                                        reminderMenu = false
-                                        onReminderChange(interval)
-                                    },
+                            Column(
+                                Modifier.fillMaxWidth().padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    stringResource(R.string.project_timer_reminder_title),
+                                    style = MaterialTheme.typography.titleSmall,
                                 )
+                                Text(
+                                    stringResource(R.string.project_timer_reminder_body),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                )
+                                TextButton(onClick = onReminderSnooze) {
+                                    Text(stringResource(R.string.project_timer_reminder_keep))
+                                }
+                            }
+                        }
+                    }
+                    if (canEdit) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                enabled = actionsEnabled,
+                                onClick = {
+                                    saveFailed = false
+                                    showEditDialog = true
+                                },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.project_timer_edit))
+                            }
+                            Button(
+                                enabled = actionsEnabled,
+                                onClick = { onRunningChange(!timer.running) {} },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (timer.running) R.string.project_timer_stop
+                                        else R.string.project_timer_start
+                                    )
+                                )
+                            }
+                        }
+                        if (timer.running) {
+                            Box {
+                                TextButton(
+                                    enabled = actionsEnabled,
+                                    onClick = { reminderMenu = true },
+                                ) {
+                                    Text(
+                                        "${stringResource(R.string.project_timer_reminder)}: ${stringResource(reminderIntervalLabel(timer.reminderIntervalMinutes))}"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = reminderMenu,
+                                    onDismissRequest = { reminderMenu = false },
+                                ) {
+                                    ProjectTimerReminderInterval.choices.forEach { interval ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    stringResource(reminderIntervalLabel(interval))
+                                                )
+                                            },
+                                            onClick = {
+                                                reminderMenu = false
+                                                onReminderChange(interval)
+                                            },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -969,28 +1001,6 @@ private fun ProjectTimerCard(
                 onEdit(total) { success ->
                     saveFailed = !success
                     if (success) showEditDialog = false
-                }
-            },
-        )
-    }
-    if (reminderDue) {
-        AlertDialog(
-            onDismissRequest = onReminderSnooze,
-            title = { Text(stringResource(R.string.project_timer_reminder_title)) },
-            text = { Text(stringResource(R.string.project_timer_reminder_body)) },
-            confirmButton = {
-                TextButton(
-                    enabled = !timer.saving,
-                    onClick = {
-                        onRunningChange(false) { success -> if (success) saveFailed = false }
-                    },
-                ) {
-                    Text(stringResource(R.string.project_timer_stop))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onReminderSnooze) {
-                    Text(stringResource(R.string.project_timer_reminder_keep))
                 }
             },
         )
