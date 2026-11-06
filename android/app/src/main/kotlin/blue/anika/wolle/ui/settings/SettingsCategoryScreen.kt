@@ -27,6 +27,12 @@ fun SettingsCategoryScreen(
             )
         SettingsCategory.Appearance ->
             AppearanceSettingsScreen(onBack = onBack, viewModel = viewModel)
+        SettingsCategory.Interface ->
+            InterfaceSettingsScreen(
+                onBack = onBack,
+                viewModel = viewModel,
+                onOpenCategory = onOpenCategory,
+            )
         SettingsCategory.Navigation ->
             NavigationSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Categories -> CategoriesScreen(onBack = onBack)

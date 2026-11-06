@@ -27,6 +27,12 @@ enum class SettingsCategory(
         R.string.settings_category_appearance_subtitle,
         PhosphorIcons.Palette,
     ),
+    /** User interface: groups the bottom bar, project timers and detail cards. */
+    Interface(
+        R.string.settings_category_interface_title,
+        R.string.settings_category_interface_subtitle,
+        PhosphorIcons.Layout,
+    ),
     Navigation(
         R.string.settings_category_navigation_title,
         R.string.settings_category_navigation_subtitle,

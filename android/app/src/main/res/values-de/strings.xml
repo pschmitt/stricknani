@@ -308,6 +308,8 @@
     <string name="settings_category_account_subtitle">Serververbindung und Abmelden</string>
     <string name="settings_category_appearance_title">Erscheinungsbild</string>
     <string name="settings_category_appearance_subtitle">Design</string>
+    <string name="settings_category_interface_title">Benutzeroberfläche</string>
+    <string name="settings_category_interface_subtitle">Untere Leiste, Projekt-Timer und Detailkarten</string>
     <string name="settings_category_navigation_title">Untere Leiste</string>
     <string name="settings_category_navigation_subtitle">Wähle, welche Tabs sie zeigt und in welcher Reihenfolge</string>
     <string name="settings_category_categories_title">Kategorien</string>

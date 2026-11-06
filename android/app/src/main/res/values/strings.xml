@@ -309,6 +309,8 @@
     <string name="settings_category_account_subtitle">Server connection and sign-out</string>
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_appearance_subtitle">Theme</string>
+    <string name="settings_category_interface_title">User interface</string>
+    <string name="settings_category_interface_subtitle">Bottom bar, project timers and detail cards</string>
     <string name="settings_category_navigation_title">Bottom bar</string>
     <string name="settings_category_navigation_subtitle">Choose which tabs it shows and their order</string>
     <string name="settings_category_categories_title">Categories</string>

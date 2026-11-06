@@ -15,12 +15,7 @@ class MoreLayoutTest {
 
     @Test
     fun `Settings holds the Android-only settings after Account, which the screen draws`() {
-        val android =
-            listOf(
-                SettingsCategory.Appearance,
-                SettingsCategory.Navigation,
-                SettingsCategory.DetailCards,
-            )
+        val android = listOf(SettingsCategory.Appearance, SettingsCategory.Interface)
         assertEquals(android, moreLayout(isAdmin = true).settings)
         assertEquals(android, moreLayout(isAdmin = false).settings)
         assertFalse(SettingsCategory.Account in moreLayout(isAdmin = true).settings)
@@ -39,6 +34,14 @@ class MoreLayoutTest {
     }
 
     @Test
+    fun `User interface opens the bottom bar and detail card pages`() {
+        assertEquals(
+            listOf(SettingsCategory.Navigation, SettingsCategory.DetailCards),
+            moreLayout(isAdmin = false).interfacePages,
+        )
+    }
+
+    @Test
     fun `About stands alone at the bottom`() {
         assertEquals(listOf(SettingsCategory.About), moreLayout(isAdmin = true).footer)
         assertEquals(listOf(SettingsCategory.About), moreLayout(isAdmin = false).footer)
@@ -52,6 +55,7 @@ class MoreLayoutTest {
                 layout.settings +
                 layout.data +
                 layout.footer +
+                layout.interfacePages +
                 SettingsCategory.Account
         assertEquals(SettingsCategory.entries.toSet(), shown.toSet())
     }
