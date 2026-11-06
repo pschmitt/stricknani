@@ -354,24 +354,4 @@ class UpdateCheckerTest {
             effectiveUpdateChannel(UpdateChannel.STABLE, developerMode = true),
         )
     }
-
-    @Test
-    fun `a debug build follows latest whatever is stored or the mode`() {
-        listOf(UpdateChannel.STABLE, UpdateChannel.LATEST).forEach { stored ->
-            listOf(true, false).forEach { developerMode ->
-                assertEquals(
-                    UpdateChannel.LATEST,
-                    effectiveUpdateChannel(stored, developerMode, debugBuild = true),
-                )
-            }
-        }
-    }
-
-    @Test
-    fun `a non-debug build ignores the debug flag default`() {
-        assertEquals(
-            UpdateChannel.STABLE,
-            effectiveUpdateChannel(UpdateChannel.LATEST, developerMode = false, debugBuild = false),
-        )
-    }
 }

@@ -125,7 +125,6 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
                 effectiveUpdateChannel(
                     UpdateChannel.fromName(prefs[KEY_UPDATE_CHANNEL]),
                     prefs[KEY_DEVELOPER_MODE] ?: DEVELOPER_MODE_DEFAULT,
-                    debugBuild = BuildConfig.DEBUG,
                 )
             }
             .distinctUntilChanged()

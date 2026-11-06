@@ -10,7 +10,8 @@ name: Release
 # - a push to main moves the rolling "latest" prerelease tag and republishes it (debug + release
 #   APKs, always prerelease, never the repo's "Latest release" badge)
 # - a push of a semantic-version tag ("vX.Y.Z" or "X.Y.Z") publishes a real, permanent release at
-#   that tag (release APKs only, becomes the repo's "Latest release")
+#   that tag (release and debug APKs, becomes the repo's "Latest release"); debug installs on the
+#   Stable channel update from these
 #
 # Needs these repo secrets to produce a *signed* release: CI_KEYSTORE_BASE64, CI_KEYSTORE_PASSWORD,
 # CI_KEY_ALIAS, CI_KEY_PASSWORD - see the "Stricknani Android CI Signing Keystore" rbw entry
@@ -67,7 +68,7 @@ jobs:
             {
               echo "tag_name=${{ github.ref_name }}"
               echo "release_name=${{ github.ref_name }}"
-              echo "include_debug=false"
+              echo "include_debug=true"
               echo "move_tag=false"
               echo "vacuum_stale_assets=false"
             } >> "$GITHUB_OUTPUT"

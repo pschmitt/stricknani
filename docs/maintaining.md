@@ -58,7 +58,7 @@ To cut a release:
 5. Watch the Release and Play Store Release workflows. The APK version name is
    taken from the tag; the Play version resolver rejects tags that are not
    semantic versions.
-6. Check the release page: four release APKs, `SHA256SUMS`, and release notes
+6. Check the release page: four release and four debug APKs, `SHA256SUMS`, and release notes
    that list the Android changes since the previous tag.
 
 The release workflow needs the repository secrets `CI_KEYSTORE_BASE64`,
