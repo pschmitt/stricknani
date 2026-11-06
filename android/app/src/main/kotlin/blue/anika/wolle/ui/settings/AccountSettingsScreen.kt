@@ -51,6 +51,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -132,10 +134,9 @@ internal fun AccountSettingsScreen(
                         onCameraDenied = securityModel::cameraDenied,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
+                            ProfileEmail(
                                 profile.email
-                                    ?: stringResource(R.string.account_settings_not_connected),
-                                style = MaterialTheme.typography.titleMedium,
+                                    ?: stringResource(R.string.account_settings_not_connected)
                             )
                             Surface(
                                 shape = CircleShape,
@@ -553,5 +554,33 @@ private fun AdminCard(onClick: () -> Unit) {
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
         }
+    }
+}
+
+/**
+ * The account email beside the avatar: the name before the "@" as the title and the domain as a
+ * quieter line under it, each on one line (ellipsized), instead of a long address breaking at
+ * arbitrary characters. Screen readers get the whole address once.
+ */
+@Composable
+private fun ProfileEmail(email: String) {
+    val at = email.lastIndexOf('@')
+    val name = if (at > 0) email.substring(0, at) else email
+    val domain = if (at > 0) email.substring(at) else null
+    Column(Modifier.clearAndSetSemantics { contentDescription = email }) {
+        Text(
+            name,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (domain != null)
+            Text(
+                domain,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
     }
 }

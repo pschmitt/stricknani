@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -58,6 +57,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -838,11 +838,7 @@ private fun ProjectTimerCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(
-                Icons.Filled.AccessTime,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
+            Stopwatch(totalSeconds = seconds, running = timer.running)
             Column(Modifier.weight(1f)) {
                 Text(
                     stringResource(R.string.project_timer_title),
@@ -850,7 +846,11 @@ private fun ProjectTimerCard(
                 )
                 Text(
                     formatTimer(seconds),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum",
+                        ),
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(

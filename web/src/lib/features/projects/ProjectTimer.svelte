@@ -3,7 +3,6 @@
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import { session } from "#lib/session.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { webNotifications } from "#lib/web-notifications.svelte.ts";
@@ -61,6 +60,12 @@
       runSeconds >= (reminderAfter ?? reminderMinutes * 60),
   );
   const parts = $derived(timerParts(total));
+  // The hands turn by cumulative degrees, so a minute boundary keeps sweeping forward
+  // instead of spinning back through zero.
+  const secondAngle = $derived(total * 6);
+  const minuteAngle = $derived(((total % 3600) / 60) * 6);
+  const running = $derived(Boolean(timer?.started_at));
+  const ticks = Array.from({ length: 60 }, (_, index) => index);
   const editing = $derived(timer !== null && editMode);
   const proposedTotal = $derived(secondsFromParts(hours, minutes, seconds));
 
@@ -392,8 +397,54 @@
 {#if enabled}
   <section class="project-timer" aria-labelledby="project-timer-title">
     {#if !unsupported}
-      <div class="timer-face" aria-live="off">
-        <span class="timer-watch"><NavIcon name="audit" /></span>
+      <div class="timer-face" class:running aria-live="off">
+        <svg
+          class="stopwatch"
+          viewBox="0 0 100 112"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <circle class="halo" cx="50" cy="62" r="46" />
+          <g class="crown">
+            <rect x="46.5" y="8" width="7" height="8" rx="1.5" />
+            <rect x="41" y="2" width="18" height="8" rx="3" />
+          </g>
+          <rect
+            class="pusher"
+            x="46"
+            y="10"
+            width="8"
+            height="7"
+            rx="2"
+            transform="rotate(42 50 62)"
+          />
+          <circle class="case" cx="50" cy="62" r="41" />
+          <circle class="dial" cx="50" cy="62" r="35" />
+          {#each ticks as tick (tick)}
+            <line
+              class={tick % 5 === 0 ? "tick tick--hour" : "tick"}
+              x1="50"
+              y1="28.5"
+              x2="50"
+              y2={tick % 5 === 0 ? 34 : 31.5}
+              transform={`rotate(${tick * 6} 50 62)`}
+            />
+          {/each}
+          <circle class="subdial" cx="50" cy="76" r="8.5" />
+          <line
+            class="minute-hand"
+            x1="50"
+            y1="76"
+            x2="50"
+            y2="69.5"
+            style={`transform: rotate(${minuteAngle}deg)`}
+          />
+          <g class="second-hand" style={`transform: rotate(${secondAngle}deg)`}>
+            <line x1="50" y1="70" x2="50" y2="31" />
+            <circle class="needle-knob" cx="50" cy="71.5" r="3.4" />
+          </g>
+          <circle class="hub" cx="50" cy="62" r="2.6" />
+        </svg>
         <div>
           <h2 id="project-timer-title">{t("Knitting time", locale)}</h2>
           <p
@@ -563,19 +614,124 @@
     gap: 0.85rem;
     min-width: 0;
   }
-  .timer-watch {
-    display: grid;
-    place-items: center;
-    width: 3rem;
-    height: 3rem;
-    border-radius: var(--radius-xs);
-    background: var(--accent-wash);
-    font-size: 1.55rem;
+  .stopwatch {
+    flex: none;
+    width: 4.6rem;
+    height: auto;
+    overflow: visible;
+    transform-origin: 50% 60%;
   }
-  .timer-watch :global(svg) {
-    width: 1.5rem;
-    height: 1.5rem;
-    color: var(--accent-strong);
+  .stopwatch .halo {
+    fill: var(--accent-wash);
+    opacity: 0;
+    transform-box: view-box;
+    transform-origin: 50px 62px;
+  }
+  .stopwatch .crown,
+  .stopwatch .pusher {
+    fill: var(--accent-strong);
+  }
+  .stopwatch .crown {
+    transition: transform 160ms ease-out;
+  }
+  .stopwatch .case {
+    fill: var(--accent-strong);
+  }
+  .stopwatch .dial {
+    fill: var(--surface);
+  }
+  .stopwatch .tick {
+    stroke: var(--ink-muted);
+    stroke-linecap: round;
+    stroke-width: 0.8;
+    opacity: 0.55;
+  }
+  .stopwatch .tick--hour {
+    stroke: var(--ink);
+    stroke-width: 1.6;
+    opacity: 0.8;
+  }
+  .stopwatch .subdial {
+    fill: var(--accent-wash);
+  }
+  .stopwatch .minute-hand {
+    stroke: var(--ink);
+    stroke-linecap: round;
+    stroke-width: 1.6;
+  }
+  .stopwatch .minute-hand,
+  .stopwatch .second-hand {
+    transform-box: view-box;
+    transition: transform 650ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .stopwatch .minute-hand {
+    transform-origin: 50px 76px;
+  }
+  .stopwatch .second-hand {
+    transform-origin: 50px 62px;
+  }
+  .stopwatch .second-hand line {
+    stroke: var(--accent-strong);
+    stroke-linecap: round;
+    stroke-width: 1.8;
+  }
+  .stopwatch .needle-knob,
+  .stopwatch .hub {
+    fill: var(--accent-strong);
+  }
+  .stopwatch .hub {
+    stroke: var(--surface);
+    stroke-width: 1;
+  }
+  /* Running: the crown stays pressed, the second hand sweeps smoothly between
+     ticks, the halo breathes and the watch gives one happy wiggle on start. */
+  .running .stopwatch {
+    animation: stopwatch-wiggle 520ms ease-out;
+  }
+  .running .stopwatch .crown {
+    transform: translateY(3px);
+  }
+  .running .stopwatch .second-hand,
+  .running .stopwatch .minute-hand {
+    transition-duration: 1s;
+    transition-timing-function: linear;
+  }
+  .running .stopwatch .halo {
+    animation: stopwatch-breathe 2.4s ease-in-out infinite;
+  }
+  .running .timer-digits b {
+    animation: stopwatch-blink 1s steps(1, end) infinite;
+  }
+  @keyframes stopwatch-wiggle {
+    0%,
+    100% {
+      transform: rotate(0);
+    }
+    25% {
+      transform: rotate(-7deg);
+    }
+    55% {
+      transform: rotate(5deg);
+    }
+    80% {
+      transform: rotate(-2deg);
+    }
+  }
+  @keyframes stopwatch-breathe {
+    0%,
+    100% {
+      opacity: 0.25;
+      transform: scale(0.94);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.04);
+    }
+  }
+  @keyframes stopwatch-blink {
+    50% {
+      opacity: 0.25;
+    }
   }
   h2 {
     margin: 0;
@@ -705,6 +861,12 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
+    .stopwatch,
+    .stopwatch *,
+    .timer-digits b {
+      animation: none !important;
+      transition: none !important;
+    }
     *,
     *::before,
     *::after {

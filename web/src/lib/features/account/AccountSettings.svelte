@@ -920,7 +920,14 @@
           </label>
         </div>
         <div class="profile__copy">
-          <p class="profile__email">{profile.email}</p>
+          <p class="profile__email">
+            {#if profile.email.lastIndexOf("@") > 0}{profile.email.slice(
+                0,
+                profile.email.lastIndexOf("@"),
+              )}<wbr /><span class="profile__domain"
+                >{profile.email.slice(profile.email.lastIndexOf("@"))}</span
+              >{:else}{profile.email}{/if}
+          </p>
           <p class="role-chip">
             <NavIcon name={profile.is_admin ? "admin" : "account"} />
             <span
@@ -1943,11 +1950,18 @@
     gap: 0.4rem;
   }
 
+  /* A long address breaks before its "@" (the <wbr>), not mid-word; the domain
+     reads quieter, like the Android profile. */
   .profile__email {
     margin: 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     font-size: 1.1rem;
     font-weight: 650;
+  }
+
+  .profile__domain {
+    color: var(--ink-muted);
+    font-weight: 500;
   }
 
   .role-chip {
