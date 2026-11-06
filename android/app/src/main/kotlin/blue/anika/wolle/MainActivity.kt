@@ -37,8 +37,8 @@ import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.update.UpdateAvailableNotifier
-import blue.anika.wolle.sync.SyncChanges
 import blue.anika.wolle.sync.SyncNotifier
+import blue.anika.wolle.sync.syncedRoute
 import blue.anika.wolle.ui.common.CrashReportDialog
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -289,14 +289,6 @@ class MainActivity : ComponentActivity() {
         finishAffinity()
     }
 }
-
-/** The list a "synced from another device" notification opens. */
-internal fun syncedRoute(changes: String?): Route =
-    when (changes) {
-        SyncChanges.Projects.name -> Route.Projects
-        SyncChanges.Yarns.name -> Route.Yarns
-        else -> Route.Home
-    }
 
 private const val STATE_PENDING_SHARE = "pending_shared_url"
 

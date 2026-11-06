@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -119,6 +120,14 @@ enum class SyncChanges {
             }
     }
 }
+
+/** The list a "synced from another device" notification opens. */
+fun syncedRoute(changes: String?): Route =
+    when (changes) {
+        SyncChanges.Projects.name -> Route.Projects
+        SyncChanges.Yarns.name -> Route.Yarns
+        else -> Route.Home
+    }
 
 internal fun canPostNotifications(
     sdkInt: Int,

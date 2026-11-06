@@ -1,7 +1,6 @@
 package blue.anika.wolle.sync
 
 import android.os.Build
-import blue.anika.wolle.syncedRoute
 import blue.anika.wolle.ui.common.shouldRequestNotificationPermission
 import blue.anika.wolle.ui.navigation.Route
 import org.junit.Assert.assertEquals
