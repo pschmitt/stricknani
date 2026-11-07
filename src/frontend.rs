@@ -199,6 +199,7 @@ fn is_known_route(path: &str) -> bool {
         | ["about"]
         | ["account"]
         | ["more"]
+        | ["backups"]
         | ["create"]
         | ["admin"]
         | ["audit"]

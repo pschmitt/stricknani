@@ -310,6 +310,11 @@ Use this file as the operational source of truth for working in Stricknani.
   lockfile, update `npmDepsHash` in `nix/web-package.nix`.
 - Old non-API page paths (`/projects`, `/login`, ...) only redirect to `/app/`; see
   `src/legacy_redirects.rs`. New pages belong in `web/`.
+- The Rust server serves the app shell only for the routes listed in
+  `src/frontend.rs` (`is_known_route`); add a new page there and in
+  `tests/frontend.rs`, or a reload or deep link of `/app/<page>` answers 404
+  even though in-app navigation works. A new More card also needs the More
+  link list in `web/e2e/journeys/admin.ts`.
 
 ### Translations (UI text)
 

@@ -186,7 +186,9 @@ function breakMediaOwner(destination: string): void {
   );
 }
 
-describe("compareImport", () => {
+// Each case builds two synthetic SQLite databases; under a loaded build host that
+// takes longer than Vitest's 5 s default.
+describe("compareImport", { timeout: 30_000 }, () => {
   it("verifies a synthetic import without disclosing row values", () => {
     const report = compareImport(...createFixture());
 
