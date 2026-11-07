@@ -3,6 +3,7 @@
   import { t } from "#lib/i18n.svelte.ts";
   import PhotoEditor from "./PhotoEditor.svelte";
   import type { ProjectImage } from "#lib/features/projects/project-api.ts";
+  import { isTextEntryTarget, viewerKeyTarget } from "./viewer-keys";
 
   interface Props {
     images: ProjectImage[];
@@ -50,7 +51,29 @@
   function close() {
     onClose();
   }
+
+  function onKeydown(event: KeyboardEvent) {
+    if (!dialog?.open || selectedId === null || editing) return;
+    if (
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return;
+    if (isTextEntryTarget(event.target)) return;
+    // Leave the keys to a dialog stacked above the viewer (photo editor, confirms).
+    const open = document.querySelectorAll("dialog[open]");
+    if (open[open.length - 1] !== dialog) return;
+    const target = viewerKeyTarget(event.key, activeIndex, images.length);
+    const image = target === null ? undefined : images[target];
+    if (!image) return;
+    event.preventDefault();
+    onSelect(image);
+  }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <dialog
   bind:this={dialog}

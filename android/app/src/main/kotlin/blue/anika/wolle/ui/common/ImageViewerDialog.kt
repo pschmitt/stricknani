@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -42,9 +43,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
@@ -104,6 +112,8 @@ fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismi
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val thresholdPx = with(density) { DismissThreshold.toPx() }
+    val keyFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { keyFocus.requestFocus() }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -114,6 +124,26 @@ fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismi
             modifier =
                 Modifier.fillMaxSize()
                     .background(Color.Black.copy(alpha = 1f - dismissProgress * 0.7f))
+                    // Hardware keyboard / D-pad: Left/Right step like the on-screen buttons
+                    // (stopping at the ends), Home/End jump to the first/last image.
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown || editing)
+                            return@onPreviewKeyEvent false
+                        val current = pagerState.currentPage
+                        val target =
+                            when (event.key) {
+                                Key.DirectionLeft -> targetIndex(current, images.size, -1)
+                                Key.DirectionRight -> targetIndex(current, images.size, 1)
+                                Key.MoveHome -> 0.takeIf { current != 0 }
+                                Key.MoveEnd ->
+                                    images.lastIndex.takeIf { current != images.lastIndex }
+                                else -> return@onPreviewKeyEvent false
+                            }
+                        target?.let { scope.launch { pagerState.animateScrollToPage(it) } }
+                        true
+                    }
+                    .focusRequester(keyFocus)
+                    .focusable()
         ) {
             Box(
                 modifier =
