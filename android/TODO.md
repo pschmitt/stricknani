@@ -41,6 +41,18 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-103: Favorite and Edit move into the detail screens' overflow menu
+
+- [x] The project and yarn detail top bars keep back, the project timer chip and the More button.
+      Edit (only when the user can edit) and Favorite / Remove from favorites are the first
+      items of the More menu, above the text size section; the favorite item shows a filled
+      heart when favorited and closes the menu on tap. The burst animation of
+      `FavoriteToggleButton` stays on the list cards only.
+- [x] The e2e journeys open More before tapping Edit.
+- [ ] Web keeps Favorite and Edit as buttons (the request was Android only).
+
+Status: **done**, 2026-11-07 (see build and test results in the hand-off).
+
 ## SNA-102: Project and yarn name move from the top bar into the content
 
 - [x] The detail screens' top bar no longer carries the (often long, truncated) name. The name is

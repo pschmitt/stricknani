@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -70,7 +72,6 @@ import blue.anika.wolle.ui.common.DetailCardReorderHint
 import blue.anika.wolle.ui.common.DetailTitle
 import blue.anika.wolle.ui.common.ErrorKind
 import blue.anika.wolle.ui.common.ErrorState
-import blue.anika.wolle.ui.common.FavoriteToggleButton
 import blue.anika.wolle.ui.common.HtmlPrinter
 import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
@@ -207,19 +208,8 @@ fun YarnDetailScreen(
                         if (state is YarnDetailUiState.Loaded) {
                             val context = LocalContext.current
                             var menuExpanded by remember { mutableStateOf(false) }
-                            // The everyday actions sit in the bar; the menu keeps Share and Delete.
-                            FavoriteToggleButton(
-                                isFavorite = state.entity.isFavorite,
-                                onClick = viewModel::toggleFavorite,
-                            )
-                            if (access.canEdit) {
-                                IconButton(onClick = { onEditClick(state.entity.id) }) {
-                                    Icon(
-                                        Icons.Filled.Edit,
-                                        contentDescription = stringResource(R.string.common_edit),
-                                    )
-                                }
-                            }
+                            // The bar keeps only the timer and More; Edit, Favorite, Share and
+                            // Delete sit in the menu.
                             IconButton(onClick = { menuExpanded = true }) {
                                 Icon(
                                     Icons.Filled.MoreVert,
@@ -233,6 +223,45 @@ fun YarnDetailScreen(
                                 expanded = menuExpanded,
                                 onDismissRequest = { menuExpanded = false },
                             ) {
+                                if (access.canEdit) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.common_edit)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Edit, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onEditClick(state.entity.id)
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            stringResource(
+                                                if (state.entity.isFavorite)
+                                                    R.string.common_unfavorite
+                                                else R.string.common_favorite
+                                            )
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (state.entity.isFavorite) Icons.Filled.Favorite
+                                            else Icons.Filled.FavoriteBorder,
+                                            contentDescription = null,
+                                            tint =
+                                                if (state.entity.isFavorite)
+                                                    MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        viewModel.toggleFavorite()
+                                    },
+                                )
+                                HorizontalDivider()
                                 TextSizeMenuSection(
                                     step = textStep,
                                     onStepChange = viewModel::setTextStep,

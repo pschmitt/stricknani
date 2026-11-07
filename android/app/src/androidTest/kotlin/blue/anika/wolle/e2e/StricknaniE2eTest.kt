@@ -249,7 +249,7 @@ class StricknaniFullE2eTest : StricknaniE2eTest() {
         setAirplaneMode(device, enabled = true)
         try {
             // The detail remains available from Room while the server is unreachable.
-            composeRule.onNodeWithContentDescription("Edit").performClick()
+            clickEditFromMenu()
             waitForText("Edit project")
             composeRule
                 .onNodeWithTag("e2e-project-editor-form")
@@ -386,8 +386,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
         // viewport - scroll back to it explicitly rather than assuming it is still on screen.
         scrollYarnsListToText(currentName, timeoutMillis = 30_000)
         composeRule.onNodeWithText(currentName).performClick()
-        waitForContentDescription("Edit")
-        composeRule.onNodeWithContentDescription("Edit").performClick()
+        clickEditFromMenu()
         waitForText("Edit yarn")
         composeRule.onNodeWithTag("e2e-yarn-editor-name").performTextReplacement(updatedName)
         clickTextWithAction("Save")
@@ -443,8 +442,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
 
     private fun editProject(currentName: String, updatedName: String) {
         composeRule.onNodeWithText(currentName).performClick()
-        waitForContentDescription("Edit")
-        composeRule.onNodeWithContentDescription("Edit").performClick()
+        clickEditFromMenu()
         waitForText("Edit project")
         composeRule.onNodeWithTag("e2e-project-editor-name").performTextReplacement(updatedName)
         clickTextWithAction("Save")
@@ -529,6 +527,13 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
                 throw it
             }
+    }
+
+    private fun clickEditFromMenu() {
+        waitForContentDescription("More actions")
+        composeRule.onNodeWithContentDescription("More actions").performClick()
+        waitForText("Edit")
+        composeRule.onNodeWithText("Edit").performClick()
     }
 
     private fun waitForContentDescription(description: String, timeoutMillis: Long = 30_000) {
