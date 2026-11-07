@@ -1502,15 +1502,20 @@ async fn regenerating_thumbnails_turns_old_sideways_ones_upright() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
     let image_id = json(response).await["data"]["id"].as_i64().unwrap();
-    // What an upload before orientation support left behind: sideways size, no fresh thumbnail.
+    // What an upload before orientation support left behind: the size and the thumbnail both
+    // sideways (landscape), the thumbnail still in place.
     sqlx::query("UPDATE media_files SET width = 80, height = 40 WHERE public_id = ?")
         .bind(image_id)
         .execute(&fixture.pool)
         .await
         .unwrap();
-    for thumbnail in files_below(&fixture._root.path().join("thumbnails")) {
-        std::fs::remove_file(thumbnail).unwrap();
-    }
+    let old_thumbnails = files_below(&fixture._root.path().join("thumbnails"));
+    assert_eq!(old_thumbnails.len(), 1);
+    std::fs::write(
+        &old_thumbnails[0],
+        two_tone(60, 30, image::ImageFormat::Jpeg),
+    )
+    .unwrap();
 
     let result =
         stricknani_server::media::regenerate_thumbnails(&fixture.pool, fixture._root.path())

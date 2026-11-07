@@ -4247,11 +4247,18 @@ pub async fn regenerate_thumbnails(
             result.skipped += 1;
             continue;
         };
-        let thumb_path = thumb_dir.join(thumbnail_name(&row.filename));
-        if write_staged(&thumb_dir, &thumb_path, &prepared.thumbnail)
+        // Replace the existing thumbnail atomically: stage it under a temporary name (write_staged
+        // never overwrites), then rename it over the old one.
+        let name = thumbnail_name(&row.filename);
+        let thumb_path = thumb_dir.join(&name);
+        let staged = thumb_dir.join(format!(".regen-{name}"));
+        let _ = tokio::fs::remove_file(&staged).await;
+        if write_staged(&thumb_dir, &staged, &prepared.thumbnail)
             .await
             .is_err()
+            || tokio::fs::rename(&staged, &thumb_path).await.is_err()
         {
+            let _ = tokio::fs::remove_file(&staged).await;
             result.skipped += 1;
             continue;
         }
