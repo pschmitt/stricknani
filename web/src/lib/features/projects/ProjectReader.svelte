@@ -33,6 +33,7 @@
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
+  import { projectImageEditPath } from "#lib/features/media/photo-editor.ts";
   import ProjectTimer from "./ProjectTimer.svelte";
   import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
@@ -688,6 +689,17 @@
     printDialogActive = false;
     clearPrintImageSources(activePrintImages);
   });
+
+  let photoEditCount = 0;
+  const canEditPhotos = $derived(
+    !adminData && canEdit && session.data?.capabilities.media_upload === true,
+  );
+
+  /** Reload the project after a photo edit; the new files have new URLs. */
+  async function refreshAfterPhotoEdit() {
+    photoEditCount += 1;
+    await refreshAfterArchive(`photo-edit-${photoEditCount}`);
+  }
 
   async function refreshAfterArchive(marker: string) {
     if (adminData) return;
@@ -1457,6 +1469,10 @@
     {locale}
     onClose={() => (selectedImageId = null)}
     onSelect={(image) => (selectedImageId = image.id)}
+    editPath={canEditPhotos
+      ? (image) => projectImageEditPath(currentProject.id, image.id)
+      : undefined}
+    onEdited={refreshAfterPhotoEdit}
   />
   {#if !adminData}
     <ConfirmDialog

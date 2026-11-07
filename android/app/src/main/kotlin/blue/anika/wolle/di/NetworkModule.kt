@@ -24,6 +24,7 @@ import blue.anika.wolle.data.api.v2.ArchiveV2Api
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
 import blue.anika.wolle.data.api.v2.ImportsV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Api
+import blue.anika.wolle.data.api.v2.PhotoEditV2Api
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.SharingV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
@@ -252,6 +253,11 @@ object NetworkModule {
     @Singleton
     fun provideArchiveV2Api(retrofit: Retrofit): ArchiveV2Api =
         retrofit.create(ArchiveV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun providePhotoEditV2Api(retrofit: Retrofit): PhotoEditV2Api =
+        retrofit.create(PhotoEditV2Api::class.java)
 
     @Provides
     @Singleton

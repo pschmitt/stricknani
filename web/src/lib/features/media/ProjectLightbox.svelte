@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from "#lib/components/Button.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import PhotoEditor from "./PhotoEditor.svelte";
   import type { ProjectImage } from "#lib/features/projects/project-api.ts";
 
   interface Props {
@@ -10,10 +11,23 @@
     locale: "en" | "de";
     onClose: () => void;
     onSelect: (image: ProjectImage) => void;
+    /** Edit endpoint of an image; omit when the viewer may not edit photos. */
+    editPath?: (image: ProjectImage) => string;
+    /** Reload the resource after an edit so every view shows the new picture. */
+    onEdited?: () => Promise<void> | void;
   }
 
-  let { images, selectedId, title, locale, onClose, onSelect }: Props =
-    $props();
+  let {
+    images,
+    selectedId,
+    title,
+    locale,
+    onClose,
+    onSelect,
+    editPath,
+    onEdited,
+  }: Props = $props();
+  let editing = $state(false);
   let dialog: HTMLDialogElement;
   let activeIndex = $derived(
     images.findIndex((image) => image.id === selectedId),
@@ -53,6 +67,19 @@
     <div class="lightbox-shell">
       <header class="lightbox-topbar">
         <p>{title}</p>
+        {#if editPath}
+          <Button
+            class="lightbox-edit"
+            variant="secondary"
+            size="md"
+            icon="crop"
+            type="button"
+            aria-label={t("Edit photo", locale)}
+            onclick={() => (editing = true)}
+          >
+            <span class="lightbox-edit-label">{t("Edit photo", locale)}</span>
+          </Button>
+        {/if}
         <Button
           class="lightbox-close"
           variant="secondary"
@@ -99,6 +126,20 @@
     </div>
   {/if}
 </dialog>
+
+{#if editPath && activeImage}
+  <PhotoEditor
+    open={editing}
+    src={activeImage.url}
+    alt={activeImage.alt_text || title}
+    endpoint={editPath(activeImage)}
+    {locale}
+    onSaved={async () => {
+      await onEdited?.();
+    }}
+    onClose={() => (editing = false)}
+  />
+{/if}
 
 <style>
   .lightbox {
@@ -153,6 +194,15 @@
     padding: 0;
   }
 
+  .lightbox-topbar p {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  :global(.lightbox-edit) {
+    flex: 0 0 auto;
+  }
+
   .lightbox-stage {
     display: grid;
     min-height: 12rem;
@@ -191,6 +241,19 @@
     gap: 1rem;
     color: var(--ink-muted);
     font-size: 0.86rem;
+  }
+
+  @media (max-width: 480px) {
+    .lightbox-edit-label {
+      display: none;
+    }
+
+    :global(.lightbox-edit) {
+      width: 44px;
+      min-width: 44px;
+      border-radius: 50%;
+      padding: 0;
+    }
   }
 
   @media (max-width: 420px) {

@@ -5,6 +5,8 @@
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
+  import PhotoEditor from "#lib/features/media/PhotoEditor.svelte";
+  import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
   import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -52,6 +54,8 @@
   let errorMessage = $state("");
   let deleting = $state(false);
   let selectedPhoto = $state<YarnPhoto | null>(null);
+  let editedPhoto = $state<YarnPhoto | null>(null);
+  let editorOpen = $state(false);
   let deleteTarget = $state<YarnPhoto | null>(null);
   let deleteOwnerId = $state<number | null>(null);
   let deleteYarnId = $state<number | null>(null);
@@ -158,6 +162,30 @@
         uploading = false;
         notifyMediaBusy?.(false, resourceId, ownerId);
       }
+    }
+  }
+
+  const editBusy = $derived(uploading || deleting || reordering);
+
+  function openPhotoEditor(photo: YarnPhoto) {
+    if (!mediaUploadAvailable || editBusy) return;
+    editedPhoto = photo;
+    editorOpen = true;
+  }
+
+  /** Reload the yarn after a photo edit; the edited file has new URLs. */
+  async function reloadAfterPhotoEdit() {
+    const currentSession = session.data;
+    if (!currentSession?.user) return;
+    const resourceId = yarnId;
+    const ownerId = currentSession.user.id;
+    const notifyMediaBusy = onMediaBusyChange;
+    notifyMediaBusy?.(true, resourceId, ownerId);
+    try {
+      await onResourceUpdated(resourceId, ownerId);
+    } finally {
+      if (isCurrentOperation(resourceId, ownerId))
+        notifyMediaBusy?.(false, resourceId, ownerId);
     }
   }
 
@@ -411,6 +439,8 @@
       disabled={reordering}
       onMove={reorderPhotos}
       onOpen={(photo) => void showPhoto(photo)}
+      onEdit={canEdit && !readOnly ? openPhotoEditor : undefined}
+      editDisabled={!mediaUploadAvailable || editBusy}
       onDelete={canEdit && !readOnly ? confirmDelete : undefined}
       deleteDisabled={!mediaDeleteAvailable ||
         uploading ||
@@ -466,6 +496,18 @@
       {#if selectedPhoto.alt_text}<p>{selectedPhoto.alt_text}</p>{/if}
     {/if}
   </dialog>
+
+  {#if editedPhoto}
+    <PhotoEditor
+      open={editorOpen}
+      src={editedPhoto.url}
+      alt={editedPhoto.alt_text ?? t("Yarn photo", locale)}
+      endpoint={yarnPhotoEditPath(yarnId, editedPhoto.id)}
+      {locale}
+      onSaved={reloadAfterPhotoEdit}
+      onClose={() => (editorOpen = false)}
+    />
+  {/if}
 
   <ConfirmDialog
     bind:this={deleteDialog}

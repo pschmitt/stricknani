@@ -67,7 +67,10 @@
     | "paperclip"
     | "notebook"
     | "list-bullets"
-    | "history";
+    | "history"
+    | "crop"
+    | "rotate-left"
+    | "rotate-right";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -324,6 +327,12 @@
     <circle cx="18" cy="5.5" r="2.5" />
     <circle cx="18" cy="18.5" r="2.5" />
     <path d="m8.2 10.8 7.6-4m-7.6 6.4 7.6 4" />
+  {:else if name === "crop"}
+    <path d="M6.1 2 6 16a2 2 0 0 0 2 2h14M2 6.1 16 6a2 2 0 0 1 2 2v14" />
+  {:else if name === "rotate-left"}
+    <path d="M4 12a8 8 0 1 0 8-8c-2.2 0-4.2.9-5.7 2.3M4 3.5v4h4" />
+  {:else if name === "rotate-right"}
+    <path d="M20 12a8 8 0 1 1-8-8c2.2 0 4.2.9 5.7 2.3M20 3.5v4h-4" />
   {:else if name === "reset"}
     <path d="M4 9V4m0 0h5M4 4l3.2 3.2A8 8 0 1 1 4 13" />
   {:else if name === "search"}

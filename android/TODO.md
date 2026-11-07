@@ -41,6 +41,22 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-95: Photo editor (crop and rotate)
+
+**Status:** done (2026-11-07)
+
+- [x] "Edit photo" in the full-screen image viewer (top start, icon and label) for projects and
+      yarns, and as a small crop icon on every saved photo tile in the project editor (title and
+      step images) and the yarn editor. Only for people who can edit.
+- [x] `PhotoEditorDialog`: the original photo turned in 90 degree steps (Rotate left, Rotate right,
+      Reset), a crop box with draggable corners and box over the turned picture, dimmed outside,
+      "Drag the corners to crop.", Cancel and Save ("Saving photo...", error inline).
+- [x] `PhotoEditV2Api`: `POST api/v2/projects/{id}/images/{image_id}/edit` and
+      `POST api/v2/yarns/{id}/photos/{photo_id}/edit` with `{rotate, crop}` (crop in fractions of
+      the rotated picture, omitted for the whole picture). Needs the network, never queued; the
+      project or yarn is refreshed afterwards so every view and the cache show the new picture.
+- [x] Pure math (`PhotoEditMath`) covered by `PhotoEditMathTest`. Web counterpart: same strings.
+
 ## SNA-94: Detail pages match the web's sections
 
 **Status:** done (2026-11-06)

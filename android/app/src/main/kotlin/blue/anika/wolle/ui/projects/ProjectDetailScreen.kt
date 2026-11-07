@@ -101,6 +101,7 @@ import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.PhotoEditTarget
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
@@ -503,7 +504,9 @@ private fun ProjectDetailContent(
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     val historyState by history.state.collectAsStateWithLifecycle()
     val viewerImages =
-        remember(detail, resolveMediaUrl) { projectViewerImages(detail, resolveMediaUrl) }
+        remember(detail, resolveMediaUrl, canEdit) {
+            projectViewerImages(detail, resolveMediaUrl, canEdit)
+        }
     val openViewerImage: (String) -> Unit = { url ->
         viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
     }
@@ -1218,6 +1221,7 @@ private fun ProjectMarkdown(
 private fun projectViewerImages(
     detail: ProjectDto,
     resolveMediaUrl: (String?) -> String?,
+    canEdit: Boolean = false,
 ): List<ImageViewerImage> {
     val images = linkedMapOf<String, ImageViewerImage>()
     val stepsById = detail.steps.associateBy { it.id }
@@ -1239,6 +1243,8 @@ private fun projectViewerImages(
                     title = detail.name,
                     sourceLabel = sourceLabel,
                     altText = image.altText,
+                    editTarget =
+                        if (canEdit) PhotoEditTarget.ProjectImage(detail.id, image.id) else null,
                 ),
             )
         }

@@ -28,6 +28,8 @@
     mayManage,
   } from "#lib/access.ts";
   import { listYarnCandidates } from "#lib/features/sharing/sharing-api.ts";
+  import PhotoEditor from "../media/PhotoEditor.svelte";
+  import { projectImageEditPath } from "../media/photo-editor";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
   import {
     applyOptimisticReorder,
@@ -48,6 +50,7 @@
     uploadProjectImage,
     type ProjectCategory,
     type ProjectDetail,
+    type ProjectImage,
     type ProjectWrite,
   } from "./project-api";
   import {
@@ -90,6 +93,8 @@
   let yarnLoading = $state(false);
   let mediaAltText = $state("");
   let mediaStepId = $state("");
+  let photoEditImage = $state<ProjectImage | null>(null);
+  let photoEditOpen = $state(false);
   let confirmationDialog = $state<ConfirmDialog | undefined>(undefined);
   let conflictDialog = $state<ConfirmDialog | undefined>(undefined);
   let conflictLoadBusy = $state(false);
@@ -950,6 +955,32 @@
     }
   }
 
+  function openPhotoEditor(image: ProjectImage): void {
+    if (!mediaUploadAvailable) return;
+    photoEditImage = image;
+    photoEditOpen = true;
+  }
+
+  /** Reload the project after a photo edit; the edited file has new URLs. */
+  async function reloadAfterPhotoEdit(): Promise<void> {
+    const currentSession = session.data;
+    const id = projectId;
+    if (!currentSession?.user || id === null) return;
+    const ownerId = currentSession.user.id;
+    const generation = routeGeneration;
+    const controller = new AbortController();
+    operationControllers.add(controller);
+    try {
+      const latest = await getProject(id, controller.signal);
+      if (!isCurrentRoute(id, ownerId, generation)) return;
+      applyLoadedProject(latest);
+    } finally {
+      operationControllers.delete(controller);
+    }
+    statusMessage = t("Project media updated.", locale);
+    publishFeedback({ ownerId, kind: "success", message: statusMessage });
+  }
+
   async function uploadImage(event: Event): Promise<void> {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) return;
@@ -1618,6 +1649,8 @@
                   onMove={(from, to) => reorderImages(null, from, to)}
                   onDelete={(image) => void removeImage(image.id)}
                   deleteDisabled={!mediaDeleteAvailable}
+                  onEdit={openPhotoEditor}
+                  editDisabled={!mediaUploadAvailable}
                 />
               {/if}
               {#each stepImageGroups as group (group.step.id)}
@@ -1632,6 +1665,8 @@
                   onMove={(from, to) => reorderImages(group.step.id, from, to)}
                   onDelete={(image) => void removeImage(image.id)}
                   deleteDisabled={!mediaDeleteAvailable}
+                  onEdit={openPhotoEditor}
+                  editDisabled={!mediaUploadAvailable}
                 />
               {/each}
               {#if otherImages.length}
@@ -1645,6 +1680,8 @@
                   onMove={async () => false}
                   onDelete={(image) => void removeImage(image.id)}
                   deleteDisabled={!mediaDeleteAvailable}
+                  onEdit={openPhotoEditor}
+                  editDisabled={!mediaUploadAvailable}
                 >
                   {#snippet badge(image)}
                     {#if image.is_stitch_sample}{t(
@@ -1797,6 +1834,17 @@
           {/snippet}
         </StickyActionBar>
       </form>
+      {#if photoEditImage && projectId !== null}
+        <PhotoEditor
+          open={photoEditOpen}
+          src={photoEditImage.url}
+          alt={photoEditImage.alt_text ?? t("Project photo", locale)}
+          endpoint={projectImageEditPath(projectId, photoEditImage.id)}
+          {locale}
+          onSaved={reloadAfterPhotoEdit}
+          onClose={() => (photoEditOpen = false)}
+        />
+      {/if}
       <ConfirmDialog
         bind:this={confirmationDialog}
         titleId="project-confirmation-title"

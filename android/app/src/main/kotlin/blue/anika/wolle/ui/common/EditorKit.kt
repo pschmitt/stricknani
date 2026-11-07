@@ -43,6 +43,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CropRotate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -229,6 +230,8 @@ data class EditorPhoto(
     val model: Any?,
     val description: String,
     val onRemove: () -> Unit,
+    /** Opens the photo editor; set only for photos already saved on the server. */
+    val onEdit: (() -> Unit)? = null,
 )
 
 /**
@@ -255,6 +258,7 @@ fun EditorPhotoStrip(
     reorder: PhotoReorder? = null,
     takePhotoLabel: String? = null,
     onTakePhoto: (() -> Unit)? = null,
+    editLabel: String? = null,
 ) {
     val listState = rememberLazyListState()
     val reduceMotion = animationsDisabled()
@@ -524,6 +528,32 @@ fun EditorPhotoStrip(
                 )
                 if (reorder != null && index == 0) {
                     CoverTag(Modifier.align(Alignment.BottomStart).padding(8.dp))
+                }
+                val onEdit = photo.onEdit
+                if (onEdit != null && editLabel != null && !editing) {
+                    // Crop and rotate: a small dark badge, bottom end, with a 44dp touch target.
+                    IconButton(
+                        onClick = {
+                            interaction++
+                            onEdit()
+                        },
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(1.dp).size(44.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.6f),
+                            contentColor = Color.White,
+                            modifier = Modifier.size(30.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Filled.CropRotate,
+                                    contentDescription = editLabel,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
                 }
                 if (editing) {
                     // 48dp touch target, small visible red badge; only in edit mode.

@@ -27,6 +27,7 @@
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
+  import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
@@ -724,6 +725,10 @@
     {locale}
     onClose={() => (selectedPhotoId = null)}
     onSelect={(image) => (selectedPhotoId = image.id)}
+    editPath={canEdit && session.data?.capabilities.media_upload === true
+      ? (image) => yarnPhotoEditPath(currentYarn.id, image.id)
+      : undefined}
+    onEdited={() => refreshCurrentYarn("photo-edit")}
   />
   <ConfirmDialog
     bind:this={deleteDialog}

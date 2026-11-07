@@ -79,6 +79,7 @@ import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.PhotoEditTarget
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
@@ -420,7 +421,9 @@ private fun YarnDetailContent(
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     val historyState by history.state.collectAsStateWithLifecycle()
     val viewerImages =
-        remember(detail, resolveMediaUrl) { yarnViewerImages(detail, resolveMediaUrl) }
+        remember(detail, resolveMediaUrl, canEdit) {
+            yarnViewerImages(detail, resolveMediaUrl, canEdit)
+        }
     val openViewerImage: (String) -> Unit = { url ->
         viewerIndex = viewerImages.indexOfFirst { image -> image.url == url }.takeIf { it >= 0 }
     }
@@ -721,6 +724,7 @@ private fun YarnMarkdown(
 private fun yarnViewerImages(
     detail: YarnDto,
     resolveMediaUrl: (String?) -> String?,
+    canEdit: Boolean = false,
 ): List<ImageViewerImage> {
     val images = linkedMapOf<String, ImageViewerImage>()
     detail.photos.forEach { photo ->
@@ -732,6 +736,8 @@ private fun yarnViewerImages(
                     title = detail.name,
                     sourceLabel = if (photo.isPrimary) "Primary yarn photo" else "Yarn photo",
                     altText = photo.altText,
+                    editTarget =
+                        if (canEdit) PhotoEditTarget.YarnPhoto(detail.id, photo.id) else null,
                 ),
             )
         }

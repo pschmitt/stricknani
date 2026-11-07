@@ -4,17 +4,21 @@ import android.os.SystemClock
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CropRotate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +51,7 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,6 +74,8 @@ data class ImageViewerImage(
     val title: String,
     val sourceLabel: String,
     val altText: String? = null,
+    /** The saved photo behind this image; set only when the viewer may offer "Edit photo". */
+    val editTarget: PhotoEditTarget? = null,
 )
 
 internal data class ImageDimensions(val width: Int, val height: Int)
@@ -91,6 +99,7 @@ fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismi
         rememberPagerState(initialPage = initialIndex.coerceIn(0, images.lastIndex)) { images.size }
     val dismissOffsetY = remember { Animatable(0f) }
     var isZoomed by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(false) }
     var loadedDimensions by remember { mutableStateOf<Map<String, ImageDimensions>>(emptyMap()) }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -203,12 +212,55 @@ fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismi
                     tint = Color.White,
                 )
             }
+            images[currentPage].editTarget?.let { _ ->
+                EditPhotoButton(
+                    onClick = { editing = true },
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                )
+            }
             ImageMetadataPanel(
                 image = images[currentPage],
                 dimensions = loadedDimensions[images[currentPage].url],
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
+    }
+    if (editing) {
+        val image = images[pagerState.currentPage.coerceIn(0, images.lastIndex)]
+        image.editTarget?.let { target ->
+            PhotoEditorDialog(
+                target = target,
+                imageUrl = image.url,
+                onDismiss = { editing = false },
+            )
+        }
+    }
+}
+
+/** "Edit photo" over the dark viewer: icon and label, a 48dp target. */
+@Composable
+private fun EditPhotoButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier =
+            modifier
+                .heightIn(min = 48.dp)
+                .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                .clickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            Icons.Filled.CropRotate,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            stringResource(R.string.photo_edit_title),
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+        )
     }
 }
 

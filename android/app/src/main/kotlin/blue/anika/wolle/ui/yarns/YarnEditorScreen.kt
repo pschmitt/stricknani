@@ -54,6 +54,8 @@ import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
+import blue.anika.wolle.ui.common.PhotoEditTarget
+import blue.anika.wolle.ui.common.PhotoEditorDialog
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -118,6 +120,20 @@ fun YarnEditorScreen(
 
     val leave = { if (isDirty && !saved) showDiscardDialog = true else onBack() }
     BackHandler(enabled = isDirty && !saved && !deleted) { showDiscardDialog = true }
+
+    var photoEdit by remember { mutableStateOf<Pair<PhotoEditTarget, String>?>(null) }
+    photoEdit?.let { (target, url) ->
+        PhotoEditorDialog(
+            target = target,
+            imageUrl = url,
+            onDismiss = { photoEdit = null },
+            onSaved = { newUrl, newThumbnail ->
+                (target as? PhotoEditTarget.YarnPhoto)?.let {
+                    viewModel.photoEdited(it.photoId, newUrl, newThumbnail)
+                }
+            },
+        )
+    }
 
     // Opened from a long-press on a yarn detail section: scroll there once loaded and put the
     // cursor in its first field.
@@ -290,6 +306,15 @@ fun YarnEditorScreen(
                                                 .removeExistingPhoto(photo.id)
                                                 ?.let(announceRemoval)
                                         },
+                                        onEdit = {
+                                            val yarnId = viewModel.yarnId
+                                            val original = viewModel.imageUrl(photo.url)
+                                            if (yarnId != null && original != null) {
+                                                photoEdit =
+                                                    PhotoEditTarget.YarnPhoto(yarnId, photo.id) to
+                                                        original
+                                            }
+                                        },
                                     )
                                 } +
                                     form.photos.mapIndexed { index, upload ->
@@ -304,6 +329,7 @@ fun YarnEditorScreen(
                                     },
                             addLabel = stringResource(R.string.editor_add_photo_short),
                             removeLabel = stringResource(R.string.yarn_editor_remove_photo),
+                            editLabel = stringResource(R.string.photo_edit_title),
                             onAdd = { photoPicker.launch("image/*") },
                             takePhotoLabel = stringResource(R.string.photo_take),
                             onTakePhoto = photoCapture.launch.takeIf { photoCapture.available },

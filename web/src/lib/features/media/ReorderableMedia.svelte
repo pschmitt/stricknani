@@ -3,6 +3,7 @@
   generics="T extends { id: number; thumbnail_url: string; alt_text: string | null }"
 >
   import { onMount, tick, type Snippet } from "svelte";
+  import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { deltaForKey, keyboardTarget, nearestIndex } from "./media-reorder";
@@ -26,6 +27,8 @@
     onOpen,
     onDelete,
     deleteDisabled = false,
+    onEdit,
+    editDisabled = false,
     badge,
     actions,
   }: {
@@ -45,6 +48,9 @@
     /** Opens the caller's delete confirmation; omit to hide delete. */
     onDelete?: (item: T) => void;
     deleteDisabled?: boolean;
+    /** Opens the photo editor; omit to hide the "Edit photo" button. */
+    onEdit?: (item: T) => void;
+    editDisabled?: boolean;
     badge?: Snippet<[T, number]>;
     actions?: Snippet<[T]>;
   } = $props();
@@ -407,9 +413,19 @@
             </button>
           </div>
         {/if}
-        {#if actions}
+        {#if onEdit || actions}
           <div class="reorder-actions" data-no-drag>
-            {@render actions(item)}
+            {#if onEdit}
+              <Button
+                class="edit-photo-button"
+                variant="secondary"
+                size="sm"
+                icon="crop"
+                disabled={editDisabled || locked}
+                onclick={() => onEdit(item)}>{t("Edit photo", locale)}</Button
+              >
+            {/if}
+            {#if actions}{@render actions(item)}{/if}
           </div>
         {/if}
       </li>
@@ -558,6 +574,12 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
+  }
+
+  :global(.edit-photo-button) {
+    flex: 1 1 auto;
+    padding-inline: 0.5rem;
+    font-size: 0.85rem;
   }
 
   .drag-source {

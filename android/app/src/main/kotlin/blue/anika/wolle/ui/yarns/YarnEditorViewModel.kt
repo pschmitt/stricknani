@@ -167,6 +167,22 @@ constructor(
         }
     }
 
+    /** The yarn being edited; null while creating one. */
+    val yarnId: Int?
+        get() = route.yarnId
+
+    /**
+     * A saved photo was cropped or rotated on the server: show its new picture in the form (and in
+     * the baseline, so the edit does not count as an unsaved change).
+     */
+    fun photoEdited(photoId: Int, url: String, thumbnailUrl: String) {
+        fun YarnPhotoDto.swap() =
+            if (id == photoId) copy(url = url, thumbnailUrl = thumbnailUrl) else this
+        fun YarnEditorFormState.swap() = copy(existingPhotos = existingPhotos.map { it.swap() })
+        _form.value = _form.value.swap()
+        _initialForm.value = _initialForm.value.swap()
+    }
+
     fun updateForm(transform: (YarnEditorFormState) -> YarnEditorFormState) {
         _form.value = transform(_form.value)
     }

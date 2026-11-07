@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DiscardChangesDialog
@@ -75,6 +76,8 @@ import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
+import blue.anika.wolle.ui.common.PhotoEditTarget
+import blue.anika.wolle.ui.common.PhotoEditorDialog
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -141,6 +144,26 @@ fun ProjectEditorScreen(
     val stepRemovedMessage = stringResource(R.string.project_editor_step_removed)
     val undoLabel = stringResource(R.string.common_undo)
     val announceRemoval = rememberPhotoRemovalAnnouncer(snackbarHostState)
+    var photoEdit by remember { mutableStateOf<Pair<PhotoEditTarget, String>?>(null) }
+    val editImage: (ImageDto) -> Unit = { image ->
+        val projectId = viewModel.projectId
+        val original = viewModel.imageUrl(image.url)
+        if (projectId != null && original != null) {
+            photoEdit = PhotoEditTarget.ProjectImage(projectId, image.id) to original
+        }
+    }
+    photoEdit?.let { (target, url) ->
+        PhotoEditorDialog(
+            target = target,
+            imageUrl = url,
+            onDismiss = { photoEdit = null },
+            onSaved = { newUrl, newThumbnail ->
+                (target as? PhotoEditTarget.ProjectImage)?.let {
+                    viewModel.imageEdited(it.imageId, newUrl, newThumbnail)
+                }
+            },
+        )
+    }
 
     val leave = { if (isDirty && !saved) showDiscardDialog = true else onBack() }
     BackHandler(enabled = isDirty && !saved && !deleted) { showDiscardDialog = true }
@@ -341,6 +364,7 @@ fun ProjectEditorScreen(
                                                 .removeExistingTitleImage(image.id)
                                                 ?.let(announceRemoval)
                                         },
+                                        onEdit = { editImage(image) },
                                     )
                                 } +
                                     form.titleImages.mapIndexed { index, upload ->
@@ -357,6 +381,7 @@ fun ProjectEditorScreen(
                                     },
                             addLabel = stringResource(R.string.editor_add_photo_short),
                             removeLabel = removeLabel,
+                            editLabel = stringResource(R.string.photo_edit_title),
                             onAdd = { titleImagePicker.launch("image/*") },
                             takePhotoLabel = stringResource(R.string.photo_take),
                             onTakePhoto = titleCapture.launch.takeIf { titleCapture.available },
@@ -622,6 +647,7 @@ fun ProjectEditorScreen(
                                     viewModel.moveStepImage(index, from, to)
                                 }
                             } else null,
+                        onEditExistingImage = editImage,
                         onRemoveExistingImage = { id ->
                             viewModel.removeExistingStepImage(index, id)?.let(announceRemoval)
                         },
@@ -706,6 +732,7 @@ private fun StepEditorCard(
     onAddImage: () -> Unit,
     onTakePhoto: (() -> Unit)?,
     reorder: PhotoReorder?,
+    onEditExistingImage: (ImageDto) -> Unit,
     onRemoveExistingImage: (Int) -> Unit,
     onRemoveNewImage: (Int) -> Unit,
 ) {
@@ -818,6 +845,7 @@ private fun StepEditorCard(
                                 model = imageUrl(image.thumbnailUrl),
                                 description = image.altText,
                                 onRemove = { onRemoveExistingImage(image.id) },
+                                onEdit = { onEditExistingImage(image) },
                             )
                         } +
                             step.images.mapIndexed { imageIndex, upload ->
@@ -830,6 +858,7 @@ private fun StepEditorCard(
                             },
                     addLabel = stringResource(R.string.editor_add_photo_short),
                     removeLabel = stringResource(R.string.project_editor_remove_image),
+                    editLabel = stringResource(R.string.photo_edit_title),
                     onAdd = onAddImage,
                     takePhotoLabel = stringResource(R.string.photo_take),
                     onTakePhoto = onTakePhoto,

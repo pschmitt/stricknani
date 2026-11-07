@@ -287,6 +287,29 @@ constructor(
         }
     }
 
+    /** The project being edited; null while creating one. */
+    val projectId: Int?
+        get() = route.projectId
+
+    /**
+     * A saved photo was cropped or rotated on the server: show its new picture in the form (and in
+     * the baseline, so the edit does not count as an unsaved change).
+     */
+    fun imageEdited(imageId: Int, url: String, thumbnailUrl: String) {
+        fun ImageDto.swap() =
+            if (id == imageId) copy(url = url, thumbnailUrl = thumbnailUrl) else this
+        fun ProjectEditorFormState.swap() =
+            copy(
+                existingTitleImages = existingTitleImages.map { it.swap() },
+                steps =
+                    steps.map { step ->
+                        step.copy(existingImages = step.existingImages.map { it.swap() })
+                    },
+            )
+        _form.value = _form.value.swap()
+        _initialForm.value = _initialForm.value.swap()
+    }
+
     fun updateForm(transform: (ProjectEditorFormState) -> ProjectEditorFormState) {
         _form.value = transform(_form.value)
     }

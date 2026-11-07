@@ -754,6 +754,13 @@
     <string name="editor_discard_keep">Weiter bearbeiten</string>
     <string name="editor_discard_confirm">Verwerfen</string>
     <string name="editor_add_photo_short">Foto hinzufügen</string>
+    <string name="photo_edit_title">Foto bearbeiten</string>
+    <string name="photo_edit_rotate_left">Nach links drehen</string>
+    <string name="photo_edit_rotate_right">Nach rechts drehen</string>
+    <string name="photo_edit_reset">Zurücksetzen</string>
+    <string name="photo_edit_saving">Foto wird gespeichert…</string>
+    <string name="photo_edit_failed">Das Foto konnte nicht gespeichert werden.</string>
+    <string name="photo_edit_hint">Zum Zuschneiden die Ecken ziehen.</string>
     <string name="photo_take">Foto aufnehmen</string>
     <string name="photo_choose">Foto auswählen</string>
     <string name="photo_camera_denied">Der Kamerazugriff ist aus. Erlaube ihn in den Systemeinstellungen, um ein Foto aufzunehmen.</string>
