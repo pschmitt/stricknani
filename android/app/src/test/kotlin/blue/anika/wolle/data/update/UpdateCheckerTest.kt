@@ -180,6 +180,29 @@ class UpdateCheckerTest {
     }
 
     @Test
+    fun `debug build on the stable channel gets the debug apk of the newest tag`() {
+        server.enqueue(MockResponse().setBody(releaseJson("v1.5.0")))
+
+        val update = check(revision = "v1.4.0", version = "1.4.0", debug = true)
+
+        assertEquals("1.5.0", update?.version)
+        assertEquals("https://example.test/arm64-debug.apk", update?.downloadUrl)
+        assertEquals("stricknani-v1.5.0-app-arm64-v8a-debug.apk", update?.asset?.name)
+        assertEquals("/repos/x/y/releases/latest", server.takeRequest().path)
+    }
+
+    @Test
+    fun `debug build on the latest channel asks the rolling release for its debug apk`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("ahead")))
+
+        val update = check("b".repeat(12), debug = true, channel = UpdateChannel.LATEST)
+
+        assertEquals("stricknani-latest-app-arm64-v8a-debug.apk", update?.asset?.name)
+        assertEquals("/repos/x/y/releases/tags/latest", server.takeRequest().path)
+    }
+
+    @Test
     fun `no matching abi falls back to release page`() {
         server.enqueue(MockResponse().setBody(releaseJson("v2.0.0")))
 
@@ -337,6 +360,46 @@ class UpdateCheckerTest {
         assertEquals(UpdateChannel.LATEST, UpdateChannel.fromName("LATEST"))
         assertEquals(UpdateChannel.STABLE, UpdateChannel.fromName(null))
         assertEquals(UpdateChannel.STABLE, UpdateChannel.fromName("nonsense"))
+    }
+
+    @Test
+    fun `debug build honours the stored channel without developer mode`() {
+        assertEquals(
+            UpdateChannel.LATEST,
+            effectiveUpdateChannel(
+                UpdateChannel.LATEST,
+                developerMode = false,
+                isDebugBuild = true,
+            ),
+        )
+        assertEquals(
+            UpdateChannel.STABLE,
+            effectiveUpdateChannel(
+                UpdateChannel.LATEST,
+                developerMode = false,
+                isDebugBuild = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `channel choice is shown for debug builds, release builds need developer mode`() {
+        assertEquals(
+            true,
+            updateChannelChoiceVisible(true, isDebugBuild = true, developerMode = false),
+        )
+        assertEquals(
+            true,
+            updateChannelChoiceVisible(true, isDebugBuild = false, developerMode = true),
+        )
+        assertEquals(
+            false,
+            updateChannelChoiceVisible(true, isDebugBuild = false, developerMode = false),
+        )
+        assertEquals(
+            false,
+            updateChannelChoiceVisible(false, isDebugBuild = true, developerMode = true),
+        )
     }
 
     @Test

@@ -11,10 +11,10 @@ sealed interface MoreLink {
 
 /**
  * The More screen's order: Create, Categories, Gauge calculator; then the Settings group (Account
- * settings first, drawn by the screen, then the Android-only [settings]); the Data group ([data]:
- * Admin for administrators, keeping up to date and backup); then [footer], About on its own at the
- * bottom. Sign out lives only in Account settings. [interfacePages] are opened from User interface
- * rather than from More itself.
+ * settings first, drawn by the screen, then Language and User interface from [settings]); the Data
+ * group ([data]: Admin for administrators, keeping up to date and backup); then [footer], About on
+ * its own at the bottom. Sign out lives only in Account settings. [interfacePages] are opened from
+ * User interface rather than from More itself.
  */
 data class MoreLayout(
     val links: List<MoreLink>,
@@ -22,7 +22,11 @@ data class MoreLayout(
     val data: List<SettingsCategory>,
     val footer: List<SettingsCategory>,
     val interfacePages: List<SettingsCategory> =
-        listOf(SettingsCategory.Navigation, SettingsCategory.DetailCards),
+        listOf(
+            SettingsCategory.Appearance,
+            SettingsCategory.Navigation,
+            SettingsCategory.DetailCards,
+        ),
 )
 
 fun moreLayout(isAdmin: Boolean): MoreLayout =
@@ -35,7 +39,7 @@ fun moreLayout(isAdmin: Boolean): MoreLayout =
             ),
         settings =
             listOf(
-                SettingsCategory.Appearance,
+                SettingsCategory.Language,
                 SettingsCategory.Interface,
             ),
         data =

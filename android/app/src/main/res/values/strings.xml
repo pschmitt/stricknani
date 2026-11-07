@@ -328,10 +328,12 @@
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Account</string>
     <string name="settings_category_account_subtitle">Server connection and sign-out</string>
+    <string name="settings_category_language_title">Language</string>
+    <string name="settings_category_language_subtitle">Choose the app language</string>
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_appearance_subtitle">Theme</string>
     <string name="settings_category_interface_title">User interface</string>
-    <string name="settings_category_interface_subtitle">Bottom bar, project timers and detail cards</string>
+    <string name="settings_category_interface_subtitle">Appearance, bottom bar, project timers and detail cards</string>
     <string name="settings_category_navigation_title">Bottom bar</string>
     <string name="settings_category_navigation_subtitle">Choose which tabs it shows and their order</string>
     <string name="settings_category_categories_title">Categories</string>
@@ -531,7 +533,7 @@
     <string name="about_update_channel_stable">Stable</string>
     <string name="about_update_channel_latest">Latest</string>
     <string name="about_update_channel_stable_help">Tagged releases only. Switching from Latest never downgrades.</string>
-    <string name="about_update_channel_latest_help">Every build of main (rolling), release APK only.</string>
+    <string name="about_update_channel_latest_help">Every build of main (rolling).</string>
     <string name="about_update_button">Update</string>
     <string name="about_update_open_play">Open Play Store</string>
     <string name="about_settings_build_label">Build</string>

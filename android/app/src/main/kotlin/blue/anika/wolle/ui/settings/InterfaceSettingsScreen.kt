@@ -33,8 +33,9 @@ import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PhosphorIcons
 
 /**
- * User interface: how the app is laid out. The bottom bar and the detail card order open their own
- * screens; project timers is a switch right here. Every row has an icon, like the rest of More.
+ * User interface: how the app looks and is laid out. Appearance, the bottom bar and the detail card
+ * order open their own screens; project timers is a switch right here. Every row has an icon, like
+ * the rest of More.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +67,7 @@ internal fun InterfaceSettingsScreen(
         ) {
             item {
                 SettingsSingleItemCard {
+                    InterfacePageRow(SettingsCategory.Appearance, onOpenCategory)
                     InterfacePageRow(SettingsCategory.Navigation, onOpenCategory)
                     ProjectTimersRow(projectTimersEnabled, viewModel::setProjectTimersEnabled)
                     InterfacePageRow(SettingsCategory.DetailCards, onOpenCategory)

@@ -110,7 +110,6 @@ class FocusedAppSemanticsTest {
 
         listOf(
                 "Account: Server connection and sign-out",
-                "Appearance: Theme",
                 "Navigation: Choose destinations and their order",
                 "Sync: Background refresh status",
                 "Backup: Export, restore, and scheduled backups",

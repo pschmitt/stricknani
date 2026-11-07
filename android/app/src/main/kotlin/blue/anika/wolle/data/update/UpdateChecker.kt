@@ -83,13 +83,28 @@ enum class UpdateChannel {
 }
 
 /**
- * The channel updates really follow. Latest is a developer-mode option, so with developer mode off
- * a stored Latest is ignored and updates come from Stable. Debug builds follow the same rule: both
- * tagged releases and the rolling `latest` release carry debug APKs, and a debug install picks the
- * debug asset of whichever release its channel names.
+ * The channel updates really follow. Latest is a developer-mode option for release builds, so with
+ * developer mode off a stored Latest is ignored and updates come from Stable. A debug build is a
+ * developer build by definition and always honours the stored pick. Both tagged releases and the
+ * rolling `latest` release carry debug APKs, and a debug install picks the debug asset of whichever
+ * release its channel names.
  */
-fun effectiveUpdateChannel(stored: UpdateChannel, developerMode: Boolean): UpdateChannel =
-    if (developerMode) stored else UpdateChannel.STABLE
+fun effectiveUpdateChannel(
+    stored: UpdateChannel,
+    developerMode: Boolean,
+    isDebugBuild: Boolean = false,
+): UpdateChannel = if (developerMode || isDebugBuild) stored else UpdateChannel.STABLE
+
+/**
+ * Whether About offers the Stable/Latest choice: in every build that can update itself, but for
+ * release builds only with developer mode on (Latest is unfinished work). Debug builds always show
+ * it, whatever the developer-mode switch says.
+ */
+fun updateChannelChoiceVisible(
+    selfUpdateEnabled: Boolean,
+    isDebugBuild: Boolean,
+    developerMode: Boolean,
+): Boolean = selfUpdateEnabled && (isDebugBuild || developerMode)
 
 /** What `BuildConfig.GIT_REVISION` says about the running build. */
 internal sealed interface InstalledBuild {

@@ -96,6 +96,7 @@ import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateInstallState
 import blue.anika.wolle.data.update.backgroundUpdatesAvailable
 import blue.anika.wolle.data.update.canInstallInApp
+import blue.anika.wolle.data.update.updateChannelChoiceVisible
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.animationsDisabled
@@ -321,11 +322,14 @@ internal fun AboutSettingsScreen(
                                     }
                                 },
                         )
-                        // Debug builds always follow Latest: debug APKs exist only on that release.
+                        // Debug builds choose a channel too: tagged and rolling releases both carry
+                        // debug APKs. Release builds need developer mode (Latest is unfinished).
                         if (
-                            BuildConfig.SELF_UPDATE_ENABLED &&
-                                !BuildConfig.DEBUG &&
-                                installDeveloperMode
+                            updateChannelChoiceVisible(
+                                BuildConfig.SELF_UPDATE_ENABLED,
+                                BuildConfig.DEBUG,
+                                installDeveloperMode,
+                            )
                         ) {
                             UpdateChannelRow(
                                 selected = updateChannel,

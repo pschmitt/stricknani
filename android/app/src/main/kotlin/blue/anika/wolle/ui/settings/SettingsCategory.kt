@@ -22,12 +22,18 @@ enum class SettingsCategory(
         R.string.settings_category_account_subtitle,
         PhosphorIcons.HardDrives,
     ),
+    Language(
+        R.string.settings_category_language_title,
+        R.string.settings_category_language_subtitle,
+        PhosphorIcons.Translate,
+    ),
+    /** Opened from User interface, not from More itself. */
     Appearance(
         R.string.settings_category_appearance_title,
         R.string.settings_category_appearance_subtitle,
         PhosphorIcons.Palette,
     ),
-    /** User interface: groups the bottom bar, project timers and detail cards. */
+    /** User interface: groups appearance, the bottom bar, project timers and detail cards. */
     Interface(
         R.string.settings_category_interface_title,
         R.string.settings_category_interface_subtitle,

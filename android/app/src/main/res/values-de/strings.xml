@@ -327,10 +327,12 @@
     <!-- Settings categories (hub screen) -->
     <string name="settings_category_account_title">Konto</string>
     <string name="settings_category_account_subtitle">Serververbindung und Abmelden</string>
+    <string name="settings_category_language_title">Sprache</string>
+    <string name="settings_category_language_subtitle">App-Sprache wählen</string>
     <string name="settings_category_appearance_title">Erscheinungsbild</string>
     <string name="settings_category_appearance_subtitle">Design</string>
     <string name="settings_category_interface_title">Benutzeroberfläche</string>
-    <string name="settings_category_interface_subtitle">Untere Leiste, Projekt-Timer und Detailkarten</string>
+    <string name="settings_category_interface_subtitle">Erscheinungsbild, untere Leiste, Projekt-Timer und Detailkarten</string>
     <string name="settings_category_navigation_title">Untere Leiste</string>
     <string name="settings_category_navigation_subtitle">Wähle, welche Tabs sie zeigt und in welcher Reihenfolge</string>
     <string name="settings_category_categories_title">Kategorien</string>
@@ -530,7 +532,7 @@
     <string name="about_update_channel_stable">Stabil</string>
     <string name="about_update_channel_latest">Aktuell</string>
     <string name="about_update_channel_stable_help">Nur getaggte Releases. Der Wechsel von „Aktuell“ führt nie zu einem Downgrade.</string>
-    <string name="about_update_channel_latest_help">Jeder Build von main (fortlaufend), nur Release-APK.</string>
+    <string name="about_update_channel_latest_help">Jeder Build von main (fortlaufend).</string>
     <string name="about_update_button">Aktualisieren</string>
     <string name="about_update_open_play">Play Store öffnen</string>
     <string name="about_settings_build_label">Build</string>

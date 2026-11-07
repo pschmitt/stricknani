@@ -1,7 +1,6 @@
 package blue.anika.wolle.ui.settings
 
 import android.os.Build
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ColorLens
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,7 +26,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
-import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.common.PhosphorIcons
 
@@ -37,8 +34,6 @@ import blue.anika.wolle.ui.common.PhosphorIcons
 internal fun AppearanceSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
-    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
-    val activity = LocalActivity.current
 
     Scaffold(
         topBar = {
@@ -120,43 +115,9 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit, viewModel: SettingsVie
                     }
                 }
             }
-            item {
-                SettingsGroupCard(
-                    title = stringResource(R.string.appearance_settings_language_title),
-                    icon = Icons.Filled.Language,
-                ) {
-                    AppLanguage.entries.forEach { language ->
-                        SettingsListItem(
-                            modifier =
-                                Modifier.fillMaxWidth().clickable {
-                                    viewModel.setAppLanguage(language)
-                                    activity?.recreate()
-                                },
-                            headlineContent = { Text(language.label()) },
-                            trailingContent = {
-                                RadioButton(
-                                    selected = appLanguage == language,
-                                    onClick = {
-                                        viewModel.setAppLanguage(language)
-                                        activity?.recreate()
-                                    },
-                                )
-                            },
-                        )
-                    }
-                }
-            }
         }
     }
 }
-
-@Composable
-private fun AppLanguage.label(): String =
-    when (this) {
-        AppLanguage.SYSTEM -> stringResource(R.string.appearance_settings_theme_system_label)
-        AppLanguage.ENGLISH -> "English"
-        AppLanguage.GERMAN -> "Deutsch"
-    }
 
 @Composable
 private fun ThemeMode.label(): String =

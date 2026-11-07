@@ -41,6 +41,32 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-97: Update channel choice missing in debug builds
+
+- [x] About hid the Stable/Latest row in debug builds (`!BuildConfig.DEBUG`, comment "debug APKs
+      exist only on that release") although tagged releases carry debug APKs since 81fbe53b and the
+      checker already resolves the debug asset per channel. The row now shows in every
+      self-updating build; release builds still need developer mode (Latest is unfinished work).
+- [x] `effectiveUpdateChannel` no longer forces Stable in debug builds when developer mode is off,
+      so a visible choice is never silently ignored. Help text no longer says "release APK only".
+- [x] Tests: debug on Stable takes the newest tag's debug APK, debug on Latest takes the rolling
+      release's debug APK, channel visibility and effective channel for debug builds.
+
+Status: **done**, 2026-11-07.
+
+<!-- vim: set ft=markdown et ts=2 sw=2 : -->
+
+## SNA-96: Language gets its own More row; Appearance moves under User interface
+
+**Status:** done (2026-11-07)
+
+- [x] More, Settings group: Account, Language, User interface, Notifications. Language
+      (`LanguageSettingsScreen`, Phosphor `Translate`) offers the same choices as before (Follow
+      system, English, Deutsch), moved out of Appearance.
+- [x] Appearance is no longer a More row: User interface lists it first, then Bottom bar, Project
+      timers and Detail cards. Its subtitle now names appearance too.
+- [x] `MoreLayout` and `MoreLayoutTest` updated. Web: no change (Preferences card on Account).
+
 ## SNA-95: Photo editor (crop and rotate)
 
 **Status:** done (2026-11-07)
@@ -2720,5 +2746,3 @@ confirm it lands cleanly, the same as SNA-65 flagged for its own untested change
 Status: **done**, 2026-08-28 - CI/doc-only change, no app code or version change; not exercised
 with a real tag push in this task for the same reason as SNA-65 (would have meant cutting an
 otherwise-unneeded release). Confirm on the next real tagged release.
-
-<!-- vim: set ft=markdown et ts=2 sw=2 : -->

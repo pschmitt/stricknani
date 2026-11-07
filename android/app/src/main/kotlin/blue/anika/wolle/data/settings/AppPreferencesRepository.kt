@@ -116,8 +116,9 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
     }
 
     /**
-     * Which GitHub release stream updates follow: the stored pick, but always stable while
-     * developer mode is off (the channel choice is a developer option).
+     * Which GitHub release stream updates follow: the stored pick, but always stable in a release
+     * build while developer mode is off (the channel choice is a developer option there; debug
+     * builds always honour it).
      */
     val updateChannel =
         dataStore.data
@@ -125,6 +126,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
                 effectiveUpdateChannel(
                     UpdateChannel.fromName(prefs[KEY_UPDATE_CHANNEL]),
                     prefs[KEY_DEVELOPER_MODE] ?: DEVELOPER_MODE_DEFAULT,
+                    BuildConfig.DEBUG,
                 )
             }
             .distinctUntilChanged()

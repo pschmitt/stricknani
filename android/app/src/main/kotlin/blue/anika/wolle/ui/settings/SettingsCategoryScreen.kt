@@ -25,6 +25,7 @@ fun SettingsCategoryScreen(
                 viewModel = viewModel,
                 onOpenCategory = onOpenCategory,
             )
+        SettingsCategory.Language -> LanguageSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Appearance ->
             AppearanceSettingsScreen(onBack = onBack, viewModel = viewModel)
         SettingsCategory.Interface ->

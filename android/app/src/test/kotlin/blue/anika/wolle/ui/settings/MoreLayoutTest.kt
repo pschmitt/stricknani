@@ -14,8 +14,8 @@ class MoreLayoutTest {
     }
 
     @Test
-    fun `Settings holds the Android-only settings after Account, which the screen draws`() {
-        val android = listOf(SettingsCategory.Appearance, SettingsCategory.Interface)
+    fun `Settings holds Language and User interface after Account, which the screen draws`() {
+        val android = listOf(SettingsCategory.Language, SettingsCategory.Interface)
         assertEquals(android, moreLayout(isAdmin = true).settings)
         assertEquals(android, moreLayout(isAdmin = false).settings)
         assertFalse(SettingsCategory.Account in moreLayout(isAdmin = true).settings)
@@ -34,9 +34,13 @@ class MoreLayoutTest {
     }
 
     @Test
-    fun `User interface opens the bottom bar and detail card pages`() {
+    fun `User interface opens Appearance, the bottom bar and detail card pages`() {
         assertEquals(
-            listOf(SettingsCategory.Navigation, SettingsCategory.DetailCards),
+            listOf(
+                SettingsCategory.Appearance,
+                SettingsCategory.Navigation,
+                SettingsCategory.DetailCards,
+            ),
             moreLayout(isAdmin = false).interfacePages,
         )
     }
