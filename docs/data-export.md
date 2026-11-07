@@ -1,6 +1,7 @@
 # Data export
 
-A user downloads everything they can read in Stricknani as one zip file: their
+A user downloads everything they can read in Stricknani as one archive
+(`.tar.gz`): their
 projects, yarns and categories, with the original photos and attachments. The
 web app offers it on the Backups page, the Android app under Settings >
 Backups. Both download the same file from the server.
@@ -16,8 +17,8 @@ future restore, other tools). Restore is not built yet (TODO T129).
 - Authentication: a browser session or an API PAT (`Authorization: Bearer`),
   like the other `/api/v2/account` routes. No CSRF token is needed: it is a
   `GET` without side effects.
-- Response: `200`, `Content-Type: application/zip`,
-  `Content-Disposition: attachment; filename="stricknani-export-YYYY-MM-DD.zip"`
+- Response: `200`, `Content-Type: application/gzip`,
+  `Content-Disposition: attachment; filename="stricknani-export-YYYY-MM-DD.tar.gz"`
   (UTC date), `Cache-Control: no-store`. The body is streamed; there is no
   `Content-Length`.
 - Errors use the usual v2 error envelope: `401` without valid credentials,
@@ -36,9 +37,12 @@ media/projects/<project id>/<file name>
 media/yarns/<yarn id>/<file name>
 ```
 
-All JSON files are UTF-8, pretty-printed. Paths inside the zip use `/`. Media
-files are stored without compression (they are already compressed); JSON files
-are deflated.
+The archive is a gzip-compressed tar (POSIX ustar/pax) with everything inside
+one top-level directory `stricknani-export-YYYY-MM-DD/`; the paths below are
+relative to it. `manifest.json` is the first entry, so a reader can check the
+format before reading the rest. All JSON files are UTF-8, pretty-printed. Paths
+use `/`; entries are regular files with mode 0644 and the export time as their
+modification time.
 
 ### `manifest.json`
 
@@ -95,7 +99,7 @@ An array of the user's own categories, sorted by `id`: `{ "id", "name" }`.
 }
 ```
 
-- `file` is the path inside the zip. Only originals are exported; thumbnails
+- `file` is the path inside the archive, relative to its top-level directory. Only originals are exported; thumbnails
   are rebuilt from them.
 - `position` is the order within its list; `is_primary` marks the cover photo
   (false for attachments).
