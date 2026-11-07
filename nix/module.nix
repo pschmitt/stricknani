@@ -382,6 +382,12 @@ in
         default = true;
         description = "Whether to enable ACME for the virtual host.";
       };
+      maxRestoreSize = lib.mkOption {
+        type = lib.types.str;
+        default = "2g";
+        example = "512m";
+        description = "Largest request body nginx accepts on `/api/v2/account/import` (a data export restore), as an nginx size (`client_max_body_size`). Request buffering is off there so the archive streams to the server. The server itself caps a restore at 2 GiB.";
+      };
     };
 
     extraConfig = lib.mkOption {
@@ -651,6 +657,20 @@ in
               add_header Cache-Control "no-store" always;
             '';
         })
+        // {
+          # Restoring a data export uploads one archive of up to the server's 2 GiB cap: lift
+          # nginx's body limit for this one path, stream it, and give a slow upload time.
+          "= /api/v2/account/import" = {
+            proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";
+            recommendedProxySettings = true;
+            extraConfig = ''
+              client_max_body_size ${cfg.nginx.maxRestoreSize};
+              proxy_request_buffering off;
+              proxy_read_timeout 600s;
+              proxy_send_timeout 600s;
+            '';
+          };
+        }
         // lib.optionalAttrs cfg.oidc.enable {
           "/api/v2/auth/oidc/callback/" = {
             proxyPass = "http://${cfg.bindHost}:${toString cfg.port}";

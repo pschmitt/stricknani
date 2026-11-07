@@ -63,7 +63,7 @@
         href={resolve("/backups")}
         icon="download"
         title={t("Backups", locale)}
-        description={t("Download your data", locale)}
+        description={t("Download or restore your data", locale)}
       />
     </nav>
   {/if}

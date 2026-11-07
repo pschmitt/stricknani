@@ -26,7 +26,7 @@ use crate::auth::{AuthError, bearer_user};
 use crate::db::AppState;
 use crate::media_ids::{self, Namespace};
 
-const MAX_UPLOAD_BYTES: usize = 25 * 1024 * 1024;
+pub(crate) const MAX_UPLOAD_BYTES: usize = 25 * 1024 * 1024;
 const MAX_IMAGE_PIXELS: u64 = 64_000_000;
 const MAX_IMAGE_DIMENSION: u32 = 20_000;
 const MAX_IMAGE_ALLOCATION: u64 = 256 * 1024 * 1024;
@@ -3351,7 +3351,7 @@ pub(crate) fn thumbnail_url(subdir: &str, parent_id: i64, filename: &str) -> Str
     )
 }
 
-fn thumbnail_name(filename: &str) -> String {
+pub(crate) fn thumbnail_name(filename: &str) -> String {
     let stem = Path::new(filename)
         .file_stem()
         .and_then(|stem| stem.to_str())
@@ -3435,7 +3435,7 @@ fn map_multipart_error(error: axum::extract::multipart::MultipartError) -> Uploa
     }
 }
 
-async fn process_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
+pub(crate) async fn process_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
     let permit = IMAGE_PROCESSING
         .clone()
         .acquire_owned()
@@ -3599,7 +3599,7 @@ fn encode_jpeg(image: &DynamicImage) -> Result<Vec<u8>, UploadError> {
     Ok(output.into_inner())
 }
 
-fn safe_mime_type(value: Option<&str>) -> Option<String> {
+pub(crate) fn safe_mime_type(value: Option<&str>) -> Option<String> {
     let value = value?.split(';').next()?.trim();
     let (kind, subtype) = value.split_once('/')?;
     let valid_token = |part: &str| {
@@ -3612,7 +3612,7 @@ fn safe_mime_type(value: Option<&str>) -> Option<String> {
     (valid_token(kind) && valid_token(subtype)).then(|| value.to_ascii_lowercase())
 }
 
-fn safe_extension(filename: &str) -> String {
+pub(crate) fn safe_extension(filename: &str) -> String {
     let extension = filename.rsplit_once('.').map(|(_, ext)| ext).unwrap_or("");
     if !extension.is_empty()
         && extension.len() <= 16
@@ -3624,7 +3624,7 @@ fn safe_extension(filename: &str) -> String {
     }
 }
 
-async fn classify_attachment(
+pub(crate) async fn classify_attachment(
     bytes: &[u8],
     claimed_type: &str,
 ) -> (String, Option<String>, bool, Option<(u32, u32)>) {
@@ -3740,7 +3740,7 @@ fn newer_timestamp(current: &str) -> String {
         .unwrap_or_else(|| timestamp(Utc::now()))
 }
 
-fn opaque_filename(extension: &str) -> String {
+pub(crate) fn opaque_filename(extension: &str) -> String {
     let mut random = [0_u8; 16];
     SysRng
         .try_fill_bytes(&mut random)
@@ -3802,7 +3802,10 @@ async fn save_files(
     })
 }
 
-async fn ensure_directory(root: &Path, segments: &[&str]) -> Result<PathBuf, std::io::Error> {
+pub(crate) async fn ensure_directory(
+    root: &Path,
+    segments: &[&str],
+) -> Result<PathBuf, std::io::Error> {
     tokio::fs::create_dir_all(root).await?;
     let canonical_root = tokio::fs::canonicalize(root).await?;
     let mut requested = canonical_root.clone();
@@ -4419,7 +4422,12 @@ async fn safe_existing_path(
     Ok(Some(canonical_file))
 }
 
-async fn remove_stored_file(root: &Path, subdir: &str, parent_id: i64, filename: &str) -> bool {
+pub(crate) async fn remove_stored_file(
+    root: &Path,
+    subdir: &str,
+    parent_id: i64,
+    filename: &str,
+) -> bool {
     match existing_file_path(root, subdir, parent_id, filename).await {
         Ok(Some(path)) => remove_path_safe(root, &path).await.is_ok(),
         Ok(None) => true,
@@ -4427,7 +4435,7 @@ async fn remove_stored_file(root: &Path, subdir: &str, parent_id: i64, filename:
     }
 }
 
-async fn remove_stored_thumbnail(
+pub(crate) async fn remove_stored_thumbnail(
     root: &Path,
     subdir: &str,
     parent_id: i64,

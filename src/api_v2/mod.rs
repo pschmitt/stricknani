@@ -75,6 +75,8 @@ struct ApiV2State {
     project_preview_slots: Arc<tokio::sync::Semaphore>,
     sync_projection_slots: Arc<tokio::sync::Semaphore>,
     exports: crate::export::ExportLimiter,
+    restores: crate::restore::RestoreLimiter,
+    restore_limit: u64,
 }
 
 /// Build API v2 routes without optional import services.
@@ -84,7 +86,20 @@ struct ApiV2State {
 /// Use the application constructor to mount import previews with their parser
 /// worker and optional AI client.
 pub fn router(app: AppState, ai_enabled: bool) -> Router {
-    router_with_context(app, ai_enabled, None, None)
+    router_with_context(
+        app,
+        ai_enabled,
+        None,
+        None,
+        crate::restore::MAX_ARCHIVE_BYTES,
+    )
+}
+
+/// Like [`router`], with a smaller cap on the restore upload (`POST /account/import`), so that
+/// tests can exercise the `413` path without a 2 GiB body.
+#[doc(hidden)]
+pub fn router_with_restore_limit(app: AppState, ai_enabled: bool, restore_limit: u64) -> Router {
+    router_with_context(app, ai_enabled, None, None, restore_limit)
 }
 
 pub(crate) fn router_with_optional_services(
@@ -99,6 +114,7 @@ pub(crate) fn router_with_optional_services(
         ai_enabled,
         Some(ImportContext::new(worker_path, ai)),
         ocr_service,
+        crate::restore::MAX_ARCHIVE_BYTES,
     )
 }
 
@@ -107,6 +123,7 @@ fn router_with_context(
     ai_enabled: bool,
     imports: Option<ImportContext>,
     ocr_service: Option<crate::ocr::OcrService>,
+    restore_limit: u64,
 ) -> Router {
     let mut csrf_key = [0_u8; 32];
     let csrf_key = SysRng.try_fill_bytes(&mut csrf_key).ok().map(|()| csrf_key);
@@ -123,6 +140,8 @@ fn router_with_context(
         project_preview_slots: Arc::new(tokio::sync::Semaphore::new(4)),
         sync_projection_slots: Arc::new(tokio::sync::Semaphore::new(4)),
         exports: crate::export::ExportLimiter::default(),
+        restores: crate::restore::RestoreLimiter::default(),
+        restore_limit,
     };
     Router::new()
         .route("/session", get(session))

@@ -55,7 +55,11 @@ pub(super) fn router() -> Router<ApiV2State> {
     let avatar_routes = Router::new()
         .route("/account/avatar", post(upload_avatar).delete(delete_avatar))
         .layer(DefaultBodyLimit::max(MAX_AVATAR_REQUEST_BYTES));
-    json_routes.merge(avatar_routes)
+    // The restore body is streamed to a file and capped by the handler, not by axum.
+    let restore_routes = Router::new()
+        .route("/account/import", post(import_account))
+        .layer(DefaultBodyLimit::disable());
+    json_routes.merge(avatar_routes).merge(restore_routes)
 }
 
 async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
@@ -155,6 +159,38 @@ async fn export_account(
             "internal_error",
             "Request failed",
         ),
+    }
+}
+
+async fn import_account(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    body: axum::body::Body,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Some(_guard) = state.restores.begin(user_id) else {
+        return rate_limited(
+            5,
+            "A restore is already running; try again when it finishes",
+        );
+    };
+    let declared = headers
+        .get(axum::http::header::CONTENT_LENGTH)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok());
+    match crate::restore::restore(&state.app, user_id, body, declared, state.restore_limit).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => {
+            let (status, code, message) = error.describe();
+            api_error(
+                StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+                code,
+                message,
+            )
+        }
     }
 }
 

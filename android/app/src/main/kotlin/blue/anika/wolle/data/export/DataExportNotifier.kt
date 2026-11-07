@@ -81,7 +81,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
 
     fun cancel() = NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
 
-    private fun builder(
+    internal fun builder(
         @androidx.annotation.StringRes title: Int,
         contentIntent: PendingIntent,
     ): NotificationCompat.Builder {
@@ -115,7 +115,10 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-    private fun notify(builder: NotificationCompat.Builder) {
+    private fun notify(builder: NotificationCompat.Builder) = post(NOTIFICATION_ID, builder)
+
+    /** Posts [builder] under [id] if notifications are allowed; the restore shares this channel. */
+    internal fun post(id: Int, builder: NotificationCompat.Builder) {
         val permissionGranted =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(
@@ -125,7 +128,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         val enabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
         if (!canPostNotifications(Build.VERSION.SDK_INT, permissionGranted, enabled)) return
         try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
+            NotificationManagerCompat.from(context).notify(id, builder.build())
         } catch (_: SecurityException) {
             // Permission revoked between the check and notify().
         }

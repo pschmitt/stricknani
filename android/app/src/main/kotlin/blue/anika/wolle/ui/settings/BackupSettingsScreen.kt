@@ -32,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,10 +68,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.backup.BackupFrequency
 import blue.anika.wolle.data.export.DataExportViewModel
+import blue.anika.wolle.data.export.DataRestoreViewModel
 import blue.anika.wolle.data.export.ExportFailure
 import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.data.export.ExportJobStatus
+import blue.anika.wolle.data.export.RestoreFailure
+import blue.anika.wolle.data.export.RestoreJobStatus
+import blue.anika.wolle.data.export.countLine
 import blue.anika.wolle.data.export.failureMessageRes
+import blue.anika.wolle.data.export.isProcessing
+import blue.anika.wolle.data.export.joinSummary
+import blue.anika.wolle.data.export.restoreFailureMessageRes
+import blue.anika.wolle.data.export.uploadPercent
 import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.NetworkStatus
 import blue.anika.wolle.ui.common.PhosphorIcons
@@ -86,6 +96,7 @@ internal fun BackupSettingsScreen(
     onBack: () -> Unit,
     viewModel: SettingsViewModel,
     exportViewModel: DataExportViewModel = hiltViewModel(),
+    restoreViewModel: DataRestoreViewModel = hiltViewModel(),
 ) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val scheduledEnabled by viewModel.scheduledBackupEnabled.collectAsStateWithLifecycle()
@@ -95,6 +106,27 @@ internal fun BackupSettingsScreen(
     val context = LocalContext.current
     val exportStatus by exportViewModel.status.collectAsStateWithLifecycle()
     val exportFailure by exportViewModel.lastFailure.collectAsStateWithLifecycle()
+    val restoreStatus by restoreViewModel.status.collectAsStateWithLifecycle()
+    val restoreFailure by restoreViewModel.lastFailure.collectAsStateWithLifecycle()
+    val restoreSummary by restoreViewModel.lastSummary.collectAsStateWithLifecycle()
+    val restoreRunning = restoreStatus as? RestoreJobStatus.Running
+    var pendingRestoreUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingRestoreName by rememberSaveable { mutableStateOf<String?>(null) }
+    val dataRestoreLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                // Keep the read grant for the background job, which may start after this screen
+                // is gone. Not every provider allows it; the job then relies on the one-time grant.
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                }
+                pendingRestoreUri = uri.toString()
+                pendingRestoreName = displayNameOf(context, uri)
+            }
+        }
     val savedMessage = stringResource(R.string.data_export_saved)
     // NetworkStatus is a plain flag, not a flow: look again every few seconds while on screen.
     var offline by remember { mutableStateOf(NetworkStatus.hasValidatedInternet == false) }
@@ -185,6 +217,45 @@ internal fun BackupSettingsScreen(
         }
     }
 
+    pendingRestoreUri?.let { uriString ->
+        AlertDialog(
+            onDismissRequest = {
+                pendingRestoreUri = null
+                pendingRestoreName = null
+            },
+            title = { Text(stringResource(R.string.data_restore_dialog_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.data_restore_dialog_text,
+                        pendingRestoreName ?: stringResource(R.string.data_restore_file_unnamed),
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        restoreViewModel.restore(Uri.parse(uriString))
+                        pendingRestoreUri = null
+                        pendingRestoreName = null
+                    }
+                ) {
+                    Text(stringResource(R.string.data_restore_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        pendingRestoreUri = null
+                        pendingRestoreName = null
+                    }
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
@@ -233,7 +304,7 @@ internal fun BackupSettingsScreen(
                             SegmentedButton(
                                 selected = exportFormat == format,
                                 onClick = { exportFormat = format },
-                                enabled = running == null,
+                                enabled = running == null && restoreRunning == null,
                                 shape =
                                     SegmentedButtonDefaults.itemShape(
                                         index,
@@ -246,7 +317,7 @@ internal fun BackupSettingsScreen(
                     }
                     Button(
                         onClick = { startExport(exportFormat) },
-                        enabled = running == null && !offline,
+                        enabled = running == null && restoreRunning == null && !offline,
                         modifier =
                             Modifier.fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -300,6 +371,99 @@ internal fun BackupSettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    SettingsListItem(
+                        headlineContent = { Text(stringResource(R.string.data_restore_label)) },
+                        supportingContent = {
+                            Text(stringResource(R.string.data_restore_description))
+                        },
+                    )
+                    Button(
+                        onClick = { dataRestoreLauncher.launch(RESTORE_MIME_TYPES) },
+                        enabled = running == null && restoreRunning == null && !offline,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .testTag("data-restore-button"),
+                    ) {
+                        if (restoreRunning != null) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            val percent = uploadPercent(restoreRunning.sent, restoreRunning.total)
+                            Text(
+                                if (
+                                    percent != null &&
+                                        !isProcessing(restoreRunning.sent, restoreRunning.total)
+                                )
+                                    stringResource(R.string.data_restore_uploading, percent)
+                                else stringResource(R.string.data_restore_processing)
+                            )
+                        } else {
+                            Text(stringResource(R.string.backup_settings_choose_file_button))
+                        }
+                    }
+                    if (offline && restoreRunning == null) {
+                        Text(
+                            stringResource(R.string.data_export_offline),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    restoreFailure?.let { failure ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        ) {
+                            Text(
+                                stringResource(restoreFailureMessageRes(failure)),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f).testTag("data-restore-error"),
+                            )
+                            // A 401 is handled by the session-expiry banner. Retrying means picking
+                            // the file again: the grant of the first pick may be gone.
+                            if (failure != RestoreFailure.Unauthorized) {
+                                TextButton(
+                                    onClick = { dataRestoreLauncher.launch(RESTORE_MIME_TYPES) }
+                                ) {
+                                    Text(stringResource(R.string.data_export_retry))
+                                }
+                            }
+                        }
+                    }
+                    restoreSummary?.let { summary ->
+                        val lines =
+                            listOfNotNull(
+                                countLine(
+                                    stringResource(R.string.data_restore_projects),
+                                    summary.projects,
+                                ),
+                                countLine(
+                                    stringResource(R.string.data_restore_yarns),
+                                    summary.yarns,
+                                ),
+                                countLine(
+                                    stringResource(R.string.data_restore_media),
+                                    summary.mediaFiles,
+                                ),
+                                if (summary.mediaSkipped > 0)
+                                    countLine(
+                                        stringResource(R.string.data_restore_missing),
+                                        summary.mediaSkipped,
+                                    )
+                                else null,
+                            )
+                        Text(
+                            joinSummary(lines),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier =
+                                Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .testTag("data-restore-summary"),
+                        )
+                    }
                 }
             }
 
@@ -617,6 +781,10 @@ fun BackupPasswordDialog(
 }
 
 private const val CONNECTIVITY_POLL_MILLIS = 2_000L
+
+/** What the picker offers: the archives a download produces, and providers that say nothing. */
+private val RESTORE_MIME_TYPES =
+    arrayOf("application/gzip", "application/x-gzip", "application/zip", "application/octet-stream")
 
 /** The name the user gave the file in the picker, or null when the provider does not say. */
 private fun displayNameOf(context: android.content.Context, uri: Uri): String? =

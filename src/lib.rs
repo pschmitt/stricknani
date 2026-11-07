@@ -37,6 +37,7 @@ pub mod operator_avatar;
 pub mod projects;
 pub mod pwa;
 pub(crate) mod resource_access;
+mod restore;
 pub mod security;
 pub(crate) mod sharing;
 pub mod sync;

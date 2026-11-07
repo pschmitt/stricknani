@@ -49,7 +49,7 @@
     <string name="destination_label_home">Start</string>
     <string name="destination_label_projects">Projekte</string>
     <string name="destination_label_categories">Kategorien</string>
-    <string name="destination_label_yarns">Wolle</string>
+    <string name="destination_label_yarns">Garne</string>
     <string name="destination_label_search">Suche</string>
     <string name="destination_label_more">Mehr</string>
     <string name="destination_label_gauge">Maschenprobe</string>
@@ -57,7 +57,7 @@
     <!-- Home -->
     <string name="home_gauge_calculator_description">Maschenprobenrechner</string>
     <string name="home_welcome_title">Deine Strickecke ist bereit</string>
-    <string name="home_welcome_subtitle">Zieh nach unten, um deine Projekte und deine Wolle zu holen.</string>
+    <string name="home_welcome_subtitle">Zieh nach unten, um deine Projekte und deine Garne zu holen.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>
     <string name="home_favorite_yarns_title">Lieblingswolle</string>
     <string name="home_recent_projects_title">Weitere Projekte</string>
@@ -89,7 +89,7 @@
     <string name="home_continue_title">Weiterstricken</string>
 
     <!-- Search -->
-    <string name="search_placeholder">Projekte und Wolle durchsuchen</string>
+    <string name="search_placeholder">Projekte und Garne durchsuchen</string>
     <string name="search_empty_title">Durchsuche deinen Vorrat</string>
     <string name="search_empty_subtitle">Durchsuche deine Projekte und Garne nach Namen.</string>
     <string name="search_no_matches_title">Nichts gefunden</string>
@@ -97,14 +97,14 @@
 
     <!-- Projects -->
     <string name="projects_list_title">Projekte</string>
-    <string name="yarns_list_title">Wolle</string>
+    <string name="yarns_list_title">Garne</string>
     <string name="project_new_label">Neues Projekt</string>
     <string name="projects_list_import_description">Projekt importieren</string>
-    <string name="project_detail_field_yarn">Wolle</string>
+    <string name="project_detail_field_yarn">Garn</string>
     <string name="project_detail_more_actions_description">Weitere Aktionen</string>
     <string name="project_detail_not_found">Projekt nicht gefunden</string>
     <string name="project_detail_details_title">Projektdetails</string>
-    <string name="project_detail_linked_yarns_title">Verknüpfte Wolle</string>
+    <string name="project_detail_linked_yarns_title">Verknüpfte Garne</string>
     <string name="project_detail_description_title">Beschreibung</string>
     <string name="project_detail_steps_title">Schritte</string>
     <string name="project_detail_notes_title">Notizen</string>
@@ -302,11 +302,11 @@
     <string name="mutation_yarn_imported_queued">Garn „%1$s“ importiert.</string>
 
     <!-- Yarns -->
-    <string name="yarns_list_new_yarn_fab">Neue Wolle</string>
-    <string name="yarns_list_search_placeholder">Wolle durchsuchen</string>
+    <string name="yarns_list_new_yarn_fab">Neues Garn</string>
+    <string name="yarns_list_search_placeholder">Garne durchsuchen</string>
     <string name="yarns_list_favorites_only">Nur Favoriten</string>
     <string name="yarns_list_empty_title">Dein Garnvorrat ist leer</string>
-    <string name="yarn_detail_not_found">Wolle nicht gefunden</string>
+    <string name="yarn_detail_not_found">Garn nicht gefunden</string>
     <string name="yarn_detail_field_brand">Marke</string>
     <string name="yarn_detail_field_colorway">Farbe</string>
     <string name="yarn_detail_field_dye_lot">Charge (Dye Lot)</string>
@@ -316,11 +316,11 @@
     <string name="yarn_detail_field_amount">Menge</string>
     <string name="yarn_detail_used_in_title">Verwendet in</string>
     <string name="yarn_detail_details_title">Wolldetails</string>
-    <string name="yarn_editor_title_edit">Wolle bearbeiten</string>
-    <string name="yarn_editor_delete_description">Wolle löschen</string>
+    <string name="yarn_editor_title_edit">Garn bearbeiten</string>
+    <string name="yarn_editor_delete_description">Garn löschen</string>
     <string name="yarn_editor_weight_grams_label">Gewicht (g)</string>
     <string name="yarn_editor_length_meters_label">Lauflänge (m)</string>
-    <string name="yarn_editor_delete_dialog_title">Wolle „%1$s“ löschen?</string>
+    <string name="yarn_editor_delete_dialog_title">Garn „%1$s“ löschen?</string>
     <string name="yarn_editor_add_photo">Wollfotos hinzufügen</string>
     <string name="yarn_editor_remove_photo">Ausgewähltes Foto entfernen</string>
     <string name="editor_image_select_failed">Das ausgewählte Bild konnte nicht zum Hochladen gespeichert werden.</string>
@@ -380,7 +380,7 @@
     <string name="detail_long_press_copied">%1$s kopiert</string>
     <string name="print_action">Drucken</string>
     <string name="print_dialog_title">Projekt drucken</string>
-    <string name="print_yarn_dialog_title">Wolle drucken</string>
+    <string name="print_yarn_dialog_title">Garn drucken</string>
     <string name="print_content_everything">Alles</string>
     <string name="print_content_instructions">Nur die Anleitung</string>
     <string name="print_include_images">Bilder einbeziehen</string>
@@ -403,9 +403,9 @@
     <string name="sync_issue_project_create">Projekt erstellen</string>
     <string name="sync_issue_project_update">Projekt aktualisieren</string>
     <string name="sync_issue_project_delete">Projekt löschen</string>
-    <string name="sync_issue_yarn_create">Wolle erstellen</string>
-    <string name="sync_issue_yarn_update">Wolle aktualisieren</string>
-    <string name="sync_issue_yarn_delete">Wolle löschen</string>
+    <string name="sync_issue_yarn_create">Garn erstellen</string>
+    <string name="sync_issue_yarn_update">Garn aktualisieren</string>
+    <string name="sync_issue_yarn_delete">Garn löschen</string>
     <string name="sync_issue_unknown_change">Eine Änderung</string>
     <string name="sync_issue_conflict_headline">Woanders geändert</string>
     <string name="sync_issue_conflict_detail">Das wurde inzwischen auf einem anderen Gerät bearbeitet, deshalb bleibt die neuere Version.</string>
@@ -556,7 +556,7 @@
     <string name="about_link_issues_title">Problem melden</string>
     <string name="about_link_issues_description">Fehler gefunden oder eine Idee? Sag uns auf GitHub Bescheid.</string>
     <string name="about_credits_title">Danksagungen und Lizenzen</string>
-    <string name="about_footer">Mit Wolle und Liebe gemacht.</string>
+    <string name="about_footer">Mit Garn und Liebe gemacht.</string>
     <string name="about_credits_license_prefix">Stricknani ist freie Software unter der GNU GPL v3.</string>
     <string name="about_credit_icons_title">Phosphor Icons</string>
     <string name="about_credit_icons_detail">Icons, MIT</string>
@@ -594,6 +594,27 @@
     <string name="data_export_notification_progress_text">%1$s bisher</string>
     <string name="data_export_notification_success_title">Deine Daten sind gespeichert</string>
     <string name="data_export_notification_failed_title">Download fehlgeschlagen</string>
+    <string name="data_restore_label">Aus einer Datei wiederherstellen</string>
+    <string name="data_restore_description">Fügt die Projekte, Garne und Fotos aus einem Stricknani-Download als neue Einträge hinzu. Bestehendes bleibt unverändert.</string>
+    <string name="data_restore_dialog_title">Diese Datei wiederherstellen?</string>
+    <string name="data_restore_dialog_text">%1$s\n\nAlles darin wird als neue Einträge hinzugefügt, auch wenn du sie schon einmal wiederhergestellt hast.</string>
+    <string name="data_restore_confirm">Wiederherstellen</string>
+    <string name="data_restore_file_unnamed">Diese Datei</string>
+    <string name="data_restore_uploading">Wird hochgeladen… %1$d%%</string>
+    <string name="data_restore_processing">Wird wiederhergestellt…</string>
+    <string name="data_restore_projects">Projekte</string>
+    <string name="data_restore_yarns">Garne</string>
+    <string name="data_restore_media">Fotos und Dateien</string>
+    <string name="data_restore_missing">Fehlten in der Datei</string>
+    <string name="data_restore_count">%1$s: %2$d</string>
+    <string name="data_restore_error_invalid_archive">Diese Datei ist kein Stricknani-Download.</string>
+    <string name="data_restore_error_unsupported_version">Dieser Download stammt aus einer neueren Stricknani-Version. Bitte zuerst den Server aktualisieren.</string>
+    <string name="data_restore_error_too_large">Die Datei ist zu groß.</string>
+    <string name="data_restore_error_already_running">Eine Wiederherstellung läuft bereits.</string>
+    <string name="data_restore_error_failed">Wiederherstellen fehlgeschlagen.</string>
+    <string name="data_restore_notification_progress_title">Deine Daten werden wiederhergestellt</string>
+    <string name="data_restore_notification_success_title">Wiederherstellung abgeschlossen</string>
+    <string name="data_restore_notification_failed_title">Wiederherstellen fehlgeschlagen</string>
     <string name="backup_settings_scheduled_title">Geplante Backups</string>
     <string name="backup_settings_enable_scheduled_label">Geplante Backups aktivieren</string>
     <string name="backup_settings_destination_folder_label">Zielordner</string>
@@ -706,9 +727,9 @@
     <string name="mutation_project_deleted_queued">Projekt gelöscht.</string>
     <string name="mutation_project_attachment_deleted_queued">Anhang gelöscht.</string>
     <string name="mutation_project_imported_queued">Projekt „%1$s“ importiert.</string>
-    <string name="mutation_yarn_created_queued">Wolle angelegt.</string>
-    <string name="mutation_yarn_updated_queued">Wolle gespeichert.</string>
-    <string name="mutation_yarn_deleted_queued">Wolle gelöscht.</string>
+    <string name="mutation_yarn_created_queued">Garn angelegt.</string>
+    <string name="mutation_yarn_updated_queued">Garn gespeichert.</string>
+    <string name="mutation_yarn_deleted_queued">Garn gelöscht.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Gib die Stricknani-Adresse und den Zugangstoken ein</string>
@@ -1233,7 +1254,7 @@
     <string name="error_forbidden_kicker">403 · Nicht erlaubt</string>
     <string name="error_forbidden_title">Finger weg vom Wollvorrat!</string>
     <string name="error_forbidden_body">Dieser Korb gehört jemand anderem. Du brauchst eine Einladung oder zumindest einen richtig guten Keks.</string>
-    <string name="error_forbidden_quip_1">Gucken ist gratis. Die Wolle anfassen nicht.</string>
+    <string name="error_forbidden_quip_1">Gucken ist gratis. Das Garn anfassen nicht.</string>
     <string name="error_server_kicker">Etwas ist schiefgelaufen</string>
     <string name="error_server_title">Da hat sich was verheddert</string>
     <string name="error_server_body">Bei uns ist etwas schiefgelaufen. Das Wollknäuel ist vom Tisch gerollt und der Server hat sich darin verheddert. Gib ihm einen Moment und versuch es dann noch einmal.</string>

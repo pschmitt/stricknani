@@ -7,8 +7,9 @@ web app offers it on the Backups page, the Android app under Settings >
 Backups. Both download the same file from the server.
 
 The format is versioned because the feature set still changes. This document is
-the contract between the server, which writes the archive, and any reader (a
-future restore, other tools). Restore is not built yet (TODO T129).
+the contract between the server, which writes and restores the archive, and
+any other reader. Restoring adds the archive's content as new items (see
+"Restore").
 
 ## Endpoint
 
@@ -149,13 +150,73 @@ version may add some of them.
   the version.
 - A restore keeps accepting every older version.
 
-## Restore rules (for the future importer)
+## Restore
 
-From `docs/sharing-api.md`, "Backup and export":
+`POST /api/v2/account/import`
 
-- A restore never writes to another account's resource. Every item, shared ones
-  included, is restored as a new copy owned by the restoring user.
-- An archive never recreates a share or grants access. `owner` and `access` in
-  an archive are informational and untrusted.
-- IDs in the archive only link items within the archive; a restore assigns new
-  IDs.
+- Authentication like the export (browser session with the usual CSRF check
+  for cookie mutations, or a Bearer PAT).
+- Body: the archive itself (`Content-Type: application/gzip` or
+  `application/zip`, as downloaded), at most 2 GiB. The server streams it to a
+  temporary file and detects the container from its first bytes, not from the
+  header. The Nix module raises nginx's body limit for this one location
+  (`services.stricknani.nginx.maxRestoreSize`, default `2g`) and turns request
+  buffering off there.
+- One restore per user at a time (`429 rate_limited`), independent of the
+  export slot.
+- Response `200`:
+
+  ```json
+  {
+    "data": {
+      "format_version": 1,
+      "projects": 12,
+      "yarns": 30,
+      "categories_created": 2,
+      "media_files": 84,
+      "media_skipped": 1
+    }
+  }
+  ```
+
+  `media_skipped` counts entries without a file in the archive (`missing`).
+- Errors (v2 envelope): `400 invalid_archive` (not a tar.gz or zip, no
+  `manifest.json` first-level entry, `format` is not `stricknani-export`,
+  malformed JSON, a media entry pointing at a file that is not in the archive or
+  fails the image/file checks), `422 unsupported_format_version` (newer than the
+  server knows; the message says to update the server), `413
+  payload_too_large`. The message never echoes archive contents.
+
+### What a restore does
+
+- Every project and yarn in the archive becomes a new item owned by the
+  restoring user, shared ones and derived yarns included. Nothing that exists is
+  changed, so restoring the same file twice gives every item twice.
+- `owner` and `access` are ignored. No share is created, no other account is
+  touched or named.
+- Categories are matched by name (case-insensitive) with the user's existing
+  ones; missing ones are created. A project's `category` is restored the same
+  way.
+- Restored: all text fields, `tags`, `link`, `link_archive`,
+  `is_ai_enhanced`, `is_favorite` (for the restoring user), `created_at`,
+  steps with their order, title images, step images, attachments, yarn photos
+  (with `position`, `is_primary`, `alt_text`, `original_filename`), and the
+  links between projects and yarns, remapped to the new IDs. Links to items not
+  in the archive are dropped. `updated_at` is the restore time, so every client
+  syncs the new items.
+- Media go through the same checks and processing as an upload (type and size
+  limits, EXIF orientation, thumbnails). `sha256` is verified when present.
+- All or nothing: the items appear in one transaction after every file has been
+  checked and stored; a failure leaves no items and no files behind (files are
+  removed or queued for the media sweeper).
+- History records each restored item as created, like any new item.
+- Only the known paths are read (`manifest.json`, the three JSON files and the
+  `media/` files the JSON names, below the one top-level directory). Anything
+  else is ignored; absolute paths, `..`, links and device entries are refused.
+  Sizes are capped while decompressing, so a small archive cannot expand without
+  bound.
+
+### Format versions
+
+The server accepts every `format_version` up to the one it writes. A future
+version that changes a field keeps a reader for the old one.

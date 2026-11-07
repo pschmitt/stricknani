@@ -29,14 +29,16 @@ msgstr "Hauptnavigation"
 #: src/import_service.rs:704
 #: web/src/lib/features/projects/ProjectLibrary.svelte:214
 #: web/src/lib/features/projects/ProjectLibrary.svelte:225
-#: web/src/routes/+layout.svelte:92
+#: web/src/routes/+layout.svelte:92 web/src/routes/backups/+page.svelte:232
+#: web/src/routes/backups/+page.svelte:248
 msgid "Projects"
 msgstr "Projekte"
 
 #: src/import_service.rs:705 web/src/lib/features/yarns/YarnDetail.svelte:340
 #: web/src/lib/features/yarns/YarnLibrary.svelte:160
 #: web/src/lib/features/yarns/YarnLibrary.svelte:171
-#: web/src/routes/+layout.svelte:93
+#: web/src/routes/+layout.svelte:93 web/src/routes/backups/+page.svelte:234
+#: web/src/routes/backups/+page.svelte:254
 msgid "Yarns"
 msgstr "Garne"
 
@@ -294,6 +296,10 @@ msgstr ""
 "Ein Referenzfoto konnte nicht zum Drucken vorbereitet werden. Bitte "
 "erneut versuchen."
 
+#: web/src/routes/backups/+page.svelte:210
+msgid "A restore is already running."
+msgstr "Eine Wiederherstellung läuft bereits."
+
 #: web/src/lib/features/imports/ImportWorkbench.svelte:91
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:54
 msgid "AI"
@@ -514,6 +520,14 @@ msgstr "{n} Fotos hinzugefügt"
 msgid "Added {n} steps"
 msgstr "{n} Schritte hinzugefügt"
 
+#: web/src/routes/backups/+page.svelte:158
+msgid ""
+"Adds the projects, yarns and photos from a Stricknani download as new "
+"items. Nothing you already have is changed."
+msgstr ""
+"Fügt die Projekte, Garne und Fotos aus einem Stricknani-Download als neue"
+" Einträge hinzu. Bestehendes bleibt unverändert."
+
 #: web/src/lib/features/projects/ProjectTimer.svelte:606
 msgid "Adjust total time"
 msgstr "Gesamtzeit anpassen"
@@ -688,7 +702,7 @@ msgstr "Der Archivdienst hat eine unlesbare Antwort zurückgegeben."
 msgid "Archive this source"
 msgstr "Diese Quelle archivieren"
 
-#: web/src/routes/backups/+page.svelte:59
+#: web/src/routes/backups/+page.svelte:139
 msgid "Archive type"
 msgstr "Archivtyp"
 
@@ -826,8 +840,8 @@ msgstr "Zurück zum Garn"
 msgid "Back to yarns"
 msgstr "Zurück zu den Garnen"
 
-#: web/src/routes/backups/+page.svelte:35
-#: web/src/routes/backups/+page.svelte:41 web/src/routes/more/+page.svelte:61
+#: web/src/routes/backups/+page.svelte:115
+#: web/src/routes/backups/+page.svelte:121 web/src/routes/more/+page.svelte:61
 #: web/src/routes/more/+page.svelte:65
 msgid "Backups"
 msgstr "Backups"
@@ -923,6 +937,7 @@ msgstr "Kann ansehen"
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
 #: web/src/lib/features/yarns/YarnForm.svelte:963
 #: web/src/lib/features/yarns/YarnForm.svelte:1026
+#: web/src/routes/backups/+page.svelte:277
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -1084,6 +1099,10 @@ msgstr "Wähle eine E-Mail-Adresse und ein sicheres Passwort."
 #: web/src/lib/features/account/AccountSettings.svelte:805
 msgid "Choose an image smaller than 25 MiB."
 msgstr "Wähle ein Bild mit weniger als 25 MiB aus."
+
+#: web/src/routes/backups/+page.svelte:180
+msgid "Choose file"
+msgstr "Datei auswählen"
 
 #: web/src/lib/features/account/AccountSettings.svelte:903
 msgid "Choose image"
@@ -1513,7 +1532,7 @@ msgstr "Dieses Garn nicht hinzufügen"
 msgid "Done"
 msgstr "Fertig"
 
-#: web/src/routes/backups/+page.svelte:68
+#: web/src/routes/backups/+page.svelte:144
 msgid "Download"
 msgstr "Herunterladen"
 
@@ -1526,8 +1545,8 @@ msgid "Download for Android"
 msgstr "Für Android herunterladen"
 
 #: web/src/routes/more/+page.svelte:66
-msgid "Download your data"
-msgstr "Deine Daten herunterladen"
+msgid "Download or restore your data"
+msgstr "Deine Daten herunterladen oder wiederherstellen"
 
 #: web/src/lib/features/media/ReorderableMedia.svelte:319
 msgid "Drag a photo or use the arrow keys to change the order."
@@ -1757,6 +1776,12 @@ msgstr ""
 msgid "Everyone"
 msgstr "Alle"
 
+#: web/src/routes/backups/+page.svelte:270
+msgid "Everything in it is added as new items, also if you restored it before."
+msgstr ""
+"Alles darin wird als neue Einträge hinzugefügt, auch wenn du sie schon "
+"einmal wiederhergestellt hast."
+
 #: web/src/routes/delete-account/+page.svelte:85
 msgid ""
 "Everything that is yours goes in one go. It cannot be undone, so there is"
@@ -1897,7 +1922,7 @@ msgstr ""
 "Aus Sicherheitsgründen musst du deine Identität bestätigen, bevor du "
 "ändern kannst, wie du dich anmeldest."
 
-#: web/src/routes/backups/+page.svelte:70
+#: web/src/routes/backups/+page.svelte:146
 msgid "Format version 1"
 msgstr "Formatversion 1"
 
@@ -2550,7 +2575,7 @@ msgstr "Suchst du die Admin-Seite?"
 
 #: web/src/lib/error-copy.ts:70
 msgid "Looking is free. Touching the wool is not."
-msgstr "Gucken ist gratis. Die Garn anfassen nicht."
+msgstr "Gucken ist gratis. Das Garn anfassen nicht."
 
 #: web/src/routes/about/+page.svelte:455
 msgid "Made with wool and love."
@@ -2602,6 +2627,10 @@ msgstr "Meine"
 #: web/src/lib/features/projects/ProjectTimer.svelte:619
 msgid "Minutes"
 msgstr "Minuten"
+
+#: web/src/routes/backups/+page.svelte:239
+msgid "Missing in the file"
+msgstr "Fehlten in der Datei"
 
 #: web/src/lib/features/home/greeting.ts:14
 msgid "Mooorning!"
@@ -3347,6 +3376,10 @@ msgstr "Foto {position} von {total}"
 msgid "Photos"
 msgstr "Fotos"
 
+#: web/src/routes/backups/+page.svelte:236
+msgid "Photos and files"
+msgstr "Fotos und Dateien"
+
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:358
 msgid "Photos to add"
 msgstr "Fotos zum Hinzufügen"
@@ -3581,7 +3614,7 @@ msgstr ""
 "fortgesetzt wird. Durch das Entfernen der App oder das Löschen ihrer App-"
 "Daten wird der lokale Cache gemäß dem Android-Verhalten entfernt."
 
-#: web/src/routes/backups/+page.svelte:51
+#: web/src/routes/backups/+page.svelte:131
 msgid ""
 "Projects, yarns, categories, photos and attachments in one archive "
 "(.tar.gz), including items shared with you."
@@ -3877,9 +3910,30 @@ msgstr "Ressourceninhaber"
 msgid "Resource unavailable"
 msgstr "Ressource nicht verfügbar"
 
-#: web/src/routes/backups/+page.svelte:75
-msgid "Restoring from a download is not available yet."
-msgstr "Das Wiederherstellen aus einem Download gibt es noch nicht."
+#: web/src/routes/backups/+page.svelte:280
+msgid "Restore"
+msgstr "Wiederherstellen"
+
+#: web/src/routes/backups/+page.svelte:212
+msgid "Restore failed."
+msgstr "Wiederherstellen fehlgeschlagen."
+
+#: web/src/routes/backups/+page.svelte:230
+msgid "Restore finished"
+msgstr "Wiederherstellung abgeschlossen"
+
+#: web/src/routes/backups/+page.svelte:155
+msgid "Restore from a file"
+msgstr "Aus einer Datei wiederherstellen"
+
+#: web/src/routes/backups/+page.svelte:264
+msgid "Restore this file?"
+msgstr "Diese Datei wiederherstellen?"
+
+#: web/src/routes/backups/+page.svelte:187
+#: web/src/routes/backups/+page.svelte:188
+msgid "Restoring…"
+msgstr "Wird wiederhergestellt…"
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:581
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:249
@@ -4827,6 +4881,10 @@ msgstr "Die Einstellung für Fehlerberichte konnte nicht gespeichert werden."
 msgid "The favorite could not be updated."
 msgstr "Der Favoritenstatus konnte nicht aktualisiert werden."
 
+#: web/src/routes/backups/+page.svelte:208
+msgid "The file is too large."
+msgstr "Die Datei ist zu groß."
+
 #: web/src/lib/features/media/ReorderableMedia.svelte:315
 msgid ""
 "The first photo is the cover. Drag a photo or use the arrow keys to "
@@ -5249,9 +5307,21 @@ msgstr ""
 "Dieses Dokumentformat wird nicht unterstützt. Verwende eine Webseite, "
 "Text, Markdown, PDF oder ein Bild."
 
+#: web/src/routes/backups/+page.svelte:203
+msgid ""
+"This download is from a newer version of Stricknani. Update the server "
+"first."
+msgstr ""
+"Dieser Download stammt aus einer neueren Stricknani-Version. Bitte zuerst"
+" den Server aktualisieren."
+
 #: web/src/lib/api.ts:306
 msgid "This feature is not enabled for this account."
 msgstr "Diese Funktion ist für dieses Konto nicht aktiviert."
+
+#: web/src/routes/backups/+page.svelte:201
+msgid "This file is not a Stricknani download."
+msgstr "Diese Datei ist kein Stricknani-Download."
 
 #: web/src/lib/api.ts:322
 msgid "This image is not available for text recognition."
@@ -5569,7 +5639,7 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:372
 #: web/src/lib/features/yarns/YarnForm.svelte:623
 #: web/src/lib/features/yarns/YarnLibrary.svelte:215
-#: web/src/routes/+layout.svelte:264
+#: web/src/routes/+layout.svelte:264 web/src/routes/backups/+page.svelte:223
 msgid "Try again"
 msgstr "Erneut versuchen"
 
@@ -6195,7 +6265,7 @@ msgstr ""
 msgid "Your choices and contact"
 msgstr "Deine Wahlmöglichkeiten und Kontakt"
 
-#: web/src/routes/backups/+page.svelte:48
+#: web/src/routes/backups/+page.svelte:128
 msgid "Your data"
 msgstr "Deine Daten"
 
@@ -6776,3 +6846,6 @@ msgstr "{n} weitere"
 
 #~ msgid "Build"
 #~ msgstr "Build"
+
+#~ msgid "Restoring from a download is not available yet."
+#~ msgstr "Das Wiederherstellen aus einem Download gibt es noch nicht."

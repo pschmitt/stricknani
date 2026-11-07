@@ -31,6 +31,7 @@ import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.export.DataExportApi
+import blue.anika.wolle.data.export.DataRestoreApi
 import blue.anika.wolle.data.media.CoilMediaCacheEvictor
 import blue.anika.wolle.data.media.MediaCacheEvictor
 import blue.anika.wolle.data.repository.ApiProjectImporter
@@ -237,6 +238,25 @@ object NetworkModule {
                 .callTimeout(0, TimeUnit.SECONDS)
                 .build()
         return retrofit.newBuilder().client(exportClient).build().create(DataExportApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDataRestoreApi(retrofit: Retrofit, okHttpClient: OkHttpClient): DataRestoreApi {
+        // A large archive uploads slowly and the server answers only after it has processed every
+        // file: no overall time limit, generous silence limits in both directions.
+        val restoreClient =
+            okHttpClient
+                .newBuilder()
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(600, TimeUnit.SECONDS)
+                .callTimeout(0, TimeUnit.SECONDS)
+                .build()
+        return retrofit
+            .newBuilder()
+            .client(restoreClient)
+            .build()
+            .create(DataRestoreApi::class.java)
     }
 
     @Provides

@@ -53,6 +53,12 @@ those values in the protected environment file, not in Nix expressions. Set
 database and media paths through `databaseUrl` and `mediaRoot`, not
 `extraConfig`, so the server and backup job use the same paths.
 
+`nginx.maxRestoreSize` (default `"2g"`) is the largest request body nginx accepts
+on `= /api/v2/account/import`, the data export restore (see `docs/data-export.md`).
+That location gets its own `client_max_body_size`, switches request buffering off
+so the archive streams to the server, and allows 600 s for a slow upload. The
+server caps a restore at 2 GiB itself; raise or lower the option to match.
+
 The system CLI command remains `stricknani-cli`. In Rust mode it forwards its
 arguments to `stricknani-server` while running as the service account and
 providing the Rust database and media settings. Rust commands include
