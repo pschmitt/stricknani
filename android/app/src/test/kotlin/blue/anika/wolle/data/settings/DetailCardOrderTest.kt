@@ -11,12 +11,12 @@ class DetailCardOrderTest {
             listOf(
                 ProjectDetailCard.NOTES,
                 ProjectDetailCard.ATTACHMENTS,
-                ProjectDetailCard.SOURCE,
                 ProjectDetailCard.DETAILS,
                 ProjectDetailCard.STITCH_SAMPLE,
                 ProjectDetailCard.LINKED_YARNS,
                 ProjectDetailCard.DESCRIPTION,
                 ProjectDetailCard.STEPS,
+                ProjectDetailCard.SOURCE,
             ),
             DetailCardOrder.sanitize(
                 DetailCardDomain.PROJECT,
@@ -34,7 +34,6 @@ class DetailCardOrderTest {
     fun `visible order changes do not disturb optional cards that are absent`() {
         assertEquals(
             listOf(
-                ProjectDetailCard.SOURCE,
                 ProjectDetailCard.STEPS,
                 ProjectDetailCard.ATTACHMENTS,
                 ProjectDetailCard.DETAILS,
@@ -42,6 +41,7 @@ class DetailCardOrderTest {
                 ProjectDetailCard.LINKED_YARNS,
                 ProjectDetailCard.DESCRIPTION,
                 ProjectDetailCard.NOTES,
+                ProjectDetailCard.SOURCE,
             ),
             DetailCardOrder.withVisibleOrder(
                 DetailCardDomain.PROJECT,

@@ -26,7 +26,8 @@ object ProjectDetailCard {
     const val NOTES = "notes"
 
     val defaultOrder =
-        listOf(SOURCE, ATTACHMENTS, DETAILS, STITCH_SAMPLE, LINKED_YARNS, DESCRIPTION, STEPS, NOTES)
+        // The pattern source sits last, just above the fixed "Recent changes" section.
+        listOf(ATTACHMENTS, DETAILS, STITCH_SAMPLE, LINKED_YARNS, DESCRIPTION, STEPS, NOTES, SOURCE)
 }
 
 /** Stable IDs for the sections on a yarn detail page. */
