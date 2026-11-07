@@ -856,7 +856,12 @@ impl CurrentMedia {
     }
 
     /// Read-only administrator URLs, valid for any owner's resource.
-    fn admin_urls(&self, kind: &str, media_kind: &str, resource_id: i64) -> Option<AuditChangeMedia> {
+    fn admin_urls(
+        &self,
+        kind: &str,
+        media_kind: &str,
+        resource_id: i64,
+    ) -> Option<AuditChangeMedia> {
         Some(AuditChangeMedia {
             url: crate::media::admin_resource_media_url(
                 kind,
@@ -967,7 +972,10 @@ async fn attach_admin_media_thumbnails(
             let parent_id: i64 = row.get("parent_id");
             let media = CurrentMedia::from_row(row);
             if let Some(urls) = media.admin_urls(entity_type, media_kind, parent_id) {
-                by_parent.entry(parent_id).or_default().push((media.label, urls));
+                by_parent
+                    .entry(parent_id)
+                    .or_default()
+                    .push((media.label, urls));
             }
         }
         for (event, labels) in events.iter_mut().zip(wanted) {
