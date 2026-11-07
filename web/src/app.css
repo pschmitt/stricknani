@@ -744,15 +744,14 @@ button:disabled {
 
 /* The release version: small and subdued, bottom right of the desktop rail.
    Phones have no rail and do not show it. */
+/* The app version, small and muted at the right end of the rail's About link. */
 .app-version {
-  margin: 0.5rem 0 0;
+  margin-left: auto;
   color: var(--ink-muted);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   opacity: 0.8;
-  text-align: right;
-  user-select: text;
 }
 
 .shell-back-button {

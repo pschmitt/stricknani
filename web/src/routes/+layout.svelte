@@ -359,11 +359,9 @@
         >
           <span class="nav-icon" data-tone="info"><NavIcon name="info" /></span>
           <span>{t("About", locale)}</span>
+          <span class="app-version">{appVersion}</span>
         </a>
       </nav>
-      <p class="app-version">
-        {appVersion}
-      </p>
     </aside>
 
     <div class="content-column">

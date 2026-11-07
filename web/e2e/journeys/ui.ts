@@ -1142,16 +1142,19 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
       );
     }
     if (width === 1280) {
-      const version = page.locator(".desktop-rail .app-version");
+      const about = page.locator('.desktop-rail a[href$="/about"]');
+      const version = about.locator(".app-version");
       await version.waitFor();
       const box = await version.boundingBox();
-      const rail = await page.locator(".desktop-rail").boundingBox();
+      const link = await about.boundingBox();
       check(
         box !== null &&
-          rail !== null &&
-          box.x + box.width > rail.x + rail.width - 40 &&
-          box.y + box.height > rail.y + rail.height - 40,
-        "the rail version is not in the bottom right corner at 1280px",
+          link !== null &&
+          box.x > link.x + link.width / 2 &&
+          box.x + box.width <= link.x + link.width + 1 &&
+          box.y >= link.y - 1 &&
+          box.y + box.height <= link.y + link.height + 1,
+        "the version is not at the right end of the rail's About link at 1280px",
       );
     }
     if (width === 768) {
