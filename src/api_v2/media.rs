@@ -45,6 +45,14 @@ pub(super) fn router() -> Router<ApiV2State> {
         .route("/yarns/{yarn_id}/photos", post(upload_yarn_photo))
         .route("/yarns/{yarn_id}/photos/order", put(reorder_yarn_photos))
         .route(
+            "/projects/{project_id}/images/{image_id}/edit",
+            post(edit_project_image),
+        )
+        .route(
+            "/yarns/{yarn_id}/photos/{photo_id}/edit",
+            post(edit_yarn_photo),
+        )
+        .route(
             "/yarns/{yarn_id}/photos/{photo_id}",
             axum::routing::delete(delete_yarn_photo),
         )
@@ -212,6 +220,7 @@ fn media_error(error: MediaOperationError) -> Response {
             "invalid_multipart",
             "Multipart upload is invalid",
         ),
+        MediaOperationError::Upload(UploadError::InvalidEdit) => invalid_edit(),
         MediaOperationError::Database => super::api_error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal_error",
@@ -348,6 +357,73 @@ async fn upload_yarn_photo(
     .await
     {
         Ok(data) => (StatusCode::CREATED, Json(Envelope { data })).into_response(),
+        Err(error) => media_error(error),
+    }
+}
+
+fn invalid_edit() -> Response {
+    super::api_error(
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "invalid_edit",
+        "Rotate by 0, 90, 180 or 270 degrees and crop inside the image",
+    )
+}
+
+/// `POST /projects/{id}/images/{image_id}/edit` with `{"rotate": 90, "crop": {x, y, width,
+/// height}}` (crop optional, in fractions of the rotated image): rotate and crop in place.
+async fn edit_project_image(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path((project_id, image_id)): Path<(i64, i64)>,
+    payload: Result<Json<media::ImageEdit>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Ok(Json(edit)) = payload else {
+        return invalid_edit();
+    };
+    match media::edit_project_image(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        project_id,
+        image_id,
+        edit,
+    )
+    .await
+    {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => media_error(error),
+    }
+}
+
+/// `POST /yarns/{id}/photos/{photo_id}/edit`: the yarn photo variant of [`edit_project_image`].
+async fn edit_yarn_photo(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path((yarn_id, photo_id)): Path<(i64, i64)>,
+    payload: Result<Json<media::ImageEdit>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Ok(Json(edit)) = payload else {
+        return invalid_edit();
+    };
+    match media::edit_yarn_photo(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        yarn_id,
+        photo_id,
+        edit,
+    )
+    .await
+    {
+        Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => media_error(error),
     }
 }

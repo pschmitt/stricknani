@@ -567,6 +567,27 @@ existing v1 routes and wire shapes stay unchanged:
 | `DELETE /projects/{project_id}/attachments/{attachment_id}` | `204`                                               |
 | `DELETE /yarns/{yarn_id}/photos/{photo_id}`                 | `204`                                               |
 
+Uploaded images are decoded with their EXIF orientation applied: thumbnails and
+stored dimensions are upright, and the original file keeps its bytes. The
+`regenerate-thumbnails` server command rewrites older thumbnails and sizes the
+same way.
+
+Project images and yarn photos can be rotated and cropped in place, with the
+same authentication as the uploads (JSON body, not multipart):
+
+| Method and path                                        | Result                    |
+| ------------------------------------------------------ | ------------------------- |
+| `POST /projects/{project_id}/images/{image_id}/edit`   | `200 {data: Image}`       |
+| `POST /yarns/{yarn_id}/photos/{photo_id}/edit`         | `200 {data: YarnPhoto}`   |
+
+The body is `{"rotate": 0|90|180|270, "crop": {"x", "y", "width", "height"}}`:
+a clockwise rotation (default `0`) and an optional crop in fractions (0 to 1)
+of the upright image after the rotation. At least one of them is required and
+the result must be at least 16 by 16 pixels; anything else is `422
+invalid_edit`. The item keeps its id, position, alt text and cover or primary
+flag; a new file replaces the old one, so `url` and `thumbnail_url` change.
+JPEG originals stay JPEG, other formats become PNG.
+
 Each upload requires a multipart field named `file`. Project image uploads may
 also set `alt_text`; other fields are rejected. Upload responses use existing
 v1 DTO field names and numeric public IDs, wrapped in `{ "data": ... }`:

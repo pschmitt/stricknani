@@ -13,10 +13,10 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use chrono::{DateTime, SecondsFormat, Utc};
-use image::{DynamicImage, ImageFormat, ImageReader, Limits};
+use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader, Limits};
 use rand::TryRng;
 use rand::rngs::SysRng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{FromRow, QueryBuilder, Sqlite, SqlitePool, Transaction};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -603,6 +603,10 @@ fn upload_error(error: UploadError) -> Response {
         UploadError::BadMultipart => {
             error_response(StatusCode::BAD_REQUEST, "Invalid multipart upload")
         }
+        UploadError::InvalidEdit => error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Rotate by 0, 90, 180 or 270 degrees and crop inside the image",
+        ),
     }
 }
 
@@ -668,6 +672,8 @@ pub(crate) enum UploadError {
     TooLarge,
     InvalidImage,
     BadMultipart,
+    /// An image edit with an unsupported rotation or a crop outside the image.
+    InvalidEdit,
 }
 
 /// Typed failures returned by shared media mutations before HTTP adapter mapping.
@@ -3541,7 +3547,7 @@ fn decode_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
     limits.max_image_height = Some(MAX_IMAGE_DIMENSION);
     limits.max_alloc = Some(MAX_IMAGE_ALLOCATION);
     reader.limits(limits);
-    let image = reader.decode().map_err(|_| UploadError::InvalidImage)?;
+    let image = decode_oriented(reader)?;
     let width = image.width();
     let height = image.height();
     if width == 0 || height == 0 || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS {
@@ -3559,6 +3565,20 @@ fn decode_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
         content_type,
         extension,
     })
+}
+
+/// Decode and apply the EXIF orientation, so thumbnails, dimensions and edits are upright like the
+/// browser shows the original. The stored original keeps its bytes (and its orientation tag).
+fn decode_oriented(reader: ImageReader<Cursor<&[u8]>>) -> Result<DynamicImage, UploadError> {
+    let mut decoder = reader
+        .into_decoder()
+        .map_err(|_| UploadError::InvalidImage)?;
+    let orientation = decoder
+        .orientation()
+        .unwrap_or(image::metadata::Orientation::NoTransforms);
+    let mut image = DynamicImage::from_decoder(decoder).map_err(|_| UploadError::InvalidImage)?;
+    image.apply_orientation(orientation);
+    Ok(image)
 }
 
 fn image_format_mime(format: ImageFormat) -> (&'static str, &'static str) {
@@ -3850,6 +3870,400 @@ async fn write_staged(
         ErrorKind::AlreadyExists,
         "media filename collision",
     ))
+}
+
+/// A clockwise rotation and an optional crop of a stored project image or yarn photo. The crop is
+/// in fractions (0 to 1) of the upright image after the rotation.
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ImageEdit {
+    #[serde(default)]
+    pub(crate) rotate: u16,
+    #[serde(default)]
+    pub(crate) crop: Option<CropRect>,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct CropRect {
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+}
+
+impl ImageEdit {
+    fn is_valid(&self) -> bool {
+        matches!(self.rotate, 0 | 90 | 180 | 270)
+            && (self.rotate != 0 || self.crop.is_some())
+            && self.crop.is_none_or(|crop| crop.is_valid())
+    }
+}
+
+impl CropRect {
+    const SLACK: f64 = 1e-6;
+
+    fn is_valid(&self) -> bool {
+        [self.x, self.y, self.width, self.height]
+            .iter()
+            .all(|value| value.is_finite())
+            && self.x >= 0.0
+            && self.y >= 0.0
+            && self.width > 0.0
+            && self.height > 0.0
+            && self.x + self.width <= 1.0 + Self::SLACK
+            && self.y + self.height <= 1.0 + Self::SLACK
+    }
+
+    /// The crop in pixels of a `width` x `height` image, at least 1 x 1 and inside it.
+    fn pixels(&self, width: u32, height: u32) -> (u32, u32, u32, u32) {
+        let span = |start: f64, length: f64, size: u32| {
+            let size_f = f64::from(size);
+            let from = (start * size_f).round().clamp(0.0, size_f - 1.0) as u32;
+            let to = ((start + length) * size_f)
+                .round()
+                .clamp(f64::from(from) + 1.0, size_f) as u32;
+            (from, to - from)
+        };
+        let (x, w) = span(self.x, self.width, width);
+        let (y, h) = span(self.y, self.height, height);
+        (x, y, w, h)
+    }
+}
+
+/// Which item an edited image belongs to.
+#[derive(Debug, Clone, Copy)]
+enum EditParent {
+    Project(i64),
+    Yarn(i64),
+}
+
+/// Smallest edge an edited image may have; a crop below it is a mistake, not a photo.
+const MIN_EDITED_EDGE: u32 = 16;
+
+/// Rotate and crop the upright original, re-encoded as JPEG (from JPEG, quality 92) or PNG.
+fn apply_image_edit(bytes: &[u8], edit: ImageEdit) -> Result<PreparedImage, UploadError> {
+    let mut reader = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(|_| UploadError::InvalidImage)?;
+    let format = reader.format().ok_or(UploadError::InvalidImage)?;
+    let mut limits = Limits::default();
+    limits.max_image_width = Some(MAX_IMAGE_DIMENSION);
+    limits.max_image_height = Some(MAX_IMAGE_DIMENSION);
+    limits.max_alloc = Some(MAX_IMAGE_ALLOCATION);
+    reader.limits(limits);
+    let mut image = decode_oriented(reader)?;
+    image = match edit.rotate {
+        90 => image.rotate90(),
+        180 => image.rotate180(),
+        270 => image.rotate270(),
+        _ => image,
+    };
+    if let Some(crop) = edit.crop {
+        let (x, y, width, height) = crop.pixels(image.width(), image.height());
+        image = image.crop_imm(x, y, width, height);
+    }
+    let (width, height) = (image.width(), image.height());
+    if width < MIN_EDITED_EDGE || height < MIN_EDITED_EDGE {
+        return Err(UploadError::InvalidEdit);
+    }
+    let mut output = Cursor::new(Vec::new());
+    let (content_type, extension) = if format == ImageFormat::Jpeg {
+        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, 92)
+            .encode_image(&DynamicImage::ImageRgb8(image.to_rgb8()))
+            .map_err(|_| UploadError::InvalidImage)?;
+        ("image/jpeg", ".jpg")
+    } else {
+        image
+            .write_to(&mut output, ImageFormat::Png)
+            .map_err(|_| UploadError::InvalidImage)?;
+        ("image/png", ".png")
+    };
+    let thumbnail = encode_jpeg(&image.thumbnail(300, 300))?;
+    Ok(PreparedImage {
+        bytes: output.into_inner(),
+        thumbnail,
+        width,
+        height,
+        content_type,
+        extension,
+    })
+}
+
+/// Rotate and crop one stored project image (title or step) or yarn photo in place: a new file
+/// and thumbnail replace the old ones (so their URLs change and caches never show the old
+/// picture), while the item keeps its id, position, alt text and cover/primary flags.
+async fn edit_media_image(
+    state: &AppState,
+    actor_id: i64,
+    surface: crate::resource_access::Surface,
+    parent: EditParent,
+    public_id: i64,
+    edit: ImageEdit,
+) -> Result<MediaRow, MediaOperationError> {
+    if !edit.is_valid() {
+        return Err(MediaOperationError::Upload(UploadError::InvalidEdit));
+    }
+    let (kind, parent_id, subdir, missing) = match parent {
+        EditParent::Project(id) => (
+            crate::resource_access::ResourceKind::Project,
+            id,
+            "projects",
+            "Image not found",
+        ),
+        EditParent::Yarn(id) => (
+            crate::resource_access::ResourceKind::Yarn,
+            id,
+            "yarns",
+            "Photo not found",
+        ),
+    };
+    let user_id = match editable_owner(&state.pool, actor_id, kind, parent_id, surface).await {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return Err(MediaOperationError::NotFound(missing)),
+        Err(EditDenied::Forbidden) => return Err(MediaOperationError::Forbidden),
+        Err(EditDenied::Database) => return Err(MediaOperationError::Database),
+    };
+    let row = match parent {
+        EditParent::Project(project_id) => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT * FROM media_files WHERE public_id = ? AND owner_id = ? \
+                 AND project_id = ? AND kind IN ('title', 'step')",
+            )
+            .bind(public_id)
+            .bind(user_id)
+            .bind(project_id)
+            .fetch_optional(&state.pool)
+            .await
+        }
+        EditParent::Yarn(yarn_id) => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT * FROM media_files WHERE public_id = ? AND owner_id = ? \
+                 AND yarn_id = ? AND kind = 'photo'",
+            )
+            .bind(public_id)
+            .bind(user_id)
+            .bind(yarn_id)
+            .fetch_optional(&state.pool)
+            .await
+        }
+    }
+    .map_err(|_| MediaOperationError::Database)?
+    .ok_or(MediaOperationError::NotFound(missing))?;
+
+    let root = media_root(state).map_err(|_| MediaOperationError::ServiceUnavailable)?;
+    let path = existing_file_path(&root, subdir, parent_id, &row.filename)
+        .await
+        .map_err(|_| MediaOperationError::Database)?
+        .ok_or(MediaOperationError::NotFound(missing))?;
+    let mut original = Vec::new();
+    tokio::fs::File::open(path)
+        .await
+        .map_err(|_| MediaOperationError::NotFound(missing))?
+        .take((MAX_UPLOAD_BYTES + 1) as u64)
+        .read_to_end(&mut original)
+        .await
+        .map_err(|_| MediaOperationError::Database)?;
+    if original.len() > MAX_UPLOAD_BYTES {
+        return Err(MediaOperationError::Upload(UploadError::TooLarge));
+    }
+    let permit = IMAGE_PROCESSING
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|_| MediaOperationError::Database)?;
+    let prepared = tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        apply_image_edit(&original, edit)
+    })
+    .await
+    .map_err(|_| MediaOperationError::Database)?
+    .map_err(MediaOperationError::Upload)?;
+    let files = save_image_files(&root, subdir, parent_id, &prepared)
+        .await
+        .map_err(|_| MediaOperationError::Database)?;
+
+    let mut tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => {
+            cleanup_saved_files(&root, subdir, parent_id, &files).await;
+            return Err(MediaOperationError::Database);
+        }
+    };
+    // Guarded by the old filename: a concurrent edit or delete wins, this one is dropped.
+    let updated = sqlx::query(
+        "UPDATE media_files SET filename = ?, content_type = ?, size_bytes = ?, width = ?, \
+         height = ? WHERE id = ? AND filename = ?",
+    )
+    .bind(&files.filename)
+    .bind(prepared.content_type)
+    .bind(prepared.bytes.len() as i64)
+    .bind(i64::from(prepared.width))
+    .bind(i64::from(prepared.height))
+    .bind(row.id)
+    .bind(&row.filename)
+    .execute(&mut *tx)
+    .await;
+    let bumped = match parent {
+        EditParent::Project(project_id) => bump_project_timestamp(&mut tx, user_id, project_id)
+            .await
+            .map(|_| ()),
+        EditParent::Yarn(yarn_id) => bump_yarn_timestamp(&mut tx, user_id, yarn_id)
+            .await
+            .map(|_| ()),
+    };
+    let (entity, media_kind) = match parent {
+        EditParent::Project(_) => (AuditEntity::Project, crate::audit::MediaKind::Image),
+        EditParent::Yarn(_) => (AuditEntity::Yarn, crate::audit::MediaKind::Photo),
+    };
+    let ok = matches!(updated, Ok(ref result) if result.rows_affected() == 1)
+        && bumped.is_ok()
+        && crate::audit::record_with_media(
+            &mut tx,
+            actor_id,
+            entity,
+            parent_id,
+            AuditAction::Updated,
+            &crate::audit::MediaRef {
+                kind: media_kind,
+                public_id: row.public_id,
+                name: Some(crate::audit::media_label(
+                    Some(&row.original_filename),
+                    &files.filename,
+                    row.public_id,
+                )),
+            },
+        )
+        .await
+        .is_ok();
+    if !ok {
+        let _ = tx.rollback().await;
+        cleanup_saved_files(&root, subdir, parent_id, &files).await;
+        return Err(match updated {
+            Ok(result) if result.rows_affected() == 0 => MediaOperationError::NotFound(missing),
+            _ => MediaOperationError::Database,
+        });
+    }
+    if tx.commit().await.is_err() {
+        cleanup_saved_files(&root, subdir, parent_id, &files).await;
+        return Err(MediaOperationError::Database);
+    }
+    // The row points at the new file now; the old file and thumbnail are unreferenced.
+    let _ = remove_stored_file(&root, subdir, parent_id, &row.filename).await;
+    let _ = remove_stored_thumbnail(&root, subdir, parent_id, &row.filename).await;
+    Ok(MediaRow {
+        filename: files.filename,
+        content_type: prepared.content_type.to_owned(),
+        size_bytes: prepared.bytes.len() as i64,
+        ..row
+    })
+}
+
+/// Rotate and/or crop a project's title or step image; answers like its upload.
+pub(crate) async fn edit_project_image(
+    state: &AppState,
+    actor_id: i64,
+    surface: crate::resource_access::Surface,
+    project_id: i64,
+    image_id: i64,
+    edit: ImageEdit,
+) -> Result<ImageResponse, MediaOperationError> {
+    let parent = EditParent::Project(project_id);
+    edit_media_image(state, actor_id, surface, parent, image_id, edit)
+        .await
+        .map(|row| image_dto(&row))
+}
+
+/// Rotate and/or crop a yarn photo; answers like its upload.
+pub(crate) async fn edit_yarn_photo(
+    state: &AppState,
+    actor_id: i64,
+    surface: crate::resource_access::Surface,
+    yarn_id: i64,
+    photo_id: i64,
+    edit: ImageEdit,
+) -> Result<YarnPhotoResponse, MediaOperationError> {
+    let parent = EditParent::Yarn(yarn_id);
+    edit_media_image(state, actor_id, surface, parent, photo_id, edit)
+        .await
+        .map(|row| yarn_photo_dto(&row))
+}
+
+/// What [`regenerate_thumbnails`] did.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct ThumbnailBackfill {
+    pub updated: usize,
+    pub skipped: usize,
+}
+
+#[derive(Debug, FromRow)]
+struct BackfillRow {
+    id: i64,
+    project_id: Option<i64>,
+    yarn_id: Option<i64>,
+    filename: String,
+}
+
+/// Rewrite the thumbnail and stored dimensions of every project image and yarn photo from its
+/// original, with the EXIF orientation applied (thumbnails made before orientation support could
+/// be sideways). Originals are untouched; unreadable or missing files are skipped.
+pub async fn regenerate_thumbnails(
+    pool: &SqlitePool,
+    root: &Path,
+) -> Result<ThumbnailBackfill, sqlx::Error> {
+    let rows = sqlx::query_as::<_, BackfillRow>(
+        "SELECT id, project_id, yarn_id, filename FROM media_files \
+         WHERE kind IN ('title', 'step', 'photo') ORDER BY id",
+    )
+    .fetch_all(pool)
+    .await?;
+    let mut result = ThumbnailBackfill::default();
+    for row in rows {
+        let (subdir, parent_id) = match (row.project_id, row.yarn_id) {
+            (Some(project_id), _) => ("projects", project_id),
+            (None, Some(yarn_id)) => ("yarns", yarn_id),
+            (None, None) => {
+                result.skipped += 1;
+                continue;
+            }
+        };
+        let Ok(Some(path)) = existing_file_path(root, subdir, parent_id, &row.filename).await
+        else {
+            result.skipped += 1;
+            continue;
+        };
+        let Ok(bytes) = tokio::fs::read(&path).await else {
+            result.skipped += 1;
+            continue;
+        };
+        let Ok(prepared) = process_image(bytes).await else {
+            result.skipped += 1;
+            continue;
+        };
+        let parent_component = parent_id.to_string();
+        let Ok(thumb_dir) =
+            ensure_directory(root, &["thumbnails", subdir, &parent_component]).await
+        else {
+            result.skipped += 1;
+            continue;
+        };
+        let thumb_path = thumb_dir.join(thumbnail_name(&row.filename));
+        if write_staged(&thumb_dir, &thumb_path, &prepared.thumbnail)
+            .await
+            .is_err()
+        {
+            result.skipped += 1;
+            continue;
+        }
+        sqlx::query("UPDATE media_files SET width = ?, height = ? WHERE id = ?")
+            .bind(i64::from(prepared.width))
+            .bind(i64::from(prepared.height))
+            .bind(row.id)
+            .execute(pool)
+            .await?;
+        result.updated += 1;
+    }
+    Ok(result)
 }
 
 async fn cleanup_saved_files(root: &Path, subdir: &str, parent_id: i64, files: &SavedFiles) {

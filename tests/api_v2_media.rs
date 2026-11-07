@@ -1168,3 +1168,360 @@ async fn media_rejections_have_v2_envelopes_and_never_mutate_foreign_or_csrf_den
         .unwrap();
     assert_eq!(media_rows, 0);
 }
+
+/// A `width` x `height` image whose left half is red and right half blue, in `format`.
+fn two_tone(width: u32, height: u32, format: image::ImageFormat) -> Vec<u8> {
+    let image = image::RgbImage::from_fn(width, height, |x, _| {
+        if x < width / 2 {
+            image::Rgb([220, 20, 20])
+        } else {
+            image::Rgb([20, 20, 220])
+        }
+    });
+    let mut output = Cursor::new(Vec::new());
+    image::DynamicImage::ImageRgb8(image)
+        .write_to(&mut output, format)
+        .expect("test image should encode");
+    output.into_inner()
+}
+
+/// A JPEG whose EXIF says "rotate 90 degrees clockwise to display" (orientation 6), the way
+/// phone cameras store portrait photos.
+fn jpeg_with_orientation_6(width: u32, height: u32) -> Vec<u8> {
+    let jpeg = two_tone(width, height, image::ImageFormat::Jpeg);
+    assert_eq!(&jpeg[..2], &[0xFF, 0xD8]);
+    let tiff: [u8; 26] = [
+        0x4D, 0x4D, 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08, // big-endian TIFF, IFD at 8
+        0x00, 0x01, // one entry
+        0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00,
+        0x00, // Orientation=6
+        0x00, 0x00, 0x00, 0x00, // no next IFD
+    ];
+    let mut app1 = vec![0xFF, 0xE1];
+    let length = (2 + 6 + tiff.len()) as u16;
+    app1.extend_from_slice(&length.to_be_bytes());
+    app1.extend_from_slice(b"Exif\0\0");
+    app1.extend_from_slice(&tiff);
+    let mut out = jpeg[..2].to_vec();
+    out.extend_from_slice(&app1);
+    out.extend_from_slice(&jpeg[2..]);
+    out
+}
+
+fn files_below(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut found = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                found.extend(files_below(&path));
+            } else {
+                found.push(path);
+            }
+        }
+    }
+    found
+}
+
+fn edit_request(path: &str, session: &str, csrf: &str, body: serde_json::Value) -> Request<Body> {
+    Request::post(path)
+        .header("host", HOST)
+        .header("origin", ORIGIN)
+        .header("sec-fetch-site", "same-origin")
+        .header("cookie", format!("__Host-stricknani_session={session}"))
+        .header("x-csrf-token", csrf)
+        .header("content-type", "application/json")
+        .body(Body::from(body.to_string()))
+        .unwrap()
+}
+
+async fn stored_size(pool: &SqlitePool, public_id: i64) -> (i64, i64, String) {
+    sqlx::query_as("SELECT width, height, filename FROM media_files WHERE public_id = ?")
+        .bind(public_id)
+        .fetch_one(pool)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn uploads_respect_the_exif_orientation_for_dimensions_and_thumbnails() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    // Stored 80 wide x 40 high, displayed (after orientation 6) 40 wide x 80 high.
+    let jpeg = jpeg_with_orientation_6(80, 40);
+    let response = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/yarns/{}/photos", fixture.yarn_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "portrait.jpg",
+            content_type: "image/jpeg",
+            bytes: &jpeg,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let photo_id = json(response).await["data"]["id"].as_i64().unwrap();
+    let (width, height, _) = stored_size(&fixture.pool, photo_id).await;
+    assert_eq!((width, height), (40, 80), "dimensions are the upright ones");
+
+    let thumbnails = files_below(&fixture._root.path().join("thumbnails"));
+    assert_eq!(thumbnails.len(), 1);
+    let thumbnail = image::open(&thumbnails[0]).expect("thumbnail should decode");
+    assert!(
+        thumbnail.height() > thumbnail.width(),
+        "the thumbnail is upright (portrait): {}x{}",
+        thumbnail.width(),
+        thumbnail.height()
+    );
+}
+
+#[tokio::test]
+async fn image_edits_rotate_and_crop_in_place_and_keep_the_item() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let png = two_tone(64, 32, image::ImageFormat::Png);
+    let upload = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/projects/{}/images/title", fixture.project_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "title.png",
+            content_type: "image/png",
+            bytes: &png,
+            alt_text: Some("Cover"),
+        }))
+        .await
+        .unwrap();
+    assert_eq!(upload.status(), StatusCode::CREATED);
+    let uploaded = json(upload).await["data"].clone();
+    let image_id = uploaded["id"].as_i64().unwrap();
+    let (_, _, old_filename) = stored_size(&fixture.pool, image_id).await;
+    let edit_path = format!("/projects/{}/images/{image_id}/edit", fixture.project_id);
+
+    // Rotate a quarter turn: 64x32 becomes 32x64, same item, new file.
+    let rotated = fixture
+        .app
+        .clone()
+        .oneshot(edit_request(
+            &edit_path,
+            &session,
+            &csrf,
+            serde_json::json!({"rotate": 90}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(rotated.status(), StatusCode::OK);
+    let rotated = json(rotated).await["data"].clone();
+    assert_eq!(rotated["id"], image_id);
+    assert_eq!(rotated["alt_text"], "Cover");
+    assert_eq!(rotated["is_title_image"], true);
+    assert_ne!(rotated["url"], uploaded["url"], "a new URL busts caches");
+    let (width, height, new_filename) = stored_size(&fixture.pool, image_id).await;
+    assert_eq!((width, height), (32, 64));
+    let stored = files_below(fixture._root.path());
+    assert!(
+        stored.iter().all(|path| !path.ends_with(&old_filename)),
+        "the old original is removed"
+    );
+    assert!(stored.iter().any(|path| path.ends_with(&new_filename)));
+
+    // Crop the top half of the rotated image: 32x64 becomes 32x32. Rotating the two-tone image
+    // clockwise puts the red (left) half on top, so the crop is all red.
+    let cropped = fixture
+        .app
+        .clone()
+        .oneshot(edit_request(
+            &edit_path,
+            &session,
+            &csrf,
+            serde_json::json!({"crop": {"x": 0.0, "y": 0.0, "width": 1.0, "height": 0.5}}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(cropped.status(), StatusCode::OK);
+    let (width, height, filename) = stored_size(&fixture.pool, image_id).await;
+    assert_eq!((width, height), (32, 32));
+    let path = files_below(fixture._root.path())
+        .into_iter()
+        .find(|path| path.ends_with(&filename) && !path.to_string_lossy().contains("thumbnails"))
+        .unwrap();
+    let pixel = image::open(path).unwrap().to_rgb8().get_pixel(16, 16).0;
+    assert!(
+        pixel[0] > 150 && pixel[2] < 100,
+        "the crop is the red half: {pixel:?}"
+    );
+
+    // Invalid edits change nothing.
+    for body in [
+        serde_json::json!({"rotate": 45}),
+        serde_json::json!({}),
+        serde_json::json!({"crop": {"x": 0.5, "y": 0.0, "width": 0.8, "height": 1.0}}),
+        serde_json::json!({"crop": {"x": 0.0, "y": 0.0, "width": 0.1, "height": 0.1}}),
+        serde_json::json!({"rotate": 90, "extra": true}),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(edit_request(&edit_path, &session, &csrf, body.clone()))
+            .await
+            .unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "{body}"
+        );
+        assert_eq!(json(response).await["error"]["code"], "invalid_edit");
+    }
+    assert_eq!(stored_size(&fixture.pool, image_id).await.2, filename);
+
+    // Someone else's project: not found, and a yarn photo id is not a project image.
+    let foreign = fixture
+        .app
+        .clone()
+        .oneshot(edit_request(
+            &format!(
+                "/projects/{}/images/{image_id}/edit",
+                fixture.foreign_project_id
+            ),
+            &session,
+            &csrf,
+            serde_json::json!({"rotate": 90}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn yarn_photo_edits_keep_the_primary_photo() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let jpeg = two_tone(64, 48, image::ImageFormat::Jpeg);
+    let upload = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/yarns/{}/photos", fixture.yarn_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "skein.jpg",
+            content_type: "image/jpeg",
+            bytes: &jpeg,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(upload.status(), StatusCode::CREATED);
+    let photo_id = json(upload).await["data"]["id"].as_i64().unwrap();
+    let edited = fixture
+        .app
+        .clone()
+        .oneshot(edit_request(
+            &format!("/yarns/{}/photos/{photo_id}/edit", fixture.yarn_id),
+            &session,
+            &csrf,
+            serde_json::json!({"rotate": 270, "crop": {"x": 0.25, "y": 0.0, "width": 0.5, "height": 1.0}}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(edited.status(), StatusCode::OK);
+    let edited = json(edited).await["data"].clone();
+    assert_eq!(edited["id"], photo_id);
+    assert_eq!(edited["is_primary"], true);
+    // 64x48 rotated is 48x64; half its width is 24.
+    let (width, height, filename) = stored_size(&fixture.pool, photo_id).await;
+    assert_eq!((width, height), (24, 64));
+    assert!(filename.ends_with(".jpg"), "JPEG stays JPEG: {filename}");
+
+    let foreign = fixture
+        .app
+        .clone()
+        .oneshot(edit_request(
+            &format!("/yarns/{}/photos/{photo_id}/edit", fixture.foreign_yarn_id),
+            &session,
+            &csrf,
+            serde_json::json!({"rotate": 90}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn regenerating_thumbnails_turns_old_sideways_ones_upright() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let jpeg = jpeg_with_orientation_6(80, 40);
+    let response = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/projects/{}/images/title", fixture.project_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "portrait.jpg",
+            content_type: "image/jpeg",
+            bytes: &jpeg,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let image_id = json(response).await["data"]["id"].as_i64().unwrap();
+    // What an upload before orientation support left behind: sideways size, no fresh thumbnail.
+    sqlx::query("UPDATE media_files SET width = 80, height = 40 WHERE public_id = ?")
+        .bind(image_id)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    for thumbnail in files_below(&fixture._root.path().join("thumbnails")) {
+        std::fs::remove_file(thumbnail).unwrap();
+    }
+
+    let result =
+        stricknani_server::media::regenerate_thumbnails(&fixture.pool, fixture._root.path())
+            .await
+            .unwrap();
+    assert_eq!(result.updated, 1);
+    assert_eq!(result.skipped, 0);
+    let (width, height, _) = stored_size(&fixture.pool, image_id).await;
+    assert_eq!((width, height), (40, 80));
+    let thumbnails = files_below(&fixture._root.path().join("thumbnails"));
+    assert_eq!(thumbnails.len(), 1);
+    let thumbnail = image::open(&thumbnails[0]).unwrap();
+    assert!(thumbnail.height() > thumbnail.width());
+}

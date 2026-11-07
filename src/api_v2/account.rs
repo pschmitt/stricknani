@@ -647,7 +647,10 @@ fn account_error(error: AccountError) -> Response {
             "payload_too_large",
             "Uploaded image is too large",
         ),
-        AccountError::InvalidAvatar(media::UploadError::InvalidImage) => super::api_error(
+        // An avatar upload never edits; an InvalidEdit cannot occur here.
+        AccountError::InvalidAvatar(
+            media::UploadError::InvalidImage | media::UploadError::InvalidEdit,
+        ) => super::api_error(
             StatusCode::BAD_REQUEST,
             "invalid_image",
             "Uploaded file is not a supported image",
