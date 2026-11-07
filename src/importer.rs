@@ -850,7 +850,9 @@ async fn import_rows(
     .await
     .map_err(|_| ImportError::InvalidMedia { count: 1 })??;
 
-    let mut tx = pool.begin().await.map_err(|_| ImportError::Database)?;
+    let mut tx = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| ImportError::Database)?;
     let mut report = ImportReport {
         users: data.users.len(),
         api_tokens: data.tokens.len(),

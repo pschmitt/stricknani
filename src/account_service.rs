@@ -126,7 +126,9 @@ pub(crate) async fn create_token_with(
 
     // The no-op active-user write obtains SQLite's write lock before quota
     // inspection, so concurrent requests cannot race past the hourly limit.
-    let mut tx = pool.begin().await.map_err(|_| AccountError::Database)?;
+    let mut tx = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AccountError::Database)?;
     let active = sqlx::query("UPDATE users SET id = id WHERE id = ? AND active = 1")
         .bind(user_id)
         .execute(&mut *tx)
@@ -332,7 +334,7 @@ pub(crate) async fn update_password_and_revoke_sessions(
     password_hash: &str,
     expected_password_hash: &str,
 ) -> Result<bool, sqlx::Error> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     let result = sqlx::query(
         "UPDATE users SET password_hash = ? WHERE id = ? AND active = 1 AND password_enabled = 1 AND password_hash = ?",
     )
@@ -369,7 +371,7 @@ pub(crate) async fn save_avatar(
         .map_err(|_| AccountError::Database)?;
     let created_at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, true);
     let result = async {
-        let mut tx = pool.begin().await.map_err(|_| AccountError::Database)?;
+        let mut tx = crate::db::begin_write(pool).await.map_err(|_| AccountError::Database)?;
         sqlx::query(
             "INSERT INTO user_avatars \
              (user_id, filename, original_filename, content_type, width, height, created_at) \
@@ -413,7 +415,9 @@ pub(crate) async fn save_avatar(
 }
 
 pub(crate) async fn delete_avatar(pool: &SqlitePool, user_id: i64) -> Result<(), AccountError> {
-    let mut tx = pool.begin().await.map_err(|_| AccountError::Database)?;
+    let mut tx = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AccountError::Database)?;
     sqlx::query("DELETE FROM user_avatars WHERE user_id = ?")
         .bind(user_id)
         .execute(&mut *tx)
@@ -573,9 +577,7 @@ pub(crate) async fn delete_account(
     confirmation: &str,
 ) -> Result<(), AccountError> {
     let now = chrono::Utc::now().timestamp();
-    let mut tx = state
-        .pool
-        .begin()
+    let mut tx = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| AccountError::Database)?;
     // The no-op write takes SQLite's write lock before the guards run, so two

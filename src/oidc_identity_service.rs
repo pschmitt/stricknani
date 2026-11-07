@@ -101,7 +101,7 @@ pub(crate) async fn issue_native_proof(
     action.ensure_target(actor_user_id, target_user_id)?;
     let (provider_id, identity_id, target_token_id) = action.fields();
 
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     if action.is_admin_operation() {
         require_active_admin_tx(&mut tx, actor_user_id).await?;
         require_active_user_tx(&mut tx, target_user_id).await?;
@@ -238,7 +238,7 @@ pub(crate) async fn validate_recent_auth(
     now: i64,
 ) -> Result<(), OidcIdentityError> {
     action.ensure_target(actor_user_id, target_user_id)?;
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     if action.is_admin_operation() {
         require_active_admin_tx(&mut tx, actor_user_id).await?;
         require_active_user_tx(&mut tx, target_user_id).await?;
@@ -329,7 +329,7 @@ pub(crate) async fn list_identities(
     pool: &SqlitePool,
     user_id: i64,
 ) -> Result<Vec<IdentitySummary>, OidcIdentityError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     require_active_user_tx(&mut tx, user_id).await?;
     let rows = sqlx::query(
         "SELECT id, provider_id, issuer, subject, verified_email, linked_at \
@@ -350,7 +350,7 @@ pub(crate) async fn admin_list_identities(
     actor_user_id: i64,
     target_user_id: i64,
 ) -> Result<Vec<IdentitySummary>, OidcIdentityError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     require_active_admin_tx(&mut tx, actor_user_id).await?;
     require_active_user_tx(&mut tx, target_user_id).await?;
     let rows = sqlx::query(
@@ -388,7 +388,7 @@ pub(crate) async fn link_identity(
     } else {
         None
     };
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     require_active_user_tx(&mut tx, user_id).await?;
     require_recent_auth_tx(
         &mut tx,
@@ -453,7 +453,7 @@ pub(crate) async fn unlink_identity(
     enabled_provider_ids: &[String],
     now: i64,
 ) -> Result<(), OidcIdentityError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     require_active_user_tx(&mut tx, user_id).await?;
     require_recent_auth_tx(
         &mut tx,
@@ -498,7 +498,7 @@ pub(crate) async fn admin_unlink_identity(
     enabled_provider_ids: &[String],
     now: i64,
 ) -> Result<(), OidcIdentityError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     require_active_admin_tx(&mut tx, actor_user_id).await?;
     require_active_user_tx(&mut tx, target_user_id).await?;
     require_recent_auth_tx(
@@ -582,7 +582,7 @@ pub(crate) async fn mint_login_token(
     {
         return Err(OidcIdentityError::InvalidTokenExpiry);
     }
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     let binding = sqlx::query(
         "UPDATE oidc_identities SET id = id WHERE issuer = ? COLLATE BINARY \
          AND subject = ? COLLATE BINARY \
@@ -696,7 +696,7 @@ pub(crate) async fn stamp_browser_reauth(
     browser_token_id: i64,
     now: i64,
 ) -> Result<(), OidcIdentityError> {
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     require_active_user_tx(&mut tx, user_id).await?;
     let result = sqlx::query(
         "UPDATE api_tokens SET reauth_at = ? WHERE id = ? AND user_id = ? \
@@ -1674,12 +1674,12 @@ mod tests {
         validate_recent_auth(&pool, recent_auth, user_id, user_id, action, now)
             .await
             .unwrap();
-        let mut tx = pool.begin().await.unwrap();
+        let mut tx = crate::db::begin_write(&pool).await.unwrap();
         consume_recent_auth_tx(&mut tx, recent_auth, user_id, user_id, action, now)
             .await
             .unwrap();
         tx.commit().await.unwrap();
-        let mut tx = pool.begin().await.unwrap();
+        let mut tx = crate::db::begin_write(&pool).await.unwrap();
         let replay = consume_recent_auth_tx(&mut tx, recent_auth, user_id, user_id, action, now)
             .await
             .unwrap_err();

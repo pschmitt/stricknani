@@ -458,7 +458,7 @@ pub(crate) async fn add_share(
             "A resource cannot be shared with its owner or with yourself",
         ));
     }
-    let mut tx = state.pool.begin().await?;
+    let mut tx = crate::db::begin_write(&state.pool).await?;
     if recipient_state(&mut tx, user_id).await? != Some(true) {
         return Err(ShareError::Invalid("Unknown or disabled account"));
     }
@@ -532,7 +532,7 @@ pub(crate) async fn change_share(
     role: Role,
 ) -> Result<ShareEntry, ShareError> {
     require_manager(&state.pool, actor_id, kind, resource_id).await?;
-    let mut tx = state.pool.begin().await?;
+    let mut tx = crate::db::begin_write(&state.pool).await?;
     let current = sqlx::query_scalar::<_, String>(
         "SELECT role FROM resource_shares WHERE kind = ? AND resource_id = ? AND user_id = ?",
     )
@@ -609,7 +609,7 @@ async fn end_share(
     user_id: i64,
     action: Action,
 ) -> Result<(), ShareError> {
-    let mut tx = state.pool.begin().await?;
+    let mut tx = crate::db::begin_write(&state.pool).await?;
     let role = sqlx::query_scalar::<_, String>(
         "SELECT role FROM resource_shares WHERE kind = ? AND resource_id = ? AND user_id = ?",
     )
@@ -757,7 +757,7 @@ pub(crate) async fn transfer(
     if move_linked_yarns && kind == ResourceKind::Yarn {
         return Err(ShareError::Invalid("Only projects have linked yarns"));
     }
-    let mut tx = state.pool.begin().await?;
+    let mut tx = crate::db::begin_write(&state.pool).await?;
     if recipient_state(&mut tx, new_owner_id).await? != Some(true) {
         return Err(ShareError::Invalid("Unknown or disabled account"));
     }

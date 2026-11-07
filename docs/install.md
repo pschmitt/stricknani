@@ -27,7 +27,8 @@ docker run -d \
 
 This example binds to loopback for local HTTP use. The container stores its
 SQLite database and uploads under `/var/lib/stricknani`; keep that volume
-across restarts. Check `http://localhost:7674/healthz`, then create the first
+across restarts (the database runs in WAL mode: back it up with `sqlite3 .backup`,
+not by copying the file alone). Check `http://localhost:7674/healthz`, then create the first
 administrator with a password from standard input:
 
 ```sh

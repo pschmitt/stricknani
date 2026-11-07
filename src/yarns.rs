@@ -437,7 +437,9 @@ pub(crate) async fn create_for_owner(
             Vec::new()
         };
     let now = timestamp(Utc::now());
-    let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
+    let mut tx = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| YarnError::Database)?;
     let result = sqlx::query(
         "INSERT INTO yarns (owner_id, name, description, brand, colorway, dye_lot, \
          fiber_content, weight_category, recommended_needles, weight_grams, length_meters, \
@@ -552,7 +554,9 @@ pub(crate) async fn update_for_owner(
         None => None,
     };
 
-    let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
+    let mut tx = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| YarnError::Database)?;
     let current = match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
         Ok(Some(yarn)) => yarn,
         Ok(None) => return Err(YarnError::NotFound),
@@ -698,7 +702,9 @@ pub(crate) async fn delete_for_owner(
     )
     .await?
     .owner_id;
-    let mut tx = state.pool.begin().await.map_err(|_| YarnError::Database)?;
+    let mut tx = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| YarnError::Database)?;
     let old_name = match get_owned_yarn_in(&mut tx, user_id, yarn_id).await {
         Ok(Some(yarn)) => yarn.name,
         Ok(None) => {

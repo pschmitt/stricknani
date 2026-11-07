@@ -30,6 +30,14 @@ this backend. Rust SQLite URLs may use either `sqlite:/absolute/path` or
 `sqlite:///absolute/path`; scheduled backups normalize both forms before
 calling `sqlite3`.
 
+File-backed databases run in WAL mode behind a pool of four connections, so
+reads do not wait for writes; the first start of this version converts an
+existing rollback-journal database to WAL (the setting persists in the file).
+The live database is then the main file plus `-wal` and `-shm` sidecars: back
+it up only with `sqlite3 .backup` (as the module does) or `VACUUM INTO`, never
+by copying the main file alone. Write transactions use `BEGIN IMMEDIATE`; see
+the module docs of `src/db.rs`.
+
 `registration.enable` (default `false`) sets `SIGNUP_ENABLED`: when `true`,
 anyone who can reach the instance can create a member account on the web or in
 the Android app. Leave it off for a private instance.

@@ -112,7 +112,9 @@ pub async fn enqueue(
     kind: ArchiveEntityKind,
     entity_id: i64,
 ) -> Result<Option<EnqueuedArchiveJob>, ArchiveJobError> {
-    let mut transaction = pool.begin().await.map_err(ArchiveJobError::Database)?;
+    let mut transaction = crate::db::begin_write(pool)
+        .await
+        .map_err(ArchiveJobError::Database)?;
     let enqueued = enqueue_in_transaction(&mut transaction, owner_id, kind, entity_id).await?;
     transaction
         .commit()
@@ -422,7 +424,9 @@ async fn persist_success(
     kind: ArchiveEntityKind,
     snapshot_url: &url::Url,
 ) -> Result<Completion, ArchiveJobError> {
-    let mut transaction = pool.begin().await.map_err(ArchiveJobError::Database)?;
+    let mut transaction = crate::db::begin_write(pool)
+        .await
+        .map_err(ArchiveJobError::Database)?;
     let claimed = sqlx::query(
         "UPDATE archive_jobs SET state = 'archived', save_accepted = 1, \
                 lease_until = NULL, last_error = NULL, updated_at = unixepoch() \
@@ -494,7 +498,9 @@ async fn schedule_pending(
     kind: ArchiveEntityKind,
 ) -> Result<Completion, ArchiveJobError> {
     let terminal = job.attempt_count as u32 >= MAX_PENDING_ATTEMPTS;
-    let mut transaction = pool.begin().await.map_err(ArchiveJobError::Database)?;
+    let mut transaction = crate::db::begin_write(pool)
+        .await
+        .map_err(ArchiveJobError::Database)?;
     let updated = sqlx::query(
         "UPDATE archive_jobs SET state = ?, save_accepted = 1, \
                 next_attempt_at = unixepoch() + ?, lease_until = NULL, \
@@ -558,7 +564,9 @@ async fn persist_failure(
     error: WaybackError,
 ) -> Result<Completion, ArchiveJobError> {
     let terminal = !is_retryable(error) || job.attempt_count as u32 >= MAX_FAILURE_ATTEMPTS;
-    let mut transaction = pool.begin().await.map_err(ArchiveJobError::Database)?;
+    let mut transaction = crate::db::begin_write(pool)
+        .await
+        .map_err(ArchiveJobError::Database)?;
     let updated = sqlx::query(
         "UPDATE archive_jobs SET state = ?, save_accepted = ?, \
                 next_attempt_at = unixepoch() + ?, lease_until = NULL, \

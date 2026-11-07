@@ -157,7 +157,9 @@ async fn create_user_with_hash(
     is_admin: bool,
     gravatar_enabled: bool,
 ) -> Result<AdminUser, AdminError> {
-    let mut tx = pool.begin().await.map_err(|_| AdminError::Database)?;
+    let mut tx = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AdminError::Database)?;
     require_admin_tx(&mut tx, actor_id).await?;
     let role = if is_admin {
         db::AccountRole::Admin
@@ -184,7 +186,9 @@ pub(crate) async fn set_user_active(
     active: bool,
     gravatar_enabled: bool,
 ) -> Result<AdminUser, AdminError> {
-    let mut tx = pool.begin().await.map_err(|_| AdminError::Database)?;
+    let mut tx = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AdminError::Database)?;
     require_admin_tx(&mut tx, actor_id).await?;
     let target = sqlx::query("SELECT active, is_admin FROM users WHERE id = ?")
         .bind(target_id)
@@ -245,7 +249,9 @@ async fn reset_password_with_hash(
     target_id: i64,
     password_hash: &str,
 ) -> Result<(), AdminError> {
-    let mut tx = pool.begin().await.map_err(|_| AdminError::Database)?;
+    let mut tx = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AdminError::Database)?;
     require_admin_tx(&mut tx, actor_id).await?;
     let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)")
         .bind(target_id)

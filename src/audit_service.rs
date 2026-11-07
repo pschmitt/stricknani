@@ -400,7 +400,9 @@ pub(crate) async fn list_resource_events(
     if page == 0 || page > MAX_PAGE || !matches!(entity, AuditEntity::Project | AuditEntity::Yarn) {
         return Err(AuditError::InvalidQuery);
     }
-    let mut transaction = pool.begin().await.map_err(|_| AuditError::Database)?;
+    let mut transaction = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AuditError::Database)?;
     if !resource_belongs_to(&mut transaction, owner_id, entity, resource_id).await? {
         return Ok(None);
     }
@@ -492,7 +494,9 @@ pub(crate) async fn get_resource_event_detail(
     if !matches!(entity, AuditEntity::Project | AuditEntity::Yarn) {
         return Err(AuditError::InvalidQuery);
     }
-    let mut transaction = pool.begin().await.map_err(|_| AuditError::Database)?;
+    let mut transaction = crate::db::begin_write(pool)
+        .await
+        .map_err(|_| AuditError::Database)?;
     if !resource_belongs_to(&mut transaction, owner_id, entity, resource_id).await? {
         return Ok(None);
     }

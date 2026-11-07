@@ -21,7 +21,7 @@ pub async fn reconcile(
     enabled_provider_ids: &[String],
 ) -> Result<(), ConfigurationError> {
     let enabled: HashSet<&str> = enabled_provider_ids.iter().map(String::as_str).collect();
-    let mut tx = pool.begin().await?;
+    let mut tx = crate::db::begin_write(pool).await?;
     sqlx::query("UPDATE users SET id = id WHERE active = 1 AND password_enabled = 0")
         .execute(&mut *tx)
         .await?;

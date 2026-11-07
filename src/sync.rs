@@ -10,7 +10,7 @@ use base64::engine::general_purpose::{URL_SAFE, URL_SAFE_NO_PAD};
 use chrono::{DateTime, SecondsFormat, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use sqlx::{Connection, QueryBuilder, Sqlite, SqlitePool};
+use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 
 use crate::auth::bearer_user;
 use crate::db::AppState;
@@ -370,8 +370,7 @@ pub(crate) async fn sync_category_page(
 async fn category_sync_watermark(state: &AppState, user_id: i64) -> Result<String, SyncPageError> {
     // Acquire the SQLite writer lock before reading/updating the per-owner
     // clock. This prevents a deferred read-to-write lock upgrade race.
-    let mut connection = state.pool.acquire().await?;
-    let mut transaction = connection.begin_with("BEGIN IMMEDIATE").await?;
+    let mut transaction = crate::db::begin_write(&state.pool).await?;
     sqlx::query(
         "INSERT INTO category_sync_clock(owner_id, changed_at) \
          VALUES (?, strftime('%Y-%m-%dT%H:%M:%f', 'now') || '000Z') \

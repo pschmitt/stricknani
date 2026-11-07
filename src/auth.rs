@@ -488,7 +488,7 @@ async fn persist_verified_token(
     account: VerifiedAccount,
     token: TokenToPersist<'_>,
 ) -> Result<bool, sqlx::Error> {
-    let mut transaction = pool.begin().await?;
+    let mut transaction = crate::db::begin_write(pool).await?;
     let current = sqlx::query(
         "UPDATE users SET password_hash = coalesce(?, password_hash) \
          WHERE id = ? AND active = 1 AND password_enabled = 1 AND password_hash = ?",

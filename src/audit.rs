@@ -722,7 +722,9 @@ mod tests {
         .await
         .expect("test actor should be inserted");
 
-        let mut tx = pool.begin().await.expect("transaction should begin");
+        let mut tx = crate::db::begin_write(&pool)
+            .await
+            .expect("transaction should begin");
         record(&mut tx, actor_id, Entity::Project, 17, Action::Created)
             .await
             .expect("event should be inserted in transaction");
@@ -733,7 +735,9 @@ mod tests {
             .expect("audit count should be readable");
         assert_eq!(count, 0);
 
-        let mut tx = pool.begin().await.expect("transaction should begin");
+        let mut tx = crate::db::begin_write(&pool)
+            .await
+            .expect("transaction should begin");
         record(&mut tx, actor_id, Entity::Project, 17, Action::Created)
             .await
             .expect("event should be inserted in transaction");
@@ -774,7 +778,9 @@ mod tests {
         ])
         .unwrap();
 
-        let mut tx = pool.begin().await.expect("transaction should begin");
+        let mut tx = crate::db::begin_write(&pool)
+            .await
+            .expect("transaction should begin");
         record_with_data(
             &mut tx,
             actor_id,
@@ -793,7 +799,9 @@ mod tests {
             .unwrap();
         assert_eq!(rolled_back, 0);
 
-        let mut tx = pool.begin().await.expect("transaction should begin");
+        let mut tx = crate::db::begin_write(&pool)
+            .await
+            .expect("transaction should begin");
         record_with_data(
             &mut tx,
             actor_id,
@@ -887,7 +895,9 @@ mod tests {
             .unwrap(),
         ])
         .unwrap();
-        let mut tx = pool.begin().await.expect("transaction should begin");
+        let mut tx = crate::db::begin_write(&pool)
+            .await
+            .expect("transaction should begin");
         record_with_data(
             &mut tx,
             actor_id,
@@ -938,7 +948,9 @@ mod tests {
             .unwrap(),
         ])
         .unwrap();
-        let mut tx = pool.begin().await.expect("transaction should begin");
+        let mut tx = crate::db::begin_write(&pool)
+            .await
+            .expect("transaction should begin");
         record_with_data(
             &mut tx,
             actor_id,

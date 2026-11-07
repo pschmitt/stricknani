@@ -791,9 +791,7 @@ async fn reorder_media(
         Err(EditDenied::Forbidden) => return Err(MediaOrderError::Forbidden),
         Err(EditDenied::Database) => return Err(MediaOrderError::Database),
     };
-    let mut tx = state
-        .pool
-        .begin()
+    let mut tx = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| MediaOrderError::Database)?;
     lock_media_parent(&mut tx, user_id, group).await?;
@@ -1322,7 +1320,7 @@ pub(crate) async fn upload_project_image(
         Err(_) => return Err(MediaOperationError::Database),
     };
 
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "projects", project_id, &files).await;
@@ -1516,7 +1514,7 @@ pub(crate) async fn persist_imported_project_image(
     let files = save_image_files(&root, "projects", project_id, prepared)
         .await
         .map_err(|_| ProjectImageStoreError::Database)?;
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "projects", project_id, &files).await;
@@ -1628,7 +1626,7 @@ pub(crate) async fn persist_imported_yarn_photo(
     let files = save_image_files(&root, "yarns", yarn_id, prepared)
         .await
         .map_err(|_| ProjectImageStoreError::Database)?;
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
@@ -1828,7 +1826,7 @@ async fn store_project_attachment(
         Ok(files) => files,
         Err(_) => return Err(MediaOperationError::Database),
     };
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "projects", project_id, &files).await;
@@ -2008,7 +2006,7 @@ pub(crate) async fn upload_yarn_photo_for_owner(
         Ok(files) => files,
         Err(_) => return Err(MediaOperationError::Database),
     };
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, "yarns", yarn_id, &files).await;
@@ -2238,7 +2236,7 @@ pub(crate) async fn delete_project_media(
         Err(EditDenied::Forbidden) => return Err(MediaOperationError::Forbidden),
         Err(EditDenied::Database) => return Err(MediaOperationError::Database),
     };
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => return Err(MediaOperationError::Database),
     };
@@ -2385,7 +2383,7 @@ pub(crate) async fn delete_yarn_photo_for_owner(
         Err(EditDenied::Forbidden) => return Err(MediaOperationError::Forbidden),
         Err(EditDenied::Database) => return Err(MediaOperationError::Database),
     };
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => return Err(MediaOperationError::Database),
     };
@@ -4083,7 +4081,7 @@ async fn edit_media_image(
         .await
         .map_err(|_| MediaOperationError::Database)?;
 
-    let mut tx = match state.pool.begin().await {
+    let mut tx = match crate::db::begin_write(&state.pool).await {
         Ok(tx) => tx,
         Err(_) => {
             cleanup_saved_files(&root, subdir, parent_id, &files).await;

@@ -174,9 +174,7 @@ pub(crate) async fn create_for_owner(
 
     // Keep the audit event atomic with the insert. A duplicate replay remains
     // idempotent and must not create another event.
-    let mut tx = state
-        .pool
-        .begin()
+    let mut tx = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| CategoryError::Database)?;
     let insert =
@@ -271,9 +269,7 @@ pub(crate) async fn update_for_owner(
         Err(_) => return Err(CategoryError::Database),
     }
 
-    let mut tx = state
-        .pool
-        .begin()
+    let mut tx = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| CategoryError::Database)?;
     let old_name =
@@ -356,9 +352,7 @@ pub(crate) async fn delete_for_owner(
     user_id: i64,
     category_id: i64,
 ) -> Result<(), CategoryError> {
-    let mut tx = state
-        .pool
-        .begin()
+    let mut tx = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| CategoryError::Database)?;
     let old_name =

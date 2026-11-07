@@ -1,7 +1,28 @@
 //! Rust-owned SQLite storage. Never open the Python application's live database.
+//!
+//! # Concurrency model
+//!
+//! File-backed databases run in WAL mode (`synchronous = NORMAL`) behind a
+//! small connection pool, so readers never wait for a writer. SQLite still
+//! allows a single writer at a time: every write transaction must be started
+//! with [`begin_write`] (`BEGIN IMMEDIATE`), which takes the write lock up
+//! front and waits for it under the busy timeout. A deferred transaction that
+//! reads first and then writes can instead fail at once with `SQLITE_BUSY`
+//! when another connection committed in between, because the busy handler is
+//! not consulted for a read-to-write lock upgrade. Single-statement writes
+//! outside a transaction are fine; they wait under the busy timeout.
+//!
+//! In-memory databases (`sqlite::memory:`) give every connection its own empty
+//! database, so they keep exactly one connection and no WAL.
+//!
+//! `PRAGMA journal_mode = WAL` persists in the database file: an existing
+//! rollback-journal database switches on its first open by this version.
+//! With WAL the live database consists of the main file plus `-wal` and
+//! `-shm`, so backups must use `sqlite3 .backup` (or `VACUUM INTO`), never a
+//! raw copy of the main file.
 use sqlx::{
-    Executor, SqlitePool,
-    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    Executor, Sqlite, SqlitePool, Transaction,
+    sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
 };
 use std::{str::FromStr, sync::Arc, time::Duration};
 
@@ -144,24 +165,88 @@ pub async fn connect(url: &str) -> Result<SqlitePool, DatabaseError> {
         return Err(DatabaseError::InvalidUrl);
     }
     let options = SqliteConnectOptions::from_str(url).map_err(|_| DatabaseError::InvalidUrl)?;
-    connect_options(options).await
+    connect_options(options, url_is_in_memory(url)).await
 }
 
+/// Open a database that is later published as a single file (the snapshot
+/// importer's staging database): one connection, rollback journal, so no
+/// `-wal` sidecar can be left behind. The server enables WAL on first open.
 pub(crate) async fn connect_file(path: &std::path::Path) -> Result<SqlitePool, DatabaseError> {
-    connect_options(SqliteConnectOptions::new().filename(path)).await
-}
-
-async fn connect_options(options: SqliteConnectOptions) -> Result<SqlitePool, DatabaseError> {
-    let options = options
+    let options = SqliteConnectOptions::new()
+        .filename(path)
         .create_if_missing(true)
         .foreign_keys(true)
-        .busy_timeout(Duration::from_secs(5));
-    // A single connection also makes disposable in-memory databases reliable.
+        .busy_timeout(BUSY_TIMEOUT);
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect_with(options)
         .await
         .map_err(DatabaseError::Connect)?;
+    prepare(pool).await
+}
+
+const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_CONNECTIONS: u32 = 4;
+
+/// Start a write transaction with `BEGIN IMMEDIATE`.
+///
+/// Use it for every transaction that writes, even if it reads first: it takes
+/// the SQLite write lock up front, so concurrent writers queue under the busy
+/// timeout instead of failing with `SQLITE_BUSY` on a lock upgrade.
+pub async fn begin_write(pool: &SqlitePool) -> Result<Transaction<'static, Sqlite>, sqlx::Error> {
+    pool.begin_with("BEGIN IMMEDIATE").await
+}
+
+/// Whether a database URL names a private, per-connection database:
+/// `sqlite::memory:`, `sqlite://:memory:`, or any `mode=memory` URI. sqlx
+/// rewrites `:memory:` into a shared-cache `file:sqlx-in-memory-N` name and
+/// consumes the `mode=memory` query, so the URL is checked before parsing.
+fn url_is_in_memory(url: &str) -> bool {
+    url.contains(":memory:") || url.contains("mode=memory")
+}
+
+/// The same check on already parsed options, for the rewritten name and an
+/// empty (temporary) filename.
+fn options_are_in_memory(options: &SqliteConnectOptions) -> bool {
+    let name = options.get_filename().to_string_lossy();
+    name.is_empty()
+        || name.contains(":memory:")
+        || name.contains("mode=memory")
+        || name.starts_with("file:sqlx-in-memory-")
+}
+
+async fn connect_options(
+    options: SqliteConnectOptions,
+    in_memory_url: bool,
+) -> Result<SqlitePool, DatabaseError> {
+    let in_memory = in_memory_url || options_are_in_memory(&options);
+    let options = options
+        .create_if_missing(true)
+        .foreign_keys(true)
+        .busy_timeout(BUSY_TIMEOUT);
+    let (pool_options, options) = if in_memory {
+        // Every in-memory connection would get its own empty database.
+        (SqlitePoolOptions::new().max_connections(1), options)
+    } else {
+        (
+            SqlitePoolOptions::new()
+                .max_connections(MAX_CONNECTIONS)
+                .min_connections(1)
+                .idle_timeout(Some(Duration::from_secs(600))),
+            options
+                .journal_mode(SqliteJournalMode::Wal)
+                .synchronous(SqliteSynchronous::Normal),
+        )
+    };
+    let pool = pool_options
+        .connect_with(options)
+        .await
+        .map_err(DatabaseError::Connect)?;
+    prepare(pool).await
+}
+
+/// Check ownership of the database and run the migrations.
+async fn prepare(pool: SqlitePool) -> Result<SqlitePool, DatabaseError> {
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
     )

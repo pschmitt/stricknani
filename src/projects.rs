@@ -563,9 +563,7 @@ async fn create_project_with_yarn_ids(
             (Vec::new(), Vec::new())
         };
     let name = payload.name.trim().to_owned();
-    let mut transaction = state
-        .pool
-        .begin()
+    let mut transaction = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| ProjectError::Database)?;
     let yarn_ids = owned_yarn_ids(&mut transaction, user_id, 0, &payload.yarn_ids)
@@ -743,9 +741,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     let current_step_ids = project_step_ids(state, project_id)
         .await
         .map_err(|_| ProjectError::Database)?;
-    let mut transaction = state
-        .pool
-        .begin()
+    let mut transaction = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| ProjectError::Database)?;
     let old_yarn_ids = linked_yarn_ids(&mut transaction, project_id)
@@ -940,9 +936,7 @@ pub(crate) async fn delete_for_owner(
     )
     .await?
     .owner_id;
-    let mut transaction = state
-        .pool
-        .begin()
+    let mut transaction = crate::db::begin_write(&state.pool)
         .await
         .map_err(|_| ProjectError::Database)?;
     let exists =
