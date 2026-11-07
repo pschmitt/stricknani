@@ -160,6 +160,22 @@ abstract class StricknaniE2eTest {
         candidates[index].performClick()
     }
 
+    /** Edit sits in the detail screen's More menu (SNA-103). */
+    protected fun clickEditFromMenu() {
+        composeRule.waitUntil(30_000) {
+            runCatching {
+                    composeRule
+                        .onAllNodesWithContentDescription("More actions")
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
+                }
+                .getOrDefault(false)
+        }
+        composeRule.onNodeWithContentDescription("More actions").performClick()
+        waitForText("Edit")
+        composeRule.onNodeWithText("Edit").performClick()
+    }
+
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()
         waitForText("Search projects")
@@ -527,13 +543,6 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
                 composeRule.onRoot(useUnmergedTree = true).printToLog(E2E_LOG_TAG)
                 throw it
             }
-    }
-
-    private fun clickEditFromMenu() {
-        waitForContentDescription("More actions")
-        composeRule.onNodeWithContentDescription("More actions").performClick()
-        waitForText("Edit")
-        composeRule.onNodeWithText("Edit").performClick()
     }
 
     private fun waitForContentDescription(description: String, timeoutMillis: Long = 30_000) {
