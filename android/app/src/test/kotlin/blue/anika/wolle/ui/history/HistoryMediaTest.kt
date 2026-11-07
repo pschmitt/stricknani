@@ -145,4 +145,22 @@ class HistoryMediaTest {
         assertTrue(rows.before.isEmpty())
         assertEquals(MediaMark.Added, rows.after.single().mark)
     }
+
+    @Test
+    fun `the viewer swipes through the distinct pictures of a change with a url`() {
+        val item = ChangeItemDto("project.image_order", list("a", "b", "x"), list("b", "c", "a"))
+        val media = thumbs("a", "b", "c") + ("x" to HistoryMediaDto(null, "/t/x"))
+        val rows = mediaChangeRows(item, media)!!
+        assertEquals(listOf("b", "c", "a"), mediaViewerLabels(rows, media))
+    }
+
+    @Test
+    fun `removed pictures follow the after pictures in the viewer`() {
+        val item = ChangeItemDto("project.cover_image", text("a.jpg"), text("b.jpg"))
+        val media = thumbs("a.jpg", "b.jpg")
+        assertEquals(
+            listOf("b.jpg", "a.jpg"),
+            mediaViewerLabels(mediaChangeRows(item, media)!!, media),
+        )
+    }
 }

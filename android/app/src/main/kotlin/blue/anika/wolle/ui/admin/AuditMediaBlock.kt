@@ -2,12 +2,15 @@ package blue.anika.wolle.ui.admin
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -155,4 +159,32 @@ fun AuditMediaBlock(media: AuditMediaDto, modifier: Modifier = Modifier) {
                 )
         }
     }
+}
+
+/**
+ * A small thumbnail of the picture an upload/removal event was about, for list rows. Nothing is
+ * drawn for files, deleted pictures or a url that cannot be resolved, so the row keeps its text.
+ */
+@Composable
+fun AuditMediaThumb(media: AuditMediaDto?, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+    val state = media?.state() as? AuditMediaState.Picture ?: return
+    val viewModel: AuditMediaViewModel = hiltViewModel()
+    val picture = viewModel.resolve(state.thumbnailUrl ?: state.url) ?: return
+    SubcomposeAsyncImage(
+        model = picture,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier =
+            modifier.size(size).clip(MaterialTheme.shapes.small).testTag("audit-media-thumb"),
+        loading = {
+            Box(
+                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            )
+        },
+        error = {
+            Box(
+                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            )
+        },
+    )
 }

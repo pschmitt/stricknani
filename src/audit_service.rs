@@ -165,7 +165,7 @@ pub(crate) struct AuditEvent {
     /// Thumbnails of the pictures this event's change values name, keyed by
     /// the exact label string used in the values (and the event media name).
     /// Resolved at read time against the resource's current media; omitted
-    /// when nothing resolves. Only set on resource history responses.
+    /// when nothing resolves. Set on resource history responses (normal media URLs) and administrator audit responses (read-only administrator media URLs).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) media_thumbnails: Option<BTreeMap<String, AuditChangeMedia>>,
     /// The other account of a share, role change, revoke, leave or transfer.
@@ -325,10 +325,12 @@ pub(crate) async fn list_events(
     .fetch_all(pool)
     .await
     .map_err(|_| AuditError::Database)?;
-    let events = rows
-        .into_iter()
-        .map(|row| make_event(&row, AuditAudience::Administrator, gravatar_enabled))
+    let mut events: Vec<AuditEvent> = rows
+        .iter()
+        .map(|row| make_event(row, AuditAudience::Administrator, gravatar_enabled))
         .collect();
+    let wanted: Vec<Vec<String>> = rows.iter().map(media_thumbnails_labels).collect();
+    attach_admin_media_thumbnails(pool, &mut events, &wanted).await?;
     Ok(AuditPage {
         events,
         page,
@@ -364,7 +366,13 @@ pub(crate) async fn get_event_detail(
     let Some(row) = row else {
         return Ok(None);
     };
-    let event = make_event(&row, AuditAudience::Administrator, gravatar_enabled);
+    let mut events = vec![make_event(
+        &row,
+        AuditAudience::Administrator,
+        gravatar_enabled,
+    )];
+    attach_admin_media_thumbnails(pool, &mut events, &[media_thumbnails_labels(&row)]).await?;
+    let event = events.remove(0);
     let (changes, unavailable_reason) = project_changes(&row);
     Ok(Some(AuditDetail {
         event,
@@ -820,6 +828,54 @@ fn media_thumbnails_labels(row: &sqlx::sqlite::SqliteRow) -> Vec<String> {
     labels
 }
 
+/// A current picture of a resource, before its URLs are chosen.
+struct CurrentMedia {
+    label: String,
+    filename: String,
+    public_id: i64,
+}
+
+impl CurrentMedia {
+    fn from_row(row: &sqlx::sqlite::SqliteRow) -> Self {
+        let filename: String = row.get("filename");
+        let original: String = row.get("original_filename");
+        let public_id: i64 = row.get("public_id");
+        Self {
+            label: crate::audit::media_label(Some(&original), &filename, public_id),
+            filename,
+            public_id,
+        }
+    }
+
+    /// Owner-facing URLs (the normal media routes).
+    fn owner_urls(&self, subdir: &str, resource_id: i64) -> AuditChangeMedia {
+        AuditChangeMedia {
+            url: crate::media::media_url(subdir, resource_id, &self.filename),
+            thumbnail_url: crate::media::thumbnail_url(subdir, resource_id, &self.filename),
+        }
+    }
+
+    /// Read-only administrator URLs, valid for any owner's resource.
+    fn admin_urls(&self, kind: &str, media_kind: &str, resource_id: i64) -> Option<AuditChangeMedia> {
+        Some(AuditChangeMedia {
+            url: crate::media::admin_resource_media_url(
+                kind,
+                resource_id,
+                media_kind,
+                self.public_id,
+                false,
+            )?,
+            thumbnail_url: crate::media::admin_resource_media_url(
+                kind,
+                resource_id,
+                media_kind,
+                self.public_id,
+                true,
+            )?,
+        })
+    }
+}
+
 /// The resource's current pictures as `(label, urls)` in display order:
 /// project title pictures before step pictures, each by position.
 async fn current_media_labels(
@@ -852,17 +908,77 @@ async fn current_media_labels(
     Ok(rows
         .iter()
         .map(|row| {
-            let filename: String = row.get("filename");
-            let original: String = row.get("original_filename");
-            (
-                crate::audit::media_label(Some(&original), &filename, row.get("public_id")),
-                AuditChangeMedia {
-                    url: crate::media::media_url(subdir, resource_id, &filename),
-                    thumbnail_url: crate::media::thumbnail_url(subdir, resource_id, &filename),
-                },
-            )
+            let media = CurrentMedia::from_row(row);
+            let urls = media.owner_urls(subdir, resource_id);
+            (media.label, urls)
         })
         .collect())
+}
+
+/// Sets `media_thumbnails` on administrator audit events. The pictures of all
+/// resources on the page are read with one bounded query per resource kind,
+/// and the URLs are the read-only administrator media routes.
+async fn attach_admin_media_thumbnails(
+    pool: &SqlitePool,
+    events: &mut [AuditEvent],
+    wanted: &[Vec<String>],
+) -> Result<(), AuditError> {
+    for (entity_type, media_kind, query) in [
+        (
+            "project",
+            "image",
+            "SELECT project_id AS parent_id, public_id, filename, original_filename \
+             FROM media_files \
+             WHERE project_id IN (SELECT value FROM json_each(?)) \
+               AND kind IN ('title', 'step') \
+             ORDER BY project_id, CASE kind WHEN 'title' THEN 0 ELSE 1 END, position, id \
+             LIMIT 20000",
+        ),
+        (
+            "yarn",
+            "photo",
+            "SELECT yarn_id AS parent_id, public_id, filename, original_filename \
+             FROM media_files \
+             WHERE yarn_id IN (SELECT value FROM json_each(?)) AND kind = 'photo' \
+             ORDER BY yarn_id, position, id LIMIT 20000",
+        ),
+    ] {
+        let mut ids: Vec<i64> = events
+            .iter()
+            .zip(wanted)
+            .filter(|(event, labels)| {
+                event.entity_type == entity_type && event.entity_id > 0 && !labels.is_empty()
+            })
+            .map(|(event, _)| event.entity_id)
+            .collect();
+        ids.sort_unstable();
+        ids.dedup();
+        if ids.is_empty() {
+            continue;
+        }
+        let json = serde_json::to_string(&ids).map_err(|_| AuditError::Database)?;
+        let rows = sqlx::query(query)
+            .bind(json)
+            .fetch_all(pool)
+            .await
+            .map_err(|_| AuditError::Database)?;
+        let mut by_parent: BTreeMap<i64, Vec<(String, AuditChangeMedia)>> = BTreeMap::new();
+        for row in &rows {
+            let parent_id: i64 = row.get("parent_id");
+            let media = CurrentMedia::from_row(row);
+            if let Some(urls) = media.admin_urls(entity_type, media_kind, parent_id) {
+                by_parent.entry(parent_id).or_default().push((media.label, urls));
+            }
+        }
+        for (event, labels) in events.iter_mut().zip(wanted) {
+            if event.entity_type == entity_type
+                && let Some(current) = by_parent.get(&event.entity_id)
+            {
+                event.media_thumbnails = resolve_media_thumbnails(labels, current);
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Maps each wanted label to the first current picture with that label.

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ChangeItemV1 } from "#lib/features/admin/admin-api.ts";
 import {
   hasMediaThumbnails,
+  lightboxSequence,
   markMediaLists,
   mediaLabels,
   parseChangeMedia,
+  type ChangeMedia,
 } from "./media-change";
 
 const order = (before: string[], after: string[]): ChangeItemV1 => ({
@@ -20,6 +22,16 @@ describe("parseChangeMedia", () => {
       "b.jpg": { url: "https://evil.invalid/b.jpg", thumbnail_url: "/media/x" },
       "c.jpg": { url: "/media/../c", thumbnail_url: "/media/c" },
       "d.jpg": "nope",
+    });
+    expect(Object.keys(media ?? {})).toEqual(["a.jpg"]);
+  });
+
+  it("accepts read-only administrator media routes", () => {
+    const media = parseChangeMedia({
+      "a.jpg": {
+        url: "/api/v2/admin/resources/yarn/4/media/photo/9",
+        thumbnail_url: "/api/v2/admin/resources/yarn/4/media/photo/9/thumbnail",
+      },
     });
     expect(Object.keys(media ?? {})).toEqual(["a.jpg"]);
   });
@@ -81,5 +93,19 @@ describe("mediaLabels / hasMediaThumbnails", () => {
     expect(hasMediaThumbnails(order(["a"], ["b"]), media)).toBe(true);
     expect(hasMediaThumbnails(order(["z"], ["b"]), media)).toBe(false);
     expect(hasMediaThumbnails(order(["a"], ["b"]), null)).toBe(false);
+  });
+});
+
+describe("lightboxSequence", () => {
+  it("lists the after pictures first, then removed ones, once each", () => {
+    const media: ChangeMedia = {
+      a: { url: "/media/a", thumbnail_url: "/media/ta" },
+      b: { url: "/media/b", thumbnail_url: "/media/tb" },
+      r: { url: "/media/r", thumbnail_url: "/media/tr" },
+    };
+    const marks = markMediaLists(["r", "b", "a", "x"], ["a", "b"]);
+    expect(
+      lightboxSequence(marks.before, marks.after, media).map((p) => p.label),
+    ).toEqual(["a", "b", "r"]);
   });
 });

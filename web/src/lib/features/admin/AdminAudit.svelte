@@ -401,10 +401,22 @@
                   <!-- Every row reserves this line so rows keep one height, with or without media. -->
                   <div class="event-note">
                     {#if event.media}
+                      {#if event.media.exists && event.media.is_image && event.media.thumbnail_url}
+                        <img
+                          class="event-thumb"
+                          src={event.media.thumbnail_url}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          width="40"
+                          height="40"
+                        />
+                      {/if}
                       <AuditMediaPreview
                         media={event.media}
                         {locale}
                         variant="note"
+                        thumb={false}
                       />
                     {/if}
                   </div>
@@ -586,8 +598,19 @@
     overflow-wrap: normal;
   }
   .event-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     min-height: 1.3rem;
     min-width: 0;
+  }
+  .event-thumb {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.6rem;
+    object-fit: cover;
+    background: var(--surface-raised);
   }
   .event-actor {
     grid-area: actor;

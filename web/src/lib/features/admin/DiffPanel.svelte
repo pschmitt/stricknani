@@ -172,7 +172,11 @@
     </article>
 
     {#if detail.changes}
-      <ChangeList changes={detail.changes} {locale} />
+      <ChangeList
+        changes={detail.changes}
+        {locale}
+        media={detail.event.media_thumbnails}
+      />
     {:else if detail.event.media}
       <!-- The file above is the whole record of an upload or removal. -->
     {:else}

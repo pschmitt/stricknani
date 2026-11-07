@@ -3,7 +3,7 @@ import type {
   ChangeValue,
 } from "#lib/features/admin/admin-api.ts";
 
-/** URLs of a current picture that a change label refers to (`media_thumbnails` of a history event). */
+/** URLs of a current picture that a change label refers to (`media_thumbnails` of a history or admin audit event). */
 export interface ChangeMediaEntry {
   url: string;
   thumbnail_url: string;
@@ -26,7 +26,8 @@ function safePath(value: unknown): value is string {
   return (
     typeof value === "string" &&
     value.length <= 512 &&
-    value.startsWith("/media/") &&
+    (value.startsWith("/media/") ||
+      value.startsWith("/api/v2/admin/resources/")) &&
     !value.includes("..")
   );
 }
@@ -144,4 +145,33 @@ export function markMediaLists(
           : "added",
     })),
   };
+}
+
+export interface LightboxPicture {
+  label: string;
+  url: string;
+}
+
+/**
+ * The pictures the viewer steps through for one picture change: the after list first, then the
+ * pictures that were removed. Each label once; labels without a full-size URL are left out.
+ */
+export function lightboxSequence(
+  before: MediaMark[],
+  after: MediaMark[],
+  media: ChangeMedia,
+): LightboxPicture[] {
+  const seen = new Set<string>();
+  const result: LightboxPicture[] = [];
+  const candidates = [
+    ...after,
+    ...before.filter((mark) => mark.status === "removed"),
+  ];
+  for (const { label } of candidates) {
+    if (seen.has(label)) continue;
+    seen.add(label);
+    const entry = Object.hasOwn(media, label) ? media[label] : undefined;
+    if (entry?.url) result.push({ label, url: entry.url });
+  }
+  return result;
 }

@@ -32,6 +32,26 @@ const gone = (media: AuditMedia): AuditMedia => ({
 });
 
 describe("AuditMediaPreview", () => {
+  it("shows a thumbnail in the note for an existing picture only", () => {
+    const shown = render(AuditMediaPreview, {
+      props: {
+        media: picture,
+        locale: "en" as const,
+        variant: "note" as const,
+      },
+    });
+    expect(shown.body).toContain("media-note__thumb");
+    expect(shown.body).toContain(
+      "/api/v2/admin/resources/project/7/media/image/12/thumbnail",
+    );
+    for (const media of [gone(picture), file]) {
+      const { body } = render(AuditMediaPreview, {
+        props: { media, locale: "en" as const, variant: "note" as const },
+      });
+      expect(body).not.toContain("media-note__thumb");
+    }
+  });
+
   it("offers a viewer for an existing picture", () => {
     const { body } = render(AuditMediaPreview, {
       props: { media: picture, locale: "en" as const },

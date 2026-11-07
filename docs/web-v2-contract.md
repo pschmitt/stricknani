@@ -1018,6 +1018,16 @@ The other two actor fields are nullable:
 returns the arbitrary historical `details` JSON, which may contain user text or
 credential-like values.
 
+Administrator events (list items and the detail's `event`) carry the same
+optional `media_thumbnails` object as the resource history (label to
+`{url, thumbnail_url}`, same label rules, omitted when nothing resolves), resolved
+against each event's own project or yarn whoever owns it. The URLs are the
+read-only administrator media routes
+(`/api/v2/admin/resources/{project|yarn}/{id}/media/{image|photo}/{public_id}`
+and `.../thumbnail`), never the owner `/media/...` routes. A list page reads the
+pictures of all its resources with one bounded query per resource kind. The
+per-event `media` object is unchanged.
+
 `entity` accepts `all`, `project`, `yarn`, or `category`; it defaults to `all`.
 `action` is an optional exact historical action string, trimmed and limited to
 64 UTF-8 bytes; it is not restricted to the current action enum. The raw query

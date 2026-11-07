@@ -320,3 +320,16 @@ fun mediaChangeRows(
             },
     )
 }
+
+/**
+ * The pictures of a change the viewer can swipe through: every distinct label of the before and
+ * after rows (after first, then pictures only in before) that has a full-size url in [media].
+ */
+fun mediaViewerLabels(
+    rows: MediaChangeRows,
+    media: Map<String, blue.anika.wolle.data.api.dto.HistoryMediaDto>,
+): List<String> =
+    (rows.after + rows.before)
+        .map { it.label }
+        .distinct()
+        .filter { !media[it]?.url.isNullOrBlank() }

@@ -845,3 +845,132 @@ async fn yarn_photo_order_events_resolve_thumbnails() {
         format!("/media/yarns/{yarn_id}/label-stored.jpg")
     );
 }
+
+#[tokio::test]
+async fn admin_audit_resolves_thumbnails_to_read_only_administrator_routes() {
+    let fixture = fixture().await;
+    let project_id = project(&fixture.pool, fixture.owner_id, "Admin picture project").await;
+    media_row(
+        &fixture.pool,
+        fixture.owner_id,
+        ("project", project_id),
+        ("title", 1, "one-stored.jpg", "19413.jpg", 0),
+    )
+    .await;
+    media_row(
+        &fixture.pool,
+        fixture.owner_id,
+        ("project", project_id),
+        ("title", 2, "two-stored.jpg", "second.jpg", 1),
+    )
+    .await;
+    let yarn_id = yarn(&fixture.pool, fixture.other_id, "Admin photo yarn").await;
+    media_row(
+        &fixture.pool,
+        fixture.other_id,
+        ("yarn", yarn_id),
+        ("photo", 7, "ball-stored.jpg", "ball.jpg", 0),
+    )
+    .await;
+    let project_event = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.owner_id),
+            entity_type: "project",
+            entity_id: project_id,
+            action: "updated",
+            created_at: "2026-05-01T00:00:00Z",
+            details: None,
+            safe_changes: Some(r#"{"version":1,"items":[{"field":"project.image_order","before":{"type":"text_list","value":["second.jpg","19413.jpg","deleted.jpg"]},"after":{"type":"text_list","value":["19413.jpg","second.jpg"]}}]}"#),
+        },
+    )
+    .await;
+    let yarn_event = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.other_id),
+            entity_type: "yarn",
+            entity_id: yarn_id,
+            action: "updated",
+            created_at: "2026-05-02T00:00:00Z",
+            details: None,
+            safe_changes: Some(r#"{"version":1,"items":[{"field":"yarn.primary_photo","before":{"type":"text","value":"gone.jpg"},"after":{"type":"text","value":"ball.jpg"}}]}"#),
+        },
+    )
+    .await;
+    let plain_event = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.owner_id),
+            entity_type: "project",
+            entity_id: project_id,
+            action: "updated",
+            created_at: "2026-05-03T00:00:00Z",
+            details: None,
+            safe_changes: Some(r#"{"version":1,"items":[{"field":"project.name","before":{"type":"text","value":"A"},"after":{"type":"text","value":"B"}}]}"#),
+        },
+    )
+    .await;
+
+    let list = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(bearer("/admin/audit", ADMIN_PAT))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let events = list["data"].as_array().unwrap();
+    let project_json = events.iter().find(|e| e["id"] == project_event).unwrap();
+    let map = project_json["media_thumbnails"].as_object().unwrap();
+    assert_eq!(map.len(), 2, "deleted label is absent: {map:?}");
+    assert_eq!(
+        map["19413.jpg"]["url"],
+        format!("/api/v2/admin/resources/project/{project_id}/media/image/1")
+    );
+    assert_eq!(
+        map["second.jpg"]["thumbnail_url"],
+        format!("/api/v2/admin/resources/project/{project_id}/media/image/2/thumbnail")
+    );
+    let yarn_json = events.iter().find(|e| e["id"] == yarn_event).unwrap();
+    let yarn_map = yarn_json["media_thumbnails"].as_object().unwrap();
+    assert_eq!(yarn_map.len(), 1);
+    assert_eq!(
+        yarn_map["ball.jpg"]["thumbnail_url"],
+        format!("/api/v2/admin/resources/yarn/{yarn_id}/media/photo/7/thumbnail")
+    );
+    let plain = events.iter().find(|e| e["id"] == plain_event).unwrap();
+    assert!(plain.get("media_thumbnails").is_none());
+
+    let detail = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(bearer(&format!("/admin/audit/{yarn_event}"), ADMIN_PAT))
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        detail["data"]["event"]["media_thumbnails"],
+        yarn_json["media_thumbnails"]
+    );
+
+    for token in [OWNER_PAT, OTHER_PAT] {
+        let denied = fixture
+            .app
+            .clone()
+            .oneshot(bearer("/admin/audit", token))
+            .await
+            .unwrap();
+        assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+        let denied = fixture
+            .app
+            .clone()
+            .oneshot(bearer(&format!("/admin/audit/{yarn_event}"), token))
+            .await
+            .unwrap();
+        assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+    }
+}

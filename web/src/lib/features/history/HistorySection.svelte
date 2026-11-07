@@ -262,6 +262,17 @@
         <li class="entry" data-tone={tone}>
           <span class="dot" aria-hidden="true"></span>
           {#snippet summary()}
+            {#if event.media?.exists && event.media.is_image && event.media.thumbnail_url}
+              <img
+                class="entry-thumb"
+                src={event.media.thumbnail_url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width="40"
+                height="40"
+              />
+            {/if}
             <span class="entry-main">
               <span class="entry-headline">{headline(event)}</span>
               <span class="entry-meta">
@@ -502,6 +513,15 @@
   .history-link:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
+  }
+
+  .entry-thumb {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.6rem;
+    object-fit: cover;
+    background: var(--surface-raised);
   }
 
   .entry-main {

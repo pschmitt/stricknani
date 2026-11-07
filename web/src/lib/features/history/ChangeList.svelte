@@ -9,9 +9,12 @@
     kindLabel,
     segments,
   } from "./change-format";
+  import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
+  import type { ProjectImage } from "#lib/features/projects/project-api.ts";
   import MediaStrip from "./MediaStrip.svelte";
   import {
     hasMediaThumbnails,
+    lightboxSequence,
     markMediaLists,
     mediaLabels,
     type ChangeMedia,
@@ -33,6 +36,41 @@
     /** Thumbnails of the pictures named by picture changes (`media_thumbnails` of the event). */
     media?: ChangeMedia | null;
   } = $props();
+
+  // The viewer of the picture change whose thumbnail was opened: its pictures, after list first.
+  let viewer = $state<{
+    title: string;
+    images: ProjectImage[];
+    selectedId: number | null;
+  } | null>(null);
+
+  function openViewer(
+    item: ChangeSetV1["items"][number],
+    thumbs: NonNullable<ChangeMedia>,
+    label: string,
+  ) {
+    const marks = markMediaLists(
+      mediaLabels(item, item.before) ?? [],
+      mediaLabels(item, item.after) ?? [],
+    );
+    const sequence = lightboxSequence(marks.before, marks.after, thumbs);
+    const index = sequence.findIndex((picture) => picture.label === label);
+    if (index < 0) return;
+    viewer = {
+      title: fieldLabel(item.field, locale),
+      selectedId: index + 1,
+      images: sequence.map((picture, position) => ({
+        id: position + 1,
+        url: picture.url,
+        thumbnail_url: thumbs[picture.label]?.thumbnail_url ?? picture.url,
+        alt_text: picture.label,
+        image_type: "image",
+        is_title_image: false,
+        is_stitch_sample: false,
+        step_id: null,
+      })),
+    };
+  }
 </script>
 
 <ol class="change-list" aria-label={label ?? t("Recorded changes", locale)}>
@@ -64,7 +102,13 @@
             {t("Before", locale)}
           </span>
           {#if marks && media}
-            <MediaStrip marks={marks.before} {media} {locale} tone="before" />
+            <MediaStrip
+              marks={marks.before}
+              {media}
+              {locale}
+              tone="before"
+              onopen={(picked) => openViewer(item, media, picked)}
+            />
           {:else}
             <!-- prettier-ignore -->
             <p class="value" class:value--empty={isEmptyValue(item.before)}>{#each parts.before as part, partIndex (partIndex)}{#if part.changed}<del>{part.text}</del>{:else}{part.text}{/if}{/each}</p>
@@ -88,7 +132,13 @@
             {t("After", locale)}
           </span>
           {#if marks && media}
-            <MediaStrip marks={marks.after} {media} {locale} tone="after" />
+            <MediaStrip
+              marks={marks.after}
+              {media}
+              {locale}
+              tone="after"
+              onopen={(picked) => openViewer(item, media, picked)}
+            />
           {:else}
             <!-- prettier-ignore -->
             <p class="value" class:value--empty={isEmptyValue(item.after)}>{#each parts.after as part, partIndex (partIndex)}{#if part.changed}<ins>{part.text}</ins>{:else}{part.text}{/if}{/each}</p>
@@ -98,6 +148,19 @@
     </li>
   {/each}
 </ol>
+
+{#if viewer}
+  <ProjectLightbox
+    images={viewer.images}
+    selectedId={viewer.selectedId}
+    title={viewer.title}
+    {locale}
+    onClose={() => (viewer = null)}
+    onSelect={(image) => {
+      if (viewer) viewer.selectedId = image.id;
+    }}
+  />
+{/if}
 
 <style>
   .change-list .change {

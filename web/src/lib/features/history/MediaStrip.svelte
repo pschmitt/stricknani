@@ -9,11 +9,14 @@
     media,
     locale,
     tone,
+    onopen,
   }: {
     marks: MediaMark[];
     media: ChangeMedia;
     locale: Locale;
     tone: "before" | "after";
+    /** Opens the picture of a label in the viewer; thumbnails without a url stay static. */
+    onopen?: (label: string) => void;
   } = $props();
 
   function statusText(status: MediaMark["status"]): string {
@@ -45,7 +48,24 @@
       {@const status = statusText(mark.status)}
       <li class="tile" data-status={mark.status} title={mark.label}>
         <span class="thumb">
-          {#if entry}
+          {#if entry && onopen && entry.url}
+            <button
+              type="button"
+              class="thumb-button"
+              aria-label={`${t("Show picture", locale)}: ${mark.label}`}
+              data-media-strip-open
+              onclick={() => onopen(mark.label)}
+            >
+              <img
+                src={entry.thumbnail_url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width="52"
+                height="52"
+              />
+            </button>
+          {:else if entry}
             <img
               src={entry.thumbnail_url}
               alt={mark.label}
@@ -113,6 +133,20 @@
   }
   .tile[data-status="removed"] img {
     opacity: 0.7;
+  }
+  .thumb-button {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: inherit;
+    padding: 0;
+    background: transparent;
+    cursor: zoom-in;
+  }
+  .thumb-button:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
   }
   img,
   .thumb-text {

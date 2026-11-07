@@ -243,4 +243,26 @@ class AdminDtoTest {
         assertNull(media.url)
         assertEquals("chart.pdf", media.name)
     }
+
+    @Test
+    fun `admin audit page and detail carry the optional picture thumbnails`() {
+        val thumbs =
+            ""","media_thumbnails":{"1.jpg":{
+                "url":"/api/v2/admin/resources/project/7/media/image/ab12",
+                "thumbnail_url":"/api/v2/admin/resources/project/7/media/image/ab12/thumbnail"}}"""
+        val withMap = eventJson.dropLast(1) + thumbs + "}"
+        val page =
+            json.decodeFromString<AuditPageDto>(
+                """{"data": [$withMap, $eventJson],
+                    "meta": {"page": 1, "per_page": 50, "has_more": false}}"""
+            )
+        assertEquals(
+            "/api/v2/admin/resources/project/7/media/image/ab12/thumbnail",
+            page.data[0].mediaThumbs["1.jpg"]?.thumbnailUrl,
+        )
+        assertTrue(page.data[1].mediaThumbs.isEmpty())
+        val detail =
+            json.decodeFromString<AuditDetailEnvelopeDto>("""{"data": {"event": $withMap}}""")
+        assertEquals(1, detail.data.event.mediaThumbs.size)
+    }
 }

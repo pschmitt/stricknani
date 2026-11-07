@@ -41,6 +41,21 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-101: Admin audit log shows picture thumbnails
+
+- [x] Admin audit events (list and detail, `api/v2/admin/audit`) carry the same optional
+      `media_thumbnails` map as the resource history (same `AuditEventDto`); the event sheet renders
+      picture order, cover and primary-photo changes with the shared `MediaChangeCard` (Before /
+      After thumbnails, tap opens the image viewer). URLs are the read-only administrator media
+      routes, loaded through the same resolver and authenticated image loader as other audit media.
+      Text fallback unchanged for events without thumbnails.
+- [x] Upload/removal events (`media`) show a 40dp thumbnail in the admin audit list rows and the
+      resource history rows (`AuditMediaThumb`); the sheets already show the picture full size.
+- [x] Tests: admin audit page/detail decoding with and without `media_thumbnails`
+      (`AdminDtoTest`), viewer label order (`HistoryMediaTest`).
+
+Status: **done**, 2026-11-07 (JVM tests; not run on a device).
+
 ## SNA-100: Recent changes show thumbnails for picture changes
 
 - [x] Picture order, step picture order, yarn photo order and cover/primary photo changes in a
@@ -54,7 +69,8 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
       media object of upload/removal events (plain decoding). History is online-only, so
       nothing is cached.
 - [x] Tests: `HistoryMediaTest` (decoding with and without the map, marks, fallback to text).
-- [ ] Follow-up: tapping a thumbnail does not open the image viewer yet.
+- [x] Tapping a thumbnail opens the full-screen image viewer on that picture, swiping between the
+      pictures of that change (after pictures first, then removed ones; no Edit button).
 
 Status: **done**, 2026-11-07 (JVM tests; not run on a device).
 

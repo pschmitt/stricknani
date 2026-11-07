@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +41,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,6 +76,7 @@ import blue.anika.wolle.data.api.dto.HistoryMediaDto
 import blue.anika.wolle.ui.admin.ActionBadge
 import blue.anika.wolle.ui.admin.AdminAvatar
 import blue.anika.wolle.ui.admin.AuditMediaBlock
+import blue.anika.wolle.ui.admin.AuditMediaThumb
 import blue.anika.wolle.ui.admin.AuditMediaViewModel
 import blue.anika.wolle.ui.admin.AuditTone
 import blue.anika.wolle.ui.admin.ChangeCard
@@ -81,6 +87,8 @@ import blue.anika.wolle.ui.admin.color
 import blue.anika.wolle.ui.admin.displayName
 import blue.anika.wolle.ui.admin.tone
 import blue.anika.wolle.ui.admin.unavailableReasonRes
+import blue.anika.wolle.ui.common.ImageViewerDialog
+import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
@@ -409,6 +417,7 @@ private fun HistoryRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
             Icon(
                 Icons.Filled.ExpandMore,
                 contentDescription = null,
@@ -532,14 +541,28 @@ private val ThumbSize = 52.dp
  * and an After row, the pictures that were added, removed or moved framed in their color.
  */
 @Composable
-private fun MediaChangeCard(
+fun MediaChangeCard(
     item: ChangeItemDto,
     rows: MediaChangeRows,
     media: Map<String, HistoryMediaDto>,
 ) {
+    val viewModel: AuditMediaViewModel = hiltViewModel()
     val fieldLabel =
         changeFieldLabelRes(item.field)?.let { stringResource(it) }
             ?: stringResource(R.string.admin_field_unknown)
+    val viewable =
+        mediaViewerLabels(rows, media).mapNotNull { label ->
+            viewModel.resolve(media[label]?.url)?.let { url ->
+                label to ImageViewerImage(url = url, title = label, sourceLabel = fieldLabel)
+            }
+        }
+    var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    val open: (String) -> Unit = { label ->
+        viewable.indexOfFirst { it.first == label }.takeIf { it >= 0 }?.let { viewerIndex = it }
+    }
+    viewerIndex?.let { index ->
+        ImageViewerDialog(viewable.map { it.second }, index, onDismiss = { viewerIndex = null })
+    }
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -553,8 +576,8 @@ private fun MediaChangeCard(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() },
             )
-            MediaThumbRow(stringResource(R.string.admin_changes_before), rows.before, media)
-            MediaThumbRow(stringResource(R.string.admin_changes_after), rows.after, media)
+            MediaThumbRow(stringResource(R.string.admin_changes_before), rows.before, media, open)
+            MediaThumbRow(stringResource(R.string.admin_changes_after), rows.after, media, open)
         }
     }
 }
@@ -565,6 +588,7 @@ private fun MediaThumbRow(
     label: String,
     thumbs: List<MediaThumb>,
     media: Map<String, HistoryMediaDto>,
+    onOpen: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
@@ -583,7 +607,7 @@ private fun MediaThumbRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                thumbs.forEach { thumb -> MediaThumbTile(thumb, media[thumb.label]) }
+                thumbs.forEach { thumb -> MediaThumbTile(thumb, media[thumb.label], onOpen) }
             }
         }
     }
@@ -599,7 +623,11 @@ private fun markColor(mark: MediaMark): Color =
     }
 
 @Composable
-private fun MediaThumbTile(thumb: MediaThumb, entry: HistoryMediaDto?) {
+private fun MediaThumbTile(
+    thumb: MediaThumb,
+    entry: HistoryMediaDto?,
+    onOpen: (String) -> Unit,
+) {
     val viewModel: AuditMediaViewModel = hiltViewModel()
     val color = markColor(thumb.mark)
     val shape = RoundedCornerShape(10.dp)
@@ -626,6 +654,11 @@ private fun MediaThumbTile(thumb: MediaThumb, entry: HistoryMediaDto?) {
                 if (thumb.mark == MediaMark.Kept) 1.dp else 2.dp,
                 color,
                 shape,
+            )
+            .then(
+                if (entry?.url != null)
+                    Modifier.clickable(role = Role.Button) { onOpen(thumb.label) }
+                else Modifier
             )
             .semantics { contentDescription = description }
     ) {

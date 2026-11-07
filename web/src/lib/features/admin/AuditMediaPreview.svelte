@@ -9,11 +9,14 @@
     media,
     locale,
     variant = "action",
+    thumb = true,
   }: {
     media: AuditMedia;
     locale: Locale;
     /** "action" is the button/link; "note" is the file name with its kind and state. */
     variant?: "action" | "note";
+    /** Whether the note shows a small thumbnail of an existing picture. */
+    thumb?: boolean;
   } = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
@@ -23,6 +26,9 @@
   const label = $derived(media.name?.trim() || kindLabel);
   const deletedLabel = $derived(t("deleted", locale));
   const available = $derived(media.exists && media.url !== null);
+  const thumbnail = $derived(
+    thumb && available && media.is_image ? media.thumbnail_url : null,
+  );
 </script>
 
 {#if variant === "note"}
@@ -32,6 +38,17 @@
     data-audit-media-note
     title={label}
   >
+    {#if thumbnail}
+      <img
+        class="media-note__thumb"
+        src={thumbnail}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        width="28"
+        height="28"
+      />
+    {/if}
     <span class="media-note__name">{label}</span>
     <span class="media-note__state"
       >· {kindLabel}{available ? "" : ` · ${deletedLabel}`}</span
@@ -92,10 +109,19 @@
   }
   .media-note {
     display: flex;
+    align-items: center;
     min-width: 0;
     gap: 0.3rem;
     color: var(--ink-muted);
     font-size: 0.82rem;
+  }
+  .media-note__thumb {
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.4rem;
+    object-fit: cover;
+    background: var(--surface-raised);
   }
   .media-note__name {
     min-width: 0;

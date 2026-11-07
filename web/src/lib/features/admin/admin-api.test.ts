@@ -481,6 +481,49 @@ describe("administrator API", () => {
     });
   });
 
+  it("keeps administrator thumbnails of picture changes and drops foreign links", async () => {
+    const event = {
+      id: 32,
+      actor_email: "owner@example.invalid",
+      actor_avatar_url: null,
+      legacy_actor_user_id: null,
+      entity_type: "project",
+      entity_id: 12,
+      action: "updated",
+      created_at: "2026-11-01T12:00:00Z",
+      resource: projectResource(12),
+      has_changes: true,
+      media_thumbnails: {
+        "a.jpg": {
+          url: "/api/v2/admin/resources/project/12/media/image/3",
+          thumbnail_url:
+            "/api/v2/admin/resources/project/12/media/image/3/thumbnail",
+        },
+        "b.jpg": {
+          url: "https://evil.invalid/b.jpg",
+          thumbnail_url: "/media/x",
+        },
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          data: [event],
+          meta: { page: 1, per_page: 50, has_more: false },
+        }),
+      ),
+    );
+    const page = await listAuditEvents({ page: 1, entity: "all", action: "" });
+    expect(page.data[0]?.media_thumbnails).toEqual({
+      "a.jpg": {
+        url: "/api/v2/admin/resources/project/12/media/image/3",
+        thumbnail_url:
+          "/api/v2/admin/resources/project/12/media/image/3/thumbnail",
+      },
+    });
+  });
+
   it("preserves stable errors and rejects unsafe or malformed DTOs", async () => {
     const fetchMock = vi
       .fn()

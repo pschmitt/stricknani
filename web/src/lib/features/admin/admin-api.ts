@@ -1,5 +1,9 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import {
+  parseChangeMedia,
+  type ChangeMedia,
+} from "#lib/features/history/media-change.ts";
 
 export interface AdminUser {
   id: number;
@@ -22,6 +26,8 @@ export interface AuditEvent {
   has_changes: boolean;
   /** The picture or file an upload/removal event was about. */
   media: AuditMedia | null;
+  /** Thumbnails of the pictures named by picture changes, by label (read-only administrator URLs). */
+  media_thumbnails: ChangeMedia | null;
 }
 
 export type AuditMediaKind = "image" | "photo" | "attachment";
@@ -207,6 +213,7 @@ function parseAuditEvent(value: unknown): AuditEvent {
     resource: parseAuditResourceReference(value.resource, value),
     has_changes: value.has_changes,
     media: parseAuditMedia(value.media),
+    media_thumbnails: parseChangeMedia(value.media_thumbnails),
   };
 }
 

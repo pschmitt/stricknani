@@ -81,6 +81,8 @@ import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.WordDiff
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.history.MediaChangeCard
+import blue.anika.wolle.ui.history.mediaChangeRows
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -463,6 +465,7 @@ private fun AuditRow(
                         )
                     }
                 }
+                AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -575,7 +578,12 @@ private fun AuditDetailSheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        changes.items.forEach { item -> ChangeCard(item) }
+                        val thumbs = state.detail.event.mediaThumbs
+                        changes.items.forEach { item ->
+                            val rows = mediaChangeRows(item, thumbs)
+                            if (rows != null) MediaChangeCard(item, rows, thumbs)
+                            else ChangeCard(item)
+                        }
                     } else if (state.detail.unavailableReason == "not_recorded") {
                         Text(
                             stringResource(R.string.admin_no_details),
