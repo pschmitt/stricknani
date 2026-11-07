@@ -224,10 +224,10 @@ yarns. Delta semantics:
 
 ## Backup and export
 
-The server has no per-user export. The only per-user backup is the Android
-app's `data/backup/BackupManager.kt` (owned by the Android agent); today it
-stores credentials and settings only and deliberately leaves out the Room
-cache, so shared items are not part of it and need no server work. The
+The per-user data export (`GET /api/v2/account/export`, format in
+`docs/data-export.md`) follows the rules below. The Android app's settings
+backup (`data/backup/BackupManager.kt`) stores credentials and settings only
+and leaves out the Room cache. The
 operator's whole-database archive (NixOS module) contains the share tables as
 they are.
 

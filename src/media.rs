@@ -4278,7 +4278,7 @@ async fn cleanup_saved_files(root: &Path, subdir: &str, parent_id: i64, files: &
     }
 }
 
-async fn existing_file_path(
+pub(crate) async fn existing_file_path(
     root: &Path,
     subdir: &str,
     parent_id: i64,

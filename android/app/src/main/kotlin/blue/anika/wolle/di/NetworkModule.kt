@@ -30,6 +30,7 @@ import blue.anika.wolle.data.api.v2.SharingV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
+import blue.anika.wolle.data.export.DataExportApi
 import blue.anika.wolle.data.media.CoilMediaCacheEvictor
 import blue.anika.wolle.data.media.MediaCacheEvictor
 import blue.anika.wolle.data.repository.ApiProjectImporter
@@ -223,6 +224,20 @@ object NetworkModule {
     @Singleton
     fun provideAccountV2Api(retrofit: Retrofit): AccountV2Api =
         retrofit.create(AccountV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDataExportApi(retrofit: Retrofit, okHttpClient: OkHttpClient): DataExportApi {
+        // The server builds the zip while streaming it: a long silence before the first byte and
+        // between large files is normal, and the whole download has no overall time limit.
+        val exportClient =
+            okHttpClient
+                .newBuilder()
+                .readTimeout(120, TimeUnit.SECONDS)
+                .callTimeout(0, TimeUnit.SECONDS)
+                .build()
+        return retrofit.newBuilder().client(exportClient).build().create(DataExportApi::class.java)
+    }
 
     @Provides
     @Singleton

@@ -326,7 +326,7 @@ msgid "API token revoked."
 msgstr ""
 
 #: web/src/routes/+layout.svelte:361 web/src/routes/about/+page.svelte:201
-#: web/src/routes/more/+page.svelte:76
+#: web/src/routes/more/+page.svelte:85
 msgid "About"
 msgstr ""
 
@@ -512,8 +512,8 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:318
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:571
-#: web/src/routes/+layout.svelte:351 web/src/routes/more/+page.svelte:63
-#: web/src/routes/more/+page.svelte:67
+#: web/src/routes/+layout.svelte:351 web/src/routes/more/+page.svelte:72
+#: web/src/routes/more/+page.svelte:76
 msgid "Admin"
 msgstr ""
 
@@ -661,6 +661,10 @@ msgstr ""
 msgid "Archive this source"
 msgstr ""
 
+#: web/src/routes/backups/+page.svelte:59
+msgid "Archive type"
+msgstr ""
+
 #: web/src/lib/features/admin/AdminResource.svelte:516
 #: web/src/lib/features/admin/AdminResource.svelte:705
 #: web/src/lib/features/projects/ProjectEditor.svelte:1415
@@ -789,6 +793,12 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnForm.svelte:609
 #: web/src/lib/features/yarns/YarnForm.svelte:627
 msgid "Back to yarns"
+msgstr ""
+
+#: web/src/routes/backups/+page.svelte:35
+#: web/src/routes/backups/+page.svelte:41 web/src/routes/more/+page.svelte:61
+#: web/src/routes/more/+page.svelte:65
+msgid "Backups"
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:541
@@ -1453,12 +1463,20 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
+#: web/src/routes/backups/+page.svelte:68
+msgid "Download"
+msgstr ""
+
 #: web/src/routes/about/+page.svelte:333
 msgid "Download APK"
 msgstr ""
 
 #: web/src/lib/components/GetAppCard.svelte:88
 msgid "Download for Android"
+msgstr ""
+
+#: web/src/routes/more/+page.svelte:66
+msgid "Download your data"
 msgstr ""
 
 #: web/src/lib/features/media/ReorderableMedia.svelte:319
@@ -1796,6 +1814,10 @@ msgstr ""
 
 #: web/src/lib/features/auth/ReauthDialog.svelte:143
 msgid "For your security, confirm your identity before changing how you sign in."
+msgstr ""
+
+#: web/src/routes/backups/+page.svelte:70
+msgid "Format version 1"
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:193
@@ -2422,7 +2444,7 @@ msgstr ""
 msgid "Main photo"
 msgstr ""
 
-#: web/src/routes/more/+page.svelte:68
+#: web/src/routes/more/+page.svelte:77
 msgid "Manage accounts and review the audit log."
 msgstr ""
 
@@ -2486,7 +2508,7 @@ msgstr ""
 msgid "More changes could not be loaded."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:72
+#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:81
 msgid "More navigation"
 msgstr ""
 
@@ -3385,6 +3407,12 @@ msgid ""
 "Android behavior."
 msgstr ""
 
+#: web/src/routes/backups/+page.svelte:51
+msgid ""
+"Projects, yarns, categories, photos and attachments in one archive "
+"(.tar.gz), including items shared with you."
+msgstr ""
+
 #: web/src/routes/about/+page.svelte:317
 msgid "QR code for the Android app download"
 msgstr ""
@@ -3662,6 +3690,10 @@ msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:158
 msgid "Resource unavailable"
+msgstr ""
+
+#: web/src/routes/backups/+page.svelte:75
+msgid "Restoring from a download is not available yet."
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:581
@@ -5371,7 +5403,7 @@ msgstr ""
 msgid "Version"
 msgstr ""
 
-#: web/src/routes/more/+page.svelte:77
+#: web/src/routes/more/+page.svelte:86
 msgid "Version, links and credits."
 msgstr ""
 
@@ -5758,6 +5790,10 @@ msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:278
 msgid "Your choices and contact"
+msgstr ""
+
+#: web/src/routes/backups/+page.svelte:48
+msgid "Your data"
 msgstr ""
 
 #: web/src/routes/delete-account/+page.svelte:26

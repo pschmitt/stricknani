@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,6 +30,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.crash.CrashReportStore
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.importAvailability
+import blue.anika.wolle.data.export.DataExportNotifier
+import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
 import blue.anika.wolle.data.oidc.OidcFailure
@@ -234,8 +237,40 @@ class MainActivity : ComponentActivity() {
                 Route.SettingsCategoryRoute(SettingsCategory.About.name)
             SyncNotifier.ACTION_OPEN_SYNCED ->
                 syncedRoute(intent.getStringExtra(SyncNotifier.EXTRA_SYNCED))
+            DataExportNotifier.ACTION_OPEN_BACKUPS -> backupsRoute()
+            DataExportNotifier.ACTION_OPEN_EXPORT -> openExportedFile(intent) ?: backupsRoute()
             else -> DeepLinkParser.parse(intent?.dataString)
         }
+
+    private fun backupsRoute(): Route = Route.SettingsCategoryRoute(SettingsCategory.Backup.name)
+
+    /**
+     * "Your data is saved" opens the archive in whatever app handles it. Null when that worked, the
+     * Backups route when nothing can open it. The action is dropped so a rotation does not open it
+     * a second time.
+     */
+    private fun openExportedFile(intent: Intent): Route? {
+        intent.action = null
+        val uri = intent.getStringExtra(DataExportNotifier.EXTRA_EXPORT_URI)?.toUri()
+        intent.removeExtra(DataExportNotifier.EXTRA_EXPORT_URI)
+        if (uri == null) return backupsRoute()
+        val view =
+            Intent(Intent.ACTION_VIEW)
+                .setDataAndType(
+                    uri,
+                    intent.getStringExtra(DataExportNotifier.EXTRA_EXPORT_MIME)
+                        ?: ExportFormat.TarGz.mimeType,
+                )
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return try {
+            startActivity(view)
+            null
+        } catch (_: ActivityNotFoundException) {
+            backupsRoute()
+        } catch (_: SecurityException) {
+            backupsRoute()
+        }
+    }
 
     /**
      * `stricknani://oidc-callback?...` is the return from the browser sign-in. It is handled once

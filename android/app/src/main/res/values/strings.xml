@@ -344,8 +344,8 @@
     <string name="settings_category_detail_cards_subtitle">Choose the order of project and yarn sections</string>
     <string name="settings_category_sync_title">Keeping up to date</string>
     <string name="settings_category_sync_subtitle">When your projects were last refreshed</string>
-    <string name="settings_category_backup_title">Backup</string>
-    <string name="settings_category_backup_subtitle">Export, restore, and scheduled backups</string>
+    <string name="settings_category_backup_title">Backups</string>
+    <string name="settings_category_backup_subtitle">Your data, app settings and scheduled backups</string>
     <string name="settings_category_about_title">About</string>
     <string name="settings_category_about_subtitle">Application and server information</string>
 
@@ -570,13 +570,31 @@
     <string name="libraries_open_content_description">Open %1$s</string>
 
     <!-- Settings: Backup -->
-    <string name="backup_settings_manual_title">Manual backup</string>
+    <string name="backup_settings_manual_title">App settings backup</string>
     <string name="backup_settings_export_label">Export backup</string>
     <string name="backup_settings_export_description">Server connection and app settings, optionally encrypted</string>
     <string name="backup_settings_export_button">Export now</string>
     <string name="backup_settings_restore_label">Restore from backup</string>
     <string name="backup_settings_restore_description">Overwrites the server connection on this device</string>
     <string name="backup_settings_choose_file_button">Choose file</string>
+    <string name="data_export_title">Your data</string>
+    <string name="data_export_label">Download your data</string>
+    <string name="data_export_description">Projects, yarns, categories, photos and attachments in one archive (.tar.gz), including items shared with you.</string>
+    <string name="data_export_button">Download</string>
+    <string name="data_export_archive_type">Archive type</string>
+    <string name="data_export_format">Format version 1</string>
+    <string name="data_export_running">Downloading… %1$s</string>
+    <string name="data_export_offline">Needs a connection to the server</string>
+    <string name="data_export_retry">Retry</string>
+    <string name="data_export_saved">Your data is saved</string>
+    <string name="data_export_error_already_running">A download is already running</string>
+    <string name="data_export_error_failed">Download failed</string>
+    <string name="data_export_notification_channel_name">Data download</string>
+    <string name="data_export_notification_channel_description">Progress and result of downloading your data</string>
+    <string name="data_export_notification_progress_title">Downloading your data</string>
+    <string name="data_export_notification_progress_text">%1$s so far</string>
+    <string name="data_export_notification_success_title">Your data is saved</string>
+    <string name="data_export_notification_failed_title">Download failed</string>
     <string name="backup_settings_scheduled_title">Scheduled backups</string>
     <string name="backup_settings_enable_scheduled_label">Enable scheduled backups</string>
     <string name="backup_settings_destination_folder_label">Destination folder</string>

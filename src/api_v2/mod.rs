@@ -74,6 +74,7 @@ struct ApiV2State {
     project_preview_limiter: OwnerRequestLimiter,
     project_preview_slots: Arc<tokio::sync::Semaphore>,
     sync_projection_slots: Arc<tokio::sync::Semaphore>,
+    exports: crate::export::ExportLimiter,
 }
 
 /// Build API v2 routes without optional import services.
@@ -121,6 +122,7 @@ fn router_with_context(
         project_preview_limiter: OwnerRequestLimiter::new(20, Duration::from_secs(60), 4096),
         project_preview_slots: Arc::new(tokio::sync::Semaphore::new(4)),
         sync_projection_slots: Arc::new(tokio::sync::Semaphore::new(4)),
+        exports: crate::export::ExportLimiter::default(),
     };
     Router::new()
         .route("/session", get(session))

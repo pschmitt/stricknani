@@ -23,6 +23,7 @@ describe("isMoreActive", () => {
     "/app/admin/audit",
     "/app/about",
     "/app/account",
+    "/app/backups",
     "/app/delete-account",
     "/app/account/",
   ])("is active on %s", (pathname) => {

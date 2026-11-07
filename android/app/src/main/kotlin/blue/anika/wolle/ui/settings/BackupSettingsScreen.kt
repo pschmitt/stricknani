@@ -1,6 +1,9 @@
 package blue.anika.wolle.ui.settings
 
+import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
+import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -12,24 +15,32 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -42,31 +53,85 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.backup.BackupFrequency
+import blue.anika.wolle.data.export.DataExportViewModel
+import blue.anika.wolle.data.export.ExportFailure
+import blue.anika.wolle.data.export.ExportFormat
+import blue.anika.wolle.data.export.ExportJobStatus
+import blue.anika.wolle.data.export.failureMessageRes
 import blue.anika.wolle.ui.common.FeedbackKind
+import blue.anika.wolle.ui.common.NetworkStatus
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.showFeedback
 import java.time.Instant
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel) {
+internal fun BackupSettingsScreen(
+    onBack: () -> Unit,
+    viewModel: SettingsViewModel,
+    exportViewModel: DataExportViewModel = hiltViewModel(),
+) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val scheduledEnabled by viewModel.scheduledBackupEnabled.collectAsStateWithLifecycle()
     val scheduledFolderUri by viewModel.scheduledBackupFolderUri.collectAsStateWithLifecycle()
     val scheduledFrequency by viewModel.scheduledBackupFrequency.collectAsStateWithLifecycle()
     val scheduledPasswordSet by viewModel.scheduledBackupPasswordSet.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val exportStatus by exportViewModel.status.collectAsStateWithLifecycle()
+    val exportFailure by exportViewModel.lastFailure.collectAsStateWithLifecycle()
+    val savedMessage = stringResource(R.string.data_export_saved)
+    // NetworkStatus is a plain flag, not a flow: look again every few seconds while on screen.
+    var offline by remember { mutableStateOf(NetworkStatus.hasValidatedInternet == false) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            offline = NetworkStatus.hasValidatedInternet == false
+            delay(CONNECTIVITY_POLL_MILLIS)
+        }
+    }
+    var exportFormat by remember { mutableStateOf(ExportFormat.TarGz) }
+    val onExportTarget = { uri: Uri? ->
+        if (uri != null) {
+            // Keep the grant for the background job, which may run after this screen is gone.
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+            exportViewModel.download(uri, displayNameOf(context, uri), exportFormat)
+        }
+    }
+    val tarGzLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument(ExportFormat.TarGz.mimeType),
+            onExportTarget,
+        )
+    val zipLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument(ExportFormat.Zip.mimeType),
+            onExportTarget,
+        )
+    val startExport = { format: ExportFormat ->
+        exportFormat = format
+        val name = exportViewModel.suggestedName(format)
+        if (format == ExportFormat.Zip) zipLauncher.launch(name) else tarGzLauncher.launch(name)
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -96,6 +161,10 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             uri?.let { viewModel.enableScheduledBackup(it) }
         }
+
+    LaunchedEffect(Unit) {
+        exportViewModel.saved.collect { snackbarHostState.showFeedback(savedMessage) }
+    }
 
     LaunchedEffect(pendingExportUri) {
         if (pendingExportUri != null) showExportPasswordDialog = true
@@ -137,6 +206,103 @@ internal fun BackupSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewMod
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            item {
+                SettingsGroupCard(
+                    title = stringResource(R.string.data_export_title),
+                    icon = Icons.Filled.Download,
+                ) {
+                    val running = exportStatus as? ExportJobStatus.Running
+                    SettingsListItem(
+                        headlineContent = { Text(stringResource(R.string.data_export_label)) },
+                        supportingContent = {
+                            Text(stringResource(R.string.data_export_description))
+                        },
+                    )
+                    Text(
+                        stringResource(R.string.data_export_archive_type),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    SingleChoiceSegmentedButtonRow(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .testTag("data-export-format")
+                    ) {
+                        ExportFormat.entries.forEachIndexed { index, format ->
+                            SegmentedButton(
+                                selected = exportFormat == format,
+                                onClick = { exportFormat = format },
+                                enabled = running == null,
+                                shape =
+                                    SegmentedButtonDefaults.itemShape(
+                                        index,
+                                        ExportFormat.entries.size,
+                                    ),
+                            ) {
+                                Text(".${format.extension}")
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = { startExport(exportFormat) },
+                        enabled = running == null && !offline,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .testTag("data-export-button"),
+                    ) {
+                        if (running != null) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                stringResource(
+                                    R.string.data_export_running,
+                                    Formatter.formatShortFileSize(context, running.bytes),
+                                )
+                            )
+                        } else {
+                            Text(stringResource(R.string.data_export_button))
+                        }
+                    }
+                    if (offline && running == null) {
+                        Text(
+                            stringResource(R.string.data_export_offline),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    exportFailure?.let { failure ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        ) {
+                            Text(
+                                stringResource(failureMessageRes(failure)),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f).testTag("data-export-error"),
+                            )
+                            // A 401 is handled by the session-expiry banner, where retrying is
+                            // pointless until the user signs in again.
+                            if (failure != ExportFailure.Unauthorized) {
+                                TextButton(onClick = { startExport(exportFormat) }) {
+                                    Text(stringResource(R.string.data_export_retry))
+                                }
+                            }
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.data_export_format),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.backup_settings_manual_title),
@@ -449,3 +615,16 @@ fun BackupPasswordDialog(
         },
     )
 }
+
+private const val CONNECTIVITY_POLL_MILLIS = 2_000L
+
+/** The name the user gave the file in the picker, or null when the provider does not say. */
+private fun displayNameOf(context: android.content.Context, uri: Uri): String? =
+    runCatching {
+            context.contentResolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                }
+        }
+        .getOrNull()

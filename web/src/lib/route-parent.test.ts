@@ -15,6 +15,7 @@ describe("routeParent", () => {
     ["/app/activity", "/app", "/app"],
     ["/app/privacy", "/app", "/app/about"],
     ["/app/about", "/app", "/app/more"],
+    ["/app/backups", "/app", "/app/more"],
     ["/app/admin/audit/123", "/app", "/app/admin/audit"],
     ["/app/admin/resources/projects/42", "/app", "/app/admin/audit"],
     ["/workspace/projects/42/edit", "/workspace/", "/workspace/projects/42"],

@@ -17,14 +17,23 @@ future restore, other tools). Restore is not built yet (TODO T129).
 - Authentication: a browser session or an API PAT (`Authorization: Bearer`),
   like the other `/api/v2/account` routes. No CSRF token is needed: it is a
   `GET` without side effects.
-- Response: `200`, `Content-Type: application/gzip`,
+- `?archive=tar.gz` (the default) or `?archive=zip` picks the container; any
+  other value is `400 invalid_request`. The content is the same in both.
+- Response: `200`, `Content-Type: application/gzip` (zip: `application/zip`),
   `Content-Disposition: attachment; filename="stricknani-export-YYYY-MM-DD.tar.gz"`
-  (UTC date), `Cache-Control: no-store`. The body is streamed; there is no
+  (zip: `.zip`; the date is UTC), `Cache-Control: no-store`. The body is streamed; there is no
   `Content-Length`.
 - Errors use the usual v2 error envelope: `401` without valid credentials,
   `429 rate_limited` when the same user already has an export running.
-- One export per user at a time. It reads one consistent snapshot of the
-  database; media files are read after it.
+- One export per user at a time; the slot frees when the download ends or the
+  client disconnects.
+- The list of items is read in one transaction; each item's details and media
+  rows are read right after it, so an item edited during the export may show
+  either state and one deleted in between is left out. Media files are read
+  after that: each file is hashed first (the manifest and JSON come before the
+  files and carry `sha256` and the real counts), then streamed. A file that
+  changes size meanwhile aborts the download instead of producing a bad
+  archive.
 
 ## Archive layout
 
@@ -43,6 +52,10 @@ relative to it. `manifest.json` is the first entry, so a reader can check the
 format before reading the rest. All JSON files are UTF-8, pretty-printed. Paths
 use `/`; entries are regular files with mode 0644 and the export time as their
 modification time.
+
+The zip variant has the same top-level directory and entries, `manifest.json`
+first; JSON files are deflated, media files stored (they are already
+compressed).
 
 ### `manifest.json`
 
@@ -106,7 +119,7 @@ An array of the user's own categories, sorted by `id`: `{ "id", "name" }`.
 - A file that is missing on the server is listed with `"file": null` and
   `"missing": true`, so the archive still describes it.
 - `original_filename` and `content_type` may be null when the server never
-  recorded them.
+  recorded them. Entries also carry the media `id` and `alt_text`.
 
 ## What is in it
 
@@ -115,7 +128,10 @@ An array of the user's own categories, sorted by `id`: `{ "id", "name" }`.
   through a shared project. A revoked share leaves nothing. Derived access is
   not transitive (other projects of a derived yarn are not exported).
 - Shared items carry `owner` (the original owner) and `access.role` (the
-  caller's role). Own items have `access.role` = `"owner"`.
+  caller's role). Own items have `access.role` = `"owner"`. A yarn readable
+  only through a shared project has `access.role` = `"viewer"` and
+  `access.derived` = `true`; its `project_ids` lists only projects that are in
+  the archive.
 - Administrators get only what they could read as a normal user, not every
   account's data.
 

@@ -31,6 +31,7 @@ use crate::{
 use super::{
     ApiV2State, Envelope,
     access::{rate_limited, resource_mutation_user, resource_user},
+    api_error,
 };
 
 const MAX_AVATAR_REQUEST_BYTES: usize = 26 * 1024 * 1024;
@@ -49,6 +50,7 @@ pub(super) fn router() -> Router<ApiV2State> {
         )
         .route("/account/password", axum::routing::put(change_password))
         .route("/account/delete", post(delete_account))
+        .route("/account/export", get(export_account))
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024));
     let avatar_routes = Router::new()
         .route("/account/avatar", post(upload_avatar).delete(delete_avatar))
@@ -116,6 +118,43 @@ async fn update_account(
     {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => account_error(error),
+    }
+}
+
+#[derive(Deserialize)]
+struct ExportQuery {
+    archive: Option<String>,
+}
+
+async fn export_account(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    axum::extract::Query(query): axum::extract::Query<ExportQuery>,
+) -> Response {
+    let user_id = match resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Some(format) = crate::export::ArchiveFormat::parse(query.archive.as_deref()) else {
+        return api_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "archive must be tar.gz or zip",
+        );
+    };
+    let Some(guard) = state.exports.begin(user_id) else {
+        return rate_limited(
+            5,
+            "An export is already running; try again when it finishes",
+        );
+    };
+    match crate::export::snapshot(&state.app, user_id).await {
+        Ok(snapshot) => crate::export::response(&state.app, snapshot, format, guard),
+        Err(_) => api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Request failed",
+        ),
     }
 }
 

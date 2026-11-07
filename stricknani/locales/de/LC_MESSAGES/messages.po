@@ -338,7 +338,7 @@ msgid "API token revoked."
 msgstr "API-Token widerrufen."
 
 #: web/src/routes/+layout.svelte:361 web/src/routes/about/+page.svelte:201
-#: web/src/routes/more/+page.svelte:76
+#: web/src/routes/more/+page.svelte:85
 msgid "About"
 msgstr "Über Stricknani"
 
@@ -530,8 +530,8 @@ msgstr "Anzahl Maschen"
 #: web/src/lib/features/admin/AdminAudit.svelte:318
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:571
-#: web/src/routes/+layout.svelte:351 web/src/routes/more/+page.svelte:63
-#: web/src/routes/more/+page.svelte:67
+#: web/src/routes/+layout.svelte:351 web/src/routes/more/+page.svelte:72
+#: web/src/routes/more/+page.svelte:76
 msgid "Admin"
 msgstr "Admin"
 
@@ -688,6 +688,10 @@ msgstr "Der Archivdienst hat eine unlesbare Antwort zurückgegeben."
 msgid "Archive this source"
 msgstr "Diese Quelle archivieren"
 
+#: web/src/routes/backups/+page.svelte:59
+msgid "Archive type"
+msgstr "Archivtyp"
+
 #: web/src/lib/features/admin/AdminResource.svelte:516
 #: web/src/lib/features/admin/AdminResource.svelte:705
 #: web/src/lib/features/projects/ProjectEditor.svelte:1415
@@ -821,6 +825,12 @@ msgstr "Zurück zum Garn"
 #: web/src/lib/features/yarns/YarnForm.svelte:627
 msgid "Back to yarns"
 msgstr "Zurück zu den Garnen"
+
+#: web/src/routes/backups/+page.svelte:35
+#: web/src/routes/backups/+page.svelte:41 web/src/routes/more/+page.svelte:61
+#: web/src/routes/more/+page.svelte:65
+msgid "Backups"
+msgstr "Backups"
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:541
 msgid "Based on a pattern cast-on of"
@@ -1503,6 +1513,10 @@ msgstr "Dieses Garn nicht hinzufügen"
 msgid "Done"
 msgstr "Fertig"
 
+#: web/src/routes/backups/+page.svelte:68
+msgid "Download"
+msgstr "Herunterladen"
+
 #: web/src/routes/about/+page.svelte:333
 msgid "Download APK"
 msgstr "APK herunterladen"
@@ -1510,6 +1524,10 @@ msgstr "APK herunterladen"
 #: web/src/lib/components/GetAppCard.svelte:88
 msgid "Download for Android"
 msgstr "Für Android herunterladen"
+
+#: web/src/routes/more/+page.svelte:66
+msgid "Download your data"
+msgstr "Deine Daten herunterladen"
 
 #: web/src/lib/features/media/ReorderableMedia.svelte:319
 msgid "Drag a photo or use the arrow keys to change the order."
@@ -1878,6 +1896,10 @@ msgid "For your security, confirm your identity before changing how you sign in.
 msgstr ""
 "Aus Sicherheitsgründen musst du deine Identität bestätigen, bevor du "
 "ändern kannst, wie du dich anmeldest."
+
+#: web/src/routes/backups/+page.svelte:70
+msgid "Format version 1"
+msgstr "Formatversion 1"
 
 #: web/src/routes/about/+page.svelte:193
 msgid "Found a bug or have an idea? Tell us on GitHub."
@@ -2538,7 +2560,7 @@ msgstr "Mit Garn und Liebe gemacht."
 msgid "Main photo"
 msgstr "Hauptfoto"
 
-#: web/src/routes/more/+page.svelte:68
+#: web/src/routes/more/+page.svelte:77
 msgid "Manage accounts and review the audit log."
 msgstr "Konten verwalten und das Änderungsprotokoll ansehen."
 
@@ -2604,7 +2626,7 @@ msgstr "Weitere Aktionen"
 msgid "More changes could not be loaded."
 msgstr "Weitere Änderungen konnten nicht geladen werden."
 
-#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:72
+#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:81
 msgid "More navigation"
 msgstr "Weitere Seiten"
 
@@ -3559,6 +3581,14 @@ msgstr ""
 "fortgesetzt wird. Durch das Entfernen der App oder das Löschen ihrer App-"
 "Daten wird der lokale Cache gemäß dem Android-Verhalten entfernt."
 
+#: web/src/routes/backups/+page.svelte:51
+msgid ""
+"Projects, yarns, categories, photos and attachments in one archive "
+"(.tar.gz), including items shared with you."
+msgstr ""
+"Projekte, Garne, Kategorien, Fotos und Anhänge in einem Archiv (.tar.gz),"
+" auch was mit dir geteilt ist."
+
 #: web/src/routes/about/+page.svelte:317
 msgid "QR code for the Android app download"
 msgstr "QR-Code für den Download der Android-App"
@@ -3846,6 +3876,10 @@ msgstr "Ressourceninhaber"
 #: web/src/lib/features/admin/DiffPanel.svelte:158
 msgid "Resource unavailable"
 msgstr "Ressource nicht verfügbar"
+
+#: web/src/routes/backups/+page.svelte:75
+msgid "Restoring from a download is not available yet."
+msgstr "Das Wiederherstellen aus einem Download gibt es noch nicht."
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:581
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:249
@@ -5713,7 +5747,7 @@ msgstr "Benutzer"
 msgid "Version"
 msgstr "Version"
 
-#: web/src/routes/more/+page.svelte:77
+#: web/src/routes/more/+page.svelte:86
 msgid "Version, links and credits."
 msgstr "Version, Links und Danksagungen."
 
@@ -6160,6 +6194,10 @@ msgstr ""
 #: web/src/routes/privacy/+page.svelte:278
 msgid "Your choices and contact"
 msgstr "Deine Wahlmöglichkeiten und Kontakt"
+
+#: web/src/routes/backups/+page.svelte:48
+msgid "Your data"
+msgstr "Deine Daten"
 
 #: web/src/routes/delete-account/+page.svelte:26
 msgid "Your data, your call"
