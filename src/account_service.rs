@@ -553,6 +553,9 @@ pub(crate) enum DeleteProof {
     BrowserSession { token_id: i64 },
     /// SHA-256 of an `X-Reauth-Token` proof, consumed with the deletion.
     NativeProof { token_id: i64, proof_hash: String },
+    /// The server operator (`stricknani-server delete-user`); a disabled
+    /// account can be deleted too.
+    Operator,
 }
 
 /// Whether `confirmation` is the literal `DELETE` or the account email.
@@ -582,8 +585,10 @@ pub(crate) async fn delete_account(
         .map_err(|_| AccountError::Database)?;
     // The no-op write takes SQLite's write lock before the guards run, so two
     // concurrent deletions of the last two administrators cannot both pass.
-    let active = sqlx::query("UPDATE users SET id = id WHERE id = ? AND active = 1")
+    let operator = matches!(proof, DeleteProof::Operator);
+    let active = sqlx::query("UPDATE users SET id = id WHERE id = ? AND (active = 1 OR ?)")
         .bind(user_id)
+        .bind(operator)
         .execute(&mut *tx)
         .await
         .map_err(|_| AccountError::Database)?;
@@ -600,7 +605,7 @@ pub(crate) async fn delete_account(
         return Err(AccountError::ConfirmationMismatch);
     }
     match &proof {
-        DeleteProof::PasswordVerified => {}
+        DeleteProof::PasswordVerified | DeleteProof::Operator => {}
         DeleteProof::BrowserSession { token_id } => {
             oidc_identity_service::consume_recent_auth_tx(
                 &mut tx,

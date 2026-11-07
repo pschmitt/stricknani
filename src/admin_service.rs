@@ -30,6 +30,8 @@ pub(crate) struct AdminUser {
     pub(crate) active: bool,
     pub(crate) is_admin: bool,
     pub(crate) avatar_url: Option<String>,
+    /// How many single sign-on identities (Authelia) are linked to the account.
+    pub(crate) linked_identities: i64,
 }
 
 pub(crate) struct UserPage {
@@ -56,6 +58,7 @@ fn decode_user(gravatar_enabled: bool) -> impl Fn(sqlx::sqlite::SqliteRow) -> Ad
                 gravatar_enabled,
             )
             .map(|(url, _)| url),
+            linked_identities: row.get("linked_identities"),
         }
     }
 }
@@ -94,7 +97,9 @@ pub(crate) async fn list_users_page(
     require_admin(pool, actor_id).await?;
     let rows = sqlx::query(
         "SELECT users.id, users.email, users.active, users.is_admin, \
-         users.use_gravatar, user_avatars.filename AS avatar_filename FROM users \
+         users.use_gravatar, user_avatars.filename AS avatar_filename, \
+         (SELECT count(*) FROM oidc_identities WHERE oidc_identities.user_id = users.id) \
+         AS linked_identities FROM users \
          LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          ORDER BY users.email COLLATE NOCASE, users.id LIMIT ? OFFSET ?",
     )
@@ -295,7 +300,9 @@ async fn get_user_tx(
 ) -> Result<AdminUser, AdminError> {
     sqlx::query(
         "SELECT users.id, users.email, users.active, users.is_admin, \
-         users.use_gravatar, user_avatars.filename AS avatar_filename FROM users \
+         users.use_gravatar, user_avatars.filename AS avatar_filename, \
+         (SELECT count(*) FROM oidc_identities WHERE oidc_identities.user_id = users.id) \
+         AS linked_identities FROM users \
          LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ?",
     )

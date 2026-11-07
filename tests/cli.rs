@@ -407,3 +407,82 @@ async fn avatar_cli_sets_replaces_clears_and_rejects_bad_input() {
     std::fs::remove_file(png_path).unwrap();
     std::fs::remove_file(bad_path).unwrap();
 }
+
+#[tokio::test]
+async fn delete_user_removes_the_account_and_what_it_owns() {
+    let id = rand::random::<u64>();
+    let path = std::env::temp_dir().join(format!("stricknani-delete-cli-{id}.db"));
+    let url = format!("sqlite:{}", path.display());
+    for email in ["keep@example.invalid", "gone@example.invalid"] {
+        assert!(
+            cli(
+                &url,
+                &["create-admin", email],
+                Some(b"disposable-test-password\n")
+            )
+            .status
+            .success()
+        );
+    }
+    let pool = db::connect(&url).await.unwrap();
+    let gone: i64 = sqlx::query_scalar("SELECT id FROM users WHERE email = 'gone@example.invalid'")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO projects (name, owner_id, created_at, updated_at) VALUES ('Test project', ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')")
+        .bind(gone)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO yarns (name, owner_id, created_at, updated_at) VALUES ('Test yarn', ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')")
+        .bind(gone)
+        .execute(&pool)
+        .await
+        .unwrap();
+    // A disabled account can still be deleted by the operator.
+    assert!(
+        cli(&url, &["disable-user", "gone@example.invalid"], None)
+            .status
+            .success()
+    );
+
+    let deleted = cli(&url, &["delete-user", "GONE@example.invalid"], None);
+    assert!(
+        deleted.status.success(),
+        "{}",
+        String::from_utf8_lossy(&deleted.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&deleted.stdout).trim(),
+        "user deleted"
+    );
+    let count = |sql: &'static str| {
+        let pool = pool.clone();
+        async move {
+            sqlx::query_scalar::<_, i64>(sql)
+                .bind(gone)
+                .fetch_one(&pool)
+                .await
+                .unwrap()
+        }
+    };
+    assert_eq!(count("SELECT count(*) FROM users WHERE id = ?").await, 0);
+    assert_eq!(
+        count("SELECT count(*) FROM projects WHERE owner_id = ?").await,
+        0
+    );
+    assert_eq!(
+        count("SELECT count(*) FROM yarns WHERE owner_id = ?").await,
+        0
+    );
+
+    let unknown = cli(&url, &["delete-user", "gone@example.invalid"], None);
+    assert!(!unknown.status.success());
+    assert!(String::from_utf8_lossy(&unknown.stderr).contains("unknown user"));
+    // The last active administrator stays.
+    let last = cli(&url, &["delete-user", "keep@example.invalid"], None);
+    assert!(!last.status.success());
+    assert!(String::from_utf8_lossy(&last.stderr).contains("cannot delete the last administrator"));
+    drop(pool);
+    let _ = std::fs::remove_file(&path);
+}

@@ -79,6 +79,31 @@ describe("administrator API", () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/v2/admin/users?page=2");
   });
 
+  it("parses the optional linked identity count and rejects bad values", async () => {
+    const listing = (value: unknown) =>
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json({
+            data: [{ ...user, linked_identities: value }],
+            meta: { page: 1, per_page: 50, has_more: false },
+          }),
+        ),
+      );
+    listing(2);
+    await expect(listAdminUsers(1)).resolves.toMatchObject({
+      data: [{ linked_identities: 2 }],
+    });
+    listing(-1);
+    await expect(listAdminUsers(1)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+    listing("1");
+    await expect(listAdminUsers(1)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+  });
+
   it("accepts only same-origin admin avatar URLs and binds users to their own", async () => {
     const withAvatar = {
       ...user,

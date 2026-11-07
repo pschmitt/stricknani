@@ -603,3 +603,37 @@ async fn admin_json_is_bounded_strict_and_has_stable_errors() {
     assert_eq!(too_large.status(), StatusCode::PAYLOAD_TOO_LARGE);
     assert_eq!(json(too_large).await["error"]["code"], "payload_too_large");
 }
+
+#[tokio::test]
+async fn admin_user_list_counts_linked_sign_in_identities() {
+    let fixture = fixture().await;
+    stricknani_server::oidc_configuration_service::reconcile(&fixture.pool, &["authelia".into()])
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO oidc_identities (user_id, provider_id, issuer, subject, linked_at) \
+         VALUES (?, 'authelia', 'https://issuer.example.test', 'member-subject', unixepoch())",
+    )
+    .bind(fixture.member_id)
+    .execute(&fixture.pool)
+    .await
+    .unwrap();
+    let users = fixture
+        .app
+        .clone()
+        .oneshot(request("GET", "/admin/users", Some(ADMIN_TOKEN), None, ""))
+        .await
+        .unwrap();
+    let users = json(users).await;
+    let linked = |id: i64| {
+        users["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|user| user["id"] == id)
+            .unwrap()["linked_identities"]
+            .clone()
+    };
+    assert_eq!(linked(fixture.member_id), 1);
+    assert_eq!(linked(fixture.admin_id), 0);
+}

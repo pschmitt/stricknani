@@ -175,9 +175,13 @@ fun AdminAccountsScreen(
                                         busy = state.busyUserId == user.id,
                                         avatarUrl = viewModel.avatarUrl(user.avatarUrl),
                                         onToggleActive = { toToggle = user },
-                                        // Only when the server lists a sign-in provider (OIDC).
+                                        // Only when the server lists a sign-in provider (OIDC)
+                                        // and the account has a linked identity (like the web).
                                         onShowLogins =
-                                            if (identitiesState.available) {
+                                            if (
+                                                identitiesState.available &&
+                                                    (user.linkedIdentities ?: 1) > 0
+                                            ) {
                                                 { identitiesViewModel.open(user) }
                                             } else null,
                                         onResetPassword = {

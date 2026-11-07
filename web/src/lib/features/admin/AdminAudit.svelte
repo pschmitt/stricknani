@@ -390,7 +390,7 @@
                 <div class="event-action">
                   <AuditActionBadge action={event.action} {locale} />
                 </div>
-                <div class="event-resource">
+                <div class="event-resource" class:no-media={!event.media}>
                   <ResourceCard
                     kind={resourceKind}
                     name={event.resource.name ??
@@ -398,7 +398,8 @@
                     href={event.resource.href}
                     imageUrl={event.resource.preview_url}
                   />
-                  <!-- Every row reserves this line so rows keep one height, with or without media. -->
+                  <!-- Every row reserves this line so rows keep one height, with or without media;
+                       rows without media shift the card down by half of it to stay centered. -->
                   <div class="event-note">
                     {#if event.media}
                       {#if event.media.exists && event.media.is_image && event.media.thumbnail_url}
@@ -582,6 +583,9 @@
   .event-resource {
     grid-area: resource;
     min-width: 0;
+  }
+  .event-resource.no-media :global(.resource-card) {
+    transform: translateY(0.875rem);
   }
   .event-resource :global(.resource-card__link) {
     grid-template-columns: 2rem minmax(0, 1fr);

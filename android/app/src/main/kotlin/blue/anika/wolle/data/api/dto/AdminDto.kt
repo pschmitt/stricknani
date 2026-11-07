@@ -33,6 +33,8 @@ data class AdminUserDto(
     val active: Boolean,
     @SerialName("is_admin") val isAdmin: Boolean,
     @SerialName("avatar_url") val avatarUrl: String? = null,
+    /** Linked single sign-on identities; null on servers that do not say. */
+    @SerialName("linked_identities") val linkedIdentities: Int? = null,
 )
 
 @Serializable data class AdminUsersPageDto(val data: List<AdminUserDto>, val meta: AdminPageMetaDto)

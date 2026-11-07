@@ -127,12 +127,16 @@ data class SyncFailureReport(
     val stackTrace: List<StackTraceElement> = emptyList(),
 )
 
-/** Stable categories that remain useful when R8 obfuscates JVM class names. */
-enum class SyncFailureClass(val tagValue: String) {
+/**
+ * Stable categories that remain useful when R8 obfuscates JVM class names. [reportable] is false
+ * for "the server cannot be reached right now" (no network, DNS, timeouts, refused connections):
+ * the app works offline and retries later, so these are not errors worth an event.
+ */
+enum class SyncFailureClass(val tagValue: String, val reportable: Boolean = true) {
     HTTP("http"),
-    UNKNOWN_HOST("unknown_host"),
-    TIMEOUT("timeout"),
-    CONNECTION("connection"),
+    UNKNOWN_HOST("unknown_host", reportable = false),
+    TIMEOUT("timeout", reportable = false),
+    CONNECTION("connection", reportable = false),
     IO("io"),
     SERIALIZATION("serialization"),
     STATE("state"),

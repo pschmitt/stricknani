@@ -206,4 +206,19 @@ class ErrorReportingTest {
         assertNull(ErrorReportingGate.tunnelDsn("not a dsn", "https://x.test/t"))
         assertNull(config(meta = meta.copy(dsn = "https://sentry.example.test/7")))
     }
+
+    @Test
+    fun `an unreachable server is not reported, real failures are`() {
+        val offline =
+            listOf(
+                java.net.UnknownHostException("offline"),
+                java.net.SocketTimeoutException(),
+                java.net.ConnectException(),
+            )
+        for (failure in offline) {
+            assertFalse(SyncFailureClassifier.classify(failure).reportable)
+        }
+        assertTrue(SyncFailureClassifier.classify(IOException()).reportable)
+        assertTrue(SyncFailureClassifier.classify(IllegalStateException()).reportable)
+    }
 }

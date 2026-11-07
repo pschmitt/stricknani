@@ -14,7 +14,7 @@ use stricknani_server::importer::{ImportOptions, import_snapshot};
 use stricknani_server::operator_avatar;
 use stricknani_server::security;
 
-const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server set-avatar EMAIL PATH\n    stricknani-server clear-avatar EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n    stricknani-server regenerate-thumbnails\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. set-avatar stores the image file at PATH (validated and resized like an app upload) as the avatar of an active user; clear-avatar removes it. import-snapshot imports only a copied, self-contained legacy snapshot. regenerate-thumbnails rewrites every photo's thumbnail and stored size from its original, upright per its EXIF orientation.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    STRICKNANI_DATABASE_URL  SQLite database URL\n    STRICKNANI_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    STRICKNANI_SENTRY_DSN_FILE   File holding a Sentry DSN (or STRICKNANI_SENTRY_DSN); error reporting is off without one\n    STRICKNANI_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    STRICKNANI_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n    STRICKNANI_PUSH_SUBJECT  Web Push (VAPID) contact, a mailto: or https: URI (default: the project page)\n";
+const HELP: &str = "stricknani-server\n\nUSAGE:\n    stricknani-server [serve]\n    stricknani-server health-check\n    stricknani-server create-user EMAIL\n    stricknani-server create-admin EMAIL\n    stricknani-server disable-user EMAIL\n    stricknani-server delete-user EMAIL\n    stricknani-server set-avatar EMAIL PATH\n    stricknani-server clear-avatar EMAIL\n    stricknani-server revoke-token ID\n    stricknani-server import-snapshot --source-db PATH --source-media PATH --destination DIR\n    stricknani-server regenerate-thumbnails\n\nhealth-check probes only the local /healthz endpoint with a three-second timeout.\ncreate-user and create-admin read the password from standard input. set-avatar stores the image file at PATH (validated and resized like an app upload) as the avatar of an active user; clear-avatar removes it. delete-user permanently deletes an account (active or disabled) with its projects, yarns, photos and history, like Delete account in the app. import-snapshot imports only a copied, self-contained legacy snapshot. regenerate-thumbnails rewrites every photo's thumbnail and stored size from its original, upright per its EXIF orientation.\n\nREQUIRED ENVIRONMENT FOR SERVING AND ACCOUNT COMMANDS:\n    STRICKNANI_DATABASE_URL  SQLite database URL\n    STRICKNANI_MEDIA_ROOT    Absolute path for uploaded media\n\nOPTIONAL ENVIRONMENT:\n    BIND_HOST          IP address to listen on (default: 127.0.0.1)\n    BIND_PORT          Port to listen on (default: PORT, then 7674)\n    PORT               Fallback port\n    WEB_ROOT           Directory of the built web app served under /app/\n    TRUSTED_HOSTS      Comma-separated exact public host names or authorities\n    SESSION_COOKIE_SECURE  Set true for non-loopback listeners behind HTTPS\n    STRICKNANI_SENTRY_DSN_FILE   File holding a Sentry DSN (or STRICKNANI_SENTRY_DSN); error reporting is off without one\n    STRICKNANI_SENTRY_ENVIRONMENT  Sentry environment name (default: production)\n    STRICKNANI_SENTRY_TRACES_SAMPLE_RATE  Performance trace sample rate, 0 to 1 (default: 0)\n    STRICKNANI_PUSH_SUBJECT  Web Push (VAPID) contact, a mailto: or https: URI (default: the project page)\n";
 
 fn main() -> ExitCode {
     if std::env::args_os()
@@ -127,6 +127,12 @@ async fn run() -> Result<(), &'static str> {
                 return Err("usage: stricknani-server set-avatar EMAIL PATH");
             };
             set_avatar(&email, &path).await
+        }
+        "delete-user" => {
+            let (Some(email), None) = (arguments.next(), arguments.next()) else {
+                return Err("usage: stricknani-server delete-user EMAIL");
+            };
+            delete_user(&email).await
         }
         "clear-avatar" => {
             let (Some(email), None) = (arguments.next(), arguments.next()) else {
@@ -487,6 +493,17 @@ async fn disable_user(email: &str) -> Result<(), &'static str> {
     }
 
     println!("user disabled");
+    Ok(())
+}
+
+async fn delete_user(email: &str) -> Result<(), &'static str> {
+    let config = Config::from_env().map_err(|_| "invalid server configuration")?;
+    let pool = db::connect(&config.database_url)
+        .await
+        .map_err(|_| "cannot initialize Rust database")?;
+    let state = db::AppState::new(pool).with_media_root(config.media_root);
+    stricknani_server::operator_account::delete_user(&state, email).await?;
+    println!("user deleted");
     Ok(())
 }
 

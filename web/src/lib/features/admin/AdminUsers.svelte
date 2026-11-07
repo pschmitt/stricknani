@@ -638,18 +638,23 @@
           </span>
           <div class="row-actions">
             {#if user.id !== userId}
-              <SharedButton
-                variant="secondary"
-                size="sm"
-                class={user.active ? "user-action--danger" : ""}
-                type="button"
-                disabled={operation !== null}
-                onclick={(event) =>
-                  askActive(user, !user.active, event.currentTarget)}
-                icon={user.active ? "user-disable" : "user-enable"}
-              >
-                {user.active ? t("Disable", locale) : t("Enable", locale)}
-              </SharedButton>
+              <span class="action-slot">
+                <SharedButton
+                  variant="secondary"
+                  size="sm"
+                  class={user.active ? "user-action--danger" : ""}
+                  type="button"
+                  disabled={operation !== null}
+                  onclick={(event) =>
+                    askActive(user, !user.active, event.currentTarget)}
+                  icon={user.active ? "user-disable" : "user-enable"}
+                >
+                  {user.active ? t("Disable", locale) : t("Enable", locale)}
+                </SharedButton>
+              </span>
+            {:else}
+              <span class="action-slot action-slot--empty" aria-hidden="true"
+              ></span>
             {/if}
             <SharedButton
               variant="ghost"
@@ -661,12 +666,15 @@
             >
               {t("Reset password", locale)}
             </SharedButton>
-            {#if oidcProviders.length > 0}
+            {#if oidcProviders.length > 0 && (user.linked_identities === undefined || user.linked_identities > 0)}
               <AdminUserIdentities
                 {user}
                 providers={oidcProviders}
                 disabled={operation !== null}
               />
+            {:else}
+              <span class="action-slot action-slot--empty" aria-hidden="true"
+              ></span>
             {/if}
           </div>
         </article>
@@ -932,9 +940,9 @@
   .ledger-head,
   .user-row {
     display: grid;
-    grid-template-columns:
-      minmax(14rem, 2fr) minmax(8rem, 0.8fr) minmax(6rem, 0.6fr)
-      minmax(16rem, auto);
+    /* Fixed tracks (no content-sized ones): every row is its own grid, so any auto or
+       max-content track would differ per row and misalign the columns. */
+    grid-template-columns: minmax(0, 1fr) 9rem 6.5rem 24rem;
     align-items: center;
     gap: 0.8rem;
     padding: 0.6rem 0.75rem 0.6rem 1rem;
@@ -980,16 +988,18 @@
   /* Role as a quiet label; administrators get the accent so they stand out in the list. */
   .role-value {
     justify-self: start;
-    color: var(--ink-muted);
-    font-size: 0.9rem;
-  }
-  .role-value.admin {
     border-radius: 999px;
-    padding: 0.2rem 0.6rem;
-    color: var(--accent-strong);
-    background: var(--accent-wash);
+    padding: 0.25rem 0.6rem;
+    color: var(--ink-muted);
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px var(--line);
     font-size: 0.83rem;
     font-weight: 650;
+  }
+  .role-value.admin {
+    color: var(--accent-strong);
+    background: var(--accent-wash);
+    box-shadow: none;
   }
   .cell-label {
     display: none;
@@ -1007,11 +1017,20 @@
     color: var(--warning);
     background: var(--warning-surface);
   }
+  /* Fixed slots: the disable/enable slot keeps its width in the current user's row so
+     Reset password and the identities link stay in the same columns. */
   .row-actions {
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: end;
+    display: grid;
+    grid-template-columns: 7.25rem max-content max-content;
+    align-items: center;
+    justify-content: start;
     gap: 0.35rem;
+  }
+  .action-slot {
+    display: flex;
+  }
+  .action-slot :global(.ui-button) {
+    width: 100%;
   }
   /* Disabling is a rare, destructive action: outlined in the danger colour instead of a solid
      pink block on every row. The confirmation dialog stays the real safeguard. */
@@ -1162,8 +1181,15 @@
       grid-row: 2;
     }
     .row-actions {
+      display: flex;
       grid-column: 1 / -1;
       justify-content: stretch;
+    }
+    .action-slot {
+      display: contents;
+    }
+    .action-slot--empty {
+      display: none;
     }
     .row-actions :global(.ui-button) {
       flex: 1;

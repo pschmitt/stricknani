@@ -84,6 +84,8 @@ constructor(
      * Reapplies the cached consent/configuration before reporting, including during startup races.
      */
     suspend fun reportSyncFailure(report: SyncFailureReport) {
+        // Being offline is normal for an offline-first app; the sync retries later.
+        if (!report.failureClass.reportable) return
         if (!reporter.supported) {
             Log.i("SyncReplay", "Sync failure reporting unavailable: SDK not included")
             return

@@ -11,6 +11,8 @@ export interface AdminUser {
   active: boolean;
   is_admin: boolean;
   avatar_url: string | null;
+  /** Count of linked OIDC identities; absent on older servers. */
+  linked_identities?: number;
 }
 
 export interface AuditEvent {
@@ -173,7 +175,12 @@ function parseUser(value: unknown): AdminUser {
     typeof value.email !== "string" ||
     typeof value.active !== "boolean" ||
     typeof value.is_admin !== "boolean" ||
-    !validAdminAvatarUrl(value.avatar_url, value.id)
+    !validAdminAvatarUrl(value.avatar_url, value.id) ||
+    (value.linked_identities !== undefined &&
+      !(
+        Number.isSafeInteger(value.linked_identities) &&
+        (value.linked_identities as number) >= 0
+      ))
   )
     throw invalidResponse();
   return {
@@ -182,6 +189,9 @@ function parseUser(value: unknown): AdminUser {
     active: value.active,
     is_admin: value.is_admin,
     avatar_url: value.avatar_url,
+    ...(value.linked_identities === undefined
+      ? {}
+      : { linked_identities: value.linked_identities as number }),
   };
 }
 
