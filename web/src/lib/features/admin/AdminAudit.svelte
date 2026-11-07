@@ -408,8 +408,8 @@
                           alt=""
                           loading="lazy"
                           decoding="async"
-                          width="40"
-                          height="40"
+                          width="28"
+                          height="28"
                         />
                       {/if}
                       <AuditMediaPreview
@@ -597,18 +597,20 @@
     white-space: nowrap;
     overflow-wrap: normal;
   }
+  /* Every row reserves the thumbnail's height here, so rows keep one height
+     with or without a picture (the admin journey checks this at 320px). */
   .event-note {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    min-height: 1.3rem;
+    min-height: 1.75rem;
     min-width: 0;
   }
   .event-thumb {
     flex: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.6rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.45rem;
     object-fit: cover;
     background: var(--surface-raised);
   }
