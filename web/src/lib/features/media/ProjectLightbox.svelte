@@ -336,9 +336,9 @@
 
 <style>
   .lightbox {
-    width: min(94vw, 70rem);
-    max-width: 70rem;
-    max-height: min(92svh, 56rem);
+    width: min(64rem, calc(100vw - 2rem));
+    max-width: none;
+    max-height: none;
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
@@ -354,8 +354,7 @@
 
   .lightbox-shell {
     display: grid;
-    max-height: min(92svh, 56rem);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
   }
 
   .lightbox-topbar {
@@ -374,6 +373,10 @@
     font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  :global(.lightbox-step) {
+    align-self: center;
   }
 
   :global(.lightbox-close),
@@ -398,8 +401,12 @@
 
   .lightbox-stage {
     display: grid;
+    /* Fixed stage: the dialog keeps one size for every photo. */
+    height: min(44rem, calc(100dvh - 8rem));
     min-height: 12rem;
+    box-sizing: border-box;
     grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
     align-items: center;
     gap: clamp(0.4rem, 2vw, 1rem);
     padding: 0.75rem;
@@ -408,7 +415,9 @@
   figure {
     display: grid;
     min-width: 0;
-    max-height: calc(92svh - 5rem);
+    height: 100%;
+    min-height: 0;
+    width: 100%;
     grid-template-rows: minmax(0, 1fr) auto;
     justify-items: center;
     gap: 0.7rem;
@@ -420,8 +429,12 @@
   }
 
   .zoom-frame {
+    display: grid;
+    width: 100%;
+    height: 100%;
     max-width: 100%;
     min-height: 0;
+    place-items: center;
     overflow: hidden;
     border-radius: 0.4rem;
     touch-action: none;
@@ -438,7 +451,7 @@
   figure img {
     display: block;
     max-width: 100%;
-    max-height: calc(92svh - 9rem);
+    max-height: 100%;
     border-radius: 0.4rem;
     object-fit: contain;
     transform-origin: center;
@@ -480,6 +493,10 @@
   }
 
   @media (max-width: 420px) {
+    .lightbox {
+      width: calc(100vw - 0.75rem);
+    }
+
     .lightbox-stage {
       grid-template-columns: 44px minmax(0, 1fr) 44px;
       gap: 0.15rem;
