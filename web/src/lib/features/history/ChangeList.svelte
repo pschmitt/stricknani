@@ -9,6 +9,13 @@
     kindLabel,
     segments,
   } from "./change-format";
+  import MediaStrip from "./MediaStrip.svelte";
+  import {
+    hasMediaThumbnails,
+    markMediaLists,
+    mediaLabels,
+    type ChangeMedia,
+  } from "./media-change";
 
   // The field-by-field "before / after" diff of one recorded change, shared by the admin audit
   // detail page and the inline history on project and yarn pages.
@@ -17,11 +24,14 @@
     locale,
     label,
     headingTag = "h2",
+    media = null,
   }: {
     changes: ChangeSetV1;
     locale: Locale;
     label?: string;
     headingTag?: "h2" | "h3" | "h4";
+    /** Thumbnails of the pictures named by picture changes (`media_thumbnails` of the event). */
+    media?: ChangeMedia | null;
   } = $props();
 </script>
 
@@ -30,6 +40,13 @@
     {@const kind = changeKind(item)}
     {@const parts = segments(item, locale)}
     {@const change = delta(item)}
+    {@const thumbs = media !== null && hasMediaThumbnails(item, media)}
+    {@const marks = thumbs
+      ? markMediaLists(
+          mediaLabels(item, item.before) ?? [],
+          mediaLabels(item, item.after) ?? [],
+        )
+      : null}
     <li class="change" data-kind={kind}>
       <header class="change-head">
         <svelte:element this={headingTag} class="change-title"
@@ -46,8 +63,12 @@
             <span class="sign" aria-hidden="true">&minus;</span>
             {t("Before", locale)}
           </span>
-          <!-- prettier-ignore -->
-          <p class="value" class:value--empty={isEmptyValue(item.before)}>{#each parts.before as part, partIndex (partIndex)}{#if part.changed}<del>{part.text}</del>{:else}{part.text}{/if}{/each}</p>
+          {#if marks && media}
+            <MediaStrip marks={marks.before} {media} {locale} tone="before" />
+          {:else}
+            <!-- prettier-ignore -->
+            <p class="value" class:value--empty={isEmptyValue(item.before)}>{#each parts.before as part, partIndex (partIndex)}{#if part.changed}<del>{part.text}</del>{:else}{part.text}{/if}{/each}</p>
+          {/if}
         </section>
         <span class="change-arrow" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="18" height="18">
@@ -66,8 +87,12 @@
             <span class="sign" aria-hidden="true">+</span>
             {t("After", locale)}
           </span>
-          <!-- prettier-ignore -->
-          <p class="value" class:value--empty={isEmptyValue(item.after)}>{#each parts.after as part, partIndex (partIndex)}{#if part.changed}<ins>{part.text}</ins>{:else}{part.text}{/if}{/each}</p>
+          {#if marks && media}
+            <MediaStrip marks={marks.after} {media} {locale} tone="after" />
+          {:else}
+            <!-- prettier-ignore -->
+            <p class="value" class:value--empty={isEmptyValue(item.after)}>{#each parts.after as part, partIndex (partIndex)}{#if part.changed}<ins>{part.text}</ins>{:else}{part.text}{/if}{/each}</p>
+          {/if}
         </section>
       </div>
     </li>

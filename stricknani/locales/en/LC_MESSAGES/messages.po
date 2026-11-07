@@ -470,6 +470,7 @@ msgstr "Add yarn"
 msgid "Add your first yarn"
 msgstr "Add your first yarn"
 
+#: web/src/lib/features/history/MediaStrip.svelte:22
 #: web/src/lib/features/history/change-format.ts:64
 msgid "Added"
 msgstr "Added"
@@ -548,7 +549,7 @@ msgstr "Administrator access"
 msgid "Administrator access is required."
 msgstr "Administrator access is required."
 
-#: web/src/lib/features/history/ChangeList.svelte:67
+#: web/src/lib/features/history/ChangeList.svelte:88
 msgid "After"
 msgstr "After"
 
@@ -810,7 +811,7 @@ msgstr "Back to yarns"
 msgid "Based on a pattern cast-on of"
 msgstr "Based on a pattern cast-on of"
 
-#: web/src/lib/features/history/ChangeList.svelte:47
+#: web/src/lib/features/history/ChangeList.svelte:64
 msgid "Before"
 msgstr "Before"
 
@@ -1094,7 +1095,7 @@ msgstr "Close"
 msgid "Close filters"
 msgstr "Close filters"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:89
+#: web/src/lib/features/media/ProjectLightbox.svelte:263
 msgid "Close image viewer"
 msgstr "Close image viewer"
 
@@ -1517,8 +1518,8 @@ msgid "Edit"
 msgstr "Edit"
 
 #: web/src/lib/features/media/PhotoEditor.svelte:266
-#: web/src/lib/features/media/ProjectLightbox.svelte:77
-#: web/src/lib/features/media/ProjectLightbox.svelte:80
+#: web/src/lib/features/media/ProjectLightbox.svelte:251
+#: web/src/lib/features/media/ProjectLightbox.svelte:254
 #: web/src/lib/features/media/ReorderableMedia.svelte:425
 msgid "Edit photo"
 msgstr "Edit photo"
@@ -1561,6 +1562,7 @@ msgstr "Email"
 msgid "Email address"
 msgstr "Email address"
 
+#: web/src/lib/features/history/MediaStrip.svelte:38
 #: web/src/lib/features/history/change-format.ts:23
 #: web/src/lib/features/history/change-format.ts:32
 msgid "Empty list"
@@ -2597,6 +2599,10 @@ msgstr "Move photo {position} earlier"
 msgid "Move photo {position} later"
 msgstr "Move photo {position} later"
 
+#: web/src/lib/features/history/MediaStrip.svelte:26
+msgid "Moved"
+msgstr "Moved"
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:536
 msgid "N/A"
 msgstr "N/A"
@@ -2663,7 +2669,7 @@ msgstr "New yarn"
 msgid "Next"
 msgstr "Next"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:121
+#: web/src/lib/features/media/ProjectLightbox.svelte:314
 msgid "Next image"
 msgstr "Next image"
 
@@ -3315,7 +3321,7 @@ msgstr "Preview and review"
 msgid "Previous"
 msgstr "Previous"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:101
+#: web/src/lib/features/media/ProjectLightbox.svelte:275
 msgid "Previous image"
 msgstr "Previous image"
 
@@ -3425,7 +3431,7 @@ msgstr "Project created. Your reviewed import is saved."
 msgid "Project details"
 msgstr "Project details"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:58
+#: web/src/lib/features/media/ProjectLightbox.svelte:232
 msgid "Project image viewer"
 msgstr "Project image viewer"
 
@@ -3595,8 +3601,8 @@ msgstr "Recommended needles"
 
 #: web/src/lib/features/admin/DiffPanel.svelte:109
 #: web/src/lib/features/admin/DiffPanel.svelte:116
-#: web/src/lib/features/history/ChangeList.svelte:28
-#: web/src/lib/features/history/HistoryEventDetail.svelte:76
+#: web/src/lib/features/history/ChangeList.svelte:38
+#: web/src/lib/features/history/HistoryEventDetail.svelte:77
 msgid "Recorded changes"
 msgstr "Recorded changes"
 
@@ -3659,6 +3665,7 @@ msgid "Remove this project photo?"
 msgstr "Remove this project photo?"
 
 #: web/src/lib/features/admin/audit-action.ts:30
+#: web/src/lib/features/history/MediaStrip.svelte:24
 #: web/src/lib/features/history/change-format.ts:66
 msgid "Removed"
 msgstr "Removed"

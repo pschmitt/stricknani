@@ -2,14 +2,20 @@ package blue.anika.wolle.ui.history
 
 import android.text.format.DateUtils
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -28,6 +34,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -38,12 +45,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -53,14 +63,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.ChangeItemDto
+import blue.anika.wolle.data.api.dto.HistoryMediaDto
 import blue.anika.wolle.ui.admin.ActionBadge
 import blue.anika.wolle.ui.admin.AdminAvatar
 import blue.anika.wolle.ui.admin.AuditMediaBlock
+import blue.anika.wolle.ui.admin.AuditMediaViewModel
+import blue.anika.wolle.ui.admin.AuditTone
 import blue.anika.wolle.ui.admin.ChangeCard
 import blue.anika.wolle.ui.admin.auditActionPresentation
 import blue.anika.wolle.ui.admin.auditEventInstant
+import blue.anika.wolle.ui.admin.changeFieldLabelRes
 import blue.anika.wolle.ui.admin.color
 import blue.anika.wolle.ui.admin.displayName
 import blue.anika.wolle.ui.admin.tone
@@ -68,6 +84,7 @@ import blue.anika.wolle.ui.admin.unavailableReasonRes
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
+import coil3.compose.SubcomposeAsyncImage
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -417,6 +434,7 @@ private fun HistoryEventSheet(
     val kind = auditActionPresentation(event.action).kind
     val tone = kind.tone().color()
     val other = otherActor(event.actorEmail, currentEmail)
+    val detailMedia = (detail as? HistoryDetailState.Loaded)?.detail?.event?.mediaThumbs.orEmpty()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             Modifier.fillMaxWidth()
@@ -490,7 +508,12 @@ private fun HistoryEventSheet(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
-                        body.items.forEach { item -> ChangeCard(item) }
+                        val thumbs = event.mediaThumbs.ifEmpty { detailMedia }
+                        body.items.forEach { item ->
+                            val rows = mediaChangeRows(item, thumbs)
+                            if (rows != null) MediaChangeCard(item, rows, thumbs)
+                            else ChangeCard(item)
+                        }
                     }
                 is HistoryDetailBody.Unavailable ->
                     Text(
@@ -499,5 +522,161 @@ private fun HistoryEventSheet(
                     )
             }
         }
+    }
+}
+
+private val ThumbSize = 52.dp
+
+/**
+ * A picture-order, cover or primary-photo change with thumbnails instead of file labels: a Before
+ * and an After row, the pictures that were added, removed or moved framed in their color.
+ */
+@Composable
+private fun MediaChangeCard(
+    item: ChangeItemDto,
+    rows: MediaChangeRows,
+    media: Map<String, HistoryMediaDto>,
+) {
+    val fieldLabel =
+        changeFieldLabelRes(item.field)?.let { stringResource(it) }
+            ?: stringResource(R.string.admin_field_unknown)
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth().testTag("history-media-change"),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                fieldLabel,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.semantics { heading() },
+            )
+            MediaThumbRow(stringResource(R.string.admin_changes_before), rows.before, media)
+            MediaThumbRow(stringResource(R.string.admin_changes_after), rows.after, media)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MediaThumbRow(
+    label: String,
+    thumbs: List<MediaThumb>,
+    media: Map<String, HistoryMediaDto>,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (thumbs.isEmpty()) {
+            Text(
+                stringResource(R.string.admin_value_not_provided),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                thumbs.forEach { thumb -> MediaThumbTile(thumb, media[thumb.label]) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun markColor(mark: MediaMark): Color =
+    when (mark) {
+        MediaMark.Kept -> MaterialTheme.colorScheme.outlineVariant
+        MediaMark.Added -> AuditTone.Green.color()
+        MediaMark.Removed -> MaterialTheme.colorScheme.error
+        MediaMark.Moved -> MaterialTheme.colorScheme.tertiary
+    }
+
+@Composable
+private fun MediaThumbTile(thumb: MediaThumb, entry: HistoryMediaDto?) {
+    val viewModel: AuditMediaViewModel = hiltViewModel()
+    val color = markColor(thumb.mark)
+    val shape = RoundedCornerShape(10.dp)
+    val markText =
+        when (thumb.mark) {
+            MediaMark.Kept -> null
+            MediaMark.Added -> stringResource(R.string.history_media_added)
+            MediaMark.Removed -> stringResource(R.string.history_media_removed)
+            MediaMark.Moved -> stringResource(R.string.history_media_moved)
+        }
+    val description = listOfNotNull(thumb.label, markText).joinToString(", ")
+    val badge =
+        when (thumb.mark) {
+            MediaMark.Kept -> null
+            MediaMark.Added -> "+"
+            MediaMark.Removed -> "\u2212"
+            MediaMark.Moved -> "\u2195"
+        }
+    val picture = entry?.let { viewModel.resolve(it.thumbnailUrl ?: it.url) }
+    Box(
+        Modifier.size(ThumbSize)
+            .clip(shape)
+            .border(
+                if (thumb.mark == MediaMark.Kept) 1.dp else 2.dp,
+                color,
+                shape,
+            )
+            .semantics { contentDescription = description }
+    ) {
+        if (picture != null) {
+            SubcomposeAsyncImage(
+                model = picture,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                    Box(
+                        Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    )
+                },
+                error = { MediaThumbLabel(thumb.label) },
+            )
+        } else {
+            MediaThumbLabel(thumb.label)
+        }
+        if (badge != null) {
+            Text(
+                badge,
+                color = MaterialTheme.colorScheme.surface,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                modifier =
+                    Modifier.align(Alignment.TopEnd)
+                        .background(color, RoundedCornerShape(bottomStart = 8.dp))
+                        .padding(horizontal = 5.dp)
+                        .clearAndSetSemantics {},
+            )
+        }
+    }
+}
+
+/** The file label as a text tile, for a picture the server no longer has. */
+@Composable
+private fun MediaThumbLabel(label: String) {
+    Box(
+        Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(4.dp),
+        Alignment.Center,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

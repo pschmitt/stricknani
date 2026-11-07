@@ -880,6 +880,32 @@ route return `{data: {event, changes, unavailable_reason}}`, using the same
 safe `ChangeSetV1` projection and legacy-detail allowlist as administrator
 audit details. Changes are nullable; raw legacy details are never returned.
 
+Events (list items and the detail's `event`) may carry an optional
+`media_thumbnails` object (the event's existing `media` field is the single file
+of an upload/removal and is unchanged):
+
+```json
+"media_thumbnails": {
+  "19413.jpg": {
+    "url": "/media/projects/42/3f2a9c.jpg",
+    "thumbnail_url": "/media/thumbnails/projects/42/thumb_3f2a9c.jpg"
+  }
+}
+```
+
+Keys are the exact label strings in the event's `project.image_order`,
+`project.step_image_order`, `project.cover_image`, `yarn.photo_order` and
+`yarn.primary_photo` change values, plus the event's media name. Values are the
+URLs of the resource's current picture with that label (the same `url` and
+`thumbnail_url` the resource detail returns). A label is
+`media_label(original_filename, filename, public_id)`; project pictures are
+searched title pictures first, then step pictures, each by position, and a
+label shared by several pictures maps to the first. Labels without a current
+picture (deleted photos) are absent, and the field is omitted entirely when no
+label resolves. It is resolved at read time, so events recorded earlier get
+thumbnails too. It is present only for readers of the history, and only
+describes the resource's own pictures.
+
 Both routes require a strict API-purpose PAT or browser session. The resource
 must still exist and belong to that authenticated user. Foreign resources,
 including requests by an administrator, and events belonging to another

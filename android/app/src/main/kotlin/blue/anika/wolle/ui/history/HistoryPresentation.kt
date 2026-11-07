@@ -219,3 +219,104 @@ fun sharingEventLine(
         }
     return SharingEventLine(res, name, role)
 }
+
+/** Change fields whose values are picture file labels (an order, or one cover/primary photo). */
+private val mediaLabelFields =
+    setOf(
+        "project.image_order",
+        "project.step_image_order",
+        "yarn.photo_order",
+        "project.cover_image",
+        "yarn.primary_photo",
+    )
+
+/** How a picture differs between the before and after side of a change. */
+enum class MediaMark {
+    Kept,
+    /** Only in the after list. */
+    Added,
+    /** Only in the before list. */
+    Removed,
+    /** In both lists, but at a different place among the pictures both lists share. */
+    Moved,
+}
+
+/** One picture (or label without a known picture) of a before/after row. */
+data class MediaThumb(val label: String, val mark: MediaMark)
+
+/** The two rows of a picture change: what it was and what it is now. */
+data class MediaChangeRows(val before: List<MediaThumb>, val after: List<MediaThumb>)
+
+private fun ChangeValue.mediaLabels(): List<String> =
+    when (this) {
+        is ChangeValue.TextList -> values
+        is ChangeValue.Text -> listOfNotNull(value?.takeIf { it.isNotBlank() })
+        else -> emptyList()
+    }
+
+/**
+ * The labels that did not move: the longest run of shared pictures that keeps its relative order
+ * ([beforeOrder] and [afterOrder] hold the same labels). Everything else was moved, so moving one
+ * picture to the front marks that picture and not all the others.
+ */
+fun unmovedLabels(beforeOrder: List<String>, afterOrder: List<String>): Set<String> {
+    val positions = beforeOrder.map { afterOrder.indexOf(it) }
+    val length = IntArray(positions.size) { 1 }
+    val previous = IntArray(positions.size) { -1 }
+    var best = -1
+    for (i in positions.indices) {
+        for (j in 0 until i) {
+            if (positions[j] < positions[i] && length[j] + 1 > length[i]) {
+                length[i] = length[j] + 1
+                previous[i] = j
+            }
+        }
+        if (best < 0 || length[i] > length[best]) best = i
+    }
+    val kept = mutableSetOf<String>()
+    var at = best
+    while (at >= 0) {
+        kept += beforeOrder[at]
+        at = previous[at]
+    }
+    return kept
+}
+
+/**
+ * The thumbnail rows of a picture change, or null when it keeps the text rendering: not a picture
+ * field, or none of its labels has a known picture in [media] (old server, deleted photos).
+ */
+fun mediaChangeRows(
+    item: ChangeItemDto,
+    media: Map<String, blue.anika.wolle.data.api.dto.HistoryMediaDto>,
+): MediaChangeRows? {
+    if (item.field !in mediaLabelFields || media.isEmpty()) return null
+    val before = parseChangeValue(item.before).mediaLabels()
+    val after = parseChangeValue(item.after).mediaLabels()
+    if ((before + after).none { it in media }) return null
+    val kept = unmovedLabels(before.filter { it in after }, after.filter { it in before })
+    return MediaChangeRows(
+        before =
+            before.map { label ->
+                MediaThumb(
+                    label,
+                    when {
+                        label !in after -> MediaMark.Removed
+                        label !in kept -> MediaMark.Moved
+                        else -> MediaMark.Kept
+                    },
+                )
+            },
+        after =
+            after.map { label ->
+                MediaThumb(
+                    label,
+                    when {
+                        label !in before -> MediaMark.Added
+                        label !in kept -> MediaMark.Moved
+                        else -> MediaMark.Kept
+                    },
+                )
+            },
+    )
+}

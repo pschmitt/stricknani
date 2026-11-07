@@ -990,6 +990,9 @@
     <string name="history_noun_ai">AI enhancement</string>
     <string name="history_noun_link">source link</string>
     <string name="history_noun_cover_image">cover picture</string>
+    <string name="history_media_added">added</string>
+    <string name="history_media_removed">removed</string>
+    <string name="history_media_moved">moved</string>
     <string name="history_noun_image_order">picture order</string>
     <string name="history_noun_step_image_order">step picture order</string>
     <string name="history_noun_primary_photo">main photo</string>

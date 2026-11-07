@@ -476,6 +476,7 @@ msgstr "Garn hinzufügen"
 msgid "Add your first yarn"
 msgstr "Füge dein erstes Garn hinzu"
 
+#: web/src/lib/features/history/MediaStrip.svelte:22
 #: web/src/lib/features/history/change-format.ts:64
 msgid "Added"
 msgstr "Hinzugefügt"
@@ -554,7 +555,7 @@ msgstr "Administratorzugriff"
 msgid "Administrator access is required."
 msgstr "Administratorrechte sind erforderlich."
 
-#: web/src/lib/features/history/ChangeList.svelte:67
+#: web/src/lib/features/history/ChangeList.svelte:88
 msgid "After"
 msgstr "Danach"
 
@@ -819,7 +820,7 @@ msgstr "Zurück zu den Garnen"
 msgid "Based on a pattern cast-on of"
 msgstr "Basierend auf einem Anschlag laut Anleitung von"
 
-#: web/src/lib/features/history/ChangeList.svelte:47
+#: web/src/lib/features/history/ChangeList.svelte:64
 msgid "Before"
 msgstr "Zuvor"
 
@@ -1109,7 +1110,7 @@ msgstr "Schließen"
 msgid "Close filters"
 msgstr "Filter schließen"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:89
+#: web/src/lib/features/media/ProjectLightbox.svelte:263
 msgid "Close image viewer"
 msgstr "Bildansicht schließen"
 
@@ -1534,8 +1535,8 @@ msgid "Edit"
 msgstr "Bearbeiten"
 
 #: web/src/lib/features/media/PhotoEditor.svelte:266
-#: web/src/lib/features/media/ProjectLightbox.svelte:77
-#: web/src/lib/features/media/ProjectLightbox.svelte:80
+#: web/src/lib/features/media/ProjectLightbox.svelte:251
+#: web/src/lib/features/media/ProjectLightbox.svelte:254
 #: web/src/lib/features/media/ReorderableMedia.svelte:425
 msgid "Edit photo"
 msgstr "Foto bearbeiten"
@@ -1578,6 +1579,7 @@ msgstr "E-Mail"
 msgid "Email address"
 msgstr "E-Mail-Adresse"
 
+#: web/src/lib/features/history/MediaStrip.svelte:38
 #: web/src/lib/features/history/change-format.ts:23
 #: web/src/lib/features/history/change-format.ts:32
 msgid "Empty list"
@@ -2633,6 +2635,10 @@ msgstr "Foto {position} nach vorn verschieben"
 msgid "Move photo {position} later"
 msgstr "Foto {position} nach hinten verschieben"
 
+#: web/src/lib/features/history/MediaStrip.svelte:26
+msgid "Moved"
+msgstr "Verschoben"
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:536
 msgid "N/A"
 msgstr "n. v."
@@ -2701,7 +2707,7 @@ msgstr "Neues Garn"
 msgid "Next"
 msgstr "Weiter"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:121
+#: web/src/lib/features/media/ProjectLightbox.svelte:314
 msgid "Next image"
 msgstr "Nächstes Bild"
 
@@ -3364,7 +3370,7 @@ msgstr "Vorschau und Prüfung"
 msgid "Previous"
 msgstr "Zurück"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:101
+#: web/src/lib/features/media/ProjectLightbox.svelte:275
 msgid "Previous image"
 msgstr "Vorheriges Bild"
 
@@ -3475,7 +3481,7 @@ msgstr "Projekt erstellt. Der geprüfte Import wurde gespeichert."
 msgid "Project details"
 msgstr "Projektdetails"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:58
+#: web/src/lib/features/media/ProjectLightbox.svelte:232
 msgid "Project image viewer"
 msgstr "Projektbildansicht"
 
@@ -3646,8 +3652,8 @@ msgstr "Empfohlene Nadeln"
 
 #: web/src/lib/features/admin/DiffPanel.svelte:109
 #: web/src/lib/features/admin/DiffPanel.svelte:116
-#: web/src/lib/features/history/ChangeList.svelte:28
-#: web/src/lib/features/history/HistoryEventDetail.svelte:76
+#: web/src/lib/features/history/ChangeList.svelte:38
+#: web/src/lib/features/history/HistoryEventDetail.svelte:77
 msgid "Recorded changes"
 msgstr "Aufgezeichnete Änderungen"
 
@@ -3710,6 +3716,7 @@ msgid "Remove this project photo?"
 msgstr "Dieses Projektfoto entfernen?"
 
 #: web/src/lib/features/admin/audit-action.ts:30
+#: web/src/lib/features/history/MediaStrip.svelte:24
 #: web/src/lib/features/history/change-format.ts:66
 msgid "Removed"
 msgstr "Entfernt"

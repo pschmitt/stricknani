@@ -8,6 +8,8 @@ import {
   type PageMeta,
 } from "#lib/features/admin/admin-api.ts";
 
+import { parseChangeMedia, type ChangeMedia } from "./media-change";
+
 /** The two resources that keep an owner-visible change history. */
 export type HistoryKind = "projects" | "yarns";
 
@@ -21,6 +23,8 @@ export interface HistoryEvent {
   created_at: string;
   has_changes: boolean;
   media: AuditMedia | null;
+  /** Thumbnails of the pictures named by this event's picture changes, keyed by label. */
+  media_thumbnails: ChangeMedia | null;
 }
 
 export interface HistoryPage {
@@ -68,6 +72,7 @@ export function parseHistoryEvent(value: unknown): HistoryEvent {
     created_at: value.created_at,
     has_changes: value.has_changes === true,
     media: parseAuditMedia(value.media),
+    media_thumbnails: parseChangeMedia(value.media_thumbnails),
   };
 }
 

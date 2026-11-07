@@ -1,6 +1,6 @@
 //! Safe, administrator-scoped reads of audit events for browser adapters.
 
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
@@ -122,6 +122,13 @@ pub(crate) struct AuditResource {
     pub(crate) exists: bool,
 }
 
+/// URLs of a current picture that a change label refers to.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditChangeMedia {
+    pub(crate) url: String,
+    pub(crate) thumbnail_url: String,
+}
+
 /// The media file an upload or removal event was about.
 #[derive(Clone, Debug, Serialize)]
 pub(crate) struct AuditMedia {
@@ -155,6 +162,12 @@ pub(crate) struct AuditEvent {
     pub(crate) resource: AuditResource,
     pub(crate) has_changes: bool,
     pub(crate) media: Option<AuditMedia>,
+    /// Thumbnails of the pictures this event's change values name, keyed by
+    /// the exact label string used in the values (and the event media name).
+    /// Resolved at read time against the resource's current media; omitted
+    /// when nothing resolves. Only set on resource history responses.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) media_thumbnails: Option<BTreeMap<String, AuditChangeMedia>>,
     /// The other account of a share, role change, revoke, leave or transfer.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) subject: Option<AuditSubject>,
@@ -425,17 +438,26 @@ pub(crate) async fn list_resource_events(
         .fetch_all(&mut *transaction)
         .await
         .map_err(|_| AuditError::Database)?;
+    let wanted: Vec<Vec<String>> = rows.iter().map(media_thumbnails_labels).collect();
+    let current = if wanted.iter().any(|labels| !labels.is_empty()) {
+        current_media_labels(&mut transaction, entity, resource_id, owner_id).await?
+    } else {
+        Vec::new()
+    };
     let events = rows
-        .into_iter()
-        .map(|row| {
-            make_event(
-                &row,
+        .iter()
+        .zip(&wanted)
+        .map(|(row, labels)| {
+            let mut event = make_event(
+                row,
                 AuditAudience::Owner {
                     viewer_id: viewer.id,
                     reveal_email: viewer.reveal_email,
                 },
                 gravatar_enabled,
-            )
+            );
+            event.media_thumbnails = resolve_media_thumbnails(labels, &current);
+            event
         })
         .collect();
     transaction
@@ -488,7 +510,7 @@ pub(crate) async fn get_resource_event_detail(
     let Some(row) = row else {
         return Ok(None);
     };
-    let event = make_event(
+    let mut event = make_event(
         &row,
         AuditAudience::Owner {
             viewer_id: viewer.id,
@@ -496,6 +518,11 @@ pub(crate) async fn get_resource_event_detail(
         },
         gravatar_enabled,
     );
+    let wanted = media_thumbnails_labels(&row);
+    if !wanted.is_empty() {
+        let current = current_media_labels(&mut transaction, entity, resource_id, owner_id).await?;
+        event.media_thumbnails = resolve_media_thumbnails(&wanted, &current);
+    }
     let (changes, unavailable_reason) = project_changes(&row);
     transaction
         .commit()
@@ -758,6 +785,103 @@ pub(crate) async fn list_activity(
     })
 }
 
+/// Labels a history event refers to pictures by: the picture lists and
+/// cover/primary values of its changes, plus the name of its media ref.
+fn media_thumbnails_labels(row: &sqlx::sqlite::SqliteRow) -> Vec<String> {
+    let mut labels: Vec<String> = Vec::new();
+    let mut push = |label: &str| {
+        if !label.is_empty() && !labels.iter().any(|known| known == label) {
+            labels.push(label.to_owned());
+        }
+    };
+    if let (Some(changes), _) = project_changes(row) {
+        for item in changes.items.iter().filter(|item| {
+            matches!(
+                item.field,
+                ChangeField::ProjectCoverImage
+                    | ChangeField::ProjectImageOrder
+                    | ChangeField::ProjectStepImageOrder
+                    | ChangeField::YarnPrimaryPhoto
+                    | ChangeField::YarnPhotoOrder
+            )
+        }) {
+            for value in [&item.before, &item.after] {
+                match value {
+                    ChangeValue::Text(Some(label)) => push(label),
+                    ChangeValue::TextList(list) => list.iter().for_each(|label| push(label)),
+                    _ => {}
+                }
+            }
+        }
+    }
+    if let Some(name) = row.get::<Option<String>, _>("media_name") {
+        push(&name);
+    }
+    labels
+}
+
+/// The resource's current pictures as `(label, urls)` in display order:
+/// project title pictures before step pictures, each by position.
+async fn current_media_labels(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    entity: AuditEntity,
+    resource_id: i64,
+    owner_id: i64,
+) -> Result<Vec<(String, AuditChangeMedia)>, AuditError> {
+    let (query, subdir) = match entity {
+        AuditEntity::Project => (
+            "SELECT public_id, filename, original_filename FROM media_files \
+             WHERE project_id = ? AND owner_id = ? AND kind IN ('title', 'step') \
+             ORDER BY CASE kind WHEN 'title' THEN 0 ELSE 1 END, position, id LIMIT 2000",
+            "projects",
+        ),
+        AuditEntity::Yarn => (
+            "SELECT public_id, filename, original_filename FROM media_files \
+             WHERE yarn_id = ? AND owner_id = ? AND kind = 'photo' \
+             ORDER BY position, id LIMIT 2000",
+            "yarns",
+        ),
+        _ => return Ok(Vec::new()),
+    };
+    let rows = sqlx::query(query)
+        .bind(resource_id)
+        .bind(owner_id)
+        .fetch_all(&mut **transaction)
+        .await
+        .map_err(|_| AuditError::Database)?;
+    Ok(rows
+        .iter()
+        .map(|row| {
+            let filename: String = row.get("filename");
+            let original: String = row.get("original_filename");
+            (
+                crate::audit::media_label(Some(&original), &filename, row.get("public_id")),
+                AuditChangeMedia {
+                    url: crate::media::media_url(subdir, resource_id, &filename),
+                    thumbnail_url: crate::media::thumbnail_url(subdir, resource_id, &filename),
+                },
+            )
+        })
+        .collect())
+}
+
+/// Maps each wanted label to the first current picture with that label.
+fn resolve_media_thumbnails(
+    wanted: &[String],
+    current: &[(String, AuditChangeMedia)],
+) -> Option<BTreeMap<String, AuditChangeMedia>> {
+    let map: BTreeMap<String, AuditChangeMedia> = wanted
+        .iter()
+        .filter_map(|label| {
+            current
+                .iter()
+                .find(|(known, _)| known == label)
+                .map(|(_, media)| (label.clone(), media.clone()))
+        })
+        .collect();
+    (!map.is_empty()).then_some(map)
+}
+
 async fn resource_belongs_to(
     transaction: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     owner_id: i64,
@@ -930,6 +1054,7 @@ fn make_event(
         resource,
         has_changes,
         media,
+        media_thumbnails: None,
         subject: row
             .get::<Option<String>, _>("subject_role")
             .map(Some)

@@ -989,6 +989,9 @@
     <string name="history_noun_ai">KI-Ergänzung</string>
     <string name="history_noun_link">Quelllink</string>
     <string name="history_noun_cover_image">Titelbild</string>
+    <string name="history_media_added">hinzugefügt</string>
+    <string name="history_media_removed">entfernt</string>
+    <string name="history_media_moved">verschoben</string>
     <string name="history_noun_image_order">Bilderreihenfolge</string>
     <string name="history_noun_step_image_order">Schrittbilder-Reihenfolge</string>
     <string name="history_noun_primary_photo">Hauptfoto</string>

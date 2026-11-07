@@ -89,6 +89,13 @@ data class AuditMediaDto(
     @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
 )
 
+/** One picture of a history event's `media` label map: where to load it and its thumbnail. */
+@Serializable
+data class HistoryMediaDto(
+    val url: String? = null,
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
+)
+
 @Serializable
 data class AuditEventDto(
     val id: Long,
@@ -104,6 +111,12 @@ data class AuditEventDto(
     val media: AuditMediaDto? = null,
     /** The other account of a sharing event; absent on every other event (never an email). */
     val subject: AuditSubjectDto? = null,
+    /**
+     * Pictures named by this event's media changes (picture order, cover or primary photo), by the
+     * file label that appears in the change values. Labels of deleted photos are absent, and the
+     * key is missing on old servers and events without such changes.
+     */
+    @SerialName("media_thumbnails") val mediaThumbs: Map<String, HistoryMediaDto> = emptyMap(),
 )
 
 /**

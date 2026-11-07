@@ -18,6 +18,7 @@ const event = (patch: Partial<HistoryEvent> = {}): HistoryEvent => ({
   created_at: "2026-05-01T10:00:00Z",
   has_changes: true,
   media: null,
+  media_thumbnails: null,
   ...patch,
 });
 

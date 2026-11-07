@@ -624,3 +624,224 @@ async fn audit_previews_follow_canonical_cover_even_when_legacy_flags_disagree()
         );
     }
 }
+
+async fn media_row(
+    pool: &SqlitePool,
+    owner_id: i64,
+    parent: (&str, i64),
+    row: (&str, i64, &str, &str, i64),
+) {
+    let (kind, public_id, filename, original, position) = row;
+    let column = if kind == "photo" {
+        "yarn_id"
+    } else {
+        "project_id"
+    };
+    let sql = format!(
+        "INSERT INTO media_files(owner_id, {column}, kind, public_id, filename, \
+         original_filename, content_type, size_bytes, position) \
+         VALUES (?, ?, ?, ?, ?, ?, 'image/jpeg', 1, ?)"
+    );
+    assert!(parent.0 == "project" || parent.0 == "yarn");
+    sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(owner_id)
+        .bind(parent.1)
+        .bind(kind)
+        .bind(public_id)
+        .bind(filename)
+        .bind(original)
+        .bind(position)
+        .execute(pool)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn order_events_resolve_current_pictures_to_thumbnails_for_readers() {
+    let fixture = fixture().await;
+    let project_id = project(&fixture.pool, fixture.owner_id, "Picture project").await;
+    media_row(
+        &fixture.pool,
+        fixture.owner_id,
+        ("project", project_id),
+        ("title", 1, "one-stored.jpg", "19413.jpg", 0),
+    )
+    .await;
+    media_row(
+        &fixture.pool,
+        fixture.owner_id,
+        ("project", project_id),
+        ("title", 2, "two-stored.jpg", "second.jpg", 1),
+    )
+    .await;
+    let changes = r#"{"version":1,"items":[{"field":"project.image_order","before":{"type":"text_list","value":["second.jpg","19413.jpg","deleted.jpg"]},"after":{"type":"text_list","value":["19413.jpg","second.jpg"]}},{"field":"project.cover_image","before":{"type":"text","value":"second.jpg"},"after":{"type":"text","value":"19413.jpg"}}]}"#;
+    let event_id = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.owner_id),
+            entity_type: "project",
+            entity_id: project_id,
+            action: "updated",
+            created_at: "2026-05-01T00:00:00Z",
+            details: None,
+            safe_changes: Some(changes),
+        },
+    )
+    .await;
+    let plain_id = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.owner_id),
+            entity_type: "project",
+            entity_id: project_id,
+            action: "updated",
+            created_at: "2026-05-02T00:00:00Z",
+            details: None,
+            safe_changes: Some(r#"{"version":1,"items":[{"field":"project.name","before":{"type":"text","value":"A"},"after":{"type":"text","value":"B"}}]}"#),
+        },
+    )
+    .await;
+
+    let list = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(bearer(
+                &format!("/projects/{project_id}/history"),
+                OWNER_PAT,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let events = list["data"].as_array().unwrap();
+    let order = events.iter().find(|e| e["id"] == event_id).unwrap();
+    let map = order["media_thumbnails"].as_object().unwrap();
+    assert_eq!(map.len(), 2, "deleted photo label is absent: {map:?}");
+    assert_eq!(
+        map["19413.jpg"]["url"],
+        format!("/media/projects/{project_id}/one-stored.jpg")
+    );
+    assert_eq!(
+        map["second.jpg"]["thumbnail_url"],
+        format!("/media/thumbnails/projects/{project_id}/thumb_two-stored.jpg")
+    );
+    assert!(!map.contains_key("deleted.jpg"));
+    let plain = events.iter().find(|e| e["id"] == plain_id).unwrap();
+    assert!(plain.get("media_thumbnails").is_none());
+
+    let detail = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(bearer(
+                &format!("/projects/{project_id}/history/{event_id}"),
+                OWNER_PAT,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        detail["data"]["event"]["media_thumbnails"],
+        order["media_thumbnails"]
+    );
+
+    // Another account never reads this history, so never its pictures ...
+    let denied = fixture
+        .app
+        .clone()
+        .oneshot(bearer(
+            &format!("/projects/{project_id}/history"),
+            OTHER_PAT,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(denied.status(), StatusCode::NOT_FOUND);
+    // ... until the project is shared with it: then it gets the same map.
+    sqlx::query(
+        "INSERT INTO resource_shares (kind, resource_id, user_id, role, created_at, updated_at) \
+         VALUES ('project', ?, ?, 'viewer', 'x', 'x')",
+    )
+    .bind(project_id)
+    .bind(fixture.other_id)
+    .execute(&fixture.pool)
+    .await
+    .unwrap();
+    let shared = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(bearer(
+                &format!("/projects/{project_id}/history"),
+                OTHER_PAT,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let shared_order = shared["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["id"] == event_id)
+        .unwrap();
+    assert_eq!(shared_order["media_thumbnails"], order["media_thumbnails"]);
+}
+
+#[tokio::test]
+async fn yarn_photo_order_events_resolve_thumbnails() {
+    let fixture = fixture().await;
+    let yarn_id = yarn(&fixture.pool, fixture.owner_id, "Photo yarn").await;
+    media_row(
+        &fixture.pool,
+        fixture.owner_id,
+        ("yarn", yarn_id),
+        ("photo", 7, "ball-stored.jpg", "ball.jpg", 0),
+    )
+    .await;
+    media_row(
+        &fixture.pool,
+        fixture.owner_id,
+        ("yarn", yarn_id),
+        ("photo", 8, "label-stored.jpg", "", 1),
+    )
+    .await;
+    let event_id = event(
+        &fixture.pool,
+        EventInput {
+            actor_id: Some(fixture.owner_id),
+            entity_type: "yarn",
+            entity_id: yarn_id,
+            action: "updated",
+            created_at: "2026-05-03T00:00:00Z",
+            details: None,
+            safe_changes: Some(r#"{"version":1,"items":[{"field":"yarn.photo_order","before":{"type":"text_list","value":["label-stored.jpg","ball.jpg"]},"after":{"type":"text_list","value":["ball.jpg","label-stored.jpg"]}},{"field":"yarn.primary_photo","before":{"type":"text","value":"label-stored.jpg"},"after":{"type":"text","value":"ball.jpg"}}]}"#),
+        },
+    )
+    .await;
+    let detail = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(bearer(
+                &format!("/yarns/{yarn_id}/history/{event_id}"),
+                OWNER_PAT,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let map = detail["data"]["event"]["media_thumbnails"]
+        .as_object()
+        .unwrap();
+    assert_eq!(map.len(), 2);
+    assert_eq!(
+        map["ball.jpg"]["thumbnail_url"],
+        format!("/media/thumbnails/yarns/{yarn_id}/thumb_ball-stored.jpg")
+    );
+    assert_eq!(
+        map["label-stored.jpg"]["url"],
+        format!("/media/yarns/{yarn_id}/label-stored.jpg")
+    );
+}

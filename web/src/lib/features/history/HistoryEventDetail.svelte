@@ -73,6 +73,7 @@
       changes={detail.detail.changes}
       {locale}
       headingTag="h3"
+      media={event.media_thumbnails}
       label={t("Recorded changes", locale)}
     />
   {:else}

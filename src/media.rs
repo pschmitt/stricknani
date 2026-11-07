@@ -3320,7 +3320,7 @@ fn yarn_photo_dto(row: &MediaRow) -> YarnPhotoResponse {
     }
 }
 
-fn media_url(subdir: &str, parent_id: i64, filename: &str) -> String {
+pub(crate) fn media_url(subdir: &str, parent_id: i64, filename: &str) -> String {
     format!("/media/{subdir}/{parent_id}/{filename}")
 }
 
@@ -3346,7 +3346,7 @@ pub(crate) fn admin_resource_media_url(
     })
 }
 
-fn thumbnail_url(subdir: &str, parent_id: i64, filename: &str) -> String {
+pub(crate) fn thumbnail_url(subdir: &str, parent_id: i64, filename: &str) -> String {
     format!(
         "/media/thumbnails/{subdir}/{parent_id}/{}",
         thumbnail_name(filename)

@@ -41,6 +41,23 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-100: Recent changes show thumbnails for picture changes
+
+- [x] Picture order, step picture order, yarn photo order and cover/primary photo changes in a
+      history entry's details show thumbnails (Before / After rows, wrapping on narrow phones)
+      instead of file labels like `19413.jpg`. Added pictures get a green frame and "+", removed
+      a red frame and a minus sign, moved a tertiary frame and an arrow (only the picture that
+      moved, not every one it passed). Labels without a picture (deleted photos, old servers)
+      keep the plain text diff.
+- [x] Wire: the optional `media_thumbnails` label map of a history event (`label -> {url, thumbnail_url}`)
+      decodes into `AuditEventDto.mediaThumbs`; `media` still carries the single
+      media object of upload/removal events (plain decoding). History is online-only, so
+      nothing is cached.
+- [x] Tests: `HistoryMediaTest` (decoding with and without the map, marks, fallback to text).
+- [ ] Follow-up: tapping a thumbnail does not open the image viewer yet.
+
+Status: **done**, 2026-11-07 (JVM tests; not run on a device).
+
 ## SNA-99: About: Shizuku updater switch, one Obtainium row, compact hero, aligned icons
 
 - [x] Developer card: removed API v2, Server version, Server build ID and the duplicate App version
