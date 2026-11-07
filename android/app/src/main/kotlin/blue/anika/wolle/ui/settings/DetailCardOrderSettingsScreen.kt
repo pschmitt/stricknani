@@ -169,6 +169,7 @@ private fun detailCardLabel(domain: DetailCardDomain, id: String): String =
             }
         DetailCardDomain.YARN ->
             when (id) {
+                YarnDetailCard.SOURCE -> stringResource(R.string.yarn_detail_source_title)
                 YarnDetailCard.DETAILS -> stringResource(R.string.yarn_detail_details_title)
                 YarnDetailCard.DESCRIPTION ->
                     stringResource(R.string.project_detail_description_title)

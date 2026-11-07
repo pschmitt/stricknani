@@ -28,6 +28,7 @@
   } from "#lib/access.ts";
   import AccessNotice from "#lib/features/sharing/AccessNotice.svelte";
   import ShareControl from "#lib/features/sharing/ShareControl.svelte";
+  import SourceCard from "#lib/components/SourceCard.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
@@ -1356,43 +1357,15 @@
       </div>
 
       <aside class="details-column" aria-label={t("Project details", locale)}>
-        <section
-          class="details-card source-card"
-          aria-labelledby="source-heading"
+        <SourceCard
+          id="source-heading"
+          heading={t("Pattern source", locale)}
+          href={safeExternalUrl(project.link)}
+          archiveHref={safeExternalUrl(project.link_archive)}
+          openLabel={t("Open original pattern", locale)}
+          archiveLabel={t("Open archived copy", locale)}
+          emptyLabel={t("No pattern link has been saved.", locale)}
         >
-          <SectionHeading id="source-heading" icon="link"
-            >{t("Pattern source", locale)}</SectionHeading
-          >
-          {#if safeExternalUrl(project.link)}
-            <a
-              class="source-link"
-              href={safeExternalUrl(project.link)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span class="source-link__icon" aria-hidden="true"
-                ><NavIcon name="notebook" /></span
-              >
-              {t("Open original pattern", locale)} ↗
-            </a>
-          {:else}
-            <p class="muted-copy">
-              {t("No pattern link has been saved.", locale)}
-            </p>
-          {/if}
-          {#if safeExternalUrl(project.link_archive)}
-            <a
-              class="source-link"
-              href={safeExternalUrl(project.link_archive)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span class="source-link__icon" aria-hidden="true"
-                ><NavIcon name="history" /></span
-              >
-              {t("Open archived copy", locale)} ↗
-            </a>
-          {/if}
           {#if !adminData && ownsIt && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
             <ArchiveControl
               entity="projects"
@@ -1406,7 +1379,7 @@
               onArchived={refreshAfterArchive}
             />
           {/if}
-        </section>
+        </SourceCard>
 
         <section
           class="details-card attachments-card"
@@ -2046,15 +2019,6 @@
     font-weight: 640;
   }
 
-  .source-card {
-    display: grid;
-    gap: 0.35rem;
-  }
-
-  .source-card p {
-    margin: 0;
-  }
-
   .attachments-card ul {
     display: grid;
     gap: 0.5rem;
@@ -2304,28 +2268,5 @@
     :global(.step-image) {
       transition: none;
     }
-  }
-
-  /* Pattern source links get the same tinted icon chips as the headings. */
-  .source-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-  }
-
-  .source-link__icon {
-    display: inline-grid;
-    width: 1.8rem;
-    height: 1.8rem;
-    flex: none;
-    place-items: center;
-    border-radius: 999px;
-    color: var(--tone-projects);
-    background: color-mix(in srgb, var(--tone-projects) 16%, transparent);
-  }
-
-  .source-link__icon :global(svg) {
-    width: 1rem;
-    height: 1rem;
   }
 </style>

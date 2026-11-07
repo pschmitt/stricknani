@@ -41,6 +41,17 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-105: Yarn links move into their own "Yarn source" card
+
+- [x] The yarn detail's source links leave the DETAILS card for a separate reorderable "Yarn
+      source" card (`YarnDetailCard.SOURCE`, last by default, always shown like the pattern
+      source): "Open yarn source", "Open archived copy", "No yarn link has been saved." and the
+      archive control for owners; the detail-cards settings list it.
+- [x] Web: shared `SourceCard.svelte` used by the project and yarn pages, same wording
+      ("Yarn source" / "Garnquelle", "Open yarn source" / "Garnquelle öffnen").
+
+Status: **done**, 2026-11-07 (see build and test results in the hand-off).
+
 ## SNA-104: Home's Recent activity gets "See all" and a full Activity page
 
 - [x] A "See all" link at the right of the Recent activity header (shown when there is activity)

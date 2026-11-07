@@ -32,12 +32,14 @@ object ProjectDetailCard {
 
 /** Stable IDs for the sections on a yarn detail page. */
 object YarnDetailCard {
+    const val SOURCE = "source"
     const val DETAILS = "details"
     const val DESCRIPTION = "description"
     const val USED_IN = "used_in"
     const val NOTES = "notes"
 
-    val defaultOrder = listOf(DETAILS, DESCRIPTION, USED_IN, NOTES)
+    // Like the pattern source on projects, the yarn source sits last.
+    val defaultOrder = listOf(DETAILS, DESCRIPTION, USED_IN, NOTES, SOURCE)
 }
 
 /** Pure ordering rules shared by detail screens, Settings, and unit tests. */

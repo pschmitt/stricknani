@@ -1525,7 +1525,7 @@ export async function exerciseYarnServiceTools(
 
   markStage("requesting a yarn source archive");
   markStage("loading yarn archive controls");
-  const archive = page.locator(".spec-panel .archive-control");
+  const archive = page.locator(".source-card .archive-control");
   await archive.waitFor({ state: "visible", timeout: 5_000 });
   markStage("checking yarn archive status");
   const archivePath = `/api/v2/yarns/${yarnId}/archive`;
@@ -1552,7 +1552,7 @@ export async function exerciseYarnServiceTools(
     );
     check(
       (await page
-        .getByRole("link", { name: "Archived source", exact: true })
+        .getByRole("link", { name: /^Open archived copy/ })
         .count()) === 0,
       "a failed yarn archive was shown as an available copy",
     );
@@ -1582,8 +1582,7 @@ export async function exerciseYarnServiceTools(
       await ready.waitFor({ state: "visible", timeout: 20_000 });
     }
     const archivedLink = page.getByRole("link", {
-      name: "Archived source",
-      exact: true,
+      name: /^Open archived copy/,
     });
     await archivedLink.waitFor({ state: "visible", timeout: 5_000 });
     check(

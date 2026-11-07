@@ -471,6 +471,7 @@ private fun YarnDetailContent(
         add(YarnDetailCard.DETAILS)
         if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
         if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
+        add(YarnDetailCard.SOURCE)
     }
     val savedVisibleOrder =
         remember(cardOrder, availableCardKeys) {
@@ -596,24 +597,45 @@ private fun YarnDetailContent(
                             updatedDate(detail.updatedAt)?.let {
                                 DetailRow(stringResource(R.string.common_field_updated), it)
                             }
-                            // The web's source links under the yarn facts.
-                            safeExternalUrl(detail.link)?.let {
+                        }
+                    YarnDetailCard.SOURCE ->
+                        ReorderableDetailCard(
+                            title = stringResource(R.string.yarn_detail_source_title),
+                            icon = PhosphorIcons.Link,
+                            accent = MaterialTheme.colorScheme.secondary,
+                            onEdit = edit?.let { e -> { e(YarnEditorFocus.DETAILS) } },
+                            copyText = detail.link,
+                            cardKey = cardKey,
+                            cardIndex = cardIndex,
+                            listState = listState,
+                            orderedKeys = orderedCardKeys,
+                            itemIndexOffset = itemIndexOffset,
+                            reorderState = reorderState,
+                            onMove = moveCard,
+                        ) {
+                            val original = safeExternalUrl(detail.link)
+                            if (original != null) {
                                 SourceLinkRow(
-                                    PhosphorIcons.Link,
+                                    PhosphorIcons.Notebook,
                                     stringResource(R.string.yarn_detail_source_open),
-                                    it,
+                                    original,
+                                )
+                            } else {
+                                Text(
+                                    stringResource(R.string.yarn_detail_source_none),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            safeExternalUrl(detail.linkArchive)?.let {
+                            safeExternalUrl(detail.linkArchive)?.let { archived ->
                                 SourceLinkRow(
                                     PhosphorIcons.ClockCounterClockwise,
                                     stringResource(R.string.yarn_detail_source_archive),
-                                    it,
+                                    archived,
                                 )
                             }
-                            val source = safeExternalUrl(detail.link)
-                            if (canArchive && source != null) {
-                                ArchiveControl(ArchiveEntity.YARN, detail.id, source, onArchived)
+                            if (canArchive && original != null) {
+                                ArchiveControl(ArchiveEntity.YARN, detail.id, original, onArchived)
                             }
                         }
                     YarnDetailCard.DESCRIPTION ->

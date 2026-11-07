@@ -64,6 +64,24 @@ class DetailCardOrderTest {
     }
 
     @Test
+    fun `yarn source card is last by default and sanitize appends it to older saved orders`() {
+        assertEquals(YarnDetailCard.SOURCE, YarnDetailCard.defaultOrder.last())
+        assertEquals(
+            listOf(
+                YarnDetailCard.NOTES,
+                YarnDetailCard.DETAILS,
+                YarnDetailCard.DESCRIPTION,
+                YarnDetailCard.USED_IN,
+                YarnDetailCard.SOURCE,
+            ),
+            DetailCardOrder.sanitize(
+                DetailCardDomain.YARN,
+                listOf(YarnDetailCard.NOTES, YarnDetailCard.DETAILS),
+            ),
+        )
+    }
+
+    @Test
     fun `move returns a new order without changing unrelated entries`() {
         assertEquals(
             listOf("notes", "details", "description"),

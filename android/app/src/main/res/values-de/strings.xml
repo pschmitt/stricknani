@@ -164,8 +164,10 @@
     <string name="project_detail_source_open">Originalanleitung öffnen</string>
     <string name="project_detail_source_archive">Archivierte Kopie öffnen</string>
     <string name="project_detail_source_none">Es wurde kein Link zur Anleitung gespeichert.</string>
-    <string name="yarn_detail_source_open">Garnquelle</string>
-    <string name="yarn_detail_source_archive">Archivierte Quelle</string>
+    <string name="yarn_detail_source_title">Garnquelle</string>
+    <string name="yarn_detail_source_open">Garnquelle öffnen</string>
+    <string name="yarn_detail_source_archive">Archivierte Kopie öffnen</string>
+    <string name="yarn_detail_source_none">Es wurde kein Link zum Garn gespeichert.</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
     <string name="project_editor_title_edit">Projekt bearbeiten</string>
