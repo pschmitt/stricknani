@@ -67,6 +67,7 @@ import blue.anika.wolle.ui.common.ArchiveEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DetailCardReorderHint
+import blue.anika.wolle.ui.common.DetailTitle
 import blue.anika.wolle.ui.common.ErrorKind
 import blue.anika.wolle.ui.common.ErrorState
 import blue.anika.wolle.ui.common.FavoriteToggleButton
@@ -83,6 +84,7 @@ import blue.anika.wolle.ui.common.PhotoEditTarget
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
+import blue.anika.wolle.ui.common.ScrolledBarTitle
 import blue.anika.wolle.ui.common.SourceLinkRow
 import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -180,13 +182,18 @@ fun YarnDetailScreen(
         if (access.canManage && state is YarnDetailUiState.Loaded) viewModel.sharing.preload()
     }
     val refreshFailure = rememberRefreshFailure(refreshState)
+    // Hoisted so the top bar can show the name once the content title has scrolled away.
+    val listState = remember { LazyListState() }
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
         topBar = {
             Column {
                 TopAppBar(
                     title = {
-                        Text(if (state is YarnDetailUiState.Loaded) state.entity.name else "")
+                        ScrolledBarTitle(
+                            name = if (state is YarnDetailUiState.Loaded) state.entity.name else "",
+                            listState = listState,
+                        )
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
@@ -351,6 +358,7 @@ fun YarnDetailScreen(
                                 access.role == ACCESS_OWNER && !access.derived && access.canManage,
                             onArchived = viewModel::refresh,
                             history = viewModel.history,
+                            listState = listState,
                         )
                     }
             }
@@ -414,6 +422,7 @@ private fun YarnDetailContent(
     canArchive: Boolean,
     onArchived: () -> Unit,
     history: HistoryController,
+    listState: LazyListState,
     modifier: Modifier = Modifier,
 ) {
     // A viewer (or a derived yarn) reads only: no Edit action, no section menu entry.
@@ -441,8 +450,7 @@ private fun YarnDetailContent(
     var orderedCardKeys by remember(savedVisibleOrder) { mutableStateOf(savedVisibleOrder) }
     LaunchedEffect(savedVisibleOrder) { orderedCardKeys = savedVisibleOrder }
     val reorderState = rememberDetailCardReorderState()
-    val listState = remember { LazyListState() }
-    val itemIndexOffset = (if (photos.isNotEmpty()) 1 else 0) + 1
+    val itemIndexOffset = 1 + (if (photos.isNotEmpty()) 1 else 0) + 1
     val moveCard: (Int, Int) -> Unit = { fromIndex, toIndex ->
         val next = DetailCardOrder.move(orderedCardKeys, fromIndex, toIndex)
         if (next != orderedCardKeys) {
@@ -460,6 +468,7 @@ private fun YarnDetailContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            item(key = "detail-title") { DetailTitle(detail.name) }
             if (photos.isNotEmpty()) {
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

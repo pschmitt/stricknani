@@ -41,6 +41,19 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-102: Project and yarn name move from the top bar into the content
+
+- [x] The detail screens' top bar no longer carries the (often long, truncated) name. The name is
+      the first item of the content list: a wrapping `headlineSmall` heading (`DetailTitle`,
+      `heading()` semantics), aligned with the content padding, before the gallery.
+- [x] Once that title has scrolled out of view, a one-line ellipsized name fades into the bar
+      (`ScrolledBarTitle`, driven by the hoisted `LazyListState`; no animation when animations are
+      disabled; hidden from accessibility as the heading already carries the name).
+- [x] Reorder offsets (`itemIndexOffset`) account for the extra list item. Category / brand and
+      colorway stay in the Details card (already there), so no subtitle was added.
+
+Status: **done**, 2026-11-07 (build and JVM tests; not run on a device).
+
 ## SNA-101: Admin audit log shows picture thumbnails
 
 - [x] Admin audit events (list and detail, `api/v2/admin/audit`) carry the same optional
