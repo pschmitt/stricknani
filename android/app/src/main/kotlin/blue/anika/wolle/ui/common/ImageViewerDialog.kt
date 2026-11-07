@@ -267,7 +267,7 @@ fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismi
     }
 }
 
-/** "Edit photo" over the dark viewer: icon and label, a 48dp target. */
+/** "Edit" (the photo) over the dark viewer: icon and label, a 48dp target. */
 @Composable
 private fun EditPhotoButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
@@ -287,7 +287,7 @@ private fun EditPhotoButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
             modifier = Modifier.size(20.dp),
         )
         Text(
-            stringResource(R.string.photo_edit_title),
+            stringResource(R.string.common_edit),
             color = Color.White,
             style = MaterialTheme.typography.labelLarge,
         )

@@ -251,7 +251,7 @@
             aria-label={t("Edit photo", locale)}
             onclick={() => (editing = true)}
           >
-            <span class="lightbox-edit-label">{t("Edit photo", locale)}</span>
+            <span class="lightbox-edit-label">{t("Edit", locale)}</span>
           </Button>
         {/if}
         <Button

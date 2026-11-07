@@ -422,7 +422,8 @@
                 size="sm"
                 icon="crop"
                 disabled={editDisabled || locked}
-                onclick={() => onEdit(item)}>{t("Edit photo", locale)}</Button
+                aria-label={t("Edit photo", locale)}
+                onclick={() => onEdit(item)}>{t("Edit", locale)}</Button
               >
             {/if}
             {#if actions}{@render actions(item)}{/if}
