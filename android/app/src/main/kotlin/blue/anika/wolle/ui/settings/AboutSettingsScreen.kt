@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -56,6 +58,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -81,6 +84,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -90,7 +94,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.update.AppUpdate
 import blue.anika.wolle.data.update.PrivilegedState
 import blue.anika.wolle.data.update.UpdateChannel
@@ -138,9 +141,10 @@ internal fun AboutSettingsScreen(
     var mascotCue by remember { mutableStateOf<MascotCue?>(null) }
     val developerMode by viewModel.developerMode.collectAsStateWithLifecycle()
     var obtainiumMissing by remember { mutableStateOf(false) }
-    fun addToObtainium(rolling: Boolean) {
+    var obtainiumChoice by remember { mutableStateOf(false) }
+    fun addToObtainium(channel: UpdateChannel) {
         val intent =
-            Intent(Intent.ACTION_VIEW, Uri.parse(ObtainiumLink.build(rolling)))
+            Intent(Intent.ACTION_VIEW, Uri.parse(ObtainiumLink.build(channel)))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             context.startActivity(intent)
@@ -189,12 +193,23 @@ internal fun AboutSettingsScreen(
     }
     val updateState by viewModel.updateState.collectAsStateWithLifecycle()
     val updateChannel by viewModel.updateChannel.collectAsStateWithLifecycle()
+    if (obtainiumChoice) {
+        ObtainiumChannelDialog(
+            initial = updateChannel,
+            onDismiss = { obtainiumChoice = false },
+            onConfirm = {
+                obtainiumChoice = false
+                addToObtainium(it)
+            },
+        )
+    }
     val refreshing by viewModel.aboutRefreshing.collectAsStateWithLifecycle()
     val installViewModel: UpdateInstallViewModel = hiltViewModel()
     val installState by installViewModel.state.collectAsStateWithLifecycle()
     val autoUpdate by installViewModel.autoUpdate.collectAsStateWithLifecycle()
     val notifyUpdates by installViewModel.notifyUpdates.collectAsStateWithLifecycle()
     val shizukuState by installViewModel.shizukuState.collectAsStateWithLifecycle()
+    val shizukuEnabled by installViewModel.shizukuEnabled.collectAsStateWithLifecycle()
     val silentPossible by installViewModel.silentInstallPossible.collectAsStateWithLifecycle()
     val installDeveloperMode by installViewModel.developerMode.collectAsStateWithLifecycle()
     // Starting Shizuku or allowing the app happens elsewhere; re-read the state on return.
@@ -273,6 +288,16 @@ internal fun AboutSettingsScreen(
                     SettingsGroupCard(
                         title = stringResource(R.string.about_settings_version_title),
                         icon = PhosphorIcons.Info,
+                        headerAction = {
+                            IconButton(
+                                onClick = { copyToClipboard(context, copyText, copiedMessage) }
+                            ) {
+                                Icon(
+                                    Icons.Filled.ContentCopy,
+                                    contentDescription = stringResource(R.string.about_copy_button),
+                                )
+                            }
+                        },
                     ) {
                         SettingsListItem(
                             headlineContent = {
@@ -392,25 +417,6 @@ internal fun AboutSettingsScreen(
                                 },
                                 supportingContent = { Text(serverVersion) },
                             )
-                        TextButton(
-                            onClick = {
-                                copyToClipboard(context, copyText, copiedMessage)
-                            },
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .heightIn(min = 48.dp)
-                                    .padding(horizontal = 8.dp),
-                        ) {
-                            Icon(
-                                Icons.Filled.ContentCopy,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Text(
-                                stringResource(R.string.about_copy_button),
-                                modifier = Modifier.padding(start = 8.dp),
-                            )
-                        }
                     }
                 }
                 item {
@@ -434,21 +440,27 @@ internal fun AboutSettingsScreen(
                                         onSelect = viewModel::setUpdateChannel,
                                     )
                                 }
-                                if (shizukuUi.visible) {
-                                    ShizukuStatusRow(
-                                        ui = shizukuUi,
-                                        onAllow = installViewModel::requestShizukuPermission,
-                                        onOpenShizuku = { openShizuku(context, installViewModel) },
-                                    )
-                                }
                             },
+                            shizukuRow =
+                                if (shizukuUi.visible) {
+                                    {
+                                        ShizukuUpdaterRow(
+                                            ui = shizukuUi,
+                                            enabled = shizukuEnabled,
+                                            onEnabledChange = installViewModel::setShizukuEnabled,
+                                            onAllow = installViewModel::requestShizukuPermission,
+                                            onOpenShizuku = {
+                                                openShizuku(context, installViewModel)
+                                            },
+                                        )
+                                    }
+                                } else null,
                             serverUrl = serverUrl,
-                            serverMeta = serverMeta,
                             apiState = apiState,
                             lastSyncedMillis = lastSyncedMillis,
                             pendingWrites = pendingWrites,
                             onDeveloperModeChange = viewModel::setDeveloperMode,
-                            onAddToObtainium = { rolling -> addToObtainium(rolling) },
+                            onAddToObtainium = { obtainiumChoice = true },
                             onReinstallViaShizuku =
                                 if (
                                     installViewModel.shizukuSupported &&
@@ -557,7 +569,7 @@ internal fun AboutSettingsScreen(
     }
 }
 
-/** Mascot (120dp, gentle 2.4s float of +-4dp unless animations are off), name and tagline. */
+/** Compact hero: mascot (72dp, gentle float unless animations are off) beside name and tagline. */
 @Composable
 private fun AboutHero(cue: MascotCue?) {
     val still = animationsDisabled()
@@ -570,26 +582,28 @@ private fun AboutHero(cue: MascotCue?) {
                 infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
             label = "about-mascot-bob",
         )
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(modifier = Modifier.graphicsLayer { if (!still) translationY = bob * density }) {
-            Mascot(size = 120.dp, cue = cue)
+            Mascot(size = 72.dp, cue = cue)
         }
-        Text(
-            stringResource(R.string.app_name),
-            style = MaterialTheme.typography.displaySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            stringResource(R.string.about_tagline),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                stringResource(R.string.about_tagline),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }
 
@@ -618,29 +632,35 @@ private fun AboutUpdateTrailingContent(
         AboutUpdateTrailing.None -> Unit
         AboutUpdateTrailing.Checking -> {
             val checking = stringResource(R.string.about_update_checking)
-            CircularProgressIndicator(
-                statusTag.size(24.dp).semantics { contentDescription = checking },
-                strokeWidth = 2.dp,
-            )
+            TrailingIconSlot {
+                CircularProgressIndicator(
+                    statusTag.size(24.dp).semantics { contentDescription = checking },
+                    strokeWidth = 2.dp,
+                )
+            }
         }
         AboutUpdateTrailing.UpToDate ->
-            Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription =
-                    stringResource(
-                        R.string.about_update_up_to_date,
-                        stringResource(channel.labelRes()),
-                    ),
-                modifier = statusTag,
-                tint = MaterialTheme.colorScheme.primary,
-            )
+            TrailingIconSlot {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    contentDescription =
+                        stringResource(
+                            R.string.about_update_up_to_date,
+                            stringResource(channel.labelRes()),
+                        ),
+                    modifier = statusTag,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         AboutUpdateTrailing.AheadOfStable ->
-            Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = stringResource(R.string.about_update_ahead_of_stable),
-                modifier = statusTag,
-                tint = MaterialTheme.colorScheme.primary,
-            )
+            TrailingIconSlot {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    contentDescription = stringResource(R.string.about_update_ahead_of_stable),
+                    modifier = statusTag,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         AboutUpdateTrailing.Offer ->
             Button(onClick = onUpdate, modifier = Modifier.testTag("about-update-button")) {
                 Icon(
@@ -653,12 +673,14 @@ private fun AboutUpdateTrailingContent(
                 Text(stringResource(R.string.about_update_button))
             }
         AboutUpdateTrailing.Failed ->
-            Icon(
-                Icons.Filled.CloudOff,
-                contentDescription = stringResource(R.string.about_update_failed),
-                modifier = statusTag,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            TrailingIconSlot {
+                Icon(
+                    Icons.Filled.CloudOff,
+                    contentDescription = stringResource(R.string.about_update_failed),
+                    modifier = statusTag,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         AboutUpdateTrailing.Play ->
             IconButton(onClick = onOpenPlay) {
                 Icon(
@@ -667,6 +689,15 @@ private fun AboutUpdateTrailingContent(
                 )
             }
     }
+}
+
+/**
+ * The 48dp square an IconButton occupies, with its 24dp icon centred. Plain status icons sit in the
+ * same square so they end in the same column as the icon buttons of the other rows.
+ */
+@Composable
+private fun TrailingIconSlot(content: @Composable () -> Unit) {
+    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { content() }
 }
 
 private fun UpdateChannel.labelRes(): Int =
@@ -717,20 +748,32 @@ private fun openShizuku(context: Context, viewModel: UpdateInstallViewModel) {
 }
 
 /**
- * "Updates through Shizuku". Updates use Shizuku automatically whenever it is ready; this row only
- * reports the state and offers the step that gets it there.
+ * "Shizuku updater": a switch for installing updates through Shizuku (on by default). Off, updates
+ * use the system installer even when Shizuku is ready. The status line and the setup step stay
+ * visible either way, so Shizuku can be made ready before switching it on.
  */
 @Composable
-private fun ShizukuStatusRow(
+private fun ShizukuUpdaterRow(
     ui: ShizukuStatusUi,
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
     onAllow: () -> Unit,
     onOpenShizuku: () -> Unit,
 ) {
     SettingsListItem(
-        modifier = Modifier.fillMaxWidth().testTag("about-shizuku-row"),
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("about-shizuku-row")
+                .toggleable(value = enabled, role = Role.Switch, onValueChange = onEnabledChange),
         headlineContent = { Text(stringResource(R.string.about_shizuku_title)) },
         supportingContent = {
             Column {
+                if (!enabled) {
+                    Text(
+                        stringResource(R.string.about_shizuku_state_off),
+                        modifier = Modifier.testTag("about-shizuku-off"),
+                    )
+                }
                 Text(
                     stringResource(
                         when (ui.hint) {
@@ -757,6 +800,7 @@ private fun ShizukuStatusRow(
                 }
             }
         },
+        trailingContent = { Switch(checked = enabled, onCheckedChange = null) },
     )
 }
 
@@ -876,13 +920,13 @@ private fun AboutCreditRow(title: String, detail: String?, onClick: () -> Unit) 
 private fun DeveloperCard(
     full: Boolean,
     updateRows: @Composable ColumnScope.() -> Unit,
+    shizukuRow: (@Composable ColumnScope.() -> Unit)?,
     serverUrl: String,
-    serverMeta: blue.anika.wolle.data.api.dto.MetaDto?,
     apiState: blue.anika.wolle.data.api.ApiCapabilitiesState?,
     lastSyncedMillis: Long?,
     pendingWrites: Int,
     onDeveloperModeChange: (Boolean) -> Unit,
-    onAddToObtainium: (rolling: Boolean) -> Unit,
+    onAddToObtainium: () -> Unit,
     onReinstallViaShizuku: (() -> Unit)?,
     onTestUpdateNotification: (() -> Unit)?,
 ) {
@@ -905,26 +949,13 @@ private fun DeveloperCard(
             )
         }
         updateRows()
-        if (!full) return@SettingsGroupCard
+        if (!full) {
+            shizukuRow?.invoke(this)
+            return@SettingsGroupCard
+        }
         DeveloperRow(
             stringResource(R.string.developer_card_server_url),
             serverUrl.ifBlank { unknown },
-        )
-        DeveloperRow(
-            stringResource(R.string.developer_card_server_version),
-            serverMeta?.version ?: unknown,
-        )
-        DeveloperRow(
-            stringResource(R.string.developer_card_server_build),
-            serverMeta?.buildId ?: unknown,
-        )
-        DeveloperRow(
-            stringResource(R.string.developer_card_api_v2),
-            when (apiState?.generation) {
-                null -> unknown
-                ApiGeneration.V2 -> stringResource(R.string.developer_card_yes)
-                ApiGeneration.V1 -> stringResource(R.string.developer_card_no)
-            },
         )
         DeveloperRow(
             stringResource(R.string.developer_card_last_sync),
@@ -941,24 +972,13 @@ private fun DeveloperCard(
                 stringResource(R.string.developer_card_token_this_device, it)
             } ?: unknown,
         )
-        DeveloperRow(
-            stringResource(R.string.developer_card_app_version),
-            "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-        )
         // Play builds update through the store; Obtainium only makes sense for sideloaded APKs.
         if (BuildConfig.SELF_UPDATE_ENABLED) {
             ObtainiumRow(
-                stringResource(R.string.developer_obtainium_stable),
-                stringResource(R.string.developer_obtainium_stable_description),
-            ) {
-                onAddToObtainium(false)
-            }
-            ObtainiumRow(
-                stringResource(R.string.developer_obtainium_rolling),
-                stringResource(R.string.developer_obtainium_rolling_description),
-            ) {
-                onAddToObtainium(true)
-            }
+                stringResource(R.string.developer_obtainium_title),
+                stringResource(R.string.developer_obtainium_description),
+                onAddToObtainium,
+            )
         }
         if (onTestUpdateNotification != null) {
             ObtainiumRow(
@@ -967,6 +987,7 @@ private fun DeveloperCard(
                 onTestUpdateNotification,
             )
         }
+        shizukuRow?.invoke(this)
         if (onReinstallViaShizuku != null) {
             ObtainiumRow(
                 stringResource(R.string.developer_shizuku_reinstall),
@@ -1001,3 +1022,62 @@ private fun DeveloperRow(label: String, value: String) {
         supportingContent = { SelectionContainer { Text(value) } },
     )
 }
+
+/** Asks which update channel Obtainium should follow, then opens its add-app link. */
+@Composable
+private fun ObtainiumChannelDialog(
+    initial: UpdateChannel,
+    onDismiss: () -> Unit,
+    onConfirm: (UpdateChannel) -> Unit,
+) {
+    var selected by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("about-obtainium-dialog"),
+        title = { Text(stringResource(R.string.developer_obtainium_title)) },
+        text = {
+            Column(Modifier.selectableGroup()) {
+                UpdateChannel.entries.forEach { channel ->
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(
+                                selected = channel == selected,
+                                role = Role.RadioButton,
+                                onClick = { selected = channel },
+                            )
+                            .testTag("about-obtainium-${channel.name}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = channel == selected, onClick = null)
+                        Column(Modifier.padding(start = 12.dp)) {
+                            Text(
+                                stringResource(channel.labelRes()),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                stringResource(channel.helpRes()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selected) }) {
+                Text(stringResource(R.string.developer_obtainium_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) }
+        },
+    )
+}
+
+private fun UpdateChannel.helpRes(): Int =
+    when (this) {
+        UpdateChannel.STABLE -> R.string.about_update_channel_stable_help
+        UpdateChannel.LATEST -> R.string.about_update_channel_latest_help
+    }

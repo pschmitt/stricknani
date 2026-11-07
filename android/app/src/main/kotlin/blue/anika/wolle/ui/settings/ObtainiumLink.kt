@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.settings
 
+import blue.anika.wolle.data.update.UpdateChannel
 import java.net.URLEncoder
 
 /**
@@ -25,6 +26,8 @@ internal object ObtainiumLink {
      * [rolling] false: stable tagged releases only. True: also the rolling `latest` prerelease; its
      * tag never changes, so the release date is used as the version to detect new builds.
      */
+    fun build(channel: UpdateChannel): String = build(rolling = channel == UpdateChannel.LATEST)
+
     fun build(rolling: Boolean): String {
         val settings = buildString {
             append("{")

@@ -66,6 +66,16 @@ class PrivilegedInstallerTest {
     }
 
     @Test
+    fun `a switched-off updater never takes the install`() {
+        PrivilegedState.entries.forEach {
+            assertEquals(
+                InstallPath.PACKAGE_INSTALLER,
+                chooseInstallPath(it, enabled = false),
+            )
+        }
+    }
+
+    @Test
     fun `the no-op installer is unavailable and cannot install`() {
         assertEquals(PrivilegedState.UNAVAILABLE, NoPrivilegedInstaller.state.value)
         assertEquals(null, NoPrivilegedInstaller.managerLaunchIntent())

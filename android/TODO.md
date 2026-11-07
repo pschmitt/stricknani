@@ -41,6 +41,25 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-99: About: Shizuku updater switch, one Obtainium row, compact hero, aligned icons
+
+- [x] Developer card: removed API v2, Server version, Server build ID and the duplicate App version
+      rows (the version card keeps App version and Server).
+- [x] "Updates through Shizuku" is now the "Shizuku updater" switch, placed directly above
+      "Reinstall this build via Shizuku". Persisted (`shizuku_updates`, default on, so nothing
+      changes silently); off sends every update (manual, automatic, background) through the system
+      installer even when Shizuku is ready and stops the permission prompt. The status line and the
+      Allow/Open Shizuku steps stay reachable.
+- [x] One "Add to Obtainium" row: a dialog picks Stable or Latest (radio buttons, preselected with
+      the current update channel) and opens the matching link.
+- [x] Version card: the copy action is a header icon button; trailing status icons sit in a 48dp
+      slot like the icon buttons, so the check mark and the GitHub icon end in the same column.
+- [x] Compact About hero: mascot left, name and tagline right.
+- [x] Tests: install path with the switch off (`PrivilegedInstallerTest`,
+      `InstallPathResolverTest`), Obtainium link per channel (`ObtainiumLinkTest`).
+
+Status: **done**, 2026-11-07.
+
 ## SNA-98: About shows which build is running; build date; update settings under Developer
 
 - [x] The app version reads `v1.4.0 (latest, debug)`: version, source (`latest` = rolling prerelease

@@ -48,6 +48,14 @@ constructor(
     val notifyUpdates: StateFlow<Boolean> =
         preferences.notifyAppUpdates.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /** The "Shizuku updater" switch. */
+    val shizukuEnabled: StateFlow<Boolean> =
+        preferences.shizukuUpdates.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    fun setShizukuEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.setShizukuUpdates(enabled) }
+    }
+
     private var startJob: Job? = null
 
     fun start(update: AppUpdate) {

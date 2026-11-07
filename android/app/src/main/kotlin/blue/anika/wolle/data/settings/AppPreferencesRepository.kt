@@ -142,6 +142,16 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_AUTO_UPDATE] = enabled }
     }
 
+    /**
+     * "Shizuku updater": install updates through Shizuku when it is ready. On unless the user turns
+     * it off, which is how updates behaved before the switch existed.
+     */
+    val shizukuUpdates = dataStore.data.map { prefs -> prefs[KEY_SHIZUKU_UPDATES] ?: true }
+
+    suspend fun setShizukuUpdates(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_SHIZUKU_UPDATES] = enabled }
+    }
+
     /** "Notify me about app updates" (GitHub APK builds only): on unless the user turns it off. */
     val notifyAppUpdates = dataStore.data.map { prefs -> prefs[KEY_NOTIFY_UPDATES] ?: true }
 
@@ -269,6 +279,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_DISMISSED_UPDATE = stringPreferencesKey("dismissed_update_version")
         val KEY_UPDATE_CHANNEL = stringPreferencesKey("update_channel")
         val KEY_AUTO_UPDATE = booleanPreferencesKey("auto_update")
+        val KEY_SHIZUKU_UPDATES = booleanPreferencesKey("shizuku_updates")
         val KEY_NOTIFY_UPDATES = booleanPreferencesKey("notify_app_updates")
         val KEY_PROJECT_TIMERS_ENABLED = booleanPreferencesKey("project_timers_enabled")
         val KEY_NOTICE_VERSION = stringPreferencesKey("update_notice_version")

@@ -6,6 +6,8 @@ import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -47,8 +49,11 @@ class InstallPathResolverTest {
         override fun canInstallSilently(): Boolean = silent
     }
 
-    private fun resolver(privileged: FakePrivileged, silent: Boolean = false) =
-        InstallPathResolver(privileged, FakeInspector(silent))
+    private fun resolver(
+        privileged: FakePrivileged,
+        silent: Boolean = false,
+        enabled: Boolean = true,
+    ) = InstallPathResolver(privileged, FakeInspector(silent), flowOf(enabled))
 
     @Test
     fun `a ready Shizuku takes the install and refreshes first`() = runTest {
@@ -67,6 +72,29 @@ class InstallPathResolverTest {
                     resolver(FakePrivileged(it)).path(),
                 )
             }
+    }
+
+    @Test
+    fun `a ready Shizuku is ignored while the updater is switched off`() = runTest {
+        val privileged = FakePrivileged(PrivilegedState.READY)
+        assertEquals(InstallPath.PACKAGE_INSTALLER, resolver(privileged, enabled = false).path())
+        assertFalse(resolver(privileged, enabled = false).privilegedSelected())
+    }
+
+    @Test
+    fun `switched off, silent install needs the installer of record`() = runTest {
+        val ready = FakePrivileged(PrivilegedState.READY)
+        assertFalse(resolver(ready, enabled = false).silentInstallPossible())
+        assertTrue(resolver(ready, silent = true, enabled = false).silentInstallPossible())
+        assertFalse(resolver(ready, enabled = false).silentInstallPossibleFlow().first())
+        assertTrue(resolver(ready, enabled = true).silentInstallPossibleFlow().first())
+    }
+
+    @Test
+    fun `it does not ask for permission while the updater is switched off`() = runTest {
+        val privileged = FakePrivileged(PrivilegedState.PERMISSION_NEEDED)
+        resolver(privileged, enabled = false).askForShizukuIfNeeded()
+        assertEquals(0, privileged.requests)
     }
 
     @Test

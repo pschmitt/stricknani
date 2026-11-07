@@ -55,9 +55,13 @@ internal fun privilegedState(
         else -> PrivilegedState.UNAVAILABLE
     }
 
-/** Updates go through Shizuku whenever it is ready right now, with no setting involved. */
-internal fun chooseInstallPath(state: PrivilegedState): InstallPath =
-    if (state == PrivilegedState.READY) InstallPath.PRIVILEGED else InstallPath.PACKAGE_INSTALLER
+/**
+ * Updates go through Shizuku when it is ready right now and the user has not switched the Shizuku
+ * updater off; otherwise they take the regular system installer.
+ */
+internal fun chooseInstallPath(state: PrivilegedState, enabled: Boolean = true): InstallPath =
+    if (enabled && state == PrivilegedState.READY) InstallPath.PRIVILEGED
+    else InstallPath.PACKAGE_INSTALLER
 
 /**
  * Installs an APK through a privileged binder (Shizuku), so no confirmation is ever needed. The

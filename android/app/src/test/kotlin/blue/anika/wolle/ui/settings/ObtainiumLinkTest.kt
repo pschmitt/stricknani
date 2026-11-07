@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.settings
 
+import blue.anika.wolle.data.update.UpdateChannel
 import java.net.URLDecoder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,6 +30,15 @@ class ObtainiumLinkTest {
         assertTrue(json.contains("includePrereleases\\\":true"))
         assertTrue(json.contains("releaseDateAsVersion\\\":true"))
         assertFalse(payload(ObtainiumLink.build(false)).contains("includePrereleases"))
+    }
+
+    @Test
+    fun `each update channel opens the link of its stream`() {
+        assertEquals(
+            ObtainiumLink.build(rolling = false),
+            ObtainiumLink.build(UpdateChannel.STABLE),
+        )
+        assertEquals(ObtainiumLink.build(rolling = true), ObtainiumLink.build(UpdateChannel.LATEST))
     }
 
     @Test
