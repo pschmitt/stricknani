@@ -41,25 +41,17 @@ export function parseCommit(raw: string | null | undefined): Commit | null {
 export interface ServerBuild {
   /** Server version without a leading "v", or null when the server did not report one. */
   version: string | null;
-  /** Full build id as reported by the server. */
-  buildId: string | null;
+  /** Commit the server was built from, or null when it did not report one. */
+  revision: Commit | null;
 }
 
-export const emptyServerBuild: ServerBuild = { version: null, buildId: null };
-
-/** Short form of the build id, long enough to tell builds apart in a bug report. */
-export function shortBuildId(
-  buildId: string | null | undefined,
-): string | null {
-  const trimmed = buildId?.trim();
-  return trimmed ? trimmed.slice(0, 8) : null;
-}
+export const emptyServerBuild: ServerBuild = { version: null, revision: null };
 
 function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-/** Read `version` and `build_id` from a `GET /api/v2/meta` response, tolerating anything else. */
+/** Read `version` and `revision` from a `GET /api/v2/meta` response, tolerating anything else. */
 export function parseServerBuild(response: unknown): ServerBuild {
   const data =
     typeof response === "object" && response !== null && "data" in response
@@ -67,7 +59,10 @@ export function parseServerBuild(response: unknown): ServerBuild {
       : null;
   if (typeof data !== "object" || data === null) return emptyServerBuild;
   const record = data as Record<string, unknown>;
-  return { version: text(record.version), buildId: text(record.build_id) };
+  return {
+    version: text(record.version),
+    revision: parseCommit(text(record.revision)),
+  };
 }
 
 export async function fetchServerBuild(
@@ -97,8 +92,7 @@ export function versionReport(
   commit: Commit | null = null,
 ): string {
   const lines = [`Stricknani ${displayVersion(server, web)}`];
-  const build = shortBuildId(server.buildId);
-  if (build) lines.push(`Build: ${build}`);
+  if (server.revision) lines.push(`Server build: ${server.revision.display}`);
   lines.push(`Web: ${web}`);
   if (commit) lines.push(`Commit: ${commit.display}`);
   return lines.join("\n");

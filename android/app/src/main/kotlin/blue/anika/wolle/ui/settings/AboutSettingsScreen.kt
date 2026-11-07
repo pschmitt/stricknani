@@ -225,7 +225,9 @@ internal fun AboutSettingsScreen(
 
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
     val serverVersion = serverMeta?.version?.takeIf { it.isNotBlank() } ?: unavailable
-    val serverBuild = serverMeta?.buildId?.takeIf { it.isNotBlank() } ?: unavailable
+    // The server's commit, linked like the app's build; the random build id means nothing here.
+    val serverRevision = BuildRevision.parse(serverMeta?.revision)
+    val serverBuild = serverRevision?.display ?: unavailable
     // The version code only orders Play uploads; it lives on the developer card.
     val appVersion =
         appVersionLabel(BuildConfig.VERSION_NAME, BuildConfig.RELEASE_CHANNEL, BuildConfig.DEBUG)
@@ -255,7 +257,10 @@ internal fun AboutSettingsScreen(
         append("Stricknani $appVersion")
         if (build != null) append("\nBuild: $build")
         if (buildDate != null) append("\nBuild date: $buildDate")
-        serverMeta?.let { append("\nServer: ${it.version} (${it.buildId})") }
+        serverMeta?.let {
+            append("\nServer: ${it.version}")
+            serverRevision?.let { revision -> append(" (${revision.display})") }
+        }
     }
     val copiedMessage = stringResource(R.string.about_copied)
 
@@ -424,6 +429,22 @@ internal fun AboutSettingsScreen(
                                     Text(stringResource(R.string.about_settings_server_build_label))
                                 },
                                 supportingContent = { Text(serverBuild) },
+                                trailingContent =
+                                    serverRevision?.let {
+                                        {
+                                            IconButton(
+                                                onClick = { uriHandler.openUri(it.commitUrl) }
+                                            ) {
+                                                Icon(
+                                                    PhosphorIcons.GithubLogo,
+                                                    contentDescription =
+                                                        stringResource(
+                                                            R.string.about_open_server_commit
+                                                        ),
+                                                )
+                                            }
+                                        }
+                                    },
                             )
                     }
                 }

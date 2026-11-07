@@ -15,8 +15,8 @@ import blue.anika.wolle.BuildConfig
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiCapabilitiesState
-import blue.anika.wolle.data.api.MetaApi
-import blue.anika.wolle.data.api.dto.MetaDto
+import blue.anika.wolle.data.api.v2.MetaV2Api
+import blue.anika.wolle.data.api.v2.MetaV2Dto
 import blue.anika.wolle.data.backup.BackupFrequency
 import blue.anika.wolle.data.backup.BackupManager
 import blue.anika.wolle.data.backup.BackupPasswordRequiredException
@@ -74,7 +74,7 @@ constructor(
     private val database: AppDatabase,
     syncStateDao: SyncStateDao,
     private val pendingMutationDao: PendingMutationDao,
-    private val metaApi: MetaApi,
+    private val metaApi: MetaV2Api,
     private val backupManager: BackupManager,
     private val backupScheduler: BackupScheduler,
     private val syncScheduler: SyncScheduler,
@@ -133,8 +133,8 @@ constructor(
                 emptyList(),
             )
 
-    private val _serverMeta = MutableStateFlow<MetaDto?>(null)
-    val serverMeta: StateFlow<MetaDto?> = _serverMeta.asStateFlow()
+    private val _serverMeta = MutableStateFlow<MetaV2Dto?>(null)
+    val serverMeta: StateFlow<MetaV2Dto?> = _serverMeta.asStateFlow()
 
     private val updateResult = MutableStateFlow<UpdateCheckResult?>(null)
     private val updateChecking = MutableStateFlow(BuildConfig.SELF_UPDATE_ENABLED)
@@ -191,7 +191,7 @@ constructor(
     /** Pull to refresh on About: the update check and the server version, both awaited. */
     fun refreshAbout() {
         aboutRefresh.refresh {
-            val meta = viewModelScope.async { runCatching { metaApi.getMeta() }.getOrNull() }
+            val meta = viewModelScope.async { runCatching { metaApi.getMeta().data }.getOrNull() }
             startUpdateCheck()?.join()
             meta.await()?.let { _serverMeta.value = it }
             true
@@ -218,7 +218,9 @@ constructor(
     }
 
     init {
-        viewModelScope.launch { _serverMeta.value = runCatching { metaApi.getMeta() }.getOrNull() }
+        viewModelScope.launch {
+            _serverMeta.value = runCatching { metaApi.getMeta().data }.getOrNull()
+        }
     }
 
     /** The reading text size step of the project and yarn pages (see `ReadingTextSize`). */

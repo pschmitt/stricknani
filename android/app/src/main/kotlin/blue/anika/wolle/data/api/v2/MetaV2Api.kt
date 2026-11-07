@@ -18,6 +18,8 @@ interface MetaV2Api {
 data class MetaV2Dto(
     val version: String? = null,
     @SerialName("build_id") val buildId: String? = null,
+    /** Commit the server was built from (`9a7bfc70`, maybe `-dirty`); absent on older servers. */
+    val revision: String? = null,
     @SerialName("is_admin") val isAdmin: Boolean = false,
     val user: MetaV2UserDto? = null,
     /** Id of the calling PAT; only sent to bearer callers by servers with bearer account access. */

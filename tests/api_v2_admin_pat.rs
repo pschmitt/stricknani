@@ -502,6 +502,8 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
     assert_eq!(anonymous_data["user"], serde_json::Value::Null);
     assert!(anonymous_data["version"].is_string());
     assert!(anonymous_data["build_id"].is_string());
+    // Null in tests: only the Nix package wrapper sets STRICKNANI_GIT_REVISION.
+    assert!(anonymous_data.get("revision").is_some());
     assert_eq!(anonymous_data["auth"]["password"], true);
     assert_eq!(anonymous_data["auth"]["oidc"], serde_json::json!([]));
     assert_eq!(anonymous_data["registration_enabled"], false);
@@ -510,7 +512,7 @@ async fn v2_meta_resolves_current_browser_or_pat_identity() {
         serde_json::json!({"url": false, "ai": false})
     );
     assert_eq!(anonymous_data["archive"], false);
-    assert_eq!(anonymous_data.as_object().unwrap().len(), 9);
+    assert_eq!(anonymous_data.as_object().unwrap().len(), 10);
 
     let browser_admin = fixture
         .app

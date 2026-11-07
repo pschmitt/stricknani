@@ -19,6 +19,9 @@ struct MetaEnvelope {
 struct MetaData {
     version: &'static str,
     build_id: String,
+    /// Commit the server was built from (`9a7bfc70`, maybe `-dirty`); null when
+    /// the build did not record one. `build_id` changes on every start instead.
+    revision: Option<String>,
     is_admin: bool,
     /// Whether public self-service registration is enabled on this instance.
     registration_enabled: bool,
@@ -130,6 +133,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
         data: MetaData {
             version: env!("CARGO_PKG_VERSION"),
             build_id: state.app.build_id,
+            revision: crate::error_reporting::git_revision(),
             is_admin,
             registration_enabled: state.app.signup_enabled,
             imports: MetaImports {

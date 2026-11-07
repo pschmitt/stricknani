@@ -539,6 +539,7 @@
     <string name="about_settings_build_label">Build</string>
     <string name="about_settings_build_date_label">Build-Datum</string>
     <string name="about_settings_server_version_label">Serverversion</string>
+    <string name="about_open_server_commit">Server-Commit auf GitHub öffnen</string>
     <string name="about_settings_server_build_label">Server-Build</string>
     <string name="about_settings_server_version_unavailable">Nicht verfügbar</string>
     <string name="about_settings_libraries_description">Open-Source-Abhängigkeiten dieser App</string>

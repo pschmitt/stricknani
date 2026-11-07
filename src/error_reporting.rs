@@ -176,7 +176,19 @@ pub struct PreparedEnvelope {
 /// environment (`STRICKNANI_GIT_REVISION`, set by the Nix package wrapper) so the
 /// compiled server does not change, and need not be rebuilt, on every commit.
 pub fn release_name() -> String {
-    release_name_for(std::env::var("STRICKNANI_GIT_REVISION").ok().as_deref())
+    release_name_for(git_revision().as_deref())
+}
+
+/// The commit this server was built from (`9a7bfc70`, or `9a7bfc70-dirty`), as
+/// the Nix package wrapper sets it in `STRICKNANI_GIT_REVISION`; None when unset.
+pub fn git_revision() -> Option<String> {
+    revision_from(std::env::var("STRICKNANI_GIT_REVISION").ok().as_deref())
+}
+
+fn revision_from(raw: Option<&str>) -> Option<String> {
+    raw.map(str::trim)
+        .filter(|revision| !revision.is_empty())
+        .map(str::to_owned)
 }
 
 fn release_name_for(revision: Option<&str>) -> String {
@@ -1231,6 +1243,9 @@ mod tests {
         assert!(release_name_for(Some(" abc1234 ")).ends_with("+abc1234"));
         assert!(!release_name_for(Some("")).contains('+'));
         assert!(!release_name_for(None).contains('+'));
+        assert_eq!(revision_from(Some(" abc1234 ")).as_deref(), Some("abc1234"));
+        assert_eq!(revision_from(Some("  ")), None);
+        assert_eq!(revision_from(None), None);
     }
 
     #[test]

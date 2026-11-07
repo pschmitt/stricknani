@@ -211,7 +211,8 @@ msgstr ""
 msgid "Fiber content"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:255 web/src/routes/about/+page.svelte:402
+#: web/src/routes/about/+page.svelte:244 web/src/routes/about/+page.svelte:268
+#: web/src/routes/about/+page.svelte:415
 msgid "(opens in a new tab)"
 msgstr ""
 
@@ -324,7 +325,7 @@ msgstr ""
 msgid "API token revoked."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:361 web/src/routes/about/+page.svelte:202
+#: web/src/routes/+layout.svelte:361 web/src/routes/about/+page.svelte:201
 #: web/src/routes/more/+page.svelte:76
 msgid "About"
 msgstr ""
@@ -629,7 +630,7 @@ msgstr ""
 msgid "Any action"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:229
+#: web/src/routes/about/+page.svelte:228
 msgid "App version"
 msgstr ""
 
@@ -769,7 +770,7 @@ msgid "Back to projects"
 msgstr ""
 
 #: web/src/lib/features/auth/SignupForm.svelte:178
-#: web/src/routes/about/+page.svelte:208
+#: web/src/routes/about/+page.svelte:207
 #: web/src/routes/delete-account/+page.svelte:22
 #: web/src/routes/privacy/+page.svelte:20
 msgid "Back to sign in"
@@ -812,10 +813,6 @@ msgstr ""
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:163
 msgid "Browse the yarns connected to your projects."
-msgstr ""
-
-#: web/src/routes/about/+page.svelte:234
-msgid "Build"
 msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:155
@@ -1086,7 +1083,7 @@ msgstr ""
 msgid "Close photo"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:244 web/src/routes/about/+page.svelte:362
+#: web/src/routes/about/+page.svelte:257 web/src/routes/about/+page.svelte:375
 msgid "Commit"
 msgstr ""
 
@@ -1147,7 +1144,7 @@ msgstr ""
 msgid "Copied."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:280
+#: web/src/routes/about/+page.svelte:293
 msgid "Copied. Paste it into your bug report."
 msgstr ""
 
@@ -1157,7 +1154,7 @@ msgid ""
 "How long that takes is up to the person who runs the server."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:276
+#: web/src/routes/about/+page.svelte:289
 msgid "Copy"
 msgstr ""
 
@@ -1187,7 +1184,7 @@ msgstr ""
 msgid "Copy was blocked. Select and copy the token manually."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:282
+#: web/src/routes/about/+page.svelte:295
 msgid "Copy was blocked. Select the version and copy it manually."
 msgstr ""
 
@@ -1272,7 +1269,7 @@ msgstr ""
 msgid "Creating…"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:420
+#: web/src/routes/about/+page.svelte:433
 msgid "Credits and licences"
 msgstr ""
 
@@ -1351,7 +1348,7 @@ msgstr ""
 msgid "Delete yarn?"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:182
+#: web/src/routes/about/+page.svelte:181
 #: web/src/routes/delete-account/+page.svelte:14
 #: web/src/routes/delete-account/+page.svelte:27
 msgid "Delete your account"
@@ -1381,15 +1378,15 @@ msgstr ""
 msgid "Details to add"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:340
+#: web/src/routes/about/+page.svelte:353
 msgid "Developer"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:343
+#: web/src/routes/about/+page.svelte:356
 msgid "Developer mode"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:96
+#: web/src/routes/about/+page.svelte:95
 msgid "Developer mode turned off"
 msgstr ""
 
@@ -1456,7 +1453,7 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:320
+#: web/src/routes/about/+page.svelte:333
 msgid "Download APK"
 msgstr ""
 
@@ -1801,7 +1798,7 @@ msgstr ""
 msgid "For your security, confirm your identity before changing how you sign in."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:194
+#: web/src/routes/about/+page.svelte:193
 msgid "Found a bug or have an idea? Tell us on GitHub."
 msgstr ""
 
@@ -1839,12 +1836,12 @@ msgid "German and English"
 msgstr ""
 
 #: web/src/lib/components/GetAppCard.svelte:87
-#: web/src/routes/about/+page.svelte:319
+#: web/src/routes/about/+page.svelte:332
 msgid "Get it on Google Play"
 msgstr ""
 
 #: web/src/lib/components/AuthFooter.svelte:18
-#: web/src/routes/about/+page.svelte:296
+#: web/src/routes/about/+page.svelte:309
 msgid "Get the Android app"
 msgstr ""
 
@@ -1943,7 +1940,7 @@ msgstr ""
 msgid "Hours"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:175
+#: web/src/routes/about/+page.svelte:174
 msgid "How Stricknani handles your data."
 msgstr ""
 
@@ -1956,7 +1953,7 @@ msgstr ""
 msgid "How to delete your account"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:183
+#: web/src/routes/about/+page.svelte:182
 msgid "How to delete your account and what happens to your data."
 msgstr ""
 
@@ -2136,7 +2133,7 @@ msgstr ""
 msgid "Knit offline with the Stricknani app for Android"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:299
+#: web/src/routes/about/+page.svelte:312
 msgid "Knit offline with the Stricknani app for Android."
 msgstr ""
 
@@ -2236,7 +2233,7 @@ msgstr ""
 msgid "Light"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:167
+#: web/src/routes/about/+page.svelte:166
 msgid "Like Stricknani? Support its development."
 msgstr ""
 
@@ -2311,7 +2308,7 @@ msgstr ""
 msgid "Linking the login did not work. Try again."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:379
+#: web/src/routes/about/+page.svelte:392
 msgid "Links"
 msgstr ""
 
@@ -2417,7 +2414,7 @@ msgstr ""
 msgid "Looking is free. Touching the wool is not."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:442
+#: web/src/routes/about/+page.svelte:455
 msgid "Made with wool and love."
 msgstr ""
 
@@ -2671,7 +2668,7 @@ msgstr ""
 msgid "No logins are linked yet."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:61
+#: web/src/routes/about/+page.svelte:60
 msgid "No need, you are already a developer."
 msgstr ""
 
@@ -2831,7 +2828,7 @@ msgid ""
 "move too, and you keep an editor share on each."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:216
+#: web/src/routes/about/+page.svelte:215
 msgid "Offline-first knitting projects and yarn stash."
 msgstr ""
 
@@ -2862,7 +2859,7 @@ msgstr ""
 msgid "Open archived copy"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:251
+#: web/src/routes/about/+page.svelte:264
 msgid "Open commit on GitHub"
 msgstr ""
 
@@ -2906,6 +2903,10 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:167
 #: web/src/routes/login/+page.svelte:15
 msgid "Open projects"
+msgstr ""
+
+#: web/src/routes/about/+page.svelte:240
+msgid "Open server commit on GitHub"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1313
@@ -3257,7 +3258,7 @@ msgstr ""
 
 #: web/src/lib/components/AuthFooter.svelte:16
 #: web/src/lib/features/account/AccountSettings.svelte:1161
-#: web/src/routes/about/+page.svelte:174
+#: web/src/routes/about/+page.svelte:173
 #: web/src/routes/delete-account/+page.svelte:160
 #: web/src/routes/privacy/+page.svelte:12
 #: web/src/routes/privacy/+page.svelte:25
@@ -3384,7 +3385,7 @@ msgid ""
 "Android behavior."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:304
+#: web/src/routes/about/+page.svelte:317
 msgid "QR code for the Android app download"
 msgstr ""
 
@@ -3396,7 +3397,7 @@ msgstr ""
 msgid "Questions about the software itself are welcome on the"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:159
+#: web/src/routes/about/+page.svelte:158
 msgid "Read the code, follow along or contribute."
 msgstr ""
 
@@ -3600,7 +3601,7 @@ msgstr ""
 msgid "Replace your unsaved edits with the latest saved version?"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:193
+#: web/src/routes/about/+page.svelte:192
 msgid "Report a problem"
 msgstr ""
 
@@ -3825,7 +3826,7 @@ msgstr ""
 msgid "Scan with the Stricknani app"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:308
+#: web/src/routes/about/+page.svelte:321
 msgid "Scan with your phone to get the app."
 msgstr ""
 
@@ -3894,15 +3895,15 @@ msgid ""
 "operator."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:358
+#: web/src/routes/about/+page.svelte:233 web/src/routes/about/+page.svelte:371
 msgid "Server build"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:354
+#: web/src/routes/about/+page.svelte:367
 msgid "Server version"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:370
+#: web/src/routes/about/+page.svelte:383
 msgid "Service worker"
 msgstr ""
 
@@ -4119,7 +4120,7 @@ msgstr ""
 msgid "Somewhere, a tension swatch is laughing."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:158
+#: web/src/routes/about/+page.svelte:157
 msgid "Source code on GitHub"
 msgstr ""
 
@@ -4127,7 +4128,7 @@ msgstr ""
 msgid "Source image details"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:166
+#: web/src/routes/about/+page.svelte:165
 msgid "Sponsor on GitHub"
 msgstr ""
 
@@ -4273,7 +4274,7 @@ msgstr ""
 msgid "Storage, retention, and deletion"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:423
+#: web/src/routes/about/+page.svelte:436
 msgid "Stricknani is free software, licensed under the"
 msgstr ""
 
@@ -5220,8 +5221,8 @@ msgstr ""
 msgid "Type DELETE or your email address, and confirm."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:355 web/src/routes/about/+page.svelte:359
-#: web/src/routes/about/+page.svelte:363 web/src/routes/about/+page.svelte:371
+#: web/src/routes/about/+page.svelte:368 web/src/routes/about/+page.svelte:372
+#: web/src/routes/about/+page.svelte:376 web/src/routes/about/+page.svelte:384
 msgid "Unknown"
 msgstr ""
 
@@ -5366,7 +5367,7 @@ msgstr ""
 msgid "Users"
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:225
+#: web/src/routes/about/+page.svelte:224
 msgid "Version"
 msgstr ""
 
@@ -5407,7 +5408,7 @@ msgid ""
 "It may have been frogged, or it lives in someone else’s basket."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:239 web/src/routes/about/+page.svelte:366
+#: web/src/routes/about/+page.svelte:252 web/src/routes/about/+page.svelte:379
 msgid "Web app"
 msgstr ""
 
@@ -5576,23 +5577,23 @@ msgstr ""
 msgid "You are already signed in."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:60
+#: web/src/routes/about/+page.svelte:59
 msgid "You are now 1 step away from being a developer."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:59
+#: web/src/routes/about/+page.svelte:58
 msgid "You are now 2 steps away from being a developer."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:58
+#: web/src/routes/about/+page.svelte:57
 msgid "You are now 3 steps away from being a developer."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:57
+#: web/src/routes/about/+page.svelte:56
 msgid "You are now 4 steps away from being a developer."
 msgstr ""
 
-#: web/src/routes/about/+page.svelte:62
+#: web/src/routes/about/+page.svelte:61
 msgid "You are now a developer!"
 msgstr ""
 

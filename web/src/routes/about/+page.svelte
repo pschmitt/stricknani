@@ -14,7 +14,6 @@
     fetchServerBuild,
     issuesUrl,
     parseCommit,
-    shortBuildId,
     sourceUrl,
     sponsorUrl,
     versionReport,
@@ -44,7 +43,7 @@
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
   const version = $derived(displayVersion(server));
-  const buildId = $derived(shortBuildId(server.buildId));
+  const serverRevision = $derived(server.revision);
   const commit = parseCommit(bundleRevision);
 
   const taps = new TapCounter();
@@ -229,10 +228,24 @@
         <dt>{t("App version", locale)}</dt>
         <dd>{version}</dd>
       </div>
-      {#if buildId}
-        <div class="fact">
-          <dt>{t("Build", locale)}</dt>
-          <dd>{buildId}</dd>
+      {#if serverRevision}
+        <div class="fact fact--commit">
+          <span class="commit-label">{t("Server build", locale)}</span>
+          <span class="commit-value">
+            <a
+              class="commit-link"
+              href={serverRevision.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t("Open server commit on GitHub", locale)}
+            >
+              <NavIcon name="github" />
+              <span class="visually-hidden"
+                >{t("(opens in a new tab)", locale)}</span
+              >
+            </a>
+            <span class="commit-press__value">{serverRevision.display}</span>
+          </span>
         </div>
       {/if}
       <div class="fact">
@@ -356,7 +369,7 @@
         </div>
         <div class="fact">
           <dt>{t("Server build", locale)}</dt>
-          <dd>{server.buildId ?? t("Unknown", locale)}</dd>
+          <dd>{server.revision?.full ?? t("Unknown", locale)}</dd>
         </div>
         <div class="fact">
           <dt>{t("Commit", locale)}</dt>
