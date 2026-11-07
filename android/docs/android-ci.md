@@ -8,11 +8,12 @@ therefore keep only Stricknani-specific triggers and parameters; shared build lo
 
 - **Android Build** calls the shared debug build workflow. Unit tests, the four ABI APK artifacts,
   and their paths are supplied relative to `android/`.
-- **Android Lint** calls the shared ktfmt/Lint workflow. Auto-fix commits remain disabled; a
+- **Checks → android-lint** calls the shared ktfmt/Lint workflow. Auto-fix commits remain disabled; a
   failing ktfmt check still produces the shared `ktfmt-diff-patch` artifact.
-- **Release** calls the shared signed APK workflow, including version/revision checksums,
+- **Release → GitHub release** mirrors the shared signed APK workflow, including version/revision checksums,
   provenance, GitHub Release publication, and tagged-release screenshot dispatch.
-- **Play Store Release** keeps Stricknani's metadata/privacy/production-confirmation validation,
+- **Release → Google Play** (version, validate, play-store jobs; tags, or a dispatch with
+  `lane=play-store`) keeps Stricknani's metadata/privacy/production-confirmation validation,
   then calls the shared signed AAB workflow. Publication remains gated by both the manual input
   and `PLAY_PUBLISH_ENABLED=true`.
 

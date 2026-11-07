@@ -1,10 +1,11 @@
 # Google Play release runbook
 
-Stricknani's Play package is `blue.anika.wolle`. Since SNA-65, **Play Store Release** runs
-automatically on every semantic-version tag push (`vX.Y.Z` or `X.Y.Z`), matching the fleet's other
+Stricknani's Play package is `blue.anika.wolle`. Since SNA-65, the **Release** workflow's Google Play
+jobs run automatically on every semantic-version tag push (`vX.Y.Z` or `X.Y.Z`), in parallel with
+the GitHub release, matching the fleet's other
 Android apps (syncwich/augh/jollyfin/nyetbox): it publishes to both the `internal` and `alpha`
 (closed testing) tracks in one upload, gated by the repository variable
-`PLAY_PUBLISH_ENABLED=true` (already set for this repo). A `workflow_dispatch` run is still
+`PLAY_PUBLISH_ENABLED=true` (already set for this repo). A `workflow_dispatch` run of **Release** with `lane=play-store` is still
 available for ad-hoc bundles, an arbitrary track list, or a dry run with `publish=false`. **Play
 Store Assets** (screenshots/icon/feature-graphic upload) remains manual-dispatch-only, unchanged.
 
@@ -57,11 +58,11 @@ actions and cannot be safely automated from this repository.
 ## Release flow
 
 1. Tag a commit on `main` with a semantic version (`vX.Y.Z` or `X.Y.Z`) and push the tag.
-   **Play Store Release** derives `versionCode`/`versionName` from the tag (same monotonic
+   The **Release** workflow's Play jobs derive `versionCode`/`versionName` from the tag (same monotonic
    `major*1000000 + minor*1000 + patch` scheme as the sibling apps), validates metadata, runs
    Android unit tests, builds a signed AAB, and publishes it to `internal,alpha` in one upload.
-2. To do a dry run or target different tracks instead, dispatch **Play Store Release** manually
-   with explicit `version_code`/`version_name` overrides, a `track` list (comma-separated, e.g.
+2. To do a dry run or target different tracks instead, dispatch **Release** manually with
+   `lane=play-store`, explicit `version_code`/`version_name` overrides, a `track` list (comma-separated, e.g.
    `internal,alpha` or just `internal`), and `publish=false` to validate/build only. Set
    `publish=true` to actually upload - both that input and `PLAY_PUBLISH_ENABLED=true` are
    required, the default cannot publish. Production is reachable this way too, but requires the

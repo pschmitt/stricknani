@@ -66,8 +66,8 @@ scoped to this directory, not mixed into the root one.
   Gradle plugin any more. If CI's ktfmt job fails anyway, apply its `ktfmt-diff-patch` artifact.
 - CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
   `.github/workflows/`: the `android-lint` job of `checks.yaml`, `android` of `build.yaml`,
-  `android-e2e`/`android-replay` of `e2e.yaml`, plus `release.yaml`, `play-store*.yaml` and
-  `android-screenshots.yaml`). The build, lint, signed release, and Play bundle lanes call
+  `android-e2e`/`android-replay` of `e2e.yaml`, plus `release.yaml` (GitHub release and Google Play),
+  `play-store-assets.yaml` and `android-screenshots.yaml`). The build, lint, signed release, and Play bundle lanes call
   the fleet's reusable `pschmitt/android-app-ci` workflows with `project-directory: android`,
   while E2E and screenshot capture retain their fixture-specific emulator/test orchestration. The
   shared screenshot-PR tail, JDK/Gradle setup, keystore decoding, KVM setup, and emulator wait

@@ -13,6 +13,17 @@ name: Release
 #   that tag (release and debug APKs, becomes the repo's "Latest release"); debug installs on the
 #   Stable channel update from these
 #
+# A semantic-version tag also publishes to Google Play, in parallel with the GitHub release: the
+# version, validate and play-store jobs (formerly play-store.yaml). Stable tags upload a signed
+# bundle to the internal and closed (alpha) testing tracks in one go, through
+# pschmitt/ci-workflows's reusable play-store.yaml, which also requires the repository variable
+# PLAY_PUBLISH_ENABLED=true and the PLAY_SERVICE_ACCOUNT_JSON secret (see
+# android/docs/play-store-release.md); a tag push fails loudly instead of silently publishing if
+# either is missing. Version resolution stays local: a real value is computed on every run.
+#
+# A manual dispatch runs one lane: `github-release` (the GitHub release for the dispatched ref) or
+# `play-store` (a Play build, by default without uploading; see the inputs).
+#
 # Needs these repo secrets to produce a *signed* release: CI_KEYSTORE_BASE64, CI_KEYSTORE_PASSWORD,
 # CI_KEY_ALIAS, CI_KEY_PASSWORD - see the "Stricknani Android CI Signing Keystore" rbw entry
 # (android/justfile's `build variant=release` uses the same keystore for local release builds).
@@ -30,20 +41,61 @@ on:
       - v*
       - '*.*.*'
   workflow_dispatch:
+    inputs:
+      lane:
+        description: "What to release: the GitHub release of this ref, or a Play Store build"
+        required: true
+        default: github-release
+        type: choice
+        options:
+          - github-release
+          - play-store
+      version_code:
+        description: "Override versionCode (leave blank on a tag build to derive it from the tag)"
+        required: false
+        type: string
+      version_name:
+        description: "Override versionName (leave blank on a tag build to derive it from the tag)"
+        required: false
+        type: string
+      track:
+        description: "Play track(s), comma-separated (e.g. internal,alpha)"
+        required: false
+        default: "internal,alpha"
+        type: string
+      production_confirmation:
+        description: "Required only when track includes production: type I_UNDERSTAND_PRODUCTION_UPLOAD"
+        required: false
+        default: ""
+        type: string
+      publish:
+        description: "Upload the bundle to the requested Play track(s)"
+        required: true
+        default: false
+        type: boolean
+      release_status:
+        description: "Play release status (draft for the first release of a draft app)"
+        required: false
+        default: draft
+        type: string
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  actions: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
   release:
+    name: GitHub release (APKs)
+    if: ${{ github.event_name == 'push' || inputs.lane == 'github-release' }}
     runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+      actions: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -315,3 +367,109 @@ jobs:
                 gh release delete-asset ${{ steps.params.outputs.tag_name }} "$name" --repo "$GITHUB_REPOSITORY" -y
               fi
             done
+
+  # Google Play: tags, or a dispatch with lane play-store.
+  version:
+    name: Resolve release version and track
+    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || inputs.lane == 'play-store' }}
+    runs-on: ubuntu-26.04
+    outputs:
+      code: ${{ steps.resolve.outputs.code }}
+      name: ${{ steps.resolve.outputs.name }}
+      track: ${{ steps.resolve.outputs.track }}
+    steps:
+      - name: Resolve release version and track
+        id: resolve
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION_CODE: ${{ inputs.version_code }}
+          INPUT_VERSION_NAME: ${{ inputs.version_name }}
+          INPUT_TRACK: ${{ inputs.track }}
+          PRODUCTION_CONFIRMATION: ${{ inputs.production_confirmation }}
+        shell: bash
+        run: |
+          if [[ -n "$INPUT_VERSION_CODE" || -n "$INPUT_VERSION_NAME" ]]; then
+            version_code="$INPUT_VERSION_CODE"
+            version_name="$INPUT_VERSION_NAME"
+          elif [[ "$REF_NAME" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            version_name="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+            # Keep version codes deterministic and monotonic for semantic-version tags.
+            version_code=$((10#${BASH_REMATCH[1]} * 1000000 + 10#${BASH_REMATCH[2]} * 1000 + 10#${BASH_REMATCH[3]}))
+          else
+            echo "Expected a semantic-version tag such as 1.0.0, or explicit version_code/version_name inputs" >&2
+            exit 1
+          fi
+          [[ "$version_code" =~ ^[1-9][0-9]*$ ]] || {
+            echo "version_code must be a positive integer" >&2
+            exit 1
+          }
+          (( version_code <= 2100000000 )) || {
+            echo "version_code exceeds Google Play's maximum" >&2
+            exit 1
+          }
+          [[ "$version_name" =~ ^[0-9A-Za-z][0-9A-Za-z.+_-]*$ ]] || {
+            echo "version_name contains unsupported characters" >&2
+            exit 1
+          }
+
+          # Falls back to the fleet default even on a tag push, where inputs.track is unset
+          # (workflow_dispatch inputs only populate for dispatch-triggered runs).
+          track="${INPUT_TRACK:-internal,alpha}"
+          [[ "$track" =~ ^(internal|alpha|beta|production)(,(internal|alpha|beta|production))*$ ]] || {
+            echo "track must be a comma-separated list of internal, alpha, beta, and/or production" >&2
+            exit 1
+          }
+          IFS=',' read -ra track_list <<< "$track"
+          for t in "${track_list[@]}"; do
+            if [[ "$t" == production && "$PRODUCTION_CONFIRMATION" != I_UNDERSTAND_PRODUCTION_UPLOAD ]]
+            then
+              echo "production requires the exact production_confirmation value" >&2
+              exit 1
+            fi
+          done
+
+          {
+            echo "code=$version_code"
+            echo "name=$version_name"
+            echo "track=$track"
+          } >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: Validate listing and committed assets
+    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || inputs.lane == 'play-store' }}
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate Play Store metadata and committed assets
+        env:
+          PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+        run: |
+          args=(--root .)
+          if [[ "$PUBLISH" == true ]]
+          then
+            args+=(--require-ready)
+          fi
+          node android/scripts/validate-play-store-metadata.mjs "${args[@]}"
+
+  play-store:
+    name: Build and publish signed Android App Bundle
+    needs: [version, validate]
+    permissions:
+      contents: read
+    uses: pschmitt/ci-workflows/.github/workflows/play-store.yaml@main
+    with:
+      application-id: blue.anika.wolle
+      artifact-label: stricknani
+      project-directory: android
+      keystore-file-name: stricknani-ci.jks
+      unit-test-task: :app:testDebugUnitTest
+      gradle-bundle-task: :app:bundleRelease
+      aab-path: app/build/outputs/bundle/release/app-release.aab
+      version-code: ${{ needs.version.outputs.code }}
+      version-name: ${{ needs.version.outputs.name }}
+      publish: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+      track: ${{ needs.version.outputs.track }}
+      status: ${{ github.event_name == 'workflow_dispatch' && inputs.release_status || 'completed' }}
+    secrets: inherit

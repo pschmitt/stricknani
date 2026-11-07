@@ -55,7 +55,8 @@ To cut a release:
    git push origin v1.2.3
    ```
 
-5. Watch the Release and Play Store Release workflows. The APK version name is
+5. Watch the Release workflow: its GitHub release and Google Play jobs run in
+   parallel. The APK version name is
    taken from the tag; the Play version resolver rejects tags that are not
    semantic versions.
 6. Check the release page: four release and four debug APKs, `SHA256SUMS`, and release notes
