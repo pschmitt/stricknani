@@ -23,6 +23,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -210,15 +211,23 @@ internal fun AboutSettingsScreen(
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
     val serverVersion = serverMeta?.let { "${it.version} (${it.buildId})" } ?: unavailable
     // The version code only orders Play uploads; it lives on the developer card.
-    val versionName = "v${BuildConfig.VERSION_NAME}"
     val appVersion =
-        if (BuildConfig.DEBUG_EXTRAS) {
-            stringResource(R.string.about_settings_app_version_debug, versionName)
-        } else {
-            versionName
-        }
+        appVersionLabel(BuildConfig.VERSION_NAME, BuildConfig.RELEASE_CHANNEL, BuildConfig.DEBUG)
+    val buildDate = formatBuildDate(BuildConfig.BUILD_DATE)
     val revision = BuildRevision.parse(BuildConfig.GIT_REVISION)
     val build = revision?.display
+    val channelChoiceVisible =
+        updateChannelChoiceVisible(
+            BuildConfig.SELF_UPDATE_ENABLED,
+            BuildConfig.DEBUG,
+            installDeveloperMode,
+        )
+    val shizukuUi =
+        shizukuStatusUi(
+            developerMode = installDeveloperMode,
+            supported = installViewModel.shizukuSupported,
+            state = shizukuState,
+        )
     val offer = aboutUpdateOffer(updateState, installState)
     val trailing = aboutUpdateTrailing(updateState, installState)
     val availableUpdate = (updateState as? AboutUpdateState.Available)?.update
@@ -229,6 +238,7 @@ internal fun AboutSettingsScreen(
     val copyText = buildString {
         append("Stricknani $appVersion")
         if (build != null) append("\nBuild: $build")
+        if (buildDate != null) append("\nBuild date: $buildDate")
         serverMeta?.let { append("\nServer: ${it.version} (${it.buildId})") }
     }
     val copiedMessage = stringResource(R.string.about_copied)
@@ -322,33 +332,6 @@ internal fun AboutSettingsScreen(
                                     }
                                 },
                         )
-                        // Debug builds choose a channel too: tagged and rolling releases both carry
-                        // debug APKs. Release builds need developer mode (Latest is unfinished).
-                        if (
-                            updateChannelChoiceVisible(
-                                BuildConfig.SELF_UPDATE_ENABLED,
-                                BuildConfig.DEBUG,
-                                installDeveloperMode,
-                            )
-                        ) {
-                            UpdateChannelRow(
-                                selected = updateChannel,
-                                onSelect = viewModel::setUpdateChannel,
-                            )
-                        }
-                        val shizukuUi =
-                            shizukuStatusUi(
-                                developerMode = installDeveloperMode,
-                                supported = installViewModel.shizukuSupported,
-                                state = shizukuState,
-                            )
-                        if (shizukuUi.visible) {
-                            ShizukuStatusRow(
-                                ui = shizukuUi,
-                                onAllow = installViewModel::requestShizukuPermission,
-                                onOpenShizuku = { openShizuku(context, installViewModel) },
-                            )
-                        }
                         if (backgroundUpdatesAvailable) {
                             AutoUpdateRow(
                                 checked = autoUpdate,
@@ -389,6 +372,17 @@ internal fun AboutSettingsScreen(
                                     }
                                 },
                         )
+                        SettingsListItem(
+                            headlineContent = {
+                                Text(stringResource(R.string.about_settings_build_date_label))
+                            },
+                            supportingContent = {
+                                Text(
+                                    buildDate
+                                        ?: stringResource(R.string.about_settings_build_unknown)
+                                )
+                            },
+                        )
                         if (serverMeta != null)
                             SettingsListItem(
                                 headlineContent = {
@@ -422,11 +416,32 @@ internal fun AboutSettingsScreen(
                 item {
                     val motion = !animationsDisabled()
                     AnimatedVisibility(
-                        visible = developerMode,
+                        // Debug builds keep the update channel choice even with developer mode
+                        // off, so the card then shows only those rows.
+                        visible = developerMode || channelChoiceVisible,
                         enter = if (motion) fadeIn() + expandVertically() else fadeIn(snap()),
                         exit = if (motion) fadeOut() + shrinkVertically() else fadeOut(snap()),
                     ) {
                         DeveloperCard(
+                            full = developerMode,
+                            updateRows = {
+                                // Debug builds choose a channel too: tagged and rolling releases
+                                // both carry debug APKs. Release builds need developer mode
+                                // (Latest is unfinished).
+                                if (channelChoiceVisible) {
+                                    UpdateChannelRow(
+                                        selected = updateChannel,
+                                        onSelect = viewModel::setUpdateChannel,
+                                    )
+                                }
+                                if (shizukuUi.visible) {
+                                    ShizukuStatusRow(
+                                        ui = shizukuUi,
+                                        onAllow = installViewModel::requestShizukuPermission,
+                                        onOpenShizuku = { openShizuku(context, installViewModel) },
+                                    )
+                                }
+                            },
                             serverUrl = serverUrl,
                             serverMeta = serverMeta,
                             apiState = apiState,
@@ -859,6 +874,8 @@ private fun AboutCreditRow(title: String, detail: String?, onClick: () -> Unit) 
  */
 @Composable
 private fun DeveloperCard(
+    full: Boolean,
+    updateRows: @Composable ColumnScope.() -> Unit,
     serverUrl: String,
     serverMeta: blue.anika.wolle.data.api.dto.MetaDto?,
     apiState: blue.anika.wolle.data.api.ApiCapabilitiesState?,
@@ -875,16 +892,20 @@ private fun DeveloperCard(
         icon = Icons.Filled.Code,
     ) {
         val switchLabel = stringResource(R.string.developer_card_switch)
-        SettingsListItem(
-            modifier =
-                Modifier.toggleable(
-                    value = true,
-                    role = Role.Switch,
-                    onValueChange = onDeveloperModeChange,
-                ),
-            headlineContent = { Text(switchLabel) },
-            trailingContent = { Switch(checked = true, onCheckedChange = null) },
-        )
+        if (full) {
+            SettingsListItem(
+                modifier =
+                    Modifier.toggleable(
+                        value = true,
+                        role = Role.Switch,
+                        onValueChange = onDeveloperModeChange,
+                    ),
+                headlineContent = { Text(switchLabel) },
+                trailingContent = { Switch(checked = true, onCheckedChange = null) },
+            )
+        }
+        updateRows()
+        if (!full) return@SettingsGroupCard
         DeveloperRow(
             stringResource(R.string.developer_card_server_url),
             serverUrl.ifBlank { unknown },

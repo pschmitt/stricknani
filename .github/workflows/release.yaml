@@ -239,10 +239,13 @@ jobs:
           # Uploads the release R8 mapping to Sentry (see android/app/build.gradle.kts).
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export BUILD_DATE
           ./gradlew \
             ${{ steps.params.outputs.include_debug == 'true' && ':app:assembleDebug' || '' }} \
             :app:assembleRelease \
             -PversionName=${{ steps.version.outputs.name }} \
+            -PreleaseChannel=${{ steps.params.outputs.tag_name == 'latest' && 'latest' || 'stable' }} \
             --stacktrace --build-cache
 
       - name: Verify embedded Android version name

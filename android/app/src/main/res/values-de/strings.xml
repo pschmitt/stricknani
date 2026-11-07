@@ -521,7 +521,6 @@
     <!-- Settings: About -->
     <string name="about_settings_version_title">Version</string>
     <string name="about_settings_app_version_label">App-Version</string>
-    <string name="about_settings_app_version_debug">%1$s (debug)</string>
     <string name="about_update_checking">Suche nach Updates …</string>
     <string name="about_update_up_to_date">Aktuell auf %1$s</string>
     <string name="about_update_available_stable">Stable %1$s verfügbar</string>
@@ -536,6 +535,7 @@
     <string name="about_update_button">Aktualisieren</string>
     <string name="about_update_open_play">Play Store öffnen</string>
     <string name="about_settings_build_label">Build</string>
+    <string name="about_settings_build_date_label">Build-Datum</string>
     <string name="about_settings_server_version_label">Serverversion</string>
     <string name="about_settings_server_version_unavailable">Nicht verfügbar</string>
     <string name="about_settings_libraries_description">Open-Source-Abhängigkeiten dieser App</string>

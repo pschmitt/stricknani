@@ -1,3 +1,6 @@
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose.compiler)
@@ -44,6 +47,26 @@ val instrumentationBuildType =
 // Debug builds carry the extras (purple branding, debug version label, developer mode on by
 // default). `-PdebugExtras=false` turns them off on a debug build, for Play screenshots.
 val debugExtras = providers.gradleProperty("debugExtras").map { it.toBoolean() }.orElse(true).get()
+// Where the build came from, shown on About: `latest` (rolling prerelease built from main),
+// `stable` (a semantic-version tag), `local` (no CI: `just build`, Android Studio) or `play` (a
+// Play bundle: the shared Play workflow cannot pass the property, so bundles infer it).
+// release.yaml passes -PreleaseChannel=latest|stable for the GitHub release APKs.
+val releaseChannel =
+    providers
+        .gradleProperty("releaseChannel")
+        .orElse(if (isBuildingBundle) "play" else "local")
+        .get()
+        .also { value ->
+            require(value in setOf("latest", "stable", "local", "play")) {
+                "releaseChannel must be latest, stable, local or play"
+            }
+        }
+// When the APK was built (UTC, ISO-8601, minute precision): CI exports BUILD_DATE; otherwise
+// -PbuildDate=<iso> or the time of this Gradle run.
+val buildDate =
+    (System.getenv("BUILD_DATE") ?: providers.gradleProperty("buildDate").orNull)?.trim()?.takeIf {
+        it.matches(Regex("[0-9TZ:+.-]+"))
+    } ?: Instant.now().truncatedTo(ChronoUnit.MINUTES).toString()
 val inferredVersionName =
     Regex("""^v?(\d+\.\d+\.\d+)(?:[-+].*)?$""").matchEntire(gitRevision)?.groupValues?.get(1)
 val configuredVersionName =
@@ -68,8 +91,8 @@ android {
         buildConfigField("String", "GIT_REVISION", "\"$gitRevision\"")
         buildConfigField("boolean", "SELF_UPDATE_ENABLED", selfUpdateEnabled.toString())
         buildConfigField("boolean", "ERROR_REPORTING_COMPILED", errorReportingEnabled.toString())
-        val buildDate = System.getenv("BUILD_DATE") ?: "unknown"
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
+        buildConfigField("String", "RELEASE_CHANNEL", "\"$releaseChannel\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

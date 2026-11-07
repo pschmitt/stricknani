@@ -41,6 +41,22 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-98: About shows which build is running; build date; update settings under Developer
+
+- [x] The app version reads `v1.4.0 (latest, debug)`: version, source (`latest` = rolling prerelease
+      from main, `stable` = a tagged release, `local` = built without CI, `play` = Play bundle) and
+      build type. New `BuildConfig.RELEASE_CHANNEL` from `-PreleaseChannel`, which release.yaml
+      passes for both GitHub flavors; bundles infer `play`, everything else defaults to `local`.
+- [x] New "Build date" row under "Build". `BuildConfig.BUILD_DATE` is now filled everywhere (CI
+      exports it, `-PbuildDate` overrides, otherwise the time of the Gradle run) instead of
+      `unknown`; shown in the user's locale (medium date and time).
+- [x] "Updates through Shizuku" and the Stable/Latest channel selector moved into the Developer
+      card with unchanged visibility (debug builds keep the channel choice with developer mode off:
+      the card then shows only that row).
+- [x] Tests: version label and build date formatting (`BuildLabelTest`).
+
+Status: **done**, 2026-11-07.
+
 ## SNA-97: Update channel choice missing in debug builds
 
 - [x] About hid the Stable/Latest row in debug builds (`!BuildConfig.DEBUG`, comment "debug APKs
