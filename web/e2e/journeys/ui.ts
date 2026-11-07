@@ -1127,15 +1127,31 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 844 });
     await assertNoHorizontalOverflow(page, width);
+    check(
+      (await page
+        .locator(".app-header .brand-lockup .brand-version")
+        .count()) === 0,
+      `the ${width}px header still shows the version`,
+    );
     if (width === 320) {
       check(
-        (await page
+        await page
           .locator(".app-header .brand-lockup .brand-title")
-          .isVisible()) &&
-          (await page
-            .locator(".app-header .brand-lockup .brand-version")
-            .isVisible()),
-        "the brand title or version is not visible in the 320px header",
+          .isVisible(),
+        "the brand title is not visible in the 320px header",
+      );
+    }
+    if (width === 1280) {
+      const version = page.locator(".desktop-rail .app-version");
+      await version.waitFor();
+      const box = await version.boundingBox();
+      const rail = await page.locator(".desktop-rail").boundingBox();
+      check(
+        box !== null &&
+          rail !== null &&
+          box.x + box.width > rail.x + rail.width - 40 &&
+          box.y + box.height > rail.y + rail.height - 40,
+        "the rail version is not in the bottom right corner at 1280px",
       );
     }
     if (width === 768) {

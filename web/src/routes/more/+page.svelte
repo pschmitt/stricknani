@@ -17,7 +17,7 @@
   aria-labelledby="more-title"
 >
   <PageHeader title={t("More", locale)} titleId="more-title" />
-  <nav class="more-links" aria-label={t("More pages", locale)}>
+  <nav class="more-card more-links" aria-label={t("More pages", locale)}>
     <NavigationTile
       href={resolve("/create")}
       icon="create"
@@ -45,39 +45,31 @@
   </nav>
 
   {#if user}
-    <section class="more-account" aria-label={t("Account", locale)}>
-      <a
-        class="more-account__link"
+    <section class="more-card" aria-label={t("Account", locale)}>
+      <NavigationTile
         href={resolve("/account")}
         aria-label={t("Account settings", locale)}
+        title={t("Account settings", locale)}
+        description={user.email}
       >
-        <UserAvatar
-          avatarUrl={user.avatar_url ?? null}
-          name={user.email}
-          size="large"
-        />
-        <span class="more-account__copy">
-          <span class="more-account__title"
-            >{t("Account settings", locale)}</span
-          >
-          <span class="more-account__email">{user.email}</span>
-        </span>
-      </a>
+        {#snippet leading()}
+          <UserAvatar avatarUrl={user.avatar_url ?? null} name={user.email} />
+        {/snippet}
+      </NavigationTile>
     </section>
   {/if}
 
-  <nav
-    class="more-links more-links--footer"
-    aria-label={t("More navigation", locale)}
-  >
-    {#if session.data?.user?.is_admin}
+  {#if session.data?.user?.is_admin}
+    <nav class="more-card more-links" aria-label={t("Admin", locale)}>
       <NavigationTile
         href={resolve("/admin/users")}
         icon="admin"
         title={t("Admin", locale)}
         description={t("Manage accounts and review the audit log.", locale)}
       />
-    {/if}
+    </nav>
+  {/if}
+  <nav class="more-card more-links" aria-label={t("More navigation", locale)}>
     <NavigationTile
       href={resolve("/about")}
       icon="info"
@@ -88,56 +80,9 @@
 </section>
 
 <style>
-  .more-links {
+  .more-page {
+    max-width: 40rem;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-    gap: 0.65rem;
-    margin-top: 0.85rem;
-  }
-
-  .more-account {
-    display: grid;
-    gap: 0.65rem;
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .more-links--footer {
-    margin-top: 1.25rem;
-  }
-
-  .more-account__link {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
     gap: 0.85rem;
-    padding: 0.65rem 0.85rem;
-    border-radius: var(--radius-md);
-    color: var(--ink);
-    background: var(--surface-container);
-    text-decoration: none;
-  }
-
-  .more-account__link:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .more-account__copy {
-    display: grid;
-    min-width: 0;
-  }
-
-  .more-account__title {
-    font-weight: 700;
-  }
-
-  .more-account__email {
-    overflow: hidden;
-    color: var(--ink-muted);
-    font-size: 0.85rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 </style>

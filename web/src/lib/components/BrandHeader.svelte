@@ -1,7 +1,6 @@
 <script lang="ts">
   import BrandMark from "#lib/components/BrandMark.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
-  import { appVersion } from "#lib/app-version.ts";
   import {
     ease,
     handoff,
@@ -161,7 +160,6 @@
     >
     <span class="brand-copy">
       <span class="brand-title">Stricknani</span>
-      <span class="brand-version">{appVersion}</span>
     </span>
   </a>
 </div>
@@ -312,14 +310,6 @@
     font-variation-settings:
       "SOFT" 100,
       "WONK" 1;
-  }
-
-  .brand-version {
-    margin-top: 0.12rem;
-    color: var(--ink-muted);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
   }
 
   @media (max-width: 760px) {

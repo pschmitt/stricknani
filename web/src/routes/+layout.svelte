@@ -13,6 +13,7 @@
     parseErrorReporting,
     syncErrorReporting,
   } from "#lib/error-reporting.ts";
+  import { appVersion } from "#lib/app-version.ts";
   import { clearFeedback, feedback } from "#lib/feedback.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import { headerSlot } from "#lib/header-slot.svelte.ts";
@@ -360,6 +361,9 @@
           <span>{t("About", locale)}</span>
         </a>
       </nav>
+      <p class="app-version">
+        {appVersion}
+      </p>
     </aside>
 
     <div class="content-column">
