@@ -355,7 +355,7 @@
           <dd>{server.version ?? t("Unknown", locale)}</dd>
         </div>
         <div class="fact">
-          <dt>{t("Server build ID", locale)}</dt>
+          <dt>{t("Server build", locale)}</dt>
           <dd>{server.buildId ?? t("Unknown", locale)}</dd>
         </div>
         <div class="fact">

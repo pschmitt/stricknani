@@ -540,6 +540,7 @@
     <string name="about_settings_build_label">Build</string>
     <string name="about_settings_build_date_label">Build date</string>
     <string name="about_settings_server_version_label">Server version</string>
+    <string name="about_settings_server_build_label">Server build</string>
     <string name="about_settings_server_version_unavailable">Unavailable</string>
     <string name="about_settings_libraries_description">Open-source dependencies used by this app</string>
     <string name="about_settings_privacy_label">Privacy Policy</string>

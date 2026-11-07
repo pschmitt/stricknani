@@ -224,7 +224,8 @@ internal fun AboutSettingsScreen(
     }
 
     val unavailable = stringResource(R.string.about_settings_server_version_unavailable)
-    val serverVersion = serverMeta?.let { "${it.version} (${it.buildId})" } ?: unavailable
+    val serverVersion = serverMeta?.version?.takeIf { it.isNotBlank() } ?: unavailable
+    val serverBuild = serverMeta?.buildId?.takeIf { it.isNotBlank() } ?: unavailable
     // The version code only orders Play uploads; it lives on the developer card.
     val appVersion =
         appVersionLabel(BuildConfig.VERSION_NAME, BuildConfig.RELEASE_CHANNEL, BuildConfig.DEBUG)
@@ -416,6 +417,13 @@ internal fun AboutSettingsScreen(
                                     )
                                 },
                                 supportingContent = { Text(serverVersion) },
+                            )
+                        if (serverMeta != null)
+                            SettingsListItem(
+                                headlineContent = {
+                                    Text(stringResource(R.string.about_settings_server_build_label))
+                                },
+                                supportingContent = { Text(serverBuild) },
                             )
                     }
                 }
