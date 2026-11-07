@@ -4,6 +4,15 @@
   import PhotoEditor from "./PhotoEditor.svelte";
   import type { ProjectImage } from "#lib/features/projects/project-api.ts";
   import { isTextEntryTarget, viewerKeyTarget } from "./viewer-keys";
+  import {
+    IDENTITY,
+    panBy,
+    toggleZoom,
+    wheelZoomFactor,
+    zoomAt,
+    zoomKeyScale,
+    type ZoomState,
+  } from "./viewer-zoom";
 
   interface Props {
     images: ProjectImage[];
@@ -30,6 +39,10 @@
   }: Props = $props();
   let editing = $state(false);
   let dialog: HTMLDialogElement;
+  let frame = $state<HTMLDivElement>();
+  let zoom = $state<ZoomState>(IDENTITY);
+  let gesturing = $state(false);
+  const pointers = new Map<number, { x: number; y: number }>();
   let activeIndex = $derived(
     images.findIndex((image) => image.id === selectedId),
   );
@@ -40,6 +53,137 @@
     if (selectedId !== null && !dialog.open) dialog.showModal();
     else if (selectedId === null && dialog.open) dialog.close();
   });
+
+  // Back to fit when the photo changes, the viewer closes or the editor opens.
+  $effect(() => {
+    void selectedId;
+    void editing;
+    resetZoom();
+  });
+
+  function resetZoom() {
+    zoom = IDENTITY;
+    pointers.clear();
+    gesturing = false;
+  }
+
+  /** Frame geometry; the photo fills the frame, so it is also the content size. */
+  function geometry() {
+    if (!frame) return null;
+    const rect = frame.getBoundingClientRect();
+    const size = { width: rect.width, height: rect.height };
+    return {
+      size,
+      cx: rect.left + rect.width / 2,
+      cy: rect.top + rect.height / 2,
+    };
+  }
+
+  function zoomTo(
+    scale: number,
+    clientX: number | null = null,
+    clientY: number | null = null,
+  ) {
+    const geo = geometry();
+    if (!geo) return;
+    const anchor =
+      clientX === null || clientY === null
+        ? { x: 0, y: 0 }
+        : { x: clientX - geo.cx, y: clientY - geo.cy };
+    zoom = zoomAt(zoom, scale, anchor, geo.size, geo.size);
+  }
+
+  /** Ctrl + wheel (and trackpad pinch) zooms; plain wheel is left alone. */
+  function wheelZoom(node: HTMLElement) {
+    const handler = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      // Keep the browser's page zoom out while the viewer is open.
+      event.preventDefault();
+      if (selectedId === null || editing) return;
+      const open = document.querySelectorAll("dialog[open]");
+      if (open[open.length - 1] !== dialog) return;
+      zoomTo(
+        zoom.scale * wheelZoomFactor(event.deltaY, event.deltaMode),
+        event.clientX,
+        event.clientY,
+      );
+    };
+    node.addEventListener("wheel", handler, { passive: false });
+    return { destroy: () => node.removeEventListener("wheel", handler) };
+  }
+
+  function pointerDistance() {
+    const [a, b] = [...pointers.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    frame?.setPointerCapture(event.pointerId);
+    gesturing = pointers.size > 1 || zoom.scale > 1;
+  }
+
+  function onPointerMove(event: PointerEvent) {
+    const previous = pointers.get(event.pointerId);
+    const geo = geometry();
+    if (!previous || !geo) return;
+    const next = { x: event.clientX, y: event.clientY };
+    if (pointers.size === 2) {
+      const beforeDistance = pointerDistance();
+      const [a, b] = [...pointers.values()];
+      const beforeMid =
+        a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : next;
+      pointers.set(event.pointerId, next);
+      const [c, d] = [...pointers.values()];
+      if (!c || !d || beforeDistance === 0) return;
+      const mid = { x: (c.x + d.x) / 2, y: (c.y + d.y) / 2 };
+      const zoomed = zoomAt(
+        zoom,
+        zoom.scale * (pointerDistance() / beforeDistance),
+        { x: mid.x - geo.cx, y: mid.y - geo.cy },
+        geo.size,
+        geo.size,
+      );
+      zoom = panBy(
+        zoomed,
+        mid.x - beforeMid.x,
+        mid.y - beforeMid.y,
+        geo.size,
+        geo.size,
+      );
+      return;
+    }
+    pointers.set(event.pointerId, next);
+    if (zoom.scale > 1) {
+      zoom = panBy(
+        zoom,
+        next.x - previous.x,
+        next.y - previous.y,
+        geo.size,
+        geo.size,
+      );
+    }
+  }
+
+  function onPointerEnd(event: PointerEvent) {
+    pointers.delete(event.pointerId);
+    if (frame?.hasPointerCapture(event.pointerId)) {
+      frame.releasePointerCapture(event.pointerId);
+    }
+    gesturing = pointers.size > 0 && zoom.scale > 1;
+  }
+
+  function onDoubleClick(event: MouseEvent) {
+    const geo = geometry();
+    if (!geo) return;
+    zoom = toggleZoom(
+      zoom,
+      { x: event.clientX - geo.cx, y: event.clientY - geo.cy },
+      geo.size,
+      geo.size,
+    );
+  }
 
   function move(direction: -1 | 1) {
     if (images.length < 2 || activeIndex < 0) return;
@@ -65,6 +209,12 @@
     // Leave the keys to a dialog stacked above the viewer (photo editor, confirms).
     const open = document.querySelectorAll("dialog[open]");
     if (open[open.length - 1] !== dialog) return;
+    const zoomScale = zoomKeyScale(event.key, zoom.scale);
+    if (zoomScale !== null) {
+      event.preventDefault();
+      zoomTo(zoomScale);
+      return;
+    }
     const target = viewerKeyTarget(event.key, activeIndex, images.length);
     const image = target === null ? undefined : images[target];
     if (!image) return;
@@ -78,6 +228,7 @@
 <dialog
   bind:this={dialog}
   class="lightbox"
+  use:wheelZoom
   aria-label={t("Project image viewer", locale)}
   onclick={(event) => {
     if (event.target === dialog) close();
@@ -126,7 +277,26 @@
           />
         {/if}
         <figure class:single-image={images.length === 1}>
-          <img src={activeImage.url} alt={activeImage.alt_text || title} />
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div
+            class="zoom-frame"
+            class:zoomed={zoom.scale > 1}
+            class:gesturing
+            bind:this={frame}
+            role="presentation"
+            onpointerdown={onPointerDown}
+            onpointermove={onPointerMove}
+            onpointerup={onPointerEnd}
+            onpointercancel={onPointerEnd}
+            ondblclick={onDoubleClick}
+          >
+            <img
+              src={activeImage.url}
+              alt={activeImage.alt_text || title}
+              draggable="false"
+              style:transform="translate({zoom.x}px, {zoom.y}px) scale({zoom.scale})"
+            />
+          </div>
           <figcaption>
             {activeImage.alt_text || title}
             {#if images.length > 1}
@@ -249,12 +419,42 @@
     grid-column: 1 / -1;
   }
 
+  .zoom-frame {
+    max-width: 100%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0.4rem;
+    touch-action: none;
+  }
+
+  .zoom-frame.zoomed {
+    cursor: grab;
+  }
+
+  .zoom-frame.zoomed.gesturing {
+    cursor: grabbing;
+  }
+
   figure img {
     display: block;
     max-width: 100%;
     max-height: calc(92svh - 9rem);
     border-radius: 0.4rem;
     object-fit: contain;
+    transform-origin: center;
+    transition: transform 90ms ease-out;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .zoom-frame.gesturing img {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    figure img {
+      transition: none;
+    }
   }
 
   figcaption {
