@@ -95,6 +95,11 @@ constructor(
     }
 
     /** Called as the server URL field changes; looks for OIDC providers once typing settles. */
+    /** A failure belongs to the form that caused it; switching forms clears it. */
+    fun clearError() {
+        if (_uiState.value is OnboardingUiState.Error) _uiState.value = OnboardingUiState.Idle
+    }
+
     fun onServerUrlChanged(url: String) {
         serverUrlInput.value = url.trim()
     }

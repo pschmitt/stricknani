@@ -575,10 +575,11 @@
     <string name="backup_settings_export_button">Jetzt exportieren</string>
     <string name="backup_settings_restore_label">Aus Backup wiederherstellen</string>
     <string name="backup_settings_restore_description">Überschreibt die Serververbindung auf diesem Gerät</string>
+    <string name="backup_settings_choose_backup_file_button">Backup-Datei auswählen</string>
     <string name="backup_settings_choose_file_button">Datei auswählen</string>
     <string name="data_export_title">Deine Daten</string>
     <string name="data_export_label">Deine Daten herunterladen</string>
-    <string name="data_export_description">Projekte, Garne, Kategorien, Fotos und Anhänge in einem Archiv (.tar.gz), auch was mit dir geteilt ist.</string>
+    <string name="data_export_description">Projekte, Garne, Kategorien, Fotos und Anhänge in einem Archiv, auch was mit dir geteilt ist.</string>
     <string name="data_export_button">Herunterladen</string>
     <string name="data_export_archive_type">Archivtyp</string>
     <string name="data_export_format">Formatversion 1</string>

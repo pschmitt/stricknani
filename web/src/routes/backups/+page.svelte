@@ -129,7 +129,7 @@
     </header>
     <p class="card__intro">
       {t(
-        "Projects, yarns, categories, photos and attachments in one archive (.tar.gz), including items shared with you.",
+        "Projects, yarns, categories, photos and attachments in one archive, including items shared with you.",
         locale,
       )}
     </p>

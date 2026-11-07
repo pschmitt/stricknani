@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
+import java.time.ZoneOffset
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -63,7 +64,8 @@ class DataExportViewModel @Inject constructor(private val scheduler: DataExportS
         }
     }
 
-    fun suggestedName(format: ExportFormat): String = exportFileName(LocalDate.now(), format)
+    fun suggestedName(format: ExportFormat): String =
+        exportFileName(LocalDate.now(ZoneOffset.UTC), format)
 
     fun download(target: Uri, displayName: String?, format: ExportFormat) {
         _lastFailure.value = null

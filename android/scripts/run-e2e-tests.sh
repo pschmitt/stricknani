@@ -18,10 +18,12 @@ case "${E2E_LANE:-smoke}" in
     ;;
   full)
     run_test blue.anika.wolle.e2e.StricknaniFullE2eTest
+    run_test blue.anika.wolle.e2e.DataBackupE2eTest
     run_test blue.anika.wolle.e2e.StricknaniLiveWriteE2eTest
     ;;
   smoke)
     run_test blue.anika.wolle.e2e.StricknaniSmokeTest
+    run_test blue.anika.wolle.e2e.DataBackupE2eTest
     ;;
   *)
     printf 'Unsupported Android E2E lane: %s\n' "${E2E_LANE}" >&2

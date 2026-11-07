@@ -108,6 +108,15 @@ fun OnboardingScreen(
     val oidcProviders by viewModel.oidcProviders.collectAsStateWithLifecycle()
     val registrationOpen by viewModel.registrationOpen.collectAsStateWithLifecycle()
     var mode by remember { mutableStateOf(OnboardingMode.PASSWORD) }
+    // An error from the token form must not stay under the password form, and vice versa. Only a
+    // real switch clears it: the first composition may show an error that just arrived (OIDC).
+    var shownMode by remember { mutableStateOf(mode) }
+    LaunchedEffect(mode) {
+        if (mode != shownMode) {
+            shownMode = mode
+            viewModel.clearError()
+        }
+    }
     var serverUrl by remember { mutableStateOf("") }
     var apiToken by remember { mutableStateOf("") }
     var tokenVisible by remember { mutableStateOf(false) }

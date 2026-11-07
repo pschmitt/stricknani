@@ -3563,11 +3563,11 @@ msgstr ""
 
 #: web/src/routes/backups/+page.svelte:131
 msgid ""
-"Projects, yarns, categories, photos and attachments in one archive "
-"(.tar.gz), including items shared with you."
+"Projects, yarns, categories, photos and attachments in one archive, "
+"including items shared with you."
 msgstr ""
-"Projects, yarns, categories, photos and attachments in one archive "
-"(.tar.gz), including items shared with you."
+"Projects, yarns, categories, photos and attachments in one archive, "
+"including items shared with you."
 
 #: web/src/routes/about/+page.svelte:317
 msgid "QR code for the Android app download"

@@ -3438,8 +3438,8 @@ msgstr ""
 
 #: web/src/routes/backups/+page.svelte:131
 msgid ""
-"Projects, yarns, categories, photos and attachments in one archive "
-"(.tar.gz), including items shared with you."
+"Projects, yarns, categories, photos and attachments in one archive, "
+"including items shared with you."
 msgstr ""
 
 #: web/src/routes/about/+page.svelte:317

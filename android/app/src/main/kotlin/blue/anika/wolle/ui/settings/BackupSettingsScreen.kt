@@ -507,7 +507,7 @@ internal fun BackupSettingsScreen(
                         modifier =
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
-                        Text(stringResource(R.string.backup_settings_choose_file_button))
+                        Text(stringResource(R.string.backup_settings_choose_backup_file_button))
                     }
                 }
             }
