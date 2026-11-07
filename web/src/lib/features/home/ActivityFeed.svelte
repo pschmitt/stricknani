@@ -1,9 +1,12 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { resolve } from "$app/paths";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import {
+    ACTIVITY_FULL_PAGE_SIZE,
+    ACTIVITY_PAGE_SIZE,
     activityDetail,
     activityIcon,
     activitySentence,
@@ -14,7 +17,23 @@
     type ActivityItem,
   } from "./activity";
 
-  let { ownerId, locale }: { ownerId: number; locale: Locale } = $props();
+  // Home shows the newest page only and links to the full page (`seeAll`, rendered next to the
+  // heading while there is activity). The full page (`full`) pages with "Show more" and leaves
+  // its heading to the page header.
+  let {
+    ownerId,
+    locale,
+    full = false,
+    seeAll,
+  }: {
+    ownerId: number;
+    locale: Locale;
+    full?: boolean;
+    seeAll?: Snippet;
+  } = $props();
+  const pageSize = $derived(
+    full ? ACTIVITY_FULL_PAGE_SIZE : ACTIVITY_PAGE_SIZE,
+  );
 
   let items = $state<ActivityItem[]>([]);
   let status = $state<"loading" | "ready" | "error">("loading");
@@ -37,7 +56,7 @@
     hasMore = false;
     nextBefore = null;
     moreFailed = false;
-    loadActivity(own.signal)
+    loadActivity(own.signal, null, pageSize)
       .then((page) => {
         if (own.signal.aborted) return;
         items = page.items;
@@ -58,7 +77,7 @@
     loadingMore = true;
     moreFailed = false;
     try {
-      const page = await loadActivity(own.signal, nextBefore);
+      const page = await loadActivity(own.signal, nextBefore, pageSize);
       if (own.signal.aborted) return;
       items = mergeActivity(items, page.items);
       hasMore = page.has_more;
@@ -70,16 +89,25 @@
     }
   }
 
-  const title = $derived(t("Recent activity", locale));
+  const title = $derived(t(full ? "Activity" : "Recent activity", locale));
   const days = $derived(groupActivity(items, locale));
 </script>
 
-<section class="activity" aria-labelledby="home-activity-title">
-  <div class="activity__heading">
-    <h2 id="home-activity-title" class="activity__title">
-      <span class="activity__badge"><NavIcon name="audit" /></span>{title}
-    </h2>
-  </div>
+<section
+  class="activity"
+  aria-labelledby={full ? undefined : "home-activity-title"}
+  aria-label={full ? title : undefined}
+>
+  {#if !full}
+    <div class="activity__heading">
+      <h2 id="home-activity-title" class="activity__title">
+        <span class="activity__badge"><NavIcon name="audit" /></span>{title}
+      </h2>
+      {#if seeAll && status === "ready" && items.length > 0}
+        {@render seeAll()}
+      {/if}
+    </div>
+  {/if}
 
   {#if status === "loading"}
     <ol class="tl" aria-hidden="true" data-testid="activity-loading">
@@ -200,7 +228,7 @@
           {t("Try again", locale)}
         </Button>
       </div>
-    {:else if hasMore}
+    {:else if full && hasMore}
       <div class="activity__more">
         <Button icon="expand" onclick={showMore} disabled={loadingMore}>
           {t("Show more", locale)}
@@ -216,6 +244,12 @@
     min-width: 0;
     max-width: 34rem;
     gap: 0.7rem;
+  }
+  .activity__heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
   .activity__title {
     display: flex;

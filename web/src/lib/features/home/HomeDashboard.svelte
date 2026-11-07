@@ -368,7 +368,13 @@
     {/if}
 
     <!-- 4. What changed lately, newest first. -->
-    <ActivityFeed ownerId={userId} {locale} />
+    <ActivityFeed ownerId={userId} {locale}>
+      {#snippet seeAll()}
+        <a class="see-all" href={resolve("/activity")}
+          >{t("See all", locale)}<NavIcon name="next" /></a
+        >
+      {/snippet}
+    </ActivityFeed>
 
     {#if appCard !== "hidden"}
       <GetAppCard

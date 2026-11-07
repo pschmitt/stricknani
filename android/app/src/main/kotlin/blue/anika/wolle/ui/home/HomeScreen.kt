@@ -120,6 +120,7 @@ fun HomeScreen(
     onCreateClick: () -> Unit,
     onGaugeClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
+    onSeeAllActivity: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val currentUserId = LocalOwnerContext.current.currentUserId
@@ -407,7 +408,7 @@ fun HomeScreen(
                                 previewUrl = viewModel::previewUrl,
                                 onProjectClick = onProjectClick,
                                 onYarnClick = onYarnClick,
-                                onShowMore = viewModel::loadMoreActivity,
+                                onSeeAll = onSeeAllActivity,
                             )
                         }
                     }

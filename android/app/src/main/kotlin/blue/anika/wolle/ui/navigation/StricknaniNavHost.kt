@@ -49,6 +49,7 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.create.CreateScreen
 import blue.anika.wolle.ui.gauge.GaugeCalculatorScreen
+import blue.anika.wolle.ui.home.ActivityScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.oidc.SessionExpiredViewModel
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
@@ -337,6 +338,14 @@ fun StricknaniNavHost(
                                 Route.SettingsCategoryRoute(SettingsCategory.Sync.name)
                             )
                         },
+                        onSeeAllActivity = { navController.navigate(Route.Activity) },
+                    )
+                }
+                screen<Route.Activity>(motion) {
+                    ActivityScreen(
+                        onBack = { navController.navigateUp() },
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                     )
                 }
                 screen<Route.Projects>(motion) {

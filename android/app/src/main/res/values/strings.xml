@@ -1111,6 +1111,8 @@
         <item quantity="other">%1$d changes</item>
     </plurals>
     <string name="activity_show_more">Show more</string>
+    <string name="activity_see_all">See all</string>
+    <string name="activity_page_title">Activity</string>
     <string name="activity_unavailable">Activity needs a connection</string>
     <string name="activity_empty">Nothing here yet. Edits to your projects and yarns will show up here.</string>
     <string name="activity_more_failed">More activity could not be loaded.</string>

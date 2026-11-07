@@ -57,6 +57,9 @@ sealed interface Route {
     /** Open-source libraries used (SNA-34) - reachable from Settings' About category. */
     @Serializable data object Libraries : Route
 
+    /** The full "Recent activity" timeline - opened from Home's "See all". */
+    @Serializable data object Activity : Route
+
     /** Administrator audit log (SNA-86) - reachable from Settings -> Admin. */
     @Serializable data object AdminAudit : Route
 
@@ -90,7 +93,7 @@ enum class TopLevelDestination(
         Route.Home,
         R.string.destination_label_home,
         PhosphorIcons.HouseLine,
-        setOf(Route.Home::class),
+        setOf(Route.Home::class, Route.Activity::class),
     ),
     PROJECTS(
         Route.Projects,

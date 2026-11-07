@@ -22,7 +22,9 @@ export function routeParent(pathname: string, basePath: string): string | null {
     base === "" ? currentPath : currentPath.slice(base.length) || "/";
   let parent: string | null = null;
 
-  if (route === "/privacy") {
+  if (route === "/activity") {
+    parent = "";
+  } else if (route === "/privacy") {
     parent = "/about";
   } else if (route === "/about") {
     parent = "/more";
@@ -53,5 +55,5 @@ export function routeParent(pathname: string, basePath: string): string | null {
     parent = "/admin/audit";
   }
 
-  return parent === null ? null : `${base}${parent}`;
+  return parent === null ? null : `${base}${parent}` || "/";
 }

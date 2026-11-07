@@ -395,6 +395,11 @@ msgstr "Active"
 msgid "Active API tokens"
 msgstr "Active API tokens"
 
+#: web/src/routes/activity/+page.svelte:11
+#: web/src/routes/activity/+page.svelte:17
+msgid "Activity"
+msgstr "Activity"
+
 #: web/src/lib/features/categories/CategoryManager.svelte:281
 msgid "Add a category above to make your project library easier to browse."
 msgstr "Add a category above to make your project library easier to browse."
@@ -600,32 +605,32 @@ msgstr "Amount"
 msgid "An account with that email already exists."
 msgstr "An account with that email already exists."
 
-#: web/src/lib/features/home/activity.ts:156
+#: web/src/lib/features/home/activity.ts:158
 #, python-brace-format
 msgid "An admin added files to {name}"
 msgstr "An admin added files to {name}"
 
-#: web/src/lib/features/home/activity.ts:160
+#: web/src/lib/features/home/activity.ts:162
 #, python-brace-format
 msgid "An admin changed {name}"
 msgstr "An admin changed {name}"
 
-#: web/src/lib/features/home/activity.ts:153
+#: web/src/lib/features/home/activity.ts:155
 #, python-brace-format
 msgid "An admin created {name}"
 msgstr "An admin created {name}"
 
-#: web/src/lib/features/home/activity.ts:155
+#: web/src/lib/features/home/activity.ts:157
 #, python-brace-format
 msgid "An admin deleted {name}"
 msgstr "An admin deleted {name}"
 
-#: web/src/lib/features/home/activity.ts:157
+#: web/src/lib/features/home/activity.ts:159
 #, python-brace-format
 msgid "An admin removed files from {name}"
 msgstr "An admin removed files from {name}"
 
-#: web/src/lib/features/home/activity.ts:154
+#: web/src/lib/features/home/activity.ts:156
 #, python-brace-format
 msgid "An admin updated {name}"
 msgstr "An admin updated {name}"
@@ -2433,7 +2438,7 @@ msgstr "Loading linked projects…"
 msgid "Loading project details…"
 msgstr "Loading project details…"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:106
+#: web/src/lib/features/home/ActivityFeed.svelte:134
 msgid "Loading recent activity…"
 msgstr "Loading recent activity…"
 
@@ -2889,7 +2894,7 @@ msgstr "Notes moved up"
 msgid "Nothing on the needles yet"
 msgstr "Nothing on the needles yet"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:117
+#: web/src/lib/features/home/ActivityFeed.svelte:145
 msgid "Nothing yet - your changes will show up here."
 msgstr "Nothing yet - your changes will show up here."
 
@@ -3533,12 +3538,8 @@ msgstr "Reading the source and preparing a draft…"
 msgid "Ready when you are"
 msgstr "Ready when you are"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:73
-msgid "Recent activity"
-msgstr "Recent activity"
-
-#: web/src/lib/features/home/ActivityFeed.svelte:110
-#: web/src/lib/features/home/ActivityFeed.svelte:198
+#: web/src/lib/features/home/ActivityFeed.svelte:138
+#: web/src/lib/features/home/ActivityFeed.svelte:226
 msgid "Recent activity could not be loaded."
 msgstr "Recent activity could not be loaded."
 
@@ -3991,6 +3992,7 @@ msgstr "Security"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:298
 #: web/src/lib/features/home/HomeDashboard.svelte:347
+#: web/src/lib/features/home/HomeDashboard.svelte:374
 msgid "See all"
 msgstr "See all"
 
@@ -4079,7 +4081,7 @@ msgstr "Show diff"
 msgid "Show fewer"
 msgstr "Show fewer"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:206
+#: web/src/lib/features/home/ActivityFeed.svelte:234
 #: web/src/lib/features/sharing/PeoplePicker.svelte:146
 msgid "Show more"
 msgstr "Show more"
@@ -5320,7 +5322,7 @@ msgid "Title image uploaded"
 msgstr "Title image uploaded"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:278
-#: web/src/lib/features/home/activity.ts:328
+#: web/src/lib/features/home/activity.ts:330
 msgid "Today"
 msgstr "Today"
 
@@ -5404,8 +5406,8 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/categories/CategoryManager.svelte:230
 #: web/src/lib/features/history/HistoryEventDetail.svelte:68
 #: web/src/lib/features/history/HistorySection.svelte:240
-#: web/src/lib/features/home/ActivityFeed.svelte:112
-#: web/src/lib/features/home/ActivityFeed.svelte:200
+#: web/src/lib/features/home/ActivityFeed.svelte:140
+#: web/src/lib/features/home/ActivityFeed.svelte:228
 #: web/src/lib/features/home/HomeDashboard.svelte:193
 #: web/src/lib/features/home/HomeDashboard.svelte:282
 #: web/src/lib/features/media/ArchiveControl.svelte:445
@@ -5796,7 +5798,7 @@ msgid "Yarn weight"
 msgstr "Yarn weight"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:280
-#: web/src/lib/features/home/activity.ts:329
+#: web/src/lib/features/home/activity.ts:331
 msgid "Yesterday"
 msgstr "Yesterday"
 
@@ -5804,7 +5806,7 @@ msgstr "Yesterday"
 msgid "You"
 msgstr "You"
 
-#: web/src/lib/features/home/activity.ts:149
+#: web/src/lib/features/home/activity.ts:151
 #, python-brace-format
 msgid "You added files to {name}"
 msgstr "You added files to {name}"
@@ -5890,7 +5892,7 @@ msgstr "You can view this project but not edit it."
 msgid "You can view this yarn but not edit it."
 msgstr "You can view this yarn but not edit it."
 
-#: web/src/lib/features/home/activity.ts:159
+#: web/src/lib/features/home/activity.ts:161
 #, python-brace-format
 msgid "You changed {name}"
 msgstr "You changed {name}"
@@ -5907,12 +5909,12 @@ msgstr "You confirmed it is you. One last step below."
 msgid "You could not leave. Try again."
 msgstr "You could not leave. Try again."
 
-#: web/src/lib/features/home/activity.ts:146
+#: web/src/lib/features/home/activity.ts:148
 #, python-brace-format
 msgid "You created {name}"
 msgstr "You created {name}"
 
-#: web/src/lib/features/home/activity.ts:148
+#: web/src/lib/features/home/activity.ts:150
 #, python-brace-format
 msgid "You deleted {name}"
 msgstr "You deleted {name}"
@@ -5969,12 +5971,12 @@ msgstr "You no longer have access to this yarn."
 msgid "You no longer have access to this yarn. Your changes are still here."
 msgstr "You no longer have access to this yarn. Your changes are still here."
 
-#: web/src/lib/features/home/activity.ts:150
+#: web/src/lib/features/home/activity.ts:152
 #, python-brace-format
 msgid "You removed files from {name}"
 msgstr "You removed files from {name}"
 
-#: web/src/lib/features/home/activity.ts:147
+#: web/src/lib/features/home/activity.ts:149
 #, python-brace-format
 msgid "You updated {name}"
 msgstr "You updated {name}"
@@ -6127,11 +6129,11 @@ msgstr "Your workspace is taking a moment."
 msgid "Your yarns could not be loaded."
 msgstr "Your yarns could not be loaded."
 
-#: web/src/lib/features/home/activity.ts:174
+#: web/src/lib/features/home/activity.ts:176
 msgid "a project"
 msgstr "a project"
 
-#: web/src/lib/features/home/activity.ts:175
+#: web/src/lib/features/home/activity.ts:177
 msgid "a yarn"
 msgstr "a yarn"
 
@@ -6139,7 +6141,7 @@ msgstr "a yarn"
 msgid "and"
 msgstr "and"
 
-#: web/src/lib/features/home/activity.ts:191
+#: web/src/lib/features/home/activity.ts:193
 msgid "attachments"
 msgstr "attachments"
 
@@ -6240,8 +6242,8 @@ msgstr "other materials"
 msgid "photo order"
 msgstr "photo order"
 
-#: web/src/lib/features/home/activity.ts:188
-#: web/src/lib/features/home/activity.ts:189
+#: web/src/lib/features/home/activity.ts:190
+#: web/src/lib/features/home/activity.ts:191
 msgid "photos"
 msgstr "photos"
 
@@ -6279,7 +6281,7 @@ msgid "step picture order"
 msgstr "step picture order"
 
 #: web/src/lib/features/history/history-summary.ts:51
-#: web/src/lib/features/home/activity.ts:190
+#: web/src/lib/features/home/activity.ts:192
 msgid "steps"
 msgstr "steps"
 
@@ -6328,13 +6330,13 @@ msgstr "{name} now owns this yarn. You are an editor."
 msgid "{name} was unlinked from your account."
 msgstr "{name} was unlinked from your account."
 
-#: web/src/lib/features/home/activity.ts:200
+#: web/src/lib/features/home/activity.ts:202
 #, python-brace-format
 msgid "{n} changes"
 msgstr "{n} changes"
 
 #: web/src/lib/features/history/history-summary.ts:171
-#: web/src/lib/features/home/activity.ts:212
+#: web/src/lib/features/home/activity.ts:214
 #, python-brace-format
 msgid "{n} more"
 msgstr "{n} more"
@@ -6582,3 +6584,6 @@ msgstr "{n} more"
 #~ "Hides timers on this device. Running "
 #~ "timers, including shared timers, continue "
 #~ "until stopped."
+
+#~ msgid "Recent activity"
+#~ msgstr "Recent activity"

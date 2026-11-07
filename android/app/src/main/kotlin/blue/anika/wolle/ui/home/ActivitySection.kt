@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -61,21 +63,53 @@ fun ActivitySection(
     previewUrl: (String?) -> String?,
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
-    onShowMore: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Home shows the first page only and links to the full page; the page itself pages. */
+    onShowMore: (() -> Unit)? = null,
+    onSeeAll: (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
+    /** The full page has its own top bar title and also explains a missing feed. */
+    showTitle: Boolean = true,
 ) {
-    if (state.phase == ActivityPhase.Hidden) return
+    if (state.phase == ActivityPhase.Hidden && showTitle) return
     Column(modifier) {
-        SectionTitle(
-            title = stringResource(R.string.activity_title),
-            icon = PhosphorIcons.ClockCounterClockwise,
-            accent = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
-        )
+        if (showTitle) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SectionTitle(
+                    title = stringResource(R.string.activity_title),
+                    icon = PhosphorIcons.ClockCounterClockwise,
+                    accent = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.weight(1f),
+                )
+                if (
+                    onSeeAll != null &&
+                        state.phase == ActivityPhase.Ready &&
+                        state.items.isNotEmpty()
+                ) {
+                    TextButton(onClick = onSeeAll, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.activity_see_all))
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+        }
         Column(Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
             when {
-                state.phase == ActivityPhase.Unavailable ->
+                state.phase == ActivityPhase.Unavailable || state.phase == ActivityPhase.Hidden -> {
                     Note(stringResource(R.string.activity_unavailable))
+                    if (onRetry != null) {
+                        TextButton(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.archive_try_again))
+                        }
+                    }
+                }
                 state.phase == ActivityPhase.Ready && state.items.isEmpty() ->
                     Note(stringResource(R.string.activity_empty))
                 state.phase == ActivityPhase.Ready -> {
@@ -113,7 +147,7 @@ fun ActivitySection(
                             modifier = Modifier.padding(start = TEXT_INSET, top = 4.dp),
                         )
                     }
-                    if (state.hasMore) {
+                    if (state.hasMore && onShowMore != null) {
                         TextButton(
                             onClick = onShowMore,
                             enabled = !state.loadingMore,

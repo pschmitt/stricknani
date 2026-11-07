@@ -3,6 +3,8 @@ import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
 import { fieldNoun } from "#lib/features/history/history-summary.ts";
 
 export const ACTIVITY_PAGE_SIZE = 6;
+/** Rows per page on the full activity page. */
+export const ACTIVITY_FULL_PAGE_SIZE = 20;
 
 export interface ActivityActor {
   name: string | null;

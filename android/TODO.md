@@ -41,6 +41,18 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-104: Home's Recent activity gets "See all" and a full Activity page
+
+- [x] A "See all" link at the right of the Recent activity header (shown when there is activity)
+      opens a new Activity screen (`Route.Activity`, top bar with back, Home stays the selected
+      tab). Home keeps its first page only; its "Show more" moved to the full page.
+- [x] The Activity screen shows the same day-grouped timeline (`ActivitySection`), 20 rows per
+      page (`ACTIVITY_FULL_PAGE_SIZE`) with a "Show more" button at the end, pull to refresh, a
+      "Try again" action when the feed is unavailable, and rows that open the same project or yarn.
+- [x] Web: `/activity`, same wording ("See all", "Activity" / "Aktivität").
+
+Status: **done**, 2026-11-07 (see build and test results in the hand-off).
+
 ## SNA-103: Favorite and Edit move into the detail screens' overflow menu
 
 - [x] The project and yarn detail top bars keep back, the project timer chip and the More button.

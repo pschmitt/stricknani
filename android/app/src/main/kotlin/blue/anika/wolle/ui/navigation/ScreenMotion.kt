@@ -66,6 +66,7 @@ private val ROUTE_CLASSES: List<KClass<out Route>> =
         Route.ProjectEditor::class,
         Route.YarnEditor::class,
         Route.Gauge::class,
+        Route.Activity::class,
         Route.Libraries::class,
         Route.AdminAudit::class,
         Route.AdminAccounts::class,

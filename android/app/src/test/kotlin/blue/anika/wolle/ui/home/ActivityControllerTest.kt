@@ -145,4 +145,14 @@ class ActivityControllerTest {
         assertEquals(ActivityPhase.Hidden, signedOut.state.value.phase)
         assertTrue(signedOut.state.value.items.isEmpty())
     }
+
+    @Test
+    fun `the full page asks for its own larger page size`() = runTest {
+        val fake = Fake(ArrayDeque(listOf(HistoryResult.Ok(page(listOf(1), hasMore = false)))))
+        val controller = ActivityController(this, fake::fetch, pageSize = ACTIVITY_FULL_PAGE_SIZE)
+        controller.reload()
+        advanceUntilIdle()
+        assertEquals(listOf(ACTIVITY_FULL_PAGE_SIZE to null), fake.calls)
+        assertTrue(ACTIVITY_FULL_PAGE_SIZE > ACTIVITY_PAGE_SIZE)
+    }
 }

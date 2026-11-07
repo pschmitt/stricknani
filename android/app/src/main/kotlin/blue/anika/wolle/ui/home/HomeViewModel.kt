@@ -79,8 +79,6 @@ constructor(
         }
     }
 
-    fun loadMoreActivity() = activityController.loadMore()
-
     private val foundUpdate = MutableStateFlow<AppUpdate?>(null)
 
     /** A newer GitHub release the user hasn't dismissed, or null. */

@@ -15,8 +15,11 @@ import java.time.format.DateTimeFormatter
  * fields are named and what the row does when tapped. The Compose layer only turns this into text.
  */
 
-/** How many rows the section shows at first, and how many each "Show more" adds. */
+/** How many rows Home shows (its first page; "See all" opens the full page). */
 const val ACTIVITY_PAGE_SIZE = 6
+
+/** The full activity page loads more rows at a time. */
+const val ACTIVITY_FULL_PAGE_SIZE = 20
 
 /** At most this many field labels are named on a row; the rest become "N more". */
 const val ACTIVITY_MAX_FIELDS = 3
