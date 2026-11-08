@@ -630,9 +630,11 @@ fn write_archive(
 
     let mut sink: Box<dyn Sink> = match format {
         ArchiveFormat::TarGz => Box::new(TarSink {
+            // Fast compression: photos dominate an export and are already compressed, so a
+            // higher level costs several times the CPU for almost no size.
             tar: tar::Builder::new(flate2::write::GzEncoder::new(
                 out,
-                flate2::Compression::default(),
+                flate2::Compression::fast(),
             )),
             mtime,
         }),
