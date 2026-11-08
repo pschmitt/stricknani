@@ -229,7 +229,7 @@
         class="ui-button ui-button--primary ui-button--md desktop-create"
         href={resolve("/projects/new")}
       >
-        <ActionLabel icon="create">{t("New project", locale)}</ActionLabel>
+        <ActionLabel icon="add">{t("New project", locale)}</ActionLabel>
       </a>
     {/snippet}
   </PageHeader>

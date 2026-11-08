@@ -175,7 +175,7 @@
         class="ui-button ui-button--primary ui-button--md desktop-create"
         href={resolve("/yarns/new")}
       >
-        <ActionLabel icon="create">{t("Add yarn", locale)}</ActionLabel>
+        <ActionLabel icon="add">{t("Add yarn", locale)}</ActionLabel>
       </a>
     {/snippet}
   </PageHeader>

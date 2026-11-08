@@ -36,7 +36,7 @@
   aria-label={label}
   data-testid={testId}
 >
-  <NavIcon name="create" />
+  <NavIcon name="add" />
   <span class="create-fab__label" aria-hidden="true">{label}</span>
 </a>
 
@@ -61,9 +61,9 @@
       gap: 0.6rem;
       padding: 0 1.15rem;
       border-radius: 16px;
-      background: var(--accent);
+      background: var(--primary-container);
       box-shadow: var(--shadow);
-      color: var(--on-accent);
+      color: var(--on-primary-container);
       font-weight: 600;
       text-decoration: none;
       transition:
