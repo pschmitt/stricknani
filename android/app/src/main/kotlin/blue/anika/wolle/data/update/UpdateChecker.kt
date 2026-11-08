@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.update
 
 import blue.anika.wolle.di.ValidationClient
+import blue.anika.wolle.notify.releaseNotesSummary
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -28,6 +29,11 @@ data class AppUpdate(
      * `X.Y.Z` of a stable release (the APK must report exactly this); null for the rolling build.
      */
     val stableVersion: String? = null,
+    /**
+     * A short plain-text summary of the release notes (stable releases only; the rolling build's
+     * body is just a commit), for the "update available" notification. Not persisted anywhere.
+     */
+    val releaseNotes: String? = null,
 )
 
 /** One downloadable APK of a release. */
@@ -344,6 +350,7 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
             asset = asset?.let { UpdateAsset(it.name, it.downloadUrl, it.size) },
             checksumsUrl = release.assets.firstOrNull { it.name == CHECKSUMS_ASSET }?.downloadUrl,
             stableVersion = stableVersion,
+            releaseNotes = stableVersion?.let { releaseNotesSummary(release.body) },
         )
     }
 

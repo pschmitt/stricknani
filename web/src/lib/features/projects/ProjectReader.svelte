@@ -848,6 +848,8 @@
               {locale}
               {canEdit}
               enabled={projectTimersEnabled}
+              projectName={currentProject.name}
+              thumbnailUrl={coverImage?.thumbnail_url ?? null}
             />
           {/if}
           {#if !adminData}

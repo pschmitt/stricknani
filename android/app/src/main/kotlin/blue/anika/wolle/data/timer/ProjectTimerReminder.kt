@@ -32,8 +32,13 @@ import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
+import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.notify.NotificationImages
+import blue.anika.wolle.notify.applyBrand
+import blue.anika.wolle.notify.elapsedParts
 import blue.anika.wolle.sync.canPostNotifications
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -292,7 +297,17 @@ constructor(
                 notifier.cancelAll()
                 return Result.success()
             }
-            notifier.show(projectId)
+            notifier.show(
+                projectId = projectId,
+                projectName = project.name,
+                startedAtMillis =
+                    runCatching { DateTimeUtils.parseToEpochMillis(expectedStartedAt) }.getOrNull(),
+                previewPath =
+                    (project.images.firstOrNull { it.isPrimary == true }
+                            ?: project.images.firstOrNull { it.isTitleImage }
+                            ?: project.images.firstOrNull())
+                        ?.thumbnailUrl,
+            )
             // Remind again after another interval for as long as the same run keeps going,
             // like the web reminder that stays due until "Keep timing" or Stop.
             scheduler.schedule(
@@ -337,8 +352,19 @@ class ProjectTimerReminderNotifier
 constructor(
     @ApplicationContext private val context: Context,
     private val settings: SettingsRepository,
+    private val mediaUrlResolver: MediaUrlResolver,
+    private val images: NotificationImages,
 ) {
-    fun show(projectId: Int) {
+    /**
+     * The reminder: the project's name as title, how long this run has been going as text and its
+     * cover as large icon (without one when it cannot be loaded). Tapping opens the project.
+     */
+    suspend fun show(
+        projectId: Int,
+        projectName: String? = null,
+        startedAtMillis: Long? = null,
+        previewPath: String? = null,
+    ) {
         val channel =
             NotificationChannel(
                     CHANNEL_ID,
@@ -366,16 +392,32 @@ constructor(
                 open,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-        val notification =
+        val hint = context.getString(R.string.project_timer_notification_text)
+        val elapsed = startedAtMillis?.let {
+            context.getString(
+                R.string.project_timer_notification_elapsed,
+                elapsedText(System.currentTimeMillis() - it),
+            )
+        }
+        val text = elapsed ?: hint
+        val builder =
             NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_stricknani)
-                .setContentTitle(context.getString(R.string.project_timer_notification_title))
-                .setContentText(context.getString(R.string.project_timer_notification_text))
+                .setContentTitle(
+                    projectName?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.project_timer_notification_title)
+                )
+                .setContentText(text)
                 .setContentIntent(pending)
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build()
+                .applyBrand(context, context.getString(R.string.project_timer_notification_subtext))
+        if (startedAtMillis != null) {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText("$text\n$hint"))
+        }
+        images.load(mediaUrlResolver.resolve(previewPath))?.let { builder.setLargeIcon(it.icon) }
+        val notification = builder.build()
         val granted =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(
@@ -395,6 +437,20 @@ constructor(
                 .notify(notificationTag(projectId), NOTIFICATION_ID, notification)
         } catch (_: SecurityException) {
             // Permission can be revoked after the check.
+        }
+    }
+
+    /** `45 min`, `1 h 5 min`. */
+    private fun elapsedText(millis: Long): String {
+        val parts = elapsedParts(millis)
+        return if (parts.hours > 0) {
+            context.getString(
+                R.string.notification_duration_hours_minutes,
+                parts.hours.toInt(),
+                parts.minutes.toInt(),
+            )
+        } else {
+            context.getString(R.string.notification_duration_minutes, parts.minutes.toInt())
         }
     }
 

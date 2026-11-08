@@ -12,4 +12,20 @@
         <item quantity="one">%d update</item>
         <item quantity="other">%d updates</item>
     </plurals>
+    <plurals name="sync_notification_projects_count">
+        <item quantity="one">%d project</item>
+        <item quantity="other">%d projects</item>
+    </plurals>
+    <plurals name="sync_notification_yarns_count">
+        <item quantity="one">%d yarn</item>
+        <item quantity="other">%d yarns</item>
+    </plurals>
+    <plurals name="sync_notification_removed_count">
+        <item quantity="one">%d item removed</item>
+        <item quantity="other">%d items removed</item>
+    </plurals>
+    <plurals name="data_restore_notification_restored">
+        <item quantity="one">%d item restored</item>
+        <item quantity="other">%d items restored</item>
+    </plurals>
 </resources>

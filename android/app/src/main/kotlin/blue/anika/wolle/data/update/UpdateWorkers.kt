@@ -70,14 +70,16 @@ constructor(
             controller.markQueued()
         }
         coroutineScope {
-            val progress = launch { controller.state.collect(notifier::render) }
+            val progress = launch {
+                controller.state.collect { notifier.render(it, update.version) }
+            }
             try {
                 controller.execute(update)
             } finally {
                 progress.cancel()
             }
         }
-        notifier.render(controller.state.value)
+        notifier.render(controller.state.value, update.version)
         return Result.success()
     }
 
@@ -156,7 +158,12 @@ constructor(
             }
             UpdateNotificationDecision.NOTIFY ->
                 // Only a notification that was actually shown counts against the limit.
-                if (availableNotifier.show(requireNotNull(offered))) {
+                if (
+                    availableNotifier.show(
+                        requireNotNull(offered),
+                        (result as? UpdateCheckResult.Available)?.update?.releaseNotes,
+                    )
+                ) {
                     preferences.recordUpdateNotice(
                         UpdateNotice(offered, channel, now, installedBuildId())
                     )

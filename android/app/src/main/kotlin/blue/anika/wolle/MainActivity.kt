@@ -247,7 +247,17 @@ class MainActivity : ComponentActivity() {
             UpdateAvailableNotifier.ACTION_OPEN_UPDATE ->
                 Route.SettingsCategoryRoute(SettingsCategory.About.name)
             SyncNotifier.ACTION_OPEN_SYNCED ->
-                syncedRoute(intent.getStringExtra(SyncNotifier.EXTRA_SYNCED))
+                syncedRoute(
+                    intent.getStringExtra(SyncNotifier.EXTRA_SYNCED),
+                    projectId =
+                        intent.getIntExtra(SyncNotifier.EXTRA_PROJECT_ID, NO_ID).takeIf {
+                            it != NO_ID
+                        },
+                    yarnId =
+                        intent.getIntExtra(SyncNotifier.EXTRA_YARN_ID, NO_ID).takeIf {
+                            it != NO_ID
+                        },
+                )
             DataExportNotifier.ACTION_OPEN_BACKUPS -> backupsRoute()
             DataExportNotifier.ACTION_OPEN_EXPORT -> openExportedFile(intent) ?: backupsRoute()
             else -> DeepLinkParser.parse(intent?.dataString)
@@ -336,6 +346,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private const val NO_ID = -1
 private const val STATE_PENDING_SHARE = "pending_shared_url"
 
 /** The same translucent navigation-bar scrims androidx uses by default for button navigation. */

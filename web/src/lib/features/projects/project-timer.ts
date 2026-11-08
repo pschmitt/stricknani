@@ -105,6 +105,14 @@ export function timerParts(totalSeconds: number): [string, string, string] {
   ];
 }
 
+/** `1 h 05 min` / `45 min`; the same in both languages and on the server. */
+export function formatElapsed(totalSeconds: number): string {
+  const minutes = Math.floor(Math.max(0, totalSeconds) / 60);
+  return minutes >= 60
+    ? `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`
+    : `${minutes} min`;
+}
+
 export function elapsedSeconds(
   timer: ProjectTimer,
   nowMilliseconds: number,

@@ -146,9 +146,17 @@ constructor(
     /**
      * Returns whether this sync actually pulled any change - see SyncWorker/SyncNotifier (SNA-14).
      */
-    suspend fun sync(): Boolean = if (capabilities.useV2()) syncV2() else syncV1()
+    suspend fun sync(): Boolean = syncDetailed().changed
 
-    private suspend fun syncV1(): Boolean {
+    /** The cached rows of [ids] (server ids), for naming what a sync changed. */
+    suspend fun cachedByIds(ids: Collection<Int>): List<ProjectEntity> = ids.mapNotNull {
+        projectDao.getById(it)
+    }
+
+    /** Same as [sync], but says which items changed (for the sync notification). */
+    suspend fun syncDetailed(): ItemSyncResult = if (capabilities.useV2()) syncV2() else syncV1()
+
+    private suspend fun syncV1(): ItemSyncResult {
         // A v1 server has no scope: it only ever serves the user's own items.
         val cursor = syncStateDao.getCursor(ENTITY_TYPE)
         val response = syncApi.syncProjects(since = cursor)
@@ -162,8 +170,8 @@ constructor(
      * [runV2Sync]). The delta semantics are those of [syncV1]: pending local writes win, tombstones
      * delete, and the new cursor is stored only after every page was applied.
      */
-    private suspend fun syncV2(): Boolean {
-        var changed = false
+    private suspend fun syncV2(): ItemSyncResult {
+        var changed = ItemSyncResult.None
         val scope = everyoneScope.forSync()
         val cursorKey = syncCursorKey(ENTITY_TYPE, scope)
         val outcome =
@@ -174,7 +182,7 @@ constructor(
                     syncV2Api.syncProjects(since = since, cursor = cursor, scope = scope.wire).data
                 },
                 onPage = { updated, deletedIds ->
-                    if (applyDelta(updated.map { it.toV1() }, deletedIds)) changed = true
+                    changed += applyDelta(updated.map { it.toV1() }, deletedIds)
                 },
             )
         if (outcome.fullResync) {
@@ -187,7 +195,7 @@ constructor(
             val stale = staleAfterFullResync(localIds, outcome.seenIds, pending)
             if (stale.isNotEmpty()) {
                 projectDao.deleteByIds(stale)
-                changed = true
+                changed += ItemSyncResult(deletedCount = stale.size)
             }
         }
         syncStateDao.setCursor(SyncStateEntity(cursorKey, outcome.serverTime))
@@ -195,8 +203,11 @@ constructor(
     }
 
     /** Applies one batch of server changes to Room; see [applyItemDelta]. */
-    private suspend fun applyDelta(updated: List<ProjectDto>, deletedIds: List<Int>): Boolean =
-        applyItemDelta(
+    private suspend fun applyDelta(
+        updated: List<ProjectDto>,
+        deletedIds: List<Int>,
+    ): ItemSyncResult =
+        applyItemDeltaDetailed(
             updated = updated,
             deletedIds = deletedIds,
             idOf = { it.id },

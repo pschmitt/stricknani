@@ -596,6 +596,7 @@
     "Open link": "Link öffnen",
     "Open on this phone": "Auf diesem Handy öffnen",
     "Open original pattern": "Originalanleitung öffnen",
+    "Open project": "Projekt öffnen",
     "Open project photo": "Projektfoto öffnen",
     "Open projects": "Projekte öffnen",
     "Open server commit on GitHub": "Server-Commit auf GitHub öffnen",
@@ -1301,8 +1302,10 @@
     "{name} now owns this project. You are an editor.": "{name} besitzt dieses Projekt jetzt. Du bist Bearbeiter.",
     "{name} now owns this yarn. You are an editor.": "{name} besitzt dieses Garn jetzt. Du bist Bearbeiter.",
     "{name} was unlinked from your account.": "{name} wurde von deinem Konto getrennt.",
+    "{name}: timer still running": "{name}: Timer läuft noch",
     "{n} changes": "{n} Änderungen",
-    "{n} more": "{n} weitere"
+    "{n} more": "{n} weitere",
+    "{time} spent so far. Open the project to stop the timer or keep timing.": "{time} bisher. Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen."
   },
   "en": {
     "(opens in a new tab)": "(opens in a new tab)",
@@ -1901,6 +1904,7 @@
     "Open link": "Open link",
     "Open on this phone": "Open on this phone",
     "Open original pattern": "Open original pattern",
+    "Open project": "Open project",
     "Open project photo": "Open project photo",
     "Open projects": "Open projects",
     "Open server commit on GitHub": "Open server commit on GitHub",
@@ -2606,7 +2610,9 @@
     "{name} now owns this project. You are an editor.": "{name} now owns this project. You are an editor.",
     "{name} now owns this yarn. You are an editor.": "{name} now owns this yarn. You are an editor.",
     "{name} was unlinked from your account.": "{name} was unlinked from your account.",
+    "{name}: timer still running": "{name}: timer still running",
     "{n} changes": "{n} changes",
-    "{n} more": "{n} more"
+    "{n} more": "{n} more",
+    "{time} spent so far. Open the project to stop the timer or keep timing.": "{time} spent so far. Open the project to stop the timer or keep timing."
   }
 }

@@ -15,6 +15,7 @@
     "Main navigation": "Hauptnavigation",
     "Name": "Name",
     "Needles": "Nadeln",
+    "Open project": "Projekt öffnen",
     "Other materials": "Weitere Materialien",
     "Pattern URL": "Anleitungs-URL",
     "Pattern file": "Anleitungsdatei",
@@ -27,6 +28,7 @@
     "Weight": "Gewicht",
     "Weight category": "Garnstärke",
     "Yarn": "Garn",
-    "Yarns": "Garne"
+    "Yarns": "Garne",
+    "{name}: timer still running": "{name}: Timer läuft noch"
   }
 }

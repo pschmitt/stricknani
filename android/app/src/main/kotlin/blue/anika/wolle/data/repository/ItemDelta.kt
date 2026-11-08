@@ -28,7 +28,32 @@ internal suspend fun <D, E> applyItemDelta(
     load: suspend (Int) -> E?,
     delete: suspend (List<Int>) -> Unit,
     evictMedia: suspend (E) -> Unit,
-): Boolean {
+): Boolean =
+    applyItemDeltaDetailed(
+            updated,
+            deletedIds,
+            idOf,
+            toEntity,
+            pendingIds,
+            upsert,
+            load,
+            delete,
+            evictMedia,
+        )
+        .changed
+
+/** Same as [applyItemDelta], but says which rows changed (for the sync notification). */
+internal suspend fun <D, E> applyItemDeltaDetailed(
+    updated: List<D>,
+    deletedIds: List<Int>,
+    idOf: (D) -> Int,
+    toEntity: (D) -> E,
+    pendingIds: suspend (List<Int>) -> Set<Int>,
+    upsert: suspend (List<E>) -> Unit,
+    load: suspend (Int) -> E?,
+    delete: suspend (List<Int>) -> Unit,
+    evictMedia: suspend (E) -> Unit,
+): ItemSyncResult {
     val updatedIds = updated.map(idOf)
     val pendingUpdated = if (updatedIds.isEmpty()) emptySet() else pendingIds(updatedIds)
     val pendingDeleted = if (deletedIds.isEmpty()) emptySet() else pendingIds(deletedIds)
@@ -39,13 +64,14 @@ internal suspend fun <D, E> applyItemDelta(
     for (id in (removable + updatedIds.filterNot { it in pendingUpdated }).distinct()) {
         before[id] = load(id)
     }
-    var changed = false
+    val changedIds = linkedSetOf<Int>()
+    var deleted = 0
     if (removable.isNotEmpty()) {
         removable
             .filterNot { it in returning }
             .forEach { id ->
                 before[id]?.let {
-                    changed = true
+                    deleted++
                     runCatching { evictMedia(it) }
                 }
             }
@@ -53,10 +79,26 @@ internal suspend fun <D, E> applyItemDelta(
     }
     val incoming = updated.filterNot { idOf(it) in pendingUpdated }.map { idOf(it) to toEntity(it) }
     if (incoming.isNotEmpty()) {
-        if (incoming.any { (id, entity) -> before[id] != entity }) changed = true
+        incoming.forEach { (id, entity) -> if (before[id] != entity) changedIds += id }
         upsert(incoming.map { it.second })
     }
-    return changed
+    return ItemSyncResult(upsertedIds = changedIds, deletedCount = deleted)
+}
+
+/**
+ * What a project or yarn sync really changed: the server ids of rows that were added or modified
+ * (this device's own writes coming back are not in it) and how many cached rows were removed.
+ */
+data class ItemSyncResult(val upsertedIds: Set<Int> = emptySet(), val deletedCount: Int = 0) {
+    val changed: Boolean
+        get() = upsertedIds.isNotEmpty() || deletedCount > 0
+
+    operator fun plus(other: ItemSyncResult): ItemSyncResult =
+        ItemSyncResult(upsertedIds + other.upsertedIds, deletedCount + other.deletedCount)
+
+    companion object {
+        val None = ItemSyncResult()
+    }
 }
 
 /** Server media paths of a project: images, thumbnails and attachment files. */

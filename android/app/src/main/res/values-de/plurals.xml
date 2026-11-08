@@ -12,4 +12,20 @@
         <item quantity="one">%d Neuigkeit</item>
         <item quantity="other">%d Neuigkeiten</item>
     </plurals>
+    <plurals name="sync_notification_projects_count">
+        <item quantity="one">%d Projekt</item>
+        <item quantity="other">%d Projekte</item>
+    </plurals>
+    <plurals name="sync_notification_yarns_count">
+        <item quantity="one">%d Garn</item>
+        <item quantity="other">%d Garne</item>
+    </plurals>
+    <plurals name="sync_notification_removed_count">
+        <item quantity="one">%d Eintrag entfernt</item>
+        <item quantity="other">%d Einträge entfernt</item>
+    </plurals>
+    <plurals name="data_restore_notification_restored">
+        <item quantity="one">%d Eintrag wiederhergestellt</item>
+        <item quantity="other">%d Einträge wiederhergestellt</item>
+    </plurals>
 </resources>

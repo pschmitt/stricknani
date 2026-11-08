@@ -10,7 +10,9 @@ import blue.anika.wolle.data.errorreporting.SyncFailureClassifier
 import blue.anika.wolle.data.errorreporting.SyncFailureKind
 import blue.anika.wolle.data.errorreporting.SyncFailureReport
 import blue.anika.wolle.data.errorreporting.SyncFailureReportSanitizer
+import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
+import blue.anika.wolle.data.repository.ItemSyncResult
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
@@ -41,6 +43,7 @@ constructor(
     private val projectRepository: ProjectRepository,
     private val settingsRepository: SettingsRepository,
     private val syncNotifier: SyncNotifier,
+    private val mediaUrlResolver: MediaUrlResolver,
     private val errorReportingController: ErrorReportingController,
 ) : CoroutineWorker(context, params) {
 
@@ -58,13 +61,13 @@ constructor(
             return Result.success()
         }
 
-        var yarnsChanged = false
-        var projectsChanged = false
+        var yarnResult = ItemSyncResult.None
+        var projectResult = ItemSyncResult.None
         val failure =
             runSyncStep("categories") { categoryRepository.sync() }
-                ?: runSyncStep("yarns") { yarnsChanged = yarnRepository.sync() }
-                ?: runSyncStep("projects") { projectsChanged = projectRepository.sync() }
-        val changes = SyncChanges.of(projects = projectsChanged, yarns = yarnsChanged)
+                ?: runSyncStep("yarns") { yarnResult = yarnRepository.syncDetailed() }
+                ?: runSyncStep("projects") { projectResult = projectRepository.syncDetailed() }
+        val changes = SyncChanges.of(projects = projectResult.changed, yarns = yarnResult.changed)
 
         if (failure != null) {
             return if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
@@ -76,10 +79,38 @@ constructor(
                 hasChanges = changes != SyncChanges.None,
             )
         ) {
-            syncNotifier.notifySyncFoundChanges(changes)
+            syncNotifier.notifySyncFoundChanges(summarize(projectResult, yarnResult))
         }
         return Result.success()
     }
+
+    /** Names (and preview images) of what changed, from the cache that was just updated. */
+    private suspend fun summarize(
+        projectResult: ItemSyncResult,
+        yarnResult: ItemSyncResult,
+    ): SyncSummary =
+        SyncSummary(
+            projects =
+                projectRepository.cachedByIds(projectResult.upsertedIds).map {
+                    SyncedItem(
+                        SyncedKind.Project,
+                        it.id,
+                        it.name,
+                        mediaUrlResolver.resolve(it.previewUrl),
+                    )
+                },
+            yarns =
+                yarnRepository.cachedByIds(yarnResult.upsertedIds).map {
+                    SyncedItem(
+                        SyncedKind.Yarn,
+                        it.id,
+                        it.name,
+                        mediaUrlResolver.resolve(it.previewUrl),
+                    )
+                },
+            removedProjects = projectResult.deletedCount,
+            removedYarns = yarnResult.deletedCount,
+        )
 
     private suspend fun runSyncStep(name: String, step: suspend () -> Unit): Throwable? =
         try {

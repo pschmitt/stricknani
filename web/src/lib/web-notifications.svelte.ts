@@ -23,6 +23,12 @@ export interface AppNotification {
   tag: string;
   /** App path the notification opens, for example `/app/projects/3`. */
   path: string;
+  /** App path of a thumbnail (`/media/thumbnails/...`) shown as icon and picture. */
+  image?: string | null;
+  /** Label of the "open" action button, when the browser shows actions. */
+  openLabel?: string;
+  /** When it happened, in milliseconds since the epoch. */
+  timestamp?: number;
 }
 
 type PreferenceStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -64,6 +70,84 @@ export function safeAppPath(path: unknown): string {
   } catch {
     return APP_PREFIX;
   }
+}
+
+const THUMBNAIL_PREFIX = "/media/thumbnails/";
+const MAX_THUMBNAIL_BYTES = 1024 * 1024;
+const APP_ICON = `${APP_PREFIX}icons/icon-192.png`;
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+/**
+ * Loads a thumbnail with the session cookie and returns it as a data: URL.
+ * Thumbnails need the session, and the browser may fetch a notification's
+ * image URL without it; a data: URL always loads. Any failure gives null.
+ */
+export async function thumbnailDataUrl(
+  path: string | null | undefined,
+  fetchImage: typeof fetch = fetch,
+): Promise<string | null> {
+  if (typeof path !== "string" || !path.startsWith(THUMBNAIL_PREFIX)) {
+    return null;
+  }
+  try {
+    const url = new URL(path, "https://app.invalid");
+    if (
+      url.origin !== "https://app.invalid" ||
+      !url.pathname.startsWith(THUMBNAIL_PREFIX)
+    ) {
+      return null;
+    }
+    const response = await fetchImage(url.pathname, {
+      credentials: "same-origin",
+    });
+    const type = response.headers.get("content-type") ?? "";
+    if (!response.ok || !type.startsWith("image/")) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > MAX_THUMBNAIL_BYTES) return null;
+    return `data:${type.split(";")[0]};base64,${bytesToBase64(bytes)}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The options the app passes: TypeScript's DOM types lack the
+ * service-worker-only fields (`image`, `timestamp`, `renotify`, `actions`).
+ */
+export type RichNotificationOptions = NotificationOptions & {
+  image?: string;
+  timestamp?: number;
+  renotify?: boolean;
+  actions?: { action: string; title: string }[];
+};
+
+/** Notification options for a notification and its loaded picture, if any. */
+export function notificationOptions(
+  notification: AppNotification,
+  picture: string | null,
+): RichNotificationOptions {
+  const options: RichNotificationOptions = {
+    body: notification.body,
+    tag: notification.tag,
+    renotify: true,
+    icon: picture ?? APP_ICON,
+    data: { path: safeAppPath(notification.path) },
+  };
+  if (picture) options.image = picture;
+  if (Number.isFinite(notification.timestamp)) {
+    options.timestamp = notification.timestamp;
+  }
+  if (notification.openLabel) {
+    options.actions = [{ action: "open", title: notification.openLabel }];
+  }
+  return options;
 }
 
 export function notificationState(
@@ -155,12 +239,10 @@ export const webNotifications = {
     this.refresh();
     if (this.state !== "on") return false;
     const path = safeAppPath(notification.path);
-    const options: NotificationOptions = {
-      body: notification.body,
-      tag: notification.tag,
-      icon: `${APP_PREFIX}icons/icon-192.png`,
-      data: { path },
-    };
+    const options = notificationOptions(
+      notification,
+      await thumbnailDataUrl(notification.image),
+    );
     try {
       const registration =
         "serviceWorker" in navigator

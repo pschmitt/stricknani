@@ -53,6 +53,7 @@ constructor(
                     request.fileName,
                     request.format,
                     request.encrypted,
+                    result.bytes,
                 )
             }
             is ExportResult.Failure -> fail(result.reason)

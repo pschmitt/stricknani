@@ -7,6 +7,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import blue.anika.wolle.R
+import blue.anika.wolle.notify.NotificationImages
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,10 +29,14 @@ class SyncNotifierTest {
                 .close()
         }
 
-        val notifier = SyncNotifier(context)
+        val notifier = SyncNotifier(context, NotificationImages(context))
         notifier.ensureChannel()
         notificationManager.cancelAll()
-        notifier.notifySyncFoundChanges(SyncChanges.Projects)
+        runBlocking {
+            notifier.notifySyncFoundChanges(
+                SyncSummary(projects = listOf(SyncedItem(SyncedKind.Project, 7, "Test blanket")))
+            )
+        }
 
         assertTrue(
             notificationManager.activeNotifications.any { notification ->
@@ -38,7 +44,7 @@ class SyncNotifierTest {
                     notification.notification.channelId == "sync_updates" &&
                     notification.notification.extras.getCharSequence(
                         android.app.Notification.EXTRA_TITLE
-                    ) == context.getString(R.string.app_name) &&
+                    ) == context.getString(R.string.sync_notification_item_title, "Test blanket") &&
                     notification.notification.contentIntent != null
             }
         )

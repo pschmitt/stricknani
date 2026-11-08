@@ -2,4 +2,5 @@
 <resources>
     <!-- Dark mode: MidnightPlum from ui/theme/Color.kt. -->
     <color name="splash_background">#1A1421</color>
+    <color name="notification_accent">#FFB0CB</color>
 </resources>

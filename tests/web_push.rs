@@ -403,6 +403,16 @@ async fn due_reminders_are_encrypted_signed_and_rearmed() {
     .await
     .unwrap();
     sqlx::query(
+        "INSERT INTO media_files(owner_id, project_id, kind, public_id, filename, \
+         original_filename, content_type, size_bytes, is_primary) \
+         VALUES (?, ?, 'title', 1, 'cover-1.jpg', 'cover.jpg', 'image/jpeg', 1, 1)",
+    )
+    .bind(owner_id)
+    .bind(project_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
         "INSERT INTO push_subscriptions(user_id, endpoint, p256dh, auth, created_at) \
          VALUES (?, ?, ?, ?, unixepoch())",
     )
@@ -440,7 +450,17 @@ async fn due_reminders_are_encrypted_signed_and_rearmed() {
     let auth = web_push_native::Auth::clone_from_slice(&browser.auth);
     let plain = web_push_native::decrypt(body.clone(), &browser.secret, &auth).unwrap();
     let message: serde_json::Value = serde_json::from_slice(&plain).unwrap();
-    assert_eq!(message["title"], "Der Projekttimer läuft noch");
+    assert_eq!(message["title"], "Push test: Timer läuft noch");
+    assert!(
+        message["body"].as_str().unwrap().starts_with("1 h 00 min"),
+        "{message}"
+    );
+    assert_eq!(
+        message["image"],
+        format!("/media/thumbnails/projects/{project_id}/thumb_cover-1.jpg")
+    );
+    assert_eq!(message["open_label"], "Projekt öffnen");
+    assert_eq!(message["timestamp"], now * 1000);
     assert_eq!(message["path"], format!("/app/projects/{project_id}"));
     assert_eq!(message["tag"], format!("project-timer-{project_id}"));
 

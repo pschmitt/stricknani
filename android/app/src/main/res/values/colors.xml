@@ -4,4 +4,7 @@
          (ui/theme/Color.kt LilacMist), so launching doesn't flash a different colour. The
          launcher icon has its own butter-yellow background (drawable/ic_launcher_background). -->
     <color name="splash_background">#F7F3FC</color>
+    <!-- Accent of every notification (Raspberry, ui/theme/Color.kt): tints the small icon and the
+         app name. The night value is RaspberryNight. -->
+    <color name="notification_accent">#C23A6E</color>
 </resources>

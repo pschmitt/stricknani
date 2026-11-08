@@ -71,6 +71,27 @@ class UpdateCheckerTest {
     }
 
     @Test
+    fun `a stable update carries a plain-text summary of the release notes`() {
+        server.enqueue(
+            MockResponse().setBody(releaseJson("v1.2.0", "## New\\n* **Timer:** nicer reminders"))
+        )
+
+        val update = check(revision = "v1.1.0", version = "1.1.0")
+
+        assertEquals("New\n• Timer: nicer reminders", update?.releaseNotes)
+    }
+
+    @Test
+    fun `the rolling build carries no release notes`() {
+        server.enqueue(MockResponse().setBody(releaseJson("latest", "built from ($remoteCommit)")))
+        server.enqueue(MockResponse().setBody(compareJson("ahead")))
+
+        val update = check(revision = "b".repeat(12), channel = UpdateChannel.LATEST)
+
+        assertNull(update?.releaseNotes)
+    }
+
+    @Test
     fun `tagged build on newest release gets nothing`() {
         server.enqueue(MockResponse().setBody(releaseJson("v1.1.0")))
 

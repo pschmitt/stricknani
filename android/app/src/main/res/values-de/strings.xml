@@ -142,6 +142,10 @@
     <string name="project_timer_notification_description">Erinnert dich, wenn ein Projekttimer schon länger läuft.</string>
     <string name="project_timer_notification_title">Der Projekttimer läuft noch</string>
     <string name="project_timer_notification_text">Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.</string>
+    <string name="project_timer_notification_subtext">Projekttimer</string>
+    <string name="project_timer_notification_elapsed">Läuft seit %1$s</string>
+    <string name="notification_duration_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="notification_duration_minutes">%1$d Min.</string>
     <string name="settings_project_timers_title">Projekt-Timer</string>
     <string name="settings_project_timers_help">Blendet Timer aus und schaltet Erinnerungen auf diesem Gerät ab. Laufende Timer, auch geteilte, laufen weiter, bis sie gestoppt werden.</string>
     <string name="settings_notifications_title">Benachrichtigungen</string>
@@ -606,6 +610,8 @@
     <string name="data_export_notification_progress_title">Deine Daten werden heruntergeladen</string>
     <string name="data_export_notification_progress_text">%1$s bisher</string>
     <string name="data_export_notification_success_title">Deine Daten sind gespeichert</string>
+    <string name="data_export_notification_share">Teilen</string>
+    <string name="data_export_notification_encrypted">Verschlüsselt</string>
     <string name="data_export_notification_failed_title">Download fehlgeschlagen</string>
     <string name="data_restore_label">Aus einer Datei wiederherstellen</string>
     <string name="data_restore_description">Fügt die Projekte, Garne und Fotos aus einem Stricknani-Download als neue Einträge hinzu. Bestehendes bleibt unverändert.</string>
@@ -710,9 +716,13 @@
     <!-- Background sync notification -->
     <string name="sync_notification_channel_name">Neues von Stricknani</string>
     <string name="sync_notification_channel_description">Wenn etwas Neues von einem anderen Gerät ankommt</string>
-    <string name="sync_notification_projects">Projekte wurden auf einem anderen Gerät geändert</string>
-    <string name="sync_notification_yarns">Garne wurden auf einem anderen Gerät geändert</string>
-    <string name="sync_notification_projects_and_yarns">Projekte und Garne wurden auf einem anderen Gerät geändert</string>
+    <string name="sync_notification_subtext">Synchronisierung</string>
+    <string name="sync_notification_item_title">%1$s wurde aktualisiert</string>
+    <string name="sync_notification_item_text">Auf einem anderen Gerät geändert</string>
+    <string name="sync_notification_multi_title">%1$s geändert</string>
+    <string name="sync_notification_removed_title">%1$s entfernt</string>
+    <string name="sync_notification_join">%1$s und %2$s</string>
+    <string name="sync_notification_more">+%1$d weitere</string>
 
     <!-- Crash report dialog -->
     <string name="crash_report_dialog_title">Die App hat sich von einem Absturz erholt</string>
@@ -1214,17 +1224,27 @@
     <string name="update_notification_channel_description">Fortschritt und Ergebnis von Stricknani-Updates</string>
     <string name="update_available_channel_name">Neue App-Versionen</string>
     <string name="update_available_channel_description">Ein Hinweis, wenn eine neue Version von Stricknani verfügbar ist, höchstens einmal am Tag</string>
-    <string name="update_available_notification_title">Stricknani-Update verfügbar</string>
-    <string name="update_available_notification_text">Version %1$s ist bereit. Zum Aktualisieren tippen.</string>
+    <string name="update_available_notification_title">Stricknani %1$s ist verfügbar</string>
+    <string name="update_available_notification_title_build">Neuer Stricknani-Build %1$s</string>
+    <string name="update_available_notification_text">Du hast %1$s</string>
+    <string name="update_version_build">Build %1$s</string>
+    <string name="update_available_notification_notes">Das ist neu</string>
     <string name="about_notify_updates_title">Über App-Updates benachrichtigen</string>
     <string name="about_notify_updates_help">Höchstens eine Benachrichtigung am Tag, wenn eine neue Version verfügbar ist.</string>
     <string name="developer_test_update_notification">Update-Benachrichtigung testen</string>
     <string name="developer_test_update_notification_description">Zeigt eine Beispiel-Benachrichtigung. Das Tageslimit bleibt unberührt.</string>
     <string name="update_notification_downloading">Stricknani-Update wird heruntergeladen</string>
+    <string name="update_notification_downloading_title">Stricknani %1$s wird heruntergeladen</string>
+    <string name="update_notification_downloading_progress">%1$s von %2$s</string>
+    <string name="update_notification_downloaded">%1$s heruntergeladen</string>
     <string name="update_notification_installing">Stricknani-Update wird installiert</string>
+    <string name="update_notification_installing_title">Stricknani %1$s wird installiert</string>
+    <string name="update_notification_installing_text">Gleich geschafft</string>
     <string name="update_notification_failed">Stricknani-Update fehlgeschlagen</string>
+    <string name="update_notification_failed_version">Update auf %1$s fehlgeschlagen</string>
     <string name="update_notification_confirm">Tippen, um die Installation abzuschließen</string>
-    <string name="update_notification_installed">Stricknani wurde aktualisiert. Tippen zum Öffnen.</string>
+    <string name="update_notification_installed_title">Auf Stricknani %1$s aktualisiert</string>
+    <string name="update_notification_installed_text">Zum Öffnen tippen</string>
     <string name="about_update_browser_hint">Dieser Build wird per Download im Browser aktualisiert.</string>
     <string name="about_auto_update_title">Automatisch aktualisieren</string>
     <string name="about_auto_update_help">Installiert neue Versionen im Hintergrund, während das Handy lädt und ruht.</string>

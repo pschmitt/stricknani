@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,6 +17,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
+import blue.anika.wolle.notify.applyBrand
+import blue.anika.wolle.notify.joinDetails
 import blue.anika.wolle.sync.canPostNotifications
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -103,19 +106,49 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         )
     }
 
+    /**
+     * The saved file: "name.tar.gz · 2.4 MB" (the size when known), a Share button next to the tap
+     * that opens the file.
+     */
     fun succeeded(
         target: Uri,
         fileName: String,
         format: ExportFormat,
         encrypted: Boolean = false,
+        bytes: Long? = null,
     ) {
+        val details =
+            joinDetails(
+                fileName,
+                bytes?.takeIf { it > 0 }?.let { Formatter.formatShortFileSize(context, it) },
+            )
+        val title = context.getString(R.string.data_export_notification_success_title)
         notify(
             builder(
                     R.string.data_export_notification_success_title,
                     openFile(target, format, encrypted),
                     results = true,
                 )
-                .setContentText(fileName)
+                .setContentText(details)
+                .setStyle(
+                    NotificationCompat.BigTextStyle().setBigContentTitle(title).bigText(details)
+                )
+                .setSubText(
+                    joinDetails(
+                        context.getString(R.string.data_export_notification_channel_name),
+                        if (encrypted) {
+                            context.getString(R.string.data_export_notification_encrypted)
+                        } else {
+                            null
+                        },
+                    )
+                )
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .addAction(
+                    0,
+                    context.getString(R.string.data_export_notification_share),
+                    shareFile(target, format, encrypted),
+                )
                 .setAutoCancel(true)
         )
     }
@@ -147,6 +180,8 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
                 if (results) NotificationCompat.PRIORITY_DEFAULT
                 else NotificationCompat.PRIORITY_LOW
             )
+            // Download and restore both live under Settings -> Backups.
+            .applyBrand(context, context.getString(R.string.settings_category_backup_title))
     }
 
     private fun openBackups(): PendingIntent =
@@ -170,6 +205,27 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+    /** A chooser that sends the saved archive to another app (read permission granted to it). */
+    private fun shareFile(target: Uri, format: ExportFormat, encrypted: Boolean): PendingIntent {
+        val send =
+            Intent(Intent.ACTION_SEND).apply {
+                setType(format.mimeTypeFor(encrypted))
+                putExtra(Intent.EXTRA_STREAM, target)
+                // setClipData returns void: it cannot be chained.
+                clipData = ClipData.newRawUri(null, target)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        val chooser =
+            Intent.createChooser(send, context.getString(R.string.data_export_notification_share))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return PendingIntent.getActivity(
+            context,
+            REQUEST_SHARE,
+            chooser,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
 
     private fun notify(builder: NotificationCompat.Builder) = post(NOTIFICATION_ID, builder)
 
@@ -220,6 +276,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         private const val SCHEDULED_NOTIFICATION_ID = 1007
         private const val REQUEST_BACKUPS = 1003
         private const val REQUEST_FILE = 1004
+        private const val REQUEST_SHARE = 1008
     }
 }
 

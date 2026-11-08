@@ -50,8 +50,25 @@ constructor(
         return builder
     }
 
+    /**
+     * "12 items restored" with one line per kind (projects, yarns, photos and files) when the
+     * notification is expanded.
+     */
     fun succeeded(summary: RestoreSummary) {
         val text = restoreSummaryText(context, summary)
+        val total = summary.projects + summary.yarns
+        val title =
+            if (total > 0) {
+                context.resources.getQuantityString(
+                    R.plurals.data_restore_notification_restored,
+                    total,
+                    total,
+                )
+            } else {
+                context.getString(R.string.data_restore_notification_success_title)
+            }
+        val inbox = NotificationCompat.InboxStyle().setBigContentTitle(title)
+        restoreSummaryLines(context, summary).forEach(inbox::addLine)
         channel.post(
             NOTIFICATION_ID,
             builder(
@@ -59,8 +76,10 @@ constructor(
                     openProjects(),
                     results = true,
                 )
+                .setContentTitle(title)
                 .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setStyle(inbox)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setAutoCancel(true),
         )
     }
@@ -128,10 +147,12 @@ fun restoreFailureMessageRes(reason: RestoreFailure): Int =
 
 /** `Projects: N · Yarns: N · Photos and files: N`, shared by the notification and the screen. */
 fun restoreSummaryText(context: Context, summary: RestoreSummary): String =
-    joinSummary(
-        listOf(
-            countLine(context.getString(R.string.data_restore_projects), summary.projects),
-            countLine(context.getString(R.string.data_restore_yarns), summary.yarns),
-            countLine(context.getString(R.string.data_restore_media), summary.mediaFiles),
-        )
+    joinSummary(restoreSummaryLines(context, summary))
+
+/** The three count lines of a restore, one per kind, for an expanded notification. */
+fun restoreSummaryLines(context: Context, summary: RestoreSummary): List<String> =
+    listOf(
+        countLine(context.getString(R.string.data_restore_projects), summary.projects),
+        countLine(context.getString(R.string.data_restore_yarns), summary.yarns),
+        countLine(context.getString(R.string.data_restore_media), summary.mediaFiles),
     )

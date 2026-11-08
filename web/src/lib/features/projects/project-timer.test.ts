@@ -3,6 +3,7 @@ import { ApiError } from "#lib/api.ts";
 import {
   currentRunSeconds,
   elapsedSeconds,
+  formatElapsed,
   isUnsupportedTimerError,
   MAX_TIMER_SECONDS,
   parseProjectTimer,
@@ -77,5 +78,14 @@ describe("project timer values", () => {
     expect(currentRunSeconds({ ...running, started_at: null }, 5_500, 0)).toBe(
       0,
     );
+  });
+});
+
+describe("formatElapsed", () => {
+  it("is compact and clamps negatives", () => {
+    expect(formatElapsed(-5)).toBe("0 min");
+    expect(formatElapsed(45 * 60 + 59)).toBe("45 min");
+    expect(formatElapsed(3600)).toBe("1 h 00 min");
+    expect(formatElapsed(13 * 3600 + 5 * 60)).toBe("13 h 05 min");
   });
 });

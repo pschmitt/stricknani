@@ -10,6 +10,7 @@
   import { saveTimerReminder, timerReminderSchedule } from "#lib/web-push.ts";
   import {
     elapsedSeconds,
+    formatElapsed,
     currentRunSeconds,
     getProjectTimer,
     isUnsupportedTimerError,
@@ -24,9 +25,20 @@
     locale: "en" | "de";
     canEdit: boolean;
     enabled: boolean;
+    /** Shown in the reminder notification's title. */
+    projectName?: string;
+    /** App path of the title image thumbnail, shown in the notification. */
+    thumbnailUrl?: string | null;
   }
 
-  let { projectId, locale, canEdit, enabled }: Props = $props();
+  let {
+    projectId,
+    locale,
+    canEdit,
+    enabled,
+    projectName = "",
+    thumbnailUrl = null,
+  }: Props = $props();
   let timer = $state<TimerValue | null>(null);
   let loading = $state(true);
   let busy = $state(false);
@@ -301,12 +313,35 @@
     if (notifiedReminder === key) return;
     notifiedReminder = key;
     if (document.visibilityState === "visible" && document.hasFocus()) return;
-    void webNotifications.show({
-      title: t("Project timer is still running", locale),
-      body: t("Open the project to stop the timer or keep timing.", locale),
-      tag: `project-timer-${projectId}`,
-      path: resolve("/projects/[id]", { id: String(projectId) }),
-    });
+    const path = resolve("/projects/[id]", { id: String(projectId) });
+    const elapsed = formatElapsed(untrack(() => total));
+    void webNotifications.show(
+      projectName
+        ? {
+            title: t("{name}: timer still running", locale).replace(
+              "{name}",
+              projectName,
+            ),
+            body: t(
+              "{time} spent so far. Open the project to stop the timer or keep timing.",
+              locale,
+            ).replace("{time}", elapsed),
+            tag: `project-timer-${projectId}`,
+            path,
+            image: thumbnailUrl,
+            openLabel: t("Open project", locale),
+            timestamp: Date.now(),
+          }
+        : {
+            title: t("Project timer is still running", locale),
+            body: t(
+              "Open the project to stop the timer or keep timing.",
+              locale,
+            ),
+            tag: `project-timer-${projectId}`,
+            path,
+          },
+    );
   });
 
   // The server sends this reminder as a Web Push, so it also arrives with no

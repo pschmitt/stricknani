@@ -59,8 +59,14 @@ class SharedSyncTest {
         updated: List<ProjectDto>,
         deleted: List<Int>,
         json: Json,
-    ): Boolean =
-        applyItemDelta(
+    ): Boolean = applyDetailed(updated, deleted, json).changed
+
+    private suspend fun Device.applyDetailed(
+        updated: List<ProjectDto>,
+        deleted: List<Int>,
+        json: Json,
+    ): ItemSyncResult =
+        applyItemDeltaDetailed(
             updated = updated,
             deletedIds = deleted,
             idOf = { it.id },
@@ -123,6 +129,47 @@ class SharedSyncTest {
         assertTrue(changed)
         assertEquals(listOf(1, 3), device.rows.keys.toList())
         assertEquals(listOf("evict-2"), device.evicted)
+    }
+
+    @Test
+    fun `the result names the changed ids and counts removals`() = runTest {
+        val device = Device()
+        val first = device.applyDetailed(listOf(project(1), project(2)), emptyList(), json)
+        assertEquals(setOf(1, 2), first.upsertedIds)
+        assertEquals(0, first.deletedCount)
+
+        // Row 1 comes back unchanged, row 2 changed, row 3 is new, row 9 was never cached.
+        val second =
+            device.applyDetailed(
+                listOf(project(1), project(2, updated = 5), project(3)),
+                listOf(9),
+                json,
+            )
+        assertEquals(setOf(2, 3), second.upsertedIds)
+        assertEquals(0, second.deletedCount)
+
+        val third = device.applyDetailed(emptyList(), listOf(1, 9), json)
+        assertEquals(emptySet<Int>(), third.upsertedIds)
+        assertEquals(1, third.deletedCount)
+        assertTrue(third.changed)
+    }
+
+    @Test
+    fun `a queued local write keeps its row out of the changed ids`() = runTest {
+        val device = Device(pending = setOf(1))
+        device.rows[1] = project(1).toEntity(json)
+
+        val result = device.applyDetailed(listOf(project(1, updated = 9)), emptyList(), json)
+
+        assertEquals(ItemSyncResult.None, result)
+        assertFalse(result.changed)
+    }
+
+    @Test
+    fun `sync results add up across pages`() {
+        val total = ItemSyncResult(setOf(1), 1) + ItemSyncResult(setOf(1, 2), 2)
+        assertEquals(setOf(1, 2), total.upsertedIds)
+        assertEquals(3, total.deletedCount)
     }
 
     @Test

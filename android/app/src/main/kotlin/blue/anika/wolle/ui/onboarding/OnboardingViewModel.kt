@@ -294,6 +294,8 @@ constructor(
                     syncScheduler.syncNow()
                     OnboardingUiState.Success
                 } else {
+                    timber.log.Timber.tag(LOCAL_LOG_TAG)
+                        .w(started.exceptionOrNull(), "The in-app server did not start")
                     OnboardingUiState.Error(context.getString(R.string.onboarding_local_failed))
                 }
         }
@@ -308,8 +310,10 @@ constructor(
         _uiState.value = OnboardingUiState.Success
     }
 
-    private companion object {
-        const val SERVER_URL_SETTLE_MILLIS = 600L
+    companion object {
+        /** Logcat tag of local-only mode failures (read by `LocalModeBackupE2eTest`). */
+        const val LOCAL_LOG_TAG = "StricknaniLocal"
+        private const val SERVER_URL_SETTLE_MILLIS = 600L
     }
 
     private fun Throwable.toRegistrationMessage(): String {

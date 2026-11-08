@@ -50,9 +50,53 @@ self.addEventListener("message", (event) => {
   }
 });
 
-// Web Push: the server sends timer reminders as {title, body, tag, path}.
-// Every push must show a notification (userVisibleOnly); the tag replaces an
-// earlier one for the same timer, and the click handler below opens `path`.
+// Web Push: the server sends timer reminders as {title, body, tag, path} plus
+// the optional {image, open_label, timestamp}. Every push must show a
+// notification (userVisibleOnly); the tag replaces an earlier one for the same
+// timer (renotify makes it alert again), and the click handler below opens
+// `path`.
+const MAX_THUMBNAIL_BYTES = 1024 * 1024;
+const THUMBNAIL_TIMEOUT_MS = 4000;
+
+// Project thumbnails need the session cookie, and the browser may fetch a
+// notification's image URL without it. This worker is same-origin, so it
+// fetches the thumbnail itself and hands the browser a data: URL. The path
+// comes from our own server's (encrypted) push payload; only same-origin image
+// responses up to MAX_THUMBNAIL_BYTES are used, and nothing is cached. Any
+// failure just means a notification without a picture.
+async function thumbnailDataUrl(path) {
+  if (
+    typeof path !== "string" ||
+    !path.startsWith("/") ||
+    path.startsWith("//")
+  ) {
+    return undefined;
+  }
+  try {
+    const url = new URL(path, self.location.origin);
+    if (url.origin !== self.location.origin) {
+      return undefined;
+    }
+    const response = await fetch(url.pathname, {
+      credentials: "same-origin",
+      signal: AbortSignal.timeout(THUMBNAIL_TIMEOUT_MS),
+    });
+    const type = response.headers.get("content-type") ?? "";
+    if (!response.ok || !type.startsWith("image/")) return undefined;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > MAX_THUMBNAIL_BYTES) {
+      return undefined;
+    }
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+    }
+    return `data:${type.split(";")[0]};base64,${btoa(binary)}`;
+  } catch {
+    return undefined;
+  }
+}
+
 self.addEventListener("push", (event) => {
   let message = {};
   try {
@@ -65,14 +109,27 @@ self.addEventListener("push", (event) => {
       ? message.title
       : "Stricknani";
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: typeof message.body === "string" ? message.body : "",
-      tag: typeof message.tag === "string" ? message.tag : undefined,
-      icon: `${APP_PREFIX}icons/icon-192.png`,
-      data: {
-        path: typeof message.path === "string" ? message.path : APP_PREFIX,
-      },
-    }),
+    (async () => {
+      const picture = await thumbnailDataUrl(message.image);
+      const tag = typeof message.tag === "string" ? message.tag : undefined;
+      const options = {
+        body: typeof message.body === "string" ? message.body : "",
+        tag,
+        renotify: tag !== undefined,
+        icon: picture ?? `${APP_PREFIX}icons/icon-192.png`,
+        data: {
+          path: typeof message.path === "string" ? message.path : APP_PREFIX,
+        },
+      };
+      if (picture) options.image = picture;
+      if (Number.isFinite(message.timestamp)) {
+        options.timestamp = message.timestamp;
+      }
+      if (typeof message.open_label === "string" && message.open_label) {
+        options.actions = [{ action: "open", title: message.open_label }];
+      }
+      await self.registration.showNotification(title, options);
+    })(),
   );
 });
 
