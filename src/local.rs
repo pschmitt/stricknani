@@ -329,6 +329,38 @@ mod tests {
         assert!(token_is_valid(&pool, &second).await.unwrap());
     }
 
+    /// A plain HTTP/1.1 request to the loopback server: (status, body). No HTTP client crate,
+    /// since those load TLS roots the Nix build sandbox does not have.
+    fn request(
+        port: u16,
+        method: &str,
+        path: &str,
+        token: Option<&str>,
+        body: Option<&str>,
+    ) -> (u16, String) {
+        use std::io::{Read, Write};
+        let mut stream = std::net::TcpStream::connect(("127.0.0.1", port)).unwrap();
+        let mut head =
+            format!("{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n");
+        if let Some(token) = token {
+            head.push_str(&format!("Authorization: Bearer {token}\r\n"));
+        }
+        let body = body.unwrap_or("");
+        if !body.is_empty() {
+            head.push_str("Content-Type: application/json\r\n");
+        }
+        head.push_str(&format!("Content-Length: {}\r\n\r\n{body}", body.len()));
+        stream.write_all(head.as_bytes()).unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).unwrap();
+        let status = response
+            .split_whitespace()
+            .nth(1)
+            .and_then(|code| code.parse().ok())
+            .unwrap();
+        (status, response)
+    }
+
     #[test]
     fn serves_only_bearer_requests_and_keeps_data_across_restarts() {
         let dir = tempfile::tempdir().unwrap();
@@ -338,53 +370,38 @@ mod tests {
             started,
             "a second start reuses it"
         );
-        let base = format!("http://127.0.0.1:{}", started.port);
-        let client = reqwest::Client::new();
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        runtime.block_on(async {
-            let health = client.get(format!("{base}/healthz")).send().await.unwrap();
-            assert_eq!(health.status(), 200);
-            let anonymous = client
-                .get(format!("{base}/api/v2/projects"))
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(anonymous.status(), 401);
-            let login = client
-                .post(format!("{base}/api/v2/auth/login"))
-                .header("content-type", "application/json")
-                .body(serde_json::json!({"email": LOCAL_EMAIL, "password": "x"}).to_string())
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(login.status(), 401, "no cookie login without a token");
-            let created = client
-                .post(format!("{base}/api/v2/projects"))
-                .bearer_auth(&started.token)
-                .header("content-type", "application/json")
-                .body(serde_json::json!({"name": "Local scarf"}).to_string())
-                .send()
-                .await
-                .unwrap();
-            assert!(created.status().is_success(), "{}", created.status());
-        });
+        let port = started.port;
+        assert_eq!(request(port, "GET", "/healthz", None, None).0, 200);
+        assert_eq!(request(port, "GET", "/api/v2/projects", None, None).0, 401);
+        let login = serde_json::json!({"email": LOCAL_EMAIL, "password": "x"}).to_string();
+        assert_eq!(
+            request(port, "POST", "/api/v2/auth/login", None, Some(&login)).0,
+            401,
+            "no cookie login without a token"
+        );
+        let project = serde_json::json!({"name": "Local scarf"}).to_string();
+        let (created, response) = request(
+            port,
+            "POST",
+            "/api/v2/projects",
+            Some(&started.token),
+            Some(&project),
+        );
+        assert!((200..300).contains(&created), "{response}");
         stop();
+
         let restarted = start(dir.path(), started.port).unwrap();
         assert_eq!(restarted.token, started.token);
         assert_eq!(restarted.port, started.port, "the preferred port is reused");
-        let base = format!("http://127.0.0.1:{}", restarted.port);
-        runtime.block_on(async {
-            let projects = client
-                .get(format!("{base}/api/v2/projects"))
-                .bearer_auth(&restarted.token)
-                .send()
-                .await
-                .unwrap()
-                .text()
-                .await
-                .unwrap();
-            assert!(projects.contains("Local scarf"), "{projects}");
-        });
+        let (status, projects) = request(
+            restarted.port,
+            "GET",
+            "/api/v2/projects",
+            Some(&restarted.token),
+            None,
+        );
+        assert_eq!(status, 200);
+        assert!(projects.contains("Local scarf"), "{projects}");
         stop();
     }
 }
