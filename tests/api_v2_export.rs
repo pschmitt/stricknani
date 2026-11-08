@@ -260,12 +260,13 @@ impl Archive {
                 top = dir.to_owned();
             }
             assert_eq!(top, dir);
-            let expected = if rest.ends_with(".json") {
-                zip::CompressionMethod::Deflated
-            } else {
-                zip::CompressionMethod::Stored
-            };
-            assert_eq!(entry.compression(), expected, "{rest}");
+            // Every entry is deflated: sequential readers (java.util.zip.ZipInputStream)
+            // refuse stored entries that carry a data descriptor.
+            assert_eq!(
+                entry.compression(),
+                zip::CompressionMethod::Deflated,
+                "{rest}"
+            );
             modes.push((0o644, 0));
             let mut data = Vec::new();
             entry.read_to_end(&mut data).unwrap();

@@ -510,10 +510,17 @@ impl Sink for ZipSink {
     }
 
     fn add_media(&mut self, path: &str, size: u64, file: std::fs::File) -> io::Result<()> {
+        // Deflated, not stored: streamed entries carry their sizes in a data descriptor,
+        // and sequential readers (java.util.zip.ZipInputStream) reject a stored entry
+        // with one. Level 1 keeps the cost low for already compressed photos.
         let options = SimpleFileOptions::default()
-            .compression_method(CompressionMethod::Stored)
+            .compression_method(CompressionMethod::Deflated)
+            .compression_level(Some(1))
             .unix_permissions(0o644)
-            .large_file(true);
+            // zip64 fields only where an entry needs them: they switch the data
+            // descriptor to 64-bit sizes, which ZipInputStream misreads. The archive
+            // itself may still grow past 4 GiB (zip64 end records and offsets).
+            .large_file(size >= u64::from(u32::MAX));
         self.zip
             .start_file(path, options)
             .map_err(io::Error::from)?;

@@ -105,6 +105,7 @@
   const secondaryNavigation = [
     { href: "/categories", label: msg("Categories"), icon: "categories" },
     { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
+    { href: "/backups", label: msg("Backups"), icon: "download" },
   ] as const;
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
@@ -178,6 +179,7 @@
     | "/imports"
     | "/categories"
     | "/gauge"
+    | "/backups"
     | "/privacy"
     | "/about"
     | "/delete-account"

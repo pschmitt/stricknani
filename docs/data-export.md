@@ -55,8 +55,11 @@ use `/`; entries are regular files with mode 0644 and the export time as their
 modification time.
 
 The zip variant has the same top-level directory and entries, `manifest.json`
-first; JSON files are deflated, media files stored (they are already
-compressed).
+first. Every entry is deflated (media at the fastest level): entries are
+streamed with a data descriptor, which sequential zip readers such as Java's
+`ZipInputStream` only accept for deflated entries. Large archives use zip64.
+Both containers use the fastest compression level for media, which are
+already compressed.
 
 ### `manifest.json`
 
@@ -149,6 +152,55 @@ version may add some of them.
 - Removing or renaming a field or file, or changing what a value means, bumps
   the version.
 - A restore keeps accepting every older version.
+
+## Encryption (optional)
+
+An export can be encrypted with a passphrase. The encrypted file is the normal
+archive wrapped in [age](https://age-encryption.org) passphrase encryption
+(scrypt recipient, the age v1 format): `stricknani-export-YYYY-MM-DD.tar.gz.age`
+or `.zip.age`. Anyone can decrypt it without Stricknani:
+`age -d stricknani-export-….tar.gz.age | tar -xz`. The content inside is the
+same archive, so `format_version` does not change.
+
+The passphrase never appears in a URL or a log line:
+
+1. `POST /api/v2/account/export` with
+   `{"archive": "tar.gz" | "zip", "passphrase": "…"}` (JSON; browser sessions
+   send the usual CSRF header). The passphrase must be 12 to 1024 bytes of
+   UTF-8, else `400 invalid_request`. The answer is `201`:
+
+   ```json
+   { "data": { "url": "/api/v2/account/export/download/<ticket>",
+               "expires_at": "2026-11-08T01:05:00Z" } }
+   ```
+
+2. `GET` that URL with the same account's credentials (the browser navigates to
+   it, so the download streams as usual). The ticket is random, held only in
+   server memory together with the passphrase, bound to the account, valid for
+   five minutes and for one download; a used, expired or foreign ticket is
+   `404`. The response is the encrypted stream with
+   `Content-Type: application/octet-stream` and the `.age` file name. It counts
+   against the one-export-per-user slot like a plain export.
+
+`GET /api/v2/account/export` without a passphrase works as before.
+
+### Restoring an encrypted file
+
+`POST /api/v2/account/import` recognises an age file by its header line
+(`age-encryption.org/v1`) and decrypts it while reading. The passphrase travels
+in the `X-Archive-Passphrase` request header as base64url (no padding) of its
+UTF-8 bytes, so any characters work.
+
+- An encrypted file without the header: `422 passphrase_required`.
+- A passphrase that does not open it: `422 wrong_passphrase`. Clients ask
+  again; this is not a broken file.
+- The server refuses scrypt work factors above 2^20 (`400 invalid_archive`),
+  so a crafted file cannot make it spend unbounded memory or time.
+- A plain archive with the header set restores normally; the header is ignored.
+- Everything else (limits, all or nothing, the restore rules) is unchanged; the
+  limits apply to the decrypted content.
+
+A forgotten passphrase cannot be recovered: the server keeps no copy.
 
 ## Restore
 
