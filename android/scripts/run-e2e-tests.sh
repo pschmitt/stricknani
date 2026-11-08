@@ -55,6 +55,10 @@ case "${E2E_LANE:-smoke}" in
     sleep 2
     mkdir -p build/fgs-demo
     adb pull "$recording" build/fgs-demo/fgs-demo.mp4 || true
+    # The picker round trip only: the app's backup tag, activity switches, DocumentsUI and
+    # crashes (no request logs, which could carry the fixture token).
+    adb logcat -d -s StricknaniBackup:V ActivityTaskManager:I DocumentsUI:V AndroidRuntime:E \
+      >build/fgs-demo/logcat.txt || true
     exit "$status"
     ;;
   *)

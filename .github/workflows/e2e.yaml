@@ -508,7 +508,9 @@ jobs:
         with:
           name: fgs-demo-api${{ matrix.api }}
           if-no-files-found: warn
-          path: android/build/fgs-demo/fgs-demo.mp4
+          path: |
+            android/build/fgs-demo/fgs-demo.mp4
+            android/build/fgs-demo/logcat.txt
 
       - name: Summarize Android instrumentation failures
         if: ${{ failure() }}
