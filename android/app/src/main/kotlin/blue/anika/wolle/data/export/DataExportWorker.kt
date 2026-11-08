@@ -25,10 +25,11 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Downloads the data export on API < 34 (newer devices run it as a user-initiated job, see
- * [DataExportJobService]). A plain worker with its own progress notification, not a foreground
- * service: the app keeps that service (and its Play permission) out of its manifest. WorkManager
- * gives a worker about ten minutes. The transfer code is shared with the job in
- * [DataExportTransfer].
+ * [DataExportJobService]). On API 26-33 the worker is a `dataSync` foreground service
+ * ([promoteToForeground]) so WorkManager's ten minute limit does not apply; the Play Console
+ * foreground service declaration covers it. If the system refuses, or on API 34+ when the job was
+ * refused, it runs as a plain worker and accepts that limit. The transfer code is shared with the
+ * job in [DataExportTransfer].
  */
 @HiltWorker
 class DataExportWorker
@@ -38,6 +39,7 @@ constructor(
     @Assisted params: WorkerParameters,
     private val transfer: DataExportTransfer,
     private val notifier: DataExportNotifier,
+    @Named(SDK_INT_NAME) private val sdkInt: Int,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -50,10 +52,22 @@ constructor(
                 // Only the id of an in-memory passphrase is stored, never the passphrase.
                 passphraseId = inputData.getString(KEY_PASSPHRASE_ID),
             )
+        // A foreground service on API 26-33 lifts WorkManager's ten minute limit; see
+        // promoteToForeground. Progress then updates that notification instead.
+        val foreground =
+            promoteToForeground(sdkInt, EXPORT_FOREGROUND_ID, notifier.progressNotification(0L))
         val result =
             try {
                 transfer.run(request) { bytes ->
-                    notifier.progress(bytes)
+                    if (foreground) {
+                        setForegroundAsync(
+                            foregroundInfoFor(
+                                sdkInt,
+                                EXPORT_FOREGROUND_ID,
+                                notifier.progressNotification(bytes),
+                            )!!
+                        )
+                    } else notifier.progress(bytes)
                     // Fire and forget: progress for the screen is best effort.
                     setProgressAsync(workDataOf(KEY_BYTES to bytes))
                 }

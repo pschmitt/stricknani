@@ -26,8 +26,9 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Uploads a Stricknani download and restores it on the server on API < 34 (newer devices run it as
- * a user-initiated job, see [DataRestoreJobService]). A plain worker with its own notification,
- * like [DataExportWorker]; the transfer code is shared in [DataRestoreTransfer].
+ * a user-initiated job, see [DataRestoreJobService]). Like [DataExportWorker] a `dataSync`
+ * foreground service on API 26-33, a plain worker otherwise; the transfer code is shared in
+ * [DataRestoreTransfer].
  */
 @HiltWorker
 class DataRestoreWorker
@@ -37,6 +38,7 @@ constructor(
     @Assisted params: WorkerParameters,
     private val transfer: DataRestoreTransfer,
     private val notifier: DataRestoreNotifier,
+    @Named(SDK_INT_NAME) private val sdkInt: Int,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -49,10 +51,26 @@ constructor(
                 inputData.getString(KEY_PASSPHRASE_ID),
             )
         val total = request.totalBytes
+        // A foreground service on API 26-33 lifts WorkManager's ten minute limit; see
+        // promoteToForeground. Progress then updates that notification instead.
+        val foreground =
+            promoteToForeground(
+                sdkInt,
+                RESTORE_FOREGROUND_ID,
+                notifier.progressNotification(uploadPercent(0L, total)),
+            )
         val result =
             try {
                 transfer.run(request) { sent ->
-                    notifier.progress(uploadPercent(sent, total))
+                    if (foreground) {
+                        setForegroundAsync(
+                            foregroundInfoFor(
+                                sdkInt,
+                                RESTORE_FOREGROUND_ID,
+                                notifier.progressNotification(uploadPercent(sent, total)),
+                            )!!
+                        )
+                    } else notifier.progress(uploadPercent(sent, total))
                     setProgressAsync(workDataOf(KEY_SENT to sent, KEY_TOTAL to total))
                 }
             } catch (e: CancellationException) {

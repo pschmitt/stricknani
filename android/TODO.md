@@ -2862,3 +2862,16 @@ confirm it lands cleanly, the same as SNA-65 flagged for its own untested change
 Status: **done**, 2026-08-28 - CI/doc-only change, no app code or version change; not exercised
 with a real tag push in this task for the same reason as SNA-65 (would have meant cutting an
 otherwise-unneeded release). Confirm on the next real tagged release.
+
+## SNA-106: Play foreground service declaration for user-started data transfers
+
+- [ ] Owner action before the next Play release: submit the Play Console foreground service
+      declaration for `dataSync` (see `docs/play-store-release.md`, step 7).
+- [x] Android 8-13 (API 26-33): the data download and restore workers promote themselves to a
+      `dataSync` foreground service (`ForegroundTransfer.kt`), lifting WorkManager's ten minute
+      limit; a refused start falls back to a plain worker. API 34+ keeps user-initiated jobs, and
+      scheduled backups stay plain background work.
+- [x] Manifest declares `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC` and
+      `SystemForegroundService` (`dataSync`) instead of removing them.
+
+Status: **in progress**, 2026-11-08 - code done, declaration pending.

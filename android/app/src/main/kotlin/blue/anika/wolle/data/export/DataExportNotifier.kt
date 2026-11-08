@@ -86,8 +86,14 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
      * A scheduled backup could not write its data download into the folder. Opens Backups, where
      * the schedule is set up.
      */
-    fun scheduledDataFailed() {
-        val text = context.getString(R.string.scheduled_backup_data_failed_text)
+    fun scheduledDataFailed() = scheduledDataFailed(R.string.scheduled_backup_data_failed_text)
+
+    /** The backup password is too short to encrypt the data download; opens Backups. */
+    fun scheduledDataPasswordTooShort() =
+        scheduledDataFailed(R.string.scheduled_backup_data_password_too_short_text)
+
+    private fun scheduledDataFailed(@androidx.annotation.StringRes textRes: Int) {
+        val text = context.getString(textRes)
         post(
             SCHEDULED_NOTIFICATION_ID,
             builder(R.string.scheduled_backup_data_failed_title, openBackups(), results = true)

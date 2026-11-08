@@ -7,7 +7,9 @@ import blue.anika.wolle.data.export.DataExportRepository
 import blue.anika.wolle.data.export.ExportFailure
 import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.data.export.ExportResult
+import blue.anika.wolle.data.export.PASSPHRASE_MIN_BYTES
 import blue.anika.wolle.data.export.exportFileName
+import blue.anika.wolle.data.export.passphraseBytes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import java.time.ZoneOffset
@@ -17,22 +19,49 @@ import javax.inject.Singleton
 /** How many data downloads a scheduled backup keeps in the folder. */
 const val SCHEDULED_DATA_EXPORTS_KEPT = 3
 
-private val DATA_EXPORT_NAME = Regex("""stricknani-export-\d{4}-\d{2}-\d{2}\.tar\.gz""")
+private val DATA_EXPORT_NAME = Regex("""stricknani-export-\d{4}-\d{2}-\d{2}\.tar\.gz(\.age)?""")
 
-/** `stricknani-export-YYYY-MM-DD.tar.gz` for the UTC date of [now]. */
-fun scheduledDataExportName(now: Instant): String =
-    exportFileName(now.atZone(ZoneOffset.UTC).toLocalDate(), ExportFormat.TarGz)
+/** What the data part of a scheduled backup does, decided by the backup password alone. */
+enum class ScheduledDataPlan {
+    /** No password: the plain `.tar.gz`, as before. */
+    Plain,
+
+    /** A password of at least [PASSPHRASE_MIN_BYTES] UTF-8 bytes: `.tar.gz.age`. */
+    Encrypted,
+
+    /** A password the server would refuse as a passphrase: nothing is written, not even plain. */
+    PasswordTooShort,
+}
+
+/** The [ScheduledDataPlan] for the scheduled-backup [password] (null or empty means none). */
+fun scheduledDataPlan(password: String?): ScheduledDataPlan =
+    when {
+        password.isNullOrEmpty() -> ScheduledDataPlan.Plain
+        passphraseBytes(password) < PASSPHRASE_MIN_BYTES -> ScheduledDataPlan.PasswordTooShort
+        else -> ScheduledDataPlan.Encrypted
+    }
+
+/**
+ * `stricknani-export-YYYY-MM-DD.tar.gz` for the UTC date of [now], with `.age` appended when
+ * [encrypted].
+ */
+fun scheduledDataExportName(now: Instant, encrypted: Boolean = false): String =
+    exportFileName(now.atZone(ZoneOffset.UTC).toLocalDate(), ExportFormat.TarGz, encrypted)
 
 /** Whether [name] looks like a data download of the app. The pattern is the only thing matched. */
 fun isDataExportName(name: String): Boolean = DATA_EXPORT_NAME.matches(name)
 
 /**
- * The names to delete so only the newest [keep] data downloads stay: only names that match
- * [isDataExportName] are ever considered, so no other file in the folder is touched. The date in
- * the name orders them.
+ * The names to delete so only the newest [keep] data downloads stay, counted across the plain and
+ * the `.age` names: only names that match [isDataExportName] are ever considered, so no other file
+ * in the folder is touched. The date in the name orders them (plain before encrypted on the same
+ * day, so a plain leftover goes first).
  */
 fun dataExportsToDelete(names: Collection<String>, keep: Int = SCHEDULED_DATA_EXPORTS_KEPT) =
-    names.filter(::isDataExportName).sortedDescending().drop(keep.coerceAtLeast(0))
+    names
+        .filter(::isDataExportName)
+        .sortedWith(compareByDescending<String> { it.substringBefore(".tar.gz") }.thenBy { it })
+        .drop(keep.coerceAtLeast(0))
 
 /**
  * Writes the data download into the folder of the scheduled backups, streaming through the same
@@ -49,23 +78,27 @@ constructor(
     private data class Child(val documentId: String, val name: String)
 
     /**
-     * Replaces today's file if it exists, downloads, and on success keeps the newest
-     * [SCHEDULED_DATA_EXPORTS_KEPT]. A failed or cancelled download leaves no partial file (the
-     * repository removes it).
+     * Replaces today's file if it exists, downloads (encrypted with [passphrase] when given, to a
+     * `.age` name), and on success keeps the newest [SCHEDULED_DATA_EXPORTS_KEPT]. A failed or
+     * cancelled download leaves no partial file (the repository removes it).
      */
-    suspend fun write(treeUri: Uri, now: Instant = Instant.now()): ExportResult {
+    suspend fun write(
+        treeUri: Uri,
+        passphrase: String? = null,
+        now: Instant = Instant.now(),
+    ): ExportResult {
         val resolver = context.contentResolver
         val parent =
             DocumentsContract.buildDocumentUriUsingTree(
                 treeUri,
                 DocumentsContract.getTreeDocumentId(treeUri),
             )
-        val name = scheduledDataExportName(now)
+        val name = scheduledDataExportName(now, encrypted = passphrase != null)
         children(treeUri).filter { it.name == name }.forEach { delete(treeUri, it) }
         val target =
             DocumentsContract.createDocument(resolver, parent, "application/octet-stream", name)
                 ?: return ExportResult.Failure(ExportFailure.Failed)
-        val result = repository.download(target, ExportFormat.TarGz) {}
+        val result = repository.download(target, ExportFormat.TarGz, passphrase) {}
         if (result is ExportResult.Success) prune(treeUri)
         return result
     }

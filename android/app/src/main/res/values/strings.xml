@@ -637,9 +637,10 @@
     <string name="backup_settings_change_button">Change</string>
     <string name="backup_settings_frequency_label">Frequency</string>
     <string name="backup_settings_include_data_label">Include your data</string>
-    <string name="backup_settings_include_data_description">Also saves a download of your projects, yarns and photos (.tar.gz) in the folder.</string>
+    <string name="backup_settings_include_data_description">Also saves a download of your projects, yarns and photos in the folder, encrypted with the backup password when one is set.</string>
     <string name="scheduled_backup_data_failed_title">Scheduled backup incomplete</string>
     <string name="scheduled_backup_data_failed_text">Your settings backup was saved, but the download of your data could not be written to the backup folder.</string>
+    <string name="scheduled_backup_data_password_too_short_text">Your backup password is too short to encrypt your data. Use at least 12 characters.</string>
     <string name="backup_settings_password_label">Backup password</string>
     <string name="backup_settings_password_set">Set</string>
     <string name="backup_settings_password_not_set">Not set (unencrypted)</string>

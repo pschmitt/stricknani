@@ -52,6 +52,13 @@ Before enabling an upload, an operator must complete these external steps:
 6. Set the repository variable `PLAY_PUBLISH_ENABLED` to the exact value `true` only after the
    listing, account access, declarations, and service account have been reviewed.
 
+7. Declare the foreground service in Play Console (App content, Foreground service permissions):
+   the app uses a `dataSync` foreground service (WorkManager's `SystemForegroundService`) on
+   Android 8-13 only, for user-started data downloads and restores that can run longer than ten
+   minutes. Android 14+ uses user-initiated data transfer jobs, scheduled backups use no foreground
+   service. The manifest declares `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_DATA_SYNC`; submit
+   the declaration before the next Play release that contains them.
+
 Play App Signing enrollment and any first-time developer-account declarations remain Console
 actions and cannot be safely automated from this repository.
 

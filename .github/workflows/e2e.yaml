@@ -269,11 +269,22 @@ jobs:
   android-e2e:
     needs: changes
     if: ${{ needs.changes.outputs.android == 'true' }}
-    name: Server + Android emulator
+    # API 34 runs the chosen lane; API 33 runs the data backup test again, because Android 13 and
+    # older use a different transfer path (a WorkManager worker in a foreground service instead of a
+    # user-initiated job). The API 34 entry keeps the established check name.
+    name: ${{ matrix.api == 34 && 'Server + Android emulator' || format('Server + Android emulator (API {0})', matrix.api) }}
     runs-on: ubuntu-26.04
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 34
+            lane: chosen
+          - api: 33
+            lane: backups
     env:
-      E2E_LANE: ${{ github.event_name == 'workflow_dispatch' && inputs.lane || 'smoke' }}
+      E2E_LANE: ${{ matrix.lane == 'backups' && 'backups' || (github.event_name == 'workflow_dispatch' && inputs.lane || 'smoke') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -395,7 +406,7 @@ jobs:
         timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: ${{ matrix.api }}
           arch: x86_64
           profile: pixel_2
           target: google_apis

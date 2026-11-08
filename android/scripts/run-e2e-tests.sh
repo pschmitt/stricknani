@@ -32,6 +32,10 @@ case "${E2E_LANE:-smoke}" in
     run_test blue.anika.wolle.e2e.StricknaniSmokeTest
     run_test blue.anika.wolle.e2e.DataBackupE2eTest
     ;;
+  backups)
+    # Data export and restore only: CI runs it on an older Android as well (see e2e.yaml).
+    run_test blue.anika.wolle.e2e.DataBackupE2eTest
+    ;;
   *)
     printf 'Unsupported Android E2E lane: %s\n' "${E2E_LANE}" >&2
     exit 2

@@ -636,9 +636,10 @@
     <string name="backup_settings_change_button">Ändern</string>
     <string name="backup_settings_frequency_label">Häufigkeit</string>
     <string name="backup_settings_include_data_label">Deine Daten einschließen</string>
-    <string name="backup_settings_include_data_description">Speichert zusätzlich einen Download deiner Projekte, Garne und Fotos (.tar.gz) im Ordner.</string>
+    <string name="backup_settings_include_data_description">Speichert zusätzlich einen Download deiner Projekte, Garne und Fotos im Ordner, verschlüsselt mit dem Backup-Passwort, wenn eines gesetzt ist.</string>
     <string name="scheduled_backup_data_failed_title">Geplante Sicherung unvollständig</string>
     <string name="scheduled_backup_data_failed_text">Deine Einstellungen wurden gesichert, aber der Download deiner Daten konnte nicht in den Sicherungsordner geschrieben werden.</string>
+    <string name="scheduled_backup_data_password_too_short_text">Dein Backup-Passwort ist zu kurz, um deine Daten zu verschlüsseln. Verwende mindestens 12 Zeichen.</string>
     <string name="backup_settings_password_label">Backup-Passwort</string>
     <string name="backup_settings_password_set">Festgelegt</string>
     <string name="backup_settings_password_not_set">Nicht festgelegt (unverschlüsselt)</string>
