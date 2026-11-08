@@ -23,7 +23,6 @@
     <string name="common_field_other_materials">Weiteres Material</string>
 
     <string name="onboarding_title">Hallo, Strickfreund!</string>
-    <string name="onboarding_subtitle">Melde dich bei deinem Stricknani an, um deine Projekte und Garne auf dieses Gerät zu holen.</string>
     <string name="onboarding_server_url_label">Stricknani-Adresse</string>
     <string name="onboarding_server_url_placeholder">https://stricknani.example.com</string>
     <string name="onboarding_api_token_label">Zugangstoken</string>
@@ -36,11 +35,13 @@
     <string name="onboarding_mode_password">Anmelden</string>
     <string name="onboarding_other_ways">Andere Wege zum Verbinden</string>
     <string name="onboarding_privacy_link">Datenschutzerklärung</string>
-    <string name="onboarding_local_button">Ohne Server nutzen</string>
-    <string name="onboarding_local_hint">Deine Projekte, Garne und Fotos bleiben nur auf diesem Handy. Sichere sie unter Einstellungen → Backups.</string>
+    <string name="onboarding_where_subtitle">Verbinde dich mit deinem Stricknani, um deine Projekte und Garne auf dieses Handy zu holen, oder behalte sie nur hier.</string>
+    <string name="onboarding_continue_button">Weiter</string>
+    <string name="onboarding_sign_in_title">Anmelden</string>
+    <string name="onboarding_change_server">Adresse ändern</string>
+    <string name="onboarding_local_button">Nur auf diesem Handy</string>
+    <string name="onboarding_local_hint">Kein Server nötig. Deine Projekte, Garne und Fotos bleiben nur auf diesem Handy; sichere sie unter Einstellungen → Backups.</string>
     <string name="onboarding_local_failed">Stricknani konnte auf diesem Handy nicht starten. Versuche es noch einmal oder nutze einen Server.</string>
-    <string name="onboarding_qr_instructions">Öffne auf der Stricknani-Webseite Einstellungen → API-Tokens und scanne den Code, der dort angezeigt wird.</string>
-    <string name="onboarding_qr_scan_button">Kamera öffnen</string>
     <string name="onboarding_email_label">E-Mail</string>
     <string name="onboarding_password_label">Passwort</string>
     <string name="onboarding_hide_password">Passwort verbergen</string>

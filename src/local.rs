@@ -21,8 +21,8 @@ use sqlx::SqlitePool;
 
 use crate::db;
 
-/// The local account's address. `.invalid` never resolves, so nothing is ever sent to it.
-pub const LOCAL_EMAIL: &str = "me@local.stricknani.invalid";
+/// The local account's address. Nothing is ever sent to it: the local mode has no mail.
+pub const LOCAL_EMAIL: &str = "me@stricknani.local";
 const TOKEN_FILE: &str = "local-token";
 const TOKEN_NAME: &str = "This phone";
 
@@ -102,9 +102,9 @@ pub async fn bootstrap(pool: &SqlitePool, data_dir: &Path) -> Result<String, Loc
     Ok(token)
 }
 
+/// The local database's one account, whatever its address (an older build used another one).
 async fn local_user(pool: &SqlitePool) -> Result<Option<i64>, LocalError> {
-    sqlx::query_scalar("SELECT id FROM users WHERE email = ? AND active = 1")
-        .bind(LOCAL_EMAIL)
+    sqlx::query_scalar("SELECT id FROM users WHERE active = 1 ORDER BY id LIMIT 1")
         .fetch_optional(pool)
         .await
         .map_err(|_| LocalError::Database)
@@ -116,10 +116,9 @@ async fn token_is_valid(pool: &SqlitePool, token: &str) -> Result<bool, LocalErr
          WHERE api_tokens.token_hash = ? AND api_tokens.purpose = 'api' \
            AND api_tokens.revoked_at IS NULL \
            AND (api_tokens.expires_at IS NULL OR api_tokens.expires_at > unixepoch()) \
-           AND users.active = 1 AND users.email = ?",
+           AND users.active = 1",
     )
     .bind(crate::auth::token_hash(token.as_bytes()))
-    .bind(LOCAL_EMAIL)
     .fetch_optional(pool)
     .await
     .map_err(|_| LocalError::Database)?;

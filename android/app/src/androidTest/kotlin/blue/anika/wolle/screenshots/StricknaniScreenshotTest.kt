@@ -123,15 +123,19 @@ class StricknaniScreenshotTest {
                 hasText(string(R.string.destination_label_projects))
         }
         if (hasTag("e2e-onboarding-server-url")) {
+            composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
+            composeRule
+                .onNodeWithTag("onboarding-continue")
+                .performSemanticsAction(SemanticsActions.OnClick)
+            composeRule.waitUntil(30_000) { hasTag("onboarding-mode-manual") }
             composeRule
                 .onNodeWithTag("onboarding-mode-manual")
                 .performSemanticsAction(SemanticsActions.OnClick)
-            // The form cross-fades between modes; typing into a field that is still fading out
-            // fails with "Failed to perform text input", so wait for the token field first.
+            // The pages and forms cross-fade; typing into a field that is still fading out fails
+            // with "Failed to perform text input", so wait for the token field first.
             composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
             composeRule.waitForIdle()
             Thread.sleep(1_000)
-            composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl)
             composeRule.onNodeWithTag("e2e-onboarding-api-token").performClick()
             composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token)
             grantNotificationPermission()

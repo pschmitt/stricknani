@@ -62,10 +62,19 @@ abstract class StricknaniE2eTest {
             hasTag("e2e-onboarding-server-url") || hasText("Projects")
         }
         if (hasTag("e2e-onboarding-server-url")) {
-            // Onboarding opens in password mode, and its mode chips sit below the fold on the
-            // small CI emulator: scroll to the chip, or the click lands off-screen and is lost.
-            // Invoke the chip's click action directly: a touch click on it was observed to be
-            // swallowed on the CI emulator, leaving onboarding in password mode.
+            // Step 1 asks for the address; step 2 opens in password mode, and its mode chips sit
+            // below the fold on the small CI emulator: scroll to the chip, or the click lands
+            // off-screen and is lost. Invoke click actions directly: a touch click on a chip was
+            // observed to be swallowed on the CI emulator.
+            composeRule
+                .onNodeWithTag("e2e-onboarding-server-url")
+                .performScrollTo()
+                .performTextInput(baseUrl)
+            composeRule
+                .onNodeWithTag("onboarding-continue")
+                .performScrollTo()
+                .performSemanticsAction(SemanticsActions.OnClick)
+            composeRule.waitUntil(30_000) { hasTag("onboarding-mode-manual") }
             composeRule
                 .onNodeWithTag("onboarding-mode-manual")
                 .performScrollTo()
@@ -78,9 +87,8 @@ abstract class StricknaniE2eTest {
                     listOf(
                             "onboarding-mode-manual",
                             "onboarding-mode-password",
-                            "onboarding-mode-qr",
                             "onboarding-email",
-                            "e2e-onboarding-server-url",
+                            "onboarding-continue",
                             "e2e-onboarding-api-token",
                         )
                         .joinToString(" ") { tag ->
@@ -93,10 +101,6 @@ abstract class StricknaniE2eTest {
                         }
                 throw AssertionError("Manual onboarding fields never appeared: $tags", failure)
             }
-            composeRule
-                .onNodeWithTag("e2e-onboarding-server-url")
-                .performScrollTo()
-                .performTextInput(baseUrl)
             composeRule
                 .onNodeWithTag("e2e-onboarding-api-token")
                 .performScrollTo()

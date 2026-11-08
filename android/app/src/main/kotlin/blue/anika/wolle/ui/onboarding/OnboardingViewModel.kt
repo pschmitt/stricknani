@@ -260,6 +260,27 @@ constructor(
         connect(payload.baseUrl, payload.token, renameAfterConnect = true)
     }
 
+    /**
+     * Step 1 -> 2: true when [url] can be signed in to; else shows why (empty or not an address).
+     * Whether a Stricknani answers there is checked by the sign-in itself.
+     */
+    fun checkServerUrl(url: String): Boolean {
+        val trimmed = url.trim()
+        val problem =
+            when {
+                trimmed.isEmpty() -> R.string.onboarding_error_missing_url
+                trimmed.trimEnd('/').toHttpUrlOrNull() == null ->
+                    R.string.onboarding_error_malformed_url
+                else -> null
+            }
+        if (problem != null) {
+            _uiState.value = OnboardingUiState.Error(context.getString(problem))
+            return false
+        }
+        clearError()
+        return true
+    }
+
     /** Keep everything on this phone: start the in-app server and use it (T130). */
     fun useOnThisPhone() {
         _uiState.value = OnboardingUiState.Validating

@@ -24,7 +24,6 @@
     <string name="common_field_other_materials">Other materials</string>
 
     <string name="onboarding_title">Hello, knitter!</string>
-    <string name="onboarding_subtitle">Sign in to your Stricknani to bring your projects and yarns onto this phone.</string>
     <string name="onboarding_server_url_label">Stricknani address</string>
     <string name="onboarding_server_url_placeholder">https://stricknani.example.com</string>
     <string name="onboarding_api_token_label">Access token</string>
@@ -37,11 +36,13 @@
     <string name="onboarding_mode_password">Sign in</string>
     <string name="onboarding_other_ways">Other ways to connect</string>
     <string name="onboarding_privacy_link">Privacy policy</string>
-    <string name="onboarding_local_button">Use without a server</string>
-    <string name="onboarding_local_hint">Your projects, yarns and photos stay on this phone only. Back them up under Settings → Backups.</string>
+    <string name="onboarding_where_subtitle">Connect to your Stricknani to bring your projects and yarns onto this phone, or keep them only here.</string>
+    <string name="onboarding_continue_button">Continue</string>
+    <string name="onboarding_sign_in_title">Sign in</string>
+    <string name="onboarding_change_server">Change the address</string>
+    <string name="onboarding_local_button">Only on this phone</string>
+    <string name="onboarding_local_hint">No server needed. Your projects, yarns and photos stay on this phone only; back them up under Settings → Backups.</string>
     <string name="onboarding_local_failed">Stricknani could not start on this phone. Try again, or use a server.</string>
-    <string name="onboarding_qr_instructions">On the Stricknani website, open Settings → API Tokens and scan the code shown there.</string>
-    <string name="onboarding_qr_scan_button">Open the camera</string>
     <string name="onboarding_email_label">Email</string>
     <string name="onboarding_password_label">Password</string>
     <string name="onboarding_hide_password">Hide password</string>

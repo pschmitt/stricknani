@@ -6,12 +6,14 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -41,20 +43,34 @@ class FocusedAppSemanticsTest {
         ensureOnboarding()
 
         composeRule.onNodeWithText("Hello, knitter!").assertIsDisplayed()
-        composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
         composeRule.onNodeWithText("Stricknani address", useUnmergedTree = true).assertIsDisplayed()
+
+        // Step 1 checks the address before the sign-in page opens.
+        composeRule.onNodeWithTag("onboarding-continue").performClick()
+        waitForText("Enter the Stricknani address first")
+        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput("not-a-server-url")
+        composeRule.onNodeWithTag("onboarding-continue").performClick()
+        waitForText("That address doesn’t look right - try something like stricknani.example.com")
+
+        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextClearance()
+        composeRule
+            .onNodeWithTag("e2e-onboarding-server-url")
+            .performTextInput("https://stricknani.invalid")
+        composeRule.onNodeWithTag("onboarding-continue").performClick()
+        composeRule.waitUntil(30_000) { hasTag("onboarding-mode-manual") }
+        composeRule.onNodeWithTag("onboarding-server").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Change the address").assertHasClickAction()
+        composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
+        composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
         composeRule.onNodeWithText("Access token", useUnmergedTree = true).assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Show token").assertHasClickAction()
 
         composeRule.onNodeWithText("Connect").performClick()
         waitForText("Enter the Stricknani address and the access token")
 
-        composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput("not-a-server-url")
         composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput("focused-test-token")
         composeRule.onNodeWithContentDescription("Show token").performClick()
         composeRule.onNodeWithContentDescription("Hide token").assertIsDisplayed()
-        composeRule.onNodeWithText("Connect").performClick()
-        waitForText("That address doesn’t look right - try something like stricknani.example.com")
     }
 
     @Test
@@ -206,8 +222,11 @@ class FocusedAppSemanticsTest {
                 "configured focused journeys require e2e_base_url and e2e_token",
                 !baseUrl.isNullOrBlank() && !token.isNullOrBlank(),
             )
-            composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
             composeRule.onNodeWithTag("e2e-onboarding-server-url").performTextInput(baseUrl!!)
+            composeRule.onNodeWithTag("onboarding-continue").performClick()
+            composeRule.waitUntil(30_000) { hasTag("onboarding-mode-manual") }
+            composeRule.onNodeWithTag("onboarding-mode-manual").performClick()
+            composeRule.waitUntil(30_000) { hasTag("e2e-onboarding-api-token") }
             composeRule.onNodeWithTag("e2e-onboarding-api-token").performTextInput(token!!)
             grantNotificationPermission()
             composeRule.onNodeWithText("Connect").performClick()
@@ -237,6 +256,12 @@ class FocusedAppSemanticsTest {
     private fun hasText(text: String): Boolean =
         composeRule
             .onAllNodesWithText(text, substring = false, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+
+    private fun hasTag(tag: String): Boolean =
+        composeRule
+            .onAllNodesWithTag(tag, useUnmergedTree = true)
             .fetchSemanticsNodes()
             .isNotEmpty()
 
