@@ -5,6 +5,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    # Rust builds with the dependency crates as their own, cached derivation
+    # (nix/rust-core-package.nix).
+    crane.url = "github:ipetkov/crane";
   };
 
   outputs =
@@ -13,6 +16,7 @@
       nixpkgs,
       flake-utils,
       pre-commit-hooks,
+      crane,
     }:
     let
       eachSystem = flake-utils.lib.eachDefaultSystem (
@@ -56,9 +60,11 @@
               "";
 
           stricknaniWeb = pkgs.callPackage ./nix/web-package.nix { inherit gitRevision; };
-          stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix { };
+          stricknaniRustCore = pkgs.callPackage ./nix/rust-core-package.nix {
+            craneLib = crane.mkLib pkgs;
+          };
           stricknaniRust = pkgs.callPackage ./nix/rust-package.nix {
-            corePackage = stricknaniRustCore;
+            corePackage = stricknaniRustCore.package;
             webPackage = stricknaniWeb;
             inherit gitRevision;
           };
@@ -184,7 +190,9 @@
             build = stricknaniRust;
             rust-build = stricknaniRust;
             inherit pre-commit-check playwright-pin;
-          };
+          }
+          # fmt, Clippy and the test suite, on the cached dependency artifacts.
+          // stricknaniRustCore.checks;
         }
       );
     in

@@ -86,6 +86,12 @@ Use this file as the operational source of truth for working in Stricknani.
   it the worker instead: `nix build --max-jobs 0 --builders "$(rworker builder
   "$w")" path:.#stricknani ...` (see the `rworker` skill). The host substitutes
   everything nixbot already built and the worker only compiles what changed.
+- The Nix Rust packaging uses crane (`nix/rust-core-package.nix`): the dependency
+  crates are their own derivation (`.#stricknani.cargoArtifacts`), so a source change
+  rebuilds only the Stricknani crate (about 2 minutes). fmt, Clippy and the tests are
+  flake checks (`rust-fmt`, `rust-clippy`, `rust-test`), not part of the package. In CI
+  the E2E `server` job and Build's `nix` job push the server and its dependency build to
+  niks3 (`ci-workflows` actions `nix-niks3`, `niks3-push`); the emulator jobs substitute it.
 - On every worker, `mkdir -p ~/tmp && export TMPDIR=~/tmp` before builds:
   older worker images keep `/tmp` on a small RAM disk, and Nix fails with a
   misleading error when `TMPDIR` points at a directory that does not exist.

@@ -267,8 +267,53 @@ jobs:
             rm -rf -- "$private_dir"
           done
 
-  android-e2e:
+  # Builds the server once and pushes it (and crane's dependency build) to the niks3 cache:
+  # the emulator and replay jobs below substitute it instead of each compiling it for 20+
+  # minutes, and later runs reuse what did not change (only the Stricknani crate when only its
+  # sources changed, nothing when only Android or web code changed).
+  server:
     needs: changes
+    if: ${{ needs.changes.outputs.android == 'true' || (needs.changes.outputs.replay == 'true' && github.event_name != 'pull_request') }}
+    name: Server (Nix, cached)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
+
+      - name: Build server
+        id: build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          server="$(nix build --no-link --print-build-logs --print-out-paths '.#stricknani')"
+          deps="$(nix build --no-link --print-out-paths '.#stricknani.cargoArtifacts')"
+          {
+            echo "paths<<EOF"
+            echo "stricknani $server"
+            echo "stricknani-cargoArtifacts $deps"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Push to the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/niks3-push@main
+        with:
+          paths: ${{ steps.build.outputs.paths }}
+          pin-prefix: gh-stricknani-main
+          server-url: ${{ vars.NIKS3_SERVER_URL }}
+
+  android-e2e:
+    needs: [changes, server]
     if: ${{ needs.changes.outputs.android == 'true' }}
     # API 34 runs the chosen lane; API 33 runs the data backup test again, because Android 13 and
     # older use a different transfer path (a WorkManager worker in a foreground service instead of a
@@ -310,8 +355,13 @@ jobs:
       - name: Install web dependencies
         run: npm ci --prefix web
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      # The server job pushed .#stricknani to niks3: "Build server" below substitutes it.
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
       - name: Set up Android SDK and Gradle
         uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
@@ -477,7 +527,7 @@ jobs:
           rm -f -- "$E2E_TOKEN_FILE" "$E2E_PEER_TOKEN_FILE" "$FIXTURE_FILE" "$FIXTURE_STATE"
 
   android-replay:
-    needs: changes
+    needs: [changes, server]
     if: ${{ needs.changes.outputs.replay == 'true' && github.event_name != 'pull_request' }}
     name: Server and Android Room replay
     runs-on: ubuntu-26.04
@@ -496,8 +546,13 @@ jobs:
       - name: Install web dependencies
         run: npm ci --prefix web
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      # The server job pushed .#stricknani to niks3: "Build server" below substitutes it.
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
       - name: Set up Android SDK and Gradle
         uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main

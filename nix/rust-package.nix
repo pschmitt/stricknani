@@ -51,7 +51,12 @@ stdenvNoCC.mkDerivation {
     runHook postInstall
   '';
 
-  passthru.corePackage = corePackage;
+  passthru = {
+    inherit corePackage;
+    # crane's dependency build, so CI can push it to niks3 with the package and later builds
+    # substitute it (ci-workflows' nix-aarch64 and the E2E server job push `<package>.cargoArtifacts`).
+    cargoArtifacts = corePackage.cargoArtifacts or null;
+  };
 
   meta = {
     description = "A self-hosted web app for managing knitting projects";
