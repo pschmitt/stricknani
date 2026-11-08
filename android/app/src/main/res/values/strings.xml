@@ -590,6 +590,8 @@
     <string name="data_export_saved">Your data is saved</string>
     <string name="data_export_error_already_running">A download is already running</string>
     <string name="data_export_error_failed">Download failed</string>
+    <string name="data_transfer_results_channel_name">Download and restore results</string>
+    <string name="data_transfer_results_channel_description">A finished or failed download or restore of your data</string>
     <string name="data_export_notification_channel_name">Data download</string>
     <string name="data_export_notification_channel_description">Progress and result of downloading your data</string>
     <string name="data_export_notification_progress_title">Downloading your data</string>

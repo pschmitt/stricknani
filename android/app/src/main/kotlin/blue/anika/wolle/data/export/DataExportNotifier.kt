@@ -29,9 +29,13 @@ import javax.inject.Singleton
 @Singleton
 class DataExportNotifier @Inject constructor(@ApplicationContext private val context: Context) {
 
-    private fun ensureChannel() {
+    /**
+     * Two channels: progress is silent (low importance), results are normal so a finished or failed
+     * download or restore is shown, not only an icon (bedtime and quiet modes collapse low ones).
+     */
+    private fun ensureChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val channel =
+        val progress =
             NotificationChannel(
                     CHANNEL_ID,
                     context.getString(R.string.data_export_notification_channel_name),
@@ -41,9 +45,19 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
                     description =
                         context.getString(R.string.data_export_notification_channel_description)
                 }
+        val results =
+            NotificationChannel(
+                    RESULTS_CHANNEL_ID,
+                    context.getString(R.string.data_transfer_results_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                )
+                .apply {
+                    description =
+                        context.getString(R.string.data_transfer_results_channel_description)
+                }
         context
             .getSystemService(NotificationManager::class.java)
-            ?.createNotificationChannel(channel)
+            ?.createNotificationChannels(listOf(progress, results))
     }
 
     /** [bytes] so far; the total is unknown (the server streams without a length). */
@@ -53,7 +67,8 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
      * The progress notification as a [Notification], for a user-initiated job: the system posts it
      * itself (`JobService.setNotification`). Clickable like [progress]: it opens Backups.
      */
-    fun progressNotification(bytes: Long): Notification = progressBuilder(bytes).build()
+    fun progressNotification(bytes: Long): Notification =
+        progressBuilder(bytes).setGroup(groupFor(NOTIFICATION_ID)).build()
 
     private fun progressBuilder(bytes: Long): NotificationCompat.Builder =
         builder(R.string.data_export_notification_progress_title, openBackups())
@@ -75,7 +90,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         val text = context.getString(R.string.scheduled_backup_data_failed_text)
         post(
             SCHEDULED_NOTIFICATION_ID,
-            builder(R.string.scheduled_backup_data_failed_title, openBackups())
+            builder(R.string.scheduled_backup_data_failed_title, openBackups(), results = true)
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setAutoCancel(true),
@@ -92,6 +107,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
             builder(
                     R.string.data_export_notification_success_title,
                     openFile(target, format, encrypted),
+                    results = true,
                 )
                 .setContentText(fileName)
                 .setAutoCancel(true)
@@ -101,7 +117,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
     fun failed(reason: ExportFailure) {
         val text = context.getString(failureMessageRes(reason))
         notify(
-            builder(R.string.data_export_notification_failed_title, openBackups())
+            builder(R.string.data_export_notification_failed_title, openBackups(), results = true)
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setAutoCancel(true)
@@ -110,16 +126,21 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
 
     fun cancel() = NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
 
+    /** [results]: a finished or failed transfer (normal channel); else progress (silent). */
     internal fun builder(
         @androidx.annotation.StringRes title: Int,
         contentIntent: PendingIntent,
+        results: Boolean = false,
     ): NotificationCompat.Builder {
-        ensureChannel()
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        ensureChannels()
+        return NotificationCompat.Builder(context, channelFor(results))
             .setSmallIcon(R.drawable.ic_stat_stricknani)
             .setContentTitle(context.getString(title))
             .setContentIntent(contentIntent)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(
+                if (results) NotificationCompat.PRIORITY_DEFAULT
+                else NotificationCompat.PRIORITY_LOW
+            )
     }
 
     private fun openBackups(): PendingIntent =
@@ -157,7 +178,8 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         val enabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
         if (!canPostNotifications(Build.VERSION.SDK_INT, permissionGranted, enabled)) return
         try {
-            NotificationManagerCompat.from(context).notify(id, builder.build())
+            NotificationManagerCompat.from(context)
+                .notify(id, builder.setGroup(groupFor(id)).build())
         } catch (_: SecurityException) {
             // Permission revoked between the check and notify().
         }
@@ -174,6 +196,19 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         const val EXTRA_EXPORT_URI = "export_uri"
         const val EXTRA_EXPORT_MIME = "export_mime"
         private const val CHANNEL_ID = "data_export"
+        private const val RESULTS_CHANNEL_ID = "data_transfer_results"
+
+        /**
+         * Each notification id is its own group. Without one, Android bundles several of the app's
+         * notifications into an automatic group that takes the silent channel of an older one,
+         * which hides a finished download or restore in the collapsed row.
+         */
+        internal fun groupFor(id: Int): String = "blue.anika.wolle.notification.$id"
+
+        /** The channel of a progress ([results] false) or result notification. */
+        internal fun channelFor(results: Boolean): String =
+            if (results) RESULTS_CHANNEL_ID else CHANNEL_ID
+
         /** The id of the download's notification, also the one a job hands to the system. */
         const val NOTIFICATION_ID = 1003
         private const val SCHEDULED_NOTIFICATION_ID = 1007

@@ -589,6 +589,8 @@
     <string name="data_export_saved">Deine Daten sind gespeichert</string>
     <string name="data_export_error_already_running">Ein Download läuft bereits</string>
     <string name="data_export_error_failed">Download fehlgeschlagen</string>
+    <string name="data_transfer_results_channel_name">Ergebnisse von Download und Wiederherstellung</string>
+    <string name="data_transfer_results_channel_description">Ein abgeschlossener oder fehlgeschlagener Download oder eine Wiederherstellung deiner Daten</string>
     <string name="data_export_notification_channel_name">Datendownload</string>
     <string name="data_export_notification_channel_description">Fortschritt und Ergebnis beim Herunterladen deiner Daten</string>
     <string name="data_export_notification_progress_title">Deine Daten werden heruntergeladen</string>

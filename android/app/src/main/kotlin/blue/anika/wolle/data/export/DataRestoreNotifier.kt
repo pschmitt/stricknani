@@ -32,7 +32,8 @@ constructor(
     fun progress(percent: Int?) = channel.post(NOTIFICATION_ID, progressBuilder(percent))
 
     /** The progress notification for a user-initiated job (`JobService.setNotification`). */
-    fun progressNotification(percent: Int?): Notification = progressBuilder(percent).build()
+    fun progressNotification(percent: Int?): Notification =
+        progressBuilder(percent).setGroup(DataExportNotifier.groupFor(NOTIFICATION_ID)).build()
 
     private fun progressBuilder(percent: Int?): NotificationCompat.Builder {
         val builder =
@@ -53,7 +54,11 @@ constructor(
         val text = restoreSummaryText(context, summary)
         channel.post(
             NOTIFICATION_ID,
-            builder(R.string.data_restore_notification_success_title, openProjects())
+            builder(
+                    R.string.data_restore_notification_success_title,
+                    openProjects(),
+                    results = true,
+                )
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setAutoCancel(true),
@@ -64,7 +69,7 @@ constructor(
         val text = context.getString(restoreFailureMessageRes(reason))
         channel.post(
             NOTIFICATION_ID,
-            builder(R.string.data_restore_notification_failed_title, openBackups())
+            builder(R.string.data_restore_notification_failed_title, openBackups(), results = true)
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setAutoCancel(true),
@@ -73,8 +78,11 @@ constructor(
 
     fun cancel() = NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
 
-    private fun builder(@StringRes title: Int, contentIntent: PendingIntent) =
-        channel.builder(title, contentIntent)
+    private fun builder(
+        @StringRes title: Int,
+        contentIntent: PendingIntent,
+        results: Boolean = false,
+    ) = channel.builder(title, contentIntent, results)
 
     private fun openBackups(): PendingIntent =
         PendingIntent.getActivity(

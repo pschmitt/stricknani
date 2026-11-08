@@ -1016,9 +1016,11 @@ fun BackupPasswordDialog(
 
 private const val CONNECTIVITY_POLL_MILLIS = 2_000L
 
-/** What the picker offers: the archives a download produces, and providers that say nothing. */
-private val RESTORE_MIME_TYPES =
-    arrayOf("application/gzip", "application/x-gzip", "application/zip", "application/octet-stream")
+/**
+ * Any file: providers name the types differently (Downloads greys out an encrypted `.age` export
+ * under a narrower filter), and the server checks the content of whatever is picked.
+ */
+private val RESTORE_MIME_TYPES = arrayOf("*/*")
 
 /** The name the user gave the file in the picker, or null when the provider does not say. */
 private fun displayNameOf(context: android.content.Context, uri: Uri): String? =

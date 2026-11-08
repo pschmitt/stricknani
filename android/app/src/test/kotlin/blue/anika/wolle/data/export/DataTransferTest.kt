@@ -93,4 +93,21 @@ class DataTransferTest {
         assertEquals(101L + ESTIMATE_STEP_BYTES, grownEstimate(101, 100))
         assertEquals(10L + ESTIMATE_STEP_BYTES, grownEstimate(10, 0))
     }
+
+    @Test
+    fun `results use their own normal channel, progress stays on the silent one`() {
+        val progress = DataExportNotifier.channelFor(results = false)
+        val results = DataExportNotifier.channelFor(results = true)
+        assertEquals("data_export", progress)
+        assertEquals("data_transfer_results", results)
+        assertTrue(progress != results)
+    }
+
+    @Test
+    fun `every notification id has its own group, so Android does not bundle them`() {
+        val download = DataExportNotifier.groupFor(DataExportNotifier.NOTIFICATION_ID)
+        val restore = DataExportNotifier.groupFor(DataRestoreNotifier.NOTIFICATION_ID)
+        assertTrue(download != restore)
+        assertEquals(download, DataExportNotifier.groupFor(DataExportNotifier.NOTIFICATION_ID))
+    }
 }
