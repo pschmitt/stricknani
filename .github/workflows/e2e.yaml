@@ -382,6 +382,11 @@ jobs:
         with:
           targets: x86_64-linux-android
 
+      - uses: Swatinem/rust-cache@v2
+        if: ${{ matrix.lane == 'backups' }}
+        with:
+          key: android-local-server-x86_64
+
       - name: Install cargo-ndk
         if: ${{ matrix.lane == 'backups' }}
         # Built from crates.io: the prebuilt download via install-action failed once (2026-11-08).

@@ -114,7 +114,11 @@ abstract class StricknaniE2eTest {
         waitForText("Projects", timeoutMillis = 120_000)
     }
 
-    private fun grantNotificationPermission() {
+    /**
+     * Before the app asks: the system dialog would pause the activity, and the compose rule only
+     * sees resumed activities.
+     */
+    protected fun grantNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             InstrumentationRegistry.getInstrumentation()
                 .uiAutomation

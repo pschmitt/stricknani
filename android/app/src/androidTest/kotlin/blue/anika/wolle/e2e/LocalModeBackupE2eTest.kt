@@ -65,6 +65,8 @@ class LocalModeBackupE2eTest : StricknaniE2eTest() {
         composeRule.waitUntil(120_000) {
             composeRule.onAllNodesWithTag("onboarding-local").fetchSemanticsNodes().isNotEmpty()
         }
+        // Leaving onboarding asks for the notification permission (Android 13+): grant it first.
+        grantNotificationPermission()
         composeRule
             .onNodeWithTag("onboarding-local")
             .performScrollTo()
@@ -74,13 +76,17 @@ class LocalModeBackupE2eTest : StricknaniE2eTest() {
         } catch (failure: AssertionError) {
             // Only the local-mode tag and crashes: no request logs (they could carry the token).
             // One line: CI's failure summary keeps only the first line of a message.
-            val screen =
-                composeRule
-                    .onAllNodes(hasText("", substring = true), useUnmergedTree = true)
-                    .fetchSemanticsNodes()
-                    .flatMap { it.config.getOrNull(SemanticsProperties.Text).orEmpty() }
-                    .joinToString(" | ") { it.text }
             val log = localModeLog().lines().filter { it.isNotBlank() }.joinToString(" ⏎ ")
+            // Fails when no activity of the app is resumed (a crash, a system dialog on top).
+            val screen =
+                runCatching {
+                        composeRule
+                            .onAllNodes(hasText("", substring = true), useUnmergedTree = true)
+                            .fetchSemanticsNodes()
+                            .flatMap { it.config.getOrNull(SemanticsProperties.Text).orEmpty() }
+                            .joinToString(" | ") { it.text }
+                    }
+                    .getOrElse { "no resumed activity: ${it.javaClass.simpleName}" }
             throw AssertionError("Local mode did not open. Screen: [$screen] Log: [$log]", failure)
         }
 
@@ -164,7 +170,8 @@ class LocalModeBackupE2eTest : StricknaniE2eTest() {
     }
 
     private fun localModeLog(): String {
-        val command = "logcat -d -t 200 -s ${OnboardingViewModel.LOCAL_LOG_TAG}:V AndroidRuntime:E"
+        val command =
+            "logcat -d -t 300 -s ${OnboardingViewModel.LOCAL_LOG_TAG}:V AndroidRuntime:E DEBUG:F libc:F"
         val output =
             InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
         return ParcelFileDescriptor.AutoCloseInputStream(output).bufferedReader().use {
