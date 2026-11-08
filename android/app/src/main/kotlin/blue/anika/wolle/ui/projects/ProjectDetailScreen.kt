@@ -563,7 +563,7 @@ private fun ProjectDetailContent(
     val availableCardKeys = buildList {
         // Always: like the web it shows at least when the project was updated.
         add(ProjectDetailCard.DETAILS)
-        if (linkedYarns.isNotEmpty() || detail.otherMaterials != null) {
+        if (linkedYarns.isNotEmpty() || detail.yarn != null || detail.otherMaterials != null) {
             add(ProjectDetailCard.MATERIALS)
         }
         if (detail.description != null || detail.notes != null) add(ProjectDetailCard.DESCRIPTION)
@@ -664,8 +664,6 @@ private fun ProjectDetailContent(
                             onEdit = edit?.let { e -> { e(ProjectEditorFocus.DETAILS) } },
                             copyText =
                                 (copyLines(
-                                        stringResource(R.string.project_detail_field_yarn) to
-                                            detail.yarn,
                                         stringResource(R.string.common_field_needles) to
                                             detail.needles,
                                         stringResource(R.string.project_detail_field_gauge) to
@@ -682,9 +680,7 @@ private fun ProjectDetailContent(
                             reorderState = reorderState,
                             onMove = moveCard,
                         ) {
-                            detail.yarn?.let {
-                                DetailRow(stringResource(R.string.project_detail_field_yarn), it)
-                            }
+                            // The yarn is listed under Materials only.
                             detail.needles?.let {
                                 DetailRow(stringResource(R.string.common_field_needles), it)
                             }
@@ -728,7 +724,10 @@ private fun ProjectDetailContent(
                             icon = MdiIcons.YarnBall,
                             onEdit = edit?.let { e -> { e(ProjectEditorFocus.LINKED_YARNS) } },
                             copyText =
-                                (linkedYarns.map { it.name } + listOfNotNull(detail.otherMaterials))
+                                (linkedYarns
+                                        .map { it.name }
+                                        .ifEmpty { listOfNotNull(detail.yarn) } +
+                                        listOfNotNull(detail.otherMaterials))
                                     .joinToString("\n"),
                             cardKey = cardKey,
                             cardIndex = cardIndex,
@@ -777,8 +776,18 @@ private fun ProjectDetailContent(
                                         )
                                     }
                                 }
+                                // An older project's yarn text, when no yarn is linked (as on
+                                // the web).
+                                if (linkedYarns.isEmpty()) {
+                                    detail.yarn?.let {
+                                        DetailRow(
+                                            stringResource(R.string.project_detail_field_yarn),
+                                            it,
+                                        )
+                                    }
+                                }
                                 detail.otherMaterials?.let {
-                                    if (linkedYarns.isNotEmpty()) {
+                                    if (linkedYarns.isNotEmpty() || detail.yarn != null) {
                                         HorizontalDivider(Modifier.padding(vertical = 8.dp))
                                     }
                                     DetailRow(

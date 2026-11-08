@@ -39,7 +39,7 @@
   import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
-  import { extraCount, plainTextSummary } from "./facts-summary.ts";
+  import { plainTextSummary } from "./facts-summary.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
   import {
@@ -96,7 +96,6 @@
   // Sanitized server HTML wins; null falls back to the plain-text rendering.
   const gaugeHtml = $derived(project?.stitch_sample_html ?? null);
   const yarnText = $derived(plainTextSummary(project?.yarn));
-  const moreYarns = $derived(extraCount(yarns.length));
   let materialsDetailsElement = $state<HTMLDetailsElement | null>(null);
   let printPreparing = $state(false);
   let printError = $state("");
@@ -1068,25 +1067,7 @@
           >{t("Project details", locale)}</SectionHeading
         >
         <dl class="reader-keyfacts">
-          <div>
-            <dt>{t("Yarn", locale)}</dt>
-            <dd>
-              {#if yarns.length}
-                {yarns[0].name}{#if moreYarns > 0}
-                  <span
-                    class="more-pill"
-                    title={`${moreYarns} ${t("more yarns", locale)}`}
-                  >
-                    <span aria-hidden="true">+{moreYarns}</span>
-                    <span class="visually-hidden"
-                      >{moreYarns} {t("more yarns", locale)}</span
-                    ></span
-                  >{/if}
-              {:else}
-                {yarnText || t("Not recorded", locale)}
-              {/if}
-            </dd>
-          </div>
+          <!-- The yarns are listed under Materials only. -->
           {#if needlesText}
             <div>
               <dt>{t("Needles", locale)}</dt>
@@ -1681,29 +1662,6 @@
 
   :global(.materials-card) .materials-body {
     padding: 0.25rem clamp(1rem, 3vw, 1.4rem) clamp(1rem, 3vw, 1.4rem);
-  }
-
-  .more-pill {
-    display: inline-block;
-    margin-left: 0.25rem;
-    border-radius: 999px;
-    padding: 0.05rem 0.5rem;
-    background: color-mix(in srgb, var(--accent-strong) 12%, transparent);
-    color: var(--accent-strong);
-    font-size: 0.78rem;
-    font-weight: 650;
-    white-space: nowrap;
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   .section-heading-row > span {
