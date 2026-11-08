@@ -46,6 +46,8 @@ val instrumentationBuildType =
     providers.gradleProperty("instrumentationBuildType").orElse("debug").get()
 // Debug builds carry the extras (purple branding, debug version label, developer mode on by
 // default). `-PdebugExtras=false` turns them off on a debug build, for Play screenshots.
+val localServerLibs: String? =
+    providers.gradleProperty("localServerLibs").orNull?.takeIf { it.isNotBlank() }
 val debugExtras = providers.gradleProperty("debugExtras").map { it.toBoolean() }.orElse(true).get()
 // Where the build came from, shown on About: `latest` (rolling prerelease built from main),
 // `stable` (a semantic-version tag), `local` (no CI: `just build`, Android Studio) or `play` (a
@@ -316,5 +318,15 @@ if (errorReportingEnabled) {
         ignoredBuildTypes.set(setOf("debug"))
         tracingInstrumentation { enabled.set(false) }
         autoInstallation { enabled.set(false) }
+    }
+}
+
+// T130 local-only mode: the Rust server as a JNI library, built outside Gradle with `cargo ndk`
+// (see docs/local-only.md) into a jniLibs-style directory (<abi>/lib*.so) passed as
+// -PlocalServerLibs=<dir>. Without it the app builds as before and offers no local mode. AGP 9 only
+// merges directories added through the variant API, not `sourceSets.jniLibs`.
+localServerLibs?.let { dir ->
+    androidComponents.onVariants { variant ->
+        variant.sources.jniLibs?.addStaticSourceDirectory(dir)
     }
 }

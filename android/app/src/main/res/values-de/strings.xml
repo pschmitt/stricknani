@@ -36,6 +36,9 @@
     <string name="onboarding_mode_password">Anmelden</string>
     <string name="onboarding_other_ways">Andere Wege zum Verbinden</string>
     <string name="onboarding_privacy_link">Datenschutzerklärung</string>
+    <string name="onboarding_local_button">Ohne Server nutzen</string>
+    <string name="onboarding_local_hint">Deine Projekte, Garne und Fotos bleiben nur auf diesem Handy. Sichere sie unter Einstellungen → Backups.</string>
+    <string name="onboarding_local_failed">Stricknani konnte auf diesem Handy nicht starten. Versuche es noch einmal oder nutze einen Server.</string>
     <string name="onboarding_qr_instructions">Öffne auf der Stricknani-Webseite Einstellungen → API-Tokens und scanne den Code, der dort angezeigt wird.</string>
     <string name="onboarding_qr_scan_button">Kamera öffnen</string>
     <string name="onboarding_email_label">E-Mail</string>

@@ -19,6 +19,7 @@ import blue.anika.wolle.data.onboarding.RegistrationClient
 import blue.anika.wolle.data.onboarding.RegistrationError
 import blue.anika.wolle.data.onboarding.RegistrationException
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.localserver.LocalServer
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.message
@@ -58,8 +59,12 @@ constructor(
     private val oidc: OidcCoordinator,
     private val deviceNames: DeviceNameProvider,
     private val tokenRenamer: DeviceTokenRenamer,
+    private val localServer: LocalServer,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    /** This build can run without a server (it carries the server library). */
+    val localModeAvailable: Boolean = localServer.isAvailable
 
     private val _uiState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -253,6 +258,24 @@ constructor(
             return
         }
         connect(payload.baseUrl, payload.token, renameAfterConnect = true)
+    }
+
+    /** Keep everything on this phone: start the in-app server and use it (T130). */
+    fun useOnThisPhone() {
+        _uiState.value = OnboardingUiState.Validating
+        viewModelScope.launch {
+            val started =
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching { localServer.enable() }
+                }
+            _uiState.value =
+                if (started.isSuccess) {
+                    syncScheduler.syncNow()
+                    OnboardingUiState.Success
+                } else {
+                    OnboardingUiState.Error(context.getString(R.string.onboarding_local_failed))
+                }
+        }
     }
 
     private fun persistAndSucceed(serverUrl: String, apiToken: String) {

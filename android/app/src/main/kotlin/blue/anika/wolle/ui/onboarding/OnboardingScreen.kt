@@ -364,6 +364,26 @@ fun OnboardingScreen(
                     )
                 }
         }
+        // T130: no server at all; everything stays on this phone.
+        if (viewModel.localModeAvailable) {
+            OutlinedButton(
+                onClick = viewModel::useOnThisPhone,
+                enabled = !isValidating,
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp).testTag("onboarding-local"),
+            ) {
+                Icon(PhosphorIcons.CloudSlash, contentDescription = null, Modifier.size(18.dp))
+                Text(
+                    stringResource(R.string.onboarding_local_button),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            Text(
+                text = stringResource(R.string.onboarding_local_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
         TextButton(
             onClick = { uriHandler.openUri(DEFAULT_PRIVACY_POLICY_URL) },
             modifier = Modifier.padding(top = 8.dp),

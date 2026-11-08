@@ -187,6 +187,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .edit()
             .putString(KEY_SERVER_URL, normalizedUrl)
             .putString(KEY_API_TOKEN, trimmedToken)
+            .remove(KEY_LOCAL_MODE)
             .remove(KEY_ACCOUNT_EMAIL)
             .remove(KEY_ACCOUNT_AVATAR)
             .putAuthInfo(expiresAt, authOrigin)
@@ -197,6 +198,25 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         _sessionExpired.value = false
         _credentials.value = StricknaniCredentials(normalizedUrl, trimmedToken)
         _isConfigured.value = _credentials.value.isValid
+    }
+
+    /** The app uses the server inside the app (T130, `LocalServer`) instead of a remote one. */
+    val isLocalMode: Boolean
+        get() = prefs.getBoolean(KEY_LOCAL_MODE, false)
+
+    /** Store the local server's address and token; keeps the account fields of local mode. */
+    fun saveLocal(serverUrl: String, apiToken: String) {
+        prefs
+            .edit()
+            .putBoolean(KEY_LOCAL_MODE, true)
+            .putString(KEY_SERVER_URL, serverUrl)
+            .putString(KEY_API_TOKEN, apiToken)
+            .putAuthInfo(null, null)
+            .apply()
+        _authInfo.value = AuthInfo(null, null)
+        _sessionExpired.value = false
+        _credentials.value = StricknaniCredentials(serverUrl, apiToken)
+        _isConfigured.value = true
     }
 
     /**
@@ -213,6 +233,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .edit()
             .remove(KEY_SERVER_URL)
             .remove(KEY_API_TOKEN)
+            .remove(KEY_LOCAL_MODE)
             .remove(KEY_ACCOUNT_EMAIL)
             .remove(KEY_ACCOUNT_AVATAR)
             .remove(KEY_TOKEN_EXPIRES_AT)
@@ -247,6 +268,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         const val KEY_AUTH_ORIGIN = "auth_origin"
         const val KEY_PENDING_TOKEN_RENAME = "pending_token_rename"
         const val KEY_SERVER_URL = "server_url"
+        const val KEY_LOCAL_MODE = "local_mode"
         const val KEY_API_TOKEN = "api_token"
         const val KEY_ACCOUNT_EMAIL = "account_email"
         const val KEY_ACCOUNT_AVATAR = "account_avatar_url"

@@ -25,3 +25,8 @@
 -keepclassmembers class <1> {
     static <1>$Companion Companion;
 }
+
+# T130: the JNI symbols of the in-app server (src/local_jni.rs) name this class and its methods.
+-keep class blue.anika.wolle.localserver.LocalServerNative {
+    native <methods>;
+}

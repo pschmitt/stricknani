@@ -49,6 +49,10 @@ http = "1"
 p256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
 web-push-native = { version = "0.5", default-features = false }
 
+[target.'cfg(target_os = "android")'.dependencies]
+# The local-only mode's JNI entry points (src/local_jni.rs).
+jni = "0.21"
+
 [dev-dependencies]
 sentry = { version = "0.49", default-features = false, features = ["test"] }
 http-body-util = "0.1"

@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.api
 
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.localserver.LocalServer
 import javax.inject.Inject
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
@@ -14,10 +15,15 @@ import okhttp3.Response
  */
 class DynamicBaseUrlInterceptor
 @Inject
-constructor(private val settingsRepository: SettingsRepository) : Interceptor {
+constructor(
+    private val settingsRepository: SettingsRepository,
+    private val localServer: LocalServer,
+) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
+        // Local-only mode: bring the in-app server up (and its current port into the settings).
+        runCatching { localServer.ensureStarted() }
         val configured =
             settingsRepository.credentials.value.serverUrl.toHttpUrlOrNull()
                 ?: return chain.proceed(request)

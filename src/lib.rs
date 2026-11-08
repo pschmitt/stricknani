@@ -18,6 +18,9 @@ mod export;
 pub mod frontend;
 pub mod gravatar;
 mod i18n;
+pub mod local;
+#[cfg(target_os = "android")]
+mod local_jni;
 pub mod image_import;
 pub mod import_document;
 pub mod import_service;
@@ -119,6 +122,11 @@ pub fn app_with_services(
         ocr,
         configured_web_root(),
     )
+}
+
+/// The local-only router (`local`): no imports, AI, OCR or web UI.
+pub(crate) fn app_with_local_services(state: db::AppState, worker_path: PathBuf) -> Router {
+    app_with_services_and_web_root(state, worker_path, false, None, None, None)
 }
 
 fn app_with_services_and_web_root(
