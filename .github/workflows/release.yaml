@@ -108,9 +108,8 @@ jobs:
           key: android-local-server
 
       - name: Install cargo-ndk
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-ndk
+        # Built from crates.io: the prebuilt download via install-action failed once (2026-11-08).
+        run: cargo install cargo-ndk --locked
 
       - name: Build and strip the libraries
         shell: bash

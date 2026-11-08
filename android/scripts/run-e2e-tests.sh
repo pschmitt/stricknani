@@ -42,7 +42,8 @@ case "${E2E_LANE:-smoke}" in
   fgs-demo)
     # The screen recording for Google Play's foreground-service declaration
     # (PlayFgsDemoRecording). The video is kept as a workflow artifact, never committed.
-    recording=/sdcard/fgs-demo.mp4
+    # /data/local/tmp: newer emulator images do not let the shell user write to /sdcard.
+    recording=/data/local/tmp/fgs-demo.mp4
     adb shell rm -f "$recording"
     adb shell screenrecord --time-limit 170 "$recording" &
     recorder=$!

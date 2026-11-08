@@ -334,9 +334,8 @@ jobs:
 
       - name: Install cargo-ndk
         if: ${{ matrix.lane == 'backups' }}
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-ndk
+        # Built from crates.io: the prebuilt download via install-action failed once (2026-11-08).
+        run: cargo install cargo-ndk --locked
 
       - name: Build the in-app server library (x86_64)
         if: ${{ matrix.lane == 'backups' }}

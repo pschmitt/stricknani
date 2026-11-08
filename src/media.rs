@@ -3853,7 +3853,7 @@ async fn write_staged(
             return Err(error);
         }
         drop(file);
-        match tokio::fs::hard_link(&stage_path, destination).await {
+        match place_without_overwrite(&stage_path, destination).await {
             Ok(()) => {
                 remove_path_unchecked(&stage_path).await;
                 return Ok(());
@@ -3871,6 +3871,40 @@ async fn write_staged(
         ErrorKind::AlreadyExists,
         "media filename collision",
     ))
+}
+
+/// Puts the staged file at [destination] unless something is already there (`AlreadyExists`).
+/// A hard link is the portable way. Android does not let apps create hard links in their own
+/// storage (SELinux), which the in-app server of the local-only mode runs in
+/// (`docs/local-only.md`): there a rename with `RENAME_NOREPLACE` does the same.
+async fn place_without_overwrite(stage: &Path, destination: &Path) -> Result<(), std::io::Error> {
+    let link_error = match tokio::fs::hard_link(stage, destination).await {
+        Ok(()) => return Ok(()),
+        Err(error) if error.kind() == ErrorKind::AlreadyExists => return Err(error),
+        Err(error) => error,
+    };
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    {
+        let (stage, destination) = (stage.to_owned(), destination.to_owned());
+        let renamed = tokio::task::spawn_blocking(move || {
+            rustix::fs::renameat_with(
+                rustix::fs::CWD,
+                &stage,
+                rustix::fs::CWD,
+                &destination,
+                rustix::fs::RenameFlags::NOREPLACE,
+            )
+        })
+        .await
+        .map_err(std::io::Error::other)?;
+        match renamed {
+            Ok(()) => Ok(()),
+            Err(rustix::io::Errno::EXIST) => Err(ErrorKind::AlreadyExists.into()),
+            Err(_) => Err(link_error),
+        }
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "android")))]
+    Err(link_error)
 }
 
 /// A clockwise rotation and an optional crop of a stored project image or yarn photo. The crop is

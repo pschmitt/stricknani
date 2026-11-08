@@ -1,7 +1,10 @@
 package blue.anika.wolle.e2e
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -10,6 +13,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
@@ -22,11 +26,16 @@ import blue.anika.wolle.data.export.DataRestoreWorker
 import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.localserver.LocalServerNative
 import blue.anika.wolle.sync.RustReplayTestEntryPoint
+import blue.anika.wolle.ui.onboarding.OnboardingViewModel
 import dagger.hilt.android.EntryPointAccessors
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -57,14 +66,24 @@ class LocalModeBackupE2eTest : StricknaniE2eTest() {
             .onNodeWithTag("onboarding-local")
             .performScrollTo()
             .performSemanticsAction(SemanticsActions.OnClick)
-        waitForText("Projects", timeoutMillis = 120_000)
+        try {
+            waitForText("Projects", timeoutMillis = 120_000)
+        } catch (failure: AssertionError) {
+            // Only the local-mode tag and crashes: no request logs (they could carry the token).
+            throw AssertionError("Local mode did not open. Log:\n${localModeLog()}", failure)
+        }
 
         val name = "Local backup ${UUID.randomUUID().toString().take(8)}"
         val api = graph.projectsApi()
         val workDir = File(context.cacheDir, "local-backup-e2e").apply { deleteRecursively() }
         workDir.mkdirs()
         try {
-            runBlocking { api.createProject(ProjectWriteRequest(name = name)) }
+            // A photo too: the server stores media through a hard link elsewhere, which Android
+            // forbids in app storage (the in-app server falls back to a no-overwrite rename).
+            runBlocking {
+                val project = api.createProject(ProjectWriteRequest(name = name))
+                api.uploadTitleImage(project.id, pngPart())
+            }
             assertEquals(1, runBlocking { named(api, name) })
 
             val archive = File(workDir, "local.tar.gz")
@@ -100,10 +119,45 @@ class LocalModeBackupE2eTest : StricknaniE2eTest() {
                         .build()
                 )
             assertEquals("restore failed", WorkInfo.State.SUCCEEDED, restore.state)
-            // A restore adds copies: the project is there twice now.
+            // A restore adds copies: the project is there twice now, both with their photo.
             assertEquals(2, runBlocking { named(api, name) })
+            runBlocking {
+                val copies = api.listProjects(page = 1).items.filter { it.name == name }
+                copies.forEach { copy ->
+                    assertTrue(
+                        "project ${copy.id} lost its photo",
+                        api.getProject(copy.id).images.any { it.isTitleImage },
+                    )
+                }
+            }
         } finally {
             workDir.deleteRecursively()
+        }
+    }
+
+    /** A small, valid PNG (a gradient), so the server's image pipeline really decodes it. */
+    private fun pngPart(): MultipartBody.Part {
+        val bitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
+        for (x in 0 until 64) for (y in 0 until 64) bitmap.setPixel(
+            x,
+            y,
+            Color.rgb(x * 4, y * 4, 128),
+        )
+        val bytes =
+            ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        return MultipartBody.Part.createFormData(
+            "file",
+            "cover.png",
+            bytes.toByteArray().toRequestBody("image/png".toMediaType()),
+        )
+    }
+
+    private fun localModeLog(): String {
+        val command = "logcat -d -t 200 -s ${OnboardingViewModel.LOCAL_LOG_TAG}:V AndroidRuntime:E"
+        val output =
+            InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        return ParcelFileDescriptor.AutoCloseInputStream(output).bufferedReader().use {
+            it.readText().takeLast(4_000)
         }
     }
 
