@@ -39,6 +39,8 @@ android/*/build/
 android/*/*/build/
 android/captures/
 android/.cxx/
+# T130: the in-app server libraries, built by CI or `cargo ndk` (docs/local-only.md).
+android/local-server-libs/
 *.jks
 *.keystore
 /target/

@@ -27,30 +27,40 @@ data class CreateOption(
         get() = disabledReasonRes == null
 }
 
-/** The tiles for what the server lets this session import. */
-fun createOptions(availability: ImportAvailability): List<CreateOption> =
+/**
+ * The tiles for what the server lets this session import. [importsOffered] false (local-only mode)
+ * drops the import tiles instead of greying them out.
+ */
+fun createOptions(
+    availability: ImportAvailability,
+    importsOffered: Boolean = true,
+): List<CreateOption> =
     listOf(
-        CreateOption(
-            CreateKind.NewProject,
-            R.string.project_new_label,
-            R.string.more_create_project_subtitle,
-        ),
-        CreateOption(
-            CreateKind.NewYarn,
-            R.string.yarns_list_new_yarn_fab,
-            R.string.more_create_yarn_subtitle,
-        ),
-        CreateOption(
-            CreateKind.ImportProject,
-            R.string.create_import_project_title,
-            R.string.create_import_project_description,
-            noteRes = R.string.import_unavailable_ai.takeUnless { availability.ai },
-        ),
-        CreateOption(
-            CreateKind.ImportYarn,
-            R.string.create_import_yarn_title,
-            R.string.create_import_yarn_description,
-            disabledReasonRes = R.string.import_unavailable_url.takeUnless { availability.url },
-            noteRes = R.string.import_unavailable_ai.takeUnless { availability.ai },
-        ),
-    )
+            CreateOption(
+                CreateKind.NewProject,
+                R.string.project_new_label,
+                R.string.more_create_project_subtitle,
+            ),
+            CreateOption(
+                CreateKind.NewYarn,
+                R.string.yarns_list_new_yarn_fab,
+                R.string.more_create_yarn_subtitle,
+            ),
+            CreateOption(
+                CreateKind.ImportProject,
+                R.string.create_import_project_title,
+                R.string.create_import_project_description,
+                noteRes = R.string.import_unavailable_ai.takeUnless { availability.ai },
+            ),
+            CreateOption(
+                CreateKind.ImportYarn,
+                R.string.create_import_yarn_title,
+                R.string.create_import_yarn_description,
+                disabledReasonRes = R.string.import_unavailable_url.takeUnless { availability.url },
+                noteRes = R.string.import_unavailable_ai.takeUnless { availability.ai },
+            ),
+        )
+        .filter {
+            importsOffered ||
+                it.kind != CreateKind.ImportProject && it.kind != CreateKind.ImportYarn
+        }

@@ -84,6 +84,10 @@ constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
+    /** Local-only mode (T130): the server runs inside the app and there is one local account. */
+    val isLocalMode: Boolean
+        get() = settingsRepository.isLocalMode
+
     val serverUrl: StateFlow<String> =
         settingsRepository.credentials
             .map { it.serverUrl }

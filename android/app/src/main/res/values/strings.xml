@@ -62,6 +62,12 @@
     <!-- Home -->
     <string name="home_welcome_title">Your knitting nook is ready</string>
     <string name="home_welcome_subtitle">Pull down to fetch your projects and yarn.</string>
+    <string name="home_welcome_subtitle_local">Start a project or a yarn below.</string>
+    <string name="local_only_title">Only on this phone</string>
+    <string name="local_only_text">Your projects, yarns and photos are stored only on this phone. Back them up under Backups.</string>
+    <string name="local_only_use_server">Use a server instead</string>
+    <string name="local_only_use_server_confirm">Your data stays on this phone; to bring it to a server, download it under Backups and restore it there.</string>
+    <string name="share_local_unavailable">Link imports are not available while the app only runs on this phone.</string>
     <string name="home_favorite_projects_title">Favorite projects</string>
     <string name="home_favorite_yarns_title">Favorite yarns</string>
     <string name="home_recent_projects_title">More recent projects</string>
@@ -356,6 +362,7 @@
     <string name="more_title">More</string>
     <string name="more_create_title">Create</string>
     <string name="more_create_subtitle">Start a project or a yarn, or import one.</string>
+    <string name="more_create_subtitle_local">Start a project or a yarn.</string>
     <string name="more_categories_subtitle">Organize projects with your own category labels.</string>
     <string name="more_about_subtitle">Version, links and credits.</string>
     <string name="more_account_title">Account settings</string>

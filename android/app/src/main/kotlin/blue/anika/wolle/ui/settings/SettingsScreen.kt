@@ -72,7 +72,12 @@ fun SettingsScreen(
                                 MoreActionRow(
                                     icon = PhosphorIcons.Sparkle,
                                     title = stringResource(R.string.more_create_title),
-                                    subtitle = stringResource(R.string.more_create_subtitle),
+                                    subtitle =
+                                        stringResource(
+                                            if (accountAvatar.isLocalMode)
+                                                R.string.more_create_subtitle_local
+                                            else R.string.more_create_subtitle
+                                        ),
                                     tag = "more-create",
                                     onClick = onCreateClick,
                                 )
@@ -100,7 +105,9 @@ fun SettingsScreen(
             }
             item {
                 SettingsSingleItemCard {
-                    MoreAccountRow(profile) { onCategoryClick(SettingsCategory.Account) }
+                    MoreAccountRow(profile, accountAvatar.isLocalMode) {
+                        onCategoryClick(SettingsCategory.Account)
+                    }
                     layout.settings.forEach { category ->
                         SettingsCategoryRow(category, profile, onCategoryClick)
                     }
@@ -166,9 +173,11 @@ private fun NotificationsRow() {
 }
 
 @Composable
-private fun MoreAccountRow(profile: AccountProfile, onClick: () -> Unit) {
+private fun MoreAccountRow(profile: AccountProfile, localMode: Boolean, onClick: () -> Unit) {
     val title = stringResource(R.string.more_account_title)
-    val subtitle = profile.email ?: stringResource(R.string.settings_category_account_subtitle)
+    val subtitle =
+        if (localMode) stringResource(R.string.local_only_title)
+        else profile.email ?: stringResource(R.string.settings_category_account_subtitle)
     SettingsListItem(
         modifier =
             Modifier.testTag("more-account")

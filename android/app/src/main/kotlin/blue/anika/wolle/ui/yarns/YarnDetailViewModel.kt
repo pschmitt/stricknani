@@ -18,6 +18,7 @@ import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrderRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.ErrorKind
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -81,9 +82,13 @@ constructor(
     private val appPreferences: AppPreferencesRepository,
     historyRepository: HistoryRepository,
     sharingRepository: SharingRepository,
+    settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     val yarnId = savedStateHandle.toRoute<Route.YarnDetail>().yarnId
+
+    /** Local-only mode: nobody to share with, and the link would point at this phone. */
+    val sharingOffered: Boolean = !settingsRepository.isLocalMode
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()

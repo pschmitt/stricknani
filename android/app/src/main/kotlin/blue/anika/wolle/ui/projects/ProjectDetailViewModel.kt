@@ -171,6 +171,9 @@ constructor(
      * Share sheet, Transfer and Leave (online only). Leaving closes the screen like a delete does,
      * since the project is gone for this user.
      */
+    /** Local-only mode: nobody to share with, and the link would point at this phone. */
+    val sharingOffered: Boolean = !settingsRepository.isLocalMode
+
     val sharing =
         SharingController(
             scope = viewModelScope,

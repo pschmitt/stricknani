@@ -44,15 +44,17 @@ is; it talks to `http://127.0.0.1:<port>` instead of a remote server.
 - **ABIs.** arm64-v8a first; x86_64 for the emulator in CI. armeabi-v7a
   only if a real device needs it.
 
-## Steps
+## Status
 
-1. Library and JNI entry point (`src/local.rs`, feature `android-local`),
-   PAT-only mode in the router, CLI-free account bootstrap. Tests on the
-   host for the bootstrap and the PAT-only router.
-2. Gradle: build the library with `cargo ndk` (arm64, x86_64), package it
-   under `jniLibs`, behind a build flag so CI without the NDK still builds.
-3. Android: `LocalServer` (start/stop, port, token), onboarding choice,
-   hidden features, settings showing "Only on this phone".
-4. Emulator E2E: local mode end to end (create project with photo, restart,
-   data still there, export).
-5. Size check, Play declaration review, docs.
+- Done: the server as a library with JNI entry points (`src/local.rs`, `src/local_jni.rs`),
+  Bearer-only router, account and PAT bootstrap (`me@stricknani.local`), host tests.
+- Done: Android `LocalServer` (started on demand before any request), two-step onboarding with
+  "Only on this phone", local mode hides imports, sharing and server account management, and
+  offers "Use a server instead" (signs out; the local data stays in `filesDir/local-server`).
+- Done: CI builds the library for arm64-v8a, armeabi-v7a and x86_64 (`release.yaml`,
+  `local-server-libs` job) and packages it into the APKs and the Play bundle. Locally:
+  `cargo ndk -t arm64-v8a --platform 26 rustc --release --lib --crate-type cdylib`, then pass the
+  jniLibs-style directory as `-PlocalServerLibs=<dir>` or put it at `android/local-server-libs`.
+- Open: an emulator E2E journey for local mode (the E2E workflow does not build the library
+  yet), a path to move local data to a server other than export and restore, and the APK size
+  (about +11 MB per ABI).

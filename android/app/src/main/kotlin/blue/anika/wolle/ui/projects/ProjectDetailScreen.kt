@@ -223,7 +223,8 @@ fun ProjectDetailScreen(
         }
     val sharingDialogs = rememberSharingDialogs()
     LaunchedEffect(access.canManage, state is ProjectDetailUiState.Loaded) {
-        if (access.canManage && state is ProjectDetailUiState.Loaded) viewModel.sharing.preload()
+        if (viewModel.sharingOffered && access.canManage && state is ProjectDetailUiState.Loaded)
+            viewModel.sharing.preload()
     }
     val refreshFailure = rememberRefreshFailure(refreshState)
     if (showTimerDialog && projectTimersEnabled && !timer.unavailable) {
@@ -342,22 +343,28 @@ fun ProjectDetailScreen(
                                         showPrintDialog = true
                                     },
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.sharing_share)) },
-                                    leadingIcon = {
-                                        Icon(PhosphorIcons.ShareNetwork, contentDescription = null)
-                                    },
-                                    onClick = {
-                                        menuExpanded = false
-                                        // Managers choose between the link and people in the sheet;
-                                        // everyone else just shares the link.
-                                        if (access.canManage) sharingDialogs.sheet = true
-                                        else
-                                            viewModel.shareUrl()?.let { url ->
-                                                context.shareUrl(url)
-                                            }
-                                    },
-                                )
+                                if (viewModel.sharingOffered) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.sharing_share)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                PhosphorIcons.ShareNetwork,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            // Managers choose between the link and people in the
+                                            // sheet;
+                                            // everyone else just shares the link.
+                                            if (access.canManage) sharingDialogs.sheet = true
+                                            else
+                                                viewModel.shareUrl()?.let { url ->
+                                                    context.shareUrl(url)
+                                                }
+                                        },
+                                    )
+                                }
                                 if (access.canLeave || access.canManage) HorizontalDivider()
                                 if (access.canLeave) {
                                     DropdownMenuItem(

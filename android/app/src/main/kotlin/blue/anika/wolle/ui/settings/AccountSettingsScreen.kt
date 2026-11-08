@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -79,6 +80,8 @@ internal fun AccountSettingsScreen(
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val textStep by viewModel.readingTextStep.collectAsStateWithLifecycle()
     var showSignOutDialog by remember { mutableStateOf(false) }
+    var showUseServerDialog by remember { mutableStateOf(false) }
+    val localMode = viewModel.isLocalMode
     val linkedLogins: LinkedLoginsViewModel = hiltViewModel()
     val linkedLoginsState by linkedLogins.state.collectAsStateWithLifecycle()
     val avatar: AccountAvatarViewModel = hiltViewModel()
@@ -115,65 +118,70 @@ internal fun AccountSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // Administrators get the way to Admin as its own card, above the profile.
-            if (isAdmin) {
+            if (isAdmin && !localMode) {
                 item { AdminCard(onClick = { onOpenCategory(SettingsCategory.Admin) }) }
+            }
+            // Local-only mode: no profile, password or sessions; just where the data lives.
+            if (localMode) {
+                item { LocalOnlyCard(onUseServer = { showUseServerDialog = true }) }
             }
             // Profile: the picture (change/remove need a server with bearer account access), the
             // email and the role.
-            item {
-                SettingsGroupCard(
-                    title = stringResource(R.string.account_profile_title),
-                    icon = PhosphorIcons.UserCircle,
-                ) {
-                    ProfilePicture(
-                        avatarUrl = profile.avatarUrl,
-                        email = profile.email,
-                        editable = security.available,
-                        busy = security.avatarBusy,
-                        onPicked = securityModel::uploadAvatar,
-                        onCameraDenied = securityModel::cameraDenied,
+            if (!localMode)
+                item {
+                    SettingsGroupCard(
+                        title = stringResource(R.string.account_profile_title),
+                        icon = PhosphorIcons.UserCircle,
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ProfileEmail(
-                                profile.email
-                                    ?: stringResource(R.string.account_settings_not_connected)
-                            )
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            ) {
-                                Text(
-                                    stringResource(
-                                        if (isAdmin) R.string.account_role_admin
-                                        else R.string.account_role_member
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier =
-                                        Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        ProfilePicture(
+                            avatarUrl = profile.avatarUrl,
+                            email = profile.email,
+                            editable = security.available,
+                            busy = security.avatarBusy,
+                            onPicked = securityModel::uploadAvatar,
+                            onCameraDenied = securityModel::cameraDenied,
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ProfileEmail(
+                                    profile.email
+                                        ?: stringResource(R.string.account_settings_not_connected)
                                 )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            if (isAdmin) R.string.account_role_admin
+                                            else R.string.account_role_member
+                                        ),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier =
+                                            Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    )
+                                }
                             }
                         }
-                    }
-                    if (
-                        security.available &&
-                            profile.avatarUrl != null &&
-                            security.avatarSource != AvatarSource.GRAVATAR
-                    ) {
-                        RemovePictureButton(
-                            enabled = !security.avatarBusy,
-                            onClick = securityModel::askRemoveAvatar,
-                        )
-                    }
-                    if (security.available && security.gravatarEnabled) {
-                        GravatarToggleRow(
-                            checked = security.useGravatar,
-                            enabled = !security.gravatarBusy,
-                            onChange = securityModel::setUseGravatar,
-                        )
+                        if (
+                            security.available &&
+                                profile.avatarUrl != null &&
+                                security.avatarSource != AvatarSource.GRAVATAR
+                        ) {
+                            RemovePictureButton(
+                                enabled = !security.avatarBusy,
+                                onClick = securityModel::askRemoveAvatar,
+                            )
+                        }
+                        if (security.available && security.gravatarEnabled) {
+                            GravatarToggleRow(
+                                checked = security.useGravatar,
+                                enabled = !security.gravatarBusy,
+                                onChange = securityModel::setUseGravatar,
+                            )
+                        }
                     }
                 }
-            }
             item {
                 SettingsGroupCard(
                     title = stringResource(R.string.account_preferences_title),
@@ -224,10 +232,10 @@ internal fun AccountSettingsScreen(
                 }
             }
             // Only when the server lists a sign-in provider (OIDC); hidden otherwise.
-            if (linkedLoginsState.phase != LinkedLoginsPhase.Hidden) {
+            if (!localMode && linkedLoginsState.phase != LinkedLoginsPhase.Hidden) {
                 item { LinkedLoginsCard(linkedLogins) }
             }
-            if (security.available) {
+            if (!localMode && security.available) {
                 item {
                     SettingsGroupCard(
                         title = stringResource(R.string.account_security_title),
@@ -302,18 +310,20 @@ internal fun AccountSettingsScreen(
                     title = stringResource(R.string.account_data_title),
                     icon = PhosphorIcons.HardDrives,
                 ) {
-                    SettingsListItem(
-                        headlineContent = {
-                            Text(stringResource(R.string.account_settings_server_url_label))
-                        },
-                        supportingContent = {
-                            Text(
-                                serverUrl.ifBlank {
-                                    stringResource(R.string.account_settings_not_connected)
-                                }
-                            )
-                        },
-                    )
+                    if (!localMode) {
+                        SettingsListItem(
+                            headlineContent = {
+                                Text(stringResource(R.string.account_settings_server_url_label))
+                            },
+                            supportingContent = {
+                                Text(
+                                    serverUrl.ifBlank {
+                                        stringResource(R.string.account_settings_not_connected)
+                                    }
+                                )
+                            },
+                        )
+                    }
                     listOf(SettingsCategory.Sync, SettingsCategory.Backup, SettingsCategory.About)
                         .forEach { category ->
                             SettingsListItem(
@@ -334,29 +344,31 @@ internal fun AccountSettingsScreen(
                         }
                 }
             }
-            item { DeleteAccountCard(onDeleted = viewModel::accountDeleted) }
-            item {
-                SettingsSingleItemCard {
-                    OutlinedButton(
-                        onClick = { showSignOutDialog = true },
-                        modifier =
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 8.dp),
+            if (!localMode) item { DeleteAccountCard(onDeleted = viewModel::accountDeleted) }
+            if (!localMode)
+                item {
+                    SettingsSingleItemCard {
+                        OutlinedButton(
+                            onClick = { showSignOutDialog = true },
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                            Text(stringResource(R.string.settings_sign_out))
+                        }
+                        Text(
+                            stringResource(R.string.settings_sign_out_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                         )
-                        Text(stringResource(R.string.settings_sign_out))
                     }
-                    Text(
-                        stringResource(R.string.settings_sign_out_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                    )
                 }
-            }
         }
     }
 
@@ -385,6 +397,18 @@ internal fun AccountSettingsScreen(
         SignedOutDialog(notice) { securityModel.confirmSignOut(viewModel::signOut) }
     }
 
+    if (showUseServerDialog) {
+        UseServerDialog(
+            onConfirm = {
+                showUseServerDialog = false
+                // The same sign-out as on a server account: it clears the app's cache and returns
+                // to onboarding, and leaves the local server's data directory alone.
+                viewModel.signOut()
+            },
+            onDismiss = { showUseServerDialog = false },
+        )
+    }
+
     if (showSignOutDialog) {
         SignOutDialog(
             onConfirm = {
@@ -394,6 +418,47 @@ internal fun AccountSettingsScreen(
             onDismiss = { showSignOutDialog = false },
         )
     }
+}
+
+/** Local-only mode: where the data lives, and the way to a server. */
+@Composable
+private fun LocalOnlyCard(onUseServer: () -> Unit) {
+    SettingsGroupCard(
+        title = stringResource(R.string.local_only_title),
+        icon = Icons.Filled.Smartphone,
+    ) {
+        Text(
+            stringResource(R.string.local_only_text),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        OutlinedButton(
+            onClick = onUseServer,
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .testTag("local-only-use-server"),
+        ) {
+            Text(stringResource(R.string.local_only_use_server))
+        }
+    }
+}
+
+@Composable
+private fun UseServerDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.local_only_use_server)) },
+        text = { Text(stringResource(R.string.local_only_use_server_confirm)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm, modifier = Modifier.testTag("local-only-confirm")) {
+                Text(stringResource(R.string.local_only_use_server))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }
 
 /** A label with its control: full width below the label on phones, to the right on wide screens. */

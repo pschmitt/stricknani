@@ -312,7 +312,10 @@ fun HomeScreen(
                     }
                     if (isEmpty) {
                         spacedItem {
-                            CozyEmptyHome(Modifier.padding(horizontal = 24.dp, vertical = 24.dp))
+                            CozyEmptyHome(
+                                localMode = viewModel.isLocalMode,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp),
+                            )
                         }
                     }
                     current?.let { project ->
@@ -330,6 +333,7 @@ fun HomeScreen(
                         CreateCard(
                             onClick = onCreateClick,
                             modifier = Modifier.padding(horizontal = 16.dp),
+                            localMode = viewModel.isLocalMode,
                         )
                     }
                     if (favoriteProjects.isNotEmpty()) {
@@ -698,7 +702,11 @@ private fun relativeDay(millis: Long): String =
 
 /** The way into the Create screen: a lagoon card right under "Continue knitting". */
 @Composable
-private fun CreateCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun CreateCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    localMode: Boolean = false,
+) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
@@ -729,7 +737,10 @@ private fun CreateCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    stringResource(R.string.more_create_subtitle),
+                    stringResource(
+                        if (localMode) R.string.more_create_subtitle_local
+                        else R.string.more_create_subtitle
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -854,7 +865,7 @@ private fun ShelfTile(
  * right above.
  */
 @Composable
-private fun CozyEmptyHome(modifier: Modifier = Modifier) {
+private fun CozyEmptyHome(localMode: Boolean, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -865,7 +876,10 @@ private fun CozyEmptyHome(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.headlineSmall,
         )
         Text(
-            stringResource(R.string.home_welcome_subtitle),
+            stringResource(
+                if (localMode) R.string.home_welcome_subtitle_local
+                else R.string.home_welcome_subtitle
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -117,7 +117,8 @@ fun CreateScreen(
                     )
                 }
             }
-            items(createOptions(availability), key = { it.kind }) { option ->
+            items(createOptions(availability, projects.importsOffered), key = { it.kind }) { option
+                ->
                 CreateTile(
                     option = option,
                     onClick = {

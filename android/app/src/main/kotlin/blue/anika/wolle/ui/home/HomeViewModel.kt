@@ -59,6 +59,10 @@ constructor(
     activityRepository: ActivityRepository,
 ) : ViewModel() {
 
+    /** Local-only mode: nothing to pull from a server, so the empty state says what to do. */
+    val isLocalMode: Boolean
+        get() = settingsRepository.isLocalMode
+
     private val activityController = ActivityController(viewModelScope, activityRepository::page)
 
     /** Home's online-only "Recent activity" (see [ActivitySection]). */

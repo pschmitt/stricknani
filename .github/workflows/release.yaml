@@ -87,8 +87,62 @@ permissions:
   contents: read
 
 jobs:
+  local-server-libs:
+    # T130: the Rust server as a JNI library for the local-only mode (docs/local-only.md), packaged
+    # into the APKs and the Play bundle from android/local-server-libs.
+    name: In-app server libraries
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust with the Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android-local-server
+
+      - name: Install cargo-ndk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+
+      - name: Build and strip the libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 --platform 26 \
+            rustc --release --lib --crate-type cdylib
+          strip="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+          declare -A triples=(
+            [arm64-v8a]=aarch64-linux-android
+            [armeabi-v7a]=armv7-linux-androideabi
+            [x86_64]=x86_64-linux-android
+          )
+          for abi in "${!triples[@]}"; do
+            mkdir -p "android/local-server-libs/$abi"
+            "$strip" -o "android/local-server-libs/$abi/libstricknani_server.so" \
+              "target/${triples[$abi]}/release/libstricknani_server.so"
+          done
+          ls -la android/local-server-libs/*
+
+      - name: Upload the libraries
+        uses: actions/upload-artifact@v7
+        with:
+          name: local-server-libs
+          path: android/local-server-libs
+          if-no-files-found: error
+          retention-days: 7
+
   release:
     name: GitHub release (APKs)
+    needs: local-server-libs
     if: ${{ github.event_name == 'push' || inputs.lane == 'github-release' }}
     runs-on: ubuntu-26.04
     permissions:
@@ -103,6 +157,12 @@ jobs:
           fetch-depth: 0
 
       - uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
+
+      - name: Download the in-app server libraries
+        uses: actions/download-artifact@v8
+        with:
+          name: local-server-libs
+          path: android/local-server-libs
 
       - name: Decode CI signing keystore
         id: ci_keystore
@@ -458,7 +518,7 @@ jobs:
 
   play-store:
     name: Build and publish signed Android App Bundle
-    needs: [version, validate]
+    needs: [version, validate, local-server-libs]
     permissions:
       contents: read
     uses: pschmitt/ci-workflows/.github/workflows/play-store.yaml@main
@@ -475,4 +535,6 @@ jobs:
       publish: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
       track: ${{ needs.version.outputs.track }}
       status: ${{ github.event_name == 'workflow_dispatch' && inputs.release_status || 'completed' }}
+      prebuilt-artifact: local-server-libs
+      prebuilt-artifact-path: android/local-server-libs
     secrets: inherit

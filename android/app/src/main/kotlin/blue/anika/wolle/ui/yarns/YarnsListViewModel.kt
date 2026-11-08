@@ -114,6 +114,10 @@ constructor(
 
     val importState: StateFlow<YarnImportState> = importController.state
 
+    /** Local-only mode has no network or AI import, so the import entries are hidden entirely. */
+    val importsOffered: Boolean
+        get() = !settingsRepository.isLocalMode
+
     /** Which import options the server offers; the dialog greys out the ones it does not. */
     val importAvailability: StateFlow<ImportAvailability> =
         apiCapabilities.state

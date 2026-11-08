@@ -61,6 +61,12 @@
     <!-- Home -->
     <string name="home_welcome_title">Deine Strickecke ist bereit</string>
     <string name="home_welcome_subtitle">Zieh nach unten, um deine Projekte und deine Garne zu holen.</string>
+    <string name="home_welcome_subtitle_local">Leg unten ein Projekt oder ein Garn an.</string>
+    <string name="local_only_title">Nur auf diesem Handy</string>
+    <string name="local_only_text">Deine Projekte, Garne und Fotos liegen nur auf diesem Handy. Sichere sie unter Backups.</string>
+    <string name="local_only_use_server">Stattdessen einen Server nutzen</string>
+    <string name="local_only_use_server_confirm">Deine Daten bleiben auf diesem Handy; um sie auf einen Server zu bringen, lade sie unter Backups herunter und stelle sie dort wieder her.</string>
+    <string name="share_local_unavailable">Link-Importe sind nicht verfügbar, solange die App nur auf diesem Handy läuft.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>
     <string name="home_favorite_yarns_title">Lieblingswolle</string>
     <string name="home_recent_projects_title">Weitere Projekte</string>
@@ -355,6 +361,7 @@
     <string name="more_title">Mehr</string>
     <string name="more_create_title">Erstellen</string>
     <string name="more_create_subtitle">Starte ein Projekt oder ein Garn oder importiere eines.</string>
+    <string name="more_create_subtitle_local">Starte ein Projekt oder ein Garn.</string>
     <string name="more_categories_subtitle">Ordne Projekte mit eigenen Kategorien.</string>
     <string name="more_about_subtitle">Version, Links und Danksagungen.</string>
     <string name="more_account_title">Kontoeinstellungen</string>

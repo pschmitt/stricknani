@@ -525,7 +525,11 @@ internal fun AboutSettingsScreen(
                             description =
                                 stringResource(R.string.about_settings_privacy_description),
                             chevron = true,
-                            onClick = { uriHandler.openUri(privacyPolicyUrl(serverUrl)) },
+                            onClick = {
+                                uriHandler.openUri(
+                                    privacyPolicyUrl(if (viewModel.isLocalMode) "" else serverUrl)
+                                )
+                            },
                         )
                         AboutLinkRow(
                             icon = Icons.Filled.BugReport,

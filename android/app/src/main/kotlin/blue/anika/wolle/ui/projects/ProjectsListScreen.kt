@@ -92,15 +92,17 @@ fun ProjectsListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.projects_list_title)) },
                 actions = {
-                    IconButton(
-                        modifier = Modifier.testTag("project-import-open"),
-                        onClick = { showImportDialog = true },
-                    ) {
-                        Icon(
-                            PhosphorIcons.DownloadSimple,
-                            contentDescription =
-                                stringResource(R.string.projects_list_import_description),
-                        )
+                    if (viewModel.importsOffered) {
+                        IconButton(
+                            modifier = Modifier.testTag("project-import-open"),
+                            onClick = { showImportDialog = true },
+                        ) {
+                            Icon(
+                                PhosphorIcons.DownloadSimple,
+                                contentDescription =
+                                    stringResource(R.string.projects_list_import_description),
+                            )
+                        }
                     }
                     // Managing categories is not a filter, so it lives here instead of as a "+"
                     // chip at the end of the filter row.

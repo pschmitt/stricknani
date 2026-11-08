@@ -84,15 +84,17 @@ fun YarnsListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.yarns_list_title)) },
                 actions = {
-                    IconButton(
-                        modifier = Modifier.testTag("yarn-import-open"),
-                        onClick = { showImportDialog = true },
-                    ) {
-                        Icon(
-                            PhosphorIcons.DownloadSimple,
-                            contentDescription =
-                                stringResource(R.string.yarns_list_import_description),
-                        )
+                    if (viewModel.importsOffered) {
+                        IconButton(
+                            modifier = Modifier.testTag("yarn-import-open"),
+                            onClick = { showImportDialog = true },
+                        ) {
+                            Icon(
+                                PhosphorIcons.DownloadSimple,
+                                contentDescription =
+                                    stringResource(R.string.yarns_list_import_description),
+                            )
+                        }
                     }
                 },
                 navigationIcon = {

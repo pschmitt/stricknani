@@ -221,7 +221,18 @@ class MainActivity : ComponentActivity() {
             ShareIntake.NotAShare -> return
             ShareIntake.NoLink ->
                 Toast.makeText(this, getString(R.string.share_no_link), Toast.LENGTH_SHORT).show()
-            is ShareIntake.Link -> pendingSharedUrl = intake.url
+            is ShareIntake.Link ->
+                if (settingsRepository.isLocalMode) {
+                    // Link imports need the network and a server; this phone has neither role.
+                    Toast.makeText(
+                            this,
+                            getString(R.string.share_local_unavailable),
+                            Toast.LENGTH_LONG,
+                        )
+                        .show()
+                } else {
+                    pendingSharedUrl = intake.url
+                }
         }
         intent.action = null
         intent.removeExtra(Intent.EXTRA_TEXT)
