@@ -1,12 +1,14 @@
 package blue.anika.wolle.e2e
 
 import android.os.SystemClock
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText as hasTextMatcher
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -50,14 +52,19 @@ class PlayFgsDemoRecording : StricknaniE2eTest() {
         pause(2_000)
 
         // Download: the system picker asks where to save the archive.
-        composeRule.onNodeWithTag("data-export-button").performClick()
+        composeRule
+            .onNodeWithTag("data-export-button")
+            .performSemanticsAction(SemanticsActions.OnClick)
         clickSystemButton("SAVE", "Save")
         showNotifications("Your data is saved")
 
         // Restore the file just saved.
         scrollBackupsTo("Choose file")
         pause(1_000)
-        composeRule.onNodeWithTag("data-restore-button").performClick()
+        // The "saved" snackbar can sit on top of the button: click through its semantics action.
+        composeRule
+            .onNodeWithTag("data-restore-button")
+            .performSemanticsAction(SemanticsActions.OnClick)
         val file = device.wait(Until.findObject(By.textStartsWith("stricknani-export")), 30_000)
         checkNotNull(file) { "the saved archive is not listed in the file picker" }
         pause(1_500)

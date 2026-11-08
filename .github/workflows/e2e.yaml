@@ -324,6 +324,32 @@ jobs:
           nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'RUST_SERVER_BINARY=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_ENV"
 
+      # The backups lane also covers the local-only mode (LocalModeBackupE2eTest), which needs the
+      # in-app server library for the emulator's ABI (docs/local-only.md).
+      - name: Install Rust for the in-app server library
+        if: ${{ matrix.lane == 'backups' }}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-linux-android
+
+      - name: Install cargo-ndk
+        if: ${{ matrix.lane == 'backups' }}
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+
+      - name: Build the in-app server library (x86_64)
+        if: ${{ matrix.lane == 'backups' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          cargo ndk -t x86_64 --platform 26 rustc --release --lib --crate-type cdylib
+          mkdir -p android/local-server-libs/x86_64
+          "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" \
+            -o android/local-server-libs/x86_64/libstricknani_server.so \
+            target/x86_64-linux-android/release/libstricknani_server.so
+
       - name: Build debug and instrumentation APKs
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
         working-directory: android
