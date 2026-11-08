@@ -55,7 +55,6 @@
     <string name="destination_label_gauge">Maschenprobe</string>
 
     <!-- Home -->
-    <string name="home_gauge_calculator_description">Maschenprobenrechner</string>
     <string name="home_welcome_title">Deine Strickecke ist bereit</string>
     <string name="home_welcome_subtitle">Zieh nach unten, um deine Projekte und deine Garne zu holen.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>

@@ -36,7 +36,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -118,7 +117,6 @@ fun HomeScreen(
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
     onCreateClick: () -> Unit,
-    onGaugeClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
     onSeeAllActivity: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
@@ -260,7 +258,6 @@ fun HomeScreen(
                     }
                     spacedItem {
                         Greeting(
-                            onGaugeClick = onGaugeClick,
                             padStatusBar = !signedOut,
                             status = subtitle,
                         )
@@ -455,7 +452,6 @@ private val BAR_MASCOT_GAP = 8.dp
 /** A friendly hello next to the mascot's place, instead of a title bar. */
 @Composable
 private fun Greeting(
-    onGaugeClick: () -> Unit,
     padStatusBar: Boolean = true,
     status: GreetingStatus = GreetingStatus.Question,
 ) {
@@ -512,12 +508,6 @@ private fun Greeting(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-        FilledTonalIconButton(onClick = onGaugeClick) {
-            Icon(
-                PhosphorIcons.Ruler,
-                contentDescription = stringResource(R.string.home_gauge_calculator_description),
-            )
         }
     }
 }
@@ -859,15 +849,17 @@ private fun ShelfTile(
     }
 }
 
-/** Nothing synced yet: the mascot says hello and explains what to do. */
+/**
+ * Nothing synced yet: a short hello and what to do. No second mascot: the greeting's mascot is
+ * right above.
+ */
 @Composable
 private fun CozyEmptyHome(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Mascot(size = 180.dp, bob = true)
         Text(
             stringResource(R.string.home_welcome_title),
             style = MaterialTheme.typography.headlineSmall,

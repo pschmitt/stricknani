@@ -332,7 +332,6 @@ fun StricknaniNavHost(
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onCreateClick = { navController.navigate(Route.Create) },
-                        onGaugeClick = { navController.navigate(Route.Gauge) },
                         onOpenSyncIssues = {
                             navController.navigate(
                                 Route.SettingsCategoryRoute(SettingsCategory.Sync.name)

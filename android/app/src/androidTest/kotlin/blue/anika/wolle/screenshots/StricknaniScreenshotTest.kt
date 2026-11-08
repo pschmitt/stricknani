@@ -105,10 +105,10 @@ class StricknaniScreenshotTest {
 
         composeRule.onNodeWithContentDescription(string(R.string.settings_nav_back)).performClick()
         composeRule.onNodeWithContentDescription(string(R.string.settings_nav_back)).performClick()
-        composeRule.onNodeWithText(string(R.string.destination_label_home)).performClick()
-        composeRule
-            .onNodeWithContentDescription(string(R.string.home_gauge_calculator_description))
-            .performClick()
+        // The gauge calculator lives under More (Home's header has no shortcut to it).
+        composeRule.onNodeWithText(string(R.string.destination_label_more)).performClick()
+        composeRule.waitUntil(30_000) { hasTag("more-gauge") }
+        composeRule.onNodeWithTag("more-gauge").performScrollTo().performClick()
         waitForText(string(R.string.gauge_calculator_title))
         Thread.sleep(1_000)
         capture("gauge")

@@ -56,7 +56,6 @@
     <string name="destination_label_gauge">Gauge</string>
 
     <!-- Home -->
-    <string name="home_gauge_calculator_description">Gauge calculator</string>
     <string name="home_welcome_title">Your knitting nook is ready</string>
     <string name="home_welcome_subtitle">Pull down to fetch your projects and yarn.</string>
     <string name="home_favorite_projects_title">Favorite projects</string>
