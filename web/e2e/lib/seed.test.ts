@@ -28,6 +28,7 @@ import {
 } from "./seed";
 
 const TEST_PAT = `sna_${"a".repeat(64)}`;
+const PEER_PAT = `sna_${"b".repeat(64)}`;
 
 let tmp: string;
 
@@ -90,7 +91,12 @@ class FakeOpener implements Opener {
     const path = pathOf(request);
     const post = request.method === "POST";
     let value: unknown;
-    if (path.endsWith("/auth/token")) {
+    if (path === "/api/v2/auth/register") {
+      value = { data: { token: PEER_PAT } };
+    } else if (path === "/api/v2/meta") {
+      expect(request.headers.Authorization).toBe(`Bearer ${PEER_PAT}`);
+      value = { data: { user: { id: 42, is_admin: false } } };
+    } else if (path.endsWith("/auth/token")) {
       value = { token: TEST_PAT };
     } else if (path === "/api/v1/categories") {
       value = { id: 3, name: "Schal" };
@@ -328,6 +334,71 @@ describe("seedFixture", () => {
       expect(body).toContain('name="file"');
       expect(body.includes('name="alt_text"')).toBe(index === 5);
     }
+  });
+
+  it("creates a peer account and writes its private token file", async () => {
+    const tokenFile = join(tmp, "secrets", "pat.json");
+    const peerFile = join(tmp, "secrets", "peer.json");
+    const opener = new FakeOpener();
+    vi.spyOn(process.stdout, "write").mockImplementation(
+      (() => true) as typeof process.stdout.write,
+    );
+
+    await seedFixture(fixtureFile(), tokenFile, {
+      opener,
+      peerTokenFile: peerFile,
+    });
+
+    expect(JSON.parse(readFileSync(peerFile, "utf-8"))).toEqual({
+      token: PEER_PAT,
+      user_id: 42,
+    });
+    expect(statSync(peerFile).mode & 0o777).toBe(0o600);
+    expect(JSON.parse(readFileSync(tokenFile, "utf-8"))).toEqual({
+      token: TEST_PAT,
+    });
+    const requests = opener.calls.map(({ request }) => request);
+    const register = requests.find(
+      (r) => pathOf(r) === "/api/v2/auth/register",
+    ) as OpenerRequest;
+    const body = jsonBody(register);
+    expect(String(body.email)).toMatch(
+      /^rust-peer-[0-9a-f]{16}@example\.invalid$/,
+    );
+    expect(String(body.password).length).toBeGreaterThanOrEqual(32);
+    expect(readFileSync(peerFile, "utf-8")).not.toContain(
+      String(body.password),
+    );
+    expect(requests.slice(-2).map((r) => [r.method, pathOf(r)])).toEqual([
+      ["POST", "/api/v2/auth/register"],
+      ["GET", "/api/v2/meta"],
+    ]);
+  });
+
+  it("rejects a peer token file equal to the token file", async () => {
+    const opener = new FakeOpener();
+    const file = join(tmp, "same.json");
+    await expect(
+      seedFixture(fixtureFile(), file, { opener, peerTokenFile: file }),
+    ).rejects.toThrow("peer token file must differ");
+    expect(opener.calls).toEqual([]);
+  });
+
+  it("reports a refused peer registration without the response body", async () => {
+    const opener = new FakeOpener({
+      failure: new HttpError(404),
+      failureAt: 15,
+    });
+    const peerFile = join(tmp, "peer.json");
+    const tokenFile = join(tmp, "pat.json");
+    await expect(
+      seedFixture(fixtureFile(), tokenFile, {
+        opener,
+        peerTokenFile: peerFile,
+      }),
+    ).rejects.toThrow("POST /api/v2/auth/register returned HTTP 404");
+    expect(() => statSync(peerFile)).toThrow();
+    expect(() => statSync(tokenFile)).toThrow();
   });
 
   it("preflights the token path before any API mutation", async () => {

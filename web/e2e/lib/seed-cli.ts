@@ -3,7 +3,7 @@
  * ci/stricknani/seed_rust.py), run through `e2e/lib/run-ts.mjs`:
  *
  *   npm --prefix web run seed -- --fixture-file F --token-file T \
- *     [--screenshot-detail]
+ *     [--peer-token-file P] [--screenshot-detail]
  */
 import { parseArgs } from "node:util";
 import { FixtureError } from "./fixture";
@@ -17,6 +17,7 @@ export async function main(argv: string[]): Promise<number> {
       options: {
         "fixture-file": { type: "string" },
         "token-file": { type: "string" },
+        "peer-token-file": { type: "string" },
         "screenshot-detail": { type: "boolean" },
       },
       strict: true,
@@ -37,9 +38,15 @@ export async function main(argv: string[]): Promise<number> {
     );
     return 2;
   }
+  const peerTokenFile = values["peer-token-file"];
+  if (peerTokenFile !== undefined && typeof peerTokenFile !== "string") {
+    console.error("usage error: --peer-token-file needs a path");
+    return 2;
+  }
   try {
     await seedFixture(fixtureFile, tokenFile, {
       screenshotDetail: values["screenshot-detail"] === true,
+      ...(peerTokenFile === undefined ? {} : { peerTokenFile }),
     });
   } catch (error) {
     if (error instanceof FixtureError || error instanceof SeedError) {

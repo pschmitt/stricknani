@@ -285,6 +285,7 @@ jobs:
           printf 'FIXTURE_FILE=%s/stricknani-e2e-fixture.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           printf 'FIXTURE_STATE=%s/stricknani-e2e-state.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           printf 'E2E_TOKEN_FILE=%s/stricknani-e2e-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'E2E_PEER_TOKEN_FILE=%s/stricknani-e2e-peer-token.json\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -322,7 +323,8 @@ jobs:
             --binary "$RUST_SERVER_BINARY" \
             --temp-dir "$RUNNER_TEMP" \
             --fixture-file "$FIXTURE_FILE" \
-            --state-file "$FIXTURE_STATE"
+            --state-file "$FIXTURE_STATE" \
+            --signup-enabled
 
       - name: Seed Android E2E records
         shell: bash
@@ -330,24 +332,30 @@ jobs:
           set -Eeuo pipefail
           npm --prefix web run --silent seed -- \
             --fixture-file "$FIXTURE_FILE" \
-            --token-file "$E2E_TOKEN_FILE"
+            --token-file "$E2E_TOKEN_FILE" \
+            --peer-token-file "$E2E_PEER_TOKEN_FILE"
 
       # This disposable PAT is masked before the existing script passes it to Gradle.
       - name: Mask and export disposable API token
         shell: bash
         run: |
           set -Eeuo pipefail
-          node - "$E2E_TOKEN_FILE" "$GITHUB_ENV" <<'JS'
+          node - "$E2E_TOKEN_FILE" "$E2E_PEER_TOKEN_FILE" "$GITHUB_ENV" <<'JS'
           const { appendFileSync, readFileSync } = require("node:fs");
 
-          const fixture = JSON.parse(readFileSync(process.argv[2], "utf8"));
-          const token = fixture !== null && typeof fixture === "object" ? fixture.token : undefined;
-          if (typeof token !== "string" || !token || /[\r\n]/.test(token)) {
-            console.error("Android E2E token fixture is invalid");
-            process.exit(1);
+          for (const [file, name] of [
+            [process.argv[2], "E2E_TOKEN"],
+            [process.argv[3], "E2E_PEER_TOKEN"],
+          ]) {
+            const fixture = JSON.parse(readFileSync(file, "utf8"));
+            const token = fixture !== null && typeof fixture === "object" ? fixture.token : undefined;
+            if (typeof token !== "string" || !token || /[\r\n]/.test(token)) {
+              console.error("Android E2E token fixture is invalid");
+              process.exit(1);
+            }
+            console.log(`::add-mask::${token}`);
+            appendFileSync(process.argv[4], `${name}=${token}\n`);
           }
-          console.log(`::add-mask::${token}`);
-          appendFileSync(process.argv[3], `E2E_TOKEN=${token}\n`);
           JS
 
       - name: Read native fixture port
@@ -409,7 +417,8 @@ jobs:
           npm --prefix web run --silent summarize-e2e -- \
             --results-dir "$GITHUB_WORKSPACE/android/app/build/outputs/androidTest-results/connected/debug" \
             --fixture-file "$FIXTURE_FILE" \
-            --token-file "$E2E_TOKEN_FILE"
+            --token-file "$E2E_TOKEN_FILE" \
+            --token-file "$E2E_PEER_TOKEN_FILE"
 
       - name: Stop and remove server fixture
         if: ${{ always() }}
@@ -419,7 +428,7 @@ jobs:
           if [[ -f "$FIXTURE_STATE" ]]; then
             npm --prefix web run --silent fixture -- stop --state-file "$FIXTURE_STATE" || true
           fi
-          rm -f -- "$E2E_TOKEN_FILE" "$FIXTURE_FILE" "$FIXTURE_STATE"
+          rm -f -- "$E2E_TOKEN_FILE" "$E2E_PEER_TOKEN_FILE" "$FIXTURE_FILE" "$FIXTURE_STATE"
 
   android-replay:
     needs: changes

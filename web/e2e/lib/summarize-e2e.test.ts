@@ -105,6 +105,38 @@ describe("summarizeResults", () => {
     expect(output).not.toContain("127.0.0.1:4321");
   });
 
+  it("redacts every token file it is given (main and peer)", () => {
+    const mainToken = "sna_" + "cd".repeat(10);
+    const peerToken = "sna_" + "ef".repeat(10);
+    const results = join(tmp, "results");
+    mkdirSync(results);
+    writeFileSync(
+      join(results, "TEST-peer.xml"),
+      `<testsuite tests="1" failures="1">
+        <testcase classname="blue.anika.wolle.e2e.DataBackupE2eTest"
+          name="sharedProjectIsExportedWithItsAccessAndRestoredAsOwnCopy">
+          <failure type="java.lang.AssertionError"
+            message="${escapeXml(`main ${mainToken} peer ${peerToken}`)}">
+            java.lang.AssertionError: share failed
+              at blue.anika.wolle.e2e.DataBackupE2eTest.share(DataBackupE2eTest.kt:300)
+          </failure>
+        </testcase></testsuite>`,
+    );
+    const mainFile = join(tmp, "token.json");
+    const peerFile = join(tmp, "peer-token.json");
+    writePrivate(mainFile, { token: mainToken });
+    writePrivate(peerFile, { token: peerToken, user_id: 2 });
+
+    const output = summarizeResults(
+      results,
+      loadRedactor(undefined, [mainFile, peerFile]),
+    ).join("\n");
+
+    expect(output).toContain("DataBackupE2eTest");
+    expect(output).not.toContain(mainToken);
+    expect(output).not.toContain(peerToken);
+  });
+
   it("keeps the app callsite after framework frames and redacts it", () => {
     const email = "offline" + "@example.invalid";
     const password = "private-fixture-password";

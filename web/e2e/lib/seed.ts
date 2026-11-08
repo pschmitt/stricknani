@@ -173,7 +173,11 @@ export class ApiClient {
     path: string,
     opts: { payload?: Record<string, unknown>; binary?: boolean } = {},
   ): Promise<unknown> {
-    if (!path.startsWith("/api/v1/") && !path.startsWith("/media/")) {
+    if (
+      !path.startsWith("/api/v1/") &&
+      !path.startsWith("/api/v2/") &&
+      !path.startsWith("/media/")
+    ) {
       throw new SeedError("invalid internal API path");
     }
     const binary = opts.binary ?? false;
@@ -371,7 +375,11 @@ function insideRepository(path: string): boolean {
   return path === REPO_ROOT || path.startsWith(REPO_ROOT + sep);
 }
 
-export function writeToken(path: string, token: string): void {
+export function writeToken(
+  path: string,
+  token: string,
+  extra: Record<string, unknown> = {},
+): void {
   const resolved = resolve(expandUser(path));
   if (insideRepository(resolved)) {
     throw new SeedError("token file must be outside the repository");
@@ -384,7 +392,7 @@ export function writeToken(path: string, token: string): void {
       0o600,
     );
     try {
-      writeSync(descriptor, JSON.stringify({ token }));
+      writeSync(descriptor, JSON.stringify({ token, ...extra }));
     } catch (error) {
       closeSync(descriptor);
       rmSync(resolved, { force: true });
@@ -436,10 +444,21 @@ function isRecordArray(value: unknown): value is JsonObject[] {
 export async function seedFixture(
   fixtureFile: string,
   tokenFile: string,
-  opts: { screenshotDetail?: boolean; opener?: Opener } = {},
+  opts: {
+    screenshotDetail?: boolean;
+    opener?: Opener;
+    peerTokenFile?: string;
+  } = {},
 ): Promise<void> {
   const environment = loadFixtureEnvironment(fixtureFile);
   const tokenTarget = validateTokenPath(tokenFile, fixtureFile);
+  let peerTarget: string | null = null;
+  if (opts.peerTokenFile !== undefined) {
+    peerTarget = validateTokenPath(opts.peerTokenFile, fixtureFile);
+    if (peerTarget === tokenTarget) {
+      throw new SeedError("peer token file must differ from the token file");
+    }
+  }
   const client = new ApiClient(
     environment.STRICKNANI_TEST_URL,
     opts.opener ?? defaultOpener(),
@@ -614,7 +633,56 @@ export async function seedFixture(
   await client.request("GET", yarnThumbnail, { binary: true });
   await client.request("GET", projectUrl, { binary: true });
   await client.request("GET", projectThumbnail, { binary: true });
+  if (peerTarget !== null) {
+    const peer = await createPeerAccount(
+      environment.STRICKNANI_TEST_URL,
+      opts.opener ?? defaultOpener(),
+    );
+    writeToken(peerTarget, peer.token, { user_id: peer.userId });
+  }
   writeToken(tokenTarget, token);
+}
+
+export interface PeerAccount {
+  token: string;
+  userId: number;
+}
+
+/**
+ * Register a second, ordinary user and return its API token and id. Needs a
+ * fixture started with sign-up enabled. The random email and password exist
+ * only in this process: they are never written, logged or returned.
+ */
+export async function createPeerAccount(
+  baseUrl: string,
+  opener: Opener,
+): Promise<PeerAccount> {
+  const client = new ApiClient(baseUrl, opener);
+  const registered = asObject(
+    await client.request("POST", "/api/v2/auth/register", {
+      payload: {
+        email: `rust-peer-${randomBytes(8).toString("hex")}@example.invalid`,
+        password: randomBytes(32).toString("base64url"),
+        device_name: "Android E2E peer",
+      },
+    }),
+    "/api/v2/auth/register",
+  );
+  const token = asObject(registered.data, "/api/v2/auth/register").token;
+  if (typeof token !== "string" || !/^sna_[0-9a-f]{64}$/.test(token)) {
+    throw new SeedError("/api/v2/auth/register returned an invalid token");
+  }
+  client.token = token;
+  const meta = asObject(
+    await client.request("GET", "/api/v2/meta"),
+    "/api/v2/meta",
+  );
+  const user = asObject(asObject(meta.data, "/api/v2/meta").user, "meta user");
+  const userId = user.id;
+  if (typeof userId !== "number" || !Number.isInteger(userId) || userId < 1) {
+    throw new SeedError("/api/v2/meta returned an invalid user id");
+  }
+  return { token, userId };
 }
 
 function isObject(value: unknown): value is JsonObject {

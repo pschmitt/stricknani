@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
@@ -35,6 +36,8 @@ import blue.anika.wolle.sync.RustReplayTestEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import java.io.File
 import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.security.SecureRandom
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -49,6 +52,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -60,8 +64,12 @@ import org.junit.runner.RunWith
  * file picker is not driven (unreliable on CI emulators): the workers get `file:` Uris in the app's
  * cache directory instead of a Storage Access Framework Uri.
  *
- * The fixture offers one account, so the "item shared with me" part of the export contract is
- * covered by the web journeys (`web/e2e/sharing.e2e.ts`) and the Rust tests, not here.
+ * The "item shared with me" part of the export contract needs a second account. The workflow seeds
+ * one (`seed --peer-token-file`, an ordinary user registered through the fixture's open sign-up)
+ * and passes its PAT as the `e2e_peer_token` instrumentation argument. The peer is driven with
+ * plain `HttpURLConnection` calls, because the app's graph only holds the main user's token.
+ * [sharedProjectIsExportedWithItsAccessAndRestoredAsOwnCopy] is skipped (JUnit assumption) when the
+ * argument is absent, so local runs without a peer still pass.
  */
 @RunWith(AndroidJUnit4::class)
 class DataBackupE2eTest : StricknaniE2eTest() {
@@ -256,6 +264,128 @@ class DataBackupE2eTest : StricknaniE2eTest() {
     }
 
     @Test
+    fun sharedProjectIsExportedWithItsAccessAndRestoredAsOwnCopy() {
+        val peerToken =
+            InstrumentationRegistry.getArguments().getString("e2e_peer_token")?.takeIf {
+                it.isNotBlank()
+            }
+        assumeTrue("e2e_peer_token not provided: shared-item assertions skipped", peerToken != null)
+        connectToFixture()
+        val nonce = UUID.randomUUID().toString().take(8)
+        val projectName = "Backup e2e $nonce shared project"
+        val workDir = freshWorkDir()
+        val projectsApi = graph.projectsApi()
+        val main = FixtureHttp(baseUrl, token)
+        val peer = FixtureHttp(baseUrl, checkNotNull(peerToken))
+        var sharedId = -1
+
+        try {
+            runBlocking {
+                val mainId = main.get("/api/v2/meta").getJSONObject("user").getInt("id")
+                val peerId = peer.get("/api/v2/meta").getJSONObject("user").getInt("id")
+                assertTrue("the peer must be a different account", mainId != peerId)
+
+                // 1. The peer creates a project with a photo and shares it as viewer with the main
+                // user.
+                sharedId =
+                    peer
+                        .send(
+                            "POST",
+                            "/api/v2/projects",
+                            JSONObject()
+                                .put("name", projectName)
+                                .put("description", "Shared by the peer account"),
+                        )
+                        .getInt("id")
+                peer.uploadPng("/api/v2/projects/$sharedId/images/title", "shared.png")
+                peer.send(
+                    "POST",
+                    "/api/v2/projects/$sharedId/shares",
+                    JSONObject().put("user_id", mainId).put("role", "viewer"),
+                )
+                val sharedAccess = main.get("/api/v2/projects/$sharedId")
+                assertEquals("viewer", sharedAccess.getJSONObject("access").getString("role"))
+
+                // 2. Both archive formats carry the shared project with the caller's role, its
+                // owner and its photo.
+                val tarFile = File(workDir, "export.tar.gz")
+                exportThroughWorker(tarFile, ExportFormat.TarGz)
+                val zipFile = File(workDir, "export.zip")
+                exportThroughWorker(zipFile, ExportFormat.Zip)
+                for ((label, archive) in
+                    listOf("tar.gz" to readTarGz(tarFile), "zip" to readZip(zipFile))) {
+                    val projects = archive.json("projects.json") as JSONArray
+                    val exported = projects.objects().single { it.getString("name") == projectName }
+                    assertEquals(
+                        "$label: role of the shared project",
+                        "viewer",
+                        exported.getJSONObject("access").getString("role"),
+                    )
+                    assertEquals(
+                        "$label: owner of the shared project",
+                        peerId,
+                        exported.getJSONObject("owner").getInt("id"),
+                    )
+                    assertEquals(label, 1, exported.getJSONArray("images").length())
+                }
+
+                // 3. Restore: the copy belongs to the restoring (main) user.
+                val restore = restoreThroughWorker(tarFile)
+                assertEquals(
+                    "restore failed: ${restore.outputData.getString(DataRestoreWorker.KEY_FAILURE)}",
+                    WorkInfo.State.SUCCEEDED,
+                    restore.state,
+                )
+                assertEquals(0, restore.outputData.getInt(DataRestoreWorker.KEY_SKIPPED, -1))
+                val copyId =
+                    serverProjects(projectsApi)
+                        .filter { it.second == projectName && it.first != sharedId }
+                        .map { it.first }
+                        .single()
+                val copy = main.get("/api/v2/projects/$copyId")
+                assertEquals(mainId, copy.getJSONObject("owner").getInt("id"))
+                assertEquals("owner", copy.getJSONObject("access").getString("role"))
+                assertEquals(1, copy.getJSONArray("images").length())
+                assertEquals(
+                    "the restored copy has no shares",
+                    0,
+                    main.get("/api/v2/projects/$copyId/shares").getJSONArray("shares").length(),
+                )
+
+                // 4. The peer's original is unchanged: still the peer's, still one share.
+                val original = peer.get("/api/v2/projects/$sharedId")
+                assertEquals(peerId, original.getJSONObject("owner").getInt("id"))
+                assertEquals("owner", original.getJSONObject("access").getString("role"))
+                assertEquals(1, original.getJSONArray("images").length())
+                val shares = peer.get("/api/v2/projects/$sharedId/shares").getJSONArray("shares")
+                assertEquals(1, shares.length())
+                assertEquals(mainId, shares.getJSONObject(0).getJSONObject("user").getInt("id"))
+                assertEquals("viewer", shares.getJSONObject(0).getString("role"))
+                assertEquals(
+                    "viewer",
+                    main
+                        .get("/api/v2/projects/$sharedId")
+                        .getJSONObject("access")
+                        .getString("role"),
+                )
+            }
+        } finally {
+            runBlocking {
+                runCatching {
+                    if (sharedId > 0) peer.send("DELETE", "/api/v2/projects/$sharedId", null)
+                }
+                runCatching {
+                    serverProjects(projectsApi)
+                        .filter { it.second == projectName }
+                        .forEach { runCatching { projectsApi.deleteProject(it.first) } }
+                    graph.projectRepository().sync()
+                }
+            }
+            workDir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun restoreOfARandomFileIsRejectedAndChangesNothing() {
         connectToFixture()
         val workDir = freshWorkDir()
@@ -437,6 +567,61 @@ class DataBackupE2eTest : StricknaniE2eTest() {
 
     private fun freshWorkDir(): File =
         File(context.cacheDir, "data-backup-e2e-${UUID.randomUUID()}").also { it.mkdirs() }
+
+    /**
+     * Minimal v2 client for one account's PAT; unwraps the `{"data": ...}` envelope. Failures name
+     * only the method, path and status, never a body or the token.
+     */
+    private class FixtureHttp(private val baseUrl: String, private val bearer: String) {
+        fun get(path: String): JSONObject = send("GET", path, null)
+
+        fun send(method: String, path: String, body: JSONObject?): JSONObject =
+            call(method, path, body?.toString()?.toByteArray(), "application/json")
+
+        fun uploadPng(path: String, fileName: String) {
+            val boundary = "e2e${UUID.randomUUID().toString().replace("-", "")}"
+            val out = java.io.ByteArrayOutputStream()
+            out.write(
+                ("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; " +
+                        "filename=\"$fileName\"\r\nContent-Type: image/png\r\n\r\n")
+                    .toByteArray()
+            )
+            out.write(PNG_1X1)
+            out.write("\r\n--$boundary--\r\n".toByteArray())
+            call("POST", path, out.toByteArray(), "multipart/form-data; boundary=$boundary")
+        }
+
+        private fun call(
+            method: String,
+            path: String,
+            body: ByteArray?,
+            contentType: String,
+        ): JSONObject {
+            val connection = URL(baseUrl + path).openConnection() as HttpURLConnection
+            try {
+                connection.requestMethod = method
+                connection.connectTimeout = 15_000
+                connection.readTimeout = 30_000
+                connection.setRequestProperty("Authorization", "Bearer $bearer")
+                connection.setRequestProperty("Accept", "application/json")
+                if (body != null) {
+                    connection.doOutput = true
+                    connection.setRequestProperty("Content-Type", contentType)
+                    connection.outputStream.use { it.write(body) }
+                }
+                val status = connection.responseCode
+                if (status !in 200..299) {
+                    throw AssertionError("$method $path returned HTTP $status")
+                }
+                val text = connection.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
+                if (text.isBlank()) return JSONObject()
+                val json = JSONObject(text)
+                return json.optJSONObject("data") ?: json
+            } finally {
+                connection.disconnect()
+            }
+        }
+    }
 
     // ---- Archive readers -----------------------------------------------------------------
 

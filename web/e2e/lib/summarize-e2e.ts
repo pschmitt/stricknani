@@ -114,11 +114,17 @@ function privateStrings(path: string | undefined): string[] {
 /** Read only the known private fixture fields for output redaction. */
 export function loadRedactor(
   fixtureFile?: string,
-  tokenFile?: string,
+  tokenFiles?: string | readonly string[],
 ): Redactor {
+  const files =
+    tokenFiles === undefined
+      ? []
+      : typeof tokenFiles === "string"
+        ? [tokenFiles]
+        : tokenFiles;
   const values = new Set([
     ...privateStrings(fixtureFile),
-    ...privateStrings(tokenFile),
+    ...files.flatMap((file) => privateStrings(file)),
   ]);
   return new Redactor([...values].sort((a, b) => b.length - a.length));
 }
@@ -484,7 +490,7 @@ export function main(
   let values: {
     "results-dir"?: string;
     "fixture-file"?: string;
-    "token-file"?: string;
+    "token-file"?: string[];
   };
   try {
     values = parseArgs({
@@ -492,7 +498,8 @@ export function main(
       options: {
         "results-dir": { type: "string" },
         "fixture-file": { type: "string" },
-        "token-file": { type: "string" },
+        // Repeatable: the main and the peer token file.
+        "token-file": { type: "string", multiple: true },
       },
       strict: true,
     }).values;
