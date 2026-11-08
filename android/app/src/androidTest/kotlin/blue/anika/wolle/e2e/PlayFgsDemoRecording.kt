@@ -3,8 +3,10 @@ package blue.anika.wolle.e2e
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText as hasTextMatcher
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -70,13 +72,22 @@ class PlayFgsDemoRecording : StricknaniE2eTest() {
         checkNotNull(file) { "the saved archive is not listed in the file picker" }
         pause(1_500)
         file.click()
-        // The confirmation is a dialog window of its own: UiAutomator rather than the compose rule.
-        checkNotNull(device.wait(Until.findObject(By.text("Restore this file?")), 30_000)) {
+        // The compose rule drives the app's frames: wait through it, or the picked file never
+        // recomposes the screen and the confirmation is never drawn.
+        try {
+            composeRule.waitUntil(30_000) {
+                composeRule
+                    .onAllNodesWithText("Restore this file?")
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+        } catch (failure: ComposeTimeoutException) {
             // One line: CI's failure summary keeps only the first line of a message.
-            "no restore confirmation. Log: [${pickerLog().lines().filter { it.isNotBlank() }.joinToString(" ⏎ ")}]"
+            val log = pickerLog().lines().filter { it.isNotBlank() }.joinToString(" ⏎ ")
+            throw AssertionError("no restore confirmation. Log: [$log]", failure)
         }
         pause(1_500)
-        device.findObject(By.text("Restore")).click()
+        composeRule.onNodeWithText("Restore").performClick()
         showNotifications("Restore finished")
 
         composeRule.onNodeWithText("Projects").performClick()
@@ -118,5 +129,21 @@ class PlayFgsDemoRecording : StricknaniE2eTest() {
         composeRule.onAllNodes(hasScrollToNodeAction())[0].performScrollToNode(hasTextMatcher(text))
     }
 
-    private fun pause(millis: Long) = SystemClock.sleep(millis)
+    /**
+     * Waits in real time and lets the app draw meanwhile: the compose rule's clock only moves when
+     * the test advances it, so a plain sleep freezes the screen (and the recording).
+     */
+    private fun pause(millis: Long) {
+        var left = millis
+        while (left > 0) {
+            val step = minOf(left, FRAME_STEP_MILLIS)
+            composeRule.mainClock.advanceTimeBy(step)
+            SystemClock.sleep(step)
+            left -= step
+        }
+    }
+
+    private companion object {
+        const val FRAME_STEP_MILLIS = 100L
+    }
 }
