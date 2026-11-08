@@ -48,6 +48,8 @@ fun ProjectImportDialog(
     onStart: (String) -> Unit,
     onConfirm: (List<String>, ProjectWriteRequest, List<String>) -> Unit,
     onCancel: () -> Unit,
+    /** Hides the dialog while the import keeps running in the background. */
+    onHide: () -> Unit = onCancel,
     onRetry: () -> Unit,
     availability: ImportAvailability = ImportAvailability(),
     thumbnailUrl: (String) -> String? = { null },
@@ -94,7 +96,8 @@ fun ProjectImportDialog(
 
     AlertDialog(
         modifier = Modifier.testTag("project-import-dialog"),
-        onDismissRequest = onCancel,
+        // While importing, leaving the dialog keeps the import running; only Cancel stops it.
+        onDismissRequest = if (state is ProjectImportState.Importing) onHide else onCancel,
         title = {
             Text(
                 when (state) {
@@ -133,6 +136,7 @@ fun ProjectImportDialog(
                     is ProjectImportState.Importing ->
                         ImportProgressContent(
                             text = stringResource(R.string.project_import_progress_description),
+                            backgroundHint = true,
                             modifier = Modifier.testTag("project-import-progress"),
                         )
                     ProjectImportState.Saving ->
@@ -294,7 +298,13 @@ fun ProjectImportDialog(
                     TextButton(onClick = onCancel) {
                         Text(stringResource(R.string.project_import_done))
                     }
-                is ProjectImportState.Importing,
+                is ProjectImportState.Importing ->
+                    TextButton(
+                        modifier = Modifier.testTag("project-import-background"),
+                        onClick = onHide,
+                    ) {
+                        Text(stringResource(R.string.import_continue_in_background))
+                    }
                 ProjectImportState.Saving -> Unit
             }
         },
@@ -346,7 +356,11 @@ private fun ImportAssetRow(asset: ImportAssetDto, selected: Boolean, onToggle: (
 }
 
 @Composable
-private fun ImportProgressContent(text: String, modifier: Modifier = Modifier) {
+private fun ImportProgressContent(
+    text: String,
+    modifier: Modifier = Modifier,
+    backgroundHint: Boolean = false,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -360,6 +374,13 @@ private fun ImportProgressContent(text: String, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (backgroundHint) {
+                Text(
+                    text = stringResource(R.string.import_background_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -8,6 +8,8 @@ import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ImportAvailability
 import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.imports.BackgroundImports
+import blue.anika.wolle.data.imports.ImportKind
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.YarnImporter
 import blue.anika.wolle.data.repository.YarnRepository
@@ -49,6 +51,7 @@ constructor(
     private val apiCapabilities: ApiCapabilities,
     private val syncScheduler: SyncScheduler,
     @ApplicationContext private val context: Context,
+    private val backgroundImports: BackgroundImports,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -107,6 +110,8 @@ constructor(
                             .ifBlank { null }
                 )
             val yarnId = yarnRepository.createYarn(request)
+            // Saved: the background import result is used up.
+            backgroundImports.clear(ImportKind.Yarn)
             syncScheduler.replayThenSyncNow()
             mutationFeedback.show(R.string.mutation_yarn_imported_queued, preview.request.name)
             yarnId
@@ -134,7 +139,23 @@ constructor(
 
     fun confirmImport(selectedImages: List<String>) = importController.confirm(selectedImages)
 
-    fun cancelImport() = importController.cancel()
+    fun cancelImport() {
+        backgroundImports.cancel(ImportKind.Yarn)
+        importController.cancel()
+    }
+
+    /** Closes the dialog but keeps the import running in the background (it notifies). */
+    fun hideImport() = importController.cancel()
+
+    /**
+     * Picks up a background import that is still running or has finished (the app was left or
+     * closed meanwhile, or its notification was tapped). Returns whether there is one to show.
+     */
+    fun resumePendingImport(): Boolean {
+        val pending = backgroundImports.state(ImportKind.Yarn).value ?: return false
+        importController.start(pending.url)
+        return true
+    }
 
     fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
 

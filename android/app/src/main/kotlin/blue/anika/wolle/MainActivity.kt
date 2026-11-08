@@ -32,6 +32,9 @@ import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.export.DataExportNotifier
 import blue.anika.wolle.data.export.ExportFormat
+import blue.anika.wolle.data.imports.AppVisibility
+import blue.anika.wolle.data.imports.ImportKind
+import blue.anika.wolle.data.imports.ImportNotifier
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
 import blue.anika.wolle.data.oidc.OidcFailure
@@ -78,6 +81,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var oidcCoordinator: OidcCoordinator
     @Inject lateinit var apiCapabilities: ApiCapabilities
     @Inject lateinit var mediaUrlResolver: MediaUrlResolver
+    @Inject lateinit var appVisibility: AppVisibility
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
@@ -190,6 +194,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        appVisibility.started()
+    }
+
+    override fun onStop() {
+        appVisibility.stopped()
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -258,6 +272,17 @@ class MainActivity : ComponentActivity() {
                             it != NO_ID
                         },
                 )
+            // A background import is done: the import dialog on its result.
+            ImportNotifier.ACTION_OPEN_IMPORT ->
+                intent.getStringExtra(ImportNotifier.EXTRA_IMPORT_URL)?.let { url ->
+                    Route.CreateImport(
+                        kind =
+                            intent.getStringExtra(ImportNotifier.EXTRA_IMPORT_KIND)
+                                ?: ImportKind.Project.name,
+                        url = url,
+                        autoStart = true,
+                    )
+                }
             DataExportNotifier.ACTION_OPEN_BACKUPS -> backupsRoute()
             DataExportNotifier.ACTION_OPEN_EXPORT -> openExportedFile(intent) ?: backupsRoute()
             else -> DeepLinkParser.parse(intent?.dataString)

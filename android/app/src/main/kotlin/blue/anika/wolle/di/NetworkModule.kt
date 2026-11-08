@@ -8,7 +8,6 @@ import blue.anika.wolle.data.account.AccountGateway
 import blue.anika.wolle.data.account.AccountRepository
 import blue.anika.wolle.data.account.AccountV2Api
 import blue.anika.wolle.data.api.AdminApi
-import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
@@ -32,10 +31,11 @@ import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.export.DataExportApi
 import blue.anika.wolle.data.export.DataRestoreApi
+import blue.anika.wolle.data.imports.BackgroundImports
+import blue.anika.wolle.data.imports.BackgroundProjectImporter
+import blue.anika.wolle.data.imports.BackgroundYarnImporter
 import blue.anika.wolle.data.media.CoilMediaCacheEvictor
 import blue.anika.wolle.data.media.MediaCacheEvictor
-import blue.anika.wolle.data.repository.ApiProjectImporter
-import blue.anika.wolle.data.repository.ApiYarnImporter
 import blue.anika.wolle.data.repository.ProjectImporter
 import blue.anika.wolle.data.repository.YarnImporter
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -196,16 +196,15 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideProjectImporter(
-        api: ProjectImportApi,
-        v2Api: ImportsV2Api,
-        capabilities: ApiCapabilities,
-    ): ProjectImporter = ApiProjectImporter(api, v2Api, capabilities)
+    // The screens import in the background (ImportWorker), which uses ApiProjectImporter and
+    // ApiYarnImporter directly.
+    fun provideProjectImporter(imports: BackgroundImports): ProjectImporter =
+        BackgroundProjectImporter(imports)
 
     @Provides
     @Singleton
-    fun provideYarnImporter(v2Api: ImportsV2Api, capabilities: ApiCapabilities): YarnImporter =
-        ApiYarnImporter(v2Api, capabilities)
+    fun provideYarnImporter(imports: BackgroundImports): YarnImporter =
+        BackgroundYarnImporter(imports)
 
     @Provides
     @Singleton

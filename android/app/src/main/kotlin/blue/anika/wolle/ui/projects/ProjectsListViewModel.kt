@@ -10,6 +10,8 @@ import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.imports.BackgroundImports
+import blue.anika.wolle.data.imports.ImportKind
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectImporter
@@ -83,6 +85,7 @@ constructor(
     private val apiCapabilities: ApiCapabilities,
     private val syncScheduler: SyncScheduler,
     private val settingsRepository: SettingsRepository,
+    private val backgroundImports: BackgroundImports,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -164,6 +167,8 @@ constructor(
         ) { preview ->
             // The dialog's review already holds the final notes and yarn choices.
             val projectId = projectRepository.createProject(preview.request)
+            // Saved: the background import result is used up.
+            backgroundImports.clear(ImportKind.Project)
             syncScheduler.replayThenSyncNow()
             mutationFeedback.show(
                 R.string.mutation_project_imported_queued,
@@ -276,9 +281,28 @@ constructor(
     /** The server's thumbnail proxy for a picture of the imported page, as a loadable URL. */
     fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
 
-    fun cancelImport() = importController.cancel()
+    fun cancelImport() {
+        backgroundImports.cancel(ImportKind.Project)
+        importController.cancel()
+    }
 
-    fun dismissImport() = importController.dismiss()
+    /** Closes the dialog but keeps the import running in the background (it notifies). */
+    fun hideImport() = importController.cancel()
+
+    /**
+     * Picks up a background import that is still running or has finished (the app was left or
+     * closed meanwhile, or its notification was tapped). Returns whether there is one to show.
+     */
+    fun resumePendingImport(): Boolean {
+        val pending = backgroundImports.state(ImportKind.Project).value ?: return false
+        importController.start(pending.url)
+        return true
+    }
+
+    fun dismissImport() {
+        backgroundImports.clear(ImportKind.Project)
+        importController.dismiss()
+    }
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()
 

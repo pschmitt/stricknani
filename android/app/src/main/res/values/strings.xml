@@ -268,6 +268,18 @@
     <string name="project_import_error_rate_limited">Too many imports just now. Try again in a few minutes.</string>
     <string name="project_import_error_server">Stricknani couldn’t read that pattern. Try another link, or add the project by hand.</string>
     <string name="project_import_error_unknown">The project could not be imported. Please try again.</string>
+    <string name="import_notification_channel_name">Imports</string>
+    <string name="import_notification_channel_description">Link imports that run in the background, and their results.</string>
+    <string name="import_notification_results_channel_name">Finished imports</string>
+    <string name="import_notification_results_channel_description">A link import is ready to review, or did not work.</string>
+    <string name="import_notification_subtext">Import</string>
+    <string name="import_notification_progress_project">Importing a pattern</string>
+    <string name="import_notification_progress_yarn">Importing a yarn</string>
+    <string name="import_notification_progress_text">Reading the page…</string>
+    <string name="import_notification_ready_project">Pattern ready to review</string>
+    <string name="import_notification_ready_yarn">Yarn ready to review</string>
+    <string name="import_notification_failed">The import did not work</string>
+    <string name="import_notification_failed_text">Tap to see why and try again.</string>
     <string name="import_detail_line">%1$s: %2$s</string>
     <string name="import_detail_designer">Designer</string>
     <string name="import_detail_sizes">Sizes</string>
@@ -300,6 +312,8 @@
     <string name="import_yarn_remove">Remove %1$s</string>
     <string name="import_yarn_name">Yarn name</string>
     <string name="import_warning_yarn_enrichment">Some yarn details could not be loaded from their product pages. Check the yarns below.</string>
+    <string name="import_continue_in_background">Continue in the background</string>
+    <string name="import_background_hint">You can leave this screen: Stricknani lets you know when the import is done.</string>
     <string name="import_progress_slow_hint">Some pages take a minute when the AI opens them in a browser.</string>
     <string name="import_error_blocked">That website refused Stricknani’s request. Try another link, or add it by hand.</string>
     <string name="import_error_not_found">That page wasn’t found. Check the link.</string>

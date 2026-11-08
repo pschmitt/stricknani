@@ -267,6 +267,18 @@
     <string name="project_import_error_rate_limited">Gerade zu viele Importe. Versuch es in ein paar Minuten erneut.</string>
     <string name="project_import_error_server">Stricknani konnte diese Anleitung nicht lesen. Versuche einen anderen Link oder lege das Projekt selbst an.</string>
     <string name="project_import_error_unknown">Das Projekt konnte nicht importiert werden. Bitte versuche es erneut.</string>
+    <string name="import_notification_channel_name">Importe</string>
+    <string name="import_notification_channel_description">Link-Importe, die im Hintergrund laufen, und ihre Ergebnisse.</string>
+    <string name="import_notification_results_channel_name">Fertige Importe</string>
+    <string name="import_notification_results_channel_description">Ein Link-Import ist bereit zum Prüfen oder hat nicht geklappt.</string>
+    <string name="import_notification_subtext">Import</string>
+    <string name="import_notification_progress_project">Anleitung wird importiert</string>
+    <string name="import_notification_progress_yarn">Garn wird importiert</string>
+    <string name="import_notification_progress_text">Die Seite wird gelesen…</string>
+    <string name="import_notification_ready_project">Anleitung bereit zum Prüfen</string>
+    <string name="import_notification_ready_yarn">Garn bereit zum Prüfen</string>
+    <string name="import_notification_failed">Der Import hat nicht geklappt</string>
+    <string name="import_notification_failed_text">Tippe, um den Grund zu sehen und es erneut zu versuchen.</string>
     <string name="import_detail_line">%1$s: %2$s</string>
     <string name="import_detail_designer">Designer</string>
     <string name="import_detail_sizes">Größen</string>
@@ -299,6 +311,8 @@
     <string name="import_yarn_remove">%1$s entfernen</string>
     <string name="import_yarn_name">Garnname</string>
     <string name="import_warning_yarn_enrichment">Einige Garnangaben konnten nicht von den Produktseiten geladen werden. Prüfe die Garne unten.</string>
+    <string name="import_continue_in_background">Im Hintergrund weiter</string>
+    <string name="import_background_hint">Du kannst den Bildschirm verlassen: Stricknani sagt dir Bescheid, wenn der Import fertig ist.</string>
     <string name="import_progress_slow_hint">Manche Seiten brauchen eine Minute, wenn die KI sie in einem Browser öffnet.</string>
     <string name="import_error_blocked">Die Website hat die Anfrage von Stricknani abgelehnt. Versuche einen anderen Link oder lege es von Hand an.</string>
     <string name="import_error_not_found">Die Seite wurde nicht gefunden. Prüfe den Link.</string>

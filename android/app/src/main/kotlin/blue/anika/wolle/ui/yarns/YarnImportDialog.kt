@@ -43,6 +43,8 @@ fun YarnImportDialog(
     onStart: (String) -> Unit,
     onConfirm: (List<String>) -> Unit,
     onCancel: () -> Unit,
+    /** Hides the dialog while the import keeps running in the background. */
+    onHide: () -> Unit = onCancel,
     onRetry: () -> Unit,
     availability: ImportAvailability = ImportAvailability(),
     thumbnailUrl: (String) -> String? = { null },
@@ -57,7 +59,8 @@ fun YarnImportDialog(
 
     AlertDialog(
         modifier = Modifier.testTag("yarn-import-dialog"),
-        onDismissRequest = onCancel,
+        // While importing, leaving the dialog keeps the import running; only Cancel stops it.
+        onDismissRequest = if (state is YarnImportState.Importing) onHide else onCancel,
         title = {
             Text(
                 when (state) {
@@ -95,6 +98,7 @@ fun YarnImportDialog(
                     is YarnImportState.Importing ->
                         ImportProgress(
                             text = stringResource(R.string.yarn_import_progress_description),
+                            backgroundHint = true,
                             modifier = Modifier.testTag("yarn-import-progress"),
                         )
                     YarnImportState.Saving ->
@@ -221,7 +225,13 @@ fun YarnImportDialog(
                     TextButton(onClick = onCancel) {
                         Text(stringResource(R.string.project_import_done))
                     }
-                is YarnImportState.Importing,
+                is YarnImportState.Importing ->
+                    TextButton(
+                        modifier = Modifier.testTag("yarn-import-background"),
+                        onClick = onHide,
+                    ) {
+                        Text(stringResource(R.string.import_continue_in_background))
+                    }
                 YarnImportState.Saving -> Unit
             }
         },
@@ -246,7 +256,11 @@ fun YarnImportDialog(
 }
 
 @Composable
-private fun ImportProgress(text: String, modifier: Modifier = Modifier) {
+private fun ImportProgress(
+    text: String,
+    modifier: Modifier = Modifier,
+    backgroundHint: Boolean = false,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -260,6 +274,13 @@ private fun ImportProgress(text: String, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (backgroundHint) {
+                Text(
+                    text = stringResource(R.string.import_background_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

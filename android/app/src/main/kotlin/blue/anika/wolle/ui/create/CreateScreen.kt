@@ -89,14 +89,13 @@ fun CreateScreen(
     var autoStarted by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(autoStartImport) {
         val url = initialImportUrl
-        if (
-            autoStartImport &&
-                !autoStarted &&
-                initialImportKind == ShareImportKind.Project &&
-                url != null
-        ) {
+        if (autoStartImport && !autoStarted && url != null) {
             autoStarted = true
-            projects.startImport(url)
+            when (initialImportKind) {
+                ShareImportKind.Project -> projects.startImport(url)
+                ShareImportKind.Yarn -> yarns.startImport(url)
+                null -> Unit
+            }
         }
     }
 
@@ -141,8 +140,15 @@ fun CreateScreen(
                         when (option.kind) {
                             CreateKind.NewProject -> onNewProject()
                             CreateKind.NewYarn -> onNewYarn()
-                            CreateKind.ImportProject -> showProjectImport = true
-                            CreateKind.ImportYarn -> showYarnImport = true
+                            // A background import that is running or done shows again.
+                            CreateKind.ImportProject -> {
+                                projects.resumePendingImport()
+                                showProjectImport = true
+                            }
+                            CreateKind.ImportYarn -> {
+                                yarns.resumePendingImport()
+                                showYarnImport = true
+                            }
                         }
                     },
                 )
@@ -166,6 +172,10 @@ fun CreateScreen(
             projects.cancelImport()
         },
         onRetry = projects::retryImport,
+        onHide = {
+            showProjectImport = false
+            projects.hideImport()
+        },
     )
     YarnImportDialog(
         visible = showYarnImport,
@@ -180,6 +190,10 @@ fun CreateScreen(
             yarns.cancelImport()
         },
         onRetry = yarns::retryImport,
+        onHide = {
+            showYarnImport = false
+            yarns.hideImport()
+        },
         thumbnailUrl = yarns::importThumbnailUrl,
     )
 }

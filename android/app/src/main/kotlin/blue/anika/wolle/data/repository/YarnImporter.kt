@@ -8,6 +8,7 @@ import blue.anika.wolle.data.api.v2.ImportPreviewRequest
 import blue.anika.wolle.data.api.v2.ImportsV2Api
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.Serializable
 
 /** A fact from the yarn page that has no field of its own and is kept in the yarn notes. */
 enum class YarnImportNoteKind {
@@ -16,9 +17,10 @@ enum class YarnImportNoteKind {
     Price,
 }
 
-data class YarnImportNote(val kind: YarnImportNoteKind, val value: String)
+@Serializable data class YarnImportNote(val kind: YarnImportNoteKind, val value: String)
 
 /** A yarn that can be confirmed and then written through the normal offline outbox. */
+@Serializable
 data class ImportedYarnPreview(
     val sourceUrl: String,
     val request: YarnWriteRequest,

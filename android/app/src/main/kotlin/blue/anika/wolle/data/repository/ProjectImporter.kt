@@ -11,6 +11,7 @@ import blue.anika.wolle.data.api.v2.ImportsV2Api
 import blue.anika.wolle.data.api.v2.toV1
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.Serializable
 
 /** A fact from the pattern page that has no field of its own and is kept in the project notes. */
 enum class ImportDetailKind {
@@ -19,12 +20,13 @@ enum class ImportDetailKind {
     Difficulty,
 }
 
-data class ImportDetail(val kind: ImportDetailKind, val value: String)
+@Serializable data class ImportDetail(val kind: ImportDetailKind, val value: String)
 
 /**
  * A yarn the pattern page needs, as the server cleaned and enriched it. [suggestedStashId] is the
  * server's best match among the user's own yarns (brand and name, normalised, fuzzy), if any.
  */
+@Serializable
 data class ImportedYarn(
     val name: String,
     val brand: String? = null,
@@ -41,6 +43,7 @@ data class ImportedYarn(
 )
 
 /** Data that can be confirmed and then written through the normal offline project outbox. */
+@Serializable
 data class ImportedProjectPreview(
     val sourceUrl: String,
     val request: ProjectWriteRequest,
