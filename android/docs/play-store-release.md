@@ -56,8 +56,17 @@ Before enabling an upload, an operator must complete these external steps:
    the app uses a `dataSync` foreground service (WorkManager's `SystemForegroundService`) on
    Android 8-13 only, for user-started data downloads and restores that can run longer than ten
    minutes. Android 14+ uses user-initiated data transfer jobs, scheduled backups use no foreground
-   service. The manifest declares `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_DATA_SYNC`; submit
-   the declaration before the next Play release that contains them.
+   service. The manifest declares `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_DATA_SYNC`.
+   - Task: "Network processing -> Backing up, restoring".
+   - Play asks for a video. Run the E2E workflow by hand with lane `fgs-demo`
+     (`gh workflow run e2e.yaml -f lane=fgs-demo`): it records the walk-through on an API 33
+     emulator (`PlayFgsDemoRecording`) and keeps it as the `fgs-demo-api33` artifact. Upload it to
+     YouTube as unlisted and paste the link.
+   - The form only lists the permission once Play has a bundle that declares it, and the release
+     workflow's API upload is rejected ("You must let us know whether your app uses any Foreground
+     Service permissions") until it is declared. The first time (v1.5.1), the signed bundle from
+     the release run's `stricknani-vX.Y.Z-aab` artifact was uploaded in Play Console (internal
+     testing, Create new release), published there, and the declaration filled in afterwards.
 
 Play App Signing enrollment and any first-time developer-account declarations remain Console
 actions and cannot be safely automated from this repository.
