@@ -4602,13 +4602,17 @@ msgstr "Speicherung, Aufbewahrung und Löschung"
 msgid ""
 "Stricknani can read the pattern behind this link and fill in the project "
 "for you."
-msgstr "Stricknani kann die Anleitung hinter diesem Link lesen und das Projekt für dich ausfüllen."
+msgstr ""
+"Stricknani kann die Anleitung hinter diesem Link lesen und das Projekt "
+"für dich ausfüllen."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1942
 msgid ""
 "Stricknani can read the pattern behind this link with the AI importer and"
 " fill in the project for you."
-msgstr "Stricknani kann die Anleitung hinter diesem Link mit dem KI-Import lesen und das Projekt für dich ausfüllen."
+msgstr ""
+"Stricknani kann die Anleitung hinter diesem Link mit dem KI-Import lesen "
+"und das Projekt für dich ausfüllen."
 
 #: web/src/routes/about/+page.svelte:436
 msgid "Stricknani is free software, licensed under the"
