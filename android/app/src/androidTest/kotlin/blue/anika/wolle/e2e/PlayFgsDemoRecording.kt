@@ -1,5 +1,6 @@
 package blue.anika.wolle.e2e
 
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasScrollToNodeAction
@@ -71,7 +72,8 @@ class PlayFgsDemoRecording : StricknaniE2eTest() {
         file.click()
         // The confirmation is a dialog window of its own: UiAutomator rather than the compose rule.
         checkNotNull(device.wait(Until.findObject(By.text("Restore this file?")), 30_000)) {
-            "no restore confirmation"
+            // One line: CI's failure summary keeps only the first line of a message.
+            "no restore confirmation. Log: [${pickerLog().lines().filter { it.isNotBlank() }.joinToString(" ⏎ ")}]"
         }
         pause(1_500)
         device.findObject(By.text("Restore")).click()
@@ -79,6 +81,18 @@ class PlayFgsDemoRecording : StricknaniE2eTest() {
 
         composeRule.onNodeWithText("Projects").performClick()
         pause(4_000)
+    }
+
+    /** The app's picker result and the activity switches around it; no file names or URIs. */
+    private fun pickerLog(): String {
+        val command =
+            "logcat -d -t 400 -s StricknaniBackup:V ActivityTaskManager:I AndroidRuntime:E " +
+                "DocumentsUI:W"
+        val output =
+            InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        return ParcelFileDescriptor.AutoCloseInputStream(output).bufferedReader().use {
+            it.readText().takeLast(3_000)
+        }
     }
 
     /** Clicks the system picker's confirm button, whatever its capitalisation. */

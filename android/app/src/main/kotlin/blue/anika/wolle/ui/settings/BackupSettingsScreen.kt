@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import android.util.Log
 import android.view.View
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -124,6 +125,9 @@ internal fun BackupSettingsScreen(
     var pendingRestoreName by rememberSaveable { mutableStateOf<String?>(null) }
     val dataRestoreLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            // Whether the picker returned a file: diagnoses a missing restore dialog (no URI
+            // logged).
+            Log.i(BACKUP_LOG_TAG, "restore picker returned a file: ${uri != null}")
             if (uri != null) {
                 // Keep the read grant for the background job, which may start after this screen
                 // is gone. Not every provider allows it; the job then relies on the one-time grant.
@@ -1021,6 +1025,8 @@ private const val CONNECTIVITY_POLL_MILLIS = 2_000L
  * under a narrower filter), and the server checks the content of whatever is picked.
  */
 private val RESTORE_MIME_TYPES = arrayOf("*/*")
+
+internal const val BACKUP_LOG_TAG = "StricknaniBackup"
 
 /** The name the user gave the file in the picker, or null when the provider does not say. */
 private fun displayNameOf(context: android.content.Context, uri: Uri): String? =
