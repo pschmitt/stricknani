@@ -7,6 +7,9 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
@@ -70,7 +73,15 @@ class LocalModeBackupE2eTest : StricknaniE2eTest() {
             waitForText("Projects", timeoutMillis = 120_000)
         } catch (failure: AssertionError) {
             // Only the local-mode tag and crashes: no request logs (they could carry the token).
-            throw AssertionError("Local mode did not open. Log:\n${localModeLog()}", failure)
+            // One line: CI's failure summary keeps only the first line of a message.
+            val screen =
+                composeRule
+                    .onAllNodes(hasText("", substring = true), useUnmergedTree = true)
+                    .fetchSemanticsNodes()
+                    .flatMap { it.config.getOrNull(SemanticsProperties.Text).orEmpty() }
+                    .joinToString(" | ") { it.text }
+            val log = localModeLog().lines().filter { it.isNotBlank() }.joinToString(" ⏎ ")
+            throw AssertionError("Local mode did not open. Screen: [$screen] Log: [$log]", failure)
         }
 
         val name = "Local backup ${UUID.randomUUID().toString().take(8)}"

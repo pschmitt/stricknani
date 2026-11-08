@@ -312,7 +312,7 @@ constructor(
 
     companion object {
         /** Logcat tag of local-only mode failures (read by `LocalModeBackupE2eTest`). */
-        const val LOCAL_LOG_TAG = "StricknaniLocal"
+        const val LOCAL_LOG_TAG = blue.anika.wolle.localserver.LocalServer.LOG_TAG
         private const val SERVER_URL_SETTLE_MILLIS = 600L
     }
 

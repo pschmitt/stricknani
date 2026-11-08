@@ -7,6 +7,7 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import timber.log.Timber
 
 /**
  * The local-only mode (T130, `docs/local-only.md`): the Stricknani server runs inside the app, on
@@ -61,13 +62,17 @@ constructor(
 
     private fun startNative(preferredPort: Int): Pair<String, String> {
         check(isAvailable) { "local server not packaged" }
+        Timber.tag(LOG_TAG).i("Starting the in-app server")
         val reply = LocalServerNative.start(dataDir.absolutePath, preferredPort)
+        Timber.tag(LOG_TAG).i("The in-app server listens on port %s", reply.substringBefore('\n'))
         val port = reply.substringBefore('\n')
         val token = reply.substringAfter('\n')
         return "http://127.0.0.1:$port" to token
     }
 
-    private companion object {
-        const val DATA_DIR = "local-server"
+    companion object {
+        /** Logcat tag of the local-only mode (read by `LocalModeBackupE2eTest` on failure). */
+        const val LOG_TAG = "StricknaniLocal"
+        private const val DATA_DIR = "local-server"
     }
 }
