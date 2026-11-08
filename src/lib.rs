@@ -18,15 +18,15 @@ mod export;
 pub mod frontend;
 pub mod gravatar;
 mod i18n;
-pub mod local;
-#[cfg(target_os = "android")]
-mod local_jni;
 pub mod image_import;
 pub mod import_document;
 pub mod import_service;
 pub mod importer;
 pub mod imports;
 pub mod legacy_redirects;
+pub mod local;
+#[cfg(target_os = "android")]
+mod local_jni;
 pub mod media;
 pub mod media_ids;
 pub mod ocr;
