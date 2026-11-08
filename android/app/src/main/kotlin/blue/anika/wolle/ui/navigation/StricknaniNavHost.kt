@@ -396,6 +396,7 @@ fun StricknaniNavHost(
                         initialImportKind =
                             ShareImportKind.entries.firstOrNull { it.name == route.kind },
                         initialImportUrl = route.url,
+                        autoStartImport = route.autoStart,
                     )
                 }
                 screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->
@@ -469,6 +470,18 @@ fun StricknaniNavHost(
                 screen<Route.ProjectEditor>(motion) {
                     ProjectEditorScreen(
                         onSaved = { navController.navigateUp() },
+                        onImportLink = { url ->
+                            // The import replaces the new, unsaved project.
+                            navController.navigate(
+                                Route.CreateImport(
+                                    ShareImportKind.Project.name,
+                                    url,
+                                    autoStart = true,
+                                )
+                            ) {
+                                popUpTo<Route.ProjectEditor> { inclusive = true }
+                            }
+                        },
                         onDeleted = {
                             navController.navigate(Route.Projects) {
                                 popUpTo(Route.Projects) { inclusive = true }

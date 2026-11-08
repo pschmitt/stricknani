@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  autoStartFromSearch,
+  importStartQuery,
   extractSharedUrl,
   importPrefillQuery,
   prefillUrlFromSearch,
@@ -79,5 +81,27 @@ describe("prefillUrlFromSearch", () => {
   it("round-trips through importPrefillQuery", () => {
     const url = "https://example.com/p.php?id=1&cid=9#x";
     expect(prefillUrlFromSearch(importPrefillQuery(url))).toBe(url);
+  });
+});
+
+describe("importStartQuery", () => {
+  it("fills in the link and starts the import", () => {
+    const query = importStartQuery(
+      "https://www.garnstudio.com/pattern.php?id=10684&cid=9",
+    );
+    expect(query).toBe(
+      "?url=https%3A%2F%2Fwww.garnstudio.com%2Fpattern.php%3Fid%3D10684%26cid%3D9&start=1",
+    );
+    expect(autoStartFromSearch(query)).toBe(true);
+  });
+});
+
+describe("autoStartFromSearch", () => {
+  it("needs both start=1 and a web link", () => {
+    expect(autoStartFromSearch("?url=https%3A%2F%2Fe.com%2Fp")).toBe(false);
+    expect(autoStartFromSearch("?start=1")).toBe(false);
+    expect(autoStartFromSearch("?url=javascript%3Aalert(1)&start=1")).toBe(
+      false,
+    );
   });
 });

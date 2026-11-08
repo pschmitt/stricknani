@@ -11,6 +11,7 @@
     invalid = false,
     describedby,
     oninput,
+    onblur,
     maxlength = 2048,
   }: {
     id: string;
@@ -21,6 +22,8 @@
     /** Ids of external helper or error text, space separated. */
     describedby?: string;
     oninput?: (value: string) => void;
+    /** Called when the field loses focus, with its current value. */
+    onblur?: (value: string) => void;
     maxlength?: number;
   } = $props();
 
@@ -101,7 +104,10 @@
       oninput={onInput}
       onkeydown={onKeydown}
       onfocus={() => (focused = true)}
-      onblur={() => (focused = false)}></textarea>
+      onblur={() => {
+        focused = false;
+        onblur?.(value);
+      }}></textarea>
     <div class="url-actions">
       {#if showClear}
         <!-- Keep focus in the field so the button survives the blur it would cause. -->

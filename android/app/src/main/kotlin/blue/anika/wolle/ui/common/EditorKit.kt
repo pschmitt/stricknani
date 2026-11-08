@@ -857,6 +857,7 @@ fun UrlTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    onFocusLost: ((String) -> Unit)? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
@@ -911,6 +912,10 @@ fun UrlTextField(
             } else null,
         keyboardOptions =
             KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
-        modifier = modifier.onFocusChanged { focused = it.isFocused },
+        modifier =
+            modifier.onFocusChanged {
+                if (focused && !it.isFocused) onFocusLost?.invoke(value)
+                focused = it.isFocused
+            },
     )
 }

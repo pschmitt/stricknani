@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,6 +69,7 @@ fun CreateScreen(
     onNewYarn: () -> Unit,
     initialImportKind: ShareImportKind? = null,
     initialImportUrl: String? = null,
+    autoStartImport: Boolean = false,
     projects: ProjectsListViewModel = hiltViewModel(),
     yarns: YarnsListViewModel = hiltViewModel(),
 ) {
@@ -82,6 +84,20 @@ fun CreateScreen(
     }
     var showYarnImport by rememberSaveable {
         mutableStateOf(initialImportKind == ShareImportKind.Yarn)
+    }
+    // Coming from the new-project editor, the user already said yes: start right away, once.
+    var autoStarted by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(autoStartImport) {
+        val url = initialImportUrl
+        if (
+            autoStartImport &&
+                !autoStarted &&
+                initialImportKind == ShareImportKind.Project &&
+                url != null
+        ) {
+            autoStarted = true
+            projects.startImport(url)
+        }
     }
 
     Scaffold(

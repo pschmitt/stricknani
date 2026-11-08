@@ -45,3 +45,19 @@ export function prefillUrlFromSearch(search: string): string | null {
 export function importPrefillQuery(url: string): string {
   return `?url=${encodeURIComponent(url)}`;
 }
+
+/**
+ * The import page's query that fills in `url` and starts the import at once:
+ * the user already said yes (the new-project editor offers it for a pasted link).
+ */
+export function importStartQuery(url: string): string {
+  return `${importPrefillQuery(url)}&start=1`;
+}
+
+/** Whether the import page should start right away (`?start=1` with a link). */
+export function autoStartFromSearch(search: string): boolean {
+  return (
+    new URLSearchParams(search).get("start") === "1" &&
+    prefillUrlFromSearch(search) !== null
+  );
+}

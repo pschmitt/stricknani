@@ -35,7 +35,10 @@ sealed interface Route {
     @Serializable data object Create : Route
 
     /** Create with the import dialog of [kind] ("Project" or "Yarn") open and [url] filled in. */
-    @Serializable data class CreateImport(val kind: String, val url: String) : Route
+    /** [autoStart]: the user already chose to import (the new-project editor's link prompt). */
+    @Serializable
+    data class CreateImport(val kind: String, val url: String, val autoStart: Boolean = false) :
+        Route
 
     @Serializable data class ProjectDetail(val projectId: Int) : Route
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { importAvailability } from "./import-availability.ts";
   import { beforeNavigate } from "$app/navigation";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
@@ -33,7 +33,7 @@
     isCurrentImportOperation,
     type ImportOperationIdentity,
   } from "./import-operation";
-  import { prefillUrlFromSearch } from "./shared-link";
+  import { autoStartFromSearch, prefillUrlFromSearch } from "./shared-link";
   import { resolve } from "$app/paths";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -58,6 +58,8 @@
   let userGeneration = 0;
   let observedUserId = session.data?.user?.id ?? null;
   let controller: AbortController | null = null;
+  /** Start the import once the session is there (`?start=1`). */
+  let pendingAutoStart = $state(false);
   let writeController: AbortController | null = null;
 
   const availability = $derived(importAvailability(session.data?.capabilities));
@@ -111,11 +113,19 @@
     if (prefill) {
       sourceKind = "url";
       sourceUrl = prefill;
+      // From the new-project editor, where the user already chose to import.
+      pendingAutoStart = autoStartFromSearch(window.location.search);
     }
     return registerPwaUpdateGuard(() => ({
       dirty: hasDirtyDraft || hasSourceDraft,
       busy: busy,
     }));
+  });
+
+  $effect(() => {
+    if (!pendingAutoStart || !session.data?.user) return;
+    pendingAutoStart = false;
+    untrack(() => void runPreview());
   });
 
   $effect(() => {

@@ -1,5 +1,7 @@
 package blue.anika.wolle.data.api.dto
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -16,10 +18,12 @@ data class ProjectImportStepDto(
  * A diagram image (`kind` "diagram") or PDF ("pdf") found on the imported page. The server stores
  * selected ones as project attachments when the project is created.
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class ImportAssetDto(
     val url: String,
-    val kind: String = "diagram",
+    // The server requires `kind`; the app's Json would leave out the default.
+    @EncodeDefault val kind: String = "diagram",
     val label: String? = null,
 ) {
     val isPdf: Boolean

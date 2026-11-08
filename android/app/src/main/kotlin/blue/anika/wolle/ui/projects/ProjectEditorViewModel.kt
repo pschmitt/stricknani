@@ -13,6 +13,7 @@ import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.api.dto.YarnCandidateDto
+import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
@@ -28,6 +29,7 @@ import blue.anika.wolle.data.repository.movedItem
 import blue.anika.wolle.data.repository.reorderedIdsOrNull
 import blue.anika.wolle.data.repository.stepImages
 import blue.anika.wolle.data.repository.titleImages
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
@@ -97,12 +99,24 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
-    capabilities: ApiCapabilities,
+    private val capabilities: ApiCapabilities,
     private val sharingRepository: SharingRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
     val isEditing: Boolean = route.projectId != null
+
+    /**
+     * Whether a link typed into a new project can be imported instead: link imports are on and the
+     * app talks to a server (not local-only mode). [aiImports]: the server imports with AI.
+     */
+    fun offersLinkImport(): Boolean =
+        !isEditing &&
+            !settingsRepository.isLocalMode &&
+            capabilities.current.importAvailability().url
+
+    fun aiImports(): Boolean = capabilities.current.importAvailability().ai
 
     /** Section or step to open the editor at, from a long-press on the detail page. */
     val initialFocus: String? = route.focus

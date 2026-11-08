@@ -198,6 +198,11 @@
     <string name="editor_section_gallery">Gallery</string>
     <string name="editor_section_photos">Photos</string>
     <string name="project_editor_tags_label">Tags</string>
+    <string name="project_editor_import_offer_title">Import this pattern?</string>
+    <string name="project_editor_import_offer_text_ai">Stricknani can read the pattern behind this link with the AI importer and fill in the project for you.</string>
+    <string name="project_editor_import_offer_text">Stricknani can read the pattern behind this link and fill in the project for you.</string>
+    <string name="project_editor_import_offer_accept">Import</string>
+    <string name="project_editor_import_offer_decline">Not now</string>
     <string name="project_editor_link_label">Link</string>
     <string name="editor_link_open">Open link</string>
     <string name="editor_link_clear">Clear link</string>

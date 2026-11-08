@@ -18,6 +18,9 @@
   import { listCategories } from "../categories/category-api";
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
   import UrlField from "#lib/components/UrlField.svelte";
+  import { importAvailability } from "../imports/import-availability";
+  import { isHttpUrl } from "../imports/import-draft";
+  import { importStartQuery } from "../imports/shared-link";
   import YarnPicker from "./YarnPicker.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
@@ -97,6 +100,11 @@
   let photoEditOpen = $state(false);
   let confirmationDialog = $state<ConfirmDialog | undefined>(undefined);
   let conflictDialog = $state<ConfirmDialog | undefined>(undefined);
+  /** A new project's pasted link: offer to import the pattern from it instead. */
+  let importOfferDialog = $state<ConfirmDialog | undefined>(undefined);
+  let importOfferUrl = $state("");
+  let declinedImportUrl = "";
+  let leavingForImport = false;
   let conflictLoadBusy = $state(false);
   let conflictLoadError = $state("");
   let confirmedAction = $state<ConfirmedAction | null>(null);
@@ -411,8 +419,32 @@
     return () => controller.abort();
   });
 
+  const linkImports = $derived(importAvailability(session.data?.capabilities));
+
+  /** Offers the import once per link, only while creating and when the server imports links. */
+  function offerImport(value: string): void {
+    const url = value.trim();
+    if (!isCreating || !linkImports.url || !isHttpUrl(url)) return;
+    if (url === declinedImportUrl || importOfferDialog === undefined) return;
+    importOfferUrl = url;
+    untrack(() => importOfferDialog?.showModal());
+  }
+
+  function acceptImport(): void {
+    leavingForImport = true;
+    untrack(() => importOfferDialog?.close());
+    void goto(`${resolve("/imports")}${importStartQuery(importOfferUrl)}`);
+  }
+
+  function declineImport(): void {
+    declinedImportUrl = importOfferUrl;
+    untrack(() => importOfferDialog?.close());
+  }
+
   beforeNavigate(({ cancel, willUnload }) => {
     if (willUnload) return;
+    // The import takes the link over; nothing else was typed worth keeping a prompt for.
+    if (leavingForImport) return;
     if (
       isDirty &&
       typeof window !== "undefined" &&
@@ -1583,6 +1615,7 @@
                   id="project-link"
                   bind:value={draft.link}
                   {locale}
+                  onblur={offerImport}
                   invalid={Boolean(fieldErrors.link)}
                   describedby={fieldErrors.link
                     ? "project-link-error"
@@ -1898,6 +1931,47 @@
         {/snippet}
       </ConfirmDialog>
     {/if}
+    <ConfirmDialog
+      bind:this={importOfferDialog}
+      titleId="import-offer-title"
+      title={t("Import this pattern?", locale)}
+    >
+      {#snippet children()}
+        {#if linkImports.ai}
+          <p>
+            {t(
+              "Stricknani can read the pattern behind this link with the AI importer and fill in the project for you.",
+              locale,
+            )}
+          </p>
+        {:else}
+          <p>
+            {t(
+              "Stricknani can read the pattern behind this link and fill in the project for you.",
+              locale,
+            )}
+          </p>
+        {/if}
+      {/snippet}
+      {#snippet actions()}
+        <Button
+          type="button"
+          variant="secondary"
+          icon="cancel"
+          onclick={declineImport}
+        >
+          {t("Not now", locale)}
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          icon="link"
+          onclick={acceptImport}
+        >
+          {t("Import", locale)}
+        </Button>
+      {/snippet}
+    </ConfirmDialog>
     <ConfirmDialog
       bind:this={conflictDialog}
       titleId="load-latest-project-title"

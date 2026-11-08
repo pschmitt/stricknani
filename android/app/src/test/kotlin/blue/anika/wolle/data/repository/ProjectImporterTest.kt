@@ -11,6 +11,7 @@ import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Dto
 import blue.anika.wolle.data.api.v2.MetaV2UserDto
 import blue.anika.wolle.data.api.v2.V2Envelope
+import blue.anika.wolle.di.NetworkModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -161,9 +162,19 @@ class ProjectImporterTest {
     }
 
     @Test
+    fun `a diagram keeps its kind in the write request`() {
+        val body =
+            NetworkModule.provideJson()
+                .encodeToString(
+                    blue.anika.wolle.data.api.dto.ImportAssetDto(url = "https://e.com/chart.jpg")
+                )
+        assertEquals("""{"url":"https://e.com/chart.jpg","kind":"diagram"}""", body)
+    }
+
+    @Test
     fun `the write request sends attachment urls with their snake case name`() {
         val body =
-            Json { encodeDefaults = true }
+            NetworkModule.provideJson()
                 .encodeToString(
                     blue.anika.wolle.data.api.dto.ProjectWriteRequest(
                         name = "x",
@@ -178,18 +189,17 @@ class ProjectImporterTest {
                 )
         assertTrue(
             body,
-            body.contains(
-                """"attachment_urls":[{"url":"https://e.com/p.pdf","kind":"pdf","label":null}]"""
-            ),
+            body.contains(""""attachment_urls":[{"url":"https://e.com/p.pdf","kind":"pdf"}]"""),
         )
     }
 
     @Test
+    // The app's own Json (no encodeDefaults): `type` must still be sent, or the server answers 422
+    // and every link import shows "invalid link".
     fun `the request body is the documented json`() {
         assertEquals(
-            """{"type":"url","url":"https://e.com","use_ai":false,"target":"project"}""",
-            Json { encodeDefaults = true }
-                .encodeToString(ImportPreviewRequest(url = "https://e.com")),
+            """{"type":"url","url":"https://e.com","target":"project"}""",
+            NetworkModule.provideJson().encodeToString(ImportPreviewRequest(url = "https://e.com")),
         )
     }
 }

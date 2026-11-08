@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -41,6 +42,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,6 +89,7 @@ import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import blue.anika.wolle.ui.common.showFeedback
+import blue.anika.wolle.ui.common.urlHostOrNull
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -108,6 +111,8 @@ fun ProjectEditorScreen(
     onSaved: () -> Unit,
     onDeleted: () -> Unit,
     onBack: () -> Unit,
+    /** Opens the import with this link, started; offered for a link typed into a new project. */
+    onImportLink: (String) -> Unit = {},
     viewModel: ProjectEditorViewModel = hiltViewModel(),
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
@@ -126,6 +131,17 @@ fun ProjectEditorScreen(
     val candidates by viewModel.candidates.collectAsStateWithLifecycle()
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    // A new project's link: offer to import the pattern instead, once per link (as on the web).
+    var importOfferUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var declinedImportUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    val offerImport = { value: String ->
+        val url = value.trim()
+        if (
+            urlHostOrNull(url) != null && url != declinedImportUrl && viewModel.offersLinkImport()
+        ) {
+            importOfferUrl = url
+        }
+    }
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     var showYarnPicker by rememberSaveable { mutableStateOf(false) }
     val isLoaded by viewModel.isLoaded.collectAsStateWithLifecycle()
@@ -467,6 +483,7 @@ fun ProjectEditorScreen(
                                 },
                                 label = stringResource(R.string.project_editor_link_label),
                                 modifier = Modifier.fillMaxWidth(),
+                                onFocusLost = offerImport,
                             )
                         }
                     }
@@ -705,6 +722,45 @@ fun ProjectEditorScreen(
             onDiscard = {
                 showDiscardDialog = false
                 onBack()
+            },
+        )
+    }
+
+    importOfferUrl?.let { url ->
+        AlertDialog(
+            onDismissRequest = {
+                declinedImportUrl = url
+                importOfferUrl = null
+            },
+            title = { Text(stringResource(R.string.project_editor_import_offer_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        if (viewModel.aiImports()) R.string.project_editor_import_offer_text_ai
+                        else R.string.project_editor_import_offer_text
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        importOfferUrl = null
+                        onImportLink(url)
+                    },
+                    modifier = Modifier.testTag("project-editor-import-offer-accept"),
+                ) {
+                    Text(stringResource(R.string.project_editor_import_offer_accept))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        declinedImportUrl = url
+                        importOfferUrl = null
+                    }
+                ) {
+                    Text(stringResource(R.string.project_editor_import_offer_decline))
+                }
             },
         )
     }

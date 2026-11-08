@@ -197,6 +197,11 @@
     <string name="editor_section_gallery">Galerie</string>
     <string name="editor_section_photos">Fotos</string>
     <string name="project_editor_tags_label">Tags</string>
+    <string name="project_editor_import_offer_title">Diese Anleitung importieren?</string>
+    <string name="project_editor_import_offer_text_ai">Stricknani kann die Anleitung hinter diesem Link mit dem KI-Import lesen und das Projekt für dich ausfüllen.</string>
+    <string name="project_editor_import_offer_text">Stricknani kann die Anleitung hinter diesem Link lesen und das Projekt für dich ausfüllen.</string>
+    <string name="project_editor_import_offer_accept">Importieren</string>
+    <string name="project_editor_import_offer_decline">Jetzt nicht</string>
     <string name="project_editor_link_label">Link</string>
     <string name="editor_link_open">Link öffnen</string>
     <string name="editor_link_clear">Link löschen</string>

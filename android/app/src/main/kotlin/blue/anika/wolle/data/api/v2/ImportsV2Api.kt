@@ -5,6 +5,8 @@ import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectImportStepDto
 import blue.anika.wolle.data.api.dto.ProjectImportYarnDto
 import blue.anika.wolle.data.api.dto.ProjectImportYarnMatchDto
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.Body
@@ -16,13 +18,18 @@ interface ImportsV2Api {
     suspend fun previewImport(@Body request: ImportPreviewRequest): V2Envelope<ImportPreviewDto>
 }
 
+/**
+ * The app's [kotlinx.serialization.json.Json] leaves out default values, but the server needs
+ * `type` (it selects the request variant) and the explicit `target`: both are always encoded.
+ */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class ImportPreviewRequest(
-    val type: String = "url",
+    @EncodeDefault val type: String = "url",
     val url: String,
     @SerialName("use_ai") val useAi: Boolean = false,
     /** `project` (default) or `yarn`. */
-    val target: String = "project",
+    @EncodeDefault val target: String = "project",
 )
 
 /** `PreviewData`. Only what the app needs; the rest of the body is ignored. */
