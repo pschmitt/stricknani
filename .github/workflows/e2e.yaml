@@ -44,6 +44,7 @@ on:
         options:
           - smoke
           - full
+          - fgs-demo
 
 concurrency:
   # A newer push to a pull request supersedes this run (the pull request's
@@ -284,7 +285,8 @@ jobs:
           - api: 33
             lane: backups
     env:
-      E2E_LANE: ${{ matrix.lane == 'backups' && 'backups' || (github.event_name == 'workflow_dispatch' && inputs.lane || 'smoke') }}
+      # A dispatched fgs-demo run records the Play foreground-service walk-through on both APIs.
+      E2E_LANE: ${{ (github.event_name == 'workflow_dispatch' && inputs.lane == 'fgs-demo') && 'fgs-demo' || (matrix.lane == 'backups' && 'backups' || (github.event_name == 'workflow_dispatch' && inputs.lane || 'smoke')) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -419,6 +421,14 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
           working-directory: android
           script: bash ../ci/run-e2e-ci.sh
+
+      - name: Upload the foreground-service demo recording
+        if: ${{ always() && env.E2E_LANE == 'fgs-demo' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: fgs-demo-api${{ matrix.api }}
+          if-no-files-found: warn
+          path: android/build/fgs-demo/fgs-demo.mp4
 
       - name: Summarize Android instrumentation failures
         if: ${{ failure() }}

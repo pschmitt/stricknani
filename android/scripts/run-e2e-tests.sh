@@ -4,6 +4,7 @@ set -euo pipefail
 
 run_test() {
   local test_class="$1"
+  shift
 
   local -a args=(
     "-Pandroid.testInstrumentationRunnerArguments.class=$test_class"
@@ -15,7 +16,7 @@ run_test() {
     args+=("-Pandroid.testInstrumentationRunnerArguments.e2e_peer_token=$E2E_PEER_TOKEN")
   fi
 
-  ./gradlew connectedDebugAndroidTest --stacktrace "${args[@]}"
+  ./gradlew connectedDebugAndroidTest --stacktrace "${args[@]}" "$@"
 }
 
 case "${E2E_LANE:-smoke}" in
@@ -35,6 +36,23 @@ case "${E2E_LANE:-smoke}" in
   backups)
     # Data export and restore only: CI runs it on an older Android as well (see e2e.yaml).
     run_test blue.anika.wolle.e2e.DataBackupE2eTest
+    ;;
+  fgs-demo)
+    # The screen recording for Google Play's foreground-service declaration
+    # (PlayFgsDemoRecording). The video is kept as a workflow artifact, never committed.
+    recording=/sdcard/fgs-demo.mp4
+    adb shell rm -f "$recording"
+    adb shell screenrecord --time-limit 170 "$recording" &
+    recorder=$!
+    status=0
+    run_test blue.anika.wolle.e2e.PlayFgsDemoRecording \
+      "-Pandroid.testInstrumentationRunnerArguments.fgs_demo=true" || status=$?
+    adb shell pkill -INT screenrecord || true
+    wait "$recorder" || true
+    sleep 2
+    mkdir -p build/fgs-demo
+    adb pull "$recording" build/fgs-demo/fgs-demo.mp4 || true
+    exit "$status"
     ;;
   *)
     printf 'Unsupported Android E2E lane: %s\n' "${E2E_LANE}" >&2
