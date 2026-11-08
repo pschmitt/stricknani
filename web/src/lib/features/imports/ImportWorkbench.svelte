@@ -3,6 +3,7 @@
   import { beforeNavigate } from "$app/navigation";
   import { onDestroy, onMount, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
+  import { webNotifications } from "#lib/web-notifications.svelte.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -278,15 +279,44 @@
       createdProjectId = null;
       busy = false;
       void loadSuggestedYarns(editor, activeController.signal);
+      notifyIfAway(editor.name, result.draft.project.imageUrls[0] ?? null);
     } catch (error) {
       if (!isCurrentOperation(identity, generation) || isAbort(error)) return;
       errorMessage = formatError(error);
+      notifyIfAway(null, null);
     } finally {
       if (isCurrentOperation(identity, generation)) {
         busy = false;
         if (controller === activeController) controller = null;
       }
     }
+  }
+
+  /**
+   * An import can take minutes: when the tab is in the background meanwhile,
+   * a notification says that the review is ready ([name]) or that it failed.
+   * Clicking it returns to this tab, which still holds the review.
+   */
+  function notifyIfAway(name: string | null, imageUrl: string | null) {
+    if (document.visibilityState === "visible" && document.hasFocus()) return;
+    const path = resolve("/imports");
+    void webNotifications.show(
+      name !== null
+        ? {
+            title: t("Pattern ready to review", locale),
+            body: name,
+            tag: "link-import",
+            path,
+            image: imageUrl ? importImageSrc(imageUrl) : null,
+            openLabel: t("Review", locale),
+          }
+        : {
+            title: t("The import did not work", locale),
+            body: t("Open the import to see why and try again.", locale),
+            tag: "link-import",
+            path,
+          },
+    );
   }
 
   /** Show the suggested stash yarns as cards; a suggestion that cannot be loaded is dropped. */
