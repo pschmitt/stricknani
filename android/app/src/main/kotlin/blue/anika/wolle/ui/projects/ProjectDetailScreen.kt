@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -53,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +79,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ACCESS_OWNER
 import blue.anika.wolle.data.api.dto.AttachmentDto
+import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.repository.ItemAccess
 import blue.anika.wolle.data.repository.access
@@ -85,7 +90,6 @@ import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.ProjectDetailCard
 import blue.anika.wolle.data.timer.ProjectTimerReminderInterval
 import blue.anika.wolle.data.util.DateTimeUtils
-import blue.anika.wolle.ui.common.ArchiveControl
 import blue.anika.wolle.ui.common.ArchiveEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
@@ -100,7 +104,6 @@ import blue.anika.wolle.ui.common.ItemBannerView
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
-import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditTarget
@@ -109,7 +112,7 @@ import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.ScrolledBarTitle
 import blue.anika.wolle.ui.common.SectionActions
-import blue.anika.wolle.ui.common.SourceLinkRow
+import blue.anika.wolle.ui.common.SourceRows
 import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.TextSizeMenuSection
@@ -122,7 +125,6 @@ import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.rememberRefreshFailure
-import blue.anika.wolle.ui.common.safeExternalUrl
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.history.HistoryPhase
@@ -559,14 +561,12 @@ private fun ProjectDetailContent(
     val stitchSampleImages =
         remember(detail.images) { detail.images.filter { it.isStitchSample && it.stepId == null } }
     val availableCardKeys = buildList {
-        // Like the web, the pattern source card is always there (it says when no link is saved).
-        add(ProjectDetailCard.SOURCE)
-        if (detail.attachments.isNotEmpty()) add(ProjectDetailCard.ATTACHMENTS)
         // Always: like the web it shows at least when the project was updated.
         add(ProjectDetailCard.DETAILS)
-        if (detail.stitchSample != null) add(ProjectDetailCard.STITCH_SAMPLE)
-        if (linkedYarns.isNotEmpty()) add(ProjectDetailCard.LINKED_YARNS)
-        if (detail.description != null) add(ProjectDetailCard.DESCRIPTION)
+        if (linkedYarns.isNotEmpty() || detail.otherMaterials != null) {
+            add(ProjectDetailCard.MATERIALS)
+        }
+        if (detail.description != null || detail.notes != null) add(ProjectDetailCard.DESCRIPTION)
         if (detail.steps.isNotEmpty()) add(ProjectDetailCard.STEPS)
     }
     val savedVisibleOrder =
@@ -576,7 +576,11 @@ private fun ProjectDetailContent(
     var orderedCardKeys by remember(savedVisibleOrder) { mutableStateOf(savedVisibleOrder) }
     LaunchedEffect(savedVisibleOrder) { orderedCardKeys = savedVisibleOrder }
     val reorderState = rememberDetailCardReorderState()
-    val itemIndexOffset = 1 + (if (detail.images.isNotEmpty()) 1 else 0) + 1
+    val itemIndexOffset =
+        1 +
+            (if (detail.images.isNotEmpty()) 1 else 0) +
+            (if (detail.attachments.isNotEmpty()) 1 else 0) +
+            1
     val moveCard: (Int, Int) -> Unit = { fromIndex, toIndex ->
         val next = DetailCardOrder.move(orderedCardKeys, fromIndex, toIndex)
         if (next != orderedCardKeys) {
@@ -594,7 +598,25 @@ private fun ProjectDetailContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item(key = "detail-title") { DetailTitle(detail.name) }
+            item(key = "detail-title") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    DetailTitle(detail.name)
+                    detail.category?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (detail.tags.isNotEmpty()) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            detail.tags.forEach { tag ->
+                                AssistChip(onClick = {}, label = { Text(tag) })
+                            }
+                        }
+                    }
+                }
+            }
             if (detail.images.isNotEmpty()) {
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -619,109 +641,39 @@ private fun ProjectDetailContent(
                     }
                 }
             }
+            if (detail.attachments.isNotEmpty()) {
+                // Frequently used, so fixed directly under the gallery.
+                item(key = "attachments") {
+                    ProjectAttachmentsCard(
+                        attachments = detail.attachments,
+                        canEdit = canEdit,
+                        onEdit = edit?.let { e -> { e(ProjectEditorFocus.ATTACHMENTS) } },
+                        onDeleteAttachment = onDeleteAttachment,
+                    )
+                }
+            }
             item { DetailCardReorderHint(reorderState, onDone = reorderState::finish) }
 
             items(orderedCardKeys, key = { it }) { cardKey ->
                 val cardIndex = orderedCardKeys.indexOf(cardKey)
                 when (cardKey) {
-                    ProjectDetailCard.SOURCE ->
-                        ReorderableDetailCard(
-                            title = stringResource(R.string.project_detail_source_title),
-                            icon = PhosphorIcons.Link,
-                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.DETAILS) } },
-                            copyText = detail.link,
-                            cardKey = cardKey,
-                            cardIndex = cardIndex,
-                            listState = listState,
-                            orderedKeys = orderedCardKeys,
-                            itemIndexOffset = itemIndexOffset,
-                            reorderState = reorderState,
-                            onMove = moveCard,
-                        ) {
-                            val original = safeExternalUrl(detail.link)
-                            if (original != null) {
-                                SourceLinkRow(
-                                    PhosphorIcons.Notebook,
-                                    stringResource(R.string.project_detail_source_open),
-                                    original,
-                                )
-                            } else {
-                                Text(
-                                    stringResource(R.string.project_detail_source_none),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            safeExternalUrl(detail.linkArchive)?.let { archived ->
-                                SourceLinkRow(
-                                    PhosphorIcons.ClockCounterClockwise,
-                                    stringResource(R.string.project_detail_source_archive),
-                                    archived,
-                                )
-                            }
-                            if (canArchive && original != null) {
-                                ArchiveControl(
-                                    ArchiveEntity.PROJECT,
-                                    detail.id,
-                                    original,
-                                    onArchived,
-                                )
-                            }
-                        }
-                    ProjectDetailCard.ATTACHMENTS ->
-                        ReorderableDetailCard(
-                            title = stringResource(R.string.project_detail_attachments_title),
-                            icon = PhosphorIcons.Paperclip,
-                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.ATTACHMENTS) } },
-                            copyText =
-                                detail.attachments.joinToString("\n") { it.originalFilename },
-                            cardKey = cardKey,
-                            cardIndex = cardIndex,
-                            listState = listState,
-                            orderedKeys = orderedCardKeys,
-                            itemIndexOffset = itemIndexOffset,
-                            reorderState = reorderState,
-                            onMove = moveCard,
-                        ) {
-                            detail.attachments.forEachIndexed { index, attachment ->
-                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        attachment.originalFilename,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    if (canEdit) {
-                                        IconButton(onClick = { onDeleteAttachment(attachment) }) {
-                                            DestructiveDeleteIcon(
-                                                contentDescription =
-                                                    stringResource(
-                                                        R.string
-                                                            .project_detail_delete_attachment_description
-                                                    )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     ProjectDetailCard.DETAILS ->
                         ReorderableDetailCard(
                             title = stringResource(R.string.project_detail_details_title),
                             icon = PhosphorIcons.Info,
                             onEdit = edit?.let { e -> { e(ProjectEditorFocus.DETAILS) } },
                             copyText =
-                                copyLines(
-                                    stringResource(R.string.common_field_category) to
-                                        detail.category,
-                                    stringResource(R.string.common_field_needles) to detail.needles,
-                                    stringResource(R.string.project_detail_field_yarn) to
-                                        detail.yarn,
-                                    stringResource(R.string.common_field_other_materials) to
-                                        detail.otherMaterials,
-                                    stringResource(R.string.project_editor_tags_label) to
-                                        detail.tags.joinToString(", "),
-                                ),
+                                (copyLines(
+                                        stringResource(R.string.project_detail_field_yarn) to
+                                            detail.yarn,
+                                        stringResource(R.string.common_field_needles) to
+                                            detail.needles,
+                                        stringResource(R.string.project_detail_field_gauge) to
+                                            detail.stitchSample,
+                                    ) +
+                                        listOfNotNull(detail.link?.takeIf { it.isNotBlank() })
+                                            .joinToString("") { "\n$it" })
+                                    .trimStart('\n'),
                             cardKey = cardKey,
                             cardIndex = cardIndex,
                             listState = listState,
@@ -730,38 +682,54 @@ private fun ProjectDetailContent(
                             reorderState = reorderState,
                             onMove = moveCard,
                         ) {
-                            detail.category?.let {
-                                DetailRow(stringResource(R.string.common_field_category), it)
+                            detail.yarn?.let {
+                                DetailRow(stringResource(R.string.project_detail_field_yarn), it)
                             }
                             detail.needles?.let {
                                 DetailRow(stringResource(R.string.common_field_needles), it)
                             }
-                            detail.yarn?.let {
-                                DetailRow(stringResource(R.string.project_detail_field_yarn), it)
+                            if (detail.stitchSample != null) {
+                                Text(
+                                    stringResource(R.string.project_detail_field_gauge),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                                ProjectMarkdown(
+                                    value = detail.stitchSample.orEmpty(),
+                                    resolveMediaUrl = resolveMediaUrl,
+                                    onImageClick = openViewerImage,
+                                )
+                                StitchSampleImages(
+                                    stitchSampleImages,
+                                    resolveMediaUrl,
+                                    openViewerImage,
+                                )
                             }
-                            detail.otherMaterials?.let {
-                                DetailRow(stringResource(R.string.common_field_other_materials), it)
-                            }
+                            SourceRows(
+                                entity = ArchiveEntity.PROJECT,
+                                id = detail.id,
+                                link = detail.link,
+                                linkArchive = detail.linkArchive,
+                                openLabel = stringResource(R.string.project_detail_source_open),
+                                archiveLabel =
+                                    stringResource(R.string.project_detail_source_archive),
+                                canArchive = canArchive,
+                                onArchived = onArchived,
+                            )
                             updatedDate(detail.updatedAt)?.let {
                                 DetailRow(stringResource(R.string.common_field_updated), it)
                             }
-                            if (detail.tags.isNotEmpty()) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(top = 8.dp),
-                                ) {
-                                    detail.tags.forEach { tag ->
-                                        AssistChip(onClick = {}, label = { Text(tag) })
-                                    }
-                                }
-                            }
                         }
-                    ProjectDetailCard.STITCH_SAMPLE ->
+                    ProjectDetailCard.MATERIALS -> {
+                        var expanded by rememberSaveable { mutableStateOf(true) }
                         ReorderableDetailCard(
-                            title = stringResource(R.string.common_field_stitch_sample),
-                            icon = PhosphorIcons.Ruler,
-                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.STITCH_SAMPLE) } },
-                            copyText = detail.stitchSample,
+                            title = stringResource(R.string.project_detail_materials_title),
+                            icon = MdiIcons.YarnBall,
+                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.LINKED_YARNS) } },
+                            copyText =
+                                (linkedYarns.map { it.name } + listOfNotNull(detail.otherMaterials))
+                                    .joinToString("\n"),
                             cardKey = cardKey,
                             cardIndex = cardIndex,
                             listState = listState,
@@ -769,83 +737,66 @@ private fun ProjectDetailContent(
                             itemIndexOffset = itemIndexOffset,
                             reorderState = reorderState,
                             onMove = moveCard,
-                        ) {
-                            ProjectMarkdown(
-                                value = detail.stitchSample.orEmpty(),
-                                resolveMediaUrl = resolveMediaUrl,
-                                onImageClick = openViewerImage,
-                            )
-                            if (stitchSampleImages.isNotEmpty()) {
-                                LazyRow(
-                                    modifier = Modifier.padding(top = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            // The heading's chevron opens and closes it, like the web's section.
+                            headerAction = {
+                                IconButton(
+                                    onClick = { expanded = !expanded },
+                                    modifier = Modifier.testTag("e2e-materials-toggle"),
                                 ) {
-                                    itemsIndexed(
-                                        stitchSampleImages,
-                                        key = { _, image -> image.id },
-                                    ) { _, image ->
-                                        AsyncImage(
-                                            model = resolveMediaUrl(image.url),
-                                            contentDescription = image.altText,
-                                            contentScale = ContentScale.Crop,
-                                            modifier =
-                                                Modifier.size(160.dp)
-                                                    .clip(RoundedCornerShape(16.dp))
-                                                    .clickable {
-                                                        resolveMediaUrl(image.url)
-                                                            ?.let(openViewerImage)
-                                                    },
+                                    Icon(
+                                        if (expanded) Icons.Filled.KeyboardArrowUp
+                                        else Icons.Filled.KeyboardArrowDown,
+                                        contentDescription =
+                                            stringResource(
+                                                if (expanded) R.string.project_detail_materials_hide
+                                                else R.string.project_detail_materials_show
+                                            ),
+                                    )
+                                }
+                            },
+                        ) {
+                            if (expanded) {
+                                linkedYarns.forEachIndexed { index, yarn ->
+                                    if (index > 0) {
+                                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                    }
+                                    LinkedEntityRow(
+                                        name = yarn.name,
+                                        previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
+                                        fallbackIcon = MdiIcons.YarnBall,
+                                        onClick = { onYarnClick(yarn.id) },
+                                    )
+                                    // The yarn's notes; no yarn source link here, the yarn page has
+                                    // it.
+                                    yarn.notes?.let {
+                                        ProjectMarkdown(
+                                            value = it,
+                                            resolveMediaUrl = resolveMediaUrl,
+                                            onImageClick = openViewerImage,
+                                            modifier = Modifier.padding(top = 4.dp),
                                         )
                                     }
                                 }
-                            }
-                        }
-                    ProjectDetailCard.LINKED_YARNS ->
-                        ReorderableDetailCard(
-                            title = stringResource(R.string.project_detail_linked_yarns_title),
-                            icon = MdiIcons.YarnBall,
-                            onEdit = edit?.let { e -> { e(ProjectEditorFocus.LINKED_YARNS) } },
-                            copyText = linkedYarns.joinToString("\n") { it.name },
-                            cardKey = cardKey,
-                            cardIndex = cardIndex,
-                            listState = listState,
-                            orderedKeys = orderedCardKeys,
-                            itemIndexOffset = itemIndexOffset,
-                            reorderState = reorderState,
-                            onMove = moveCard,
-                        ) {
-                            linkedYarns.forEachIndexed { index, yarn ->
-                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                                LinkedEntityRow(
-                                    name = yarn.name,
-                                    previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
-                                    fallbackIcon = MdiIcons.YarnBall,
-                                    onClick = { onYarnClick(yarn.id) },
-                                )
-                                // The web's Materials list: the yarn's notes and its source.
-                                yarn.notes?.let {
-                                    ProjectMarkdown(
-                                        value = it,
-                                        resolveMediaUrl = resolveMediaUrl,
-                                        onImageClick = openViewerImage,
-                                        modifier = Modifier.padding(top = 4.dp),
-                                    )
-                                }
-                                safeExternalUrl(yarn.link)?.let {
-                                    SourceLinkRow(
-                                        PhosphorIcons.Link,
-                                        stringResource(R.string.yarn_detail_source_open),
+                                detail.otherMaterials?.let {
+                                    if (linkedYarns.isNotEmpty()) {
+                                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                    }
+                                    DetailRow(
+                                        stringResource(R.string.common_field_other_materials),
                                         it,
                                     )
                                 }
                             }
                         }
+                    }
                     ProjectDetailCard.DESCRIPTION ->
                         ReorderableDetailCard(
-                            title = stringResource(R.string.project_detail_description_title),
+                            title = stringResource(R.string.project_detail_pattern_notes_title),
                             icon = PhosphorIcons.NotePencil,
                             onEdit = edit?.let { e -> { e(ProjectEditorFocus.DESCRIPTION) } },
-                            copyText = detail.description,
+                            copyText =
+                                listOfNotNull(detail.description, detail.notes)
+                                    .joinToString("\n\n"),
                             cardKey = cardKey,
                             cardIndex = cardIndex,
                             listState = listState,
@@ -854,11 +805,26 @@ private fun ProjectDetailContent(
                             reorderState = reorderState,
                             onMove = moveCard,
                         ) {
-                            ProjectMarkdown(
-                                value = detail.description.orEmpty(),
-                                resolveMediaUrl = resolveMediaUrl,
-                                onImageClick = openViewerImage,
-                            )
+                            detail.description?.let {
+                                ProjectMarkdown(
+                                    value = it,
+                                    resolveMediaUrl = resolveMediaUrl,
+                                    onImageClick = openViewerImage,
+                                )
+                            }
+                            detail.notes?.let {
+                                Text(
+                                    stringResource(R.string.project_detail_notes_title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                                ProjectMarkdown(
+                                    value = it,
+                                    resolveMediaUrl = resolveMediaUrl,
+                                    onImageClick = openViewerImage,
+                                )
+                            }
                         }
                     ProjectDetailCard.STEPS ->
                         ReorderableDetailCard(
@@ -921,15 +887,6 @@ private fun ProjectDetailContent(
                         avatarUrl = resolveMediaUrl,
                     )
                 }
-            }
-        }
-        if (detail.notes != null) {
-            NotesDisclosure(listState) {
-                ProjectMarkdown(
-                    value = detail.notes.orEmpty(),
-                    resolveMediaUrl = resolveMediaUrl,
-                    onImageClick = openViewerImage,
-                )
             }
         }
     }
@@ -1379,3 +1336,98 @@ private fun DetailRow(label: String, value: String) {
 /** The "Updated" value of a detail card, like the web; null if the timestamp does not parse. */
 internal fun updatedDate(raw: String): String? =
     runCatching { formatUpdatedDate(DateTimeUtils.parseToEpochMillis(raw)) }.getOrNull()
+
+/** The attachments, a fixed card under the gallery: they are opened and removed often. */
+@Composable
+private fun ProjectAttachmentsCard(
+    attachments: List<AttachmentDto>,
+    canEdit: Boolean,
+    onEdit: (() -> Unit)?,
+    onDeleteAttachment: (AttachmentDto) -> Unit,
+) {
+    val title = stringResource(R.string.project_detail_attachments_title)
+    val accent = MaterialTheme.colorScheme.primary
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag("e2e-project-attachments"),
+        shape = RoundedCornerShape(24.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    Modifier.size(30.dp).clip(CircleShape).background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        PhosphorIcons.Paperclip,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Text(title, style = MaterialTheme.typography.titleMedium)
+            }
+            SectionActions(
+                what = title,
+                copyText = attachments.joinToString("\n") { it.originalFilename },
+                onEdit = onEdit,
+            ) {
+                attachments.forEachIndexed { index, attachment ->
+                    if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            attachment.originalFilename,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (canEdit) {
+                            IconButton(onClick = { onDeleteAttachment(attachment) }) {
+                                DestructiveDeleteIcon(
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.project_detail_delete_attachment_description
+                                        )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The stitch sample's own pictures, a row under its text. */
+@Composable
+private fun StitchSampleImages(
+    images: List<ImageDto>,
+    resolveMediaUrl: (String?) -> String?,
+    onImageClick: (String) -> Unit,
+) {
+    if (images.isEmpty()) return
+    LazyRow(
+        modifier = Modifier.padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        itemsIndexed(images, key = { _, image -> image.id }) { _, image ->
+            val url = resolveMediaUrl(image.url)
+            AsyncImage(
+                model = url,
+                contentDescription = image.altText,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).clickable {
+                        url?.let(onImageClick)
+                    },
+            )
+        }
+    }
+}

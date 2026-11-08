@@ -28,7 +28,7 @@
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
-  import SourceCard from "#lib/components/SourceCard.svelte";
+  import SourceRows from "#lib/components/SourceRows.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
@@ -558,6 +558,75 @@
       </div>
     {/if}
 
+    <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
+      <SectionHeading icon="info" tone="yarns"
+        >{t("Yarn details", locale)}</SectionHeading
+      >
+      <dl class={textSizeClass}>
+        {#if yarn.brand}<div>
+            <dt>{t("Brand", locale)}</dt>
+            <dd>{yarn.brand}</dd>
+          </div>{/if}
+        {#if yarn.colorway}<div>
+            <dt>{t("Colorway", locale)}</dt>
+            <dd>{yarn.colorway}</dd>
+          </div>{/if}
+        {#if yarn.dye_lot}<div>
+            <dt>{t("Dye lot", locale)}</dt>
+            <dd>{yarn.dye_lot}</dd>
+          </div>{/if}
+        {#if yarn.fiber_content}<div>
+            <dt>{t("Fiber content", locale)}</dt>
+            <dd>{yarn.fiber_content}</dd>
+          </div>{/if}
+        {#if yarn.weight_category}<div>
+            <dt>{t("Yarn weight", locale)}</dt>
+            <dd>{yarn.weight_category}</dd>
+          </div>{/if}
+        {#if yarn.recommended_needles}<div>
+            <dt>{t("Recommended needles", locale)}</dt>
+            <dd>{yarn.recommended_needles}</dd>
+          </div>{/if}
+        {#if yarn.weight_grams !== null}<div>
+            <dt>{t("Skein weight", locale)}</dt>
+            <dd>{displayNumber(yarn.weight_grams, t("g", locale))}</dd>
+          </div>{/if}
+        {#if yarn.length_meters !== null}<div>
+            <dt>{t("Skein length", locale)}</dt>
+            <dd>{displayNumber(yarn.length_meters, t("m", locale))}</dd>
+          </div>{/if}
+        <div>
+          <dt>{t("Updated", locale)}</dt>
+          <dd>
+            <time datetime={yarn.updated_at}>{formatDate(yarn.updated_at)}</time
+            >
+          </dd>
+        </div>
+      </dl>
+      <SourceRows
+        tone="yarns"
+        label={t("Yarn source", locale)}
+        href={safeExternalHref(yarn.link)}
+        archiveHref={safeExternalHref(yarn.link_archive)}
+        openLabel={t("Open yarn source", locale)}
+        archiveLabel={t("Open archived copy", locale)}
+      >
+        {#if ownsIt && safeExternalHref(yarn.link) && (canArchive || canReadArchiveState)}
+          <ArchiveControl
+            entity="yarns"
+            id={yarn.id}
+            sourceLink={yarn.link ?? ""}
+            detailHasArchive={yarn.link_archive !== null}
+            ownerId={userId}
+            {locale}
+            enabled={canArchive && canManage}
+            readStateEnabled={canReadArchiveState}
+            onArchived={refreshCurrentYarn}
+          />
+        {/if}
+      </SourceRows>
+    </aside>
+
     <div class="detail-layout">
       <div class="detail-main">
         {#if yarn.description_html}
@@ -632,80 +701,6 @@
             <p class="muted">{t("No projects use this yarn yet.", locale)}</p>
           </section>
         {/if}
-      </div>
-
-      <div class="spec-column">
-        <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
-          <SectionHeading icon="info" tone="yarns"
-            >{t("At a glance", locale)}</SectionHeading
-          >
-          <dl class={textSizeClass}>
-            {#if yarn.brand}<div>
-                <dt>{t("Brand", locale)}</dt>
-                <dd>{yarn.brand}</dd>
-              </div>{/if}
-            {#if yarn.colorway}<div>
-                <dt>{t("Colorway", locale)}</dt>
-                <dd>{yarn.colorway}</dd>
-              </div>{/if}
-            {#if yarn.dye_lot}<div>
-                <dt>{t("Dye lot", locale)}</dt>
-                <dd>{yarn.dye_lot}</dd>
-              </div>{/if}
-            {#if yarn.fiber_content}<div>
-                <dt>{t("Fiber content", locale)}</dt>
-                <dd>{yarn.fiber_content}</dd>
-              </div>{/if}
-            {#if yarn.weight_category}<div>
-                <dt>{t("Yarn weight", locale)}</dt>
-                <dd>{yarn.weight_category}</dd>
-              </div>{/if}
-            {#if yarn.recommended_needles}<div>
-                <dt>{t("Recommended needles", locale)}</dt>
-                <dd>{yarn.recommended_needles}</dd>
-              </div>{/if}
-            {#if yarn.weight_grams !== null}<div>
-                <dt>{t("Skein weight", locale)}</dt>
-                <dd>{displayNumber(yarn.weight_grams, t("g", locale))}</dd>
-              </div>{/if}
-            {#if yarn.length_meters !== null}<div>
-                <dt>{t("Skein length", locale)}</dt>
-                <dd>{displayNumber(yarn.length_meters, t("m", locale))}</dd>
-              </div>{/if}
-            <div>
-              <dt>{t("Updated", locale)}</dt>
-              <dd>
-                <time datetime={yarn.updated_at}
-                  >{formatDate(yarn.updated_at)}</time
-                >
-              </dd>
-            </div>
-          </dl>
-        </aside>
-        <SourceCard
-          id="yarn-source-heading"
-          tone="yarns"
-          heading={t("Yarn source", locale)}
-          href={safeExternalHref(yarn.link)}
-          archiveHref={safeExternalHref(yarn.link_archive)}
-          openLabel={t("Open yarn source", locale)}
-          archiveLabel={t("Open archived copy", locale)}
-          emptyLabel={t("No yarn link has been saved.", locale)}
-        >
-          {#if ownsIt && safeExternalHref(yarn.link) && (canArchive || canReadArchiveState)}
-            <ArchiveControl
-              entity="yarns"
-              id={yarn.id}
-              sourceLink={yarn.link ?? ""}
-              detailHasArchive={yarn.link_archive !== null}
-              ownerId={userId}
-              {locale}
-              enabled={canArchive && canManage}
-              readStateEnabled={canReadArchiveState}
-              onArchived={refreshCurrentYarn}
-            />
-          {/if}
-        </SourceCard>
       </div>
     </div>
 
@@ -795,8 +790,7 @@
 
   .detail-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--stack-gap);
   }
 
@@ -875,18 +869,16 @@
     margin-bottom: 0;
   }
 
-  .spec-column {
-    display: grid;
-    position: sticky;
-    top: 1rem;
-    min-width: 0;
-    gap: var(--stack-gap);
-  }
-
   dl {
     display: grid;
     gap: 0;
     margin: 0;
+  }
+
+  /* The details card spans the page: two columns of facts on wide screens. */
+  .spec-panel > dl {
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    column-gap: 2rem;
   }
 
   dl div {
@@ -966,17 +958,6 @@
     }
   }
 
-  /* On phones the actions sit in the app header bar (PageHeader headerActions). */
-  @media (max-width: 760px) {
-    .detail-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .spec-column {
-      position: static;
-    }
-  }
-
   @media print {
     :global(.desktop-rail),
     :global(.app-header),
@@ -995,14 +976,6 @@
       width: 100%;
       max-width: none;
       padding: 0;
-    }
-
-    .spec-column {
-      position: static;
-    }
-
-    .detail-layout {
-      grid-template-columns: 1fr;
     }
 
     .detail-section,

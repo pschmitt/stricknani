@@ -153,23 +153,16 @@ private fun detailCardLabel(domain: DetailCardDomain, id: String): String =
     when (domain) {
         DetailCardDomain.PROJECT ->
             when (id) {
-                ProjectDetailCard.SOURCE -> stringResource(R.string.project_detail_source_title)
-                ProjectDetailCard.ATTACHMENTS ->
-                    stringResource(R.string.project_detail_attachments_title)
                 ProjectDetailCard.DETAILS -> stringResource(R.string.project_detail_details_title)
-                ProjectDetailCard.STITCH_SAMPLE ->
-                    stringResource(R.string.common_field_stitch_sample)
-                ProjectDetailCard.LINKED_YARNS ->
-                    stringResource(R.string.project_detail_linked_yarns_title)
+                ProjectDetailCard.MATERIALS ->
+                    stringResource(R.string.project_detail_materials_title)
                 ProjectDetailCard.DESCRIPTION ->
-                    stringResource(R.string.project_detail_description_title)
+                    stringResource(R.string.project_detail_pattern_notes_title)
                 ProjectDetailCard.STEPS -> stringResource(R.string.project_detail_steps_title)
-                ProjectDetailCard.NOTES -> stringResource(R.string.project_detail_notes_title)
                 else -> id
             }
         DetailCardDomain.YARN ->
             when (id) {
-                YarnDetailCard.SOURCE -> stringResource(R.string.yarn_detail_source_title)
                 YarnDetailCard.DETAILS -> stringResource(R.string.yarn_detail_details_title)
                 YarnDetailCard.DESCRIPTION ->
                     stringResource(R.string.project_detail_description_title)

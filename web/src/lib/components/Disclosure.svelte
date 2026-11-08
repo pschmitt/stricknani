@@ -5,6 +5,7 @@
   let {
     label,
     icon,
+    tone = "projects",
     open = $bindable(false),
     element = $bindable(null),
     class: className = "",
@@ -12,6 +13,7 @@
   }: {
     label: string;
     icon: NavIconName;
+    tone?: "projects" | "yarns" | "gauge";
     open?: boolean;
     element?: HTMLDetailsElement | null;
     class?: string;
@@ -21,7 +23,9 @@
 
 <details class="disclosure {className}" bind:open bind:this={element}>
   <summary class="disclosure__summary">
-    <span class="disclosure__icon"><NavIcon name={icon} /></span>
+    <span class="disclosure__icon" data-tone={tone} aria-hidden="true"
+      ><NavIcon name={icon} /></span
+    >
     <span class="disclosure__label">{label}</span>
     <span class="disclosure__chevron"><NavIcon name="chevron-down" /></span>
   </summary>
@@ -42,9 +46,12 @@
     gap: 0.75rem;
     min-height: 56px;
     padding: 0.5rem clamp(1rem, 3vw, 1.5rem);
-    color: var(--accent-strong);
+    color: var(--ink);
     font-family: var(--font-display);
+    font-size: 1.1rem;
     font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
     cursor: pointer;
     list-style: none;
   }
@@ -66,13 +73,41 @@
     outline-offset: -3px;
   }
 
-  .disclosure__icon,
   .disclosure__chevron {
     display: inline-flex;
     flex: none;
+    color: var(--accent-strong);
   }
 
-  .disclosure__icon :global(svg),
+  /* The same round tinted chip as SectionHeading, so collapsible and plain headers match. */
+  .disclosure__icon {
+    --tone: var(--tone-projects);
+    --tone-wash: var(--tone-projects-wash);
+    display: grid;
+    width: 1.9rem;
+    height: 1.9rem;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--tone);
+    background: var(--tone-wash);
+  }
+
+  .disclosure__icon[data-tone="yarns"] {
+    --tone: var(--tone-yarns);
+    --tone-wash: var(--tone-yarns-wash);
+  }
+
+  .disclosure__icon[data-tone="gauge"] {
+    --tone: var(--tone-gauge);
+    --tone-wash: var(--tone-gauge-wash);
+  }
+
+  .disclosure__icon :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
   .disclosure__chevron :global(svg) {
     width: 1.35rem;
     height: 1.35rem;

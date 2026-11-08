@@ -9,22 +9,19 @@ class DetailCardOrderTest {
     fun `missing and unknown saved cards are sanitized in default order`() {
         assertEquals(
             listOf(
-                ProjectDetailCard.NOTES,
-                ProjectDetailCard.ATTACHMENTS,
-                ProjectDetailCard.DETAILS,
-                ProjectDetailCard.STITCH_SAMPLE,
-                ProjectDetailCard.LINKED_YARNS,
-                ProjectDetailCard.DESCRIPTION,
                 ProjectDetailCard.STEPS,
-                ProjectDetailCard.SOURCE,
+                ProjectDetailCard.DETAILS,
+                ProjectDetailCard.MATERIALS,
+                ProjectDetailCard.DESCRIPTION,
             ),
             DetailCardOrder.sanitize(
                 DetailCardDomain.PROJECT,
                 listOf(
-                    ProjectDetailCard.NOTES,
+                    ProjectDetailCard.STEPS,
                     "unknown",
-                    ProjectDetailCard.NOTES,
-                    ProjectDetailCard.ATTACHMENTS,
+                    "source",
+                    "attachments",
+                    ProjectDetailCard.STEPS,
                 ),
             ),
         )
@@ -35,18 +32,14 @@ class DetailCardOrderTest {
         assertEquals(
             listOf(
                 ProjectDetailCard.STEPS,
-                ProjectDetailCard.ATTACHMENTS,
                 ProjectDetailCard.DETAILS,
-                ProjectDetailCard.STITCH_SAMPLE,
-                ProjectDetailCard.LINKED_YARNS,
+                ProjectDetailCard.MATERIALS,
                 ProjectDetailCard.DESCRIPTION,
-                ProjectDetailCard.NOTES,
-                ProjectDetailCard.SOURCE,
             ),
             DetailCardOrder.withVisibleOrder(
                 DetailCardDomain.PROJECT,
                 null,
-                listOf(ProjectDetailCard.STEPS, ProjectDetailCard.ATTACHMENTS),
+                listOf(ProjectDetailCard.STEPS, ProjectDetailCard.DETAILS),
             ),
         )
     }
@@ -64,19 +57,17 @@ class DetailCardOrderTest {
     }
 
     @Test
-    fun `yarn source card is last by default and sanitize appends it to older saved orders`() {
-        assertEquals(YarnDetailCard.SOURCE, YarnDetailCard.defaultOrder.last())
+    fun `retired source card is dropped from older saved yarn orders`() {
         assertEquals(
             listOf(
                 YarnDetailCard.NOTES,
                 YarnDetailCard.DETAILS,
                 YarnDetailCard.DESCRIPTION,
                 YarnDetailCard.USED_IN,
-                YarnDetailCard.SOURCE,
             ),
             DetailCardOrder.sanitize(
                 DetailCardDomain.YARN,
-                listOf(YarnDetailCard.NOTES, YarnDetailCard.DETAILS),
+                listOf(YarnDetailCard.NOTES, "source", YarnDetailCard.DETAILS),
             ),
         )
     }

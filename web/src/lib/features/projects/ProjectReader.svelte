@@ -28,7 +28,7 @@
   } from "#lib/access.ts";
   import AccessNotice from "#lib/features/sharing/AccessNotice.svelte";
   import ShareControl from "#lib/features/sharing/ShareControl.svelte";
-  import SourceCard from "#lib/components/SourceCard.svelte";
+  import SourceRows from "#lib/components/SourceRows.svelte";
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
@@ -1029,6 +1029,40 @@
           {/snippet}
         </PhotoStrip>
       {/if}
+      {#if project.attachments.length}
+        <section
+          class="details-card attachments-card"
+          aria-labelledby="attachments-heading"
+        >
+          <SectionHeading id="attachments-heading" icon="paperclip"
+            >{t("Attachments", locale)}</SectionHeading
+          >
+          <ul>
+            {#each project.attachments as attachment (attachment.id)}
+              <li>
+                <a
+                  href={attachment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="file-icon" aria-hidden="true">↗</span>
+                  <span class="file-description">
+                    <strong
+                      >{attachment.original_filename ??
+                        attachment.filename}</strong
+                    >
+                    <small
+                      >{attachment.content_type} · {formatFileSize(
+                        attachment.size_bytes,
+                      )}</small
+                    >
+                  </span>
+                </a>
+              </li>
+            {/each}
+          </ul>
+        </section>
+      {/if}
       <section class="reader-facts-card" aria-labelledby="reader-facts-title">
         <SectionHeading id="reader-facts-title" icon="info"
           >{t("Project details", locale)}</SectionHeading
@@ -1070,6 +1104,27 @@
             </div>
           {/if}
         </dl>
+        <SourceRows
+          label={t("Pattern source", locale)}
+          href={safeExternalUrl(project.link)}
+          archiveHref={safeExternalUrl(project.link_archive)}
+          openLabel={t("Open original pattern", locale)}
+          archiveLabel={t("Open archived copy", locale)}
+        >
+          {#if !adminData && ownsIt && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
+            <ArchiveControl
+              entity="projects"
+              id={project.id}
+              sourceLink={project.link ?? ""}
+              detailHasArchive={project.link_archive !== null}
+              ownerId={userId}
+              {locale}
+              enabled={canArchive && canManage}
+              readStateEnabled={canReadArchiveState}
+              onArchived={refreshAfterArchive}
+            />
+          {/if}
+        </SourceRows>
       </section>
     </div>
 
@@ -1111,15 +1166,6 @@
                     {@html yarn.notes_html}
                   </div>
                 {/if}
-                {#if safeExternalUrl(yarn.link)}
-                  <a
-                    href={safeExternalUrl(yarn.link)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t("Yarn source", locale)} ↗
-                  </a>
-                {/if}
               </dd>
             </div>
           {/each}
@@ -1156,19 +1202,11 @@
             {t("Some yarn details could not be loaded.", locale)}
           </p>
         {/if}
-        {#if needlesText}
+        {#if project.other_materials_html}
           <div>
-            <dt>{t("Needles", locale)}</dt>
-            <dd>{needlesText}</dd>
-          </div>
-        {/if}
-        {#if gaugeHtml || gaugeText}
-          <div>
-            <dt>{t("Gauge", locale)}</dt>
+            <dt>{t("Other materials", locale)}</dt>
             <dd>
-              {#if gaugeHtml}<div class="rich-text">
-                  {@html gaugeHtml}
-                </div>{:else}{gaugeText}{/if}
+              <div class="rich-text">{@html project.other_materials_html}</div>
             </dd>
           </div>
         {/if}
@@ -1225,12 +1263,6 @@
                 id: String(currentProject.id),
               })}#project-notes`}
             />
-          {/if}
-          {#if project.other_materials_html}
-            <section class="note-section" aria-labelledby="materials-heading">
-              <h3 id="materials-heading">{t("Other materials", locale)}</h3>
-              <div class="rich-text">{@html project.other_materials_html}</div>
-            </section>
           {/if}
         </section>
 
@@ -1357,71 +1389,6 @@
           {/if}
         </section>
       </div>
-
-      <aside class="details-column" aria-label={t("Project details", locale)}>
-        <SourceCard
-          id="source-heading"
-          heading={t("Pattern source", locale)}
-          href={safeExternalUrl(project.link)}
-          archiveHref={safeExternalUrl(project.link_archive)}
-          openLabel={t("Open original pattern", locale)}
-          archiveLabel={t("Open archived copy", locale)}
-          emptyLabel={t("No pattern link has been saved.", locale)}
-        >
-          {#if !adminData && ownsIt && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
-            <ArchiveControl
-              entity="projects"
-              id={project.id}
-              sourceLink={project.link ?? ""}
-              detailHasArchive={project.link_archive !== null}
-              ownerId={userId}
-              {locale}
-              enabled={canArchive && canManage}
-              readStateEnabled={canReadArchiveState}
-              onArchived={refreshAfterArchive}
-            />
-          {/if}
-        </SourceCard>
-
-        <section
-          class="details-card attachments-card"
-          aria-labelledby="attachments-heading"
-        >
-          <SectionHeading id="attachments-heading" icon="paperclip"
-            >{t("Attachments", locale)}</SectionHeading
-          >
-          {#if project.attachments.length}
-            <ul>
-              {#each project.attachments as attachment (attachment.id)}
-                <li>
-                  <a
-                    href={attachment.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span class="file-icon" aria-hidden="true">↗</span>
-                    <span class="file-description">
-                      <strong
-                        >{attachment.original_filename ??
-                          attachment.filename}</strong
-                      >
-                      <small
-                        >{attachment.content_type} · {formatFileSize(
-                          attachment.size_bytes,
-                        )}</small
-                      >
-                    </span>
-                  </a>
-                </li>
-              {/each}
-            </ul>
-          {:else}
-            <p class="muted-copy">
-              {t("No attachments have been added yet.", locale)}
-            </p>
-          {/if}
-        </section>
-      </aside>
     </div>
 
     {#if !adminData}
@@ -1838,15 +1805,10 @@
     gap: var(--stack-gap);
   }
 
-  .pattern-column,
-  .details-column {
+  .pattern-column {
     display: grid;
     min-width: 0;
     gap: var(--stack-gap);
-  }
-
-  .details-column {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .reading-copy {
@@ -1896,13 +1858,6 @@
     color: var(--ink-muted);
   }
 
-  .note-section {
-    margin-top: 1.2rem;
-    border-top: 1px solid var(--line);
-    padding-top: 1rem;
-  }
-
-  .note-section h3,
   .step-content h3 {
     margin: 0 0 0.45rem;
     font-size: 1rem;
@@ -2079,12 +2034,6 @@
     font-size: 0.88rem;
   }
 
-  @media (max-width: 900px) {
-    .details-column {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
   @media (max-width: 600px) {
     .reader-keyfacts {
       gap: 0.5rem 0.75rem;
@@ -2115,10 +2064,6 @@
     .step-navigation-link {
       padding: 0.25rem 0.4rem;
       font-size: 0.82rem;
-    }
-
-    .details-column {
-      grid-template-columns: minmax(0, 1fr);
     }
 
     .reader-footer {
@@ -2160,6 +2105,13 @@
     }
 
     .reader-facts-card {
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+    }
+
+    .reader-facts-card :global(.section-heading),
+    .reader-keyfacts {
       display: none;
     }
 
@@ -2224,8 +2176,7 @@
 
     .reader-heading-actions,
     .reader-columns,
-    .pattern-column,
-    .details-column {
+    .pattern-column {
       display: block;
     }
 

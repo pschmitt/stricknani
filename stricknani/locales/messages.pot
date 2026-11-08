@@ -104,8 +104,7 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:107
 #: web/src/lib/features/imports/ImportWorkbench.svelte:644
 #: web/src/lib/features/projects/ProjectEditor.svelte:1326
-#: web/src/lib/features/projects/ProjectReader.svelte:1058
-#: web/src/lib/features/projects/ProjectReader.svelte:1161
+#: web/src/lib/features/projects/ProjectReader.svelte:1092
 msgid "Needles"
 msgstr ""
 
@@ -123,7 +122,7 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:111
 #: web/src/lib/features/imports/ImportWorkbench.svelte:655
 #: web/src/lib/features/projects/ProjectEditor.svelte:1463
-#: web/src/lib/features/projects/ProjectReader.svelte:1231
+#: web/src/lib/features/projects/ProjectReader.svelte:1207
 msgid "Other materials"
 msgstr ""
 
@@ -133,11 +132,11 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:437
 #: web/src/lib/features/admin/DiffPanel.svelte:91
 #: web/src/lib/features/history/change-format.ts:105
-#: web/src/lib/features/projects/ProjectReader.svelte:1038
-#: web/src/lib/features/projects/ProjectReader.svelte:1086
-#: web/src/lib/features/projects/ProjectReader.svelte:1128
-#: web/src/lib/features/projects/ProjectReader.svelte:1133
-#: web/src/lib/features/projects/ProjectReader.svelte:1140
+#: web/src/lib/features/projects/ProjectReader.svelte:1072
+#: web/src/lib/features/projects/ProjectReader.svelte:1141
+#: web/src/lib/features/projects/ProjectReader.svelte:1174
+#: web/src/lib/features/projects/ProjectReader.svelte:1179
+#: web/src/lib/features/projects/ProjectReader.svelte:1186
 #: web/src/routes/share/+page.svelte:82
 msgid "Yarn"
 msgstr ""
@@ -149,7 +148,7 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:125
 #: web/src/lib/features/imports/ImportWorkbench.svelte:637
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:346
-#: web/src/lib/features/yarns/YarnDetail.svelte:566
+#: web/src/lib/features/yarns/YarnDetail.svelte:635
 #: web/src/lib/features/yarns/YarnForm.svelte:871
 msgid "Description"
 msgstr ""
@@ -168,7 +167,7 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:126
 #: web/src/lib/features/imports/ImportWorkbench.svelte:805
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:291
-#: web/src/lib/features/yarns/YarnDetail.svelte:644
+#: web/src/lib/features/yarns/YarnDetail.svelte:567
 #: web/src/lib/features/yarns/YarnForm.svelte:767
 msgid "Brand"
 msgstr ""
@@ -178,7 +177,7 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:127
 #: web/src/lib/features/imports/ImportWorkbench.svelte:810
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:295
-#: web/src/lib/features/yarns/YarnDetail.svelte:648
+#: web/src/lib/features/yarns/YarnDetail.svelte:571
 #: web/src/lib/features/yarns/YarnForm.svelte:776
 msgid "Colorway"
 msgstr ""
@@ -208,7 +207,7 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:129
 #: web/src/lib/features/imports/ImportWorkbench.svelte:815
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:300
-#: web/src/lib/features/yarns/YarnDetail.svelte:656
+#: web/src/lib/features/yarns/YarnDetail.svelte:579
 #: web/src/lib/features/yarns/YarnForm.svelte:800
 msgid "Fiber content"
 msgstr ""
@@ -416,8 +415,8 @@ msgstr ""
 msgid "Add a name before creating this yarn."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1223
-#: web/src/lib/features/yarns/YarnDetail.svelte:592
+#: web/src/lib/features/projects/ProjectReader.svelte:1261
+#: web/src/lib/features/yarns/YarnDetail.svelte:661
 msgid "Add a note"
 msgstr ""
 
@@ -525,11 +524,11 @@ msgstr ""
 msgid "Adjust total time"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:535
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:536
 msgid "Adjusted Rows"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:531
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:532
 msgid "Adjusted Stitches"
 msgstr ""
 
@@ -713,10 +712,6 @@ msgstr ""
 msgid "Ask your server administrator if you need an account."
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:640
-msgid "At a glance"
-msgstr ""
-
 #: web/src/lib/features/account/AccountSettings.svelte:1261
 msgid "At least 12 characters. Avoid common passwords."
 msgstr ""
@@ -745,7 +740,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:577
 #: web/src/lib/features/projects/ProjectEditor.svelte:1749
-#: web/src/lib/features/projects/ProjectReader.svelte:1391
+#: web/src/lib/features/projects/ProjectReader.svelte:1038
 msgid "Attachments"
 msgstr ""
 
@@ -832,7 +827,7 @@ msgstr ""
 msgid "Backups"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:541
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:542
 msgid "Based on a pattern cast-on of"
 msgstr ""
 
@@ -868,17 +863,17 @@ msgid "By"
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:221
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:240
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:241
 msgid ""
 "Calculate how many stitches to cast on and rows to knit based on your "
 "gauge and the pattern's gauge."
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:502
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:503
 msgid "Calculating…"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:528
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:529
 msgid "Calculation Results"
 msgstr ""
 
@@ -910,7 +905,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1816
 #: web/src/lib/features/projects/ProjectEditor.svelte:1873
 #: web/src/lib/features/projects/ProjectEditor.svelte:1914
-#: web/src/lib/features/projects/ProjectReader.svelte:1476
+#: web/src/lib/features/projects/ProjectReader.svelte:1443
 #: web/src/lib/features/projects/ProjectTimer.svelte:677
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
@@ -966,8 +961,8 @@ msgstr ""
 msgid "Change password"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:281
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:420
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:282
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:421
 msgid "Change swatch size"
 msgstr ""
 
@@ -1086,7 +1081,7 @@ msgstr ""
 msgid "Choose image"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:499
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:500
 msgid "Clear"
 msgstr ""
 
@@ -1121,8 +1116,8 @@ msgstr ""
 msgid "Close image viewer"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1205
-#: web/src/lib/features/yarns/YarnDetail.svelte:577
+#: web/src/lib/features/projects/ProjectReader.svelte:1243
+#: web/src/lib/features/yarns/YarnDetail.svelte:646
 msgid "Close notes"
 msgstr ""
 
@@ -1348,7 +1343,7 @@ msgstr ""
 
 #: web/src/lib/features/categories/CategoryManager.svelte:359
 #: web/src/lib/features/categories/CategoryManager.svelte:377
-#: web/src/lib/features/yarns/YarnDetail.svelte:739
+#: web/src/lib/features/yarns/YarnDetail.svelte:734
 #: web/src/lib/features/yarns/YarnForm.svelte:1049
 msgid "Delete"
 msgstr ""
@@ -1373,24 +1368,24 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1612
 #: web/src/lib/features/projects/ProjectEditor.svelte:1883
 #: web/src/lib/features/projects/ProjectReader.svelte:961
-#: web/src/lib/features/projects/ProjectReader.svelte:1485
+#: web/src/lib/features/projects/ProjectReader.svelte:1452
 msgid "Delete project"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:172
-#: web/src/lib/features/projects/ProjectReader.svelte:1456
+#: web/src/lib/features/projects/ProjectReader.svelte:1423
 msgid "Delete this project? This cannot be undone."
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:495
-#: web/src/lib/features/yarns/YarnDetail.svelte:768
+#: web/src/lib/features/yarns/YarnDetail.svelte:763
 #: web/src/lib/features/yarns/YarnForm.svelte:985
 #: web/src/lib/features/yarns/YarnForm.svelte:996
 #: web/src/lib/features/yarns/YarnForm.svelte:1080
 msgid "Delete yarn"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:734
+#: web/src/lib/features/yarns/YarnDetail.svelte:729
 #: web/src/lib/features/yarns/YarnForm.svelte:1044
 msgid "Delete yarn?"
 msgstr ""
@@ -1412,7 +1407,7 @@ msgstr ""
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:193
 #: web/src/lib/features/categories/CategoryManager.svelte:403
 #: web/src/lib/features/projects/ProjectEditor.svelte:1612
-#: web/src/lib/features/yarns/YarnDetail.svelte:768
+#: web/src/lib/features/yarns/YarnDetail.svelte:763
 #: web/src/lib/features/yarns/YarnForm.svelte:1080
 msgid "Deleting…"
 msgstr ""
@@ -1532,7 +1527,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:616
 #: web/src/lib/features/history/change-format.ts:128
-#: web/src/lib/features/yarns/YarnDetail.svelte:652
+#: web/src/lib/features/yarns/YarnDetail.svelte:575
 #: web/src/lib/features/yarns/YarnForm.svelte:790
 msgid "Dye lot"
 msgstr ""
@@ -1672,15 +1667,15 @@ msgstr ""
 msgid "Enter an email address."
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:247
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:248
 msgid "Enter the gauge from your pattern (stitches and rows per 10cm)"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:259
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:260
 msgid "Enter the stitch count from your pattern (cast-on stitches)"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:253
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:254
 msgid "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgstr ""
 
@@ -1879,8 +1874,7 @@ msgstr ""
 msgid "From a link"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1064
-#: web/src/lib/features/projects/ProjectReader.svelte:1167
+#: web/src/lib/features/projects/ProjectReader.svelte:1098
 msgid "Gauge"
 msgstr ""
 
@@ -2030,7 +2024,7 @@ msgstr ""
 msgid "How to delete your account and what happens to your data."
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:237
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:238
 msgid "How to use this calculator"
 msgstr ""
 
@@ -2197,7 +2191,7 @@ msgstr ""
 msgid "Keep token"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:759
+#: web/src/lib/features/yarns/YarnDetail.svelte:754
 #: web/src/lib/features/yarns/YarnForm.svelte:1070
 msgid "Keep yarn"
 msgstr ""
@@ -2240,7 +2234,7 @@ msgstr ""
 msgid "Large"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1437
+#: web/src/lib/features/projects/ProjectReader.svelte:1404
 msgid "Last updated"
 msgstr ""
 
@@ -2368,7 +2362,7 @@ msgstr ""
 msgid "Linked projects"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:622
+#: web/src/lib/features/yarns/YarnDetail.svelte:691
 msgid "Linked projects could not be loaded."
 msgstr ""
 
@@ -2417,7 +2411,7 @@ msgstr ""
 msgid "Loading linked logins…"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:603
+#: web/src/lib/features/yarns/YarnDetail.svelte:672
 msgid "Loading linked projects…"
 msgstr ""
 
@@ -2474,8 +2468,8 @@ msgstr ""
 msgid "Loading…"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1206
-#: web/src/lib/features/yarns/YarnDetail.svelte:578
+#: web/src/lib/features/projects/ProjectReader.svelte:1244
+#: web/src/lib/features/yarns/YarnDetail.svelte:647
 msgid "Long-press and drag to move"
 msgstr ""
 
@@ -2511,7 +2505,7 @@ msgstr ""
 msgid "Markdown file"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1079
+#: web/src/lib/features/projects/ProjectReader.svelte:1134
 msgid "Materials"
 msgstr ""
 
@@ -2601,7 +2595,7 @@ msgstr ""
 msgid "Moved"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:536
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:537
 msgid "N/A"
 msgstr ""
 
@@ -2676,7 +2670,7 @@ msgstr ""
 msgid "Next page"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1278
+#: web/src/lib/features/projects/ProjectReader.svelte:1310
 msgid "Next step"
 msgstr ""
 
@@ -2695,10 +2689,6 @@ msgstr ""
 msgid ""
 "No Stricknani account is linked to this {name} login yet. Sign in with "
 "your password, then link {name} in your account settings."
-msgstr ""
-
-#: web/src/lib/features/projects/ProjectReader.svelte:1420
-msgid "No attachments have been added yet."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1775
@@ -2753,11 +2743,7 @@ msgstr ""
 msgid "No one matches that search."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1369
-msgid "No pattern link has been saved."
-msgstr ""
-
-#: web/src/lib/features/projects/ProjectReader.svelte:1196
+#: web/src/lib/features/projects/ProjectReader.svelte:1234
 msgid "No pattern notes have been added yet."
 msgstr ""
 
@@ -2773,8 +2759,8 @@ msgstr ""
 msgid "No projects match those filters."
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:623
-#: web/src/lib/features/yarns/YarnDetail.svelte:632
+#: web/src/lib/features/yarns/YarnDetail.svelte:692
+#: web/src/lib/features/yarns/YarnDetail.svelte:701
 msgid "No projects use this yarn yet."
 msgstr ""
 
@@ -2791,7 +2777,7 @@ msgid ""
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1591
-#: web/src/lib/features/projects/ProjectReader.svelte:1355
+#: web/src/lib/features/projects/ProjectReader.svelte:1387
 msgid "No steps have been added yet."
 msgstr ""
 
@@ -2805,10 +2791,6 @@ msgstr ""
 
 #: web/src/lib/features/projects/YarnPicker.svelte:111
 msgid "No yarn is linked to this project yet."
-msgstr ""
-
-#: web/src/lib/features/yarns/YarnDetail.svelte:693
-msgid "No yarn link has been saved."
 msgstr ""
 
 #: web/src/lib/features/imports/YarnStashPicker.svelte:108
@@ -2836,8 +2818,8 @@ msgstr ""
 msgid "Not provided"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1052
-#: web/src/lib/features/projects/ProjectReader.svelte:1134
+#: web/src/lib/features/projects/ProjectReader.svelte:1086
+#: web/src/lib/features/projects/ProjectReader.svelte:1180
 msgid "Not recorded"
 msgstr ""
 
@@ -2848,31 +2830,31 @@ msgstr ""
 #: web/src/lib/features/imports/ImportWorkbench.svelte:893
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:352
 #: web/src/lib/features/projects/ProjectEditor.svelte:1456
-#: web/src/lib/features/projects/ProjectReader.svelte:1202
-#: web/src/lib/features/projects/ProjectReader.svelte:1220
-#: web/src/lib/features/yarns/YarnDetail.svelte:575
-#: web/src/lib/features/yarns/YarnDetail.svelte:590
+#: web/src/lib/features/projects/ProjectReader.svelte:1240
+#: web/src/lib/features/projects/ProjectReader.svelte:1258
+#: web/src/lib/features/yarns/YarnDetail.svelte:644
+#: web/src/lib/features/yarns/YarnDetail.svelte:659
 #: web/src/lib/features/yarns/YarnForm.svelte:884
 msgid "Notes"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1211
-#: web/src/lib/features/yarns/YarnDetail.svelte:583
+#: web/src/lib/features/projects/ProjectReader.svelte:1249
+#: web/src/lib/features/yarns/YarnDetail.svelte:652
 msgid "Notes moved down"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1208
-#: web/src/lib/features/yarns/YarnDetail.svelte:580
+#: web/src/lib/features/projects/ProjectReader.svelte:1246
+#: web/src/lib/features/yarns/YarnDetail.svelte:649
 msgid "Notes moved to the left"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1209
-#: web/src/lib/features/yarns/YarnDetail.svelte:581
+#: web/src/lib/features/projects/ProjectReader.svelte:1247
+#: web/src/lib/features/yarns/YarnDetail.svelte:650
 msgid "Notes moved to the right"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1210
-#: web/src/lib/features/yarns/YarnDetail.svelte:582
+#: web/src/lib/features/projects/ProjectReader.svelte:1248
+#: web/src/lib/features/yarns/YarnDetail.svelte:651
 msgid "Notes moved up"
 msgstr ""
 
@@ -2931,8 +2913,8 @@ msgstr ""
 msgid "Open Account in the web app, or the Account screen in the Android app."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1368
-#: web/src/lib/features/yarns/YarnDetail.svelte:692
+#: web/src/lib/features/projects/ProjectReader.svelte:1112
+#: web/src/lib/features/yarns/YarnDetail.svelte:612
 msgid "Open archived copy"
 msgstr ""
 
@@ -2969,7 +2951,7 @@ msgstr ""
 msgid "Open on this phone"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1367
+#: web/src/lib/features/projects/ProjectReader.svelte:1111
 msgid "Open original pattern"
 msgstr ""
 
@@ -2986,7 +2968,7 @@ msgstr ""
 msgid "Open server commit on GitHub"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1315
+#: web/src/lib/features/projects/ProjectReader.svelte:1347
 msgid "Open step photo"
 msgstr ""
 
@@ -2994,7 +2976,7 @@ msgstr ""
 msgid "Open the project to stop the timer or keep timing."
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:691
+#: web/src/lib/features/yarns/YarnDetail.svelte:611
 msgid "Open yarn source"
 msgstr ""
 
@@ -3141,16 +3123,16 @@ msgstr ""
 msgid "Pattern"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:349
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:350
 msgid "Pattern Counts"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:275
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:276
 msgid "Pattern Gauge (per 10cm)"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1436
-#: web/src/lib/features/projects/ProjectReader.svelte:1187
+#: web/src/lib/features/projects/ProjectReader.svelte:1225
 msgid "Pattern and notes"
 msgstr ""
 
@@ -3159,7 +3141,7 @@ msgid "Pattern page URL"
 msgstr ""
 
 #: web/src/lib/features/imports/ImportWorkbench.svelte:630
-#: web/src/lib/features/projects/ProjectReader.svelte:1364
+#: web/src/lib/features/projects/ProjectReader.svelte:1108
 msgid "Pattern source"
 msgstr ""
 
@@ -3167,7 +3149,7 @@ msgstr ""
 msgid "Pattern source URL"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1247
+#: web/src/lib/features/projects/ProjectReader.svelte:1279
 msgid "Pattern step navigation"
 msgstr ""
 
@@ -3322,7 +3304,7 @@ msgstr ""
 msgid "Previous page"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1256
+#: web/src/lib/features/projects/ProjectReader.svelte:1288
 msgid "Previous step"
 msgstr ""
 
@@ -3410,8 +3392,7 @@ msgid "Project created. Your reviewed import is saved."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:430
-#: web/src/lib/features/projects/ProjectReader.svelte:1034
-#: web/src/lib/features/projects/ProjectReader.svelte:1361
+#: web/src/lib/features/projects/ProjectReader.svelte:1068
 msgid "Project details"
 msgstr ""
 
@@ -3557,7 +3538,7 @@ msgstr ""
 msgid "Recognized text from project photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1336
+#: web/src/lib/features/projects/ProjectReader.svelte:1368
 msgid "Recognized text from step photo"
 msgstr ""
 
@@ -3573,7 +3554,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:628
 #: web/src/lib/features/history/change-format.ts:131
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:334
-#: web/src/lib/features/yarns/YarnDetail.svelte:664
+#: web/src/lib/features/yarns/YarnDetail.svelte:587
 #: web/src/lib/features/yarns/YarnForm.svelte:820
 msgid "Recommended needles"
 msgstr ""
@@ -3847,12 +3828,12 @@ msgstr ""
 msgid "Rotate right"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:316
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:455
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:317
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:456
 msgid "Rows"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:383
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:384
 msgid "Rows to knit"
 msgstr ""
 
@@ -4194,7 +4175,7 @@ msgstr ""
 msgid "Sizes"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:672
+#: web/src/lib/features/yarns/YarnDetail.svelte:595
 msgid "Skein length"
 msgstr ""
 
@@ -4202,7 +4183,7 @@ msgstr ""
 msgid "Skein length in meters"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:668
+#: web/src/lib/features/yarns/YarnDetail.svelte:591
 msgid "Skein weight"
 msgstr ""
 
@@ -4224,7 +4205,7 @@ msgid ""
 " yarns below."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1156
+#: web/src/lib/features/projects/ProjectReader.svelte:1202
 msgid "Some yarn details could not be loaded."
 msgstr ""
 
@@ -4292,7 +4273,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:561
 #: web/src/lib/features/projects/ProjectEditor.svelte:1519
 #: web/src/lib/features/projects/ProjectEditor.svelte:1710
-#: web/src/lib/features/projects/ProjectReader.svelte:1267
+#: web/src/lib/features/projects/ProjectReader.svelte:1299
 msgid "Step"
 msgstr ""
 
@@ -4330,7 +4311,7 @@ msgstr ""
 msgid "Step photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1307
+#: web/src/lib/features/projects/ProjectReader.svelte:1339
 msgid "Step photos"
 msgstr ""
 
@@ -4355,7 +4336,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:524
 #: web/src/lib/features/history/change-format.ts:113
-#: web/src/lib/features/projects/ProjectReader.svelte:1240
+#: web/src/lib/features/projects/ProjectReader.svelte:1272
 msgid "Steps"
 msgstr ""
 
@@ -4375,12 +4356,12 @@ msgstr ""
 msgid "Stitch sample image uploaded"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:286
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:425
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:287
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:426
 msgid "Stitches"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:352
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:353
 msgid "Stitches to cast on"
 msgstr ""
 
@@ -4845,7 +4826,7 @@ msgstr ""
 msgid "The request is larger than the allowed size."
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:265
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:266
 msgid "The result appears automatically as soon as every field is filled in"
 msgstr ""
 
@@ -5020,8 +5001,8 @@ msgid "This browser cannot show notifications."
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1856
-#: web/src/lib/features/projects/ProjectReader.svelte:1460
-#: web/src/lib/features/yarns/YarnDetail.svelte:739
+#: web/src/lib/features/projects/ProjectReader.svelte:1427
+#: web/src/lib/features/yarns/YarnDetail.svelte:734
 #: web/src/lib/features/yarns/YarnForm.svelte:986
 #: web/src/lib/features/yarns/YarnForm.svelte:1049
 msgid "This cannot be undone."
@@ -5414,7 +5395,7 @@ msgstr ""
 #: web/src/lib/features/admin/audit-action.ts:27
 #: web/src/lib/features/home/HomeDashboard.svelte:222
 #: web/src/lib/features/projects/ProjectReader.svelte:814
-#: web/src/lib/features/yarns/YarnDetail.svelte:676
+#: web/src/lib/features/yarns/YarnDetail.svelte:599
 msgid "Updated"
 msgstr ""
 
@@ -5482,8 +5463,8 @@ msgstr ""
 msgid "Use plain text or Markdown. The reader formats it safely for you."
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:599
-#: web/src/lib/features/yarns/YarnDetail.svelte:630
+#: web/src/lib/features/yarns/YarnDetail.svelte:668
+#: web/src/lib/features/yarns/YarnDetail.svelte:699
 msgid "Used in projects"
 msgstr ""
 
@@ -5653,6 +5634,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:605
 #: web/src/lib/features/yarns/YarnDetail.svelte:341
+#: web/src/lib/features/yarns/YarnDetail.svelte:563
 msgid "Yarn details"
 msgstr ""
 
@@ -5692,8 +5674,7 @@ msgstr ""
 msgid "Yarn photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1120
-#: web/src/lib/features/yarns/YarnDetail.svelte:688
+#: web/src/lib/features/yarns/YarnDetail.svelte:608
 msgid "Yarn source"
 msgstr ""
 
@@ -5701,11 +5682,11 @@ msgstr ""
 msgid "Yarn source URL"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:638
+#: web/src/lib/features/yarns/YarnDetail.svelte:561
 msgid "Yarn specifications"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:660
+#: web/src/lib/features/yarns/YarnDetail.svelte:583
 #: web/src/lib/features/yarns/YarnForm.svelte:810
 msgid "Yarn weight"
 msgstr ""
@@ -5885,7 +5866,7 @@ msgstr ""
 msgid "Your API tokens could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:414
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:415
 msgid "Your Gauge (per 10cm)"
 msgstr ""
 
@@ -5976,7 +5957,7 @@ msgstr ""
 msgid "Your projects, yarns, steps, notes, and categories."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1189
+#: web/src/lib/features/projects/ProjectReader.svelte:1227
 msgid "Your reference"
 msgstr ""
 
@@ -6026,7 +6007,7 @@ msgstr ""
 msgid "a yarn"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:545
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:546
 msgid "and"
 msgstr ""
 
@@ -6075,7 +6056,7 @@ msgstr ""
 msgid "fiber content"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:669
+#: web/src/lib/features/yarns/YarnDetail.svelte:592
 msgid "g"
 msgstr ""
 
@@ -6083,7 +6064,7 @@ msgstr ""
 msgid "linked yarns"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:673
+#: web/src/lib/features/yarns/YarnDetail.svelte:596
 msgid "m"
 msgstr ""
 
@@ -6091,7 +6072,7 @@ msgstr ""
 msgid "main photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1048
+#: web/src/lib/features/projects/ProjectReader.svelte:1082
 msgid "more yarns"
 msgstr ""
 
@@ -6110,11 +6091,11 @@ msgstr ""
 msgid "notes"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1269
+#: web/src/lib/features/projects/ProjectReader.svelte:1301
 msgid "of"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:384
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:385
 msgid "optional"
 msgstr ""
 
@@ -6148,7 +6129,7 @@ msgstr ""
 msgid "recommended needles"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:547
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:548
 msgid "rows"
 msgstr ""
 
@@ -6178,7 +6159,7 @@ msgstr ""
 msgid "stitch sample"
 msgstr ""
 
-#: web/src/lib/features/gauge/GaugeCalculator.svelte:543
+#: web/src/lib/features/gauge/GaugeCalculator.svelte:544
 msgid "stitches"
 msgstr ""
 

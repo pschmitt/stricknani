@@ -1340,7 +1340,7 @@ export async function exerciseProjectServiceTools(
 
   markStage("requesting a project source archive");
   markStage("loading project archive controls");
-  const archive = page.locator(".source-card .archive-control");
+  const archive = page.locator(".source-rows .archive-control");
   await archive.waitFor({ state: "visible", timeout: 5_000 });
   markStage("checking project archive status");
   const archivePath = `/api/v2/projects/${projectId}/archive`;
@@ -1411,14 +1411,14 @@ export async function exerciseProjectServiceTools(
           : null;
         const text =
           document
-            .querySelector(".source-card .archive-status")
+            .querySelector(".source-rows .archive-status")
             ?.textContent?.trim() ?? null;
         return {
           responseStatus: response.status,
           detailHasArchive: typeof envelope?.data?.link_archive === "string",
           statusText: text,
           linkCount: document.querySelectorAll(
-            '.source-card a[href*="web.archive.org"]',
+            '.source-rows a[href*="web.archive.org"]',
           ).length,
         };
       }, projectId);
@@ -1525,7 +1525,7 @@ export async function exerciseYarnServiceTools(
 
   markStage("requesting a yarn source archive");
   markStage("loading yarn archive controls");
-  const archive = page.locator(".source-card .archive-control");
+  const archive = page.locator(".source-rows .archive-control");
   await archive.waitFor({ state: "visible", timeout: 5_000 });
   markStage("checking yarn archive status");
   const archivePath = `/api/v2/yarns/${yarnId}/archive`;

@@ -64,7 +64,6 @@ import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.settings.DetailCardDomain
 import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.data.settings.YarnDetailCard
-import blue.anika.wolle.ui.common.ArchiveControl
 import blue.anika.wolle.ui.common.ArchiveEntity
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
@@ -86,7 +85,7 @@ import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
 import blue.anika.wolle.ui.common.ScrolledBarTitle
-import blue.anika.wolle.ui.common.SourceLinkRow
+import blue.anika.wolle.ui.common.SourceRows
 import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.TextSizeMenuSection
@@ -98,7 +97,6 @@ import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
 import blue.anika.wolle.ui.common.rememberRefreshFailure
-import blue.anika.wolle.ui.common.safeExternalUrl
 import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.history.HistoryPhase
@@ -478,7 +476,6 @@ private fun YarnDetailContent(
         add(YarnDetailCard.DETAILS)
         if (detail.description != null) add(YarnDetailCard.DESCRIPTION)
         if (linkedProjects.isNotEmpty()) add(YarnDetailCard.USED_IN)
-        add(YarnDetailCard.SOURCE)
     }
     val savedVisibleOrder =
         remember(cardOrder, availableCardKeys) {
@@ -601,48 +598,18 @@ private fun YarnDetailContent(
                                         .joinToString(" / ")
                                 DetailRow(stringResource(R.string.yarn_detail_field_amount), amount)
                             }
+                            SourceRows(
+                                entity = ArchiveEntity.YARN,
+                                id = detail.id,
+                                link = detail.link,
+                                linkArchive = detail.linkArchive,
+                                openLabel = stringResource(R.string.yarn_detail_source_open),
+                                archiveLabel = stringResource(R.string.yarn_detail_source_archive),
+                                canArchive = canArchive,
+                                onArchived = onArchived,
+                            )
                             updatedDate(detail.updatedAt)?.let {
                                 DetailRow(stringResource(R.string.common_field_updated), it)
-                            }
-                        }
-                    YarnDetailCard.SOURCE ->
-                        ReorderableDetailCard(
-                            title = stringResource(R.string.yarn_detail_source_title),
-                            icon = PhosphorIcons.Link,
-                            accent = MaterialTheme.colorScheme.secondary,
-                            onEdit = edit?.let { e -> { e(YarnEditorFocus.DETAILS) } },
-                            copyText = detail.link,
-                            cardKey = cardKey,
-                            cardIndex = cardIndex,
-                            listState = listState,
-                            orderedKeys = orderedCardKeys,
-                            itemIndexOffset = itemIndexOffset,
-                            reorderState = reorderState,
-                            onMove = moveCard,
-                        ) {
-                            val original = safeExternalUrl(detail.link)
-                            if (original != null) {
-                                SourceLinkRow(
-                                    PhosphorIcons.Notebook,
-                                    stringResource(R.string.yarn_detail_source_open),
-                                    original,
-                                )
-                            } else {
-                                Text(
-                                    stringResource(R.string.yarn_detail_source_none),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            safeExternalUrl(detail.linkArchive)?.let { archived ->
-                                SourceLinkRow(
-                                    PhosphorIcons.ClockCounterClockwise,
-                                    stringResource(R.string.yarn_detail_source_archive),
-                                    archived,
-                                )
-                            }
-                            if (canArchive && original != null) {
-                                ArchiveControl(ArchiveEntity.YARN, detail.id, original, onArchived)
                             }
                         }
                     YarnDetailCard.DESCRIPTION ->

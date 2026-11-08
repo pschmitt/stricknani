@@ -16,30 +16,27 @@ enum class DetailCardDomain(val storageName: String) {
 
 /** Stable IDs for the optional sections on a project detail page. */
 object ProjectDetailCard {
-    const val SOURCE = "source"
-    const val ATTACHMENTS = "attachments"
     const val DETAILS = "details"
-    const val STITCH_SAMPLE = "stitch_sample"
-    const val LINKED_YARNS = "linked_yarns"
+    const val MATERIALS = "materials"
+
+    /** "Pattern and notes": the description and the notes together, like the web. */
     const val DESCRIPTION = "description"
     const val STEPS = "steps"
-    const val NOTES = "notes"
 
-    val defaultOrder =
-        // The pattern source sits last, just above the fixed "Recent changes" section.
-        listOf(ATTACHMENTS, DETAILS, STITCH_SAMPLE, LINKED_YARNS, DESCRIPTION, STEPS, NOTES, SOURCE)
+    // Attachments sit fixed under the gallery and the source links are rows of the details card.
+    val defaultOrder = listOf(DETAILS, MATERIALS, DESCRIPTION, STEPS)
 }
 
 /** Stable IDs for the sections on a yarn detail page. */
 object YarnDetailCard {
-    const val SOURCE = "source"
     const val DETAILS = "details"
     const val DESCRIPTION = "description"
     const val USED_IN = "used_in"
     const val NOTES = "notes"
 
-    // Like the pattern source on projects, the yarn source sits last.
-    val defaultOrder = listOf(DETAILS, DESCRIPTION, USED_IN, NOTES, SOURCE)
+    // The source links are rows of the details card.
+    // The web yarn page's order: details, description, notes, used in.
+    val defaultOrder = listOf(DETAILS, DESCRIPTION, NOTES, USED_IN)
 }
 
 /** Pure ordering rules shared by detail screens, Settings, and unit tests. */

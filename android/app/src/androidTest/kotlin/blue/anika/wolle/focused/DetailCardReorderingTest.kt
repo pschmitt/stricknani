@@ -30,7 +30,7 @@ class DetailCardReorderingTest {
     fun longPressingACardTitleEntersAccessibleReorderMode() {
         composeRule.setContent {
             StricknaniTheme {
-                val keys = listOf(ProjectDetailCard.DETAILS, ProjectDetailCard.NOTES)
+                val keys = listOf(ProjectDetailCard.DETAILS, ProjectDetailCard.STEPS)
                 val listState = rememberLazyListState()
                 val reorderState = rememberDetailCardReorderState()
                 LazyColumn(state = listState) {
@@ -77,7 +77,7 @@ class DetailCardReorderingTest {
         composeRule.onNodeWithText("Drag the card titles into place.").assertDoesNotExist()
         composeRule.onNodeWithText("A card").assertIsDisplayed()
 
-        composeRule.runOnIdle { reorderState.begin("notes") }
+        composeRule.runOnIdle { reorderState.begin("steps") }
         composeRule.onNodeWithText("Drag the card titles into place.").assertIsDisplayed()
         composeRule.onNodeWithText("A card").assertIsDisplayed()
 

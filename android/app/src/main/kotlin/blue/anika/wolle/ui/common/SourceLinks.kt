@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.common
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -56,6 +57,33 @@ fun SourceLinkRow(icon: ImageVector, label: String, url: String) {
             color = MaterialTheme.colorScheme.primary,
             textDecoration = TextDecoration.Underline,
         )
+    }
+}
+
+/**
+ * The source rows of a project's or yarn's details card (like the web): the original link, the
+ * archived copy when there is one, and the owner's archive action. Nothing is shown without a link.
+ */
+@Composable
+fun ColumnScope.SourceRows(
+    entity: ArchiveEntity,
+    id: Int,
+    link: String?,
+    linkArchive: String?,
+    openLabel: String,
+    archiveLabel: String,
+    canArchive: Boolean,
+    onArchived: () -> Unit,
+) {
+    val original = safeExternalUrl(link)
+    if (original != null) {
+        SourceLinkRow(PhosphorIcons.Notebook, openLabel, original)
+    }
+    safeExternalUrl(linkArchive)?.let { archived ->
+        SourceLinkRow(PhosphorIcons.ClockCounterClockwise, archiveLabel, archived)
+    }
+    if (canArchive && original != null) {
+        ArchiveControl(entity, id, original, onArchived)
     }
 }
 

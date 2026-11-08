@@ -234,6 +234,7 @@
   <Disclosure
     class="help-panel"
     icon="help"
+    tone="gauge"
     label={t("How to use this calculator", locale)}
   >
     <p class="help-intro">

@@ -155,6 +155,8 @@ internal fun ReorderableDetailCard(
     sticky: Boolean = false,
     icon: ImageVector? = null,
     accent: Color = MaterialTheme.colorScheme.primary,
+    /** At the end of the heading, e.g. the collapse chevron of Materials (like the web). */
+    headerAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val titleDescription = stringResource(R.string.detail_card_reorder_title_description, title)
@@ -219,6 +221,7 @@ internal fun ReorderableDetailCard(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
+            if (headerAction != null && !reorderState.isReordering) headerAction()
             if (reorderState.isReordering) {
                 Icon(
                     Icons.Filled.DragHandle,
