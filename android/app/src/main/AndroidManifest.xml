@@ -12,6 +12,10 @@
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
         tools:node="remove" />
+    <!-- API 34+ user-initiated data transfer jobs run "Download your data" and "Restore" without
+         WorkManager's ten minute limit. A normal permission, no Play declaration, and no
+         foreground service. -->
+    <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
     <!-- API 33+ runtime permission for optional background sync result notifications (SNA-14).
          Sync never depends on it being granted. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -53,6 +57,17 @@
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             tools:node="remove" />
+
+        <!-- User-initiated data transfer jobs (API 34+) of the data download and restore; below
+             API 34 the same transfers run as WorkManager workers. -->
+        <service
+            android:name=".data.export.DataExportJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name=".data.export.DataRestoreJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <activity
             android:name=".MainActivity"

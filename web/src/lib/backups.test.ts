@@ -4,6 +4,11 @@ import {
   restoreContentType,
   restoreErrorKind,
   uploadPercent,
+  encodePassphrase,
+  encryptedExportBody,
+  parseExportTicket,
+  passphraseBytes,
+  passphraseProblem,
   exportFormatVersion,
   exportUrl,
   parseArchiveType,
@@ -96,5 +101,57 @@ describe("restore", () => {
     expect(uploadPercent(50, 200)).toBe(25);
     expect(uploadPercent(300, 200)).toBe(100);
     expect(uploadPercent(5, 0)).toBe(0);
+  });
+});
+
+describe("encryption", () => {
+  it("encodes the UTF-8 bytes as base64url without padding", () => {
+    expect(encodePassphrase("abc")).toBe("YWJj");
+    expect(encodePassphrase("a")).toBe("YQ");
+    // 0xfb 0xff would be "+/" in plain base64.
+    expect(encodePassphrase("\u00fb")).toBe("w7s");
+    expect(encodePassphrase("Gr\u00fc\u00dfe \u{1F9F6}")).toBe(
+      "R3LDvMOfZSDwn6e2",
+    );
+  });
+
+  it("counts UTF-8 bytes, not characters", () => {
+    expect(passphraseBytes("\u00e4\u00f6\u00fc")).toBe(6);
+    expect(passphraseProblem("\u00e4\u00f6\u00fc\u00e4\u00f6\u00fc", "x")).toBe(
+      "mismatch",
+    );
+    expect(passphraseProblem("eleven char", "eleven char")).toBe("too_short");
+    expect(passphraseProblem("twelve chars", "twelve chars")).toBeUndefined();
+    expect(passphraseProblem("twelve chars", "twelve charz")).toBe("mismatch");
+  });
+
+  it("builds the request body and reads the ticket", () => {
+    expect(encryptedExportBody("zip", "pw")).toEqual({
+      archive: "zip",
+      passphrase: "pw",
+    });
+    expect(
+      parseExportTicket({ data: { url: "/api/v2/account/export/download/x" } }),
+    ).toBe("/api/v2/account/export/download/x");
+    expect(parseExportTicket({ data: { url: "https://evil.example/" } })).toBe(
+      undefined,
+    );
+    expect(parseExportTicket({ data: { url: "//evil.example/" } })).toBe(
+      undefined,
+    );
+    expect(parseExportTicket(null)).toBe(undefined);
+  });
+
+  it("maps the passphrase errors and age file types", () => {
+    expect(
+      restoreErrorKind(422, { error: { code: "passphrase_required" } }),
+    ).toBe("passphrase_required");
+    expect(restoreErrorKind(422, { error: { code: "wrong_passphrase" } })).toBe(
+      "wrong_passphrase",
+    );
+    expect(restoreContentType({ name: "a.tar.gz.age" })).toBe(
+      "application/gzip",
+    );
+    expect(restoreContentType({ name: "a.zip.age" })).toBe("application/zip");
   });
 });

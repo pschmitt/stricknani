@@ -64,11 +64,24 @@ class DataExportViewModel @Inject constructor(private val scheduler: DataExportS
         }
     }
 
-    fun suggestedName(format: ExportFormat): String =
-        exportFileName(LocalDate.now(ZoneOffset.UTC), format)
+    fun suggestedName(format: ExportFormat, encrypted: Boolean = false): String =
+        exportFileName(LocalDate.now(ZoneOffset.UTC), format, encrypted)
 
-    fun download(target: Uri, displayName: String?, format: ExportFormat) {
+    /** With a [passphrase] the download is encrypted; the screen clears its fields after this. */
+    fun download(
+        target: Uri,
+        displayName: String?,
+        format: ExportFormat,
+        passphrase: String? = null,
+    ) {
         _lastFailure.value = null
-        scheduler.start(target, displayName ?: suggestedName(format), format)
+        scheduler.start(
+            DataExportRequest(
+                target,
+                displayName ?: suggestedName(format, passphrase != null),
+                format,
+            ),
+            passphrase,
+        )
     }
 }

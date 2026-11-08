@@ -513,6 +513,13 @@ constructor(
             BackupFrequency.WEEKLY,
         )
 
+    val scheduledBackupIncludeData: StateFlow<Boolean> =
+        appPreferencesRepository.scheduledBackupIncludeData.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            false,
+        )
+
     val scheduledBackupPasswordSet: StateFlow<Boolean> =
         settingsRepository.scheduledBackupPassword
             .map { !it.isNullOrBlank() }
@@ -598,6 +605,10 @@ constructor(
             appPreferencesRepository.setScheduledBackupFrequency(frequency)
             if (scheduledBackupEnabled.value) backupScheduler.schedule(frequency)
         }
+    }
+
+    fun setScheduledBackupIncludeData(enabled: Boolean) {
+        viewModelScope.launch { appPreferencesRepository.setScheduledBackupIncludeData(enabled) }
     }
 
     fun setScheduledBackupPassword(password: String?) {

@@ -21,24 +21,24 @@ msgstr ""
 msgid "Import a pattern"
 msgstr "Anleitung importieren"
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:290
-#: web/src/routes/+layout.svelte:387
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:292
+#: web/src/routes/+layout.svelte:389
 msgid "Main navigation"
 msgstr "Hauptnavigation"
 
 #: src/import_service.rs:704
 #: web/src/lib/features/projects/ProjectLibrary.svelte:214
 #: web/src/lib/features/projects/ProjectLibrary.svelte:225
-#: web/src/routes/+layout.svelte:92 web/src/routes/backups/+page.svelte:232
-#: web/src/routes/backups/+page.svelte:248
+#: web/src/routes/+layout.svelte:92 web/src/routes/backups/+page.svelte:426
+#: web/src/routes/backups/+page.svelte:442
 msgid "Projects"
 msgstr "Projekte"
 
 #: src/import_service.rs:705 web/src/lib/features/yarns/YarnDetail.svelte:340
 #: web/src/lib/features/yarns/YarnLibrary.svelte:160
 #: web/src/lib/features/yarns/YarnLibrary.svelte:171
-#: web/src/routes/+layout.svelte:93 web/src/routes/backups/+page.svelte:234
-#: web/src/routes/backups/+page.svelte:254
+#: web/src/routes/+layout.svelte:93 web/src/routes/backups/+page.svelte:428
+#: web/src/routes/backups/+page.svelte:448
 msgid "Yarns"
 msgstr "Garne"
 
@@ -276,6 +276,10 @@ msgstr ""
 "Inhalte erhalten und ein Archivdienst bei einer von dir angeforderten "
 "Archivaufnahme eine URL erhalten."
 
+#: web/src/routes/backups/+page.svelte:327
+msgid "A download is already running."
+msgstr "Ein Download läuft bereits."
+
 #: web/src/lib/features/yarns/YarnForm.svelte:681
 msgid "A newer version was saved"
 msgstr "Eine neuere Version wurde gespeichert"
@@ -284,7 +288,7 @@ msgstr "Eine neuere Version wurde gespeichert"
 msgid "A place for your projects and yarn."
 msgstr "Ein Ort für deine Projekte und deine Garn."
 
-#: web/src/routes/+layout.svelte:207
+#: web/src/routes/+layout.svelte:209
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "Ein ruhiger Ort für deine Strickprojekte und dein Garn."
 
@@ -296,7 +300,7 @@ msgstr ""
 "Ein Referenzfoto konnte nicht zum Drucken vorbereitet werden. Bitte "
 "erneut versuchen."
 
-#: web/src/routes/backups/+page.svelte:210
+#: web/src/routes/backups/+page.svelte:404
 msgid "A restore is already running."
 msgstr "Eine Wiederherstellung läuft bereits."
 
@@ -343,7 +347,7 @@ msgstr "API-Zugriff"
 msgid "API token revoked."
 msgstr "API-Token widerrufen."
 
-#: web/src/routes/+layout.svelte:361 web/src/routes/about/+page.svelte:201
+#: web/src/routes/+layout.svelte:363 web/src/routes/about/+page.svelte:201
 #: web/src/routes/more/+page.svelte:85
 msgid "About"
 msgstr "Über Stricknani"
@@ -354,12 +358,12 @@ msgstr "Über diese Richtlinie"
 
 #: web/src/lib/features/account/AccountSettings.svelte:831
 #: web/src/lib/features/account/AccountSettings.svelte:839
-#: web/src/routes/+layout.svelte:324 web/src/routes/+layout.svelte:327
-#: web/src/routes/+layout.svelte:335 web/src/routes/more/+page.svelte:48
+#: web/src/routes/+layout.svelte:326 web/src/routes/+layout.svelte:329
+#: web/src/routes/+layout.svelte:337 web/src/routes/more/+page.svelte:48
 msgid "Account"
 msgstr "Konto"
 
-#: web/src/routes/+layout.svelte:371
+#: web/src/routes/+layout.svelte:373
 msgid "Account access"
 msgstr "Kontozugriff"
 
@@ -520,7 +524,7 @@ msgstr "{n} Fotos hinzugefügt"
 msgid "Added {n} steps"
 msgstr "{n} Schritte hinzugefügt"
 
-#: web/src/routes/backups/+page.svelte:158
+#: web/src/routes/backups/+page.svelte:352
 msgid ""
 "Adds the projects, yarns and photos from a Stricknani download as new "
 "items. Nothing you already have is changed."
@@ -544,7 +548,7 @@ msgstr "Anzahl Maschen"
 #: web/src/lib/features/admin/AdminAudit.svelte:318
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:571
-#: web/src/routes/+layout.svelte:351 web/src/routes/more/+page.svelte:72
+#: web/src/routes/+layout.svelte:353 web/src/routes/more/+page.svelte:72
 #: web/src/routes/more/+page.svelte:76
 msgid "Admin"
 msgstr "Admin"
@@ -702,7 +706,7 @@ msgstr "Der Archivdienst hat eine unlesbare Antwort zurückgegeben."
 msgid "Archive this source"
 msgstr "Diese Quelle archivieren"
 
-#: web/src/routes/backups/+page.svelte:139
+#: web/src/routes/backups/+page.svelte:257
 msgid "Archive type"
 msgstr "Archivtyp"
 
@@ -721,7 +725,7 @@ msgstr "Archivierung ist derzeit nicht verfügbar."
 msgid "Ask AI to improve extraction"
 msgstr "KI bitten, die Extraktion zu verbessern"
 
-#: web/src/routes/+layout.svelte:375
+#: web/src/routes/+layout.svelte:377
 msgid "Ask an administrator if you need access."
 msgstr "Wende dich an die Administration, wenn du Zugriff benötigst."
 
@@ -736,6 +740,14 @@ msgstr "Auf einen Blick"
 #: web/src/lib/features/account/AccountSettings.svelte:1261
 msgid "At least 12 characters. Avoid common passwords."
 msgstr "Mindestens 12 Zeichen. Vermeide häufig verwendete Passwörter."
+
+#: web/src/routes/backups/+page.svelte:284
+msgid ""
+"At least 12 characters. Without it the file cannot be opened; it is not "
+"stored anywhere."
+msgstr ""
+"Mindestens 12 Zeichen. Ohne sie lässt sich die Datei nicht öffnen; sie "
+"wird nirgends gespeichert."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1700
 msgid "Attach photo to"
@@ -789,7 +801,7 @@ msgstr ""
 "Zugriff. Tokenwerte werden nur bei ihrer Erstellung angezeigt; der Server"
 " speichert für die spätere Überprüfung einen Hash."
 
-#: web/src/routes/+layout.svelte:284
+#: web/src/routes/+layout.svelte:286
 msgid "Back"
 msgstr "Zurück"
 
@@ -814,7 +826,7 @@ msgstr "Zurück zu Mehr"
 #: web/src/lib/features/projects/ProjectReader.svelte:766
 #: web/src/lib/features/projects/ProjectReader.svelte:777
 #: web/src/lib/features/projects/ProjectReader.svelte:783
-#: web/src/routes/+layout.svelte:377
+#: web/src/routes/+layout.svelte:379
 msgid "Back to projects"
 msgstr "Zurück zu Projekten"
 
@@ -840,8 +852,8 @@ msgstr "Zurück zum Garn"
 msgid "Back to yarns"
 msgstr "Zurück zu den Garnen"
 
-#: web/src/routes/backups/+page.svelte:115
-#: web/src/routes/backups/+page.svelte:121 web/src/routes/more/+page.svelte:61
+#: web/src/routes/+layout.svelte:108 web/src/routes/backups/+page.svelte:233
+#: web/src/routes/backups/+page.svelte:239 web/src/routes/more/+page.svelte:61
 #: web/src/routes/more/+page.svelte:65
 msgid "Backups"
 msgstr "Backups"
@@ -937,7 +949,8 @@ msgstr "Kann ansehen"
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
 #: web/src/lib/features/yarns/YarnForm.svelte:963
 #: web/src/lib/features/yarns/YarnForm.svelte:1026
-#: web/src/routes/backups/+page.svelte:277
+#: web/src/routes/backups/+page.svelte:471
+#: web/src/routes/backups/+page.svelte:507
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -1100,7 +1113,7 @@ msgstr "Wähle eine E-Mail-Adresse und ein sicheres Passwort."
 msgid "Choose an image smaller than 25 MiB."
 msgstr "Wähle ein Bild mit weniger als 25 MiB aus."
 
-#: web/src/routes/backups/+page.svelte:180
+#: web/src/routes/backups/+page.svelte:374
 msgid "Choose file"
 msgstr "Datei auswählen"
 
@@ -1532,13 +1545,18 @@ msgstr "Dieses Garn nicht hinzufügen"
 msgid "Done"
 msgstr "Fertig"
 
-#: web/src/routes/backups/+page.svelte:144
+#: web/src/routes/backups/+page.svelte:318
+#: web/src/routes/backups/+page.svelte:337
 msgid "Download"
 msgstr "Herunterladen"
 
 #: web/src/routes/about/+page.svelte:333
 msgid "Download APK"
 msgstr "APK herunterladen"
+
+#: web/src/routes/backups/+page.svelte:329
+msgid "Download failed."
+msgstr "Download fehlgeschlagen."
 
 #: web/src/lib/components/GetAppCard.svelte:88
 msgid "Download for Android"
@@ -1636,6 +1654,10 @@ msgstr "Konto aktivieren"
 #: web/src/lib/features/admin/AdminUsers.svelte:805
 msgid "Enable this account?"
 msgstr "Dieses Konto aktivieren?"
+
+#: web/src/routes/backups/+page.svelte:267
+msgid "Encrypt with a passphrase"
+msgstr "Mit einer Passphrase verschlüsseln"
 
 #: web/src/lib/components/LocaleSwitcher.svelte:31
 #: web/src/lib/features/media/OcrControl.svelte:190
@@ -1776,7 +1798,7 @@ msgstr ""
 msgid "Everyone"
 msgstr "Alle"
 
-#: web/src/routes/backups/+page.svelte:270
+#: web/src/routes/backups/+page.svelte:464
 msgid "Everything in it is added as new items, also if you restored it before."
 msgstr ""
 "Alles darin wird als neue Einträge hinzugefügt, auch wenn du sie schon "
@@ -1922,7 +1944,8 @@ msgstr ""
 "Aus Sicherheitsgründen musst du deine Identität bestätigen, bevor du "
 "ändern kannst, wie du dich anmeldest."
 
-#: web/src/routes/backups/+page.svelte:146
+#: web/src/routes/backups/+page.svelte:320
+#: web/src/routes/backups/+page.svelte:339
 msgid "Format version 1"
 msgstr "Formatversion 1"
 
@@ -2628,7 +2651,7 @@ msgstr "Meine"
 msgid "Minutes"
 msgstr "Minuten"
 
-#: web/src/routes/backups/+page.svelte:239
+#: web/src/routes/backups/+page.svelte:433
 msgid "Missing in the file"
 msgstr "Fehlten in der Datei"
 
@@ -2637,7 +2660,7 @@ msgid "Mooorning!"
 msgstr "Guten Morgen, Sonnenschein!"
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:308 web/src/routes/+layout.svelte:417
+#: web/src/routes/+layout.svelte:310 web/src/routes/+layout.svelte:419
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "Mehr"
@@ -2655,7 +2678,7 @@ msgstr "Weitere Aktionen"
 msgid "More changes could not be loaded."
 msgstr "Weitere Änderungen konnten nicht geladen werden."
 
-#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:81
+#: web/src/routes/+layout.svelte:311 web/src/routes/more/+page.svelte:81
 msgid "More navigation"
 msgstr "Weitere Seiten"
 
@@ -3125,7 +3148,7 @@ msgstr "Öffne deine Projektübersicht, um weiterzumachen."
 msgid "Opening your pattern…"
 msgstr "Deine Anleitung wird geöffnet …"
 
-#: web/src/routes/+layout.svelte:243
+#: web/src/routes/+layout.svelte:245
 msgid "Opening your workspace…"
 msgstr "Dein Arbeitsbereich wird geöffnet …"
 
@@ -3217,6 +3240,11 @@ msgstr "PDF-Link nicht angehängt"
 #: web/src/lib/features/yarns/YarnLibrary.svelte:286
 msgid "Page"
 msgstr "Seite"
+
+#: web/src/routes/backups/+page.svelte:271
+#: web/src/routes/backups/+page.svelte:488
+msgid "Passphrase"
+msgstr "Passphrase"
 
 #: web/src/lib/components/SignInForm.svelte:129
 #: web/src/lib/features/account/AccountSettings.svelte:1195
@@ -3376,7 +3404,7 @@ msgstr "Foto {position} von {total}"
 msgid "Photos"
 msgstr "Fotos"
 
-#: web/src/routes/backups/+page.svelte:236
+#: web/src/routes/backups/+page.svelte:430
 msgid "Photos and files"
 msgstr "Fotos und Dateien"
 
@@ -3614,7 +3642,7 @@ msgstr ""
 "fortgesetzt wird. Durch das Entfernen der App oder das Löschen ihrer App-"
 "Daten wird der lokale Cache gemäß dem Android-Verhalten entfernt."
 
-#: web/src/routes/backups/+page.svelte:131
+#: web/src/routes/backups/+page.svelte:249
 msgid ""
 "Projects, yarns, categories, photos and attachments in one archive, "
 "including items shared with you."
@@ -3832,6 +3860,10 @@ msgstr "Wird entfernt …"
 msgid "Rename"
 msgstr "Umbenennen"
 
+#: web/src/routes/backups/+page.svelte:294
+msgid "Repeat passphrase"
+msgstr "Passphrase wiederholen"
+
 #: web/src/lib/features/imports/ImportWorkbench.svelte:221
 #: web/src/lib/features/imports/YarnImportWorkbench.svelte:104
 msgid "Replace this import review? Your edits will be lost."
@@ -3910,28 +3942,29 @@ msgstr "Ressourceninhaber"
 msgid "Resource unavailable"
 msgstr "Ressource nicht verfügbar"
 
-#: web/src/routes/backups/+page.svelte:280
+#: web/src/routes/backups/+page.svelte:474
+#: web/src/routes/backups/+page.svelte:516
 msgid "Restore"
 msgstr "Wiederherstellen"
 
-#: web/src/routes/backups/+page.svelte:212
+#: web/src/routes/backups/+page.svelte:406
 msgid "Restore failed."
 msgstr "Wiederherstellen fehlgeschlagen."
 
-#: web/src/routes/backups/+page.svelte:230
+#: web/src/routes/backups/+page.svelte:424
 msgid "Restore finished"
 msgstr "Wiederherstellung abgeschlossen"
 
-#: web/src/routes/backups/+page.svelte:155
+#: web/src/routes/backups/+page.svelte:349
 msgid "Restore from a file"
 msgstr "Aus einer Datei wiederherstellen"
 
-#: web/src/routes/backups/+page.svelte:264
+#: web/src/routes/backups/+page.svelte:458
 msgid "Restore this file?"
 msgstr "Diese Datei wiederherstellen?"
 
-#: web/src/routes/backups/+page.svelte:187
-#: web/src/routes/backups/+page.svelte:188
+#: web/src/routes/backups/+page.svelte:381
+#: web/src/routes/backups/+page.svelte:382
 msgid "Restoring…"
 msgstr "Wird wiederhergestellt…"
 
@@ -4262,7 +4295,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:162
 #: web/src/lib/features/projects/ProjectEditor.svelte:1208
-#: web/src/routes/+layout.svelte:227 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:229 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Anmelden"
 
@@ -4372,7 +4405,7 @@ msgstr "Knäuelgewicht"
 msgid "Skein weight in grams"
 msgstr "Knäuelgewicht in Gramm"
 
-#: web/src/routes/+layout.svelte:215
+#: web/src/routes/+layout.svelte:217
 msgid "Skip to content"
 msgstr "Zum Inhalt springen"
 
@@ -4703,6 +4736,10 @@ msgstr "Textgröße"
 msgid "That item could not be found."
 msgstr "Dieser Eintrag wurde nicht gefunden."
 
+#: web/src/routes/backups/+page.svelte:501
+msgid "That passphrase does not open this file."
+msgstr "Mit dieser Passphrase lässt sich die Datei nicht öffnen."
+
 #: web/src/lib/features/auth/ReauthDialog.svelte:120
 msgid "That password is not correct."
 msgstr "Das Passwort ist nicht richtig."
@@ -4881,7 +4918,7 @@ msgstr "Die Einstellung für Fehlerberichte konnte nicht gespeichert werden."
 msgid "The favorite could not be updated."
 msgstr "Der Favoritenstatus konnte nicht aktualisiert werden."
 
-#: web/src/routes/backups/+page.svelte:208
+#: web/src/routes/backups/+page.svelte:402
 msgid "The file is too large."
 msgstr "Die Datei ist zu groß."
 
@@ -4951,6 +4988,14 @@ msgid "The new photo order could not be saved. The previous order was restored."
 msgstr ""
 "Die neue Fotoreihenfolge konnte nicht gespeichert werden. Die vorherige "
 "Reihenfolge wurde wiederhergestellt."
+
+#: web/src/routes/backups/+page.svelte:291
+msgid "The passphrase is too short."
+msgstr "Die Passphrase ist zu kurz."
+
+#: web/src/routes/backups/+page.svelte:308
+msgid "The passphrases do not match."
+msgstr "Die Passphrasen stimmen nicht überein."
 
 #: web/src/lib/features/account/AccountSettings.svelte:739
 msgid "The password could not be changed."
@@ -5123,7 +5168,7 @@ msgstr "Der Server lieferte eine unerwartete Importantwort."
 msgid "The server returned an unexpected response."
 msgstr "Der Server hat unerwartet geantwortet."
 
-#: web/src/lib/session.svelte.ts:176 web/src/routes/+layout.svelte:256
+#: web/src/lib/session.svelte.ts:176 web/src/routes/+layout.svelte:258
 msgid "The session could not be loaded."
 msgstr "Die Sitzung konnte nicht geladen werden."
 
@@ -5307,7 +5352,7 @@ msgstr ""
 "Dieses Dokumentformat wird nicht unterstützt. Verwende eine Webseite, "
 "Text, Markdown, PDF oder ein Bild."
 
-#: web/src/routes/backups/+page.svelte:203
+#: web/src/routes/backups/+page.svelte:397
 msgid ""
 "This download is from a newer version of Stricknani. Update the server "
 "first."
@@ -5319,7 +5364,11 @@ msgstr ""
 msgid "This feature is not enabled for this account."
 msgstr "Diese Funktion ist für dieses Konto nicht aktiviert."
 
-#: web/src/routes/backups/+page.svelte:201
+#: web/src/routes/backups/+page.svelte:482
+msgid "This file is encrypted"
+msgstr "Diese Datei ist verschlüsselt"
+
+#: web/src/routes/backups/+page.svelte:395
 msgid "This file is not a Stricknani download."
 msgstr "Diese Datei ist kein Stricknani-Download."
 
@@ -5639,7 +5688,7 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:372
 #: web/src/lib/features/yarns/YarnForm.svelte:623
 #: web/src/lib/features/yarns/YarnLibrary.svelte:215
-#: web/src/routes/+layout.svelte:264 web/src/routes/backups/+page.svelte:223
+#: web/src/routes/+layout.svelte:266 web/src/routes/backups/+page.svelte:417
 msgid "Try again"
 msgstr "Erneut versuchen"
 
@@ -6152,7 +6201,7 @@ msgstr "Du hast {name} angelegt"
 msgid "You deleted {name}"
 msgstr "Du hast {name} gelöscht"
 
-#: web/src/routes/+layout.svelte:373
+#: web/src/routes/+layout.svelte:375
 msgid "You do not have access to this page."
 msgstr "Du hast keinen Zugriff auf diese Seite."
 
@@ -6265,7 +6314,7 @@ msgstr ""
 msgid "Your choices and contact"
 msgstr "Deine Wahlmöglichkeiten und Kontakt"
 
-#: web/src/routes/backups/+page.svelte:128
+#: web/src/routes/backups/+page.svelte:246
 msgid "Your data"
 msgstr "Deine Daten"
 
@@ -6308,7 +6357,7 @@ msgstr "Deine Favoriten und dein Profilbild."
 msgid "Your knitting timer has been running for a while."
 msgstr "Dein Stricktimer läuft schon eine Weile."
 
-#: web/src/routes/+layout.svelte:291
+#: web/src/routes/+layout.svelte:293
 msgid "Your library"
 msgstr "Deine Übersicht"
 
@@ -6372,7 +6421,7 @@ msgstr ""
 msgid "Your stash is empty"
 msgstr "Dein Garnvorrat ist leer"
 
-#: web/src/routes/+layout.svelte:252
+#: web/src/routes/+layout.svelte:254
 msgid "Your workspace is taking a moment."
 msgstr "Dein Arbeitsbereich braucht noch einen Moment."
 

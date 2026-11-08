@@ -75,6 +75,7 @@ struct ApiV2State {
     project_preview_slots: Arc<tokio::sync::Semaphore>,
     sync_projection_slots: Arc<tokio::sync::Semaphore>,
     exports: crate::export::ExportLimiter,
+    export_tickets: crate::export::ExportTickets,
     restores: crate::restore::RestoreLimiter,
     restore_limit: u64,
 }
@@ -92,6 +93,7 @@ pub fn router(app: AppState, ai_enabled: bool) -> Router {
         None,
         None,
         crate::restore::MAX_ARCHIVE_BYTES,
+        crate::export::TICKET_TTL,
     )
 }
 
@@ -99,7 +101,28 @@ pub fn router(app: AppState, ai_enabled: bool) -> Router {
 /// tests can exercise the `413` path without a 2 GiB body.
 #[doc(hidden)]
 pub fn router_with_restore_limit(app: AppState, ai_enabled: bool, restore_limit: u64) -> Router {
-    router_with_context(app, ai_enabled, None, None, restore_limit)
+    router_with_context(
+        app,
+        ai_enabled,
+        None,
+        None,
+        restore_limit,
+        crate::export::TICKET_TTL,
+    )
+}
+
+/// Like [`router`], with a different lifetime for the download tickets of encrypted exports,
+/// so that tests can exercise expiry.
+#[doc(hidden)]
+pub fn router_with_export_ticket_ttl(app: AppState, ai_enabled: bool, ttl: Duration) -> Router {
+    router_with_context(
+        app,
+        ai_enabled,
+        None,
+        None,
+        crate::restore::MAX_ARCHIVE_BYTES,
+        ttl,
+    )
 }
 
 pub(crate) fn router_with_optional_services(
@@ -115,6 +138,7 @@ pub(crate) fn router_with_optional_services(
         Some(ImportContext::new(worker_path, ai)),
         ocr_service,
         crate::restore::MAX_ARCHIVE_BYTES,
+        crate::export::TICKET_TTL,
     )
 }
 
@@ -124,6 +148,7 @@ fn router_with_context(
     imports: Option<ImportContext>,
     ocr_service: Option<crate::ocr::OcrService>,
     restore_limit: u64,
+    ticket_ttl: Duration,
 ) -> Router {
     let mut csrf_key = [0_u8; 32];
     let csrf_key = SysRng.try_fill_bytes(&mut csrf_key).ok().map(|()| csrf_key);
@@ -140,6 +165,7 @@ fn router_with_context(
         project_preview_slots: Arc::new(tokio::sync::Semaphore::new(4)),
         sync_projection_slots: Arc::new(tokio::sync::Semaphore::new(4)),
         exports: crate::export::ExportLimiter::default(),
+        export_tickets: crate::export::ExportTickets::new(ticket_ttl),
         restores: crate::restore::RestoreLimiter::default(),
         restore_limit,
     };

@@ -7,6 +7,11 @@ import java.io.OutputStream
 import java.time.LocalDate
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 
@@ -36,11 +41,60 @@ enum class ExportFormat(val mimeType: String, val extension: String, val archive
     companion object {
         fun fromName(name: String?): ExportFormat = entries.firstOrNull { it.name == name } ?: TarGz
     }
+
+    /** The picker's MIME type: an age file is opaque bytes, whatever archive is inside. */
+    fun mimeTypeFor(encrypted: Boolean): String = if (encrypted) ENCRYPTED_MIME_TYPE else mimeType
 }
 
-/** The suggested name in the file picker: `stricknani-export-YYYY-MM-DD.tar.gz` (or `.zip`). */
-fun exportFileName(date: LocalDate, format: ExportFormat = ExportFormat.TarGz): String =
-    "stricknani-export-$date.${format.extension}"
+/** The content type of an encrypted download (`.tar.gz.age`, `.zip.age`). */
+const val ENCRYPTED_MIME_TYPE = "application/octet-stream"
+
+/** Added to the file name of an encrypted download. */
+const val ENCRYPTED_EXTENSION = "age"
+
+/**
+ * The suggested name in the file picker: `stricknani-export-YYYY-MM-DD.tar.gz` (or `.zip`), with
+ * `.age` appended for an [encrypted] download.
+ */
+fun exportFileName(
+    date: LocalDate,
+    format: ExportFormat = ExportFormat.TarGz,
+    encrypted: Boolean = false,
+): String =
+    "stricknani-export-$date.${format.extension}" + if (encrypted) ".$ENCRYPTED_EXTENSION" else ""
+
+@Serializable private data class EncryptedExportRequest(val archive: String, val passphrase: String)
+
+/** The JSON body of `POST /api/v2/account/export`; the passphrase never goes into a URL. */
+fun encryptedExportBody(format: ExportFormat, passphrase: String): RequestBody =
+    Json.encodeToString(EncryptedExportRequest(format.archiveParam ?: "tar.gz", passphrase))
+        .toRequestBody("application/json".toMediaType())
+
+@Serializable private data class TicketEnvelope(val data: TicketData)
+
+@Serializable private data class TicketData(val url: String)
+
+private val ticketJson = Json { ignoreUnknownKeys = true }
+
+/** The download URL in the `{ "data": { "url": ... } }` answer, or null when it is not one. */
+fun parseExportTicketUrl(body: String): String? =
+    runCatching { ticketJson.decodeFromString<TicketEnvelope>(body).data.url }
+        .getOrNull()
+        ?.takeIf { it.isNotBlank() }
+
+/** The answer to the first step of an encrypted download. */
+sealed interface TicketResult {
+    data class Ready(val url: String) : TicketResult
+
+    data class Refused(val reason: ExportFailure) : TicketResult
+}
+
+/** Maps the status and body of `POST /api/v2/account/export` to a ticket or a failure. */
+fun ticketResultFor(httpStatus: Int, body: String?): TicketResult {
+    if (httpStatus != 201) return TicketResult.Refused(exportFailureFor(httpStatus))
+    val url = body?.let(::parseExportTicketUrl)
+    return if (url == null) TicketResult.Refused(ExportFailure.Failed) else TicketResult.Ready(url)
+}
 
 /** Maps the HTTP status of `GET /api/v2/account/export` to a failure. */
 fun exportFailureFor(httpStatus: Int): ExportFailure =

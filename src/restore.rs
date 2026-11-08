@@ -18,7 +18,7 @@
 
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
-    io::{self, Read},
+    io::{self, Read, Seek, Write},
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -68,6 +68,10 @@ pub(crate) enum RestoreError {
     TooLarge,
     Timeout,
     Unavailable,
+    /// An age-encrypted file and no passphrase was sent.
+    PassphraseRequired,
+    /// The passphrase does not open the age file.
+    WrongPassphrase,
     Internal,
 }
 
@@ -92,6 +96,16 @@ impl RestoreError {
             ),
             Self::Timeout => (408, "request_timeout", "The upload stalled"),
             Self::Unavailable => (503, "service_unavailable", "Media storage is not available"),
+            Self::PassphraseRequired => (
+                422,
+                "passphrase_required",
+                "The file is encrypted; a passphrase is required",
+            ),
+            Self::WrongPassphrase => (
+                422,
+                "wrong_passphrase",
+                "The passphrase does not open the file",
+            ),
             Self::Internal => (500, "internal_error", "Request failed"),
         }
     }
@@ -1314,13 +1328,80 @@ async fn receive(
     Ok(named)
 }
 
-/// Restore the archive in `body` for `user_id`.
+/// First line of an age file, with its newline.
+const AGE_MAGIC: &[u8] = b"age-encryption.org/v1\n";
+/// Highest scrypt work factor (`N = 2^20`, 1 GiB) a restore spends on a passphrase.
+const MAX_WORK_FACTOR: u8 = 20;
+
+/// Decrypt `upload` when it is an age file, into a second temporary file of at most `limit`
+/// bytes; any other file is returned unchanged.
+fn decrypt_upload(
+    upload: tempfile::NamedTempFile,
+    passphrase: Option<&str>,
+    limit: u64,
+    directory: &Path,
+) -> Result<tempfile::NamedTempFile, RestoreError> {
+    let mut file = std::fs::File::open(upload.path()).map_err(|_| RestoreError::Internal)?;
+    let mut head = [0_u8; AGE_MAGIC.len()];
+    let read = read_up_to(&mut file, &mut head).map_err(|_| RestoreError::Internal)?;
+    if &head[..read] != AGE_MAGIC {
+        return Ok(upload);
+    }
+    let passphrase = passphrase.ok_or(RestoreError::PassphraseRequired)?;
+    file.rewind().map_err(|_| RestoreError::Internal)?;
+    let decryptor = age::Decryptor::new_buffered(io::BufReader::new(file))
+        .map_err(|_| RestoreError::Invalid)?;
+    if !decryptor.is_scrypt() {
+        // Encrypted to keys, not to a passphrase: nothing a passphrase can open.
+        return Err(RestoreError::Invalid);
+    }
+    let mut identity =
+        age::scrypt::Identity::new(age::secrecy::SecretString::from(passphrase.to_owned()));
+    identity.set_max_work_factor(MAX_WORK_FACTOR);
+    let mut reader = decryptor
+        .decrypt(std::iter::once(&identity as &dyn age::Identity))
+        .map_err(|error| match error {
+            age::DecryptError::DecryptionFailed | age::DecryptError::KeyDecryptionFailed => {
+                RestoreError::WrongPassphrase
+            }
+            age::DecryptError::Io(_) => RestoreError::Internal,
+            _ => RestoreError::Invalid,
+        })?;
+    let mut output = tempfile::Builder::new()
+        .prefix(UPLOAD_PREFIX)
+        .tempfile_in(directory)
+        .map_err(|_| RestoreError::Internal)?;
+    let mut buffer = vec![0_u8; 64 * 1024];
+    let mut total = 0_u64;
+    loop {
+        // A read error here is a damaged or truncated file, not a server fault.
+        let read = reader
+            .read(&mut buffer)
+            .map_err(|_| RestoreError::Invalid)?;
+        if read == 0 {
+            break;
+        }
+        total += read as u64;
+        if total > limit {
+            return Err(RestoreError::TooLarge);
+        }
+        output
+            .write_all(&buffer[..read])
+            .map_err(|_| RestoreError::Internal)?;
+    }
+    output.flush().map_err(|_| RestoreError::Internal)?;
+    Ok(output)
+}
+
+/// Restore the archive in `body` for `user_id`. `passphrase` opens an age-encrypted archive
+/// and is ignored for a plain one.
 pub(crate) async fn restore(
     state: &AppState,
     user_id: i64,
     body: Body,
     declared_length: Option<u64>,
     limit: u64,
+    passphrase: Option<crate::export::Passphrase>,
 ) -> Result<Summary, RestoreError> {
     let root = state.media_root.clone();
     let upload_dir = match &root {
@@ -1333,6 +1414,17 @@ pub(crate) async fn restore(
         None => std::env::temp_dir(),
     };
     let upload = receive(body, declared_length, limit, &upload_dir).await?;
+    let decrypt_dir = upload_dir.clone();
+    let upload = tokio::task::spawn_blocking(move || {
+        decrypt_upload(
+            upload,
+            passphrase.as_ref().map(|p| p.as_str()),
+            limit,
+            &decrypt_dir,
+        )
+    })
+    .await
+    .map_err(|_| RestoreError::Internal)??;
     let path = upload.path().to_owned();
 
     let container = detect(&path)?;

@@ -166,8 +166,10 @@ The passphrase never appears in a URL or a log line:
 
 1. `POST /api/v2/account/export` with
    `{"archive": "tar.gz" | "zip", "passphrase": "…"}` (JSON; browser sessions
-   send the usual CSRF header). The passphrase must be 12 to 1024 bytes of
-   UTF-8, else `400 invalid_request`. The answer is `201`:
+   send the usual CSRF header; a cookie request without it is `403`, like every
+   cookie mutation). The passphrase must be 12 to 1024 bytes of UTF-8, else
+   `400 invalid_request` (a body that is not JSON: `400 invalid_json`). The
+   answer is `201`:
 
    ```json
    { "data": { "url": "/api/v2/account/export/download/<ticket>",
@@ -178,9 +180,13 @@ The passphrase never appears in a URL or a log line:
    it, so the download streams as usual). The ticket is random, held only in
    server memory together with the passphrase, bound to the account, valid for
    five minutes and for one download; a used, expired or foreign ticket is
-   `404`. The response is the encrypted stream with
+   `404`; a foreign request does not use the ticket up. Each account keeps at
+   most eight live tickets (the oldest goes first). The response is the
+   encrypted stream with
    `Content-Type: application/octet-stream` and the `.age` file name. It counts
-   against the one-export-per-user slot like a plain export.
+   against the one-export-per-user slot like a plain export: while another
+   export runs it is `429` and the ticket stays valid. The scrypt work factor
+   is 2^18, the `age` CLI default.
 
 `GET /api/v2/account/export` without a passphrase works as before.
 

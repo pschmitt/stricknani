@@ -17,15 +17,29 @@ class DataExportRepository
 @Inject
 constructor(private val api: DataExportApi, @ApplicationContext private val context: Context) {
 
+    /**
+     * Streams the export into [target]. With a [passphrase] the download is encrypted: the ticket
+     * is requested first and the ticket URL streamed second (`docs/data-export.md`, "Encryption").
+     */
     suspend fun download(
         target: Uri,
         format: ExportFormat,
+        passphrase: String? = null,
         onProgress: (Long) -> Unit,
     ): ExportResult =
         withContext(Dispatchers.IO) {
             val result =
                 try {
-                    val response = api.export(format.archiveParam)
+                    val response =
+                        if (passphrase == null) api.export(format.archiveParam)
+                        else
+                            when (val ticket = requestTicket(format, passphrase)) {
+                                is TicketResult.Ready -> api.downloadTicket(ticket.url)
+                                is TicketResult.Refused ->
+                                    return@withContext ExportResult.Failure(ticket.reason).also {
+                                        discard(target)
+                                    }
+                            }
                     streamExport(
                         response,
                         openOutput = { context.contentResolver.openOutputStream(target, "wt") },
@@ -42,6 +56,17 @@ constructor(private val api: DataExportApi, @ApplicationContext private val cont
             if (result is ExportResult.Failure) discard(target)
             result
         }
+
+    private suspend fun requestTicket(format: ExportFormat, passphrase: String): TicketResult {
+        val response = api.createEncryptedExport(encryptedExportBody(format, passphrase))
+        val text =
+            if (response.isSuccessful) response.body()?.use { it.string() }
+            else {
+                response.errorBody()?.close()
+                null
+            }
+        return ticketResultFor(response.code(), text)
+    }
 
     /** A half-written archive is worse than none: remove the file the picker created. */
     private fun discard(target: Uri) {

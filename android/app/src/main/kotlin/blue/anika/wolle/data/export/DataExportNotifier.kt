@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.export
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -46,24 +47,52 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
     }
 
     /** [bytes] so far; the total is unknown (the server streams without a length). */
-    fun progress(bytes: Long) {
-        notify(
-            builder(R.string.data_export_notification_progress_title, openBackups())
-                .setContentText(
-                    context.getString(
-                        R.string.data_export_notification_progress_text,
-                        Formatter.formatShortFileSize(context, bytes),
-                    )
+    fun progress(bytes: Long) = notify(progressBuilder(bytes))
+
+    /**
+     * The progress notification as a [Notification], for a user-initiated job: the system posts it
+     * itself (`JobService.setNotification`). Clickable like [progress]: it opens Backups.
+     */
+    fun progressNotification(bytes: Long): Notification = progressBuilder(bytes).build()
+
+    private fun progressBuilder(bytes: Long): NotificationCompat.Builder =
+        builder(R.string.data_export_notification_progress_title, openBackups())
+            .setContentText(
+                context.getString(
+                    R.string.data_export_notification_progress_text,
+                    Formatter.formatShortFileSize(context, bytes),
                 )
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setProgress(0, 0, true)
+            )
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setProgress(0, 0, true)
+
+    /**
+     * A scheduled backup could not write its data download into the folder. Opens Backups, where
+     * the schedule is set up.
+     */
+    fun scheduledDataFailed() {
+        val text = context.getString(R.string.scheduled_backup_data_failed_text)
+        post(
+            SCHEDULED_NOTIFICATION_ID,
+            builder(R.string.scheduled_backup_data_failed_title, openBackups())
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setAutoCancel(true),
         )
     }
 
-    fun succeeded(target: Uri, fileName: String, format: ExportFormat) {
+    fun succeeded(
+        target: Uri,
+        fileName: String,
+        format: ExportFormat,
+        encrypted: Boolean = false,
+    ) {
         notify(
-            builder(R.string.data_export_notification_success_title, openFile(target, format))
+            builder(
+                    R.string.data_export_notification_success_title,
+                    openFile(target, format, encrypted),
+                )
                 .setContentText(fileName)
                 .setAutoCancel(true)
         )
@@ -103,14 +132,14 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-    private fun openFile(target: Uri, format: ExportFormat): PendingIntent =
+    private fun openFile(target: Uri, format: ExportFormat, encrypted: Boolean): PendingIntent =
         PendingIntent.getActivity(
             context,
             REQUEST_FILE,
             Intent(context, MainActivity::class.java)
                 .setAction(ACTION_OPEN_EXPORT)
                 .putExtra(EXTRA_EXPORT_URI, target.toString())
-                .putExtra(EXTRA_EXPORT_MIME, format.mimeType)
+                .putExtra(EXTRA_EXPORT_MIME, format.mimeTypeFor(encrypted))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -145,7 +174,9 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
         const val EXTRA_EXPORT_URI = "export_uri"
         const val EXTRA_EXPORT_MIME = "export_mime"
         private const val CHANNEL_ID = "data_export"
-        private const val NOTIFICATION_ID = 1003
+        /** The id of the download's notification, also the one a job hands to the system. */
+        const val NOTIFICATION_ID = 1003
+        private const val SCHEDULED_NOTIFICATION_ID = 1007
         private const val REQUEST_BACKUPS = 1003
         private const val REQUEST_FILE = 1004
     }

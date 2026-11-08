@@ -30,7 +30,11 @@ constructor(private val api: DataRestoreApi, @ApplicationContext private val con
             }
             .getOrNull() ?: 0L
 
-    suspend fun restore(source: Uri, onProgress: (Long) -> Unit): RestoreResult =
+    suspend fun restore(
+        source: Uri,
+        passphrase: String? = null,
+        onProgress: (Long) -> Unit,
+    ): RestoreResult =
         withContext(Dispatchers.IO) {
             try {
                 val head =
@@ -45,7 +49,7 @@ constructor(private val api: DataRestoreApi, @ApplicationContext private val con
                         },
                         onProgress = onProgress,
                     )
-                resultOf(api.import(body))
+                resultOf(api.import(body, passphrase?.let(::encodePassphraseHeader)))
             } catch (e: CancellationException) {
                 throw e
             } catch (_: IOException) {

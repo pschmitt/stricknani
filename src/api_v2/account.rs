@@ -50,7 +50,14 @@ pub(super) fn router() -> Router<ApiV2State> {
         )
         .route("/account/password", axum::routing::put(change_password))
         .route("/account/delete", post(delete_account))
-        .route("/account/export", get(export_account))
+        .route(
+            "/account/export",
+            get(export_account).post(create_export_ticket),
+        )
+        .route(
+            "/account/export/download/{ticket}",
+            get(download_encrypted_export),
+        )
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024));
     let avatar_routes = Router::new()
         .route("/account/avatar", post(upload_avatar).delete(delete_avatar))
@@ -153,13 +160,120 @@ async fn export_account(
         );
     };
     match crate::export::snapshot(&state.app, user_id).await {
-        Ok(snapshot) => crate::export::response(&state.app, snapshot, format, guard),
+        Ok(snapshot) => crate::export::response(&state.app, snapshot, format, guard, None),
         Err(_) => api_error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal_error",
             "Request failed",
         ),
     }
+}
+
+#[derive(Deserialize)]
+struct EncryptedExportRequest {
+    archive: Option<String>,
+    passphrase: Option<String>,
+}
+
+/// `POST /account/export`: register an encrypted export. The passphrase stays in server memory,
+/// bound to a one-time download ticket, so that it never appears in a URL.
+async fn create_export_ticket(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    request: Result<Json<EncryptedExportRequest>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Json(mut request) = match request {
+        Ok(request) => request,
+        Err(error) => return json_rejection(error),
+    };
+    let passphrase = Zeroizing::new(request.passphrase.take().unwrap_or_default());
+    let Some(format) = crate::export::ArchiveFormat::parse(request.archive.as_deref()) else {
+        return api_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "archive must be tar.gz or zip",
+        );
+    };
+    if !crate::export::PASSPHRASE_BYTES.contains(&passphrase.len()) {
+        return api_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "passphrase must be 12 to 1024 bytes",
+        );
+    }
+    let (ticket, expires_at) = state.export_tickets.issue(user_id, format, passphrase);
+    (
+        StatusCode::CREATED,
+        [(axum::http::header::CACHE_CONTROL, "no-store")],
+        Json(Envelope {
+            data: serde_json::json!({
+                "url": format!("/api/v2/account/export/download/{ticket}"),
+                "expires_at": expires_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            }),
+        }),
+    )
+        .into_response()
+}
+
+/// `GET /account/export/download/{ticket}`: stream the encrypted archive once.
+async fn download_encrypted_export(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path(ticket): Path<String>,
+) -> Response {
+    let user_id = match resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let not_found = || api_error(StatusCode::NOT_FOUND, "not_found", "Not found");
+    if !state.export_tickets.is_valid(&ticket, user_id) {
+        return not_found();
+    }
+    let Some(guard) = state.exports.begin(user_id) else {
+        return rate_limited(
+            5,
+            "An export is already running; try again when it finishes",
+        );
+    };
+    let Some((format, passphrase)) = state.export_tickets.redeem(&ticket, user_id) else {
+        return not_found();
+    };
+    match crate::export::snapshot(&state.app, user_id).await {
+        Ok(snapshot) => {
+            crate::export::response(&state.app, snapshot, format, guard, Some(passphrase))
+        }
+        Err(_) => api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Request failed",
+        ),
+    }
+}
+
+/// The restore passphrase: `X-Archive-Passphrase`, base64url without padding of its UTF-8 bytes.
+#[allow(clippy::result_large_err)]
+fn archive_passphrase(headers: &HeaderMap) -> Result<Option<Zeroizing<String>>, Response> {
+    use base64::Engine as _;
+    let Some(value) = headers.get("x-archive-passphrase") else {
+        return Ok(None);
+    };
+    let invalid = || {
+        api_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "X-Archive-Passphrase must be base64url (no padding) of UTF-8 text",
+        )
+    };
+    let bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .decode(value.as_bytes())
+        .map(Zeroizing::new)
+        .map_err(|_| invalid())?;
+    let text = std::str::from_utf8(&bytes).map_err(|_| invalid())?;
+    Ok(Some(Zeroizing::new(text.to_owned())))
 }
 
 async fn import_account(
@@ -171,6 +285,10 @@ async fn import_account(
         Ok(user_id) => user_id,
         Err(error) => return *error,
     };
+    let passphrase = match archive_passphrase(&headers) {
+        Ok(passphrase) => passphrase,
+        Err(error) => return error,
+    };
     let Some(_guard) = state.restores.begin(user_id) else {
         return rate_limited(
             5,
@@ -181,7 +299,16 @@ async fn import_account(
         .get(axum::http::header::CONTENT_LENGTH)
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.parse::<u64>().ok());
-    match crate::restore::restore(&state.app, user_id, body, declared, state.restore_limit).await {
+    match crate::restore::restore(
+        &state.app,
+        user_id,
+        body,
+        declared,
+        state.restore_limit,
+        passphrase,
+    )
+    .await
+    {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => {
             let (status, code, message) = error.describe();

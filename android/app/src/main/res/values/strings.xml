@@ -614,6 +614,16 @@
     <string name="data_restore_error_too_large">The file is too large.</string>
     <string name="data_restore_error_already_running">A restore is already running.</string>
     <string name="data_restore_error_failed">Restore failed.</string>
+    <string name="data_export_encrypt">Encrypt with a passphrase</string>
+    <string name="data_passphrase_label">Passphrase</string>
+    <string name="data_export_passphrase_repeat">Repeat passphrase</string>
+    <string name="data_export_passphrase_help">At least 12 characters. Without it the file cannot be opened; it is not stored anywhere.</string>
+    <string name="data_export_passphrase_too_short">The passphrase is too short.</string>
+    <string name="data_export_passphrase_mismatch">The passphrases do not match.</string>
+    <string name="data_restore_encrypted_title">This file is encrypted</string>
+    <string name="data_restore_passphrase_wrong">That passphrase does not open this file.</string>
+    <string name="data_restore_error_passphrase_required">This file is encrypted. Open Backups to enter the passphrase.</string>
+    <string name="data_restore_error_wrong_passphrase">That passphrase does not open this file.</string>
     <string name="data_restore_notification_progress_title">Restoring your data</string>
     <string name="data_restore_notification_success_title">Restore finished</string>
     <string name="data_restore_notification_failed_title">Restore failed</string>
@@ -624,6 +634,10 @@
     <string name="backup_settings_folder_not_set">Not set</string>
     <string name="backup_settings_change_button">Change</string>
     <string name="backup_settings_frequency_label">Frequency</string>
+    <string name="backup_settings_include_data_label">Include your data</string>
+    <string name="backup_settings_include_data_description">Also saves a download of your projects, yarns and photos (.tar.gz) in the folder.</string>
+    <string name="scheduled_backup_data_failed_title">Scheduled backup incomplete</string>
+    <string name="scheduled_backup_data_failed_text">Your settings backup was saved, but the download of your data could not be written to the backup folder.</string>
     <string name="backup_settings_password_label">Backup password</string>
     <string name="backup_settings_password_set">Set</string>
     <string name="backup_settings_password_not_set">Not set (unencrypted)</string>

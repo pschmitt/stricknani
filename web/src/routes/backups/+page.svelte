@@ -7,9 +7,14 @@
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
+  import { apiRequest, ApiError } from "#lib/api.ts";
   import {
     archiveTypes,
+    encryptedExportBody,
+    exportPath,
     exportUrl,
+    parseExportTicket,
+    passphraseProblem,
     readArchiveType,
     RestoreError,
     restoreAccept,
@@ -42,6 +47,23 @@
   let upload: RestoreUpload | undefined;
   let destroyed = false;
 
+  let encrypt = $state(false);
+  let passphrase = $state("");
+  let repeat = $state("");
+  let attempted = $state(false);
+  let exporting = $state(false);
+  let exportFailure = $state<"running" | "failed" | null>(null);
+  let exportController: AbortController | undefined;
+  const problem = $derived(passphraseProblem(passphrase, repeat));
+  const showProblem = $derived(
+    attempted || (repeat !== "" && passphrase !== "") ? problem : undefined,
+  );
+
+  let passDialog = $state<ReturnType<typeof ConfirmDialog>>();
+  let needFile = $state<File | null>(null);
+  let restorePassphrase = $state("");
+  let wrongPassphrase = $state(false);
+
   onMount(() => {
     archive = readArchiveType();
   });
@@ -49,7 +71,64 @@
   onDestroy(() => {
     destroyed = true;
     upload?.abort();
+    exportController?.abort();
   });
+
+  async function startEncryptedExport(event: SubmitEvent) {
+    event.preventDefault();
+    if (exporting) return;
+    attempted = true;
+    if (problem) return;
+    exportController?.abort();
+    const controller = new AbortController();
+    exportController = controller;
+    exporting = true;
+    exportFailure = null;
+    try {
+      const body = await apiRequest<unknown>(exportPath, {
+        method: "POST",
+        csrfToken: session.data?.csrf_token ?? "",
+        body: encryptedExportBody(archive, passphrase),
+        signal: controller.signal,
+      });
+      if (exportController !== controller || destroyed) return;
+      const url = parseExportTicket(body);
+      if (!url) {
+        exportFailure = "failed";
+        return;
+      }
+      passphrase = "";
+      repeat = "";
+      attempted = false;
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "";
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      if (exportController !== controller || destroyed) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      exportFailure =
+        error instanceof ApiError && error.status === 429
+          ? "running"
+          : "failed";
+    } finally {
+      if (exportController === controller) {
+        exportController = undefined;
+        exporting = false;
+      }
+    }
+  }
+
+  function toggleEncrypt() {
+    if (encrypt) return;
+    passphrase = "";
+    repeat = "";
+    attempted = false;
+    exportFailure = null;
+  }
 
   function chooseFile(event: Event & { currentTarget: HTMLInputElement }) {
     const file = event.currentTarget.files?.[0] ?? null;
@@ -70,15 +149,43 @@
     if (!busy) pending = null;
   }
 
-  async function restore() {
+  function restore() {
     const file = pending;
     if (!file || busy) return;
+    dialog?.close();
+    void run(file);
+  }
+
+  function submitPassphrase(event: SubmitEvent) {
+    event.preventDefault();
+    const file = needFile;
+    const secret = restorePassphrase;
+    if (!file || busy || !secret) return;
+    restorePassphrase = "";
+    passDialog?.close();
+    void run(file, secret);
+  }
+
+  function cancelPassphrase() {
+    if (busy) return;
+    passDialog?.close();
+  }
+
+  function clearPassphrase() {
+    if (busy) return;
+    needFile = null;
+    restorePassphrase = "";
+    wrongPassphrase = false;
+  }
+
+  async function run(file: File, secret?: string) {
     busy = true;
     percent = 0;
     processing = false;
     failure = null;
     result = null;
-    dialog?.close();
+    needFile = null;
+    wrongPassphrase = false;
     const current = uploadRestore(
       file,
       session.data?.csrf_token ?? "",
@@ -87,21 +194,32 @@
         percent = value;
         processing = done;
       },
+      secret,
     );
+    secret = undefined;
     upload = current;
+    let askAgain = false;
     try {
       const outcome = await current.promise;
       if (upload !== current || destroyed) return;
       result = outcome;
     } catch (error) {
       if (upload !== current || destroyed) return;
-      failure = error instanceof RestoreError ? error.kind : "failed";
+      const kind = error instanceof RestoreError ? error.kind : "failed";
+      if (kind === "passphrase_required" || kind === "wrong_passphrase") {
+        needFile = file;
+        wrongPassphrase = kind === "wrong_passphrase";
+        askAgain = true;
+      } else {
+        failure = kind;
+      }
     } finally {
       if (upload === current) {
         upload = undefined;
         busy = false;
         processing = false;
         pending = null;
+        if (askAgain) passDialog?.showModal();
       }
     }
   }
@@ -139,12 +257,88 @@
       label={t("Archive type", locale)}
       onchange={chooseArchive}
     />
-    <div class="download-row">
-      <a class="ui-button ui-button--primary ui-button--md" {href} download>
-        <ActionLabel icon="download">{t("Download", locale)}</ActionLabel>
-      </a>
-      <span class="format">{t("Format version 1", locale)}</span>
-    </div>
+    <label class="check-field">
+      <input
+        type="checkbox"
+        bind:checked={encrypt}
+        disabled={exporting}
+        onchange={toggleEncrypt}
+      />
+      <span>{t("Encrypt with a passphrase", locale)}</span>
+    </label>
+    {#if encrypt}
+      <form class="passphrase-form" onsubmit={startEncryptedExport}>
+        <label for="export-passphrase">{t("Passphrase", locale)}</label>
+        <input
+          id="export-passphrase"
+          type="password"
+          autocomplete="new-password"
+          bind:value={passphrase}
+          aria-describedby={showProblem === "too_short"
+            ? "export-passphrase-hint export-passphrase-error"
+            : "export-passphrase-hint"}
+          aria-invalid={showProblem === "too_short" ? "true" : undefined}
+          disabled={exporting}
+        />
+        <p class="field-hint" id="export-passphrase-hint">
+          {t(
+            "At least 12 characters. Without it the file cannot be opened; it is not stored anywhere.",
+            locale,
+          )}
+        </p>
+        {#if showProblem === "too_short"}
+          <p class="field-error" id="export-passphrase-error">
+            {t("The passphrase is too short.", locale)}
+          </p>
+        {/if}
+        <label for="export-repeat">{t("Repeat passphrase", locale)}</label>
+        <input
+          id="export-repeat"
+          type="password"
+          autocomplete="new-password"
+          bind:value={repeat}
+          aria-describedby={showProblem === "mismatch"
+            ? "export-repeat-error"
+            : undefined}
+          aria-invalid={showProblem === "mismatch" ? "true" : undefined}
+          disabled={exporting}
+        />
+        {#if showProblem === "mismatch"}
+          <p class="field-error" id="export-repeat-error">
+            {t("The passphrases do not match.", locale)}
+          </p>
+        {/if}
+        <div class="download-row">
+          <Button
+            type="submit"
+            variant="primary"
+            icon="download"
+            disabled={exporting}
+          >
+            {t("Download", locale)}
+          </Button>
+          <span class="format">{t("Format version 1", locale)}</span>
+        </div>
+      </form>
+      {#if exportFailure}
+        <div class="notice-error" role="alert">
+          <p>
+            {#if exportFailure === "running"}
+              {t("A download is already running.", locale)}
+            {:else}
+              {t("Download failed.", locale)}
+            {/if}
+          </p>
+        </div>
+      {/if}
+    {:else}
+      <div class="download-row">
+        <a class="ui-button ui-button--primary ui-button--md" {href} download>
+          <ActionLabel icon="download">{t("Download", locale)}</ActionLabel>
+        </a>
+        <span class="format">{t("Format version 1", locale)}</span>
+      </div>
+    {/if}
   </section>
 
   <section class="card" aria-labelledby="restore-title">
@@ -281,6 +475,48 @@
       </Button>
     {/snippet}
   </ConfirmDialog>
+
+  <ConfirmDialog
+    bind:this={passDialog}
+    titleId="passphrase-dialog-title"
+    title={t("This file is encrypted", locale)}
+    {busy}
+    onclose={clearPassphrase}
+  >
+    <form id="restore-passphrase-form" onsubmit={submitPassphrase}>
+      <p class="file-name">{needFile?.name ?? ""}</p>
+      <label for="restore-passphrase">{t("Passphrase", locale)}</label>
+      <input
+        id="restore-passphrase"
+        type="password"
+        autocomplete="off"
+        bind:value={restorePassphrase}
+        aria-describedby={wrongPassphrase
+          ? "restore-passphrase-error"
+          : undefined}
+        aria-invalid={wrongPassphrase ? "true" : undefined}
+      />
+      {#if wrongPassphrase}
+        <p class="field-error" id="restore-passphrase-error" role="alert">
+          {t("That passphrase does not open this file.", locale)}
+        </p>
+      {/if}
+    </form>
+    {#snippet actions()}
+      <Button variant="ghost" icon="cancel" onclick={cancelPassphrase}>
+        {t("Cancel", locale)}
+      </Button>
+      <Button
+        variant="primary"
+        icon="upload"
+        type="submit"
+        form="restore-passphrase-form"
+        disabled={busy || !restorePassphrase}
+      >
+        {t("Restore", locale)}
+      </Button>
+    {/snippet}
+  </ConfirmDialog>
 </section>
 
 <style>
@@ -352,6 +588,49 @@
   .format {
     color: var(--ink-muted);
     font-size: 0.9rem;
+  }
+
+  .check-field {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 44px;
+  }
+
+  .check-field input {
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--accent-strong);
+  }
+
+  .passphrase-form,
+  #restore-passphrase-form {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .passphrase-form label,
+  #restore-passphrase-form label {
+    font-weight: 650;
+  }
+
+  .passphrase-form input,
+  #restore-passphrase-form input {
+    width: 100%;
+  }
+
+  .field-hint,
+  .field-error {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .field-hint {
+    color: var(--ink-muted);
+  }
+
+  .field-error {
+    color: var(--danger);
   }
 
   .file-input {

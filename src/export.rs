@@ -11,6 +11,7 @@ use std::{
     pin::Pin,
     sync::{Arc, Mutex, PoisonError},
     task::{Context, Poll},
+    time::{Duration, Instant},
 };
 
 use axum::{
@@ -21,10 +22,12 @@ use axum::{
     },
     response::{IntoResponse, Response},
 };
-use chrono::{SecondsFormat, Utc};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use chrono::{DateTime, SecondsFormat, Utc};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 use tokio::sync::mpsc;
+use zeroize::Zeroizing;
 use zip::{CompressionMethod, ZipWriter, write::SimpleFileOptions};
 
 use crate::{
@@ -71,6 +74,173 @@ impl Drop for ExportGuard {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .remove(&self.user_id);
+    }
+}
+
+/// Passphrase of an encrypted export; zeroed when dropped.
+pub(crate) type Passphrase = Zeroizing<String>;
+
+/// Shortest and longest accepted passphrase, in bytes of UTF-8.
+pub(crate) const PASSPHRASE_BYTES: std::ops::RangeInclusive<usize> = 12..=1024;
+/// How long a download ticket stays valid.
+pub(crate) const TICKET_TTL: Duration = Duration::from_secs(5 * 60);
+/// Tickets one user may hold at a time; the oldest is dropped beyond it.
+const TICKETS_PER_USER: usize = 8;
+/// scrypt work factor (`N = 2^18`, 256 MiB) of encrypted exports: the default of the age CLI.
+const EXPORT_WORK_FACTOR: u8 = 18;
+
+struct Ticket {
+    user_id: i64,
+    format: ArchiveFormat,
+    passphrase: Passphrase,
+    expires: Instant,
+    issued: Instant,
+}
+
+/// Download tickets of encrypted exports. They live in memory only, with the
+/// passphrase, are bound to one account and are valid once until they expire.
+#[derive(Clone)]
+pub(crate) struct ExportTickets {
+    tickets: Arc<Mutex<HashMap<String, Ticket>>>,
+    ttl: Duration,
+}
+
+impl ExportTickets {
+    pub(crate) fn new(ttl: Duration) -> Self {
+        Self {
+            tickets: Arc::default(),
+            ttl,
+        }
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, Ticket>> {
+        self.tickets.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Store a ticket and return its token with the time it expires.
+    pub(crate) fn issue(
+        &self,
+        user_id: i64,
+        format: ArchiveFormat,
+        passphrase: Passphrase,
+    ) -> (String, DateTime<Utc>) {
+        use rand::TryRng;
+        let mut random = [0_u8; 32];
+        rand::rngs::SysRng
+            .try_fill_bytes(&mut random)
+            .expect("the operating system random number generator failed");
+        let token = URL_SAFE_NO_PAD.encode(random);
+        let now = Instant::now();
+        let mut tickets = self.lock();
+        tickets.retain(|_, ticket| ticket.expires > now);
+        let own: Vec<(String, Instant)> = tickets
+            .iter()
+            .filter(|(_, ticket)| ticket.user_id == user_id)
+            .map(|(token, ticket)| (token.clone(), ticket.issued))
+            .collect();
+        if own.len() >= TICKETS_PER_USER
+            && let Some((oldest, _)) = own.into_iter().min_by_key(|(_, issued)| *issued)
+        {
+            tickets.remove(&oldest);
+        }
+        tickets.insert(
+            token.clone(),
+            Ticket {
+                user_id,
+                format,
+                passphrase,
+                expires: now + self.ttl,
+                issued: now,
+            },
+        );
+        let expires_at = Utc::now() + chrono::Duration::from_std(self.ttl).unwrap_or_default();
+        (token, expires_at)
+    }
+
+    /// Whether `token` is a live ticket of `user_id`. Does not use it up.
+    pub(crate) fn is_valid(&self, token: &str, user_id: i64) -> bool {
+        self.lock()
+            .get(token)
+            .is_some_and(|ticket| ticket.user_id == user_id && ticket.expires > Instant::now())
+    }
+
+    /// Use the ticket up. `None` for an unknown, used, expired or foreign ticket;
+    /// a foreign ticket stays valid for its owner.
+    pub(crate) fn redeem(&self, token: &str, user_id: i64) -> Option<(ArchiveFormat, Passphrase)> {
+        let mut tickets = self.lock();
+        let now = Instant::now();
+        tickets.retain(|_, ticket| ticket.expires > now);
+        if tickets.get(token)?.user_id != user_id {
+            return None;
+        }
+        let ticket = tickets.remove(token)?;
+        Some((ticket.format, ticket.passphrase))
+    }
+}
+
+/// The archive's destination: the response channel, directly or through age.
+enum Target {
+    Plain(ChannelWriter),
+    Age(Option<age::stream::StreamWriter<ChannelWriter>>),
+}
+
+/// Cloneable handle on the [`Target`], so that the age stream can be finished
+/// after the container writers (which own a handle) are done.
+#[derive(Clone)]
+struct Output(Arc<Mutex<Target>>);
+
+impl Output {
+    fn new(channel: ChannelWriter, passphrase: Option<Passphrase>) -> io::Result<Self> {
+        let target = match passphrase {
+            None => Target::Plain(channel),
+            Some(passphrase) => {
+                let mut recipient = age::scrypt::Recipient::new(age::secrecy::SecretString::from(
+                    passphrase.as_str().to_owned(),
+                ));
+                recipient.set_work_factor(EXPORT_WORK_FACTOR);
+                let encryptor = age::Encryptor::with_recipients(std::iter::once(
+                    &recipient as &dyn age::Recipient,
+                ))
+                .map_err(io::Error::other)?;
+                Target::Age(Some(encryptor.wrap_output(channel)?))
+            }
+        };
+        Ok(Self(Arc::new(Mutex::new(target))))
+    }
+
+    fn with<T>(&self, f: impl FnOnce(&mut Target) -> io::Result<T>) -> io::Result<T> {
+        f(&mut self.0.lock().unwrap_or_else(PoisonError::into_inner))
+    }
+
+    /// Write the last bytes (for age: the final authenticated chunk) and flush.
+    fn finish(&self) -> io::Result<()> {
+        self.with(|target| match target {
+            Target::Plain(channel) => channel.flush(),
+            Target::Age(writer) => {
+                let writer = writer
+                    .take()
+                    .ok_or_else(|| io::Error::from(io::ErrorKind::BrokenPipe))?;
+                writer.finish()?.flush()
+            }
+        })
+    }
+}
+
+impl Write for Output {
+    fn write(&mut self, data: &[u8]) -> io::Result<usize> {
+        self.with(|target| match target {
+            Target::Plain(channel) => channel.write(data),
+            Target::Age(Some(writer)) => writer.write(data),
+            Target::Age(None) => Err(io::Error::from(io::ErrorKind::BrokenPipe)),
+        })
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.with(|target| match target {
+            Target::Plain(channel) => channel.flush(),
+            Target::Age(Some(writer)) => writer.flush(),
+            Target::Age(None) => Ok(()),
+        })
     }
 }
 
@@ -436,7 +606,7 @@ impl ArchiveFormat {
         }
     }
 
-    const fn extension(self) -> &'static str {
+    pub(crate) const fn extension(self) -> &'static str {
         match self {
             Self::TarGz => "tar.gz",
             Self::Zip => "zip",
@@ -461,7 +631,7 @@ trait Sink {
 }
 
 struct TarSink {
-    tar: tar::Builder<flate2::write::GzEncoder<ChannelWriter>>,
+    tar: tar::Builder<flate2::write::GzEncoder<Output>>,
     mtime: u64,
 }
 
@@ -495,7 +665,7 @@ impl Sink for TarSink {
 }
 
 struct ZipSink {
-    zip: ZipWriter<zip::write::StreamWriter<ChannelWriter>>,
+    zip: ZipWriter<zip::write::StreamWriter<Output>>,
 }
 
 impl Sink for ZipSink {
@@ -596,8 +766,10 @@ fn write_archive(
     media_root: Option<std::path::PathBuf>,
     runtime: &tokio::runtime::Handle,
     format: ArchiveFormat,
-    out: ChannelWriter,
+    channel: ChannelWriter,
+    passphrase: Option<Passphrase>,
 ) -> io::Result<()> {
+    let out = Output::new(channel, passphrase)?;
     let Snapshot {
         account,
         categories,
@@ -640,13 +812,13 @@ fn write_archive(
             // Fast compression: photos dominate an export and are already compressed, so a
             // higher level costs several times the CPU for almost no size.
             tar: tar::Builder::new(flate2::write::GzEncoder::new(
-                out,
+                out.clone(),
                 flate2::Compression::fast(),
             )),
             mtime,
         }),
         ArchiveFormat::Zip => Box::new(ZipSink {
-            zip: ZipWriter::new_stream(out),
+            zip: ZipWriter::new_stream(out.clone()),
         }),
     };
     for (name, value) in [
@@ -665,18 +837,21 @@ fn write_archive(
         let file = std::fs::File::open(path)?;
         sink.add_media(&format!("{top}/{}", job.archive_path), *size, file)?;
     }
-    sink.finish()
+    sink.finish()?;
+    out.finish()
 }
 
-/// Start the archive stream. The returned response owns `guard` until its body is
-/// finished or dropped.
+/// Start the archive stream, age-encrypted when a passphrase is given. The returned
+/// response owns `guard` until its body is finished or dropped.
 pub(crate) fn response(
     state: &AppState,
     snapshot: Snapshot,
     format: ArchiveFormat,
     guard: ExportGuard,
+    passphrase: Option<Passphrase>,
 ) -> Response {
     let (tx, rx) = mpsc::channel::<Chunk>(CHANNEL_DEPTH);
+    let passphrase_given = passphrase.is_some();
     let media_root = state.media_root.clone();
     let runtime = tokio::runtime::Handle::current();
     let error_tx = tx.clone();
@@ -685,20 +860,27 @@ pub(crate) fn response(
             tx,
             buffer: Vec::with_capacity(CHUNK),
         };
-        if let Err(error) = write_archive(snapshot, media_root, &runtime, format, out) {
+        if let Err(error) = write_archive(snapshot, media_root, &runtime, format, out, passphrase) {
             // A truncated archive must fail the download, not look complete.
             let _ = error_tx.blocking_send(Err(error));
         }
     });
+    let encrypted = passphrase_given;
     let filename = format!(
-        "stricknani-export-{}.{}",
+        "stricknani-export-{}.{}{}",
         Utc::now().format("%Y-%m-%d"),
-        format.extension()
+        format.extension(),
+        if encrypted { ".age" } else { "" }
     );
+    let content_type = if encrypted {
+        "application/octet-stream"
+    } else {
+        format.content_type()
+    };
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, format.content_type().to_owned()),
+            (CONTENT_TYPE, content_type.to_owned()),
             (
                 CONTENT_DISPOSITION,
                 format!("attachment; filename=\"{filename}\""),

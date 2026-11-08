@@ -34,6 +34,14 @@ class DataRestoreViewModel @Inject constructor(private val scheduler: DataRestor
     /** What the restore this screen saw finish added, until a new restore starts. */
     val lastSummary: StateFlow<RestoreSummary?> = _lastSummary.asStateFlow()
 
+    /** A restore the server refused for want of a passphrase; null when none is waiting. */
+    val passphrasePrompt: StateFlow<PassphrasePrompt?> =
+        scheduler.passphrasePrompt.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            null,
+        )
+
     private var wasRunning = false
 
     init {
@@ -60,9 +68,18 @@ class DataRestoreViewModel @Inject constructor(private val scheduler: DataRestor
         }
     }
 
-    fun restore(source: Uri) {
+    fun restore(source: Uri, passphrase: String? = null) {
         _lastFailure.value = null
         _lastSummary.value = null
-        scheduler.start(source)
+        scheduler.start(source, passphrase)
     }
+
+    /** Asks the server again with the typed [passphrase]; the dialog closes. */
+    fun restoreWithPassphrase(prompt: PassphrasePrompt, passphrase: String) {
+        scheduler.dismissPassphrasePrompt()
+        restore(prompt.source, passphrase)
+    }
+
+    /** The user cancelled the passphrase dialog. */
+    fun dismissPassphrasePrompt() = scheduler.dismissPassphrasePrompt()
 }

@@ -40,7 +40,7 @@ export const importPath = "/api/v2/account/import";
 
 /** File types the restore picker offers. */
 export const restoreAccept =
-  ".tar.gz,.tgz,.zip,application/gzip,application/zip";
+  ".tar.gz,.tgz,.zip,.age,application/gzip,application/zip";
 
 export interface RestoreResult {
   projects: number;
@@ -54,6 +54,8 @@ export type RestoreErrorKind =
   | "unsupported_format_version"
   | "payload_too_large"
   | "rate_limited"
+  | "passphrase_required"
+  | "wrong_passphrase"
   | "failed";
 
 /** Content-Type of the raw request body, from the file name or its type. */
@@ -62,6 +64,8 @@ export function restoreContentType(file: {
   type?: string;
 }): "application/gzip" | "application/zip" {
   const name = file.name.toLowerCase();
+  if (name.endsWith(".zip.age")) return "application/zip";
+  if (name.endsWith(".age")) return "application/gzip";
   if (name.endsWith(".zip") || file.type === "application/zip")
     return "application/zip";
   return "application/gzip";
@@ -106,6 +110,8 @@ export function restoreErrorKind(
   if (code === "invalid_archive") return "invalid_archive";
   if (code === "unsupported_format_version")
     return "unsupported_format_version";
+  if (code === "passphrase_required") return "passphrase_required";
+  if (code === "wrong_passphrase") return "wrong_passphrase";
   if (code === "payload_too_large" || status === 413)
     return "payload_too_large";
   if (code === "rate_limited" || status === 429) return "rate_limited";
@@ -141,6 +147,7 @@ export function uploadRestore(
   file: File,
   csrfToken: string,
   onProgress: (percent: number, done: boolean) => void,
+  passphrase?: string,
 ): RestoreUpload {
   const xhr = new XMLHttpRequest();
   const promise = new Promise<RestoreResult>((resolve, reject) => {
@@ -149,6 +156,11 @@ export function uploadRestore(
     xhr.setRequestHeader("accept", "application/json");
     xhr.setRequestHeader("content-type", restoreContentType(file));
     if (csrfToken) xhr.setRequestHeader("x-csrf-token", csrfToken);
+    if (passphrase)
+      xhr.setRequestHeader(
+        "x-archive-passphrase",
+        encodePassphrase(passphrase),
+      );
     xhr.upload.onprogress = (event) =>
       onProgress(uploadPercent(event.loaded, file.size), false);
     xhr.upload.onload = () => onProgress(100, true);
@@ -172,4 +184,56 @@ export function uploadRestore(
     xhr.send(file);
   });
   return { promise, abort: () => xhr.abort() };
+}
+
+/** Shortest passphrase the server accepts, in UTF-8 bytes. */
+export const passphraseMinBytes = 12;
+
+const textEncoder = new TextEncoder();
+
+/** Length in UTF-8 bytes, which is what the server counts. */
+export function passphraseBytes(passphrase: string): number {
+  return textEncoder.encode(passphrase).length;
+}
+
+/** base64url without padding of the UTF-8 bytes, for X-Archive-Passphrase. */
+export function encodePassphrase(passphrase: string): string {
+  let binary = "";
+  for (const byte of textEncoder.encode(passphrase))
+    binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+export type PassphraseProblem = "too_short" | "mismatch";
+
+/** What is wrong with a new passphrase and its repetition, if anything. */
+export function passphraseProblem(
+  passphrase: string,
+  repeat: string,
+): PassphraseProblem | undefined {
+  if (passphraseBytes(passphrase) < passphraseMinBytes) return "too_short";
+  if (passphrase !== repeat) return "mismatch";
+  return undefined;
+}
+
+/** Body of the POST that starts an encrypted export. */
+export function encryptedExportBody(
+  archive: ArchiveType,
+  passphrase: string,
+): { archive: ArchiveType; passphrase: string } {
+  return { archive, passphrase };
+}
+
+/** The download URL from the 201 answer; undefined for another shape. */
+export function parseExportTicket(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null) return;
+  const data = (body as Record<string, unknown>).data;
+  if (typeof data !== "object" || data === null) return;
+  const url = (data as Record<string, unknown>).url;
+  return typeof url === "string" && url.startsWith("/") && !url.startsWith("//")
+    ? url
+    : undefined;
 }

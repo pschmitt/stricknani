@@ -4,6 +4,7 @@ import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
@@ -13,5 +14,9 @@ import retrofit2.http.POST
  */
 interface DataRestoreApi {
     @POST("api/v2/account/import")
-    suspend fun import(@Body archive: RequestBody): Response<ResponseBody>
+    suspend fun import(
+        @Body archive: RequestBody,
+        /** [PASSPHRASE_HEADER] value ([encodePassphraseHeader]); null leaves the header out. */
+        @Header(PASSPHRASE_HEADER) passphrase: String? = null,
+    ): Response<ResponseBody>
 }

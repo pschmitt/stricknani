@@ -613,6 +613,16 @@
     <string name="data_restore_error_too_large">Die Datei ist zu groß.</string>
     <string name="data_restore_error_already_running">Eine Wiederherstellung läuft bereits.</string>
     <string name="data_restore_error_failed">Wiederherstellen fehlgeschlagen.</string>
+    <string name="data_export_encrypt">Mit einer Passphrase verschlüsseln</string>
+    <string name="data_passphrase_label">Passphrase</string>
+    <string name="data_export_passphrase_repeat">Passphrase wiederholen</string>
+    <string name="data_export_passphrase_help">Mindestens 12 Zeichen. Ohne sie lässt sich die Datei nicht öffnen; sie wird nirgends gespeichert.</string>
+    <string name="data_export_passphrase_too_short">Die Passphrase ist zu kurz.</string>
+    <string name="data_export_passphrase_mismatch">Die Passphrasen stimmen nicht überein.</string>
+    <string name="data_restore_encrypted_title">Diese Datei ist verschlüsselt</string>
+    <string name="data_restore_passphrase_wrong">Mit dieser Passphrase lässt sich die Datei nicht öffnen.</string>
+    <string name="data_restore_error_passphrase_required">Diese Datei ist verschlüsselt. Öffne Backups, um die Passphrase einzugeben.</string>
+    <string name="data_restore_error_wrong_passphrase">Mit dieser Passphrase lässt sich die Datei nicht öffnen.</string>
     <string name="data_restore_notification_progress_title">Deine Daten werden wiederhergestellt</string>
     <string name="data_restore_notification_success_title">Wiederherstellung abgeschlossen</string>
     <string name="data_restore_notification_failed_title">Wiederherstellen fehlgeschlagen</string>
@@ -623,6 +633,10 @@
     <string name="backup_settings_folder_not_set">Nicht festgelegt</string>
     <string name="backup_settings_change_button">Ändern</string>
     <string name="backup_settings_frequency_label">Häufigkeit</string>
+    <string name="backup_settings_include_data_label">Deine Daten einschließen</string>
+    <string name="backup_settings_include_data_description">Speichert zusätzlich einen Download deiner Projekte, Garne und Fotos (.tar.gz) im Ordner.</string>
+    <string name="scheduled_backup_data_failed_title">Geplante Sicherung unvollständig</string>
+    <string name="scheduled_backup_data_failed_text">Deine Einstellungen wurden gesichert, aber der Download deiner Daten konnte nicht in den Sicherungsordner geschrieben werden.</string>
     <string name="backup_settings_password_label">Backup-Passwort</string>
     <string name="backup_settings_password_set">Festgelegt</string>
     <string name="backup_settings_password_not_set">Nicht festgelegt (unverschlüsselt)</string>

@@ -55,6 +55,12 @@ enum class RestoreFailure {
     /** `401`: the saved token was rejected (the session-expiry handling shows "sign in again"). */
     Unauthorized,
 
+    /** `422 passphrase_required`: the file is encrypted and no passphrase was sent. */
+    PassphraseRequired,
+
+    /** `422 wrong_passphrase`: the passphrase does not open the file; ask again. */
+    WrongPassphrase,
+
     /** Anything else: server error, network failure, the file could not be read. */
     Failed,
 }
@@ -65,6 +71,8 @@ fun restoreFailureFor(httpStatus: Int, errorCode: String?): RestoreFailure =
         httpStatus == 401 -> RestoreFailure.Unauthorized
         httpStatus == 413 || errorCode == "payload_too_large" -> RestoreFailure.TooLarge
         httpStatus == 429 || errorCode == "rate_limited" -> RestoreFailure.AlreadyRunning
+        errorCode == "passphrase_required" -> RestoreFailure.PassphraseRequired
+        errorCode == "wrong_passphrase" -> RestoreFailure.WrongPassphrase
         errorCode == "invalid_archive" -> RestoreFailure.InvalidArchive
         errorCode == "unsupported_format_version" -> RestoreFailure.UnsupportedVersion
         else -> RestoreFailure.Failed

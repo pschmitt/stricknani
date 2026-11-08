@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import android.view.View
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,8 +60,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -69,15 +73,20 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.backup.BackupFrequency
 import blue.anika.wolle.data.export.DataExportViewModel
 import blue.anika.wolle.data.export.DataRestoreViewModel
+import blue.anika.wolle.data.export.ENCRYPTED_MIME_TYPE
 import blue.anika.wolle.data.export.ExportFailure
 import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.data.export.ExportJobStatus
+import blue.anika.wolle.data.export.PassphraseProblem
+import blue.anika.wolle.data.export.PassphrasePrompt
 import blue.anika.wolle.data.export.RestoreFailure
 import blue.anika.wolle.data.export.RestoreJobStatus
 import blue.anika.wolle.data.export.countLine
 import blue.anika.wolle.data.export.failureMessageRes
 import blue.anika.wolle.data.export.isProcessing
 import blue.anika.wolle.data.export.joinSummary
+import blue.anika.wolle.data.export.passphraseFits
+import blue.anika.wolle.data.export.passphraseProblem
 import blue.anika.wolle.data.export.restoreFailureMessageRes
 import blue.anika.wolle.data.export.uploadPercent
 import blue.anika.wolle.ui.common.FeedbackKind
@@ -103,6 +112,7 @@ internal fun BackupSettingsScreen(
     val scheduledFolderUri by viewModel.scheduledBackupFolderUri.collectAsStateWithLifecycle()
     val scheduledFrequency by viewModel.scheduledBackupFrequency.collectAsStateWithLifecycle()
     val scheduledPasswordSet by viewModel.scheduledBackupPasswordSet.collectAsStateWithLifecycle()
+    val scheduledIncludeData by viewModel.scheduledBackupIncludeData.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val exportStatus by exportViewModel.status.collectAsStateWithLifecycle()
     val exportFailure by exportViewModel.lastFailure.collectAsStateWithLifecycle()
@@ -137,6 +147,12 @@ internal fun BackupSettingsScreen(
         }
     }
     var exportFormat by remember { mutableStateOf(ExportFormat.TarGz) }
+    var encryptExport by rememberSaveable { mutableStateOf(false) }
+    // Never rememberSaveable: a passphrase must not land in saved instance state.
+    var passphrase by remember { mutableStateOf("") }
+    var passphraseRepeat by remember { mutableStateOf("") }
+    val problem = if (encryptExport) passphraseProblem(passphrase, passphraseRepeat) else null
+    val exportReady = !encryptExport || problem == null
     val onExportTarget = { uri: Uri? ->
         if (uri != null) {
             // Keep the grant for the background job, which may run after this screen is gone.
@@ -146,7 +162,15 @@ internal fun BackupSettingsScreen(
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
             }
-            exportViewModel.download(uri, displayNameOf(context, uri), exportFormat)
+            exportViewModel.download(
+                uri,
+                displayNameOf(context, uri),
+                exportFormat,
+                passphrase.takeIf { encryptExport },
+            )
+            // The transfer holds the passphrase now; do not keep it in the fields.
+            passphrase = ""
+            passphraseRepeat = ""
         }
     }
     val tarGzLauncher =
@@ -159,10 +183,21 @@ internal fun BackupSettingsScreen(
             ActivityResultContracts.CreateDocument(ExportFormat.Zip.mimeType),
             onExportTarget,
         )
+    val encryptedLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument(ENCRYPTED_MIME_TYPE),
+            onExportTarget,
+        )
     val startExport = { format: ExportFormat ->
-        exportFormat = format
-        val name = exportViewModel.suggestedName(format)
-        if (format == ExportFormat.Zip) zipLauncher.launch(name) else tarGzLauncher.launch(name)
+        if (exportReady) {
+            exportFormat = format
+            val name = exportViewModel.suggestedName(format, encryptExport)
+            when {
+                encryptExport -> encryptedLauncher.launch(name)
+                format == ExportFormat.Zip -> zipLauncher.launch(name)
+                else -> tarGzLauncher.launch(name)
+            }
+        }
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -215,6 +250,16 @@ internal fun BackupSettingsScreen(
             BackupOperationState.PasswordRequired -> showRestorePasswordDialog = true
             else -> Unit
         }
+    }
+
+    val passphrasePrompt by restoreViewModel.passphrasePrompt.collectAsStateWithLifecycle()
+    passphrasePrompt?.let { prompt ->
+        RestorePassphraseDialog(
+            prompt = prompt,
+            fileName = displayNameOf(context, prompt.source),
+            onCancel = restoreViewModel::dismissPassphrasePrompt,
+            onRestore = { restoreViewModel.restoreWithPassphrase(prompt, it) },
+        )
     }
 
     pendingRestoreUri?.let { uriString ->
@@ -315,9 +360,26 @@ internal fun BackupSettingsScreen(
                             }
                         }
                     }
+                    EncryptionOptions(
+                        encrypt = encryptExport,
+                        onEncryptChange = {
+                            encryptExport = it
+                            if (!it) {
+                                passphrase = ""
+                                passphraseRepeat = ""
+                            }
+                        },
+                        passphrase = passphrase,
+                        onPassphraseChange = { passphrase = it },
+                        repeat = passphraseRepeat,
+                        onRepeatChange = { passphraseRepeat = it },
+                        problem = problem,
+                        enabled = running == null && restoreRunning == null,
+                    )
                     Button(
                         onClick = { startExport(exportFormat) },
-                        enabled = running == null && restoreRunning == null && !offline,
+                        enabled =
+                            running == null && restoreRunning == null && !offline && exportReady,
                         modifier =
                             Modifier.fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -360,7 +422,10 @@ internal fun BackupSettingsScreen(
                             // A 401 is handled by the session-expiry banner, where retrying is
                             // pointless until the user signs in again.
                             if (failure != ExportFailure.Unauthorized) {
-                                TextButton(onClick = { startExport(exportFormat) }) {
+                                TextButton(
+                                    onClick = { startExport(exportFormat) },
+                                    enabled = exportReady,
+                                ) {
                                     Text(stringResource(R.string.data_export_retry))
                                 }
                             }
@@ -581,6 +646,20 @@ internal fun BackupSettingsScreen(
                     }
                     SettingsListItem(
                         headlineContent = {
+                            Text(stringResource(R.string.backup_settings_include_data_label))
+                        },
+                        supportingContent = {
+                            Text(stringResource(R.string.backup_settings_include_data_description))
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = scheduledIncludeData,
+                                onCheckedChange = { viewModel.setScheduledBackupIncludeData(it) },
+                            )
+                        },
+                    )
+                    SettingsListItem(
+                        headlineContent = {
                             Text(stringResource(R.string.backup_settings_password_label))
                         },
                         supportingContent = {
@@ -733,6 +812,161 @@ fun ScheduledBackupPasswordGateDialog(
             ) {
                 Text(stringResource(R.string.backup_settings_scheduled_gate_skip_button))
             }
+        },
+    )
+}
+
+/**
+ * Asks Android's autofill service to leave the passphrase fields alone while they are on screen: a
+ * passphrase that belongs to one file must not be offered for saving to a password manager.
+ */
+@Composable
+private fun DiscourageAutofill() {
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val previous = view.importantForAutofill
+        view.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        onDispose { view.importantForAutofill = previous }
+    }
+}
+
+/** A masked field for a data export passphrase: no suggestions, no autofill, bounded length. */
+@Composable
+private fun PassphraseField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    supportingText: String? = null,
+    isError: Boolean = false,
+    enabled: Boolean = true,
+    imeAction: ImeAction = ImeAction.Next,
+) {
+    DiscourageAutofill()
+    OutlinedTextField(
+        value = value,
+        // The server takes at most 1024 bytes: stop typing there instead of failing later.
+        onValueChange = { if (passphraseFits(it)) onValueChange(it) },
+        label = { Text(label) },
+        supportingText = supportingText?.let { { Text(it) } },
+        isError = isError,
+        enabled = enabled,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                autoCorrectEnabled = false,
+                imeAction = imeAction,
+            ),
+        singleLine = true,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** The switch and the two fields below the archive type: "Encrypt with a passphrase". */
+@Composable
+private fun EncryptionOptions(
+    encrypt: Boolean,
+    onEncryptChange: (Boolean) -> Unit,
+    passphrase: String,
+    onPassphraseChange: (String) -> Unit,
+    repeat: String,
+    onRepeatChange: (String) -> Unit,
+    problem: PassphraseProblem?,
+    enabled: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        Text(
+            stringResource(R.string.data_export_encrypt),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(
+            checked = encrypt,
+            onCheckedChange = onEncryptChange,
+            enabled = enabled,
+            modifier = Modifier.testTag("data-export-encrypt"),
+        )
+    }
+    if (!encrypt) return
+    val tooShort = passphrase.isNotEmpty() && problem == PassphraseProblem.TooShort
+    val mismatch = repeat.isNotEmpty() && problem == PassphraseProblem.Mismatch
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(horizontal = 16.dp),
+    ) {
+        PassphraseField(
+            value = passphrase,
+            onValueChange = onPassphraseChange,
+            label = stringResource(R.string.data_passphrase_label),
+            supportingText =
+                stringResource(
+                    if (tooShort) R.string.data_export_passphrase_too_short
+                    else R.string.data_export_passphrase_help
+                ),
+            isError = tooShort,
+            enabled = enabled,
+            modifier = Modifier.testTag("data-export-passphrase"),
+        )
+        PassphraseField(
+            value = repeat,
+            onValueChange = onRepeatChange,
+            label = stringResource(R.string.data_export_passphrase_repeat),
+            supportingText =
+                if (mismatch) stringResource(R.string.data_export_passphrase_mismatch) else null,
+            isError = mismatch,
+            enabled = enabled,
+            imeAction = ImeAction.Done,
+            modifier = Modifier.testTag("data-export-passphrase-repeat"),
+        )
+    }
+}
+
+/**
+ * "This file is encrypted": asks for the passphrase of a file the server refused. [prompt]`.wrong`
+ * shows that the last passphrase did not open it. Typed text lives only in this dialog's state.
+ */
+@Composable
+private fun RestorePassphraseDialog(
+    prompt: PassphrasePrompt,
+    fileName: String?,
+    onCancel: () -> Unit,
+    onRestore: (String) -> Unit,
+) {
+    var passphrase by remember(prompt) { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.data_restore_encrypted_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                fileName?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                PassphraseField(
+                    value = passphrase,
+                    onValueChange = { passphrase = it },
+                    label = stringResource(R.string.data_passphrase_label),
+                    supportingText =
+                        if (prompt.wrong) stringResource(R.string.data_restore_passphrase_wrong)
+                        else null,
+                    isError = prompt.wrong,
+                    imeAction = ImeAction.Done,
+                    modifier = Modifier.testTag("data-restore-passphrase"),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onRestore(passphrase) },
+                enabled = passphrase.isNotEmpty(),
+                modifier = Modifier.testTag("data-restore-passphrase-confirm"),
+            ) {
+                Text(stringResource(R.string.data_restore_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
         },
     )
 }

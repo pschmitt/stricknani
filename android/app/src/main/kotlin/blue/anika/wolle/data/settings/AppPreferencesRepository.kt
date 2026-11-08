@@ -87,6 +87,14 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         dataStore.edit { prefs -> prefs[KEY_BACKUP_FREQUENCY] = frequency.name }
     }
 
+    /** Scheduled backups also write a data download (`.tar.gz`) into the folder. Off by default. */
+    val scheduledBackupIncludeData =
+        dataStore.data.map { prefs -> prefs[KEY_BACKUP_INCLUDE_DATA] ?: false }
+
+    suspend fun setScheduledBackupIncludeData(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_BACKUP_INCLUDE_DATA] = enabled }
+    }
+
     /**
      * SNA-34's tap-to-unlock easter egg, matching syncwich's `developer_mode` flag. Debug builds
      * start with it on; an explicit off is kept.
@@ -290,6 +298,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_NAVBAR_ITEMS = stringPreferencesKey("navbar_items")
         val KEY_BACKUP_FOLDER_URI = stringPreferencesKey("scheduled_backup_folder_uri")
         val KEY_BACKUP_ENABLED = booleanPreferencesKey("scheduled_backup_enabled")
+        val KEY_BACKUP_INCLUDE_DATA = booleanPreferencesKey("scheduled_backup_include_data")
         val KEY_BACKUP_FREQUENCY = stringPreferencesKey("scheduled_backup_frequency")
         val KEY_DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
         val KEY_NOTIFICATION_PERMISSION_REQUESTED =

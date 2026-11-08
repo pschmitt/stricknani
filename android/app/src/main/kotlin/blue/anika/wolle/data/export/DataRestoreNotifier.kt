@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.export
 
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -28,7 +29,12 @@ constructor(
 ) {
 
     /** Percent while uploading when the size is known, else "Restoring…" without a number. */
-    fun progress(percent: Int?) {
+    fun progress(percent: Int?) = channel.post(NOTIFICATION_ID, progressBuilder(percent))
+
+    /** The progress notification for a user-initiated job (`JobService.setNotification`). */
+    fun progressNotification(percent: Int?): Notification = progressBuilder(percent).build()
+
+    private fun progressBuilder(percent: Int?): NotificationCompat.Builder {
         val builder =
             builder(R.string.data_restore_notification_progress_title, openBackups())
                 .setOngoing(true)
@@ -40,7 +46,7 @@ constructor(
             builder.setContentText(context.getString(R.string.data_restore_processing))
             builder.setProgress(0, 0, true)
         }
-        channel.post(NOTIFICATION_ID, builder)
+        return builder
     }
 
     fun succeeded(summary: RestoreSummary) {
@@ -91,10 +97,11 @@ constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-    private companion object {
+    companion object {
+        /** The id of the restore's notification, also the one a job hands to the system. */
         const val NOTIFICATION_ID = 1005
-        const val REQUEST_BACKUPS = 1005
-        const val REQUEST_PROJECTS = 1006
+        private const val REQUEST_BACKUPS = 1005
+        private const val REQUEST_PROJECTS = 1006
     }
 }
 
@@ -105,6 +112,8 @@ fun restoreFailureMessageRes(reason: RestoreFailure): Int =
         RestoreFailure.UnsupportedVersion -> R.string.data_restore_error_unsupported_version
         RestoreFailure.TooLarge -> R.string.data_restore_error_too_large
         RestoreFailure.AlreadyRunning -> R.string.data_restore_error_already_running
+        RestoreFailure.PassphraseRequired -> R.string.data_restore_error_passphrase_required
+        RestoreFailure.WrongPassphrase -> R.string.data_restore_error_wrong_passphrase
         RestoreFailure.Unauthorized,
         RestoreFailure.Failed -> R.string.data_restore_error_failed
     }

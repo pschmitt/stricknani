@@ -573,6 +573,72 @@ export async function runBackupsJourney(
         JSON.stringify(tar.manifest.counts),
       "the zip and the tar.gz have different counts",
     );
+
+    // 2b. Ada: an encrypted .tar.gz with a non-ASCII passphrase.
+    mark("ada downloads encrypted tar.gz");
+    const secret = `Sch\u00e4fchen \u{1F9F6} ${randomBytes(6).toString("base64url")}`;
+    maskGithubSecret(secret);
+    await tarOption.click();
+    await expect(tarOption).toHaveAttribute("aria-pressed", "true", {
+      timeout: WAIT,
+    });
+    await adaPage.getByLabel("Encrypt with a passphrase").check();
+    const passField = adaPage.locator("#export-passphrase");
+    const repeatField = adaPage.locator("#export-repeat");
+    await expect(adaPage.getByLabel("Passphrase", { exact: true })).toHaveCount(
+      2,
+    );
+    await expect(passField).toHaveAttribute("type", "password");
+    await expect(repeatField).toHaveAttribute("type", "password");
+    await adaPage
+      .getByText(
+        "At least 12 characters. Without it the file cannot be opened; it is not stored anywhere.",
+      )
+      .waitFor({ state: "visible", timeout: WAIT });
+    const encryptedButton = adaPage.getByRole("button", {
+      name: "Download",
+      exact: true,
+    });
+    await passField.fill("short");
+    await repeatField.fill("short");
+    await encryptedButton.click();
+    await adaPage
+      .getByText("The passphrase is too short.")
+      .waitFor({ state: "visible", timeout: WAIT });
+    await passField.fill(secret);
+    await repeatField.fill(`${secret}x`);
+    await adaPage
+      .getByText("The passphrases do not match.")
+      .waitFor({ state: "visible", timeout: WAIT });
+    await repeatField.fill(secret);
+    const encryptedPending = adaPage.waitForEvent("download", {
+      timeout: WAIT,
+    });
+    await encryptedButton.click();
+    const encryptedDownload = await encryptedPending;
+    const encryptedName = encryptedDownload.suggestedFilename();
+    check(
+      namePattern("tar\\.gz\\.age").test(encryptedName),
+      `encrypted download name is unexpected: ${encryptedName}`,
+    );
+    const encryptedPath = join(downloadDir(), encryptedName);
+    await encryptedDownload.saveAs(encryptedPath);
+    check(
+      (await encryptedDownload.failure()) === null,
+      "encrypted download failed",
+    );
+    const encryptedBytes = readFileSync(encryptedPath);
+    check(
+      encryptedBytes.subarray(0, 22).toString("latin1") ===
+        "age-encryption.org/v1\n",
+      "the encrypted download does not start with the age header",
+    );
+    check(
+      !encryptedBytes.includes(Buffer.from("manifest.json")),
+      "the encrypted download leaks archive content",
+    );
+    await expect(passField).toHaveValue("", { timeout: WAIT });
+    await expect(repeatField).toHaveValue("", { timeout: WAIT });
     await adaContext.close();
 
     // 3. Cy: restore the tar.gz, then the zip.
@@ -763,6 +829,43 @@ export async function runBackupsJourney(
     check(
       (await listLength("/api/v2/yarns")) === 2,
       "a failed restore added yarns",
+    );
+
+    // 4b. Encrypted restore: ask for the passphrase, refuse a wrong one.
+    mark("cy restores encrypted");
+    await openBackups();
+    await restoreFile({ name: encryptedName, path: encryptedPath });
+    const passDialog = cyPage.getByRole("dialog", {
+      name: "This file is encrypted",
+    });
+    await passDialog.waitFor({ state: "visible", timeout: WAIT });
+    const dialogField = passDialog.getByLabel("Passphrase", { exact: true });
+    await expect(dialogField).toHaveAttribute("type", "password");
+    await dialogField.fill(`${secret}-wrong`);
+    await passDialog
+      .getByRole("button", { name: "Restore", exact: true })
+      .click();
+    await passDialog
+      .getByText("That passphrase does not open this file.")
+      .waitFor({ state: "visible", timeout: WAIT });
+    check(
+      (await listLength("/api/v2/projects")) === 4,
+      "a wrong passphrase added projects",
+    );
+    await expect(dialogField).toHaveValue("", { timeout: WAIT });
+    await dialogField.fill(secret);
+    await passDialog
+      .getByRole("button", { name: "Restore", exact: true })
+      .click();
+    await passDialog.waitFor({ state: "hidden", timeout: WAIT });
+    await expectResult(tar);
+    check(
+      (await listLength("/api/v2/projects")) === 6,
+      "the encrypted restore project count",
+    );
+    check(
+      (await listLength("/api/v2/yarns")) === 3,
+      "the encrypted restore yarn count",
     );
 
     // 5. German catalog wording on the same page.
