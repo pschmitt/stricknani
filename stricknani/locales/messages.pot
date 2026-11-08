@@ -420,10 +420,6 @@ msgstr ""
 msgid "Add a note"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:332
-msgid "Add a project"
-msgstr ""
-
 #: web/src/lib/features/imports/ImportWorkbench.svelte:360
 msgid "Add a project name before creating it."
 msgstr ""
@@ -476,10 +472,6 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnForm.svelte:650
 #: web/src/lib/features/yarns/YarnLibrary.svelte:178
 msgid "Add yarn"
-msgstr ""
-
-#: web/src/lib/features/yarns/YarnLibrary.svelte:251
-msgid "Add your first yarn"
 msgstr ""
 
 #: web/src/lib/features/history/MediaStrip.svelte:25
@@ -1416,7 +1408,7 @@ msgstr ""
 msgid "Designer"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:266
+#: web/src/lib/features/yarns/YarnLibrary.svelte:258
 msgid "Details to add"
 msgstr ""
 
@@ -2639,7 +2631,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1219
 #: web/src/lib/features/projects/ProjectEditor.svelte:1229
 #: web/src/lib/features/projects/ProjectLibrary.svelte:232
-#: web/src/lib/features/projects/ProjectLibrary.svelte:381
+#: web/src/lib/features/projects/ProjectLibrary.svelte:375
 #: web/src/routes/create/+page.svelte:28
 msgid "New project"
 msgstr ""
@@ -2661,14 +2653,14 @@ msgid "New version ready"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnForm.svelte:594
-#: web/src/lib/features/yarns/YarnLibrary.svelte:302
+#: web/src/lib/features/yarns/YarnLibrary.svelte:294
 #: web/src/routes/create/+page.svelte:35
 msgid "New yarn"
 msgstr ""
 
 #: web/src/lib/components/PhotoStrip.svelte:146
-#: web/src/lib/features/projects/ProjectLibrary.svelte:373
-#: web/src/lib/features/yarns/YarnLibrary.svelte:294
+#: web/src/lib/features/projects/ProjectLibrary.svelte:367
+#: web/src/lib/features/yarns/YarnLibrary.svelte:286
 msgid "Next"
 msgstr ""
 
@@ -3087,8 +3079,8 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminAudit.svelte:480
 #: web/src/lib/features/admin/AdminUsers.svelte:699
-#: web/src/lib/features/projects/ProjectLibrary.svelte:366
-#: web/src/lib/features/yarns/YarnLibrary.svelte:287
+#: web/src/lib/features/projects/ProjectLibrary.svelte:360
+#: web/src/lib/features/yarns/YarnLibrary.svelte:279
 msgid "Page"
 msgstr ""
 
@@ -3313,8 +3305,8 @@ msgid "Preview and review"
 msgstr ""
 
 #: web/src/lib/components/PhotoStrip.svelte:137
-#: web/src/lib/features/projects/ProjectLibrary.svelte:364
-#: web/src/lib/features/yarns/YarnLibrary.svelte:285
+#: web/src/lib/features/projects/ProjectLibrary.svelte:358
+#: web/src/lib/features/yarns/YarnLibrary.svelte:277
 msgid "Previous"
 msgstr ""
 
@@ -3431,7 +3423,7 @@ msgstr ""
 msgid "Project name"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:357
+#: web/src/lib/features/projects/ProjectLibrary.svelte:351
 msgid "Project pages"
 msgstr ""
 
@@ -5701,7 +5693,7 @@ msgstr ""
 msgid "Yarn page URL"
 msgstr ""
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:278
+#: web/src/lib/features/yarns/YarnLibrary.svelte:270
 msgid "Yarn pages"
 msgstr ""
 

@@ -243,14 +243,6 @@
             locale,
           )}
         </p>
-        <a
-          class="ui-button ui-button--secondary ui-button--md"
-          href={resolve("/yarns/new")}
-        >
-          <ActionLabel icon="create"
-            >{t("Add your first yarn", locale)}</ActionLabel
-          >
-        </a>
       {/if}
     </section>
   {:else if loadState === "ready"}

@@ -432,10 +432,6 @@ msgstr "Add a name before creating this yarn."
 msgid "Add a note"
 msgstr "Add a note"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:332
-msgid "Add a project"
-msgstr "Add a project"
-
 #: web/src/lib/features/imports/ImportWorkbench.svelte:360
 msgid "Add a project name before creating it."
 msgstr "Add a project name before creating it."
@@ -489,10 +485,6 @@ msgstr "Add to favorites"
 #: web/src/lib/features/yarns/YarnLibrary.svelte:178
 msgid "Add yarn"
 msgstr "Add yarn"
-
-#: web/src/lib/features/yarns/YarnLibrary.svelte:251
-msgid "Add your first yarn"
-msgstr "Add your first yarn"
 
 #: web/src/lib/features/history/MediaStrip.svelte:25
 #: web/src/lib/features/history/change-format.ts:64
@@ -1453,7 +1445,7 @@ msgstr "Deleting…"
 msgid "Designer"
 msgstr "Designer"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:266
+#: web/src/lib/features/yarns/YarnLibrary.svelte:258
 msgid "Details to add"
 msgstr "Details to add"
 
@@ -2725,7 +2717,7 @@ msgstr "New password"
 #: web/src/lib/features/projects/ProjectEditor.svelte:1219
 #: web/src/lib/features/projects/ProjectEditor.svelte:1229
 #: web/src/lib/features/projects/ProjectLibrary.svelte:232
-#: web/src/lib/features/projects/ProjectLibrary.svelte:381
+#: web/src/lib/features/projects/ProjectLibrary.svelte:375
 #: web/src/routes/create/+page.svelte:28
 msgid "New project"
 msgstr "New project"
@@ -2747,14 +2739,14 @@ msgid "New version ready"
 msgstr "New version ready"
 
 #: web/src/lib/features/yarns/YarnForm.svelte:594
-#: web/src/lib/features/yarns/YarnLibrary.svelte:302
+#: web/src/lib/features/yarns/YarnLibrary.svelte:294
 #: web/src/routes/create/+page.svelte:35
 msgid "New yarn"
 msgstr "New yarn"
 
 #: web/src/lib/components/PhotoStrip.svelte:146
-#: web/src/lib/features/projects/ProjectLibrary.svelte:373
-#: web/src/lib/features/yarns/YarnLibrary.svelte:294
+#: web/src/lib/features/projects/ProjectLibrary.svelte:367
+#: web/src/lib/features/yarns/YarnLibrary.svelte:286
 msgid "Next"
 msgstr "Next"
 
@@ -3199,8 +3191,8 @@ msgstr "PDF link not attached"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:480
 #: web/src/lib/features/admin/AdminUsers.svelte:699
-#: web/src/lib/features/projects/ProjectLibrary.svelte:366
-#: web/src/lib/features/yarns/YarnLibrary.svelte:287
+#: web/src/lib/features/projects/ProjectLibrary.svelte:360
+#: web/src/lib/features/yarns/YarnLibrary.svelte:279
 msgid "Page"
 msgstr "Page"
 
@@ -3427,8 +3419,8 @@ msgid "Preview and review"
 msgstr "Preview and review"
 
 #: web/src/lib/components/PhotoStrip.svelte:137
-#: web/src/lib/features/projects/ProjectLibrary.svelte:364
-#: web/src/lib/features/yarns/YarnLibrary.svelte:285
+#: web/src/lib/features/projects/ProjectLibrary.svelte:358
+#: web/src/lib/features/yarns/YarnLibrary.svelte:277
 msgid "Previous"
 msgstr "Previous"
 
@@ -3553,7 +3545,7 @@ msgstr "Project media updated."
 msgid "Project name"
 msgstr "Project name"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:357
+#: web/src/lib/features/projects/ProjectLibrary.svelte:351
 msgid "Project pages"
 msgstr "Project pages"
 
@@ -5961,7 +5953,7 @@ msgstr "Yarn options could not be loaded."
 msgid "Yarn page URL"
 msgstr "Yarn page URL"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:278
+#: web/src/lib/features/yarns/YarnLibrary.svelte:270
 msgid "Yarn pages"
 msgstr "Yarn pages"
 
@@ -6798,3 +6790,9 @@ msgstr "{time} spent so far. Open the project to stop the timer or keep timing."
 
 #~ msgid "Project basics"
 #~ msgstr "Project basics"
+
+#~ msgid "Add a project"
+#~ msgstr "Add a project"
+
+#~ msgid "Add your first yarn"
+#~ msgstr "Add your first yarn"

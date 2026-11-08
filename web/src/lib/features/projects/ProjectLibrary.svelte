@@ -325,12 +325,6 @@
             locale,
           )}
         </p>
-        <a
-          class="ui-button ui-button--secondary ui-button--md"
-          href={resolve("/projects/new")}
-        >
-          <ActionLabel icon="create">{t("Add a project", locale)}</ActionLabel>
-        </a>
       {/if}
     </div>
   {:else if loadState === "ready"}
