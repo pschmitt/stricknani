@@ -8,6 +8,7 @@
   import LibraryFilters, {
     type ActiveFilterChip,
   } from "#lib/components/LibraryFilters.svelte";
+  import CreateFab from "#lib/components/CreateFab.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
@@ -374,6 +375,12 @@
       </nav>
     {/if}
   {/if}
+
+  <CreateFab
+    href={resolve("/projects/new")}
+    label={t("New project", locale)}
+    testId="create-fab-project"
+  />
 </section>
 
 <style>
@@ -500,6 +507,11 @@
   @media (max-width: 640px) {
     .desktop-create {
       display: none;
+    }
+
+    /* Room under the last card for the floating create button. */
+    .library {
+      padding-bottom: 5.5rem;
     }
   }
 </style>

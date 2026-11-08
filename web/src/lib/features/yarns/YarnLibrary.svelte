@@ -10,6 +10,7 @@
   } from "#lib/components/LibraryFilters.svelte";
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
+  import CreateFab from "#lib/components/CreateFab.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
@@ -295,6 +296,12 @@
       </nav>
     {/if}
   {/if}
+
+  <CreateFab
+    href={resolve("/yarns/new")}
+    label={t("New yarn", locale)}
+    testId="create-fab-yarn"
+  />
 </section>
 
 <style>
@@ -406,6 +413,11 @@
   @media (max-width: 640px) {
     .desktop-create {
       display: none;
+    }
+
+    /* Room under the last card for the floating create button. */
+    .library {
+      padding-bottom: 5.5rem;
     }
   }
 </style>
