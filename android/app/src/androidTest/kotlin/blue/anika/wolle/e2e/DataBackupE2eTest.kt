@@ -230,7 +230,15 @@ class DataBackupE2eTest : StricknaniE2eTest() {
                 val restoredDetail = projectsApi.getProject(restoredProject.id)
                 assertEquals(listOf(restoredYarn.id), restoredDetail.yarnIds)
                 assertEquals(stepTitle, restoredDetail.steps.single().title)
-                assertEquals(1, restoredDetail.images.size)
+                // `images` lists the title and the step photos; the copy must have exactly
+                // what the original has (here 2: one title photo, one step photo).
+                val originalDetail = projectsApi.getProject(project.id)
+                assertEquals(2, originalDetail.images.size)
+                assertEquals(originalDetail.images.size, restoredDetail.images.size)
+                assertEquals(
+                    yarnsApi.getYarn(yarn.id).photos.size,
+                    yarnsApi.getYarn(restoredYarn.id).photos.size,
+                )
                 assertEquals(1, yarnsApi.getYarn(restoredYarn.id).photos.size)
 
                 // The Projects screen lists the original and the copy.
