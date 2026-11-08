@@ -94,7 +94,7 @@ import kotlinx.coroutines.launch
  * First LazyColumn position of the steps (after details, photos, attachments, materials,
  * description and the steps header).
  */
-private const val FIRST_STEP_ITEM = 6
+private const val FIRST_STEP_ITEM = 7
 
 /**
  * The project form, arranged so related things sit together and the common path needs no scrolling
@@ -132,6 +132,7 @@ fun ProjectEditorScreen(
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val nameFocus = remember { FocusRequester() }
     val detailsFocus = remember { FocusRequester() }
     val stitchSampleFocus = remember { FocusRequester() }
     val descriptionFocus = remember { FocusRequester() }
@@ -285,67 +286,29 @@ fun ProjectEditorScreen(
                     PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                // 0: what it is - name, category, tags, link.
+                // 0: the name, at the top like the title of the project page.
                 item {
-                    EditorSectionCard(
-                        title = stringResource(R.string.editor_section_project_details),
-                        icon = PhosphorIcons.Info,
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = form.name,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(name = value) }
-                                },
-                                label = {
-                                    Text(stringResource(R.string.project_editor_name_label))
-                                },
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .focusRequester(detailsFocus)
-                                        .testTag("e2e-project-editor-name"),
-                                singleLine = true,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences,
-                                        imeAction = ImeAction.Next,
-                                    ),
-                            )
-                            SuggestionTextField(
-                                value = form.category,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(category = value) }
-                                },
-                                label = stringResource(R.string.common_field_category),
-                                suggestions = categories.map { it.name },
-                            )
-                            OutlinedTextField(
-                                value = form.tags,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(tags = value) }
-                                },
-                                label = {
-                                    Text(stringResource(R.string.project_editor_tags_label))
-                                },
-                                supportingText = {
-                                    Text(stringResource(R.string.project_editor_tags_hint))
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                            )
-                            UrlTextField(
-                                value = form.link,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(link = value) }
-                                },
-                                label = stringResource(R.string.project_editor_link_label),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                    }
+                    OutlinedTextField(
+                        value = form.name,
+                        onValueChange = { value ->
+                            viewModel.updateForm { it.copy(name = value) }
+                        },
+                        label = {
+                            Text(stringResource(R.string.project_editor_name_label))
+                        },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .focusRequester(nameFocus)
+                                .testTag("e2e-project-editor-name"),
+                        singleLine = true,
+                        keyboardOptions =
+                            KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Sentences,
+                                imeAction = ImeAction.Next,
+                            ),
+                    )
                 }
-                // 1: photos as thumbnails, add tile last.
+                // 1: photos (add tile last), first like the gallery on the project page.
                 item {
                     EditorSectionCard(
                         title = stringResource(R.string.editor_section_gallery),
@@ -432,7 +395,83 @@ fun ProjectEditorScreen(
                         }
                     }
                 }
-                // 3: what you knit it with.
+                // 3: the details card: category, needles, stitch sample, tags, link.
+                item {
+                    EditorSectionCard(
+                        title = stringResource(R.string.editor_section_project_details),
+                        icon = PhosphorIcons.Info,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            SuggestionTextField(
+                                value = form.category,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(category = value) }
+                                },
+                                label = stringResource(R.string.common_field_category),
+                                suggestions = categories.map { it.name },
+                                modifier = Modifier.focusRequester(detailsFocus),
+                            )
+                            OutlinedTextField(
+                                value = form.needles,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(needles = value) }
+                                },
+                                label = { Text(stringResource(R.string.common_field_needles)) },
+                                placeholder = {
+                                    Text(stringResource(R.string.project_editor_needles_hint))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            )
+                            // Stitch samples are often several lines (stitches, rows, needle,
+                            // washed or not), so the field grows instead of scrolling sideways.
+                            OutlinedTextField(
+                                value = form.stitchSample,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(stitchSample = value) }
+                                },
+                                label = {
+                                    Text(stringResource(R.string.common_field_stitch_sample))
+                                },
+                                placeholder = {
+                                    Text(stringResource(R.string.project_editor_stitch_sample_hint))
+                                },
+                                modifier =
+                                    Modifier.fillMaxWidth().focusRequester(stitchSampleFocus),
+                                minLines = 2,
+                                keyboardOptions =
+                                    KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Sentences
+                                    ),
+                            )
+                            OutlinedTextField(
+                                value = form.tags,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(tags = value) }
+                                },
+                                label = {
+                                    Text(stringResource(R.string.project_editor_tags_label))
+                                },
+                                supportingText = {
+                                    Text(stringResource(R.string.project_editor_tags_hint))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            )
+                            UrlTextField(
+                                value = form.link,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(link = value) }
+                                },
+                                label = stringResource(R.string.project_editor_link_label),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+                // 4: what you knit it with: linked yarns, then other materials.
                 item {
                     EditorSectionCard(
                         title = stringResource(R.string.editor_section_materials),
@@ -482,40 +521,7 @@ fun ProjectEditorScreen(
                                     )
                                 }
                             }
-                            OutlinedTextField(
-                                value = form.needles,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(needles = value) }
-                                },
-                                label = { Text(stringResource(R.string.common_field_needles)) },
-                                placeholder = {
-                                    Text(stringResource(R.string.project_editor_needles_hint))
-                                },
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                            )
-                            // Stitch samples are often several lines (stitches, rows, needle,
-                            // washed or not), so the field grows instead of scrolling sideways.
-                            OutlinedTextField(
-                                value = form.stitchSample,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(stitchSample = value) }
-                                },
-                                label = {
-                                    Text(stringResource(R.string.common_field_stitch_sample))
-                                },
-                                placeholder = {
-                                    Text(stringResource(R.string.project_editor_stitch_sample_hint))
-                                },
-                                modifier =
-                                    Modifier.fillMaxWidth().focusRequester(stitchSampleFocus),
-                                minLines = 2,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences
-                                    ),
-                            )
+                            // Other materials go under the linked yarns, as on the project page.
                             OutlinedTextField(
                                 value = form.otherMaterials,
                                 onValueChange = { value ->
@@ -524,7 +530,7 @@ fun ProjectEditorScreen(
                                 label = {
                                     Text(stringResource(R.string.common_field_other_materials))
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                                 minLines = 2,
                                 keyboardOptions =
                                     KeyboardOptions(
@@ -534,7 +540,7 @@ fun ProjectEditorScreen(
                         }
                     }
                 }
-                // 4: free text.
+                // 5: free text.
                 item {
                     EditorSectionCard(
                         title = stringResource(R.string.editor_section_content),
@@ -571,7 +577,7 @@ fun ProjectEditorScreen(
                         }
                     }
                 }
-                // 5: steps header.
+                // 6: steps header.
                 item {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -887,19 +893,19 @@ internal object ProjectEditorFocus {
 
 /**
  * LazyColumn position of a focus target in [ProjectEditorScreen]. Keep in sync with the items
- * there: details 0, photos 1, attachments 2, materials (linked yarns, needles, stitch sample) 3,
- * description and notes 4, steps header 5, then one item per step from [FIRST_STEP_ITEM].
- * [stepIndex] is the step's index in the form, or null/-1 when the step is unknown (the steps
- * header is used then).
+ * there, which follow the project page: name 0, photos 1, attachments 2, details (category,
+ * needles, stitch sample, tags, link) 3, materials (linked yarns, other materials) 4, description
+ * and notes 5, steps header 6, then one item per step from [FIRST_STEP_ITEM]. [stepIndex] is the
+ * step's index in the form, or null/-1 when the step is unknown (the steps header is used then).
  */
 internal fun projectEditorItemIndex(focus: String, stepIndex: Int?): Int? =
     when {
         ProjectEditorFocus.stepId(focus) != null ->
             if (stepIndex != null && stepIndex >= 0) FIRST_STEP_ITEM + stepIndex
             else FIRST_STEP_ITEM - 1
-        focus == ProjectEditorFocus.DETAILS -> 0
         focus == ProjectEditorFocus.ATTACHMENTS -> 2
-        focus == ProjectEditorFocus.STITCH_SAMPLE || focus == ProjectEditorFocus.LINKED_YARNS -> 3
-        focus == ProjectEditorFocus.DESCRIPTION || focus == ProjectEditorFocus.NOTES -> 4
+        focus == ProjectEditorFocus.DETAILS || focus == ProjectEditorFocus.STITCH_SAMPLE -> 3
+        focus == ProjectEditorFocus.LINKED_YARNS -> 4
+        focus == ProjectEditorFocus.DESCRIPTION || focus == ProjectEditorFocus.NOTES -> 5
         else -> null
     }

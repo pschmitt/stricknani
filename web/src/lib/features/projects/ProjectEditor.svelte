@@ -1274,12 +1274,13 @@
         novalidate
         onsubmit={submit}
       >
+        <!-- Same order as the project page: the name (its title), photos and files, details,
+             materials, pattern and notes, steps. -->
         <fieldset
           class="form-fields"
           disabled={saving || deleting || mediaBusy}
         >
-          <section class="form-card" aria-labelledby="basics-heading">
-            <h2 id="basics-heading">{t("Project basics", locale)}</h2>
+          <section class="form-card">
             <div class="field-grid">
               <div class="field field-wide">
                 <label for="project-name">{t("Project name", locale)}</label>
@@ -1301,318 +1302,9 @@
                     {fieldErrors.name}
                   </p>{/if}
               </div>
-              <div class="field">
-                <label for="project-category">{t("Category", locale)}</label>
-                <input
-                  id="project-category"
-                  bind:value={draft.category}
-                  list="project-category-options"
-                  maxlength="128"
-                  autocomplete="off"
-                />
-                <datalist id="project-category-options">
-                  {#each categories as category (category.id)}
-                    <option value={category.name}></option>
-                  {/each}
-                </datalist>
-                {#if categoryLoading}<span class="field-hint"
-                    >{t("Loading categories…", locale)}</span
-                  >{/if}
-                {#if categoryError}<span class="field-hint field-error"
-                    >{categoryError}</span
-                  >{/if}
-              </div>
-              <div class="field">
-                <label for="project-needles">{t("Needles", locale)}</label>
-                <input id="project-needles" bind:value={draft.needles} />
-              </div>
-              <div class="field field-wide">
-                <label for="project-stitch-sample"
-                  >{t("Stitch sample", locale)}</label
-                >
-                <input
-                  id="project-stitch-sample"
-                  bind:value={draft.stitchSample}
-                />
-              </div>
-              <div class="field field-wide">
-                <label for="project-tag-entry">{t("Tags", locale)}</label>
-                <div class="search-row">
-                  <input
-                    id="project-tag-entry"
-                    bind:value={tagInput}
-                    autocomplete="off"
-                    onkeydown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        addTag();
-                      }
-                    }}
-                  />
-                  <Button
-                    id="add-project-step"
-                    type="button"
-                    class="secondary-button"
-                    variant="secondary"
-                    icon="create"
-                    onclick={addTag}
-                  >
-                    {t("Add tag", locale)}
-                  </Button>
-                </div>
-                <span class="field-hint">
-                  {t(
-                    "Add each tag separately; commas stay inside a tag.",
-                    locale,
-                  )}
-                </span>
-                {#if draft.tags.length}
-                  <ul class="tag-list" aria-label={t("Tags", locale)}>
-                    {#each draft.tags as tag, index (`${index}:${tag}`)}
-                      <li>
-                        <span>{tag}</span>
-                        <Button
-                          type="button"
-                          class="remove-button"
-                          variant="ghost"
-                          icon="action-delete"
-                          aria-label={`${t("Remove", locale)} ${tag}`}
-                          onclick={() => removeTag(index)}
-                        >
-                          {t("Remove", locale)}
-                        </Button>
-                      </li>
-                    {/each}
-                  </ul>
-                {/if}
-              </div>
-              <div class="field field-wide">
-                <label for="project-link"
-                  >{t("Pattern source URL", locale)}</label
-                >
-                <UrlField
-                  id="project-link"
-                  bind:value={draft.link}
-                  {locale}
-                  invalid={Boolean(fieldErrors.link)}
-                  describedby={fieldErrors.link
-                    ? "project-link-error"
-                    : undefined}
-                />
-                {#if fieldErrors.link}<p
-                    id="project-link-error"
-                    class="field-error"
-                  >
-                    {fieldErrors.link}
-                  </p>{/if}
-                {#if project?.link_archive && safeExternalUrl(project.link_archive)}
-                  <a
-                    class="archive-link"
-                    href={safeExternalUrl(project.link_archive) ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t("Archived source", locale)} ↗
-                  </a>
-                {/if}
-              </div>
             </div>
-            {#if project?.is_ai_enhanced}
-              <p class="field-hint">
-                {t("This project includes AI-assisted details.", locale)}
-              </p>
-            {/if}
-            {#if project?.yarn}
-              <p class="field-hint">
-                {t("Previous yarn note", locale)}: {project.yarn}
-              </p>
-            {/if}
           </section>
-
-          <details bind:open={optionalDetailsOpen} class="optional-details">
-            <summary>{t("More project details", locale)}</summary>
-            <div class="optional-details__content">
-              <section class="form-card" aria-labelledby="writing-heading">
-                <h2 id="writing-heading">{t("Pattern and notes", locale)}</h2>
-                <p class="section-hint">
-                  {t(
-                    "Use plain text or Markdown. The reader formats it safely for you.",
-                    locale,
-                  )}
-                </p>
-                <div class="field-grid">
-                  <div class="field field-wide">
-                    <label for="project-description"
-                      >{t("Pattern", locale)}</label
-                    >
-                    <textarea
-                      id="project-description"
-                      bind:value={draft.description}
-                      rows="10"></textarea>
-                  </div>
-                  <div class="field field-wide">
-                    <StickyNoteField
-                      id="project-notes"
-                      label={t("Notes", locale)}
-                      bind:value={draft.notes}
-                      rows={5}
-                    />
-                  </div>
-                  <div class="field field-wide">
-                    <label for="project-materials"
-                      >{t("Other materials", locale)}</label
-                    >
-                    <textarea
-                      id="project-materials"
-                      bind:value={draft.otherMaterials}
-                      rows="4"></textarea>
-                  </div>
-                </div>
-              </section>
-
-              <section class="form-card" aria-labelledby="yarn-heading">
-                <h2 id="yarn-heading">{t("Yarn for this project", locale)}</h2>
-                <YarnPicker
-                  {locale}
-                  query={yarnSearchInput}
-                  results={yarnResults}
-                  selected={selectedYarns}
-                  loading={yarnLoading}
-                  error={yarnSearchError}
-                  onQueryChange={(value) => (yarnSearchInput = value)}
-                  onSearch={beginSearch}
-                  onAdd={addYarn}
-                  onRemove={removeYarn}
-                />
-              </section>
-
-              <section class="form-card" aria-labelledby="steps-heading">
-                <div class="section-title-row">
-                  <div>
-                    <h2 id="steps-heading">{t("Pattern steps", locale)}</h2>
-                    <p class="section-hint">
-                      {t("Steps stay in the order shown here.", locale)}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    class="secondary-button"
-                    variant="secondary"
-                    icon="create"
-                    onclick={addStep}
-                  >
-                    {t("Add step", locale)}
-                  </Button>
-                </div>
-                {#if fieldErrors.steps}<p
-                    id="project-steps-error"
-                    class="field-error"
-                    role="alert"
-                  >
-                    {fieldErrors.steps}
-                  </p>{/if}
-                {#if draft.steps.length}
-                  <ol class="step-editor-list">
-                    {#each draft.steps as step, index (step.key)}
-                      <li class="step-editor-card">
-                        <div class="step-editor-heading">
-                          <h3>{t("Step", locale)} {index + 1}</h3>
-                          <div class="step-actions">
-                            <Button
-                              type="button"
-                              class="icon-button"
-                              variant="ghost"
-                              size="sm"
-                              icon="move-up"
-                              aria-label={`${t("Move up", locale)} ${t("Step", locale)} ${index + 1}`}
-                              disabled={index === 0}
-                              onclick={() => moveStep(index, -1)}
-                            />
-                            <Button
-                              type="button"
-                              class="icon-button"
-                              variant="ghost"
-                              size="sm"
-                              icon="move-down"
-                              aria-label={`${t("Move down", locale)} ${t("Step", locale)} ${index + 1}`}
-                              disabled={index === draft.steps.length - 1}
-                              onclick={() => moveStep(index, 1)}
-                            />
-                            <Button
-                              type="button"
-                              class="remove-button"
-                              variant="ghost"
-                              icon="action-delete"
-                              aria-label={`${t("Remove", locale)} ${t("Step", locale)} ${index + 1}`}
-                              onclick={() =>
-                                (draft.steps = draft.steps.filter(
-                                  (item) => item.key !== step.key,
-                                ))}
-                            >
-                              {t("Remove", locale)}
-                            </Button>
-                          </div>
-                        </div>
-                        <div class="field">
-                          <label for={`step-title-${step.key}`}
-                            >{t("Step title", locale)}</label
-                          >
-                          <input
-                            id={`step-title-${step.key}`}
-                            bind:value={step.title}
-                            maxlength="256"
-                            required
-                            aria-invalid={fieldErrors.steps &&
-                            (!step.title.trim() ||
-                              step.title.trim().length > 256)
-                              ? "true"
-                              : undefined}
-                            aria-describedby={fieldErrors.steps &&
-                            (!step.title.trim() ||
-                              step.title.trim().length > 256)
-                              ? "project-steps-error"
-                              : undefined}
-                          />
-                        </div>
-                        <div class="field">
-                          <label for={`step-description-${step.key}`}
-                            >{t("Step instructions", locale)}</label
-                          >
-                          <textarea
-                            id={`step-description-${step.key}`}
-                            bind:value={step.description}
-                            rows="4"></textarea>
-                        </div>
-                      </li>
-                    {/each}
-                  </ol>
-                {:else}
-                  <p class="field-hint">
-                    {t("No steps have been added yet.", locale)}
-                  </p>
-                {/if}
-              </section>
-            </div>
-          </details>
         </fieldset>
-
-        {#if project && mayManage(project.access)}
-          <section class="danger-zone" aria-labelledby="danger-zone-heading">
-            <div>
-              <h2 id="danger-zone-heading">{t("Danger zone", locale)}</h2>
-            </div>
-            <Button
-              class="danger-button"
-              variant="danger"
-              icon="action-delete"
-              type="button"
-              disabled={isDirty || saving || deleting || mediaBusy}
-              onclick={() => openConfirmation({ kind: "project" })}
-            >
-              {deleting ? t("Deleting…", locale) : t("Delete project", locale)}
-            </Button>
-          </section>
-        {/if}
 
         {#if project}
           <section
@@ -1788,6 +1480,326 @@
                 onchange={uploadAttachment}
               />
             </div>
+          </section>
+        {/if}
+
+        <fieldset
+          class="form-fields"
+          disabled={saving || deleting || mediaBusy}
+        >
+          <section class="form-card" aria-labelledby="basics-heading">
+            <h2 id="basics-heading">{t("Project details", locale)}</h2>
+            <div class="field-grid">
+              <div class="field">
+                <label for="project-category">{t("Category", locale)}</label>
+                <input
+                  id="project-category"
+                  bind:value={draft.category}
+                  list="project-category-options"
+                  maxlength="128"
+                  autocomplete="off"
+                />
+                <datalist id="project-category-options">
+                  {#each categories as category (category.id)}
+                    <option value={category.name}></option>
+                  {/each}
+                </datalist>
+                {#if categoryLoading}<span class="field-hint"
+                    >{t("Loading categories…", locale)}</span
+                  >{/if}
+                {#if categoryError}<span class="field-hint field-error"
+                    >{categoryError}</span
+                  >{/if}
+              </div>
+              <div class="field">
+                <label for="project-needles">{t("Needles", locale)}</label>
+                <input id="project-needles" bind:value={draft.needles} />
+              </div>
+              <div class="field field-wide">
+                <label for="project-stitch-sample"
+                  >{t("Stitch sample", locale)}</label
+                >
+                <input
+                  id="project-stitch-sample"
+                  bind:value={draft.stitchSample}
+                />
+              </div>
+              <div class="field field-wide">
+                <label for="project-tag-entry">{t("Tags", locale)}</label>
+                <div class="search-row">
+                  <input
+                    id="project-tag-entry"
+                    bind:value={tagInput}
+                    autocomplete="off"
+                    onkeydown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addTag();
+                      }
+                    }}
+                  />
+                  <Button
+                    id="add-project-step"
+                    type="button"
+                    class="secondary-button"
+                    variant="secondary"
+                    icon="create"
+                    onclick={addTag}
+                  >
+                    {t("Add tag", locale)}
+                  </Button>
+                </div>
+                <span class="field-hint">
+                  {t(
+                    "Add each tag separately; commas stay inside a tag.",
+                    locale,
+                  )}
+                </span>
+                {#if draft.tags.length}
+                  <ul class="tag-list" aria-label={t("Tags", locale)}>
+                    {#each draft.tags as tag, index (`${index}:${tag}`)}
+                      <li>
+                        <span>{tag}</span>
+                        <Button
+                          type="button"
+                          class="remove-button"
+                          variant="ghost"
+                          icon="action-delete"
+                          aria-label={`${t("Remove", locale)} ${tag}`}
+                          onclick={() => removeTag(index)}
+                        >
+                          {t("Remove", locale)}
+                        </Button>
+                      </li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
+              <div class="field field-wide">
+                <label for="project-link"
+                  >{t("Pattern source URL", locale)}</label
+                >
+                <UrlField
+                  id="project-link"
+                  bind:value={draft.link}
+                  {locale}
+                  invalid={Boolean(fieldErrors.link)}
+                  describedby={fieldErrors.link
+                    ? "project-link-error"
+                    : undefined}
+                />
+                {#if fieldErrors.link}<p
+                    id="project-link-error"
+                    class="field-error"
+                  >
+                    {fieldErrors.link}
+                  </p>{/if}
+                {#if project?.link_archive && safeExternalUrl(project.link_archive)}
+                  <a
+                    class="archive-link"
+                    href={safeExternalUrl(project.link_archive) ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("Archived source", locale)} ↗
+                  </a>
+                {/if}
+              </div>
+            </div>
+            {#if project?.is_ai_enhanced}
+              <p class="field-hint">
+                {t("This project includes AI-assisted details.", locale)}
+              </p>
+            {/if}
+            {#if project?.yarn}
+              <p class="field-hint">
+                {t("Previous yarn note", locale)}: {project.yarn}
+              </p>
+            {/if}
+          </section>
+
+          <details bind:open={optionalDetailsOpen} class="optional-details">
+            <summary>{t("More project details", locale)}</summary>
+            <div class="optional-details__content">
+              <section class="form-card" aria-labelledby="yarn-heading">
+                <h2 id="yarn-heading">{t("Materials", locale)}</h2>
+                <YarnPicker
+                  {locale}
+                  query={yarnSearchInput}
+                  results={yarnResults}
+                  selected={selectedYarns}
+                  loading={yarnLoading}
+                  error={yarnSearchError}
+                  onQueryChange={(value) => (yarnSearchInput = value)}
+                  onSearch={beginSearch}
+                  onAdd={addYarn}
+                  onRemove={removeYarn}
+                />
+                <div class="field field-wide yarn-other-materials">
+                  <label for="project-materials"
+                    >{t("Other materials", locale)}</label
+                  >
+                  <textarea
+                    id="project-materials"
+                    bind:value={draft.otherMaterials}
+                    rows="4"></textarea>
+                </div>
+              </section>
+
+              <section class="form-card" aria-labelledby="writing-heading">
+                <h2 id="writing-heading">{t("Pattern and notes", locale)}</h2>
+                <p class="section-hint">
+                  {t(
+                    "Use plain text or Markdown. The reader formats it safely for you.",
+                    locale,
+                  )}
+                </p>
+                <div class="field-grid">
+                  <div class="field field-wide">
+                    <label for="project-description"
+                      >{t("Pattern", locale)}</label
+                    >
+                    <textarea
+                      id="project-description"
+                      bind:value={draft.description}
+                      rows="10"></textarea>
+                  </div>
+                  <div class="field field-wide">
+                    <StickyNoteField
+                      id="project-notes"
+                      label={t("Notes", locale)}
+                      bind:value={draft.notes}
+                      rows={5}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section class="form-card" aria-labelledby="steps-heading">
+                <div class="section-title-row">
+                  <div>
+                    <h2 id="steps-heading">{t("Pattern steps", locale)}</h2>
+                    <p class="section-hint">
+                      {t("Steps stay in the order shown here.", locale)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    class="secondary-button"
+                    variant="secondary"
+                    icon="create"
+                    onclick={addStep}
+                  >
+                    {t("Add step", locale)}
+                  </Button>
+                </div>
+                {#if fieldErrors.steps}<p
+                    id="project-steps-error"
+                    class="field-error"
+                    role="alert"
+                  >
+                    {fieldErrors.steps}
+                  </p>{/if}
+                {#if draft.steps.length}
+                  <ol class="step-editor-list">
+                    {#each draft.steps as step, index (step.key)}
+                      <li class="step-editor-card">
+                        <div class="step-editor-heading">
+                          <h3>{t("Step", locale)} {index + 1}</h3>
+                          <div class="step-actions">
+                            <Button
+                              type="button"
+                              class="icon-button"
+                              variant="ghost"
+                              size="sm"
+                              icon="move-up"
+                              aria-label={`${t("Move up", locale)} ${t("Step", locale)} ${index + 1}`}
+                              disabled={index === 0}
+                              onclick={() => moveStep(index, -1)}
+                            />
+                            <Button
+                              type="button"
+                              class="icon-button"
+                              variant="ghost"
+                              size="sm"
+                              icon="move-down"
+                              aria-label={`${t("Move down", locale)} ${t("Step", locale)} ${index + 1}`}
+                              disabled={index === draft.steps.length - 1}
+                              onclick={() => moveStep(index, 1)}
+                            />
+                            <Button
+                              type="button"
+                              class="remove-button"
+                              variant="ghost"
+                              icon="action-delete"
+                              aria-label={`${t("Remove", locale)} ${t("Step", locale)} ${index + 1}`}
+                              onclick={() =>
+                                (draft.steps = draft.steps.filter(
+                                  (item) => item.key !== step.key,
+                                ))}
+                            >
+                              {t("Remove", locale)}
+                            </Button>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label for={`step-title-${step.key}`}
+                            >{t("Step title", locale)}</label
+                          >
+                          <input
+                            id={`step-title-${step.key}`}
+                            bind:value={step.title}
+                            maxlength="256"
+                            required
+                            aria-invalid={fieldErrors.steps &&
+                            (!step.title.trim() ||
+                              step.title.trim().length > 256)
+                              ? "true"
+                              : undefined}
+                            aria-describedby={fieldErrors.steps &&
+                            (!step.title.trim() ||
+                              step.title.trim().length > 256)
+                              ? "project-steps-error"
+                              : undefined}
+                          />
+                        </div>
+                        <div class="field">
+                          <label for={`step-description-${step.key}`}
+                            >{t("Step instructions", locale)}</label
+                          >
+                          <textarea
+                            id={`step-description-${step.key}`}
+                            bind:value={step.description}
+                            rows="4"></textarea>
+                        </div>
+                      </li>
+                    {/each}
+                  </ol>
+                {:else}
+                  <p class="field-hint">
+                    {t("No steps have been added yet.", locale)}
+                  </p>
+                {/if}
+              </section>
+            </div>
+          </details>
+        </fieldset>
+
+        {#if project && mayManage(project.access)}
+          <section class="danger-zone" aria-labelledby="danger-zone-heading">
+            <div>
+              <h2 id="danger-zone-heading">{t("Danger zone", locale)}</h2>
+            </div>
+            <Button
+              class="danger-button"
+              variant="danger"
+              icon="action-delete"
+              type="button"
+              disabled={isDirty || saving || deleting || mediaBusy}
+              onclick={() => openConfirmation({ kind: "project" })}
+            >
+              {deleting ? t("Deleting…", locale) : t("Delete project", locale)}
+            </Button>
           </section>
         {/if}
 
@@ -2013,6 +2025,10 @@
 
   .field-wide {
     grid-column: 1 / -1;
+  }
+
+  .yarn-other-materials {
+    margin-top: 1rem;
   }
 
   label {

@@ -43,13 +43,44 @@ pub(crate) fn valid_csrf(token: &str, supplied: &str) -> bool {
 }
 
 pub(crate) fn rich_text(source: &str) -> String {
+    render_rich_text(source, false)
+}
+
+/// Like [`rich_text`], but every line break of the source stays a line break. For list-like
+/// fields (other materials, stitch sample) people write one item per line without Markdown.
+pub(crate) fn rich_text_lines(source: &str) -> String {
+    render_rich_text(source, true)
+}
+
+fn render_rich_text(source: &str, keep_line_breaks: bool) -> String {
+    let parser = pulldown_cmark::Parser::new_ext(
+        source,
+        pulldown_cmark::Options::ENABLE_TABLES | pulldown_cmark::Options::ENABLE_STRIKETHROUGH,
+    )
+    .map(|event| match event {
+        pulldown_cmark::Event::SoftBreak if keep_line_breaks => pulldown_cmark::Event::HardBreak,
+        other => other,
+    });
     let mut html = String::new();
-    pulldown_cmark::html::push_html(
-        &mut html,
-        pulldown_cmark::Parser::new_ext(
-            source,
-            pulldown_cmark::Options::ENABLE_TABLES | pulldown_cmark::Options::ENABLE_STRIKETHROUGH,
-        ),
-    );
+    pulldown_cmark::html::push_html(&mut html, parser);
     ammonia::clean(&html)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{rich_text, rich_text_lines};
+
+    #[test]
+    fn line_fields_keep_every_line_break() {
+        let source = "2 buttons\nstitch markers\n\ncable needle";
+        assert_eq!(
+            rich_text_lines(source),
+            "<p>2 buttons<br>\nstitch markers</p>\n<p>cable needle</p>\n"
+        );
+        // Prose fields still join soft-wrapped lines into one paragraph.
+        assert_eq!(
+            rich_text(source),
+            "<p>2 buttons\nstitch markers</p>\n<p>cable needle</p>\n"
+        );
+    }
 }

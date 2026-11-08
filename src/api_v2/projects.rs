@@ -110,7 +110,10 @@ impl From<ProjectResponse> for ProjectDto {
             category: project.category,
             yarn: project.yarn,
             needles: project.needles,
-            stitch_sample_html: project.stitch_sample.as_deref().map(crate::web::rich_text),
+            stitch_sample_html: project
+                .stitch_sample
+                .as_deref()
+                .map(crate::web::rich_text_lines),
             stitch_sample: project.stitch_sample,
             description_html: project.description.as_deref().map(crate::web::rich_text),
             description: project.description,
@@ -119,7 +122,7 @@ impl From<ProjectResponse> for ProjectDto {
             other_materials_html: project
                 .other_materials
                 .as_deref()
-                .map(crate::web::rich_text),
+                .map(crate::web::rich_text_lines),
             other_materials: project.other_materials,
             tags: project.tags,
             link: project.link,
