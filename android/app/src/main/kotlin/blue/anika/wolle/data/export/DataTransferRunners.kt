@@ -48,13 +48,16 @@ constructor(
         when (result) {
             is ExportResult.Success -> {
                 store.setExport(ExportJobStatus.Succeeded)
-                notifier.succeeded(
-                    request.target,
-                    request.fileName,
-                    request.format,
-                    request.encrypted,
-                    result.bytes,
-                )
+                // The file is saved: a notification that cannot be posted must not fail it.
+                runCatching {
+                    notifier.succeeded(
+                        request.target,
+                        request.fileName,
+                        request.format,
+                        request.encrypted,
+                        result.bytes,
+                    )
+                }
             }
             is ExportResult.Failure -> fail(result.reason)
         }
@@ -116,7 +119,7 @@ constructor(
                 // The restored items have new `updated_at`: a normal sync brings them in.
                 syncScheduler.syncNow()
                 store.setRestore(RestoreJobStatus.Succeeded(result.summary))
-                notifier.succeeded(result.summary)
+                runCatching { notifier.succeeded(result.summary) }
             }
             is RestoreResult.Failure -> {
                 val wrong = result.reason == RestoreFailure.WrongPassphrase

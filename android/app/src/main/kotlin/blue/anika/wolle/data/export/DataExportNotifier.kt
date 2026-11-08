@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ClipData
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -123,7 +124,7 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
                 bytes?.takeIf { it > 0 }?.let { Formatter.formatShortFileSize(context, it) },
             )
         val title = context.getString(R.string.data_export_notification_success_title)
-        notify(
+        val builder =
             builder(
                     R.string.data_export_notification_success_title,
                     openFile(target, format, encrypted),
@@ -144,13 +145,17 @@ class DataExportNotifier @Inject constructor(@ApplicationContext private val con
                     )
                 )
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
-                .addAction(
-                    0,
-                    context.getString(R.string.data_export_notification_share),
-                    shareFile(target, format, encrypted),
-                )
                 .setAutoCancel(true)
-        )
+        // Only a content Uri (the system picker's) can be granted to another app; a file Uri in
+        // an outgoing intent throws FileUriExposedException.
+        if (target.scheme == ContentResolver.SCHEME_CONTENT) {
+            builder.addAction(
+                0,
+                context.getString(R.string.data_export_notification_share),
+                shareFile(target, format, encrypted),
+            )
+        }
+        notify(builder)
     }
 
     fun failed(reason: ExportFailure) {
