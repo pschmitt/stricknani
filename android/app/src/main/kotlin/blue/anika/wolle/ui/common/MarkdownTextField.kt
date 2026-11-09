@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.model.HeadingStyle
-import com.mohamedrejeb.richeditor.model.LocalImageLoader
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 
@@ -165,6 +164,8 @@ internal fun MarkdownTextField(
         if (!visual) return@LaunchedEffect
         snapshotFlow { rich.annotatedString }
             .collect {
+                // A half-deleted picture chip goes whole; the change comes back as a new value.
+                if (MarkdownRich.dropDamagedPictures(rich)) return@collect
                 val markdown = MarkdownRich.toMarkdown(rich, keepLineBreaks)
                 if (markdown == written) return@collect
                 written = markdown
@@ -449,20 +450,15 @@ private fun VisualEditor(
         ) {
             FieldLabel(label, labelIcon)
         }
-        // Pictures load through the app's authenticated Coil, like the reader's Markdown images.
-        val resolveUrl = LocalOwnerContext.current.resolveUrl
-        val imageLoader = remember(resolveUrl) { EditorImageLoader(resolveUrl) }
-        CompositionLocalProvider(LocalImageLoader provides imageLoader) {
-            BasicRichTextEditor(
-                state = state,
-                modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink),
-                cursorBrush = SolidColor(colors.cursorColor.orElse(ink)),
-                minLines = minLines,
-                keyboardOptions = keyboardOptions,
-                interactionSource = interaction,
-            )
-        }
+        BasicRichTextEditor(
+            state = state,
+            modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink),
+            cursorBrush = SolidColor(colors.cursorColor.orElse(ink)),
+            minLines = minLines,
+            keyboardOptions = keyboardOptions,
+            interactionSource = interaction,
+        )
     }
 }
 

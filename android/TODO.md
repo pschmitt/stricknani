@@ -52,7 +52,7 @@ picture stays in Raw with the "This text uses formatting the visual editor canno
 - [x] Drop `MarkdownElementTypes.IMAGE` from `MarkdownRich.UNSUPPORTED` and cover pictures in
       `MarkdownRichTest`.
 
-Status: **done** (device test pending), 2026-11-09. Pictures are atomic image spans (`EditorImageLoader`); the original `![alt](url){.sn-size-*}` text is kept verbatim. Linked pictures (`[![a](b)](c)`) and `<img>` HTML stay in Raw.
+Status: **done as chips**, 2026-11-09. Compose Rich Editor 1.2.1 renders inline images only in read-only `RichText`, never in `BasicRichTextEditor`, so a picture is an atomic token chip (picture symbol + alt text) that round-trips the original `![alt](url){.sn-size-*}` verbatim. Real thumbnails inside the editable text need a custom overlay (follow-up). Linked pictures and `<img>` HTML stay in Raw.
 
 ## SNA-105: Yarn links move into their own "Yarn source" card
 

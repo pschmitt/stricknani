@@ -1,39 +1,13 @@
-@file:OptIn(ExperimentalRichTextApi::class)
-
 package blue.anika.wolle.ui.common
-
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImagePainter
-import coil3.compose.rememberAsyncImagePainter
-import coil3.request.ImageRequest
-import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
-import com.mohamedrejeb.richeditor.model.ImageData
-import com.mohamedrejeb.richeditor.model.ImageLoader
 
 /**
  * A picture of the visual editor: the Markdown exactly as it was read (`![alt](url){.sn-size-md}`,
  * written back verbatim so nothing about it changes) and its alt text for display.
+ *
+ * Compose Rich Editor 1.2.1 cannot show inline images in its editable text field (only its
+ * read-only `RichText` renders inline content), so a picture is an atomic token chip in the text: a
+ * picture symbol and the alt text. Backspace or a selection removes it as one character, text can
+ * be typed before and after it, and it is written back as [markdown].
  */
 internal data class EditorImage(val markdown: String, val alt: String) {
     /** The destination as written in [markdown] (`/media/...`, absolute), or null if unparsable. */
@@ -43,7 +17,21 @@ internal data class EditorImage(val markdown: String, val alt: String) {
     /** [source] resolved against the configured server, null when it is unsafe or unusable. */
     fun resolvedSource(resolveUrl: (String?) -> String?): String? = source?.let(resolveUrl)
 
+    /** The visible text of the chip. */
+    fun chip(): String {
+        val label = alt.replace(Regex("\\s+"), " ").trim()
+        val short =
+            if (label.length > CHIP_LABEL_MAX) label.take(CHIP_LABEL_MAX - 1) + "…" else label
+        return if (short.isEmpty()) SYMBOL else "$SYMBOL $short"
+    }
+
     companion object {
+        /** The token trigger that marks a picture chip. */
+        const val TRIGGER = "sn-image"
+
+        /** Framed picture (U+1F5BC). */
+        private const val SYMBOL = "🖼"
+        private const val CHIP_LABEL_MAX = 40
         private val escapes = Regex("\\\\([!-/:-@\\[-`{-~])")
         private val syntax =
             Regex(
@@ -71,84 +59,5 @@ internal data class EditorImage(val markdown: String, val alt: String) {
             val destination = url.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
             return "![$alt]($destination)"
         }
-    }
-}
-
-/**
- * Loads the pictures of the visual editor with the app's Coil (authenticated media client, shared
- * disk cache), through the same resolver as the reader's Markdown images. While offline, unloadable
- * or unsafe, the picture is a box with its alt text.
- */
-internal class EditorImageLoader(private val resolveUrl: (String?) -> String?) : ImageLoader {
-    @Composable
-    override fun load(model: Any): ImageData {
-        val image = remember(model) { EditorImage(model.toString(), alt(model.toString())) }
-        val url = remember(image, resolveUrl) { image.resolvedSource(resolveUrl) }
-        val context = LocalContext.current
-        val request = remember(url) { ImageRequest.Builder(context).data(url).build() }
-        val painter = rememberAsyncImagePainter(request)
-        val state by painter.state.collectAsState()
-        val failed = url == null || state is AsyncImagePainter.State.Error
-        val placeholder =
-            rememberAltPlaceholder(
-                image.alt,
-                MaterialTheme.colorScheme.surfaceVariant,
-                MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        return ImageData(
-            painter = if (failed) placeholder else painter,
-            contentDescription = image.alt.ifBlank { null },
-            contentScale = ContentScale.Fit,
-            modifier = Modifier,
-        )
-    }
-
-    private fun alt(markdown: String) = EditorImage.parse(markdown)?.first.orEmpty()
-}
-
-@Composable
-private fun rememberAltPlaceholder(alt: String, background: Color, ink: Color): Painter {
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val style = MaterialTheme.typography.bodySmall
-    return remember(alt, background, ink, density, style) {
-        AltPlaceholderPainter(
-            alt,
-            measurer,
-            style.copy(color = ink),
-            background,
-            Size(density.run { 280.dp.toPx() }, density.run { 96.dp.toPx() }),
-        )
-    }
-}
-
-/** A rounded box with the picture's alt text, shown where the picture cannot be loaded. */
-private class AltPlaceholderPainter(
-    private val alt: String,
-    private val measurer: TextMeasurer,
-    private val style: TextStyle,
-    private val background: Color,
-    override val intrinsicSize: Size,
-) : Painter() {
-    override fun DrawScope.onDraw() {
-        drawRoundRect(background, size = size, cornerRadius = CornerRadius(8f, 8f))
-        if (alt.isBlank()) return
-        val inset = 12f
-        val layout =
-            measurer.measure(
-                alt,
-                style,
-                overflow = TextOverflow.Ellipsis,
-                constraints =
-                    Constraints(maxWidth = (size.width - 2 * inset).toInt().coerceAtLeast(1)),
-            )
-        drawText(
-            layout,
-            topLeft =
-                Offset(
-                    inset,
-                    ((size.height - layout.size.height) / 2f).coerceAtLeast(0f),
-                ),
-        )
     }
 }

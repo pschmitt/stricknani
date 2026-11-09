@@ -2,7 +2,7 @@
 
 package blue.anika.wolle.ui.common
 
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextRange
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.document.RichTextBlock
 import com.mohamedrejeb.richeditor.document.RichTextBlockType
@@ -163,18 +163,6 @@ internal object MarkdownRich {
     /** One private-use character per picture while the library parses; see [extractImages]. */
     private const val IMAGE_BASE = 0xF000
 
-    /** What the editor holds in the text for a picture (the object replacement character). */
-    private const val IMAGE_CHAR = '\uFFFC'
-
-    /**
-     * The box a picture gets in the text. The library lays an inline picture out from its declared
-     * size: with an unspecified size the placeholder has no usable size and the text shows a
-     * missing-glyph box instead of the picture. The editor clamps it to the line width and the
-     * loader fits the picture (or the alt text box) inside.
-     */
-    private val EDITOR_IMAGE_WIDTH = 320.sp
-    private val EDITOR_IMAGE_HEIGHT = 240.sp
-
     private fun isImagePlaceholder(c: Char) = c.code in IMAGE_BASE until IMAGE_BASE + MAX_IMAGES
 
     private val imageAttributes = Regex("^\\{[^}\\r\\n]*\\}")
@@ -246,29 +234,53 @@ internal object MarkdownRich {
         if (!changed) return
         val blocks =
             document.blocks.map { block ->
-                val pictures =
-                    block.text.indices
-                        .filter { isImagePlaceholder(block.text[it]) }
-                        .mapNotNull {
-                            images.getOrNull(block.text[it].code - IMAGE_BASE)?.let { image ->
-                                RichTextSpanMark.Image(
-                                    it..it,
-                                    image.markdown,
-                                    EDITOR_IMAGE_WIDTH,
-                                    EDITOR_IMAGE_HEIGHT,
-                                    image.alt,
-                                )
-                            }
-                        }
+                // A picture is a visible, atomic chip (see [EditorImage.chip]); its text is longer
+                // than the placeholder, so the ranges of the other marks move with it.
+                val text = restore(block.text)
+                val starts = IntArray(text.length + 1)
+                val out = StringBuilder()
+                val pictures = mutableListOf<RichTextSpanMark>()
+                for (i in text.indices) {
+                    starts[i] = out.length
+                    val image =
+                        if (isImagePlaceholder(text[i])) images.getOrNull(text[i].code - IMAGE_BASE)
+                        else null
+                    if (image == null) {
+                        out.append(text[i])
+                    } else {
+                        val chip = image.chip()
+                        pictures.add(
+                            RichTextSpanMark.Token(
+                                out.length until out.length + chip.length,
+                                EditorImage.TRIGGER,
+                                image.markdown,
+                                chip,
+                            )
+                        )
+                        out.append(chip)
+                    }
+                }
+                starts[text.length] = out.length
+                fun moved(range: IntRange) =
+                    starts.getOrElse(range.first) { out.length }..(starts.getOrElse(
+                            range.last + 1
+                        ) {
+                            out.length
+                        } - 1)
                 block.copy(
-                    text =
-                        restore(block.text)
-                            .map { if (isImagePlaceholder(it)) IMAGE_CHAR else it }
-                            .joinToString(""),
+                    text = out.toString(),
                     spans =
                         block.spans.map { mark ->
-                            if (mark is RichTextSpanMark.Link) mark.copy(url = restore(mark.url))
-                            else mark
+                            when (mark) {
+                                is RichTextSpanMark.Link ->
+                                    mark.copy(url = restore(mark.url), range = moved(mark.range))
+                                is RichTextSpanMark.Bold -> mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.Italic -> mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.Strikethrough ->
+                                    mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.CodeSpan -> mark.copy(range = moved(mark.range))
+                                else -> mark
+                            }
                         } + pictures,
                 )
             }
@@ -284,6 +296,81 @@ internal object MarkdownRich {
 
     /** A rich text state holding [markdown]. */
     fun toRich(markdown: String): RichTextState = RichTextState().also { load(it, markdown) }
+
+    /**
+     * Pictures are one unit: the library lets Backspace eat a chip character by character, so a
+     * chip whose text no longer matches its label (part of it deleted or typed into) is removed
+     * whole, like deleting one character. Returns true when the state was changed.
+     */
+    fun dropDamagedPictures(state: RichTextState): Boolean {
+        val document = state.toRichTextDocument()
+        var damaged = false
+        val blocks =
+            document.blocks.map { block ->
+                val bad =
+                    block.spans
+                        .filterIsInstance<RichTextSpanMark.Token>()
+                        .filter { it.trigger == EditorImage.TRIGGER }
+                        .filter { token ->
+                            val range = token.range
+                            range.first < 0 ||
+                                range.last >= block.text.length ||
+                                block.text.substring(range.first, range.last + 1) != token.label
+                        }
+                if (bad.isEmpty()) return@map block
+                damaged = true
+                val cut = bad.map {
+                    it.range.first.coerceAtLeast(0)..it.range.last.coerceAtMost(
+                            block.text.lastIndex
+                        )
+                }
+                fun moved(index: Int) =
+                    index - cut.sumOf { r -> (minOf(r.last + 1, index) - r.first).coerceAtLeast(0) }
+                fun shifted(range: IntRange) = moved(range.first)..(moved(range.last + 1) - 1)
+                block.copy(
+                    text = block.text.filterIndexed { i, _ -> cut.none { i in it } },
+                    spans =
+                        block.spans
+                            .filterNot { it in bad }
+                            .map { mark ->
+                                when (mark) {
+                                    is RichTextSpanMark.Link ->
+                                        mark.copy(range = shifted(mark.range))
+                                    is RichTextSpanMark.Bold ->
+                                        mark.copy(range = shifted(mark.range))
+                                    is RichTextSpanMark.Italic ->
+                                        mark.copy(range = shifted(mark.range))
+                                    is RichTextSpanMark.Strikethrough ->
+                                        mark.copy(range = shifted(mark.range))
+                                    is RichTextSpanMark.CodeSpan ->
+                                        mark.copy(range = shifted(mark.range))
+                                    is RichTextSpanMark.Token ->
+                                        mark.copy(range = shifted(mark.range))
+                                    else -> mark
+                                }
+                            },
+                )
+            }
+        if (!damaged) return false
+        val before = state.annotatedString.text
+        val selection = state.selection
+        state.setRichTextDocument(RichTextDocument(blocks))
+        val after = state.annotatedString.text
+        // Keep the caret where the removed text was.
+        var prefix = 0
+        while (prefix < after.length && prefix < before.length && before[prefix] == after[prefix]) {
+            prefix++
+        }
+        val removed = before.length - after.length
+        fun place(offset: Int) =
+            when {
+                offset <= prefix -> offset
+                offset >= prefix + removed -> offset - removed
+                else -> prefix
+            }.coerceIn(0, after.length)
+        state.selection = TextRange(place(selection.start), place(selection.end))
+        return true
+    }
 
     // --- Writing -----------------------------------------------------------------------------
 
@@ -418,6 +505,13 @@ internal object MarkdownWriter {
                 is RichTextSpanMark.Image ->
                     for (i in mark.range) if (i in text.indices) {
                         images[i] = EditorImage.markdownOf(mark.url, mark.description)
+                    }
+                is RichTextSpanMark.Token ->
+                    if (mark.trigger == EditorImage.TRIGGER) {
+                        // The chip stands for the original picture Markdown, written once.
+                        for (i in mark.range) if (i in text.indices) {
+                            images[i] = if (i == mark.range.first) mark.id else ""
+                        }
                     }
                 else -> Unit
             }

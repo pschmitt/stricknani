@@ -3,7 +3,6 @@
 package blue.anika.wolle.ui.common
 
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.unit.isSpecified
 import blue.anika.wolle.data.media.resolveMediaUrl
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.document.RichTextSpanMark
@@ -45,28 +44,63 @@ class MarkdownRichImagesTest {
     }
 
     @Test
-    fun picturesAreAtomicUnitsWithTheirAlt() {
+    fun picturesAreAtomicChipsWithTheirAlt() {
         val state = MarkdownRich.toRich("Hi ![a cat \\[1\\]](/media/c.jpg){.sn-size-md} there")
         val blocks = state.toRichTextDocument().blocks
         assertEquals(1, blocks.size)
-        val marks = blocks[0].spans.filterIsInstance<RichTextSpanMark.Image>()
+        val marks = blocks[0].spans.filterIsInstance<RichTextSpanMark.Token>()
         assertEquals(1, marks.size)
-        assertEquals(3..3, marks[0].range)
-        assertEquals("a cat [1]", marks[0].description)
-        assertEquals("![a cat \\[1\\]](/media/c.jpg){.sn-size-md}", marks[0].url)
-        assertEquals("Hi ￼ there", blocks[0].text)
+        val chip = "\uD83D\uDDBC a cat [1]"
+        assertEquals(3 until 3 + chip.length, marks[0].range)
+        assertEquals(EditorImage.TRIGGER, marks[0].trigger)
+        assertEquals("![a cat \\[1\\]](/media/c.jpg){.sn-size-md}", marks[0].id)
+        assertEquals("Hi $chip there", blocks[0].text)
     }
 
     @Test
     fun deletingAPictureRemovesItWholeAndTextCanBeTypedAround() {
         val state = MarkdownRich.toRich("ab ![x](/media/x.jpg) cd")
-        // Select the single picture character and delete it.
-        state.removeTextRange(TextRange(3, 4))
+        val range =
+            state
+                .toRichTextDocument()
+                .blocks[0]
+                .spans
+                .filterIsInstance<RichTextSpanMark.Token>()
+                .single()
+                .range
+        state.removeTextRange(TextRange(range.first, range.last + 1))
         assertEquals("ab  cd", MarkdownRich.toMarkdown(state))
         val typed = MarkdownRich.toRich("![x](/media/x.jpg)")
         typed.addTextAtIndex(0, "before ")
         typed.addTextAtIndex(typed.annotatedString.text.length, " after")
         assertEquals("before ![x](/media/x.jpg) after", MarkdownRich.toMarkdown(typed))
+    }
+
+    @Test
+    fun aHalfDeletedChipGoesWhole() {
+        val state = MarkdownRich.toRich("ab ![Masse](/media/x.jpg) **cd**")
+        val range =
+            state
+                .toRichTextDocument()
+                .blocks[0]
+                .spans
+                .filterIsInstance<RichTextSpanMark.Token>()
+                .single()
+                .range
+        // Backspace removes the last chip character only.
+        state.removeTextRange(TextRange(range.last, range.last + 1))
+        assertTrue(MarkdownRich.dropDamagedPictures(state))
+        assertEquals("ab  **cd**", MarkdownRich.toMarkdown(state))
+        assertTrue(!MarkdownRich.dropDamagedPictures(state))
+        // An untouched chip stays.
+        val intact = MarkdownRich.toRich("ab ![Masse](/media/x.jpg) cd")
+        assertTrue(!MarkdownRich.dropDamagedPictures(intact))
+    }
+
+    @Test
+    fun formattingAroundAPictureKeepsItsRange() {
+        val text = "**bold** ![x](/media/x.jpg) and *it* ![yy](/media/y.jpg) end"
+        assertEquals(text, roundTrip(text))
     }
 
     @Test
@@ -125,38 +159,20 @@ class MarkdownRichImagesTest {
 
     /**
      * The entry point of MarkdownTextField (`enterVisual` and the outside-change reload):
-     * `canEditVisually`, then `MarkdownRich.load` into the editor's state. The picture must be an
-     * inline-content span with a usable size, or the text shows a missing-glyph box.
+     * `canEditVisually`, then `MarkdownRich.load` into the editor's state. The picture is a visible
+     * token chip in the text (the editor cannot render inline images), not a placeholder glyph.
      */
     @Test
-    fun loadingIntoTheEditorStateCreatesRenderablePictures() {
+    fun loadingIntoTheEditorStateShowsAVisibleChip() {
         val text = "Vorher ![Masse](/Media/x.jpg) nachher"
         assertTrue(MarkdownRich.canEditVisually(text, false))
         val state = RichTextState()
         MarkdownRich.load(state, text)
         // Loading again (a reload of the same state) behaves the same.
         MarkdownRich.load(state, text)
-        val annotated = state.annotatedString
-        assertEquals("Vorher � nachher", annotated.text.replace('￼', '�'))
-        assertTrue(annotated.text.none { it.code in 0xE000..0xF8FF })
-        val inline =
-            annotated.getStringAnnotations(
-                "androidx.compose.foundation.text.inlineContent",
-                0,
-                annotated.length,
-            )
-        assertEquals(1, inline.size)
-        assertEquals(7, inline[0].start)
-        val mark =
-            state
-                .toRichTextDocument()
-                .blocks
-                .flatMap { it.spans }
-                .filterIsInstance<RichTextSpanMark.Image>()
-                .single()
-        assertTrue(mark.width.isSpecified && mark.width.value > 0f)
-        assertTrue(mark.height.isSpecified && mark.height.value > 0f)
-        assertEquals("Masse", mark.description)
+        val shown = state.annotatedString.text
+        assertEquals("Vorher \uD83D\uDDBC Masse nachher", shown)
+        assertTrue(shown.none { it.code in 0xE000..0xF8FF || it == '\uFFFC' || it == '\uFFFD' })
         assertEquals(text, MarkdownRich.toMarkdown(state))
     }
 }
