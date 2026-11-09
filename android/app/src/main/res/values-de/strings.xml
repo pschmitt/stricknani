@@ -1410,4 +1410,24 @@
     <string name="settings_sync_error_rejected">Der Server hat diese Änderung abgelehnt. Prüfe den Eintrag vor einem neuen Versuch.</string>
     <string name="settings_sync_error_network">Die Verbindung ist fehlgeschlagen oder hat zu lange gedauert. Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="settings_sync_error_unknown">Das Hochladen ist aus unbekanntem Grund fehlgeschlagen. Versuche es erneut; deine Änderung bleibt vorgemerkt.</string>
+
+    <!-- Command palette -->
+    <string name="palette_open">Alles durchsuchen</string>
+    <string name="palette_placeholder">Projekte, Garne, Seiten, Einstellungen durchsuchen …</string>
+    <string name="palette_group_actions">Aktionen</string>
+    <string name="palette_group_projects">Projekte</string>
+    <string name="palette_group_yarns">Garne</string>
+    <string name="palette_group_categories">Kategorien</string>
+    <string name="palette_group_pages">Seiten</string>
+    <string name="palette_group_settings">Einstellungen</string>
+    <string name="palette_group_recent_projects">Zuletzt bearbeitete Projekte</string>
+    <string name="palette_group_recent_yarns">Zuletzt bearbeitete Garne</string>
+    <string name="palette_show_more">Mehr anzeigen</string>
+    <string name="palette_nothing_title">Nichts gefunden</string>
+    <string name="palette_nothing_hint">Versuche weniger Wörter oder einen Teil des Namens.</string>
+    <string name="palette_action_new_project">Neues Projekt</string>
+    <string name="palette_action_new_yarn">Neues Garn</string>
+    <string name="palette_action_toggle_dark">Dunklen Modus umschalten</string>
+    <string name="palette_action_import_pattern">Diese Anleitung importieren</string>
+    <string name="palette_action_import_yarn">Als Garn importieren</string>
 </resources>

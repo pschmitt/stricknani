@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -21,9 +22,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,6 +61,7 @@ import blue.anika.wolle.ui.home.ActivityScreen
 import blue.anika.wolle.ui.home.HomeScreen
 import blue.anika.wolle.ui.oidc.SessionExpiredViewModel
 import blue.anika.wolle.ui.onboarding.OnboardingScreen
+import blue.anika.wolle.ui.palette.PaletteSheet
 import blue.anika.wolle.ui.projects.ProjectDetailScreen
 import blue.anika.wolle.ui.projects.ProjectEditorScreen
 import blue.anika.wolle.ui.projects.ProjectsListScreen
@@ -71,6 +79,9 @@ import blue.anika.wolle.ui.signin.SignedOutBanner
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
 import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
+
+/** How far a drag up from the bottom bar must go to open the palette. */
+private const val PALETTE_SWIPE_DP = 36
 
 internal fun shouldNavigateToTopLevelRoot(isAlreadyAtRoot: Boolean): Boolean = !isAlreadyAtRoot
 
@@ -159,6 +170,15 @@ fun StricknaniNavHost(
 
     MutationFeedbackEffect(mutationFeedback, snackbarHostState)
 
+    // The command palette: a swipe up from the bottom bar, or the search action of More.
+    var paletteOpen by rememberSaveable { mutableStateOf(false) }
+    if (paletteOpen && startDestination != Route.Onboarding) {
+        PaletteSheet(
+            onDismiss = { paletteOpen = false },
+            onNavigate = { route -> navController.navigate(route) },
+        )
+    }
+
     // The server no longer accepts this phone's token: Home shows a big panel, every other screen
     // a slim banner. An OIDC session signs in again through its provider, others on their own
     // screen.
@@ -226,7 +246,26 @@ fun StricknaniNavHost(
                     navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
                 val accountProfile by accountAvatarViewModel.profile.collectAsStateWithLifecycle()
 
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+                val swipeThresholdPx = with(LocalDensity.current) { PALETTE_SWIPE_DP.dp.toPx() }
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    // Taps on the tabs still work: only a vertical drag is handled here.
+                    modifier =
+                        Modifier.testTag("palette-swipe-area").pointerInput(swipeThresholdPx) {
+                            var travelled = 0f
+                            detectVerticalDragGestures(
+                                onDragStart = { travelled = 0f },
+                                onDragCancel = { travelled = 0f },
+                                onDragEnd = { travelled = 0f },
+                            ) { _, dragAmount ->
+                                travelled += dragAmount
+                                if (travelled < -swipeThresholdPx) {
+                                    travelled = 0f
+                                    paletteOpen = true
+                                }
+                            }
+                        },
+                ) {
                     visibleDestinations.forEach { destination ->
                         val selected =
                             isTabSelected(currentDestination, destination, visibleDestinations)
@@ -393,6 +432,7 @@ fun StricknaniNavHost(
                         },
                         onCreateClick = { navController.navigate(Route.Create) },
                         onGaugeClick = { navController.navigate(Route.Gauge) },
+                        onSearchClick = { paletteOpen = true },
                     )
                 }
                 screen<Route.Create>(motion) {

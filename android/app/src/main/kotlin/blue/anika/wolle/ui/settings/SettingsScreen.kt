@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -51,14 +52,31 @@ fun SettingsScreen(
     onCategoryClick: (SettingsCategory) -> Unit,
     onCreateClick: () -> Unit,
     onGaugeClick: () -> Unit,
+    onSearchClick: () -> Unit = {},
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
 ) {
     val profile by accountAvatar.profile.collectAsStateWithLifecycle()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
     val layout = moreLayout(isAdmin)
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.more_title)) }) }) {
-        innerPadding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.more_title)) },
+                actions = {
+                    IconButton(
+                        onClick = onSearchClick,
+                        modifier = Modifier.testTag("more-search"),
+                    ) {
+                        Icon(
+                            PhosphorIcons.MagnifyingGlass,
+                            contentDescription = stringResource(R.string.palette_open),
+                        )
+                    }
+                },
+            )
+        }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding).testTag("settings-list"),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),

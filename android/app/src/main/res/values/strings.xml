@@ -1413,4 +1413,24 @@
     <string name="settings_sync_error_rejected">The server rejected this change. Check the item before retrying.</string>
     <string name="settings_sync_error_network">The connection failed or timed out. Check your connection and try again.</string>
     <string name="settings_sync_error_unknown">The upload failed without a recognized cause. Try again; your change remains queued.</string>
+
+    <!-- Command palette -->
+    <string name="palette_open">Search everything</string>
+    <string name="palette_placeholder">Search projects, yarns, pages, settings…</string>
+    <string name="palette_group_actions">Actions</string>
+    <string name="palette_group_projects">Projects</string>
+    <string name="palette_group_yarns">Yarns</string>
+    <string name="palette_group_categories">Categories</string>
+    <string name="palette_group_pages">Pages</string>
+    <string name="palette_group_settings">Settings</string>
+    <string name="palette_group_recent_projects">Recent projects</string>
+    <string name="palette_group_recent_yarns">Recent yarns</string>
+    <string name="palette_show_more">Show more</string>
+    <string name="palette_nothing_title">Nothing matches</string>
+    <string name="palette_nothing_hint">Try fewer words, or a part of a name.</string>
+    <string name="palette_action_new_project">New project</string>
+    <string name="palette_action_new_yarn">New yarn</string>
+    <string name="palette_action_toggle_dark">Toggle dark mode</string>
+    <string name="palette_action_import_pattern">Import this pattern</string>
+    <string name="palette_action_import_yarn">Import as yarn</string>
 </resources>
