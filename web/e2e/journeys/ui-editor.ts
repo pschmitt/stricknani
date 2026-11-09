@@ -161,9 +161,12 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     .fill("18 stitches over 10 cm");
   markStage("filling the project tags");
   await page.locator("#project-tag-entry").fill("color, texture");
-  await page.getByRole("button", { name: "Add tag", exact: true }).click();
+  await page.locator("#project-tag-entry").press("Enter");
   await page.locator("#project-tag-entry").fill("winter");
-  await page.getByRole("button", { name: "Add tag", exact: true }).click();
+  await page.locator("#project-tag-entry").press("Enter");
+  await page
+    .getByRole("button", { name: "Remove tag winter", exact: true })
+    .waitFor();
   markStage("filling the project pattern");
   await projectOptionalDetails.locator("summary").click();
   check(

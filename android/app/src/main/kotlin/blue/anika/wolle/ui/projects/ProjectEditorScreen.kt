@@ -561,23 +561,18 @@ fun ProjectEditorScreen(
                                         capitalization = KeyboardCapitalization.Sentences
                                     ),
                             )
-                            OutlinedTextField(
-                                value = form.tags,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(tags = value) }
+                            TagChipField(
+                                tags = form.tags,
+                                text = form.tagInput,
+                                onTextChange = { value, commitAll ->
+                                    viewModel.updateForm { it.withTagText(value, commitAll) }
                                 },
-                                label = {
-                                    FieldLabel(
-                                        stringResource(R.string.project_editor_tags_label),
-                                        PhosphorIcons.Tag,
-                                    )
+                                onRemove = { index ->
+                                    viewModel.updateForm { it.withoutTag(index) }
                                 },
-                                supportingText = {
-                                    Text(stringResource(R.string.project_editor_tags_hint))
+                                onBackspaceInEmptyField = {
+                                    viewModel.updateForm { it.withoutLastTagIfInputEmpty() }
                                 },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                             )
                             UrlTextField(
                                 value = form.link,

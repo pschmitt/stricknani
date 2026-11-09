@@ -864,7 +864,8 @@
     <string name="editor_photo_position">Photo %1$d of %2$d</string>
     <string name="project_editor_step_removed">Step removed</string>
     <string name="editor_photo_removed">Photo removed</string>
-    <string name="project_editor_tags_hint">Separate tags with a space or comma</string>
+    <string name="project_editor_tags_placeholder">Add tags…</string>
+    <string name="project_editor_tag_remove">Remove tag %1$s</string>
     <string name="project_editor_needles_hint">e.g. 4 mm circular, 80 cm</string>
     <string name="project_editor_stitch_sample_hint">e.g. 22 stitches and 30 rows = 10 cm</string>
     <string name="project_editor_unlink_yarn">Unlink yarn</string>

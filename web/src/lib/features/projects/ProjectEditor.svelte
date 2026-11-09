@@ -1,6 +1,7 @@
 <script lang="ts">
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -140,6 +141,7 @@
   let editorForm = $state<HTMLFormElement | undefined>(undefined);
   let optionalDetailsOpen = $state(false);
   let tagInput = $state("");
+  let tagField = $state<HTMLInputElement | null>(null);
   let stepKey = 0;
   let routeGeneration = 0;
   let categoryGeneration = 0;
@@ -1766,15 +1768,48 @@
                 <label for="project-tag-entry"
                   ><LabelIcon name="categories" />{t("Tags", locale)}</label
                 >
-                <div class="tag-entry-row">
+                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                <div
+                  class="tag-box"
+                  onclick={(event) => {
+                    if (event.target === event.currentTarget) tagField?.focus();
+                  }}
+                >
+                  {#each draft.tags as tag, index (`${index}:${tag}`)}
+                    <span class="tag-chip">
+                      <span class="tag-chip-text">{tag}</span>
+                      <button
+                        type="button"
+                        class="tag-chip-remove"
+                        aria-label={t("Remove tag {name}", locale).replace(
+                          "{name}",
+                          tag,
+                        )}
+                        onclick={() => {
+                          removeTag(index);
+                          tagField?.focus();
+                        }}
+                      >
+                        <NavIcon name="close" />
+                      </button>
+                    </span>
+                  {/each}
                   <input
                     id="project-tag-entry"
+                    class="tag-box-input"
+                    bind:this={tagField}
                     bind:value={tagInput}
                     autocomplete="off"
+                    autocapitalize="none"
+                    enterkeyhint="done"
+                    placeholder={draft.tags.length
+                      ? ""
+                      : t("Add tags…", locale)}
                     oninput={(event) => {
                       const { inputType } = event as unknown as InputEvent;
                       addTag(inputType === "insertFromPaste");
                     }}
+                    onblur={() => addTag()}
                     onkeydown={(event) => {
                       if (event.key === "Enter") {
                         event.preventDefault();
@@ -1788,39 +1823,7 @@
                       }
                     }}
                   />
-                  <Button
-                    id="add-project-tag"
-                    type="button"
-                    class="secondary-button"
-                    variant="secondary"
-                    icon="add"
-                    onclick={() => addTag()}
-                  >
-                    {t("Add tag", locale)}
-                  </Button>
                 </div>
-                <span class="field-hint">
-                  {t("A space or comma ends a tag.", locale)}
-                </span>
-                {#if draft.tags.length}
-                  <ul class="tag-list" aria-label={t("Tags", locale)}>
-                    {#each draft.tags as tag, index (`${index}:${tag}`)}
-                      <li>
-                        <span>{tag}</span>
-                        <Button
-                          type="button"
-                          class="remove-button"
-                          variant="ghost"
-                          icon="action-delete"
-                          aria-label={`${t("Remove", locale)} ${tag}`}
-                          onclick={() => removeTag(index)}
-                        >
-                          {t("Remove", locale)}
-                        </Button>
-                      </li>
-                    {/each}
-                  </ul>
-                {/if}
               </div>
               <div class="field field-wide">
                 <label for="project-link"
@@ -2359,20 +2362,80 @@
     grid-column: 1 / -1;
   }
 
-  /* The tag input and its button side by side, the same height. */
-  .tag-entry-row {
+  /* The tag box looks like the other inputs and holds the tag chips in front of the cursor. */
+  .tag-box {
     display: flex;
-    gap: 0.5rem;
-    align-items: stretch;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    box-sizing: border-box;
+    min-height: var(--ui-input-height);
+    border: 1px solid var(--control-border);
+    border-radius: var(--ui-input-radius);
+    padding: 0.3rem 0.5rem;
+    background: var(--surface-raised);
+    cursor: text;
   }
 
-  .tag-entry-row input {
-    flex: 1;
+  .tag-box:focus-within {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
     min-width: 0;
+    max-width: 100%;
+    border-radius: 999px;
+    padding: 0.1rem 0.15rem 0.1rem 0.65rem;
+    background: var(--accent-wash);
+    color: var(--accent-strong);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.3;
   }
 
-  .tag-entry-row :global(.ui-button) {
+  .tag-chip-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .tag-chip-remove {
+    display: inline-grid;
     flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-inline-start: 0.15rem;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .tag-chip-remove:hover {
+    background: color-mix(in srgb, currentcolor 16%, transparent);
+  }
+
+  .tag-chip-remove :global(svg) {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .tag-box .tag-box-input {
+    flex: 1 1 6rem;
+    min-width: 6rem;
+    min-height: 2rem;
+    border: 0;
+    padding: 0.2rem 0.25rem;
+    background: transparent;
+  }
+
+  .tag-box .tag-box-input:focus-visible {
+    outline: none;
   }
 
   .yarn-other-materials {
@@ -2461,7 +2524,6 @@
     justify-content: flex-start;
   }
 
-  .tag-list,
   .attachment-list {
     display: grid;
     gap: 0.5rem;
@@ -2470,7 +2532,6 @@
     list-style: none;
   }
 
-  .tag-list li,
   .attachment-list li {
     display: flex;
     align-items: center;
@@ -2490,17 +2551,6 @@
 
   .attachment-list span {
     color: var(--ink-muted);
-  }
-
-  .tag-list li {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    overflow-wrap: anywhere;
-  }
-
-  .tag-list li > span {
-    min-width: 0;
-    overflow-wrap: anywhere;
   }
 
   .media-manager h3 {

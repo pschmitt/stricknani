@@ -81,7 +81,10 @@ data class ProjectEditorFormState(
     val description: String = "",
     val notes: String = "",
     val otherMaterials: String = "",
-    val tags: String = "",
+    /** The finished tags, shown as chips. */
+    val tags: List<String> = emptyList(),
+    /** The text still being typed after the last chip; [committedTags] turns it into tags. */
+    val tagInput: String = "",
     val link: String = "",
     val isAiEnhanced: Boolean = false,
     val selectedYarnIds: Set<Int> = emptySet(),
@@ -129,7 +132,7 @@ internal fun ProjectEditorFormState.withImport(
         description = pick(imported.description, description),
         otherMaterials = pick(imported.otherMaterials, otherMaterials),
         notes = listOf(this.notes, notes.orEmpty()).filter { it.isNotBlank() }.joinToString("\n"),
-        tags = if (imported.tags.isEmpty()) tags else imported.tags.joinToString(", "),
+        tags = imported.tags.ifEmpty { tags },
         link = pick(imported.link, link),
         isAiEnhanced = imported.isAiEnhanced,
         steps =
@@ -447,7 +450,7 @@ constructor(
                             description = detail.description ?: "",
                             notes = detail.notes ?: "",
                             otherMaterials = detail.otherMaterials ?: "",
-                            tags = detail.tags.joinToString(", "),
+                            tags = detail.tags,
                             link = detail.link ?: "",
                             isAiEnhanced = detail.isAiEnhanced,
                             selectedYarnIds = detail.yarnIds.toSet(),
@@ -684,7 +687,7 @@ constructor(
                         description = current.description.trim().ifBlank { null },
                         notes = current.notes.trim().ifBlank { null },
                         otherMaterials = current.otherMaterials.trim().ifBlank { null },
-                        tags = parseTagInput(current.tags),
+                        tags = current.committedTags(),
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
                         yarnIds = (current.selectedYarnIds + importReview.linkedStashIds).toList(),
@@ -792,14 +795,6 @@ constructor(
         const val DRAFT_ID_KEY = "import_draft_id"
     }
 }
-
-/**
- * The editor's tag field as a tag list. A space or a comma ends a tag, so "test, test2" and "a, b
- * c" give two and three tags. Blank pieces and case-insensitive duplicates are dropped, as the
- * server did.
- */
-internal fun parseTagInput(input: String): List<String> =
-    input.split(Regex("[\\s,]+")).filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
 
 private fun <T> List<T>.inserted(index: Int, item: T): List<T> =
     toMutableList().apply { add(index.coerceIn(0, size), item) }

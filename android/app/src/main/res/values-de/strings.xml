@@ -863,7 +863,8 @@
     <string name="editor_photo_position">Foto %1$d von %2$d</string>
     <string name="project_editor_step_removed">Schritt entfernt</string>
     <string name="editor_photo_removed">Foto entfernt</string>
-    <string name="project_editor_tags_hint">Tags mit Leerzeichen oder Komma trennen</string>
+    <string name="project_editor_tags_placeholder">Schlagwörter hinzufügen…</string>
+    <string name="project_editor_tag_remove">Schlagwort %1$s entfernen</string>
     <string name="project_editor_needles_hint">z. B. 4 mm Rundnadel, 80 cm</string>
     <string name="project_editor_stitch_sample_hint">z. B. 22 Maschen und 30 Reihen = 10 cm</string>
     <string name="project_editor_unlink_yarn">Garn entfernen</string>
