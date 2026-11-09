@@ -180,6 +180,9 @@
     <string name="project_detail_materials_hide">Materialien ausblenden</string>
     <string name="project_detail_materials_show">Materialien anzeigen</string>
     <string name="project_detail_pattern_notes_title">Anleitung</string>
+    <string name="project_detail_pattern_reference">Deine Referenz</string>
+    <string name="project_detail_no_description">Noch keine Beschreibung der Anleitung.</string>
+    <string name="project_detail_not_recorded">Nicht angegeben</string>
     <string name="project_detail_field_gauge">Maschenprobe</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
@@ -396,6 +399,9 @@
     <string name="more_account_title">Kontoeinstellungen</string>
     <string name="more_settings_header">Einstellungen</string>
     <string name="more_data_header">Daten</string>
+    <string name="create_project_subtitle_import">Plane, was du als Nächstes stricken willst, oder hole eine Anleitung aus einem Link, einer Datei oder einem Text.</string>
+    <string name="create_yarn_subtitle_import">Halte ein Garn fest, das du besitzt, oder fülle es aus einem Shop- oder Ravelry-Link aus.</string>
+    <string name="more_create_subtitle_import">Starte ein Projekt oder ein Garn oder importiere eines.</string>
     <string name="create_heading">Was möchtest du hinzufügen?</string>
     <string name="create_intro">Fang etwas Neues an. In einem neuen Projekt oder Garn kannst du auch einen Link einfügen.</string>
     <string name="more_create_project_subtitle">Plane dein nächstes Strickprojekt.</string>
@@ -713,6 +719,11 @@
     <string name="gauge_calculator_not_available">n. v.</string>
     <string name="gauge_calculator_summary_with_rows">Basierend auf %1$d angeschlagenen Maschen und %2$d Reihen der Anleitung.</string>
     <string name="gauge_calculator_summary_without_rows">Basierend auf %1$d angeschlagenen Maschen der Anleitung.</string>
+    <string name="gauge_calculator_how_to_title">Wie man diesen Rechner benutzt</string>
+    <string name="gauge_calculator_how_to_step_1">Gib die Maschenprobe aus deiner Anleitung ein (Maschen und Reihen pro 10cm)</string>
+    <string name="gauge_calculator_how_to_step_2">Gib deine tatsächliche Maschenprobe von deiner Strickprobe ein (Maschen und Reihen pro 10cm)</string>
+    <string name="gauge_calculator_how_to_step_3">Gib die Maschenzahl aus deiner Anleitung ein (Anschlagmaschen)</string>
+    <string name="gauge_calculator_how_to_step_4">Das Ergebnis erscheint automatisch, sobald alle Felder ausgefüllt sind</string>
     <string name="gauge_calculator_hint">Fülle beide Maschenproben und den Anschlag aus, dann erscheinen hier deine Zahlen.</string>
     <string name="gauge_calculator_difference">%1$s gegenüber der Anleitung</string>
     <string name="gauge_calculator_swatch_size_change">Größe der Maschenprobe %1$s, ändern</string>
@@ -998,8 +1009,11 @@
     <string name="admin_accounts_empty_title">Noch keine Konten</string>
     <string name="admin_accounts_empty_subtitle">Tippe auf „Konto hinzufügen“, um jemanden einzuladen.</string>
     <string name="admin_accounts_badge_admin">Administrator</string>
+    <string name="admin_accounts_badge_member">Mitglied</string>
+    <string name="admin_accounts_badge_active">Aktiv</string>
     <string name="admin_accounts_badge_you">Du</string>
-    <string name="admin_accounts_badge_disabled">Gesperrt</string>
+    <string name="admin_accounts_impersonate">Identität übernehmen</string>
+    <string name="admin_accounts_badge_disabled">Deaktiviert</string>
     <string name="admin_accounts_menu">Mehr für %1$s</string>
     <string name="admin_accounts_disable">Konto deaktivieren</string>
     <string name="admin_accounts_enable">Konto aktivieren</string>
@@ -1049,7 +1063,8 @@
     <string name="history_more_failed">Weitere Änderungen konnten nicht geladen werden.</string>
     <string name="history_detail_failed">Diese Änderungen konnten nicht geladen werden.</string>
     <string name="history_empty_title">Noch keine Änderungen aufgezeichnet</string>
-    <string name="history_empty_hint">Änderungen erscheinen hier.</string>
+    <string name="history_empty_hint_project">Änderungen an diesem Projekt erscheinen hier.</string>
+    <string name="history_empty_hint_yarn">Änderungen an diesem Garn erscheinen hier.</string>
     <string name="history_show_all">Alle Änderungen anzeigen</string>
     <string name="history_show_older">Ältere Änderungen anzeigen</string>
     <string name="history_show_fewer">Weniger anzeigen</string>
@@ -1409,6 +1424,7 @@
         <item quantity="one">Auch %1$d verknüpftes Garn verschieben</item>
         <item quantity="other">Auch %1$d verknüpfte Garne verschieben</item>
     </plurals>
+    <string name="sharing_transfer_move_yarns_hint">Aus: Die Garne bleiben bei dir, die neue Besitzerin oder der neue Besitzer kann sie nur ansehen. An: Sie wechseln mit, und du behältst jeweils eine Bearbeiten-Freigabe.</string>
     <string name="sharing_transfer_confirm">An %1$s übertragen</string>
     <string name="sharing_transferred">An %1$s übertragen</string>
     <string name="sharing_leave_title">„%1$s“ verlassen?</string>

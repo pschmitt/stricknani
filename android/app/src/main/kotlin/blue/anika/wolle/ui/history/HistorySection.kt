@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.history
 
 import android.text.format.DateUtils
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -108,6 +109,8 @@ fun HistorySection(
     state: HistoryUiState,
     controller: HistoryController,
     avatarUrl: (String?) -> String?,
+    /** What the empty timeline says: names the project or the yarn, like the web. */
+    @StringRes emptyHint: Int,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(Unit) { controller.ensureLoaded() }
@@ -162,7 +165,7 @@ fun HistorySection(
                 HistoryPhase.Hidden -> Unit
                 HistoryPhase.Ready ->
                     if (state.events.isEmpty()) {
-                        HistoryEmpty()
+                        HistoryEmpty(emptyHint)
                     } else {
                         HistoryTimeline(state, controller)
                     }
@@ -184,7 +187,7 @@ fun HistorySection(
 }
 
 @Composable
-private fun HistoryEmpty() {
+private fun HistoryEmpty(@StringRes hint: Int) {
     Column(
         Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -195,7 +198,7 @@ private fun HistoryEmpty() {
             style = MaterialTheme.typography.titleSmall,
         )
         Text(
-            stringResource(R.string.history_empty_hint),
+            stringResource(hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

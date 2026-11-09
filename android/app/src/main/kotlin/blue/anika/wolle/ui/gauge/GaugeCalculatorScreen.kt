@@ -142,6 +142,7 @@ fun GaugeCalculatorScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item { MascotIntro() }
+            item { GaugeHowToPanel() }
             item {
                 SwatchCard(
                     title = stringResource(R.string.gauge_calculator_pattern_gauge_title),

@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,6 +39,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
@@ -48,7 +51,13 @@ import blue.anika.wolle.ui.common.PhosphorIcons
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateScreen(onBack: () -> Unit, onNewProject: () -> Unit, onNewYarn: () -> Unit) {
+fun CreateScreen(
+    onBack: () -> Unit,
+    onNewProject: () -> Unit,
+    onNewYarn: () -> Unit,
+    offerViewModel: ImportOfferViewModel = hiltViewModel(),
+) {
+    val offers by offerViewModel.offers.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -82,7 +91,7 @@ fun CreateScreen(onBack: () -> Unit, onNewProject: () -> Unit, onNewYarn: () -> 
                     )
                 }
             }
-            items(createOptions(), key = { it.kind }) { option ->
+            items(createOptions(offers), key = { it.kind }) { option ->
                 CreateTile(
                     option = option,
                     onClick = {

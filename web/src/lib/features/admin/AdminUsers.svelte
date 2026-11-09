@@ -4,7 +4,7 @@
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import { onDestroy, onMount, tick } from "svelte";
+  import { onDestroy, onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -27,6 +27,7 @@
     setUserActive,
     type AdminUser,
   } from "./admin-api";
+  import { readImpersonateId, withoutImpersonate } from "./impersonate-link";
 
   type LoadState = "loading" | "ready" | "error";
   type Operation = "create" | "active" | "reset" | "impersonate" | null;
@@ -72,6 +73,11 @@
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
   const requestedPage = $derived(readPage(page.url.searchParams.get("page")));
+  // /admin/users?impersonate=<id> (the native app links here): opens the confirmation.
+  const requestedImpersonate = $derived(
+    readImpersonateId(page.url.searchParams.get("impersonate")),
+  );
+  let handledImpersonate: number | null = null;
 
   function readPage(value: string | null): number {
     const parsed = Number(value ?? "1");
@@ -188,6 +194,25 @@
               );
       });
     return () => controller.abort();
+  });
+
+  $effect(() => {
+    const wanted = requestedImpersonate;
+    if (wanted === null) {
+      handledImpersonate = null;
+      return;
+    }
+    if (loadState !== "ready" || handledImpersonate === wanted) return;
+    handledImpersonate = wanted;
+    const target = users.find((user) => user.id === wanted);
+    untrack(() => {
+      // The link is single use: drop it from the address so a reload stays quiet.
+      const query = withoutImpersonate(page.url.search);
+      void goto(`${page.url.pathname}${query ? `?${query}` : ""}`, {
+        replaceState: true,
+      });
+      if (target && canImpersonate(target)) askImpersonate(target, null);
+    });
   });
 
   onDestroy(() => {

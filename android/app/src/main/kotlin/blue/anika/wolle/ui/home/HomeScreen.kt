@@ -100,6 +100,9 @@ import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.stitchedBorder
+import blue.anika.wolle.ui.create.ImportOfferViewModel
+import blue.anika.wolle.ui.create.ImportOffers
+import blue.anika.wolle.ui.create.moreCreateSubtitleRes
 import blue.anika.wolle.ui.imports.WaitingForReview
 import blue.anika.wolle.ui.signin.SignedOutPanel
 import blue.anika.wolle.ui.update.UpdateInstallEffects
@@ -124,8 +127,10 @@ fun HomeScreen(
     /** Opens the editor on an import draft that waits for review. */
     onOpenDraft: (ImportJobDto) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
+    importOfferViewModel: ImportOfferViewModel = hiltViewModel(),
 ) {
     val currentUserId = LocalOwnerContext.current.currentUserId
+    val importOffers by importOfferViewModel.offers.collectAsStateWithLifecycle()
     val favoriteProjects by viewModel.favoriteProjects.collectAsStateWithLifecycle()
     val favoriteYarns by viewModel.favoriteYarns.collectAsStateWithLifecycle()
     val recentProjects by viewModel.recentProjects.collectAsStateWithLifecycle()
@@ -347,6 +352,7 @@ fun HomeScreen(
                             onClick = onCreateClick,
                             modifier = Modifier.padding(horizontal = 16.dp),
                             localMode = viewModel.isLocalMode,
+                            offers = importOffers,
                         )
                     }
                     if (favoriteProjects.isNotEmpty()) {
@@ -719,6 +725,7 @@ private fun CreateCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     localMode: Boolean = false,
+    offers: ImportOffers = ImportOffers(),
 ) {
     Surface(
         onClick = onClick,
@@ -750,10 +757,7 @@ private fun CreateCard(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    stringResource(
-                        if (localMode) R.string.more_create_subtitle_local
-                        else R.string.more_create_subtitle
-                    ),
+                    stringResource(moreCreateSubtitleRes(offers, localMode)),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

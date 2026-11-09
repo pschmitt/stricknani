@@ -8,6 +8,7 @@ import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.AdminException
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.repository.AdminRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.security.SecureRandom
@@ -80,6 +81,7 @@ constructor(
     private val repository: AdminRepository,
     private val mediaUrlResolver: MediaUrlResolver,
     private val feedback: MutationFeedback,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
     private val _state =
         MutableStateFlow(
@@ -100,6 +102,23 @@ constructor(
     }
 
     fun avatarUrl(path: String?): String? = mediaUrlResolver.resolve(path)
+
+    /**
+     * Where the web app opens the "Impersonate this account?" confirmation for [user], or null
+     * where the web hides the action (yourself, administrators, disabled accounts) or there is no
+     * web app (local-only mode).
+     */
+    fun impersonationLink(user: AdminUserDto): String? {
+        val current = _state.value
+        val index = current.users.indexOfFirst { it.id == user.id }
+        if (settings.isLocalMode || index < 0) return null
+        if (
+            !canImpersonate(user, isCurrentUser(user, current.currentEmail, current.currentUserId))
+        ) {
+            return null
+        }
+        return impersonationUrl(settings.credentials.value.serverUrl, user.id, index)
+    }
 
     fun refresh() = load(userInitiated = true)
 

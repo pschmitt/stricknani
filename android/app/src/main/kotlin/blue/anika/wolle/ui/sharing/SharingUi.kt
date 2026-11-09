@@ -569,6 +569,13 @@ fun TransferDialog(
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
+                    // What on and off mean, like the web's hint under the switch.
+                    Text(
+                        stringResource(R.string.sharing_transfer_move_yarns_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 48.dp),
+                    )
                 }
                 transfer.error
                     ?.takeIf { it != SharingError.Offline }

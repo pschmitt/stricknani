@@ -567,10 +567,9 @@ private fun ProjectDetailContent(
     val availableCardKeys = buildList {
         // Always: like the web it shows at least when the project was updated.
         add(ProjectDetailCard.DETAILS)
-        if (linkedYarns.isNotEmpty() || detail.yarn != null || detail.otherMaterials != null) {
-            add(ProjectDetailCard.MATERIALS)
-        }
-        if (detail.description != null || detail.notes != null) add(ProjectDetailCard.DESCRIPTION)
+        // Like the web, Materials and Pattern always show, with a placeholder when empty.
+        add(ProjectDetailCard.MATERIALS)
+        add(ProjectDetailCard.DESCRIPTION)
         if (detail.steps.isNotEmpty()) add(ProjectDetailCard.STEPS)
     }
     val savedVisibleOrder =
@@ -816,13 +815,12 @@ private fun ProjectDetailContent(
                                 // An older project's yarn text, when no yarn is linked (as on
                                 // the web).
                                 if (linkedYarns.isEmpty()) {
-                                    detail.yarn?.let {
-                                        DetailRow(
-                                            stringResource(R.string.project_detail_field_yarn),
-                                            it,
-                                            icon = PhosphorIcons.Yarn,
-                                        )
-                                    }
+                                    DetailRow(
+                                        stringResource(R.string.project_detail_field_yarn),
+                                        detail.yarn
+                                            ?: stringResource(R.string.project_detail_not_recorded),
+                                        icon = PhosphorIcons.Yarn,
+                                    )
                                 }
                                 detail.otherMaterials?.let {
                                     if (linkedYarns.isNotEmpty() || detail.yarn != null) {
@@ -851,11 +849,25 @@ private fun ProjectDetailContent(
                             reorderState = reorderState,
                             onMove = moveCard,
                         ) {
-                            detail.description?.let {
+                            Text(
+                                stringResource(R.string.project_detail_pattern_reference),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("project-pattern-reference"),
+                            )
+                            val description = detail.description
+                            if (description != null) {
                                 ProjectMarkdown(
-                                    value = it,
+                                    value = description,
                                     resolveMediaUrl = resolveMediaUrl,
                                     onImageClick = openViewerImage,
+                                )
+                            } else {
+                                Text(
+                                    stringResource(R.string.project_detail_no_description),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp),
                                 )
                             }
                         }
@@ -918,6 +930,7 @@ private fun ProjectDetailContent(
                         state = historyState,
                         controller = history,
                         avatarUrl = resolveMediaUrl,
+                        emptyHint = R.string.history_empty_hint_project,
                     )
                 }
             }

@@ -40,6 +40,8 @@ import blue.anika.wolle.data.repository.AccountProfile
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.create.ImportOfferViewModel
+import blue.anika.wolle.ui.create.moreCreateSubtitleRes
 
 /**
  * More hub (SNA-21; the Settings hub, now the "More" tab), in the website's More order: Create,
@@ -55,9 +57,11 @@ fun SettingsScreen(
     onSearchClick: () -> Unit = {},
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
+    importOfferViewModel: ImportOfferViewModel = hiltViewModel(),
 ) {
     val profile by accountAvatar.profile.collectAsStateWithLifecycle()
     val isAdmin by adminAccess.isAdmin.collectAsStateWithLifecycle()
+    val importOffers by importOfferViewModel.offers.collectAsStateWithLifecycle()
     val layout = moreLayout(isAdmin)
     Scaffold(
         topBar = {
@@ -92,9 +96,10 @@ fun SettingsScreen(
                                     title = stringResource(R.string.more_create_title),
                                     subtitle =
                                         stringResource(
-                                            if (accountAvatar.isLocalMode)
-                                                R.string.more_create_subtitle_local
-                                            else R.string.more_create_subtitle
+                                            moreCreateSubtitleRes(
+                                                importOffers,
+                                                accountAvatar.isLocalMode,
+                                            )
                                         ),
                                     tag = "more-create",
                                     onClick = onCreateClick,

@@ -52,7 +52,7 @@ picture stays in Raw with the "This text uses formatting the visual editor canno
 - [ ] Drop `MarkdownElementTypes.IMAGE` from `MarkdownRich.UNSUPPORTED` and cover pictures in
       `MarkdownRichTest`.
 
-Status: **not started**, 2026-11-09.
+Status: **done** except the T134 and T135 items (own tasks), 2026-11-09. Impersonate opens the web app at `/app/admin/users?impersonate=<id>` (the native session never switches account). The transfer switch already existed; the explanation text under it was added.
 
 ## SNA-105: Yarn links move into their own "Yarn source" card
 
@@ -2895,24 +2895,24 @@ Source: `docs/parity-audit.md` (2026-11-09). The wording, section-order and stat
 as fixed landed with the audit; these gaps need real work on the Android side. Same wording as the
 web catalogs (`stricknani/locales/{en,de}`), same defaults, same order.
 
-- [ ] Admin Users: the row overflow menu has no Impersonate action (web: Linked logins, Reset
+- [x] Admin Users: the row overflow menu has no Impersonate action (web: Linked logins, Reset
       password, Impersonate with the "Act as {email}?" confirmation); the rows show no Member or
       Active status (web: Role and Status columns). Needs the impersonation flow decision (a
       native session must not silently become another account).
-- [ ] Gauge calculator: add the collapsible "How to use this calculator" help panel with the four
+- [x] Gauge calculator: add the collapsible "How to use this calculator" help panel with the four
       steps the web shows.
-- [ ] Transfer ownership of a project: the web dialog has a switch "also move the linked yarns" (off:
+- [x] Transfer ownership of a project: the web dialog has a switch "also move the linked yarns" (off:
       the yarns stay yours and the new owner reads them; on: they move and you keep an editor
       share). Android transfers the project only. Check the v2 transfer endpoint first.
-- [ ] Project reader: the web shows "Not recorded" under Yarn, "No pattern description yet." and
+- [x] Project reader: the web shows "Not recorded" under Yarn, "No pattern description yet." and
       the "Your reference" tag on the Pattern heading when empty; Android hides the empty rows.
-- [ ] Recent changes: the empty hint says "Edits to this project will show up here." / "Edits to this
+- [x] Recent changes: the empty hint says "Edits to this project will show up here." / "Edits to this
       yarn will show up here." on the web; Android shows one generic hint for both.
-- [ ] Create and More: the web card texts mention importing ("... or bring in a pattern from a link,
+- [x] Create and More: the web card texts mention importing ("... or bring in a pattern from a link,
       a file or text", "... or fill it in from a shop or Ravelry link"); Android keeps the short
       texts because local-only mode has no import. Add the import wording when imports are offered.
 - [ ] Yarn editor structure: see T135 in `TODO.md`.
 - [ ] Detail card order: the web needs the same setting, see T134 in `TODO.md`.
 
-Status: **not started**, 2026-11-09.
+Status: **done** except the T134 and T135 items (own tasks), 2026-11-09. Impersonate opens the web app at `/app/admin/users?impersonate=<id>` (the native session never switches account). The transfer switch already existed; the explanation text under it was added.
 

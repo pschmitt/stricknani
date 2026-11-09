@@ -181,6 +181,9 @@
     <string name="project_detail_materials_hide">Hide materials</string>
     <string name="project_detail_materials_show">Show materials</string>
     <string name="project_detail_pattern_notes_title">Pattern</string>
+    <string name="project_detail_pattern_reference">Your reference</string>
+    <string name="project_detail_no_description">No pattern description yet.</string>
+    <string name="project_detail_not_recorded">Not recorded</string>
     <string name="project_detail_field_gauge">Gauge</string>
     <string name="project_detail_attachments_title">Attachments</string>
     <string name="project_detail_delete_attachment_description">Delete attachment</string>
@@ -397,6 +400,9 @@
     <string name="more_account_title">Account settings</string>
     <string name="more_settings_header">Settings</string>
     <string name="more_data_header">Data</string>
+    <string name="create_project_subtitle_import">Plan the next thing you want to knit, or bring in a pattern from a link, a file or text.</string>
+    <string name="create_yarn_subtitle_import">Keep a note of a yarn you own, or fill it in from a shop or Ravelry link.</string>
+    <string name="more_create_subtitle_import">Start a project or a yarn, or import one.</string>
     <string name="create_heading">What would you like to add?</string>
     <string name="create_intro">Start something new. In a new project or yarn you can also paste a link.</string>
     <string name="more_create_project_subtitle">Plan the next thing you want to knit.</string>
@@ -714,6 +720,11 @@
     <string name="gauge_calculator_not_available">N/A</string>
     <string name="gauge_calculator_summary_with_rows">Based on a pattern cast-on of %1$d stitches and %2$d rows.</string>
     <string name="gauge_calculator_summary_without_rows">Based on a pattern cast-on of %1$d stitches.</string>
+    <string name="gauge_calculator_how_to_title">How to use this calculator</string>
+    <string name="gauge_calculator_how_to_step_1">Enter the gauge from your pattern (stitches and rows per 10cm)</string>
+    <string name="gauge_calculator_how_to_step_2">Enter your actual gauge from your swatch (stitches and rows per 10cm)</string>
+    <string name="gauge_calculator_how_to_step_3">Enter the stitch count from your pattern (cast-on stitches)</string>
+    <string name="gauge_calculator_how_to_step_4">The result appears automatically as soon as every field is filled in</string>
     <string name="gauge_calculator_hint">Fill in both swatches and the cast-on, and your numbers show up here.</string>
     <string name="gauge_calculator_difference">%1$s compared to the pattern</string>
     <string name="gauge_calculator_swatch_size_change">Swatch size %1$s, change</string>
@@ -999,7 +1010,10 @@
     <string name="admin_accounts_empty_title">No accounts yet</string>
     <string name="admin_accounts_empty_subtitle">Tap \"Add account\" to invite someone.</string>
     <string name="admin_accounts_badge_admin">Administrator</string>
+    <string name="admin_accounts_badge_member">Member</string>
+    <string name="admin_accounts_badge_active">Active</string>
     <string name="admin_accounts_badge_you">You</string>
+    <string name="admin_accounts_impersonate">Impersonate</string>
     <string name="admin_accounts_badge_disabled">Disabled</string>
     <string name="admin_accounts_menu">More for %1$s</string>
     <string name="admin_accounts_disable">Disable account</string>
@@ -1050,7 +1064,8 @@
     <string name="history_more_failed">More changes could not be loaded.</string>
     <string name="history_detail_failed">These changes could not be loaded.</string>
     <string name="history_empty_title">No changes recorded yet</string>
-    <string name="history_empty_hint">Edits will show up here.</string>
+    <string name="history_empty_hint_project">Edits to this project will show up here.</string>
+    <string name="history_empty_hint_yarn">Edits to this yarn will show up here.</string>
     <string name="history_show_all">Show all changes</string>
     <string name="history_show_older">Show older changes</string>
     <string name="history_show_fewer">Show fewer</string>
@@ -1412,6 +1427,7 @@
         <item quantity="one">Also move %1$d linked yarn</item>
         <item quantity="other">Also move %1$d linked yarns</item>
     </plurals>
+    <string name="sharing_transfer_move_yarns_hint">Off, the yarns stay yours and the new owner can only read them. On, they move too, and you keep an editor share on each.</string>
     <string name="sharing_transfer_confirm">Transfer to %1$s</string>
     <string name="sharing_transferred">Transferred to %1$s</string>
     <string name="sharing_leave_title">Leave “%1$s”?</string>

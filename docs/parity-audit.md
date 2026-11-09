@@ -36,19 +36,19 @@ left alone on purpose.
 | P-18 | Admin | Screen titles and card text | Users, Audit log, "Manage accounts and review the audit log." | Accounts, Activity | fixed |
 | P-19 | Admin Users | Create dialog | Create user, Create a user account, Email address, Temporary password, Administrator access + hint, badge Administrator | Add account, Add an account, Email, Password, Make this person an admin, Admin | fixed |
 | P-20 | Admin Users | Enable / disable / reset dialogs | texts "The user will be able to sign in again.", "...signed out and will not be able to sign in.", "The user will need to sign in with the new password.", buttons Enable account, Disable account, Reset password, "New temporary password" | own variants | fixed (dialog titles stay "Enable {email}?": Android names the account, `platform`) |
-| P-21 | Admin Users | Impersonate, Member and Active status | in the row menu and table | missing | TODO SNA-107 |
+| P-21 | Admin Users | Impersonate, Member and Active status | in the row menu and table | Impersonate opens the web (browser), Role and Status chips | fixed (SNA-107) |
 | P-22 | Admin audit | Texts | Unknown actor, All entities, Recorded changes, "No changes are available for this event.", "No audit events match these filters." | Unknown person, All, What changed, other texts | fixed |
 | P-23 | Sharing | Transfer text, people errors | "Ownership moves to the person you pick, right away...", "People could not be loaded.", "Search by name", "No one matches that search." | variants | fixed |
-| P-24 | Sharing | Transfer with linked yarns switch | present | missing | TODO SNA-107 |
+| P-24 | Sharing | Transfer with linked yarns switch | present | switch existed, hint added | fixed (SNA-107) |
 | P-25 | Home | Section and activity texts | Recent projects, "Nothing yet - your changes will show up here." | More recent projects, "Nothing here yet. Edits..." | fixed |
 | P-26 | Imports | Draft and warning texts | "Remove some first.", "Import it as a yarn instead?", "Check the fields below." | "Save or dismiss one first.", "Leave it as..." variants | fixed |
 | P-27 | Categories | Empty title, delete text | "No categories yet.", "Projects that use this category will no longer show it." | no period, "...uncategorized. This can't be undone." | fixed |
 | P-28 | Sign-in | Register prompt, back link | "New to Stricknani?" + "Create an account", "Already have an account?" | "No account yet? Create one", "I already have an account" | fixed |
 | P-29 | Various | Trailing punctuation | Download failed., Restore failed., A download is already running., Photo removed., The passwords do not match., Copied. | no period | fixed (notification titles keep no period) |
-| P-30 | Gauge calculator | How-to help panel | present | missing | TODO SNA-107 |
-| P-31 | Project reader | Empty placeholders ("Not recorded", "No pattern description yet.", "Your reference") | present | hidden | TODO SNA-107 |
-| P-32 | Recent changes | Empty hint names project or yarn | yes | one generic hint | TODO SNA-107 |
-| P-33 | Create, More | Card texts mention import | yes | short texts (local-only mode has no import) | TODO SNA-107 |
+| P-30 | Gauge calculator | How-to help panel | present | missing | fixed (SNA-107) |
+| P-31 | Project reader | Empty placeholders ("Not recorded", "No pattern description yet.", "Your reference") | present | hidden | fixed (SNA-107) |
+| P-32 | Recent changes | Empty hint names project or yarn | yes | one generic hint | fixed (SNA-107) |
+| P-33 | Create, More | Card texts mention import | yes | short texts (local-only mode has no import) | fixed (SNA-107) |
 
 ## Compared and equal (no action)
 

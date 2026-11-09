@@ -64,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -98,6 +99,7 @@ fun AdminAccountsScreen(
     var toReset by remember { mutableStateOf<AdminUserDto?>(null) }
     var resetResult by remember { mutableStateOf<Pair<AdminUserDto, String>?>(null) }
     var showAdd by rememberSaveable { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
 
     Scaffold(
         topBar = {
@@ -188,6 +190,13 @@ fun AdminAccountsScreen(
                                             viewModel.clearForm()
                                             toReset = user
                                         },
+                                        // The web app does the impersonating (the native
+                                        // session never becomes another account): hidden where
+                                        // the web hides it.
+                                        onImpersonate =
+                                            viewModel.impersonationLink(user)?.let { url ->
+                                                { runCatching { uriHandler.openUri(url) } }
+                                            },
                                     )
                                 }
                             }
@@ -297,14 +306,24 @@ private fun AccountRow(
     onToggleActive: () -> Unit,
     onShowLogins: (() -> Unit)?,
     onResetPassword: () -> Unit,
+    onImpersonate: (() -> Unit)?,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val disabledText = stringResource(R.string.admin_accounts_badge_disabled)
+    // Like the web's Role and Status columns: every row says Administrator or Member, Active or
+    // Disabled.
+    val roleText =
+        stringResource(
+            if (user.isAdmin) R.string.admin_accounts_badge_admin
+            else R.string.admin_accounts_badge_member
+        )
+    val statusText =
+        if (user.active) stringResource(R.string.admin_accounts_badge_active) else disabledText
     val description = buildString {
         append(user.email)
-        if (user.isAdmin) append(", ").append(stringResource(R.string.admin_accounts_badge_admin))
         if (isYou) append(", ").append(stringResource(R.string.admin_accounts_badge_you))
-        if (!user.active) append(", ").append(disabledText)
+        append(", ").append(roleText)
+        append(", ").append(statusText)
     }
     Surface(
         shape = MaterialTheme.shapes.medium,
@@ -332,30 +351,28 @@ private fun AccountRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (user.isAdmin || isYou || !user.active) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (user.isAdmin) {
-                            Pill(
-                                stringResource(R.string.admin_accounts_badge_admin),
-                                MaterialTheme.colorScheme.tertiaryContainer,
-                                MaterialTheme.colorScheme.onTertiaryContainer,
-                            )
-                        }
-                        if (isYou) {
-                            Pill(
-                                stringResource(R.string.admin_accounts_badge_you),
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        }
-                        if (!user.active) {
-                            Pill(
-                                disabledText,
-                                MaterialTheme.colorScheme.surfaceContainerHighest,
-                                MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (isYou) {
+                        Pill(
+                            stringResource(R.string.admin_accounts_badge_you),
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
                     }
+                    Pill(
+                        roleText,
+                        if (user.isAdmin) MaterialTheme.colorScheme.tertiaryContainer
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        if (user.isAdmin) MaterialTheme.colorScheme.onTertiaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Pill(
+                        statusText,
+                        if (user.active) MaterialTheme.colorScheme.secondaryContainer
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        if (user.active) MaterialTheme.colorScheme.onSecondaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             Box {
@@ -414,6 +431,19 @@ private fun AccountRow(
                             onResetPassword()
                         },
                     )
+                    if (onImpersonate != null) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.admin_accounts_impersonate)) },
+                            leadingIcon = {
+                                Icon(PhosphorIcons.UsersThree, contentDescription = null)
+                            },
+                            modifier = Modifier.testTag("admin-account-impersonate-${user.id}"),
+                            onClick = {
+                                menuOpen = false
+                                onImpersonate()
+                            },
+                        )
+                    }
                 }
             }
         }
