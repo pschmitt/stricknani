@@ -104,7 +104,7 @@
   let categories = $state<ProjectCategory[]>([]);
   let categoryError = $state("");
   let yarnResults = $state<YarnSummary[]>([]);
-  let selectedYarnNames = $state<Record<number, string>>({});
+  let selectedYarnNames = $state<Record<number, YarnSummary>>({});
   let yarnQuery = $state("");
   let yarnSearchInput = $state("");
   let yarnSearchError = $state("");
@@ -207,10 +207,17 @@
     saving || deleting || (!isCreating && !isDirty) || conflictProject !== null,
   );
   const selectedYarns = $derived(
-    draft.yarnIds.map((id) => ({
-      id,
-      name: selectedYarnNames[id] ?? t("Selected yarn is unavailable.", locale),
-    })),
+    draft.yarnIds.map((id) => {
+      const yarn = selectedYarnNames[id];
+      return {
+        id,
+        name: yarn?.name ?? t("Selected yarn is unavailable.", locale),
+        brand: yarn?.brand ?? null,
+        colorway: yarn?.colorway ?? null,
+        preview_url: yarn?.preview_url ?? null,
+        weight_category: yarn?.weight_category ?? null,
+      };
+    }),
   );
   const confirmationTitle = $derived(
     confirmedAction?.kind === "project"
@@ -430,7 +437,7 @@
           return;
         yarnResults = items;
         for (const yarn of items) {
-          selectedYarnNames[yarn.id] = yarn.name;
+          selectedYarnNames[yarn.id] = yarn;
         }
       })
       .catch((error: unknown) => {
@@ -575,7 +582,7 @@
         result.yarn_ids.map(async (yarnId) => {
           try {
             const yarn = await getYarn(yarnId, controller.signal);
-            return [yarnId, yarn.name] as const;
+            return [yarnId, yarn as YarnSummary] as const;
           } catch {
             return null;
           }
@@ -587,7 +594,7 @@
       savedSnapshot = JSON.stringify(draft);
       selectedYarnNames = Object.fromEntries(
         yarnNames.filter(
-          (entry): entry is readonly [number, string] => entry !== null,
+          (entry): entry is readonly [number, YarnSummary] => entry !== null,
         ),
       );
       loadState = "ready";
@@ -613,7 +620,7 @@
   function addYarn(yarn: YarnSummary): void {
     if (draft.yarnIds.includes(yarn.id)) return;
     draft.yarnIds = [...draft.yarnIds, yarn.id];
-    selectedYarnNames[yarn.id] = yarn.name;
+    selectedYarnNames[yarn.id] = yarn;
   }
 
   /** Chips the typed text at spaces and commas; `commitAll` also takes the last piece. */
@@ -900,8 +907,8 @@
       value.yarn_ids
         .map((id) => [id, selectedYarnNames[id]] as const)
         .filter(
-          (entry): entry is readonly [number, string] =>
-            typeof entry[1] === "string",
+          (entry): entry is readonly [number, YarnSummary] =>
+            entry[1] !== undefined,
         ),
     );
   }

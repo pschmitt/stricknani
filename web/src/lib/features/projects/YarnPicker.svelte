@@ -1,9 +1,16 @@
 <script lang="ts">
   import Button from "#lib/components/Button.svelte";
+  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import type { YarnSummary } from "../yarns/yarn-api";
 
-  type SelectedYarn = { id: number; name: string };
+  type SelectedYarn = Pick<YarnSummary, "id" | "name"> &
+    Partial<
+      Pick<
+        YarnSummary,
+        "brand" | "colorway" | "preview_url" | "weight_category"
+      >
+    >;
 
   let {
     locale,
@@ -30,6 +37,14 @@
   } = $props();
 
   const selectedIds = $derived(new Set(selected.map((yarn) => yarn.id)));
+  function subtitleOf(yarn: SelectedYarn): string {
+    return [yarn.brand, yarn.colorway].filter(Boolean).join(" · ");
+  }
+
+  function metaOf(yarn: SelectedYarn): string[] {
+    return yarn.weight_category ? [yarn.weight_category] : [];
+  }
+
   const availableResults = $derived(
     results.filter((yarn) => !selectedIds.has(yarn.id)),
   );
@@ -71,27 +86,36 @@
   {#if selected.length || availableResults.length}
     <ul>
       {#each selected as yarn (yarn.id)}
-        <li>
-          <span>{yarn.name}</span>
+        <li class="linked-yarn">
+          <ResourceCard
+            kind="yarn"
+            href={null}
+            name={yarn.name}
+            imageUrl={yarn.preview_url ?? null}
+            subtitle={subtitleOf(yarn)}
+            meta={metaOf(yarn)}
+          />
           <Button
             type="button"
             class="remove-button"
             variant="ghost"
             icon="action-delete"
             aria-label={`${t("Remove", locale)} ${yarn.name}`}
+            title={`${t("Remove", locale)} ${yarn.name}`}
             onclick={() => onRemove(yarn.id)}
-          >
-            {t("Remove", locale)}
-          </Button>
+          />
         </li>
       {/each}
       {#each availableResults as yarn (yarn.id)}
         <li>
-          <span>
-            <strong>{yarn.name}</strong>
-            {#if yarn.brand}<small>{yarn.brand}</small>{/if}
-            {#if yarn.colorway}<small>{yarn.colorway}</small>{/if}
-          </span>
+          <ResourceCard
+            kind="yarn"
+            href={null}
+            name={yarn.name}
+            imageUrl={yarn.preview_url}
+            subtitle={subtitleOf(yarn)}
+            meta={metaOf(yarn)}
+          />
           <Button
             type="button"
             class="secondary-button"
@@ -159,14 +183,18 @@
     background: var(--surface-raised);
   }
 
-  li > span {
-    display: grid;
-    min-width: 0;
-    overflow-wrap: anywhere;
+  li > :global(.resource-card) {
+    flex: 1 1 12rem;
   }
 
-  small {
-    color: var(--ink-muted);
+  li.linked-yarn {
+    flex-wrap: nowrap;
+  }
+
+  li.linked-yarn :global(.ui-button) {
+    min-width: 44px;
+    min-height: 44px;
+    flex: none;
   }
 
   .field-hint,
