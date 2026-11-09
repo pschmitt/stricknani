@@ -77,8 +77,7 @@ class MarkdownRichTest {
     fun unsupportedTextStaysRaw() {
         listOf(
                 "| a | b |\n|---|---|\n| 1 | 2 |",
-                "Look ![a cat](/media/projects/1/cat.jpg) here",
-                "![a cat](/media/projects/1/cat.jpg){.sn-size-md}",
+                "[![a cat](/media/cat.jpg)](https://example.com)",
                 "> quoted",
                 "```\ncode\n```",
                 "<b>html</b>",

@@ -47,12 +47,12 @@ The web's visual editor shows `![alt](/media/...)` pictures in place. Android's 
 Compose Rich Editor) cannot yet: the library's default image loader shows nothing, so text with a
 picture stays in Raw with the "This text uses formatting the visual editor cannot show" hint.
 
-- [ ] Give the editor an `ImageLoader` that resolves `/media/...` through `MediaUrlResolver` and
+- [x] Give the editor an `ImageLoader` that resolves `/media/...` through `MediaUrlResolver` and
       Coil, show the picture inline, and keep the `{.sn-size-*}` size annotation on write.
-- [ ] Drop `MarkdownElementTypes.IMAGE` from `MarkdownRich.UNSUPPORTED` and cover pictures in
+- [x] Drop `MarkdownElementTypes.IMAGE` from `MarkdownRich.UNSUPPORTED` and cover pictures in
       `MarkdownRichTest`.
 
-Status: **done** except the T134 and T135 items (own tasks), 2026-11-09. Impersonate opens the web app at `/app/admin/users?impersonate=<id>` (the native session never switches account). The transfer switch already existed; the explanation text under it was added.
+Status: **done** (device test pending), 2026-11-09. Pictures are atomic image spans (`EditorImageLoader`); the original `![alt](url){.sn-size-*}` text is kept verbatim. Linked pictures (`[![a](b)](c)`) and `<img>` HTML stay in Raw.
 
 ## SNA-105: Yarn links move into their own "Yarn source" card
 

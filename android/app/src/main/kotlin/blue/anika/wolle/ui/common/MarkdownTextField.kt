@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.model.HeadingStyle
+import com.mohamedrejeb.richeditor.model.LocalImageLoader
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 
@@ -74,9 +75,9 @@ import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
  *
  * Nothing is mangled: before the visual editor opens a text it converts it to rich text and back
  * and compares the result (see [MarkdownRich.canEditVisually]); a text the editor cannot carry
- * losslessly (tables, quotes, pictures, ...) stays in Raw with a hint. Writing escapes literal
- * Markdown characters, so no edit is ever refused. The field emits Markdown only when the user
- * edits, so opening a field never makes a form dirty.
+ * losslessly (tables, quotes, code, ...) stays in Raw with a hint. Writing escapes literal Markdown
+ * characters, so no edit is ever refused. The field emits Markdown only when the user edits, so
+ * opening a field never makes a form dirty.
  */
 @Composable
 internal fun MarkdownTextField(
@@ -448,15 +449,20 @@ private fun VisualEditor(
         ) {
             FieldLabel(label, labelIcon)
         }
-        BasicRichTextEditor(
-            state = state,
-            modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink),
-            cursorBrush = SolidColor(colors.cursorColor.orElse(ink)),
-            minLines = minLines,
-            keyboardOptions = keyboardOptions,
-            interactionSource = interaction,
-        )
+        // Pictures load through the app's authenticated Coil, like the reader's Markdown images.
+        val resolveUrl = LocalOwnerContext.current.resolveUrl
+        val imageLoader = remember(resolveUrl) { EditorImageLoader(resolveUrl) }
+        CompositionLocalProvider(LocalImageLoader provides imageLoader) {
+            BasicRichTextEditor(
+                state = state,
+                modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink),
+                cursorBrush = SolidColor(colors.cursorColor.orElse(ink)),
+                minLines = minLines,
+                keyboardOptions = keyboardOptions,
+                interactionSource = interaction,
+            )
+        }
     }
 }
 

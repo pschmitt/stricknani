@@ -2,6 +2,7 @@
 
 package blue.anika.wolle.ui.common
 
+import androidx.compose.ui.unit.TextUnit
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.document.RichTextBlock
 import com.mohamedrejeb.richeditor.document.RichTextBlockType
@@ -49,15 +50,34 @@ internal object MarkdownRich {
             MarkdownElementTypes.SETEXT_1,
             MarkdownElementTypes.SETEXT_2,
             MarkdownTokenTypes.HORIZONTAL_RULE,
-            // Pictures are not shown inline yet (SNA-108): keep them in Raw.
-            MarkdownElementTypes.IMAGE,
         )
+
+    /** Parents inside which a picture cannot be an atomic unit of the editor (a linked picture). */
+    private val LINKS: Set<IElementType> =
+        setOf(
+            MarkdownElementTypes.INLINE_LINK,
+            MarkdownElementTypes.FULL_REFERENCE_LINK,
+            MarkdownElementTypes.SHORT_REFERENCE_LINK,
+            MarkdownElementTypes.AUTOLINK,
+        )
+
+    /** More pictures than placeholder characters: the text stays in Raw. */
+    private const val MAX_IMAGES = 0x800
 
     private fun parse(source: String): ASTNode =
         MarkdownParser(flavour).buildMarkdownTreeFromString(source)
 
-    private fun hasUnsupported(node: ASTNode): Boolean =
-        node.type in UNSUPPORTED || node.children.any(::hasUnsupported)
+    private fun hasUnsupported(node: ASTNode, inLink: Boolean = false): Boolean =
+        if (node.type == MarkdownElementTypes.IMAGE) {
+            // Inline pictures only; what is inside the brackets is the alt text, not content.
+            inLink || node.children.none { it.type == MarkdownElementTypes.INLINE_LINK }
+        } else {
+            node.type in UNSUPPORTED ||
+                node.children.any { hasUnsupported(it, inLink || node.type in LINKS) }
+        }
+
+    private fun countImages(node: ASTNode): Int =
+        (if (node.type == MarkdownElementTypes.IMAGE) 1 else 0) + node.children.sumOf(::countImages)
 
     /** What the server and the reader render for [markdown], whitespace-insensitive. */
     internal fun renderedHtml(markdown: String, keepLineBreaks: Boolean): String {
@@ -138,33 +158,109 @@ internal object MarkdownRich {
         return out.toString()
     }
 
-    private fun prepare(markdown: String): String {
-        val source = markdown.replace("\r\n", "\n")
-        val escaped = escapeStrayDelimiters(source)
-        return codeSpanOrEscape.replace(escaped) { match ->
-            // The library drops a bare `=` (a setext token) from text, so it is carried too.
-            val literal = match.groups[2] ?: match.groups[3]
-            if (literal == null) match.value else placeholder(literal.value[0]).toString()
+    // --- Pictures ----------------------------------------------------------------------------
+
+    /** One private-use character per picture while the library parses; see [extractImages]. */
+    private const val IMAGE_BASE = 0xF000
+
+    /** What the editor holds in the text for a picture (the object replacement character). */
+    private const val IMAGE_CHAR = '\uFFFC'
+
+    private fun isImagePlaceholder(c: Char) = c.code in IMAGE_BASE until IMAGE_BASE + MAX_IMAGES
+
+    private val imageAttributes = Regex("^\\{[^}\\r\\n]*\\}")
+
+    /** The Markdown with every picture replaced by one placeholder character, and the pictures. */
+    internal class Extracted(val source: String, val images: List<EditorImage>)
+
+    /**
+     * Pictures are atomic in the editor and written back exactly as they were read (including the
+     * web's `{.sn-size-*}` attribute), so the library never sees them: each one becomes a single
+     * placeholder character that [restoreLiterals] turns into an image span.
+     */
+    internal fun extractImages(source: String): Extracted {
+        val ranges = mutableListOf<IntRange>()
+        val alts = mutableListOf<String>()
+
+        fun walk(node: ASTNode, inLink: Boolean) {
+            if (node.type == MarkdownElementTypes.IMAGE && !inLink) {
+                var end = node.endOffset
+                imageAttributes.find(source.substring(end))?.let { end += it.value.length }
+                ranges.add(node.startOffset until end)
+                val label =
+                    node.children
+                        .firstOrNull { it.type == MarkdownElementTypes.INLINE_LINK }
+                        ?.children
+                        ?.firstOrNull { it.type == MarkdownElementTypes.LINK_TEXT }
+                alts.add(
+                    label?.let { source.substring(it.startOffset + 1, it.endOffset - 1) }.orEmpty()
+                )
+                return
+            }
+            node.children.forEach { walk(it, inLink || node.type in LINKS) }
         }
+        walk(parse(source), false)
+        if (ranges.isEmpty() || ranges.size > MAX_IMAGES) return Extracted(source, emptyList())
+        val out = StringBuilder()
+        val images = mutableListOf<EditorImage>()
+        var at = 0
+        for ((i, range) in ranges.withIndex()) {
+            if (range.first < at) continue
+            out.append(source, at, range.first)
+            out.append((IMAGE_BASE + images.size).toChar())
+            images.add(EditorImage(source.substring(range), EditorImage.unescapeAlt(alts[i])))
+            at = range.last + 1
+        }
+        out.append(source, at, source.length)
+        return Extracted(out.toString(), images)
     }
 
-    private fun restoreLiterals(state: RichTextState) {
+    private fun prepare(markdown: String): Extracted {
+        val extracted = extractImages(markdown.replace("\r\n", "\n"))
+        val escaped = escapeStrayDelimiters(extracted.source)
+        val source =
+            codeSpanOrEscape.replace(escaped) { match ->
+                // The library drops a bare `=` (a setext token) from text, so it is carried too.
+                val literal = match.groups[2] ?: match.groups[3]
+                if (literal == null) match.value else placeholder(literal.value[0]).toString()
+            }
+        return Extracted(source, extracted.images)
+    }
+
+    private fun restoreLiterals(state: RichTextState, images: List<EditorImage>) {
         val document = state.toRichTextDocument()
         val changed =
             document.blocks.any { block ->
-                block.text.any(::isPlaceholder) ||
+                block.text.any { isPlaceholder(it) || isImagePlaceholder(it) } ||
                     block.spans.any { it is RichTextSpanMark.Link && it.url.any(::isPlaceholder) }
             }
         if (!changed) return
         val blocks =
             document.blocks.map { block ->
+                val pictures =
+                    block.text.indices
+                        .filter { isImagePlaceholder(block.text[it]) }
+                        .mapNotNull {
+                            images.getOrNull(block.text[it].code - IMAGE_BASE)?.let { image ->
+                                RichTextSpanMark.Image(
+                                    it..it,
+                                    image.markdown,
+                                    TextUnit.Unspecified,
+                                    TextUnit.Unspecified,
+                                    image.alt,
+                                )
+                            }
+                        }
                 block.copy(
-                    text = restore(block.text),
+                    text =
+                        restore(block.text)
+                            .map { if (isImagePlaceholder(it)) IMAGE_CHAR else it }
+                            .joinToString(""),
                     spans =
                         block.spans.map { mark ->
                             if (mark is RichTextSpanMark.Link) mark.copy(url = restore(mark.url))
                             else mark
-                        },
+                        } + pictures,
                 )
             }
         state.setRichTextDocument(RichTextDocument(blocks))
@@ -172,8 +268,9 @@ internal object MarkdownRich {
 
     /** Replace the content of [state] with [markdown]. */
     fun load(state: RichTextState, markdown: String) {
-        state.setMarkdown(prepare(markdown))
-        restoreLiterals(state)
+        val prepared = prepare(markdown)
+        state.setMarkdown(prepared.source)
+        restoreLiterals(state, prepared.images)
     }
 
     /** A rich text state holding [markdown]. */
@@ -195,7 +292,8 @@ internal object MarkdownRich {
     fun roundTrip(markdown: String, keepLineBreaks: Boolean): String? {
         if (markdown.isBlank()) return ""
         return try {
-            if (hasUnsupported(parse(markdown))) return null
+            val tree = parse(markdown)
+            if (hasUnsupported(tree) || countImages(tree) > MAX_IMAGES) return null
             val again = toMarkdown(toRich(markdown), keepLineBreaks)
             if (again.isBlank() || hasUnsupported(parse(again))) return null
             again.takeIf {
@@ -296,6 +394,7 @@ internal object MarkdownWriter {
         val strike = BooleanArray(text.length)
         val code = BooleanArray(text.length)
         val links = arrayOfNulls<String>(text.length)
+        val images = arrayOfNulls<String>(text.length)
         fun fill(flags: BooleanArray, range: IntRange) {
             for (i in range) if (i in text.indices) flags[i] = true
         }
@@ -307,7 +406,10 @@ internal object MarkdownWriter {
                 is RichTextSpanMark.CodeSpan -> fill(code, mark.range)
                 is RichTextSpanMark.Link ->
                     for (i in mark.range) if (i in text.indices) links[i] = mark.url
-                is RichTextSpanMark.Image -> Unit
+                is RichTextSpanMark.Image ->
+                    for (i in mark.range) if (i in text.indices) {
+                        images[i] = EditorImage.markdownOf(mark.url, mark.description)
+                    }
                 else -> Unit
             }
         }
@@ -345,12 +447,18 @@ internal object MarkdownWriter {
                     italic[j] == italic[i] &&
                     strike[j] == strike[i] &&
                     code[j] == code[i] &&
-                    links[j] == links[i]
+                    links[j] == links[i] &&
+                    images[i] == null &&
+                    images[j] == null
             ) {
                 j++
             }
             val run = text.substring(i, j)
-            out.append(if (code[i]) run else escape(run, atLineStart = out.isEmpty()))
+            val picture = images[i]
+            out.append(
+                if (picture != null) picture
+                else if (code[i]) run else escape(run, atLineStart = out.isEmpty())
+            )
             i = j
         }
         for (k in open.lastIndex downTo 0) out.append(close(open[k]))
