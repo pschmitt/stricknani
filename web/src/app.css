@@ -598,6 +598,33 @@ button:disabled {
   animation: turn 1400ms linear infinite;
 }
 
+/* Drag files from the desktop onto a target that has a file picker (components/file-drop.ts). */
+[data-file-drop] {
+  position: relative;
+}
+
+[data-file-drop="active"] {
+  outline: 2px dashed var(--accent-strong);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+[data-file-drop="active"]::after {
+  content: attr(data-file-drop-label);
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--accent-wash) 92%, transparent);
+  color: var(--ink);
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+}
+
 @keyframes turn {
   to {
     transform: rotate(1turn);

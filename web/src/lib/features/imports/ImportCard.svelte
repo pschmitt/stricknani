@@ -2,6 +2,7 @@
   import { onDestroy, onMount, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
+  import { fileDrop } from "#lib/components/file-drop.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import ImportProgress from "./ImportProgress.svelte";
@@ -352,6 +353,8 @@
     }
     selectedFile = input.files?.[0] ?? null;
   }
+
+  const fileAccept = ".html,.htm,.txt,.md,.markdown,.pdf,image/*";
 </script>
 
 {#if allowPreview}
@@ -513,7 +516,19 @@
           ></label
         >
       {:else}
-        <label class="file-picker"
+        <label
+          class="file-picker"
+          use:fileDrop={{
+            enabled: !locked && allowPreview,
+            accept: fileAccept,
+            label: t("Drop to import this file", locale),
+            onFiles: (files) => {
+              message = "";
+              selectedFile = files[0];
+            },
+            onRejected: () =>
+              (message = t("This file type is not supported.", locale)),
+          }}
           ><span class="file-icon" aria-hidden="true">↑</span><strong
             >{selectedFile?.name ?? t("Choose a file", locale)}</strong
           ><span
@@ -524,7 +539,7 @@
           ><input
             type="file"
             disabled={locked}
-            accept=".html,.htm,.txt,.md,.markdown,.pdf,image/*"
+            accept={fileAccept}
             onchange={fileChanged}
           /></label
         >

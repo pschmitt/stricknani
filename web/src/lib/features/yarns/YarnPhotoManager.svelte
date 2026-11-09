@@ -17,6 +17,7 @@
     putOrder,
     yarnPhotoOrderPath,
   } from "../media/media-reorder";
+  import { fileDrop } from "#lib/components/file-drop.ts";
   import { deleteYarnPhoto, uploadYarnPhoto, type YarnPhoto } from "./yarn-api";
 
   let {
@@ -130,6 +131,12 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
+    await uploadFile(file);
+  }
+
+  /** Shared by the pickers and by files dropped on the photo section. */
+  async function uploadFile(file: File) {
+    if (!mediaUploadAvailable) return;
     if (!canEdit) {
       errorMessage = t("Save your yarn changes before editing photos.", locale);
       return;
@@ -375,7 +382,20 @@
   }
 </script>
 
-<section class="photo-manager" aria-labelledby="photo-manager-title">
+<section
+  class="photo-manager"
+  aria-labelledby="photo-manager-title"
+  use:fileDrop={{
+    enabled: mediaUploadAvailable && !uploading,
+    accept: "image/*",
+    label: t("Drop to add photos", locale),
+    onFiles: (files) => void uploadFile(files[0]),
+    onRejected: () => {
+      uploadMessage = "";
+      errorMessage = t("Choose a supported image file.", locale);
+    },
+  }}
+>
   <header class="photo-heading">
     <div>
       <h2 id="photo-manager-title">{t("Photos", locale)}</h2>

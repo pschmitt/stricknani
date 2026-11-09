@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import { resolve } from "$app/paths";
   import Button from "#lib/components/Button.svelte";
+  import { fileDrop } from "#lib/components/file-drop.ts";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import { apiRequest, ApiError } from "#lib/api.ts";
@@ -140,7 +141,12 @@
   function chooseFile(event: Event & { currentTarget: HTMLInputElement }) {
     const file = event.currentTarget.files?.[0] ?? null;
     event.currentTarget.value = "";
-    if (!file || busy) return;
+    if (file) startRestore(file);
+  }
+
+  /** Shared by the picker and by a file dropped on the restore card. */
+  function startRestore(file: File) {
+    if (busy) return;
     pending = file;
     failure = null;
     result = null;
@@ -341,7 +347,20 @@
     {/if}
   </section>
 
-  <section class="card" aria-labelledby="restore-title">
+  <section
+    class="card"
+    aria-labelledby="restore-title"
+    use:fileDrop={{
+      enabled: !busy,
+      accept: restoreAccept,
+      label: t("Drop to restore from this file", locale),
+      onFiles: (files) => startRestore(files[0]),
+      onRejected: () => {
+        result = null;
+        failure = "invalid_archive";
+      },
+    }}
+  >
     <header class="card__header">
       <span class="card__icon" aria-hidden="true"
         ><NavIcon name="upload" /></span

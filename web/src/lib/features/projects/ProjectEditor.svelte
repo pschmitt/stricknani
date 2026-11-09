@@ -8,6 +8,7 @@
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
+  import { fileDrop } from "#lib/components/file-drop.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
@@ -1108,6 +1109,12 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
+    await addImage(file);
+  }
+
+  /** Shared by the pickers and by files dropped on the photo area. */
+  async function addImage(file: File): Promise<void> {
+    if (!mediaUploadAvailable) return;
     const stepId = mediaStepId ? Number(mediaStepId) : undefined;
     await performMediaMutation(
       (id, currentSession, signal) =>
@@ -1134,6 +1141,12 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
+    await addAttachment(file);
+  }
+
+  /** Shared by the picker and by files dropped on the attachments area. */
+  async function addAttachment(file: File): Promise<void> {
+    if (!mediaUploadAvailable) return;
     await performMediaMutation(
       (id, currentSession, signal) =>
         uploadProjectAttachment(id, file, currentSession, signal),
@@ -1523,157 +1536,183 @@
               >
                 {mediaError}
               </p>{/if}
-            {#if project.images.length}
-              {#if titleImages.length}
-                <h3>{t("Project cover", locale)}</h3>
-                <ReorderableMedia
-                  items={titleImages}
-                  {locale}
-                  label={t("Project cover", locale)}
-                  fallbackAlt={t("Project photo", locale)}
-                  showCover
-                  disabled={!mediaAvailable}
-                  onMove={(from, to) => reorderImages(null, from, to)}
-                  onDelete={(image) => void removeImage(image.id)}
-                  deleteDisabled={!mediaDeleteAvailable}
-                  onEdit={openPhotoEditor}
-                  editDisabled={!mediaUploadAvailable}
-                />
+            <div
+              class="media-drop"
+              use:fileDrop={{
+                enabled: mediaUploadAvailable,
+                accept: "image/*",
+                label: t("Drop to add photos", locale),
+                onFiles: (files) => void addImage(files[0]),
+                onRejected: () =>
+                  (mediaError = t("Choose a supported image file.", locale)),
+              }}
+            >
+              {#if project.images.length}
+                {#if titleImages.length}
+                  <h3>{t("Project cover", locale)}</h3>
+                  <ReorderableMedia
+                    items={titleImages}
+                    {locale}
+                    label={t("Project cover", locale)}
+                    fallbackAlt={t("Project photo", locale)}
+                    showCover
+                    disabled={!mediaAvailable}
+                    onMove={(from, to) => reorderImages(null, from, to)}
+                    onDelete={(image) => void removeImage(image.id)}
+                    deleteDisabled={!mediaDeleteAvailable}
+                    onEdit={openPhotoEditor}
+                    editDisabled={!mediaUploadAvailable}
+                  />
+                {/if}
+                {#each stepImageGroups as group (group.step.id)}
+                  {@const stepLabel = `${t("Step", locale)} ${group.step.step_number}: ${group.step.title}`}
+                  <h3>{stepLabel}</h3>
+                  <ReorderableMedia
+                    items={group.images}
+                    {locale}
+                    label={stepLabel}
+                    fallbackAlt={t("Step photo", locale)}
+                    disabled={!mediaAvailable}
+                    onMove={(from, to) =>
+                      reorderImages(group.step.id, from, to)}
+                    onDelete={(image) => void removeImage(image.id)}
+                    deleteDisabled={!mediaDeleteAvailable}
+                    onEdit={openPhotoEditor}
+                    editDisabled={!mediaUploadAvailable}
+                  />
+                {/each}
+                {#if otherImages.length}
+                  <h3>{t("Project photo", locale)}</h3>
+                  <ReorderableMedia
+                    items={otherImages}
+                    {locale}
+                    label={t("Project photo", locale)}
+                    fallbackAlt={t("Project photo", locale)}
+                    reorderable={false}
+                    onMove={async () => false}
+                    onDelete={(image) => void removeImage(image.id)}
+                    deleteDisabled={!mediaDeleteAvailable}
+                    onEdit={openPhotoEditor}
+                    editDisabled={!mediaUploadAvailable}
+                  >
+                    {#snippet badge(image)}
+                      {#if image.is_stitch_sample}{t(
+                          "Stitch sample",
+                          locale,
+                        )}{/if}
+                    {/snippet}
+                  </ReorderableMedia>
+                {/if}
+              {:else}
+                <p class="field-hint">{t("No project photos yet.", locale)}</p>
               {/if}
-              {#each stepImageGroups as group (group.step.id)}
-                {@const stepLabel = `${t("Step", locale)} ${group.step.step_number}: ${group.step.title}`}
-                <h3>{stepLabel}</h3>
-                <ReorderableMedia
-                  items={group.images}
-                  {locale}
-                  label={stepLabel}
-                  fallbackAlt={t("Step photo", locale)}
-                  disabled={!mediaAvailable}
-                  onMove={(from, to) => reorderImages(group.step.id, from, to)}
-                  onDelete={(image) => void removeImage(image.id)}
-                  deleteDisabled={!mediaDeleteAvailable}
-                  onEdit={openPhotoEditor}
-                  editDisabled={!mediaUploadAvailable}
-                />
-              {/each}
-              {#if otherImages.length}
-                <h3>{t("Project photo", locale)}</h3>
-                <ReorderableMedia
-                  items={otherImages}
-                  {locale}
-                  label={t("Project photo", locale)}
-                  fallbackAlt={t("Project photo", locale)}
-                  reorderable={false}
-                  onMove={async () => false}
-                  onDelete={(image) => void removeImage(image.id)}
-                  deleteDisabled={!mediaDeleteAvailable}
-                  onEdit={openPhotoEditor}
-                  editDisabled={!mediaUploadAvailable}
-                >
-                  {#snippet badge(image)}
-                    {#if image.is_stitch_sample}{t(
-                        "Stitch sample",
-                        locale,
-                      )}{/if}
-                  {/snippet}
-                </ReorderableMedia>
-              {/if}
-            {:else}
-              <p class="field-hint">{t("No project photos yet.", locale)}</p>
-            {/if}
-            <div class="media-upload-grid">
-              <div class="field">
-                <label for="project-image-step"
-                  >{t("Attach photo to", locale)}</label
-                >
-                <select
-                  id="project-image-step"
-                  bind:value={mediaStepId}
-                  disabled={!mediaUploadAvailable}
-                >
-                  <option value="">{t("Project cover", locale)}</option>
-                  {#each project.steps as step (step.id)}
-                    <option value={String(step.id)}
-                      >{t("Step", locale)}
-                      {step.step_number}: {step.title}</option
-                    >
+              <div class="media-upload-grid">
+                <div class="field">
+                  <label for="project-image-step"
+                    >{t("Attach photo to", locale)}</label
+                  >
+                  <select
+                    id="project-image-step"
+                    bind:value={mediaStepId}
+                    disabled={!mediaUploadAvailable}
+                  >
+                    <option value="">{t("Project cover", locale)}</option>
+                    {#each project.steps as step (step.id)}
+                      <option value={String(step.id)}
+                        >{t("Step", locale)}
+                        {step.step_number}: {step.title}</option
+                      >
+                    {/each}
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="project-image-alt"
+                    >{t("Photo description", locale)}</label
+                  >
+                  <input
+                    id="project-image-alt"
+                    bind:value={mediaAltText}
+                    disabled={!mediaUploadAvailable}
+                  />
+                </div>
+                <div class="field">
+                  <label for="project-image-file"
+                    ><ActionLabel icon="upload" size="sm"
+                      >{t("Add project photo", locale)}</ActionLabel
+                    ></label
+                  >
+                  <input
+                    id="project-image-file"
+                    type="file"
+                    class="shared-file-input"
+                    accept="image/*"
+                    disabled={!mediaUploadAvailable}
+                    onchange={uploadImage}
+                  />
+                  <TakePhotoInput
+                    {locale}
+                    size="sm"
+                    disabled={!mediaUploadAvailable}
+                    onchange={uploadImage}
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              class="media-drop"
+              use:fileDrop={{
+                enabled: mediaUploadAvailable,
+                label: t("Drop to attach a file", locale),
+                onFiles: (files) => void addAttachment(files[0]),
+              }}
+            >
+              {#if project.attachments.length}
+                <h3>{t("Attachments", locale)}</h3>
+                <ul class="attachment-list">
+                  {#each project.attachments as attachment (attachment.id)}
+                    <li>
+                      <a href={attachment.url}
+                        >{attachment.original_filename ??
+                          attachment.filename}</a
+                      >
+                      <span
+                        >{(attachment.size_bytes / 1024).toLocaleString(
+                          locale,
+                          {
+                            maximumFractionDigits: 1,
+                          },
+                        )} KB</span
+                      >
+                      <Button
+                        type="button"
+                        class="remove-button"
+                        variant="ghost"
+                        icon="action-delete"
+                        disabled={!mediaDeleteAvailable}
+                        onclick={() => void removeAttachment(attachment.id)}
+                      >
+                        {t("Remove attachment", locale)}
+                      </Button>
+                    </li>
                   {/each}
-                </select>
-              </div>
+                </ul>
+              {:else}
+                <p class="field-hint">{t("No attachments yet.", locale)}</p>
+              {/if}
               <div class="field">
-                <label for="project-image-alt"
-                  >{t("Photo description", locale)}</label
-                >
-                <input
-                  id="project-image-alt"
-                  bind:value={mediaAltText}
-                  disabled={!mediaUploadAvailable}
-                />
-              </div>
-              <div class="field">
-                <label for="project-image-file"
+                <label for="project-attachment-file"
                   ><ActionLabel icon="upload" size="sm"
-                    >{t("Add project photo", locale)}</ActionLabel
+                    >{t("Add attachment", locale)}</ActionLabel
                   ></label
                 >
                 <input
-                  id="project-image-file"
+                  id="project-attachment-file"
                   type="file"
                   class="shared-file-input"
-                  accept="image/*"
                   disabled={!mediaUploadAvailable}
-                  onchange={uploadImage}
-                />
-                <TakePhotoInput
-                  {locale}
-                  size="sm"
-                  disabled={!mediaUploadAvailable}
-                  onchange={uploadImage}
+                  onchange={uploadAttachment}
                 />
               </div>
-            </div>
-            {#if project.attachments.length}
-              <h3>{t("Attachments", locale)}</h3>
-              <ul class="attachment-list">
-                {#each project.attachments as attachment (attachment.id)}
-                  <li>
-                    <a href={attachment.url}
-                      >{attachment.original_filename ?? attachment.filename}</a
-                    >
-                    <span
-                      >{(attachment.size_bytes / 1024).toLocaleString(locale, {
-                        maximumFractionDigits: 1,
-                      })} KB</span
-                    >
-                    <Button
-                      type="button"
-                      class="remove-button"
-                      variant="ghost"
-                      icon="action-delete"
-                      disabled={!mediaDeleteAvailable}
-                      onclick={() => void removeAttachment(attachment.id)}
-                    >
-                      {t("Remove attachment", locale)}
-                    </Button>
-                  </li>
-                {/each}
-              </ul>
-            {:else}
-              <p class="field-hint">{t("No attachments yet.", locale)}</p>
-            {/if}
-            <div class="field">
-              <label for="project-attachment-file"
-                ><ActionLabel icon="upload" size="sm"
-                  >{t("Add attachment", locale)}</ActionLabel
-                ></label
-              >
-              <input
-                id="project-attachment-file"
-                type="file"
-                class="shared-file-input"
-                disabled={!mediaUploadAvailable}
-                onchange={uploadAttachment}
-              />
             </div>
           </section>
         {/if}

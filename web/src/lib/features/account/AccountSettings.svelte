@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fileDrop } from "#lib/components/file-drop.ts";
   import SharedButton from "#lib/components/Button.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -885,7 +886,20 @@
         </SharedButton>
       </div>
     {:else if profile}
-      <div class="profile">
+      <div
+        class="profile"
+        use:fileDrop={{
+          enabled: operation === null && avatarUploadEnabled,
+          accept: "image/*",
+          label: t("Drop to use as profile picture", locale),
+          onFiles: (files) => {
+            avatarFile = files[0];
+            avatarError = "";
+          },
+          onRejected: () =>
+            (avatarError = t("Choose a supported image file.", locale)),
+        }}
+      >
         <div class="avatar">
           <div class="avatar__portrait" aria-hidden="true">
             {#if profile.avatar_url && profile.avatar_url !== brokenAvatarUrl}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack, type Snippet } from "svelte";
   import { installAutogrow } from "#lib/autogrow.ts";
+  import { installFileDropGuard } from "#lib/components/file-drop.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -115,6 +116,7 @@
     void refreshSession();
     const stopTheme = initTheme();
     const stopAutogrow = installAutogrow();
+    const stopFileDropGuard = installFileDropGuard();
     // A clicked notification navigates this tab in-app (keeps dirty-form guards).
     const stopNotificationOpens = listenForNotificationOpens(
       (path) => void goto(path),
@@ -136,6 +138,7 @@
     return () => {
       stopTheme();
       stopAutogrow();
+      stopFileDropGuard();
       stopNotificationOpens();
       window.removeEventListener("scroll", scheduleGlass);
       if (frame) cancelAnimationFrame(frame);

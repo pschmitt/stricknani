@@ -33,6 +33,40 @@ type ObservedMutation = [method: string, path: string];
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+/** Fires dragenter and drop on `selector` with a DataTransfer built in the page, like a desktop drop. */
+async function dropFilesOn(
+  page: Page,
+  selector: string,
+  files: { name: string; type: string; base64: string }[],
+  options: { drop: boolean },
+): Promise<void> {
+  await page.evaluate(
+    ({ selector, files, drop }) => {
+      const target = document.querySelector(selector);
+      if (!target) throw new Error("drop target is missing");
+      const transfer = new DataTransfer();
+      for (const file of files) {
+        const bytes = Uint8Array.from(atob(file.base64), (c) =>
+          c.charCodeAt(0),
+        );
+        transfer.items.add(new File([bytes], file.name, { type: file.type }));
+      }
+      const fire = (type: string) =>
+        target.dispatchEvent(
+          new DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: transfer,
+          }),
+        );
+      fire("dragenter");
+      fire("dragover");
+      if (drop) fire("drop");
+    },
+    { selector, files, drop: options.drop },
+  );
+}
+
 function removePrefix(value: string, prefix: string): string {
   return value.startsWith(prefix) ? value.slice(prefix.length) : value;
 }
@@ -641,6 +675,87 @@ export async function runYarnJourney(
           p.includes("/photos") && [200, 201, 204].includes(status),
       ),
       "yarn photo upload or removal did not reach API v2",
+    );
+
+    markStage("dropping files on the yarn photo section");
+    const dropPhotoUrls = await page
+      .locator(".reorder-item img")
+      .evaluateAll((images) =>
+        images.map((image) => (image as HTMLImageElement).currentSrc),
+      );
+    const photoBase64 = fs.readFileSync(demoPhoto).toString("base64");
+    await dropFilesOn(
+      page,
+      ".photo-manager",
+      [{ name: "demo.jpg", type: "image/jpeg", base64: photoBase64 }],
+      { drop: false },
+    );
+    await expect(page.locator(".photo-manager")).toHaveAttribute(
+      "data-file-drop",
+      "active",
+    );
+    await expect(page.locator(".photo-manager")).toHaveAttribute(
+      "data-file-drop-label",
+      "Drop to add photos",
+    );
+    await dropFilesOn(
+      page,
+      ".photo-manager",
+      [{ name: "notes.pdf", type: "application/pdf", base64: "JVBERg==" }],
+      { drop: true },
+    );
+    await page
+      .getByRole("alert")
+      .filter({ hasText: "Choose a supported image file." })
+      .waitFor({ state: "visible" });
+    check(
+      (await page.locator(".reorder-item").count()) === dropPhotoUrls.length,
+      "a dropped non-image file changed the yarn gallery",
+    );
+    await dropFilesOn(
+      page,
+      ".photo-manager",
+      [{ name: "demo.jpg", type: "image/jpeg", base64: photoBase64 }],
+      { drop: true },
+    );
+    await page
+      .getByRole("status")
+      .filter({ hasText: "Photo uploaded." })
+      .waitFor({ state: "visible", timeout: 15_000 });
+    await page.waitForFunction(
+      (previous) =>
+        document.querySelectorAll(".reorder-item").length > previous,
+      dropPhotoUrls.length,
+    );
+    await expect(page.locator(".photo-manager")).toHaveAttribute(
+      "data-file-drop",
+      "idle",
+    );
+    const droppedIndex = await page
+      .locator(".reorder-item img")
+      .evaluateAll(
+        (images, previous) =>
+          images.findIndex(
+            (image) =>
+              !previous.includes((image as HTMLImageElement).currentSrc),
+          ),
+        dropPhotoUrls,
+      );
+    check(droppedIndex >= 0, "a dropped photo did not appear in the gallery");
+    const droppedPhoto = page.locator(".reorder-item").nth(droppedIndex);
+    await droppedPhoto.hover();
+    await droppedPhoto.getByRole("button", { name: "Remove photo" }).click();
+    const dropDialog = page.getByRole("dialog", { name: "Remove this photo?" });
+    await dropDialog.waitFor({ state: "visible" });
+    await dropDialog.getByRole("button", { name: "Remove photo" }).click();
+    await page
+      .getByRole("status")
+      .filter({ hasText: "Photo removed." })
+      .waitFor({ state: "visible", timeout: 15_000 });
+    await page.waitForFunction(
+      (previous) =>
+        document.querySelectorAll(".reorder-item").length === previous,
+      dropPhotoUrls.length,
     );
 
     markStage("checking yarn dirty-navigation guard and CAS conflict");
