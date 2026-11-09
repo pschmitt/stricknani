@@ -26,9 +26,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
@@ -85,64 +82,56 @@ internal fun MarkdownTextField(
     val tint = LocalContentColor.current
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // The mode toggle on its own row (the shared segmented control), the formatting
+        // toolbar below it with the full width: side by side they did not fit a narrow field
+        // such as the sticky note, and the toggle covered the toolbar.
+        val modeDescription = stringResource(R.string.markdown_editor_mode)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            SegmentedControl(
+                options =
+                    listOf(
+                        SegmentedOption(false, stringResource(R.string.markdown_editor_raw)),
+                        SegmentedOption(true, stringResource(R.string.markdown_editor_preview)),
+                    ),
+                selected = preview,
+                onSelect = { preview = it },
+                label = modeDescription,
+                compact = true,
+            )
+        }
+        if (!preview) {
             val formattingDescription = stringResource(R.string.markdown_editor_formatting)
             Row(
-                Modifier.weight(1f).horizontalScroll(rememberScrollState()).semantics {
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).semantics {
                     contentDescription = formattingDescription
                 },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (!preview) {
-                    ToolbarButton(Icons.Filled.FormatBold, R.string.markdown_editor_bold, tint) {
-                        apply(field, MarkdownFormat.BOLD, onValueChange) { field = it }
-                    }
-                    ToolbarButton(
-                        Icons.Filled.FormatItalic,
-                        R.string.markdown_editor_italic,
-                        tint,
-                    ) {
-                        apply(field, MarkdownFormat.ITALIC, onValueChange) { field = it }
-                    }
-                    ToolbarButton(Icons.Filled.Title, R.string.markdown_editor_heading, tint) {
-                        apply(field, MarkdownFormat.HEADING, onValueChange) { field = it }
-                    }
-                    ToolbarButton(
-                        Icons.AutoMirrored.Filled.FormatListBulleted,
-                        R.string.markdown_editor_bullet_list,
-                        tint,
-                    ) {
-                        apply(field, MarkdownFormat.BULLET_LIST, onValueChange) { field = it }
-                    }
-                    ToolbarButton(
-                        Icons.Filled.FormatListNumbered,
-                        R.string.markdown_editor_numbered_list,
-                        tint,
-                    ) {
-                        apply(field, MarkdownFormat.NUMBERED_LIST, onValueChange) { field = it }
-                    }
-                    ToolbarButton(Icons.Filled.Link, R.string.markdown_editor_link, tint) {
-                        apply(field, MarkdownFormat.LINK, onValueChange) { field = it }
-                    }
+                ToolbarButton(Icons.Filled.FormatBold, R.string.markdown_editor_bold, tint) {
+                    apply(field, MarkdownFormat.BOLD, onValueChange) { field = it }
                 }
-            }
-            val modeDescription = stringResource(R.string.markdown_editor_mode)
-            SingleChoiceSegmentedButtonRow(
-                Modifier.semantics { contentDescription = modeDescription }
-            ) {
-                SegmentedButton(
-                    selected = !preview,
-                    onClick = { preview = false },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
-                ) {
-                    Text(stringResource(R.string.markdown_editor_raw), maxLines = 1)
+                ToolbarButton(Icons.Filled.FormatItalic, R.string.markdown_editor_italic, tint) {
+                    apply(field, MarkdownFormat.ITALIC, onValueChange) { field = it }
                 }
-                SegmentedButton(
-                    selected = preview,
-                    onClick = { preview = true },
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
+                ToolbarButton(Icons.Filled.Title, R.string.markdown_editor_heading, tint) {
+                    apply(field, MarkdownFormat.HEADING, onValueChange) { field = it }
+                }
+                ToolbarButton(
+                    Icons.AutoMirrored.Filled.FormatListBulleted,
+                    R.string.markdown_editor_bullet_list,
+                    tint,
                 ) {
-                    Text(stringResource(R.string.markdown_editor_preview), maxLines = 1)
+                    apply(field, MarkdownFormat.BULLET_LIST, onValueChange) { field = it }
+                }
+                ToolbarButton(
+                    Icons.Filled.FormatListNumbered,
+                    R.string.markdown_editor_numbered_list,
+                    tint,
+                ) {
+                    apply(field, MarkdownFormat.NUMBERED_LIST, onValueChange) { field = it }
+                }
+                ToolbarButton(Icons.Filled.Link, R.string.markdown_editor_link, tint) {
+                    apply(field, MarkdownFormat.LINK, onValueChange) { field = it }
                 }
             }
         }
