@@ -281,6 +281,7 @@
     <string name="import_source_link">Über einen Link</string>
     <string name="import_source_file">Datei hochladen</string>
     <string name="import_source_text">Text einfügen</string>
+    <string name="import_source_label">Importquelle</string>
     <string name="import_text_label">Anleitungstext oder Strickanweisungen</string>
     <string name="import_text_placeholder">Füge eine Strickanleitung, Notizen oder ein Rezept ein…</string>
     <string name="import_size_limit">Text und Dateien sind auf 5 MiB begrenzt.</string>

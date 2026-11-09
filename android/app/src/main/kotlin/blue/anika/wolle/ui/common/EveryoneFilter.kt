@@ -1,16 +1,10 @@
 package blue.anika.wolle.ui.common
 
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,24 +69,23 @@ fun EveryoneFilterChips(
     val label = stringResource(R.string.owner_filter_label)
     // A segmented control on its own line, like the website's ScopeFilter: it chooses whose
     // items the list shows and must not read as one more category chip.
-    SingleChoiceSegmentedButtonRow(
-        modifier = modifier.semantics { contentDescription = label }.testTag("everyone-filter")
-    ) {
-        SegmentedButton(
-            selected = !state.enabled,
-            onClick = { onSelect(false) },
-            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            modifier = Modifier.testTag("everyone-filter-mine"),
-        ) {
-            Text(stringResource(R.string.owner_filter_mine))
-        }
-        SegmentedButton(
-            selected = state.enabled,
-            onClick = { onSelect(true) },
-            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            modifier = Modifier.testTag("everyone-filter-everyone"),
-        ) {
-            Text(stringResource(R.string.owner_filter_everyone))
-        }
-    }
+    SegmentedControl(
+        options =
+            listOf(
+                SegmentedOption(
+                    false,
+                    stringResource(R.string.owner_filter_mine),
+                    testTag = "everyone-filter-mine",
+                ),
+                SegmentedOption(
+                    true,
+                    stringResource(R.string.owner_filter_everyone),
+                    testTag = "everyone-filter-everyone",
+                ),
+            ),
+        selected = state.enabled,
+        onSelect = onSelect,
+        label = label,
+        modifier = modifier.testTag("everyone-filter"),
+    )
 }

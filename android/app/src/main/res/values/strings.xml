@@ -282,6 +282,7 @@
     <string name="import_source_link">From a link</string>
     <string name="import_source_file">Upload file</string>
     <string name="import_source_text">Paste text</string>
+    <string name="import_source_label">Import source</string>
     <string name="import_text_label">Pattern text or instructions</string>
     <string name="import_text_placeholder">Paste pattern instructions, notes, or a recipe…</string>
     <string name="import_size_limit">Text and files are limited to 5 MiB.</string>

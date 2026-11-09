@@ -2,6 +2,7 @@
   import { ApiError } from "#lib/api.ts";
   import { isAccessLost } from "#lib/access.ts";
   import Button from "#lib/components/Button.svelte";
+  import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -312,17 +313,16 @@
       />
       <div class="share-add__row">
         <div class="share-add__role">
-          <label for={`${dialogId}-new-role`}>{t("Role", locale)}</label>
-          <select
-            id={`${dialogId}-new-role`}
+          <span class="share-add__role-label">{t("Role", locale)}</span>
+          <SegmentedControl
+            label={t("Role", locale)}
             value={newRole}
-            onchange={(event) =>
-              (newRole =
-                event.currentTarget.value === "editor" ? "editor" : "viewer")}
-          >
-            <option value="viewer">{t("Can view", locale)}</option>
-            <option value="editor">{t("Can edit", locale)}</option>
-          </select>
+            options={[
+              { value: "viewer", label: t("Can view", locale) },
+              { value: "editor", label: t("Can edit", locale) },
+            ]}
+            onchange={(next) => (newRole = next)}
+          />
         </div>
         <Button
           type="button"

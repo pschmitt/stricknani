@@ -464,13 +464,13 @@ export async function runBackupsJourney(
       "/app/backups did not redirect to /app/account#backups",
     );
 
-    const group = adaPage.getByRole("group", { name: "Archive type" });
-    const tarOption = group.getByRole("button", { name: ".tar.gz" });
-    const zipOption = group.getByRole("button", { name: ".zip" });
-    await expect(tarOption).toHaveAttribute("aria-pressed", "true", {
+    const group = adaPage.getByRole("radiogroup", { name: "Archive type" });
+    const tarOption = group.getByRole("radio", { name: ".tar.gz" });
+    const zipOption = group.getByRole("radio", { name: ".zip" });
+    await expect(tarOption).toHaveAttribute("aria-checked", "true", {
       timeout: WAIT,
     });
-    await expect(zipOption).toHaveAttribute("aria-pressed", "false", {
+    await expect(zipOption).toHaveAttribute("aria-checked", "false", {
       timeout: WAIT,
     });
     const downloadLink = adaPage.getByRole("link", {
@@ -559,7 +559,7 @@ export async function runBackupsJourney(
 
     mark("ada downloads zip");
     await zipOption.click();
-    await expect(zipOption).toHaveAttribute("aria-pressed", "true", {
+    await expect(zipOption).toHaveAttribute("aria-checked", "true", {
       timeout: WAIT,
     });
     await expect(downloadLink).toHaveAttribute("href", /archive=zip$/, {
@@ -586,7 +586,7 @@ export async function runBackupsJourney(
     const secret = `Sch\u00e4fchen \u{1F9F6} ${randomBytes(6).toString("base64url")}`;
     maskGithubSecret(secret);
     await tarOption.click();
-    await expect(tarOption).toHaveAttribute("aria-pressed", "true", {
+    await expect(tarOption).toHaveAttribute("aria-checked", "true", {
       timeout: WAIT,
     });
     await adaPage.getByLabel("Encrypt with a passphrase").check();

@@ -67,7 +67,7 @@ describe("ScopeFilter", () => {
     const { body } = render(ScopeFilter, { props: {} });
     expect(body).toContain("Mine");
     expect(body).toContain(">All<");
-    expect(body).toMatch(/aria-pressed="true"[^>]*>(?:(?!<button).)*All/s);
+    expect(body).toMatch(/aria-checked="true"[^>]*>(?:(?!<button).)*All/s);
   });
 
   it("is hidden from regular users", () => {

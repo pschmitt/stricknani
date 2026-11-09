@@ -168,7 +168,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: src/import_service.rs:723 web/src/lib/components/MarkdownEditor.svelte:240
+#: src/import_service.rs:723 web/src/lib/components/MarkdownEditor.svelte:241
 msgid "Link"
 msgstr ""
 
@@ -324,7 +324,7 @@ msgid ""
 "extraction."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:558
+#: web/src/lib/features/imports/ImportCard.svelte:546
 msgid "AI import is turned off on this server."
 msgstr ""
 
@@ -432,7 +432,7 @@ msgstr ""
 msgid "Add category"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:305
+#: web/src/lib/features/sharing/ShareDialog.svelte:306
 msgid "Add people"
 msgstr ""
 
@@ -688,7 +688,7 @@ msgstr ""
 msgid "Archiving is unavailable right now."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:556
+#: web/src/lib/features/imports/ImportCard.svelte:544
 msgid "Ask AI to improve extraction"
 msgstr ""
 
@@ -813,7 +813,7 @@ msgstr ""
 msgid "Before"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:215
+#: web/src/lib/components/MarkdownEditor.svelte:216
 msgid "Bold"
 msgstr ""
 
@@ -840,7 +840,7 @@ msgid ""
 "token and is subject to GitHub's privacy policy."
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:231
+#: web/src/lib/components/MarkdownEditor.svelte:232
 msgid "Bulleted list"
 msgstr ""
 
@@ -865,17 +865,17 @@ msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:196
 #: web/src/lib/features/sharing/AccessNotice.svelte:37
-#: web/src/lib/features/sharing/ShareDialog.svelte:82
-#: web/src/lib/features/sharing/ShareDialog.svelte:288
-#: web/src/lib/features/sharing/ShareDialog.svelte:324
+#: web/src/lib/features/sharing/ShareDialog.svelte:83
+#: web/src/lib/features/sharing/ShareDialog.svelte:289
+#: web/src/lib/features/sharing/ShareDialog.svelte:322
 msgid "Can edit"
 msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:196
 #: web/src/lib/features/sharing/AccessNotice.svelte:37
-#: web/src/lib/features/sharing/ShareDialog.svelte:82
-#: web/src/lib/features/sharing/ShareDialog.svelte:287
-#: web/src/lib/features/sharing/ShareDialog.svelte:323
+#: web/src/lib/features/sharing/ShareDialog.svelte:83
+#: web/src/lib/features/sharing/ShareDialog.svelte:288
+#: web/src/lib/features/sharing/ShareDialog.svelte:321
 msgid "Can view"
 msgstr ""
 
@@ -1009,11 +1009,11 @@ msgstr ""
 msgid "Choose a different password."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:215
+#: web/src/lib/features/imports/ImportCard.svelte:216
 msgid "Choose a document to preview."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:533
+#: web/src/lib/features/imports/ImportCard.svelte:521
 msgid "Choose a file"
 msgstr ""
 
@@ -1475,7 +1475,7 @@ msgid "Discard this password draft?"
 msgstr ""
 
 #: web/src/lib/components/GetAppCard.svelte:102
-#: web/src/lib/features/imports/ImportCard.svelte:585
+#: web/src/lib/features/imports/ImportCard.svelte:573
 msgid "Dismiss"
 msgstr ""
 
@@ -1536,7 +1536,7 @@ msgstr ""
 msgid "Drop to attach a file"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:524
+#: web/src/lib/features/imports/ImportCard.svelte:512
 msgid "Drop to import this file"
 msgstr ""
 
@@ -1588,7 +1588,7 @@ msgstr ""
 msgid "Edit yarn"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:279
+#: web/src/lib/components/MarkdownEditor.svelte:280
 msgid "Editor mode"
 msgstr ""
 
@@ -1636,7 +1636,7 @@ msgstr ""
 msgid "Encrypt with a passphrase"
 msgstr ""
 
-#: web/src/lib/components/LocaleSwitcher.svelte:31
+#: web/src/lib/components/LocaleSwitcher.svelte:26
 #: web/src/lib/features/media/OcrControl.svelte:190
 msgid "English"
 msgstr ""
@@ -1669,7 +1669,7 @@ msgstr ""
 msgid "Enter a temporary password."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:207
+#: web/src/lib/features/imports/ImportCard.svelte:208
 msgid "Enter a valid HTTP or HTTPS URL."
 msgstr ""
 
@@ -1889,7 +1889,7 @@ msgstr ""
 msgid "Format version 1"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:256
+#: web/src/lib/components/MarkdownEditor.svelte:257
 msgid "Formatting"
 msgstr ""
 
@@ -1897,7 +1897,7 @@ msgstr ""
 msgid "Found a bug or have an idea? Tell us on GitHub."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:431
+#: web/src/lib/features/imports/ImportCard.svelte:422
 msgid "From a link"
 msgstr ""
 
@@ -1924,7 +1924,7 @@ msgstr ""
 msgid "Gauge width"
 msgstr ""
 
-#: web/src/lib/components/LocaleSwitcher.svelte:54
+#: web/src/lib/components/LocaleSwitcher.svelte:27
 #: web/src/lib/features/media/OcrControl.svelte:189
 msgid "German"
 msgstr ""
@@ -1973,7 +1973,7 @@ msgstr ""
 msgid "Gravatar enabled."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:535
+#: web/src/lib/features/imports/ImportCard.svelte:523
 msgid "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 msgstr ""
 
@@ -1981,11 +1981,11 @@ msgstr ""
 msgid "Hands off the stash!"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:369
+#: web/src/lib/features/imports/ImportCard.svelte:370
 msgid "Have a link to the yarn? Paste it here"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:371
+#: web/src/lib/features/imports/ImportCard.svelte:372
 msgid "Have a pattern? Paste a link, upload a file or paste text"
 msgstr ""
 
@@ -1993,7 +1993,7 @@ msgstr ""
 msgid "Have you tried turning the yarn off and on again?"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:225
+#: web/src/lib/components/MarkdownEditor.svelte:226
 msgid "Heading"
 msgstr ""
 
@@ -2153,7 +2153,7 @@ msgstr ""
 msgid "Impersonation stopped"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:569
+#: web/src/lib/features/imports/ImportCard.svelte:557
 #: web/src/lib/features/imports/ImportDraftCards.svelte:78
 #: web/src/lib/features/projects/ProjectEditor.svelte:2239
 msgid "Import"
@@ -2175,7 +2175,7 @@ msgstr ""
 msgid "Import progress"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:393
+#: web/src/lib/features/imports/ImportCard.svelte:394
 msgid "Import something else"
 msgstr ""
 
@@ -2233,7 +2233,7 @@ msgid ""
 "been used up, or it was never in your stash."
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:219
+#: web/src/lib/components/MarkdownEditor.svelte:220
 msgid "Italic"
 msgstr ""
 
@@ -2302,7 +2302,7 @@ msgstr ""
 msgid "Knitting time"
 msgstr ""
 
-#: web/src/lib/components/LocaleSwitcher.svelte:25
+#: web/src/lib/components/LocaleSwitcher.svelte:35
 #: web/src/lib/features/account/AccountSettings.svelte:1049
 #: web/src/lib/features/account/AccountSettings.svelte:1055
 #: web/src/lib/palette/entries.ts:39
@@ -2390,7 +2390,7 @@ msgid "Link address"
 msgstr ""
 
 #: web/src/lib/components/ShareMenuItem.svelte:35
-#: web/src/lib/features/sharing/ShareDialog.svelte:190
+#: web/src/lib/features/sharing/ShareDialog.svelte:191
 msgid "Link copied."
 msgstr ""
 
@@ -2398,9 +2398,9 @@ msgstr ""
 msgid "Link import is off"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:203
-#: web/src/lib/features/imports/ImportCard.svelte:427
-#: web/src/lib/features/imports/ImportCard.svelte:458
+#: web/src/lib/features/imports/ImportCard.svelte:204
+#: web/src/lib/features/imports/ImportCard.svelte:426
+#: web/src/lib/features/imports/ImportCard.svelte:446
 #: web/src/routes/share/+page.svelte:58
 msgid "Link imports are turned off on this server."
 msgstr ""
@@ -2549,7 +2549,7 @@ msgstr ""
 
 #: web/src/lib/features/history/HistorySection.svelte:362
 #: web/src/lib/features/sharing/PeoplePicker.svelte:157
-#: web/src/lib/features/sharing/ShareDialog.svelte:241
+#: web/src/lib/features/sharing/ShareDialog.svelte:242
 msgid "Loading…"
 msgstr ""
 
@@ -2983,7 +2983,7 @@ msgid ""
 " settings."
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:237
+#: web/src/lib/components/MarkdownEditor.svelte:238
 msgid "Numbered list"
 msgstr ""
 
@@ -3101,7 +3101,7 @@ msgstr ""
 msgid "Opening {name}…"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:219
+#: web/src/lib/features/sharing/ShareDialog.svelte:220
 msgid ""
 "Opens for people who already have access. Pick someone below to give them"
 " access."
@@ -3143,7 +3143,7 @@ msgid "Owned by {name}"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:407
-#: web/src/lib/features/sharing/ShareDialog.svelte:257
+#: web/src/lib/features/sharing/ShareDialog.svelte:258
 msgid "Owner"
 msgstr ""
 
@@ -3206,19 +3206,19 @@ msgstr ""
 msgid "Passwords must be 1024 bytes or fewer."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:493
+#: web/src/lib/features/imports/ImportCard.svelte:481
 msgid "Paste"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:511
+#: web/src/lib/features/imports/ImportCard.svelte:499
 msgid "Paste pattern instructions, notes, or a recipe…"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:453
+#: web/src/lib/features/imports/ImportCard.svelte:437
 msgid "Paste text"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:211
+#: web/src/lib/features/imports/ImportCard.svelte:212
 msgid "Paste text to preview."
 msgstr ""
 
@@ -3244,7 +3244,7 @@ msgstr ""
 msgid "Pattern gauge (per 10cm)"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:466
+#: web/src/lib/features/imports/ImportCard.svelte:454
 msgid "Pattern page URL"
 msgstr ""
 
@@ -3260,7 +3260,7 @@ msgstr ""
 msgid "Pattern steps"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:506
+#: web/src/lib/features/imports/ImportCard.svelte:494
 msgid "Pattern text or instructions"
 msgstr ""
 
@@ -3272,11 +3272,11 @@ msgstr ""
 msgid "People could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:252
+#: web/src/lib/features/sharing/ShareDialog.svelte:253
 msgid "People with access"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:228
+#: web/src/lib/features/sharing/ShareDialog.svelte:229
 msgid "People you share this with can also see its linked yarns, read-only."
 msgstr ""
 
@@ -3560,7 +3560,7 @@ msgstr ""
 msgid "Questions about the software itself are welcome on the"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:297
+#: web/src/lib/components/MarkdownEditor.svelte:295
 msgid "Raw"
 msgstr ""
 
@@ -3777,8 +3777,8 @@ msgstr ""
 msgid "Repeat passphrase"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:221
-#: web/src/lib/features/imports/ImportCard.svelte:341
+#: web/src/lib/features/imports/ImportCard.svelte:222
+#: web/src/lib/features/imports/ImportCard.svelte:342
 msgid "Replace this import review? Your edits will be lost."
 msgstr ""
 
@@ -3907,11 +3907,12 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminUsers.svelte:674
 #: web/src/lib/features/admin/AdminUsers.svelte:691
-#: web/src/lib/features/sharing/ShareDialog.svelte:315
+#: web/src/lib/features/sharing/ShareDialog.svelte:316
+#: web/src/lib/features/sharing/ShareDialog.svelte:318
 msgid "Role"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:271
+#: web/src/lib/features/sharing/ShareDialog.svelte:272
 #, python-brace-format
 msgid "Role of {name}"
 msgstr ""
@@ -3921,7 +3922,7 @@ msgstr ""
 msgid "Role of {name} changed to {role}"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:151
+#: web/src/lib/features/sharing/ShareDialog.svelte:152
 #, python-brace-format
 msgid "Role updated for {name}."
 msgstr ""
@@ -4139,12 +4140,12 @@ msgid "Settings"
 msgstr ""
 
 #: web/src/lib/components/ShareMenuItem.svelte:54
-#: web/src/lib/features/sharing/ShareDialog.svelte:204
+#: web/src/lib/features/sharing/ShareDialog.svelte:205
 #: web/src/lib/features/sharing/ShareDialog.svelte:336
 msgid "Share"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:216
+#: web/src/lib/features/sharing/ShareDialog.svelte:217
 msgid "Share link"
 msgstr ""
 
@@ -4167,7 +4168,7 @@ msgstr ""
 msgid "Shared with {name} · {role}"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:118
+#: web/src/lib/features/sharing/ShareDialog.svelte:119
 #, python-brace-format
 msgid "Shared with {name}."
 msgstr ""
@@ -4616,11 +4617,11 @@ msgstr ""
 msgid "Temporary password"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:110
+#: web/src/lib/components/MarkdownEditor.svelte:111
 msgid "Text"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:515
+#: web/src/lib/features/imports/ImportCard.svelte:503
 msgid "Text and files are limited to 5 MiB."
 msgstr ""
 
@@ -4847,7 +4848,7 @@ msgid "The latest project could not be loaded."
 msgstr ""
 
 #: web/src/lib/components/ShareMenuItem.svelte:41
-#: web/src/lib/features/sharing/ShareDialog.svelte:192
+#: web/src/lib/features/sharing/ShareDialog.svelte:193
 msgid "The link could not be shared."
 msgstr ""
 
@@ -4902,7 +4903,7 @@ msgstr ""
 msgid "The pattern could not be opened."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:383
+#: web/src/lib/features/imports/ImportCard.svelte:384
 msgid "The pattern was read. Check the fields below."
 msgstr ""
 
@@ -5001,7 +5002,7 @@ msgstr ""
 msgid "The result appears automatically as soon as every field is filled in"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:157
+#: web/src/lib/features/sharing/ShareDialog.svelte:158
 msgid "The role could not be changed."
 msgstr ""
 
@@ -5042,11 +5043,11 @@ msgstr ""
 msgid "The session token is missing. Refresh and try again."
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:120
+#: web/src/lib/features/sharing/ShareDialog.svelte:121
 msgid "The share could not be added."
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:181
+#: web/src/lib/features/sharing/ShareDialog.svelte:182
 msgid "The share could not be removed."
 msgstr ""
 
@@ -5121,11 +5122,11 @@ msgstr ""
 msgid "The yarn list could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:382
+#: web/src/lib/features/imports/ImportCard.svelte:383
 msgid "The yarn was read. Check the fields below."
 msgstr ""
 
-#: web/src/lib/components/ThemeSwitcher.svelte:22
+#: web/src/lib/components/ThemeSwitcher.svelte:28
 #: web/src/lib/features/account/AccountSettings.svelte:1068
 msgid "Theme"
 msgstr ""
@@ -5219,7 +5220,7 @@ msgstr ""
 msgid "This file is not a Stricknani download."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:530
+#: web/src/lib/features/imports/ImportCard.svelte:518
 msgid "This file type is not supported."
 msgstr ""
 
@@ -5227,7 +5228,7 @@ msgstr ""
 msgid "This image is not available for text recognition."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:309
+#: web/src/lib/features/imports/ImportCard.svelte:310
 msgid "This import is gone. It may have been removed."
 msgstr ""
 
@@ -5349,7 +5350,7 @@ msgid ""
 "as Markdown."
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:286
+#: web/src/lib/components/MarkdownEditor.svelte:289
 msgid "This text uses formatting the visual editor cannot show."
 msgstr ""
 
@@ -5520,7 +5521,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:301
 #: web/src/lib/features/projects/ProjectReader.svelte:761
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119
-#: web/src/lib/features/sharing/ShareDialog.svelte:246
+#: web/src/lib/features/sharing/ShareDialog.svelte:247
 #: web/src/lib/features/yarns/YarnDetail.svelte:373
 #: web/src/lib/features/yarns/YarnForm.svelte:722
 #: web/src/lib/features/yarns/YarnLibrary.svelte:219
@@ -5598,7 +5599,7 @@ msgstr ""
 msgid "Updated"
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:442
+#: web/src/lib/features/imports/ImportCard.svelte:431
 msgid "Upload file"
 msgstr ""
 
@@ -5713,7 +5714,7 @@ msgstr ""
 msgid "Visible through a shared project"
 msgstr ""
 
-#: web/src/lib/components/MarkdownEditor.svelte:291
+#: web/src/lib/components/MarkdownEditor.svelte:286
 msgid "Visual"
 msgstr ""
 
@@ -5864,7 +5865,7 @@ msgstr ""
 msgid "Yarn options could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:465
+#: web/src/lib/features/imports/ImportCard.svelte:453
 msgid "Yarn page URL"
 msgstr ""
 
@@ -5947,7 +5948,7 @@ msgid ""
 " deleting your account."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:406
+#: web/src/lib/features/imports/ImportCard.svelte:407
 msgid ""
 "You can leave this page. The import waits for you under Waiting for "
 "review."
@@ -6107,7 +6108,7 @@ msgstr ""
 msgid "Your account is ready. Sign in with your email and password."
 msgstr ""
 
-#: web/src/lib/features/imports/ImportCard.svelte:498
+#: web/src/lib/features/imports/ImportCard.svelte:486
 msgid ""
 "Your browser did not allow reading the clipboard. Paste with Ctrl+V or a "
 "long press."
@@ -6436,7 +6437,7 @@ msgstr ""
 msgid "{name} left"
 msgstr ""
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:176
+#: web/src/lib/features/sharing/ShareDialog.svelte:177
 #, python-brace-format
 msgid "{name} no longer has access."
 msgstr ""

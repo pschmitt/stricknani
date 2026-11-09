@@ -247,7 +247,7 @@ export async function runImportJourney(
       .waitFor({ state: "visible" });
     await page.getByTestId("import-card").waitFor({ state: "visible" });
     check(
-      await page.getByRole("button", { name: "From a link" }).isDisabled(),
+      await page.getByRole("radio", { name: "From a link" }).isDisabled(),
       "URL import was not disabled for the fixture capability",
     );
     // The AI opt-in stays on the page but greyed out, with the reason, when
@@ -383,7 +383,7 @@ export async function runImportJourney(
       "Cozy import fixture\n" +
       "A reviewed pattern for a small test swatch.\n" +
       "Cast on 48 stitches. Work four rows in garter stitch.";
-    await page.getByRole("button", { name: "Paste text" }).click();
+    await page.getByRole("radio", { name: "Paste text" }).click();
     await page.getByLabel("Pattern text or instructions").fill(sourceText);
     await page.getByRole("button", { name: "Import", exact: true }).click();
     const projectName = page.locator("#project-name");
@@ -573,7 +573,7 @@ export async function runImportJourney(
     await page.goto(`${origin}/app/projects/new`, {
       waitUntil: "networkidle",
     });
-    await page.getByRole("button", { name: "Upload file" }).click();
+    await page.getByRole("radio", { name: "Upload file" }).click();
     markStage("selecting synthetic HTML file");
     await page.getByLabel("Choose a file").setInputFiles({
       name: "sample.html",

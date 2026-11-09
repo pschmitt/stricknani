@@ -216,7 +216,7 @@ async function shareWith(
   const dialog = await openShareDialog(page);
   await pickPerson(dialog, name);
   if (role === "editor")
-    await dialog.getByLabel("Role", { exact: true }).selectOption("editor");
+    await dialog.getByRole("radio", { name: "Can edit", exact: true }).click();
   await dialog
     .getByRole("button", { name: new RegExp(`Share with ${name}`, "i") })
     .click();
@@ -378,8 +378,9 @@ export async function runSharingJourney(
     await dialog.getByText("Owner", { exact: true }).waitFor();
     await pickPerson(dialog, "bea");
     check(
-      (await dialog.getByLabel("Role", { exact: true }).inputValue()) ===
-        "viewer",
+      (await dialog
+        .getByRole("radio", { name: "Can view", exact: true })
+        .getAttribute("aria-checked")) === "true",
       "the new share did not default to Can view",
     );
     await shoot(olgaPage, "share-dialog.png");

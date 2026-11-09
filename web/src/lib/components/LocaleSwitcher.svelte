@@ -16,80 +16,62 @@
 
 <script lang="ts">
   import { t } from "#lib/i18n.svelte.ts";
-  import SharedButton from "#lib/components/Button.svelte";
+  import SegmentedControl from "#lib/components/SegmentedControl.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
   const enabled = $derived(session.status === "ready" && session.data !== null);
+  const options = $derived<
+    { value: Locale; label: string; ariaLabel: string }[]
+  >([
+    { value: "en", label: "EN", ariaLabel: t("English", locale) },
+    { value: "de", label: "DE", ariaLabel: t("German", locale) },
+  ]);
 </script>
 
-<div class="locale-switcher" role="group" aria-label={t("Language", locale)}>
-  <SharedButton
-    variant="ghost"
-    class="locale-option"
-    type="button"
+<div class="locale-switcher">
+  <SegmentedControl
+    {options}
+    value={locale}
+    label={t("Language", locale)}
+    size="compact"
     disabled={!enabled}
-    aria-label={t("English", locale)}
-    aria-pressed={locale === "en"}
-    onclick={() => chooseLocale("en")}
+    onchange={chooseLocale}
   >
-    <svg
-      class="language-flag"
-      aria-hidden="true"
-      focusable="false"
-      viewBox="0 0 60 40"
-    >
-      <rect width="60" height="40" fill="#21468b" />
-      <path d="m0 0 60 40m0-40L0 40" stroke="#fff" stroke-width="11" />
-      <path d="m0 0 60 40m0-40L0 40" stroke="#c8102e" stroke-width="5" />
-      <path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="16" />
-      <path d="M30 0v40M0 20h60" stroke="#c8102e" stroke-width="8" />
-    </svg>
-    <span>EN</span>
-  </SharedButton>
-  <SharedButton
-    variant="ghost"
-    class="locale-option"
-    type="button"
-    disabled={!enabled}
-    aria-label={t("German", locale)}
-    aria-pressed={locale === "de"}
-    onclick={() => chooseLocale("de")}
-  >
-    <svg
-      class="language-flag"
-      aria-hidden="true"
-      focusable="false"
-      viewBox="0 0 60 40"
-    >
-      <rect width="60" height="40" fill="#ffce00" />
-      <rect width="60" height="26.67" fill="#dd0000" />
-      <rect width="60" height="13.33" fill="#000" />
-    </svg>
-    <span>DE</span>
-  </SharedButton>
+    {#snippet content(option)}
+      {#if option.value === "en"}
+        <svg
+          class="language-flag"
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 60 40"
+        >
+          <rect width="60" height="40" fill="#21468b" />
+          <path d="m0 0 60 40m0-40L0 40" stroke="#fff" stroke-width="11" />
+          <path d="m0 0 60 40m0-40L0 40" stroke="#c8102e" stroke-width="5" />
+          <path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="16" />
+          <path d="M30 0v40M0 20h60" stroke="#c8102e" stroke-width="8" />
+        </svg>
+      {:else}
+        <svg
+          class="language-flag"
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 60 40"
+        >
+          <rect width="60" height="40" fill="#ffce00" />
+          <rect width="60" height="26.67" fill="#dd0000" />
+          <rect width="60" height="13.33" fill="#000" />
+        </svg>
+      {/if}
+      <span>{option.label}</span>
+    {/snippet}
+  </SegmentedControl>
 </div>
 
 <style>
   .locale-switcher {
     display: inline-flex;
     flex: 0 0 auto;
-    align-items: center;
-    gap: 0.15rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0.15rem;
-    background: var(--surface);
-  }
-
-  .locale-switcher :global(.locale-option) {
-    min-width: 2.75rem;
-    gap: 0.35rem;
-    border-radius: 0.5rem;
-    padding-inline: 0.35rem;
-    color: var(--ink-muted);
-    background: transparent;
-    font-size: 0.85rem;
-    font-weight: 700;
   }
 
   .language-flag {

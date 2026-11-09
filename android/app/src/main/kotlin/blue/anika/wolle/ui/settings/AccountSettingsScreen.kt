@@ -33,9 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +61,8 @@ import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.SegmentedControl
+import blue.anika.wolle.ui.common.SegmentedOption
 import blue.anika.wolle.ui.oidc.LinkedLoginsCard
 import blue.anika.wolle.ui.oidc.LinkedLoginsPhase
 import blue.anika.wolle.ui.oidc.LinkedLoginsViewModel
@@ -190,6 +189,7 @@ internal fun AccountSettingsScreen(
                     PreferenceRow(label = stringResource(R.string.account_pref_language)) {
                         SegmentedChoice(
                             options = AppLanguage.entries,
+                            groupLabel = stringResource(R.string.account_pref_language),
                             selected = appLanguage,
                             label = { it.accountLabel() },
                             onSelect = {
@@ -202,6 +202,7 @@ internal fun AccountSettingsScreen(
                     PreferenceRow(label = stringResource(R.string.account_pref_appearance)) {
                         SegmentedChoice(
                             options = ThemeMode.entries,
+                            groupLabel = stringResource(R.string.account_pref_appearance),
                             selected = themeMode,
                             label = { it.accountLabel() },
                             icon = { it.accountIcon() },
@@ -215,6 +216,7 @@ internal fun AccountSettingsScreen(
                     ) {
                         SegmentedChoice(
                             options = listOf(0, 1, 2),
+                            groupLabel = stringResource(R.string.account_pref_text_size),
                             selected = textStep,
                             label = { it.textSizeLabel() },
                             onSelect = viewModel::setReadingTextStep,
@@ -503,48 +505,26 @@ private fun PreferenceRow(
     }
 }
 
-/** The one segmented-button style used by every preference. */
+/** The shared [SegmentedControl] for every preference. */
 @Composable
 private fun <T> SegmentedChoice(
     options: List<T>,
     selected: T,
     label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
+    groupLabel: String,
     icon: (@Composable (T) -> ImageVector)? = null,
 ) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, option ->
-            SegmentedButton(
-                selected = option == selected,
-                onClick = { onSelect(option) },
-                shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                // No animated check mark slot: it reserved space in the unselected segments and
-                // shifted their labels. The selected fill already shows the choice.
-                icon = {},
-                label = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement =
-                            Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                    ) {
-                        icon?.let {
-                            Icon(
-                                it(option),
-                                contentDescription = null,
-                                modifier = Modifier.size(SegmentedButtonDefaults.IconSize),
-                            )
-                        }
-                        Text(
-                            label(option),
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                },
-            )
-        }
-    }
+    SegmentedControl(
+        options =
+            options.map { option ->
+                SegmentedOption(option, label(option), icon = icon?.invoke(option))
+            },
+        selected = selected,
+        onSelect = onSelect,
+        label = groupLabel,
+        fullWidth = true,
+    )
 }
 
 @Composable

@@ -21,7 +21,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +56,8 @@ import blue.anika.wolle.data.repository.SharingError
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.SegmentedControl
+import blue.anika.wolle.ui.common.SegmentedOption
 
 /** Maximum avatars on the Share row before "+N". */
 private const val MAX_STACKED_AVATARS = 4
@@ -282,21 +283,21 @@ fun SharingSheet(
                 )
             }
             item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                SegmentedControl(
+                    options =
+                        ShareRole.entries.map {
+                            SegmentedOption(
+                                it,
+                                roleLabel(it),
+                                testTag = "new-role-${it.wire}",
+                            )
+                        },
+                    selected = state.newRole,
+                    onSelect = controller::setNewRole,
+                    label = stringResource(R.string.sharing_share_with),
+                    enabled = enabled,
                     modifier = Modifier.padding(vertical = 4.dp),
-                ) {
-                    ShareRole.entries.forEach { role ->
-                        FilterChip(
-                            selected = state.newRole == role,
-                            onClick = { controller.setNewRole(role) },
-                            enabled = enabled,
-                            label = { Text(roleLabel(role)) },
-                            modifier = Modifier.testTag("new-role-${role.wire}"),
-                        )
-                    }
-                }
+                )
             }
             val picked = state.selected
             if (picked != null) {

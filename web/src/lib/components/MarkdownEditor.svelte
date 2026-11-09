@@ -7,6 +7,7 @@
   import { onMount, untrack } from "svelte";
   import { focusOnHash } from "./focus-on-hash.ts";
   import NavIcon, { type NavIconName } from "./NavIcon.svelte";
+  import SegmentedControl from "./SegmentedControl.svelte";
   import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
   import { editorMode } from "#lib/markdown/editor-mode.svelte.ts";
   import type {
@@ -273,29 +274,28 @@
         {/each}
       </div>
     {/if}
-    <div
-      class="md-editor__mode"
-      role="group"
-      aria-label={t("Editor mode", locale)}
-    >
-      <button
-        type="button"
-        aria-pressed={shown === "visual"}
-        disabled={disabled || unsupported || !core}
-        title={unsupported
-          ? t(
-              "This text uses formatting the visual editor cannot show.",
-              locale,
-            )
-          : undefined}
-        onclick={() => setMode("visual")}>{t("Visual", locale)}</button
-      >
-      <button
-        type="button"
-        aria-pressed={shown === "raw"}
+    <div class="md-editor__mode">
+      <SegmentedControl
+        size="compact"
+        label={t("Editor mode", locale)}
+        value={shown}
         {disabled}
-        onclick={() => setMode("raw")}>{t("Raw", locale)}</button
-      >
+        options={[
+          {
+            value: "visual",
+            label: t("Visual", locale),
+            disabled: unsupported || !core,
+            title: unsupported
+              ? t(
+                  "This text uses formatting the visual editor cannot show.",
+                  locale,
+                )
+              : undefined,
+          },
+          { value: "raw", label: t("Raw", locale) },
+        ]}
+        onchange={setMode}
+      />
     </div>
   </div>
 
@@ -427,35 +427,9 @@
     display: inline-flex;
     flex: none;
     margin-inline-start: auto;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.2rem;
-    background: var(--surface-raised);
-  }
-
-  .md-editor__mode button {
-    min-height: 2.25rem;
-    border: 0;
-    border-radius: 999px;
-    padding-inline: 0.8rem;
-    color: var(--ink-muted);
-    background: transparent;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition:
-      background-color 120ms ease,
-      color 120ms ease;
-  }
-
-  .md-editor__mode button[aria-pressed="true"] {
-    color: var(--accent-strong);
-    background: var(--surface);
-    box-shadow: 0 0 0 1px var(--accent-strong);
   }
 
   .md-editor__tool:focus-visible,
-  .md-editor__mode button:focus-visible,
   .md-editor__link button:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 1px;
@@ -470,10 +444,6 @@
     .md-editor__tool {
       width: 2.75rem;
       height: 2.75rem;
-    }
-
-    .md-editor__mode button {
-      min-height: 2.75rem;
     }
   }
 
@@ -630,14 +600,12 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--sticky-ink) 45%, transparent);
   }
 
-  .md-editor--sticky .md-editor__tools,
-  .md-editor--sticky .md-editor__mode {
+  .md-editor--sticky .md-editor__tools {
     border-color: color-mix(in srgb, var(--sticky-ink) 22%, transparent);
     background: color-mix(in srgb, var(--sticky-ink) 7%, transparent);
   }
 
-  .md-editor--sticky .md-editor__tool,
-  .md-editor--sticky .md-editor__mode button {
+  .md-editor--sticky .md-editor__tool {
     color: color-mix(in srgb, var(--sticky-ink) 75%, transparent);
   }
 
@@ -648,7 +616,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .md-editor__tool,
-    .md-editor__mode button,
     .md-editor__raw,
     .md-editor__surface :global(.md-editor__content) {
       transition: none;

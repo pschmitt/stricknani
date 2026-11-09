@@ -5,19 +5,14 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -45,6 +39,8 @@ import blue.anika.wolle.data.api.v2.IMPORT_FILE_MIME_TYPES
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.ImportProgressPanel
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.SegmentedControl
+import blue.anika.wolle.ui.common.SegmentedOption
 import blue.anika.wolle.ui.common.importFailureRes
 import blue.anika.wolle.ui.projects.importWarningRes
 import blue.anika.wolle.ui.share.SharedLink
@@ -258,60 +254,40 @@ internal fun canStartImport(
     }
 
 /** "From a link", "Upload file", "Paste text": the web's source choice, same order and icons. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ImportSourceChoice(
     source: ImportSource,
     allowLink: Boolean,
     onChange: (ImportSource) -> Unit,
 ) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().testTag("import-source-choice"),
-    ) {
-        SourceChip(
-            ImportSource.Link,
-            source,
-            R.string.import_source_link,
-            PhosphorIcons.Link,
-            allowLink,
-            onChange,
-        )
-        SourceChip(
-            ImportSource.File,
-            source,
-            R.string.import_source_file,
-            PhosphorIcons.CloudArrowUp,
-            true,
-            onChange,
-        )
-        SourceChip(
-            ImportSource.Text,
-            source,
-            R.string.import_source_text,
-            Icons.Outlined.ContentPaste,
-            true,
-            onChange,
-        )
-    }
-}
-
-@Composable
-private fun SourceChip(
-    kind: ImportSource,
-    selected: ImportSource,
-    @StringRes label: Int,
-    icon: ImageVector,
-    enabled: Boolean,
-    onChange: (ImportSource) -> Unit,
-) {
-    FilterChip(
-        selected = kind == selected,
-        onClick = { onChange(kind) },
-        enabled = enabled,
-        label = { Text(stringResource(label)) },
-        leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
-        modifier = Modifier.testTag("import-source-${kind.name.lowercase()}"),
+    SegmentedControl(
+        options =
+            listOf(
+                SegmentedOption(
+                    ImportSource.Link,
+                    stringResource(R.string.import_source_link),
+                    icon = PhosphorIcons.Link,
+                    enabled = allowLink,
+                    testTag = "import-source-link",
+                ),
+                SegmentedOption(
+                    ImportSource.File,
+                    stringResource(R.string.import_source_file),
+                    icon = PhosphorIcons.CloudArrowUp,
+                    testTag = "import-source-file",
+                ),
+                SegmentedOption(
+                    ImportSource.Text,
+                    stringResource(R.string.import_source_text),
+                    icon = Icons.Outlined.ContentPaste,
+                    testTag = "import-source-text",
+                ),
+            ),
+        selected = source,
+        onSelect = onChange,
+        label = stringResource(R.string.import_source_label),
+        fullWidth = true,
+        modifier = Modifier.testTag("import-source-choice"),
     )
 }
 

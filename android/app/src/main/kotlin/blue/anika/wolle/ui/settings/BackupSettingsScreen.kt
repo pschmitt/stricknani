@@ -33,7 +33,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,9 +40,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -93,6 +89,8 @@ import blue.anika.wolle.data.export.uploadPercent
 import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.NetworkStatus
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.SegmentedControl
+import blue.anika.wolle.ui.common.SegmentedOption
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.showFeedback
 import java.time.Instant
@@ -343,27 +341,17 @@ internal fun BackupSettingsScreen(
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
-                    SingleChoiceSegmentedButtonRow(
+                    SegmentedControl(
+                        options =
+                            ExportFormat.entries.map { SegmentedOption(it, ".${it.extension}") },
+                        selected = exportFormat,
+                        onSelect = { exportFormat = it },
+                        label = stringResource(R.string.data_export_archive_type),
+                        enabled = running == null && restoreRunning == null,
+                        fullWidth = true,
                         modifier =
-                            Modifier.fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .testTag("data-export-format")
-                    ) {
-                        ExportFormat.entries.forEachIndexed { index, format ->
-                            SegmentedButton(
-                                selected = exportFormat == format,
-                                onClick = { exportFormat = format },
-                                enabled = running == null && restoreRunning == null,
-                                shape =
-                                    SegmentedButtonDefaults.itemShape(
-                                        index,
-                                        ExportFormat.entries.size,
-                                    ),
-                            ) {
-                                Text(".${format.extension}")
-                            }
-                        }
-                    }
+                            Modifier.padding(horizontal = 16.dp).testTag("data-export-format"),
+                    )
                     EncryptionOptions(
                         encrypt = encryptExport,
                         onEncryptChange = {
@@ -636,18 +624,14 @@ internal fun BackupSettingsScreen(
                         stringResource(R.string.backup_settings_frequency_label),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    SegmentedControl(
+                        options = BackupFrequency.entries.map { SegmentedOption(it, it.label) },
+                        selected = scheduledFrequency,
+                        onSelect = { viewModel.setScheduledBackupFrequency(it) },
+                        label = stringResource(R.string.backup_settings_frequency_label),
+                        fullWidth = true,
                         modifier = Modifier.padding(horizontal = 16.dp),
-                    ) {
-                        BackupFrequency.entries.forEach { frequency ->
-                            FilterChip(
-                                selected = scheduledFrequency == frequency,
-                                onClick = { viewModel.setScheduledBackupFrequency(frequency) },
-                                label = { Text(frequency.label) },
-                            )
-                        }
-                    }
+                    )
                     SettingsListItem(
                         headlineContent = {
                             Text(stringResource(R.string.backup_settings_include_data_label))

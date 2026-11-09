@@ -2,6 +2,7 @@
   import { onDestroy, onMount, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
+  import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import { fileDrop } from "#lib/components/file-drop.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -411,48 +412,35 @@
       {/if}
     {:else}
       {#if !forYarn}
-        <div
-          class="source-tabs"
-          role="group"
-          aria-label={t("Import source", locale)}
-        >
-          <Button
-            variant={sourceKind === "url" ? "primary" : "secondary"}
-            size="sm"
-            icon="link"
-            type="button"
-            aria-pressed={sourceKind === "url"}
-            disabled={!allowExternal || locked}
-            title={!allowExternal
-              ? t("Link imports are turned off on this server.", locale)
-              : undefined}
-            onclick={() => (sourceKind = "url")}
-          >
-            {t("From a link", locale)}
-          </Button>
-          <Button
-            variant={sourceKind === "file" ? "primary" : "secondary"}
-            size="sm"
-            icon="upload"
-            type="button"
-            aria-pressed={sourceKind === "file"}
-            disabled={locked}
-            onclick={() => (sourceKind = "file")}
-          >
-            {t("Upload file", locale)}
-          </Button>
-          <Button
-            variant={sourceKind === "text" ? "primary" : "secondary"}
-            size="sm"
-            icon="clipboard"
-            type="button"
-            aria-pressed={sourceKind === "text"}
-            disabled={locked}
-            onclick={() => (sourceKind = "text")}
-          >
-            {t("Paste text", locale)}
-          </Button>
-        </div>
+        <SegmentedControl
+          fullWidth
+          label={t("Import source", locale)}
+          value={sourceKind}
+          options={[
+            {
+              value: "url",
+              label: t("From a link", locale),
+              icon: "link",
+              disabled: !allowExternal || locked,
+              title: !allowExternal
+                ? t("Link imports are turned off on this server.", locale)
+                : undefined,
+            },
+            {
+              value: "file",
+              label: t("Upload file", locale),
+              icon: "upload",
+              disabled: locked,
+            },
+            {
+              value: "text",
+              label: t("Paste text", locale),
+              icon: "clipboard",
+              disabled: locked,
+            },
+          ]}
+          onchange={(next) => (sourceKind = next)}
+        />
       {/if}
       {#if !allowExternal}<p class="supporting">
           {t("Link imports are turned off on this server.", locale)}
@@ -614,16 +602,6 @@
   .import-card__done {
     margin: 0;
     font-weight: 600;
-  }
-
-  .source-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .source-tabs :global(.ui-button) {
-    flex: 1 1 7rem;
   }
 
   .field {

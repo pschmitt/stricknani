@@ -251,7 +251,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     markStage("selecting German for the signup page");
     await page
       .locator(".auth-footer")
-      .getByRole("button", { name: "German", exact: true })
+      .getByRole("radio", { name: "German", exact: true })
       .click();
     await page.waitForFunction(
       fn("() => document.documentElement.lang === 'de'"),
@@ -478,7 +478,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     markStage("local password mismatch verified");
     await page
       .locator(".signup-footer")
-      .getByRole("button", { name: "Englisch", exact: true })
+      .getByRole("radio", { name: "Englisch", exact: true })
       .click();
     await page.goto(`${origin}/app/signup`, { waitUntil: "networkidle" });
     await page

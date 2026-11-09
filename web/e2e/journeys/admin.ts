@@ -690,8 +690,8 @@ async function assertAdminEditsForeignProject(
   const filter = page.getByTestId("scope-filter");
   await filter.waitFor({ state: "visible" });
   await expect(
-    filter.getByRole("button", { name: "All", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    filter.getByRole("radio", { name: "All", exact: true }),
+  ).toHaveAttribute("aria-checked", "true");
   const card = page.locator(".library-card").filter({ hasText: project.name });
   await card.waitFor({ state: "visible" });
   check(
@@ -699,9 +699,9 @@ async function assertAdminEditsForeignProject(
     "the foreign project card has no owner badge",
   );
   mark("administrator narrows the library to Mine and back");
-  await filter.getByRole("button", { name: "Mine", exact: true }).click();
+  await filter.getByRole("radio", { name: "Mine", exact: true }).click();
   await expect(card).toHaveCount(0);
-  await filter.getByRole("button", { name: "All", exact: true }).click();
+  await filter.getByRole("radio", { name: "All", exact: true }).click();
   await card.waitFor({ state: "visible" });
 
   mark("administrator opens the foreign project and sees the banner");

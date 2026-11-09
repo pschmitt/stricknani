@@ -54,7 +54,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -103,6 +102,8 @@ import blue.anika.wolle.data.update.canInstallInApp
 import blue.anika.wolle.data.update.updateChannelChoiceVisible
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.SegmentedControl
+import blue.anika.wolle.ui.common.SegmentedOption
 import blue.anika.wolle.ui.common.animationsDisabled
 import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
@@ -747,16 +748,20 @@ private fun UpdateChannelRow(selected: UpdateChannel, onSelect: (UpdateChannel) 
         headlineContent = { Text(stringResource(R.string.about_update_channel_title)) },
         supportingContent = {
             Column {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    UpdateChannel.entries.forEach { channel ->
-                        FilterChip(
-                            selected = channel == selected,
-                            onClick = { onSelect(channel) },
-                            label = { Text(stringResource(channel.labelRes())) },
-                            modifier = Modifier.testTag("about-update-channel-${channel.name}"),
-                        )
-                    }
-                }
+                SegmentedControl(
+                    options =
+                        UpdateChannel.entries.map {
+                            SegmentedOption(
+                                it,
+                                stringResource(it.labelRes()),
+                                testTag = "about-update-channel-${it.name}",
+                            )
+                        },
+                    selected = selected,
+                    onSelect = onSelect,
+                    label = stringResource(R.string.about_update_channel_title),
+                    fullWidth = true,
+                )
                 Text(
                     stringResource(
                         when (selected) {
