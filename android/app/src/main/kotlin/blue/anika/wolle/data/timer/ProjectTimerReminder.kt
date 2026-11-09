@@ -71,7 +71,15 @@ constructor(
     suspend fun currentAccountKey(): String? {
         val credentials = settings.credentials.value
         if (!credentials.isValid) return null
-        val state = capabilities.resolve()
+        // Offline (or a local server that is not up) the capabilities probe throws: no account key.
+        val state =
+            try {
+                capabilities.resolve()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                return null
+            }
         val user = state.user ?: return null
         val value = "${credentials.serverUrl}\n${user.id}\n${state.currentTokenId ?: ""}"
         return MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") {

@@ -50,6 +50,7 @@ import dagger.hilt.components.SingletonComponent
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -267,6 +268,7 @@ class RunningTimers
 @Inject
 constructor(
     private val workManager: WorkManager,
+    private val settings: SettingsRepository,
     private val reminderPreferences: ProjectTimerReminderRepository,
     private val reminderScheduler: ProjectTimerReminderScheduler,
     appPreferences: AppPreferencesRepository,
@@ -321,9 +323,7 @@ constructor(
     fun retryStopWhenOnline(projectId: Int, accountKey: String) {
         val request =
             OneTimeWorkRequestBuilder<RunningTimerStopWorker>()
-                .setConstraints(
-                    Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-                )
+                .setConstraints(networkConstraints())
                 .setInputData(
                     Data.Builder()
                         .putInt(RunningTimerStopWorker.KEY_PROJECT_ID, projectId)
@@ -339,14 +339,17 @@ constructor(
         )
     }
 
+    /** The local server on this phone needs no network; a remote server does. */
+    private fun networkConstraints() =
+        if (settings.isLocalMode) Constraints.NONE
+        else Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+
     /** The periodic check exists exactly while a timer is remembered as running. */
     private suspend fun syncSchedule() {
         if (controller.hasRunning()) {
             val request =
                 PeriodicWorkRequestBuilder<RunningTimerCheckWorker>(15, TimeUnit.MINUTES)
-                    .setConstraints(
-                        Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-                    )
+                    .setConstraints(networkConstraints())
                     .build()
             workManager.enqueueUniquePeriodicWork(
                 CHECK_WORK,
@@ -372,7 +375,13 @@ constructor(
     private val runningTimers: RunningTimers,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        runningTimers.refreshAll()
+        try {
+            runningTimers.refreshAll()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            return Result.retry()
+        }
         return Result.success()
     }
 }
@@ -425,11 +434,23 @@ class RunningTimerReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_STOP -> {
                         val account = intent.getStringExtra(EXTRA_ACCOUNT) ?: return@launch
-                        if (runningTimers.stop(projectId, account) == StopTimerResult.Retry)
+                        val result =
+                            try {
+                                runningTimers.stop(projectId, account)
+                            } catch (cancellation: CancellationException) {
+                                throw cancellation
+                            } catch (_: Exception) {
+                                StopTimerResult.Retry
+                            }
+                        if (result == StopTimerResult.Retry)
                             runningTimers.retryStopWhenOnline(projectId, account)
                     }
                     ACTION_DISMISSED -> runningTimers.onDismissed(projectId)
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                // Never crash the app from a notification button.
             } finally {
                 pending.finish()
             }
