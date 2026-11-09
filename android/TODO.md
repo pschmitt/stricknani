@@ -41,6 +41,26 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-109: Persistent notification while a project timer runs
+
+Android shows an ongoing, silent notification for every running project timer (channel "Running
+timers"): the project's name, a ticking chronometer of the project's total time, a "Stop timer"
+action and a tap that opens the project. Web has no counterpart (browsers cannot keep an OS
+notification up); no web change.
+
+- [x] `RunningTimerController` (pure logic, `data/timer/RunningTimer.kt`) fed by the project screen,
+      a 15-minute periodic check (`RunningTimerCheckWorker`, only while a timer is remembered; it
+      also re-posts after a reboot and drops timers stopped on another device or by the server) and
+      app start.
+- [x] Stop action (`RunningTimerReceiver`) stops through the same v2 route as the in-app button,
+      cancels the reminder, reloads an open project screen, and retries when online if offline.
+- [x] Respects "Project timers" (off: none, everything cleared), viewers get none, sign-out clears,
+      POST_NOTIFICATIONS handled like the other notifiers, swipe-away is not undone by the check.
+- [x] No foreground service: the timer lives on the server, a plain ongoing notification suffices.
+- [x] The reminders (`ProjectTimerReminder`) stay as they are: they interrupt, this one stays quiet.
+
+Status: **done**, 2026-11-09. Device checklist in the hand-off.
+
 ## SNA-108: Pictures inline in the visual Markdown editor
 
 The web's visual editor shows `![alt](/media/...)` pictures in place. Android's (SNA visual editor,

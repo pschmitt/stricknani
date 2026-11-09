@@ -143,6 +143,8 @@
     <string name="project_timer_notification_text">Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.</string>
     <string name="project_timer_notification_subtext">Projekttimer</string>
     <string name="project_timer_notification_elapsed">Läuft seit %1$s</string>
+    <string name="running_timer_notification_channel">Laufende Timer</string>
+    <string name="running_timer_notification_description">Eine stille Benachrichtigung mit der vergangenen Zeit, solange ein Projekt-Timer läuft. Tippe darauf, um das Projekt zu öffnen, oder stoppe den Timer direkt dort.</string>
     <string name="notification_duration_hours_minutes">%1$d Std. %2$d Min.</string>
     <string name="notification_duration_minutes">%1$d Min.</string>
     <string name="settings_project_timers_title">Projekt-Timer</string>

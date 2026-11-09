@@ -32,6 +32,7 @@ import blue.anika.wolle.data.settings.NavbarItemPreference
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.data.timer.ProjectTimerReminderScheduler
+import blue.anika.wolle.data.timer.RunningTimers
 import blue.anika.wolle.data.update.UpdateChannel
 import blue.anika.wolle.data.update.UpdateCheckResult
 import blue.anika.wolle.data.update.UpdateChecker
@@ -81,6 +82,7 @@ constructor(
     private val capabilities: ApiCapabilities,
     private val updateChecker: UpdateChecker,
     private val timerReminderScheduler: ProjectTimerReminderScheduler,
+    private val runningTimers: RunningTimers,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -110,7 +112,10 @@ constructor(
     fun setProjectTimersEnabled(enabled: Boolean) {
         viewModelScope.launch {
             appPreferencesRepository.setProjectTimersEnabled(enabled)
-            if (!enabled) timerReminderScheduler.cancelAll()
+            if (!enabled) {
+                timerReminderScheduler.cancelAll()
+                runningTimers.clearAll()
+            }
         }
     }
 
@@ -460,7 +465,10 @@ constructor(
      */
     fun signOut() {
         timerReminderScheduler.cancelAll()
-        viewModelScope.launch { timerReminderScheduler.clearSavedDeadlines() }
+        viewModelScope.launch {
+            timerReminderScheduler.clearSavedDeadlines()
+            runningTimers.clearAll()
+        }
         settingsRepository.signOut()
         viewModelScope.launch { withContext(Dispatchers.IO) { database.clearAllTables() } }
     }

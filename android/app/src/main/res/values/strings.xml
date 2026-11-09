@@ -144,6 +144,8 @@
     <string name="project_timer_notification_text">Open the project to stop the timer or keep timing.</string>
     <string name="project_timer_notification_subtext">Project timer</string>
     <string name="project_timer_notification_elapsed">Running for %1$s</string>
+    <string name="running_timer_notification_channel">Running timers</string>
+    <string name="running_timer_notification_description">A silent notification with the elapsed time while a project timer is running. Tap it to open the project, or stop the timer from it.</string>
     <string name="notification_duration_hours_minutes">%1$d h %2$d min</string>
     <string name="notification_duration_minutes">%1$d min</string>
     <string name="settings_project_timers_title">Project timers</string>

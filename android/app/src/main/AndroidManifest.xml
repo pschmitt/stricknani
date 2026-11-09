@@ -60,6 +60,11 @@
 
         <!-- User-initiated data transfer jobs (API 34+) of the data download and restore; below
              API 34 the same transfers run as WorkManager workers. -->
+        <!-- The Stop button and dismissal of the persistent running-timer notification. -->
+        <receiver
+            android:name=".data.timer.RunningTimerReceiver"
+            android:exported="false" />
+
         <service
             android:name=".data.export.DataExportJobService"
             android:exported="false"

@@ -29,6 +29,7 @@ import blue.anika.wolle.data.timer.ProjectTimerLoadFailure
 import blue.anika.wolle.data.timer.ProjectTimerReminderInterval
 import blue.anika.wolle.data.timer.ProjectTimerReminderRepository
 import blue.anika.wolle.data.timer.ProjectTimerReminderScheduler
+import blue.anika.wolle.data.timer.RunningTimers
 import blue.anika.wolle.data.timer.classifyProjectTimerLoadFailure
 import blue.anika.wolle.data.timer.projectTimerReminderDeadline
 import blue.anika.wolle.sync.SyncScheduler
@@ -111,6 +112,7 @@ constructor(
     private val projectsV2Api: ProjectsV2Api,
     private val reminderPreferences: ProjectTimerReminderRepository,
     private val reminderScheduler: ProjectTimerReminderScheduler,
+    private val runningTimers: RunningTimers,
     private val settingsRepository: SettingsRepository,
     historyRepository: HistoryRepository,
     sharingRepository: SharingRepository,
@@ -287,13 +289,20 @@ constructor(
                 !appPreferences.projectTimersEnabled.first()
         )
             return false
-        val canEditTimer =
-            projectRepository.observeById(projectId).first()?.access()?.canEdit == true
+        val timerProject = projectRepository.observeById(projectId).first()
+        val canEditTimer = timerProject?.access()?.canEdit == true
         if (
             reminderPreferences.currentAccountKey() != accountKey ||
                 !appPreferences.projectTimersEnabled.first()
         )
             return false
+        // The persistent notification follows the timer: posted while it runs, gone when it stops.
+        runningTimers.onTimerObserved(
+            projectId,
+            timerProject?.name.orEmpty(),
+            canEditTimer,
+            response,
+        )
         if (response.startedAt == null) {
             reminderScheduler.cancel(projectId, accountKey)
             if (
@@ -723,6 +732,7 @@ constructor(
                     _timer.value = TimerState(loading = enabled && configured && userId != null)
                     if (!enabled) {
                         reminderScheduler.cancelAll()
+                        runningTimers.clearAll()
                         return@collectLatest
                     }
                     if (!configured || userId == null || !capabilities.useV2()) return@collectLatest
@@ -733,6 +743,13 @@ constructor(
                     _timer.value = _timer.value.copy(reminderIntervalMinutes = interval)
                     loadTimer()
                 }
+        }
+    }
+
+    // The notification's Stop button stopped this project's timer: show it.
+    init {
+        viewModelScope.launch {
+            runningTimers.stopped.collect { if (it == projectId) loadTimer() }
         }
     }
 

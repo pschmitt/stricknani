@@ -6,6 +6,8 @@ import androidx.work.Configuration
 import blue.anika.wolle.crash.CrashReportInstaller
 import blue.anika.wolle.data.errorreporting.ErrorReportingController
 import blue.anika.wolle.data.settings.AppPreferencesRepository
+import blue.anika.wolle.data.timer.RunningTimerNotifier
+import blue.anika.wolle.data.timer.RunningTimers
 import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.data.update.UpdateScheduler
 import blue.anika.wolle.data.update.backgroundUpdatesAvailable
@@ -42,6 +44,8 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var syncScheduler: SyncScheduler
     @Inject lateinit var syncNotifier: SyncNotifier
+    @Inject lateinit var runningTimerNotifier: RunningTimerNotifier
+    @Inject lateinit var runningTimers: RunningTimers
     @Inject lateinit var updateScheduler: UpdateScheduler
     @Inject lateinit var updateAvailableNotifier: UpdateAvailableNotifier
     @Inject lateinit var appPreferences: AppPreferencesRepository
@@ -73,6 +77,12 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch { errorReporting.run() }
         NetworkStatus.start(this)
         syncNotifier.ensureChannel()
+        runningTimerNotifier.ensureChannel()
+        // Re-post the notifications of timers that run (the process died, or the phone rebooted)
+        // and drop those stopped elsewhere.
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            runCatching { runningTimers.refreshAll() }
+        }
         // Both no-op quickly (WorkManager dedupes the periodic request; SyncWorker itself no-ops
         // pre-onboarding) so it's safe to call unconditionally on every process start.
         syncScheduler.schedulePeriodic()
