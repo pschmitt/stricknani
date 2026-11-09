@@ -258,6 +258,15 @@ in
       description = "Environment file with RAVELRY_USERNAME and RAVELRY_PASSWORD, the read-only Basic-auth key pair of a Ravelry API app. Enables clean gauge, needle, yarn and fiber data when importing Ravelry pattern and yarn links.";
     };
 
+    android.appLinkFingerprints = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [
+        "61:50:52:4C:34:01:C2:32:A8:B5:82:E8:73:D6:92:E7:1A:D9:C6:72:63:17:FC:6C:69:88:90:40:F6:0D:A1:1F"
+      ];
+      description = "SHA-256 fingerprints of the signing certificates of the Android app builds that may open this instance's project and yarn links directly (Android App Links, served as /.well-known/assetlinks.json). Sets ANDROID_APP_LINK_FINGERPRINTS. Empty: links open in the browser.";
+    };
+
     registration.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -500,6 +509,9 @@ in
           SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
           EXTERNAL_IMPORTS_ENABLED = lib.boolToString cfg.imports.enable;
           AI_ENABLED = lib.boolToString cfg.ai.enable;
+        }
+        // lib.optionalAttrs (cfg.android.appLinkFingerprints != [ ]) {
+          ANDROID_APP_LINK_FINGERPRINTS = lib.concatStringsSep "," cfg.android.appLinkFingerprints;
         }
         // lib.optionalAttrs (cfg.sentry.dsnFile != null) {
           STRICKNANI_SENTRY_DSN_FILE = cfg.sentry.dsnFile;

@@ -42,6 +42,11 @@ the module docs of `src/db.rs`.
 anyone who can reach the instance can create a member account on the web or in
 the Android app. Leave it off for a private instance.
 
+`android.appLinkFingerprints` (default empty) sets
+`ANDROID_APP_LINK_FINGERPRINTS`: the signing certificates of the Android app
+builds that may open this instance's links (Android App Links, served as
+`/.well-known/assetlinks.json`).
+
 `sessionCookieSecure` defaults to the module's HTTPS virtual-host setting. Set
 it to `true` when HTTPS terminates at an external proxy. A non-loopback Rust
 listener also requires secure cookies and an explicit trusted-host allowlist;

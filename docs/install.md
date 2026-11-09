@@ -49,6 +49,15 @@ app show a card that points to this repository and offers a setup prompt for an
 AI coding agent. Without self-service registration, add accounts with
 `stricknani-server create-user EMAIL`.
 
+To let the Android app open this instance's project and yarn links directly
+(for example a link sent by messenger), set `ANDROID_APP_LINK_FINGERPRINTS` to
+the SHA-256 fingerprints of the app's signing certificates (comma separated,
+`apksigner verify --print-certs app.apk` shows them). The server then answers
+`/.well-known/assetlinks.json`; `ANDROID_APP_PACKAGE` overrides the package name
+`blue.anika.wolle`. On a self-hosted domain the user still enables the link
+under the app's "Open by default" settings, since the app can only verify
+domains it names itself.
+
 Optional Sentry error reporting stays off unless `STRICKNANI_SENTRY_DSN_FILE` (or
 `STRICKNANI_SENTRY_DSN`) is set; see [rust-nixos.md](rust-nixos.md#error-reporting-sentry).
 

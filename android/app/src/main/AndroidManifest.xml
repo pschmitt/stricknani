@@ -81,6 +81,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Verified App Links for the hosted instance (wool/stricken/wolle.anika.blue): its
+                 /.well-known/assetlinks.json names this app's signing certificate, so a project
+                 or yarn link sent by messenger opens the app directly instead of the browser
+                 (Android 12+ opens unverified links in the browser). Self-hosted instances use
+                 the unverified filters below, unless they serve their own assetlinks.json and
+                 the user approves the domain under the app's "Open by default" settings. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="wolle.anika.blue" />
+                <data android:host="wool.anika.blue" />
+                <data android:host="stricken.anika.blue" />
+                <data android:pathPrefix="/app/projects/" />
+                <data android:pathPrefix="/app/yarns/" />
+                <data android:pathPrefix="/projects/" />
+                <data android:pathPrefix="/yarn/" />
+            </intent-filter>
+
             <!-- Legacy and SPA project/yarn web links (SNA-17, SNA-75). No android:autoVerify:
                  every self-hosted Stricknani instance runs on a different, user-chosen domain, so
                  a single APK can't declare one verified host the way a single-tenant app would (see

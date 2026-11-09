@@ -39,6 +39,8 @@ pub struct Config {
     /// Maximum lifetime for PATs minted from OIDC login.
     pub oidc_pat_ttl_seconds: u64,
     pub trusted_hosts: TrustedHosts,
+    /// The Android app allowed to open this server's links (App Links), when configured.
+    pub android_app_links: Option<crate::app_links::AppLinks>,
 }
 
 impl fmt::Debug for Config {
@@ -151,6 +153,11 @@ impl Config {
             Some("true" | "1") => true,
             _ => return Err(ConfigError("WAYBACK_ENABLED must be true or false")),
         };
+        let android_app_links = crate::app_links::AppLinks::parse(
+            get("ANDROID_APP_PACKAGE").as_deref(),
+            get("ANDROID_APP_LINK_FINGERPRINTS").as_deref(),
+        )
+        .map_err(ConfigError)?;
         let signup_enabled = match get("SIGNUP_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
@@ -222,6 +229,7 @@ impl Config {
             oidc,
             oidc_pat_ttl_seconds,
             trusted_hosts,
+            android_app_links,
         })
     }
 }

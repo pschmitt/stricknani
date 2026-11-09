@@ -388,6 +388,10 @@ async fn serve() -> Result<(), &'static str> {
         .then(stricknani_server::ocr::OcrService::new);
     let app =
         stricknani_server::app_with_services(state, worker_path, config.external_imports, ai, ocr);
+    let app = match config.android_app_links.clone() {
+        Some(links) => app.merge(stricknani_server::app_links::router(links)),
+        None => app,
+    };
     let app = if config.error_reporting.server_reporting() {
         // One Sentry hub per request: the signed-in user's opt-out marker and
         // identity stay scoped to that request.
