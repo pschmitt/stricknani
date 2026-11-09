@@ -46,6 +46,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CropRotate
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -121,6 +122,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import blue.anika.wolle.R
+import blue.anika.wolle.data.repository.canMakeCover
 import coil3.compose.AsyncImage
 import kotlin.math.abs
 import kotlinx.coroutines.delay
@@ -246,8 +248,9 @@ class PhotoReorder(val count: Int, val onMove: (from: Int, to: Int) -> Unit)
 /**
  * A strip of photo thumbnails with an add tile. With [reorder], each server photo gets a drag
  * handle: long-press a thumbnail and drag it sideways, or tap the handle for Move earlier / Move
- * later (also offered to TalkBack as actions, and as Alt+arrow keys). The first photo wears a cover
- * tag. Animation of the moving thumbnails is skipped when animations are turned off.
+ * later (also offered to TalkBack as actions, and as Alt+arrow keys). In edit mode (long-press) a
+ * star makes a photo the cover. The first photo wears a small star tag. Animation of the moving
+ * thumbnails is skipped when animations are turned off.
  */
 @Composable
 fun EditorPhotoStrip(
@@ -399,6 +402,8 @@ fun EditorPhotoStrip(
                 }
             val earlierLabel = stringResource(R.string.editor_photo_move_earlier)
             val laterLabel = stringResource(R.string.editor_photo_move_later)
+            val makeCoverLabel = stringResource(R.string.editor_photo_make_cover)
+            val canMakeCover = reorderable && canMakeCover(index, reorder!!.count)
             val positionLabel =
                 if (reorderable) {
                     stringResource(R.string.editor_photo_position, index + 1, reorder!!.count)
@@ -484,6 +489,12 @@ fun EditorPhotoStrip(
                                         true
                                     }
                                 } else null,
+                                if (canMakeCover) {
+                                    CustomAccessibilityAction(makeCoverLabel) {
+                                        currentReorder?.onMove?.invoke(index, 0)
+                                        true
+                                    }
+                                } else null,
                                 CustomAccessibilityAction(removeLabel) {
                                     photo.onRemove()
                                     true
@@ -551,6 +562,33 @@ fun EditorPhotoStrip(
                                 Icon(
                                     Icons.Filled.CropRotate,
                                     contentDescription = editLabel,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                if (editing && canMakeCover) {
+                    // Top start, like the grip on the website: a small star badge, 44dp target.
+                    IconButton(
+                        onClick = {
+                            interaction++
+                            currentReorder?.onMove?.invoke(index, 0)
+                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            stopEditing()
+                        },
+                        modifier = Modifier.align(Alignment.TopStart).padding(1.dp).size(44.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.6f),
+                            contentColor = Color.White,
+                            modifier = Modifier.size(30.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Filled.Star,
+                                    contentDescription = makeCoverLabel,
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
@@ -641,7 +679,7 @@ private const val JIGGLE_DEGREES = 1.8f
 private const val JIGGLE_BOB_DP = 0.8f
 private const val MAX_SETTLE_FRAMES = 6
 
-/** The "Cover" tag on the first photo: a yarn-ball chip in the theme's primary container. */
+/** The cover tag on the first photo: a small star chip, named "Cover" for screen readers. */
 @Composable
 private fun CoverTag(modifier: Modifier = Modifier) {
     Surface(
@@ -650,17 +688,11 @@ private fun CoverTag(modifier: Modifier = Modifier) {
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = modifier,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 6.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
-        ) {
-            Icon(PhosphorIcons.Yarn, contentDescription = null, modifier = Modifier.size(12.dp))
-            Text(
-                stringResource(R.string.editor_photo_cover),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(start = 3.dp),
-            )
-        }
+        Icon(
+            Icons.Filled.Star,
+            contentDescription = stringResource(R.string.editor_photo_cover),
+            modifier = Modifier.padding(4.dp).size(14.dp),
+        )
     }
 }
 

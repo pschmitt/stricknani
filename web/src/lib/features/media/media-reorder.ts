@@ -169,3 +169,8 @@ export const projectStepOrderPath = (
 ): string => `/api/v2/projects/${projectId}/steps/${stepId}/images/order`;
 export const yarnPhotoOrderPath = (yarnId: number): string =>
   `/api/v2/yarns/${yarnId}/photos/order`;
+
+/** A photo can become the cover when it is not already first. */
+export function canMakeCover(index: number, length: number): boolean {
+  return Number.isInteger(index) && index > 0 && index < length;
+}

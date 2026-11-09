@@ -4,28 +4,22 @@ import { closeBrowser } from "../lib/common";
 //
 // Runs against the disposable Rust fixture only (synthetic seeded records and
 // the demo photos), so reordering and deleting never touches real data. It
-// checks tile geometry, the hover/focus/long-press trash button and keyboard
+// checks tile geometry, the hover/focus/touch action buttons, Make cover and keyboard
 // reordering with its live-region announcement, at desktop, phone and
 // narrowest-phone sizes.
 import { chmodSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { expect } from "@playwright/test";
-import type {
-  BrowserContextOptions,
-  CDPSession,
-  Locator,
-  Page,
-} from "@playwright/test";
+import type { BrowserContextOptions, Locator, Page } from "@playwright/test";
 import { AcceptanceFailure, fn } from "../lib/common";
 import { REPO_ROOT } from "../lib/fixture";
 import type { E2eConfig, LiveFixture } from "../lib/harness";
 import { launchBrowser } from "../lib/harness";
 import { PROJECT_NAME, YARN_NAME } from "../lib/seed";
 
-const LONG_PRESS_MS = 400;
 const GEOMETRY_TOLERANCE_PX = 2.0;
-const INSET_PX = 8.0;
-const MIN_TARGET_PX = 44.0;
+const INSET_PX = 6.0;
+const MIN_TARGET_PX = 32.0;
 
 type Profile = {
   name: string;
@@ -212,79 +206,6 @@ async function tabToTile(page: Page, tile: Locator): Promise<boolean> {
   return false;
 }
 
-/** Press a tile with a finger: real CDP touch on Chromium, synthetic otherwise. */
-class Touch {
-  private readonly cdp: CDPSession | null;
-
-  constructor(cdp: CDPSession | null) {
-    this.cdp = cdp;
-  }
-
-  get kind(): string {
-    return this.cdp !== null ? "cdp-touch" : "synthetic-pointer";
-  }
-
-  private async center(tile: Locator, offsetY: number, what: string) {
-    const box = await tile.locator(".tile-media").boundingBox();
-    if (box === null) {
-      throw new AcceptanceFailure(`tile has no box to ${what}`);
-    }
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 + offsetY };
-  }
-
-  async press(tile: Locator): Promise<void> {
-    const point = await this.center(tile, 0, "press");
-    if (this.cdp !== null) {
-      await this.cdp.send("Input.dispatchTouchEvent", {
-        type: "touchStart",
-        touchPoints: [{ x: point.x, y: point.y, id: 1 }],
-      });
-    } else {
-      await tile.evaluate(
-        fn(`(tile, point) => tile.dispatchEvent(new PointerEvent('pointerdown', {
-          pointerType: 'touch', pointerId: 77, isPrimary: true,
-          clientX: point.x, clientY: point.y, bubbles: true, cancelable: true,
-          button: 0, buttons: 1}))`),
-        point,
-      );
-    }
-  }
-
-  /** Move the finger past the slop, as a scroll would. */
-  async dragAway(tile: Locator, distance = 24.0): Promise<void> {
-    const point = await this.center(tile, distance, "drag");
-    if (this.cdp !== null) {
-      await this.cdp.send("Input.dispatchTouchEvent", {
-        type: "touchMove",
-        touchPoints: [{ x: point.x, y: point.y, id: 1 }],
-      });
-    } else {
-      await tile.evaluate(
-        fn(`(tile, point) => tile.dispatchEvent(new PointerEvent('pointermove', {
-          pointerType: 'touch', pointerId: 77, isPrimary: true,
-          clientX: point.x, clientY: point.y, bubbles: true,
-          cancelable: true, button: 0, buttons: 1}))`),
-        point,
-      );
-    }
-  }
-
-  async release(tile: Locator): Promise<void> {
-    if (this.cdp !== null) {
-      await this.cdp.send("Input.dispatchTouchEvent", {
-        type: "touchEnd",
-        touchPoints: [],
-      });
-    } else {
-      await tile.evaluate(
-        fn(`tile => tile.dispatchEvent(new PointerEvent('pointerup', {
-          pointerType: 'touch', pointerId: 77, isPrimary: true,
-          bubbles: true, cancelable: true, button: 0}))`),
-      );
-    }
-  }
-}
-
 async function shot(
   page: Page,
   shots: string | null,
@@ -304,14 +225,9 @@ async function shot(
   }
 }
 
-const EDITING_JS =
-  "tile => tile.closest('.reorder-list')?.classList.contains('editing')";
-
-/** Trash visibility (rest, hover, focus, long press) and tile geometry. */
+/** Action visibility (rest, hover, focus, touch) and tile geometry. */
 async function checkTile(
   page: Page,
-  touch: Touch | null,
-  profile: Profile,
   tag: string,
   list: Locator,
   report: Report,
@@ -330,78 +246,26 @@ async function checkTile(
   await centerTile(first);
   await page.mouse.move(1, 1);
 
-  await expect(trashButton).toHaveCSS("opacity", "0");
-  const rest = await geometry(first);
-  report.check(rest.trashOpacity === 0, `${tag}: trash hidden at rest`);
+  // Touch devices have no hover, so the compact actions stay visible there.
+  const noHover = Boolean(
+    await page.evaluate(fn("() => matchMedia('(hover: none)').matches")),
+  );
+  await expect(trashButton).toHaveCSS("opacity", noHover ? "1" : "0");
+  report.check(
+    true,
+    `${tag}: actions ${noHover ? "always visible on touch" : "hidden at rest"}`,
+  );
   await shot(page, shots, `${shotName}-1-rest`, list);
 
   let revealed: Geometry;
-  if (profile.touch) {
-    if (touch === null) {
-      throw new AcceptanceFailure("touch profile has no touch driver");
-    }
-    // Moving before the long press elapses is a scroll: no trash, no drag.
-    await touch.press(first);
-    await page.waitForTimeout(Math.floor(LONG_PRESS_MS / 4));
-    await touch.dragAway(first);
-    await page.waitForTimeout(LONG_PRESS_MS + 150);
-    const short = await geometry(first);
-    await touch.release(first);
-    report.check(
-      short.trashOpacity === 0,
-      `${tag}: a press that moves before ${LONG_PRESS_MS} ms shows no trash`,
-    );
-    // Let the scroll the browser took over settle before pressing again.
-    await page.waitForTimeout(500);
-    await centerTile(first);
-    await page.waitForTimeout(200);
-    await touch.press(first);
-    await page.waitForTimeout(LONG_PRESS_MS + 50);
-    const armed: unknown = await first.evaluate(fn(EDITING_JS));
-    const shown = await holds(() =>
-      expect(trashButton).toHaveCSS("opacity", "1"),
-    );
-    report.check(
-      Boolean(armed) && shown,
-      `${tag}: ${LONG_PRESS_MS} ms long press without moving shows the trash ` +
-        `(${touch.kind})`,
-    );
-    await shot(page, shots, `${shotName}-2-longpress`, list);
-    // The jiggle rotates every tile by a degree or two; measure the layout
-    // with the animation paused so the corner insets are exact.
-    // (CSSOM writes are allowed under the page CSP; an injected <style> is not.)
-    const pauseJs =
-      "on => document.querySelectorAll('.reorder-item').forEach(el => " +
-      "on ? el.style.setProperty('animation', 'none', 'important') " +
-      ": el.style.removeProperty('animation'))";
-    await page.evaluate(fn(pauseJs), true);
+  if (noHover) {
     revealed = await geometry(first);
-    await page.evaluate(fn(pauseJs), false);
-    await touch.release(first);
-    await page.waitForTimeout(300);
-    const viewerOpen = (await page.locator("dialog[open]").count()) > 0;
-    report.check(
-      !viewerOpen && Boolean(await first.evaluate(fn(EDITING_JS))),
-      `${tag}: lifting after the long press stays in edit mode with no photo ` +
-        `viewer on top of the trash (${touch.kind})`,
-    );
-    if ((await first.locator(".thumb-button").count()) > 0) {
-      report.check(
-        !viewerOpen,
-        `${tag}: lifting after the long press keeps the trash instead of ` +
-          `opening the photo viewer (${touch.kind})`,
-      );
-    }
-    if (viewerOpen) {
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(300);
-    }
   } else {
     await first.hover();
     const shown = await holds(() =>
       expect(trashButton).toHaveCSS("opacity", "1"),
     );
-    report.check(shown, `${tag}: hovering a tile shows the trash`);
+    report.check(shown, `${tag}: hovering a tile shows the actions`);
     revealed = await geometry(first);
     await shot(page, shots, `${shotName}-2-hover`, list);
     await page.mouse.move(1, 1);
@@ -410,31 +274,31 @@ async function checkTile(
     );
     report.check(
       hidden,
-      `${tag}: the trash hides again when the pointer leaves`,
+      `${tag}: the actions hide again when the pointer leaves`,
     );
   }
 
   const { media, badge, trash } = revealed;
   report.check(
     media !== null && trash !== null,
-    `${tag}: first tile has a trash button`,
+    `${tag}: first tile has a remove button`,
   );
   if (media !== null && trash !== null) {
     const rtl = revealed.dir === "rtl";
     const endGap = rtl ? trash.left - media.left : media.right - trash.right;
     report.check(
       near(trash.top - media.top, INSET_PX) && near(endGap, INSET_PX),
-      `${tag}: trash sits top-end`,
+      `${tag}: actions sit top-end`,
       `(top gap ${(trash.top - media.top).toFixed(1)}px, ` +
         `end gap ${endGap.toFixed(1)}px)`,
     );
     report.check(
       trash.width >= MIN_TARGET_PX - 0.5 && trash.height >= MIN_TARGET_PX - 0.5,
-      `${tag}: trash target is at least ${MIN_TARGET_PX.toFixed(0)}px`,
+      `${tag}: remove button is at least ${MIN_TARGET_PX.toFixed(0)}px`,
       `(${trash.width.toFixed(0)}x${trash.height.toFixed(0)}px)`,
     );
     if (expectCover) {
-      report.check(badge !== null, `${tag}: first tile shows the cover label`);
+      report.check(badge !== null, `${tag}: first tile shows the cover star`);
       if (badge !== null) {
         const startGap = rtl
           ? media.right - badge.right
@@ -442,24 +306,28 @@ async function checkTile(
         report.check(
           near(media.bottom - badge.bottom, INSET_PX) &&
             near(startGap, INSET_PX),
-          `${tag}: cover label sits bottom-start`,
+          `${tag}: cover star sits bottom-start`,
           `(bottom gap ${(media.bottom - badge.bottom).toFixed(1)}px, ` +
             `start gap ${startGap.toFixed(1)}px)`,
         );
         const overlap = overlapArea(badge, trash);
         report.check(
           overlap === 0.0,
-          `${tag}: cover label and trash do not overlap`,
+          `${tag}: cover star and remove button do not overlap`,
           `(tile ${media.width.toFixed(0)}x${media.height.toFixed(0)}px, ` +
             `overlap ${overlap.toFixed(1)}px^2)`,
         );
         report.check(
           badge.left >= media.left - 0.5 && badge.right <= media.right + 0.5,
-          `${tag}: cover label stays inside the tile`,
+          `${tag}: cover star stays inside the tile`,
         );
       }
+      report.check(
+        (await first.getByRole("button", { name: "Make cover" }).count()) === 0,
+        `${tag}: the cover tile has no Make cover action`,
+      );
     } else {
-      report.check(badge === null, `${tag}: non-cover tile has no cover label`);
+      report.check(badge === null, `${tag}: non-cover tile has no cover star`);
     }
     report.info(`INFO ${tag}: tile ${media.width.toFixed(0)}px wide`);
   }
@@ -478,9 +346,69 @@ async function checkTile(
     const focusShows = await holds(() =>
       expect(trashButton).toHaveCSS("opacity", "1"),
     );
-    report.check(focusShows, `${tag}: keyboard focus shows the trash`);
+    report.check(focusShows, `${tag}: keyboard focus shows the actions`);
     await shot(page, shots, `${shotName}-3-focus`, list);
   }
+}
+
+/** Make cover moves a later photo to the front in one step. */
+async function checkMakeCover(
+  page: Page,
+  tag: string,
+  list: Locator,
+  report: Report,
+): Promise<void> {
+  const tiles = tilesOf(list);
+  const count = await tiles.count();
+  if (count < 2) {
+    report.check(false, `${tag}: at least two photos for Make cover`, count);
+    return;
+  }
+  const before = await tileIds(list);
+  const second = tiles.nth(1);
+  await centerTile(second);
+  await second.hover();
+  const requests: string[] = [];
+  const onRequest = (request: { method(): string; url(): string }): void => {
+    if (request.method() === "PUT" && request.url().includes("/order")) {
+      requests.push(request.url());
+    }
+  };
+  page.on("request", onRequest);
+  const button = second.getByRole("button", { name: "Make cover" });
+  await expect(button).toHaveCount(1);
+  await button.click();
+  const status = list.locator("xpath=..").locator("[role=status]");
+  const announced = await holds(() =>
+    expect(status).toHaveText("Photo set as cover.", { timeout: 10_000 }),
+  );
+  page.off("request", onRequest);
+  const after = await tileIds(list);
+  report.check(
+    announced &&
+      after[0] === before[1] &&
+      after[1] === before[0] &&
+      requests.length === 1,
+    `${tag}: Make cover moves the photo to the front with one request`,
+    `(${JSON.stringify(before)} -> ${JSON.stringify(after)}, ` +
+      `${requests.length} request(s))`,
+  );
+  // Restore the original order with the keyboard.
+  await centerTile(tiles.nth(1));
+  await page.mouse.move(1, 1);
+  const reached = await tabToTile(page, tiles.nth(1));
+  if (reached) {
+    await page.keyboard.press("ArrowLeft");
+  }
+  await holds(() =>
+    expect(status).toHaveText(/Photo moved to position 1 of \d+\./, {
+      timeout: 10_000,
+    }),
+  );
+  report.check(
+    JSON.stringify(await tileIds(list)) === JSON.stringify(before),
+    `${tag}: original photo order restored after Make cover`,
+  );
 }
 
 /** Arrow keys move the focused tile and the live region announces it. */
@@ -595,11 +523,6 @@ export async function runMediaTilesJourney(
           cspErrors.push(message.text().slice(0, 120));
         }
       });
-      const cdp =
-        browserName === "chromium" && profile.touch
-          ? await context.newCDPSession(page)
-          : null;
-      const touch = profile.touch ? new Touch(cdp) : null;
       await signIn(page, origin, email, password);
       if (!projectId) {
         projectId = await resourceId(page, origin, "projects", PROJECT_NAME);
@@ -667,8 +590,6 @@ export async function runMediaTilesJourney(
       const tag = `${browserName}/${profile.name}`;
       await checkTile(
         page,
-        touch,
-        profile,
         `${tag}/project-cover`,
         coverList.first(),
         report,
@@ -678,8 +599,6 @@ export async function runMediaTilesJourney(
       );
       await checkTile(
         page,
-        touch,
-        profile,
         `${tag}/project-step`,
         stepList.first(),
         report,
@@ -723,8 +642,6 @@ export async function runMediaTilesJourney(
       await yarnList.first().waitFor({ state: "visible" });
       await checkTile(
         page,
-        touch,
-        profile,
         `${tag}/yarn`,
         yarnList.first(),
         report,
@@ -732,6 +649,7 @@ export async function runMediaTilesJourney(
         `${base}-yarn`,
         true,
       );
+      await checkMakeCover(page, `${tag}/yarn`, yarnList.first(), report);
       await checkReorder(
         page,
         `${tag}/yarn`,

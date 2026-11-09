@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "#lib/api.ts";
 import {
   applyOptimisticReorder,
+  canMakeCover,
   deltaForKey,
   keyboardTarget,
   moveItem,
@@ -133,5 +134,23 @@ describe("order endpoints", () => {
       "/api/v2/projects/5/steps/9/images/order",
     );
     expect(yarnPhotoOrderPath(3)).toBe("/api/v2/yarns/3/photos/order");
+  });
+});
+
+describe("canMakeCover", () => {
+  it("allows every photo except the cover itself", () => {
+    expect(canMakeCover(0, 4)).toBe(false);
+    expect(canMakeCover(1, 4)).toBe(true);
+    expect(canMakeCover(3, 4)).toBe(true);
+  });
+
+  it("rejects out-of-range and fractional indexes", () => {
+    expect(canMakeCover(4, 4)).toBe(false);
+    expect(canMakeCover(-1, 4)).toBe(false);
+    expect(canMakeCover(1.5, 4)).toBe(false);
+  });
+
+  it("moves the photo to the front in one reorder", () => {
+    expect(moveItem(items, 2, 0).map((item) => item.id)).toEqual([3, 1, 2, 4]);
   });
 });

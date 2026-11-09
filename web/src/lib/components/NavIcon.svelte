@@ -58,6 +58,8 @@
     | "search"
     | "help"
     | "edit"
+    | "star"
+    | "grip"
     | "chevron-down"
     | "camera"
     | "device"
@@ -267,6 +269,19 @@
       stroke="none"
       d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"
     />
+  {:else if name === "star"}
+    <path
+      d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9Z"
+    />
+  {:else if name === "grip"}
+    <g fill="currentColor" stroke="none">
+      <circle cx="9" cy="6" r="1.5" />
+      <circle cx="15" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" />
+      <circle cx="15" cy="18" r="1.5" />
+    </g>
   {:else if name === "chevron-down"}
     <path d="m5 9 7 7 7-7" />
   {:else if name === "previous"}

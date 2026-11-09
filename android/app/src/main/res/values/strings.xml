@@ -859,6 +859,7 @@
     <string name="photo_choose">Choose photo</string>
     <string name="photo_camera_denied">Camera access is off. Allow it in the system settings to take a photo.</string>
     <string name="editor_photo_cover">Cover</string>
+    <string name="editor_photo_make_cover">Make cover</string>
     <string name="editor_photo_move_earlier">Move earlier</string>
     <string name="editor_photo_move_later">Move later</string>
     <string name="editor_photo_position">Photo %1$d of %2$d</string>

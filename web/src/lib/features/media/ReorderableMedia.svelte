@@ -3,15 +3,17 @@
   generics="T extends { id: number; thumbnail_url: string; alt_text: string | null }"
 >
   import { onMount, tick, type Snippet } from "svelte";
-  import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
-  import { deltaForKey, keyboardTarget, nearestIndex } from "./media-reorder";
+  import {
+    canMakeCover,
+    deltaForKey,
+    keyboardTarget,
+    nearestIndex,
+  } from "./media-reorder";
 
-  /** Touch press time before a tile arms for drag and delete. */
+  /** Touch press time before a tile arms for drag. */
   const LONG_PRESS_MS = 400;
-  /** Idle time before touch edit mode ends by itself. */
-  const EDIT_IDLE_MS = 5000;
   /** Pointer travel in px that cancels a pending long press or starts a mouse drag. */
   const MOVE_SLOP = 8;
 
@@ -71,9 +73,8 @@
   let listElement = $state<HTMLUListElement | null>(null);
   let dragFrom = $state<number | null>(null);
   let dropTo = $state<number | null>(null);
-  // Touch edit mode: every tile jiggles and shows its trash button.
-  let editing = $state(false);
-  let editTimer: ReturnType<typeof setTimeout> | null = null;
+  // Tile id whose long press armed a touch drag, for a calm visual cue.
+  let armedId = $state<number | null>(null);
   let announcement = $state("");
   let moving = $state(false);
   let gesture: Gesture | null = null;
@@ -103,23 +104,9 @@
     listElement?.addEventListener("touchmove", block, { passive: false });
     return () => {
       listElement?.removeEventListener("touchmove", block);
-      if (editTimer) clearTimeout(editTimer);
       clearSuppress();
     };
   });
-
-  function endEdit(): void {
-    if (editTimer) clearTimeout(editTimer);
-    editTimer = null;
-    editing = false;
-  }
-
-  /** Enter edit mode, or restart the idle countdown while in it. */
-  function bumpEdit(): void {
-    if (editTimer) clearTimeout(editTimer);
-    editTimer = setTimeout(endEdit, EDIT_IDLE_MS);
-    editing = true;
-  }
 
   function focusTile(id: number): void {
     listElement
@@ -147,6 +134,34 @@
     focusTile(id);
   }
 
+  /** Make a photo the cover: the same single reorder request, to position 0. */
+  async function makeCover(index: number): Promise<void> {
+    if (!coverAllowed(index)) return;
+    const from = index;
+    const id = items[from].id;
+    moving = true;
+    let ok = false;
+    try {
+      ok = await onMove(from, 0);
+    } finally {
+      moving = false;
+    }
+    announcement = ok
+      ? t("Photo set as cover.", locale)
+      : t(
+          "The new photo order could not be saved. The previous order was restored.",
+          locale,
+        );
+    await tick();
+    focusTile(id);
+  }
+
+  function coverAllowed(index: number): boolean {
+    return (
+      showCover && !locked && sortable && canMakeCover(index, items.length)
+    );
+  }
+
   function canDelete(): boolean {
     return onDelete !== undefined && !deleteDisabled && !locked;
   }
@@ -156,7 +171,6 @@
     if (event.target !== event.currentTarget) return;
     if (event.key === "Escape") {
       cancelGesture();
-      endEdit();
       return;
     }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -194,8 +208,10 @@
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if ((event.target as Element).closest("[data-no-drag]")) return;
     cancelGesture();
-    if (editing) bumpEdit();
     const tile = event.currentTarget as HTMLElement;
+    // The grip drags straight away on touch; elsewhere a long press arms it.
+    const onHandle =
+      (event.target as Element).closest("[data-handle]") !== null;
     const current: Gesture = {
       id: items[index].id,
       index,
@@ -204,17 +220,19 @@
       startX: event.clientX,
       startY: event.clientY,
       timer: null,
-      armed: editing && event.pointerType !== "mouse",
+      armed: onHandle && event.pointerType !== "mouse" && sortable,
       tile,
     };
     gesture = current;
-    // In edit mode a touch can drag straight away; otherwise a long press arms it.
-    if (event.pointerType !== "mouse" && !current.armed) {
+    if (current.armed) {
+      armedId = current.id;
+      tile.setPointerCapture(current.pointerId);
+    } else if (event.pointerType !== "mouse" && sortable) {
       current.timer = setTimeout(() => {
         current.timer = null;
         if (gesture !== current) return;
         current.armed = true;
-        if (onDelete || sortable) bumpEdit();
+        armedId = current.id;
         tile.setPointerCapture(current.pointerId);
       }, LONG_PRESS_MS);
     }
@@ -239,7 +257,6 @@
       }
       dragFrom = current.index;
     }
-    if (editing) bumpEdit();
     if (!listElement) return;
     const tiles = Array.from(listElement.children) as HTMLElement[];
     dropTo = nearestIndex(
@@ -275,19 +292,9 @@
     if (current?.tile.hasPointerCapture(current.pointerId))
       current.tile.releasePointerCapture(current.pointerId);
     gesture = null;
+    armedId = null;
     dragFrom = null;
     dropTo = null;
-  }
-
-  function onWindowPointerDown(event: PointerEvent): void {
-    if (!editing) return;
-    // Tapping outside the group ends edit mode; taps inside keep it alive.
-    if (listElement?.contains(event.target as Node)) bumpEdit();
-    else endEdit();
-  }
-
-  function onWindowKeydown(event: KeyboardEvent): void {
-    if (editing && event.key === "Escape") endEdit();
   }
 
   function onClickCapture(event: MouseEvent): void {
@@ -303,26 +310,10 @@
   }
 </script>
 
-<svelte:window
-  onpointerdown={onWindowPointerDown}
-  onkeydown={onWindowKeydown}
-/>
-
 <div class="reorderable">
-  {#if sortable}
-    <p class="reorder-hint" id={hintId}>
-      {showCover
-        ? t(
-            "The first photo is the cover. Drag a photo or use the arrow keys to change the order.",
-            locale,
-          )
-        : t("Drag a photo or use the arrow keys to change the order.", locale)}
-    </p>
-  {/if}
   <ul
     class="reorder-list"
     class:dragging={dragFrom !== null}
-    class:editing
     bind:this={listElement}
     aria-label={label}
   >
@@ -330,8 +321,9 @@
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <li
         class="reorder-item"
+        class:sortable
         class:drag-source={dragFrom === index}
-        style:animation-delay={`-${(index * 53) % 140}ms`}
+        class:armed={armedId === item.id}
         class:drop-target={dragFrom !== null &&
           dropTo === index &&
           dropTo !== dragFrom}
@@ -357,7 +349,7 @@
               class="thumb thumb-button"
               tabindex="-1"
               aria-label={item.alt_text ?? fallbackAlt}
-              onclick={() => !editing && onOpen(item)}
+              onclick={() => onOpen(item)}
             >
               <img
                 src={item.thumbnail_url}
@@ -377,21 +369,56 @@
             </div>
           {/if}
           {#if showCover && index === 0}
-            <span class="cover-badge">{t("Cover photo", locale)}</span>
+            <span class="cover-badge" title={t("Cover photo", locale)}>
+              <NavIcon name="star" />
+              <span class="visually-hidden">{t("Cover photo", locale)}</span>
+            </span>
           {:else if badge}
             <span class="cover-badge">{@render badge(item, index)}</span>
           {/if}
-          {#if onDelete}
-            <button
-              type="button"
-              class="delete-button"
-              data-no-drag
-              disabled={deleteDisabled || locked}
-              aria-label={t("Remove photo", locale)}
-              onclick={() => onDelete(item)}
-            >
-              <NavIcon name="action-delete" />
-            </button>
+          {#if sortable}
+            <span class="grip" data-handle aria-hidden="true">
+              <NavIcon name="grip" />
+            </span>
+          {/if}
+          {#if onDelete || onEdit || coverAllowed(index)}
+            <div class="tile-actions" data-no-drag>
+              {#if coverAllowed(index)}
+                <button
+                  type="button"
+                  class="tile-button make-cover-button"
+                  aria-label={t("Make cover", locale)}
+                  title={t("Make cover", locale)}
+                  onclick={() => void makeCover(index)}
+                >
+                  <NavIcon name="star" />
+                </button>
+              {/if}
+              {#if onEdit}
+                <button
+                  type="button"
+                  class="tile-button edit-photo-button"
+                  disabled={editDisabled || locked}
+                  aria-label={t("Edit photo", locale)}
+                  title={t("Edit photo", locale)}
+                  onclick={() => onEdit(item)}
+                >
+                  <NavIcon name="edit" />
+                </button>
+              {/if}
+              {#if onDelete}
+                <button
+                  type="button"
+                  class="tile-button delete-button"
+                  disabled={deleteDisabled || locked}
+                  aria-label={t("Remove photo", locale)}
+                  title={t("Remove photo", locale)}
+                  onclick={() => onDelete(item)}
+                >
+                  <NavIcon name="action-delete" />
+                </button>
+              {/if}
+            </div>
           {/if}
         </div>
         {#if sortable}
@@ -413,25 +440,21 @@
             </button>
           </div>
         {/if}
-        {#if onEdit || actions}
+        {#if actions}
           <div class="reorder-actions" data-no-drag>
-            {#if onEdit}
-              <Button
-                class="edit-photo-button"
-                variant="secondary"
-                size="sm"
-                icon="crop"
-                disabled={editDisabled || locked}
-                aria-label={t("Edit photo", locale)}
-                onclick={() => onEdit(item)}>{t("Edit", locale)}</Button
-              >
-            {/if}
-            {#if actions}{@render actions(item)}{/if}
+            {@render actions(item)}
           </div>
         {/if}
       </li>
     {/each}
   </ul>
+  {#if sortable}
+    <p class="reorder-hint" id={hintId}>
+      {showCover
+        ? t("Drag to reorder. The first photo is the cover.", locale)
+        : t("Drag to reorder.", locale)}
+    </p>
+  {/if}
   <p class="visually-hidden" role="status" aria-live="polite">
     {announcement}
   </p>
@@ -440,19 +463,19 @@
 <style>
   .reorderable {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .reorder-hint {
     margin: 0;
     color: var(--ink-muted);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .reorder-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
-    gap: 0.65rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.5rem), 1fr));
+    gap: 0.5rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -463,9 +486,13 @@
     display: grid;
     min-width: 0;
     align-content: start;
-    gap: 0.35rem;
+    gap: 0.3rem;
     -webkit-touch-callout: none;
     user-select: none;
+  }
+
+  .reorder-item.sortable {
+    cursor: grab;
   }
 
   .reorder-item:focus-visible {
@@ -505,64 +532,117 @@
 
   .cover-badge {
     position: absolute;
-    inset-block-end: 8px;
-    inset-inline-start: 8px;
-    max-width: calc(100% - 16px);
+    inset-block-end: 6px;
+    inset-inline-start: 6px;
+    display: inline-flex;
+    max-width: calc(100% - 12px);
+    align-items: center;
+    justify-content: center;
     border-radius: 999px;
-    padding: 0.05rem 0.5rem;
+    padding: 0.15rem 0.4rem;
     color: var(--accent-strong);
     background: var(--surface);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 650;
     pointer-events: none;
   }
 
-  .delete-button {
+  .cover-badge :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .tile-actions {
     position: absolute;
-    inset-block-start: 8px;
-    inset-inline-end: 8px;
+    inset-block-start: 6px;
+    inset-inline-end: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .grip {
+    position: absolute;
+    inset-block-start: 6px;
+    inset-inline-start: 6px;
     display: inline-flex;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    cursor: grab;
+    opacity: 0;
+    touch-action: none;
+  }
+
+  .grip :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .tile-button {
+    position: relative;
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
     align-items: center;
     justify-content: center;
     border: 0;
     border-radius: 50%;
     padding: 0;
-    color: var(--on-danger);
-    background: var(--danger);
-    font-size: 1.3rem;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    font-size: 1.1rem;
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
   }
 
-  .delete-button:disabled {
+  /* Extend the hit area to 44px without growing the visible button. */
+  .tile-button::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
+  }
+
+  .delete-button {
+    color: var(--danger);
+  }
+
+  .tile-button:disabled {
     opacity: 0;
     cursor: not-allowed;
   }
 
-  .editing .delete-button:not(:disabled),
-  .reorder-item:focus-visible .delete-button:not(:disabled),
-  .reorder-item:has(:focus-visible) .delete-button:not(:disabled) {
+  .reorder-item:focus-within .tile-button:not(:disabled),
+  .reorder-item:focus-within .grip {
     opacity: 1;
     pointer-events: auto;
   }
 
+  .tile-button:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
   @media (hover: hover) {
-    .reorder-item:hover .delete-button:not(:disabled) {
+    .reorder-item:hover .tile-button:not(:disabled),
+    .reorder-item:hover .grip {
       opacity: 1;
       pointer-events: auto;
     }
-
-    .reorder-item {
-      cursor: grab;
-    }
   }
 
-  .delete-button:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
+  /* Touch devices have no hover: keep the compact actions visible. */
+  @media (hover: none) {
+    .tile-button:not(:disabled),
+    .grip {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   .dragging,
@@ -577,16 +657,11 @@
     gap: 0.35rem;
   }
 
-  :global(.edit-photo-button) {
-    flex: 1 1 auto;
-    padding-inline: 0.5rem;
-    font-size: 0.85rem;
-  }
-
   .drag-source {
     opacity: 0.55;
   }
 
+  .armed .thumb,
   .drop-target .thumb {
     outline: 3px solid var(--accent-strong);
     outline-offset: 1px;
@@ -603,24 +678,10 @@
     white-space: nowrap;
   }
 
-  @keyframes jiggle {
-    from {
-      transform: rotate(-1.75deg);
-    }
-
-    to {
-      transform: rotate(1.75deg);
-    }
-  }
-
   @media (prefers-reduced-motion: no-preference) {
-    /* Two 140ms alternating halves give a ~280ms period; transform only. */
-    .editing .reorder-item:not(.drag-source) {
-      animation: jiggle 140ms ease-in-out infinite alternate;
-    }
-
     .reorder-item,
-    .delete-button {
+    .tile-button,
+    .grip {
       transition:
         opacity 120ms ease,
         outline-color 120ms ease;

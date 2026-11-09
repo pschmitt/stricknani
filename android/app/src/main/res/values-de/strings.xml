@@ -858,6 +858,7 @@
     <string name="photo_choose">Foto auswählen</string>
     <string name="photo_camera_denied">Der Kamerazugriff ist aus. Erlaube ihn in den Systemeinstellungen, um ein Foto aufzunehmen.</string>
     <string name="editor_photo_cover">Titelbild</string>
+    <string name="editor_photo_make_cover">Als Titelbild festlegen</string>
     <string name="editor_photo_move_earlier">Weiter nach vorn</string>
     <string name="editor_photo_move_later">Weiter nach hinten</string>
     <string name="editor_photo_position">Foto %1$d von %2$d</string>
