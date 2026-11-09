@@ -5,7 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -28,6 +33,7 @@ import blue.anika.wolle.ui.common.ImportProgressPanel
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.importFailureRes
 import blue.anika.wolle.ui.projects.importWarningRes
+import blue.anika.wolle.ui.share.SharedLink
 import blue.anika.wolle.ui.theme.RaspberryNightWash
 import blue.anika.wolle.ui.theme.RaspberryWash
 
@@ -58,6 +64,7 @@ fun ImportLinkCard(
     initialUrl: String = "",
 ) {
     var link by rememberSaveable(initialUrl) { mutableStateOf(initialUrl) }
+    val clipboard = LocalClipboardManager.current
     Column(modifier.fillMaxWidth().testTag("import-link-card")) {
         EditorSectionCard(
             title =
@@ -117,6 +124,24 @@ fun ImportLinkCard(
                                     )
                                 },
                                 placeholder = { Text("https://") },
+                                // Fills the link from the clipboard: its first web link, as a
+                                // share would (a "title link" text works too).
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            val text = clipboard.getText()?.text.orEmpty()
+                                            val pasted = SharedLink.extract(text) ?: text.trim()
+                                            if (pasted.isNotEmpty()) link = pasted
+                                        },
+                                        modifier = Modifier.testTag("import-link-paste"),
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.ContentPaste,
+                                            contentDescription =
+                                                stringResource(R.string.import_paste),
+                                        )
+                                    }
+                                },
                                 singleLine = true,
                                 keyboardOptions =
                                     KeyboardOptions(

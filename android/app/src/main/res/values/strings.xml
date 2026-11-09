@@ -260,6 +260,7 @@
     <string name="import_notification_ready_yarn">Yarn ready to review</string>
     <string name="import_notification_failed">The import did not work</string>
     <string name="import_notification_failed_text">Tap to see why and try again.</string>
+    <string name="import_paste">Paste</string>
     <string name="import_card_title_project">Have a pattern? Paste a link</string>
     <string name="import_card_title_yarn">Have a link to the yarn? Paste it here</string>
     <string name="import_error_too_many_imports">Stricknani is still reading other links. Try again in a minute.</string>

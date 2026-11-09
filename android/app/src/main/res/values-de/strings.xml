@@ -259,6 +259,7 @@
     <string name="import_notification_ready_yarn">Garn bereit zum Prüfen</string>
     <string name="import_notification_failed">Der Import hat nicht geklappt</string>
     <string name="import_notification_failed_text">Tippe, um den Grund zu sehen und es erneut zu versuchen.</string>
+    <string name="import_paste">Einfügen</string>
     <string name="import_card_title_project">Hast du eine Anleitung? Füge einen Link ein</string>
     <string name="import_card_title_yarn">Hast du einen Link zum Garn? Füge ihn hier ein</string>
     <string name="import_error_too_many_imports">Stricknani liest noch andere Links. Versuch es in einer Minute noch einmal.</string>

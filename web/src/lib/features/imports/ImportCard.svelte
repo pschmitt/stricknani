@@ -12,6 +12,7 @@
     type ImportTarget,
   } from "./import-api";
   import { isHttpUrl } from "./import-draft";
+  import { extractSharedUrl } from "./shared-link";
   import {
     IMPORT_DRAFT_POLL_MS,
     createImportDraft,
@@ -69,6 +70,28 @@
 
   let sourceKind = $state<"url" | "text" | "file">("url");
   let sourceUrl = $state("");
+  const uid = $props.id();
+  const urlInputId = `import-url-${uid}`;
+  /** The clipboard API needs a secure context; without it the button stays hidden. */
+  const canPaste =
+    typeof navigator !== "undefined" &&
+    typeof navigator.clipboard?.readText === "function";
+  let pasteRefused = $state(false);
+
+  /** Fills the link from the clipboard: the first web link in it, as a share would. */
+  async function pasteLink() {
+    pasteRefused = false;
+    try {
+      const text = await navigator.clipboard.readText();
+      const link = extractSharedUrl(text) ?? text.trim();
+      if (link) {
+        sourceUrl = link;
+        document.getElementById(urlInputId)?.focus();
+      }
+    } catch {
+      pasteRefused = true;
+    }
+  }
   let sourceText = $state("");
   let selectedFile = $state<File | null>(null);
   let useAi = $state(true);
@@ -433,27 +456,48 @@
         </p>{/if}
 
       {#if forYarn || sourceKind === "url"}
-        <label class="field"
-          ><span
+        <div class="field">
+          <label for={urlInputId}
             >{forYarn
               ? t("Yarn page URL", locale)
-              : t("Pattern page URL", locale)}</span
-          ><input
-            type="url"
-            bind:value={sourceUrl}
-            disabled={!allowExternal || locked}
-            placeholder={forYarn
-              ? "https://shop.example/yarn"
-              : "https://example.com/pattern"}
-            autocomplete="url"
-            onkeydown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                void start();
-              }
-            }}
-          /></label
-        >
+              : t("Pattern page URL", locale)}</label
+          >
+          <div class="url-row">
+            <input
+              id={urlInputId}
+              type="url"
+              bind:value={sourceUrl}
+              disabled={!allowExternal || locked}
+              placeholder={forYarn
+                ? "https://shop.example/yarn"
+                : "https://example.com/pattern"}
+              autocomplete="url"
+              onkeydown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void start();
+                }
+              }}
+            />
+            {#if canPaste}
+              <Button
+                type="button"
+                variant="secondary"
+                icon="clipboard"
+                disabled={!allowExternal || locked}
+                onclick={pasteLink}
+              >
+                {t("Paste", locale)}
+              </Button>
+            {/if}
+          </div>
+          {#if pasteRefused}<small class="supporting"
+              >{t(
+                "Your browser did not allow reading the clipboard. Paste with Ctrl+V or a long press.",
+                locale,
+              )}</small
+            >{/if}
+        </div>
       {:else if sourceKind === "text"}
         <label class="field"
           ><span>{t("Pattern text or instructions", locale)}</span><textarea
@@ -571,6 +615,20 @@
     display: grid;
     gap: 0.35rem;
     font-weight: 620;
+  }
+
+  .url-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .url-row input {
+    flex: 1;
+  }
+
+  .url-row :global(.ui-button) {
+    flex: none;
   }
 
   .field input,
