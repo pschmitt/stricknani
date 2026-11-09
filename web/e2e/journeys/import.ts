@@ -1,5 +1,6 @@
 import { closeBrowser } from "../lib/common";
-// Import review journeys against a disposable Rust fixture.
+// Import journeys (the import card of the new-project editor) against a
+// disposable Rust fixture.
 // Port of ci/stricknani/web_import_browser.py.
 import { chmodSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -123,7 +124,9 @@ export async function runImportJourney(
         // Unreadable payloads only lose a diagnostic count.
       }
     }
-    if (status >= 400 && isImportApi(p)) {
+    // The checks below refuse an import start on purpose (HTTP 503).
+    const refusedStart = p === "/api/v2/imports/drafts" && status === 503;
+    if (status >= 400 && isImportApi(p) && !refusedStart) {
       resourceFailures.push(`HTTP ${status} ${p}`);
     }
   };
@@ -230,10 +233,14 @@ export async function runImportJourney(
     await page.locator(".app-shell").waitFor({ state: "visible" });
 
     markStage("checking capability-gated import options");
+    // There is one way to add things: the editors. The old import pages only
+    // redirect there and keep a link.
     await page.goto(`${origin}/app/imports`, { waitUntil: "networkidle" });
+    await page.waitForURL("**/app/projects/new");
     await page
-      .getByRole("heading", { name: "Import a project" })
+      .getByRole("heading", { name: "New project", exact: true })
       .waitFor({ state: "visible" });
+    await page.getByTestId("import-card").waitFor({ state: "visible" });
     check(
       await page.getByRole("button", { name: "From a link" }).isDisabled(),
       "URL import was not disabled for the fixture capability",
@@ -250,6 +257,10 @@ export async function runImportJourney(
         !(await aiOptIn.isChecked()),
       "AI opt-in was usable without the AI capability",
     );
+    await page.goto(`${origin}/app/imports/yarn`, {
+      waitUntil: "networkidle",
+    });
+    await page.waitForURL("**/app/yarns/new");
 
     markStage("sharing a link to the app with link imports off");
     const sharedLink = "https://www.garnstudio.com/pattern.php?id=12752&cid=9";
@@ -273,8 +284,11 @@ export async function runImportJourney(
       .getByRole("heading", { name: "No link found" })
       .waitFor({ state: "visible" });
 
-    markStage("sharing a link with link imports on prefills the import page");
-    // The fixture server has link imports off: report them on for this check.
+    markStage(
+      "sharing a link with link imports on starts the import in the editor",
+    );
+    // The fixture server has link imports off: report them on for this check
+    // and refuse the import itself, which is all this check needs to see.
     await page.route("**/api/v2/session", async (route) => {
       const upstream = await route.fetch();
       const body = (await upstream.json()) as {
@@ -284,6 +298,28 @@ export async function runImportJourney(
         body.data.capabilities.external_imports = true;
       }
       await route.fulfill({ response: upstream, json: body });
+    });
+    const startedImports: Array<{ url?: string; target?: string }> = [];
+    await page.route("**/api/v2/imports/drafts", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.continue();
+        return;
+      }
+      startedImports.push(
+        (route.request().postDataJSON() ?? {}) as {
+          url?: string;
+          target?: string;
+        },
+      );
+      await route.fulfill({
+        status: 503,
+        json: {
+          error: {
+            code: "feature_disabled",
+            message: "Imports are turned off.",
+          },
+        },
+      });
     });
     await page.goto(
       `${origin}/app/share?text=${encodeURIComponent(shareText)}`,
@@ -299,8 +335,9 @@ export async function runImportJourney(
       "the share chooser did not show the link's host",
     );
     await page.getByTestId("share-project").click();
+    await page.waitForURL("**/app/projects/new?**");
     await page
-      .getByRole("heading", { name: "Import a project" })
+      .getByRole("heading", { name: "New project", exact: true })
       .waitFor({ state: "visible" });
     const prefilled = page.getByLabel("Pattern page URL");
     await prefilled.waitFor({ state: "visible" });
@@ -308,16 +345,21 @@ export async function runImportJourney(
       (await prefilled.inputValue()) === sharedLink,
       "the shared link did not prefill the project import",
     );
+    await page
+      .getByText("Imports are turned off.")
+      .waitFor({ state: "visible" });
     check(
-      importResponses.filter(([p]) => p === "/api/v2/imports/preview")
-        .length === 0,
-      "choosing a share started an import without confirmation",
+      startedImports.length === 1 &&
+        startedImports[0]?.url === sharedLink &&
+        startedImports[0]?.target === "project",
+      "choosing a share did not start the import in the project editor",
     );
     await page.goto(
       `${origin}/app/share?url=${encodeURIComponent(sharedLink)}`,
       { waitUntil: "networkidle" },
     );
     await page.getByTestId("share-yarn").click();
+    await page.waitForURL("**/app/yarns/new?**");
     const yarnPrefilled = page.getByLabel("Yarn page URL");
     await yarnPrefilled.waitFor({ state: "visible" });
     check(
@@ -325,82 +367,89 @@ export async function runImportJourney(
       "the shared link did not prefill the yarn import",
     );
     await page.unroute("**/api/v2/session");
-    await page.goto(`${origin}/app/imports`, { waitUntil: "networkidle" });
+    await page.unroute("**/api/v2/imports/drafts");
 
-    markStage("previewing text and checking review fields");
+    markStage("previewing text and checking the filled editor");
+    await page.goto(`${origin}/app/projects/new`, {
+      waitUntil: "networkidle",
+    });
     const sourceText =
       "Cozy import fixture\n" +
       "A reviewed pattern for a small test swatch.\n" +
       "Cast on 48 stitches. Work four rows in garter stitch.";
+    await page.getByRole("button", { name: "Paste text" }).click();
     await page.getByLabel("Pattern text or instructions").fill(sourceText);
-    await page.getByRole("button", { name: "Preview and review" }).click();
+    await page.getByRole("button", { name: "Start import" }).click();
+    const projectName = page.locator("#project-name");
     await page
-      .getByRole("heading", { name: "Review and correct" })
-      .waitFor({ state: "visible" });
-    const projectName = page.getByLabel("Project name");
-    await projectName.waitFor({ state: "visible" });
+      .getByText("The pattern was read. Check the fields below.")
+      .waitFor({ state: "visible", timeout: 60_000 });
     check(
       Boolean(await projectName.inputValue()),
-      "text preview did not extract a title",
+      "text import did not fill the project name",
     );
 
-    markStage("checking source and draft preservation after network failure");
+    markStage("checking source and edits preservation after network failure");
     await projectName.fill("Edited title retained after failure");
-    await page
-      .getByLabel("Pattern text or instructions")
-      .fill(`${sourceText}\nUpdated source.`);
-    markStage("cancelling replacement of a dirty review");
+    markStage("cancelling replacement of a dirty editor");
     dismissNext(page);
-    await page.getByRole("button", { name: "Preview and review" }).click();
+    await page.getByRole("button", { name: "Import something else" }).click();
     check(
       (await projectName.inputValue()) ===
         "Edited title retained after failure" &&
-        (await page.getByLabel("Pattern text or instructions").inputValue()) ===
-          `${sourceText}\nUpdated source.` &&
         (await page
-          .getByRole("heading", { name: "Review and correct" })
+          .getByText("The pattern was read. Check the fields below.")
           .isVisible()),
-      "cancelling review replacement discarded the existing draft",
+      "cancelling the replacement discarded the filled editor",
+    );
+    page.once("dialog", (dialog: Dialog) => {
+      void dialog.accept();
+    });
+    await page.getByRole("button", { name: "Import something else" }).click();
+    await page
+      .getByLabel("Pattern text or instructions")
+      .waitFor({ state: "visible" });
+    check(
+      (await page.getByLabel("Pattern text or instructions").inputValue()) ===
+        sourceText,
+      "the import source was lost when starting another import",
     );
     let failedOnce = false;
-    const failNextPreview = async (route: Route): Promise<void> => {
-      if (!failedOnce) {
+    const failNextStart = async (route: Route): Promise<void> => {
+      if (route.request().method() === "POST" && !failedOnce) {
         failedOnce = true;
         await route.abort();
       } else {
         await route.continue();
       }
     };
-    await page.route("**/api/v2/imports/preview", failNextPreview);
+    await page.route("**/api/v2/imports/drafts", failNextStart);
     page.once("dialog", (dialog: Dialog) => {
       void dialog.accept();
     });
-    await page.getByRole("button", { name: "Preview and review" }).click();
-    await page.getByRole("alert").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Start import" }).click();
+    await page.getByRole("alert").first().waitFor({ state: "visible" });
     check(failedOnce, "network failure route was not exercised");
     check(
       (await projectName.inputValue()) ===
         "Edited title retained after failure" &&
         (await page.getByLabel("Pattern text or instructions").inputValue()) ===
-          `${sourceText}\nUpdated source.` &&
-        (await page
-          .getByRole("heading", { name: "Review and correct" })
-          .isVisible()),
-      "a failed preview discarded its current source or reviewed draft",
+          sourceText,
+      "a failed import start discarded the source or the edited fields",
     );
-    await page.unroute("**/api/v2/imports/preview", failNextPreview);
+    await page.unroute("**/api/v2/imports/drafts", failNextStart);
 
-    markStage("checking the unsaved import navigation guard");
+    markStage("checking the unsaved editor navigation guard");
     dismissNext(page);
     await page
       .locator(".mobile-navigation")
       .getByRole("link", { name: "Yarns", exact: true })
       .click();
     check(
-      pathOf(page.url()) === "/app/imports" &&
+      pathOf(page.url()) === "/app/projects/new" &&
         (await projectName.inputValue()) ===
           "Edited title retained after failure",
-      "dismissed navigation warning did not preserve the import review",
+      "dismissed navigation warning did not preserve the filled editor",
     );
 
     markStage("clearing the required project name");
@@ -408,38 +457,25 @@ export async function runImportJourney(
     markStage("submitting project validation");
     await page.getByRole("button", { name: "Create project" }).click();
     markStage("waiting for project validation feedback");
-    await page.getByRole("alert").waitFor({ state: "visible" });
-    markStage("checking project review remains after validation");
-    const validationState = await page.evaluate(() => ({
-      path: location.pathname,
-      review: document.querySelector(".review-card") !== null,
-      name: document.querySelector("input[required]") !== null,
-      alert: document.querySelector("[role=alert]") !== null,
-    }));
+    await page.locator("#project-name-error").waitFor({ state: "visible" });
     check(
-      validationState.path === "/app/imports" &&
-        validationState.review &&
-        validationState.name &&
-        validationState.alert,
-      "validation feedback did not preserve the reviewed draft " +
-        `(review=${validationState.review}, ` +
-        `name=${validationState.name}, ` +
-        `alert=${validationState.alert})`,
+      pathOf(page.url()) === "/app/projects/new",
+      "validation feedback left the editor",
     );
-    markStage("restoring project title after validation");
+
+    markStage("checking the layout of the filled editor");
     await projectName.fill("Reviewed import swatch");
-    markStage("saving import notes before project create");
     const noteFields = page.getByLabel("Notes", { exact: true });
     check(
       (await noteFields.count()) === 1,
-      "review page must render exactly one notes field",
+      "the editor must render exactly one notes field",
     );
     await noteFields.fill("Created after checking every imported field.");
     for (const width of [320, 390, 1280]) {
       await page.setViewportSize({ width, height: 844 });
       await assertNoOverflow(page, width);
       const targetHeights: number[] = await page
-        .locator(".source-tabs button, .primary, .secondary")
+        .locator(".import-card .ui-button")
         .evaluateAll((nodes) =>
           nodes
             .filter((node) => node.getClientRects().length > 0)
@@ -453,45 +489,43 @@ export async function runImportJourney(
     await page.setViewportSize({ width: 390, height: 844 });
     await maskFixtureIdentity(page);
     await page.keyboard.press("Escape");
-    const reviewHeading = page.getByRole("heading", {
-      name: "Review and correct",
-    });
-    await reviewHeading.evaluate((element) => {
-      element.tabIndex = -1;
-      element.focus();
-    });
-    await reviewHeading.scrollIntoViewIfNeeded();
-    await page.evaluate(() => {
-      window.scrollBy(0, -80);
-    });
+    await page.locator("#import-card-title").scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(screenshots, "import-review-mobile.png"),
       caret: "initial",
     });
 
-    markStage("checking save action clears the mobile navigation");
-    const createButton = page.getByRole("button", { name: "Create project" });
-    await createButton.scrollIntoViewIfNeeded();
-    const createRect = await createButton.boundingBox();
-    const navigationRect = await page
-      .locator(".mobile-navigation")
-      .boundingBox();
-    check(
-      createRect !== null &&
-        navigationRect !== null &&
-        createRect.height >= 44 &&
-        createRect.y + createRect.height <= navigationRect.y,
-      "the create action is obscured by mobile navigation",
-    );
-    await page.screenshot({
-      path: path.join(screenshots, "import-form-bottom-mobile.png"),
-      caret: "initial",
+    markStage("leaving the editor: the import waits for review");
+    page.once("dialog", (dialog: Dialog) => {
+      void dialog.accept();
     });
+    await page
+      .locator(".mobile-navigation")
+      .getByRole("link", { name: "Projects", exact: true })
+      .click();
+    await page.waitForURL("**/app/projects");
+    const waiting = page.getByTestId("import-drafts");
+    await waiting.waitFor({ state: "visible" });
+    check(
+      (await waiting.getByText("Ready to review").count()) === 1,
+      "the finished import did not wait for review on the projects list",
+    );
+    markStage("opening the waiting import");
+    await waiting.locator("a").first().click();
+    await page.waitForURL("**/app/projects/new?draft=*");
+    await page
+      .getByText("The pattern was read. Check the fields below.")
+      .waitFor({ state: "visible", timeout: 60_000 });
+    check(
+      Boolean(await projectName.inputValue()),
+      "opening a waiting import did not fill the editor",
+    );
 
-    markStage("creating reviewed project through API v2");
+    markStage("creating the reviewed project through API v2");
+    await projectName.fill("Reviewed import swatch");
     // Delay the real API response to cover the in-flight mutation path.
     // Fields should be locked while saving, and a navigation attempt
-    // must still preserve the reviewed draft until the request settles.
+    // must still preserve the draft until the request settles.
     const cdp = await context.newCDPSession(page);
     await cdp.send("Network.enable");
     await cdp.send("Network.emulateNetworkConditions", {
@@ -501,23 +535,12 @@ export async function runImportJourney(
       uploadThroughput: 1_000_000,
       connectionType: "cellular3g",
     });
-    await createButton.click();
+    await page.getByRole("button", { name: "Create project" }).click();
     check(
       await projectName.isDisabled(),
-      "review fields remained editable during project creation",
+      "editor fields remained editable during project creation",
     );
-    dismissNext(page);
-    await page
-      .locator(".mobile-navigation")
-      .getByRole("link", { name: "Yarns", exact: true })
-      .click();
-    check(
-      pathOf(page.url()) === "/app/imports",
-      "dismissed navigation warning left the pending import",
-    );
-    await page
-      .getByRole("link", { name: "Open created project" })
-      .waitFor({ state: "visible" });
+    await page.waitForURL(/\/app\/projects\/\d+$/);
     await cdp.send("Network.emulateNetworkConditions", {
       offline: false,
       latency: 0,
@@ -531,10 +554,16 @@ export async function runImportJourney(
       ),
       "reviewed project was not created through API v2",
     );
+    await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
+    check(
+      (await page.getByTestId("import-drafts").count()) === 0,
+      "a saved import stayed on the waiting list",
+    );
 
-    markStage("starting a second import");
-    await page.getByRole("button", { name: "Start another import" }).click();
-    markStage("choosing the file source");
+    markStage("importing a file into the editor");
+    await page.goto(`${origin}/app/projects/new`, {
+      waitUntil: "networkidle",
+    });
     await page.getByRole("button", { name: "Upload file" }).click();
     markStage("selecting synthetic HTML file");
     await page.getByLabel("Choose a file").setInputFiles({
@@ -543,12 +572,12 @@ export async function runImportJourney(
       buffer: Buffer.from(SYNTHETIC_HTML, "utf-8"),
     });
     markStage("submitting HTML file preview");
-    await page.getByRole("button", { name: "Preview and review" }).click();
-    markStage("waiting for HTML file review");
+    await page.getByRole("button", { name: "Start import" }).click();
+    markStage("waiting for the HTML file to fill the editor");
     try {
       await page
-        .getByRole("heading", { name: "Review and correct" })
-        .waitFor({ state: "visible" });
+        .getByText("The pattern was read. Check the fields below.")
+        .waitFor({ state: "visible", timeout: 60_000 });
     } catch (error) {
       if (!(error instanceof errors.TimeoutError)) {
         throw error;
@@ -561,10 +590,10 @@ export async function runImportJourney(
           ? String(fileStatuses[fileStatuses.length - 1])
           : "not observed";
       throw new AcceptanceFailure(
-        `HTML file preview did not show review (API status ${fileStatus})`,
+        `HTML file import did not fill the editor (API status ${fileStatus})`,
       );
     }
-    markStage("checking extracted yarn in HTML review");
+    markStage("checking extracted yarn in the editor");
     try {
       await page
         .getByRole("heading", { name: "Materials", exact: true })
@@ -578,12 +607,12 @@ export async function runImportJourney(
           ? String(filePreviewYarnCounts[filePreviewYarnCounts.length - 1])
           : "unavailable";
       throw new AcceptanceFailure(
-        `HTML preview did not render imported yarn details (count ${count})`,
+        `HTML import did not render imported yarn details (count ${count})`,
       );
     }
     markStage("checking the extracted yarn name field");
     const importedYarnName = page
-      .locator(".yarn-card input:not([type='radio']):not([type='search'])")
+      .locator(".imported-yarn input:not([type='radio']):not([type='search'])")
       .first();
     await importedYarnName.waitFor({ state: "visible" });
     check(
@@ -595,16 +624,20 @@ export async function runImportJourney(
       "disabled external image capability was not explained",
     );
     check(
-      await page
-        .getByRole("radio", { name: "Create a new yarn" })
-        .first()
-        .isChecked(),
+      (await page.getByRole("radio", { name: "Leave out" }).count()) === 1 &&
+        (await page.getByRole("radio", { name: "From my stash" }).count()) ===
+          1 &&
+        (await page
+          .getByRole("radio", { name: "Create new" })
+          .first()
+          .isChecked()),
       "a yarn without a stash match did not default to creating it",
     );
+    await page.setViewportSize({ width: 320, height: 844 });
+    await assertNoOverflow(page, 320);
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Create project" }).click();
-    await page
-      .getByRole("link", { name: "Open created project" })
-      .waitFor({ state: "visible" });
+    await page.waitForURL(/\/app\/projects\/\d+$/);
     check(
       importResponses.filter(
         ([p, status]) => p === "/api/v2/projects" && status === 201,

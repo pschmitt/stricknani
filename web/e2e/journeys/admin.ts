@@ -1011,8 +1011,8 @@ async function assertMoreNavigation(
     .waitFor({ state: "visible" });
   const createImport = page.locator(".create-options a[href$='/imports']");
   check(
-    (await createImport.count()) === 1,
-    "Create does not contain exactly one Imports link",
+    (await createImport.count()) === 0,
+    "Create still contains an Imports link",
   );
   check(
     (await page.locator(".secondary-nav a[href$='/imports']").count()) === 0,

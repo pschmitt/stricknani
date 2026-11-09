@@ -770,22 +770,19 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
             .count()) === 0,
         "the create page showed stale preview copy or missing creation links",
       );
-      // Create has four tiles; the project import tile is a link whatever
-      // the server's import settings are (only the yarn tile can be disabled).
-      const importsLink = page.getByRole("link", {
-        name: /^Import a project(?:\s|$)/,
-      });
+      // Create has two tiles: there is one way to add things, the editors.
       check(
-        (await importsLink.count()) === 1 &&
-          (await importsLink.isVisible()) &&
-          (await importsLink.getAttribute("href")) === "/app/imports",
-        "Create does not expose one visible project Imports destination",
+        (await page.locator(".create-options > .create-card").count()) === 2 &&
+          (await page
+            .locator(".create-options a[href$='/imports']")
+            .count()) === 0,
+        "Create does not offer exactly the project and yarn tiles",
       );
-      markStage("opening Imports from Create navigation");
-      await importsLink.click();
-      await page.waitForURL("**/app/imports");
+      markStage("opening the old Imports link lands in the project editor");
+      await page.goto(`${origin}/app/imports`);
+      await page.waitForURL("**/app/projects/new");
       await page
-        .getByRole("heading", { name: "Import a project", exact: true })
+        .getByRole("heading", { name: "New project", exact: true })
         .waitFor({ state: "visible" });
     }
   }

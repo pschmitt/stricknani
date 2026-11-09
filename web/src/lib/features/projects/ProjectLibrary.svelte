@@ -17,6 +17,7 @@
   import { scopeFor } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
+  import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
   import {
     filtersFromSearch,
     listCategories,
@@ -235,6 +236,8 @@
   </PageHeader>
 
   <ScopeFilter {locale} />
+
+  <ImportDraftCards target="project" />
 
   <LibraryFilters
     query={filters.query}

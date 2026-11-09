@@ -3,6 +3,7 @@
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { page } from "$app/state";
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
@@ -18,9 +19,27 @@
   import { listCategories } from "../categories/category-api";
   import { getYarn, listYarns, type YarnSummary } from "../yarns/yarn-api";
   import UrlField from "#lib/components/UrlField.svelte";
+  import AssetChoices from "../imports/AssetChoices.svelte";
+  import ImageChoices from "../imports/ImageChoices.svelte";
+  import ImportCard from "../imports/ImportCard.svelte";
+  import ImportedYarns from "../imports/ImportedYarns.svelte";
   import { importAvailability } from "../imports/import-availability";
-  import { isHttpUrl } from "../imports/import-draft";
-  import { importStartQuery } from "../imports/shared-link";
+  import { importWarningMessage, isHttpUrl } from "../imports/import-draft";
+  import {
+    deleteImportDraft,
+    draftIdFromSearch,
+  } from "../imports/import-drafts-api";
+  import {
+    importedProjectWrite,
+    projectFromImport,
+    type ImportEditorState,
+  } from "../imports/import-editor";
+  import type { ImportPreview } from "../imports/import-api";
+  import {
+    autoStartFromSearch,
+    importStartQuery,
+    prefillUrlFromSearch,
+  } from "../imports/shared-link";
   import YarnPicker from "./YarnPicker.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
@@ -104,7 +123,10 @@
   let importOfferDialog = $state<ConfirmDialog | undefined>(undefined);
   let importOfferUrl = $state("");
   let declinedImportUrl = "";
-  let leavingForImport = false;
+  /** What the import added to a new project: pictures to choose, yarns, step pictures. */
+  let importState = $state<ImportEditorState | null>(null);
+  let importBusy = $state(false);
+  let importCard = $state<ImportCard | undefined>(undefined);
   let conflictLoadBusy = $state(false);
   let conflictLoadError = $state("");
   let confirmedAction = $state<ConfirmedAction | null>(null);
@@ -126,6 +148,15 @@
     savedSnapshot !== JSON.stringify(draft) || tagInput.trim().length > 0,
   );
   const isCreating = $derived(projectId === null);
+  const resumeDraftId = $derived(
+    isCreating ? draftIdFromSearch(page.url.search) : null,
+  );
+  const sharedLink = $derived(
+    isCreating ? (prefillUrlFromSearch(page.url.search) ?? "") : "",
+  );
+  const sharedAutoStart = $derived(
+    isCreating && autoStartFromSearch(page.url.search),
+  );
   const mediaAvailable = $derived(
     project !== null &&
       projectId === project.id &&
@@ -194,6 +225,7 @@
         saving ||
         deleting ||
         mediaBusy ||
+        importBusy ||
         categoryLoading ||
         yarnLoading,
     }));
@@ -430,11 +462,46 @@
     untrack(() => importOfferDialog?.showModal());
   }
 
+  /** The import runs in place: it fills this editor, no other page opens. */
   function acceptImport(): void {
-    leavingForImport = true;
     untrack(() => importOfferDialog?.close());
-    void goto(`${resolve("/imports")}${importStartQuery(importOfferUrl)}`);
+    importCard?.startWithUrl(importOfferUrl);
+    document.getElementById("import-card-title")?.scrollIntoView({
+      block: "center",
+    });
   }
+
+  function stepFallbackTitle(number: number): string {
+    return t("Step {number}", locale).replace("{number}", String(number));
+  }
+
+  /** Fill the editor's own fields from a finished import. */
+  function applyImport(result: {
+    preview: ImportPreview;
+    draftId: number | null;
+  }): void {
+    const filled = projectFromImport(
+      result.preview,
+      result.draftId,
+      () => ++stepKey,
+      stepFallbackTitle,
+    );
+    draft = filled.draft;
+    importState = filled.state;
+    selectedYarnNames = {};
+    fieldErrors = {};
+    serverError = "";
+    optionalDetailsOpen = true;
+  }
+
+  const importWarnings = $derived(
+    (importState?.warnings ?? [])
+      .map((code) => ({ code, message: importWarningMessage(code, locale) }))
+      .filter(
+        (entry): entry is { code: string; message: string } =>
+          entry.message !== null,
+      ),
+  );
 
   function declineImport(): void {
     declinedImportUrl = importOfferUrl;
@@ -443,8 +510,6 @@
 
   beforeNavigate(({ cancel, willUnload }) => {
     if (willUnload) return;
-    // The import takes the link over; nothing else was typed worth keeping a prompt for.
-    if (leavingForImport) return;
     if (
       isDirty &&
       typeof window !== "undefined" &&
@@ -465,6 +530,7 @@
 
   function clearPrivateDraft(): void {
     const empty = blankProjectDraft();
+    importState = null;
     draft = empty;
     savedSnapshot = JSON.stringify(empty);
     tagInput = "";
@@ -595,6 +661,13 @@
 
   function makeWrite(isAiEnhanced: boolean): ProjectWrite | null {
     if (showLocalErrors()) return null;
+    if (isCreating && importState)
+      return importedProjectWrite(
+        draft,
+        importState,
+        linkImports.url,
+        t("Amount", locale),
+      );
     return projectWriteFromDraft(draft, isAiEnhanced);
   }
 
@@ -697,6 +770,7 @@
     const generation = routeGeneration;
     const controller = new AbortController();
     let focusServerErrors = false;
+    const importedDraftId = id === null ? (importState?.draftId ?? null) : null;
     operationControllers.add(controller);
     saving = true;
     serverError = "";
@@ -730,6 +804,14 @@
           ? t("Project created.", locale)
           : t("Project changes saved.", locale);
       publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      // The import is done with: take it off the "Waiting for review" list.
+      if (importedDraftId !== null) {
+        try {
+          await deleteImportDraft(importedDraftId, currentSession);
+        } catch {
+          // The draft expires on its own.
+        }
+      }
       await goto(resolve("/projects/[id]", { id: String(result.id) }));
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
@@ -1306,6 +1388,39 @@
         novalidate
         onsubmit={submit}
       >
+        {#if isCreating}
+          <ImportCard
+            bind:this={importCard}
+            target="project"
+            initialUrl={sharedLink}
+            autoStart={sharedAutoStart}
+            {resumeDraftId}
+            replaceNeedsConfirm={importState !== null && isDirty}
+            disabled={saving}
+            bind:busy={importBusy}
+            onReady={applyImport}
+          />
+          {#if importState}
+            {#if importState.aiFallback}<p class="notice" role="status">
+                {t(
+                  "AI enhancement was unavailable, so this preview uses the original extraction.",
+                  locale,
+                )}
+              </p>{/if}
+            {#each importWarnings as warning (warning.code)}<p
+                class="notice"
+                role="status"
+              >
+                {warning.message}
+                {#if warning.code === "looks_like_yarn_page" && draft.link}
+                  <a
+                    href={`${resolve("/yarns/new")}${importStartQuery(draft.link)}`}
+                    >{t("New yarn", locale)}</a
+                  >
+                {/if}
+              </p>{/each}
+          {/if}
+        {/if}
         <!-- Same order as the project page: the name (its title), photos and files, details,
              materials, pattern and notes, steps. -->
         <fieldset
@@ -1337,6 +1452,38 @@
             </div>
           </section>
         </fieldset>
+
+        {#if isCreating && importState && (importState.imageUrls.length || importState.assets.length)}
+          <fieldset class="form-fields" disabled={saving}>
+            <section
+              class="form-card import-media"
+              aria-labelledby="import-media-heading"
+            >
+              <h2 id="import-media-heading">
+                {t("Project photos and files", locale)}
+              </h2>
+              <p class="section-hint">
+                {t(
+                  "Choose the pictures and files to keep. They are saved with the project.",
+                  locale,
+                )}
+              </p>
+              {#if importState.imageUrls.length}<ImageChoices
+                  title={t("Suggested project images", locale)}
+                  images={importState.imageUrls}
+                  disabled={!linkImports.url || saving}
+                  external={linkImports.url}
+                  {locale}
+                />{/if}
+              {#if importState.assets.length}<AssetChoices
+                  assets={importState.assets}
+                  disabled={!linkImports.url || saving}
+                  external={linkImports.url}
+                  {locale}
+                />{/if}
+            </section>
+          </fieldset>
+        {/if}
 
         {#if project}
           <section
@@ -1656,6 +1803,23 @@
             <div class="optional-details__content">
               <section class="form-card" aria-labelledby="yarn-heading">
                 <h2 id="yarn-heading">{t("Materials", locale)}</h2>
+                {#if importState && importState.yarns.length}
+                  <p class="section-hint">
+                    {t(
+                      "For each yarn the import found, use one from your stash, create a new one, or leave it out.",
+                      locale,
+                    )}
+                  </p>
+                  <ImportedYarns
+                    bind:yarns={importState.yarns}
+                    {locale}
+                    disabled={saving}
+                    allowExternal={linkImports.url}
+                  />
+                  <h3 class="more-yarn-heading">
+                    {t("More yarn from my stash", locale)}
+                  </h3>
+                {/if}
                 <YarnPicker
                   {locale}
                   query={yarnSearchInput}
@@ -1805,6 +1969,15 @@
                             bind:value={step.description}
                             rows="4"></textarea>
                         </div>
+                        {#if importState?.stepImages[step.key]?.length}
+                          <ImageChoices
+                            title={t("Suggested step images", locale)}
+                            images={importState.stepImages[step.key]}
+                            disabled={!linkImports.url || saving}
+                            external={linkImports.url}
+                            {locale}
+                          />
+                        {/if}
                       </li>
                     {/each}
                   </ol>
@@ -2103,6 +2276,16 @@
 
   .yarn-other-materials {
     margin-top: 1rem;
+  }
+
+  .more-yarn-heading {
+    margin: 1.2rem 0 0.4rem;
+    font-size: 1rem;
+  }
+
+  .notice a {
+    color: var(--accent-strong);
+    font-weight: 650;
   }
 
   label {

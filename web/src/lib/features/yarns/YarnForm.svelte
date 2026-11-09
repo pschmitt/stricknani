@@ -4,6 +4,7 @@
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { page } from "$app/state";
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
@@ -23,6 +24,24 @@
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
+  import ImageChoices from "../imports/ImageChoices.svelte";
+  import ImportCard from "../imports/ImportCard.svelte";
+  import type { ImportPreview } from "../imports/import-api";
+  import { importAvailability } from "../imports/import-availability";
+  import {
+    importWarningMessage,
+    yarnImportEditor,
+    type ImportImageChoice,
+  } from "../imports/import-draft";
+  import {
+    deleteImportDraft,
+    draftIdFromSearch,
+  } from "../imports/import-drafts-api";
+  import {
+    autoStartFromSearch,
+    importStartQuery,
+    prefillUrlFromSearch,
+  } from "../imports/shared-link";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
   import {
     createYarn,
@@ -106,9 +125,27 @@
   let optionalDetailsOpen = $state(false);
   let reload = $state(0);
   let routeGeneration = 0;
+  /** What an import added to a new yarn: pictures to choose from and where it came from. */
+  let importImages = $state<ImportImageChoice[]>([]);
+  let importDraftId = $state<number | null>(null);
+  let importAi = $state(false);
+  let importWarnings = $state<string[]>([]);
+  let importBusy = $state(false);
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  const allowExternalImages = $derived(
+    importAvailability(session.data?.capabilities).url,
+  );
+  const resumeDraftId = $derived(
+    yarnId === null ? draftIdFromSearch(page.url.search) : null,
+  );
+  const sharedLink = $derived(
+    yarnId === null ? (prefillUrlFromSearch(page.url.search) ?? "") : "",
+  );
+  const sharedAutoStart = $derived(
+    yarnId === null && autoStartFromSearch(page.url.search),
+  );
   const isDirty = $derived(savedSnapshot !== JSON.stringify(draft));
   const canManagePhotos = $derived(
     loadedYarn !== null && !isDirty && !saving && !mediaBusy && !deleting,
@@ -131,7 +168,12 @@
   onMount(() => {
     const unregister = registerPwaUpdateGuard(() => ({
       dirty: isDirty,
-      busy: loadState === "loading" || saving || mediaBusy || deleting,
+      busy:
+        loadState === "loading" ||
+        saving ||
+        mediaBusy ||
+        deleting ||
+        importBusy,
     }));
     const onKeydown = (event: KeyboardEvent) => {
       if (
@@ -266,6 +308,43 @@
     conflictYarn = null;
   }
 
+  /** Fill the form from a finished import. */
+  function applyImport(result: {
+    preview: ImportPreview;
+    draftId: number | null;
+  }): void {
+    const editor = yarnImportEditor(result.preview, draft.link);
+    draft = {
+      ...blankDraft(),
+      name: editor.name,
+      brand: editor.brand,
+      colorway: editor.colorway,
+      fiber_content: editor.fiberContent,
+      weight_category: editor.weightCategory,
+      recommended_needles: editor.recommendedNeedles,
+      weight_grams: editor.weightGrams,
+      length_meters: editor.lengthMeters,
+      description: editor.description,
+      notes: editor.notes,
+      link: editor.link,
+    };
+    importImages = editor.images;
+    importDraftId = result.draftId;
+    importAi = result.preview.is_ai_enhanced;
+    importWarnings = result.preview.draft.warnings;
+    fieldErrors = {};
+    optionalDetailsOpen = true;
+  }
+
+  const importNotices = $derived(
+    importWarnings
+      .map((code) => ({ code, message: importWarningMessage(code, locale) }))
+      .filter(
+        (entry): entry is { code: string; message: string } =>
+          entry.message !== null,
+      ),
+  );
+
   function optionalText(value: string): string | null {
     const cleaned = value.trim();
     return cleaned ? cleaned : null;
@@ -304,6 +383,13 @@
     }
     revealErroredOptionalFields();
     if (Object.keys(fieldErrors).length > 0) return null;
+    const imageUrls =
+      yarnId === null && allowExternalImages
+        ? importImages
+            .filter((image) => image.selected)
+            .map((image) => image.url.trim())
+            .filter(Boolean)
+        : [];
     return {
       name,
       description: optionalText(draft.description),
@@ -317,7 +403,8 @@
       length_meters: lengthMeters,
       notes: optionalText(draft.notes),
       link,
-      is_ai_enhanced: loadedYarn?.is_ai_enhanced ?? false,
+      is_ai_enhanced: loadedYarn?.is_ai_enhanced ?? importAi,
+      ...(imageUrls.length ? { image_urls: imageUrls } : {}),
     };
   }
 
@@ -355,6 +442,7 @@
     const ownerId = currentSession.user.id;
     const generation = routeGeneration;
     let focusServerErrors = false;
+    const importedDraftId = id === null ? importDraftId : null;
     saving = true;
     serverError = "";
     statusMessage = "";
@@ -374,6 +462,14 @@
         kind: "success",
         message: successMessage,
       });
+      // The import is done with: take it off the "Waiting for review" list.
+      if (importedDraftId !== null) {
+        try {
+          await deleteImportDraft(importedDraftId, currentSession);
+        } catch {
+          // The draft expires on its own.
+        }
+      }
       await goto(`${resolve("/yarns")}/${result.id}`);
     } catch (error) {
       if (!isCurrentRoute(id, ownerId, generation)) return;
@@ -664,16 +760,29 @@
       {/if}
     {/if}
 
-    {#if yarnId === null && session.data?.capabilities.external_imports}
-      <p class="import-link">
-        <a
-          class="ui-button ui-button--secondary"
-          href={resolve("/imports/yarn")}
-          ><ActionLabel icon="link"
-            >{t("Import from a link", locale)}</ActionLabel
-          ></a
+    {#if yarnId === null}
+      <ImportCard
+        target="yarn"
+        initialUrl={sharedLink}
+        autoStart={sharedAutoStart}
+        {resumeDraftId}
+        replaceNeedsConfirm={isDirty}
+        disabled={saving}
+        bind:busy={importBusy}
+        onReady={applyImport}
+      />
+      {#each importNotices as notice (notice.code)}<p
+          class="import-notice"
+          role="status"
         >
-      </p>
+          {notice.message}
+          {#if notice.code === "looks_like_pattern_page" && draft.link}
+            <a
+              href={`${resolve("/projects/new")}${importStartQuery(draft.link)}`}
+              >{t("New project", locale)}</a
+            >
+          {/if}
+        </p>{/each}
     {/if}
 
     {#if conflictYarn}
@@ -927,12 +1036,23 @@
       {:else}
         <section class="photo-placeholder" aria-labelledby="yarn-photos-title">
           <h2 id="yarn-photos-title">{t("Photos", locale)}</h2>
-          <p>
-            {t(
-              "Save this yarn first. You can add photos as soon as it has been created.",
-              locale,
-            )}
-          </p>
+          {#if importImages.length}
+            <ImageChoices
+              title={t("Photos to add", locale)}
+              images={importImages}
+              disabled={!allowExternalImages || saving}
+              external={allowExternalImages}
+              {locale}
+            />
+          {/if}
+          {#if !importImages.length}
+            <p>
+              {t(
+                "Save this yarn first. You can add photos as soon as it has been created.",
+                locale,
+              )}
+            </p>
+          {/if}
         </section>
       {/if}
 
@@ -1321,7 +1441,16 @@
       grid-template-columns: minmax(0, 1fr);
     }
   }
-  .import-link {
-    margin: 0 0 1rem;
+  .import-notice {
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-xs);
+    background: var(--surface-raised);
+  }
+
+  .import-notice a {
+    color: var(--accent-strong);
+    font-weight: 650;
   }
 </style>

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImportPreview } from "./import-api";
 import {
-  createProjectWrite,
   createYarnImportWrite,
   createYarnWrite,
   fieldHint,
@@ -85,88 +84,13 @@ const preview: ImportPreview = {
 };
 
 describe("import review mapping", () => {
-  it("keeps extracted fields editable and preserves image suggestions when disabled", () => {
+  it("keeps extracted fields editable", () => {
     const editor = importProjectEditor(preview);
     expect(editor.name).toBe("Winter shawl");
     expect(editor.steps[0]?.stepNumber).toBe(3);
     expect(editor.notes).toContain("Gauge width: 18");
     expect(editor.notes).toContain("designer_note: Work loosely");
-
-    const write = createProjectWrite(
-      editor,
-      false,
-      false,
-      (number) => `Step ${number}`,
-    );
-    expect(write.steps[0]?.step_number).toBe(3);
-    expect(write.steps[0]?.image_urls).toBeUndefined();
-    expect(write.image_urls).toBeUndefined();
-    expect(write.notes).toContain("Project image URL not attached");
-    expect(write.notes).toContain("Step image URL not attached (3)");
-  });
-
-  it("passes only explicitly selected suggestions when server capability is enabled", () => {
-    const editor = importProjectEditor(preview);
-    editor.imageUrls[0]!.selected = false;
-    editor.steps[0]!.images[0]!.selected = true;
-    const write = createProjectWrite(
-      editor,
-      true,
-      true,
-      (number) => `Step ${number}`,
-    );
-    expect(write.image_urls).toBeUndefined();
-    expect(write.steps[0]?.image_urls).toEqual([
-      "https://images.example.test/step.jpg",
-    ]);
-    expect(write.is_ai_enhanced).toBe(true);
-  });
-
-  it("saves selected diagrams and PDFs as attachments and keeps the rest as links", () => {
-    const editor = importProjectEditor(preview);
     expect(editor.assets.map((asset) => asset.selected)).toEqual([true, true]);
-    const write = createProjectWrite(
-      editor,
-      false,
-      true,
-      (number) => `Step ${number}`,
-    );
-    expect(write.attachment_urls).toEqual([
-      {
-        url: "https://images.example.test/drops/22-chart.jpg",
-        kind: "diagram",
-        label: "Diagram for DROPS 273-22",
-      },
-      {
-        url: "https://patterns.example.test/shawl.pdf",
-        kind: "pdf",
-        label: null,
-      },
-    ]);
-    expect(write.notes ?? "").not.toContain("not attached: Diagram");
-
-    editor.assets[1]!.selected = false;
-    const partial = createProjectWrite(
-      editor,
-      false,
-      true,
-      (number) => `Step ${number}`,
-    );
-    expect(partial.attachment_urls).toHaveLength(1);
-    expect(partial.notes).toContain(
-      "PDF link not attached: https://patterns.example.test/shawl.pdf",
-    );
-
-    const offline = createProjectWrite(
-      editor,
-      false,
-      false,
-      (number) => `Step ${number}`,
-    );
-    expect(offline.attachment_urls).toBeUndefined();
-    expect(offline.notes).toContain(
-      "Diagram URL not attached: Diagram for DROPS 273-22 - https://images.example.test/drops/22-chart.jpg",
-    );
   });
 
   it("maps yarn facts to the yarn choice and keeps them out of the notes", () => {
@@ -190,8 +114,6 @@ describe("import review mapping", () => {
       expect(editor.notes).not.toContain(yarnFact);
     expect(editor.notes).not.toContain("Schurwolle");
     expect(editor.notes).not.toContain("Merino");
-    const write = createProjectWrite(editor, false, true, (n) => `Step ${n}`);
-    expect(write.notes).not.toContain("Schurwolle");
     expect(editor.yarns).toHaveLength(1);
   });
 
@@ -214,48 +136,22 @@ describe("import review mapping", () => {
       stashId: 42,
       suggestedId: 42,
     });
-    const write = createProjectWrite(editor, false, true, (n) => `Step ${n}`);
-    expect(write.yarn_ids).toEqual([42]);
-    expect(write.new_yarns).toEqual([]);
+    expect(editor.yarns[0]?.stashCandidates).toEqual([42]);
   });
 
-  it("writes the chosen stash yarns, new yarns and extra stash yarns, and none for skip", () => {
-    const base = importProjectEditor(preview);
-    const second = { ...base.yarns[0]!, name: "Second yarn" };
-    const third = { ...base.yarns[0]!, name: "Third yarn" };
-    const editor = {
-      ...base,
-      yarns: [
-        { ...base.yarns[0]!, choice: "stash" as const, stashId: 5 },
-        { ...second, choice: "new" as const, amount: "250-300 g" },
-        { ...third, choice: "skip" as const },
+  it("keeps every stash match, best first", () => {
+    const editor = importProjectEditor({
+      ...preview,
+      yarn_matches: [
+        { index: 0, yarn_id: 7, score: 0.6, exact: false },
+        { index: 0, yarn_id: 42, score: 1, exact: true },
       ],
-      extraStashIds: [5, 9],
-    };
-    const write = createProjectWrite(
-      editor,
-      true,
-      true,
-      (n) => `Step ${n}`,
-      "Amount",
-    );
-    expect(write.yarn_ids).toEqual([5, 9]);
-    expect(write.new_yarns).toHaveLength(1);
-    expect(write.new_yarns![0]).toMatchObject({
-      name: "Second yarn",
-      weight_grams: 100,
-      is_ai_enhanced: true,
-      image_urls: ["https://images.example.test/skein.jpg"],
-      notes: "Amount: 250-300 g",
     });
-    const skipped = {
-      ...editor,
-      yarns: editor.yarns.map((yarn) => ({ ...yarn, choice: "skip" as const })),
-      extraStashIds: [],
-    };
-    const none = createProjectWrite(skipped, false, true, (n) => `S${n}`);
-    expect(none.yarn_ids).toEqual([]);
-    expect(none.new_yarns).toEqual([]);
+    expect(editor.yarns[0]).toMatchObject({
+      stashId: 42,
+      suggestedId: 42,
+      stashCandidates: [42, 7],
+    });
   });
 
   it("fetches a new yarn's photo only when external images are allowed", () => {

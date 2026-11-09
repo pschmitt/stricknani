@@ -20,6 +20,7 @@
   import { scopeFor } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
+  import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
   import {
     loadFavoriteProjects,
     loadFavoriteYarns,
@@ -164,6 +165,8 @@
     </div>
   {:else}
     <ScopeFilter {locale} />
+
+    <ImportDraftCards target="all" />
 
     <!-- 1. Pick up the project worked on last. -->
     <section class="home-continue" aria-labelledby="home-continue-title">

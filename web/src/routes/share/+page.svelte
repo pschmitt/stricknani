@@ -6,7 +6,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { importAvailability } from "#lib/features/imports/import-availability.ts";
   import {
-    importPrefillQuery,
+    importStartQuery,
     sharedUrlFromSearch,
   } from "#lib/features/imports/shared-link.ts";
   import { t } from "#lib/i18n.svelte.ts";
@@ -34,13 +34,13 @@
     }
   });
 
-  // Choosing only opens the import page with the link filled in; nothing is
-  // imported until the user confirms there.
+  // Choosing opens the new project or new yarn editor with the link filled
+  // in and the import started there.
   function choose(kind: "project" | "yarn"): void {
     if (!link) return;
     const path =
-      kind === "project" ? resolve("/imports") : resolve("/imports/yarn");
-    void goto(`${path}${importPrefillQuery(link)}`, { replaceState: true });
+      kind === "project" ? resolve("/projects/new") : resolve("/yarns/new");
+    void goto(`${path}${importStartQuery(link)}`, { replaceState: true });
   }
 </script>
 

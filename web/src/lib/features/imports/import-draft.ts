@@ -1,7 +1,3 @@
-import type {
-  ProjectStepWrite,
-  ProjectWrite,
-} from "../projects/project-api.ts";
 import type { YarnWrite } from "../yarns/yarn-api.ts";
 import { t } from "#lib/i18n.svelte.ts";
 import type {
@@ -46,6 +42,8 @@ export interface ImportYarnEditor {
   stashId: number | null;
   /** The server's suggested match, if any, for the "Suggested" badge. */
   suggestedId: number | null;
+  /** Every stash yarn the server found for this yarn, best match first. */
+  stashCandidates: number[];
   name: string;
   brand: string;
   colorway: string;
@@ -73,8 +71,6 @@ export interface ImportProjectEditor {
   assets: ImportAssetChoice[];
   steps: ImportStepEditor[];
   yarns: ImportYarnEditor[];
-  /** Stash yarns the user linked in addition to the ones the import found. */
-  extraStashIds: number[];
 }
 
 export function importProjectEditor(
@@ -96,9 +92,14 @@ export function importProjectEditor(
       imageUrl: null,
     });
   }
-  const matches = new Map(
-    (preview.yarn_matches ?? []).map((match) => [match.index, match.yarn_id]),
-  );
+  const matches = new Map<number, number[]>();
+  for (const match of [...(preview.yarn_matches ?? [])].sort(
+    (left, right) => right.score - left.score,
+  )) {
+    const ids = matches.get(match.index) ?? [];
+    if (!ids.includes(match.yarn_id)) ids.push(match.yarn_id);
+    matches.set(match.index, ids);
+  }
   return {
     name: project.name ?? "",
     description: project.description ?? "",
@@ -120,77 +121,8 @@ export function importProjectEditor(
     })),
     steps: project.steps.map(importStepEditor),
     yarns: yarns.map((yarn, index) =>
-      importYarnEditor(yarn, matches.get(index) ?? null),
+      importYarnEditor(yarn, matches.get(index) ?? []),
     ),
-    extraStashIds: [],
-  };
-}
-
-/** Stash yarns to link: the chosen ones for imported yarns plus the extra ones, once each. */
-export function linkedStashIds(draft: ImportProjectEditor): number[] {
-  const ids = draft.yarns
-    .filter((yarn) => yarn.choice === "stash" && yarn.stashId !== null)
-    .map((yarn) => yarn.stashId as number);
-  return [...new Set([...ids, ...draft.extraStashIds])];
-}
-
-export function createProjectWrite(
-  draft: ImportProjectEditor,
-  isAiEnhanced: boolean,
-  allowExternalImages: boolean,
-  fallbackStepTitle: (number: number) => string,
-  amountLabel = "Amount",
-): ProjectWrite {
-  const stepImages = draft.steps.map((step) =>
-    step.images
-      .filter((image) => image.selected && allowExternalImages)
-      .map((image) => image.url.trim())
-      .filter(Boolean),
-  );
-  const notes = [
-    draft.notes.trim(),
-    unattachedImageNotes(draft, allowExternalImages),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-  const steps: ProjectStepWrite[] = draft.steps.map((step, index) => ({
-    title: step.title.trim() || fallbackStepTitle(step.stepNumber || index + 1),
-    description: optionalText(step.description),
-    step_number: step.stepNumber || index + 1,
-    ...(stepImages[index].length ? { image_urls: stepImages[index] } : {}),
-  }));
-  const imageUrls = draft.imageUrls
-    .filter((image) => image.selected && allowExternalImages)
-    .map((image) => image.url.trim())
-    .filter(Boolean);
-  const attachmentUrls = draft.assets
-    .filter((asset) => asset.selected && allowExternalImages)
-    .map((asset) => ({
-      url: asset.url.trim(),
-      kind: asset.kind,
-      label: optionalText(asset.label),
-    }))
-    .filter((asset) => asset.url);
-  return {
-    name: draft.name.trim(),
-    category: optionalText(draft.category),
-    needles: optionalText(draft.needles),
-    stitch_sample: optionalText(draft.stitchSample),
-    description: optionalText(draft.description),
-    notes: optionalText(notes),
-    other_materials: optionalText(draft.otherMaterials),
-    tags: [],
-    link: optionalText(draft.link),
-    is_ai_enhanced: isAiEnhanced,
-    yarn_ids: linkedStashIds(draft),
-    new_yarns: draft.yarns
-      .filter((yarn) => yarn.choice === "new" && yarn.name.trim())
-      .map((yarn) =>
-        createYarnWrite(yarn, isAiEnhanced, allowExternalImages, amountLabel),
-      ),
-    steps,
-    ...(imageUrls.length ? { image_urls: imageUrls } : {}),
-    ...(attachmentUrls.length ? { attachment_urls: attachmentUrls } : {}),
   };
 }
 
@@ -264,13 +196,15 @@ function importStepEditor(step: ImportedStepDraft): ImportStepEditor {
 
 function importYarnEditor(
   source: ImportedYarnDraft,
-  suggestedId: number | null,
+  candidates: number[],
 ): ImportYarnEditor {
+  const suggestedId = candidates[0] ?? null;
   return {
     source,
     choice: suggestedId !== null ? "stash" : "new",
     stashId: suggestedId,
     suggestedId,
+    stashCandidates: candidates,
     name: source.name ?? "",
     brand: source.brand ?? "",
     colorway: source.colorway ?? "",
@@ -308,36 +242,6 @@ function leftoverDetails(project: ImportedProjectDraft): string {
 }
 
 const INTERNAL_EXTRAS = new Set(["page_text", "structured_data", "page_links"]);
-
-function unattachedImageNotes(
-  draft: ImportProjectEditor,
-  allowExternalImages: boolean,
-): string {
-  const lines: string[] = [];
-  for (const image of draft.imageUrls) {
-    if (!image.selected || !allowExternalImages)
-      lines.push(`${t("Project image URL not attached")}: ${image.url}`);
-  }
-  for (const step of draft.steps) {
-    for (const image of step.images) {
-      if (!image.selected || !allowExternalImages)
-        lines.push(
-          `${t("Step image URL not attached")} (${step.stepNumber}): ${image.url}`,
-        );
-    }
-  }
-  // Diagrams and PDFs that are not stored stay reachable as links.
-  for (const asset of draft.assets) {
-    if (asset.selected && allowExternalImages) continue;
-    const prefix =
-      asset.kind === "pdf"
-        ? t("PDF link not attached")
-        : t("Diagram URL not attached");
-    const label = asset.label ? `${asset.label} - ` : "";
-    lines.push(`${prefix}: ${label}${asset.url}`);
-  }
-  return lines.join("\n");
-}
 
 function formatExtra(value: unknown): string {
   if (typeof value === "string") return value;

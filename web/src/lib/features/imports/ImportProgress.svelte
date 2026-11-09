@@ -21,7 +21,14 @@
     kind,
     ai,
     locale,
-  }: { kind: ImportSourceKind; ai: boolean; locale: "en" | "de" } = $props();
+    since = null,
+  }: {
+    kind: ImportSourceKind;
+    ai: boolean;
+    locale: "en" | "de";
+    /** When the server started the import (epoch ms), for one that was already running. */
+    since?: number | null;
+  } = $props();
 
   let elapsed = $state(0);
   const steps = $derived(importSteps(kind, ai));
@@ -29,7 +36,8 @@
   const fraction = $derived(progressFraction(elapsed, ai));
 
   onMount(() => {
-    const started = performance.now();
+    const head = since === null ? 0 : Math.max(0, Date.now() - since);
+    const started = performance.now() - head;
     const timer = window.setInterval(() => {
       elapsed = performance.now() - started;
     }, 250);
