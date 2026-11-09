@@ -25,9 +25,30 @@ branch.
 
 | Output | Trigger | Result |
 | --- | --- | --- |
-| Android APKs | Push to `main`, or a `v*` / `X.Y.Z` tag | A push moves the rolling `latest` prerelease (debug and release APKs). A tag publishes a permanent GitHub release with signed release APKs, `SHA256SUMS` and build provenance. |
+| GitHub release assets | Push to `main`, or a `v*` / `X.Y.Z` tag | A push replaces the rolling `latest` prerelease; a tag publishes a permanent GitHub release. Both carry the same set, see below. |
 | Play Store bundle | A `vX.Y.Z` tag | A signed bundle goes to the internal and closed testing tracks. See [`android/docs/play-store-release.md`](../android/docs/play-store-release.md). |
 | Container image | Push to `main` that touches the crate (`src/`, `tests/`, `migrations/`, ...), `web/`, `nix/`, the flake or the `Dockerfile` | The image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
+
+The release assets (tag releases and `latest` alike; `<tag>` is `latest` or the tag name):
+
+- `stricknani-<tag>-app-{arm64-v8a,armeabi-v7a,x86_64,x86}-{release,debug}.apk`: the eight Android
+  APKs (tags and `latest` use different release channels).
+- `stricknani-server-<tag>-linux-x86_64` and `-linux-aarch64`: the static (musl) server binary,
+  built with Nix (`.#stricknani-server-static`, nix/rust-core-package.nix on `pkgsStatic`), aarch64
+  natively on GitHub's arm runners. It has no Nix wrapper: set `WEB_ROOT`,
+  `STRICKNANI_DATABASE_URL` and `STRICKNANI_MEDIA_ROOT` (see `--help`); `tesseract` for OCR is not
+  bundled.
+- `stricknani-web-<tag>.tar.gz`: the built web app (`.#stricknani-web`) that `WEB_ROOT` points to.
+- `SHA256SUMS` over all of the above; it is also the subject of the build-provenance attestation.
+  The release body has a short run-without-Nix note.
+
+`release.yaml` builds in separate jobs (`release` for the APKs, `server` for the binaries and web
+archive) and publishes in one `publish` job. A newer push cancels the builds of the older run but
+never its `publish` job, which queues per ref: cancelling an upload midway once left `latest` with a
+single APK. `publish` replaces `latest`'s assets as a whole and deletes anything not in the current
+set. To check the assets without touching a release, dispatch the Release workflow with lane
+`github-release` and `dry_run` enabled: it builds everything and attaches the would-be assets (and
+release notes) to the run as the `release-assets-preview` artifact.
 
 To cut a release:
 

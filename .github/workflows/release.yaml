@@ -21,6 +21,16 @@ name: Release
 # android/docs/play-store-release.md); a tag push fails loudly instead of silently publishing if
 # either is missing. Version resolution stays local: a real value is computed on every run.
 #
+# Assets (tag release and "latest" alike): the eight APKs (release + debug, four ABIs), static musl
+# `stricknani-server` binaries for Linux x86_64 and aarch64 (built natively with Nix, aarch64 on
+# GitHub's arm runners), the built web app as `stricknani-web-<tag>.tar.gz`, and `SHA256SUMS` over all
+# of them (also the subject of the build-provenance attestation).
+#
+# Builds and publishing are separate jobs. A newer push cancels the older run's *builds* (job-level
+# concurrency), but never its `publish` job: cancelling an upload midway used to leave "latest"
+# with a single APK (softprops/action-gh-release replaces each asset as it uploads them in parallel).
+# `publish` runs serially per ref, so the rolling release is always replaced as a whole.
+#
 # A manual dispatch runs one lane: `github-release` (the GitHub release for the dispatched ref) or
 # `play-store` (a Play build, by default without uploading; see the inputs).
 #
@@ -68,6 +78,11 @@ on:
         required: false
         default: ""
         type: string
+      dry_run:
+        description: "github-release lane: build everything and attach the release assets to the run as an artifact, without touching any release or tag"
+        required: false
+        default: false
+        type: boolean
       publish:
         description: "Upload the bundle to the requested Play track(s)"
         required: true
@@ -79,9 +94,8 @@ on:
         default: draft
         type: string
 
-concurrency:
-  group: release-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# No workflow-level concurrency: see the header. Each build job cancels its predecessor on a branch
+# push (tags always run to completion); `publish` queues instead.
 
 permissions:
   contents: read
@@ -92,6 +106,9 @@ jobs:
     # into the APKs and the Play bundle from android/local-server-libs.
     name: In-app server libraries
     runs-on: ubuntu-26.04
+    concurrency:
+      group: release-libs-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref_type != 'tag' }}
     permissions:
       contents: read
     steps:
@@ -139,16 +156,43 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  release:
-    name: GitHub release (APKs)
-    needs: local-server-libs
+  params:
+    name: Release parameters
     if: ${{ github.event_name == 'push' || inputs.lane == 'github-release' }}
     runs-on: ubuntu-26.04
+    outputs:
+      tag_name: ${{ steps.params.outputs.tag_name }}
+      release_name: ${{ steps.params.outputs.release_name }}
+    steps:
+      - name: Determine release parameters
+        # A pushed semantic-version tag gets its own permanent release; anything else (a main push,
+        # or a manual dispatch off main) republishes the rolling "latest" prerelease instead.
+        id: params
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            {
+              echo "tag_name=$REF_NAME"
+              echo "release_name=$REF_NAME"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "tag_name=latest"
+              echo "release_name=Latest build"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    name: Android APKs
+    needs: [params, local-server-libs]
+    runs-on: ubuntu-26.04
+    concurrency:
+      group: release-apks-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref_type != 'tag' }}
     permissions:
-      contents: write
-      actions: write
-      id-token: write
-      attestations: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -170,29 +214,6 @@ jobs:
           keystore-base64: ${{ secrets.CI_KEYSTORE_BASE64 }}
           file-name: stricknani-ci.jks
 
-      - name: Determine release parameters
-        # A pushed semantic-version tag gets its own permanent release; anything else (a main push,
-        # or a manual dispatch off main) republishes the rolling "latest" prerelease instead.
-        id: params
-        run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            {
-              echo "tag_name=${{ github.ref_name }}"
-              echo "release_name=${{ github.ref_name }}"
-              echo "include_debug=true"
-              echo "move_tag=false"
-              echo "vacuum_stale_assets=false"
-            } >> "$GITHUB_OUTPUT"
-          else
-            {
-              echo "tag_name=latest"
-              echo "release_name=Latest build"
-              echo "include_debug=true"
-              echo "move_tag=true"
-              echo "vacuum_stale_assets=true"
-            } >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Compute git revision
         id: git_revision
         run: echo "value=$(git describe --always --abbrev=12 --dirty --exclude=latest)" >> "$GITHUB_OUTPUT"
@@ -208,77 +229,6 @@ jobs:
             version_name="0.1.0"
           fi
           echo "name=$version_name" >> "$GITHUB_OUTPUT"
-
-      - name: Generate release summary
-        if: steps.params.outputs.tag_name != 'latest'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          previous_tag=""
-          while IFS= read -r candidate
-          do
-            if [[ "$candidate" != latest && "$candidate" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]
-            then
-              previous_tag="$candidate"
-              break
-            fi
-          done < <(git tag --merged "${GITHUB_SHA}^" --sort=-version:refname)
-          if [[ -n "$previous_tag" ]]
-          then
-            release_range="$previous_tag..$GITHUB_SHA"
-          else
-            release_range="$GITHUB_SHA"
-          fi
-
-          generated_notes="$(mktemp)"
-          trap 'rm -f "$generated_notes"' EXIT
-          api_args=(
-            --method POST
-            "repos/$GITHUB_REPOSITORY/releases/generate-notes"
-            -f "tag_name=${{ steps.params.outputs.tag_name }}"
-            -f "target_commitish=$GITHUB_SHA"
-          )
-          if [[ -n "$previous_tag" ]]
-          then
-            api_args+=(-f "previous_tag_name=$previous_tag")
-          fi
-
-          if ! gh api "${api_args[@]}" --jq '.body' > "$generated_notes"
-          then
-            : > "$generated_notes"
-          fi
-
-          {
-            echo "# Stricknani ${{ steps.params.outputs.release_name }}"
-            echo
-            if [[ -n "$previous_tag" ]]
-            then
-              echo "Changes since [$previous_tag](https://github.com/$GITHUB_REPOSITORY/releases/tag/$previous_tag):"
-            else
-              echo "Changes included in this release:"
-            fi
-            echo
-            echo "## Summary"
-            echo
-            git log --no-merges --format='- %s (%h)' "$release_range" -- android
-            echo
-            if [[ -s "$generated_notes" ]]
-            then
-              echo "## GitHub details"
-              echo
-              cat "$generated_notes"
-              echo
-            fi
-            echo "## Installation"
-            echo
-            echo "Signed with the same CI key as every other build here, so upgrades work cleanly over"
-            echo "an existing \`blue.anika.wolle\` install."
-            echo
-            printf '%s\n' "\`SHA256SUMS\` covers every APK. Each APK embeds commit \`$GITHUB_SHA\`, visible in"
-            echo "Settings > About."
-          } > release-notes.md
 
       - name: Run unit tests
         working-directory: android
@@ -301,10 +251,10 @@ jobs:
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           export BUILD_DATE
           ./gradlew \
-            ${{ steps.params.outputs.include_debug == 'true' && ':app:assembleDebug' || '' }} \
+            :app:assembleDebug \
             :app:assembleRelease \
             -PversionName=${{ steps.version.outputs.name }} \
-            -PreleaseChannel=${{ steps.params.outputs.tag_name == 'latest' && 'latest' || 'stable' }} \
+            -PreleaseChannel=${{ needs.params.outputs.tag_name == 'latest' && 'latest' || 'stable' }} \
             --stacktrace --build-cache
 
       - name: Verify embedded Android version name
@@ -336,89 +286,358 @@ jobs:
           done <<< "$(printf 'android/app/build/outputs/apk/release/app-arm64-v8a-release.apk\nandroid/app/build/outputs/apk/release/app-armeabi-v7a-release.apk\nandroid/app/build/outputs/apk/release/app-x86_64-release.apk\nandroid/app/build/outputs/apk/release/app-x86-release.apk')"
 
       - name: Collect and rename APKs
-        id: apks
+        env:
+          LABEL: stricknani-${{ needs.params.outputs.tag_name }}
         run: |
-          label="stricknani-${{ steps.params.outputs.tag_name }}"
-          dir="/tmp/$label"
+          set -euo pipefail
+          dir="$RUNNER_TEMP/apks"
           mkdir -p "$dir"
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            for variant in release debug; do
+              apk="android/app/build/outputs/apk/$variant/app-$abi-$variant.apk"
+              cp "$apk" "$dir/$LABEL-$(basename "$apk")"
+            done
+          done
+          ls -la "$dir"
+          [ "$(ls -1 "$dir" | wc -l)" -eq 8 ]
 
-          apks=(
-            android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
-            android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk
-            android/app/build/outputs/apk/release/app-x86_64-release.apk
-            android/app/build/outputs/apk/release/app-x86-release.apk
-          )
-          if [ "${{ steps.params.outputs.include_debug }}" = "true" ]; then
-            apks+=(
-              android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
-              android/app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
-              android/app/build/outputs/apk/debug/app-x86_64-debug.apk
-              android/app/build/outputs/apk/debug/app-x86-debug.apk
-            )
+      - name: Upload the APKs
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-apks
+          path: ${{ runner.temp }}/apks/*
+          if-no-files-found: error
+          retention-days: 7
+
+  server:
+    # The Rust server as a static (musl) binary, and the built web app it serves, from the flake's
+    # `stricknani-server-static` and `stricknani-web` packages. aarch64 is built natively on
+    # GitHub's arm runners, like the nix-aarch64 job of build.yaml; dependency builds substitute
+    # from niks3 where nixbot or an earlier run pushed them.
+    name: Server (linux-${{ matrix.arch }})
+    needs: params
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-26.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    concurrency:
+      group: release-server-${{ matrix.arch }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref_type != 'tag' }}
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.params.outputs.tag_name }}
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
+          extra-conf: |
+            nix-path = nixpkgs=channel:nixos-unstable
+
+      - name: Build the static server
+        run: nix build --print-build-logs --out-link result-server '.#stricknani-server-static'
+
+      - name: Build the web app
+        run: nix build --print-build-logs --out-link result-web '.#stricknani-web'
+
+      - name: Stage the assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          out="$RUNNER_TEMP/server-assets"
+          mkdir -p "$out"
+          binary="$out/stricknani-server-$TAG-linux-$ARCH"
+          install -m 0755 result-server/bin/stricknani-server "$binary"
+          file "$binary"
+          # A dynamic binary would not run on the hosts this is meant for.
+          file "$binary" | grep -E 'statically linked|static-pie linked'
+          # The web app is architecture independent: ship it once.
+          if [[ "$ARCH" == x86_64 ]]
+          then
+            tar --sort=name --owner=0 --group=0 --numeric-owner --mtime='@0' \
+              -C result-web -czf "$out/stricknani-web-$TAG.tar.gz" .
+          fi
+          ls -la "$out"
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/media"
+          STRICKNANI_DATABASE_URL='sqlite::memory:' \
+          STRICKNANI_MEDIA_ROOT="$RUNNER_TEMP/media" \
+          WEB_ROOT="$PWD/result-web" \
+          BIND_PORT=17674 \
+          TRUSTED_HOSTS=127.0.0.1,localhost \
+            "$RUNNER_TEMP/server-assets/stricknani-server-$TAG-linux-$ARCH" &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          deadline=$((SECONDS + 60))
+          until curl --fail --silent --show-error http://127.0.0.1:17674/healthz
+          do
+            if (( SECONDS >= deadline )) || ! kill -0 "$server_pid" 2>/dev/null
+            then
+              echo "The static server did not become healthy." >&2
+              exit 1
+            fi
+            sleep 2
+          done
+          echo
+
+      - name: Upload the server assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-server-${{ matrix.arch }}
+          path: ${{ runner.temp }}/server-assets/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    # Serial per ref and never cancelled (see the header): the release's assets are replaced as a
+    # whole by one run at a time.
+    name: GitHub release
+    needs: [params, release, server]
+    runs-on: ubuntu-26.04
+    concurrency:
+      group: release-publish-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: write
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ needs.params.outputs.tag_name }}
+      RELEASE_NAME: ${{ needs.params.outputs.release_name }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Skip a superseded build
+        # A newer push to main has its own run; do not let an older commit replace "latest" after it.
+        id: stale
+        if: ${{ github.ref_type != 'tag' && github.event_name == 'push' }}
+        run: |
+          head="$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
+          if [[ -n "$head" && "$head" != "$GITHUB_SHA" ]]
+          then
+            echo "::notice::$GITHUB_SHA is superseded by $head; leaving the release to that run."
+            echo "superseded=true" >> "$GITHUB_OUTPUT"
           fi
 
-          for apk in "${apks[@]}"; do
-            cp "$apk" "$dir/$label-$(basename "$apk")"
-          done
+      - name: Download the assets
+        if: steps.stale.outputs.superseded != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: ${{ runner.temp }}/downloaded
+          merge-multiple: true
+
+      - name: Assemble the assets and checksums
+        id: assets
+        if: steps.stale.outputs.superseded != 'true'
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/assets"
+          mkdir -p "$dir"
+          cp "$RUNNER_TEMP"/downloaded/* "$dir/"
+          # 8 APKs, 2 server binaries, the web app.
+          [ "$(ls -1 "$dir" | wc -l)" -eq 11 ]
+          (cd "$dir" && sha256sum -- * > SHA256SUMS)
+          cat "$dir/SHA256SUMS"
           echo "dir=$dir" >> "$GITHUB_OUTPUT"
 
-      - name: Generate checksums
-        working-directory: ${{ steps.apks.outputs.dir }}
-        run: sha256sum -- *.apk > SHA256SUMS
+      - name: Generate release notes
+        if: steps.stale.outputs.superseded != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          trap 'rm -f "${generated_notes:-}" "${run_howto:-}"' EXIT
+
+          run_howto="$(mktemp)"
+          {
+            echo "## Running the server without Nix"
+            echo
+            echo "\`stricknani-server-$TAG-linux-x86_64\` and \`-linux-aarch64\` are static (musl) binaries: no"
+            echo "libc or other system libraries needed. The web app is a separate archive; the server serves"
+            echo "it under \`/app/\` from \`WEB_ROOT\`. The optional \`tesseract\` OCR engine is not bundled."
+            echo
+            echo '```sh'
+            echo "chmod +x stricknani-server-$TAG-linux-x86_64"
+            echo "mkdir -p web media"
+            echo "tar -xzf stricknani-web-$TAG.tar.gz -C web"
+            echo 'WEB_ROOT="$PWD/web" \'
+            echo 'STRICKNANI_DATABASE_URL=sqlite:stricknani.sqlite3 \'
+            echo 'STRICKNANI_MEDIA_ROOT="$PWD/media" \'
+            echo "./stricknani-server-$TAG-linux-x86_64"
+            echo '```'
+            echo
+            echo "It listens on \`127.0.0.1:7674\`. \`stricknani-server --help\` lists the commands"
+            echo "(\`create-admin\`, ...) and every environment variable."
+          } > "$run_howto"
+
+          if [[ "$TAG" == latest ]]
+          then
+            {
+              echo "Automated build of the latest main ($GITHUB_SHA), built $(date -u +'%Y-%m-%d %H:%M UTC'). Not a stable release."
+              echo
+              echo "Two Android variants are provided, both signed with the same CI key so upgrades between them work:"
+              echo '- `*-debug.apk` - debuggable, uses the `blue.anika.wolle.debug` applicationId so it installs side by side with a release install for testing.'
+              echo '- `*-release.apk` - minified/optimized like a real release build, uses the same `blue.anika.wolle` applicationId as every tagged release, so it upgrades cleanly over (or is upgraded by) any of them.'
+              echo
+              echo "The server binaries and the web app are built from the same commit."
+              echo
+              echo '`SHA256SUMS` covers every asset above. Each APK also embeds this exact commit'
+              echo "(\`$GITHUB_SHA\`) as \`BuildConfig.GIT_REVISION\`, checkable via Settings in the app."
+              echo
+              cat "$run_howto"
+            } > release-notes.md
+            exit 0
+          fi
+
+          previous_tag=""
+          while IFS= read -r candidate
+          do
+            if [[ "$candidate" != latest && "$candidate" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]
+            then
+              previous_tag="$candidate"
+              break
+            fi
+          done < <(git tag --merged "${GITHUB_SHA}^" --sort=-version:refname)
+          if [[ -n "$previous_tag" ]]
+          then
+            release_range="$previous_tag..$GITHUB_SHA"
+          else
+            release_range="$GITHUB_SHA"
+          fi
+
+          generated_notes="$(mktemp)"
+          api_args=(
+            --method POST
+            "repos/$GITHUB_REPOSITORY/releases/generate-notes"
+            -f "tag_name=$TAG"
+            -f "target_commitish=$GITHUB_SHA"
+          )
+          if [[ -n "$previous_tag" ]]
+          then
+            api_args+=(-f "previous_tag_name=$previous_tag")
+          fi
+
+          if ! gh api "${api_args[@]}" --jq '.body' > "$generated_notes"
+          then
+            : > "$generated_notes"
+          fi
+
+          {
+            echo "# Stricknani $RELEASE_NAME"
+            echo
+            if [[ -n "$previous_tag" ]]
+            then
+              echo "Changes since [$previous_tag](https://github.com/$GITHUB_REPOSITORY/releases/tag/$previous_tag):"
+            else
+              echo "Changes included in this release:"
+            fi
+            echo
+            echo "## Summary"
+            echo
+            git log --no-merges --format='- %s (%h)' "$release_range" -- android
+            echo
+            if [[ -s "$generated_notes" ]]
+            then
+              echo "## GitHub details"
+              echo
+              cat "$generated_notes"
+              echo
+            fi
+            echo "## Installation"
+            echo
+            echo "Signed with the same CI key as every other build here, so upgrades work cleanly over"
+            echo "an existing \`blue.anika.wolle\` install."
+            echo
+            printf '%s\n' "\`SHA256SUMS\` covers every asset (APKs, server binaries, web app). Each APK embeds commit \`$GITHUB_SHA\`, visible in"
+            echo "Settings > About."
+            echo
+            cat "$run_howto"
+          } > release-notes.md
 
       - name: Attest build provenance
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN != 'true' }}
         uses: actions/attest-build-provenance@v4
         with:
-          subject-checksums: ${{ steps.apks.outputs.dir }}/SHA256SUMS
+          subject-checksums: ${{ steps.assets.outputs.dir }}/SHA256SUMS
+
+      - name: Preview the assets (dry run)
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN == 'true' }}
+        env:
+          ASSETS_DIR: ${{ steps.assets.outputs.dir }}
+        run: |
+          cp release-notes.md "$ASSETS_DIR/RELEASE-NOTES.md"
+          echo "Dry run: nothing is published. Assets for '$TAG':"
+          ls -la "$ASSETS_DIR"
+
+      - name: Upload the assets (dry run)
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-assets-preview
+          path: ${{ steps.assets.outputs.dir }}/*
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Move tag
-        if: steps.params.outputs.move_tag == 'true'
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN != 'true' && env.TAG == 'latest' }}
         run: |
-          git tag -f ${{ steps.params.outputs.tag_name }}
-          git push origin ${{ steps.params.outputs.tag_name }} --force
-
-      - name: Record build time
-        if: steps.params.outputs.tag_name == 'latest'
-        id: date
-        run: echo "date=$(date -u +'%Y-%m-%d %H:%M UTC')" >> "$GITHUB_OUTPUT"
+          git tag -f latest
+          git push origin latest --force
 
       - name: Publish release (latest)
-        if: steps.params.outputs.tag_name == 'latest'
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN != 'true' && env.TAG == 'latest' }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: latest
           name: "Latest build"
-          body: |
-            Automated build of the latest main (${{ github.sha }}), built ${{ steps.date.outputs.date }}. Not a stable release.
-
-            Two variants are provided, both signed with the same CI key so upgrades between them work:
-            - `*-debug.apk` — debuggable, uses the `blue.anika.wolle.debug` applicationId so it installs side by side with a release install for testing.
-            - `*-release.apk` — minified/optimized like a real release build, uses the same `blue.anika.wolle` applicationId as every tagged release, so it upgrades cleanly over (or is upgraded by) any of them.
-
-            `SHA256SUMS` covers every APK above. Each APK also embeds this exact commit
-            (`${{ github.sha }}`) as `BuildConfig.GIT_REVISION`, checkable via Settings in the app.
-          files: ${{ steps.apks.outputs.dir }}/*
+          body_path: release-notes.md
+          files: ${{ steps.assets.outputs.dir }}/*
           prerelease: true
           make_latest: false
 
       - name: Publish release (tag)
-        if: steps.params.outputs.tag_name != 'latest'
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN != 'true' && env.TAG != 'latest' }}
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.params.outputs.tag_name }}
-          name: ${{ steps.params.outputs.release_name }}
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.RELEASE_NAME }}
           body_path: release-notes.md
-          files: ${{ steps.apks.outputs.dir }}/*
+          files: ${{ steps.assets.outputs.dir }}/*
           prerelease: false
           make_latest: true
 
       - name: Vacuum stale release assets
-        if: steps.params.outputs.vacuum_stale_assets == 'true'
+        # "latest" keeps exactly the current set: whatever this run did not upload goes.
+        if: ${{ steps.stale.outputs.superseded != 'true' && env.DRY_RUN != 'true' && env.TAG == 'latest' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          ASSETS_DIR: ${{ steps.assets.outputs.dir }}
         run: |
-          mapfile -t expected < <(basename -a "${{ steps.apks.outputs.dir }}"/*)
-          gh release view ${{ steps.params.outputs.tag_name }} --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' |
+          set -euo pipefail
+          mapfile -t expected < <(basename -a "$ASSETS_DIR"/*)
+          gh release view latest --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' |
             while IFS= read -r name; do
               keep=0
               for f in "${expected[@]}"; do
@@ -426,9 +645,13 @@ jobs:
               done
               if [ "$keep" -eq 0 ]; then
                 echo "Deleting stale asset: $name"
-                gh release delete-asset ${{ steps.params.outputs.tag_name }} "$name" --repo "$GITHUB_REPOSITORY" -y
+                gh release delete-asset latest "$name" --repo "$GITHUB_REPOSITORY" -y
               fi
             done
+          # Fail loudly if the release does not carry the full set.
+          gh release view latest --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | sort > "$RUNNER_TEMP/actual"
+          printf '%s\n' "${expected[@]}" | sort > "$RUNNER_TEMP/expected"
+          diff "$RUNNER_TEMP/expected" "$RUNNER_TEMP/actual"
 
   # Google Play: tags, or a dispatch with lane play-store.
   version:

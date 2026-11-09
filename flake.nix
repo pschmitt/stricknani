@@ -69,6 +69,13 @@
             inherit gitRevision;
           };
 
+          # Fully static (musl) server binary for the GitHub release assets. Built natively on
+          # each architecture (x86_64 here, aarch64 on GitHub's arm runners), not cross-compiled.
+          stricknaniRustStatic =
+            (pkgs.pkgsStatic.callPackage ./nix/rust-core-package.nix {
+              craneLib = crane.mkLib pkgs.pkgsStatic;
+            }).package;
+
           rustContainerConfig = {
             Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
             User = "65532:65532";
@@ -124,6 +131,9 @@
             default = stricknaniRust;
             stricknani = stricknaniRust;
             stricknani-web = stricknaniWeb;
+            # Static musl `stricknani-server` without the Nix wrapper (release assets, see
+            # docs/maintaining.md). Set WEB_ROOT to the stricknani-web output to serve the app.
+            stricknani-server-static = stricknaniRustStatic;
 
             stricknani-docker = pkgs.dockerTools.buildLayeredImage {
               name = "ghcr.io/pschmitt/stricknani";
