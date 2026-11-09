@@ -3878,6 +3878,7 @@ msgstr ""
 msgid "Scroll down to Delete account and choose Delete my account."
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:297
 #: web/src/lib/features/projects/YarnPicker.svelte:61
 msgid "Search"
 msgstr ""
@@ -3890,10 +3891,6 @@ msgstr ""
 #: web/src/lib/components/CommandPalette.svelte:296
 #: web/src/routes/+layout.svelte:284
 msgid "Search everything"
-msgstr ""
-
-#: web/src/lib/components/CommandPalette.svelte:297
-msgid "Search projects, yarns, pages, settings…"
 msgstr ""
 
 #: web/src/lib/features/projects/YarnPicker.svelte:39

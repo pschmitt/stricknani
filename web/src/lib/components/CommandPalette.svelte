@@ -294,7 +294,7 @@
             ? `${listId}-option-${selected}`
             : undefined}
           aria-label={t("Search everything", locale)}
-          placeholder={t("Search projects, yarns, pages, settings…", locale)}
+          placeholder={t("Search", locale)}
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"

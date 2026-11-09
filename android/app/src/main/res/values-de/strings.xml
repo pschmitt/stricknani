@@ -1413,7 +1413,7 @@
 
     <!-- Command palette -->
     <string name="palette_open">Alles durchsuchen</string>
-    <string name="palette_placeholder">Projekte, Garne, Seiten, Einstellungen durchsuchen …</string>
+    <string name="palette_placeholder">Suchen</string>
     <string name="palette_group_actions">Aktionen</string>
     <string name="palette_group_projects">Projekte</string>
     <string name="palette_group_yarns">Garne</string>

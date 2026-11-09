@@ -1416,7 +1416,7 @@
 
     <!-- Command palette -->
     <string name="palette_open">Search everything</string>
-    <string name="palette_placeholder">Search projects, yarns, pages, settings…</string>
+    <string name="palette_placeholder">Search</string>
     <string name="palette_group_actions">Actions</string>
     <string name="palette_group_projects">Projects</string>
     <string name="palette_group_yarns">Yarns</string>

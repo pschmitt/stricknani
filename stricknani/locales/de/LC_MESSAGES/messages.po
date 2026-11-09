@@ -4075,6 +4075,7 @@ msgstr "Mit dem Handy scannen, um die App zu holen."
 msgid "Scroll down to Delete account and choose Delete my account."
 msgstr "Scrolle nach unten zu Konto löschen und wähle Mein Konto löschen."
 
+#: web/src/lib/components/CommandPalette.svelte:297
 #: web/src/lib/features/projects/YarnPicker.svelte:61
 msgid "Search"
 msgstr "Suchen"
@@ -4088,10 +4089,6 @@ msgstr "Nach Namen suchen"
 #: web/src/routes/+layout.svelte:284
 msgid "Search everything"
 msgstr "Alles durchsuchen"
-
-#: web/src/lib/components/CommandPalette.svelte:297
-msgid "Search projects, yarns, pages, settings…"
-msgstr "Projekte, Garne, Seiten, Einstellungen durchsuchen …"
 
 #: web/src/lib/features/projects/YarnPicker.svelte:39
 msgid "Search yarn"
@@ -7078,3 +7075,6 @@ msgstr ""
 
 #~ msgid "Download or restore your data"
 #~ msgstr "Deine Daten herunterladen oder wiederherstellen"
+
+#~ msgid "Search projects, yarns, pages, settings…"
+#~ msgstr "Projekte, Garne, Seiten, Einstellungen durchsuchen …"

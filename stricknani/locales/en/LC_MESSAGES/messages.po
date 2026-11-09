@@ -4018,6 +4018,7 @@ msgstr "Scan with your phone to get the app."
 msgid "Scroll down to Delete account and choose Delete my account."
 msgstr "Scroll down to Delete account and choose Delete my account."
 
+#: web/src/lib/components/CommandPalette.svelte:297
 #: web/src/lib/features/projects/YarnPicker.svelte:61
 msgid "Search"
 msgstr "Search"
@@ -4031,10 +4032,6 @@ msgstr "Search by name"
 #: web/src/routes/+layout.svelte:284
 msgid "Search everything"
 msgstr "Search everything"
-
-#: web/src/lib/components/CommandPalette.svelte:297
-msgid "Search projects, yarns, pages, settings…"
-msgstr "Search projects, yarns, pages, settings…"
 
 #: web/src/lib/features/projects/YarnPicker.svelte:39
 msgid "Search yarn"
@@ -6928,3 +6925,6 @@ msgstr "{time} spent so far. Open the project to stop the timer or keep timing."
 
 #~ msgid "Download or restore your data"
 #~ msgstr "Download or restore your data"
+
+#~ msgid "Search projects, yarns, pages, settings…"
+#~ msgstr "Search projects, yarns, pages, settings…"
