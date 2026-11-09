@@ -163,6 +163,8 @@
     width: 100%;
     min-width: 0;
     min-height: var(--ui-input-height);
+    /* Sized by autosize() to whole lines, not by the global text area rule. */
+    field-sizing: fixed;
     resize: none;
     overflow-y: hidden;
     line-height: 1.4;

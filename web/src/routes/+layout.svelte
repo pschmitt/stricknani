@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, untrack, type Snippet } from "svelte";
+  import { installAutogrow } from "#lib/autogrow.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -122,6 +123,7 @@
     void loadCatalog();
     void refreshSession();
     const stopTheme = initTheme();
+    const stopAutogrow = installAutogrow();
     // A clicked notification navigates this tab in-app (keeps dirty-form guards).
     const stopNotificationOpens = listenForNotificationOpens(
       (path) => void goto(path),
@@ -142,6 +144,7 @@
     window.addEventListener("scroll", scheduleGlass, { passive: true });
     return () => {
       stopTheme();
+      stopAutogrow();
       stopNotificationOpens();
       window.removeEventListener("scroll", scheduleGlass);
       if (frame) cancelAnimationFrame(frame);

@@ -275,6 +275,13 @@ select {
   font: inherit;
 }
 
+/* Text areas always grow with their content (lib/autogrow.ts covers browsers
+   without field-sizing). */
+textarea {
+  field-sizing: content;
+  min-height: 4.5em;
+}
+
 button,
 a,
 input {
