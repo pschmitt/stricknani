@@ -60,7 +60,8 @@
       justify-content: center;
       gap: 0.6rem;
       padding: 0 1.15rem;
-      border-radius: 16px;
+      /* Android FAB shape: the theme large shape, 28dp, so round: a pill or a circle. */
+      border-radius: 28px;
       background: var(--primary-container);
       box-shadow: var(--shadow);
       color: var(--on-primary-container);
