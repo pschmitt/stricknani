@@ -287,7 +287,6 @@
         onclick={openPalette}
       >
         <NavIcon name="search" />
-        <kbd class="palette-trigger__key">{shortcutLabel()}</kbd>
       </button>
       <div class="app-header__actions" bind:this={headerActionsEl}></div>
     </header>
@@ -435,9 +434,9 @@
     box-sizing: border-box;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
+    flex: none;
     margin-left: auto;
-    padding: 0 0.7rem;
+    padding: 0;
     border: 0;
     border-radius: var(--radius-xs);
     color: var(--ink);
@@ -463,22 +462,6 @@
   .palette-trigger :global(svg) {
     width: 1.35rem;
     height: 1.35rem;
-  }
-
-  .palette-trigger__key {
-    padding: 0.05rem 0.4rem;
-    border: 1px solid var(--line);
-    border-bottom-width: 2px;
-    border-radius: 0.4rem;
-    color: var(--ink-muted);
-    font-size: 0.72rem;
-    font-weight: 700;
-  }
-
-  @media (hover: none), (max-width: 760px) {
-    .palette-trigger__key {
-      display: none;
-    }
   }
 
   .rail-account {
