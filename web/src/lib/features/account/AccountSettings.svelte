@@ -9,6 +9,7 @@
   import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
+  import BackupsSection from "./BackupsSection.svelte";
   import ConnectAppDialog from "./ConnectAppDialog.svelte";
   import DeleteAccountDialog from "./DeleteAccountDialog.svelte";
   import { formatLastUsed } from "./connect-app.ts";
@@ -1470,6 +1471,8 @@
       </ul>
     {/if}
   </section>
+
+  <BackupsSection />
 
   <section class="card card--danger" aria-labelledby="delete-account-heading">
     <header class="card__header">

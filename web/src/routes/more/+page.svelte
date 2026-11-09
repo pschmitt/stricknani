@@ -57,15 +57,6 @@
         {/snippet}
       </NavigationTile>
     </section>
-
-    <nav class="more-card more-links" aria-label={t("Backups", locale)}>
-      <NavigationTile
-        href={resolve("/backups")}
-        icon="download"
-        title={t("Backups", locale)}
-        description={t("Download or restore your data", locale)}
-      />
-    </nav>
   {/if}
 
   {#if session.data?.user?.is_admin}

@@ -10,7 +10,6 @@ export const MORE_SECTION_PATHS = [
   "/admin",
   "/about",
   "/account",
-  "/backups",
   "/delete-account",
 ] as const;
 

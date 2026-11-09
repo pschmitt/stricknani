@@ -1027,8 +1027,6 @@ async function assertMoreNavigation(
   const expectedCards: Array<[string, string]> = [
     ["Categories", "/categories"],
     ["Gauge calculator", "/gauge"],
-    // Signed-in users get Backups (download and restore of their data).
-    ["Backups", "/backups"],
   ];
   if (opts.isAdmin) expectedCards.push(["Admin", "/admin/users"]);
   expectedCards.push(["About", "/about"]);

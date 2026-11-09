@@ -1,4 +1,4 @@
-// Data export and restore journey (web Backups page, docs/data-export.md)
+// Data export and restore journey (the Your data section of the web Account page, docs/data-export.md)
 // against a disposable Rust server. Ada owns the data and downloads it, Bo
 // shares a project with her, Cy restores the downloads into an empty account.
 import { createHash, randomBytes } from "node:crypto";
@@ -444,18 +444,25 @@ export async function runBackupsJourney(
       .click();
     await adaPage.getByRole("heading", { name: "More", exact: true }).waitFor();
     await adaPage
-      .getByRole("navigation", { name: "Backups", exact: true })
-      .getByRole("link")
+      .getByRole("link", { name: "Account settings", exact: true })
       .click();
-    await adaPage.getByRole("heading", { name: "Backups", level: 1 }).waitFor();
+    await adaPage.getByRole("heading", { name: "Account", level: 1 }).waitFor();
     await adaPage.getByRole("heading", { name: "Your data" }).waitFor();
     check(
-      new URL(adaPage.url()).pathname.replace(/\/+$/, "") === "/app/backups",
-      "More > Backups did not open /app/backups",
+      new URL(adaPage.url()).pathname.replace(/\/+$/, "") === "/app/account",
+      "More > Account settings did not open /app/account",
     );
     mark("ada reloads backups");
     await adaPage.reload({ waitUntil: "networkidle" });
-    await adaPage.getByRole("heading", { name: "Backups", level: 1 }).waitFor();
+    await adaPage.getByRole("heading", { name: "Your data" }).waitFor();
+    mark("ada follows an old backups link");
+    await adaPage.goto(`${origin}/app/backups`, { waitUntil: "networkidle" });
+    await adaPage.getByRole("heading", { name: "Your data" }).waitFor();
+    check(
+      new URL(adaPage.url()).pathname.replace(/\/+$/, "") === "/app/account" &&
+        new URL(adaPage.url()).hash === "#backups",
+      "/app/backups did not redirect to /app/account#backups",
+    );
 
     const group = adaPage.getByRole("group", { name: "Archive type" });
     const tarOption = group.getByRole("button", { name: ".tar.gz" });
@@ -883,7 +890,7 @@ export async function runBackupsJourney(
     ]);
     const dePage = await pageOf(deContext);
     await dePage.goto(`${origin}/app/backups`, { waitUntil: "networkidle" });
-    await dePage.getByRole("heading", { name: "Backups", level: 1 }).waitFor({
+    await dePage.getByRole("heading", { name: "Konto", level: 1 }).waitFor({
       state: "visible",
       timeout: WAIT,
     });
@@ -909,7 +916,7 @@ export async function runBackupsJourney(
       .waitFor({ timeout: WAIT });
     check(
       (await dePage.getByRole("heading", { name: "Your data" }).count()) === 0,
-      "English wording remained in the German Backups page",
+      "English wording remained in the German Your data section",
     );
     await deContext.close();
 
