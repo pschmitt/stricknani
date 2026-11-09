@@ -181,22 +181,29 @@ fun ProjectEditorScreen(
     val stepRemovedMessage = stringResource(R.string.project_editor_step_removed)
     val undoLabel = stringResource(R.string.common_undo)
     val announceRemoval = rememberPhotoRemovalAnnouncer(snackbarHostState)
-    var photoEdit by remember { mutableStateOf<Pair<PhotoEditTarget, String>?>(null) }
+    var photoEdit by remember { mutableStateOf<Triple<PhotoEditTarget, String, String>?>(null) }
     val editImage: (ImageDto) -> Unit = { image ->
         val projectId = viewModel.projectId
         val original = viewModel.imageUrl(image.url)
         if (projectId != null && original != null) {
-            photoEdit = PhotoEditTarget.ProjectImage(projectId, image.id) to original
+            photoEdit =
+                Triple(PhotoEditTarget.ProjectImage(projectId, image.id), original, image.altText)
         }
     }
-    photoEdit?.let { (target, url) ->
+    photoEdit?.let { (target, url, altText) ->
         PhotoEditorDialog(
             target = target,
             imageUrl = url,
+            altText = altText,
             onDismiss = { photoEdit = null },
-            onSaved = { newUrl, newThumbnail ->
+            onSaved = { saved ->
                 (target as? PhotoEditTarget.ProjectImage)?.let {
-                    viewModel.imageEdited(it.imageId, newUrl, newThumbnail)
+                    viewModel.imageEdited(
+                        it.imageId,
+                        saved.url,
+                        saved.thumbnailUrl,
+                        saved.altText,
+                    )
                 }
             },
         )
@@ -540,28 +547,17 @@ fun ProjectEditorScreen(
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                             )
                             // Stitch samples are often several lines (stitches, rows, needle,
-                            // washed or not), so the field grows instead of scrolling sideways.
-                            OutlinedTextField(
+                            // washed or not): the shared Markdown editor, one line break per line.
+                            MarkdownTextField(
                                 value = form.stitchSample,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(stitchSample = value) }
                                 },
-                                label = {
-                                    FieldLabel(
-                                        stringResource(R.string.common_field_stitch_sample),
-                                        PhosphorIcons.Ruler,
-                                    )
-                                },
-                                placeholder = {
-                                    Text(stringResource(R.string.project_editor_stitch_sample_hint))
-                                },
-                                modifier =
-                                    Modifier.fillMaxWidth().focusRequester(stitchSampleFocus),
+                                label = stringResource(R.string.common_field_stitch_sample),
+                                labelIcon = PhosphorIcons.Ruler,
+                                fieldModifier = Modifier.focusRequester(stitchSampleFocus),
                                 minLines = 2,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences
-                                    ),
+                                keepLineBreaks = true,
                             )
                             TagChipField(
                                 tags = form.tags,

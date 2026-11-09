@@ -139,15 +139,21 @@ fun YarnEditorScreen(
     val leave = { if (isDirty && !saved) showDiscardDialog = true else onBack() }
     BackHandler(enabled = isDirty && !saved && !deleted) { showDiscardDialog = true }
 
-    var photoEdit by remember { mutableStateOf<Pair<PhotoEditTarget, String>?>(null) }
-    photoEdit?.let { (target, url) ->
+    var photoEdit by remember { mutableStateOf<Triple<PhotoEditTarget, String, String>?>(null) }
+    photoEdit?.let { (target, url, altText) ->
         PhotoEditorDialog(
             target = target,
             imageUrl = url,
+            altText = altText,
             onDismiss = { photoEdit = null },
-            onSaved = { newUrl, newThumbnail ->
+            onSaved = { saved ->
                 (target as? PhotoEditTarget.YarnPhoto)?.let {
-                    viewModel.photoEdited(it.photoId, newUrl, newThumbnail)
+                    viewModel.photoEdited(
+                        it.photoId,
+                        saved.url,
+                        saved.thumbnailUrl,
+                        saved.altText,
+                    )
                 }
             },
         )
@@ -367,8 +373,11 @@ fun YarnEditorScreen(
                                             val original = viewModel.imageUrl(photo.url)
                                             if (yarnId != null && original != null) {
                                                 photoEdit =
-                                                    PhotoEditTarget.YarnPhoto(yarnId, photo.id) to
-                                                        original
+                                                    Triple(
+                                                        PhotoEditTarget.YarnPhoto(yarnId, photo.id),
+                                                        original,
+                                                        photo.altText,
+                                                    )
                                             }
                                         },
                                     )

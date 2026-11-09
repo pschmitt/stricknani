@@ -167,9 +167,10 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     .getByLabel("Needles", { exact: true })
     .fill("4 mm circular needles");
   markStage("filling the project stitch sample");
-  await page
-    .getByLabel("Stitch sample", { exact: true })
-    .fill("18 stitches over 10 cm");
+  await fillMarkdownField(
+    page.getByLabel("Stitch sample", { exact: true }),
+    "18 stitches over 10 cm",
+  );
   markStage("filling the project tags");
   await page.locator("#project-tag-entry").fill("color, texture");
   await page.locator("#project-tag-entry").press("Enter");

@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.common
 
+import blue.anika.wolle.data.api.v2.PhotoAltRequest
 import blue.anika.wolle.data.api.v2.PhotoCropDto
 import blue.anika.wolle.data.api.v2.PhotoEditRequest
 import kotlinx.serialization.encodeToString
@@ -31,6 +32,20 @@ class PhotoEditMathTest {
         assertEquals(300 to 400, PhotoEditMath.rotatedSize(400, 300, 90))
         assertEquals(400 to 300, PhotoEditMath.rotatedSize(400, 300, 180))
         assertEquals(300 to 400, PhotoEditMath.rotatedSize(400, 300, 270))
+    }
+
+    @Test
+    fun descriptionChangeIgnoresSurroundingBlanks() {
+        assertFalse(PhotoEditMath.altChanged("Cover", " Cover "))
+        assertTrue(PhotoEditMath.altChanged("Cover", "Back"))
+        assertTrue(PhotoEditMath.altChanged("Cover", "  "))
+        assertFalse(PhotoEditMath.altChanged("", "   "))
+    }
+
+    @Test
+    fun descriptionRequestUsesTheServerFieldName() {
+        val body = Json.encodeToString(PhotoAltRequest("Sleeve detail"))
+        assertEquals("""{"alt_text":"Sleeve detail"}""", body)
     }
 
     @Test

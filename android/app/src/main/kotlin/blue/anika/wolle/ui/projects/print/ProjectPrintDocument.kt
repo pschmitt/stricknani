@@ -28,6 +28,8 @@ data class PrintLabels(
  * left out rather than printed as broken frames.
  */
 object ProjectPrintDocument {
+    /** A single line break inside a paragraph (not a blank line). */
+    private val SOFT_BREAK = Regex("(?<!\n)\n(?!\n)")
 
     /** Absolute URLs of every image the printout can show for [options]. */
     fun imageUrls(
@@ -95,7 +97,9 @@ object ProjectPrintDocument {
             )
             if (!project.stitchSample.isNullOrBlank()) {
                 body.append("<h2>").append(PrintHtml.escape(labels.stitchSample)).append("</h2>")
-                body.append("<p>").append(PrintHtml.escape(project.stitchSample)).append("</p>")
+                // Every line stays its own line, like the reader (the renderer trims trailing
+                // blanks, so a hard break cannot be written): one paragraph per line.
+                body.append(markdown(project.stitchSample.replace(SOFT_BREAK, "\n\n")))
                 body.append(
                     images(project.images.filter { it.stepId == null && it.isStitchSample })
                 )

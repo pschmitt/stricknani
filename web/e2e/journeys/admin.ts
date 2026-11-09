@@ -304,9 +304,10 @@ async function createAdminAuditProject(
   await page
     .getByLabel("Needles", { exact: true })
     .fill("4 mm circular needles");
-  await page
-    .getByLabel("Stitch sample", { exact: true })
-    .fill("18 stitches over 10 cm");
+  await fillMarkdownField(
+    page.getByLabel("Stitch sample", { exact: true }),
+    "18 stitches over 10 cm",
+  );
   await fillMarkdownField(
     page.getByLabel("Pattern", { exact: true }),
     "Synthetic audit fixture pattern",

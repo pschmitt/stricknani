@@ -29,7 +29,7 @@ left alone on purpose.
 | P-11 | Project list (web) | Filter label | "Favorites" here, "Favorites only" on yarns | Favorites only | fixed on web ("Favorites only") |
 | P-12 | Project and yarn detail | Section order setting | fixed order | Settings, Detail cards (default order, drag to reorder) | fixed (T134: per-user server setting, web Account > Detail cards) |
 | P-13 | Yarn editor | Structure | Yarn information fieldset, More yarn details disclosure (dye lot inside), Photos last | cards: Yarn details (with dye lot), Photos, specs, Description and notes | fixed (T135: the web uses Android's order, no disclosure) |
-| P-14 | Project reader and editor | Stitch sample word | Gauge (reader), Stitch sample (editor) | same split | TODO T136 |
+| P-14 | Project reader and editor | Stitch sample word | Gauge (reader), Stitch sample (editor) | same split | fixed (Stitch sample / Maschenprobe on both screens and platforms; the gauge calculator keeps its name) |
 | P-15 | Account | API token wording | "API token(s)" everywhere | "token(s)", "access token" | fixed (account screen); onboarding still says "Access token" (the token is created under API Tokens on the web: low risk, left) |
 | P-16 | Account | Delete account texts, confirmation label, re-auth text, "Confirm it is you", "Privacy Policy", "This cannot be undone." | web wording | "can't", "it's", "Privacy policy", "Type DELETE or your email address" | fixed |
 | P-17 | Account | Self-host prompt hint, session-expired text, password/last-login errors | web wording | variants | fixed |

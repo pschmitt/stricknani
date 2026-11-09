@@ -125,6 +125,7 @@ import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.formatUpdatedDate
 import blue.anika.wolle.ui.common.itemBannerOf
+import blue.anika.wolle.ui.common.markdownPreviewSource
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.rememberDetailCardReorderState
@@ -669,7 +670,7 @@ private fun ProjectDetailContent(
                                 (copyLines(
                                         stringResource(R.string.common_field_needles) to
                                             detail.needles,
-                                        stringResource(R.string.project_detail_field_gauge) to
+                                        stringResource(R.string.common_field_stitch_sample) to
                                             detail.stitchSample,
                                     ) +
                                         listOfNotNull(detail.link?.takeIf { it.isNotBlank() })
@@ -704,7 +705,7 @@ private fun ProjectDetailContent(
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Text(
-                                        stringResource(R.string.project_detail_field_gauge),
+                                        stringResource(R.string.common_field_stitch_sample),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -713,6 +714,7 @@ private fun ProjectDetailContent(
                                     value = detail.stitchSample.orEmpty(),
                                     resolveMediaUrl = resolveMediaUrl,
                                     onImageClick = openViewerImage,
+                                    keepLineBreaks = true,
                                 )
                                 StitchSampleImages(
                                     stitchSampleImages,
@@ -1259,8 +1261,12 @@ private fun ProjectMarkdown(
     resolveMediaUrl: (String?) -> String?,
     onImageClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    keepLineBreaks: Boolean = false,
 ) {
-    val content = remember(value) { normalizeMarkdownContent(value) }
+    val content =
+        remember(value, keepLineBreaks) {
+            markdownPreviewSource(normalizeMarkdownContent(value), keepLineBreaks)
+        }
     val references = remember(content) { extractMarkdownImageReferences(content) }
     val imageTransformer =
         remember(resolveMediaUrl, references, onImageClick) {

@@ -186,7 +186,6 @@
     <string name="project_detail_pattern_reference">Your reference</string>
     <string name="project_detail_no_description">No pattern description yet.</string>
     <string name="project_detail_not_recorded">Not recorded</string>
-    <string name="project_detail_field_gauge">Gauge</string>
     <string name="project_detail_attachments_title">Attachments</string>
     <string name="project_detail_delete_attachment_description">Delete attachment</string>
     <string name="project_editor_title_edit">Edit project</string>
@@ -871,6 +870,8 @@
     <string name="photo_edit_saving">Saving photo…</string>
     <string name="photo_edit_failed">The photo could not be saved.</string>
     <string name="photo_edit_hint">Drag the corners to crop.</string>
+    <string name="photo_edit_description">Description</string>
+    <string name="photo_edit_description_hint">Read aloud by screen readers and shown when the photo cannot load.</string>
     <string name="photo_take">Take photo</string>
     <string name="photo_choose">Choose photo</string>
     <string name="photo_camera_denied">Camera access is off. Allow it in the system settings to take a photo.</string>
@@ -885,7 +886,6 @@
     <string name="project_editor_tags_suggestions">Tag suggestions</string>
     <string name="project_editor_tag_remove">Remove tag %1$s</string>
     <string name="project_editor_needles_hint">e.g. 4 mm circular, 80 cm</string>
-    <string name="project_editor_stitch_sample_hint">e.g. 22 stitches and 30 rows = 10 cm</string>
     <string name="project_editor_unlink_yarn">Remove %1$s</string>
     <string name="project_editor_no_yarns_yet">No yarn is linked to this project yet.</string>
     <string name="project_editor_pick_yarns_title">Add yarn</string>

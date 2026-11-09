@@ -325,6 +325,7 @@
     open={editing}
     src={activeImage.url}
     alt={activeImage.alt_text || title}
+    altText={activeImage.alt_text ?? ""}
     endpoint={editPath(activeImage)}
     {locale}
     onSaved={async () => {

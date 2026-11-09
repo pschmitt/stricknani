@@ -47,6 +47,12 @@ object PhotoEditMath {
     const val MIN_CROP_FRACTION = 0.08f
     const val WHOLE_EPSILON = 0.002f
 
+    /** Longest description the editor accepts (the server allows 4096 bytes). */
+    const val MAX_ALT_LENGTH = 1000
+
+    /** The description differs from the stored one; surrounding blanks do not count. */
+    fun altChanged(stored: String, current: String): Boolean = stored.trim() != current.trim()
+
     /** [degrees] folded into 0, 90, 180 or 270 (clockwise). */
     fun normalizeRotation(degrees: Int): Int = ((degrees % 360) + 360) % 360
 

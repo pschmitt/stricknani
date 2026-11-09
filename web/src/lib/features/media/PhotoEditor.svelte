@@ -7,10 +7,12 @@
   import {
     buildEditBody,
     clampCrop,
+    altTextChanged,
     editPhoto,
     fitSize,
     fullCrop,
     isUnchanged,
+    MAX_ALT_TEXT_LENGTH,
     minCropFractions,
     moveCrop,
     nudgeBox,
@@ -23,6 +25,7 @@
     type CropHandle,
     type Rotation,
     type Size,
+    updateAltText,
   } from "./photo-editor";
 
   interface Props {
@@ -30,6 +33,8 @@
     /** Original image URL, shown upright (the browser applies EXIF orientation). */
     src: string;
     alt: string;
+    /** Stored description of the photo; leave out to hide the Description field. */
+    altText?: string;
     /** Edit endpoint of the photo, see photo-editor.ts. */
     endpoint: string;
     locale: "en" | "de";
@@ -38,9 +43,11 @@
     onClose: () => void;
   }
 
-  let { open, src, alt, endpoint, locale, onSaved, onClose }: Props = $props();
+  let { open, src, alt, altText, endpoint, locale, onSaved, onClose }: Props =
+    $props();
 
   const hintId = $props.id();
+  const descriptionId = `${hintId}-description`;
   const titleId = `${hintId}-title`;
   const handles: { id: CropHandle; label: string }[] = [
     { id: "nw", label: msg("Top left corner") },
@@ -58,6 +65,9 @@
   let crop = $state<CropBox>(fullCrop());
   let saving = $state(false);
   let errorMessage = $state("");
+  // The description field: what the server stores now, and what the field holds.
+  let storedAlt = $state("");
+  let describedAs = $state("");
 
   type Drag =
     | { kind: "handle"; pointerId: number; handle: CropHandle }
@@ -105,12 +115,22 @@
       : null,
   );
   const unchanged = $derived(isUnchanged(rotation, crop));
-  const canSave = $derived(natural !== null && !unchanged && !saving);
+  const showDescription = $derived(altText !== undefined);
+  const altDirty = $derived(
+    showDescription && altTextChanged(storedAlt, describedAs),
+  );
+  const canSave = $derived(
+    ((natural !== null && !unchanged) || altDirty) && !saving,
+  );
 
   $effect(() => {
     if (!dialog) return;
     if (open && !dialog.open) {
-      untrack(reset);
+      untrack(() => {
+        reset();
+        storedAlt = altText ?? "";
+        describedAs = storedAlt;
+      });
       dialog.showModal();
     } else if (!open && dialog.open) {
       dialog.close();
@@ -166,11 +186,26 @@
     }
     saving = true;
     errorMessage = "";
+    let altSaved = false;
     try {
-      await editPhoto(endpoint, buildEditBody(rotation, crop), token);
+      if (altDirty) {
+        storedAlt = await updateAltText(endpoint, describedAs, token);
+        describedAs = storedAlt;
+        altSaved = true;
+      }
+      if (natural !== null && !unchanged)
+        await editPhoto(endpoint, buildEditBody(rotation, crop), token);
     } catch {
       errorMessage = t("The photo could not be saved.", locale);
       saving = false;
+      if (altSaved) {
+        // The description is stored even though the crop was not: show it in the page.
+        try {
+          await onSaved();
+        } catch {
+          // Keep the dialog open with its error.
+        }
+      }
       return;
     }
     try {
@@ -382,6 +417,27 @@
         onclick={resetAll}>{t("Reset", locale)}</Button
       >
     </div>
+
+    {#if showDescription}
+      <div class="editor-description">
+        <label for={descriptionId}>{t("Description", locale)}</label>
+        <input
+          id={descriptionId}
+          type="text"
+          bind:value={describedAs}
+          maxlength={MAX_ALT_TEXT_LENGTH}
+          disabled={saving}
+          autocomplete="off"
+          aria-describedby={`${descriptionId}-hint`}
+        />
+        <small id={`${descriptionId}-hint`}
+          >{t(
+            "Read aloud by screen readers and shown when the photo cannot load.",
+            locale,
+          )}</small
+        >
+      </div>
+    {/if}
 
     <div class="editor-status" aria-live="polite">
       {#if errorMessage}
@@ -696,6 +752,27 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.45rem;
+  }
+
+  .editor-description {
+    display: grid;
+    gap: 0.25rem;
+    padding-inline: 0.3rem;
+  }
+
+  .editor-description label {
+    font-size: 0.9rem;
+    font-weight: 650;
+  }
+
+  .editor-description input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .editor-description small {
+    color: var(--ink-muted);
   }
 
   .editor-status {

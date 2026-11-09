@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.automirrored.filled.RotateRight
@@ -25,6 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +37,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +54,8 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -59,6 +65,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.v2.PhotoAltRequest
 import blue.anika.wolle.data.api.v2.PhotoEditRequest
 import blue.anika.wolle.data.api.v2.PhotoEditV2Api
 import blue.anika.wolle.data.repository.ProjectRepository
@@ -83,6 +90,9 @@ sealed interface PhotoEditTarget {
 
 data class PhotoEditUiState(val saving: Boolean = false, val failed: Boolean = false)
 
+/** What a save produced: the photo's current URLs and, when it was changed, its description. */
+data class PhotoEditSaved(val url: String, val thumbnailUrl: String, val altText: String?)
+
 /**
  * Sends the edit to the server (it needs the network, so it is never queued), then refreshes the
  * project or yarn so every view and the offline cache show the new picture.
@@ -102,29 +112,56 @@ constructor(
         _state.value = PhotoEditUiState()
     }
 
-    /** Calls [onSaved] with the new `url` and `thumbnail_url` once the server accepted the edit. */
+    /**
+     * Saves the new description ([altText], when changed) and then the rotation and crop
+     * ([request], when edited); calls [onSaved] with the photo's current URLs once the server
+     * accepted everything. A failure after the description was stored still refreshes the screens.
+     */
     fun save(
         target: PhotoEditTarget,
-        request: PhotoEditRequest,
-        onSaved: (url: String, thumbnailUrl: String) -> Unit,
+        request: PhotoEditRequest?,
+        altText: String?,
+        onSaved: (PhotoEditSaved) -> Unit,
     ) {
         if (_state.value.saving) return
+        if (request == null && altText == null) return
         _state.value = PhotoEditUiState(saving = true)
         viewModelScope.launch {
+            var altStored = false
             try {
-                val (url, thumbnail) =
+                var current: Pair<String, String>? = null
+                var storedAlt: String? = null
+                if (altText != null) {
+                    val body = PhotoAltRequest(altText.trim())
+                    when (target) {
+                        is PhotoEditTarget.ProjectImage ->
+                            api.updateProjectImageAlt(target.projectId, target.imageId, body)
+                                .data
+                                .let {
+                                    current = it.url to it.thumbnailUrl
+                                    storedAlt = it.altText
+                                }
+                        is PhotoEditTarget.YarnPhoto ->
+                            api.updateYarnPhotoAlt(target.yarnId, target.photoId, body).data.let {
+                                current = it.url to it.thumbnailUrl
+                                storedAlt = it.altText
+                            }
+                    }
+                    altStored = true
+                }
+                if (request != null) {
                     when (target) {
                         is PhotoEditTarget.ProjectImage ->
                             api.editProjectImage(target.projectId, target.imageId, request)
                                 .data
-                                .let {
-                                    it.url to it.thumbnailUrl
-                                }
+                                .let { current = it.url to it.thumbnailUrl }
                         is PhotoEditTarget.YarnPhoto ->
                             api.editYarnPhoto(target.yarnId, target.photoId, request).data.let {
-                                it.url to it.thumbnailUrl
+                                current = it.url to it.thumbnailUrl
                             }
                     }
+                }
+                val (url, thumbnail) = current ?: return@launch
                 // The picture is saved; a failed refresh only delays the new thumbnails.
                 try {
                     when (target) {
@@ -135,10 +172,20 @@ constructor(
                     throw cancel
                 } catch (_: Exception) {}
                 _state.value = PhotoEditUiState()
-                onSaved(url, thumbnail)
+                onSaved(PhotoEditSaved(url, thumbnail, storedAlt))
             } catch (cancel: CancellationException) {
                 throw cancel
             } catch (_: Exception) {
+                if (altStored) {
+                    try {
+                        when (target) {
+                            is PhotoEditTarget.ProjectImage -> projects.refreshOne(target.projectId)
+                            is PhotoEditTarget.YarnPhoto -> yarns.refreshOne(target.yarnId)
+                        }
+                    } catch (cancel: CancellationException) {
+                        throw cancel
+                    } catch (_: Exception) {}
+                }
                 _state.update { it.copy(saving = false, failed = true) }
             }
         }
@@ -150,15 +197,17 @@ private val EdgePad = 24.dp
 
 /**
  * The lightweight photo editor: the original [imageUrl] turned in quarter steps with a crop box
- * over the turned picture (drag the corners, or the box). Save sends the rotation and the crop to
- * the server and calls [onSaved] with the new URLs; on a failure the dialog stays open.
+ * over the turned picture (drag the corners, or the box), and a Description field ([altText] is the
+ * stored one). Save sends the description, the rotation and the crop to the server and calls
+ * [onSaved] with the current URLs and the stored description; on a failure the dialog stays open.
  */
 @Composable
 fun PhotoEditorDialog(
     target: PhotoEditTarget,
     imageUrl: String,
     onDismiss: () -> Unit,
-    onSaved: (url: String, thumbnailUrl: String) -> Unit = { _, _ -> },
+    altText: String = "",
+    onSaved: (PhotoEditSaved) -> Unit = {},
 ) {
     val viewModel: PhotoEditViewModel = hiltViewModel(key = "photo-edit-$target")
     LaunchedEffect(target) { viewModel.reset() }
@@ -166,6 +215,8 @@ fun PhotoEditorDialog(
     var rotation by remember { mutableIntStateOf(0) }
     var crop by remember { mutableStateOf(CropBox.Whole) }
     val request = PhotoEditMath.request(rotation, crop)
+    var description by rememberSaveable(target) { mutableStateOf(altText) }
+    val altChanged = PhotoEditMath.altChanged(altText, description)
     val painter = rememberAsyncImagePainter(model = imageUrl)
     val painterState by painter.state.collectAsStateWithLifecycle()
     val natural =
@@ -179,7 +230,10 @@ fun PhotoEditorDialog(
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier =
+                    Modifier.fillMaxSize()
+                        .imePadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
@@ -240,6 +294,24 @@ fun PhotoEditorDialog(
                         crop = CropBox.Whole
                     }
                 }
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = {
+                        if (it.length <= PhotoEditMath.MAX_ALT_LENGTH) description = it
+                    },
+                    label = { Text(stringResource(R.string.photo_edit_description)) },
+                    supportingText = {
+                        Text(stringResource(R.string.photo_edit_description_hint))
+                    },
+                    enabled = !state.saving,
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done,
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 if (state.failed) {
                     Text(
                         stringResource(R.string.photo_edit_failed),
@@ -279,14 +351,16 @@ fun PhotoEditorDialog(
                         }
                         Button(
                             onClick = {
-                                request?.let {
-                                    viewModel.save(target, it) { url, thumb ->
-                                        onSaved(url, thumb)
-                                        onDismiss()
-                                    }
+                                viewModel.save(
+                                    target,
+                                    request,
+                                    description.takeIf { altChanged },
+                                ) { saved ->
+                                    onSaved(saved)
+                                    onDismiss()
                                 }
                             },
-                            enabled = request != null,
+                            enabled = request != null || altChanged,
                             modifier = Modifier.heightIn(min = 48.dp),
                         ) {
                             Text(stringResource(R.string.common_save))

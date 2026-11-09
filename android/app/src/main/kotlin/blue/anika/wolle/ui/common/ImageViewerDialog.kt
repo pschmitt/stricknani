@@ -261,6 +261,7 @@ fun ImageViewerDialog(images: List<ImageViewerImage>, initialIndex: Int, onDismi
             PhotoEditorDialog(
                 target = target,
                 imageUrl = image.url,
+                altText = image.altText.orEmpty(),
                 onDismiss = { editing = false },
             )
         }

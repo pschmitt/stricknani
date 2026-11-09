@@ -185,7 +185,6 @@
     <string name="project_detail_pattern_reference">Deine Referenz</string>
     <string name="project_detail_no_description">Noch keine Beschreibung der Anleitung.</string>
     <string name="project_detail_not_recorded">Nicht angegeben</string>
-    <string name="project_detail_field_gauge">Maschenprobe</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
     <string name="project_editor_title_edit">Projekt bearbeiten</string>
@@ -870,6 +869,8 @@
     <string name="photo_edit_saving">Foto wird gespeichert…</string>
     <string name="photo_edit_failed">Das Foto konnte nicht gespeichert werden.</string>
     <string name="photo_edit_hint">Zum Zuschneiden die Ecken ziehen.</string>
+    <string name="photo_edit_description">Beschreibung</string>
+    <string name="photo_edit_description_hint">Wird von Screenreadern vorgelesen und angezeigt, wenn das Foto nicht geladen werden kann.</string>
     <string name="photo_take">Foto aufnehmen</string>
     <string name="photo_choose">Foto auswählen</string>
     <string name="photo_camera_denied">Der Kamerazugriff ist aus. Erlaube ihn in den Systemeinstellungen, um ein Foto aufzunehmen.</string>
@@ -884,7 +885,6 @@
     <string name="project_editor_tags_suggestions">Tag-Vorschläge</string>
     <string name="project_editor_tag_remove">Schlagwort %1$s entfernen</string>
     <string name="project_editor_needles_hint">z. B. 4 mm Rundnadel, 80 cm</string>
-    <string name="project_editor_stitch_sample_hint">z. B. 22 Maschen und 30 Reihen = 10 cm</string>
     <string name="project_editor_unlink_yarn">%1$s entfernen</string>
     <string name="project_editor_no_yarns_yet">Mit diesem Projekt ist noch kein Garn verknüpft.</string>
     <string name="project_editor_pick_yarns_title">Garn hinzufügen</string>

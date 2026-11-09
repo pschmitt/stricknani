@@ -1726,6 +1726,73 @@ async fn media_is_readable_by_recipients_and_writable_by_editors_only() {
 }
 
 #[tokio::test]
+async fn image_descriptions_are_editable_by_editors_only() {
+    let f = fx().await;
+    let (status, image) = upload(
+        &f.app,
+        &format!("/api/v2/projects/{}/images/title", f.p1),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "{image}");
+    let image_id = image["data"]["id"].as_i64().unwrap();
+    let path = format!("/api/v2/projects/{}/images/{image_id}", f.p1);
+    let body = Some(json!({"alt_text": "Shared description"}));
+    for (who, expected) in [
+        ("vera", StatusCode::FORBIDDEN),
+        ("ben", StatusCode::NOT_FOUND),
+        ("frank", StatusCode::NOT_FOUND),
+    ] {
+        let (status, _) = call(&f.app, "PATCH", &path, Some(who), body.clone()).await;
+        assert_eq!(status, expected, "{who}");
+    }
+    let (status, _) = call(&f.app, "PATCH", &path, None, body.clone()).await;
+    // Like every other media mutation, an anonymous write is refused by the mutation guard (403).
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let stored: String = sqlx::query_scalar("SELECT alt_text FROM media_files WHERE public_id = ?")
+        .bind(image_id)
+        .fetch_one(&f.pool)
+        .await
+        .unwrap();
+    assert_eq!(stored, "a.png", "denied callers change nothing");
+    let (status, updated) = call(&f.app, "PATCH", &path, Some("eddie"), body).await;
+    assert_eq!(status, StatusCode::OK, "{updated}");
+    assert_eq!(updated["data"]["alt_text"], "Shared description");
+    // The audit entry names the editor, not the owner.
+    let actor: i64 = sqlx::query_scalar(
+        "SELECT actor_user_id FROM audit_events WHERE entity_type = 'project' \
+         AND entity_id = ? AND action = 'updated' ORDER BY id DESC LIMIT 1",
+    )
+    .bind(f.p1)
+    .fetch_one(&f.pool)
+    .await
+    .unwrap();
+    assert_eq!(actor, f.eddie);
+
+    // A derived yarn viewer may not change a yarn photo description; its owner may.
+    let (status, photo) = upload(
+        &f.app,
+        &format!("/api/v2/yarns/{}/photos", f.y1),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let photo_path = format!(
+        "/api/v2/yarns/{}/photos/{}",
+        f.y1,
+        photo["data"]["id"].as_i64().unwrap()
+    );
+    let body = Some(json!({"alt_text": "Skein"}));
+    let (status, _) = call(&f.app, "PATCH", &photo_path, Some("vera"), body.clone()).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, _) = call(&f.app, "PATCH", &photo_path, Some("ben"), body.clone()).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let (status, updated) = call(&f.app, "PATCH", &photo_path, Some("anika"), body).await;
+    assert_eq!(status, StatusCode::OK, "{updated}");
+    assert_eq!(updated["data"]["alt_text"], "Skein");
+}
+
+#[tokio::test]
 async fn sharing_events_show_in_resource_history_with_the_other_account() {
     let f = fx().await;
     let base = format!("/api/v2/projects/{}", f.q1);

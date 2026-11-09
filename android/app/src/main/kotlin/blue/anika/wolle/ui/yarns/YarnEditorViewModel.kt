@@ -292,9 +292,11 @@ constructor(
      * A saved photo was cropped or rotated on the server: show its new picture in the form (and in
      * the baseline, so the edit does not count as an unsaved change).
      */
-    fun photoEdited(photoId: Int, url: String, thumbnailUrl: String) {
+    fun photoEdited(photoId: Int, url: String, thumbnailUrl: String, altText: String? = null) {
         fun YarnPhotoDto.swap() =
-            if (id == photoId) copy(url = url, thumbnailUrl = thumbnailUrl) else this
+            if (id == photoId) {
+                copy(url = url, thumbnailUrl = thumbnailUrl, altText = altText ?: this.altText)
+            } else this
         fun YarnEditorFormState.swap() = copy(existingPhotos = existingPhotos.map { it.swap() })
         _form.value = _form.value.swap()
         _initialForm.value = _initialForm.value.swap()

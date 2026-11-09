@@ -501,9 +501,11 @@ constructor(
      * A saved photo was cropped or rotated on the server: show its new picture in the form (and in
      * the baseline, so the edit does not count as an unsaved change).
      */
-    fun imageEdited(imageId: Int, url: String, thumbnailUrl: String) {
+    fun imageEdited(imageId: Int, url: String, thumbnailUrl: String, altText: String? = null) {
         fun ImageDto.swap() =
-            if (id == imageId) copy(url = url, thumbnailUrl = thumbnailUrl) else this
+            if (id == imageId) {
+                copy(url = url, thumbnailUrl = thumbnailUrl, altText = altText ?: this.altText)
+            } else this
         fun ProjectEditorFormState.swap() =
             copy(
                 existingTitleImages = existingTitleImages.map { it.swap() },

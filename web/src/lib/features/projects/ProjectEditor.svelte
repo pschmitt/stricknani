@@ -1745,12 +1745,18 @@
                 <input id="project-needles" bind:value={draft.needles} />
               </div>
               <div class="field field-wide">
-                <label for="project-stitch-sample"
+                <label
+                  for="project-stitch-sample"
+                  id="project-stitch-sample-label"
                   ><LabelIcon name="gauge" />{t("Stitch sample", locale)}</label
                 >
-                <input
+                <MarkdownEditor
                   id="project-stitch-sample"
+                  labelledBy="project-stitch-sample-label"
+                  {locale}
+                  lines
                   bind:value={draft.stitchSample}
+                  rows={3}
                 />
               </div>
               <div class="field field-wide">
@@ -2152,6 +2158,7 @@
           open={photoEditOpen}
           src={photoEditImage.url}
           alt={photoEditImage.alt_text ?? t("Project photo", locale)}
+          altText={photoEditImage.alt_text ?? ""}
           endpoint={projectImageEditPath(projectId, photoEditImage.id)}
           {locale}
           onSaved={reloadAfterPhotoEdit}

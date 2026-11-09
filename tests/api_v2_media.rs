@@ -1474,6 +1474,256 @@ async fn yarn_photo_edits_keep_the_primary_photo() {
     assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
 }
 
+fn patch_request(
+    path: &str,
+    session: &str,
+    csrf: Option<&str>,
+    body: serde_json::Value,
+) -> Request<Body> {
+    let mut request = Request::patch(path)
+        .header("host", HOST)
+        .header("origin", ORIGIN)
+        .header("sec-fetch-site", "same-origin")
+        .header("cookie", format!("__Host-stricknani_session={session}"))
+        .header("content-type", "application/json");
+    if let Some(csrf) = csrf {
+        request = request.header("x-csrf-token", csrf);
+    }
+    request.body(Body::from(body.to_string())).unwrap()
+}
+
+async fn alt_text_of(pool: &SqlitePool, public_id: i64) -> String {
+    sqlx::query_scalar("SELECT alt_text FROM media_files WHERE public_id = ?")
+        .bind(public_id)
+        .fetch_one(pool)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn image_descriptions_can_be_changed_validated_and_audited() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let png = two_tone(64, 32, image::ImageFormat::Png);
+    let upload = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!(
+                "/projects/{}/steps/{}/images",
+                fixture.project_id, fixture.step_id
+            ),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "step.png",
+            content_type: "image/png",
+            bytes: &png,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(upload.status(), StatusCode::CREATED);
+    let image_id = json(upload).await["data"]["id"].as_i64().unwrap();
+    let path = format!("/projects/{}/images/{image_id}", fixture.project_id);
+    let project_updated = |pool: SqlitePool, id: i64| async move {
+        sqlx::query_scalar::<_, String>("SELECT updated_at FROM projects WHERE id = ?")
+            .bind(id)
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+    let before = project_updated(fixture.pool.clone(), fixture.project_id).await;
+
+    // A change is trimmed, answered like the upload, bumps the project and is audited.
+    let response = fixture
+        .app
+        .clone()
+        .oneshot(patch_request(
+            &path,
+            &session,
+            Some(&csrf),
+            serde_json::json!({"alt_text": "  Sleeve detail  "}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let data = json(response).await["data"].clone();
+    assert_eq!(data["id"], image_id);
+    assert_eq!(data["alt_text"], "Sleeve detail");
+    assert_eq!(data["step_id"], fixture.step_id);
+    assert_eq!(alt_text_of(&fixture.pool, image_id).await, "Sleeve detail");
+    let after = project_updated(fixture.pool.clone(), fixture.project_id).await;
+    assert!(after > before, "{after} should follow {before}");
+    let audits = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' \
+         AND entity_id = ? AND action = 'updated'",
+    )
+    .bind(fixture.owner_id)
+    .bind(fixture.project_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(audits, 1);
+
+    // The same text again is a no-op: no second audit entry.
+    let again = fixture
+        .app
+        .clone()
+        .oneshot(patch_request(
+            &path,
+            &session,
+            Some(&csrf),
+            serde_json::json!({"alt_text": "Sleeve detail"}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(again.status(), StatusCode::OK);
+    let audits_after = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM audit_events WHERE entity_type = 'project' AND action = 'updated'",
+    )
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(audits_after, 1);
+
+    // Empty falls back to the original file name.
+    let empty = fixture
+        .app
+        .clone()
+        .oneshot(patch_request(
+            &path,
+            &session,
+            Some(&csrf),
+            serde_json::json!({"alt_text": "   "}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(empty.status(), StatusCode::OK);
+    assert_eq!(json(empty).await["data"]["alt_text"], "step.png");
+    assert_eq!(alt_text_of(&fixture.pool, image_id).await, "step.png");
+
+    // Validation: too long, wrong shape, extra field.
+    for body in [
+        serde_json::json!({"alt_text": "x".repeat(4097)}),
+        serde_json::json!({}),
+        serde_json::json!({"alt_text": 5}),
+        serde_json::json!({"alt_text": "ok", "extra": true}),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(patch_request(&path, &session, Some(&csrf), body.clone()))
+            .await
+            .unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "{body}"
+        );
+        assert_eq!(json(response).await["error"]["code"], "validation_error");
+    }
+    assert_eq!(alt_text_of(&fixture.pool, image_id).await, "step.png");
+
+    // A cookie mutation needs the CSRF token.
+    let no_csrf = fixture
+        .app
+        .clone()
+        .oneshot(patch_request(
+            &path,
+            &session,
+            None,
+            serde_json::json!({"alt_text": "No token"}),
+        ))
+        .await
+        .unwrap();
+    assert!(no_csrf.status().is_client_error());
+    assert_eq!(alt_text_of(&fixture.pool, image_id).await, "step.png");
+
+    // Another account's project and a wrong image id are not found.
+    for path in [
+        format!("/projects/{}/images/{image_id}", fixture.foreign_project_id),
+        format!("/projects/{}/images/999999", fixture.project_id),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(patch_request(
+                &path,
+                &session,
+                Some(&csrf),
+                serde_json::json!({"alt_text": "Nope"}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND, "{path}");
+    }
+}
+
+#[tokio::test]
+async fn yarn_photo_descriptions_can_be_changed() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let jpeg = two_tone(64, 48, image::ImageFormat::Jpeg);
+    let upload = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/yarns/{}/photos", fixture.yarn_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "skein.jpg",
+            content_type: "image/jpeg",
+            bytes: &jpeg,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    let photo_id = json(upload).await["data"]["id"].as_i64().unwrap();
+    let path = format!("/yarns/{}/photos/{photo_id}", fixture.yarn_id);
+    let response = fixture
+        .app
+        .clone()
+        .oneshot(patch_request(
+            &path,
+            &session,
+            Some(&csrf),
+            serde_json::json!({"alt_text": "Close-up"}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let data = json(response).await["data"].clone();
+    assert_eq!(data["alt_text"], "Close-up");
+    assert_eq!(data["is_primary"], true);
+    assert_eq!(alt_text_of(&fixture.pool, photo_id).await, "Close-up");
+    let foreign = fixture
+        .app
+        .clone()
+        .oneshot(patch_request(
+            &format!("/yarns/{}/photos/{photo_id}", fixture.foreign_yarn_id),
+            &session,
+            Some(&csrf),
+            serde_json::json!({"alt_text": "Nope"}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
+}
+
 #[tokio::test]
 async fn regenerating_thumbnails_turns_old_sideways_ones_upright() {
     let fixture = fixture().await;

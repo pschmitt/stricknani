@@ -94,6 +94,24 @@ class ProjectPrintDocumentTest {
     }
 
     @Test
+    fun `stitch sample prints as markdown with its line breaks`() {
+        val options = PrintOptions(PrintContent.EVERYTHING, includeImages = false)
+        val html =
+            ProjectPrintDocument.html(
+                project.copy(stitchSample = "**22** stitches\n30 rows"),
+                emptyList(),
+                options,
+                labels,
+                resolve,
+                emptyMap(),
+            )
+
+        assertTrue(html.contains("<h2>Stitch sample</h2>"))
+        assertTrue(html.contains("<strong>22</strong> stitches"))
+        assertTrue(Regex("stitches</p>\\s*<p>30 rows").containsMatchIn(html))
+    }
+
+    @Test
     fun `instructions only leaves out details, description and notes`() {
         val options = PrintOptions(PrintContent.INSTRUCTIONS, includeImages = false)
         val html =

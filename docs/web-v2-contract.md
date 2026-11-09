@@ -610,6 +610,21 @@ invalid_edit`. The item keeps its id, position, alt text and cover or primary
 flag; a new file replaces the old one, so `url` and `thumbnail_url` change.
 JPEG originals stay JPEG, other formats become PNG.
 
+The description of an image (title and step images share the project route) or
+yarn photo changes with a JSON body, same authentication and permissions as
+the other media mutations (owner or editor; viewers `403`):
+
+| Method and path                                        | Result                    |
+| ------------------------------------------------------ | ------------------------- |
+| `PATCH /projects/{project_id}/images/{image_id}`       | `200 {data: Image}`       |
+| `PATCH /yarns/{yarn_id}/photos/{photo_id}`             | `200 {data: YarnPhoto}`   |
+
+The body is exactly `{"alt_text": "..."}`. The text is trimmed and at most 4096
+bytes (`422 validation_error` otherwise, also for a missing or extra field);
+empty falls back to the original file name, like an upload without a
+description. An unchanged description is a no-op. A change bumps the parent's
+`updated_at` (sync cursor) and adds an `updated` history entry for the image.
+
 Each upload requires a multipart field named `file`. Project image uploads may
 also set `alt_text`; other fields are rejected. Upload responses use existing
 v1 DTO field names and numeric public IDs, wrapped in `{ "data": ... }`:

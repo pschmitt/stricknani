@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  altTextChanged,
+  altTextPath,
   arrowDelta,
   buildEditBody,
   clampCrop,
@@ -18,6 +20,7 @@ import {
   resizeCrop,
   rotateBy,
   rotatedSize,
+  updateAltText,
   yarnPhotoEditPath,
 } from "./photo-editor";
 
@@ -277,5 +280,49 @@ describe("paths and request", () => {
         "t",
       ),
     ).rejects.toMatchObject({ status: 422 });
+  });
+});
+
+describe("photo description", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("compares trimmed text", () => {
+    expect(altTextChanged("Cover", " Cover ")).toBe(false);
+    expect(altTextChanged("Cover", "Back")).toBe(true);
+    expect(altTextChanged("Cover", "  ")).toBe(true);
+  });
+
+  it("derives the photo route from the edit route", () => {
+    expect(altTextPath(projectImageEditPath(3, 9))).toBe(
+      "/api/v2/projects/3/images/9",
+    );
+    expect(altTextPath(yarnPhotoEditPath(4, 7))).toBe(
+      "/api/v2/yarns/4/photos/7",
+    );
+  });
+
+  it("patches the trimmed text with the CSRF token", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: { id: 9, alt_text: "Sleeve" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const stored = await updateAltText(
+      projectImageEditPath(3, 9),
+      "  Sleeve ",
+      "tok",
+    );
+    expect(stored).toBe("Sleeve");
+    const [path, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(path).toBe("/api/v2/projects/3/images/9");
+    expect(init.method).toBe("PATCH");
+    expect(new Headers(init.headers).get("x-csrf-token")).toBe("tok");
+    expect(init.body).toBe(JSON.stringify({ alt_text: "Sleeve" }));
   });
 });

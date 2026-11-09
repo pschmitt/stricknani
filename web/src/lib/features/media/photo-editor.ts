@@ -252,3 +252,44 @@ export async function editPhoto(
 ): Promise<void> {
   await apiRequest(path, { method: "POST", csrfToken, body, signal });
 }
+
+/** The description the field starts from and the server stores, compared trimmed. */
+export function normalizeAltText(value: string): string {
+  return value.trim();
+}
+
+/** The description changed (an empty field on a stored description counts as a change). */
+export function altTextChanged(initial: string, current: string): boolean {
+  return normalizeAltText(initial) !== normalizeAltText(current);
+}
+
+/** Longest description the field accepts (the server allows 4096 bytes; 4 bytes per char). */
+export const MAX_ALT_TEXT_LENGTH = 1000;
+
+/** The photo's own route, `…/edit` without its last segment. */
+export function altTextPath(editPath: string): string {
+  return editPath.replace(/\/edit$/, "");
+}
+
+/**
+ * Change the description of a photo; empty falls back to the file name on the server. Resolves
+ * with the description the server stored.
+ */
+export async function updateAltText(
+  editPath: string,
+  altText: string,
+  csrfToken: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const payload: unknown = await apiRequest(altTextPath(editPath), {
+    method: "PATCH",
+    csrfToken,
+    body: { alt_text: normalizeAltText(altText) },
+    signal,
+  });
+  const stored =
+    typeof payload === "object" && payload !== null && "data" in payload
+      ? (payload.data as { alt_text?: unknown } | null)?.alt_text
+      : undefined;
+  return typeof stored === "string" ? stored : normalizeAltText(altText);
+}

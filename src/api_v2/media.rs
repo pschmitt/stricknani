@@ -36,7 +36,7 @@ pub(super) fn router() -> Router<ApiV2State> {
         )
         .route(
             "/projects/{project_id}/images/{image_id}",
-            axum::routing::delete(delete_project_image),
+            axum::routing::delete(delete_project_image).patch(update_project_image_alt),
         )
         .route(
             "/projects/{project_id}/attachments/{attachment_id}",
@@ -54,7 +54,7 @@ pub(super) fn router() -> Router<ApiV2State> {
         )
         .route(
             "/yarns/{yarn_id}/photos/{photo_id}",
-            axum::routing::delete(delete_yarn_photo),
+            axum::routing::delete(delete_yarn_photo).patch(update_yarn_photo_alt),
         )
         .route(
             "/projects/{project_id}/images/order",
@@ -221,6 +221,11 @@ fn media_error(error: MediaOperationError) -> Response {
             "Multipart upload is invalid",
         ),
         MediaOperationError::Upload(UploadError::InvalidEdit) => invalid_edit(),
+        MediaOperationError::InvalidAltText => super::api_error(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+            "The description is too long",
+        ),
         MediaOperationError::Database => super::api_error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal_error",
@@ -420,6 +425,79 @@ async fn edit_yarn_photo(
         yarn_id,
         photo_id,
         edit,
+    )
+    .await
+    {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => media_error(error),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AltTextPayload {
+    alt_text: String,
+}
+
+fn alt_text_payload_error() -> Response {
+    super::api_error(
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "validation_error",
+        "Send an alt_text string",
+    )
+}
+
+/// `PATCH /projects/{id}/images/{image_id}` with `{"alt_text": "..."}` (title and step images):
+/// change the description. Empty falls back to the original file name, as an upload does.
+async fn update_project_image_alt(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path((project_id, image_id)): Path<(i64, i64)>,
+    payload: Result<Json<AltTextPayload>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Ok(Json(payload)) = payload else {
+        return alt_text_payload_error();
+    };
+    match media::update_project_image_alt_text(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        project_id,
+        image_id,
+        &payload.alt_text,
+    )
+    .await
+    {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => media_error(error),
+    }
+}
+
+/// `PATCH /yarns/{id}/photos/{photo_id}`: the yarn photo variant of [`update_project_image_alt`].
+async fn update_yarn_photo_alt(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path((yarn_id, photo_id)): Path<(i64, i64)>,
+    payload: Result<Json<AltTextPayload>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Ok(Json(payload)) = payload else {
+        return alt_text_payload_error();
+    };
+    match media::update_yarn_photo_alt_text(
+        &state.app,
+        user_id,
+        crate::resource_access::Surface::V2,
+        yarn_id,
+        photo_id,
+        &payload.alt_text,
     )
     .await
     {

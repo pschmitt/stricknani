@@ -1,5 +1,5 @@
 import type { YarnWrite } from "../yarns/yarn-api.ts";
-import { t } from "#lib/i18n.svelte.ts";
+import { msg, t } from "#lib/i18n.svelte.ts";
 import type {
   ImportPreview,
   ImportedAsset,
@@ -8,6 +8,9 @@ import type {
   ImportedYarnDetails,
   ImportedYarnDraft,
 } from "./import-api";
+
+/** Marked for extraction: the yarn gauge note is the only place that still says Gauge. */
+const GAUGE_LABEL = msg("Gauge");
 
 /** How many suggested pictures start out selected. */
 const PRESELECTED_IMAGES = 3;
@@ -301,7 +304,7 @@ export function yarnImportEditor(
     imageUrls: [],
   };
   const notes = [
-    yarn.gauge ? `${t("Gauge")}: ${yarn.gauge}` : "",
+    yarn.gauge ? `${t(GAUGE_LABEL)}: ${yarn.gauge}` : "",
     yarn.care ? `${t("Care")}: ${yarn.care}` : "",
     yarn.price ? `${t("Price")}: ${yarn.price}` : "",
   ]

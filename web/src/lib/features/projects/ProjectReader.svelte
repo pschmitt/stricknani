@@ -787,7 +787,7 @@
         {/if}
         {#if gaugeHtml || gaugeText}
           <div>
-            <dt><LabelIcon name="gauge" />{t("Gauge", locale)}</dt>
+            <dt><LabelIcon name="gauge" />{t("Stitch sample", locale)}</dt>
             <dd>
               {#if gaugeHtml}<div class="rich-text">
                   {@html gaugeHtml}

@@ -508,6 +508,7 @@
       open={editorOpen}
       src={editedPhoto.url}
       alt={editedPhoto.alt_text ?? t("Yarn photo", locale)}
+      altText={editedPhoto.alt_text ?? ""}
       endpoint={yarnPhotoEditPath(yarnId, editedPhoto.id)}
       {locale}
       onSaved={reloadAfterPhotoEdit}

@@ -618,6 +618,10 @@ fn legacy_media_error(error: MediaOperationError) -> Response {
         MediaOperationError::NotFound(detail) => not_found(detail),
         MediaOperationError::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE.into_response(),
         MediaOperationError::Upload(error) => upload_error(error),
+        MediaOperationError::InvalidAltText => error_response(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "The description is too long",
+        ),
         MediaOperationError::Database => database_error(),
     }
 }
@@ -684,6 +688,8 @@ pub(crate) enum MediaOperationError {
     Forbidden,
     ServiceUnavailable,
     Upload(UploadError),
+    /// The new description is longer than `MAX_ALT_TEXT_BYTES`.
+    InvalidAltText,
     Database,
 }
 
@@ -4220,6 +4226,155 @@ pub(crate) async fn edit_yarn_photo(
 ) -> Result<YarnPhotoResponse, MediaOperationError> {
     let parent = EditParent::Yarn(yarn_id);
     edit_media_image(state, actor_id, surface, parent, photo_id, edit)
+        .await
+        .map(|row| yarn_photo_dto(&row))
+}
+
+/// Change the description (alt text) of one project image (title or step) or yarn photo. Empty
+/// text falls back to the original file name, as an upload does. Editors may; the parent's
+/// timestamp (sync cursor) is bumped and the change is audited like other media changes.
+async fn update_media_alt_text(
+    state: &AppState,
+    actor_id: i64,
+    surface: crate::resource_access::Surface,
+    parent: EditParent,
+    public_id: i64,
+    alt_text: &str,
+) -> Result<MediaRow, MediaOperationError> {
+    let alt_text = alt_text.trim();
+    if alt_text.len() > MAX_ALT_TEXT_BYTES {
+        return Err(MediaOperationError::InvalidAltText);
+    }
+    let (kind, parent_id, missing) = match parent {
+        EditParent::Project(id) => (
+            crate::resource_access::ResourceKind::Project,
+            id,
+            "Image not found",
+        ),
+        EditParent::Yarn(id) => (
+            crate::resource_access::ResourceKind::Yarn,
+            id,
+            "Photo not found",
+        ),
+    };
+    let owner_id = match editable_owner(&state.pool, actor_id, kind, parent_id, surface).await {
+        Ok(Some(owner_id)) => owner_id,
+        Ok(None) => return Err(MediaOperationError::NotFound(missing)),
+        Err(EditDenied::Forbidden) => return Err(MediaOperationError::Forbidden),
+        Err(EditDenied::Database) => return Err(MediaOperationError::Database),
+    };
+    let mut tx = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| MediaOperationError::Database)?;
+    let row = match parent {
+        EditParent::Project(project_id) => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT * FROM media_files WHERE public_id = ? AND owner_id = ? \
+                 AND project_id = ? AND kind IN ('title', 'step')",
+            )
+            .bind(public_id)
+            .bind(owner_id)
+            .bind(project_id)
+            .fetch_optional(&mut *tx)
+            .await
+        }
+        EditParent::Yarn(yarn_id) => {
+            sqlx::query_as::<_, MediaRow>(
+                "SELECT * FROM media_files WHERE public_id = ? AND owner_id = ? \
+                 AND yarn_id = ? AND kind = 'photo'",
+            )
+            .bind(public_id)
+            .bind(owner_id)
+            .bind(yarn_id)
+            .fetch_optional(&mut *tx)
+            .await
+        }
+    }
+    .map_err(|_| MediaOperationError::Database)?
+    .ok_or(MediaOperationError::NotFound(missing))?;
+    let alt_text = if alt_text.is_empty() {
+        row.original_filename.clone()
+    } else {
+        alt_text.to_owned()
+    };
+    if alt_text == row.alt_text {
+        // Nothing to change: no history entry, no sync bump.
+        let _ = tx.rollback().await;
+        return Ok(row);
+    }
+    let updated = sqlx::query("UPDATE media_files SET alt_text = ? WHERE id = ?")
+        .bind(&alt_text)
+        .bind(row.id)
+        .execute(&mut *tx)
+        .await;
+    let bumped = match parent {
+        EditParent::Project(project_id) => bump_project_timestamp(&mut tx, owner_id, project_id)
+            .await
+            .map(|_| ()),
+        EditParent::Yarn(yarn_id) => bump_yarn_timestamp(&mut tx, owner_id, yarn_id)
+            .await
+            .map(|_| ()),
+    };
+    let (entity, media_kind) = match parent {
+        EditParent::Project(_) => (AuditEntity::Project, crate::audit::MediaKind::Image),
+        EditParent::Yarn(_) => (AuditEntity::Yarn, crate::audit::MediaKind::Photo),
+    };
+    let ok = matches!(updated, Ok(ref result) if result.rows_affected() == 1)
+        && bumped.is_ok()
+        && crate::audit::record_with_media(
+            &mut tx,
+            actor_id,
+            entity,
+            parent_id,
+            AuditAction::Updated,
+            &crate::audit::MediaRef {
+                kind: media_kind,
+                public_id: row.public_id,
+                name: Some(crate::audit::media_label(
+                    Some(&row.original_filename),
+                    &row.filename,
+                    row.public_id,
+                )),
+            },
+        )
+        .await
+        .is_ok();
+    if !ok {
+        let _ = tx.rollback().await;
+        return Err(MediaOperationError::Database);
+    }
+    tx.commit()
+        .await
+        .map_err(|_| MediaOperationError::Database)?;
+    Ok(MediaRow { alt_text, ..row })
+}
+
+/// Change the description of a project's title or step image; answers like its upload.
+pub(crate) async fn update_project_image_alt_text(
+    state: &AppState,
+    actor_id: i64,
+    surface: crate::resource_access::Surface,
+    project_id: i64,
+    image_id: i64,
+    alt_text: &str,
+) -> Result<ImageResponse, MediaOperationError> {
+    let parent = EditParent::Project(project_id);
+    update_media_alt_text(state, actor_id, surface, parent, image_id, alt_text)
+        .await
+        .map(|row| image_dto(&row))
+}
+
+/// Change the description of a yarn photo; answers like its upload.
+pub(crate) async fn update_yarn_photo_alt_text(
+    state: &AppState,
+    actor_id: i64,
+    surface: crate::resource_access::Surface,
+    yarn_id: i64,
+    photo_id: i64,
+    alt_text: &str,
+) -> Result<YarnPhotoResponse, MediaOperationError> {
+    let parent = EditParent::Yarn(yarn_id);
+    update_media_alt_text(state, actor_id, surface, parent, photo_id, alt_text)
         .await
         .map(|row| yarn_photo_dto(&row))
 }
