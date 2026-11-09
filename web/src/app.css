@@ -101,6 +101,12 @@
   --ui-input-height: 44px;
   --ui-input-radius: var(--radius-xs);
   --ui-input-font-size: 16px;
+  --ui-label-font-size: 0.9rem;
+  --ui-label-font-weight: 650;
+  /* Reading text: the reader and the editors share one size and line height,
+     scaled by the viewer's text-size preference (data-text-size on <html>). */
+  --reading-font-size: 1.06rem;
+  --reading-line-height: 1.75;
   /* The phone bar is Material's 80dp navigation bar (no border): the sticky action bars sit flush on it. */
   --app-mobile-nav-height: 80px;
   --app-mobile-nav-bottom-inset: max(4px, env(safe-area-inset-bottom, 0px));
@@ -331,6 +337,21 @@ button {
 :where(textarea) {
   min-height: 7rem;
   line-height: 1.55;
+}
+
+:root[data-text-size="small"] {
+  --reading-font-size: 0.94rem;
+}
+
+:root[data-text-size="large"] {
+  --reading-font-size: 1.22rem;
+}
+
+/* Long-form text fields (descriptions, notes, steps) type at the size and line height they
+   are read at. Not :where(): it must beat the shared control rule and component resets. */
+textarea.reading-input {
+  font-size: var(--reading-font-size);
+  line-height: var(--reading-line-height);
 }
 
 :where(input, select, textarea)[aria-invalid="true"] {

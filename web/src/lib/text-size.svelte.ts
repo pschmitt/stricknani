@@ -45,6 +45,23 @@ function clamp(index: number): number {
 
 let index = $state(DEFAULT_INDEX);
 
+const ROOT_VALUES = ["small", "medium", "large"] as const;
+
+/** Mirror the step on <html> so editors and readers share one size (see app.css). */
+function applyToRoot(): void {
+  try {
+    if (typeof document === "undefined") return;
+    const value = ROOT_VALUES[index];
+    if (value === "medium") {
+      delete document.documentElement.dataset.textSize;
+    } else {
+      document.documentElement.dataset.textSize = value;
+    }
+  } catch {
+    // No document: the CSS defaults apply.
+  }
+}
+
 export const textSize = {
   /** Current step index (0..2). */
   get index(): number {
@@ -71,6 +88,7 @@ export const textSize = {
   set(next: number): void {
     index = clamp(next);
     writeStored(index);
+    applyToRoot();
   },
   up(): void {
     textSize.set(index + 1);
@@ -84,6 +102,7 @@ export const textSize = {
   /** Re-read the persisted value (used at startup and in tests). */
   reload(): void {
     index = readStored();
+    applyToRoot();
   },
 };
 
@@ -93,6 +112,7 @@ if (typeof window !== "undefined") {
     window.addEventListener("storage", (event) => {
       if (event.key === null || event.key === TEXT_SIZE_STORAGE_KEY) {
         index = indexFromStored(event.newValue);
+        applyToRoot();
       }
     });
   } catch {

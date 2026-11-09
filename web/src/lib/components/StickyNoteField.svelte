@@ -40,6 +40,7 @@
     >
     <textarea
       {id}
+      class="reading-input"
       use:focusOnHash
       bind:value
       {rows}
@@ -127,12 +128,12 @@
   }
 
   label {
-    font-weight: 700;
+    font-weight: var(--ui-label-font-weight);
   }
 
   /* Writing on the note itself: ruled lines, no box, and the note's own ink for focus. */
   textarea {
-    --line-height: 1.6em;
+    --line-height: calc(var(--reading-line-height) * 1em);
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -151,6 +152,7 @@
       0 0.25rem / 100% var(--line-height) local;
     color: var(--sticky-ink);
     font: inherit;
+    font-size: var(--reading-font-size);
     line-height: var(--line-height);
     box-shadow: none;
     transition: box-shadow 120ms ease;

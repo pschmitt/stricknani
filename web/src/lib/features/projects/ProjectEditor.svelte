@@ -1922,6 +1922,7 @@
                   >
                   <textarea
                     id="project-materials"
+                    class="reading-input"
                     bind:value={draft.otherMaterials}
                     rows="4"></textarea>
                 </div>
@@ -1945,6 +1946,7 @@
                     >
                     <textarea
                       id="project-description"
+                      class="reading-input"
                       bind:value={draft.description}
                       rows="10"></textarea>
                   </div>
@@ -2061,6 +2063,7 @@
                           >
                           <textarea
                             id={`step-description-${step.key}`}
+                            class="reading-input"
                             bind:value={step.description}
                             rows="4"></textarea>
                         </div>
@@ -2460,8 +2463,8 @@
   }
 
   label {
-    font-size: 0.9rem;
-    font-weight: 650;
+    font-size: var(--ui-label-font-size);
+    font-weight: var(--ui-label-font-weight);
   }
 
   input,

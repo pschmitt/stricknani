@@ -827,21 +827,15 @@
     margin-bottom: 1rem;
   }
 
-  .reading-small {
-    font-size: 0.94rem;
-  }
-
-  .reading-medium {
-    font-size: 1.06rem;
-  }
-
+  .reading-small,
+  .reading-medium,
   .reading-large {
-    font-size: 1.22rem;
+    font-size: var(--reading-font-size);
   }
 
   .text-size-reset {
     justify-self: start;
-    min-height: 32px;
+    min-height: 44px;
     padding: 0 0.4rem;
     border: 0;
     border-radius: var(--radius-xs);
@@ -861,7 +855,7 @@
   .rich-text {
     max-width: 68ch;
     overflow-wrap: anywhere;
-    line-height: 1.75;
+    line-height: var(--reading-line-height);
   }
 
   .rich-text :global(:first-child) {
