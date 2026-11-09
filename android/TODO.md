@@ -72,7 +72,20 @@ picture stays in Raw with the "This text uses formatting the visual editor canno
 - [x] Drop `MarkdownElementTypes.IMAGE` from `MarkdownRich.UNSUPPORTED` and cover pictures in
       `MarkdownRichTest`.
 
-Status: **done as chips**, 2026-11-09. Compose Rich Editor 1.2.1 renders inline images only in read-only `RichText`, never in `BasicRichTextEditor`, so a picture is an atomic token chip (picture symbol + alt text) that round-trips the original `![alt](url){.sn-size-*}` verbatim. Real thumbnails inside the editable text need a custom overlay (follow-up). Linked pictures and `<img>` HTML stay in Raw.
+Status: **done as chips**, 2026-11-09. Compose Rich Editor 1.2.1 renders inline images only in read-only `RichText`, never in `BasicRichTextEditor`, so a picture is an atomic token chip (picture symbol + alt text) that round-trips the original `![alt](url){.sn-size-*}` verbatim. Linked pictures and `<img>` HTML stay in Raw.
+
+Follow-up, **done**, 2026-11-10: real thumbnails in the editable text. A picture alone in its
+paragraph is one transparent character (`EditorImage.THUMB_LABEL`, a token of trigger
+`sn-image-thumb`) in a paragraph whose `lineHeight` is 160dp (room for the picture);
+`MarkdownEditorThumbnails.kt` draws the picture behind that line from the editor's
+`TextLayoutResult` (Coil singleton loader, rounded corners, fitted into the line, width capped by
+`{.sn-size-*}`, alt-text placeholder when offline or failed, outline while the caret or selection
+is on it and the editor has the focus). Tapping it selects it (Backspace/Delete/Cut remove it as a
+unit). A picture in the middle of a line stays a text chip; `MarkdownRich.relayoutPictures` flips
+between the two forms as text is typed or deleted (Markdown never changes). Limitations: typing
+directly next to a thumbnail turns it into a chip (press Enter to type on a new line); Cut/Copy of
+a picture and Paste back does not restore it; with the caret beside a thumbnail the (tall) caret
+is hidden and the outline shows the position.
 
 ## SNA-105: Yarn links move into their own "Yarn source" card
 

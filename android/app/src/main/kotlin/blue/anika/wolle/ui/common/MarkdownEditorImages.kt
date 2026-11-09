@@ -5,9 +5,12 @@ package blue.anika.wolle.ui.common
  * written back verbatim so nothing about it changes) and its alt text for display.
  *
  * Compose Rich Editor 1.2.1 cannot show inline images in its editable text field (only its
- * read-only `RichText` renders inline content), so a picture is an atomic token chip in the text: a
- * picture symbol and the alt text. Backspace or a selection removes it as one character, text can
- * be typed before and after it, and it is written back as [markdown].
+ * read-only `RichText` renders inline content), so a picture is an atomic token in the text that is
+ * written back as [markdown]. A picture that is alone in its paragraph is a thumbnail: one
+ * transparent character ([THUMB_LABEL]) in a paragraph with a tall line, and the editor draws the
+ * picture behind that line (see `MarkdownEditorThumbnails`). A picture in the middle of a line
+ * stays a text chip (a picture symbol and the alt text), because a thumbnail needs its own line.
+ * Either way Backspace or a selection removes it as one unit and text can be typed around it.
  */
 internal data class EditorImage(val markdown: String, val alt: String) {
     /** The destination as written in [markdown] (`/media/...`, absolute), or null if unparsable. */
@@ -16,6 +19,13 @@ internal data class EditorImage(val markdown: String, val alt: String) {
 
     /** [source] resolved against the configured server, null when it is unsafe or unusable. */
     fun resolvedSource(resolveUrl: (String?) -> String?): String? = source?.let(resolveUrl)
+
+    /** The size annotation (`{.sn-size-md}`), null when the picture has none. */
+    val size: MarkdownImageSize?
+        get() = sizeAttribute.find(markdown)?.let { MarkdownImageSize.fromToken(it.groupValues[1]) }
+
+    /** The text standing for this picture: the thumbnail placeholder or the chip. */
+    fun label(thumbnail: Boolean): String = if (thumbnail) THUMB_LABEL else chip()
 
     /** The visible text of the chip. */
     fun chip(): String {
@@ -26,12 +36,27 @@ internal data class EditorImage(val markdown: String, val alt: String) {
     }
 
     companion object {
-        /** The token trigger that marks a picture chip. */
+        /** The token trigger that marks a picture chip (a picture in the middle of a line). */
         const val TRIGGER = "sn-image"
+
+        /** The token trigger that marks a thumbnail (a picture alone in its paragraph). */
+        const val THUMB_TRIGGER = "sn-image-thumb"
+
+        /** Trigger characters of the two kinds; private use, never typed. */
+        const val TRIGGER_CHAR = '\uF8FE'
+        const val THUMB_TRIGGER_CHAR = '\uF8FF'
+
+        /** The one character that stands for a thumbnail in the text (object replacement). */
+        const val THUMB_LABEL = "\uFFFC"
+
+        fun isPictureTrigger(trigger: String): Boolean =
+            trigger == TRIGGER || trigger == THUMB_TRIGGER
 
         /** Framed picture (U+1F5BC). */
         private const val SYMBOL = "🖼"
         private const val CHIP_LABEL_MAX = 40
+        private val sizeAttribute =
+            Regex("\\{[^}\\r\\n]*\\.sn-size-([a-z]+)", RegexOption.IGNORE_CASE)
         private val escapes = Regex("\\\\([!-/:-@\\[-`{-~])")
         private val syntax =
             Regex(

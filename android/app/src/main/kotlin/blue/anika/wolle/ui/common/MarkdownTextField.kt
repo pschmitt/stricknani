@@ -36,18 +36,22 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -58,12 +62,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.model.HeadingStyle
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
+import kotlinx.coroutines.launch
 
 /**
  * A Markdown text field, the Android counterpart of the web's Markdown editor: a formatting toolbar
@@ -98,7 +104,9 @@ internal fun MarkdownTextField(
     val currentOnChange by rememberUpdatedState(onValueChange)
 
     var field by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
-    val rich = remember { RichTextState() }
+    val rich = remember { RichTextState().also(::registerPictureTriggers) }
+    val thumbLineHeight = with(LocalDensity.current) { ThumbnailGeometry.LINE_HEIGHT_DP.dp.toSp() }
+    val currentThumbLineHeight by rememberUpdatedState(thumbLineHeight)
     // The Markdown the editor currently stands for, to tell outside changes from its own.
     var known by remember { mutableStateOf(value) }
     // What this field emitted and the caller has not handed back yet. The caller's value arrives
@@ -119,7 +127,7 @@ internal fun MarkdownTextField(
     fun enterVisual(): Boolean {
         val ok = MarkdownRich.canEditVisually(currentValue, keepLineBreaks)
         if (ok) {
-            MarkdownRich.load(rich, currentValue)
+            MarkdownRich.load(rich, currentValue, currentThumbLineHeight)
             written = MarkdownRich.toMarkdown(rich, keepLineBreaks)
         }
         unsupported = !ok
@@ -149,7 +157,7 @@ internal fun MarkdownTextField(
         known = value
         if (visual) {
             if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
-                MarkdownRich.load(rich, value)
+                MarkdownRich.load(rich, value, currentThumbLineHeight)
                 written = MarkdownRich.toMarkdown(rich, keepLineBreaks)
             } else {
                 unsupported = true
@@ -164,8 +172,10 @@ internal fun MarkdownTextField(
         if (!visual) return@LaunchedEffect
         snapshotFlow { rich.annotatedString }
             .collect {
-                // A half-deleted picture chip goes whole; the change comes back as a new value.
+                // A half-deleted picture goes whole, and a picture takes the form (thumbnail or
+                // chip) its place calls for; each change comes back as a new value.
                 if (MarkdownRich.dropDamagedPictures(rich)) return@collect
+                if (MarkdownRich.relayoutPictures(rich, currentThumbLineHeight)) return@collect
                 val markdown = MarkdownRich.toMarkdown(rich, keepLineBreaks)
                 if (markdown == written) return@collect
                 written = markdown
@@ -435,6 +445,19 @@ private fun VisualEditor(
         if (focused) colors.focusedLabelColor.orElse(ink)
         else colors.unfocusedLabelColor.orElse(ink)
     val link = MaterialTheme.colorScheme.primary
+    val host = remember(state) { ThumbnailHost(state) }
+    val measurer = rememberTextMeasurer()
+    val scope = rememberCoroutineScope()
+    SideEffect { host.focused = focused }
+    host.paddingPx = with(LocalDensity.current) { 4.dp.toPx() }
+    LaunchedEffect(state) {
+        snapshotFlow { state.annotatedString }
+            .collect { host.pictures = MarkdownRich.thumbnails(state) }
+    }
+    host.images = rememberThumbnailPainters(host.pictures.map { it.image })
+    val caretColor = colors.cursorColor.orElse(ink)
+    // A thumbnail's line is tall, and so would its caret be: the outline shows the position.
+    val cursor = if (host.caretBesidePicture()) Color.Transparent else caretColor
     // Not in the composition body: the library re-lays out its text when a config value is set,
     // which would reset the selection on every recomposition.
     LaunchedEffect(link) { if (state.config.linkColor != link) state.config.linkColor = link }
@@ -452,9 +475,28 @@ private fun VisualEditor(
         }
         BasicRichTextEditor(
             state = state,
-            modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .pictureThumbnails(
+                        host = host,
+                        measurer = measurer,
+                        placeholder = MaterialTheme.colorScheme.surfaceVariant,
+                        onPlaceholder = MaterialTheme.colorScheme.onSurfaceVariant,
+                        outline = MaterialTheme.colorScheme.primary,
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        onTap = { offset ->
+                            // After the editor has handled the tap and placed its caret.
+                            scope.launch {
+                                withFrameNanos {}
+                                state.selection = ThumbnailGeometry.selectionOf(offset)
+                            }
+                        },
+                    )
+                    .semantics { contentDescription = label },
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink),
-            cursorBrush = SolidColor(colors.cursorColor.orElse(ink)),
+            cursorBrush = SolidColor(cursor),
+            onTextLayout = { host.layout = it },
             minLines = minLines,
             keyboardOptions = keyboardOptions,
             interactionSource = interaction,

@@ -3,6 +3,8 @@
 package blue.anika.wolle.ui.common
 
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.document.RichTextBlock
 import com.mohamedrejeb.richeditor.document.RichTextBlockType
@@ -224,7 +226,14 @@ internal object MarkdownRich {
         return Extracted(source, extracted.images)
     }
 
-    private fun restoreLiterals(state: RichTextState, images: List<EditorImage>) {
+    /** The line height of a paragraph that holds only a picture: room for its thumbnail. */
+    internal val DEFAULT_THUMB_LINE_HEIGHT: TextUnit = 160.sp
+
+    private fun restoreLiterals(
+        state: RichTextState,
+        images: List<EditorImage>,
+        thumbLineHeight: TextUnit,
+    ) {
         val document = state.toRichTextDocument()
         val changed =
             document.blocks.any { block ->
@@ -234,9 +243,15 @@ internal object MarkdownRich {
         if (!changed) return
         val blocks =
             document.blocks.map { block ->
-                // A picture is a visible, atomic chip (see [EditorImage.chip]); its text is longer
-                // than the placeholder, so the ranges of the other marks move with it.
+                // A picture alone in its paragraph is a thumbnail (one character, drawn by the
+                // editor); any other picture is a visible, atomic chip (see [EditorImage.chip]),
+                // whose text is longer than the placeholder, so the ranges of the other marks move
+                // with it.
                 val text = restore(block.text)
+                val alone =
+                    text.length == 1 &&
+                        isImagePlaceholder(text[0]) &&
+                        images.getOrNull(text[0].code - IMAGE_BASE) != null
                 val starts = IntArray(text.length + 1)
                 val out = StringBuilder()
                 val pictures = mutableListOf<RichTextSpanMark>()
@@ -248,11 +263,11 @@ internal object MarkdownRich {
                     if (image == null) {
                         out.append(text[i])
                     } else {
-                        val chip = image.chip()
+                        val chip = image.label(alone)
                         pictures.add(
                             RichTextSpanMark.Token(
                                 out.length until out.length + chip.length,
-                                EditorImage.TRIGGER,
+                                if (alone) EditorImage.THUMB_TRIGGER else EditorImage.TRIGGER,
                                 image.markdown,
                                 chip,
                             )
@@ -269,6 +284,7 @@ internal object MarkdownRich {
                         } - 1)
                 block.copy(
                     text = out.toString(),
+                    lineHeight = if (alone) thumbLineHeight else block.lineHeight,
                     spans =
                         block.spans.map { mark ->
                             when (mark) {
@@ -288,10 +304,14 @@ internal object MarkdownRich {
     }
 
     /** Replace the content of [state] with [markdown]. */
-    fun load(state: RichTextState, markdown: String) {
+    fun load(
+        state: RichTextState,
+        markdown: String,
+        thumbLineHeight: TextUnit = DEFAULT_THUMB_LINE_HEIGHT,
+    ) {
         val prepared = prepare(markdown)
         state.setMarkdown(prepared.source)
-        restoreLiterals(state, prepared.images)
+        restoreLiterals(state, prepared.images, thumbLineHeight)
     }
 
     /** A rich text state holding [markdown]. */
@@ -310,20 +330,32 @@ internal object MarkdownRich {
                 val bad =
                     block.spans
                         .filterIsInstance<RichTextSpanMark.Token>()
-                        .filter { it.trigger == EditorImage.TRIGGER }
+                        .filter { EditorImage.isPictureTrigger(it.trigger) }
                         .filter { token ->
                             val range = token.range
                             range.first < 0 ||
                                 range.last >= block.text.length ||
                                 block.text.substring(range.first, range.last + 1) != token.label
                         }
-                if (bad.isEmpty()) return@map block
+                // A thumbnail character without its token (an IME's undo puts it back as plain
+                // text)
+                // would be written into the Markdown: it goes too.
+                val kept =
+                    block.spans.filterIsInstance<RichTextSpanMark.Token>().filter {
+                        it.trigger == EditorImage.THUMB_TRIGGER && it !in bad
+                    }
+                val stray =
+                    block.text.indices.filter { i ->
+                        block.text[i] == EditorImage.THUMB_LABEL[0] && kept.none { i in it.range }
+                    }
+                if (bad.isEmpty() && stray.isEmpty()) return@map block
                 damaged = true
-                val cut = bad.map {
-                    it.range.first.coerceAtLeast(0)..it.range.last.coerceAtMost(
-                            block.text.lastIndex
-                        )
-                }
+                val cut =
+                    bad.map {
+                        it.range.first.coerceAtLeast(0)..it.range.last.coerceAtMost(
+                                block.text.lastIndex
+                            )
+                    } + stray.map { it..it }
                 fun moved(index: Int) =
                     index - cut.sumOf { r -> (minOf(r.last + 1, index) - r.first).coerceAtLeast(0) }
                 fun shifted(range: IntRange) = moved(range.first)..(moved(range.last + 1) - 1)
@@ -348,7 +380,8 @@ internal object MarkdownRich {
                                         mark.copy(range = shifted(mark.range))
                                     else -> mark
                                 }
-                            },
+                            }
+                            .filter { it.range.last >= it.range.first },
                 )
             }
         if (!damaged) return false
@@ -370,6 +403,138 @@ internal object MarkdownRich {
             }.coerceIn(0, after.length)
         state.selection = TextRange(place(selection.start), place(selection.end))
         return true
+    }
+
+    /**
+     * Keep every picture in the form its place calls for: a thumbnail (one character, tall line)
+     * when it is alone in its paragraph, a text chip when text shares its line. Typing next to a
+     * thumbnail turns it into a chip and deleting the text around a chip turns it back; a new
+     * paragraph made by Enter after a thumbnail gets a normal line. The Markdown never changes.
+     * Returns true when the state was changed.
+     */
+    fun relayoutPictures(
+        state: RichTextState,
+        thumbLineHeight: TextUnit = DEFAULT_THUMB_LINE_HEIGHT,
+    ): Boolean {
+        val document = state.toRichTextDocument()
+        var changed = false
+
+        fun imageOf(token: RichTextSpanMark.Token) =
+            EditorImage(token.id, EditorImage.parse(token.id)?.first.orEmpty())
+
+        val blocks =
+            document.blocks.map { block ->
+                val tokens =
+                    block.spans
+                        .filterIsInstance<RichTextSpanMark.Token>()
+                        .filter { EditorImage.isPictureTrigger(it.trigger) }
+                        .sortedBy { it.range.first }
+                val alone = tokens.size == 1 && tokens[0].range.count() == block.text.length
+                val lineHeight = if (alone) thumbLineHeight else TextUnit.Unspecified
+                val wrong = tokens.filter { token ->
+                    token.label != imageOf(token).label(alone) ||
+                        (token.trigger == EditorImage.THUMB_TRIGGER) != alone
+                }
+                if (wrong.isEmpty() && block.lineHeight == lineHeight) return@map block
+                changed = true
+                val text = block.text
+                val starts = IntArray(text.length + 1)
+                val out = StringBuilder()
+                val relabelled = mutableMapOf<RichTextSpanMark.Token, RichTextSpanMark.Token>()
+                var i = 0
+                while (i < text.length) {
+                    val token = wrong.firstOrNull { it.range.first == i }
+                    if (token == null) {
+                        starts[i] = out.length
+                        out.append(text[i])
+                        i++
+                        continue
+                    }
+                    val label = imageOf(token).label(alone)
+                    for (k in i..token.range.last) starts[k] = out.length
+                    relabelled[token] =
+                        RichTextSpanMark.Token(
+                            out.length until out.length + label.length,
+                            if (alone) EditorImage.THUMB_TRIGGER else EditorImage.TRIGGER,
+                            token.id,
+                            label,
+                        )
+                    out.append(label)
+                    i = token.range.last + 1
+                }
+                starts[text.length] = out.length
+                fun moved(range: IntRange) =
+                    starts[range.first]..(starts[(range.last + 1).coerceAtMost(text.length)] - 1)
+                block.copy(
+                    text = out.toString(),
+                    lineHeight = lineHeight,
+                    spans =
+                        block.spans.map { mark ->
+                            when (mark) {
+                                is RichTextSpanMark.Token ->
+                                    relabelled[mark] ?: mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.Link -> mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.Bold -> mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.Italic -> mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.Strikethrough ->
+                                    mark.copy(range = moved(mark.range))
+                                is RichTextSpanMark.CodeSpan -> mark.copy(range = moved(mark.range))
+                                else -> mark
+                            }
+                        },
+                )
+            }
+        if (!changed) return false
+        val before = state.annotatedString.text
+        val selection = state.selection
+        state.setRichTextDocument(RichTextDocument(blocks))
+        val after = state.annotatedString.text
+        // Keep the caret where it was: before the changed text, or after it.
+        var prefix = 0
+        while (prefix < after.length && prefix < before.length && before[prefix] == after[prefix]) {
+            prefix++
+        }
+        var suffix = 0
+        while (
+            suffix < after.length - prefix &&
+                suffix < before.length - prefix &&
+                before[before.length - 1 - suffix] == after[after.length - 1 - suffix]
+        ) {
+            suffix++
+        }
+
+        fun place(offset: Int) =
+            when {
+                offset <= prefix -> offset
+                offset >= before.length - suffix -> offset - before.length + after.length
+                else -> after.length - suffix
+            }.coerceIn(0, after.length)
+        state.selection = TextRange(place(selection.start), place(selection.end))
+        return true
+    }
+
+    /** A thumbnail in the editor text: the offset of its character and the picture. */
+    internal data class EditorPicture(val offset: Int, val image: EditorImage)
+
+    /** The thumbnails of [state] in text order, empty when the text and the tokens disagree. */
+    fun thumbnails(state: RichTextState): List<EditorPicture> {
+        val text = state.annotatedString.text
+        val offsets = text.indices.filter { text[it] == EditorImage.THUMB_LABEL[0] }
+        if (offsets.isEmpty()) return emptyList()
+        val tokens =
+            state.toRichTextDocument().blocks.flatMap { block ->
+                block.spans
+                    .filterIsInstance<RichTextSpanMark.Token>()
+                    .filter { it.trigger == EditorImage.THUMB_TRIGGER }
+                    .sortedBy { it.range.first }
+            }
+        if (tokens.size != offsets.size) return emptyList()
+        return offsets.zip(tokens) { offset, token ->
+            EditorPicture(
+                offset,
+                EditorImage(token.id, EditorImage.parse(token.id)?.first.orEmpty()),
+            )
+        }
     }
 
     // --- Writing -----------------------------------------------------------------------------
@@ -507,7 +672,7 @@ internal object MarkdownWriter {
                         images[i] = EditorImage.markdownOf(mark.url, mark.description)
                     }
                 is RichTextSpanMark.Token ->
-                    if (mark.trigger == EditorImage.TRIGGER) {
+                    if (EditorImage.isPictureTrigger(mark.trigger)) {
                         // The chip stands for the original picture Markdown, written once.
                         for (i in mark.range) if (i in text.indices) {
                             images[i] = if (i == mark.range.first) mark.id else ""
