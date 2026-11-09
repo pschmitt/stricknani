@@ -249,7 +249,7 @@
 
     <!-- Project import -->
     <string name="project_import_url_label">URL der Anleitungsseite</string>
-    <string name="project_import_start">Import starten</string>
+    <string name="project_import_start">Importieren</string>
     <string name="project_import_ai_fallback">Die KI-Extraktion war nicht verfügbar; die einfache Anleitungserkennung wurde verwendet.</string>
     <string name="project_import_error_invalid_url">Füge den vollständigen Link zur Anleitung ein, beginnend mit https://</string>
     <string name="project_import_error_offline">Stricknani ist nicht erreichbar. Prüfe dein Internet und versuche es erneut.</string>
@@ -264,7 +264,7 @@
     <string name="import_notification_failed">Der Import hat nicht geklappt</string>
     <string name="import_notification_failed_text">Tippe, um den Grund zu sehen und es erneut zu versuchen.</string>
     <string name="import_paste">Einfügen</string>
-    <string name="import_card_title_project">Hast du eine Anleitung? Füge einen Link ein</string>
+    <string name="import_card_title_project">Hast du eine Anleitung? Füge einen Link ein, lade eine Datei hoch oder füge Text ein</string>
     <string name="import_card_title_yarn">Hast du einen Link zum Garn? Füge ihn hier ein</string>
     <string name="import_error_too_many_imports">Stricknani liest noch andere Links. Versuch es in einer Minute noch einmal.</string>
     <string name="import_error_too_many_drafts">Zu viele Importe warten auf deine Prüfung. Speichere oder verwirf erst einen.</string>
@@ -276,6 +276,16 @@
     <string name="import_card_done_project">Die Anleitung wurde gelesen. Prüfe die Felder unten.</string>
     <string name="import_card_done_yarn">Das Garn wurde gelesen. Prüfe die Felder unten.</string>
     <string name="import_error_gone">Dieser Import ist nicht mehr da. Er wurde vielleicht entfernt.</string>
+    <string name="import_source_link">Über einen Link</string>
+    <string name="import_source_file">Datei hochladen</string>
+    <string name="import_source_text">Text einfügen</string>
+    <string name="import_text_label">Anleitungstext oder Strickanweisungen</string>
+    <string name="import_text_placeholder">Füge eine Strickanleitung, Notizen oder ein Rezept ein…</string>
+    <string name="import_size_limit">Text und Dateien sind auf 5 MiB begrenzt.</string>
+    <string name="import_file_choose">Datei auswählen</string>
+    <string name="import_file_hint">HTML, Text, Markdown, PDF oder Bild · bis zu 5 MiB</string>
+    <string name="import_error_too_large">Dieses Dokument überschreitet das Importlimit von 5 MiB.</string>
+    <string name="import_error_unreadable">Dieses Dokument konnte nicht gelesen werden. Versuch eine andere Datei oder einen anderen Text oder lege das Projekt von Hand an.</string>
     <string name="import_yarn_which">Welches Garn aus meinem Vorrat?</string>
     <string name="import_detail_line">%1$s: %2$s</string>
     <string name="import_detail_designer">Designer</string>

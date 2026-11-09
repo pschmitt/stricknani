@@ -2098,6 +2098,7 @@ msgstr ""
 msgid "Impersonation stopped"
 msgstr ""
 
+#: web/src/lib/features/imports/ImportCard.svelte:554
 #: web/src/lib/features/imports/ImportDraftCards.svelte:78
 #: web/src/lib/features/projects/ProjectEditor.svelte:2190
 msgid "Import"
@@ -4299,10 +4300,6 @@ msgstr ""
 #: web/src/lib/features/home/HomeDashboard.svelte:265
 #: web/src/routes/more/+page.svelte:25
 msgid "Start a project or a yarn, or import one."
-msgstr ""
-
-#: web/src/lib/features/imports/ImportCard.svelte:554
-msgid "Start import"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1397

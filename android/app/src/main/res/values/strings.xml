@@ -250,7 +250,7 @@
 
     <!-- Project import -->
     <string name="project_import_url_label">Pattern page URL</string>
-    <string name="project_import_start">Start import</string>
+    <string name="project_import_start">Import</string>
     <string name="project_import_ai_fallback">AI extraction was unavailable; basic pattern extraction was used.</string>
     <string name="project_import_error_invalid_url">Paste the full link to the pattern, starting with https://</string>
     <string name="project_import_error_offline">Couldn’t reach Stricknani. Check your internet and try again.</string>
@@ -265,7 +265,7 @@
     <string name="import_notification_failed">The import did not work</string>
     <string name="import_notification_failed_text">Tap to see why and try again.</string>
     <string name="import_paste">Paste</string>
-    <string name="import_card_title_project">Have a pattern? Paste a link</string>
+    <string name="import_card_title_project">Have a pattern? Paste a link, upload a file or paste text</string>
     <string name="import_card_title_yarn">Have a link to the yarn? Paste it here</string>
     <string name="import_error_too_many_imports">Stricknani is still reading other links. Try again in a minute.</string>
     <string name="import_error_too_many_drafts">Too many imports are waiting for review. Save or dismiss one first.</string>
@@ -277,6 +277,16 @@
     <string name="import_card_done_project">The pattern was read. Check the fields below.</string>
     <string name="import_card_done_yarn">The yarn was read. Check the fields below.</string>
     <string name="import_error_gone">This import is gone. It may have been removed.</string>
+    <string name="import_source_link">From a link</string>
+    <string name="import_source_file">Upload file</string>
+    <string name="import_source_text">Paste text</string>
+    <string name="import_text_label">Pattern text or instructions</string>
+    <string name="import_text_placeholder">Paste pattern instructions, notes, or a recipe…</string>
+    <string name="import_size_limit">Text and files are limited to 5 MiB.</string>
+    <string name="import_file_choose">Choose a file</string>
+    <string name="import_file_hint">HTML, text, Markdown, PDF, or image · up to 5 MiB</string>
+    <string name="import_error_too_large">This document is larger than the 5 MiB import limit.</string>
+    <string name="import_error_unreadable">That document could not be read. Try another file or text, or add the project by hand.</string>
     <string name="import_yarn_which">Which yarn from my stash?</string>
     <string name="import_detail_line">%1$s: %2$s</string>
     <string name="import_detail_designer">Designer</string>

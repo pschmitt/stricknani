@@ -9,9 +9,12 @@ import androidx.work.WorkManager
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.v2.ImportDraftRequest
 import blue.anika.wolle.data.api.v2.ImportJobDto
+import blue.anika.wolle.data.api.v2.ImportPreviewDto
 import blue.anika.wolle.data.api.v2.ImportsV2Api
+import blue.anika.wolle.data.api.v2.MAX_IMPORT_SOURCE_BYTES
 import blue.anika.wolle.data.settings.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.InputStream
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -23,6 +26,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 /** What a link is imported as; the draft API's `target`. */
 enum class ImportTarget(val wire: String) {
@@ -36,9 +42,57 @@ const val DRAFT_POLL_MILLIS = 2_000L
 /** How often the "waiting for review" cards ask when nothing is running. */
 private const val IDLE_POLL_MILLIS = 30_000L
 
+/** A document the user picked for an import: its [name], MIME type and whole content. */
+class ImportFile(val name: String, val mimeType: String, val bytes: ByteArray) {
+    override fun equals(other: Any?): Boolean =
+        other is ImportFile &&
+            name == other.name &&
+            mimeType == other.mimeType &&
+            bytes.contentEquals(other.bytes)
+
+    override fun hashCode(): Int =
+        31 * (31 * name.hashCode() + mimeType.hashCode()) + bytes.contentHashCode()
+}
+
+/**
+ * Reads at most [limit] bytes of [input]; null when there is more (the document is too large), so a
+ * huge file is never read into memory whole.
+ */
+fun readImportBytes(input: InputStream, limit: Int = MAX_IMPORT_SOURCE_BYTES): ByteArray? {
+    val out = java.io.ByteArrayOutputStream()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (true) {
+        val read = input.read(buffer)
+        if (read < 0) break
+        if (out.size() + read > limit) return null
+        out.write(buffer, 0, read)
+    }
+    return out.toByteArray()
+}
+
+/** The multipart form of `POST /imports/preview-file`: the `file` part and the `use_ai` flag. */
+fun importFileParts(
+    file: ImportFile,
+    useAi: Boolean,
+): Pair<MultipartBody.Part, MultipartBody.Part> =
+    MultipartBody.Part.createFormData(
+        "file",
+        file.name,
+        file.bytes.toRequestBody(file.mimeType.toMediaTypeOrNull()),
+    ) to MultipartBody.Part.createFormData("use_ai", useAi.toString())
+
 /** The part of the draft API a [LinkImportSession] needs. */
 interface ImportDraftSource {
     suspend fun start(url: String, target: ImportTarget): ImportJobDto
+
+    /** Starts the import of pasted [text] (always a project) as a draft. */
+    suspend fun startText(text: String): ImportJobDto
+
+    /**
+     * Reads [file] at once (no draft: the result comes back in this call) and returns it as a
+     * finished job whose `preview` the editor applies; it has no id, nothing waits on the server.
+     */
+    suspend fun previewFile(file: ImportFile): ImportJobDto
 
     suspend fun get(id: String): ImportJobDto
 
@@ -86,6 +140,30 @@ constructor(
         _drafts.value = listOf(draft) + _drafts.value.filter { it.id != draft.id }
         schedulePoll()
         return draft
+    }
+
+    override suspend fun startText(text: String): ImportJobDto {
+        capabilities.resolve()
+        val draft =
+            api.createDraft(
+                    ImportDraftRequest(
+                        type = "text",
+                        text = text,
+                        useAi = capabilities.current.importsAi,
+                        locale = Locale.getDefault().language.takeIf { it.isNotBlank() },
+                    )
+                )
+                .data
+        _drafts.value = listOf(draft) + _drafts.value.filter { it.id != draft.id }
+        schedulePoll()
+        return draft
+    }
+
+    override suspend fun previewFile(file: ImportFile): ImportJobDto {
+        capabilities.resolve()
+        val (filePart, aiPart) = importFileParts(file, capabilities.current.importsAi)
+        val preview = api.previewFile(filePart, aiPart).data
+        return fileImportJob(preview, capabilities.current.importsAi)
     }
 
     /**
@@ -208,6 +286,16 @@ constructor(
         const val POLL_WORK_DELAY_SECONDS = 20L
     }
 }
+
+/** A file's preview as a finished job, so the editor applies it like a draft's result. */
+fun fileImportJob(preview: ImportPreviewDto, useAi: Boolean): ImportJobDto =
+    ImportJobDto(
+        id = "",
+        sourceKind = "file",
+        useAi = useAi,
+        status = ImportJobDto.STATUS_READY,
+        preview = preview,
+    )
 
 /** The drafts that are done ([ImportJobDto.isRunning] false) and not yet in [seen]. */
 fun draftsToNotify(drafts: List<ImportJobDto>, seen: Set<String>): List<ImportJobDto> =

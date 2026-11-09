@@ -98,6 +98,7 @@ import blue.anika.wolle.ui.common.showFeedback
 import blue.anika.wolle.ui.common.urlHostOrNull
 import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportLinkCard
+import blue.anika.wolle.ui.imports.readPickedImportFile
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -334,7 +335,7 @@ fun ProjectEditorScreen(
                         }
                         if (
                             !viewModel.isEditing &&
-                                (viewModel.offersLinkImport() ||
+                                (viewModel.offersImport() ||
                                     importState !is EditorImportState.Idle ||
                                     importNotice != null)
                         ) {
@@ -345,6 +346,15 @@ fun ProjectEditorScreen(
                                 ai = viewModel.aiImports(),
                                 onStart = viewModel::startImport,
                                 initialUrl = viewModel.sharedLink.orEmpty(),
+                                allowLink = viewModel.allowsLinkImport(),
+                                onStartText = viewModel::startTextImport,
+                                onStartFile = { picked ->
+                                    scope.launch {
+                                        viewModel.startFileImport(
+                                            readPickedImportFile(context.contentResolver, picked)
+                                        )
+                                    }
+                                },
                             )
                         }
                         OutlinedTextField(

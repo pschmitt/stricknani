@@ -2212,6 +2212,7 @@ msgstr "Identitätswechsel gestartet"
 msgid "Impersonation stopped"
 msgstr "Identitätswechsel beendet"
 
+#: web/src/lib/features/imports/ImportCard.svelte:554
 #: web/src/lib/features/imports/ImportDraftCards.svelte:78
 #: web/src/lib/features/projects/ProjectEditor.svelte:2190
 msgid "Import"
@@ -4519,10 +4520,6 @@ msgstr "Start"
 #: web/src/routes/more/+page.svelte:25
 msgid "Start a project or a yarn, or import one."
 msgstr "Starte ein Projekt oder ein Garn oder importiere eines."
-
-#: web/src/lib/features/imports/ImportCard.svelte:554
-msgid "Start import"
-msgstr "Import starten"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1397
 msgid "Start something cosy"
@@ -7263,3 +7260,6 @@ msgstr ""
 
 #~ msgid "Pattern and notes"
 #~ msgstr "Anleitung und Notizen"
+
+#~ msgid "Start import"
+#~ msgstr "Import starten"

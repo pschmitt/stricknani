@@ -52,6 +52,7 @@ import blue.anika.wolle.ui.common.yarnsOwnedBy
 import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportNotice
 import blue.anika.wolle.ui.imports.LinkImportSession
+import blue.anika.wolle.ui.imports.PickedFileResult
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -249,6 +250,28 @@ constructor(
         !isEditing &&
             !settingsRepository.isLocalMode &&
             capabilities.current.importAvailability().url
+
+    /**
+     * Whether the new-project import card is offered: a link, a file or pasted text can be imported
+     * (the document imports need no link import, as on the web).
+     */
+    fun offersImport(): Boolean =
+        !isEditing &&
+            !settingsRepository.isLocalMode &&
+            (capabilities.current.importAvailability().url ||
+                capabilities.current.generation == ApiGeneration.V2)
+
+    fun allowsLinkImport(): Boolean = capabilities.current.importAvailability().url
+
+    /** Imports pasted [text]: the card shows progress, the result fills the form. */
+    fun startTextImport(text: String) = importSession.startText(text)
+
+    /** Imports the picked document (read by the screen): same path as a link's result. */
+    fun startFileImport(picked: PickedFileResult) =
+        when (picked) {
+            is PickedFileResult.Read -> importSession.startFile(picked.file)
+            is PickedFileResult.Failed -> importSession.fail(picked.failure)
+        }
 
     fun aiImports(): Boolean = capabilities.current.importAvailability().ai
 

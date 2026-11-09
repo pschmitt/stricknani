@@ -1,8 +1,10 @@
 package blue.anika.wolle.ui.imports
 
 import blue.anika.wolle.data.api.v2.ImportJobDto
+import blue.anika.wolle.data.api.v2.MAX_IMPORT_SOURCE_BYTES
 import blue.anika.wolle.data.imports.DRAFT_POLL_MILLIS
 import blue.anika.wolle.data.imports.ImportDraftSource
+import blue.anika.wolle.data.imports.ImportFile
 import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.ui.common.ImportFailure
 import blue.anika.wolle.ui.common.classifyImportError
@@ -77,6 +79,58 @@ class LinkImportSession(
                 }
             remember(draft.id)
             poll(draft.id, url)
+        }
+    }
+
+    /** Imports pasted [text] (a project) as a new draft. */
+    fun startText(text: String) {
+        if (text.isBlank()) return
+        if (text.toByteArray().size > MAX_IMPORT_SOURCE_BYTES) {
+            _state.value = EditorImportState.Failed("", ImportFailure.TooLarge)
+            return
+        }
+        begin { drafts.startText(text) }
+    }
+
+    /** Reads [file] at once; the result comes back without a draft on the server. */
+    fun startFile(file: ImportFile) {
+        if (file.bytes.size > MAX_IMPORT_SOURCE_BYTES) {
+            _state.value = EditorImportState.Failed("", ImportFailure.TooLarge)
+            return
+        }
+        job?.cancel()
+        _state.value = EditorImportState.Running("")
+        job = scope.launch {
+            try {
+                _state.value = EditorImportState.Ready(drafts.previewFile(file))
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                _state.value = EditorImportState.Failed("", classifyImportFailure(failure))
+            }
+        }
+    }
+
+    /** Fails a source that cannot be read (a picked file that could not be opened). */
+    fun fail(failure: ImportFailure) {
+        _state.value = EditorImportState.Failed("", failure)
+    }
+
+    private fun begin(create: suspend () -> ImportJobDto) {
+        job?.cancel()
+        _state.value = EditorImportState.Running("")
+        job = scope.launch {
+            val draft =
+                try {
+                    create()
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (failure: Exception) {
+                    _state.value = EditorImportState.Failed("", classifyImportFailure(failure))
+                    return@launch
+                }
+            remember(draft.id)
+            poll(draft.id, "")
         }
     }
 

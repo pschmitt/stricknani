@@ -551,7 +551,7 @@
           disabled={!canStart}
           onclick={() => void start()}
         >
-          {t("Start import", locale)}
+          {t("Import", locale)}
         </Button>
       </div>
       {#if message}

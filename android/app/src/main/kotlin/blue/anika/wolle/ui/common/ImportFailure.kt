@@ -20,6 +20,10 @@ enum class ImportFailure {
     /** Link import is off on this server. */
     Disabled,
     Server,
+    /** A pasted text or picked file is over the 5 MiB limit. */
+    TooLarge,
+    /** The server could not read the pasted text or the picked file. */
+    Unreadable,
     /** The draft was removed (dismissed elsewhere). */
     Gone,
     Unknown,
@@ -52,6 +56,8 @@ fun classifyImportError(status: Int?, code: String?): ImportFailure =
         code == "too_many_imports" -> ImportFailure.TooManyImports
         code == "too_many_drafts" -> ImportFailure.TooManyDrafts
         status == 429 || code == "rate_limited" -> ImportFailure.RateLimited
+        code == "payload_too_large" || status == 413 -> ImportFailure.TooLarge
+        code == "unsupported_document" || code == "invalid_document" -> ImportFailure.Unreadable
         code == "validation_error" || code == "unsafe_url" -> ImportFailure.InvalidUrl
         code == "import_blocked" -> ImportFailure.Blocked
         code == "import_not_found" -> ImportFailure.NotFound
@@ -76,6 +82,8 @@ fun importFailureRes(failure: ImportFailure, yarn: Boolean = false): Int =
         ImportFailure.Disabled -> R.string.import_error_disabled
         ImportFailure.Server ->
             if (yarn) R.string.yarn_import_error_server else R.string.project_import_error_server
+        ImportFailure.TooLarge -> R.string.import_error_too_large
+        ImportFailure.Unreadable -> R.string.import_error_unreadable
         ImportFailure.Gone -> R.string.import_error_gone
         ImportFailure.Unknown ->
             if (yarn) R.string.yarn_import_error_unknown else R.string.project_import_error_unknown

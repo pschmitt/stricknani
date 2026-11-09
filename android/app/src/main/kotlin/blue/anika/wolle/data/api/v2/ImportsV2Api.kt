@@ -9,10 +9,13 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 
 /** `src/api_v2/imports.rs`: import drafts (the server runs the imports). */
@@ -28,24 +31,44 @@ interface ImportsV2Api {
     @GET("api/v2/imports/drafts/{id}")
     suspend fun getDraft(@Path("id") id: String): V2Envelope<ImportJobDto>
 
+    /**
+     * Reads one document (PDF, image, HTML, text, Markdown) at once, without a draft: multipart
+     * `file` and `use_ai`, answered with the preview. Same contract as the web's file import.
+     */
+    @Multipart
+    @POST("api/v2/imports/preview-file")
+    suspend fun previewFile(
+        @Part file: MultipartBody.Part,
+        @Part useAi: MultipartBody.Part,
+    ): V2Envelope<ImportPreviewDto>
+
     @DELETE("api/v2/imports/drafts/{id}") suspend fun deleteDraft(@Path("id") id: String)
 }
 
 /**
  * `POST /api/v2/imports/drafts`. The app's [kotlinx.serialization.json.Json] leaves out default
  * values, but the server needs `type` (it selects the request variant) and the explicit `target`:
- * both are always encoded. [locale] is the language of the notes the import writes.
+ * both are always encoded. A link import sets [url], a text import [text] (type `text`, no target
+ * needed). [locale] is the language of the notes the import writes.
  */
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class ImportDraftRequest(
     @EncodeDefault val type: String = "url",
-    val url: String,
+    val url: String? = null,
+    val text: String? = null,
     @SerialName("use_ai") val useAi: Boolean = false,
     /** `project` or `yarn`. */
     @EncodeDefault val target: String = "project",
     val locale: String? = null,
 )
+
+/** Largest link-less source (text or file) the server reads: 5 MiB, as on the web. */
+const val MAX_IMPORT_SOURCE_BYTES = 5 * 1024 * 1024
+
+/** What the document import accepts: the web's file picker types. */
+val IMPORT_FILE_MIME_TYPES =
+    arrayOf("application/pdf", "image/*", "text/plain", "text/html", "text/markdown")
 
 /** The server's import draft: what it is, how far it is and, once ready, what it found. */
 @Serializable

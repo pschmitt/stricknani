@@ -2174,6 +2174,7 @@ msgstr "Impersonation started"
 msgid "Impersonation stopped"
 msgstr "Impersonation stopped"
 
+#: web/src/lib/features/imports/ImportCard.svelte:554
 #: web/src/lib/features/imports/ImportDraftCards.svelte:78
 #: web/src/lib/features/projects/ProjectEditor.svelte:2190
 msgid "Import"
@@ -4454,10 +4455,6 @@ msgstr "Start"
 #: web/src/routes/more/+page.svelte:25
 msgid "Start a project or a yarn, or import one."
 msgstr "Start a project or a yarn, or import one."
-
-#: web/src/lib/features/imports/ImportCard.svelte:554
-msgid "Start import"
-msgstr "Start import"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1397
 msgid "Start something cosy"
@@ -7103,3 +7100,6 @@ msgstr "{time} spent so far. Open the project to stop the timer or keep timing."
 
 #~ msgid "Pattern and notes"
 #~ msgstr "Pattern and notes"
+
+#~ msgid "Start import"
+#~ msgstr "Start import"

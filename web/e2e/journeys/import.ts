@@ -380,7 +380,7 @@ export async function runImportJourney(
       "Cast on 48 stitches. Work four rows in garter stitch.";
     await page.getByRole("button", { name: "Paste text" }).click();
     await page.getByLabel("Pattern text or instructions").fill(sourceText);
-    await page.getByRole("button", { name: "Start import" }).click();
+    await page.getByRole("button", { name: "Import", exact: true }).click();
     const projectName = page.locator("#project-name");
     await page
       .getByText("The pattern was read. Check the fields below.")
@@ -428,7 +428,7 @@ export async function runImportJourney(
     page.once("dialog", (dialog: Dialog) => {
       void dialog.accept();
     });
-    await page.getByRole("button", { name: "Start import" }).click();
+    await page.getByRole("button", { name: "Import", exact: true }).click();
     await page.getByRole("alert").first().waitFor({ state: "visible" });
     check(failedOnce, "network failure route was not exercised");
     check(
@@ -573,7 +573,7 @@ export async function runImportJourney(
       buffer: Buffer.from(SYNTHETIC_HTML, "utf-8"),
     });
     markStage("submitting HTML file preview");
-    await page.getByRole("button", { name: "Start import" }).click();
+    await page.getByRole("button", { name: "Import", exact: true }).click();
     markStage("waiting for the HTML file to fill the editor");
     try {
       await page
