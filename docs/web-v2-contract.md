@@ -169,8 +169,8 @@ consume that quota.
 
 | Method and path                   | Request                                 | Result                                                                           |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
-| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url, avatar_source, use_gravatar, gravatar_enabled}}` |
-| `PATCH /account`                  | JSON `{use_gravatar?: boolean}` (unknown fields rejected) | `200 {data: <same as GET /account>}`                              |
+| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url, avatar_source, use_gravatar, gravatar_enabled, error_reporting_enabled, error_reporting_available, detail_card_order}}` |
+| `PATCH /account`                  | JSON `{use_gravatar?: boolean, error_reporting_enabled?: boolean, detail_card_order?: {project?: string[], yarn?: string[]}}` (unknown fields rejected) | `200 {data: <same as GET /account>}`                              |
 | `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at, last_used_at}]}`; `last_used_at` is RFC 3339 or `null` for a token never used |
 | `POST /account/api-tokens`        | JSON `{name?, expires_at?, current_password?}` | `201 {data: {id, name, created_at, expires_at, token}}`                   |
 | `PATCH /account/api-tokens/current` | JSON `{name}` (1 to 100 characters after trimming) | bearer PAT only: `200 {data: {id, name, created_at, expires_at, last_used_at}}`; renames the calling token. A cookie session gets `403 forbidden`; an empty, blank or over-long name gets `422 validation_error` with `error.fields.name`; an invalid or revoked PAT gets `401 session_expired`. Not audit-logged: the auth audit has a closed action set and no fitting event |
@@ -225,6 +225,19 @@ one exists. Lookups are lazy: payloads never wait for Gravatar.
 - **Server.** `GRAVATAR_ENABLED` (default `true`; NixOS option
   `services.stricknani.gravatar.enable`) switches the feature off for the whole
   instance. Migration `0019_user_gravatar.sql` adds `users.use_gravatar`.
+
+### Detail card order
+
+`detail_card_order` is the per-user order of the
+reorderable detail-page sections, shared by the web app and Android
+(`users.detail_order_project` / `detail_order_yarn`, migration `0029`, NULL is the
+default). `GET /account` and the session `user` always return both lists in full:
+`project` is `details, materials, description, steps` and `yarn` is
+`details, description, notes, used_in` by default. `PATCH /account` names only the
+pages it changes; an empty list resets a page. An unknown or repeated section id
+answers `422 validation_error` (`error.fields["detail_card_order.project"]` or
+`.yarn`) and changes nothing; a section left out is appended in its default
+position. Bearer PATs and cookie sessions (Origin and CSRF) use the same route.
 
 ### Error reporting
 

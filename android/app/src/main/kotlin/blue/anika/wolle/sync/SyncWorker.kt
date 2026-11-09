@@ -18,6 +18,7 @@ import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ItemSyncResult
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.settings.DetailCardOrderRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -51,6 +52,7 @@ constructor(
     private val importDrafts: ImportDrafts,
     private val importNotifier: ImportNotifier,
     private val appVisibility: AppVisibility,
+    private val detailCardOrder: DetailCardOrderRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -73,6 +75,14 @@ constructor(
             runSyncStep("categories") { categoryRepository.sync() }
                 ?: runSyncStep("yarns") { yarnResult = yarnRepository.syncDetailed() }
                 ?: runSyncStep("projects") { projectResult = projectRepository.syncDetailed() }
+        // The per-user detail-card order is shared with the web app; failures keep the cache.
+        try {
+            detailCardOrder.sync()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            Log.w("SyncReplay", "Detail card order sync failed")
+        }
         // An import the server finished while the app was away (safety net for ImportDraftsWorker).
         runCatching { importDrafts.announceFinished(importNotifier, appVisibility.visible) }
         val changes = SyncChanges.of(projects = projectResult.changed, yarns = yarnResult.changed)

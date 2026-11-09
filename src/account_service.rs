@@ -32,6 +32,8 @@ pub(crate) enum AccountError {
     ConfirmationMismatch,
     /// The last active administrator cannot delete their own account.
     LastAdministrator,
+    /// A detail-card order names an unknown or repeated section.
+    InvalidDetailCardOrder(crate::detail_order::DetailDomain),
 }
 
 /// How a bearer caller proved recent authentication for token creation.
@@ -444,7 +446,8 @@ pub(crate) async fn account_dto(
     use sqlx::Row;
     let row = sqlx::query(
         "SELECT users.id, users.email, users.is_admin, users.use_gravatar, \
-         users.error_reporting, user_avatars.filename \
+         users.error_reporting, users.detail_order_project, users.detail_order_yarn, \
+         user_avatars.filename \
          FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ? AND users.active = 1",
     )
@@ -466,7 +469,44 @@ pub(crate) async fn account_dto(
         gravatar_enabled,
         error_reporting_enabled: row.get::<i64, _>("error_reporting") != 0,
         error_reporting_available,
+        detail_card_order: crate::detail_order::DetailCardOrders::from_stored(
+            row.get::<Option<String>, _>("detail_order_project")
+                .as_deref(),
+            row.get::<Option<String>, _>("detail_order_yarn").as_deref(),
+        ),
     })
+}
+
+/// Store the per-user order of one detail page's sections. An empty list resets it.
+pub(crate) async fn set_detail_card_order(
+    pool: &SqlitePool,
+    user_id: i64,
+    domain: crate::detail_order::DetailDomain,
+    requested: &[String],
+) -> Result<(), AccountError> {
+    if !crate::detail_order::is_valid(domain, requested) {
+        return Err(AccountError::InvalidDetailCardOrder(domain));
+    }
+    let stored = crate::detail_order::to_stored(domain, requested);
+    let sql = match domain {
+        crate::detail_order::DetailDomain::Project => {
+            "UPDATE users SET detail_order_project = ? WHERE id = ? AND active = 1"
+        }
+        crate::detail_order::DetailDomain::Yarn => {
+            "UPDATE users SET detail_order_yarn = ? WHERE id = ? AND active = 1"
+        }
+    };
+    let result = sqlx::query(sql)
+        .bind(stored)
+        .bind(user_id)
+        .execute(pool)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(AccountError::TokenNotFound)
+    }
 }
 
 /// Store the per-user Gravatar preference.
@@ -537,6 +577,8 @@ pub(crate) struct AccountDto {
     pub(crate) error_reporting_enabled: bool,
     /// Whether the operator configured error reporting for this instance.
     pub(crate) error_reporting_available: bool,
+    /// The order of the reorderable detail-page sections (defaults when never set).
+    pub(crate) detail_card_order: crate::detail_order::DetailCardOrders,
 }
 
 fn format_timestamp(timestamp: i64) -> String {

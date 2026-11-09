@@ -1,3 +1,4 @@
+import type { DetailCardOrders } from "./detail-order";
 import type { ErrorReportingInfo } from "./error-reporting";
 import { t } from "./i18n.svelte";
 
@@ -24,6 +25,8 @@ export interface SessionUser {
   is_admin: boolean;
   avatar_url: string | null;
   avatar_source?: AvatarSource | null;
+  /** Per-user order of the reorderable detail sections; absent on older servers. */
+  detail_card_order?: DetailCardOrders;
 }
 
 /** An administrator acting as another account (browser session only). */

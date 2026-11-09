@@ -11,6 +11,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import BackupsSection from "./BackupsSection.svelte";
+  import DetailCardOrderSettings from "./DetailCardOrderSettings.svelte";
   import ConnectAppDialog from "./ConnectAppDialog.svelte";
   import DeleteAccountDialog from "./DeleteAccountDialog.svelte";
   import { formatLastUsed } from "./connect-app.ts";
@@ -1196,6 +1197,11 @@
       {/if}
     </div>
   </section>
+
+  <DetailCardOrderSettings
+    {locale}
+    disabled={!accountActionsEnabled || session.status !== "ready"}
+  />
 
   <section class="card" aria-labelledby="security-title">
     <header class="card__header">

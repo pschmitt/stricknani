@@ -298,7 +298,7 @@ class AccountRepositoryTest {
                     "a@b.c",
                     avatarUrl = "/media/thumbnails/users/1/gravatar",
                     avatarSourceRaw = "gravatar",
-                    useGravatar = it.useGravatar,
+                    useGravatar = it.useGravatar == true,
                     gravatarEnabled = true,
                 )
             )

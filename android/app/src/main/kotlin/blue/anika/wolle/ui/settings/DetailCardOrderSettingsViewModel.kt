@@ -30,6 +30,11 @@ constructor(private val repository: DetailCardOrderRepository) : ViewModel() {
             DetailCardOrder.defaults(DetailCardDomain.YARN),
         )
 
+    init {
+        // Picks up a change made on the web and sends one made offline.
+        viewModelScope.launch { repository.sync() }
+    }
+
     fun move(domain: DetailCardDomain, fromIndex: Int, toIndex: Int) {
         val current =
             if (domain == DetailCardDomain.PROJECT) projectOrder.value else yarnOrder.value

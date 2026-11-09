@@ -138,9 +138,30 @@ data class AccountDto(
     @SerialName("use_gravatar") val useGravatar: Boolean = true,
     /** False when the server does not offer Gravatar (or predates it): hide the toggle. */
     @SerialName("gravatar_enabled") val gravatarEnabled: Boolean = false,
+    /** The per-user section order shared with the web app; absent on older servers. */
+    @SerialName("detail_card_order") val detailCardOrder: DetailCardOrderDto? = null,
 ) {
     val avatarSource: AvatarSource?
         get() = AvatarSource.parse(avatarSourceRaw)
 }
 
-@Serializable data class UpdateAccountRequest(@SerialName("use_gravatar") val useGravatar: Boolean)
+/**
+ * `{use_gravatar}` and/or `{detail_card_order}`: absent fields stay as they are (the client omits
+ * nulls), so one `PATCH /account` can carry either setting.
+ */
+@Serializable
+data class UpdateAccountRequest(
+    @SerialName("use_gravatar") val useGravatar: Boolean? = null,
+    @SerialName("detail_card_order") val detailCardOrder: DetailCardOrderDto? = null,
+)
+
+/**
+ * `detail_card_order`: the order of the reorderable project and yarn detail sections. The server
+ * answers both lists in full (defaults when never set); a request names only the pages it changes,
+ * and an empty list resets that page to its default order.
+ */
+@Serializable
+data class DetailCardOrderDto(
+    val project: List<String>? = null,
+    val yarn: List<String>? = null,
+)

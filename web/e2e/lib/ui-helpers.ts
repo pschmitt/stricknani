@@ -1183,7 +1183,7 @@ export async function exerciseProjectServiceTools(
         photoCards: document.querySelectorAll(".steps-list .step-photo-card")
           .length,
         ocrControls: document.querySelectorAll(".ocr-control").length,
-        routeReady: document.querySelectorAll(".reader-columns").length > 0,
+        routeReady: document.querySelectorAll(".reader-sections").length > 0,
         authenticated:
           document.querySelectorAll(
             ".desktop-rail .rail-account, .mobile-navigation a.more-tab",

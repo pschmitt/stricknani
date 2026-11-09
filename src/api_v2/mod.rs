@@ -233,6 +233,7 @@ struct UserSummary {
     is_admin: bool,
     avatar_url: Option<String>,
     avatar_source: Option<&'static str>,
+    detail_card_order: crate::detail_order::DetailCardOrders,
 }
 
 #[derive(Serialize)]
@@ -664,8 +665,17 @@ async fn load_user(
     id: i64,
     gravatar_enabled: bool,
 ) -> Result<Option<UserSummary>, sqlx::Error> {
-    sqlx::query_as::<_, (String, bool, bool, Option<String>)>(
-        "SELECT users.email, users.is_admin, users.use_gravatar, user_avatars.filename \
+    type Row = (
+        String,
+        bool,
+        bool,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    );
+    sqlx::query_as::<_, Row>(
+        "SELECT users.email, users.is_admin, users.use_gravatar, user_avatars.filename, \
+         users.detail_order_project, users.detail_order_yarn \
          FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ? AND users.active = 1",
     )
@@ -673,17 +683,27 @@ async fn load_user(
     .fetch_optional(pool)
     .await
     .map(|user| {
-        user.map(|(email, is_admin, use_gravatar, filename)| {
-            let avatar =
-                crate::media::self_avatar(id, filename.as_deref(), use_gravatar, gravatar_enabled);
-            UserSummary {
-                id,
-                email,
-                is_admin,
-                avatar_source: avatar.as_ref().map(|(_, source)| source.as_str()),
-                avatar_url: avatar.map(|(url, _)| url),
-            }
-        })
+        user.map(
+            |(email, is_admin, use_gravatar, filename, project_order, yarn_order)| {
+                let avatar = crate::media::self_avatar(
+                    id,
+                    filename.as_deref(),
+                    use_gravatar,
+                    gravatar_enabled,
+                );
+                UserSummary {
+                    id,
+                    email,
+                    is_admin,
+                    avatar_source: avatar.as_ref().map(|(_, source)| source.as_str()),
+                    avatar_url: avatar.map(|(url, _)| url),
+                    detail_card_order: crate::detail_order::DetailCardOrders::from_stored(
+                        project_order.as_deref(),
+                        yarn_order.as_deref(),
+                    ),
+                }
+            },
+        )
     })
 }
 

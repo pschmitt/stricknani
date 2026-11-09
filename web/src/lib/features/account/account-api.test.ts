@@ -6,6 +6,7 @@ import {
   getAccount,
   listApiTokens,
   revokeApiToken,
+  setDetailCardOrder,
   setErrorReporting,
   setUseGravatar,
   uploadAvatar,
@@ -45,6 +46,10 @@ const account = {
   gravatar_enabled: true,
   error_reporting_enabled: true,
   error_reporting_available: true,
+  detail_card_order: {
+    project: ["details", "materials", "description", "steps"],
+    yarn: ["details", "description", "notes", "used_in"],
+  },
 };
 
 const token = {
@@ -176,6 +181,36 @@ describe("account v2 API contract", () => {
     expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
     expect(JSON.parse(String(init.body))).toEqual({
       error_reporting_enabled: false,
+    });
+  });
+
+  it("saves one detail page order and parses the stored orders", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      Response.json({
+        data: {
+          ...account,
+          detail_card_order: {
+            project: ["steps", "bogus", "details"],
+            yarn: ["details", "description", "notes", "used_in"],
+          },
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      setDetailCardOrder("project", ["steps", "details"], session),
+    ).resolves.toMatchObject({
+      detail_card_order: {
+        project: ["steps", "details", "materials", "description"],
+        yarn: ["details", "description", "notes", "used_in"],
+      },
+    });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/v2/account");
+    expect(init.method).toBe("PATCH");
+    expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
+    expect(JSON.parse(String(init.body))).toEqual({
+      detail_card_order: { project: ["steps", "details"] },
     });
   });
 

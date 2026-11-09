@@ -92,6 +92,15 @@ async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
 struct UpdateAccountRequest {
     use_gravatar: Option<bool>,
     error_reporting_enabled: Option<bool>,
+    detail_card_order: Option<DetailCardOrderRequest>,
+}
+
+/// Per-page section orders; an absent page is left alone and an empty list resets it.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DetailCardOrderRequest {
+    project: Option<Vec<String>>,
+    yarn: Option<Vec<String>>,
 }
 
 async fn update_account(
@@ -118,6 +127,29 @@ async fn update_account(
             account_service::set_error_reporting(&state.app.pool, user_id, enabled).await
     {
         return account_error(error);
+    }
+    if let Some(order) = request.detail_card_order {
+        let pages = [
+            (crate::detail_order::DetailDomain::Project, order.project),
+            (crate::detail_order::DetailDomain::Yarn, order.yarn),
+        ];
+        // Validate every page before storing any, so a bad request changes nothing.
+        for (domain, ids) in &pages {
+            if let Some(ids) = ids
+                && !crate::detail_order::is_valid(*domain, ids)
+            {
+                return account_error(AccountError::InvalidDetailCardOrder(*domain));
+            }
+        }
+        for (domain, ids) in pages {
+            if let Some(ids) = ids
+                && let Err(error) =
+                    account_service::set_detail_card_order(&state.app.pool, user_id, domain, &ids)
+                        .await
+            {
+                return account_error(error);
+            }
+        }
     }
     match account_service::account_dto(
         &state.app.pool,
@@ -838,6 +870,13 @@ fn account_error(error: AccountError) -> Response {
         AccountError::ConfirmationMismatch => field_error(
             "confirmation",
             "Type DELETE or your email address to confirm",
+        ),
+        AccountError::InvalidDetailCardOrder(domain) => field_error(
+            match domain {
+                crate::detail_order::DetailDomain::Project => "detail_card_order.project",
+                crate::detail_order::DetailDomain::Yarn => "detail_card_order.yarn",
+            },
+            "Unknown or repeated section",
         ),
         AccountError::LastAdministrator => super::api_error(
             StatusCode::CONFLICT,

@@ -2911,8 +2911,11 @@ web catalogs (`stricknani/locales/{en,de}`), same defaults, same order.
 - [x] Create and More: the web card texts mention importing ("... or bring in a pattern from a link,
       a file or text", "... or fill it in from a shop or Ravelry link"); Android keeps the short
       texts because local-only mode has no import. Add the import wording when imports are offered.
-- [ ] Yarn editor structure: see T135 in `TODO.md`.
-- [ ] Detail card order: the web needs the same setting, see T134 in `TODO.md`.
+- [x] Yarn editor structure: see T135 in `TODO.md`. The web now uses Android's sections and order
+      (Yarn information with dye lot, Photos, More yarn details, Description and notes); no change here.
+- [x] Detail card order: now a per-user server setting shared with the web (T134). `DetailCardOrderRepository`
+      keeps DataStore as the offline cache, queues a pending change while offline, pushes it with
+      `PATCH /account {detail_card_order}` and lets the server win on sync (`SyncWorker`, Settings > Detail cards).
 
 Status: **done** except the T134 and T135 items (own tasks), 2026-11-09. Impersonate opens the web app at `/app/admin/users?impersonate=<id>` (the native session never switches account). The transfer switch already existed; the explanation text under it was added.
 

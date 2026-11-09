@@ -2,6 +2,7 @@
   import StickyNote from "#lib/components/StickyNote.svelte";
   import { onDestroy, tick, untrack } from "svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
+  import { sanitizeDetailOrder } from "#lib/detail-order.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -112,6 +113,13 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  /** The per-user section order (Settings, Detail cards), shared with Android. */
+  const sectionOrder = $derived(
+    sanitizeDetailOrder(
+      "project",
+      session.data?.user?.detail_card_order?.project,
+    ),
+  );
   const canUseOcr = $derived(session.data?.capabilities.ocr === true);
   const canArchive = $derived(session.data?.capabilities.archive === true);
   const canReadArchiveState = $derived(
@@ -764,6 +772,274 @@
   </section>
 {:else if project}
   {@const currentProject = project}
+  {#snippet detailsSection()}
+    <section class="reader-facts-card" aria-labelledby="reader-facts-title">
+      <SectionHeading id="reader-facts-title" icon="info"
+        >{t("Project details", locale)}</SectionHeading
+      >
+      <dl class="reader-keyfacts">
+        <!-- The yarns are listed under Materials only. -->
+        {#if needlesText}
+          <div>
+            <dt><LabelIcon name="needle" />{t("Needles", locale)}</dt>
+            <dd>{needlesText}</dd>
+          </div>
+        {/if}
+        {#if gaugeHtml || gaugeText}
+          <div>
+            <dt><LabelIcon name="gauge" />{t("Gauge", locale)}</dt>
+            <dd>
+              {#if gaugeHtml}<div class="rich-text">
+                  {@html gaugeHtml}
+                </div>{:else}{gaugeText}{/if}
+            </dd>
+          </div>
+        {/if}
+      </dl>
+      <SourceRows
+        label={t("Pattern source", locale)}
+        href={safeExternalUrl(currentProject.link)}
+        archiveHref={safeExternalUrl(currentProject.link_archive)}
+        openLabel={t("Open original pattern", locale)}
+        archiveLabel={t("Open archived copy", locale)}
+      >
+        {#if !adminData && ownsIt && safeExternalUrl(currentProject.link) && (canArchive || canReadArchiveState)}
+          <ArchiveControl
+            entity="projects"
+            id={currentProject.id}
+            sourceLink={currentProject.link ?? ""}
+            detailHasArchive={currentProject.link_archive !== null}
+            ownerId={userId}
+            {locale}
+            enabled={canArchive && canManage}
+            readStateEnabled={canReadArchiveState}
+            onArchived={refreshAfterArchive}
+          />
+        {/if}
+      </SourceRows>
+    </section>
+  {/snippet}
+
+  {#snippet materialsSection()}
+    <Disclosure
+      class="materials-card"
+      icon="needle"
+      label={t("Materials", locale)}
+      bind:element={materialsDetailsElement}
+    >
+      <dl class="materials-body">
+        {#if yarns.length}
+          <div>
+            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
+            {#each yarns as yarn (yarn.id)}
+              <dd class="yarn-tile">
+                <ResourceCard
+                  kind="yarn"
+                  href={adminData
+                    ? resolve("/admin/resources/[kind]/[id]", {
+                        kind: "yarn",
+                        id: String(yarn.id),
+                      })
+                    : `${resolve("/yarns")}/${yarn.id}`}
+                  imageUrl={yarn.preview_url}
+                  name={yarn.name}
+                  subtitle={[yarn.brand, yarn.colorway]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  meta={[
+                    yarn.fiber_content,
+                    yarn.weight_category,
+                    yarn.weight_grams ? `${yarn.weight_grams} g` : null,
+                    yarn.length_meters ? `${yarn.length_meters} m` : null,
+                  ].filter((value): value is string => Boolean(value))}
+                  titleTag="h3"
+                />
+                {#if yarn.notes_html}
+                  <div class="rich-text yarn-notes">
+                    {@html yarn.notes_html}
+                  </div>
+                {/if}
+              </dd>
+            {/each}
+          </div>
+        {:else if yarnText}
+          <div>
+            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
+            <dd>{yarnText}</dd>
+          </div>
+        {:else}
+          <div>
+            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
+            <dd>{t("Not recorded", locale)}</dd>
+          </div>
+        {/if}
+        {#if adminData && yarnWarning}
+          {#each currentProject.yarn_ids.filter((yarnId) => !yarns.some((yarn) => yarn.id === yarnId)) as yarnId (yarnId)}
+            <div>
+              <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
+              <dd>
+                <ResourceCard
+                  kind="yarn"
+                  href={null}
+                  imageUrl={null}
+                  name={`${t("Yarn", locale)} #${yarnId}`}
+                  subtitle={null}
+                  titleTag="h3"
+                />
+              </dd>
+            </div>
+          {/each}
+        {/if}
+        {#if yarnWarning}
+          <p class="muted-copy">
+            {t("Some yarn details could not be loaded.", locale)}
+          </p>
+        {/if}
+        {#if currentProject.other_materials_html}
+          <div>
+            <dt><LabelIcon name="scissors" />{t("Other materials", locale)}</dt>
+            <dd>
+              <div class="rich-text">
+                {@html currentProject.other_materials_html}
+              </div>
+            </dd>
+          </div>
+        {/if}
+      </dl>
+    </Disclosure>
+  {/snippet}
+
+  {#snippet descriptionSection()}
+    <section class="pattern-section" aria-labelledby="pattern-heading">
+      <div class="section-heading-row">
+        <SectionHeading id="pattern-heading" icon="notebook"
+          >{t("Pattern", locale)}</SectionHeading
+        >
+        <span>{t("Your reference", locale)}</span>
+      </div>
+      <div class="reading-copy {textSizeClass}">
+        {#if currentProject.description_html}
+          <div class="rich-text">{@html currentProject.description_html}</div>
+        {:else}
+          <p class="muted-copy">
+            {t("No pattern description yet.", locale)}
+          </p>
+        {/if}
+      </div>
+      {#if currentProject.notes_html}
+        <StickyNote
+          title={t("Notes", locale)}
+          headingId="notes-heading"
+          headingLevel={3}
+          closeLabel={t("Close notes", locale)}
+          moveHint={t("Long-press and drag to move", locale)}
+          movedLabels={{
+            left: t("Notes moved to the left", locale),
+            right: t("Notes moved to the right", locale),
+            up: t("Notes moved up", locale),
+            down: t("Notes moved down", locale),
+          }}
+        >
+          <div class="reading-copy {textSizeClass}">
+            <div class="rich-text">{@html currentProject.notes_html}</div>
+          </div>
+        </StickyNote>
+      {:else if !adminData && canEdit}
+        <StickyNote
+          title={t("Notes", locale)}
+          headingId="notes-heading"
+          headingLevel={3}
+          emptyLabel={t("Add a note", locale)}
+          emptyHref={`${resolve("/projects/[id]/edit", {
+            id: String(currentProject.id),
+          })}#project-notes`}
+        />
+      {/if}
+    </section>
+  {/snippet}
+
+  {#snippet stepsSection()}
+    <section class="steps-section" aria-labelledby="steps-heading">
+      <div class="section-heading-row">
+        <SectionHeading id="steps-heading" icon="list-bullets"
+          >{t("Steps", locale)}</SectionHeading
+        >
+        <span>{orderedSteps.length}</span>
+      </div>
+      {#if orderedSteps.length}
+        <ol class="steps-list">
+          {#each orderedSteps as step (step.id)}
+            <li
+              id={`step-${step.id}`}
+              class:current-step={step.id === currentStepId}
+              aria-current={step.id === currentStepId ? "step" : undefined}
+            >
+              <span class="step-number" aria-hidden="true"
+                >{step.step_number}</span
+              >
+              <div class="step-content">
+                <h3>{step.title}</h3>
+                {#if step.description_html}
+                  <div class="reading-copy {textSizeClass}">
+                    <div class="rich-text">
+                      {@html step.description_html}
+                    </div>
+                  </div>
+                {/if}
+                {#if stepImages(step.id).length}
+                  <div
+                    class="step-images"
+                    aria-label={t("Step photos", locale)}
+                  >
+                    {#each stepImages(step.id) as image (image.id)}
+                      <div class="step-photo-card">
+                        <Button
+                          class="step-image"
+                          variant="ghost"
+                          type="button"
+                          aria-label={t("Open step photo", locale) +
+                            `: ${image.alt_text || step.title}`}
+                          onclick={() => openImage(image)}
+                        >
+                          <img
+                            class="screen-reference-image"
+                            src={image.thumbnail_url}
+                            alt={image.alt_text || step.title}
+                            loading="lazy"
+                          />
+                          <img
+                            class="print-reference-image"
+                            data-print-src={image.url}
+                            alt={image.alt_text || step.title}
+                            loading="lazy"
+                            onerror={handlePrintImageError}
+                          />
+                        </Button>
+                        {#if !adminData && ownsIt}
+                          <OcrControl
+                            src={image.url}
+                            label={t("Recognized text from step photo", locale)}
+                            ownerId={userId}
+                            {locale}
+                            enabled={canUseOcr}
+                          />
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            </li>
+          {/each}
+        </ol>
+      {:else}
+        <p class="muted-copy">
+          {t("No steps have been added yet.", locale)}
+        </p>
+      {/if}
+    </section>
+  {/snippet}
+
   <article
     class="reader page-container page-container--standard"
     bind:this={readerElement}
@@ -968,332 +1244,84 @@
       <p class="print-error" role="alert">{printError}</p>
     {/if}
 
-    <div class="reader-overview">
-      {#if stripImages.length}
-        <PhotoStrip
-          items={stripItems}
-          label={t("Photos", locale)}
-          openLabel={t("Open project photo", locale)}
-          {locale}
-          printable
-          onprinterror={handlePrintImageError}
-          onopen={(item) => (selectedImageId = item.id)}
-        >
-          {#snippet tile(item)}
-            {#if !adminData && ownsIt}
-              <OcrControl
-                src={item.url}
-                label={t("Recognized text from project photo", locale)}
-                ownerId={userId}
-                {locale}
-                enabled={canUseOcr}
-              />
-            {/if}
-          {/snippet}
-        </PhotoStrip>
-      {/if}
-      {#if project.attachments.length}
-        <section
-          class="details-card attachments-card"
-          aria-labelledby="attachments-heading"
-        >
-          <SectionHeading id="attachments-heading" icon="paperclip"
-            >{t("Attachments", locale)}</SectionHeading
+    {#if stripImages.length || currentProject.attachments.length}
+      <div class="reader-overview">
+        {#if stripImages.length}
+          <PhotoStrip
+            items={stripItems}
+            label={t("Photos", locale)}
+            openLabel={t("Open project photo", locale)}
+            {locale}
+            printable
+            onprinterror={handlePrintImageError}
+            onopen={(item) => (selectedImageId = item.id)}
           >
-          <ul>
-            {#each project.attachments as attachment (attachment.id)}
-              <li>
-                <a
-                  href={attachment.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span class="file-icon" aria-hidden="true">↗</span>
-                  <span class="file-description">
-                    <strong
-                      >{attachment.original_filename ??
-                        attachment.filename}</strong
-                    >
-                    <small
-                      >{attachment.content_type} · {formatFileSize(
-                        attachment.size_bytes,
-                      )}</small
-                    >
-                  </span>
-                </a>
-              </li>
-            {/each}
-          </ul>
-        </section>
-      {/if}
-      <section class="reader-facts-card" aria-labelledby="reader-facts-title">
-        <SectionHeading id="reader-facts-title" icon="info"
-          >{t("Project details", locale)}</SectionHeading
-        >
-        <dl class="reader-keyfacts">
-          <!-- The yarns are listed under Materials only. -->
-          {#if needlesText}
-            <div>
-              <dt><LabelIcon name="needle" />{t("Needles", locale)}</dt>
-              <dd>{needlesText}</dd>
-            </div>
-          {/if}
-          {#if gaugeHtml || gaugeText}
-            <div>
-              <dt><LabelIcon name="gauge" />{t("Gauge", locale)}</dt>
-              <dd>
-                {#if gaugeHtml}<div class="rich-text">
-                    {@html gaugeHtml}
-                  </div>{:else}{gaugeText}{/if}
-              </dd>
-            </div>
-          {/if}
-        </dl>
-        <SourceRows
-          label={t("Pattern source", locale)}
-          href={safeExternalUrl(project.link)}
-          archiveHref={safeExternalUrl(project.link_archive)}
-          openLabel={t("Open original pattern", locale)}
-          archiveLabel={t("Open archived copy", locale)}
-        >
-          {#if !adminData && ownsIt && safeExternalUrl(project.link) && (canArchive || canReadArchiveState)}
-            <ArchiveControl
-              entity="projects"
-              id={project.id}
-              sourceLink={project.link ?? ""}
-              detailHasArchive={project.link_archive !== null}
-              ownerId={userId}
-              {locale}
-              enabled={canArchive && canManage}
-              readStateEnabled={canReadArchiveState}
-              onArchived={refreshAfterArchive}
-            />
-          {/if}
-        </SourceRows>
-      </section>
-    </div>
-
-    <Disclosure
-      class="materials-card"
-      icon="needle"
-      label={t("Materials", locale)}
-      bind:element={materialsDetailsElement}
-    >
-      <dl class="materials-body">
-        {#if yarns.length}
-          <div>
-            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
-            {#each yarns as yarn (yarn.id)}
-              <dd class="yarn-tile">
-                <ResourceCard
-                  kind="yarn"
-                  href={adminData
-                    ? resolve("/admin/resources/[kind]/[id]", {
-                        kind: "yarn",
-                        id: String(yarn.id),
-                      })
-                    : `${resolve("/yarns")}/${yarn.id}`}
-                  imageUrl={yarn.preview_url}
-                  name={yarn.name}
-                  subtitle={[yarn.brand, yarn.colorway]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  meta={[
-                    yarn.fiber_content,
-                    yarn.weight_category,
-                    yarn.weight_grams ? `${yarn.weight_grams} g` : null,
-                    yarn.length_meters ? `${yarn.length_meters} m` : null,
-                  ].filter((value): value is string => Boolean(value))}
-                  titleTag="h3"
+            {#snippet tile(item)}
+              {#if !adminData && ownsIt}
+                <OcrControl
+                  src={item.url}
+                  label={t("Recognized text from project photo", locale)}
+                  ownerId={userId}
+                  {locale}
+                  enabled={canUseOcr}
                 />
-                {#if yarn.notes_html}
-                  <div class="rich-text yarn-notes">
-                    {@html yarn.notes_html}
-                  </div>
-                {/if}
-              </dd>
-            {/each}
-          </div>
-        {:else if yarnText}
-          <div>
-            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
-            <dd>{yarnText}</dd>
-          </div>
-        {:else}
-          <div>
-            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
-            <dd>{t("Not recorded", locale)}</dd>
-          </div>
+              {/if}
+            {/snippet}
+          </PhotoStrip>
         {/if}
-        {#if adminData && yarnWarning}
-          {#each project.yarn_ids.filter((yarnId) => !yarns.some((yarn) => yarn.id === yarnId)) as yarnId (yarnId)}
-            <div>
-              <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
-              <dd>
-                <ResourceCard
-                  kind="yarn"
-                  href={null}
-                  imageUrl={null}
-                  name={`${t("Yarn", locale)} #${yarnId}`}
-                  subtitle={null}
-                  titleTag="h3"
-                />
-              </dd>
-            </div>
-          {/each}
+        {#if project.attachments.length}
+          <section
+            class="details-card attachments-card"
+            aria-labelledby="attachments-heading"
+          >
+            <SectionHeading id="attachments-heading" icon="paperclip"
+              >{t("Attachments", locale)}</SectionHeading
+            >
+            <ul>
+              {#each project.attachments as attachment (attachment.id)}
+                <li>
+                  <a
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span class="file-icon" aria-hidden="true">↗</span>
+                    <span class="file-description">
+                      <strong
+                        >{attachment.original_filename ??
+                          attachment.filename}</strong
+                      >
+                      <small
+                        >{attachment.content_type} · {formatFileSize(
+                          attachment.size_bytes,
+                        )}</small
+                      >
+                    </span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </section>
         {/if}
-        {#if yarnWarning}
-          <p class="muted-copy">
-            {t("Some yarn details could not be loaded.", locale)}
-          </p>
-        {/if}
-        {#if project.other_materials_html}
-          <div>
-            <dt><LabelIcon name="scissors" />{t("Other materials", locale)}</dt>
-            <dd>
-              <div class="rich-text">{@html project.other_materials_html}</div>
-            </dd>
-          </div>
-        {/if}
-      </dl>
-    </Disclosure>
+      </div>
+    {/if}
 
     {#if favoriteError}
       <p class="inline-error" role="alert">{favoriteError}</p>
     {/if}
 
-    <div class="reader-columns">
-      <div class="pattern-column">
-        <section class="pattern-section" aria-labelledby="pattern-heading">
-          <div class="section-heading-row">
-            <SectionHeading id="pattern-heading" icon="notebook"
-              >{t("Pattern", locale)}</SectionHeading
-            >
-            <span>{t("Your reference", locale)}</span>
-          </div>
-          <div class="reading-copy {textSizeClass}">
-            {#if project.description_html}
-              <div class="rich-text">{@html project.description_html}</div>
-            {:else}
-              <p class="muted-copy">
-                {t("No pattern description yet.", locale)}
-              </p>
-            {/if}
-          </div>
-          {#if project.notes_html}
-            <StickyNote
-              title={t("Notes", locale)}
-              headingId="notes-heading"
-              headingLevel={3}
-              closeLabel={t("Close notes", locale)}
-              moveHint={t("Long-press and drag to move", locale)}
-              movedLabels={{
-                left: t("Notes moved to the left", locale),
-                right: t("Notes moved to the right", locale),
-                up: t("Notes moved up", locale),
-                down: t("Notes moved down", locale),
-              }}
-            >
-              <div class="reading-copy {textSizeClass}">
-                <div class="rich-text">{@html project.notes_html}</div>
-              </div>
-            </StickyNote>
-          {:else if !adminData && canEdit}
-            <StickyNote
-              title={t("Notes", locale)}
-              headingId="notes-heading"
-              headingLevel={3}
-              emptyLabel={t("Add a note", locale)}
-              emptyHref={`${resolve("/projects/[id]/edit", {
-                id: String(currentProject.id),
-              })}#project-notes`}
-            />
-          {/if}
-        </section>
-
-        <section class="steps-section" aria-labelledby="steps-heading">
-          <div class="section-heading-row">
-            <SectionHeading id="steps-heading" icon="list-bullets"
-              >{t("Steps", locale)}</SectionHeading
-            >
-            <span>{orderedSteps.length}</span>
-          </div>
-          {#if orderedSteps.length}
-            <ol class="steps-list">
-              {#each orderedSteps as step (step.id)}
-                <li
-                  id={`step-${step.id}`}
-                  class:current-step={step.id === currentStepId}
-                  aria-current={step.id === currentStepId ? "step" : undefined}
-                >
-                  <span class="step-number" aria-hidden="true"
-                    >{step.step_number}</span
-                  >
-                  <div class="step-content">
-                    <h3>{step.title}</h3>
-                    {#if step.description_html}
-                      <div class="reading-copy {textSizeClass}">
-                        <div class="rich-text">
-                          {@html step.description_html}
-                        </div>
-                      </div>
-                    {/if}
-                    {#if stepImages(step.id).length}
-                      <div
-                        class="step-images"
-                        aria-label={t("Step photos", locale)}
-                      >
-                        {#each stepImages(step.id) as image (image.id)}
-                          <div class="step-photo-card">
-                            <Button
-                              class="step-image"
-                              variant="ghost"
-                              type="button"
-                              aria-label={t("Open step photo", locale) +
-                                `: ${image.alt_text || step.title}`}
-                              onclick={() => openImage(image)}
-                            >
-                              <img
-                                class="screen-reference-image"
-                                src={image.thumbnail_url}
-                                alt={image.alt_text || step.title}
-                                loading="lazy"
-                              />
-                              <img
-                                class="print-reference-image"
-                                data-print-src={image.url}
-                                alt={image.alt_text || step.title}
-                                loading="lazy"
-                                onerror={handlePrintImageError}
-                              />
-                            </Button>
-                            {#if !adminData && ownsIt}
-                              <OcrControl
-                                src={image.url}
-                                label={t(
-                                  "Recognized text from step photo",
-                                  locale,
-                                )}
-                                ownerId={userId}
-                                {locale}
-                                enabled={canUseOcr}
-                              />
-                            {/if}
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
-                  </div>
-                </li>
-              {/each}
-            </ol>
-          {:else}
-            <p class="muted-copy">
-              {t("No steps have been added yet.", locale)}
-            </p>
-          {/if}
-        </section>
-      </div>
+    <div class="reader-sections">
+      {#each sectionOrder as id (id)}
+        {#if id === "details"}
+          {@render detailsSection()}
+        {:else if id === "materials"}
+          {@render materialsSection()}
+        {:else if id === "description"}
+          {@render descriptionSection()}
+        {:else if id === "steps"}
+          {@render stepsSection()}
+        {/if}
+      {/each}
     </div>
 
     {#if !adminData}
@@ -1422,9 +1450,7 @@
     color: var(--ink-muted);
   }
 
-  /* One gap for every stack of cards: the page, the overview, and both columns. The
-     .reader-columns wrapper used to have none, so the aside's first card butted against
-     the steps card above it. */
+  /* One gap for every stack of cards: the page, the overview, and the sections. */
   .reader {
     --stack-gap: 1.25rem;
     display: grid;
@@ -1633,17 +1659,13 @@
     inset: 0;
   }
 
-  .reader-columns {
+  /* The reorderable sections (Settings, Detail cards) stack in the user's order. */
+  .reader-sections {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: var(--stack-gap);
-  }
-
-  .pattern-column {
-    display: grid;
     min-width: 0;
-    gap: var(--stack-gap);
   }
 
   .reading-copy {
@@ -2013,8 +2035,7 @@
     }
 
     .reader-heading-actions,
-    .reader-columns,
-    .pattern-column {
+    .reader-sections {
       display: block;
     }
 

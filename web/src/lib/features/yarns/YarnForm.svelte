@@ -86,18 +86,6 @@
     link: "",
   });
 
-  const optionalDraftFields: (keyof Draft)[] = [
-    "dye_lot",
-    "fiber_content",
-    "weight_category",
-    "recommended_needles",
-    "weight_grams",
-    "length_meters",
-    "description",
-    "notes",
-    "link",
-  ];
-
   let {
     yarnId,
   }: {
@@ -125,7 +113,6 @@
   let conflictDialogBusy = $state(false);
   let conflictDialogError = $state("");
   let yarnForm = $state<HTMLFormElement | undefined>(undefined);
-  let optionalDetailsOpen = $state(false);
   let reload = $state(0);
   let routeGeneration = 0;
   /** What an import added to a new yarn: pictures to choose from and where it came from. */
@@ -209,7 +196,6 @@
     const currentUserId = userId;
     reload;
     const generation = ++routeGeneration;
-    optionalDetailsOpen = id !== null;
     saving = false;
     mediaBusy = false;
     deleting = false;
@@ -336,7 +322,6 @@
     importAi = result.preview.is_ai_enhanced;
     importWarnings = result.preview.draft.warnings;
     fieldErrors = {};
-    optionalDetailsOpen = true;
   }
 
   const importNotices = $derived(
@@ -384,7 +369,6 @@
         fieldErrors.link = t("Enter a complete http or https URL.", locale);
       }
     }
-    revealErroredOptionalFields();
     if (Object.keys(fieldErrors).length > 0) return null;
     const imageUrls =
       yarnId === null && allowExternalImages
@@ -508,7 +492,6 @@
                 ? t("Enter a whole number of zero or more.", locale)
                 : message;
         }
-        revealErroredOptionalFields();
         focusServerErrors = true;
         serverError = error.message;
       } else {
@@ -663,17 +646,11 @@
     statusMessage = "";
   }
 
-  function revealErroredOptionalFields(): void {
-    if (optionalDraftFields.some((field) => fieldErrors[field]))
-      optionalDetailsOpen = true;
-  }
-
   async function focusFirstValidationError(
     id: number | null,
     ownerId: number,
     generation: number,
   ): Promise<void> {
-    revealErroredOptionalFields();
     await tick();
     if (!isCurrentRoute(id, ownerId, generation)) return;
     const target = yarnForm?.querySelector<
@@ -886,7 +863,7 @@
                 class="field-error">{fieldErrors.name}</small
               >{/if}
           </label>
-          <label class="field" for={fieldId("brand")}>
+          <label class="field wide" for={fieldId("brand")}>
             <span><LabelIcon name="storefront" />{t("Brand", locale)}</span>
             <input
               id={fieldId("brand")}
@@ -905,153 +882,17 @@
                 setDraft("colorway", event.currentTarget.value)}
             />
           </label>
+          <label class="field" for={fieldId("dye_lot")}>
+            <span><LabelIcon name="palette" />{t("Dye lot", locale)}</span>
+            <input
+              id={fieldId("dye_lot")}
+              value={draft.dye_lot}
+              autocomplete="off"
+              oninput={(event) =>
+                setDraft("dye_lot", event.currentTarget.value)}
+            />
+          </label>
         </div>
-        <details class="optional-details" bind:open={optionalDetailsOpen}>
-          <summary>{t("More yarn details", locale)}</summary>
-          <div class="field-grid">
-            <label class="field" for={fieldId("dye_lot")}>
-              <span><LabelIcon name="palette" />{t("Dye lot", locale)}</span>
-              <input
-                id={fieldId("dye_lot")}
-                value={draft.dye_lot}
-                autocomplete="off"
-                oninput={(event) =>
-                  setDraft("dye_lot", event.currentTarget.value)}
-              />
-            </label>
-            <label class="field" for={fieldId("fiber_content")}>
-              <span><LabelIcon name="leaf" />{t("Fiber content", locale)}</span>
-              <input
-                id={fieldId("fiber_content")}
-                value={draft.fiber_content}
-                placeholder={t("For example, 80% wool, 20% nylon", locale)}
-                oninput={(event) =>
-                  setDraft("fiber_content", event.currentTarget.value)}
-              />
-            </label>
-            <label class="field" for={fieldId("weight_category")}>
-              <span><LabelIcon name="scales" />{t("Yarn weight", locale)}</span>
-              <input
-                id={fieldId("weight_category")}
-                value={draft.weight_category}
-                placeholder={t("For example, DK or fingering", locale)}
-                oninput={(event) =>
-                  setDraft("weight_category", event.currentTarget.value)}
-              />
-            </label>
-            <label class="field" for={fieldId("recommended_needles")}>
-              <span
-                ><LabelIcon name="needle" />{t(
-                  "Recommended needles",
-                  locale,
-                )}</span
-              >
-              <input
-                id={fieldId("recommended_needles")}
-                value={draft.recommended_needles}
-                oninput={(event) =>
-                  setDraft("recommended_needles", event.currentTarget.value)}
-              />
-            </label>
-            <label class="field" for={fieldId("weight_grams")}>
-              <span
-                ><LabelIcon name="scales" />{t(
-                  "Skein weight in grams",
-                  locale,
-                )}</span
-              >
-              <input
-                id={fieldId("weight_grams")}
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                value={draft.weight_grams}
-                aria-invalid={Boolean(fieldErrors.weight_grams)}
-                aria-describedby={fieldErrors.weight_grams
-                  ? `${fieldId("weight_grams")}-error`
-                  : undefined}
-                oninput={(event) =>
-                  setDraft("weight_grams", event.currentTarget.value)}
-              />
-              {#if fieldErrors.weight_grams}<small
-                  id={`${fieldId("weight_grams")}-error`}
-                  class="field-error">{fieldErrors.weight_grams}</small
-                >{/if}
-            </label>
-            <label class="field" for={fieldId("length_meters")}>
-              <span
-                ><LabelIcon name="gauge" />{t(
-                  "Skein length in meters",
-                  locale,
-                )}</span
-              >
-              <input
-                id={fieldId("length_meters")}
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                value={draft.length_meters}
-                aria-invalid={Boolean(fieldErrors.length_meters)}
-                aria-describedby={fieldErrors.length_meters
-                  ? `${fieldId("length_meters")}-error`
-                  : undefined}
-                oninput={(event) =>
-                  setDraft("length_meters", event.currentTarget.value)}
-              />
-              {#if fieldErrors.length_meters}<small
-                  id={`${fieldId("length_meters")}-error`}
-                  class="field-error">{fieldErrors.length_meters}</small
-                >{/if}
-            </label>
-            <div class="field wide">
-              <span id={`${fieldId("description")}-label`}
-                ><LabelIcon name="text-align" />{t("Description", locale)}</span
-              >
-              <MarkdownEditor
-                id={fieldId("description")}
-                labelledBy={`${fieldId("description")}-label`}
-                {locale}
-                rows={4}
-                maxlength={20000}
-                value={draft.description}
-                onInput={(value) => setDraft("description", value)}
-              />
-            </div>
-            <div class="field wide">
-              <StickyNoteField
-                id={fieldId("notes")}
-                label={t("Notes", locale)}
-                icon="note"
-                rows={4}
-                maxlength={20000}
-                value={draft.notes}
-                onInput={(value) => setDraft("notes", value)}
-              />
-            </div>
-            <div class="field wide">
-              <label for={fieldId("link")}
-                ><LabelIcon name="link" />{t("Yarn source URL", locale)}</label
-              >
-              <UrlField
-                id={fieldId("link")}
-                value={draft.link}
-                {locale}
-                placeholder="https://"
-                invalid={Boolean(fieldErrors.link)}
-                describedby={fieldErrors.link
-                  ? `${fieldId("link")}-error`
-                  : undefined}
-                oninput={(value) => setDraft("link", value)}
-              />
-              {#if fieldErrors.link}<small
-                  id={`${fieldId("link")}-error`}
-                  class="field-error">{fieldErrors.link}</small
-                >{/if}
-            </div>
-          </div>
-        </details>
       </fieldset>
 
       {#if loadedYarn}
@@ -1089,6 +930,149 @@
           {/if}
         </section>
       {/if}
+
+      <fieldset disabled={saving || mediaBusy || deleting}>
+        <legend>{t("More yarn details", locale)}</legend>
+        <div class="field-grid">
+          <label class="field" for={fieldId("fiber_content")}>
+            <span><LabelIcon name="leaf" />{t("Fiber content", locale)}</span>
+            <input
+              id={fieldId("fiber_content")}
+              value={draft.fiber_content}
+              placeholder={t("For example, 80% wool, 20% nylon", locale)}
+              oninput={(event) =>
+                setDraft("fiber_content", event.currentTarget.value)}
+            />
+          </label>
+          <label class="field" for={fieldId("weight_category")}>
+            <span><LabelIcon name="scales" />{t("Yarn weight", locale)}</span>
+            <input
+              id={fieldId("weight_category")}
+              value={draft.weight_category}
+              placeholder={t("For example, DK or fingering", locale)}
+              oninput={(event) =>
+                setDraft("weight_category", event.currentTarget.value)}
+            />
+          </label>
+          <label class="field" for={fieldId("recommended_needles")}>
+            <span
+              ><LabelIcon name="needle" />{t(
+                "Recommended needles",
+                locale,
+              )}</span
+            >
+            <input
+              id={fieldId("recommended_needles")}
+              value={draft.recommended_needles}
+              oninput={(event) =>
+                setDraft("recommended_needles", event.currentTarget.value)}
+            />
+          </label>
+          <label class="field" for={fieldId("weight_grams")}>
+            <span
+              ><LabelIcon name="scales" />{t(
+                "Skein weight in grams",
+                locale,
+              )}</span
+            >
+            <input
+              id={fieldId("weight_grams")}
+              type="number"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              value={draft.weight_grams}
+              aria-invalid={Boolean(fieldErrors.weight_grams)}
+              aria-describedby={fieldErrors.weight_grams
+                ? `${fieldId("weight_grams")}-error`
+                : undefined}
+              oninput={(event) =>
+                setDraft("weight_grams", event.currentTarget.value)}
+            />
+            {#if fieldErrors.weight_grams}<small
+                id={`${fieldId("weight_grams")}-error`}
+                class="field-error">{fieldErrors.weight_grams}</small
+              >{/if}
+          </label>
+          <label class="field" for={fieldId("length_meters")}>
+            <span
+              ><LabelIcon name="gauge" />{t(
+                "Skein length in meters",
+                locale,
+              )}</span
+            >
+            <input
+              id={fieldId("length_meters")}
+              type="number"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              value={draft.length_meters}
+              aria-invalid={Boolean(fieldErrors.length_meters)}
+              aria-describedby={fieldErrors.length_meters
+                ? `${fieldId("length_meters")}-error`
+                : undefined}
+              oninput={(event) =>
+                setDraft("length_meters", event.currentTarget.value)}
+            />
+            {#if fieldErrors.length_meters}<small
+                id={`${fieldId("length_meters")}-error`}
+                class="field-error">{fieldErrors.length_meters}</small
+              >{/if}
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset disabled={saving || mediaBusy || deleting}>
+        <legend>{t("Description and notes", locale)}</legend>
+        <div class="field-grid">
+          <div class="field wide">
+            <span id={`${fieldId("description")}-label`}
+              ><LabelIcon name="text-align" />{t("Description", locale)}</span
+            >
+            <MarkdownEditor
+              id={fieldId("description")}
+              labelledBy={`${fieldId("description")}-label`}
+              {locale}
+              rows={4}
+              maxlength={20000}
+              value={draft.description}
+              onInput={(value) => setDraft("description", value)}
+            />
+          </div>
+          <div class="field wide">
+            <StickyNoteField
+              id={fieldId("notes")}
+              label={t("Notes", locale)}
+              icon="note"
+              rows={4}
+              maxlength={20000}
+              value={draft.notes}
+              onInput={(value) => setDraft("notes", value)}
+            />
+          </div>
+          <div class="field wide">
+            <label for={fieldId("link")}
+              ><LabelIcon name="link" />{t("Yarn source URL", locale)}</label
+            >
+            <UrlField
+              id={fieldId("link")}
+              value={draft.link}
+              {locale}
+              placeholder="https://"
+              invalid={Boolean(fieldErrors.link)}
+              describedby={fieldErrors.link
+                ? `${fieldId("link")}-error`
+                : undefined}
+              oninput={(value) => setDraft("link", value)}
+            />
+            {#if fieldErrors.link}<small
+                id={`${fieldId("link")}-error`}
+                class="field-error">{fieldErrors.link}</small
+              >{/if}
+          </div>
+        </div>
+      </fieldset>
 
       {#if loadedYarn && !canManagePhotos && !mediaBusy && isDirty}
         <p class="media-hint">
@@ -1334,23 +1318,6 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.6rem;
-  }
-
-  .optional-details {
-    min-width: 0;
-    margin-top: 0.75rem;
-  }
-
-  .optional-details > summary {
-    min-height: 44px;
-    align-content: center;
-    color: var(--accent-strong);
-    cursor: pointer;
-    font-weight: 650;
-  }
-
-  .optional-details .field-grid {
-    padding-top: 0.75rem;
   }
 
   .danger-zone {

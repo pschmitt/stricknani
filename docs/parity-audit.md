@@ -27,8 +27,8 @@ left alone on purpose.
 | P-9 | Yarn detail | Rows | Skein weight "100 g" and Skein length "200 m" as two rows | one row "Amount" "100g / 200m" | fixed |
 | P-10 | Gauge calculator | Labels | Pattern gauge (per 10cm), Pattern counts, Your gauge (per 10cm), Calculation results, Adjusted stitches, Adjusted rows, N/A, intro text | The pattern's swatch, What the pattern says, Your swatch, Your numbers, Cast on, Knit rows, a dash, other intro | fixed |
 | P-11 | Project list (web) | Filter label | "Favorites" here, "Favorites only" on yarns | Favorites only | fixed on web ("Favorites only") |
-| P-12 | Project and yarn detail | Section order setting | fixed order | Settings, Detail cards (default order, drag to reorder) | TODO T134 |
-| P-13 | Yarn editor | Structure | Yarn information fieldset, More yarn details disclosure (dye lot inside), Photos last | cards: Yarn details (with dye lot), Photos, specs, Description and notes | TODO T135 |
+| P-12 | Project and yarn detail | Section order setting | fixed order | Settings, Detail cards (default order, drag to reorder) | fixed (T134: per-user server setting, web Account > Detail cards) |
+| P-13 | Yarn editor | Structure | Yarn information fieldset, More yarn details disclosure (dye lot inside), Photos last | cards: Yarn details (with dye lot), Photos, specs, Description and notes | fixed (T135: the web uses Android's order, no disclosure) |
 | P-14 | Project reader and editor | Stitch sample word | Gauge (reader), Stitch sample (editor) | same split | TODO T136 |
 | P-15 | Account | API token wording | "API token(s)" everywhere | "token(s)", "access token" | fixed (account screen); onboarding still says "Access token" (the token is created under API Tokens on the web: low risk, left) |
 | P-16 | Account | Delete account texts, confirmation label, re-auth text, "Confirm it is you", "Privacy Policy", "This cannot be undone." | web wording | "can't", "it's", "Privacy policy", "Type DELETE or your email address" | fixed |

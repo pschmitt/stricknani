@@ -4,6 +4,11 @@ import {
   type AvatarSource,
   type SessionData,
 } from "#lib/api.ts";
+import {
+  parseDetailOrders,
+  type DetailCardDomain,
+  type DetailCardOrders,
+} from "#lib/detail-order.ts";
 import { t } from "#lib/i18n.svelte.ts";
 
 export interface AccountProfile {
@@ -21,6 +26,8 @@ export interface AccountProfile {
   error_reporting_enabled: boolean;
   /** Whether the operator configured error reporting at all. */
   error_reporting_available: boolean;
+  /** Order of the reorderable project and yarn detail sections. */
+  detail_card_order: DetailCardOrders;
 }
 
 export interface ApiToken {
@@ -85,6 +92,7 @@ function parseProfile(value: unknown): AccountProfile {
     gravatar_enabled: value.gravatar_enabled ?? false,
     error_reporting_enabled: value.error_reporting_enabled ?? true,
     error_reporting_available: value.error_reporting_available ?? false,
+    detail_card_order: parseDetailOrders(value.detail_card_order),
   };
 }
 
@@ -209,6 +217,24 @@ export async function setErrorReporting(
     method: "PATCH",
     csrfToken: currentSession.csrf_token,
     body: { error_reporting_enabled: enabled },
+  });
+  if (!record(payload)) throw invalidResponse();
+  return parseProfile(payload.data);
+}
+
+/**
+ * Store the per-user order of one detail page's sections (shared with Android).
+ * An empty list resets the page to its default order.
+ */
+export async function setDetailCardOrder(
+  domain: DetailCardDomain,
+  order: readonly string[],
+  currentSession: SessionData,
+): Promise<AccountProfile> {
+  const payload: unknown = await apiRequest("/api/v2/account", {
+    method: "PATCH",
+    csrfToken: currentSession.csrf_token,
+    body: { detail_card_order: { [domain]: order } },
   });
   if (!record(payload)) throw invalidResponse();
   return parseProfile(payload.data);

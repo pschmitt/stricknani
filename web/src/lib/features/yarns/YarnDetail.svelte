@@ -22,6 +22,7 @@
   } from "#lib/access.ts";
   import AccessNotice from "#lib/features/sharing/AccessNotice.svelte";
   import ShareControl from "#lib/features/sharing/ShareControl.svelte";
+  import { sanitizeDetailOrder } from "#lib/detail-order.ts";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -67,6 +68,10 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
+  /** The per-user section order (Settings, Detail cards), shared with Android. */
+  const sectionOrder = $derived(
+    sanitizeDetailOrder("yarn", session.data?.user?.detail_card_order?.yarn),
+  );
   let selectedPhotoId = $state<number | null>(null);
   const stripItems = $derived(
     (yarn?.photos ?? []).map((photo) => ({
@@ -380,6 +385,163 @@
   </section>
 {:else if yarn}
   {@const currentYarn = yarn}
+  {#snippet detailsSection()}
+    <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
+      <SectionHeading icon="info" tone="yarns"
+        >{t("Yarn details", locale)}</SectionHeading
+      >
+      <dl class={textSizeClass}>
+        {#if currentYarn.brand}<div>
+            <dt><LabelIcon name="storefront" />{t("Brand", locale)}</dt>
+            <dd>{currentYarn.brand}</dd>
+          </div>{/if}
+        {#if currentYarn.colorway}<div>
+            <dt><LabelIcon name="palette" />{t("Colorway", locale)}</dt>
+            <dd>{currentYarn.colorway}</dd>
+          </div>{/if}
+        {#if currentYarn.dye_lot}<div>
+            <dt><LabelIcon name="palette" />{t("Dye lot", locale)}</dt>
+            <dd>{currentYarn.dye_lot}</dd>
+          </div>{/if}
+        {#if currentYarn.fiber_content}<div>
+            <dt><LabelIcon name="leaf" />{t("Fiber content", locale)}</dt>
+            <dd>{currentYarn.fiber_content}</dd>
+          </div>{/if}
+        {#if currentYarn.weight_category}<div>
+            <dt><LabelIcon name="scales" />{t("Yarn weight", locale)}</dt>
+            <dd>{currentYarn.weight_category}</dd>
+          </div>{/if}
+        {#if currentYarn.recommended_needles}<div>
+            <dt>
+              <LabelIcon name="needle" />{t("Recommended needles", locale)}
+            </dt>
+            <dd>{currentYarn.recommended_needles}</dd>
+          </div>{/if}
+        {#if currentYarn.weight_grams !== null}<div>
+            <dt><LabelIcon name="scales" />{t("Skein weight", locale)}</dt>
+            <dd>{displayNumber(currentYarn.weight_grams, t("g", locale))}</dd>
+          </div>{/if}
+        {#if currentYarn.length_meters !== null}<div>
+            <dt><LabelIcon name="gauge" />{t("Skein length", locale)}</dt>
+            <dd>{displayNumber(currentYarn.length_meters, t("m", locale))}</dd>
+          </div>{/if}
+        <div>
+          <dt><LabelIcon name="history" />{t("Updated", locale)}</dt>
+          <dd>
+            <time datetime={currentYarn.updated_at}
+              >{formatDate(currentYarn.updated_at)}</time
+            >
+          </dd>
+        </div>
+      </dl>
+      <SourceRows
+        tone="yarns"
+        label={t("Yarn source", locale)}
+        href={safeExternalHref(currentYarn.link)}
+        archiveHref={safeExternalHref(currentYarn.link_archive)}
+        openLabel={t("Open yarn source", locale)}
+        archiveLabel={t("Open archived copy", locale)}
+      >
+        {#if ownsIt && safeExternalHref(currentYarn.link) && (canArchive || canReadArchiveState)}
+          <ArchiveControl
+            entity="yarns"
+            id={currentYarn.id}
+            sourceLink={currentYarn.link ?? ""}
+            detailHasArchive={currentYarn.link_archive !== null}
+            ownerId={userId}
+            {locale}
+            enabled={canArchive && canManage}
+            readStateEnabled={canReadArchiveState}
+            onArchived={refreshCurrentYarn}
+          />
+        {/if}
+      </SourceRows>
+    </aside>
+  {/snippet}
+
+  {#snippet descriptionSection()}
+    {#if currentYarn.description_html}
+      <section class="detail-section">
+        <SectionHeading icon="notebook" tone="yarns"
+          >{t("Description", locale)}</SectionHeading
+        >
+        <div class="rich-text {textSizeClass}">
+          {@html currentYarn.description_html}
+        </div>
+      </section>
+    {/if}
+  {/snippet}
+
+  {#snippet notesSection()}
+    {#if currentYarn.notes_html}
+      <StickyNote
+        title={t("Notes", locale)}
+        headingId="yarn-notes-heading"
+        closeLabel={t("Close notes", locale)}
+        moveHint={t("Long-press and drag to move", locale)}
+        movedLabels={{
+          left: t("Notes moved to the left", locale),
+          right: t("Notes moved to the right", locale),
+          up: t("Notes moved up", locale),
+          down: t("Notes moved down", locale),
+        }}
+      >
+        <div class="rich-text {textSizeClass}">
+          {@html currentYarn.notes_html}
+        </div>
+      </StickyNote>
+    {:else if canEdit}
+      <StickyNote
+        title={t("Notes", locale)}
+        headingId="yarn-notes-heading"
+        emptyLabel={t("Add a note", locale)}
+        emptyHref={`${resolve("/yarns")}/${currentYarn.id}/edit#yarn-notes`}
+      />
+    {/if}
+  {/snippet}
+
+  {#snippet usedInSection()}
+    {#if currentYarn.project_ids.length > 0}
+      <section class="detail-section" aria-labelledby="used-in-title">
+        <SectionHeading id="used-in-title" icon="projects" tone="yarns"
+          >{t("Used in projects", locale)}</SectionHeading
+        >
+        {#if linkedProjectsLoading}
+          <p class="muted" aria-live="polite">
+            {t("Loading linked projects…", locale)}
+          </p>
+        {:else if linkedProjects.length > 0}
+          <ul class="project-list">
+            {#each linkedProjects as project (project.id)}
+              <li>
+                <ResourceCard
+                  kind="project"
+                  href={`${resolve("/projects")}/${project.id}`}
+                  imageUrl={project.preview_url}
+                  name={project.name}
+                  subtitle={project.category}
+                />
+              </li>
+            {/each}
+          </ul>
+        {:else}
+          <p class="muted">
+            {linkedProjectsError
+              ? t("Linked projects could not be loaded.", locale)
+              : t("No projects use this yarn yet.", locale)}
+          </p>
+        {/if}
+      </section>
+    {:else}
+      <section class="detail-section">
+        <SectionHeading icon="projects" tone="yarns"
+          >{t("Used in projects", locale)}</SectionHeading
+        >
+        <p class="muted">{t("No projects use this yarn yet.", locale)}</p>
+      </section>
+    {/if}
+  {/snippet}
+
   <main
     class="yarn-detail page-container page-container--wide"
     aria-labelledby="yarn-title"
@@ -559,151 +721,19 @@
       </div>
     {/if}
 
-    <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
-      <SectionHeading icon="info" tone="yarns"
-        >{t("Yarn details", locale)}</SectionHeading
-      >
-      <dl class={textSizeClass}>
-        {#if yarn.brand}<div>
-            <dt><LabelIcon name="storefront" />{t("Brand", locale)}</dt>
-            <dd>{yarn.brand}</dd>
-          </div>{/if}
-        {#if yarn.colorway}<div>
-            <dt><LabelIcon name="palette" />{t("Colorway", locale)}</dt>
-            <dd>{yarn.colorway}</dd>
-          </div>{/if}
-        {#if yarn.dye_lot}<div>
-            <dt><LabelIcon name="palette" />{t("Dye lot", locale)}</dt>
-            <dd>{yarn.dye_lot}</dd>
-          </div>{/if}
-        {#if yarn.fiber_content}<div>
-            <dt><LabelIcon name="leaf" />{t("Fiber content", locale)}</dt>
-            <dd>{yarn.fiber_content}</dd>
-          </div>{/if}
-        {#if yarn.weight_category}<div>
-            <dt><LabelIcon name="scales" />{t("Yarn weight", locale)}</dt>
-            <dd>{yarn.weight_category}</dd>
-          </div>{/if}
-        {#if yarn.recommended_needles}<div>
-            <dt>
-              <LabelIcon name="needle" />{t("Recommended needles", locale)}
-            </dt>
-            <dd>{yarn.recommended_needles}</dd>
-          </div>{/if}
-        {#if yarn.weight_grams !== null}<div>
-            <dt><LabelIcon name="scales" />{t("Skein weight", locale)}</dt>
-            <dd>{displayNumber(yarn.weight_grams, t("g", locale))}</dd>
-          </div>{/if}
-        {#if yarn.length_meters !== null}<div>
-            <dt><LabelIcon name="gauge" />{t("Skein length", locale)}</dt>
-            <dd>{displayNumber(yarn.length_meters, t("m", locale))}</dd>
-          </div>{/if}
-        <div>
-          <dt><LabelIcon name="history" />{t("Updated", locale)}</dt>
-          <dd>
-            <time datetime={yarn.updated_at}>{formatDate(yarn.updated_at)}</time
-            >
-          </dd>
-        </div>
-      </dl>
-      <SourceRows
-        tone="yarns"
-        label={t("Yarn source", locale)}
-        href={safeExternalHref(yarn.link)}
-        archiveHref={safeExternalHref(yarn.link_archive)}
-        openLabel={t("Open yarn source", locale)}
-        archiveLabel={t("Open archived copy", locale)}
-      >
-        {#if ownsIt && safeExternalHref(yarn.link) && (canArchive || canReadArchiveState)}
-          <ArchiveControl
-            entity="yarns"
-            id={yarn.id}
-            sourceLink={yarn.link ?? ""}
-            detailHasArchive={yarn.link_archive !== null}
-            ownerId={userId}
-            {locale}
-            enabled={canArchive && canManage}
-            readStateEnabled={canReadArchiveState}
-            onArchived={refreshCurrentYarn}
-          />
-        {/if}
-      </SourceRows>
-    </aside>
-
     <div class="detail-layout">
       <div class="detail-main">
-        {#if yarn.description_html}
-          <section class="detail-section">
-            <SectionHeading icon="notebook" tone="yarns"
-              >{t("Description", locale)}</SectionHeading
-            >
-            <div class="rich-text {textSizeClass}">
-              {@html yarn.description_html}
-            </div>
-          </section>
-        {/if}
-        {#if yarn.notes_html}
-          <StickyNote
-            title={t("Notes", locale)}
-            headingId="yarn-notes-heading"
-            closeLabel={t("Close notes", locale)}
-            moveHint={t("Long-press and drag to move", locale)}
-            movedLabels={{
-              left: t("Notes moved to the left", locale),
-              right: t("Notes moved to the right", locale),
-              up: t("Notes moved up", locale),
-              down: t("Notes moved down", locale),
-            }}
-          >
-            <div class="rich-text {textSizeClass}">{@html yarn.notes_html}</div>
-          </StickyNote>
-        {:else if canEdit}
-          <StickyNote
-            title={t("Notes", locale)}
-            headingId="yarn-notes-heading"
-            emptyLabel={t("Add a note", locale)}
-            emptyHref={`${resolve("/yarns")}/${yarn.id}/edit#yarn-notes`}
-          />
-        {/if}
-        {#if yarn.project_ids.length > 0}
-          <section class="detail-section" aria-labelledby="used-in-title">
-            <SectionHeading id="used-in-title" icon="projects" tone="yarns"
-              >{t("Used in projects", locale)}</SectionHeading
-            >
-            {#if linkedProjectsLoading}
-              <p class="muted" aria-live="polite">
-                {t("Loading linked projects…", locale)}
-              </p>
-            {:else if linkedProjects.length > 0}
-              <ul class="project-list">
-                {#each linkedProjects as project (project.id)}
-                  <li>
-                    <ResourceCard
-                      kind="project"
-                      href={`${resolve("/projects")}/${project.id}`}
-                      imageUrl={project.preview_url}
-                      name={project.name}
-                      subtitle={project.category}
-                    />
-                  </li>
-                {/each}
-              </ul>
-            {:else}
-              <p class="muted">
-                {linkedProjectsError
-                  ? t("Linked projects could not be loaded.", locale)
-                  : t("No projects use this yarn yet.", locale)}
-              </p>
-            {/if}
-          </section>
-        {:else}
-          <section class="detail-section">
-            <SectionHeading icon="projects" tone="yarns"
-              >{t("Used in projects", locale)}</SectionHeading
-            >
-            <p class="muted">{t("No projects use this yarn yet.", locale)}</p>
-          </section>
-        {/if}
+        {#each sectionOrder as id (id)}
+          {#if id === "details"}
+            {@render detailsSection()}
+          {:else if id === "description"}
+            {@render descriptionSection()}
+          {:else if id === "notes"}
+            {@render notesSection()}
+          {:else if id === "used_in"}
+            {@render usedInSection()}
+          {/if}
+        {/each}
       </div>
     </div>
 

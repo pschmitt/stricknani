@@ -13,6 +13,7 @@ pub(crate) mod auth_stepup_service;
 pub mod categories;
 pub mod config;
 pub mod db;
+pub(crate) mod detail_order;
 pub mod document_worker;
 pub mod error_reporting;
 mod export;

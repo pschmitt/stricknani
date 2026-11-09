@@ -8,6 +8,11 @@ import {
   type AvatarSource,
   type SessionData,
 } from "./api";
+import {
+  parseDetailOrders,
+  sanitizeDetailOrder,
+  type DetailCardDomain,
+} from "./detail-order";
 import { t } from "./i18n.svelte";
 
 export type SessionStatus = "loading" | "ready" | "error";
@@ -146,6 +151,36 @@ export function patchSessionAvatar(
       ...expectedSession.user,
       avatar_url: avatarUrl,
       avatar_source: avatarSource,
+    },
+  };
+  return true;
+}
+
+/**
+ * Mirror one detail page's section order into the session so the readers pick it
+ * up at once. Returns false when another account is signed in by now.
+ */
+export function patchSessionDetailOrder(
+  userId: number,
+  domain: DetailCardDomain,
+  order: readonly string[],
+): boolean {
+  const current = session.data;
+  if (
+    session.status !== "ready" ||
+    !current ||
+    current.user === null ||
+    current.user.id !== userId
+  )
+    return false;
+  session.data = {
+    ...current,
+    user: {
+      ...current.user,
+      detail_card_order: {
+        ...parseDetailOrders(current.user.detail_card_order),
+        [domain]: sanitizeDetailOrder(domain, order),
+      },
     },
   };
   return true;

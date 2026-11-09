@@ -876,11 +876,29 @@ export async function runYarnJourney(
     await page.goto(`${origin}/app/yarns/new`, { waitUntil: "networkidle" });
     const nameField = page.getByLabel("Yarn name");
     await nameField.waitFor({ state: "visible" });
-    let yarnOptionalDetails = page.locator(".optional-details");
+    const yarnEditorSections = () =>
+      page
+        .locator(
+          ".yarn-form > fieldset, .yarn-form > .photo-section, .yarn-form > .photo-placeholder",
+        )
+        .evaluateAll((elements) =>
+          elements.map((element) =>
+            element.matches("fieldset")
+              ? (element.querySelector("legend")?.textContent?.trim() ?? "")
+              : "Photos",
+          ),
+        );
+    // Same sections in the same order as the Android editor.
+    expect(await yarnEditorSections(), "new yarn editor sections").toEqual([
+      "Yarn information",
+      "Photos",
+      "More yarn details",
+      "Description and notes",
+    ]);
     check(
-      (await yarnOptionalDetails.count()) === 1 &&
-        (await yarnOptionalDetails.getAttribute("open")) === null,
-      "new yarn details should start collapsed",
+      (await page.getByLabel("Dye lot").isVisible()) &&
+        (await page.getByLabel("Fiber content").isVisible()),
+      "the dye lot and the yarn details should be visible without a disclosure",
     );
     await assertStickySaveCancelGeometry(page, "Save yarn");
     await page.getByRole("button", { name: "Save yarn" }).click();
@@ -889,11 +907,6 @@ export async function runYarnJourney(
       .waitFor({ state: "visible" });
     await nameField.fill("New browser yarn");
     await page.getByLabel("Brand").fill("North Shore Fibers");
-    await yarnOptionalDetails.locator("summary").click();
-    check(
-      (await yarnOptionalDetails.getAttribute("open")) !== null,
-      "More yarn details did not open when needed",
-    );
     await page.getByLabel("Fiber content").fill("80% wool, 20% nylon");
     await page.getByLabel("Yarn weight").fill("Sport");
     await page.getByLabel("Skein weight in grams").fill("-4");
@@ -939,12 +952,12 @@ export async function runYarnJourney(
     await page
       .getByRole("heading", { name: "Edit yarn", exact: true })
       .waitFor({ state: "visible" });
-    yarnOptionalDetails = page.locator(".optional-details");
-    check(
-      (await yarnOptionalDetails.count()) === 1 &&
-        (await yarnOptionalDetails.getAttribute("open")) !== null,
-      "More yarn details should be expanded while editing",
-    );
+    expect(await yarnEditorSections(), "edit yarn editor sections").toEqual([
+      "Yarn information",
+      "Photos",
+      "More yarn details",
+      "Description and notes",
+    ]);
     const deleteButton = page.getByRole("button", {
       name: "Delete yarn",
       exact: true,
