@@ -351,3 +351,23 @@ export async function closeBrowser(browser: Browser): Promise<void> {
   }
   await browser.close();
 }
+
+/**
+ * Type into a Markdown field. The visual editor is a contenteditable, which a plain `fill` does
+ * not drive reliably, and the field may still be swapping from the textarea while its editor
+ * chunk loads, so wait for the editors to be ready, then select all and type with the keyboard.
+ */
+export async function fillMarkdownField(
+  field: Locator,
+  text: string,
+): Promise<void> {
+  const page = field.page();
+  await page
+    .locator('.md-editor[data-ready="true"]')
+    .first()
+    .waitFor({ state: "attached", timeout: 15_000 })
+    .catch(() => undefined);
+  await field.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type(text);
+}

@@ -11,7 +11,7 @@ import { chmodSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { expect } from "@playwright/test";
 import type { BrowserContextOptions, Locator, Page } from "@playwright/test";
-import { AcceptanceFailure, fn } from "../lib/common";
+import { AcceptanceFailure, fillMarkdownField, fn } from "../lib/common";
 import { REPO_ROOT } from "../lib/fixture";
 import type { E2eConfig, LiveFixture } from "../lib/harness";
 import { launchBrowser } from "../lib/harness";
@@ -542,10 +542,10 @@ export async function runMediaTilesJourney(
           .getByRole("button", { name: "Add step", exact: true })
           .click();
         await page.getByLabel("Step title").first().fill("Photo order fixture");
-        await page
-          .getByLabel("Step instructions")
-          .first()
-          .fill("Synthetic step for the photo tile checks.");
+        await fillMarkdownField(
+          page.getByLabel("Step instructions", { exact: true }).first(),
+          "Synthetic step for the photo tile checks.",
+        );
         await Promise.all([
           page.waitForResponse(
             (response) =>

@@ -2,6 +2,7 @@
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -1914,17 +1915,20 @@
                   onRemove={removeYarn}
                 />
                 <div class="field field-wide yarn-other-materials">
-                  <label for="project-materials"
+                  <label for="project-materials" id="project-materials-label"
                     ><LabelIcon name="scissors" />{t(
                       "Other materials",
                       locale,
                     )}</label
                   >
-                  <textarea
+                  <MarkdownEditor
                     id="project-materials"
-                    class="reading-input"
+                    labelledBy="project-materials-label"
+                    {locale}
+                    lines
                     bind:value={draft.otherMaterials}
-                    rows="4"></textarea>
+                    rows={4}
+                  />
                 </div>
               </section>
 
@@ -1938,17 +1942,21 @@
                 </p>
                 <div class="field-grid">
                   <div class="field field-wide">
-                    <label for="project-description"
+                    <label
+                      for="project-description"
+                      id="project-description-label"
                       ><LabelIcon name="text-align" />{t(
                         "Pattern",
                         locale,
                       )}</label
                     >
-                    <textarea
+                    <MarkdownEditor
                       id="project-description"
-                      class="reading-input"
+                      labelledBy="project-description-label"
+                      {locale}
                       bind:value={draft.description}
-                      rows="10"></textarea>
+                      rows={10}
+                    />
                   </div>
                   <div class="field field-wide">
                     <StickyNoteField
@@ -2055,17 +2063,21 @@
                           />
                         </div>
                         <div class="field">
-                          <label for={`step-description-${step.key}`}
+                          <label
+                            for={`step-description-${step.key}`}
+                            id={`step-description-${step.key}-label`}
                             ><LabelIcon name="text-align" />{t(
                               "Step instructions",
                               locale,
                             )}</label
                           >
-                          <textarea
+                          <MarkdownEditor
                             id={`step-description-${step.key}`}
-                            class="reading-input"
+                            labelledBy={`step-description-${step.key}-label`}
+                            {locale}
                             bind:value={step.description}
-                            rows="4"></textarea>
+                            rows={4}
+                          />
                         </div>
                         {#if importState?.stepImages[step.key]?.length}
                           <ImageChoices
@@ -2468,13 +2480,8 @@
   }
 
   input,
-  textarea,
   select {
     width: 100%;
-  }
-
-  textarea {
-    resize: vertical;
   }
 
   input[type="file"] {
@@ -2482,7 +2489,6 @@
   }
 
   input:focus-visible,
-  textarea:focus-visible,
   select:focus-visible,
   a:focus-visible {
     outline: 3px solid var(--focus);

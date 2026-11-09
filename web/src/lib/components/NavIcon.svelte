@@ -85,7 +85,10 @@
     | "folder"
     | "palette"
     | "note"
-    | "list-numbers";
+    | "list-numbers"
+    | "format-bold"
+    | "format-italic"
+    | "format-heading";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -336,6 +339,12 @@
     />
   {:else if name === "download"}
     <path d="M5 14v5h14v-5M12 4v11m-4-4 4 4 4-4" />
+  {:else if name === "format-bold"}
+    <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7.5a3.5 3.5 0 0 1 0 7H7z" />
+  {:else if name === "format-italic"}
+    <path d="M10 5h7M7 19h7M14.5 5l-5 14" />
+  {:else if name === "format-heading"}
+    <path d="M6 5v14M18 5v14M6 12h12" />
   {:else if name === "link"}
     <path
       d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1 0l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"

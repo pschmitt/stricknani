@@ -1,8 +1,8 @@
 <script lang="ts">
   // The editable twin of StickyNote: a paper sticky note (same paper, fold, tilt, tape and shadow
   // tokens, and the same look as Android's StickyNoteCard) around a real, labelled textarea.
-  import { focusOnHash } from "./focus-on-hash.ts";
   import LabelIcon from "./LabelIcon.svelte";
+  import MarkdownEditor from "./MarkdownEditor.svelte";
   import type { NavIconName } from "./NavIcon.svelte";
 
   let {
@@ -35,20 +35,21 @@
 <div class="sticky-field" style:--rows={rows}>
   <span class="sticky-field__paper" aria-hidden="true"></span>
   <div class="sticky-field__body">
-    <label for={id}
+    <label for={id} id={`${id}-label`}
       >{#if icon}<LabelIcon name={icon} />{/if}{label}</label
     >
-    <textarea
+    <MarkdownEditor
       {id}
-      class="reading-input"
-      use:focusOnHash
+      labelledBy={`${id}-label`}
+      describedBy={hint ? `${id}-hint` : undefined}
+      sticky
       bind:value
       {rows}
       {maxlength}
       {disabled}
       {onfocus}
-      oninput={(event) => onInput?.(event.currentTarget.value)}
-      aria-describedby={hint ? `${id}-hint` : undefined}></textarea>
+      {onInput}
+    />
     {#if hint}<small id={`${id}-hint`}>{hint}</small>{/if}
   </div>
 </div>
@@ -129,45 +130,6 @@
 
   label {
     font-weight: var(--ui-label-font-weight);
-  }
-
-  /* Writing on the note itself: ruled lines, no box, and the note's own ink for focus. */
-  textarea {
-    --line-height: calc(var(--reading-line-height) * 1em);
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    min-height: calc(var(--rows, 4) * var(--line-height) + 0.5rem);
-    field-sizing: content;
-    resize: none;
-    border: 0;
-    border-radius: 8px;
-    padding: 0.25rem 0.4rem;
-    background: repeating-linear-gradient(
-        to bottom,
-        transparent 0 calc(var(--line-height) - 1px),
-        color-mix(in srgb, var(--sticky-ink) 16%, transparent)
-          calc(var(--line-height) - 1px) var(--line-height)
-      )
-      0 0.25rem / 100% var(--line-height) local;
-    color: var(--sticky-ink);
-    font: inherit;
-    font-size: var(--reading-font-size);
-    line-height: var(--line-height);
-    box-shadow: none;
-    transition: box-shadow 120ms ease;
-  }
-
-  textarea:focus,
-  textarea:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--sticky-ink) 45%, transparent);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    textarea {
-      transition: none;
-    }
   }
 
   small {

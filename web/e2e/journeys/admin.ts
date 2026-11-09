@@ -18,6 +18,7 @@ import {
 import {
   AcceptanceFailure,
   check,
+  fillMarkdownField,
   playwrightErrorCategory,
   tinyPngFixture,
   waitTwoAnimationFrames,
@@ -301,24 +302,27 @@ async function createAdminAuditProject(
   await page
     .getByLabel("Stitch sample", { exact: true })
     .fill("18 stitches over 10 cm");
-  await page
-    .getByLabel("Pattern", { exact: true })
-    .fill("Synthetic audit fixture pattern");
-  await page
-    .getByLabel("Notes", { exact: true })
-    .fill("Synthetic audit fixture notes");
-  await page
-    .getByLabel("Other materials", { exact: true })
-    .fill("Synthetic fixture markers");
+  await fillMarkdownField(
+    page.getByLabel("Pattern", { exact: true }),
+    "Synthetic audit fixture pattern",
+  );
+  await fillMarkdownField(
+    page.getByLabel("Notes", { exact: true }),
+    "Synthetic audit fixture notes",
+  );
+  await fillMarkdownField(
+    page.getByLabel("Other materials", { exact: true }),
+    "Synthetic fixture markers",
+  );
   await page.getByRole("button", { name: "Add step", exact: true }).click();
   await page
     .getByLabel("Step title", { exact: true })
     .first()
     .fill("Fixture step");
-  await page
-    .getByLabel("Step instructions", { exact: true })
-    .first()
-    .fill("Complete the synthetic audit fixture step.");
+  await fillMarkdownField(
+    page.getByLabel("Step instructions", { exact: true }).first(),
+    "Complete the synthetic audit fixture step.",
+  );
   const createResponsePromise = page.waitForResponse(
     (response) =>
       urlPath(response.url()) === "/api/v2/projects" &&

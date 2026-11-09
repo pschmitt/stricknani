@@ -14,7 +14,12 @@ import type {
 } from "@playwright/test";
 import { errors } from "@playwright/test";
 
-import { AcceptanceFailure, check, maskFixtureIdentity } from "../lib/common";
+import {
+  AcceptanceFailure,
+  check,
+  fillMarkdownField,
+  maskFixtureIdentity,
+} from "../lib/common";
 import {
   launchBrowser,
   stageMarker,
@@ -471,7 +476,10 @@ export async function runImportJourney(
       (await noteFields.count()) === 1,
       "the editor must render exactly one notes field",
     );
-    await noteFields.fill("Created after checking every imported field.");
+    await fillMarkdownField(
+      noteFields,
+      "Created after checking every imported field.",
+    );
     for (const width of [320, 390, 1280]) {
       await page.setViewportSize({ width, height: 844 });
       await assertNoOverflow(page, width);

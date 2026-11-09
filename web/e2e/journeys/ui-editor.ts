@@ -13,6 +13,7 @@ import {
   assertStickySaveCancelGeometry,
   check,
   clickAndHandleDialog,
+  fillMarkdownField,
   maskFixtureIdentity,
   tinyPngFixture,
   waitTwoAnimationFrames,
@@ -173,26 +174,29 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     (await projectOptionalDetails.getAttribute("open")) !== null,
     "More project details did not open when needed",
   );
-  await page
-    .getByLabel("Pattern", { exact: true })
-    .fill("Work an even textured panel.");
+  await fillMarkdownField(
+    page.getByLabel("Pattern", { exact: true }),
+    "Work an even textured panel.",
+  );
   markStage("filling the project notes");
-  await page
-    .getByLabel("Notes", { exact: true })
-    .fill("Check the width after each repeat.");
+  await fillMarkdownField(
+    page.getByLabel("Notes", { exact: true }),
+    "Check the width after each repeat.",
+  );
   markStage("filling the project materials");
-  await page
-    .getByLabel("Other materials", { exact: true })
-    .fill("Two stitch markers.");
+  await fillMarkdownField(
+    page.getByLabel("Other materials", { exact: true }),
+    "Two stitch markers.",
+  );
   markStage("adding the first project step");
   await page.getByRole("button", { name: "Add step", exact: true }).click();
   markStage("checking client-side project validation");
   const firstStepTitle = page.getByLabel("Step title", { exact: true }).first();
   await firstStepTitle.fill("");
-  await page
-    .getByLabel("Step instructions", { exact: true })
-    .first()
-    .fill("Cast on and establish the border.");
+  await fillMarkdownField(
+    page.getByLabel("Step instructions", { exact: true }).first(),
+    "Cast on and establish the border.",
+  );
   await page
     .getByRole("button", { name: "Create project", exact: true })
     .click();
@@ -549,10 +553,10 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   markStage("saving ordered project steps and refreshing project media");
   await page.getByRole("button", { name: "Add step", exact: true }).click();
   await page.getByLabel("Step title").nth(1).fill("Finish the border");
-  await page
-    .getByLabel("Step instructions")
-    .nth(1)
-    .fill("Bind off loosely and weave in the ends.");
+  await fillMarkdownField(
+    page.getByLabel("Step instructions", { exact: true }).nth(1),
+    "Bind off loosely and weave in the ends.",
+  );
   await page
     .getByRole("button", { name: "Move up Step 2", exact: true })
     .click();

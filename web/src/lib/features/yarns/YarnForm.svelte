@@ -1,5 +1,6 @@
 <script lang="ts">
   import LabelIcon from "#lib/components/LabelIcon.svelte";
+  import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import UrlField from "#lib/components/UrlField.svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
@@ -1004,20 +1005,20 @@
                   class="field-error">{fieldErrors.length_meters}</small
                 >{/if}
             </label>
-            <label class="field wide" for={fieldId("description")}>
-              <span
+            <div class="field wide">
+              <span id={`${fieldId("description")}-label`}
                 ><LabelIcon name="text-align" />{t("Description", locale)}</span
               >
-              <textarea
+              <MarkdownEditor
                 id={fieldId("description")}
-                class="reading-input"
-                rows="4"
-                maxlength="20000"
+                labelledBy={`${fieldId("description")}-label`}
+                {locale}
+                rows={4}
+                maxlength={20000}
                 value={draft.description}
-                oninput={(event) =>
-                  setDraft("description", event.currentTarget.value)}
-              ></textarea>
-            </label>
+                onInput={(value) => setDraft("description", value)}
+              />
+            </div>
             <div class="field wide">
               <StickyNoteField
                 id={fieldId("notes")}
@@ -1308,14 +1309,9 @@
     color: var(--danger);
   }
 
-  .field input,
-  .field textarea {
+  .field input {
     width: 100%;
     min-width: 0;
-  }
-
-  .field textarea {
-    resize: vertical;
   }
 
   .wide {
