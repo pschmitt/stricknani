@@ -603,12 +603,7 @@ fun ProjectEditorScreen(
                         icon = PhosphorIcons.Needle,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(
-                                stringResource(R.string.project_detail_linked_yarns_title),
-                                style = MaterialTheme.typography.titleSmall,
-                            )
                             val linked = yarns.filter { it.id in form.selectedYarnIds }
-                            val unlinkLabel = stringResource(R.string.project_editor_unlink_yarn)
                             linked.forEach { yarn ->
                                 EditorListRow(
                                     leading = {
@@ -616,17 +611,22 @@ fun ProjectEditorScreen(
                                     },
                                     title = yarn.name,
                                     subtitle = yarnSubtitle(yarn),
-                                    removeLabel = unlinkLabel,
+                                    removeLabel =
+                                        stringResource(
+                                            R.string.project_editor_unlink_yarn,
+                                            yarn.name,
+                                        ),
                                     onRemove = { viewModel.toggleYarnSelected(yarn.id) },
                                 )
                             }
-                            if (yarns.isEmpty()) {
+                            if (linked.isEmpty()) {
                                 Text(
                                     stringResource(R.string.project_editor_no_yarns_yet),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                            } else {
+                            }
+                            if (yarns.isNotEmpty()) {
                                 OutlinedButton(
                                     onClick = { showYarnPicker = true },
                                     modifier =
@@ -638,12 +638,7 @@ fun ProjectEditorScreen(
                                         contentDescription = null,
                                         modifier = Modifier.padding(end = 8.dp),
                                     )
-                                    Text(
-                                        stringResource(
-                                            if (linked.isEmpty()) R.string.project_editor_link_yarns
-                                            else R.string.project_editor_change_yarns
-                                        )
-                                    )
+                                    Text(stringResource(R.string.project_editor_add_yarn))
                                 }
                             }
                             // The yarns the pattern names: from the stash, new, or left out.
@@ -674,7 +669,7 @@ fun ProjectEditorScreen(
                 // 5: free text.
                 item {
                     EditorSectionCard(
-                        title = stringResource(R.string.editor_section_content),
+                        title = stringResource(R.string.editor_section_pattern),
                         icon = PhosphorIcons.NotePencil,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -683,7 +678,7 @@ fun ProjectEditorScreen(
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(description = value) }
                                 },
-                                label = stringResource(R.string.project_detail_description_title),
+                                label = stringResource(R.string.project_detail_pattern_notes_title),
                                 labelIcon = PhosphorIcons.TextAlignLeft,
                                 fieldModifier =
                                     Modifier.focusRequester(descriptionFocus)

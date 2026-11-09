@@ -75,6 +75,7 @@ fun ProjectsListScreen(
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
@@ -163,6 +164,13 @@ fun ProjectsListScreen(
                             label = { Text(stringResource(R.string.projects_list_category_all)) },
                         )
                     }
+                    item(key = "favorites-only") {
+                        FilterChip(
+                            selected = favoritesOnly,
+                            onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
+                            label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
+                        )
+                    }
                     items(categories, key = { it.id }) { category ->
                         FilterChip(
                             selected = selectedCategory == category.name,
@@ -200,6 +208,11 @@ fun ProjectsListScreen(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                     )
                 }
+                val filtered =
+                    searchQuery.isNotBlank() ||
+                        selectedCategory != null ||
+                        selectedTag != null ||
+                        favoritesOnly
                 if (projects.isEmpty()) {
                     LazyColumn(
                         state = listState,
@@ -208,8 +221,16 @@ fun ProjectsListScreen(
                         item {
                             EmptyState(
                                 icon = PhosphorIcons.Hoodie,
-                                title = stringResource(R.string.projects_list_empty_title),
-                                subtitle = stringResource(R.string.projects_list_empty_subtitle),
+                                title =
+                                    stringResource(
+                                        if (filtered) R.string.projects_list_empty_filtered_title
+                                        else R.string.projects_list_empty_title
+                                    ),
+                                subtitle =
+                                    stringResource(
+                                        if (filtered) R.string.projects_list_empty_filtered_subtitle
+                                        else R.string.projects_list_empty_subtitle
+                                    ),
                                 modifier = Modifier.fillMaxWidth().height(400.dp),
                             )
                         }

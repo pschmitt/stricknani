@@ -140,6 +140,7 @@ fun YarnsListScreen(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                     )
                 }
+                val filtered = searchQuery.isNotBlank() || favoritesOnly
                 if (yarns.isEmpty()) {
                     LazyColumn(
                         state = listState,
@@ -148,8 +149,16 @@ fun YarnsListScreen(
                         item {
                             EmptyState(
                                 icon = MdiIcons.YarnBall,
-                                title = stringResource(R.string.yarns_list_empty_title),
-                                subtitle = stringResource(R.string.projects_list_empty_subtitle),
+                                title =
+                                    stringResource(
+                                        if (filtered) R.string.yarns_list_empty_filtered_title
+                                        else R.string.yarns_list_empty_title
+                                    ),
+                                subtitle =
+                                    stringResource(
+                                        if (filtered) R.string.yarns_list_empty_filtered_subtitle
+                                        else R.string.yarns_list_empty_subtitle
+                                    ),
                                 modifier = Modifier.fillMaxWidth().height(400.dp),
                             )
                         }

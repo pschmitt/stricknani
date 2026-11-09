@@ -606,17 +606,18 @@ private fun YarnDetailContent(
                                     icon = PhosphorIcons.Needle,
                                 )
                             }
-                            if (detail.weightGrams != null || detail.lengthMeters != null) {
-                                val amount =
-                                    listOfNotNull(
-                                            detail.weightGrams?.let { "${it}g" },
-                                            detail.lengthMeters?.let { "${it}m" },
-                                        )
-                                        .joinToString(" / ")
+                            detail.weightGrams?.let {
                                 DetailRow(
-                                    stringResource(R.string.yarn_detail_field_amount),
-                                    amount,
+                                    stringResource(R.string.yarn_detail_field_skein_weight),
+                                    "$it g",
                                     icon = PhosphorIcons.Scales,
+                                )
+                            }
+                            detail.lengthMeters?.let {
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_skein_length),
+                                    "$it m",
+                                    icon = PhosphorIcons.Ruler,
                                 )
                             }
                             SourceRows(

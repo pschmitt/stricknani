@@ -48,9 +48,11 @@ internal fun filterProjects(
     category: String?,
     tag: String?,
     decodeTags: (ProjectEntity) -> List<String>,
+    favoritesOnly: Boolean = false,
 ): List<ProjectEntity> =
     entities
         .asSequence()
+        .filter { !favoritesOnly || it.isFavorite }
         .filter { category == null || it.category == category }
         .filter {
             tag == null ||
@@ -91,6 +93,9 @@ constructor(
     private val _selectedTag = MutableStateFlow<String?>(null)
     val selectedTag: StateFlow<String?> = _selectedTag.asStateFlow()
 
+    private val _favoritesOnly = MutableStateFlow(false)
+    val favoritesOnly: StateFlow<Boolean> = _favoritesOnly.asStateFlow()
+
     private val refreshController =
         RefreshController(
             viewModelScope,
@@ -130,17 +135,20 @@ constructor(
             )
 
     val projects: StateFlow<List<ProjectEntity>> =
-        combine(allProjects, debouncedSearchQuery, selectedCategory, selectedTag) {
-                entities,
-                query,
-                category,
-                tag ->
+        combine(
+                allProjects,
+                debouncedSearchQuery,
+                selectedCategory,
+                selectedTag,
+                favoritesOnly,
+            ) { entities, query, category, tag, favoritesOnly ->
                 filterProjects(
                     entities,
                     query,
                     category,
                     tag,
                     projectRepository::decodeTags,
+                    favoritesOnly,
                 )
             }
             .stateIn(
@@ -164,6 +172,10 @@ constructor(
 
     fun onCategorySelected(category: String?) {
         _selectedCategory.value = category
+    }
+
+    fun onFavoritesOnlyChange(favoritesOnly: Boolean) {
+        _favoritesOnly.value = favoritesOnly
     }
 
     fun onTagSelected(tag: String?) {
