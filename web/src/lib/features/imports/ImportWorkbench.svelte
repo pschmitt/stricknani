@@ -9,6 +9,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import AssetChoices from "./AssetChoices.svelte";
   import ImageChoices from "./ImageChoices.svelte";
+  import ImportProgress from "./ImportProgress.svelte";
   import { createProject } from "#lib/features/projects/project-api.ts";
   import { getYarn, type YarnSummary } from "#lib/features/yarns/yarn-api.ts";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
@@ -591,18 +592,9 @@
     >
       {busy ? t("Preparing preview…", locale) : t("Preview and review", locale)}
     </Button>
-    {#if busy}<p class="status" role="status" aria-live="polite">
-        {t("Reading the source and preparing a draft…", locale)}
-      </p>{/if}
-    {#if busy && sourceKind === "url" && useAi && allowAi}<p
-        class="status"
-        role="status"
-      >
-        {t(
-          "Reading the page… some pages take a minute when the AI opens them in a browser.",
-          locale,
-        )}
-      </p>{/if}
+    {#if busy}
+      <ImportProgress kind={sourceKind} ai={useAi && allowAi} {locale} />
+    {/if}
   </section>
 
   {#if errorMessage}<p class="feedback error" role="alert">
@@ -650,6 +642,8 @@
         </p>
       {/if}
       <fieldset class="review-fields" disabled={busy}>
+        <!-- Same order as the project editor: name, photos and files, details, materials, pattern and
+             notes, steps. -->
         <div class="form-grid">
           <label class="field wide"
             ><span
@@ -661,76 +655,7 @@
               autocomplete="off"
             /></label
           >
-          <label class="field"
-            ><span
-              >{t("Category", locale)} {@render hint("project.category")}</span
-            ><input bind:value={draft.category} /></label
-          >
-          <label class="field"
-            ><span>{t("Pattern source", locale)}</span><input
-              bind:value={draft.link}
-              inputmode="url"
-            /></label
-          >
-          <label class="field wide"
-            ><span
-              >{t("Description", locale)}
-              {@render hint("project.description")}</span
-            ><textarea bind:value={draft.description} rows="3"
-            ></textarea></label
-          >
-          <label class="field"
-            ><span
-              >{t("Needles", locale)} {@render hint("project.needles")}</span
-            ><input bind:value={draft.needles} /></label
-          >
-          <label class="field"
-            ><span
-              >{t("Stitch sample", locale)}
-              {@render hint("project.stitchSample")}</span
-            ><input bind:value={draft.stitchSample} /></label
-          >
-          <label class="field wide"
-            ><span
-              >{t("Other materials", locale)}
-              {@render hint("project.otherMaterials")}</span
-            ><textarea bind:value={draft.otherMaterials} rows="2"
-            ></textarea></label
-          >
         </div>
-
-        {#if draft.steps.length}
-          <div class="subsection">
-            <h3>{t("Instructions", locale)}</h3>
-            {#each draft.steps as step, index (index)}
-              <fieldset class="step-card">
-                <legend
-                  >{t("Step {number}", locale).replace(
-                    "{number}",
-                    String(step.stepNumber),
-                  )}</legend
-                >
-                <label class="field"
-                  ><span>{t("Step title", locale)}</span><input
-                    bind:value={step.title}
-                  /></label
-                >
-                <label class="field"
-                  ><span>{t("Instructions", locale)}</span><textarea
-                    bind:value={step.description}
-                    rows="4"></textarea></label
-                >
-                {#if step.images.length}<ImageChoices
-                    title={t("Suggested step images", locale)}
-                    images={step.images}
-                    disabled={!allowExternal || busy}
-                    external={allowExternal}
-                    {locale}
-                  />{/if}
-              </fieldset>
-            {/each}
-          </div>
-        {/if}
 
         {#if draft.imageUrls.length}<ImageChoices
             title={t("Suggested project images", locale)}
@@ -747,8 +672,37 @@
             {locale}
           />{/if}
 
+        <div class="subsection" aria-labelledby="import-details-heading">
+          <h3 id="import-details-heading">{t("Project details", locale)}</h3>
+          <div class="form-grid">
+            <label class="field"
+              ><span
+                >{t("Category", locale)}
+                {@render hint("project.category")}</span
+              ><input bind:value={draft.category} /></label
+            >
+            <label class="field"
+              ><span
+                >{t("Needles", locale)} {@render hint("project.needles")}</span
+              ><input bind:value={draft.needles} /></label
+            >
+            <label class="field"
+              ><span
+                >{t("Stitch sample", locale)}
+                {@render hint("project.stitchSample")}</span
+              ><input bind:value={draft.stitchSample} /></label
+            >
+            <label class="field"
+              ><span>{t("Pattern source", locale)}</span><input
+                bind:value={draft.link}
+                inputmode="url"
+              /></label
+            >
+          </div>
+        </div>
+
         <div class="subsection" aria-labelledby="import-yarn-heading">
-          <h3 id="import-yarn-heading">{t("Yarn for this project", locale)}</h3>
+          <h3 id="import-yarn-heading">{t("Materials", locale)}</h3>
           {#if draft.yarns.length}
             <p class="supporting">
               {t(
@@ -926,15 +880,69 @@
               }}
             />
           </fieldset>
+          <div class="form-grid">
+            <label class="field wide"
+              ><span
+                >{t("Other materials", locale)}
+                {@render hint("project.otherMaterials")}</span
+              ><textarea bind:value={draft.otherMaterials} rows="2"
+              ></textarea></label
+            >
+          </div>
         </div>
 
-        <StickyNoteField
-          id="import-notes"
-          label={t("Notes", locale)}
-          bind:value={draft.notes}
-          rows={5}
-          disabled={busy}
-        />
+        <div class="subsection" aria-labelledby="import-writing-heading">
+          <h3 id="import-writing-heading">{t("Pattern and notes", locale)}</h3>
+          <div class="form-grid">
+            <label class="field wide"
+              ><span
+                >{t("Description", locale)}
+                {@render hint("project.description")}</span
+              ><textarea bind:value={draft.description} rows="3"
+              ></textarea></label
+            >
+          </div>
+          <StickyNoteField
+            id="import-notes"
+            label={t("Notes", locale)}
+            bind:value={draft.notes}
+            rows={5}
+            disabled={busy}
+          />
+        </div>
+
+        {#if draft.steps.length}
+          <div class="subsection">
+            <h3>{t("Pattern steps", locale)}</h3>
+            {#each draft.steps as step, index (index)}
+              <fieldset class="step-card">
+                <legend
+                  >{t("Step {number}", locale).replace(
+                    "{number}",
+                    String(step.stepNumber),
+                  )}</legend
+                >
+                <label class="field"
+                  ><span>{t("Step title", locale)}</span><input
+                    bind:value={step.title}
+                  /></label
+                >
+                <label class="field"
+                  ><span>{t("Instructions", locale)}</span><textarea
+                    bind:value={step.description}
+                    rows="4"></textarea></label
+                >
+                {#if step.images.length}<ImageChoices
+                    title={t("Suggested step images", locale)}
+                    images={step.images}
+                    disabled={!allowExternal || busy}
+                    external={allowExternal}
+                    {locale}
+                  />{/if}
+              </fieldset>
+            {/each}
+          </div>
+        {/if}
       </fieldset>
 
       <div class="review-actions">

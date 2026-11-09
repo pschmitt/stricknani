@@ -128,8 +128,6 @@
     min-height: 44px;
     resize: vertical;
     border: 0;
-    border-bottom: 1px dashed
-      color-mix(in srgb, var(--sticky-ink) 45%, transparent);
     border-radius: 0;
     background: transparent;
     color: var(--sticky-ink);

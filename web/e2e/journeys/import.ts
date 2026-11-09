@@ -567,7 +567,7 @@ export async function runImportJourney(
     markStage("checking extracted yarn in HTML review");
     try {
       await page
-        .getByRole("heading", { name: "Yarn for this project" })
+        .getByRole("heading", { name: "Materials", exact: true })
         .waitFor({ state: "visible" });
     } catch (error) {
       if (!(error instanceof errors.TimeoutError)) {
