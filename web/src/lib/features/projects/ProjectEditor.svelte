@@ -11,6 +11,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+  import NewBanner from "#lib/components/NewBanner.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
@@ -1391,6 +1392,14 @@
         onsubmit={submit}
       >
         {#if isCreating}
+          <NewBanner
+            kind="project"
+            title={t("Start something cosy", locale)}
+            subtitle={t(
+              "Give it a name and cast on your first stitches.",
+              locale,
+            )}
+          />
           <ImportCard
             bind:this={importCard}
             target="project"

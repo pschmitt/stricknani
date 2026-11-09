@@ -79,6 +79,8 @@ import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.FieldLabel
 import blue.anika.wolle.ui.common.ImportAssetRow
 import blue.anika.wolle.ui.common.ImportImagePicker
+import blue.anika.wolle.ui.common.NewBanner
+import blue.anika.wolle.ui.common.NewBannerKind
 import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
@@ -323,6 +325,13 @@ fun ProjectEditorScreen(
                 // project page.
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        if (!viewModel.isEditing) {
+                            NewBanner(
+                                kind = NewBannerKind.Project,
+                                title = stringResource(R.string.new_banner_project_title),
+                                subtitle = stringResource(R.string.new_banner_project_subtitle),
+                            )
+                        }
                         if (
                             !viewModel.isEditing &&
                                 (viewModel.offersLinkImport() ||

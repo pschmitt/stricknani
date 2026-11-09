@@ -193,6 +193,10 @@
     <string name="editor_section_content">Description and notes</string>
     <string name="editor_section_steps">Instructions</string>
     <string name="editor_section_media">Images and attachments</string>
+    <string name="new_banner_project_title">Start something cosy</string>
+    <string name="new_banner_project_subtitle">Give it a name and cast on your first stitches.</string>
+    <string name="new_banner_yarn_title">Add a yarn to your stash</string>
+    <string name="new_banner_yarn_subtitle">Tell us what is in the ball and it is ready for your next project.</string>
     <string name="editor_section_yarn_details">Yarn details</string>
     <string name="editor_section_yarn_specs">Yarn specifications</string>
     <string name="editor_section_gallery">Gallery</string>

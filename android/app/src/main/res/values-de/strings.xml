@@ -192,6 +192,10 @@
     <string name="editor_section_content">Beschreibung und Notizen</string>
     <string name="editor_section_steps">Anleitung</string>
     <string name="editor_section_media">Bilder und Anhänge</string>
+    <string name="new_banner_project_title">Fang etwas Gemütliches an</string>
+    <string name="new_banner_project_subtitle">Gib ihm einen Namen und schlag die ersten Maschen an.</string>
+    <string name="new_banner_yarn_title">Neues Garn für deinen Vorrat</string>
+    <string name="new_banner_yarn_subtitle">Erzähl uns, was im Knäuel steckt, und es ist bereit für dein nächstes Projekt.</string>
     <string name="editor_section_yarn_details">Garndetails</string>
     <string name="editor_section_yarn_specs">Garn-Eigenschaften</string>
     <string name="editor_section_gallery">Galerie</string>

@@ -11,6 +11,7 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+  import NewBanner from "#lib/components/NewBanner.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
@@ -762,6 +763,14 @@
     {/if}
 
     {#if yarnId === null}
+      <NewBanner
+        kind="yarn"
+        title={t("Add a yarn to your stash", locale)}
+        subtitle={t(
+          "Tell us what is in the ball and it is ready for your next project.",
+          locale,
+        )}
+      />
       <ImportCard
         target="yarn"
         initialUrl={sharedLink}
