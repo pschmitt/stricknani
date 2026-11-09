@@ -20,6 +20,8 @@ pub mod gravatar;
 mod i18n;
 pub mod image_import;
 pub mod import_document;
+pub mod import_drafts;
+pub mod import_images;
 pub mod import_service;
 pub mod importer;
 pub mod imports;

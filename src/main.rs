@@ -325,6 +325,16 @@ async fn serve() -> Result<(), &'static str> {
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         }
     });
+    // Imports that were running when the server stopped never finish: mark them failed.
+    if stricknani_server::import_drafts::fail_interrupted(
+        &state.pool,
+        chrono::Utc::now().timestamp(),
+    )
+    .await
+    .is_err()
+    {
+        tracing::warn!(component = "imports", "imports.interrupted_cleanup_failed");
+    }
     // Web Push timer reminders (see stricknani_server::web_push).
     let push_pool = state.pool.clone();
     let push_sender =
@@ -339,6 +349,14 @@ async fn serve() -> Result<(), &'static str> {
             {
                 sentry::capture_message("push.reminders.failed", sentry::Level::Error);
                 tracing::warn!(component = "push", "push.reminders.failed");
+            }
+            // Finished imports waiting for review (see stricknani_server::import_drafts).
+            if stricknani_server::import_drafts::deliver_finished(&push_pool, &push_sender, now)
+                .await
+                .is_err()
+            {
+                sentry::capture_message("push.imports.failed", sentry::Level::Error);
+                tracing::warn!(component = "push", "push.imports.failed");
             }
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         }

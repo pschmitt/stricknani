@@ -34,6 +34,7 @@ mod admin_resources;
 mod archive;
 mod audit;
 mod categories;
+mod import_drafts;
 mod imports;
 mod media;
 mod meta;
@@ -189,6 +190,7 @@ fn router_with_context(
         .merge(categories::router())
         .merge(media::router())
         .merge(imports::router())
+        .merge(import_drafts::router())
         .merge(ocr::router())
         .merge(archive::router())
         .merge(meta::router())

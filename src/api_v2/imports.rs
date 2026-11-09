@@ -49,7 +49,7 @@ impl Default for PreviewLimiter {
 }
 
 impl PreviewLimiter {
-    fn reserve(&self, owner_id: i64) -> Result<(), u64> {
+    pub(super) fn reserve(&self, owner_id: i64) -> Result<(), u64> {
         self.0.reserve(owner_id)
     }
 }
@@ -69,7 +69,7 @@ pub(super) fn router() -> Router<ApiV2State> {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
-enum PreviewRequest {
+pub(super) enum PreviewRequest {
     Url {
         url: String,
         #[serde(default)]
@@ -85,8 +85,8 @@ enum PreviewRequest {
 }
 
 #[derive(Serialize)]
-struct PreviewData {
-    draft: ImportDocumentDraft,
+pub(super) struct PreviewData {
+    pub(super) draft: ImportDocumentDraft,
     content_sha256: String,
     ai_requested: bool,
     is_ai_enhanced: bool,
@@ -113,7 +113,7 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
-    let Some(imports) = state.imports else {
+    let Some(imports) = state.imports.clone() else {
         return api_error(
             StatusCode::SERVICE_UNAVAILABLE,
             "import_unavailable",
@@ -131,6 +131,20 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         Ok(request) => request,
         Err(_) => return validation_error("Request JSON is invalid", "body"),
     };
+    match build_preview(&state, &imports, user_id, request).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(response) => *response,
+    }
+}
+
+/// A preview of a link or of pasted text, as `POST /imports/preview` answers it; an error is the
+/// response to send. Import drafts run the same on the server ([super::import_drafts]).
+pub(super) async fn build_preview(
+    state: &ApiV2State,
+    imports: &import_service::ImportContext,
+    user_id: i64,
+    request: PreviewRequest,
+) -> Result<PreviewData, Box<Response>> {
     let mut ai_target = ImportTarget::Project;
     let mut url_import = false;
     let mut browse = import_service::BrowseState::Off;
@@ -143,14 +157,17 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
             ai_target = target;
             url_import = true;
             if !state.app.external_imports {
-                return api_error(
+                return Err(Box::new(api_error(
                     StatusCode::SERVICE_UNAVAILABLE,
                     "feature_disabled",
                     "Remote URL imports are disabled",
-                );
+                )));
             }
             if url.trim().is_empty() || url.len() > 2048 {
-                return validation_error("URL is required and must be at most 2048 bytes", "url");
+                return Err(Box::new(validation_error(
+                    "URL is required and must be at most 2048 bytes",
+                    "url",
+                )));
             }
             let may_browse = use_ai && imports.ai.as_deref().is_some_and(AiClient::browse_enabled);
             match import_service::import_url_browsing(
@@ -165,15 +182,15 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
                     browse = imported.browse;
                     (imported.draft, imported.source_text, use_ai)
                 }
-                Err(error) => return import_error(error),
+                Err(error) => return Err(Box::new(import_error(error))),
             }
         }
         PreviewRequest::Text { text, use_ai } => {
             if text.trim().is_empty() {
-                return validation_error("Text is required", "text");
+                return Err(Box::new(validation_error("Text is required", "text")));
             }
             if text.len() > import_service::MAX_UPLOAD_BYTES {
-                return payload_too_large();
+                return Err(Box::new(payload_too_large()));
             }
             let source_text = text.clone();
             match import_service::parse_bytes(
@@ -186,7 +203,7 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
             .await
             {
                 Ok(draft) => (draft, source_text, use_ai),
-                Err(error) => return worker_error(error),
+                Err(error) => return Err(Box::new(worker_error(error))),
             }
         }
     };
@@ -204,7 +221,7 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         if let import_service::BrowseState::Blocked { error, .. } = &browse
             && !enhanced
         {
-            return import_error(ImportFailure::Fetch(*error));
+            return Err(Box::new(import_error(ImportFailure::Fetch(*error))));
         }
         if ai_target == ImportTarget::Project {
             import_service::complete_assets_fallback(&mut draft).await;
@@ -221,17 +238,18 @@ async fn preview(State(state): State<ApiV2State>, request: Request<Body>) -> Res
         .await
     };
     let enrich = url_import && ai_target == ImportTarget::Project && state.app.external_imports;
-    finish_preview(
+    Ok(finish_preview(
         &state.app.pool,
         user_id,
-        &imports,
+        imports,
         draft,
         ai_requested,
         is_ai_enhanced,
         ai_target == ImportTarget::Project,
         enrich,
+        url_import && state.app.external_imports,
     )
-    .await
+    .await)
 }
 
 #[derive(Deserialize)]
@@ -396,7 +414,7 @@ async fn preview_file(
         images,
     )
     .await;
-    finish_preview(
+    let data = finish_preview(
         &state.app.pool,
         user_id,
         &imports,
@@ -405,8 +423,10 @@ async fn preview_file(
         is_ai_enhanced,
         true,
         false,
+        false,
     )
-    .await
+    .await;
+    Json(Envelope { data }).into_response()
 }
 
 /// Last step of every preview: one clean yarn list, product-page enrichment for link imports,
@@ -421,7 +441,20 @@ async fn finish_preview(
     is_ai_enhanced: bool,
     project: bool,
     enrich: bool,
-) -> Response {
+    dedupe_images: bool,
+) -> PreviewData {
+    // The same picture under several names or sizes (link imports fetch the pictures to compare).
+    if dedupe_images {
+        draft.project.image_urls = crate::import_images::drop_near_duplicates(std::mem::take(
+            &mut draft.project.image_urls,
+        ))
+        .await;
+        if let Some(yarn) = draft.yarn.as_mut() {
+            yarn.image_urls =
+                crate::import_images::drop_near_duplicates(std::mem::take(&mut yarn.image_urls))
+                    .await;
+        }
+    }
     let mut yarn_matches = Vec::new();
     if project {
         crate::yarn_import::finalize_project_yarns(&mut draft);
@@ -438,27 +471,24 @@ async fn finish_preview(
         yarn_matches = crate::yarn_import::match_stash(&draft.project.yarns, &stash);
     }
     crate::yarn_import::strip_internal_extras(&mut draft);
-    preview_response(draft, ai_requested, is_ai_enhanced, yarn_matches)
+    preview_data(draft, ai_requested, is_ai_enhanced, yarn_matches)
 }
 
-fn preview_response(
+fn preview_data(
     draft: ImportDocumentDraft,
     ai_requested: bool,
     is_ai_enhanced: bool,
     yarn_matches: Vec<crate::yarn_import::StashMatch>,
-) -> Response {
+) -> PreviewData {
     let content_sha256 = draft.sha256.clone();
-    Json(Envelope {
-        data: PreviewData {
-            draft,
-            content_sha256,
-            ai_requested,
-            is_ai_enhanced,
-            ai_fallback: ai_requested && !is_ai_enhanced,
-            yarn_matches,
-        },
-    })
-    .into_response()
+    PreviewData {
+        draft,
+        content_sha256,
+        ai_requested,
+        is_ai_enhanced,
+        ai_fallback: ai_requested && !is_ai_enhanced,
+        yarn_matches,
+    }
 }
 
 fn multipart_error(error: MultipartRejection) -> Response {
@@ -552,7 +582,7 @@ fn worker_error(error: WorkerError) -> Response {
     }
 }
 
-fn validation_error(message: &'static str, field: &'static str) -> Response {
+pub(super) fn validation_error(message: &'static str, field: &'static str) -> Response {
     api_error_with_fields(
         StatusCode::UNPROCESSABLE_ENTITY,
         "validation_error",
@@ -561,7 +591,7 @@ fn validation_error(message: &'static str, field: &'static str) -> Response {
     )
 }
 
-fn payload_too_large() -> Response {
+pub(super) fn payload_too_large() -> Response {
     api_error(
         StatusCode::PAYLOAD_TOO_LARGE,
         "payload_too_large",
@@ -569,11 +599,11 @@ fn payload_too_large() -> Response {
     )
 }
 
-fn rate_limited(retry_after: u64) -> Response {
+pub(super) fn rate_limited(retry_after: u64) -> Response {
     access::rate_limited(retry_after, "Too many import previews; try again later")
 }
 
-fn api_error(status: StatusCode, code: &'static str, message: &'static str) -> Response {
+pub(super) fn api_error(status: StatusCode, code: &'static str, message: &'static str) -> Response {
     (
         status,
         Json(ErrorBody {

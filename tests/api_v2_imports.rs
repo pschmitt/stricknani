@@ -615,3 +615,227 @@ fn image_bytes() -> Vec<u8> {
         .expect("fixture image encodes");
     output.into_inner()
 }
+
+fn draft_request(
+    method: &str,
+    path: &str,
+    session: &str,
+    csrf: &str,
+    payload: Option<serde_json::Value>,
+) -> Request<Body> {
+    Request::builder()
+        .method(method)
+        .uri(path)
+        .header("host", HOST)
+        .header("origin", ORIGIN)
+        .header("sec-fetch-site", "same-origin")
+        .header("cookie", format!("__Host-stricknani_session={session}"))
+        .header("x-csrf-token", csrf)
+        .header("content-type", "application/json")
+        .body(payload.map_or_else(Body::empty, |payload| Body::from(payload.to_string())))
+        .unwrap()
+}
+
+/// Polls a draft until its import is done (the job runs in the background).
+async fn finished_draft(
+    app: &axum::Router,
+    session: &str,
+    csrf: &str,
+    id: i64,
+) -> serde_json::Value {
+    for _ in 0..200 {
+        let response = app
+            .clone()
+            .oneshot(draft_request(
+                "GET",
+                &format!("/api/v2/imports/drafts/{id}"),
+                session,
+                csrf,
+                None,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = json(response).await;
+        if body["data"]["status"] != "running" {
+            return body["data"].clone();
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    panic!("the import draft did not finish");
+}
+
+#[tokio::test]
+async fn an_import_draft_runs_in_the_background_and_waits_for_review() {
+    let fixture = fixture(false).await;
+    let (session, csrf) = signed_in(&fixture.app).await;
+    let created = fixture
+        .app
+        .clone()
+        .oneshot(draft_request(
+            "POST",
+            "/api/v2/imports/drafts",
+            &session,
+            &csrf,
+            Some(serde_json::json!({
+                "type": "text", "text": "Cozy socks\nCast on 48 stitches.", "locale": "de"
+            })),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(created.status(), StatusCode::ACCEPTED);
+    let created = json(created).await;
+    assert_eq!(created["data"]["status"], "running");
+    assert_eq!(created["data"]["target"], "project");
+    assert_eq!(created["data"]["source_kind"], "text");
+    let id = created["data"]["id"].as_i64().unwrap();
+
+    let draft = finished_draft(&fixture.app, &session, &csrf, id).await;
+    assert_eq!(draft["status"], "ready");
+    // The same preview the preview endpoint answers, kept for the editor.
+    assert_eq!(draft["preview"]["draft"]["kind"], "plain_text");
+    assert_eq!(
+        draft["preview"]["content_sha256"].as_str().unwrap().len(),
+        64
+    );
+    assert!(
+        draft["title"]
+            .as_str()
+            .is_some_and(|title| !title.is_empty())
+    );
+    let locale: String = sqlx::query_scalar("SELECT locale FROM import_drafts WHERE id = ?")
+        .bind(id)
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(locale, "de");
+
+    // The list is for the cards: no preview in it.
+    let list = json(
+        fixture
+            .app
+            .clone()
+            .oneshot(draft_request(
+                "GET",
+                "/api/v2/imports/drafts",
+                &session,
+                &csrf,
+                None,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(list["data"].as_array().unwrap().len(), 1);
+    assert!(list["data"][0].get("preview").is_none());
+
+    // Another account sees nothing of it.
+    db::create_user(
+        &fixture.pool,
+        "other@example.test",
+        "other-user-password".to_owned(),
+    )
+    .await
+    .unwrap();
+    let other: i64 = sqlx::query_scalar("SELECT id FROM users WHERE email = 'other@example.test'")
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    let owned: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM import_drafts WHERE user_id = ?")
+        .bind(other)
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(owned, 0);
+
+    // Dismissing (or saving in the editor) deletes it.
+    let dismissed = fixture
+        .app
+        .clone()
+        .oneshot(draft_request(
+            "DELETE",
+            &format!("/api/v2/imports/drafts/{id}"),
+            &session,
+            &csrf,
+            None,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(dismissed.status(), StatusCode::NO_CONTENT);
+    let gone = fixture
+        .app
+        .clone()
+        .oneshot(draft_request(
+            "GET",
+            &format!("/api/v2/imports/drafts/{id}"),
+            &session,
+            &csrf,
+            None,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(gone.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn an_import_draft_that_can_never_work_is_refused_up_front() {
+    let fixture = fixture(false).await;
+    let (session, csrf) = signed_in(&fixture.app).await;
+    for (payload, status) in [
+        (
+            serde_json::json!({"type": "text", "text": "  "}),
+            StatusCode::UNPROCESSABLE_ENTITY,
+        ),
+        (
+            serde_json::json!({"type": "url", "url": "https://example.com/p"}),
+            StatusCode::SERVICE_UNAVAILABLE,
+        ),
+    ] {
+        let response = fixture
+            .app
+            .clone()
+            .oneshot(draft_request(
+                "POST",
+                "/api/v2/imports/drafts",
+                &session,
+                &csrf,
+                Some(payload),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), status);
+    }
+    let stored: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM import_drafts")
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(stored, 0);
+}
+
+#[tokio::test]
+async fn running_import_drafts_fail_when_the_server_restarts() {
+    let fixture = fixture(false).await;
+    let user: i64 = sqlx::query_scalar("SELECT id FROM users LIMIT 1")
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO import_drafts (user_id, target, source_kind, source_url, status, created_at) \
+         VALUES (?, 'project', 'url', 'https://example.com/p', 'running', 1)",
+    )
+    .bind(user)
+    .execute(&fixture.pool)
+    .await
+    .unwrap();
+    let changed = stricknani_server::import_drafts::fail_interrupted(&fixture.pool, 2)
+        .await
+        .unwrap();
+    assert_eq!(changed, 1);
+    let (status, error): (String, String) =
+        sqlx::query_as("SELECT status, error_json FROM import_drafts")
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(status, "failed");
+    assert!(error.contains("import_interrupted"));
+}
