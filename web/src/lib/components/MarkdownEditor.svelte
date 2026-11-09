@@ -55,7 +55,6 @@
     onfocus?: () => void;
   } = $props();
 
-
   let core = $state<Core | null>(null);
   let model = $state<Model | null>(null);
   // The text uses something the visual editor cannot show faithfully.
