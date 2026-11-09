@@ -41,6 +41,19 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-108: Pictures inline in the visual Markdown editor
+
+The web's visual editor shows `![alt](/media/...)` pictures in place. Android's (SNA visual editor,
+Compose Rich Editor) cannot yet: the library's default image loader shows nothing, so text with a
+picture stays in Raw with the "This text uses formatting the visual editor cannot show" hint.
+
+- [ ] Give the editor an `ImageLoader` that resolves `/media/...` through `MediaUrlResolver` and
+      Coil, show the picture inline, and keep the `{.sn-size-*}` size annotation on write.
+- [ ] Drop `MarkdownElementTypes.IMAGE` from `MarkdownRich.UNSUPPORTED` and cover pictures in
+      `MarkdownRichTest`.
+
+Status: **not started**, 2026-11-09.
+
 ## SNA-105: Yarn links move into their own "Yarn source" card
 
 - [x] The yarn detail's source links leave the DETAILS card for a separate reorderable "Yarn

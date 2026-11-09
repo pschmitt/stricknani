@@ -1471,8 +1471,6 @@
     <string name="markdown_editor_link">Link</string>
     <string name="markdown_editor_mode">Editor mode</string>
     <string name="markdown_editor_raw">Raw</string>
-    <string name="markdown_editor_preview">Preview</string>
-    <string name="markdown_editor_preview_empty">Nothing to preview yet.</string>
     <string name="editor_section_pattern">Pattern</string>
     <string name="project_editor_add_yarn">Add yarn</string>
     <string name="yarns_list_empty_subtitle">Add a skein to keep its details and project links together.</string>
@@ -1482,4 +1480,9 @@
     <string name="yarns_list_empty_filtered_subtitle">Try another search or show all yarn.</string>
     <string name="yarn_detail_field_skein_weight">Skein weight</string>
     <string name="yarn_detail_field_skein_length">Skein length</string>
+    <string name="markdown_editor_visual">Visual</string>
+    <string name="markdown_editor_unsupported">This text uses formatting the visual editor cannot show, so it is edited as Markdown.</string>
+    <string name="markdown_editor_link_address">Link address</string>
+    <string name="markdown_editor_link_apply">Apply</string>
+    <string name="markdown_editor_link_remove">Remove link</string>
 </resources>

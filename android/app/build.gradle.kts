@@ -242,6 +242,7 @@ dependencies {
     implementation(libs.jetbrains.markdown)
     implementation(libs.markdown.renderer.m3)
     implementation(libs.markdown.renderer.coil3)
+    implementation(libs.richeditor.compose)
 
     // QR-code onboarding scanner (SNA-13) - CameraX + ZXing, no Google Play Services dependency
     // (matches nyetbox's/jollyfin's scanner stack exactly).

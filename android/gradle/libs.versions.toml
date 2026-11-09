@@ -45,6 +45,8 @@ markdown-renderer = "0.46.0"
 # The markdown renderer's own parser; used directly to turn project text into HTML for printing.
 jetbrains-markdown = "0.7.18"
 okhttp = "5.5.1"
+# Rich text editor (visual Markdown editing, Apache-2.0); see ui/common/MarkdownTextField.kt.
+rich-editor = "1.2.1"
 retrofit = "3.0.0"
 retrofit-kotlinx-serialization-converter = "1.0.0"
 shizuku = "13.1.5"
@@ -105,6 +107,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+richeditor-compose = { group = "com.mohamedrejeb.richeditor", name = "richeditor-compose", version.ref = "rich-editor" }
 markdown-renderer = { group = "com.mikepenz", name = "multiplatform-markdown-renderer", version.ref = "markdown-renderer" }
 jetbrains-markdown = { group = "org.jetbrains", name = "markdown", version.ref = "jetbrains-markdown" }
 markdown-renderer-m3 = { group = "com.mikepenz", name = "multiplatform-markdown-renderer-m3", version.ref = "markdown-renderer" }
