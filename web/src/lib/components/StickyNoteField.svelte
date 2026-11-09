@@ -32,7 +32,7 @@
   } = $props();
 </script>
 
-<div class="sticky-field">
+<div class="sticky-field" style:--rows={rows}>
   <span class="sticky-field__paper" aria-hidden="true"></span>
   <div class="sticky-field__body">
     <label for={id}
@@ -122,29 +122,50 @@
     position: relative;
     display: grid;
     gap: 0.4rem;
-    padding: 1.1rem 1.1rem 1.3rem;
+    /* Room on the right and at the bottom for the folded corner. */
+    padding: 1.1rem 1.6rem 1.8rem 1.1rem;
   }
 
   label {
     font-weight: 700;
   }
 
+  /* Writing on the note itself: ruled lines, no box, and the note's own ink for focus. */
   textarea {
+    --line-height: 1.6em;
+    box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    min-height: 44px;
-    resize: vertical;
+    min-height: calc(var(--rows, 4) * var(--line-height) + 0.5rem);
+    field-sizing: content;
+    resize: none;
     border: 0;
-    border-radius: 0;
-    background: transparent;
+    border-radius: 8px;
+    padding: 0.25rem 0.4rem;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0 calc(var(--line-height) - 1px),
+        color-mix(in srgb, var(--sticky-ink) 16%, transparent)
+          calc(var(--line-height) - 1px) var(--line-height)
+      )
+      0 0.25rem / 100% var(--line-height) local;
     color: var(--sticky-ink);
     font: inherit;
-    line-height: 1.5;
+    line-height: var(--line-height);
+    box-shadow: none;
+    transition: box-shadow 120ms ease;
   }
 
+  textarea:focus,
   textarea:focus-visible {
-    outline: 2px solid var(--sticky-ink);
-    outline-offset: 3px;
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--sticky-ink) 45%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    textarea {
+      transition: none;
+    }
   }
 
   small {

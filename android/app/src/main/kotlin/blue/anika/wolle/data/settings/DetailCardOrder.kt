@@ -19,7 +19,7 @@ object ProjectDetailCard {
     const val DETAILS = "details"
     const val MATERIALS = "materials"
 
-    /** "Pattern and notes": the description and the notes together, like the web. */
+    /** "Pattern": the description and the notes together, like the web. */
     const val DESCRIPTION = "description"
     const val STEPS = "steps"
 

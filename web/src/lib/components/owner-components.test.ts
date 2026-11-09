@@ -46,8 +46,9 @@ describe("ForeignOwnerBanner", () => {
       props: { kind: "project", owner },
     });
     expect(body).toContain('role="note"');
+    expect(body).toContain("Anika's project");
     expect(body).toContain(
-      "This is Anika's project. Changes you make are saved to their project and recorded in the audit log.",
+      "Your changes are saved to their project and recorded in the audit log.",
     );
   });
 
@@ -55,7 +56,7 @@ describe("ForeignOwnerBanner", () => {
     const { body } = render(ForeignOwnerBanner, {
       props: { kind: "yarn", owner },
     });
-    expect(body).toContain("This is Anika's yarn.");
+    expect(body).toContain("Anika's yarn");
     expect(body).toContain("saved to their yarn");
   });
 });

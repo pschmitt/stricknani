@@ -114,6 +114,15 @@ async function isTimeout<T>(action: () => Promise<T>): Promise<T | null> {
   }
 }
 
+/** Opens the overflow menu of an Admin, Users row (all actions but Disable). */
+async function openUserMenu(row: Locator): Promise<void> {
+  await row.locator(".action-overflow__trigger").click();
+  await row
+    .page()
+    .getByRole("menuitem", { name: "Reset password" })
+    .waitFor({ state: "visible" });
+}
+
 async function svgShapeSignature(icon: Locator): Promise<string> {
   const signature: unknown = await icon.evaluate((svg) => {
     const attributes = [
@@ -663,7 +672,7 @@ async function assertAdminEditsForeignProject(
   mark: Mark,
 ): Promise<void> {
   const bannerText =
-    /^This is .+'s project\. Changes you make are saved to their project and recorded in the audit log\.$/;
+    /^.+'s project Your changes are saved to their project and recorded in the audit log\.$/;
   mark("administrator library shows Mine / Everyone and the owner badge");
   await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
   await page
@@ -693,7 +702,11 @@ async function assertAdminEditsForeignProject(
   const banner = page.getByTestId("foreign-owner-banner");
   await banner.waitFor({ state: "visible" });
   check(
-    bannerText.test(((await banner.textContent()) ?? "").trim()),
+    bannerText.test(
+      ((await banner.locator(".foreign-banner__copy").textContent()) ?? "")
+        .replace(/\s+/g, " ")
+        .trim(),
+    ),
     "the foreign project banner text is wrong",
   );
 
@@ -1769,7 +1782,8 @@ async function runAcceptance(
       "focus did not return to the changed account action",
     );
     mark("open member password reset");
-    await memberRow.getByRole("button", { name: "Reset password" }).click();
+    await openUserMenu(memberRow);
+    await page.getByRole("menuitem", { name: "Reset password" }).click();
     const resetDialog = page.getByRole("dialog", {
       name: "Reset this password?",
     });
@@ -1807,14 +1821,16 @@ async function runAcceptance(
     let ownRow = page.locator(".user-row").filter({ hasText: adminEmail });
     await ownRow.locator(".you-marker").waitFor({ state: "visible" });
     check(
-      (await ownRow.getByRole("button", { name: "Disable" }).count()) === 0,
+      await ownRow.getByRole("button", { name: "Disable" }).isDisabled(),
       "the signed-in administrator's own row offers Disable",
     );
+    await openUserMenu(ownRow);
     check(
-      (await ownRow.getByRole("button", { name: "Reset password" }).count()) ===
+      (await page.getByRole("menuitem", { name: "Reset password" }).count()) ===
         1,
       "the own row lost its other actions",
     );
+    await page.keyboard.press("Escape");
 
     mark("audit list and filters");
     await createAdminAuditProject(page, origin, mark);
@@ -2910,7 +2926,8 @@ async function runAcceptance(
     mark("open administrator user route");
     await page.goto(`${origin}/app/admin/users`, { waitUntil: "networkidle" });
     ownRow = page.locator(".user-row").filter({ hasText: adminEmail });
-    await ownRow.getByRole("button", { name: "Reset password" }).click();
+    await openUserMenu(ownRow);
+    await page.getByRole("menuitem", { name: "Reset password" }).click();
     const ownResetDialog = page.getByRole("dialog", {
       name: "Reset this password?",
     });

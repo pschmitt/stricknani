@@ -19,7 +19,11 @@ enum class OwnedKind {
     Yarn,
 }
 
-data class OwnerBannerData(val ownerName: String, val kind: OwnedKind)
+data class OwnerBannerData(
+    val ownerName: String,
+    val kind: OwnedKind,
+    val avatarUrl: String? = null,
+)
 
 /**
  * The badge of an item owned by someone else, or null for the user's own items, for rows without
@@ -47,7 +51,7 @@ fun YarnEntity.ownerBadge(currentUserId: Long?): OwnerBadgeData? =
 
 /** The banner of a foreign item's detail/edit screen; null for the user's own items. */
 fun ownerBannerOf(badge: OwnerBadgeData?, kind: OwnedKind): OwnerBannerData? = badge?.let {
-    OwnerBannerData(it.name, kind)
+    OwnerBannerData(it.name, kind, it.avatarUrl)
 }
 
 /**
@@ -68,7 +72,7 @@ fun itemBannerOf(badge: OwnerBadgeData?, access: ItemAccess, kind: OwnedKind): I
     when {
         access.derived -> ItemBanner.Derived
         access.isShared && badge != null -> ItemBanner.SharedBy(badge, access.role)
-        badge != null -> ItemBanner.Owned(OwnerBannerData(badge.name, kind))
+        badge != null -> ItemBanner.Owned(OwnerBannerData(badge.name, kind, badge.avatarUrl))
         else -> null
     }
 

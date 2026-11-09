@@ -76,6 +76,8 @@ data class LinkedYarn(
     val previewUrl: String?,
     val notes: String? = null,
     val link: String? = null,
+    /** Brand and colourway, as on the web's yarn card ("Garnstudio · Farbe 22"). */
+    val subtitle: String? = null,
 )
 
 sealed interface ProjectDetailUiState {
@@ -655,6 +657,11 @@ constructor(
                                     yarn.previewUrl,
                                     notes = yarnDetail?.notes?.takeIf { it.isNotBlank() },
                                     link = yarnDetail?.link,
+                                    subtitle =
+                                        listOfNotNull(yarn.brand, yarn.colorway)
+                                            .filter { it.isNotBlank() }
+                                            .joinToString(" · ")
+                                            .ifBlank { null },
                                 )
                             }
                     ProjectDetailUiState.Loaded(entity, detail, linked)

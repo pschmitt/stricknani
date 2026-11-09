@@ -179,7 +179,7 @@
     <string name="project_detail_materials_title">Materialien</string>
     <string name="project_detail_materials_hide">Materialien ausblenden</string>
     <string name="project_detail_materials_show">Materialien anzeigen</string>
-    <string name="project_detail_pattern_notes_title">Anleitung und Notizen</string>
+    <string name="project_detail_pattern_notes_title">Anleitung</string>
     <string name="project_detail_field_gauge">Maschenprobe</string>
     <string name="project_detail_attachments_title">Anhänge</string>
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
@@ -1340,8 +1340,10 @@
     <string name="error_back_yarns">Zurück zu den Garnen</string>
     <string name="error_go_back">Zurück</string>
     <string name="owner_badge_description">Gehört %1$s</string>
-    <string name="owner_banner_project">Dies ist das Projekt von %1$s. Deine Änderungen werden in dessen Projekt gespeichert und im Prüfprotokoll festgehalten.</string>
-    <string name="owner_banner_yarn">Dies ist das Garn von %1$s. Deine Änderungen werden in dessen Garn gespeichert und im Prüfprotokoll festgehalten.</string>
+    <string name="owner_banner_project_title">Projekt von %1$s</string>
+    <string name="owner_banner_project_detail">Deine Änderungen werden in dessen Projekt gespeichert und im Prüfprotokoll festgehalten.</string>
+    <string name="owner_banner_yarn_title">Garn von %1$s</string>
+    <string name="owner_banner_yarn_detail">Deine Änderungen werden in dessen Garn gespeichert und im Prüfprotokoll festgehalten.</string>
     <string name="owner_filter_label">Anzeigen</string>
     <string name="owner_filter_mine">Meine</string>
     <string name="owner_filter_everyone">Alle</string>

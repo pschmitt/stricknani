@@ -3,12 +3,14 @@ package blue.anika.wolle.ui.common
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,23 +52,44 @@ fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier, size: Dp = 
  */
 @Composable
 fun OwnerBanner(banner: OwnerBannerData, modifier: Modifier = Modifier) {
-    val text =
+    val project = banner.kind == OwnedKind.Project
+    val title =
         stringResource(
-            if (banner.kind == OwnedKind.Project) R.string.owner_banner_project
-            else R.string.owner_banner_yarn,
+            if (project) R.string.owner_banner_project_title else R.string.owner_banner_yarn_title,
             banner.ownerName,
+        )
+    val detail =
+        stringResource(
+            if (project) R.string.owner_banner_project_detail else R.string.owner_banner_yarn_detail
         )
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.fillMaxWidth().testTag("owner-banner"),
+        modifier =
+            modifier.fillMaxWidth().testTag("owner-banner").semantics(mergeDescendants = true) {},
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
+        // The owner's picture, whose item it is, and that changes are saved there and audited
+        // (like the web's banner).
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+        ) {
+            AccountAvatar(
+                url = LocalOwnerContext.current.resolveUrl(banner.avatarUrl),
+                email = banner.ownerName,
+                size = 36.dp,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LocalContentColor.current.copy(alpha = 0.8f),
+                )
+            }
+        }
     }
 }
 

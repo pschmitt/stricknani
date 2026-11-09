@@ -1862,7 +1862,7 @@
               </section>
 
               <section class="form-card" aria-labelledby="writing-heading">
-                <h2 id="writing-heading">{t("Pattern and notes", locale)}</h2>
+                <h2 id="writing-heading">{t("Pattern", locale)}</h2>
                 <p class="section-hint">
                   {t(
                     "Use plain text or Markdown. The reader formats it safely for you.",

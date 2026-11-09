@@ -10,6 +10,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import AdminTabs from "./AdminTabs.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import AdminUserIdentities from "#lib/features/auth/AdminUserIdentities.svelte";
   import {
     getAuthOptions,
@@ -45,8 +46,8 @@
   let activeDialog = $state<HTMLDialogElement | null>(null);
   let resetDialog = $state<HTMLDialogElement | null>(null);
   let createOpener: HTMLButtonElement | null = null;
-  let activeOpener: HTMLButtonElement | null = null;
-  let resetOpener: HTMLButtonElement | null = null;
+  let activeOpener: HTMLElement | null = null;
+  let resetOpener: HTMLElement | null = null;
   let createEmailInput = $state<HTMLInputElement | null>(null);
   let resetPasswordInput = $state<HTMLInputElement | null>(null);
   let createEmail = $state("");
@@ -66,7 +67,7 @@
   let impersonateDialog = $state<ReturnType<typeof ConfirmDialog>>();
   let impersonateTarget = $state<AdminUser | null>(null);
   let impersonateError = $state("");
-  let impersonateOpener: HTMLButtonElement | null = null;
+  let impersonateOpener: HTMLElement | null = null;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -409,7 +410,24 @@
     return user.id !== userId && user.active && !user.is_admin;
   }
 
-  function askImpersonate(user: AdminUser, opener: HTMLButtonElement) {
+  /** The row's overflow button: focus goes back there after a menu action's dialog. */
+  function menuTrigger(item: HTMLElement): HTMLElement | null {
+    return item.closest("details")?.querySelector("summary") ?? null;
+  }
+
+  const identityDialogs: Record<
+    number,
+    ReturnType<typeof AdminUserIdentities>
+  > = $state({});
+
+  function hasIdentities(user: AdminUser): boolean {
+    return (
+      oidcProviders.length > 0 &&
+      (user.linked_identities === undefined || user.linked_identities > 0)
+    );
+  }
+
+  function askImpersonate(user: AdminUser, opener: HTMLElement | null) {
     impersonateTarget = user;
     impersonateOpener = opener;
     impersonateError = "";
@@ -511,7 +529,7 @@
     }
   }
 
-  function askReset(user: AdminUser, opener: HTMLButtonElement) {
+  function askReset(user: AdminUser, opener: HTMLElement | null) {
     resetTarget = user;
     resetOpener = opener;
     resetPasswordValue = "";
@@ -713,44 +731,77 @@
                 >
               {/if}
             </span>
-            <SharedButton
-              variant="ghost"
-              size="sm"
-              type="button"
-              class="icon-action"
-              disabled={operation !== null}
-              onclick={(event) => askReset(user, event.currentTarget)}
-              icon="key"
-              aria-label={t("Reset password", locale)}
-              title={t("Reset password", locale)}
-            />
-            {#if oidcProviders.length > 0 && (user.linked_identities === undefined || user.linked_identities > 0)}
+            <ActionOverflow
+              label={t("More for {email}", locale).replace(
+                "{email}",
+                user.email,
+              )}
+            >
+              {#snippet children(close)}
+                <div
+                  class="action-overflow__menu"
+                  role="menu"
+                  aria-label={t("More for {email}", locale).replace(
+                    "{email}",
+                    user.email,
+                  )}
+                >
+                  {#if hasIdentities(user)}
+                    <button
+                      class="action-overflow__item"
+                      role="menuitem"
+                      type="button"
+                      disabled={operation !== null}
+                      onclick={(event) => {
+                        const trigger = menuTrigger(event.currentTarget);
+                        close();
+                        identityDialogs[user.id]?.open(trigger);
+                      }}
+                    >
+                      <NavIcon name="link" />
+                      <span>{t("Linked logins", locale)}</span>
+                    </button>
+                  {/if}
+                  <button
+                    class="action-overflow__item"
+                    role="menuitem"
+                    type="button"
+                    disabled={operation !== null}
+                    onclick={(event) => {
+                      const trigger = menuTrigger(event.currentTarget);
+                      close();
+                      askReset(user, trigger);
+                    }}
+                  >
+                    <NavIcon name="key" />
+                    <span>{t("Reset password", locale)}</span>
+                  </button>
+                  {#if canImpersonate(user)}
+                    <button
+                      class="action-overflow__item"
+                      role="menuitem"
+                      type="button"
+                      disabled={operation !== null}
+                      onclick={(event) => {
+                        const trigger = menuTrigger(event.currentTarget);
+                        close();
+                        askImpersonate(user, trigger);
+                      }}
+                    >
+                      <NavIcon name="user-impersonate" />
+                      <span>{t("Impersonate", locale)}</span>
+                    </button>
+                  {/if}
+                </div>
+              {/snippet}
+            </ActionOverflow>
+            {#if hasIdentities(user)}
               <AdminUserIdentities
+                bind:this={identityDialogs[user.id]}
                 {user}
                 providers={oidcProviders}
-                disabled={operation !== null}
+                showTrigger={false}
               />
-            {:else}
-              <span class="action-slot action-slot--empty" aria-hidden="true"
-              ></span>
-            {/if}
-            {#if canImpersonate(user)}
-              <span class="action-slot">
-                <SharedButton
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  class="icon-action"
-                  disabled={operation !== null}
-                  onclick={(event) => askImpersonate(user, event.currentTarget)}
-                  icon="user-impersonate"
-                  aria-label={t("Impersonate", locale)}
-                  title={t("Impersonate", locale)}
-                />
-              </span>
-            {:else}
-              <span class="action-slot action-slot--empty" aria-hidden="true"
-              ></span>
             {/if}
           </div>
         </article>
@@ -1144,24 +1195,18 @@
     color: var(--warning);
     background: var(--warning-surface);
   }
-  /* Fixed slots: the disable/enable slot keeps its width in the current user's row so
-     Reset password and the identities link stay in the same columns. */
+  /* Fixed slots: the disable/enable slot keeps its width in every row so the overflow
+     menus line up. */
   .row-actions {
     display: grid;
-    /* Disable/Enable with its label, then three icon slots: password, identities, impersonate. */
-    grid-template-columns: 7.25rem 44px 44px 44px;
+    /* Disable/Enable with its label, then the overflow menu with the other actions. */
+    grid-template-columns: 7.25rem 44px;
     align-items: center;
     justify-content: start;
     gap: 0.35rem;
   }
   .action-slot {
     display: flex;
-  }
-  .row-actions :global(.icon-action) {
-    width: 44px;
-    min-height: 44px;
-    padding: 0;
-    justify-content: center;
   }
   .visually-hidden {
     position: absolute;
@@ -1329,9 +1374,6 @@
     }
     .action-slot {
       display: contents;
-    }
-    .action-slot--empty {
-      display: none;
     }
     .row-actions :global(.ui-button) {
       flex: 1;

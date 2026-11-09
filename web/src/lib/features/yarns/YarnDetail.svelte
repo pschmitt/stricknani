@@ -599,7 +599,7 @@
             <dd>{displayNumber(yarn.length_meters, t("m", locale))}</dd>
           </div>{/if}
         <div>
-          <dt>{t("Updated", locale)}</dt>
+          <dt><LabelIcon name="history" />{t("Updated", locale)}</dt>
           <dd>
             <time datetime={yarn.updated_at}>{formatDate(yarn.updated_at)}</time
             >
@@ -876,6 +876,11 @@
     display: grid;
     gap: 0;
     margin: 0;
+  }
+
+  /* The facts above already end in a line; a second one under them looked like a stray rule. */
+  .spec-panel :global(.source-row) {
+    border-top: 0;
   }
 
   /* The details card spans the page: two columns of facts on wide screens. */

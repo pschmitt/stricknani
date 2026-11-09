@@ -1118,10 +1118,10 @@
     >
       <dl class="materials-body">
         {#if yarns.length}
-          {#each yarns as yarn (yarn.id)}
-            <div>
-              <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
-              <dd>
+          <div>
+            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
+            {#each yarns as yarn (yarn.id)}
+              <dd class="yarn-tile">
                 <ResourceCard
                   kind="yarn"
                   href={adminData
@@ -1149,8 +1149,8 @@
                   </div>
                 {/if}
               </dd>
-            </div>
-          {/each}
+            {/each}
+          </div>
         {:else if yarnText}
           <div>
             <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
@@ -1204,7 +1204,7 @@
         <section class="pattern-section" aria-labelledby="pattern-heading">
           <div class="section-heading-row">
             <SectionHeading id="pattern-heading" icon="notebook"
-              >{t("Pattern and notes", locale)}</SectionHeading
+              >{t("Pattern", locale)}</SectionHeading
             >
             <span>{t("Your reference", locale)}</span>
           </div>
@@ -1213,7 +1213,7 @@
               <div class="rich-text">{@html project.description_html}</div>
             {:else}
               <p class="muted-copy">
-                {t("No pattern notes have been added yet.", locale)}
+                {t("No pattern description yet.", locale)}
               </p>
             {/if}
           </div>
@@ -1680,19 +1680,40 @@
 
   .step-navigation-link {
     display: grid;
+    box-sizing: border-box;
+    width: 100%;
     min-width: 0;
     min-height: 44px;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+    justify-items: start;
     align-content: center;
+    gap: 0.1rem;
     border: 1px solid var(--line);
     border-radius: var(--radius-xs);
-    padding: 0.35rem 0.6rem;
+    padding: 0.4rem 0.75rem;
     color: var(--accent-strong);
     background: var(--surface-raised);
     text-decoration: none;
     white-space: normal;
   }
 
+  .step-navigation-link > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .step-navigation-link :global(svg) {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+  }
+
   .step-navigation-link strong {
+    max-width: 100%;
     overflow: hidden;
     color: var(--ink);
     font-size: 0.82rem;
@@ -1702,6 +1723,7 @@
   }
 
   .next-step-link {
+    justify-items: end;
     text-align: right;
   }
 
@@ -1711,6 +1733,7 @@
 
   .step-progress {
     margin: 0;
+    text-align: center;
     color: var(--ink-muted);
     font-size: 0.82rem;
     font-weight: 650;
@@ -1920,9 +1943,28 @@
     align-items: center;
   }
 
+  /* A linked yarn: its card, and its notes (the amount) aligned under the name. */
+  .materials-body dd.yarn-tile {
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+    background: var(--surface-raised);
+  }
+
+  .materials-body dd.yarn-tile + dd.yarn-tile {
+    margin-top: 0.4rem;
+  }
+
   .yarn-notes {
+    /* The card's picture (3.25rem) and its gap (0.7rem). */
+    padding-left: 3.95rem;
     color: var(--ink-muted);
     font-size: 0.88rem;
+  }
+
+  .yarn-notes :global(p) {
+    margin: 0;
   }
 
   .materials-body a,

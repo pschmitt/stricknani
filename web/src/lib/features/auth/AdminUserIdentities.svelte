@@ -19,15 +19,18 @@
   /**
    * Per-user linked logins for administrators: a row action that opens a
    * dialog listing identities, with unlink behind step-up authentication.
+   * Without `showTrigger` the caller opens it with `open()` (a menu item).
    */
   let {
     user,
     providers,
     disabled = false,
+    showTrigger = true,
   }: {
     user: { id: number; email: string };
     providers: OidcProvider[];
     disabled?: boolean;
+    showTrigger?: boolean;
   } = $props();
 
   let dialog = $state<ReturnType<typeof ConfirmDialog>>();
@@ -36,7 +39,7 @@
   let status = $state<"loading" | "ready" | "error">("loading");
   let error = $state("");
   let busy = $state(false);
-  let opener: HTMLButtonElement | null = null;
+  let opener: HTMLElement | null = null;
   let generation = 0;
 
   const locale = $derived(session.data?.locale ?? "en");
@@ -65,10 +68,9 @@
     }
   }
 
-  function openDialog(
-    event: MouseEvent & { currentTarget: HTMLButtonElement },
-  ) {
-    opener = event.currentTarget;
+  /** Opens the dialog; focus returns to `from` when it closes. */
+  export function open(from: HTMLElement | null): void {
+    opener = from;
     identities = [];
     error = "";
     dialog?.showModal();
@@ -111,16 +113,18 @@
   }
 </script>
 
-<SharedButton
-  variant="ghost"
-  size="sm"
-  type="button"
-  {disabled}
-  onclick={openDialog}
-  icon="link"
-  aria-label={t("Linked logins", locale)}
-  title={t("Linked logins", locale)}
-/>
+{#if showTrigger}
+  <SharedButton
+    variant="ghost"
+    size="sm"
+    type="button"
+    {disabled}
+    onclick={(event) => open(event.currentTarget)}
+    icon="link"
+    aria-label={t("Linked logins", locale)}
+    title={t("Linked logins", locale)}
+  />
+{/if}
 
 <ConfirmDialog
   bind:this={dialog}

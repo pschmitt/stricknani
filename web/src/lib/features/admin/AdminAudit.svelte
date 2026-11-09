@@ -475,8 +475,7 @@
                         class="no-details"
                         data-audit-no-details
                         title={t("No details recorded", locale)}
-                        ><span aria-hidden="true">–</span><span
-                          class="visually-hidden"
+                        ><span class="visually-hidden"
                           >{t("No details recorded", locale)}</span
                         ></span
                       >

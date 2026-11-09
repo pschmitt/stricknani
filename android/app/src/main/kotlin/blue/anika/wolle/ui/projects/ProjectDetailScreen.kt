@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.projects
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -772,25 +773,43 @@ private fun ProjectDetailContent(
                             },
                         ) {
                             if (expanded) {
+                                // One tile per yarn: its row, and its notes (the amount)
+                                // aligned under the name, like the web.
                                 linkedYarns.forEachIndexed { index, yarn ->
-                                    if (index > 0) {
-                                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                                    }
-                                    LinkedEntityRow(
-                                        name = yarn.name,
-                                        previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
-                                        fallbackIcon = MdiIcons.YarnBall,
-                                        onClick = { onYarnClick(yarn.id) },
-                                    )
-                                    // The yarn's notes; no yarn source link here, the yarn page has
-                                    // it.
-                                    yarn.notes?.let {
-                                        ProjectMarkdown(
-                                            value = it,
-                                            resolveMediaUrl = resolveMediaUrl,
-                                            onImageClick = openViewerImage,
-                                            modifier = Modifier.padding(top = 4.dp),
-                                        )
+                                    Surface(
+                                        shape = MaterialTheme.shapes.medium,
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        border =
+                                            BorderStroke(
+                                                1.dp,
+                                                MaterialTheme.colorScheme.outlineVariant,
+                                            ),
+                                        modifier =
+                                            Modifier.fillMaxWidth()
+                                                .padding(top = if (index > 0) 8.dp else 0.dp),
+                                    ) {
+                                        Column(
+                                            Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                        ) {
+                                            LinkedEntityRow(
+                                                name = yarn.name,
+                                                previewUrl = yarn.previewUrl?.let(resolveMediaUrl),
+                                                fallbackIcon = MdiIcons.YarnBall,
+                                                onClick = { onYarnClick(yarn.id) },
+                                                subtitle = yarn.subtitle,
+                                            )
+                                            // The yarn's notes; no yarn source link here, the
+                                            // yarn page has it.
+                                            yarn.notes?.let {
+                                                ProjectMarkdown(
+                                                    value = it,
+                                                    resolveMediaUrl = resolveMediaUrl,
+                                                    onImageClick = openViewerImage,
+                                                    // The picture (48dp) and its gap (12dp).
+                                                    modifier = Modifier.padding(start = 60.dp),
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                                 // An older project's yarn text, when no yarn is linked (as on
@@ -1315,6 +1334,7 @@ internal fun LinkedEntityRow(
     previewUrl: String?,
     fallbackIcon: ImageVector,
     onClick: () -> Unit,
+    subtitle: String? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 4.dp),
@@ -1344,7 +1364,16 @@ internal fun LinkedEntityRow(
                 }
             }
         }
-        Text(name)
+        Column(Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.titleSmall)
+            subtitle?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

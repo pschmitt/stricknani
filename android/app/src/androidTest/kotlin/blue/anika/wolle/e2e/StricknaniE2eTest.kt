@@ -197,11 +197,11 @@ abstract class StricknaniE2eTest {
         openProjects()
         composeRule.onNodeWithText("Heirloom Baby Blanket").performClick()
         waitForText("Heirloom Baby Blanket")
-        // The pattern card (description and notes) is part of the seeded project.
+        // The pattern card (description) is part of the seeded project.
         composeRule
             .onNodeWithTag("e2e-project-detail")
-            .performScrollToNode(hasTextMatcher("Pattern and notes"))
-        waitForText("Pattern and notes", timeoutMillis = 120_000)
+            .performScrollToNode(hasTextMatcher("Pattern"))
+        waitForText("Pattern", timeoutMillis = 120_000)
     }
 
     protected fun openSettingsAccount() {

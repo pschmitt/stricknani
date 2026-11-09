@@ -72,6 +72,11 @@ class OwnerPresentationTest {
             OwnerBannerData("Anika", OwnedKind.Yarn),
             ownerBannerOf(badge, OwnedKind.Yarn),
         )
+        assertEquals(
+            "/a.png",
+            ownerBannerOf(project(7, "Anika", "/a.png").ownerBadge(1), OwnedKind.Project)
+                ?.avatarUrl,
+        )
         assertNull(ownerBannerOf(null, OwnedKind.Project))
         assertNull(ownerBannerOf(project(1, "Me").ownerBadge(1), OwnedKind.Project))
     }
