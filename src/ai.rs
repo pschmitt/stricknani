@@ -421,7 +421,7 @@ impl AiClient {
         let mut content = vec![json!({
             "type": "text",
             "text": format!(
-                "Extract and improve knitting pattern fields from the supplied source. Return one JSON object only, using camelCase field names matching this draft. Preserve the source language. Do not invent image URLs. Keep the source link unchanged.\n\nSource text:\n{}\n\nExisting parsed draft JSON:\n{}",
+                "Extract and improve knitting pattern fields from the supplied source. Return one JSON object only, using camelCase field names matching this draft. Preserve the source language. Do not invent image URLs. Keep the source link unchanged. Write description, otherMaterials and step descriptions as Markdown: keep the wording and numbers exactly, put each round or row instruction on its own line as a list item starting with its label in bold (for example '- **1. Runde:** ...'), and use paragraphs for separate ideas.\n\nSource text:\n{}\n\nExisting parsed draft JSON:\n{}",
                 input.source_text, draft_json
             )
         })];

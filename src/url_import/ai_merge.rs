@@ -26,7 +26,11 @@ Answer with exactly one JSON object that follows the given schema and nothing el
 Use null for every field the page does not state. Never guess, calculate or invent values, and copy numbers exactly as written. \
 Keep names and descriptions in the language of the page. Write fiber content like '75% Wool, 25% Nylon'. \
 weightCategory is one of Lace, Fingering, Sport, DK, Worsted, Aran, Bulky, Super Bulky or null. \
-weightGrams is the weight of one skein in grams and lengthMeters its length in meters (convert yards to meters only if the page gives no meters).";
+weightGrams is the weight of one skein in grams and lengthMeters its length in meters (convert yards to meters only if the page gives no meters). \
+Write description, otherMaterials and every step description as Markdown that is easy to follow while knitting: \
+keep the page's wording and numbers exactly, but put each round or row instruction on its own line as a list item \
+that starts with its label in bold (for example '- **1. Runde:** …' or '- **Rows 2-4:** …'), use separate paragraphs \
+for separate ideas, and use a short bulleted list for materials. Do not add headings, emphasis or words of your own.";
 
 /// Text shorter than this (in characters) counts as "the server could not read the page".
 pub const THIN_TEXT_CHARS: usize = 400;

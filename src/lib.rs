@@ -27,6 +27,7 @@ pub mod import_images;
 pub mod import_service;
 pub mod importer;
 pub mod imports;
+pub(crate) mod instruction_format;
 pub mod legacy_redirects;
 pub mod local;
 #[cfg(target_os = "android")]

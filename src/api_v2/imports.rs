@@ -237,6 +237,8 @@ pub(super) async fn build_preview(
         )
         .await
     };
+    // Run-together rounds and rows ("1. RUNDE: … 2.-4. RUNDE: …") become a readable list.
+    crate::instruction_format::format_steps(&mut draft.project.steps);
     let enrich = url_import && ai_target == ImportTarget::Project && state.app.external_imports;
     Ok(finish_preview(
         &state.app.pool,
