@@ -47,7 +47,7 @@ msgstr "Hauptnavigation"
 #: web/src/lib/features/account/BackupsSection.svelte:442
 #: web/src/lib/features/projects/ProjectLibrary.svelte:216
 #: web/src/lib/features/projects/ProjectLibrary.svelte:227
-#: web/src/lib/nav-items.ts:19
+#: web/src/lib/nav-items.ts:13
 msgid "Projects"
 msgstr "Projekte"
 
@@ -57,7 +57,7 @@ msgstr "Projekte"
 #: web/src/lib/features/yarns/YarnDetail.svelte:340
 #: web/src/lib/features/yarns/YarnLibrary.svelte:162
 #: web/src/lib/features/yarns/YarnLibrary.svelte:173
-#: web/src/lib/nav-items.ts:20
+#: web/src/lib/nav-items.ts:14
 msgid "Yarns"
 msgstr "Garne"
 
@@ -934,7 +934,7 @@ msgstr "Kommst du nicht mehr rein?"
 #: web/src/lib/components/CommandPalette.svelte:112
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/lib/nav-items.ts:25 web/src/routes/more/+page.svelte:30
+#: web/src/lib/nav-items.ts:19 web/src/routes/more/+page.svelte:30
 msgid "Categories"
 msgstr "Kategorien"
 
@@ -1276,7 +1276,7 @@ msgid "Cover picture"
 msgstr "Titelbild"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:263
-#: web/src/lib/nav-items.ts:21 web/src/routes/create/+page.svelte:41
+#: web/src/lib/nav-items.ts:15 web/src/routes/create/+page.svelte:41
 #: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:88
 msgid "Create"
 msgstr "Erstellen"
@@ -1933,7 +1933,7 @@ msgstr "Maschenprobe"
 #: web/src/lib/components/AuthFooter.svelte:20
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/lib/nav-items.ts:26 web/src/routes/more/+page.svelte:39
+#: web/src/lib/nav-items.ts:20 web/src/routes/more/+page.svelte:39
 msgid "Gauge calculator"
 msgstr "Maschenprobe berechnen"
 
@@ -2053,7 +2053,7 @@ msgstr ""
 " Timer, auch geteilte, laufen weiter, bis sie gestoppt werden."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:128
-#: web/src/lib/nav-items.ts:18
+#: web/src/lib/nav-items.ts:12
 msgid "Home"
 msgstr "Start"
 

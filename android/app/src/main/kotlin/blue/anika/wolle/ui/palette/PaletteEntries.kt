@@ -8,7 +8,6 @@ import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.TopLevelDestination
 import blue.anika.wolle.ui.settings.SettingsCategory
-import blue.anika.wolle.ui.share.ShareImportKind
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -98,10 +97,7 @@ object PaletteEntries {
                     title = s(R.string.palette_action_import_pattern),
                     sub = url,
                     icon = PaletteIcon.Import,
-                    target =
-                        PaletteTarget.Go(
-                            Route.CreateImport(ShareImportKind.Project.name, url, autoStart = true)
-                        ),
+                    target = PaletteTarget.Go(Route.ProjectEditor(importUrl = url)),
                 )
             out +=
                 PaletteEntry(
@@ -110,10 +106,7 @@ object PaletteEntries {
                     title = s(R.string.palette_action_import_yarn),
                     sub = url,
                     icon = PaletteIcon.Yarns,
-                    target =
-                        PaletteTarget.Go(
-                            Route.CreateImport(ShareImportKind.Yarn.name, url, autoStart = true)
-                        ),
+                    target = PaletteTarget.Go(Route.YarnEditor(importUrl = url)),
                 )
         }
         out +=

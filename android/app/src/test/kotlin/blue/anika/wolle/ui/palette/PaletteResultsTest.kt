@@ -128,11 +128,11 @@ class PaletteResultsTest {
         val rows = groups.single().rows.map { it.entry }
         assertEquals(listOf("action:import-project", "action:import-yarn"), rows.map { it.id })
         assertEquals(
-            Route.CreateImport("Project", url, autoStart = true),
+            Route.ProjectEditor(importUrl = url),
             (rows[0].target as PaletteTarget.Go).route,
         )
         assertEquals(
-            Route.CreateImport("Yarn", url, autoStart = true),
+            Route.YarnEditor(importUrl = url),
             (rows[1].target as PaletteTarget.Go).route,
         )
     }
