@@ -385,20 +385,28 @@ Use this file as the operational source of truth for working in Stricknani.
   Use compact variants in audit and related-resource lists. Cross-owner audit
   cards must use the separate read-only administrator links and media routes.
 
-### UI Parity (Web & Android)
+### UI Parity (Web & Android) - hard rule
 
-- The web app (`web/`) and the Android app (`android/`) are one product: keep
-  their layout, structure, wording and visual language in sync.
-- A UI change on one side (a new card or section, a reordered form, renamed
-  copy, a new interaction) needs the matching change on the other side in the
-  same task. If that isn't possible yet, for example because it needs an API
-  change first, add a follow-up entry to the other side's TODO and mention it
-  in the commit message and the hand-off.
+- The web app (`web/`) and the Android app (`android/`) are one product. Same
+  features, same behaviour, same wording, same order, same modes and states.
+  Differences are bugs. The user keeps finding small ones; do not add more.
+- Every UI change lands on both sides in the same task and the same landing:
+  a new card or section, a reordered form, renamed copy, a new control, a new
+  mode (for example the markdown editor's Visual / Raw), an empty, loading,
+  disabled or error state. "Android already does something similar" is not
+  parity: compare labels, options, order and behaviour one by one.
+- Only when the other side truly cannot follow yet (it needs an API change
+  first), land a follow-up entry in the other side's TODO in the same commit,
+  and say so in the commit message and the hand-off. Never leave a silent gap.
+- Before calling a UI task done, write a short parity check in the hand-off:
+  each changed screen, what web and Android now show, and any remaining
+  difference with its TODO entry.
 - Use the same English and German wording on both sides (`web` catalogs and
-  `android/app/src/main/res/values{,-de}/strings.xml`).
-- Platform conventions may differ (bottom bar vs. sidebar, sheets vs.
-  dialogs), but the order of sections and what each screen offers should
-  match.
+  `android/app/src/main/res/values{,-de}/strings.xml`), the same icons where
+  both icon sets have them, and the same defaults.
+- Only true platform conventions may differ (bottom bar vs. sidebar, sheets vs.
+  dialogs, system pickers, hover vs. long-press). What each screen offers, its
+  section order and its wording do not.
 
 ### Release/CI Parity
 
