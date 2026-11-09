@@ -45,6 +45,21 @@ describe("history API", () => {
     expect(page.meta.has_more).toBe(true);
   });
 
+  it("keeps the person of a sharing event", () => {
+    const page = parseHistoryPage({
+      data: [
+        event(3, {
+          action: "ownership_transferred",
+          subject: { id: 2, name: "Anika", role: null },
+        }),
+        event(2, { action: "shared", subject: "bogus" }),
+      ],
+      meta: { page: 1, per_page: 20, has_more: false },
+    });
+    expect(page.data[0].subject).toEqual({ id: 2, name: "Anika", role: null });
+    expect(page.data[1].subject).toBeNull();
+  });
+
   it("rejects malformed events and drops non-local avatars", () => {
     expect(() =>
       parseHistoryPage({ data: [{ id: 1 }], meta: { page: 1 } }),

@@ -90,6 +90,17 @@ export function parseHistoryEvent(value: unknown): HistoryEvent {
     media: parseAuditMedia(value.media),
     media_thumbnails: parseChangeMedia(value.media_thumbnails),
     impersonated_by: parseImpersonator(value.impersonated_by),
+    subject: parseSubject(value.subject),
+  };
+}
+
+function parseSubject(value: unknown): HistorySubject | null {
+  if (!record(value)) return null;
+  const id = value.id;
+  return {
+    id: typeof id === "number" && Number.isSafeInteger(id) ? id : null,
+    name: typeof value.name === "string" ? value.name : null,
+    role: typeof value.role === "string" ? value.role : null,
   };
 }
 
