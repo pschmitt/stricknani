@@ -8,10 +8,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.model.HeadingStyle
+import com.mohamedrejeb.richeditor.model.RichTextState
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MarkdownRichTest {
@@ -53,14 +52,14 @@ class MarkdownRichTest {
     fun equivalentSpellingsAreNormalized() {
         assertEquals("- one\n- two", roundTrip("* one\n* two"))
         assertEquals(
-            "- one\n    - nested a\n    - nested b\n- two",
+            "- one\n  - nested a\n  - nested b\n- two",
             roundTrip("- one\n  - nested a\n  - nested b\n- two"),
         )
-        assertEquals("1. one\n    1. sub\n2. two", roundTrip("1. one\n   1. sub\n2. two"))
+        assertEquals("1. one\n   1. sub\n2. two", roundTrip("1. one\n   1. sub\n2. two"))
         assertEquals("Intro:\n\n- a\n- b", roundTrip("Intro:\n- a\n- b"))
         assertEquals("a\n\nb", roundTrip("a\n\n\nb"))
         assertEquals("text", roundTrip("text\n"))
-        assertEquals("snake_case and *em* here", roundTrip("snake_case and _em_ here"))
+        assertEquals("snake\\_case and *em* here", roundTrip("snake_case and _em_ here"))
         assertEquals("1. first\n2. second", roundTrip("1) first\n2) second"))
     }
 
@@ -84,9 +83,6 @@ class MarkdownRichTest {
                 "```\ncode\n```",
                 "<b>html</b>",
                 "line one  \nline two",
-                "Rnd 1: *k2, p2; repeat from * to end.",
-                "5 * 3 = 15 and a_b_c",
-                "price \\* 3",
                 "[x] done",
                 "---",
             )
@@ -99,16 +95,53 @@ class MarkdownRichTest {
         assertEquals(text, roundTrip(text, keep = true))
     }
 
-    @Test
-    fun editedTextThatReadsBackDifferentlyIsRejected() {
-        val state = MarkdownRich.toRich("5")
-        state.selection = TextRange(1)
-        state.addTextAfterSelection(" * 3 = 15")
+    private fun typed(text: String): String {
+        val state = RichTextState()
+        state.addTextAfterSelection(text)
         val markdown = MarkdownRich.toMarkdown(state)
-        assertFalse(MarkdownRich.survivesEdit(state, markdown))
+        // Reading it back gives the typed characters, and the field can stay visual.
+        assertEquals(text, MarkdownRich.toRich(markdown).toText())
+        assertEquals(markdown, roundTrip(markdown))
+        return markdown
+    }
 
-        val fine = MarkdownRich.toRich("**bold** text")
-        assertTrue(MarkdownRich.survivesEdit(fine, MarkdownRich.toMarkdown(fine)))
+    /** Characters that mean something in Markdown are escaped, and come back as typed. */
+    @Test
+    fun typedMarkdownCharactersAreEscaped() {
+        assertEquals("5 \\* 3 = 15", typed("5 * 3 = 15"))
+        assertEquals("\\* k2, p2 \\* repeat", typed("* k2, p2 * repeat"))
+        assertEquals("a \\_x\\_ b", typed("a _x_ b"))
+        assertEquals("\\# not a heading", typed("# not a heading"))
+        assertEquals("\\[a\\] and \\[b\\](c)", typed("[a] and [b](c)"))
+        assertEquals("back\\\\slash \\`tick\\` \\~", typed("back\\slash `tick` ~"))
+        assertEquals("1\\. not a list", typed("1. not a list"))
+        assertEquals("\\- not a bullet", typed("- not a bullet"))
+        assertEquals("a < b, I <3 yarn", typed("a < b, I <3 yarn"))
+    }
+
+    @Test
+    fun escapesInLoadedMarkdownBecomeLiterals() {
+        assertEquals(
+            "price * 3 and 1. not list",
+            MarkdownRich.toRich("price \\* 3 and 1\\. not list").toText(),
+        )
+        assertEquals("a_b", MarkdownRich.toRich("a\\_b").toText())
+        // A backslash inside a code span stays.
+        assertEquals("a\\*b", MarkdownRich.toRich("`a\\*b`").toText())
+        assertEquals("price \\* 3", roundTrip("price \\* 3"))
+    }
+
+    @Test
+    fun strayDelimitersInOldTextStayLiteral() {
+        assertEquals(
+            "Rnd 1: \\* k2, p2 \\* repeat",
+            roundTrip("Rnd 1: * k2, p2 * repeat"),
+        )
+        assertEquals(
+            "Rnd 1: * k2, p2 * repeat",
+            MarkdownRich.toRich("Rnd 1: * k2, p2 * repeat").toText(),
+        )
+        assertEquals("5 \\* 3 = 15 and a\\_b\\_c", roundTrip("5 * 3 = 15 and a_b_c"))
     }
 
     @Test

@@ -1,5 +1,12 @@
+@file:OptIn(ExperimentalRichTextApi::class)
+
 package blue.anika.wolle.ui.common
 
+import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
+import com.mohamedrejeb.richeditor.document.RichTextBlock
+import com.mohamedrejeb.richeditor.document.RichTextBlockType
+import com.mohamedrejeb.richeditor.document.RichTextDocument
+import com.mohamedrejeb.richeditor.document.RichTextSpanMark
 import com.mohamedrejeb.richeditor.model.RichTextState
 import org.intellij.markdown.IElementType
 import org.intellij.markdown.MarkdownElementTypes
@@ -7,16 +14,21 @@ import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.flavours.gfm.GFMElementTypes
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.flavours.gfm.GFMTokenTypes
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
 
 /**
  * The Markdown <-> rich text model behind the visual editor, the Android counterpart of the web's
- * `markdown-model.ts`. The rich editor library reads and writes Markdown through its own mapping,
- * which does not carry everything (tables, quotes, code blocks, HTML, images, ...). Like the web,
- * [canEditVisually] proves that a text survives the round trip before the visual editor may open
- * it: the text is converted to rich text and back, and both Markdown strings must render to the
- * same HTML. Anything else is edited as Markdown ("Raw"), so nothing is mangled.
+ * `markdown-model.ts`. The rich editor library is only the editing model: Markdown is read with its
+ * parser (after backslash escapes are turned into literal characters) and written by [toMarkdown],
+ * which escapes every character that would otherwise mean something, as prosemirror-markdown does
+ * on the web. So typed text such as `5 * 3`, `* k2, p2 *` or `# not a heading` round-trips and no
+ * edit is ever refused.
+ *
+ * What the model cannot carry (tables, quotes, code blocks, HTML, pictures, ...) is detected when a
+ * text is loaded: [canEditVisually] converts it to rich text and back and both Markdown strings
+ * must render to the same HTML, like the web. Anything else is edited as Markdown ("Raw").
  */
 internal object MarkdownRich {
     private val flavour = GFMFlavourDescriptor()
@@ -37,7 +49,7 @@ internal object MarkdownRich {
             MarkdownElementTypes.SETEXT_1,
             MarkdownElementTypes.SETEXT_2,
             MarkdownTokenTypes.HORIZONTAL_RULE,
-            // The editor cannot display (or resolve `/media/...`) pictures: keep them in Raw.
+            // Pictures are not shown inline yet (SNA-108): keep them in Raw.
             MarkdownElementTypes.IMAGE,
         )
 
@@ -54,31 +66,126 @@ internal object MarkdownRich {
         return html.replace(whitespace, " ").replace("> <", "><").trim()
     }
 
-    /** A rich text state holding [markdown]. */
-    fun toRich(markdown: String): RichTextState =
-        RichTextState().setMarkdown(markdown.replace("\r\n", "\n"))
+    // --- Loading -----------------------------------------------------------------------------
+
+    /** Backslash-escaped ASCII punctuation becomes one private-use character (same length). */
+    private const val PLACEHOLDER_BASE = 0xE000
+    private val codeSpanOrEscape = Regex("(`+)[\\s\\S]*?\\1|\\\\([!-/:-@\\[-`{-~])|(=)")
+
+    private fun placeholder(c: Char) = (PLACEHOLDER_BASE + c.code).toChar()
+
+    private fun isPlaceholder(c: Char) =
+        c.code in (PLACEHOLDER_BASE + 0x21)..(PLACEHOLDER_BASE + 0x7e)
+
+    private fun restore(text: String): String =
+        if (text.none(::isPlaceholder)) text
+        else
+            buildString {
+                for (c in text) append(
+                    if (isPlaceholder(c)) (c.code - PLACEHOLDER_BASE).toChar() else c
+                )
+            }
+
+    /**
+     * Put a backslash before `*`, `_` and `~` that are not emphasis delimiters, list bullets or
+     * part of a link target or code span, so they stay literal text. (The library would otherwise
+     * reshuffle the spaces around them.)
+     */
+    private fun escapeStrayDelimiters(markdown: String): String {
+        val tree = parse(markdown)
+        val real = HashSet<Int>()
+        val skipped = mutableListOf<IntRange>()
+        val delimiterParents =
+            setOf(
+                MarkdownElementTypes.EMPH,
+                MarkdownElementTypes.STRONG,
+                GFMElementTypes.STRIKETHROUGH,
+            )
+        val opaque =
+            setOf(
+                MarkdownElementTypes.CODE_SPAN,
+                MarkdownElementTypes.LINK_DESTINATION,
+                MarkdownElementTypes.AUTOLINK,
+                GFMTokenTypes.GFM_AUTOLINK,
+                MarkdownTokenTypes.URL,
+                MarkdownTokenTypes.EMAIL_AUTOLINK,
+                MarkdownTokenTypes.LIST_BULLET,
+            )
+
+        fun walk(node: ASTNode) {
+            if (node.type in opaque) {
+                skipped.add(node.startOffset until node.endOffset)
+                return
+            }
+            if (node.type in delimiterParents) {
+                node.children
+                    .filter { it.type == MarkdownTokenTypes.EMPH || it.type == GFMTokenTypes.TILDE }
+                    .forEach { for (i in it.startOffset until it.endOffset) real.add(i) }
+            }
+            node.children.forEach(::walk)
+        }
+        walk(tree)
+        val out = StringBuilder()
+        var backslashes = 0
+        for ((i, c) in markdown.withIndex()) {
+            val delimiter = c == '*' || c == '_' || c == '~'
+            if (delimiter && backslashes % 2 == 0 && i !in real && skipped.none { i in it }) {
+                out.append('\\')
+            }
+            backslashes = if (c == '\\') backslashes + 1 else 0
+            out.append(c)
+        }
+        return out.toString()
+    }
+
+    private fun prepare(markdown: String): String {
+        val source = markdown.replace("\r\n", "\n")
+        val escaped = escapeStrayDelimiters(source)
+        return codeSpanOrEscape.replace(escaped) { match ->
+            // The library drops a bare `=` (a setext token) from text, so it is carried too.
+            val literal = match.groups[2] ?: match.groups[3]
+            if (literal == null) match.value else placeholder(literal.value[0]).toString()
+        }
+    }
+
+    private fun restoreLiterals(state: RichTextState) {
+        val document = state.toRichTextDocument()
+        val changed =
+            document.blocks.any { block ->
+                block.text.any(::isPlaceholder) ||
+                    block.spans.any { it is RichTextSpanMark.Link && it.url.any(::isPlaceholder) }
+            }
+        if (!changed) return
+        val blocks =
+            document.blocks.map { block ->
+                block.copy(
+                    text = restore(block.text),
+                    spans =
+                        block.spans.map { mark ->
+                            if (mark is RichTextSpanMark.Link) mark.copy(url = restore(mark.url))
+                            else mark
+                        },
+                )
+            }
+        state.setRichTextDocument(RichTextDocument(blocks))
+    }
 
     /** Replace the content of [state] with [markdown]. */
     fun load(state: RichTextState, markdown: String) {
-        state.setMarkdown(markdown.replace("\r\n", "\n"))
+        state.setMarkdown(prepare(markdown))
+        restoreLiterals(state)
     }
 
-    private fun plain(text: String): String = text.replace(whitespace, " ").trim()
+    /** A rich text state holding [markdown]. */
+    fun toRich(markdown: String): RichTextState = RichTextState().also { load(it, markdown) }
 
-    /**
-     * True when [markdown], written for the edited [state], reads back as the same text. The
-     * library does not escape characters that mean something in Markdown (`*`, `_`, `#`, `[`), so a
-     * typed `5 * 3` would come back changed; such an edit must not be saved.
-     */
-    fun survivesEdit(state: RichTextState, markdown: String): Boolean =
-        try {
-            plain(toRich(markdown).toText()) == plain(state.toText())
-        } catch (_: Exception) {
-            false
-        }
+    // --- Writing -----------------------------------------------------------------------------
 
     /** The Markdown of [state], without trailing blank lines. */
-    fun toMarkdown(state: RichTextState): String = state.toMarkdown().trimEnd()
+    fun toMarkdown(state: RichTextState, keepLineBreaks: Boolean = false): String =
+        MarkdownWriter.write(state.toRichTextDocument(), keepLineBreaks)
+
+    // --- Guard -------------------------------------------------------------------------------
 
     /**
      * The Markdown the visual editor would write for [markdown] when nothing was edited, or null
@@ -89,7 +196,7 @@ internal object MarkdownRich {
         if (markdown.isBlank()) return ""
         return try {
             if (hasUnsupported(parse(markdown))) return null
-            val again = toMarkdown(toRich(markdown))
+            val again = toMarkdown(toRich(markdown), keepLineBreaks)
             if (again.isBlank() || hasUnsupported(parse(again))) return null
             again.takeIf {
                 renderedHtml(markdown, keepLineBreaks) == renderedHtml(it, keepLineBreaks)
@@ -101,4 +208,219 @@ internal object MarkdownRich {
 
     fun canEditVisually(markdown: String, keepLineBreaks: Boolean): Boolean =
         roundTrip(markdown, keepLineBreaks) != null
+}
+
+/** Rich text document to Markdown: `-` bullets, `*em*`, `**strong**`, everything else escaped. */
+internal object MarkdownWriter {
+    private sealed interface Token {
+        data object Bold : Token
+
+        data object Italic : Token
+
+        data object Strike : Token
+
+        data object Code : Token
+
+        data class Link(val url: String) : Token
+    }
+
+    fun write(document: RichTextDocument, keepLineBreaks: Boolean): String {
+        val lines = mutableListOf<String>()
+        // Marker widths of the open list items, by level, and ordered counters.
+        val widths = mutableListOf<Int>()
+        val counters = mutableListOf<Int>()
+        var previous: RichTextBlock? = null
+        for (block in document.blocks) {
+            val type = block.type
+            val body = inline(block.text, block.spans)
+            val isEmpty = body.isEmpty()
+            val prefix: String
+            if (type is RichTextBlockType.ListItem) {
+                val level = type.indent
+                while (widths.size > level + 1) widths.removeAt(widths.lastIndex)
+                while (counters.size > level + 1) counters.removeAt(counters.lastIndex)
+                while (widths.size < level + 1) widths.add(2)
+                while (counters.size < level + 1) counters.add(0)
+                val marker =
+                    if (type.ordered) {
+                        val number = type.startNumber ?: (counters[level] + 1)
+                        counters[level] = number
+                        "$number."
+                    } else {
+                        counters[level] = 0
+                        "-"
+                    }
+                widths[level] = marker.length + 1
+                prefix = " ".repeat(widths.take(level).sum()) + marker + if (isEmpty) "" else " "
+            } else {
+                widths.clear()
+                counters.clear()
+                prefix =
+                    if (block.headingLevel in 1..6 && !isEmpty) "#".repeat(block.headingLevel) + " "
+                    else ""
+            }
+            val line = prefix + body
+            val prev = previous
+            if (prev != null && lines.isNotEmpty()) {
+                val prevList = prev.type is RichTextBlockType.ListItem
+                val thisList = type is RichTextBlockType.ListItem
+                val prevBlank = prev.text.isBlank()
+                val needsBlank =
+                    !prevBlank &&
+                        !isEmpty &&
+                        ((!prevList && thisList) ||
+                            (prevList && !thisList) ||
+                            (!keepLineBreaks &&
+                                !prevList &&
+                                !thisList &&
+                                prev.headingLevel == 0 &&
+                                block.headingLevel == 0))
+                if (needsBlank) lines.add("")
+            }
+            lines.add(line)
+            previous = block
+        }
+        return lines.joinToString("\n").trimEnd()
+    }
+
+    private fun inline(rawText: String, spans: List<RichTextSpanMark>): String {
+        val text = rawText.replace('\n', ' ')
+        var start = 0
+        var end = text.length
+        while (start < end && text[start].isWhitespace()) start++
+        while (end > start && text[end - 1].isWhitespace()) end--
+        if (start >= end) return ""
+
+        val bold = BooleanArray(text.length)
+        val italic = BooleanArray(text.length)
+        val strike = BooleanArray(text.length)
+        val code = BooleanArray(text.length)
+        val links = arrayOfNulls<String>(text.length)
+        fun fill(flags: BooleanArray, range: IntRange) {
+            for (i in range) if (i in text.indices) flags[i] = true
+        }
+        for (mark in spans) {
+            when (mark) {
+                is RichTextSpanMark.Bold -> fill(bold, mark.range)
+                is RichTextSpanMark.Italic -> fill(italic, mark.range)
+                is RichTextSpanMark.Strikethrough -> fill(strike, mark.range)
+                is RichTextSpanMark.CodeSpan -> fill(code, mark.range)
+                is RichTextSpanMark.Link ->
+                    for (i in mark.range) if (i in text.indices) links[i] = mark.url
+                is RichTextSpanMark.Image -> Unit
+                else -> Unit
+            }
+        }
+        // Emphasis cannot start or end with a space: the spaces move outside the markers.
+        for (flags in listOf(bold, italic, strike, code)) trimEdges(text, flags)
+        val linkKeys = links.filterNotNull().distinct()
+        for (url in linkKeys) {
+            val flags = BooleanArray(text.length) { links[it] == url }
+            trimEdges(text, flags)
+            for (i in text.indices) if (links[i] == url && !flags[i]) links[i] = null
+        }
+
+        val out = StringBuilder()
+        var open = emptyList<Token>()
+        var i = start
+        while (i < end) {
+            val wanted = buildList {
+                links[i]?.let { add(Token.Link(it)) }
+                if (bold[i]) add(Token.Bold)
+                if (italic[i]) add(Token.Italic)
+                if (strike[i]) add(Token.Strike)
+                if (code[i]) add(Token.Code)
+            }
+            var common = 0
+            while (common < open.size && common < wanted.size && open[common] == wanted[common]) {
+                common++
+            }
+            for (k in open.lastIndex downTo common) out.append(close(open[k]))
+            for (k in common until wanted.size) out.append(open(wanted[k]))
+            open = wanted
+            var j = i + 1
+            while (
+                j < end &&
+                    bold[j] == bold[i] &&
+                    italic[j] == italic[i] &&
+                    strike[j] == strike[i] &&
+                    code[j] == code[i] &&
+                    links[j] == links[i]
+            ) {
+                j++
+            }
+            val run = text.substring(i, j)
+            out.append(if (code[i]) run else escape(run, atLineStart = out.isEmpty()))
+            i = j
+        }
+        for (k in open.lastIndex downTo 0) out.append(close(open[k]))
+        return out.toString()
+    }
+
+    private fun trimEdges(text: String, flags: BooleanArray) {
+        var i = 0
+        while (i < flags.size) {
+            if (!flags[i]) {
+                i++
+                continue
+            }
+            var j = i
+            while (j < flags.size && flags[j]) j++
+            var a = i
+            var b = j
+            while (a < b && text[a].isWhitespace()) flags[a++] = false
+            while (b > a && text[b - 1].isWhitespace()) flags[--b] = false
+            i = j
+        }
+    }
+
+    private fun open(token: Token): String =
+        when (token) {
+            Token.Bold -> "**"
+            Token.Italic -> "*"
+            Token.Strike -> "~~"
+            Token.Code -> "`"
+            is Token.Link -> "["
+        }
+
+    private fun close(token: Token): String =
+        when (token) {
+            is Token.Link -> "](${destination(token.url)})"
+            else -> open(token)
+        }
+
+    private fun destination(url: String): String =
+        url.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
+
+    private val entityAhead = Regex("^&(#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);")
+    private val orderedMarker = Regex("^(\\d{1,9})([.)])(\\s|$)")
+
+    /** Escape what would mean Markdown, like prosemirror-markdown's `esc`. */
+    fun escape(text: String, atLineStart: Boolean): String {
+        val sb = StringBuilder(text.length + 4)
+        for ((index, c) in text.withIndex()) {
+            when {
+                c == '\\' || c == '`' || c == '*' || c == '_' || c == '[' || c == ']' || c == '~' ->
+                    sb.append('\\').append(c)
+                c == '<' &&
+                    index + 1 < text.length &&
+                    (text[index + 1].isLetter() || text[index + 1] in "/!?") -> sb.append("\\<")
+                c == '&' && entityAhead.containsMatchIn(text.substring(index)) -> sb.append("\\&")
+                else -> sb.append(c)
+            }
+        }
+        if (!atLineStart) return sb.toString()
+        val escaped = sb.toString()
+        return when {
+            Regex("^#{1,6}(\\s|$)").containsMatchIn(escaped) -> "\\$escaped"
+            Regex("^[>+]").containsMatchIn(escaped) -> "\\$escaped"
+            Regex("^-+(\\s|$)").containsMatchIn(escaped) -> "\\$escaped"
+            Regex("^=+\\s*$").containsMatchIn(escaped) -> "\\$escaped"
+            Regex("^-{3,}\\s*$").containsMatchIn(escaped) -> "\\$escaped"
+            else ->
+                orderedMarker.replace(escaped) {
+                    "${it.groupValues[1]}\\${it.groupValues[2]}${it.groupValues[3]}"
+                }
+        }
+    }
 }

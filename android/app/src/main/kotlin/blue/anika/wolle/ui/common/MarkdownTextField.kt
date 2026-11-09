@@ -30,9 +30,6 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldColors
@@ -77,8 +74,9 @@ import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
  *
  * Nothing is mangled: before the visual editor opens a text it converts it to rich text and back
  * and compares the result (see [MarkdownRich.canEditVisually]); a text the editor cannot carry
- * losslessly (tables, quotes, pictures, ...) stays in Raw with a hint. The field emits Markdown
- * only when the user edits, so opening a field never makes a form dirty.
+ * losslessly (tables, quotes, pictures, ...) stays in Raw with a hint. Writing escapes literal
+ * Markdown characters, so no edit is ever refused. The field emits Markdown only when the user
+ * edits, so opening a field never makes a form dirty.
  */
 @Composable
 internal fun MarkdownTextField(
@@ -112,7 +110,7 @@ internal fun MarkdownTextField(
         val ok = MarkdownRich.canEditVisually(currentValue, keepLineBreaks)
         if (ok) {
             MarkdownRich.load(rich, currentValue)
-            written = MarkdownRich.toMarkdown(rich)
+            written = MarkdownRich.toMarkdown(rich, keepLineBreaks)
         }
         unsupported = !ok
         return ok
@@ -138,7 +136,7 @@ internal fun MarkdownTextField(
         if (visual) {
             if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
                 MarkdownRich.load(rich, value)
-                written = MarkdownRich.toMarkdown(rich)
+                written = MarkdownRich.toMarkdown(rich, keepLineBreaks)
             } else {
                 unsupported = true
                 visual = false
@@ -152,14 +150,8 @@ internal fun MarkdownTextField(
         if (!visual) return@LaunchedEffect
         snapshotFlow { rich.annotatedString }
             .collect {
-                val markdown = MarkdownRich.toMarkdown(rich)
+                val markdown = MarkdownRich.toMarkdown(rich, keepLineBreaks)
                 if (markdown == written) return@collect
-                if (!MarkdownRich.survivesEdit(rich, markdown)) {
-                    // Writing this would change the text: keep the last good Markdown, in Raw.
-                    unsupported = true
-                    visual = false
-                    return@collect
-                }
                 written = markdown
                 known = markdown
                 currentOnChange(markdown)
@@ -285,35 +277,35 @@ internal fun MarkdownTextField(
                     }
                 }
             }
-            val modeDescription = stringResource(R.string.markdown_editor_mode)
-            SingleChoiceSegmentedButtonRow(
-                Modifier.semantics { contentDescription = modeDescription }
-            ) {
-                SegmentedButton(
-                    selected = visual,
-                    onClick = {
+            SegmentedControl(
+                options =
+                    listOf(
+                        SegmentedOption(
+                            MarkdownEditorMode.VISUAL,
+                            stringResource(R.string.markdown_editor_visual),
+                        ),
+                        SegmentedOption(
+                            MarkdownEditorMode.RAW,
+                            stringResource(R.string.markdown_editor_raw),
+                        ),
+                    ),
+                selected = if (visual) MarkdownEditorMode.VISUAL else MarkdownEditorMode.RAW,
+                onSelect = { mode ->
+                    if (mode == MarkdownEditorMode.VISUAL) {
                         if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
                             MarkdownEditorModeStore.set(context, MarkdownEditorMode.VISUAL)
                             if (!visual) visual = enterVisual()
                         } else {
                             unsupported = true
                         }
-                    },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
-                ) {
-                    Text(stringResource(R.string.markdown_editor_visual), maxLines = 1)
-                }
-                SegmentedButton(
-                    selected = !visual,
-                    onClick = {
+                    } else {
                         visual = false
                         MarkdownEditorModeStore.set(context, MarkdownEditorMode.RAW)
-                    },
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
-                ) {
-                    Text(stringResource(R.string.markdown_editor_raw), maxLines = 1)
-                }
-            }
+                    }
+                },
+                label = stringResource(R.string.markdown_editor_mode),
+                compact = true,
+            )
         }
         if (visual && linkOpen) {
             LinkRow(
