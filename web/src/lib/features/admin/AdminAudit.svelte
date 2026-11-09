@@ -1,6 +1,5 @@
 <script lang="ts">
   import SharedButton from "#lib/components/Button.svelte";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { goto, snapshot } from "$app/navigation";
   import { page } from "$app/state";
   import { onDestroy, tick } from "svelte";
@@ -442,18 +441,24 @@
                     {#if event.media}
                       <AuditMediaPreview media={event.media} {locale} />
                     {:else if !event.has_changes}
-                      <span class="no-details" data-audit-no-details
-                        >{t("No details recorded", locale)}</span
+                      <span
+                        class="no-details"
+                        data-audit-no-details
+                        title={t("No details recorded", locale)}
+                        ><span aria-hidden="true">–</span><span
+                          class="visually-hidden"
+                          >{t("No details recorded", locale)}</span
+                        ></span
                       >
                     {/if}
                     {#if event.has_changes}
                       <a
                         class="ui-button ui-button--ghost ui-button--sm show-diff"
                         href={`/app/admin/audit/${event.id}`}
+                        aria-label={t("Show diff", locale)}
+                        title={t("Show diff", locale)}
                       >
-                        <ActionLabel icon="preview"
-                          >{t("Show diff", locale)}</ActionLabel
-                        >
+                        <NavIcon name="diff" />
                       </a>
                     {/if}
                   </div>
@@ -582,10 +587,13 @@
   }
   .event-resource {
     grid-area: resource;
+    display: grid;
+    gap: 0.25rem;
     min-width: 0;
   }
+  /* Half of the note line and the gap: the card stays centered without media. */
   .event-resource.no-media :global(.resource-card) {
-    transform: translateY(0.875rem);
+    transform: translateY(1rem);
   }
   .event-resource :global(.resource-card__link) {
     grid-template-columns: 2rem minmax(0, 1fr);
@@ -643,7 +651,8 @@
   .event-meta {
     grid-area: meta;
     display: grid;
-    grid-template-columns: 5rem 7.5rem;
+    /* One icon button (44px); a fixed column keeps the times lined up from row to row. */
+    grid-template-columns: 5rem 2.75rem;
     align-items: center;
     gap: 0.25rem;
   }
@@ -666,8 +675,10 @@
     text-align: right;
   }
   .show-diff {
+    width: 44px;
     min-height: 44px;
-    white-space: nowrap;
+    padding: 0;
+    justify-content: center;
   }
   .visually-hidden {
     position: absolute;

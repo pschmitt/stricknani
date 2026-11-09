@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import type { AuditMedia } from "./admin-api";
@@ -63,17 +64,21 @@
       rel="noopener noreferrer"
       download={media.name ?? undefined}
       data-audit-media-open
+      aria-label={t("Open file", locale)}
+      title={t("Open file", locale)}
     >
-      <ActionLabel icon="download">{t("Open file", locale)}</ActionLabel>
+      <NavIcon name="download" />
     </a>
   {:else}
     <button
       type="button"
       class="ui-button ui-button--ghost ui-button--sm show-media"
       data-audit-media-show
+      aria-label={t("Show picture", locale)}
+      title={t("Show picture", locale)}
       onclick={() => dialog?.showModal()}
     >
-      <ActionLabel icon="preview">{t("Show picture", locale)}</ActionLabel>
+      <NavIcon name="image" />
     </button>
     <dialog
       bind:this={dialog}
@@ -104,8 +109,10 @@
 
 <style>
   .show-media {
+    width: 44px;
     min-height: 44px;
-    white-space: nowrap;
+    padding: 0;
+    justify-content: center;
   }
   .media-note {
     display: flex;
