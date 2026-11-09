@@ -1857,9 +1857,6 @@ msgstr "Favorite yarns could not be loaded."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:81
 #: web/src/lib/features/projects/ProjectLibrary.svelte:292
-msgid "Favorites"
-msgstr "Favorites"
-
 #: web/src/lib/features/yarns/YarnLibrary.svelte:50
 #: web/src/lib/features/yarns/YarnLibrary.svelte:210
 msgid "Favorites only"
@@ -7270,3 +7267,6 @@ msgstr "{time} spent so far. Open the project to stop the timer or keep timing."
 
 #~ msgid "The photo could not be uploaded."
 #~ msgstr "The photo could not be uploaded."
+
+#~ msgid "Favorites"
+#~ msgstr "Favorites"

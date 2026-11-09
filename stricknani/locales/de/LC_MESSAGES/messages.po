@@ -1883,9 +1883,6 @@ msgstr "Favorisierte Garne konnten nicht geladen werden."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:81
 #: web/src/lib/features/projects/ProjectLibrary.svelte:292
-msgid "Favorites"
-msgstr "Favoriten"
-
 #: web/src/lib/features/yarns/YarnLibrary.svelte:50
 #: web/src/lib/features/yarns/YarnLibrary.svelte:210
 msgid "Favorites only"
@@ -7436,3 +7433,6 @@ msgstr ""
 
 #~ msgid "The photo could not be uploaded."
 #~ msgstr "Das Foto konnte nicht hochgeladen werden."
+
+#~ msgid "Favorites"
+#~ msgstr "Favoriten"

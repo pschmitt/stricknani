@@ -1802,9 +1802,6 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:81
 #: web/src/lib/features/projects/ProjectLibrary.svelte:292
-msgid "Favorites"
-msgstr ""
-
 #: web/src/lib/features/yarns/YarnLibrary.svelte:50
 #: web/src/lib/features/yarns/YarnLibrary.svelte:210
 msgid "Favorites only"
