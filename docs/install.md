@@ -53,8 +53,8 @@ To let the Android app open this instance's project and yarn links directly
 (for example a link sent by messenger), set `ANDROID_APP_LINK_FINGERPRINTS` to
 the SHA-256 fingerprints of the app's signing certificates (comma separated,
 `apksigner verify --print-certs app.apk` shows them). The server then answers
-`/.well-known/assetlinks.json`; `ANDROID_APP_PACKAGE` overrides the package name
-`blue.anika.wolle`. On a self-hosted domain the user still enables the link
+`/.well-known/assetlinks.json`; `ANDROID_APP_PACKAGE` (comma separated) overrides the package names
+`blue.anika.wolle` and `blue.anika.wolle.debug`. On a self-hosted domain the user still enables the link
 under the app's "Open by default" settings, since the app can only verify
 domains it names itself.
 

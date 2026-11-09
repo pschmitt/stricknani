@@ -11,20 +11,22 @@ use axum::{
     routing::get,
 };
 
-/// The package name of the Stricknani Android app.
-pub const DEFAULT_PACKAGE: &str = "blue.anika.wolle";
+/// The package names of the Stricknani Android app: the release build and the debug build (its
+/// `.debug` suffix), both signed with the same key.
+pub const DEFAULT_PACKAGES: [&str; 2] = ["blue.anika.wolle", "blue.anika.wolle.debug"];
 
-/// The app (package and SHA-256 signing certificate fingerprints) allowed to open this server's
+/// The apps (packages and SHA-256 signing certificate fingerprints) allowed to open this server's
 /// links.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppLinks {
-    package: String,
+    packages: Vec<String>,
     fingerprints: Vec<String>,
 }
 
 impl AppLinks {
     /// Reads `ANDROID_APP_LINK_FINGERPRINTS` (comma or space separated SHA-256 fingerprints, with
-    /// or without colons) and `ANDROID_APP_PACKAGE`. None when no fingerprint is configured.
+    /// or without colons) and `ANDROID_APP_PACKAGE` (comma separated package names, default
+    /// [DEFAULT_PACKAGES]). None when no fingerprint is configured.
     pub fn parse(
         package: Option<&str>,
         fingerprints: Option<&str>,
@@ -35,40 +37,63 @@ impl AppLinks {
             .filter(|value| !value.is_empty())
             .map(normalize_fingerprint)
             .collect::<Option<Vec<_>>>()
-            .ok_or("ANDROID_APP_LINK_FINGERPRINTS must list SHA-256 fingerprints (64 hex digits)")?;
+            .ok_or(
+                "ANDROID_APP_LINK_FINGERPRINTS must list SHA-256 fingerprints (64 hex digits)",
+            )?;
         if fingerprints.is_empty() {
             return Ok(None);
         }
-        let package = package
+        let packages: Vec<String> = package
+            .unwrap_or_default()
+            .split(',')
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .unwrap_or(DEFAULT_PACKAGE);
-        let valid_package = package.split('.').count() >= 2
-            && package.split('.').all(|part| {
-                part.chars()
-                    .next()
-                    .is_some_and(|first| first.is_ascii_alphabetic())
-                    && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
-            });
-        if !valid_package {
-            return Err("ANDROID_APP_PACKAGE must be an Android package name");
+            .map(str::to_owned)
+            .collect();
+        let packages = if packages.is_empty() {
+            DEFAULT_PACKAGES
+                .iter()
+                .map(|value| (*value).to_owned())
+                .collect()
+        } else {
+            packages
+        };
+        if !packages.iter().all(|package| valid_package(package)) {
+            return Err("ANDROID_APP_PACKAGE must list Android package names");
         }
         Ok(Some(Self {
-            package: package.to_owned(),
+            packages,
             fingerprints,
         }))
     }
 
     fn statement(&self) -> serde_json::Value {
-        serde_json::json!([{
-            "relation": ["delegate_permission/common.handle_all_urls"],
-            "target": {
-                "namespace": "android_app",
-                "package_name": self.package,
-                "sha256_cert_fingerprints": self.fingerprints,
-            }
-        }])
+        serde_json::Value::Array(
+            self.packages
+                .iter()
+                .map(|package| {
+                    serde_json::json!({
+                        "relation": ["delegate_permission/common.handle_all_urls"],
+                        "target": {
+                            "namespace": "android_app",
+                            "package_name": package,
+                            "sha256_cert_fingerprints": self.fingerprints,
+                        }
+                    })
+                })
+                .collect(),
+        )
     }
+}
+
+fn valid_package(package: &str) -> bool {
+    package.split('.').count() >= 2
+        && package.split('.').all(|part| {
+            part.chars()
+                .next()
+                .is_some_and(|first| first.is_ascii_alphabetic())
+                && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+        })
 }
 
 /// `AB:CD:...` in upper case, or None when it is not 32 bytes of hex.
@@ -128,10 +153,13 @@ mod tests {
 
     #[test]
     fn fingerprints_are_normalized_and_checked() {
-        let links = AppLinks::parse(None, Some(&format!("{FINGERPRINT}, AA:{}", "BB".repeat(31))))
-            .unwrap()
-            .unwrap();
-        assert_eq!(links.package, DEFAULT_PACKAGE);
+        let links = AppLinks::parse(
+            None,
+            Some(&format!("{FINGERPRINT}, AA:{}", "BB".repeat(31))),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(links.packages, DEFAULT_PACKAGES);
         assert!(links.fingerprints[0].starts_with("61:50:52:4C:"));
         assert_eq!(links.fingerprints[0].len(), 95);
         assert!(links.fingerprints[1].starts_with("AA:BB:"));
@@ -153,14 +181,12 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers()[header::CONTENT_TYPE],
-            "application/json"
-        );
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
         let body: serde_json::Value =
             serde_json::from_slice(&to_bytes(response.into_body(), 1 << 16).await.unwrap())
                 .unwrap();
         assert_eq!(body[0]["target"]["package_name"], "org.example.app");
+        assert_eq!(body.as_array().unwrap().len(), 1);
         assert_eq!(
             body[0]["relation"][0],
             "delegate_permission/common.handle_all_urls"
