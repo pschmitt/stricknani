@@ -7,6 +7,7 @@ import {
   isUnsupportedTimerError,
   MAX_TIMER_SECONDS,
   parseProjectTimer,
+  startedByUser,
   secondsFromParts,
   timerParts,
 } from "./project-timer";
@@ -48,6 +49,38 @@ describe("project timer values", () => {
     ).toThrow();
   });
 
+  it("reads who started the running timer and only reminds that user", () => {
+    const running = parseProjectTimer({
+      total_seconds: 60,
+      started_at: "2026-11-05T12:00:00Z",
+      started_by: 7,
+      server_time: "2026-11-05T12:00:30Z",
+    });
+    expect(running.started_by).toBe(7);
+    expect(startedByUser(running, 7)).toBe(true);
+    // Another editor, the owner or a viewer still sees the timer but is not reminded.
+    expect(startedByUser(running, 8)).toBe(false);
+    expect(startedByUser(running, undefined)).toBe(false);
+    expect(startedByUser(null, 7)).toBe(false);
+    expect(startedByUser({ ...running, started_at: null }, 7)).toBe(false);
+    // A server without the field, or a run from before it existed, notifies nobody.
+    const legacy = parseProjectTimer({
+      total_seconds: 60,
+      started_at: "2026-11-05T12:00:00Z",
+      server_time: "2026-11-05T12:00:30Z",
+    });
+    expect(legacy.started_by).toBeNull();
+    expect(startedByUser(legacy, 7)).toBe(false);
+    expect(() =>
+      parseProjectTimer({
+        total_seconds: 60,
+        started_at: null,
+        started_by: "7",
+        server_time: "2026-11-05T12:00:30Z",
+      }),
+    ).toThrow();
+  });
+
   it("classifies only a bare missing timer route as unsupported", () => {
     expect(
       isUnsupportedTimerError(
@@ -68,6 +101,7 @@ describe("project timer values", () => {
     const running = {
       total_seconds: 120,
       started_at: "2026-11-05T11:59:00Z",
+      started_by: 7,
       server_time: "2026-11-05T12:00:00Z",
     };
     expect(elapsedSeconds(running, 5_500, 0)).toBe(125);

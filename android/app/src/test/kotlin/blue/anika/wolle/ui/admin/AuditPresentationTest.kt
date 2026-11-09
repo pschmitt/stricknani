@@ -151,6 +151,11 @@ class AuditPresentationTest {
         )
         assertEquals("a\nb", ChangeValue.TextList(listOf("a", "b")).displayText(s))
         assertEquals("4", ChangeValue.Integer(4).displayText(s))
+        // Timer seconds read as a length of time, not a raw number.
+        assertEquals(
+            "25 min",
+            ChangeValue.Integer(1500).displayText(s, "project.timer_seconds"),
+        )
         assertEquals("res${R.string.admin_value_yes}", ChangeValue.Flag(true).displayText(s))
         assertEquals(
             "res${R.string.admin_value_link_present}",

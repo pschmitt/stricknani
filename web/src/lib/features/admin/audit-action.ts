@@ -69,6 +69,12 @@ const knownActions: Record<
     icon: "action-update",
     messageKey: msg("Ownership transferred"),
   },
+  timer_started: { icon: "action-create", messageKey: msg("Timer started") },
+  timer_stopped: { icon: "action-update", messageKey: msg("Timer stopped") },
+  timer_total_changed: {
+    icon: "action-update",
+    messageKey: msg("Knitting time changed"),
+  },
   photo_promoted: {
     icon: "action-update",
     messageKey: msg("Cover photo changed"),

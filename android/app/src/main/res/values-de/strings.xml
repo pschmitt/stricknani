@@ -937,6 +937,9 @@
     <string name="admin_action_share_revoked">Teilen beendet</string>
     <string name="admin_action_share_left">Geteiltes verlassen</string>
     <string name="admin_action_ownership_transferred">Besitz übertragen</string>
+    <string name="admin_action_timer_started">Timer gestartet</string>
+    <string name="admin_action_timer_stopped">Timer gestoppt</string>
+    <string name="admin_action_timer_total_changed">Strickzeit geändert</string>
     <string name="admin_action_photo_promoted">Titelfoto geändert</string>
     <string name="admin_action_title_image_promoted">Titelbild geändert</string>
     <string name="admin_action_impersonation_started">Identitätswechsel gestartet</string>
@@ -980,6 +983,7 @@
     <string name="admin_field_cover_image">Titelbild</string>
     <string name="admin_field_image_order">Reihenfolge der Bilder</string>
     <string name="admin_field_step_image_order">Reihenfolge der Schrittbilder</string>
+    <string name="admin_field_timer_seconds">Strickzeit</string>
     <string name="admin_field_primary_photo">Hauptfoto</string>
     <string name="admin_field_photo_order">Reihenfolge der Fotos</string>
     <string name="admin_no_details">Keine Details aufgezeichnet</string>
@@ -1439,6 +1443,11 @@
     <string name="history_share_revoked">Teilen mit %1$s beendet</string>
     <string name="history_share_left">%1$s hat verlassen</string>
     <string name="history_ownership_transferred">An %1$s übertragen</string>
+    <string name="history_timer_started">Timer gestartet</string>
+    <string name="history_timer_stopped">Timer gestoppt</string>
+    <string name="history_timer_stopped_after">Timer gestoppt · %1$s</string>
+    <string name="history_timer_total_changed">Strickzeit geändert</string>
+    <string name="history_timer_total_changed_to">Strickzeit geändert auf %1$s</string>
     <string name="history_deleted_account">ein gelöschtes Konto</string>
     <string name="sharing_change">Ändern</string>
     <string name="sharing_link_hint">Öffnet sich für Personen, die bereits Zugriff haben. Wähle unten eine Person aus, um ihr Zugriff zu geben.</string>

@@ -68,6 +68,18 @@ constructor(
     private val settings: SettingsRepository,
     private val capabilities: ApiCapabilities,
 ) {
+    /** The signed-in user's id, or null when signed out or the server cannot be reached. */
+    suspend fun currentUserId(): Long? {
+        if (!settings.credentials.value.isValid) return null
+        return try {
+            capabilities.resolve().user?.id
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     suspend fun currentAccountKey(): String? {
         val credentials = settings.credentials.value
         if (!credentials.isValid) return null
@@ -266,6 +278,15 @@ constructor(
             }
             if (timer.startedAt != expectedStartedAt) {
                 preferences.setDeadline(expectedAccount, projectId, null)
+                return Result.success()
+            }
+            // Only the user who started this run is reminded; others just see it running.
+            val userId =
+                preferences.currentUserId()
+                    ?: return if (runAttemptCount < 3) Result.retry() else Result.success()
+            if (!isTimerStarter(timer, userId)) {
+                preferences.setDeadline(expectedAccount, projectId, null)
+                notifier.cancel(projectId)
                 return Result.success()
             }
             val project = api.getProject(projectId).data

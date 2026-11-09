@@ -109,7 +109,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:237
 #: web/src/lib/features/admin/AdminResource.svelte:433
 #: web/src/lib/features/admin/DiffPanel.svelte:93
-#: web/src/lib/features/history/change-format.ts:104
+#: web/src/lib/features/history/change-format.ts:122
 #: web/src/lib/features/projects/ProjectEditor.svelte:1725
 #: web/src/lib/features/projects/ProjectLibrary.svelte:258
 msgid "Category"
@@ -117,7 +117,7 @@ msgstr ""
 
 #: src/import_service.rs:717
 #: web/src/lib/features/admin/AdminResource.svelte:441
-#: web/src/lib/features/history/change-format.ts:107
+#: web/src/lib/features/history/change-format.ts:125
 #: web/src/lib/features/projects/ProjectEditor.svelte:1743
 #: web/src/lib/features/projects/ProjectReader.svelte:784
 msgid "Needles"
@@ -125,7 +125,7 @@ msgstr ""
 
 #: src/import_service.rs:718
 #: web/src/lib/features/admin/AdminResource.svelte:445
-#: web/src/lib/features/history/change-format.ts:108
+#: web/src/lib/features/history/change-format.ts:126
 #: web/src/lib/features/projects/ProjectEditor.svelte:1621
 #: web/src/lib/features/projects/ProjectEditor.svelte:1643
 #: web/src/lib/features/projects/ProjectEditor.svelte:1751
@@ -135,7 +135,7 @@ msgstr ""
 
 #: src/import_service.rs:719
 #: web/src/lib/features/admin/AdminResource.svelte:496
-#: web/src/lib/features/history/change-format.ts:111
+#: web/src/lib/features/history/change-format.ts:129
 #: web/src/lib/features/projects/ProjectEditor.svelte:1857
 #: web/src/lib/features/projects/ProjectReader.svelte:900
 msgid "Other materials"
@@ -146,7 +146,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:235
 #: web/src/lib/features/admin/AdminResource.svelte:437
 #: web/src/lib/features/admin/DiffPanel.svelte:91
-#: web/src/lib/features/history/change-format.ts:105
+#: web/src/lib/features/history/change-format.ts:123
 #: web/src/lib/features/projects/ProjectReader.svelte:833
 #: web/src/lib/features/projects/ProjectReader.svelte:867
 #: web/src/lib/features/projects/ProjectReader.svelte:872
@@ -159,8 +159,8 @@ msgstr ""
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:46
 #: web/src/lib/features/admin/AdminResource.svelte:484
 #: web/src/lib/features/admin/AdminResource.svelte:681
-#: web/src/lib/features/history/change-format.ts:109
-#: web/src/lib/features/history/change-format.ts:125
+#: web/src/lib/features/history/change-format.ts:127
+#: web/src/lib/features/history/change-format.ts:144
 #: web/src/lib/features/media/PhotoEditor.svelte:423
 #: web/src/lib/features/yarns/YarnDetail.svelte:466
 #: web/src/lib/features/yarns/YarnForm.svelte:1031
@@ -177,7 +177,7 @@ msgstr ""
 
 #: src/import_service.rs:724
 #: web/src/lib/features/admin/AdminResource.svelte:608
-#: web/src/lib/features/history/change-format.ts:126
+#: web/src/lib/features/history/change-format.ts:145
 #: web/src/lib/features/imports/ImportedYarns.svelte:196
 #: web/src/lib/features/yarns/YarnDetail.svelte:395
 #: web/src/lib/features/yarns/YarnForm.svelte:867
@@ -186,7 +186,7 @@ msgstr ""
 
 #: src/import_service.rs:725
 #: web/src/lib/features/admin/AdminResource.svelte:612
-#: web/src/lib/features/history/change-format.ts:127
+#: web/src/lib/features/history/change-format.ts:146
 #: web/src/lib/features/imports/ImportedYarns.svelte:202
 #: web/src/lib/features/yarns/YarnDetail.svelte:399
 #: web/src/lib/features/yarns/YarnForm.svelte:876
@@ -195,38 +195,38 @@ msgstr ""
 
 #: src/import_service.rs:726
 #: web/src/lib/features/admin/AdminResource.svelte:632
-#: web/src/lib/features/history/change-format.ts:132
+#: web/src/lib/features/history/change-format.ts:151
 msgid "Weight"
 msgstr ""
 
 #: src/import_service.rs:727
 #: web/src/lib/features/admin/AdminResource.svelte:641
-#: web/src/lib/features/history/change-format.ts:133
+#: web/src/lib/features/history/change-format.ts:152
 msgid "Length"
 msgstr ""
 
 #: src/import_service.rs:728
 #: web/src/lib/features/admin/AdminResource.svelte:624
-#: web/src/lib/features/history/change-format.ts:130
+#: web/src/lib/features/history/change-format.ts:149
 #: web/src/lib/features/imports/ImportedYarns.svelte:214
 msgid "Weight category"
 msgstr ""
 
 #: src/import_service.rs:729
 #: web/src/lib/features/admin/AdminResource.svelte:620
-#: web/src/lib/features/history/change-format.ts:129
+#: web/src/lib/features/history/change-format.ts:148
 #: web/src/lib/features/imports/ImportedYarns.svelte:208
 #: web/src/lib/features/yarns/YarnDetail.svelte:407
 #: web/src/lib/features/yarns/YarnForm.svelte:938
 msgid "Fiber content"
 msgstr ""
 
-#: src/web_push.rs:323 web/src/lib/features/projects/ProjectTimer.svelte:321
+#: src/web_push.rs:323 web/src/lib/features/projects/ProjectTimer.svelte:326
 #, python-brace-format
 msgid "{name}: timer still running"
 msgstr ""
 
-#: src/web_push.rs:350 web/src/lib/features/projects/ProjectTimer.svelte:332
+#: src/web_push.rs:350 web/src/lib/features/projects/ProjectTimer.svelte:337
 msgid "Open project"
 msgstr ""
 
@@ -235,7 +235,7 @@ msgstr ""
 msgid "(opens in a new tab)"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:729
+#: web/src/lib/features/projects/ProjectTimer.svelte:734
 msgid "1 hour"
 msgstr ""
 
@@ -243,11 +243,11 @@ msgstr ""
 msgid "1 linked yarn"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:730
+#: web/src/lib/features/projects/ProjectTimer.svelte:735
 msgid "2 hours"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:728
+#: web/src/lib/features/projects/ProjectTimer.svelte:733
 msgid "30 minutes"
 msgstr ""
 
@@ -311,8 +311,8 @@ msgstr ""
 msgid "A restore is already running."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:117
-#: web/src/lib/features/history/change-format.ts:136
+#: web/src/lib/features/history/change-format.ts:135
+#: web/src/lib/features/history/change-format.ts:155
 msgid "AI enhanced"
 msgstr ""
 
@@ -465,7 +465,7 @@ msgid "Add yarn"
 msgstr ""
 
 #: web/src/lib/features/history/MediaStrip.svelte:25
-#: web/src/lib/features/history/change-format.ts:64
+#: web/src/lib/features/history/change-format.ts:80
 msgid "Added"
 msgstr ""
 
@@ -502,7 +502,7 @@ msgid ""
 "items. Nothing you already have is changed."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:641
+#: web/src/lib/features/projects/ProjectTimer.svelte:646
 msgid "Adjust total time"
 msgstr ""
 
@@ -713,7 +713,7 @@ msgid ""
 "stored anywhere."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:116
+#: web/src/lib/features/history/change-format.ts:134
 msgid "Attachment count"
 msgstr ""
 
@@ -902,7 +902,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:2193
 #: web/src/lib/features/projects/ProjectEditor.svelte:2275
 #: web/src/lib/features/projects/ProjectReader.svelte:1376
-#: web/src/lib/features/projects/ProjectTimer.svelte:677
+#: web/src/lib/features/projects/ProjectTimer.svelte:682
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
 #: web/src/lib/features/yarns/YarnForm.svelte:1101
@@ -940,7 +940,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:744
 #: web/src/lib/features/categories/CategoryManager.svelte:300
-#: web/src/lib/features/history/change-format.ts:138
+#: web/src/lib/features/history/change-format.ts:157
 msgid "Category name"
 msgstr ""
 
@@ -961,7 +961,7 @@ msgstr ""
 msgid "Change swatch size"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:67
+#: web/src/lib/features/history/change-format.ts:83
 msgid "Changed"
 msgstr ""
 
@@ -1106,7 +1106,7 @@ msgstr ""
 #: web/src/lib/features/account/ConnectAppDialog.svelte:114
 #: web/src/lib/features/admin/AuditMediaPreview.svelte:100
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:195
-#: web/src/lib/features/projects/ProjectTimer.svelte:581
+#: web/src/lib/features/projects/ProjectTimer.svelte:586
 msgid "Close"
 msgstr ""
 
@@ -1252,11 +1252,11 @@ msgstr ""
 msgid "Cover photo"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:74
+#: web/src/lib/features/admin/audit-action.ts:80
 msgid "Cover photo changed"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:119
+#: web/src/lib/features/history/change-format.ts:137
 msgid "Cover picture"
 msgstr ""
 
@@ -1564,7 +1564,7 @@ msgid "Drop to use as profile picture"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:616
-#: web/src/lib/features/history/change-format.ts:128
+#: web/src/lib/features/history/change-format.ts:147
 #: web/src/lib/features/yarns/YarnDetail.svelte:403
 #: web/src/lib/features/yarns/YarnForm.svelte:886
 msgid "Dye lot"
@@ -1593,7 +1593,7 @@ msgstr ""
 msgid "Edit project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:696
+#: web/src/lib/features/projects/ProjectTimer.svelte:701
 msgid "Edit time"
 msgstr ""
 
@@ -1630,8 +1630,8 @@ msgid "Email address"
 msgstr ""
 
 #: web/src/lib/features/history/MediaStrip.svelte:41
-#: web/src/lib/features/history/change-format.ts:23
-#: web/src/lib/features/history/change-format.ts:32
+#: web/src/lib/features/history/change-format.ts:24
+#: web/src/lib/features/history/change-format.ts:33
 msgid "Empty list"
 msgstr ""
 
@@ -2055,8 +2055,8 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:643
-#: web/src/lib/features/projects/ProjectTimer.svelte:644
+#: web/src/lib/features/projects/ProjectTimer.svelte:648
+#: web/src/lib/features/projects/ProjectTimer.svelte:649
 msgid "Hours"
 msgstr ""
 
@@ -2117,7 +2117,7 @@ msgid ""
 "about the Stricknani software can be reported through the"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:115
+#: web/src/lib/features/history/change-format.ts:133
 msgid "Image count"
 msgstr ""
 
@@ -2138,12 +2138,12 @@ msgstr ""
 msgid "Impersonate this account?"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:242
+#: web/src/lib/features/history/history-summary.ts:306
 #, python-brace-format
 msgid "Impersonation by {admin} started"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:244
+#: web/src/lib/features/history/history-summary.ts:308
 #, python-brace-format
 msgid "Impersonation by {admin} stopped"
 msgstr ""
@@ -2160,11 +2160,11 @@ msgstr ""
 msgid "Impersonation has ended. Reload the page to continue."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:82
+#: web/src/lib/features/admin/audit-action.ts:88
 msgid "Impersonation started"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:86
+#: web/src/lib/features/admin/audit-action.ts:92
 msgid "Impersonation stopped"
 msgstr ""
 
@@ -2276,7 +2276,7 @@ msgstr ""
 msgid "Keep photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:626
+#: web/src/lib/features/projects/ProjectTimer.svelte:631
 msgid "Keep timing"
 msgstr ""
 
@@ -2312,9 +2312,20 @@ msgstr ""
 msgid "Knitting project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:565
-#: web/src/lib/features/projects/ProjectTimer.svelte:586
+#: web/src/lib/features/history/change-format.ts:140
+#: web/src/lib/features/projects/ProjectTimer.svelte:570
+#: web/src/lib/features/projects/ProjectTimer.svelte:591
 msgid "Knitting time"
+msgstr ""
+
+#: web/src/lib/features/admin/audit-action.ts:76
+#: web/src/lib/features/history/history-summary.ts:277
+msgid "Knitting time changed"
+msgstr ""
+
+#: web/src/lib/features/history/history-summary.ts:273
+#, python-brace-format
+msgid "Knitting time changed to {time}"
 msgstr ""
 
 #: web/src/lib/components/LocaleSwitcher.svelte:35
@@ -2431,11 +2442,11 @@ msgid ""
 "provider account."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:36
+#: web/src/lib/features/history/change-format.ts:37
 msgid "Link not present"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:35
+#: web/src/lib/features/history/change-format.ts:36
 msgid "Link present"
 msgstr ""
 
@@ -2467,7 +2478,7 @@ msgid "Linked projects could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:459
-#: web/src/lib/features/history/change-format.ts:106
+#: web/src/lib/features/history/change-format.ts:124
 msgid "Linked yarns"
 msgstr ""
 
@@ -2540,7 +2551,7 @@ msgstr ""
 msgid "Loading resource details…"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:604
+#: web/src/lib/features/projects/ProjectTimer.svelte:609
 msgid "Loading timer…"
 msgstr ""
 
@@ -2589,7 +2600,7 @@ msgstr ""
 msgid "Made with wool and love."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:122
+#: web/src/lib/features/history/change-format.ts:141
 msgid "Main photo"
 msgstr ""
 
@@ -2632,8 +2643,8 @@ msgstr ""
 msgid "Mine"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:653
-#: web/src/lib/features/projects/ProjectTimer.svelte:654
+#: web/src/lib/features/projects/ProjectTimer.svelte:658
+#: web/src/lib/features/projects/ProjectTimer.svelte:659
 msgid "Minutes"
 msgstr ""
 
@@ -2934,7 +2945,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:629
 #: web/src/lib/features/admin/AdminResource.svelte:635
 #: web/src/lib/features/admin/AdminResource.svelte:644
-#: web/src/lib/features/history/change-format.ts:17
+#: web/src/lib/features/history/change-format.ts:18
 msgid "Not provided"
 msgstr ""
 
@@ -2945,8 +2956,8 @@ msgstr ""
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:47
 #: web/src/lib/features/admin/AdminResource.svelte:490
 #: web/src/lib/features/admin/AdminResource.svelte:687
-#: web/src/lib/features/history/change-format.ts:110
-#: web/src/lib/features/history/change-format.ts:134
+#: web/src/lib/features/history/change-format.ts:128
+#: web/src/lib/features/history/change-format.ts:153
 #: web/src/lib/features/projects/ProjectEditor.svelte:1902
 #: web/src/lib/features/projects/ProjectReader.svelte:931
 #: web/src/lib/features/projects/ProjectReader.svelte:949
@@ -3004,7 +3015,7 @@ msgstr ""
 msgid "Numbered list"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:727
+#: web/src/lib/features/projects/ProjectTimer.svelte:732
 msgid "Off"
 msgstr ""
 
@@ -3092,7 +3103,7 @@ msgstr ""
 msgid "Open step photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:337
+#: web/src/lib/features/projects/ProjectTimer.svelte:342
 msgid "Open the project to stop the timer or keep timing."
 msgstr ""
 
@@ -3149,8 +3160,8 @@ msgstr ""
 msgid "Original source"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:118
-#: web/src/lib/features/history/change-format.ts:137
+#: web/src/lib/features/history/change-format.ts:136
+#: web/src/lib/features/history/change-format.ts:156
 msgid "Original source link"
 msgstr ""
 
@@ -3304,7 +3315,7 @@ msgid ""
 "to confirm it is you first."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:135
+#: web/src/lib/features/history/change-format.ts:154
 msgid "Photo count"
 msgstr ""
 
@@ -3317,7 +3328,7 @@ msgstr ""
 msgid "Photo moved to position {position} of {total}."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:123
+#: web/src/lib/features/history/change-format.ts:142
 msgid "Photo order"
 msgstr ""
 
@@ -3385,7 +3396,7 @@ msgstr ""
 msgid "Picture deleted"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:120
+#: web/src/lib/features/history/change-format.ts:138
 msgid "Picture order"
 msgstr ""
 
@@ -3517,7 +3528,7 @@ msgstr ""
 msgid "Project media updated."
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:103
+#: web/src/lib/features/history/change-format.ts:121
 #: web/src/lib/features/projects/ProjectEditor.svelte:1472
 msgid "Project name"
 msgstr ""
@@ -3543,7 +3554,7 @@ msgstr ""
 msgid "Project tags"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:336
+#: web/src/lib/features/projects/ProjectTimer.svelte:341
 msgid "Project timer is still running"
 msgstr ""
 
@@ -3616,7 +3627,7 @@ msgstr ""
 msgid "Ready to review"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:598
+#: web/src/lib/features/projects/ProjectTimer.svelte:603
 msgid "Ready when you are"
 msgstr ""
 
@@ -3682,7 +3693,7 @@ msgid "Recognizing…"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:628
-#: web/src/lib/features/history/change-format.ts:131
+#: web/src/lib/features/history/change-format.ts:150
 #: web/src/lib/features/yarns/YarnDetail.svelte:416
 #: web/src/lib/features/yarns/YarnForm.svelte:959
 msgid "Recommended needles"
@@ -3695,7 +3706,7 @@ msgstr ""
 msgid "Recorded changes"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:140
+#: web/src/lib/features/history/change-format.ts:159
 msgid "Recorded field"
 msgstr ""
 
@@ -3760,7 +3771,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/audit-action.ts:31
 #: web/src/lib/features/history/MediaStrip.svelte:27
-#: web/src/lib/features/history/change-format.ts:66
+#: web/src/lib/features/history/change-format.ts:82
 msgid "Removed"
 msgstr ""
 
@@ -3979,8 +3990,8 @@ msgstr ""
 msgid "Rumour has it a cat was involved."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:720
-#: web/src/lib/features/projects/ProjectTimer.svelte:722
+#: web/src/lib/features/projects/ProjectTimer.svelte:725
+#: web/src/lib/features/projects/ProjectTimer.svelte:727
 msgid "Running reminder"
 msgstr ""
 
@@ -4011,7 +4022,7 @@ msgstr ""
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:686
+#: web/src/lib/features/projects/ProjectTimer.svelte:691
 msgid "Save time"
 msgstr ""
 
@@ -4112,8 +4123,8 @@ msgstr ""
 msgid "Search your yarns"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:663
-#: web/src/lib/features/projects/ProjectTimer.svelte:664
+#: web/src/lib/features/projects/ProjectTimer.svelte:668
+#: web/src/lib/features/projects/ProjectTimer.svelte:669
 msgid "Seconds"
 msgstr ""
 
@@ -4297,7 +4308,7 @@ msgstr ""
 msgid "Sign in to see your favorite projects and yarns."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:202
+#: web/src/lib/features/projects/ProjectTimer.svelte:207
 msgid "Sign in to use the project timer."
 msgstr ""
 
@@ -4412,7 +4423,7 @@ msgstr ""
 msgid "Sponsor on GitHub"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:712
+#: web/src/lib/features/projects/ProjectTimer.svelte:717
 msgid "Start"
 msgstr ""
 
@@ -4455,7 +4466,7 @@ msgstr ""
 msgid "Step"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:114
+#: web/src/lib/features/history/change-format.ts:132
 msgid "Step count"
 msgstr ""
 
@@ -4484,7 +4495,7 @@ msgstr ""
 msgid "Step photos"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:121
+#: web/src/lib/features/history/change-format.ts:139
 msgid "Step picture order"
 msgstr ""
 
@@ -4503,7 +4514,7 @@ msgstr ""
 
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:43
 #: web/src/lib/features/admin/AdminResource.svelte:524
-#: web/src/lib/features/history/change-format.ts:113
+#: web/src/lib/features/history/change-format.ts:131
 #: web/src/lib/features/projects/ProjectReader.svelte:965
 msgid "Steps"
 msgstr ""
@@ -4533,7 +4544,7 @@ msgstr ""
 msgid "Stitches to cast on"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:704
+#: web/src/lib/features/projects/ProjectTimer.svelte:709
 msgid "Stop"
 msgstr ""
 
@@ -4541,7 +4552,7 @@ msgstr ""
 msgid "Stop impersonating"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:621
+#: web/src/lib/features/projects/ProjectTimer.svelte:626
 msgid "Stop timer"
 msgstr ""
 
@@ -4624,7 +4635,7 @@ msgid "Tag suggestions"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:478
-#: web/src/lib/features/history/change-format.ts:112
+#: web/src/lib/features/history/change-format.ts:130
 #: web/src/lib/features/projects/ProjectEditor.svelte:1764
 msgid "Tags"
 msgstr ""
@@ -4995,11 +5006,11 @@ msgstr ""
 msgid "The project media could not be updated."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:236
+#: web/src/lib/features/projects/ProjectTimer.svelte:241
 msgid "The project timer could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:485
+#: web/src/lib/features/projects/ProjectTimer.svelte:490
 msgid "The project timer could not be updated."
 msgstr ""
 
@@ -5422,7 +5433,7 @@ msgstr ""
 msgid "Three imports are already running. Wait until one is done."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:597
+#: web/src/lib/features/projects/ProjectTimer.svelte:602
 msgid "Time spent on this project"
 msgstr ""
 
@@ -5432,9 +5443,24 @@ msgid ""
 "about a minute. No email to write and no waiting for anyone."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:231
-#: web/src/lib/features/projects/ProjectTimer.svelte:278
-#: web/src/lib/features/projects/ProjectTimer.svelte:480
+#: web/src/lib/features/admin/audit-action.ts:72
+#: web/src/lib/features/history/history-summary.ts:263
+msgid "Timer started"
+msgstr ""
+
+#: web/src/lib/features/admin/audit-action.ts:73
+#: web/src/lib/features/history/history-summary.ts:270
+msgid "Timer stopped"
+msgstr ""
+
+#: web/src/lib/features/history/history-summary.ts:266
+#, python-brace-format
+msgid "Timer stopped · {time}"
+msgstr ""
+
+#: web/src/lib/features/projects/ProjectTimer.svelte:236
+#: web/src/lib/features/projects/ProjectTimer.svelte:283
+#: web/src/lib/features/projects/ProjectTimer.svelte:485
 msgid "Timers are not available on this server yet."
 msgstr ""
 
@@ -5442,7 +5468,7 @@ msgstr ""
 msgid "Tip: a missing page is just a very large yarn over."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:78
+#: web/src/lib/features/admin/audit-action.ts:84
 msgid "Title image changed"
 msgstr ""
 
@@ -5906,7 +5932,7 @@ msgstr ""
 msgid "Yarn information"
 msgstr ""
 
-#: web/src/lib/features/history/change-format.ts:124
+#: web/src/lib/features/history/change-format.ts:143
 #: web/src/lib/features/imports/ImportedYarns.svelte:189
 #: web/src/lib/features/yarns/YarnForm.svelte:846
 msgid "Yarn name"
@@ -6216,7 +6242,7 @@ msgstr ""
 msgid "Your gauge (per 10cm)"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:613
+#: web/src/lib/features/projects/ProjectTimer.svelte:618
 msgid "Your knitting timer has been running for a while."
 msgstr ""
 
@@ -6316,7 +6342,7 @@ msgstr ""
 msgid "by"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:255
+#: web/src/lib/features/history/history-summary.ts:319
 #, python-brace-format
 msgid "by {admin} as {user}"
 msgstr ""
@@ -6529,7 +6555,7 @@ msgstr ""
 msgid "{n} more"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:325
+#: web/src/lib/features/projects/ProjectTimer.svelte:330
 #, python-brace-format
 msgid "{time} spent so far. Open the project to stop the timer or keep timing."
 msgstr ""

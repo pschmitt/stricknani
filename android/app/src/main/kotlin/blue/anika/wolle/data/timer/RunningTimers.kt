@@ -283,6 +283,7 @@ constructor(
             sink = sink,
             timersEnabled = { appPreferences.projectTimersEnabled.first() },
             accountKey = { reminderPreferences.currentAccountKey() },
+            userId = { reminderPreferences.currentUserId() },
         )
 
     /** Emits the id of a project whose timer the notification just stopped. */

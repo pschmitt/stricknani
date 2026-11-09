@@ -15,6 +15,8 @@ import blue.anika.wolle.data.api.dto.ChangeStep
 import blue.anika.wolle.data.api.dto.ChangeValue
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.history.TIMER_SECONDS_FIELD
+import blue.anika.wolle.ui.history.formatTimerDuration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -77,6 +79,10 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "image_deleted" to (AuditActionKind.Delete to R.string.admin_action_image_deleted),
         "photo_uploaded" to (AuditActionKind.Upload to R.string.admin_action_photo_uploaded),
         "photo_deleted" to (AuditActionKind.Delete to R.string.admin_action_photo_deleted),
+        "timer_started" to (AuditActionKind.Create to R.string.admin_action_timer_started),
+        "timer_stopped" to (AuditActionKind.Update to R.string.admin_action_timer_stopped),
+        "timer_total_changed" to
+            (AuditActionKind.Update to R.string.admin_action_timer_total_changed),
         "photo_promoted" to (AuditActionKind.Update to R.string.admin_action_photo_promoted),
         "title_image_promoted" to
             (AuditActionKind.Update to R.string.admin_action_title_image_promoted),
@@ -235,6 +241,7 @@ private val fieldLabels: Map<String, Int> =
         "project.cover_image" to R.string.admin_field_cover_image,
         "project.image_order" to R.string.admin_field_image_order,
         "project.step_image_order" to R.string.admin_field_step_image_order,
+        TIMER_SECONDS_FIELD to R.string.admin_field_timer_seconds,
         "yarn.name" to R.string.admin_field_yarn_name,
         "yarn.description" to R.string.admin_field_description,
         "yarn.brand" to R.string.admin_field_brand,
@@ -258,7 +265,7 @@ private val fieldLabels: Map<String, Int> =
 @StringRes fun changeFieldLabelRes(field: String): Int? = fieldLabels[field]
 
 /** How one side of a change is shown, as lines of plain text. */
-fun ChangeValue.displayText(string: (Int) -> String): String =
+fun ChangeValue.displayText(string: (Int) -> String, field: String? = null): String =
     when (this) {
         is ChangeValue.Text -> value?.ifBlank { null } ?: string(R.string.admin_value_not_provided)
         is ChangeValue.TextList ->
@@ -267,7 +274,10 @@ fun ChangeValue.displayText(string: (Int) -> String): String =
         is ChangeValue.Yarns ->
             if (names.isEmpty()) string(R.string.admin_value_empty_list)
             else names.joinToString("\n")
-        is ChangeValue.Integer -> value?.toString() ?: string(R.string.admin_value_not_provided)
+        is ChangeValue.Integer ->
+            value?.let {
+                if (field == TIMER_SECONDS_FIELD) formatTimerDuration(it.toLong()) else "$it"
+            } ?: string(R.string.admin_value_not_provided)
         is ChangeValue.Flag ->
             string(if (value) R.string.admin_value_yes else R.string.admin_value_no)
         is ChangeValue.Steps ->

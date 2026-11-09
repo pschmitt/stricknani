@@ -395,10 +395,11 @@ async fn due_reminders_are_encrypted_signed_and_rearmed() {
     let now = chrono::Utc::now().timestamp();
     let started_at = now - 3600;
     sqlx::query(
-        "INSERT INTO project_timers(project_id, total_seconds, started_at) VALUES (?, 0, ?)",
+        "INSERT INTO project_timers(project_id, total_seconds, started_at, started_by) VALUES (?, 0, ?, ?)",
     )
     .bind(project_id)
     .bind(started_at)
+    .bind(owner_id)
     .execute(&pool)
     .await
     .unwrap();
@@ -500,6 +501,142 @@ async fn due_reminders_are_encrypted_signed_and_rearmed() {
         .await
         .unwrap();
     assert_eq!(schedules, 0);
+}
+
+#[tokio::test]
+async fn reminders_are_only_scheduled_for_the_user_who_started_the_timer() {
+    let (app, pool) = fixture().await;
+    let owner_id = db::create_user(&pool, "owner@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let editor_id = db::create_user(&pool, "editor@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let project_id = project(&pool, owner_id).await;
+    sqlx::query(
+        "INSERT INTO resource_shares(kind, resource_id, user_id, role, created_at, updated_at) \
+         VALUES ('project', ?, ?, 'editor', 'now', 'now')",
+    )
+    .bind(project_id)
+    .bind(editor_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let owner = signed_in(&app, "owner@example.test").await;
+    let editor = signed_in(&app, "editor@example.test").await;
+    let timer = send(
+        &app,
+        request(
+            "PUT",
+            &format!("/projects/{project_id}/timer"),
+            &editor,
+            Some(serde_json::json!({"action": "start"})),
+        ),
+    )
+    .await;
+    let started_at = json(timer).await["data"]["started_at"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let path = format!("/projects/{project_id}/timer/reminder");
+    let schedule = serde_json::json!({
+        "started_at": started_at,
+        "interval_minutes": 30,
+        "next_at": chrono::Utc::now().to_rfc3339(),
+        "locale": "en",
+    });
+
+    // The owner may edit the project but did not start the timer: accepted, nothing stored.
+    let response = send(&app, request("PUT", &path, &owner, Some(schedule.clone()))).await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let stored: i64 = sqlx::query_scalar("SELECT count(*) FROM timer_reminders")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(stored, 0);
+
+    let response = send(&app, request("PUT", &path, &editor, Some(schedule))).await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let stored: Vec<i64> = sqlx::query_scalar("SELECT user_id FROM timer_reminders")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(stored, vec![editor_id]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn due_reminders_reach_only_the_starter_even_for_older_schedules() {
+    let (_app, pool) = fixture().await;
+    let owner_id = db::create_user(&pool, "owner@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let editor_id = db::create_user(&pool, "editor@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let project_id = project(&pool, owner_id).await;
+    sqlx::query(
+        "INSERT INTO resource_shares(kind, resource_id, user_id, role, created_at, updated_at) \
+         VALUES ('project', ?, ?, 'editor', 'now', 'now')",
+    )
+    .bind(project_id)
+    .bind(editor_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let (service, endpoint) = push_service().await;
+    let now = chrono::Utc::now().timestamp();
+    let started_at = now - 3600;
+    // The editor started the run; the owner has a schedule from before the rule.
+    sqlx::query(
+        "INSERT INTO project_timers(project_id, total_seconds, started_at, started_by) VALUES (?, 0, ?, ?)",
+    )
+    .bind(project_id)
+    .bind(started_at)
+    .bind(editor_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let browsers = [
+        (owner_id, endpoint.clone(), Browser::new()),
+        (
+            editor_id,
+            endpoint.replace("browser", "other"),
+            Browser::new(),
+        ),
+    ];
+    for (user_id, endpoint, browser) in &browsers {
+        sqlx::query(
+            "INSERT INTO push_subscriptions(user_id, endpoint, p256dh, auth, created_at) \
+             VALUES (?, ?, ?, ?, unixepoch())",
+        )
+        .bind(user_id)
+        .bind(endpoint)
+        .bind(browser.public())
+        .bind(browser.auth.to_vec())
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO timer_reminders(user_id, project_id, started_at, interval_minutes, next_at, locale) \
+             VALUES (?, ?, ?, 60, ?, 'en')",
+        )
+        .bind(user_id)
+        .bind(project_id)
+        .bind(started_at)
+        .bind(now - 5)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+    let sender = web_push::Sender::with_endpoint_check(None, |_| true).unwrap();
+
+    assert_eq!(web_push::deliver_due(&pool, &sender, now).await.unwrap(), 1);
+    assert_eq!(service.received.lock().unwrap().len(), 1);
+    let remaining: Vec<i64> = sqlx::query_scalar("SELECT user_id FROM timer_reminders")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(remaining, vec![editor_id]);
 }
 
 #[test]

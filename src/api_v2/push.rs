@@ -187,21 +187,28 @@ async fn put_reminder(
     {
         return validation_error("Invalid reminder");
     }
-    let running: Option<Option<i64>> =
-        match sqlx::query_scalar("SELECT started_at FROM project_timers WHERE project_id = ?")
-            .bind(project_id)
-            .fetch_optional(&state.app.pool)
-            .await
-        {
-            Ok(value) => value,
-            Err(_) => return internal_error(),
-        };
-    if running.flatten() != Some(started_at) {
+    let running: Option<(Option<i64>, Option<i64>)> = match sqlx::query_as(
+        "SELECT started_at, started_by FROM project_timers WHERE project_id = ?",
+    )
+    .bind(project_id)
+    .fetch_optional(&state.app.pool)
+    .await
+    {
+        Ok(value) => value,
+        Err(_) => return internal_error(),
+    };
+    let (run, starter) = running.unwrap_or((None, None));
+    if run != Some(started_at) {
         return super::api_error(
             StatusCode::CONFLICT,
             "timer_not_running",
             "This timer run is not running any more",
         );
+    }
+    // Only the user who started the timer is reminded; for anyone else the
+    // request is accepted but schedules nothing.
+    if starter != Some(user_id) {
+        return remove_reminder(&state, user_id, project_id).await;
     }
     let result = sqlx::query(
         "INSERT INTO timer_reminders(user_id, project_id, started_at, interval_minutes, next_at, locale) \

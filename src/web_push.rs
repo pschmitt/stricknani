@@ -364,7 +364,8 @@ pub async fn deliver_due(
     sqlx::query(
         "DELETE FROM timer_reminders WHERE NOT EXISTS (SELECT 1 FROM project_timers t \
          WHERE t.project_id = timer_reminders.project_id \
-           AND t.started_at = timer_reminders.started_at)",
+           AND t.started_at = timer_reminders.started_at \
+           AND t.started_by = timer_reminders.user_id)",
     )
     .execute(pool)
     .await?;

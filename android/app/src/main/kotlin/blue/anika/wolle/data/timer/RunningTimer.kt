@@ -36,15 +36,23 @@ fun runningTimerBaseMillis(nowMillis: Long, totalSeconds: Long): Long =
     nowMillis - totalSeconds.coerceAtLeast(0) * 1_000L
 
 /**
+ * Whether [userId] started the run that is going on: only that user is notified about a timer. The
+ * owner, other editors and viewers of a shared project see it running but get nothing. A run the
+ * server cannot attribute (started before it recorded the starter) notifies nobody.
+ */
+fun isTimerStarter(timer: ProjectTimerDto, userId: Long?): Boolean =
+    timer.startedAt != null && userId != null && timer.startedBy == userId
+
+/**
  * True when the project's timer deserves a persistent notification: the feature is on for this
- * device, the timer runs, and this user may stop it (viewers of a shared timer get none, as they
- * get no reminders).
+ * device, the timer runs, this user may stop it and this user started it (see [isTimerStarter]).
  */
 fun shouldShowRunningTimer(
     featureEnabled: Boolean,
     canEdit: Boolean,
     timer: ProjectTimerDto,
-): Boolean = featureEnabled && canEdit && timer.startedAt != null
+    userId: Long?,
+): Boolean = featureEnabled && canEdit && isTimerStarter(timer, userId)
 
 /** Where the registry of running timers lives (DataStore in the app, a map in tests). */
 interface RunningTimerRegistry {
@@ -97,6 +105,7 @@ class RunningTimerController(
     private val sink: RunningTimerSink,
     private val timersEnabled: suspend () -> Boolean,
     private val accountKey: suspend () -> String?,
+    private val userId: suspend () -> Long?,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     private val _stopped = MutableSharedFlow<Int>(extraBufferCapacity = 8)
@@ -112,7 +121,7 @@ class RunningTimerController(
         timer: ProjectTimerDto,
     ) {
         val account = accountKey() ?: return
-        if (shouldShowRunningTimer(timersEnabled(), canEdit, timer)) {
+        if (shouldShowRunningTimer(timersEnabled(), canEdit, timer, userId())) {
             // A fresh look at a running timer brings back a notification the user swiped away.
             registry.put(account, projectId, RegisteredTimer(projectName))
             sink.show(notificationOf(projectId, projectName, timer, account))
@@ -133,11 +142,13 @@ class RunningTimerController(
             clearAll()
             return 0
         }
+        val user = userId()
         var running = 0
         for ((projectId, entry) in registry.all(account)) {
             try {
                 val timer = gateway.get(projectId)
-                if (timer.startedAt == null) {
+                // Stopped, or restarted by someone else (a new run is not ours): forget it.
+                if (!isTimerStarter(timer, user)) {
                     registry.remove(account, projectId)
                     sink.cancel(projectId)
                 } else {

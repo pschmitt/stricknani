@@ -14,6 +14,7 @@
     currentRunSeconds,
     getProjectTimer,
     isUnsupportedTimerError,
+    startedByUser,
     secondsFromParts,
     timerParts,
     updateProjectTimer,
@@ -65,8 +66,12 @@
   const runSeconds = $derived(
     timer ? currentRunSeconds(timer, now, sampleTime) : 0,
   );
+  // Only the user who started the running timer gets reminders for it; everyone
+  // else still sees the timer.
+  const startedByMe = $derived(startedByUser(timer, session.data?.user?.id));
   const reminderDue = $derived(
     canEdit &&
+      startedByMe &&
       timer?.started_at !== null &&
       timer?.started_at !== undefined &&
       reminderMinutes > 0 &&
@@ -350,7 +355,7 @@
   let savedSchedule = "";
   $effect(() => {
     const schedule =
-      enabled && canEdit && webNotifications.state === "on"
+      enabled && canEdit && startedByMe && webNotifications.state === "on"
         ? timerReminderSchedule(
             timer?.started_at ?? null,
             reminderMinutes,
@@ -715,7 +720,7 @@
           </div>
         {/if}
 
-        {#if canEdit && running}
+        {#if canEdit && running && startedByMe}
           <label class="reminder-setting"
             >{t("Running reminder", locale)}
             <select

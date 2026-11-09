@@ -288,6 +288,9 @@ private fun historyHeadline(event: AuditEventDto, state: HistoryUiState): String
         return "${actionLabel(event.action)}: $name"
     }
     val loaded = state.details[event.id] as? HistoryDetailState.Loaded
+    timerEventLine(event.action, loaded?.detail?.changes)?.let { line ->
+        return line.time?.let { stringResource(line.textRes, it) } ?: stringResource(line.textRes)
+    }
     val parts = summaryParts(loaded?.detail?.changes)
     if (parts.isEmpty()) return actionLabel(event.action)
     val andWord = stringResource(R.string.history_list_and)

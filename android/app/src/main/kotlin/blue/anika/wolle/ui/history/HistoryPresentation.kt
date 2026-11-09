@@ -220,6 +220,62 @@ fun sharingEventLine(
     return SharingEventLine(res, name, role)
 }
 
+/** The change field of a timer event: the project's accumulated seconds. */
+const val TIMER_SECONDS_FIELD = "project.timer_seconds"
+
+/**
+ * `3 h 10 min` / `25 min` / `< 1 min`: a length of knitting time, the same in both languages and on
+ * the web (`formatTimerDuration`).
+ */
+fun formatTimerDuration(totalSeconds: Long): String {
+    val minutes = totalSeconds.coerceAtLeast(0) / 60
+    if (minutes < 1) return "< 1 min"
+    val hours = minutes / 60
+    val rest = minutes % 60
+    return when {
+        hours == 0L -> "$rest min"
+        rest == 0L -> "$hours h"
+        else -> "$hours h $rest min"
+    }
+}
+
+/** One line of a timer event: which sentence, and the length of time it names (if recorded). */
+data class TimerEventLine(
+    @androidx.annotation.StringRes val textRes: Int,
+    /** Substituted into the sentence; null for the sentences without a time. */
+    val time: String?,
+)
+
+/**
+ * The sentence for a timer action ("Timer stopped · 25 min", "Knitting time changed to 3 h 10
+ * min"), or null for any other action. Until the details are in ([changes] null) the sentence has
+ * no time.
+ */
+fun timerEventLine(action: String, changes: ChangeSetDto?): TimerEventLine? {
+    val item = changes?.items?.firstOrNull { it.field == TIMER_SECONDS_FIELD }
+    val before = (item?.let { parseChangeValue(it.before) } as? ChangeValue.Integer)?.value
+    val after = (item?.let { parseChangeValue(it.after) } as? ChangeValue.Integer)?.value
+    val known = before != null && after != null
+    return when (action) {
+        "timer_started" -> TimerEventLine(R.string.history_timer_started, null)
+        "timer_stopped" ->
+            if (known) {
+                TimerEventLine(
+                    R.string.history_timer_stopped_after,
+                    formatTimerDuration((after!! - before!!).toLong()),
+                )
+            } else TimerEventLine(R.string.history_timer_stopped, null)
+        "timer_total_changed" ->
+            if (known) {
+                TimerEventLine(
+                    R.string.history_timer_total_changed_to,
+                    formatTimerDuration(after!!.toLong()),
+                )
+            } else TimerEventLine(R.string.history_timer_total_changed, null)
+        else -> null
+    }
+}
+
 /** Change fields whose values are picture file labels (an order, or one cover/primary photo). */
 private val mediaLabelFields =
     setOf(

@@ -4,10 +4,13 @@ import {
   actionLabel,
   actionTone,
   eventHeadline,
+  formatTimerDuration,
   impersonatedByText,
   impersonationHeadline,
   relativeTime,
   summarizeChanges,
+  timerHeadline,
+  timerSeconds,
 } from "./history-summary";
 
 const text = (field: string, before: string | null, after: string | null) => ({
@@ -157,6 +160,42 @@ describe("sharing events", () => {
     expect(actionLabel("ownership_transferred", "en")).toBe(
       "Ownership transferred",
     );
+  });
+});
+
+describe("timer events", () => {
+  const seconds = (before: number, after: number) =>
+    set(count("project.timer_seconds", before, after));
+
+  it("formats a length of knitting time like Android", () => {
+    expect(formatTimerDuration(0)).toBe("< 1 min");
+    expect(formatTimerDuration(59)).toBe("< 1 min");
+    expect(formatTimerDuration(25 * 60 + 30)).toBe("25 min");
+    expect(formatTimerDuration(3600)).toBe("1 h");
+    expect(formatTimerDuration(3 * 3600 + 10 * 60)).toBe("3 h 10 min");
+    expect(formatTimerDuration(-5)).toBe("< 1 min");
+  });
+
+  // The German wording lives in the PO catalogue (checked by i18n:check), which is loaded at
+  // runtime and not in these tests.
+  it("words start, stop and edit with the length of time", () => {
+    expect(eventHeadline("timer_started", null, "en")).toBe("Timer started");
+    expect(eventHeadline("timer_stopped", seconds(600, 2100), "en")).toBe(
+      "Timer stopped · 25 min",
+    );
+    expect(
+      eventHeadline("timer_total_changed", seconds(600, 11400), "en"),
+    ).toBe("Knitting time changed to 3 h 10 min");
+  });
+
+  it("falls back to the plain action before the details are loaded", () => {
+    expect(eventHeadline("timer_stopped", null, "en")).toBe("Timer stopped");
+    expect(eventHeadline("timer_total_changed", null, "en")).toBe(
+      "Knitting time changed",
+    );
+    expect(actionLabel("timer_started", "en")).toBe("Timer started");
+    expect(timerSeconds(null)).toBeNull();
+    expect(timerHeadline("created", null, "en")).toBeNull();
   });
 });
 

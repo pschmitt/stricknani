@@ -5,6 +5,8 @@ export const MAX_TIMER_SECONDS = 315_576_000;
 export interface ProjectTimer {
   total_seconds: number;
   started_at: string | null;
+  /** The user who started the running timer; null while stopped. Only that user is notified. */
+  started_by: number | null;
   server_time: string;
 }
 
@@ -26,12 +28,18 @@ export function parseProjectTimer(value: unknown): ProjectTimer {
     (value.total_seconds as number) < 0 ||
     (value.total_seconds as number) > MAX_TIMER_SECONDS ||
     !(value.started_at === null || isTimestamp(value.started_at)) ||
+    !(
+      value.started_by === undefined ||
+      value.started_by === null ||
+      Number.isSafeInteger(value.started_by)
+    ) ||
     !isTimestamp(value.server_time)
   )
     throw invalidResponse();
   return {
     total_seconds: value.total_seconds as number,
     started_at: value.started_at as string | null,
+    started_by: (value.started_by as number | null | undefined) ?? null,
     server_time: value.server_time as string,
   };
 }
@@ -103,6 +111,19 @@ export function timerParts(totalSeconds: number): [string, string, string] {
     String(Math.floor((safe % 3600) / 60)),
     String(safe % 60),
   ];
+}
+
+/** Whether this user started the running timer; only they get timer reminders. */
+export function startedByUser(
+  timer: ProjectTimer | null,
+  userId: number | undefined,
+): boolean {
+  return (
+    timer !== null &&
+    timer.started_at !== null &&
+    userId !== undefined &&
+    timer.started_by === userId
+  );
 }
 
 /** `1 h 05 min` / `45 min`; the same in both languages and on the server. */

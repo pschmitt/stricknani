@@ -31,6 +31,7 @@ import blue.anika.wolle.data.timer.ProjectTimerReminderRepository
 import blue.anika.wolle.data.timer.ProjectTimerReminderScheduler
 import blue.anika.wolle.data.timer.RunningTimers
 import blue.anika.wolle.data.timer.classifyProjectTimerLoadFailure
+import blue.anika.wolle.data.timer.isTimerStarter
 import blue.anika.wolle.data.timer.projectTimerReminderDeadline
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.ErrorKind
@@ -130,6 +131,8 @@ constructor(
         val error: Boolean = false,
         val unavailable: Boolean = false,
         val projectMissing: Boolean = false,
+        /** This user started the running timer: only then do reminders and notifications apply. */
+        val startedByMe: Boolean = false,
         val reminderIntervalMinutes: Int = ProjectTimerReminderInterval.HOUR_1,
         val reminderDeadlineMillis: Long? = null,
     ) {
@@ -248,11 +251,12 @@ constructor(
         }
     }
 
-    private fun ProjectTimerDto.toTimerState() =
+    private fun ProjectTimerDto.toTimerState(userId: Long) =
         TimerState(
             totalSeconds = totalSeconds.coerceIn(0, MAX_TIMER_SECONDS),
             startedAt = startedAt,
             receivedAtElapsedMillis = SystemClock.elapsedRealtime(),
+            startedByMe = isTimerStarter(this, userId),
             loading = false,
         )
 
@@ -309,19 +313,21 @@ constructor(
                 currentUserId.first() == userId &&
                     reminderPreferences.currentAccountKey() == accountKey
             ) {
-                _timer.value = response.toTimerState().copy(reminderIntervalMinutes = interval)
+                _timer.value =
+                    response.toTimerState(userId).copy(reminderIntervalMinutes = interval)
                 return true
             }
             return false
         }
         val startedAt = requireNotNull(response.startedAt)
-        if (!canEditTimer) {
+        if (!canEditTimer || !isTimerStarter(response, userId)) {
             reminderScheduler.cancel(projectId, accountKey)
             if (
                 currentUserId.first() == userId &&
                     reminderPreferences.currentAccountKey() == accountKey
             ) {
-                _timer.value = response.toTimerState().copy(reminderIntervalMinutes = interval)
+                _timer.value =
+                    response.toTimerState(userId).copy(reminderIntervalMinutes = interval)
                 return true
             }
             return false
@@ -363,7 +369,7 @@ constructor(
         ) {
             _timer.value =
                 response
-                    .toTimerState()
+                    .toTimerState(userId)
                     .copy(
                         reminderIntervalMinutes = interval,
                         reminderDeadlineMillis = deadline,
@@ -508,6 +514,7 @@ constructor(
             val current = _timer.value
             if (
                 current.running &&
+                    current.startedByMe &&
                     current.startedAt != null &&
                     intervalMinutes != ProjectTimerReminderInterval.OFF
             ) {
@@ -541,6 +548,7 @@ constructor(
         if (!timersEnabledNow) return
         val current = _timer.value
         val startedAt = current.startedAt ?: return
+        if (!current.startedByMe) return
         val interval = current.reminderIntervalMinutes
         if (interval == ProjectTimerReminderInterval.OFF) return
         viewModelScope.launch {

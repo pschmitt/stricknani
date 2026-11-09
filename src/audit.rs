@@ -52,6 +52,12 @@ pub(crate) enum Action {
     /// A recipient left a share of their own accord.
     ShareLeft,
     OwnershipTransferred,
+    /// A project timer went from stopped to running.
+    TimerStarted,
+    /// A running project timer was stopped; the change records the run's length.
+    TimerStopped,
+    /// The accumulated timer total was edited by hand.
+    TimerTotalChanged,
 }
 
 impl Action {
@@ -67,6 +73,9 @@ impl Action {
             Self::ShareRevoked => "share_revoked",
             Self::ShareLeft => "share_left",
             Self::OwnershipTransferred => "ownership_transferred",
+            Self::TimerStarted => "timer_started",
+            Self::TimerStopped => "timer_stopped",
+            Self::TimerTotalChanged => "timer_total_changed",
         }
     }
 }
@@ -128,6 +137,9 @@ pub(crate) enum ChangeField {
     ProjectImageOrder,
     #[serde(rename = "project.step_image_order")]
     ProjectStepImageOrder,
+    /// The project timer's accumulated seconds.
+    #[serde(rename = "project.timer_seconds")]
+    ProjectTimerSeconds,
     #[serde(rename = "yarn.name")]
     YarnName,
     #[serde(rename = "yarn.description")]
@@ -268,7 +280,8 @@ impl ChangeField {
             | Self::ProjectLink
             | Self::ProjectCoverImage
             | Self::ProjectImageOrder
-            | Self::ProjectStepImageOrder => Entity::Project,
+            | Self::ProjectStepImageOrder
+            | Self::ProjectTimerSeconds => Entity::Project,
             Self::YarnName
             | Self::YarnDescription
             | Self::YarnBrand
@@ -302,7 +315,8 @@ impl ChangeField {
             | Self::ProjectAttachmentCount
             | Self::YarnWeightGrams
             | Self::YarnLengthMeters
-            | Self::YarnPhotoCount => ChangeValueType::Integer,
+            | Self::YarnPhotoCount
+            | Self::ProjectTimerSeconds => ChangeValueType::Integer,
             Self::ProjectIsAiEnhanced | Self::YarnIsAiEnhanced => ChangeValueType::Boolean,
             Self::ProjectLink | Self::YarnLink => ChangeValueType::LinkChanged,
             Self::ProjectName

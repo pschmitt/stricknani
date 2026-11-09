@@ -1096,7 +1096,7 @@ private fun ProjectTimerDialog(
                                 )
                             }
                         }
-                        if (timer.running) {
+                        if (timer.running && timer.startedByMe) {
                             Box {
                                 TextButton(
                                     enabled = actionsEnabled,

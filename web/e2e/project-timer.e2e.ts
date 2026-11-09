@@ -94,11 +94,16 @@ test("project timer edits, runs, persists, and reminds", async () => {
           if (route.request().method() !== "GET") return route.continue();
           const serverTime = new Date().toISOString();
           const startedAt = new Date(Date.now() - 3_601_000).toISOString();
+          // Keep the real started_by: only the user who started the timer is reminded.
+          const real = (await (await route.fetch()).json()) as {
+            data: Record<string, unknown>;
+          };
           await route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
               data: {
+                ...real.data,
                 total_seconds: 3_601,
                 started_at: startedAt,
                 server_time: serverTime,

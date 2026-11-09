@@ -77,13 +77,22 @@ class RunningTimerControllerTest {
     private val sink = RecordingSink()
     private var enabled = true
     private var account: String? = "acct"
+    private var userId: Long? = ME
     private val clock = 1_000_000_000L
 
     private val controller =
-        RunningTimerController(gateway, registry, sink, { enabled }, { account }, { clock })
+        RunningTimerController(
+            gateway,
+            registry,
+            sink,
+            { enabled },
+            { account },
+            { userId },
+            { clock },
+        )
 
-    private fun running(total: Long = 600) =
-        ProjectTimerDto(total, "2026-11-09T10:00:00Z", "2026-11-09T10:10:00Z")
+    private fun running(total: Long = 600, startedBy: Long? = ME) =
+        ProjectTimerDto(total, "2026-11-09T10:00:00Z", "2026-11-09T10:10:00Z", startedBy)
 
     private fun stopped(total: Long = 600) = ProjectTimerDto(total, null, "2026-11-09T10:10:00Z")
 
@@ -239,8 +248,61 @@ class RunningTimerControllerTest {
     }
 
     @Test
+    fun `a timer someone else started gets no notification here`() = runTest {
+        // The owner, another editor or a viewer sees the run but is not told about it.
+        controller.onTimerObserved(7, "Socks", true, running(startedBy = OTHER))
+        assertTrue(sink.shown.isEmpty())
+        assertTrue(registry.all("acct").isEmpty())
+        // A run the server cannot attribute (started before it recorded the starter) is nobody's.
+        controller.onTimerObserved(7, "Socks", true, running(startedBy = null))
+        assertTrue(sink.shown.isEmpty())
+        // A signed-in user whose id is not known yet is nobody either.
+        userId = null
+        controller.onTimerObserved(7, "Socks", true, running())
+        assertTrue(sink.shown.isEmpty())
+    }
+
+    @Test
+    fun `the notification goes away when another user takes over a new run`() = runTest {
+        controller.onTimerObserved(7, "Socks", true, running())
+        assertEquals(setOf(7), sink.shown.keys)
+        // Someone else stopped it and started a new run: that run is theirs.
+        controller.onTimerObserved(7, "Socks", true, running(startedBy = OTHER))
+        assertTrue(sink.shown.isEmpty())
+        assertTrue(registry.all("acct").isEmpty())
+    }
+
+    @Test
+    fun `the check drops a timer that another user restarted`() = runTest {
+        registry.put("acct", 1, RegisteredTimer("A"))
+        registry.put("acct", 2, RegisteredTimer("B"))
+        gateway.timers[1] = running(60)
+        gateway.timers[2] = running(60, startedBy = OTHER)
+        assertEquals(1, controller.refreshAll())
+        assertEquals(setOf(1), sink.shown.keys)
+        assertEquals(setOf(1), registry.all("acct").keys)
+    }
+
+    @Test
+    fun `only the user who started the run is its starter`() {
+        assertTrue(isTimerStarter(running(), ME))
+        assertFalse(isTimerStarter(running(), OTHER))
+        assertFalse(isTimerStarter(running(), null))
+        assertFalse(isTimerStarter(running(startedBy = null), ME))
+        assertFalse(isTimerStarter(stopped(), ME))
+        assertTrue(shouldShowRunningTimer(true, true, running(), ME))
+        assertFalse(shouldShowRunningTimer(true, true, running(startedBy = OTHER), ME))
+        assertFalse(shouldShowRunningTimer(true, false, running(), ME))
+        assertFalse(shouldShowRunningTimer(false, true, running(), ME))
+    }
+
+    @Test
     fun `base time is clamped for negative totals`() {
         assertEquals(1000L, runningTimerBaseMillis(1000L, -5))
         assertEquals(0L, runningTimerBaseMillis(5_000L, 5))
     }
 }
+
+/** The signed-in user, and someone else who shares the project. */
+private const val ME = 5L
+private const val OTHER = 9L

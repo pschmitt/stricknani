@@ -422,6 +422,70 @@ async fn changes_made_while_impersonating_name_the_administrator() {
 }
 
 #[tokio::test]
+async fn timer_events_while_impersonating_name_the_administrator() {
+    let fixture = fixture().await;
+    let project_id: i64 = sqlx::query_scalar(
+        "INSERT INTO projects(owner_id, name, created_at, updated_at) \
+         VALUES (?, 'Timer', 'now', 'now') RETURNING id",
+    )
+    .bind(fixture.member_id)
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    let path = format!("/projects/{project_id}/timer");
+    let (status, _) = start(&fixture, fixture.member_id).await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, timer) = browser(
+        &fixture,
+        "PUT",
+        &path,
+        ADMIN_TOKEN,
+        Some(json!({"action": "start"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    // The run belongs to the account being acted as.
+    assert_eq!(timer["data"]["started_by"], fixture.member_id);
+    let (status, _) = browser(
+        &fixture,
+        "PUT",
+        &path,
+        MEMBER_TOKEN,
+        Some(json!({"action": "stop"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+
+    let rows = sqlx::query_as::<_, (String, i64, Option<i64>)>(
+        "SELECT action, actor_user_id, impersonated_by_user_id FROM audit_events \
+         WHERE entity_type = 'project' AND action LIKE 'timer\\_%' ESCAPE '\\' ORDER BY id",
+    )
+    .fetch_all(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            (
+                "timer_started".to_owned(),
+                fixture.member_id,
+                Some(fixture.admin_id)
+            ),
+            ("timer_stopped".to_owned(), fixture.member_id, None),
+        ]
+    );
+    let (status, audit) = bearer(&fixture, "GET", "/admin/audit").await;
+    assert_eq!(status, StatusCode::OK);
+    let started = audit["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|event| event["action"] == "timer_started")
+        .unwrap();
+    assert_eq!(started["impersonated_by"]["id"], fixture.admin_id);
+}
+
+#[tokio::test]
 async fn an_expired_impersonation_ends_when_it_is_noticed_and_is_logged_once() {
     let fixture = fixture().await;
     let (status, _) = start(&fixture, fixture.member_id).await;

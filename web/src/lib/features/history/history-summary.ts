@@ -217,7 +217,70 @@ export function sharingHeadline(
   return text.replace("{name}", name).replace("{role}", role);
 }
 
-/** The headline of a history row: a sharing sentence, the change summary, else the action name. */
+/**
+ * `3 h 10 min` / `25 min` / `< 1 min`: a length of knitting time, the same in both languages and
+ * on Android (`formatTimerDuration`).
+ */
+export function formatTimerDuration(totalSeconds: number): string {
+  const minutes = Math.floor(Math.max(0, totalSeconds) / 60);
+  if (minutes < 1) return "< 1 min";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+}
+
+/** The two totals (before, after) a timer event recorded, or null without them. */
+export function timerSeconds(
+  changes: ChangeSetV1 | null,
+): { before: number; after: number } | null {
+  const item = changes?.items.find(
+    (entry) => entry.field === "project.timer_seconds",
+  );
+  if (
+    !item ||
+    item.before.type !== "integer" ||
+    item.after.type !== "integer" ||
+    item.before.value === null ||
+    item.after.value === null
+  )
+    return null;
+  return { before: item.before.value, after: item.after.value };
+}
+
+/**
+ * The sentence for a timer event ("Timer stopped · 25 min", "Knitting time changed to 3 h 10
+ * min"), or null for any other action. Android words it the same (`timerEventLine`).
+ */
+export function timerHeadline(
+  action: string,
+  changes: ChangeSetV1 | null,
+  locale: Locale,
+): string | null {
+  const totals = timerSeconds(changes);
+  switch (action) {
+    case "timer_started":
+      return t("Timer started", locale);
+    case "timer_stopped":
+      return totals
+        ? t("Timer stopped · {time}", locale).replace(
+            "{time}",
+            formatTimerDuration(totals.after - totals.before),
+          )
+        : t("Timer stopped", locale);
+    case "timer_total_changed":
+      return totals
+        ? t("Knitting time changed to {time}", locale).replace(
+            "{time}",
+            formatTimerDuration(totals.after),
+          )
+        : t("Knitting time changed", locale);
+    default:
+      return null;
+  }
+}
+
+/** The headline of a history row: a sharing or timer sentence, the change summary, else the action name. */
 export function eventHeadline(
   action: string,
   changes: ChangeSetV1 | null,
@@ -226,6 +289,7 @@ export function eventHeadline(
 ): string {
   return (
     sharingHeadline(action, subject, locale) ??
+    timerHeadline(action, changes, locale) ??
     summarizeChanges(changes, locale) ??
     actionLabel(action, locale)
   );

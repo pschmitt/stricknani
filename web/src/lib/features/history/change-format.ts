@@ -4,6 +4,7 @@ import type {
   ChangeValue,
 } from "#lib/features/admin/admin-api.ts";
 import { wordDiff, type DiffSegment } from "#lib/features/admin/word-diff.ts";
+import { formatTimerDuration } from "./history-summary";
 
 export type ChangeKind = "added" | "removed" | "changed";
 
@@ -35,6 +36,21 @@ export function displayValue(value: ChangeValue, locale: Locale): string {
         ? t("Link present", locale)
         : t("Link not present", locale);
   }
+}
+
+/** A value of one change item; timer seconds read as a length of time, not a raw number. */
+function displayItemValue(
+  item: ChangeItemV1,
+  value: ChangeValue,
+  locale: Locale,
+): string {
+  if (
+    item.field === "project.timer_seconds" &&
+    value.type === "integer" &&
+    value.value !== null
+  )
+    return formatTimerDuration(value.value);
+  return displayValue(value, locale);
 }
 
 export function isEmptyValue(value: ChangeValue): boolean {
@@ -72,8 +88,8 @@ export function segments(
   item: ChangeItemV1,
   locale: Locale,
 ): { before: DiffSegment[]; after: DiffSegment[] } {
-  const before = displayValue(item.before, locale);
-  const after = displayValue(item.after, locale);
+  const before = displayItemValue(item, item.before, locale);
+  const after = displayItemValue(item, item.after, locale);
   const comparable =
     !isEmptyValue(item.before) &&
     !isEmptyValue(item.after) &&
@@ -95,6 +111,8 @@ export function delta(item: ChangeItemV1): string | null {
   if (item.before.value === null || item.after.value === null) return null;
   const difference = item.after.value - item.before.value;
   if (difference === 0) return null;
+  if (item.field === "project.timer_seconds")
+    return `${difference > 0 ? "+" : "−"}${formatTimerDuration(Math.abs(difference))}`;
   return difference > 0 ? `+${difference}` : `−${-difference}`;
 }
 
@@ -119,6 +137,7 @@ export function fieldLabel(field: string, locale: Locale): string {
     "project.cover_image": msg("Cover picture"),
     "project.image_order": msg("Picture order"),
     "project.step_image_order": msg("Step picture order"),
+    "project.timer_seconds": msg("Knitting time"),
     "yarn.primary_photo": msg("Main photo"),
     "yarn.photo_order": msg("Photo order"),
     "yarn.name": msg("Yarn name"),

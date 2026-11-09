@@ -119,6 +119,8 @@ data class ProjectTimerDto(
     @SerialName("total_seconds") val totalSeconds: Long,
     @SerialName("started_at") val startedAt: String? = null,
     @SerialName("server_time") val serverTime: String,
+    /** The user who started the running timer (null while stopped); only they get notifications. */
+    @SerialName("started_by") val startedBy: Long? = null,
 )
 
 @Serializable

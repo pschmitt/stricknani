@@ -531,3 +531,219 @@ async fn invalid_totals_and_malformed_actions_are_rejected_without_changing_time
     assert_eq!(unchanged["data"]["total_seconds"], 0);
     assert!(unchanged["data"]["started_at"].is_null());
 }
+
+async fn timer_events(
+    pool: &SqlitePool,
+    project_id: i64,
+) -> Vec<(String, i64, Option<i64>, Option<serde_json::Value>)> {
+    sqlx::query_as::<_, (String, i64, Option<i64>, Option<String>)>(
+        "SELECT action, actor_user_id, impersonated_by_user_id, safe_changes FROM audit_events \
+         WHERE entity_type = 'project' AND entity_id = ? AND action LIKE 'timer\\_%' ESCAPE '\\' \
+         ORDER BY id",
+    )
+    .bind(project_id)
+    .fetch_all(pool)
+    .await
+    .unwrap()
+    .into_iter()
+    .map(|(action, actor, impersonator, changes)| {
+        (
+            action,
+            actor,
+            impersonator,
+            changes.map(|text| serde_json::from_str(&text).unwrap()),
+        )
+    })
+    .collect()
+}
+
+#[tokio::test]
+async fn each_timer_action_writes_one_audit_event_and_repeats_write_none() {
+    let (app, pool) = fixture().await;
+    let owner_id = db::create_user(&pool, "owner@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let editor_id = db::create_user(&pool, "editor@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let project_id = project(&pool, owner_id).await;
+    sqlx::query(
+        "INSERT INTO resource_shares(kind, resource_id, user_id, role, created_at, updated_at) VALUES ('project', ?, ?, 'editor', 'now', 'now')",
+    )
+    .bind(project_id)
+    .bind(editor_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let (owner, owner_csrf) = signed_in(&app, "owner@example.test").await;
+    let (editor, editor_csrf) = signed_in(&app, "editor@example.test").await;
+    let path = format!("/projects/{project_id}/timer");
+    macro_rules! put {
+        ($session:expr, $csrf:expr, $body:expr $(,)?) => {
+            send(&app, "PUT", &path, $session, Some($csrf), Some($body))
+        };
+    }
+
+    // Starting records one event; the retry of a running start records none.
+    let (_, started) = put!(&owner, &owner_csrf, serde_json::json!({"action":"start"})).await;
+    assert_eq!(started["data"]["started_by"], owner_id);
+    put!(&owner, &owner_csrf, serde_json::json!({"action":"start"})).await;
+    // A second editor "starting" the running timer neither records nor takes it over.
+    let (_, taken) = put!(&editor, &editor_csrf, serde_json::json!({"action":"start"})).await;
+    assert_eq!(taken["data"]["started_by"], owner_id);
+
+    // Stopping records the run: before and after total.
+    sqlx::query("UPDATE project_timers SET started_at = unixepoch() - 1500 WHERE project_id = ?")
+        .bind(project_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (_, stopped) = put!(&editor, &editor_csrf, serde_json::json!({"action":"stop"})).await;
+    assert!(stopped["data"]["started_by"].is_null());
+    put!(&editor, &editor_csrf, serde_json::json!({"action":"stop"})).await;
+
+    // Editing the total records old and new; saving the same value records nothing.
+    let total = stopped["data"]["total_seconds"].as_i64().unwrap();
+    assert!((1500..=1503).contains(&total));
+    put!(
+        &owner,
+        &owner_csrf,
+        serde_json::json!({"action":"set_total","total_seconds":11400}),
+    )
+    .await;
+    put!(
+        &owner,
+        &owner_csrf,
+        serde_json::json!({"action":"set_total","total_seconds":11400}),
+    )
+    .await;
+
+    // Reads and a failed validation record nothing.
+    send(&app, "GET", &path, &owner, None, None).await;
+    put!(
+        &owner,
+        &owner_csrf,
+        serde_json::json!({"action":"set_total","total_seconds":-5}),
+    )
+    .await;
+
+    let events = timer_events(&pool, project_id).await;
+    let actions: Vec<_> = events.iter().map(|event| event.0.as_str()).collect();
+    assert_eq!(
+        actions,
+        ["timer_started", "timer_stopped", "timer_total_changed"]
+    );
+    assert_eq!(events[0].1, owner_id);
+    assert!(events[0].3.is_none());
+    assert_eq!(events[1].1, editor_id);
+    assert_eq!(events[0].2, None);
+    let stop_change = &events[1].3.as_ref().unwrap()["items"][0];
+    assert_eq!(stop_change["field"], "project.timer_seconds");
+    assert_eq!(stop_change["before"]["value"], 0);
+    assert_eq!(stop_change["after"]["value"], total);
+    let edit_change = &events[2].3.as_ref().unwrap()["items"][0];
+    assert_eq!(edit_change["before"]["value"], total);
+    assert_eq!(edit_change["after"]["value"], 11400);
+
+    // The owner-visible project history lists them.
+    let (status, history) = send(
+        &app,
+        "GET",
+        &format!("/projects/{project_id}/history"),
+        &owner,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let listed: Vec<_> = history["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|event| event["action"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        listed,
+        ["timer_total_changed", "timer_stopped", "timer_started"]
+    );
+}
+
+#[tokio::test]
+async fn timer_exposes_who_started_the_running_run_to_every_reader() {
+    let (app, pool) = fixture().await;
+    let owner_id = db::create_user(&pool, "owner@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let viewer_id = db::create_user(&pool, "viewer@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let editor_id = db::create_user(&pool, "editor@example.test", PASSWORD.to_owned())
+        .await
+        .unwrap();
+    let project_id = project(&pool, owner_id).await;
+    for (user_id, role) in [(viewer_id, "viewer"), (editor_id, "editor")] {
+        sqlx::query(
+            "INSERT INTO resource_shares(kind, resource_id, user_id, role, created_at, updated_at) VALUES ('project', ?, ?, ?, 'now', 'now')",
+        )
+        .bind(project_id)
+        .bind(user_id)
+        .bind(role)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+    let (viewer, _) = signed_in(&app, "viewer@example.test").await;
+    let (editor, editor_csrf) = signed_in(&app, "editor@example.test").await;
+    let (owner, owner_csrf) = signed_in(&app, "owner@example.test").await;
+    let path = format!("/projects/{project_id}/timer");
+
+    let (_, idle) = send(&app, "GET", &path, &viewer, None, None).await;
+    assert!(idle["data"]["started_by"].is_null());
+
+    send(
+        &app,
+        "PUT",
+        &path,
+        &editor,
+        Some(&editor_csrf),
+        Some(serde_json::json!({"action":"start"})),
+    )
+    .await;
+    for session in [&viewer, &owner, &editor] {
+        let (_, running) = send(&app, "GET", &path, session, None, None).await;
+        assert_eq!(running["data"]["started_by"], editor_id);
+    }
+
+    // Editing the total keeps the run, and the starter, as they are.
+    let (_, edited) = send(
+        &app,
+        "PUT",
+        &path,
+        &owner,
+        Some(&owner_csrf),
+        Some(serde_json::json!({"action":"set_total","total_seconds":600})),
+    )
+    .await;
+    assert_eq!(edited["data"]["started_by"], editor_id);
+
+    // A new run belongs to whoever starts it.
+    send(
+        &app,
+        "PUT",
+        &path,
+        &owner,
+        Some(&owner_csrf),
+        Some(serde_json::json!({"action":"stop"})),
+    )
+    .await;
+    let (_, again) = send(
+        &app,
+        "PUT",
+        &path,
+        &owner,
+        Some(&owner_csrf),
+        Some(serde_json::json!({"action":"start"})),
+    )
+    .await;
+    assert_eq!(again["data"]["started_by"], owner_id);
+}

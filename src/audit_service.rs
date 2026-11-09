@@ -739,7 +739,8 @@ pub(crate) async fn list_activity(
         format!(
             "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM {table} AS r \
                JOIN audit_events AS e ON e.entity_type = '{entity}' AND e.entity_id = r.id \
-               WHERE r.owner_id = ?1 AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
+               WHERE r.owner_id = ?1 AND e.action NOT LIKE 'timer\\_%' ESCAPE '\\' \
+               AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
                ORDER BY e.created_at DESC, e.id DESC LIMIT ?4)"
         )
     };
@@ -747,6 +748,7 @@ pub(crate) async fn list_activity(
         format!(
             "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM audit_events AS e \
                WHERE e.actor_user_id = ?1 AND e.entity_type = '{entity}' \
+                 AND e.action NOT LIKE 'timer\\_%' ESCAPE '\\' \
                  AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
                  AND NOT EXISTS (SELECT 1 FROM {table} AS r WHERE r.id = e.entity_id) \
                ORDER BY e.created_at DESC, e.id DESC LIMIT ?4)"

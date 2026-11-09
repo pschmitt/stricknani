@@ -687,8 +687,8 @@ internal fun ChangeCard(item: ChangeItemDto) {
     val afterValue = parseChangeValue(item.after)
     val beforeEmpty = beforeValue.isEmptyValue()
     val afterEmpty = afterValue.isEmptyValue()
-    val before = beforeValue.displayText(string)
-    val after = afterValue.displayText(string)
+    val before = beforeValue.displayText(string, item.field)
+    val after = afterValue.displayText(string, item.field)
     val diff =
         remember(before, after, beforeEmpty, afterEmpty) {
             WordDiff.diff(if (beforeEmpty) "" else before, if (afterEmpty) "" else after)

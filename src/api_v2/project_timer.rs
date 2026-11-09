@@ -10,6 +10,7 @@ use axum::{
 use chrono::{DateTime, SecondsFormat, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::audit::{self, Action, ChangeField, ChangeItemV1, ChangeValue, Entity};
 use crate::resource_access::{self, Need, ResourceKind, Surface};
 
 use super::{ApiV2State, Envelope, access};
@@ -27,6 +28,9 @@ pub(super) fn router() -> Router<ApiV2State> {
 struct TimerDto {
     total_seconds: i64,
     started_at: Option<String>,
+    /// The user who started the running timer; `null` while it is stopped.
+    /// Timer notifications go only to this user.
+    started_by: Option<i64>,
     server_time: String,
 }
 
@@ -108,22 +112,38 @@ async fn put_timer(
 
     let now = Utc::now();
     let now_epoch = now.timestamp();
+    let mut tx = match crate::db::begin_write(&state.app.pool).await {
+        Ok(tx) => tx,
+        Err(_) => return internal_error(),
+    };
+    let before = match sqlx::query_as::<_, (i64, Option<i64>)>(
+        "SELECT total_seconds, started_at FROM project_timers WHERE project_id = ?",
+    )
+    .bind(project_id)
+    .fetch_optional(&mut *tx)
+    .await
+    {
+        Ok(row) => row.unwrap_or((0, None)),
+        Err(_) => return internal_error(),
+    };
     let result = match payload.action {
         TimerAction::Start => {
             sqlx::query(
-                "INSERT INTO project_timers(project_id, total_seconds, started_at) \
-                 SELECT ?, 0, ? WHERE EXISTS (SELECT 1 FROM projects p WHERE p.id = ? AND \
+                "INSERT INTO project_timers(project_id, total_seconds, started_at, started_by) \
+                 SELECT ?, 0, ?, ? WHERE EXISTS (SELECT 1 FROM projects p WHERE p.id = ? AND \
                  (p.owner_id = ? OR EXISTS (SELECT 1 FROM users u WHERE u.id = ? AND u.is_admin = 1 AND u.active = 1) \
                  OR EXISTS (SELECT 1 FROM resource_shares s WHERE s.kind = 'project' AND s.resource_id = p.id AND s.user_id = ? AND s.role = 'editor'))) \
-                 ON CONFLICT(project_id) DO UPDATE SET started_at = coalesce(project_timers.started_at, excluded.started_at)",
+                 ON CONFLICT(project_id) DO UPDATE SET started_at = coalesce(project_timers.started_at, excluded.started_at), \
+                 started_by = CASE WHEN project_timers.started_at IS NULL THEN excluded.started_by ELSE project_timers.started_by END",
             )
             .bind(project_id)
             .bind(now_epoch)
+            .bind(user_id)
             .bind(project_id)
             .bind(user_id)
             .bind(user_id)
             .bind(user_id)
-            .execute(&state.app.pool)
+            .execute(&mut *tx)
             .await
         }
         TimerAction::Stop => {
@@ -134,7 +154,7 @@ async fn put_timer(
                  OR EXISTS (SELECT 1 FROM resource_shares s WHERE s.kind = 'project' AND s.resource_id = p.id AND s.user_id = ? AND s.role = 'editor'))) \
                  ON CONFLICT(project_id) DO UPDATE SET \
                  total_seconds = min(315576000, project_timers.total_seconds + max(0, ? - coalesce(project_timers.started_at, ?))), \
-                 started_at = NULL",
+                 started_at = NULL, started_by = NULL",
             )
             .bind(project_id)
             .bind(project_id)
@@ -143,7 +163,7 @@ async fn put_timer(
             .bind(user_id)
             .bind(now_epoch)
             .bind(now_epoch)
-            .execute(&state.app.pool)
+            .execute(&mut *tx)
             .await
         }
         TimerAction::SetTotal => {
@@ -165,7 +185,7 @@ async fn put_timer(
             .bind(user_id)
             .bind(user_id)
             .bind(now_epoch)
-            .execute(&state.app.pool)
+            .execute(&mut *tx)
             .await
         }
     };
@@ -191,9 +211,59 @@ async fn put_timer(
     if result.rows_affected() > 1 {
         return internal_error();
     }
+    if let Some((action, changes)) = timer_audit(payload.action, before, set_total, now_epoch) {
+        let recorded = audit::record_with_data(
+            &mut tx,
+            user_id,
+            Entity::Project,
+            project_id,
+            action,
+            None,
+            changes.as_ref(),
+        )
+        .await;
+        if recorded.is_err() {
+            return internal_error();
+        }
+    }
+    if tx.commit().await.is_err() {
+        return internal_error();
+    }
     match read_timer(&state, project_id, now).await {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(_) => internal_error(),
+    }
+}
+
+/// The audit event one timer request earns, if any, from the state before it.
+/// Repeating a request that changes nothing (start of a running timer, stop of
+/// a stopped one, saving the same total) records nothing.
+fn timer_audit(
+    action: TimerAction,
+    before: (i64, Option<i64>),
+    set_total: Option<i64>,
+    now_epoch: i64,
+) -> Option<(Action, Option<audit::ChangeSetV1>)> {
+    let (stored, started_at) = before;
+    let seconds_change = |from: i64, to: i64| {
+        audit::changes_from_items(vec![ChangeItemV1::new(
+            ChangeField::ProjectTimerSeconds,
+            ChangeValue::Integer(Some(from)),
+            ChangeValue::Integer(Some(to)),
+        )?])
+    };
+    let running = started_at.map_or(0, |started| now_epoch.saturating_sub(started).max(0));
+    let effective = stored.saturating_add(running).min(MAX_SECONDS);
+    match action {
+        TimerAction::Start => started_at.is_none().then_some((Action::TimerStarted, None)),
+        TimerAction::Stop => started_at
+            .is_some()
+            .then(|| (Action::TimerStopped, seconds_change(stored, effective))),
+        TimerAction::SetTotal => {
+            let total = set_total?;
+            (total != effective)
+                .then(|| (Action::TimerTotalChanged, seconds_change(effective, total)))
+        }
     }
 }
 
@@ -202,13 +272,13 @@ async fn read_timer(
     project_id: i64,
     now: DateTime<Utc>,
 ) -> Result<TimerDto, sqlx::Error> {
-    let row = sqlx::query_as::<_, (i64, Option<i64>)>(
-        "SELECT total_seconds, started_at FROM project_timers WHERE project_id = ?",
+    let row = sqlx::query_as::<_, (i64, Option<i64>, Option<i64>)>(
+        "SELECT total_seconds, started_at, started_by FROM project_timers WHERE project_id = ?",
     )
     .bind(project_id)
     .fetch_optional(&state.app.pool)
     .await?;
-    let (total_seconds, started_at) = row.unwrap_or((0, None));
+    let (total_seconds, started_at, started_by) = row.unwrap_or((0, None, None));
     let now_epoch = now.timestamp();
     let total_seconds = started_at.map_or(total_seconds, |started| {
         total_seconds.saturating_add(now_epoch.saturating_sub(started).max(0))
@@ -218,6 +288,7 @@ async fn read_timer(
         started_at: started_at
             .and_then(|value| Utc.timestamp_opt(value, 0).single())
             .map(|value| value.to_rfc3339_opts(SecondsFormat::Secs, true)),
+        started_by: started_at.and(started_by),
         server_time: now.to_rfc3339_opts(SecondsFormat::Micros, true),
     })
 }

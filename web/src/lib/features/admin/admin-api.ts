@@ -402,6 +402,7 @@ const changeFields = new Set([
   "project.cover_image",
   "project.image_order",
   "project.step_image_order",
+  "project.timer_seconds",
   "yarn.name",
   "yarn.description",
   "yarn.brand",
@@ -434,7 +435,8 @@ function compatibleChangeValue(
   if (
     field.endsWith("_count") ||
     field.endsWith("_grams") ||
-    field.endsWith("_meters")
+    field.endsWith("_meters") ||
+    field === "project.timer_seconds"
   )
     return type === "integer";
   if (field.endsWith(".is_ai_enhanced")) return type === "boolean";
