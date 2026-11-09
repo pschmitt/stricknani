@@ -345,8 +345,9 @@ export async function runImportJourney(
       (await prefilled.inputValue()) === sharedLink,
       "the shared link did not prefill the project import",
     );
+    // The editor shows its own words for feature_disabled.
     await page
-      .getByText("Imports are turned off.")
+      .getByText("Imports are turned off on this server.")
       .waitFor({ state: "visible" });
     check(
       startedImports.length === 1 &&

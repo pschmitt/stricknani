@@ -941,7 +941,7 @@ async function assertOwnerResourceCards(
 }
 
 async function uploadAccountAvatar(page: Page): Promise<void> {
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
     name: "synthetic-admin-avatar.png",
     mimeType: "image/png",
     buffer: tinyPngFixture(),

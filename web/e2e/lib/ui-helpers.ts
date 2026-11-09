@@ -933,7 +933,10 @@ export async function assertMobileAppHeader(page: Page): Promise<void> {
     (await page.locator(".app-header .header-account").count()) === 0 &&
       // A project or yarn page's own actions may sit in the bar's slot.
       (await page
-        .locator(".app-header button:not(.app-header__actions *)")
+        // The palette's search button is the bar's one own control.
+        .locator(
+          ".app-header button:not(.app-header__actions *):not(.palette-trigger)",
+        )
         .count()) === 0,
     "the phone header still has an account avatar button",
   );

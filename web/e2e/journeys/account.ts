@@ -326,7 +326,7 @@ export async function runAccountJourney(
       );
 
       markStage("upload and remove avatar");
-      await page.locator('input[type="file"]').setInputFiles({
+      await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
         name: "profile.png",
         mimeType: "image/png",
         buffer: tinyPngFixture(),
