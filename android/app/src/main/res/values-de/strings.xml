@@ -1468,6 +1468,8 @@
     <string name="markdown_editor_link">Link</string>
     <string name="markdown_editor_mode">Editor-Modus</string>
     <string name="markdown_editor_raw">Roh</string>
+    <string name="markdown_editor_preview">Vorschau</string>
+    <string name="markdown_editor_preview_empty">Noch nichts zur Vorschau.</string>
     <string name="editor_section_pattern">Anleitung</string>
     <string name="project_editor_add_yarn">Garn hinzufügen</string>
     <string name="yarns_list_empty_subtitle">Füge ein Knäuel hinzu, um seine Angaben und Projektverknüpfungen zusammenzuhalten.</string>
@@ -1477,9 +1479,4 @@
     <string name="yarns_list_empty_filtered_subtitle">Versuche eine andere Suche oder zeige alle Garne.</string>
     <string name="yarn_detail_field_skein_weight">Knäuelgewicht</string>
     <string name="yarn_detail_field_skein_length">Lauflänge</string>
-    <string name="markdown_editor_visual">Visuell</string>
-    <string name="markdown_editor_unsupported">Dieser Text enthält Formatierungen, die der visuelle Editor nicht darstellen kann. Er wird daher als Markdown bearbeitet.</string>
-    <string name="markdown_editor_link_address">Link-Adresse</string>
-    <string name="markdown_editor_link_apply">Übernehmen</string>
-    <string name="markdown_editor_link_remove">Link entfernen</string>
 </resources>

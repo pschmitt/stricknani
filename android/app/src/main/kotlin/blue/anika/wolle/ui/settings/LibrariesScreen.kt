@@ -67,11 +67,6 @@ internal val LIBRARIES =
             "https://github.com/Kotlin/kotlinx.serialization",
         ),
         Library(
-            "Compose Rich Editor",
-            "Apache License 2.0",
-            "https://github.com/MohamedRejeb/compose-rich-editor",
-        ),
-        Library(
             "Multiplatform Markdown Renderer",
             "Apache License 2.0",
             "https://github.com/mikepenz/multiplatform-markdown-renderer",

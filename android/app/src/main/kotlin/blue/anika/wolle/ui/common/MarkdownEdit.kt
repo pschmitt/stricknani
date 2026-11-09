@@ -33,8 +33,8 @@ internal fun applyMarkdownFormat(value: TextFieldValue, format: MarkdownFormat):
     }
 
 /**
- * Source as the server renders it. A list-like field (other materials) keeps every line break;
- * prose fields join soft-wrapped lines. Used to compare what a text renders to.
+ * Source for the preview. A list-like field (other materials) keeps every line break, as the server
+ * does; prose fields join soft-wrapped lines.
  */
 internal fun markdownPreviewSource(text: String, keepLineBreaks: Boolean): String =
     if (keepLineBreaks) text.replace(Regex("(?<!\n)\n(?!\n)"), "  \n") else text
