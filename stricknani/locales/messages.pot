@@ -565,6 +565,10 @@ msgid ""
 "you cannot sign in, contact the instance operator."
 msgstr ""
 
+#: web/src/lib/components/ScopeFilter.svelte:17
+msgid "All"
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectLibrary.svelte:265
 msgid "All categories"
 msgstr ""
@@ -1699,10 +1703,6 @@ msgstr ""
 msgid ""
 "Every sign-in: browser sessions, the apps and devices you connected, and "
 "any linked login provider."
-msgstr ""
-
-#: web/src/lib/components/ScopeFilter.svelte:17
-msgid "Everyone"
 msgstr ""
 
 #: web/src/lib/features/account/BackupsSection.svelte:464

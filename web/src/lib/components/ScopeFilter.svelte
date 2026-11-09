@@ -14,7 +14,7 @@
   const scope = $derived(scopeFor(user));
   const options = $derived<{ value: LibraryScope; label: string }[]>([
     { value: "mine", label: t("Mine", locale) },
-    { value: "all", label: t("Everyone", locale) },
+    { value: "all", label: t("All", locale) },
   ]);
 </script>
 

@@ -1363,7 +1363,7 @@
     <string name="owner_banner_yarn_detail">Your changes are saved to their yarn and recorded in the audit log.</string>
     <string name="owner_filter_label">Show</string>
     <string name="owner_filter_mine">Mine</string>
-    <string name="owner_filter_everyone">Everyone</string>
+    <string name="owner_filter_everyone">All</string>
     <string name="share_import_title">Import this link as a project or as a yarn?</string>
     <string name="share_import_project">Project</string>
     <string name="share_import_yarn">Yarn</string>

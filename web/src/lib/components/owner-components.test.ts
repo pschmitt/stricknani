@@ -62,18 +62,18 @@ describe("ForeignOwnerBanner", () => {
 });
 
 describe("ScopeFilter", () => {
-  it("shows Mine and Everyone to administrators, Everyone selected by default", () => {
+  it("shows Mine and All to administrators, All selected by default", () => {
     session.data = sessionFor(true);
     const { body } = render(ScopeFilter, { props: {} });
     expect(body).toContain("Mine");
-    expect(body).toContain("Everyone");
-    expect(body).toMatch(/aria-pressed="true"[^>]*>(?:(?!<button).)*Everyone/s);
+    expect(body).toContain(">All<");
+    expect(body).toMatch(/aria-pressed="true"[^>]*>(?:(?!<button).)*All/s);
   });
 
   it("is hidden from regular users", () => {
     session.data = sessionFor(false);
     const { body } = render(ScopeFilter, { props: {} });
-    expect(body).not.toContain("Everyone");
+    expect(body).not.toContain(">All<");
     expect(body).not.toContain("scope-filter");
   });
 });

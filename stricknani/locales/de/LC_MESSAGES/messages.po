@@ -594,6 +594,10 @@ msgstr ""
 " einen Export deiner Daten möchtest oder dich nicht mehr anmelden kannst,"
 " wende dich an den Betreiber der Instanz."
 
+#: web/src/lib/components/ScopeFilter.svelte:17
+msgid "All"
+msgstr "Alle"
+
 #: web/src/lib/features/projects/ProjectLibrary.svelte:265
 msgid "All categories"
 msgstr "Alle Kategorien"
@@ -1773,10 +1777,6 @@ msgid ""
 msgstr ""
 "Alle Anmeldungen: Browser-Sitzungen, die verbundenen Apps und Geräte und "
 "jeder verknüpfte Login-Anbieter."
-
-#: web/src/lib/components/ScopeFilter.svelte:17
-msgid "Everyone"
-msgstr "Alle"
 
 #: web/src/lib/features/account/BackupsSection.svelte:464
 msgid "Everything in it is added as new items, also if you restored it before."
@@ -7258,3 +7258,6 @@ msgstr ""
 
 #~ msgid "of"
 #~ msgstr "von"
+
+#~ msgid "Everyone"
+#~ msgstr "Alle"

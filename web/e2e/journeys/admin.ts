@@ -656,7 +656,7 @@ async function assertNoScopeFilter(page: Page, origin: string): Promise<void> {
     .waitFor({ state: "visible" });
   check(
     (await page.getByTestId("scope-filter").count()) === 0,
-    "a regular user was offered the Mine / Everyone filter",
+    "a regular user was offered the Mine / All filter",
   );
 }
 
@@ -673,7 +673,7 @@ async function assertAdminEditsForeignProject(
 ): Promise<void> {
   const bannerText =
     /^.+'s project Your changes are saved to their project and recorded in the audit log\.$/;
-  mark("administrator library shows Mine / Everyone and the owner badge");
+  mark("administrator library shows Mine / All and the owner badge");
   await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
   await page
     .getByRole("heading", { name: "Projects", exact: true })
@@ -681,7 +681,7 @@ async function assertAdminEditsForeignProject(
   const filter = page.getByTestId("scope-filter");
   await filter.waitFor({ state: "visible" });
   await expect(
-    filter.getByRole("button", { name: "Everyone", exact: true }),
+    filter.getByRole("button", { name: "All", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   const card = page.locator(".library-card").filter({ hasText: project.name });
   await card.waitFor({ state: "visible" });
@@ -692,7 +692,7 @@ async function assertAdminEditsForeignProject(
   mark("administrator narrows the library to Mine and back");
   await filter.getByRole("button", { name: "Mine", exact: true }).click();
   await expect(card).toHaveCount(0);
-  await filter.getByRole("button", { name: "Everyone", exact: true }).click();
+  await filter.getByRole("button", { name: "All", exact: true }).click();
   await card.waitFor({ state: "visible" });
 
   mark("administrator opens the foreign project and sees the banner");
@@ -2902,7 +2902,7 @@ async function runAcceptance(
       resourceForbiddenStatus === 403,
       "a member session was not denied by the admin resource API",
     );
-    mark("member is not offered the Mine / Everyone filter");
+    mark("member is not offered the Mine / All filter");
     await assertNoScopeFilter(page, origin);
     mark("administrator edits the member's project");
     await signOut(page);
