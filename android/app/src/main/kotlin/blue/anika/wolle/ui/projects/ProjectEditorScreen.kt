@@ -76,6 +76,7 @@ import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.FeedbackKind
+import blue.anika.wolle.ui.common.FieldLabel
 import blue.anika.wolle.ui.common.ImportAssetRow
 import blue.anika.wolle.ui.common.ImportImagePicker
 import blue.anika.wolle.ui.common.OwnerBanner
@@ -343,7 +344,10 @@ fun ProjectEditorScreen(
                                 viewModel.updateForm { it.copy(name = value) }
                             },
                             label = {
-                                Text(stringResource(R.string.project_editor_name_label))
+                                FieldLabel(
+                                    stringResource(R.string.project_editor_name_label),
+                                    PhosphorIcons.Hoodie,
+                                )
                             },
                             modifier =
                                 Modifier.fillMaxWidth()
@@ -492,6 +496,7 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(category = value) }
                                 },
                                 label = stringResource(R.string.common_field_category),
+                                labelIcon = PhosphorIcons.FolderSimple,
                                 suggestions = categories.map { it.name },
                                 modifier = Modifier.focusRequester(detailsFocus),
                             )
@@ -500,7 +505,12 @@ fun ProjectEditorScreen(
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(needles = value) }
                                 },
-                                label = { Text(stringResource(R.string.common_field_needles)) },
+                                label = {
+                                    FieldLabel(
+                                        stringResource(R.string.common_field_needles),
+                                        PhosphorIcons.Needle,
+                                    )
+                                },
                                 placeholder = {
                                     Text(stringResource(R.string.project_editor_needles_hint))
                                 },
@@ -516,7 +526,10 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(stitchSample = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.common_field_stitch_sample))
+                                    FieldLabel(
+                                        stringResource(R.string.common_field_stitch_sample),
+                                        PhosphorIcons.Ruler,
+                                    )
                                 },
                                 placeholder = {
                                     Text(stringResource(R.string.project_editor_stitch_sample_hint))
@@ -535,7 +548,10 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(tags = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.project_editor_tags_label))
+                                    FieldLabel(
+                                        stringResource(R.string.project_editor_tags_label),
+                                        PhosphorIcons.Tag,
+                                    )
                                 },
                                 supportingText = {
                                     Text(stringResource(R.string.project_editor_tags_hint))
@@ -550,6 +566,7 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(link = value) }
                                 },
                                 label = stringResource(R.string.project_editor_link_label),
+                                labelIcon = PhosphorIcons.Link,
                                 modifier = Modifier.fillMaxWidth(),
                                 onFocusLost = offerImport,
                             )
@@ -623,7 +640,10 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(otherMaterials = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.common_field_other_materials))
+                                    FieldLabel(
+                                        stringResource(R.string.common_field_other_materials),
+                                        PhosphorIcons.Scissors,
+                                    )
                                 },
                                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                                 minLines = 2,
@@ -648,7 +668,10 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(description = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.project_detail_description_title))
+                                    FieldLabel(
+                                        stringResource(R.string.project_detail_description_title),
+                                        PhosphorIcons.TextAlignLeft,
+                                    )
                                 },
                                 modifier =
                                     Modifier.fillMaxWidth()
@@ -666,6 +689,7 @@ fun ProjectEditorScreen(
                                     viewModel.updateForm { it.copy(notes = value) }
                                 },
                                 label = stringResource(R.string.project_detail_notes_title),
+                                labelIcon = PhosphorIcons.NotePencil,
                                 fieldModifier = Modifier.focusRequester(notesFocus),
                                 minLines = 3,
                             )
@@ -963,7 +987,12 @@ private fun StepEditorCard(
                 OutlinedTextField(
                     value = step.title,
                     onValueChange = onTitleChange,
-                    label = { Text(stringResource(R.string.project_editor_step_title_label)) },
+                    label = {
+                        FieldLabel(
+                            stringResource(R.string.project_editor_step_title_label),
+                            PhosphorIcons.ListNumbers,
+                        )
+                    },
                     modifier = titleModifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions =
@@ -976,7 +1005,10 @@ private fun StepEditorCard(
                     value = step.description,
                     onValueChange = onDescriptionChange,
                     label = {
-                        Text(stringResource(R.string.project_editor_step_description_label))
+                        FieldLabel(
+                            stringResource(R.string.project_editor_step_description_label),
+                            PhosphorIcons.TextAlignLeft,
+                        )
                     },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,

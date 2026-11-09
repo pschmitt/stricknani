@@ -8,7 +8,9 @@ describe("StickyNoteField", () => {
   });
 
   it("is one real, labelled textarea on the sticky paper", () => {
-    expect(body).toMatch(/<label for="import-notes"[^>]*>Notes<\/label>/);
+    expect(body).toMatch(
+      /<label for="import-notes"[^>]*>(?:<!--[^>]*-->)*Notes<\/label>/,
+    );
     expect(body.match(/<textarea/g)).toHaveLength(1);
     expect(body).toContain('id="import-notes"');
     expect(body).toContain("Designer: DROPS");

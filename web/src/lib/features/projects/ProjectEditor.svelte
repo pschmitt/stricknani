@@ -1,5 +1,6 @@
 <script lang="ts">
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
+  import LabelIcon from "#lib/components/LabelIcon.svelte";
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -1430,7 +1431,12 @@
           <section class="form-card">
             <div class="field-grid">
               <div class="field field-wide">
-                <label for="project-name">{t("Project name", locale)}</label>
+                <label for="project-name"
+                  ><LabelIcon name="projects" />{t(
+                    "Project name",
+                    locale,
+                  )}</label
+                >
                 <input
                   id="project-name"
                   bind:value={draft.name}
@@ -1670,7 +1676,9 @@
             <h2 id="basics-heading">{t("Project details", locale)}</h2>
             <div class="field-grid">
               <div class="field">
-                <label for="project-category">{t("Category", locale)}</label>
+                <label for="project-category"
+                  ><LabelIcon name="folder" />{t("Category", locale)}</label
+                >
                 <input
                   id="project-category"
                   bind:value={draft.category}
@@ -1691,12 +1699,14 @@
                   >{/if}
               </div>
               <div class="field">
-                <label for="project-needles">{t("Needles", locale)}</label>
+                <label for="project-needles"
+                  ><LabelIcon name="needle" />{t("Needles", locale)}</label
+                >
                 <input id="project-needles" bind:value={draft.needles} />
               </div>
               <div class="field field-wide">
                 <label for="project-stitch-sample"
-                  >{t("Stitch sample", locale)}</label
+                  ><LabelIcon name="gauge" />{t("Stitch sample", locale)}</label
                 >
                 <input
                   id="project-stitch-sample"
@@ -1704,7 +1714,9 @@
                 />
               </div>
               <div class="field field-wide">
-                <label for="project-tag-entry">{t("Tags", locale)}</label>
+                <label for="project-tag-entry"
+                  ><LabelIcon name="categories" />{t("Tags", locale)}</label
+                >
                 <div class="tag-entry-row">
                   <input
                     id="project-tag-entry"
@@ -1756,7 +1768,10 @@
               </div>
               <div class="field field-wide">
                 <label for="project-link"
-                  >{t("Pattern source URL", locale)}</label
+                  ><LabelIcon name="link" />{t(
+                    "Pattern source URL",
+                    locale,
+                  )}</label
                 >
                 <UrlField
                   id="project-link"
@@ -1834,7 +1849,10 @@
                 />
                 <div class="field field-wide yarn-other-materials">
                   <label for="project-materials"
-                    >{t("Other materials", locale)}</label
+                    ><LabelIcon name="scissors" />{t(
+                      "Other materials",
+                      locale,
+                    )}</label
                   >
                   <textarea
                     id="project-materials"
@@ -1854,7 +1872,10 @@
                 <div class="field-grid">
                   <div class="field field-wide">
                     <label for="project-description"
-                      >{t("Pattern", locale)}</label
+                      ><LabelIcon name="text-align" />{t(
+                        "Pattern",
+                        locale,
+                      )}</label
                     >
                     <textarea
                       id="project-description"
@@ -1865,6 +1886,7 @@
                     <StickyNoteField
                       id="project-notes"
                       label={t("Notes", locale)}
+                      icon="note"
                       bind:value={draft.notes}
                       rows={5}
                     />
@@ -1942,7 +1964,10 @@
                         </div>
                         <div class="field">
                           <label for={`step-title-${step.key}`}
-                            >{t("Step title", locale)}</label
+                            ><LabelIcon name="list-numbers" />{t(
+                              "Step title",
+                              locale,
+                            )}</label
                           >
                           <input
                             id={`step-title-${step.key}`}
@@ -1963,7 +1988,10 @@
                         </div>
                         <div class="field">
                           <label for={`step-description-${step.key}`}
-                            >{t("Step instructions", locale)}</label
+                            ><LabelIcon name="text-align" />{t(
+                              "Step instructions",
+                              locale,
+                            )}</label
                           >
                           <textarea
                             id={`step-description-${step.key}`}

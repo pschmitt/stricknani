@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
@@ -228,13 +229,14 @@ internal fun StickyNoteField(
     minLines: Int = 4,
     keyboardOptions: KeyboardOptions =
         KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+    labelIcon: ImageVector? = null,
 ) {
     StickyNoteSurface(modifier) {
         val ink = LocalContentColor.current
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(label) },
+            label = { FieldLabel(label, labelIcon) },
             modifier = fieldModifier.fillMaxWidth().testTag("sticky-note-field"),
             minLines = minLines,
             keyboardOptions = keyboardOptions,

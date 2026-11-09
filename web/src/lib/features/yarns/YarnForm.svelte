@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LabelIcon from "#lib/components/LabelIcon.svelte";
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
   import UrlField from "#lib/components/UrlField.svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
@@ -854,7 +855,10 @@
         <legend>{t("Yarn information", locale)}</legend>
         <div class="field-grid">
           <label class="field wide" for={fieldId("name")}>
-            <span>{t("Yarn name", locale)} <b aria-hidden="true">*</b></span>
+            <span
+              ><LabelIcon name="yarns" />{t("Yarn name", locale)}
+              <b aria-hidden="true">*</b></span
+            >
             <input
               id={fieldId("name")}
               value={draft.name}
@@ -873,7 +877,7 @@
               >{/if}
           </label>
           <label class="field" for={fieldId("brand")}>
-            <span>{t("Brand", locale)}</span>
+            <span><LabelIcon name="storefront" />{t("Brand", locale)}</span>
             <input
               id={fieldId("brand")}
               value={draft.brand}
@@ -882,7 +886,7 @@
             />
           </label>
           <label class="field" for={fieldId("colorway")}>
-            <span>{t("Colorway", locale)}</span>
+            <span><LabelIcon name="palette" />{t("Colorway", locale)}</span>
             <input
               id={fieldId("colorway")}
               value={draft.colorway}
@@ -896,7 +900,7 @@
           <summary>{t("More yarn details", locale)}</summary>
           <div class="field-grid">
             <label class="field" for={fieldId("dye_lot")}>
-              <span>{t("Dye lot", locale)}</span>
+              <span><LabelIcon name="palette" />{t("Dye lot", locale)}</span>
               <input
                 id={fieldId("dye_lot")}
                 value={draft.dye_lot}
@@ -906,7 +910,7 @@
               />
             </label>
             <label class="field" for={fieldId("fiber_content")}>
-              <span>{t("Fiber content", locale)}</span>
+              <span><LabelIcon name="leaf" />{t("Fiber content", locale)}</span>
               <input
                 id={fieldId("fiber_content")}
                 value={draft.fiber_content}
@@ -916,7 +920,7 @@
               />
             </label>
             <label class="field" for={fieldId("weight_category")}>
-              <span>{t("Yarn weight", locale)}</span>
+              <span><LabelIcon name="scales" />{t("Yarn weight", locale)}</span>
               <input
                 id={fieldId("weight_category")}
                 value={draft.weight_category}
@@ -926,7 +930,12 @@
               />
             </label>
             <label class="field" for={fieldId("recommended_needles")}>
-              <span>{t("Recommended needles", locale)}</span>
+              <span
+                ><LabelIcon name="needle" />{t(
+                  "Recommended needles",
+                  locale,
+                )}</span
+              >
               <input
                 id={fieldId("recommended_needles")}
                 value={draft.recommended_needles}
@@ -935,7 +944,12 @@
               />
             </label>
             <label class="field" for={fieldId("weight_grams")}>
-              <span>{t("Skein weight in grams", locale)}</span>
+              <span
+                ><LabelIcon name="scales" />{t(
+                  "Skein weight in grams",
+                  locale,
+                )}</span
+              >
               <input
                 id={fieldId("weight_grams")}
                 type="number"
@@ -956,7 +970,12 @@
                 >{/if}
             </label>
             <label class="field" for={fieldId("length_meters")}>
-              <span>{t("Skein length in meters", locale)}</span>
+              <span
+                ><LabelIcon name="gauge" />{t(
+                  "Skein length in meters",
+                  locale,
+                )}</span
+              >
               <input
                 id={fieldId("length_meters")}
                 type="number"
@@ -977,7 +996,9 @@
                 >{/if}
             </label>
             <label class="field wide" for={fieldId("description")}>
-              <span>{t("Description", locale)}</span>
+              <span
+                ><LabelIcon name="text-align" />{t("Description", locale)}</span
+              >
               <textarea
                 id={fieldId("description")}
                 rows="4"
@@ -991,6 +1012,7 @@
               <StickyNoteField
                 id={fieldId("notes")}
                 label={t("Notes", locale)}
+                icon="note"
                 rows={4}
                 maxlength={20000}
                 value={draft.notes}
@@ -998,7 +1020,8 @@
               />
             </div>
             <div class="field wide">
-              <label for={fieldId("link")}>{t("Yarn source URL", locale)}</label
+              <label for={fieldId("link")}
+                ><LabelIcon name="link" />{t("Yarn source URL", locale)}</label
               >
               <UrlField
                 id={fieldId("link")}

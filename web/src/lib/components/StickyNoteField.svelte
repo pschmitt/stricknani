@@ -2,10 +2,13 @@
   // The editable twin of StickyNote: a paper sticky note (same paper, fold, tilt, tape and shadow
   // tokens, and the same look as Android's StickyNoteCard) around a real, labelled textarea.
   import { focusOnHash } from "./focus-on-hash.ts";
+  import LabelIcon from "./LabelIcon.svelte";
+  import type { NavIconName } from "./NavIcon.svelte";
 
   let {
     id,
     label,
+    icon,
     value = $bindable(""),
     rows = 5,
     disabled = false,
@@ -16,6 +19,8 @@
   }: {
     id: string;
     label: string;
+    /** Optional decorative glyph before the label text. */
+    icon?: NavIconName;
     value?: string;
     rows?: number;
     disabled?: boolean;
@@ -30,7 +35,9 @@
 <div class="sticky-field">
   <span class="sticky-field__paper" aria-hidden="true"></span>
   <div class="sticky-field__body">
-    <label for={id}>{label}</label>
+    <label for={id}
+      >{#if icon}<LabelIcon name={icon} />{/if}{label}</label
+    >
     <textarea
       {id}
       use:focusOnHash

@@ -53,6 +53,7 @@ import blue.anika.wolle.ui.common.EditorPhoto
 import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
+import blue.anika.wolle.ui.common.FieldLabel
 import blue.anika.wolle.ui.common.ImportImagePicker
 import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
@@ -266,7 +267,10 @@ fun YarnEditorScreen(
                                         viewModel.updateForm { it.copy(name = value) }
                                     },
                                     label = {
-                                        Text(stringResource(R.string.yarn_editor_name_label))
+                                        FieldLabel(
+                                            stringResource(R.string.yarn_editor_name_label),
+                                            PhosphorIcons.Yarn,
+                                        )
                                     },
                                     modifier =
                                         Modifier.fillMaxWidth()
@@ -281,7 +285,10 @@ fun YarnEditorScreen(
                                         viewModel.updateForm { it.copy(brand = value) }
                                     },
                                     label = {
-                                        Text(stringResource(R.string.yarn_detail_field_brand))
+                                        FieldLabel(
+                                            stringResource(R.string.yarn_detail_field_brand),
+                                            PhosphorIcons.Storefront,
+                                        )
                                     },
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
@@ -294,8 +301,9 @@ fun YarnEditorScreen(
                                             viewModel.updateForm { it.copy(colorway = value) }
                                         },
                                         label = {
-                                            Text(
-                                                stringResource(R.string.yarn_detail_field_colorway)
+                                            FieldLabel(
+                                                stringResource(R.string.yarn_detail_field_colorway),
+                                                PhosphorIcons.Palette,
                                             )
                                         },
                                         modifier = Modifier.weight(1.4f),
@@ -308,7 +316,10 @@ fun YarnEditorScreen(
                                             viewModel.updateForm { it.copy(dyeLot = value) }
                                         },
                                         label = {
-                                            Text(stringResource(R.string.yarn_detail_field_dye_lot))
+                                            FieldLabel(
+                                                stringResource(R.string.yarn_detail_field_dye_lot),
+                                                PhosphorIcons.Palette,
+                                            )
                                         },
                                         modifier = Modifier.weight(1f),
                                         singleLine = true,
@@ -409,7 +420,10 @@ fun YarnEditorScreen(
                                     viewModel.updateForm { it.copy(fiberContent = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.yarn_detail_field_fiber_content))
+                                    FieldLabel(
+                                        stringResource(R.string.yarn_detail_field_fiber_content),
+                                        PhosphorIcons.Leaf,
+                                    )
                                 },
                                 placeholder = {
                                     Text(stringResource(R.string.yarn_editor_fiber_content_hint))
@@ -424,6 +438,7 @@ fun YarnEditorScreen(
                                     viewModel.updateForm { it.copy(weightCategory = value) }
                                 },
                                 label = stringResource(R.string.yarn_detail_field_weight_category),
+                                labelIcon = PhosphorIcons.Scales,
                                 suggestions = YARN_WEIGHT_SUGGESTIONS,
                             )
                             OutlinedTextField(
@@ -432,10 +447,11 @@ fun YarnEditorScreen(
                                     viewModel.updateForm { it.copy(recommendedNeedles = value) }
                                 },
                                 label = {
-                                    Text(
+                                    FieldLabel(
                                         stringResource(
                                             R.string.yarn_detail_field_recommended_needles
-                                        )
+                                        ),
+                                        PhosphorIcons.Needle,
                                     )
                                 },
                                 placeholder = {
@@ -454,8 +470,9 @@ fun YarnEditorScreen(
                                         }
                                     },
                                     label = {
-                                        Text(
-                                            stringResource(R.string.yarn_editor_weight_grams_label)
+                                        FieldLabel(
+                                            stringResource(R.string.yarn_editor_weight_grams_label),
+                                            PhosphorIcons.Scales,
                                         )
                                     },
                                     suffix = { Text("g") },
@@ -475,8 +492,11 @@ fun YarnEditorScreen(
                                         }
                                     },
                                     label = {
-                                        Text(
-                                            stringResource(R.string.yarn_editor_length_meters_label)
+                                        FieldLabel(
+                                            stringResource(
+                                                R.string.yarn_editor_length_meters_label
+                                            ),
+                                            PhosphorIcons.Ruler,
                                         )
                                     },
                                     suffix = { Text("m") },
@@ -505,7 +525,10 @@ fun YarnEditorScreen(
                                     viewModel.updateForm { it.copy(description = value) }
                                 },
                                 label = {
-                                    Text(stringResource(R.string.project_detail_description_title))
+                                    FieldLabel(
+                                        stringResource(R.string.project_detail_description_title),
+                                        PhosphorIcons.TextAlignLeft,
+                                    )
                                 },
                                 modifier = Modifier.fillMaxWidth().focusRequester(descriptionFocus),
                                 minLines = 3,
@@ -520,6 +543,7 @@ fun YarnEditorScreen(
                                     viewModel.updateForm { it.copy(notes = value) }
                                 },
                                 label = stringResource(R.string.project_detail_notes_title),
+                                labelIcon = PhosphorIcons.NotePencil,
                                 fieldModifier = Modifier.focusRequester(notesFocus),
                                 minLines = 3,
                             )
@@ -529,6 +553,7 @@ fun YarnEditorScreen(
                                     viewModel.updateForm { it.copy(link = value) }
                                 },
                                 label = stringResource(R.string.project_editor_link_label),
+                                labelIcon = PhosphorIcons.Link,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }

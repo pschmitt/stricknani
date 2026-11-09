@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -675,6 +677,7 @@ fun SuggestionTextField(
     suggestions: List<String>,
     modifier: Modifier = Modifier,
     supportingText: String? = null,
+    labelIcon: ImageVector? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val filtered =
@@ -697,7 +700,7 @@ fun SuggestionTextField(
                 onValueChange(it)
                 expanded = true
             },
-            label = { Text(label) },
+            label = { FieldLabel(label, labelIcon) },
             singleLine = true,
             supportingText = supportingText?.let { { Text(it) } },
             trailingIcon = {
@@ -858,6 +861,7 @@ fun UrlTextField(
     label: String,
     modifier: Modifier = Modifier,
     onFocusLost: ((String) -> Unit)? = null,
+    labelIcon: ImageVector? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
@@ -868,7 +872,7 @@ fun UrlTextField(
     OutlinedTextField(
         value = value,
         onValueChange = { onValueChange(it.filterNot { char -> char == '\n' || char == '\r' }) },
-        label = { Text(label) },
+        label = { FieldLabel(label, labelIcon) },
         placeholder = { Text("https://") },
         textStyle =
             MaterialTheme.typography.bodyMedium.copy(
@@ -918,4 +922,22 @@ fun UrlTextField(
                 focused = it.isFocused
             },
     )
+}
+
+/**
+ * A field label with a small decorative icon before the text, for an `OutlinedTextField` label slot
+ * (the web editors do the same with `LabelIcon`). The icon takes the label colour, has no content
+ * description, and the label text, so the field's accessible name, is unchanged.
+ */
+@Composable
+fun FieldLabel(text: String, icon: ImageVector?) {
+    if (icon == null) {
+        Text(text)
+        return
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(text)
+    }
 }
