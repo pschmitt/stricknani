@@ -41,6 +41,15 @@ class AuditPresentationTest {
         assertEquals(AuditActionKind.Upload, auditActionPresentation("uploaded").kind)
         assertEquals(AuditActionKind.Upload, auditActionPresentation("photo_uploaded").kind)
         assertEquals(AuditActionKind.Remove, auditActionPresentation("removed").kind)
+        assertEquals(
+            AuditActionKind.Impersonate,
+            auditActionPresentation("impersonation_started").kind,
+        )
+        assertEquals(
+            AuditActionKind.Impersonate,
+            auditActionPresentation("impersonation_stopped").kind,
+        )
+        assertNotNull(auditActionPresentation("impersonation_started").labelRes)
         assertNotNull(auditActionPresentation("created").labelRes)
     }
 
@@ -69,6 +78,7 @@ class AuditPresentationTest {
         assertEquals(AuditTone.Red, AuditActionKind.Remove.tone())
         assertEquals(AuditTone.Marigold, AuditActionKind.Upload.tone())
         assertEquals(AuditTone.Muted, AuditActionKind.Other.tone())
+        assertEquals(AuditTone.Muted, AuditActionKind.Impersonate.tone())
     }
 
     @Test

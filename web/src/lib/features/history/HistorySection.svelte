@@ -20,6 +20,7 @@
     eventHeadline,
     fullDate,
     historyDetailKind,
+    impersonatedByText,
     relativeTime,
   } from "./history-summary";
 
@@ -285,7 +286,17 @@
                   title={fullDate(event.created_at, locale)}
                   >{relativeTime(event.created_at, now, locale)}</time
                 >
-                {#if other}
+                {#if event.impersonated_by}
+                  <span class="entry-actor">
+                    <span
+                      >{impersonatedByText(
+                        event.impersonated_by.name ?? "",
+                        event.actor_email ?? currentEmail ?? "",
+                        locale,
+                      )}</span
+                    >
+                  </span>
+                {:else if other}
                   <span class="entry-actor">
                     <UserAvatar
                       avatarUrl={event.actor_avatar_url}

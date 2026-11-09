@@ -4,6 +4,8 @@ import {
   actionLabel,
   actionTone,
   eventHeadline,
+  impersonatedByText,
+  impersonationHeadline,
   relativeTime,
   summarizeChanges,
 } from "./history-summary";
@@ -154,6 +156,24 @@ describe("sharing events", () => {
     ).toBe("Transferred to a deleted account");
     expect(actionLabel("ownership_transferred", "en")).toBe(
       "Ownership transferred",
+    );
+  });
+});
+
+describe("impersonation wording", () => {
+  it("names the administrator in the headline of both events", () => {
+    expect(impersonationHeadline("impersonation_started", "Ann", "en")).toBe(
+      "Impersonation by Ann started",
+    );
+    expect(impersonationHeadline("impersonation_stopped", "Ann", "en")).toBe(
+      "Impersonation by Ann stopped",
+    );
+    expect(impersonationHeadline("updated", "Ann", "en")).toBeNull();
+  });
+
+  it("says who acted as whom", () => {
+    expect(impersonatedByText("Ann", "bea@example.test", "en")).toBe(
+      "by Ann as bea@example.test",
     );
   });
 });

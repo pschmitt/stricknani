@@ -908,6 +908,8 @@
     <string name="admin_action_ownership_transferred">Besitz übertragen</string>
     <string name="admin_action_photo_promoted">Titelfoto geändert</string>
     <string name="admin_action_title_image_promoted">Titelbild geändert</string>
+    <string name="admin_action_impersonation_started">Identitätswechsel gestartet</string>
+    <string name="admin_action_impersonation_stopped">Identitätswechsel beendet</string>
     <string name="admin_detail_who">Wer</string>
     <string name="admin_detail_what">Was</string>
     <string name="admin_detail_when">Wann</string>

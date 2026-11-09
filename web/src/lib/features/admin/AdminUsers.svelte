@@ -1,6 +1,8 @@
 <script lang="ts">
   import SharedButton from "#lib/components/Button.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import { beforeNavigate, goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError } from "#lib/api.ts";
@@ -18,6 +20,7 @@
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
     createAdminUser,
+    impersonateUser,
     listAdminUsers,
     resetUserPassword,
     setUserActive,
@@ -25,7 +28,7 @@
   } from "./admin-api";
 
   type LoadState = "loading" | "ready" | "error";
-  type Operation = "create" | "active" | "reset" | null;
+  type Operation = "create" | "active" | "reset" | "impersonate" | null;
 
   let users = $state<AdminUser[]>([]);
   let pageMeta = $state({ page: 1, per_page: 50, has_more: false });
@@ -60,6 +63,10 @@
   let activeNext = $state(false);
   let resetTarget = $state<AdminUser | null>(null);
   let oidcProviders = $state<OidcProvider[]>([]);
+  let impersonateDialog = $state<ReturnType<typeof ConfirmDialog>>();
+  let impersonateTarget = $state<AdminUser | null>(null);
+  let impersonateError = $state("");
+  let impersonateOpener: HTMLButtonElement | null = null;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -398,6 +405,42 @@
     }
   }
 
+  function canImpersonate(user: AdminUser): boolean {
+    return user.id !== userId && user.active && !user.is_admin;
+  }
+
+  function askImpersonate(user: AdminUser, opener: HTMLButtonElement) {
+    impersonateTarget = user;
+    impersonateOpener = opener;
+    impersonateError = "";
+    impersonateDialog?.showModal();
+  }
+
+  async function impersonate() {
+    const target = impersonateTarget;
+    const activeSession = session.data;
+    if (!target || !activeSession || operation !== null) return;
+    const operationId = ++operationGeneration;
+    operation = "impersonate";
+    impersonateError = "";
+    try {
+      await impersonateUser(target.id, activeSession);
+      impersonateDialog?.close();
+      impersonateTarget = null;
+      // The cookie session now acts as the member: reload the session and land on their home.
+      await refreshSession();
+      await goto(resolve("/"));
+    } catch (error) {
+      if (operationId !== operationGeneration) return;
+      impersonateError = errorMessage(
+        error,
+        t("Impersonation could not be started.", locale),
+      );
+    } finally {
+      if (operationId === operationGeneration) operation = null;
+    }
+  }
+
   function askActive(
     user: AdminUser,
     next: boolean,
@@ -637,8 +680,8 @@
             {user.active ? t("Active", locale) : t("Disabled", locale)}
           </span>
           <div class="row-actions">
-            {#if user.id !== userId}
-              <span class="action-slot">
+            <span class="action-slot">
+              {#if user.id !== userId}
                 <SharedButton
                   variant="secondary"
                   size="sm"
@@ -651,11 +694,25 @@
                 >
                   {user.active ? t("Disable", locale) : t("Enable", locale)}
                 </SharedButton>
-              </span>
-            {:else}
-              <span class="action-slot action-slot--empty" aria-hidden="true"
-              ></span>
-            {/if}
+              {:else}
+                <!-- Kept (disabled) so the action columns line up in every row. -->
+                <SharedButton
+                  variant="secondary"
+                  size="sm"
+                  class="user-action--danger"
+                  type="button"
+                  disabled
+                  title={t("You cannot disable your own account.", locale)}
+                  aria-describedby={`self-disable-${user.id}`}
+                  icon="user-disable"
+                >
+                  {t("Disable", locale)}
+                </SharedButton>
+                <span class="visually-hidden" id={`self-disable-${user.id}`}
+                  >{t("You cannot disable your own account.", locale)}</span
+                >
+              {/if}
+            </span>
             <SharedButton
               variant="ghost"
               size="sm"
@@ -672,6 +729,23 @@
                 providers={oidcProviders}
                 disabled={operation !== null}
               />
+            {:else}
+              <span class="action-slot action-slot--empty" aria-hidden="true"
+              ></span>
+            {/if}
+            {#if canImpersonate(user)}
+              <span class="action-slot action-slot--wide">
+                <SharedButton
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  disabled={operation !== null}
+                  onclick={(event) => askImpersonate(user, event.currentTarget)}
+                  icon="user-impersonate"
+                >
+                  {t("Impersonate", locale)}
+                </SharedButton>
+              </span>
             {:else}
               <span class="action-slot action-slot--empty" aria-hidden="true"
               ></span>
@@ -790,6 +864,57 @@
     </div>
   </form>
 </dialog>
+
+<ConfirmDialog
+  bind:this={impersonateDialog}
+  titleId="impersonate-title"
+  title={t("Impersonate this account?", locale)}
+  busy={operation === "impersonate"}
+  onclose={() => {
+    impersonateTarget = null;
+    void tick().then(() => impersonateOpener?.focus());
+  }}
+>
+  {#if impersonateTarget}
+    <div class="target-identity">
+      <UserAvatar
+        avatarUrl={impersonateTarget.avatar_url}
+        name={impersonateTarget.email}
+        size="large"
+      />
+      <strong>{impersonateTarget.email}</strong>
+    </div>
+    <p>
+      {t(
+        "Act as {email}? Everything you do is recorded as done by them and logged.",
+        locale,
+      ).replace("{email}", impersonateTarget.email)}
+    </p>
+  {/if}
+  {#if impersonateError}<p class="notice notice-error" role="alert">
+      {impersonateError}
+    </p>{/if}
+  {#snippet actions()}
+    <SharedButton
+      variant="secondary"
+      type="button"
+      disabled={operation !== null}
+      onclick={() => impersonateDialog?.close()}
+      icon="cancel">{t("Cancel", locale)}</SharedButton
+    >
+    <SharedButton
+      variant="primary"
+      type="button"
+      disabled={operation !== null}
+      onclick={() => void impersonate()}
+      icon="user-impersonate"
+    >
+      {operation === "impersonate"
+        ? t("Starting…", locale)
+        : t("Impersonate", locale)}
+    </SharedButton>
+  {/snippet}
+</ConfirmDialog>
 
 <dialog
   bind:this={activeDialog}
@@ -1021,13 +1146,21 @@
      Reset password and the identities link stay in the same columns. */
   .row-actions {
     display: grid;
-    grid-template-columns: 7.25rem max-content max-content;
+    grid-template-columns: 7.25rem max-content max-content max-content;
     align-items: center;
     justify-content: start;
     gap: 0.35rem;
   }
   .action-slot {
     display: flex;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   .action-slot :global(.ui-button) {
     width: 100%;

@@ -120,7 +120,7 @@ impl IntoResponse for AuthError {
 /// Resolve a valid bearer PAT to its active user ID.
 pub async fn bearer_user(pool: &SqlitePool, headers: &HeaderMap) -> Result<i64, AuthError> {
     let token = bearer_token(headers)?;
-    token_user(pool, token, None).await
+    token_user(pool, token, None, false).await
 }
 
 /// Resolve a valid API-purpose bearer PAT, rejecting duplicate authorization headers.
@@ -137,7 +137,7 @@ pub(crate) async fn bearer_pat_user(
         return Err(AuthError::Unauthorized);
     }
     let token = bearer_token(headers)?;
-    token_user(pool, token, Some("api")).await
+    token_user(pool, token, Some("api"), false).await
 }
 
 fn bearer_token(headers: &HeaderMap) -> Result<&str, AuthError> {
@@ -173,7 +173,7 @@ pub(crate) async fn browser_user(
     secure: bool,
 ) -> Result<i64, AuthError> {
     let token = cookie(headers, session_cookie_name(secure)).ok_or(AuthError::Unauthorized)?;
-    token_user(pool, token, Some("browser")).await
+    token_user(pool, token, Some("browser"), true).await
 }
 
 pub(crate) fn cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
@@ -190,12 +190,15 @@ async fn token_user(
     pool: &SqlitePool,
     token: &str,
     purpose: Option<&str>,
+    allow_impersonation: bool,
 ) -> Result<i64, AuthError> {
     let hash = token_hash(token.as_bytes());
-    let (user_id, token_id, last_used_at, token_purpose, error_reporting) =
-        sqlx::query_as::<_, (i64, i64, Option<i64>, String, i64)>(
+    let (mut user_id, token_id, last_used_at, token_purpose, mut error_reporting, impersonated) =
+        sqlx::query_as::<_, (i64, i64, Option<i64>, String, i64, Option<i64>)>(
             "SELECT users.id, api_tokens.id, api_tokens.last_used_at, api_tokens.purpose, \
-         users.error_reporting \
+         users.error_reporting, \
+         CASE WHEN api_tokens.impersonation_expires_at > unixepoch() \
+              THEN api_tokens.impersonated_user_id END \
          FROM api_tokens \
          JOIN users ON users.id = api_tokens.user_id \
          WHERE api_tokens.token_hash = ? \
@@ -217,6 +220,21 @@ async fn token_user(
         .ok_or(AuthError::Unauthorized)?;
     if token_purpose == "api" {
         touch_last_used(pool, token_id, last_used_at);
+    }
+    // Only a browser session acts as another account, and only while that
+    // account is still an active non-administrator.
+    if allow_impersonation
+        && token_purpose == "browser"
+        && let Some(target_id) = impersonated
+        && let Some(target_reporting) = sqlx::query_scalar::<_, i64>(
+            "SELECT error_reporting FROM users WHERE id = ? AND active = 1 AND is_admin = 0",
+        )
+        .bind(target_id)
+        .fetch_optional(pool)
+        .await?
+    {
+        user_id = target_id;
+        error_reporting = target_reporting;
     }
     crate::error_reporting::bind_user(user_id, error_reporting != 0);
     Ok(user_id)

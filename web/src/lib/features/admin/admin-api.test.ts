@@ -5,10 +5,13 @@ import {
   auditSearchFromFilters,
   createAdminUser,
   getAuditEventDetail,
+  impersonateUser,
   listAdminUsers,
   listAuditEvents,
   resetUserPassword,
+  parseImpersonator,
   setUserActive,
+  stopImpersonation,
   type AdminUser,
 } from "./admin-api";
 
@@ -333,6 +336,53 @@ describe("administrator API", () => {
     expect(fetchMock.mock.calls[2]?.[0]).toBe(
       "/api/v2/admin/users/7/reset-password",
     );
+  });
+
+  it("starts and stops impersonation with a CSRF-protected POST", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            user: { id: 7, email: "member@example.invalid" },
+            admin: { id: 4, email: "admin@example.invalid" },
+            expires_at: 1,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ data: { stopped: true } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await impersonateUser(7, session);
+    await stopImpersonation(session);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/v2/admin/users/7/impersonate",
+    );
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      "/api/v2/admin/impersonation/stop",
+    );
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(init).toMatchObject({ method: "POST" });
+      expect(new Headers(init?.headers).get("x-csrf-token")).toBe("csrf-test");
+    }
+  });
+
+  it("reads the optional impersonator of an event and ignores junk", () => {
+    expect(parseImpersonator(undefined)).toBeNull();
+    expect(parseImpersonator("admin")).toBeNull();
+    expect(
+      parseImpersonator({
+        id: 4,
+        name: "Admin",
+        email: "admin@example.invalid",
+      }),
+    ).toEqual({ id: 4, name: "Admin", email: "admin@example.invalid" });
+    expect(parseImpersonator({ id: 4, name: "Admin" })).toEqual({
+      id: 4,
+      name: "Admin",
+      email: null,
+    });
   });
 
   it("serializes audit filters and parses entity/page URL state", async () => {

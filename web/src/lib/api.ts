@@ -26,6 +26,14 @@ export interface SessionUser {
   avatar_source?: AvatarSource | null;
 }
 
+/** An administrator acting as another account (browser session only). */
+export interface Impersonation {
+  user: { id: number; email: string; name?: string };
+  admin: { id: number; email: string };
+  /** Unix seconds. */
+  expires_at: number;
+}
+
 export interface SessionData {
   user: SessionUser | null;
   csrf_token: string;
@@ -33,6 +41,8 @@ export interface SessionData {
   /** Optional error reporting; absent on servers that predate it. */
   error_reporting?: ErrorReportingInfo;
   locale: "en" | "de";
+  /** Present while an administrator is acting as the signed-in account. */
+  impersonation?: Impersonation;
 }
 
 export interface RequestOptions {
@@ -295,6 +305,13 @@ function localizedError(code: string): string {
     session_expired: t("Your session expired. Sign in again."),
     unauthorized: t("Your session has expired. Sign in again."),
     forbidden: t("You do not have permission to do that."),
+    impersonation_forbidden: t(
+      "This is not available while you are acting as another user.",
+    ),
+    impersonation_expired: t(
+      "Impersonation has ended. Reload the page to continue.",
+    ),
+    impersonation_invalid_target: t("This account cannot be impersonated."),
     validation_error: t("Check the highlighted fields and try again."),
     not_found: t("That item could not be found."),
     rate_limited: t("Too many attempts. Wait a moment and try again."),
@@ -367,6 +384,7 @@ function isSessionData(value: unknown): value is SessionData {
     typeof candidate.csrf_token === "string" &&
     (candidate.locale === "en" || candidate.locale === "de") &&
     isCapabilities(candidate.capabilities) &&
+    isImpersonation(candidate.impersonation) &&
     (user === null ||
       (typeof user === "object" &&
         Number.isSafeInteger(user.id) &&
@@ -374,6 +392,32 @@ function isSessionData(value: unknown): value is SessionData {
         typeof user.is_admin === "boolean" &&
         isAvatarUrl(user.avatar_url, user.id) &&
         isAvatarSource(user.avatar_source)))
+  );
+}
+
+function isImpersonation(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return false;
+  const { user, admin, expires_at } = value as Record<string, unknown>;
+  const account = (candidate: unknown, named: boolean): boolean => {
+    if (
+      typeof candidate !== "object" ||
+      candidate === null ||
+      Array.isArray(candidate)
+    )
+      return false;
+    const { id, email, name } = candidate as Record<string, unknown>;
+    return (
+      Number.isSafeInteger(id) &&
+      typeof email === "string" &&
+      (!named || name === undefined || typeof name === "string")
+    );
+  };
+  return (
+    account(user, true) &&
+    account(admin, false) &&
+    Number.isSafeInteger(expires_at)
   );
 }
 

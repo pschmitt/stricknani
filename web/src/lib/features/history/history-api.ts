@@ -2,9 +2,11 @@ import { ApiError, apiRequest } from "#lib/api.ts";
 import {
   parseAuditMedia,
   parseChangeSet,
+  parseImpersonator,
   type AuditMedia,
   type ChangeSetV1,
   type ChangeUnavailableReason,
+  type Impersonator,
   type PageMeta,
 } from "#lib/features/admin/admin-api.ts";
 
@@ -25,6 +27,8 @@ export interface HistoryEvent {
   media: AuditMedia | null;
   /** Thumbnails of the pictures named by this event's picture changes, keyed by label. */
   media_thumbnails: ChangeMedia | null;
+  /** The administrator who made this change while acting as the actor. */
+  impersonated_by: Impersonator | null;
   /**
    * The person of a sharing event (shared, share_role_changed, share_revoked, share_left,
    * ownership_transferred): `id`/`name` are null once that account was deleted; `role` is the
@@ -85,6 +89,7 @@ export function parseHistoryEvent(value: unknown): HistoryEvent {
     has_changes: value.has_changes === true,
     media: parseAuditMedia(value.media),
     media_thumbnails: parseChangeMedia(value.media_thumbnails),
+    impersonated_by: parseImpersonator(value.impersonated_by),
   };
 }
 

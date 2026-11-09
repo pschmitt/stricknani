@@ -19,6 +19,7 @@
   import CommandPalette from "#lib/components/CommandPalette.svelte";
   import { openPalette, shortcutLabel } from "#lib/palette/palette.svelte.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
+  import ImpersonationBanner from "#lib/components/ImpersonationBanner.svelte";
   import { headerSlot } from "#lib/header-slot.svelte.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import LocaleSwitcher from "#lib/components/LocaleSwitcher.svelte";
@@ -208,6 +209,7 @@
 
 <a class="skip-link" href="#main-content">{t("Skip to content", locale)}</a>
 <PwaUpdate />
+<ImpersonationBanner />
 <ActionFeedback ownerId={user?.id ?? null} {locale} />
 
 {#if publicGauge}

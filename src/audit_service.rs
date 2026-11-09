@@ -171,6 +171,19 @@ pub(crate) struct AuditEvent {
     /// The other account of a share, role change, revoke, leave or transfer.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) subject: Option<AuditSubject>,
+    /// The administrator who made this change while acting as the actor.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) impersonated_by: Option<AuditImpersonator>,
+}
+
+/// An administrator who acted as another account. The email is only given to
+/// administrators.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditImpersonator {
+    pub(crate) id: Option<i64>,
+    pub(crate) name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) email: Option<String>,
 }
 
 /// The other account a sharing event is about. Never carries an email.
@@ -232,6 +245,8 @@ macro_rules! resource_event_columns {
         e.resource_name_snapshot, e.change_version, \
         e.subject_user_id, e.subject_role, \
         (SELECT email FROM users WHERE id = e.subject_user_id) AS subject_email, \
+        e.impersonated_by_user_id, \
+        (SELECT email FROM users WHERE id = e.impersonated_by_user_id) AS impersonator_email, \
         CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
         CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
         COALESCE(length(e.safe_changes) > 262144, 0) AS safe_changes_too_large, \
@@ -1183,6 +1198,16 @@ fn make_event(
         has_changes,
         media,
         media_thumbnails: None,
+        impersonated_by: row
+            .get::<Option<i64>, _>("impersonated_by_user_id")
+            .map(|id| {
+                let email = row.get::<Option<String>, _>("impersonator_email");
+                AuditImpersonator {
+                    id: Some(id),
+                    name: email.as_deref().map(crate::resource_access::display_name),
+                    email: email.filter(|_| matches!(audience, AuditAudience::Administrator)),
+                }
+            }),
         subject: row
             .get::<Option<String>, _>("subject_role")
             .map(Some)

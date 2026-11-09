@@ -909,6 +909,8 @@
     <string name="admin_action_ownership_transferred">Ownership transferred</string>
     <string name="admin_action_photo_promoted">Cover photo changed</string>
     <string name="admin_action_title_image_promoted">Title image changed</string>
+    <string name="admin_action_impersonation_started">Impersonation started</string>
+    <string name="admin_action_impersonation_stopped">Impersonation stopped</string>
     <string name="admin_detail_who">Who</string>
     <string name="admin_detail_what">What</string>
     <string name="admin_detail_when">When</string>

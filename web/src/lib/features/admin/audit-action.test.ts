@@ -20,6 +20,8 @@ describe("auditActionPresentation", () => {
     ["photo_deleted", "action-delete", "Photo deleted"],
     ["photo_promoted", "action-update", "Cover photo changed"],
     ["title_image_promoted", "action-update", "Title image changed"],
+    ["impersonation_started", "action-default", "Impersonation started"],
+    ["impersonation_stopped", "action-default", "Impersonation stopped"],
   ] as const)(
     "maps %s to its action family and specific label",
     (action, icon, label) => {

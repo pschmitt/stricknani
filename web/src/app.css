@@ -619,6 +619,17 @@ button:disabled {
   }
 }
 
+/* While an administrator impersonates an account, a stripe marks the top edge of every page. */
+html[data-impersonating]::before {
+  position: fixed;
+  z-index: 9999;
+  inset: 0 0 auto;
+  height: 4px;
+  background: #ffd54a;
+  content: "";
+  pointer-events: none;
+}
+
 .app-shell {
   display: grid;
   min-height: 100svh;

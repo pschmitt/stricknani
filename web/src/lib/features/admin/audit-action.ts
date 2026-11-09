@@ -5,7 +5,8 @@ export type AuditActionIcon =
   | "action-update"
   | "action-delete"
   | "action-upload"
-  | "action-remove";
+  | "action-remove"
+  | "action-default";
 
 export type AuditActionPresentation =
   | {
@@ -75,6 +76,14 @@ const knownActions: Record<
   title_image_promoted: {
     icon: "action-update",
     messageKey: msg("Title image changed"),
+  },
+  impersonation_started: {
+    icon: "action-default",
+    messageKey: msg("Impersonation started"),
+  },
+  impersonation_stopped: {
+    icon: "action-default",
+    messageKey: msg("Impersonation stopped"),
   },
 };
 

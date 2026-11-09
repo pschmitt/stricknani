@@ -30,6 +30,24 @@ export interface AuditEvent {
   media: AuditMedia | null;
   /** Thumbnails of the pictures named by picture changes, by label (read-only administrator URLs). */
   media_thumbnails: ChangeMedia | null;
+  /** The administrator who made this change while acting as the actor. */
+  impersonated_by: Impersonator | null;
+}
+
+export interface Impersonator {
+  id: number | null;
+  name: string | null;
+  email: string | null;
+}
+
+/** The optional `impersonated_by` of an audit or history event; malformed values read as none. */
+export function parseImpersonator(value: unknown): Impersonator | null {
+  if (!record(value)) return null;
+  return {
+    id: safeInteger(value.id) ? value.id : null,
+    name: typeof value.name === "string" ? value.name : null,
+    email: typeof value.email === "string" ? value.email : null,
+  };
 }
 
 export type AuditMediaKind = "image" | "photo" | "attachment";
@@ -224,6 +242,7 @@ function parseAuditEvent(value: unknown): AuditEvent {
     has_changes: value.has_changes,
     media: parseAuditMedia(value.media),
     media_thumbnails: parseChangeMedia(value.media_thumbnails),
+    impersonated_by: parseImpersonator(value.impersonated_by),
   };
 }
 
@@ -591,6 +610,29 @@ export async function setUserActive(
   );
   if (!record(payload)) throw invalidResponse();
   return parseUser(payload.data);
+}
+
+/** Start acting as `id`; the cookie session itself switches, nothing is returned to store. */
+export async function impersonateUser(
+  id: number,
+  currentSession: SessionData,
+): Promise<void> {
+  const payload: unknown = await apiRequest(
+    `/api/v2/admin/users/${id}/impersonate`,
+    { method: "POST", csrfToken: currentSession.csrf_token },
+  );
+  if (!record(payload) || !record(payload.data)) throw invalidResponse();
+}
+
+/** End the impersonation of this browser session. */
+export async function stopImpersonation(
+  currentSession: SessionData,
+): Promise<void> {
+  const payload: unknown = await apiRequest(
+    "/api/v2/admin/impersonation/stop",
+    { method: "POST", csrfToken: currentSession.csrf_token },
+  );
+  if (!record(payload) || !record(payload.data)) throw invalidResponse();
 }
 
 export async function resetUserPassword(

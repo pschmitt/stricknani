@@ -19,6 +19,7 @@
     | "user-add"
     | "user-enable"
     | "user-disable"
+    | "user-impersonate"
     | "key"
     | "filter"
     | "favorite"
@@ -231,6 +232,11 @@
     <circle cx="9" cy="8" r="3" />
     <path
       d="M3.5 20c.4-3.1 2.4-4.8 5.5-4.8 1.7 0 3.1.5 4.1 1.4M15 16l6 6m0-6-6 6"
+    />
+  {:else if name === "user-impersonate"}
+    <circle cx="9" cy="8" r="3" />
+    <path
+      d="M3.5 20c.4-3.1 2.4-4.8 5.5-4.8 1.7 0 3.1.5 4.1 1.4M15 18h6m-2.5-2.5L21 18l-2.5 2.5"
     />
   {:else if name === "key"}
     <circle cx="8" cy="15.5" r="4" />

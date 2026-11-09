@@ -231,6 +231,32 @@ export function eventHeadline(
   );
 }
 
+/** "Impersonation by Ann started": the headline of the two impersonation events. */
+export function impersonationHeadline(
+  action: string,
+  admin: string,
+  locale: Locale,
+): string | null {
+  const template =
+    action === "impersonation_started"
+      ? t("Impersonation by {admin} started", locale)
+      : action === "impersonation_stopped"
+        ? t("Impersonation by {admin} stopped", locale)
+        : null;
+  return template?.replace("{admin}", admin) ?? null;
+}
+
+/** "by Ann as Bea": who made a change while acting as another account. */
+export function impersonatedByText(
+  admin: string,
+  user: string,
+  locale: Locale,
+): string {
+  return t("by {admin} as {user}", locale)
+    .replace("{admin}", admin)
+    .replace("{user}", user);
+}
+
 const units: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 365 * 24 * 3600],
   ["month", 30 * 24 * 3600],

@@ -19,6 +19,7 @@ const event = (patch: Partial<HistoryEvent> = {}): HistoryEvent => ({
   has_changes: true,
   media: null,
   media_thumbnails: null,
+  impersonated_by: null,
   ...patch,
 });
 

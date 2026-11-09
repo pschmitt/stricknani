@@ -12,6 +12,11 @@
   import AuditActionBadge from "./AuditActionBadge.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import { knownAuditActions } from "./audit-action";
+  import {
+    actionLabel,
+    impersonatedByText,
+    impersonationHeadline,
+  } from "#lib/features/history/history-summary.ts";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -232,6 +237,16 @@
     return t("Unknown actor", locale);
   }
 
+  /** "by Ann as Bea": the administrator behind a change made while impersonating. */
+  function adminAsUser(event: AuditEvent, actor: string): string {
+    const admin = event.impersonated_by;
+    return impersonatedByText(
+      admin?.email ?? admin?.name ?? t("Unknown actor", locale),
+      actor,
+      locale,
+    );
+  }
+
   function entityLabel(entity: string): string {
     return entity === "project"
       ? t("Project", locale)
@@ -390,36 +405,47 @@
                   <AuditActionBadge action={event.action} {locale} />
                 </div>
                 <div class="event-resource" class:no-media={!event.media}>
-                  <ResourceCard
-                    kind={resourceKind}
-                    name={event.resource.name ??
-                      `${entityLabel(event.entity_type)} #${event.entity_id}`}
-                    href={event.resource.href}
-                    imageUrl={event.resource.preview_url}
-                  />
-                  <!-- Every row reserves this line so rows keep one height, with or without media;
+                  {#if event.entity_type === "user"}
+                    <p class="impersonation-event">
+                      <strong
+                        >{impersonationHeadline(event.action, actor, locale) ??
+                          actionLabel(event.action, locale)}</strong
+                      >
+                      <span>{event.resource.name ?? `#${event.entity_id}`}</span
+                      >
+                    </p>
+                  {:else}
+                    <ResourceCard
+                      kind={resourceKind}
+                      name={event.resource.name ??
+                        `${entityLabel(event.entity_type)} #${event.entity_id}`}
+                      href={event.resource.href}
+                      imageUrl={event.resource.preview_url}
+                    />
+                    <!-- Every row reserves this line so rows keep one height, with or without media;
                        rows without media shift the card down by half of it to stay centered. -->
-                  <div class="event-note">
-                    {#if event.media}
-                      {#if event.media.exists && event.media.is_image && event.media.thumbnail_url}
-                        <img
-                          class="event-thumb"
-                          src={event.media.thumbnail_url}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          width="28"
-                          height="28"
+                    <div class="event-note">
+                      {#if event.media}
+                        {#if event.media.exists && event.media.is_image && event.media.thumbnail_url}
+                          <img
+                            class="event-thumb"
+                            src={event.media.thumbnail_url}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            width="28"
+                            height="28"
+                          />
+                        {/if}
+                        <AuditMediaPreview
+                          media={event.media}
+                          {locale}
+                          variant="note"
+                          thumb={false}
                         />
                       {/if}
-                      <AuditMediaPreview
-                        media={event.media}
-                        {locale}
-                        variant="note"
-                        thumb={false}
-                      />
-                    {/if}
-                  </div>
+                    </div>
+                  {/if}
                 </div>
                 <p class="event-actor">
                   <span class="visually-hidden">{t("By", locale)}</span>
@@ -428,7 +454,11 @@
                       avatarUrl={event.actor_avatar_url}
                       name={actor}
                     />
-                    <span class="actor-name">{actor}</span>
+                    <span class="actor-name"
+                      >{event.impersonated_by
+                        ? adminAsUser(event, actor)
+                        : actor}</span
+                    >
                   </span>
                 </p>
                 <div class="event-meta">
@@ -625,6 +655,16 @@
     border-radius: 0.45rem;
     object-fit: cover;
     background: var(--surface-raised);
+  }
+  .impersonation-event {
+    display: grid;
+    min-width: 0;
+    gap: 0.15rem;
+    margin: 0;
+  }
+  .impersonation-event span {
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
   }
   .event-actor {
     grid-area: actor;

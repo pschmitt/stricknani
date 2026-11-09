@@ -24,13 +24,17 @@ import java.time.ZoneId
  * and `DiffPanel.svelte`. Kept free of Compose state so they can be unit tested.
  */
 
-/** The five visual kinds of audit action (the web's `action-*` icons) plus "anything else". */
+/**
+ * The five visual kinds of audit action (the web's `action-*` icons), administrator impersonation,
+ * and "anything else".
+ */
 enum class AuditActionKind {
     Create,
     Update,
     Delete,
     Upload,
     Remove,
+    Impersonate,
     Other,
 }
 
@@ -83,6 +87,10 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "share_left" to (AuditActionKind.Remove to R.string.admin_action_share_left),
         "ownership_transferred" to
             (AuditActionKind.Update to R.string.admin_action_ownership_transferred),
+        "impersonation_started" to
+            (AuditActionKind.Impersonate to R.string.admin_action_impersonation_started),
+        "impersonation_stopped" to
+            (AuditActionKind.Impersonate to R.string.admin_action_impersonation_stopped),
     )
 
 /** Action names the filter offers as suggestions (the server filters on the exact name). */
@@ -108,6 +116,7 @@ fun AuditActionKind.icon(): ImageVector =
         AuditActionKind.Delete -> PhosphorIcons.Trash
         AuditActionKind.Upload -> Icons.Filled.CloudUpload
         AuditActionKind.Remove -> Icons.Filled.RemoveCircle
+        AuditActionKind.Impersonate -> PhosphorIcons.UserCircle
         AuditActionKind.Other -> PhosphorIcons.ClockCounterClockwise
     }
 
@@ -119,6 +128,7 @@ fun AuditActionKind.tone(): AuditTone =
         AuditActionKind.Delete,
         AuditActionKind.Remove -> AuditTone.Red
         AuditActionKind.Upload -> AuditTone.Marigold
+        AuditActionKind.Impersonate,
         AuditActionKind.Other -> AuditTone.Muted
     }
 

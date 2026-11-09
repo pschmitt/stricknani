@@ -63,6 +63,34 @@ describe("same-origin API client", () => {
     await expect(getSession()).resolves.toMatchObject({ user: { id: 42 } });
   });
 
+  it("accepts the optional impersonation block and rejects a malformed one", async () => {
+    const impersonation = {
+      user: { id: 7, email: "member@example.invalid", name: "Member" },
+      admin: { id: 4, email: "admin@example.invalid" },
+      expires_at: 1_900_000_000,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json({ data: { ...sessionFixture.data, impersonation } }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            data: {
+              ...sessionFixture.data,
+              impersonation: { ...impersonation, expires_at: "soon" },
+            },
+          }),
+        ),
+    );
+    await expect(getSession()).resolves.toMatchObject({ impersonation });
+    await expect(getSession()).rejects.toMatchObject({
+      code: "invalid_response",
+    });
+  });
+
   it.each(actionCapabilities)(
     "requires the %s capability in a session response",
     async (capability) => {

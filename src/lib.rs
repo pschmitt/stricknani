@@ -19,6 +19,7 @@ pub mod frontend;
 pub mod gravatar;
 mod i18n;
 pub mod image_import;
+pub(crate) mod impersonation;
 pub mod import_document;
 pub mod import_drafts;
 pub mod import_images;
@@ -152,7 +153,13 @@ fn app_with_services_and_web_root(
                 .route("/meta", get(meta))
                 .with_state(state.clone()),
         )
-        .merge(media::router().with_state(state.clone()));
+        .merge(media::router().with_state(state.clone()))
+        // Resource requests made while an administrator impersonates an
+        // account are attributed to the administrator in the audit log.
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            impersonation::guard,
+        ));
 
     // `/` has always been the landing route: it sends everyone to the app.
     let mut web_router = Router::new()

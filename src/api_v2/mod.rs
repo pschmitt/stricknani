@@ -201,6 +201,10 @@ fn router_with_context(
         .merge(admin_resources::router())
         .merge(audit::router())
         .merge(signup::router())
+        .layer(middleware::from_fn_with_state(
+            state.app.clone(),
+            crate::impersonation::guard,
+        ))
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }
@@ -217,6 +221,9 @@ struct SessionData {
     capabilities: Capabilities,
     error_reporting: telemetry::ErrorReportingInfo,
     locale: &'static str,
+    /// Present while an administrator is acting as the signed-in account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    impersonation: Option<crate::impersonation::ImpersonationInfo>,
 }
 
 #[derive(Serialize)]
@@ -303,6 +310,15 @@ fn api_error(status: StatusCode, code: &'static str, message: &'static str) -> R
         .into_response()
 }
 
+/// [`api_error`] for the request guards outside this module.
+pub(crate) fn error_response(
+    status: StatusCode,
+    code: &'static str,
+    message: &'static str,
+) -> Response {
+    api_error(status, code, message)
+}
+
 fn api_error_fields(
     status: StatusCode,
     code: &'static str,
@@ -343,6 +359,16 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
             let csrf_token = crate::web::csrf(&token);
             let capabilities = Capabilities::from_state(&state, Some(&user));
             let error_reporting = telemetry::ErrorReportingInfo::load(&state, Some(user.id)).await;
+            let impersonation = match crate::impersonation::info(&state.app.pool, &token).await {
+                Ok(info) => info,
+                Err(_) => {
+                    return api_error(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "internal_error",
+                        "Request failed",
+                    );
+                }
+            };
             return Json(Envelope {
                 data: SessionData {
                     user: Some(user),
@@ -350,6 +376,7 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
                     capabilities,
                     error_reporting,
                     locale: locale(&headers),
+                    impersonation,
                 },
             })
             .into_response();
@@ -380,6 +407,7 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
             capabilities,
             error_reporting,
             locale: locale(&headers),
+            impersonation: None,
         },
     })
     .into_response();
@@ -509,6 +537,7 @@ async fn login(
             capabilities,
             error_reporting,
             locale: locale(&headers),
+            impersonation: None,
         },
     })
     .into_response();
@@ -583,6 +612,17 @@ async fn logout(
             StatusCode::FORBIDDEN,
             "csrf_failed",
             "CSRF token is missing or invalid",
+        );
+    }
+    // Signing out ends an impersonation too, and logs it.
+    if crate::impersonation::stop(&state.app.pool, token)
+        .await
+        .is_err()
+    {
+        return api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            "Request failed",
         );
     }
     if sqlx::query("UPDATE api_tokens SET revoked_at = unixepoch() WHERE token_hash = ? AND purpose = 'browser' AND revoked_at IS NULL")

@@ -25,6 +25,8 @@ pub(super) fn router() -> Router<ApiV2State> {
             get(user_avatar_thumbnail),
         )
         .route("/admin/users/{id}/reset-password", post(reset_password))
+        .route("/admin/users/{id}/impersonate", post(impersonate))
+        .route("/admin/impersonation/stop", post(stop_impersonation))
         .layer(DefaultBodyLimit::max(8 * 1024))
 }
 
@@ -233,6 +235,77 @@ async fn reset_password(
             response
         }
         Err(error) => map_admin_error(error, "new_password"),
+    }
+}
+
+/// Impersonation belongs to the cookie session: a Bearer token never starts,
+/// stops or carries one.
+fn browser_session_token(
+    state: &ApiV2State,
+    headers: &axum::http::HeaderMap,
+) -> Result<String, Box<Response>> {
+    if headers.contains_key(axum::http::header::AUTHORIZATION) {
+        return Err(Box::new(api_error(
+            StatusCode::FORBIDDEN,
+            "impersonation_forbidden",
+            "Impersonation needs a browser session",
+        )));
+    }
+    crate::auth::cookie(
+        headers,
+        crate::auth::session_cookie_name(state.app.secure_cookies),
+    )
+    .map(str::to_owned)
+    .ok_or_else(|| {
+        Box::new(api_error(
+            StatusCode::UNAUTHORIZED,
+            "session_expired",
+            "Sign in to continue",
+        ))
+    })
+}
+
+async fn impersonate(
+    State(state): State<ApiV2State>,
+    headers: axum::http::HeaderMap,
+    Path(id): Path<i64>,
+) -> Response {
+    let token = match browser_session_token(&state, &headers) {
+        Ok(token) => token,
+        Err(response) => return *response,
+    };
+    let actor = match access::mutation_user(&state.app, &headers).await {
+        Ok(actor) => actor,
+        Err(response) => return *response,
+    };
+    match crate::impersonation::start(&state.app.pool, &token, actor, id).await {
+        Ok(info) => Json(Envelope { data: info }).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+#[derive(Serialize)]
+struct StopImpersonationData {
+    stopped: bool,
+}
+
+async fn stop_impersonation(
+    State(state): State<ApiV2State>,
+    headers: axum::http::HeaderMap,
+) -> Response {
+    let token = match browser_session_token(&state, &headers) {
+        Ok(token) => token,
+        Err(response) => return *response,
+    };
+    if let Err(response) = access::mutation_user(&state.app, &headers).await {
+        return *response;
+    }
+    match crate::impersonation::stop(&state.app.pool, &token).await {
+        Ok(stopped) => Json(Envelope {
+            data: StopImpersonationData { stopped },
+        })
+        .into_response(),
+        Err(_) => internal_error(),
     }
 }
 
