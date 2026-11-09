@@ -1,7 +1,6 @@
 package blue.anika.wolle.data.imports
 
 import android.Manifest
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -14,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.notify.NotificationImages
 import blue.anika.wolle.notify.applyBrand
@@ -25,9 +25,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Notifications of a background link import ([ImportWorker]): the progress of the short foreground
- * service on Android 8 to 11, and the result when nobody is looking at the import dialog. Tapping
- * the result opens the import dialog on it.
+ * "Pattern ready to review" (or "Yarn ...", or "The import did not work") for an import draft that
+ * finished while nobody was looking. Tapping it opens the editor on the draft.
  */
 @Singleton
 class ImportNotifier
@@ -38,77 +37,34 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
 ) {
 
-    fun progressNotification(kind: ImportKind): Notification {
-        ensureChannels()
-        return NotificationCompat.Builder(context, PROGRESS_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_stricknani)
-            .setContentTitle(
-                context.getString(
-                    when (kind) {
-                        ImportKind.Project -> R.string.import_notification_progress_project
-                        ImportKind.Yarn -> R.string.import_notification_progress_yarn
-                    }
-                )
-            )
-            .setContentText(context.getString(R.string.import_notification_progress_text))
-            .setProgress(0, 0, true)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .applyBrand(context, context.getString(R.string.import_notification_subtext))
-            .build()
-    }
-
-    /** "Pattern ready to review" with the name and the first picture found, or the failure. */
-    suspend fun finished(kind: ImportKind, result: PendingImport) {
-        ensureChannels()
+    /** Announces a finished [draft] with its name and first picture, or the failure. */
+    suspend fun finished(draft: ImportJobDto) {
+        ensureChannel()
         val builder =
             NotificationCompat.Builder(context, RESULTS_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_stricknani)
-                .setContentIntent(openImport(kind, result.url))
+                .setContentIntent(openDraft(draft))
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .applyBrand(context, context.getString(R.string.import_notification_subtext))
-        when (result) {
-            is PendingImport.ProjectReady ->
-                ready(
-                    builder,
-                    R.string.import_notification_ready_project,
-                    result.preview.request.name,
-                    result.preview.imageUrls.firstOrNull(),
-                )
-            is PendingImport.YarnReady ->
-                ready(
-                    builder,
-                    R.string.import_notification_ready_yarn,
-                    result.preview.request.name,
-                    result.preview.imageUrls.firstOrNull(),
-                )
-            is PendingImport.Failed -> {
-                val text = context.getString(R.string.import_notification_failed_text)
-                builder
-                    .setContentTitle(context.getString(R.string.import_notification_failed))
-                    .setContentText(hostOf(result.url) ?: text)
-                    .setStyle(
-                        NotificationCompat.BigTextStyle()
-                            .bigText(listOfNotNull(hostOf(result.url), text).joinToString("\n"))
-                    )
-            }
-            is PendingImport.Running -> return
-        }
-        post(notificationId(kind), builder)
+        if (draft.isReady) ready(builder, draft) else failed(builder, draft)
+        post(notificationId(draft), builder)
     }
 
-    private suspend fun ready(
-        builder: NotificationCompat.Builder,
-        title: Int,
-        name: String,
-        imageUrl: String?,
-    ) {
-        builder.setContentTitle(context.getString(title)).setContentText(name)
+    private suspend fun ready(builder: NotificationCompat.Builder, draft: ImportJobDto) {
+        val name = draft.title?.takeIf { it.isNotBlank() } ?: hostOf(draft.sourceUrl).orEmpty()
+        builder
+            .setContentTitle(
+                context.getString(
+                    if (draft.isYarn) R.string.import_notification_ready_yarn
+                    else R.string.import_notification_ready_project
+                )
+            )
+            .setContentText(name)
         // Through the server's image proxy: the app never contacts the pattern site itself.
-        val image = images.load(imageUrl?.let { mediaUrlResolver.resolve(importImagePath(it)) })
+        val image =
+            images.load(draft.imageUrl?.let { mediaUrlResolver.resolve(importImagePath(it)) })
         if (image != null) {
             builder
                 .setLargeIcon(image.icon)
@@ -121,21 +77,29 @@ constructor(
         }
     }
 
-    private fun openImport(kind: ImportKind, url: String): PendingIntent =
+    private fun failed(builder: NotificationCompat.Builder, draft: ImportJobDto) {
+        val host = hostOf(draft.sourceUrl)
+        val text = context.getString(R.string.import_notification_failed_text)
+        builder
+            .setContentTitle(context.getString(R.string.import_notification_failed))
+            .setContentText(host ?: text)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(listOfNotNull(host, text).joinToString("\n"))
+            )
+    }
+
+    private fun openDraft(draft: ImportJobDto): PendingIntent =
         PendingIntent.getActivity(
             context,
-            notificationId(kind),
+            notificationId(draft),
             Intent(context, MainActivity::class.java)
-                .setAction(ACTION_OPEN_IMPORT)
-                .putExtra(EXTRA_IMPORT_KIND, kind.name)
-                .putExtra(EXTRA_IMPORT_URL, url)
+                .setAction(ACTION_OPEN_DRAFT)
+                .putExtra(EXTRA_DRAFT_ID, draft.id)
+                .putExtra(EXTRA_DRAFT_YARN, draft.isYarn)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-
-    /** The result is shown in the dialog now: remove its notification. */
-    fun cancel(kind: ImportKind) =
-        NotificationManagerCompat.from(context).cancel(notificationId(kind))
 
     private fun post(id: Int, builder: NotificationCompat.Builder) {
         val permissionGranted =
@@ -153,18 +117,8 @@ constructor(
         }
     }
 
-    private fun ensureChannels() {
+    private fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val progress =
-            NotificationChannel(
-                    PROGRESS_CHANNEL_ID,
-                    context.getString(R.string.import_notification_channel_name),
-                    NotificationManager.IMPORTANCE_LOW,
-                )
-                .apply {
-                    description =
-                        context.getString(R.string.import_notification_channel_description)
-                }
         val results =
             NotificationChannel(
                     RESULTS_CHANNEL_ID,
@@ -177,25 +131,23 @@ constructor(
                 }
         context
             .getSystemService(NotificationManager::class.java)
-            ?.createNotificationChannels(listOf(progress, results))
+            ?.createNotificationChannel(results)
     }
 
-    private fun hostOf(url: String): String? =
-        runCatching { URI(url).host?.removePrefix("www.") }.getOrNull()
+    private fun hostOf(url: String?): String? = url?.let {
+        runCatching { URI(it).host?.removePrefix("www.") }.getOrNull()
+    }
 
     companion object {
-        /** Opens the import dialog of [EXTRA_IMPORT_KIND] on the result for [EXTRA_IMPORT_URL]. */
-        const val ACTION_OPEN_IMPORT = "blue.anika.wolle.action.OPEN_IMPORT"
-        const val EXTRA_IMPORT_KIND = "blue.anika.wolle.extra.IMPORT_KIND"
-        const val EXTRA_IMPORT_URL = "blue.anika.wolle.extra.IMPORT_URL"
+        /** Opens the editor of [EXTRA_DRAFT_YARN] on the draft [EXTRA_DRAFT_ID]. */
+        const val ACTION_OPEN_DRAFT = "blue.anika.wolle.action.OPEN_IMPORT_DRAFT"
+        const val EXTRA_DRAFT_ID = "blue.anika.wolle.extra.IMPORT_DRAFT_ID"
+        const val EXTRA_DRAFT_YARN = "blue.anika.wolle.extra.IMPORT_DRAFT_YARN"
 
-        private const val PROGRESS_CHANNEL_ID = "link_imports"
         private const val RESULTS_CHANNEL_ID = "link_import_results"
+        private const val ID_BASE = 1100
 
-        fun notificationId(kind: ImportKind): Int =
-            when (kind) {
-                ImportKind.Project -> 1030
-                ImportKind.Yarn -> 1031
-            }
+        /** One notification per draft, so two finished imports do not replace each other. */
+        fun notificationId(draft: ImportJobDto): Int = ID_BASE + (draft.id.hashCode() and 0xfff)
     }
 }

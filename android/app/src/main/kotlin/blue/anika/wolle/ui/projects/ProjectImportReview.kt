@@ -66,12 +66,15 @@ data class ProjectImportReview(
     fun applyTo(base: ProjectWriteRequest, amountLabel: String): ProjectWriteRequest =
         base.copy(
             yarnIds = linkedStashIds,
-            newYarns =
-                yarns
-                    .filter { it.choice == ImportYarnChoice.New && it.yarn.name.isNotBlank() }
-                    .map { it.yarn.toWriteRequest(amountLabel) },
+            newYarns = newYarns(amountLabel),
             notes = notes.trim().ifBlank { null },
         )
+
+    /** The yarns to create with the project, as write requests. */
+    fun newYarns(amountLabel: String): List<YarnWriteRequest> =
+        yarns
+            .filter { it.choice == ImportYarnChoice.New && it.yarn.name.isNotBlank() }
+            .map { it.yarn.toWriteRequest(amountLabel) }
 
     private fun updateYarn(
         index: Int,

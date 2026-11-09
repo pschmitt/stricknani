@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -75,6 +76,8 @@ import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.FeedbackKind
+import blue.anika.wolle.ui.common.ImportAssetRow
+import blue.anika.wolle.ui.common.ImportImagePicker
 import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
@@ -90,6 +93,8 @@ import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import blue.anika.wolle.ui.common.showFeedback
 import blue.anika.wolle.ui.common.urlHostOrNull
+import blue.anika.wolle.ui.imports.EditorImportState
+import blue.anika.wolle.ui.imports.ImportLinkCard
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -111,8 +116,6 @@ fun ProjectEditorScreen(
     onSaved: () -> Unit,
     onDeleted: () -> Unit,
     onBack: () -> Unit,
-    /** Opens the import with this link, started; offered for a link typed into a new project. */
-    onImportLink: (String) -> Unit = {},
     viewModel: ProjectEditorViewModel = hiltViewModel(),
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
@@ -130,6 +133,17 @@ fun ProjectEditorScreen(
     val picksFromOwner by viewModel.picksFromOwner.collectAsStateWithLifecycle()
     val candidates by viewModel.candidates.collectAsStateWithLifecycle()
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
+    val importNotice by viewModel.importNotice.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val amountLabel = stringResource(R.string.yarn_detail_field_amount)
+    // The import is ready: its result fills this form's own fields.
+    LaunchedEffect(importState) {
+        val ready = importState as? EditorImportState.Ready ?: return@LaunchedEffect
+        viewModel.applyImport(ready.draft) { preview ->
+            projectImportNotes(context, preview.request.notes, preview.details)
+        }
+    }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     // A new project's link: offer to import the pattern instead, once per link (as on the web).
     var importOfferUrl by rememberSaveable { mutableStateOf<String?>(null) }
@@ -292,7 +306,9 @@ fun ProjectEditorScreen(
                     }
                 }
             },
-            bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },
+            bottomBar = {
+                EditorSaveBar(isSaving = isSaving, onSave = { viewModel.save(amountLabel) })
+            },
         ) { innerPadding ->
             LazyColumn(
                 modifier =
@@ -302,27 +318,45 @@ fun ProjectEditorScreen(
                     PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                // 0: the name, at the top like the title of the project page.
+                // 0: the import card (new projects) and the name, at the top like the title of the
+                // project page.
                 item {
-                    OutlinedTextField(
-                        value = form.name,
-                        onValueChange = { value ->
-                            viewModel.updateForm { it.copy(name = value) }
-                        },
-                        label = {
-                            Text(stringResource(R.string.project_editor_name_label))
-                        },
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .focusRequester(nameFocus)
-                                .testTag("e2e-project-editor-name"),
-                        singleLine = true,
-                        keyboardOptions =
-                            KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Sentences,
-                                imeAction = ImeAction.Next,
-                            ),
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        if (
+                            !viewModel.isEditing &&
+                                (viewModel.offersLinkImport() ||
+                                    importState !is EditorImportState.Idle ||
+                                    importNotice != null)
+                        ) {
+                            ImportLinkCard(
+                                yarn = false,
+                                state = importState,
+                                notice = importNotice,
+                                ai = viewModel.aiImports(),
+                                onStart = viewModel::startImport,
+                                initialUrl = viewModel.sharedLink.orEmpty(),
+                            )
+                        }
+                        OutlinedTextField(
+                            value = form.name,
+                            onValueChange = { value ->
+                                viewModel.updateForm { it.copy(name = value) }
+                            },
+                            label = {
+                                Text(stringResource(R.string.project_editor_name_label))
+                            },
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .focusRequester(nameFocus)
+                                    .testTag("e2e-project-editor-name"),
+                            singleLine = true,
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Sentences,
+                                    imeAction = ImeAction.Next,
+                                ),
+                        )
+                    }
                 }
                 // 1: photos (add tile last), first like the gallery on the project page.
                 item {
@@ -371,6 +405,25 @@ fun ProjectEditorScreen(
                                     }
                                 } else null,
                         )
+                        // Pictures the import found: tick the ones to keep.
+                        if (form.importImageUrls.isNotEmpty()) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(top = 12.dp),
+                            ) {
+                                Text(
+                                    stringResource(R.string.import_pick_photos),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                ImportImagePicker(
+                                    urls = form.importImageUrls,
+                                    selected = form.selectedImportImages,
+                                    onToggle = viewModel::toggleImportImage,
+                                    thumbnailUrl = viewModel::importThumbnailUrl,
+                                )
+                            }
+                        }
                     }
                 }
                 // 2: pattern PDFs and other files, close to the photos (SNA-81).
@@ -396,6 +449,21 @@ fun ProjectEditorScreen(
                                     removeLabel = removeLabel,
                                     onRemove = { viewModel.removeAttachment(index) },
                                 )
+                            }
+                            // Diagrams and PDFs the import found: tick the ones to keep.
+                            if (form.importAssets.isNotEmpty()) {
+                                Text(
+                                    stringResource(R.string.import_pick_assets),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                form.importAssets.forEach { asset ->
+                                    ImportAssetRow(
+                                        asset = asset,
+                                        selected = asset.url in form.selectedImportAssets,
+                                        onToggle = { viewModel.toggleImportAsset(asset.url) },
+                                    )
+                                }
                             }
                             OutlinedButton(
                                 onClick = { attachmentPicker.launch("*/*") },
@@ -538,6 +606,16 @@ fun ProjectEditorScreen(
                                     )
                                 }
                             }
+                            // The yarns the pattern names: from the stash, new, or left out.
+                            if (form.importYarns.isNotEmpty()) {
+                                ProjectImportYarns(
+                                    review = ProjectImportReview(form.importYarns),
+                                    onReview = { viewModel.setImportYarns(it.yarns) },
+                                    stash = yarns,
+                                    previewUrl = viewModel::previewUrl,
+                                    showExtras = false,
+                                )
+                            }
                             // Other materials go under the linked yarns, as on the project page.
                             OutlinedTextField(
                                 value = form.otherMaterials,
@@ -631,6 +709,10 @@ fun ProjectEditorScreen(
                                     else it
                                 },
                         imageUrl = viewModel::imageUrl,
+                        importImageUrl = viewModel::importThumbnailUrl,
+                        onRemoveImportImage = { url ->
+                            viewModel.removeStepImportImage(index, url)
+                        },
                         onTitleChange = { value ->
                             viewModel.updateStep(index) { it.copy(title = value) }
                         },
@@ -745,7 +827,7 @@ fun ProjectEditorScreen(
                 TextButton(
                     onClick = {
                         importOfferUrl = null
-                        onImportLink(url)
+                        viewModel.startImport(url)
                     },
                     modifier = Modifier.testTag("project-editor-import-offer-accept"),
                 ) {
@@ -787,6 +869,8 @@ private fun StepEditorCard(
     canMoveDown: Boolean,
     titleModifier: Modifier,
     imageUrl: (String) -> String?,
+    importImageUrl: (String) -> String?,
+    onRemoveImportImage: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onMove: (Int) -> Unit,
@@ -916,6 +1000,14 @@ private fun StepEditorCard(
                                     model = File(upload.path),
                                     description = upload.fileName,
                                     onRemove = { onRemoveNewImage(imageIndex) },
+                                )
+                            } +
+                            step.importImageUrls.map { url ->
+                                EditorPhoto(
+                                    key = "import-$url",
+                                    model = importImageUrl(url),
+                                    description = url.substringAfterLast('/'),
+                                    onRemove = { onRemoveImportImage(url) },
                                 )
                             },
                     addLabel = stringResource(R.string.editor_add_photo_short),

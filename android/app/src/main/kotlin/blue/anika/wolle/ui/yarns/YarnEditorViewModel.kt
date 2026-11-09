@@ -8,14 +8,22 @@ import androidx.navigation.toRoute
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiGeneration
+import blue.anika.wolle.data.api.ImportAvailability
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
+import blue.anika.wolle.data.api.importAvailability
+import blue.anika.wolle.data.api.v2.ImportJobDto
+import blue.anika.wolle.data.imports.ImportDrafts
+import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.data.media.MediaUrlResolver
+import blue.anika.wolle.data.repository.ImportedYarnPreview
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.repository.movedItem
 import blue.anika.wolle.data.repository.photosSortedByPosition
 import blue.anika.wolle.data.repository.reorderedIdsOrNull
+import blue.anika.wolle.data.repository.toYarnPreview
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
@@ -23,8 +31,13 @@ import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.OwnerBannerData
 import blue.anika.wolle.ui.common.PhotoRemoval
+import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.ownerBannerOf
+import blue.anika.wolle.ui.common.urlHostOrNull
+import blue.anika.wolle.ui.imports.EditorImportState
+import blue.anika.wolle.ui.imports.ImportNotice
+import blue.anika.wolle.ui.imports.LinkImportSession
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -57,7 +70,38 @@ data class YarnEditorFormState(
     val existingPhotos: List<YarnPhotoDto> = emptyList(),
     val photos: List<PendingUpload> = emptyList(),
     val removedPhotoIds: List<Int> = emptyList(),
+    /** Pictures found on the imported page; [selectedImportImages] of them are attached on save. */
+    val importImageUrls: List<String> = emptyList(),
+    val selectedImportImages: Set<String> = emptySet(),
 )
+
+/**
+ * The form with what an import found; a field the import has nothing for keeps what the user typed.
+ * [notes] are the imported notes (gauge, care, price) the yarn has no field for.
+ */
+internal fun YarnEditorFormState.withImport(
+    preview: ImportedYarnPreview,
+    notes: String?,
+): YarnEditorFormState {
+    val imported = preview.request
+    fun pick(value: String?, current: String) = value?.takeIf { it.isNotBlank() } ?: current
+    return copy(
+        name = pick(imported.name, name),
+        description = pick(imported.description, description),
+        brand = pick(imported.brand, brand),
+        colorway = pick(imported.colorway, colorway),
+        fiberContent = pick(imported.fiberContent, fiberContent),
+        weightCategory = pick(imported.weightCategory, weightCategory),
+        recommendedNeedles = pick(imported.recommendedNeedles, recommendedNeedles),
+        weightGrams = imported.weightGrams?.toString() ?: weightGrams,
+        lengthMeters = imported.lengthMeters?.toString() ?: lengthMeters,
+        notes = listOf(this.notes, notes.orEmpty()).filter { it.isNotBlank() }.joinToString("\n"),
+        link = pick(imported.link, link),
+        isAiEnhanced = imported.isAiEnhanced,
+        importImageUrls = preview.imageUrls,
+        selectedImportImages = imported.imageUrls.toSet(),
+    )
+}
 
 @HiltViewModel
 class YarnEditorViewModel
@@ -69,11 +113,84 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val mutationFeedback: MutationFeedback,
     private val pendingUploadStore: PendingUploadStore,
-    capabilities: ApiCapabilities,
+    private val capabilities: ApiCapabilities,
+    private val settingsRepository: SettingsRepository,
+    importDrafts: ImportDrafts,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.YarnEditor>()
     val isEditing: Boolean = route.yarnId != null
+
+    /** The server's import of a link, for a new yarn; its result fills the form. */
+    private val importSession =
+        LinkImportSession(viewModelScope, importDrafts, ImportTarget.Yarn) {
+            savedStateHandle[DRAFT_ID_KEY] = it
+        }
+    val importState: StateFlow<EditorImportState> = importSession.state
+
+    private val _importNotice = MutableStateFlow<ImportNotice?>(null)
+    /** Where the filled-in fields came from, once an import has been applied. */
+    val importNotice: StateFlow<ImportNotice?> = _importNotice.asStateFlow()
+
+    /** A link shared to the app: the import starts when the editor opens, the card shows it. */
+    val sharedLink: String? = route.importUrl
+
+    /** Link imports are on and the app talks to a server (not local-only mode). */
+    fun offersLinkImport(): Boolean =
+        !isEditing &&
+            !settingsRepository.isLocalMode &&
+            capabilities.current.importAvailability().url
+
+    fun importAvailability(): ImportAvailability = capabilities.current.importAvailability()
+
+    fun startImport(url: String) = importSession.start(url)
+
+    /**
+     * Fills the form from a finished import [draft]; [notesFor] writes the notes (gauge, care,
+     * price) in the app's language.
+     */
+    fun applyImport(draft: ImportJobDto, notesFor: (ImportedYarnPreview) -> String?) {
+        val dto = draft.preview
+        if (dto == null) {
+            importSession.applied()
+            return
+        }
+        val source = draft.sourceUrl ?: dto.draft.sourceUrl.orEmpty()
+        val preview = dto.toYarnPreview(source)
+        _form.value = _form.value.withImport(preview, notesFor(preview))
+        _importNotice.value =
+            ImportNotice(
+                host = urlHostOrNull(source)?.removePrefix("www.") ?: source,
+                warnings = preview.warnings,
+                aiFilled = preview.aiFields.isNotEmpty(),
+                aiFallback = preview.aiFallback,
+            )
+        importSession.applied()
+    }
+
+    fun toggleImportImage(url: String) {
+        updateForm {
+            it.copy(
+                selectedImportImages =
+                    if (url in it.selectedImportImages) it.selectedImportImages - url
+                    else it.selectedImportImages + url
+            )
+        }
+    }
+
+    /** The server's thumbnail proxy for a picture of the imported page. */
+    fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
+
+    init {
+        if (!isEditing) {
+            val draftId = savedStateHandle.get<String>(DRAFT_ID_KEY) ?: route.draftId
+            val link = route.importUrl
+            when {
+                draftId != null -> importSession.resume(draftId)
+                link != null -> importSession.start(link)
+            }
+        }
+    }
 
     /** Section to open the editor at, from a long-press on the yarn detail page. */
     val initialFocus: String? = route.focus
@@ -261,6 +378,8 @@ constructor(
                         notes = current.notes.trim().ifBlank { null },
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
+                        imageUrls =
+                            current.importImageUrls.filter { it in current.selectedImportImages },
                     )
                 val id = route.yarnId
                 val yarnId =
@@ -284,6 +403,8 @@ constructor(
                         ?.let { yarnRepository.queuePhotoOrder(yarnId, it) }
                 }
                 current.photos.forEach { upload -> yarnRepository.queuePhotoUpload(yarnId, upload) }
+                // The import is used up: its draft no longer waits for review.
+                if (id == null) importSession.finish()
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(
                     if (id == null) R.string.mutation_yarn_created_queued
@@ -317,6 +438,7 @@ constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val DRAFT_ID_KEY = "import_draft_id"
     }
 }
 

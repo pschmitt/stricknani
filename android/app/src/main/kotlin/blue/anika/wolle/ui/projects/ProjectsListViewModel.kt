@@ -3,30 +3,18 @@ package blue.anika.wolle.ui.projects
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.ApiCapabilities
-import blue.anika.wolle.data.api.ImportAvailability
-import blue.anika.wolle.data.api.dto.ProjectWriteRequest
-import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
-import blue.anika.wolle.data.db.entity.YarnEntity
-import blue.anika.wolle.data.imports.BackgroundImports
-import blue.anika.wolle.data.imports.ImportKind
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
-import blue.anika.wolle.data.repository.ProjectImporter
 import blue.anika.wolle.data.repository.ProjectRepository
-import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
-import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
-import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
-import blue.anika.wolle.ui.common.yarnsOwnedBy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
@@ -80,13 +68,14 @@ constructor(
     private val categoryRepository: CategoryRepository,
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
-    private val projectImporter: ProjectImporter,
-    yarnRepository: YarnRepository,
-    private val apiCapabilities: ApiCapabilities,
-    private val syncScheduler: SyncScheduler,
     private val settingsRepository: SettingsRepository,
-    private val backgroundImports: BackgroundImports,
 ) : ViewModel() {
+
+    /**
+     * Local-only mode has no network or AI import, so the "waiting for review" cards are hidden.
+     */
+    val importsOffered: Boolean
+        get() = !settingsRepository.isLocalMode
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -160,35 +149,6 @@ constructor(
                 emptyList(),
             )
 
-    private val importController =
-        ProjectImportController(
-            scope = viewModelScope,
-            importer = projectImporter,
-        ) { preview ->
-            // The dialog's review already holds the final notes and yarn choices.
-            val projectId = projectRepository.createProject(preview.request)
-            // Saved: the background import result is used up.
-            backgroundImports.clear(ImportKind.Project)
-            syncScheduler.replayThenSyncNow()
-            mutationFeedback.show(
-                R.string.mutation_project_imported_queued,
-                preview.request.name,
-            )
-            projectId
-        }
-
-    val importState: StateFlow<ProjectImportState> = importController.state
-
-    /** Local-only mode has no network or AI import, so the import entries are hidden entirely. */
-    val importsOffered: Boolean
-        get() = !settingsRepository.isLocalMode
-
-    /** Which import options the server offers; the dialog greys out the ones it does not. */
-    val importAvailability: StateFlow<ImportAvailability> =
-        apiCapabilities.state
-            .map { it.importAvailability() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, ImportAvailability())
-
     init {
         refresh(trigger = RefreshTrigger.Automatic)
     }
@@ -246,62 +206,6 @@ constructor(
                 mutationFeedback.show(R.string.error_create_category_failed, name)
             }
         }
-    }
-
-    fun startImport(url: String) = importController.start(url)
-
-    fun retryImport() = importController.retry()
-
-    fun confirmImport(
-        selectedImages: List<String>,
-        reviewed: ProjectWriteRequest,
-        selectedAssets: List<String>,
-    ) = importController.confirm(selectedImages, reviewed, selectedAssets)
-
-    /**
-     * The user's own yarns, for the stash picker of the import review. An import always creates the
-     * importing user's own project, so an administrator who also caches other users' yarns must
-     * never be offered those here: the server links only yarns of the project's owner.
-     */
-    val stashYarns: StateFlow<List<YarnEntity>> =
-        combine(
-                yarnRepository.observeAll(),
-                apiCapabilities.state.map { it.user?.id }.distinctUntilChanged(),
-            ) { yarns, currentUserId ->
-                yarnsOwnedBy(yarns, ownerId = null, currentUserId = currentUserId)
-            }
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                emptyList(),
-            )
-
-    fun stashYarnPreviewUrl(yarn: YarnEntity): String? = mediaUrlResolver.resolve(yarn.previewUrl)
-
-    /** The server's thumbnail proxy for a picture of the imported page, as a loadable URL. */
-    fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
-
-    fun cancelImport() {
-        backgroundImports.cancel(ImportKind.Project)
-        importController.cancel()
-    }
-
-    /** Closes the dialog but keeps the import running in the background (it notifies). */
-    fun hideImport() = importController.cancel()
-
-    /**
-     * Picks up a background import that is still running or has finished (the app was left or
-     * closed meanwhile, or its notification was tapped). Returns whether there is one to show.
-     */
-    fun resumePendingImport(): Boolean {
-        val pending = backgroundImports.state(ImportKind.Project).value ?: return false
-        importController.start(pending.url)
-        return true
-    }
-
-    fun dismissImport() {
-        backgroundImports.clear(ImportKind.Project)
-        importController.dismiss()
     }
 
     fun dismissRefreshFeedback() = refreshController.clearFeedback()

@@ -31,14 +31,8 @@ sealed interface Route {
 
     @Serializable data object Settings : Route
 
-    /** Create (new project/yarn, imports) - opened from the first row of More. */
+    /** Create (new project or yarn) - opened from the first row of More. */
     @Serializable data object Create : Route
-
-    /** Create with the import dialog of [kind] ("Project" or "Yarn") open and [url] filled in. */
-    /** [autoStart]: the user already chose to import (the new-project editor's link prompt). */
-    @Serializable
-    data class CreateImport(val kind: String, val url: String, val autoStart: Boolean = false) :
-        Route
 
     @Serializable data class ProjectDetail(val projectId: Int) : Route
 
@@ -46,13 +40,26 @@ sealed interface Route {
 
     /**
      * `projectId == null` is create; a value is edit. `focus` opens the editor at one section or
-     * step (see `ProjectEditorFocus`) - used when a detail section is long-pressed.
+     * step (see `ProjectEditorFocus`) - used when a detail section is long-pressed. A new project
+     * can start from an import: [draftId] is a draft waiting for review (a card, a notification),
+     * [importUrl] a link to import right away (a shared link).
      */
     @Serializable
-    data class ProjectEditor(val projectId: Int? = null, val focus: String? = null) : Route
+    data class ProjectEditor(
+        val projectId: Int? = null,
+        val focus: String? = null,
+        val draftId: String? = null,
+        val importUrl: String? = null,
+    ) : Route
 
-    /** `yarnId == null` is create; a value is edit. `focus` works as for projects. */
-    @Serializable data class YarnEditor(val yarnId: Int? = null, val focus: String? = null) : Route
+    /** `yarnId == null` is create; a value is edit. The other arguments work as for projects. */
+    @Serializable
+    data class YarnEditor(
+        val yarnId: Int? = null,
+        val focus: String? = null,
+        val draftId: String? = null,
+        val importUrl: String? = null,
+    ) : Route
 
     /** Gauge calculator (SNA-11) - pure math, reachable from `HomeScreen`'s top bar. */
     @Serializable data object Gauge : Route
@@ -146,7 +153,6 @@ enum class TopLevelDestination(
         setOf(
             Route.Settings::class,
             Route.Create::class,
-            Route.CreateImport::class,
             Route.SettingsCategoryRoute::class,
             Route.Libraries::class,
             Route.AdminAudit::class,

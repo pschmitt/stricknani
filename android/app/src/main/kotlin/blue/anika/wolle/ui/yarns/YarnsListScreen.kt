@@ -27,9 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -38,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.v2.ImportJobDto
+import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.EveryoneFilterChips
 import blue.anika.wolle.ui.common.LibraryCardData
@@ -45,7 +45,6 @@ import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MdiIcons
-import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
@@ -53,12 +52,15 @@ import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.yarnChips
 import blue.anika.wolle.ui.common.yarnMetaLine
+import blue.anika.wolle.ui.imports.WaitingForReview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YarnsListScreen(
     onYarnClick: (Int) -> Unit,
     onAddYarnClick: () -> Unit,
+    /** Opens the new-yarn editor on an import draft that waits for review. */
+    onOpenDraft: (ImportJobDto) -> Unit = {},
     /** Shown as a back arrow when Yarns is not a visible tab (opened from Home's stash card). */
     onBack: (() -> Unit)? = null,
     viewModel: YarnsListViewModel = hiltViewModel(),
@@ -68,9 +70,6 @@ fun YarnsListScreen(
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
-    val importState by viewModel.importState.collectAsStateWithLifecycle()
-    val importAvailability by viewModel.importAvailability.collectAsStateWithLifecycle()
-    var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -83,20 +82,6 @@ fun YarnsListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.yarns_list_title)) },
-                actions = {
-                    if (viewModel.importsOffered) {
-                        IconButton(
-                            modifier = Modifier.testTag("yarn-import-open"),
-                            onClick = { showImportDialog = true },
-                        ) {
-                            Icon(
-                                PhosphorIcons.DownloadSimple,
-                                contentDescription =
-                                    stringResource(R.string.yarns_list_import_description),
-                            )
-                        }
-                    }
-                },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
@@ -148,6 +133,13 @@ fun YarnsListScreen(
                 }
                 Spacer(Modifier.height(8.dp))
 
+                if (viewModel.importsOffered) {
+                    WaitingForReview(
+                        target = ImportTarget.Yarn,
+                        onOpen = onOpenDraft,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    )
+                }
                 if (yarns.isEmpty()) {
                     LazyColumn(
                         state = listState,
@@ -192,18 +184,4 @@ fun YarnsListScreen(
             }
         }
     }
-
-    YarnImportDialog(
-        visible = showImportDialog,
-        state = importState,
-        availability = importAvailability,
-        onStart = viewModel::startImport,
-        onConfirm = viewModel::confirmImport,
-        onCancel = {
-            showImportDialog = false
-            viewModel.cancelImport()
-        },
-        onRetry = viewModel::retryImport,
-        thumbnailUrl = viewModel::importThumbnailUrl,
-    )
 }

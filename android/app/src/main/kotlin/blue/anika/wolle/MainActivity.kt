@@ -33,7 +33,6 @@ import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.export.DataExportNotifier
 import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.data.imports.AppVisibility
-import blue.anika.wolle.data.imports.ImportKind
 import blue.anika.wolle.data.imports.ImportNotifier
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
@@ -272,16 +271,12 @@ class MainActivity : ComponentActivity() {
                             it != NO_ID
                         },
                 )
-            // A background import is done: the import dialog on its result.
-            ImportNotifier.ACTION_OPEN_IMPORT ->
-                intent.getStringExtra(ImportNotifier.EXTRA_IMPORT_URL)?.let { url ->
-                    Route.CreateImport(
-                        kind =
-                            intent.getStringExtra(ImportNotifier.EXTRA_IMPORT_KIND)
-                                ?: ImportKind.Project.name,
-                        url = url,
-                        autoStart = true,
-                    )
+            // An import the server finished: the editor on its draft.
+            ImportNotifier.ACTION_OPEN_DRAFT ->
+                intent.getStringExtra(ImportNotifier.EXTRA_DRAFT_ID)?.let { id ->
+                    if (intent.getBooleanExtra(ImportNotifier.EXTRA_DRAFT_YARN, false))
+                        Route.YarnEditor(draftId = id)
+                    else Route.ProjectEditor(draftId = id)
                 }
             DataExportNotifier.ACTION_OPEN_BACKUPS -> backupsRoute()
             DataExportNotifier.ACTION_OPEN_EXPORT -> openExportedFile(intent) ?: backupsRoute()

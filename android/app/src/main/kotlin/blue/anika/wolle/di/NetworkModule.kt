@@ -13,7 +13,6 @@ import blue.anika.wolle.data.api.CategoriesApi
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
 import blue.anika.wolle.data.api.HistoryApi
 import blue.anika.wolle.data.api.MetaApi
-import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SessionExpiryInterceptor
 import blue.anika.wolle.data.api.SyncApi
@@ -31,13 +30,8 @@ import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.export.DataExportApi
 import blue.anika.wolle.data.export.DataRestoreApi
-import blue.anika.wolle.data.imports.BackgroundImports
-import blue.anika.wolle.data.imports.BackgroundProjectImporter
-import blue.anika.wolle.data.imports.BackgroundYarnImporter
 import blue.anika.wolle.data.media.CoilMediaCacheEvictor
 import blue.anika.wolle.data.media.MediaCacheEvictor
-import blue.anika.wolle.data.repository.ProjectImporter
-import blue.anika.wolle.data.repository.YarnImporter
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -163,48 +157,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideProjectImportApi(
-        retrofit: Retrofit,
-        okHttpClient: OkHttpClient,
-    ): ProjectImportApi {
-        val importClient =
-            okHttpClient
-                .newBuilder()
-                .readTimeout(65, TimeUnit.SECONDS)
-                .callTimeout(75, TimeUnit.SECONDS)
-                .build()
-        return retrofit
-            .newBuilder()
-            .client(importClient)
-            .build()
-            .create(ProjectImportApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideImportsV2Api(retrofit: Retrofit, okHttpClient: OkHttpClient): ImportsV2Api {
-        // Fetching and parsing a page is slow, and with AI browsing (up to 200 s on the server) the
-        // answer can take over three minutes.
-        val importClient =
-            okHttpClient
-                .newBuilder()
-                .readTimeout(235, TimeUnit.SECONDS)
-                .callTimeout(245, TimeUnit.SECONDS)
-                .build()
-        return retrofit.newBuilder().client(importClient).build().create(ImportsV2Api::class.java)
-    }
-
-    @Provides
-    @Singleton
-    // The screens import in the background (ImportWorker), which uses ApiProjectImporter and
-    // ApiYarnImporter directly.
-    fun provideProjectImporter(imports: BackgroundImports): ProjectImporter =
-        BackgroundProjectImporter(imports)
-
-    @Provides
-    @Singleton
-    fun provideYarnImporter(imports: BackgroundImports): YarnImporter =
-        BackgroundYarnImporter(imports)
+    fun provideImportsV2Api(retrofit: Retrofit): ImportsV2Api =
+        retrofit.create(ImportsV2Api::class.java)
 
     @Provides
     @Singleton

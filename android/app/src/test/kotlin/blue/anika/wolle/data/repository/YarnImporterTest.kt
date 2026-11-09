@@ -1,15 +1,7 @@
 package blue.anika.wolle.data.repository
 
-import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.v2.ImportPreviewDto
-import blue.anika.wolle.data.api.v2.ImportPreviewRequest
-import blue.anika.wolle.data.api.v2.ImportsV2Api
-import blue.anika.wolle.data.api.v2.MetaV2Api
-import blue.anika.wolle.data.api.v2.MetaV2Dto
-import blue.anika.wolle.data.api.v2.MetaV2ImportsDto
-import blue.anika.wolle.data.api.v2.MetaV2UserDto
 import blue.anika.wolle.data.api.v2.V2Envelope
-import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -36,46 +28,12 @@ class YarnImporterTest {
         "warnings":["looks_like_pattern_page"]},
         "content_sha256":"x","ai_requested":true,"is_ai_enhanced":true,"ai_fallback":false}}"""
 
-    private fun capabilities(ai: Boolean) =
-        ApiCapabilities(
-            object : MetaV2Api {
-                override suspend fun getMeta(): V2Envelope<MetaV2Dto> =
-                    V2Envelope(
-                        MetaV2Dto(
-                            user = MetaV2UserDto(1, "a@b.c"),
-                            imports = MetaV2ImportsDto(url = true, ai = ai),
-                        )
-                    )
-            }
-        ) {
-            "s\nt"
-        }
+    private fun preview() = json.decodeFromString<V2Envelope<ImportPreviewDto>>(body).data
 
     @Test
-    fun `yarn import asks for the yarn target and maps details, notes and photos`() = runTest {
-        var seen: ImportPreviewRequest? = null
-        val importer =
-            ApiYarnImporter(
-                object : ImportsV2Api {
-                    override suspend fun previewImport(request: ImportPreviewRequest) =
-                        json.decodeFromString<V2Envelope<ImportPreviewDto>>(body).also {
-                            seen = request
-                        }
-                },
-                capabilities(ai = true),
-            )
+    fun `a yarn draft maps details, notes and photos`() {
+        val result = preview().toYarnPreview("https://shop.example/air")
 
-        val result = importer.importFromUrl("https://shop.example/air")
-
-        assertEquals(
-            ImportPreviewRequest(
-                type = "url",
-                url = "https://shop.example/air",
-                useAi = true,
-                target = "yarn",
-            ),
-            seen,
-        )
         assertEquals("DROPS Air", result.request.name)
         assertEquals("DROPS Design", result.request.brand)
         assertEquals(50, result.request.weightGrams)
@@ -95,23 +53,6 @@ class YarnImporterTest {
         )
         assertEquals(listOf("yarn.care"), result.aiFields)
         assertEquals(listOf("looks_like_pattern_page"), result.warnings)
-    }
-
-    @Test
-    fun `without an AI provider the request does not ask for AI`() = runTest {
-        var seen: ImportPreviewRequest? = null
-        val importer =
-            ApiYarnImporter(
-                object : ImportsV2Api {
-                    override suspend fun previewImport(request: ImportPreviewRequest) =
-                        json.decodeFromString<V2Envelope<ImportPreviewDto>>(body).also {
-                            seen = request
-                        }
-                },
-                capabilities(ai = false),
-            )
-        importer.importFromUrl("https://shop.example/air")
-        assertEquals(false, seen?.useAi)
     }
 
     @Test

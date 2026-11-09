@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.projects
 import android.content.Context
 import blue.anika.wolle.R
 import blue.anika.wolle.data.repository.ImportDetail
+import blue.anika.wolle.data.repository.ImportDetailKind
 import blue.anika.wolle.data.repository.YarnImportNote
 import blue.anika.wolle.data.repository.YarnImportNoteKind
 
@@ -43,3 +44,22 @@ internal fun yarnImportNotes(context: Context, notes: List<YarnImportNote>): Str
         }
         .joinToString("\n")
         .ifBlank { null }
+
+internal fun importDetailLabel(kind: ImportDetailKind): Int =
+    when (kind) {
+        ImportDetailKind.Designer -> R.string.import_detail_designer
+        ImportDetailKind.Sizes -> R.string.import_detail_sizes
+        ImportDetailKind.Difficulty -> R.string.import_detail_difficulty
+    }
+
+/** The explanation for a server warning code, or null for codes the user does not need. */
+internal fun importWarningRes(code: String): Int? =
+    when (code) {
+        "looks_like_yarn_page" -> R.string.import_warning_looks_like_yarn
+        "looks_like_pattern_page",
+        "not_a_yarn_page" -> R.string.import_warning_looks_like_pattern
+        "little_page_text" -> R.string.import_warning_little_text
+        "ai_browsed" -> R.string.import_warning_ai_browsed
+        "yarn_enrichment_failed" -> R.string.import_warning_yarn_enrichment
+        else -> null
+    }

@@ -1,16 +1,9 @@
 package blue.anika.wolle.data.repository
 
-import blue.anika.wolle.data.api.ApiCapabilities
-import blue.anika.wolle.data.api.ProjectImportApi
 import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
-import blue.anika.wolle.data.api.v2.ImportPreviewRequest
-import blue.anika.wolle.data.api.v2.ImportsV2Api
-import blue.anika.wolle.data.api.v2.toV1
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.serialization.Serializable
 
 /** A fact from the pattern page that has no field of its own and is kept in the project notes. */
@@ -66,36 +59,6 @@ data class ImportedProjectPreview(
     /** The same preview with only the diagrams and PDFs whose URL is in [selected] attached. */
     fun withAssets(selected: List<String>): ImportedProjectPreview =
         copy(request = request.copy(attachmentUrls = assets.filter { it.url in selected }))
-}
-
-/** Boundary for importing project data, kept small so the UI state machine is unit-testable. */
-interface ProjectImporter {
-    suspend fun importFromUrl(url: String): ImportedProjectPreview
-}
-
-/**
- * Imports through `POST /api/v2/imports/preview` (SNA-87), or the web `POST /projects/import` route
- * on a server without v2. AI is requested whenever the server reports a provider.
- */
-@Singleton
-class ApiProjectImporter
-@Inject
-constructor(
-    private val api: ProjectImportApi,
-    private val v2Api: ImportsV2Api,
-    private val capabilities: ApiCapabilities,
-) : ProjectImporter {
-    override suspend fun importFromUrl(url: String): ImportedProjectPreview =
-        if (capabilities.useV2()) {
-            val useAi = capabilities.current.importsAi
-            v2Api
-                .previewImport(ImportPreviewRequest(url = url, useAi = useAi))
-                .data
-                .toV1()
-                .toPreview(url)
-        } else {
-            api.importProject(url = url).toPreview(sourceUrl = url)
-        }
 }
 
 internal fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProjectPreview {

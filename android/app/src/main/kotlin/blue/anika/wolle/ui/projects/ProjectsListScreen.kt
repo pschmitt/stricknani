@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.v2.ImportJobDto
+import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.EveryoneFilterChips
 import blue.anika.wolle.ui.common.LibraryCardData
@@ -59,12 +61,15 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.libraryChips
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.imports.WaitingForReview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsListScreen(
     onProjectClick: (Int) -> Unit,
     onAddProjectClick: () -> Unit,
+    /** Opens the new-project editor on an import draft that waits for review. */
+    onOpenDraft: (ImportJobDto) -> Unit = {},
     viewModel: ProjectsListViewModel = hiltViewModel(),
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
@@ -75,11 +80,7 @@ fun ProjectsListScreen(
     val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
-    val importState by viewModel.importState.collectAsStateWithLifecycle()
-    val importAvailability by viewModel.importAvailability.collectAsStateWithLifecycle()
-    val stashYarns by viewModel.stashYarns.collectAsStateWithLifecycle()
     var showAddCategoryDialog by rememberSaveable { mutableStateOf(false) }
-    var showImportDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -92,18 +93,6 @@ fun ProjectsListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.projects_list_title)) },
                 actions = {
-                    if (viewModel.importsOffered) {
-                        IconButton(
-                            modifier = Modifier.testTag("project-import-open"),
-                            onClick = { showImportDialog = true },
-                        ) {
-                            Icon(
-                                PhosphorIcons.DownloadSimple,
-                                contentDescription =
-                                    stringResource(R.string.projects_list_import_description),
-                            )
-                        }
-                    }
                     // Managing categories is not a filter, so it lives here instead of as a "+"
                     // chip at the end of the filter row.
                     var menuExpanded by remember { mutableStateOf(false) }
@@ -204,6 +193,13 @@ fun ProjectsListScreen(
                 }
                 Spacer(Modifier.height(8.dp))
 
+                if (viewModel.importsOffered) {
+                    WaitingForReview(
+                        target = ImportTarget.Project,
+                        onOpen = onOpenDraft,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    )
+                }
                 if (projects.isEmpty()) {
                     LazyColumn(
                         state = listState,
@@ -258,22 +254,6 @@ fun ProjectsListScreen(
             onDismiss = { showAddCategoryDialog = false },
         )
     }
-
-    ProjectImportDialog(
-        visible = showImportDialog,
-        state = importState,
-        availability = importAvailability,
-        onStart = viewModel::startImport,
-        onConfirm = viewModel::confirmImport,
-        thumbnailUrl = viewModel::importThumbnailUrl,
-        stashYarns = stashYarns,
-        stashYarnPreviewUrl = viewModel::stashYarnPreviewUrl,
-        onCancel = {
-            showImportDialog = false
-            viewModel.cancelImport()
-        },
-        onRetry = viewModel::retryImport,
-    )
 }
 
 @Composable

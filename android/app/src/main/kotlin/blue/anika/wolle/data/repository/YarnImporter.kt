@@ -1,13 +1,8 @@
 package blue.anika.wolle.data.repository
 
-import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.api.v2.ImportDraftYarnDto
 import blue.anika.wolle.data.api.v2.ImportPreviewDto
-import blue.anika.wolle.data.api.v2.ImportPreviewRequest
-import blue.anika.wolle.data.api.v2.ImportsV2Api
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.serialization.Serializable
 
 /** A fact from the yarn page that has no field of its own and is kept in the yarn notes. */
@@ -32,27 +27,6 @@ data class ImportedYarnPreview(
 ) {
     fun withImages(selected: List<String>): ImportedYarnPreview =
         copy(request = request.copy(imageUrls = selected))
-}
-
-interface YarnImporter {
-    suspend fun importFromUrl(url: String): ImportedYarnPreview
-}
-
-/** Imports a yarn through `POST /api/v2/imports/preview` with `target: "yarn"`. */
-@Singleton
-class ApiYarnImporter
-@Inject
-constructor(private val v2Api: ImportsV2Api, private val capabilities: ApiCapabilities) :
-    YarnImporter {
-    override suspend fun importFromUrl(url: String): ImportedYarnPreview {
-        // Yarn import exists on v2 only; an older server answers 404, which the UI reports.
-        capabilities.resolve()
-        val useAi = capabilities.current.importsAi
-        return v2Api
-            .previewImport(ImportPreviewRequest(url = url, useAi = useAi, target = "yarn"))
-            .data
-            .toYarnPreview(url)
-    }
 }
 
 internal fun ImportPreviewDto.toYarnPreview(sourceUrl: String): ImportedYarnPreview {

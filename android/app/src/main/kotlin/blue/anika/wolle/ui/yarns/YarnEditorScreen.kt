@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -35,6 +36,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -51,6 +53,7 @@ import blue.anika.wolle.ui.common.EditorPhoto
 import blue.anika.wolle.ui.common.EditorPhotoStrip
 import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
+import blue.anika.wolle.ui.common.ImportImagePicker
 import blue.anika.wolle.ui.common.OwnerBanner
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditHostProvider
@@ -64,6 +67,9 @@ import blue.anika.wolle.ui.common.UrlTextField
 import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
+import blue.anika.wolle.ui.imports.EditorImportState
+import blue.anika.wolle.ui.imports.ImportLinkCard
+import blue.anika.wolle.ui.projects.yarnImportNotes
 import java.io.File
 
 /**
@@ -106,6 +112,14 @@ fun YarnEditorScreen(
     // A reader (viewer, derived yarn) has no editor: a stale link or back stack leaves at once.
     LaunchedEffect(canEdit) { if (viewModel.isEditing && !canEdit) onBack() }
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
+    val importNotice by viewModel.importNotice.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    // The import is ready: its result fills this form's own fields.
+    LaunchedEffect(importState) {
+        val ready = importState as? EditorImportState.Ready ?: return@LaunchedEffect
+        viewModel.applyImport(ready.draft) { preview -> yarnImportNotes(context, preview.notes) }
+    }
     val banner by viewModel.ownerBanner.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
@@ -223,67 +237,88 @@ fun YarnEditorScreen(
                     PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                // 0: what's on the label.
+                // 0: the import card (new yarns) and what's on the label.
                 item {
-                    EditorSectionCard(
-                        title = stringResource(R.string.editor_section_yarn_details),
-                        icon = PhosphorIcons.Info,
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = form.name,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(name = value) }
-                                },
-                                label = {
-                                    Text(stringResource(R.string.project_editor_name_label))
-                                },
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .focusRequester(detailsFocus)
-                                        .testTag("e2e-yarn-editor-name"),
-                                singleLine = true,
-                                keyboardOptions = nextSentences,
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        if (
+                            !viewModel.isEditing &&
+                                (viewModel.offersLinkImport() ||
+                                    importState !is EditorImportState.Idle ||
+                                    importNotice != null)
+                        ) {
+                            ImportLinkCard(
+                                yarn = true,
+                                state = importState,
+                                notice = importNotice,
+                                ai = viewModel.importAvailability().ai,
+                                onStart = viewModel::startImport,
+                                initialUrl = viewModel.sharedLink.orEmpty(),
                             )
-                            OutlinedTextField(
-                                value = form.brand,
-                                onValueChange = { value ->
-                                    viewModel.updateForm { it.copy(brand = value) }
-                                },
-                                label = { Text(stringResource(R.string.yarn_detail_field_brand)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = nextSentences,
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        }
+                        EditorSectionCard(
+                            title = stringResource(R.string.editor_section_yarn_details),
+                            icon = PhosphorIcons.Info,
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedTextField(
-                                    value = form.colorway,
+                                    value = form.name,
                                     onValueChange = { value ->
-                                        viewModel.updateForm { it.copy(colorway = value) }
+                                        viewModel.updateForm { it.copy(name = value) }
                                     },
                                     label = {
-                                        Text(stringResource(R.string.yarn_detail_field_colorway))
+                                        Text(stringResource(R.string.project_editor_name_label))
                                     },
-                                    modifier = Modifier.weight(1.4f),
+                                    modifier =
+                                        Modifier.fillMaxWidth()
+                                            .focusRequester(detailsFocus)
+                                            .testTag("e2e-yarn-editor-name"),
                                     singleLine = true,
                                     keyboardOptions = nextSentences,
                                 )
                                 OutlinedTextField(
-                                    value = form.dyeLot,
+                                    value = form.brand,
                                     onValueChange = { value ->
-                                        viewModel.updateForm { it.copy(dyeLot = value) }
+                                        viewModel.updateForm { it.copy(brand = value) }
                                     },
                                     label = {
-                                        Text(stringResource(R.string.yarn_detail_field_dye_lot))
+                                        Text(stringResource(R.string.yarn_detail_field_brand))
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
-                                    keyboardOptions =
-                                        KeyboardOptions(
-                                            capitalization = KeyboardCapitalization.Characters,
-                                            imeAction = ImeAction.Next,
-                                        ),
+                                    keyboardOptions = nextSentences,
                                 )
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    OutlinedTextField(
+                                        value = form.colorway,
+                                        onValueChange = { value ->
+                                            viewModel.updateForm { it.copy(colorway = value) }
+                                        },
+                                        label = {
+                                            Text(
+                                                stringResource(R.string.yarn_detail_field_colorway)
+                                            )
+                                        },
+                                        modifier = Modifier.weight(1.4f),
+                                        singleLine = true,
+                                        keyboardOptions = nextSentences,
+                                    )
+                                    OutlinedTextField(
+                                        value = form.dyeLot,
+                                        onValueChange = { value ->
+                                            viewModel.updateForm { it.copy(dyeLot = value) }
+                                        },
+                                        label = {
+                                            Text(stringResource(R.string.yarn_detail_field_dye_lot))
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        keyboardOptions =
+                                            KeyboardOptions(
+                                                capitalization = KeyboardCapitalization.Characters,
+                                                imeAction = ImeAction.Next,
+                                            ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -340,6 +375,25 @@ fun YarnEditorScreen(
                                     }
                                 } else null,
                         )
+                        // Pictures the import found: tick the ones to keep.
+                        if (form.importImageUrls.isNotEmpty()) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(top = 12.dp),
+                            ) {
+                                Text(
+                                    stringResource(R.string.import_pick_photos),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                ImportImagePicker(
+                                    urls = form.importImageUrls,
+                                    selected = form.selectedImportImages,
+                                    onToggle = viewModel::toggleImportImage,
+                                    thumbnailUrl = viewModel::importThumbnailUrl,
+                                )
+                            }
+                        }
                     }
                 }
                 // 2: what it's made of and how it knits.

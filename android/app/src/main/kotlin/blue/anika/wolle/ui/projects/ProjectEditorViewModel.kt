@@ -10,15 +10,21 @@ import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.api.dto.ACCESS_EDITOR
 import blue.anika.wolle.data.api.dto.ImageDto
+import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.api.dto.YarnCandidateDto
 import blue.anika.wolle.data.api.importAvailability
+import blue.anika.wolle.data.api.v2.ImportJobDto
+import blue.anika.wolle.data.api.v2.toV1
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.imports.ImportDrafts
+import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
+import blue.anika.wolle.data.repository.ImportedProjectPreview
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.SharingError
 import blue.anika.wolle.data.repository.SharingException
@@ -29,6 +35,7 @@ import blue.anika.wolle.data.repository.movedItem
 import blue.anika.wolle.data.repository.reorderedIdsOrNull
 import blue.anika.wolle.data.repository.stepImages
 import blue.anika.wolle.data.repository.titleImages
+import blue.anika.wolle.data.repository.toPreview
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
@@ -37,9 +44,14 @@ import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.OwnerBannerData
 import blue.anika.wolle.ui.common.PhotoRemoval
+import blue.anika.wolle.ui.common.importImagePath
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.ownerBannerOf
+import blue.anika.wolle.ui.common.urlHostOrNull
 import blue.anika.wolle.ui.common.yarnsOwnedBy
+import blue.anika.wolle.ui.imports.EditorImportState
+import blue.anika.wolle.ui.imports.ImportNotice
+import blue.anika.wolle.ui.imports.LinkImportSession
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -77,6 +89,14 @@ data class ProjectEditorFormState(
     val titleImages: List<PendingUpload> = emptyList(),
     val removedImageIds: List<Int> = emptyList(),
     val attachments: List<PendingUpload> = emptyList(),
+    /** Pictures found on the imported page; [selectedImportImages] of them are attached on save. */
+    val importImageUrls: List<String> = emptyList(),
+    val selectedImportImages: Set<String> = emptySet(),
+    /** Diagrams and PDFs found on the imported page; [selectedImportAssets] are attached. */
+    val importAssets: List<ImportAssetDto> = emptyList(),
+    val selectedImportAssets: Set<String> = emptySet(),
+    /** The yarns the pattern needs, each with the user's decision (stash, new, leave out). */
+    val importYarns: List<ImportYarnReview> = emptyList(),
 )
 
 data class ProjectEditorStep(
@@ -85,7 +105,49 @@ data class ProjectEditorStep(
     val description: String = "",
     val existingImages: List<ImageDto> = emptyList(),
     val images: List<PendingUpload> = emptyList(),
+    /** Pictures of the imported page that belong to this step; the server fetches them on save. */
+    val importImageUrls: List<String> = emptyList(),
 )
+
+/**
+ * The form with what an import found. A field the import has nothing for keeps what the user typed
+ * (a note they wrote stays above the imported ones); steps, pictures, files and yarns come from the
+ * import. [notes] are the imported notes including the facts that have no field of their own.
+ */
+internal fun ProjectEditorFormState.withImport(
+    preview: ImportedProjectPreview,
+    notes: String?,
+): ProjectEditorFormState {
+    val imported = preview.request
+    fun pick(value: String?, current: String) = value?.takeIf { it.isNotBlank() } ?: current
+    return copy(
+        name = pick(imported.name, name),
+        category = pick(imported.category, category),
+        needles = pick(imported.needles, needles),
+        stitchSample = pick(imported.stitchSample, stitchSample),
+        description = pick(imported.description, description),
+        otherMaterials = pick(imported.otherMaterials, otherMaterials),
+        notes = listOf(this.notes, notes.orEmpty()).filter { it.isNotBlank() }.joinToString("\n"),
+        tags = if (imported.tags.isEmpty()) tags else imported.tags.joinToString(", "),
+        link = pick(imported.link, link),
+        isAiEnhanced = imported.isAiEnhanced,
+        steps =
+            if (imported.steps.isEmpty()) steps
+            else
+                imported.steps.map {
+                    ProjectEditorStep(
+                        title = it.title,
+                        description = it.description.orEmpty(),
+                        importImageUrls = it.imageUrls,
+                    )
+                },
+        importImageUrls = preview.imageUrls,
+        selectedImportImages = imported.imageUrls.toSet(),
+        importAssets = preview.assets,
+        selectedImportAssets = preview.assets.map { it.url }.toSet(),
+        importYarns = ProjectImportReview.from(preview, "").yarns,
+    )
+}
 
 @HiltViewModel
 class ProjectEditorViewModel
@@ -102,10 +164,82 @@ constructor(
     private val capabilities: ApiCapabilities,
     private val sharingRepository: SharingRepository,
     private val settingsRepository: SettingsRepository,
+    importDrafts: ImportDrafts,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<Route.ProjectEditor>()
     val isEditing: Boolean = route.projectId != null
+
+    /** The server's import of a link, for a new project; its result fills the form. */
+    private val importSession =
+        LinkImportSession(viewModelScope, importDrafts, ImportTarget.Project) {
+            savedStateHandle[DRAFT_ID_KEY] = it
+        }
+    val importState: StateFlow<EditorImportState> = importSession.state
+
+    private val _importNotice = MutableStateFlow<ImportNotice?>(null)
+    /** Where the filled-in fields came from, once an import has been applied. */
+    val importNotice: StateFlow<ImportNotice?> = _importNotice.asStateFlow()
+
+    /** A link shared to the app: the import starts when the editor opens, the card shows it. */
+    val sharedLink: String? = route.importUrl
+
+    /** Imports the pattern behind [url]: the card shows progress, the result fills the form. */
+    fun startImport(url: String) = importSession.start(url)
+
+    /**
+     * Fills the form from a finished import [draft]; [notesFor] writes the imported notes (with the
+     * facts that have no field of their own) in the app's language.
+     */
+    fun applyImport(draft: ImportJobDto, notesFor: (ImportedProjectPreview) -> String?) {
+        val dto = draft.preview
+        if (dto == null) {
+            importSession.applied()
+            return
+        }
+        val source = draft.sourceUrl ?: dto.draft.sourceUrl.orEmpty()
+        val preview = dto.toV1().toPreview(source)
+        _form.value = _form.value.withImport(preview, notesFor(preview))
+        _importNotice.value =
+            ImportNotice(
+                host = urlHostOrNull(source)?.removePrefix("www.") ?: source,
+                warnings = preview.warnings,
+                aiFilled = preview.aiFields.isNotEmpty(),
+                aiFallback = preview.aiFallback,
+            )
+        importSession.applied()
+    }
+
+    fun toggleImportImage(url: String) {
+        updateForm {
+            it.copy(
+                selectedImportImages =
+                    if (url in it.selectedImportImages) it.selectedImportImages - url
+                    else it.selectedImportImages + url
+            )
+        }
+    }
+
+    fun toggleImportAsset(url: String) {
+        updateForm {
+            it.copy(
+                selectedImportAssets =
+                    if (url in it.selectedImportAssets) it.selectedImportAssets - url
+                    else it.selectedImportAssets + url
+            )
+        }
+    }
+
+    fun removeStepImportImage(stepIndex: Int, url: String) {
+        updateStep(stepIndex) { it.copy(importImageUrls = it.importImageUrls - url) }
+    }
+
+    fun setImportYarns(yarns: List<ImportYarnReview>) {
+        updateForm { it.copy(importYarns = yarns) }
+    }
+
+    /** The server's thumbnail proxy for a picture of the imported page. */
+    fun importThumbnailUrl(url: String): String? = mediaUrlResolver.resolve(importImagePath(url))
 
     /**
      * Whether a link typed into a new project can be imported instead: link imports are on and the
@@ -120,6 +254,17 @@ constructor(
 
     /** Section or step to open the editor at, from a long-press on the detail page. */
     val initialFocus: String? = route.focus
+
+    init {
+        if (!isEditing) {
+            val draftId = savedStateHandle.get<String>(DRAFT_ID_KEY) ?: route.draftId
+            val link = route.importUrl
+            when {
+                draftId != null -> importSession.resume(draftId)
+                link != null -> importSession.start(link)
+            }
+        }
+    }
 
     private val _isLoaded = MutableStateFlow(!isEditing)
     /** True once an edited project's fields are in the form (immediately for a new one). */
@@ -496,12 +641,14 @@ constructor(
         )
     }
 
-    fun save() {
+    /** [amountLabel] names the "Amount" line of a yarn the import creates ("Amount: 3 skeins"). */
+    fun save(amountLabel: String = "") {
         val current = _form.value
         if (current.name.isBlank()) {
             mutationFeedback.show(R.string.error_name_required)
             return
         }
+        val importReview = ProjectImportReview(current.importYarns)
         viewModelScope.launch {
             _isSaving.value = true
             try {
@@ -517,7 +664,8 @@ constructor(
                         tags = parseTagInput(current.tags),
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
-                        yarnIds = current.selectedYarnIds.toList(),
+                        yarnIds = (current.selectedYarnIds + importReview.linkedStashIds).toList(),
+                        newYarns = importReview.newYarns(amountLabel),
                         steps =
                             current.steps.mapIndexed { index, step ->
                                 StepWriteRequest(
@@ -525,8 +673,13 @@ constructor(
                                     title = step.title.trim().ifBlank { "Step ${index + 1}" },
                                     description = step.description.trim().ifBlank { null },
                                     stepNumber = index + 1,
+                                    imageUrls = step.importImageUrls,
                                 )
                             },
+                        imageUrls =
+                            current.importImageUrls.filter { it in current.selectedImportImages },
+                        attachmentUrls =
+                            current.importAssets.filter { it.url in current.selectedImportAssets },
                     )
                 val id = route.projectId
                 val projectId =
@@ -556,6 +709,8 @@ constructor(
                 current.attachments.forEach { upload ->
                     projectRepository.queueAttachmentUpload(projectId, upload)
                 }
+                // The import is used up: its draft no longer waits for review.
+                if (id == null) importSession.finish()
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(
                     if (id == null) R.string.mutation_project_created_queued
@@ -611,6 +766,7 @@ constructor(
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val CANDIDATE_SEARCH_DEBOUNCE_MILLIS = 300L
+        const val DRAFT_ID_KEY = "import_draft_id"
     }
 }
 

@@ -10,27 +10,88 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
-/** `src/api_v2/imports.rs`: JSON in, `{data:{draft:{...camelCase...}}}` out. */
+/** `src/api_v2/imports.rs`: import drafts (the server runs the imports). */
 interface ImportsV2Api {
-    @POST("api/v2/imports/preview")
-    suspend fun previewImport(@Body request: ImportPreviewRequest): V2Envelope<ImportPreviewDto>
+    /** Starts an import on the server (202); it keeps running when the app is closed. */
+    @POST("api/v2/imports/drafts")
+    suspend fun createDraft(@Body request: ImportDraftRequest): V2Envelope<ImportJobDto>
+
+    /** The user's drafts, newest first, without their `preview`. */
+    @GET("api/v2/imports/drafts") suspend fun listDrafts(): V2Envelope<List<ImportJobDto>>
+
+    /** One draft; carries the `preview` once it is ready. */
+    @GET("api/v2/imports/drafts/{id}")
+    suspend fun getDraft(@Path("id") id: String): V2Envelope<ImportJobDto>
+
+    @DELETE("api/v2/imports/drafts/{id}") suspend fun deleteDraft(@Path("id") id: String)
 }
 
 /**
- * The app's [kotlinx.serialization.json.Json] leaves out default values, but the server needs
- * `type` (it selects the request variant) and the explicit `target`: both are always encoded.
+ * `POST /api/v2/imports/drafts`. The app's [kotlinx.serialization.json.Json] leaves out default
+ * values, but the server needs `type` (it selects the request variant) and the explicit `target`:
+ * both are always encoded. [locale] is the language of the notes the import writes.
  */
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-data class ImportPreviewRequest(
+data class ImportDraftRequest(
     @EncodeDefault val type: String = "url",
     val url: String,
     @SerialName("use_ai") val useAi: Boolean = false,
-    /** `project` (default) or `yarn`. */
+    /** `project` or `yarn`. */
     @EncodeDefault val target: String = "project",
+    val locale: String? = null,
 )
+
+/** The server's import draft: what it is, how far it is and, once ready, what it found. */
+@Serializable
+data class ImportJobDto(
+    val id: String,
+    val target: String = "project",
+    @SerialName("source_kind") val sourceKind: String? = null,
+    @SerialName("source_url") val sourceUrl: String? = null,
+    @SerialName("use_ai") val useAi: Boolean = false,
+    /** `running`, `ready` or `failed`. */
+    val status: String = "running",
+    val title: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("created_at") val createdAt: Long = 0,
+    @SerialName("finished_at") val finishedAt: Long? = null,
+    @SerialName("error_status") val errorStatus: Int? = null,
+    val error: ImportJobErrorDto? = null,
+    val preview: ImportPreviewDto? = null,
+) {
+    val isRunning: Boolean
+        get() = status == STATUS_RUNNING
+
+    val isReady: Boolean
+        get() = status == STATUS_READY
+
+    val isFailed: Boolean
+        get() = status == STATUS_FAILED
+
+    val isYarn: Boolean
+        get() = target == "yarn"
+
+    companion object {
+        const val STATUS_RUNNING = "running"
+        const val STATUS_READY = "ready"
+        const val STATUS_FAILED = "failed"
+    }
+}
+
+/** `{error:{code,message}}` of a failed draft. */
+@Serializable
+data class ImportJobErrorDto(val error: ImportJobErrorBody? = null) {
+    val code: String?
+        get() = error?.code
+}
+
+@Serializable data class ImportJobErrorBody(val code: String? = null, val message: String? = null)
 
 /** `PreviewData`. Only what the app needs; the rest of the body is ignored. */
 @Serializable

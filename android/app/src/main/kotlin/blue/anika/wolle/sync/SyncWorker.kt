@@ -10,6 +10,9 @@ import blue.anika.wolle.data.errorreporting.SyncFailureClassifier
 import blue.anika.wolle.data.errorreporting.SyncFailureKind
 import blue.anika.wolle.data.errorreporting.SyncFailureReport
 import blue.anika.wolle.data.errorreporting.SyncFailureReportSanitizer
+import blue.anika.wolle.data.imports.AppVisibility
+import blue.anika.wolle.data.imports.ImportDrafts
+import blue.anika.wolle.data.imports.ImportNotifier
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ItemSyncResult
@@ -45,6 +48,9 @@ constructor(
     private val syncNotifier: SyncNotifier,
     private val mediaUrlResolver: MediaUrlResolver,
     private val errorReportingController: ErrorReportingController,
+    private val importDrafts: ImportDrafts,
+    private val importNotifier: ImportNotifier,
+    private val appVisibility: AppVisibility,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -67,6 +73,8 @@ constructor(
             runSyncStep("categories") { categoryRepository.sync() }
                 ?: runSyncStep("yarns") { yarnResult = yarnRepository.syncDetailed() }
                 ?: runSyncStep("projects") { projectResult = projectRepository.syncDetailed() }
+        // An import the server finished while the app was away (safety net for ImportDraftsWorker).
+        runCatching { importDrafts.announceFinished(importNotifier, appVisibility.visible) }
         val changes = SyncChanges.of(projects = projectResult.changed, yarns = yarnResult.changed)
 
         if (failure != null) {

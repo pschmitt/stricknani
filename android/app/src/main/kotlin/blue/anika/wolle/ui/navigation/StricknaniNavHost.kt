@@ -39,6 +39,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.ui.admin.AdminAccountsScreen
 import blue.anika.wolle.ui.admin.AdminAuditScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
@@ -89,6 +90,11 @@ internal fun deepLinkParent(route: Route): Route? =
         is Route.YarnEditor -> Route.Yarns
         else -> null
     }
+
+/** The editor of a new project or yarn on the import draft [draft] that waits for review. */
+internal fun draftRoute(draft: ImportJobDto): Route =
+    if (draft.isYarn) Route.YarnEditor(draftId = draft.id)
+    else Route.ProjectEditor(draftId = draft.id)
 
 internal fun navigateToTopLevelRoot(
     navController: NavHostController,
@@ -185,7 +191,13 @@ fun StricknaniNavHost(
                 availability = importAvailability,
             ),
         onChoose = { kind, url ->
-            navController.navigate(Route.CreateImport(kind.name, url))
+            // The editor starts the import and shows it: one way to add things.
+            navController.navigate(
+                when (kind) {
+                    ShareImportKind.Project -> Route.ProjectEditor(importUrl = url)
+                    ShareImportKind.Yarn -> Route.YarnEditor(importUrl = url)
+                }
+            )
             onSharedUrlConsumed()
         },
         onDismiss = onSharedUrlConsumed,
@@ -338,6 +350,7 @@ fun StricknaniNavHost(
                             )
                         },
                         onSeeAllActivity = { navController.navigate(Route.Activity) },
+                        onOpenDraft = { navController.navigate(draftRoute(it)) },
                     )
                 }
                 screen<Route.Activity>(motion) {
@@ -351,6 +364,7 @@ fun StricknaniNavHost(
                     ProjectsListScreen(
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
+                        onOpenDraft = { navController.navigate(draftRoute(it)) },
                     )
                 }
                 screen<Route.Categories>(motion) { CategoriesScreen() }
@@ -359,6 +373,7 @@ fun StricknaniNavHost(
                     YarnsListScreen(
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
+                        onOpenDraft = { navController.navigate(draftRoute(it)) },
                         // Without a Yarns tab the list is opened from Home, so offer a way back.
                         onBack =
                             if (TopLevelDestination.YARNS in tabs) null
@@ -385,18 +400,6 @@ fun StricknaniNavHost(
                         onBack = { navController.navigateUp() },
                         onNewProject = { navController.navigate(Route.ProjectEditor()) },
                         onNewYarn = { navController.navigate(Route.YarnEditor()) },
-                    )
-                }
-                screen<Route.CreateImport>(motion) { backStackEntry ->
-                    val route: Route.CreateImport = backStackEntry.toRoute()
-                    CreateScreen(
-                        onBack = { navController.navigateUp() },
-                        onNewProject = { navController.navigate(Route.ProjectEditor()) },
-                        onNewYarn = { navController.navigate(Route.YarnEditor()) },
-                        initialImportKind =
-                            ShareImportKind.entries.firstOrNull { it.name == route.kind },
-                        initialImportUrl = route.url,
-                        autoStartImport = route.autoStart,
                     )
                 }
                 screen<Route.SettingsCategoryRoute>(motion) { backStackEntry ->
@@ -470,18 +473,6 @@ fun StricknaniNavHost(
                 screen<Route.ProjectEditor>(motion) {
                     ProjectEditorScreen(
                         onSaved = { navController.navigateUp() },
-                        onImportLink = { url ->
-                            // The import replaces the new, unsaved project.
-                            navController.navigate(
-                                Route.CreateImport(
-                                    ShareImportKind.Project.name,
-                                    url,
-                                    autoStart = true,
-                                )
-                            ) {
-                                popUpTo<Route.ProjectEditor> { inclusive = true }
-                            }
-                        },
                         onDeleted = {
                             navController.navigate(Route.Projects) {
                                 popUpTo(Route.Projects) { inclusive = true }

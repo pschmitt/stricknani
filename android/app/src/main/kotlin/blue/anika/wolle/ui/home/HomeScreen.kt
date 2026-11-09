@@ -81,6 +81,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.update.canInstallInApp
 import blue.anika.wolle.ui.common.LocalOwnerContext
@@ -99,6 +100,7 @@ import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.stitchedBorder
+import blue.anika.wolle.ui.imports.WaitingForReview
 import blue.anika.wolle.ui.signin.SignedOutPanel
 import blue.anika.wolle.ui.update.UpdateInstallEffects
 import blue.anika.wolle.ui.update.UpdateInstallViewModel
@@ -119,6 +121,8 @@ fun HomeScreen(
     onCreateClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
     onSeeAllActivity: () -> Unit = {},
+    /** Opens the editor on an import draft that waits for review. */
+    onOpenDraft: (ImportJobDto) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val currentUserId = LocalOwnerContext.current.currentUserId
@@ -325,6 +329,15 @@ fun HomeScreen(
                                 previewUrl = viewModel.previewUrl(project.previewUrl),
                                 owner = project.ownerBadge(currentUserId),
                                 onClick = { onProjectClick(project.id) },
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
+                    }
+                    if (!viewModel.isLocalMode && !signedOut) {
+                        spacedItem {
+                            WaitingForReview(
+                                target = null,
+                                onOpen = onOpenDraft,
                                 modifier = Modifier.padding(horizontal = 16.dp),
                             )
                         }
