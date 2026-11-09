@@ -61,3 +61,7 @@ internal val StickyPaperInkLight = Color(0xFF2A2033)
 internal val StickyPaperDark = Color(0xFF4A4430)
 internal val StickyPaperFoldDark = Color(0xFF38331F)
 internal val StickyPaperInkDark = Color(0xFFF4EDDA)
+
+/** The web's `--accent-wash`: the import card's tint (light and dark). */
+internal val RaspberryWash = Color(0xFFFFE3EC)
+internal val RaspberryNightWash = Color(0xFF44253D)

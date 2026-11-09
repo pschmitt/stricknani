@@ -266,7 +266,7 @@ fun YarnEditorScreen(
                                         viewModel.updateForm { it.copy(name = value) }
                                     },
                                     label = {
-                                        Text(stringResource(R.string.project_editor_name_label))
+                                        Text(stringResource(R.string.yarn_editor_name_label))
                                     },
                                     modifier =
                                         Modifier.fillMaxWidth()

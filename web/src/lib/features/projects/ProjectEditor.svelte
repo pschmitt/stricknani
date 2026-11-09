@@ -1705,7 +1705,7 @@
               </div>
               <div class="field field-wide">
                 <label for="project-tag-entry">{t("Tags", locale)}</label>
-                <div class="search-row">
+                <div class="tag-entry-row">
                   <input
                     id="project-tag-entry"
                     bind:value={tagInput}
@@ -1718,11 +1718,11 @@
                     }}
                   />
                   <Button
-                    id="add-project-step"
+                    id="add-project-tag"
                     type="button"
                     class="secondary-button"
                     variant="secondary"
-                    icon="create"
+                    icon="add"
                     onclick={addTag}
                   >
                     {t("Add tag", locale)}
@@ -1881,10 +1881,11 @@
                     </p>
                   </div>
                   <Button
+                    id="add-project-step"
                     type="button"
                     class="secondary-button"
                     variant="secondary"
-                    icon="create"
+                    icon="add"
                     onclick={addStep}
                   >
                     {t("Add step", locale)}
@@ -2272,6 +2273,22 @@
 
   .field-wide {
     grid-column: 1 / -1;
+  }
+
+  /* The tag input and its button side by side, the same height. */
+  .tag-entry-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .tag-entry-row input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tag-entry-row :global(.ui-button) {
+    flex: none;
   }
 
   .yarn-other-materials {

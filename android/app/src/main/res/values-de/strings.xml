@@ -185,7 +185,8 @@
     <string name="project_detail_delete_attachment_description">Anhang löschen</string>
     <string name="project_editor_title_edit">Projekt bearbeiten</string>
     <string name="project_editor_delete_description">Projekt löschen</string>
-    <string name="project_editor_name_label">Name</string>
+    <string name="project_editor_name_label">Projektname</string>
+    <string name="yarn_editor_name_label">Garnname</string>
     <string name="editor_section_project_details">Projektdetails</string>
     <string name="editor_section_materials">Materialien und Garn</string>
     <string name="editor_section_content">Beschreibung und Notizen</string>

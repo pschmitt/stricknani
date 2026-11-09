@@ -186,7 +186,8 @@
     <string name="project_detail_delete_attachment_description">Delete attachment</string>
     <string name="project_editor_title_edit">Edit project</string>
     <string name="project_editor_delete_description">Delete project</string>
-    <string name="project_editor_name_label">Name</string>
+    <string name="project_editor_name_label">Project name</string>
+    <string name="yarn_editor_name_label">Yarn name</string>
     <string name="editor_section_project_details">Project details</string>
     <string name="editor_section_materials">Materials and yarn</string>
     <string name="editor_section_content">Description and notes</string>

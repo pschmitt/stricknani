@@ -2,7 +2,6 @@ package blue.anika.wolle.ui.imports
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,7 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -27,6 +28,8 @@ import blue.anika.wolle.ui.common.ImportProgressPanel
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.importFailureRes
 import blue.anika.wolle.ui.projects.importWarningRes
+import blue.anika.wolle.ui.theme.RaspberryNightWash
+import blue.anika.wolle.ui.theme.RaspberryWash
 
 /**
  * What a finished import tells besides the fields it filled: the page it came from, hints about the
@@ -63,6 +66,10 @@ fun ImportLinkCard(
                     else R.string.import_card_title_project
                 ),
             icon = PhosphorIcons.DownloadSimple,
+            // Tinted like the web's import card (--accent-wash), so it stands out from the form.
+            containerColor =
+                if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) RaspberryNightWash
+                else RaspberryWash,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 when (state) {
@@ -90,8 +97,10 @@ fun ImportLinkCard(
                             )
                         }
                         val start = { if (link.isNotBlank()) onStart(link) }
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        // As on the web: the link on its own line, the button below it.
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.End,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             OutlinedTextField(
@@ -115,7 +124,7 @@ fun ImportLinkCard(
                                         imeAction = ImeAction.Go,
                                     ),
                                 keyboardActions = KeyboardActions(onGo = { start() }),
-                                modifier = Modifier.weight(1f).testTag("import-link-url"),
+                                modifier = Modifier.fillMaxWidth().testTag("import-link-url"),
                             )
                             Button(
                                 onClick = start,
