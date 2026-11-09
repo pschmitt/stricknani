@@ -2,7 +2,6 @@
 
 package blue.anika.wolle.ui.common
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -100,7 +99,7 @@ internal class EditorImageLoader(private val resolveUrl: (String?) -> String?) :
             painter = if (failed) placeholder else painter,
             contentDescription = image.alt.ifBlank { null },
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier,
         )
     }
 

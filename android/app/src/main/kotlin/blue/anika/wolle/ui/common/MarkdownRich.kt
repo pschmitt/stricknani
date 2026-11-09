@@ -2,7 +2,7 @@
 
 package blue.anika.wolle.ui.common
 
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.document.RichTextBlock
 import com.mohamedrejeb.richeditor.document.RichTextBlockType
@@ -166,6 +166,15 @@ internal object MarkdownRich {
     /** What the editor holds in the text for a picture (the object replacement character). */
     private const val IMAGE_CHAR = '\uFFFC'
 
+    /**
+     * The box a picture gets in the text. The library lays an inline picture out from its declared
+     * size: with an unspecified size the placeholder has no usable size and the text shows a
+     * missing-glyph box instead of the picture. The editor clamps it to the line width and the
+     * loader fits the picture (or the alt text box) inside.
+     */
+    private val EDITOR_IMAGE_WIDTH = 320.sp
+    private val EDITOR_IMAGE_HEIGHT = 240.sp
+
     private fun isImagePlaceholder(c: Char) = c.code in IMAGE_BASE until IMAGE_BASE + MAX_IMAGES
 
     private val imageAttributes = Regex("^\\{[^}\\r\\n]*\\}")
@@ -245,8 +254,8 @@ internal object MarkdownRich {
                                 RichTextSpanMark.Image(
                                     it..it,
                                     image.markdown,
-                                    TextUnit.Unspecified,
-                                    TextUnit.Unspecified,
+                                    EDITOR_IMAGE_WIDTH,
+                                    EDITOR_IMAGE_HEIGHT,
                                     image.alt,
                                 )
                             }

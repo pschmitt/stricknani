@@ -3,9 +3,11 @@
 package blue.anika.wolle.ui.common
 
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.unit.isSpecified
 import blue.anika.wolle.data.media.resolveMediaUrl
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.document.RichTextSpanMark
+import com.mohamedrejeb.richeditor.model.RichTextState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -119,5 +121,42 @@ class MarkdownRichImagesTest {
         assertNull(EditorImage("![c](/media/a.jpg)", "c").resolvedSource { null })
         assertNotNull(EditorImage("![c](/media/a.jpg)", "c").source)
         assertTrue(roundTrip("![c](/media/a.jpg)") != null)
+    }
+
+    /**
+     * The entry point of MarkdownTextField (`enterVisual` and the outside-change reload):
+     * `canEditVisually`, then `MarkdownRich.load` into the editor's state. The picture must be an
+     * inline-content span with a usable size, or the text shows a missing-glyph box.
+     */
+    @Test
+    fun loadingIntoTheEditorStateCreatesRenderablePictures() {
+        val text = "Vorher ![Masse](/Media/x.jpg) nachher"
+        assertTrue(MarkdownRich.canEditVisually(text, false))
+        val state = RichTextState()
+        MarkdownRich.load(state, text)
+        // Loading again (a reload of the same state) behaves the same.
+        MarkdownRich.load(state, text)
+        val annotated = state.annotatedString
+        assertEquals("Vorher � nachher", annotated.text.replace('￼', '�'))
+        assertTrue(annotated.text.none { it.code in 0xE000..0xF8FF })
+        val inline =
+            annotated.getStringAnnotations(
+                "androidx.compose.foundation.text.inlineContent",
+                0,
+                annotated.length,
+            )
+        assertEquals(1, inline.size)
+        assertEquals(7, inline[0].start)
+        val mark =
+            state
+                .toRichTextDocument()
+                .blocks
+                .flatMap { it.spans }
+                .filterIsInstance<RichTextSpanMark.Image>()
+                .single()
+        assertTrue(mark.width.isSpecified && mark.width.value > 0f)
+        assertTrue(mark.height.isSpecified && mark.height.value > 0f)
+        assertEquals("Masse", mark.description)
+        assertEquals(text, MarkdownRich.toMarkdown(state))
     }
 }
