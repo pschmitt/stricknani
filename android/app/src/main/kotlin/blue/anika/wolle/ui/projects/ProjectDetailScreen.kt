@@ -107,6 +107,7 @@ import blue.anika.wolle.ui.common.ItemBannerView
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MarkdownImageTransformer
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditTarget
@@ -841,9 +842,7 @@ private fun ProjectDetailContent(
                             title = stringResource(R.string.project_detail_pattern_notes_title),
                             icon = PhosphorIcons.NotePencil,
                             onEdit = edit?.let { e -> { e(ProjectEditorFocus.DESCRIPTION) } },
-                            copyText =
-                                listOfNotNull(detail.description, detail.notes)
-                                    .joinToString("\n\n"),
+                            copyText = detail.description,
                             cardKey = cardKey,
                             cardIndex = cardIndex,
                             listState = listState,
@@ -853,19 +852,6 @@ private fun ProjectDetailContent(
                             onMove = moveCard,
                         ) {
                             detail.description?.let {
-                                ProjectMarkdown(
-                                    value = it,
-                                    resolveMediaUrl = resolveMediaUrl,
-                                    onImageClick = openViewerImage,
-                                )
-                            }
-                            detail.notes?.let {
-                                Text(
-                                    stringResource(R.string.project_detail_notes_title),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 8.dp),
-                                )
                                 ProjectMarkdown(
                                     value = it,
                                     resolveMediaUrl = resolveMediaUrl,
@@ -934,6 +920,17 @@ private fun ProjectDetailContent(
                         avatarUrl = resolveMediaUrl,
                     )
                 }
+            }
+        }
+        // The notes: the pinned mini sticky note on the right edge that unfolds into the full
+        // note (the web's sticky note in the Pattern section).
+        if (detail.notes != null) {
+            NotesDisclosure(listState) {
+                ProjectMarkdown(
+                    value = detail.notes.orEmpty(),
+                    resolveMediaUrl = resolveMediaUrl,
+                    onImageClick = openViewerImage,
+                )
             }
         }
     }
