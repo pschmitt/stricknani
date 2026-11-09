@@ -234,6 +234,8 @@
     <string name="projects_list_more_actions_description">More options</string>
     <string name="projects_list_empty_title">Nothing on the needles yet</string>
     <string name="projects_list_empty_subtitle">Pull down to look for new ones, or loosen your filters.</string>
+    <string name="editor_category_none">No category</string>
+    <string name="editor_category_new">New category…</string>
     <string name="projects_list_add_category_dialog_title">New category</string>
     <string name="projects_list_add_category_name_placeholder">e.g. Sweaters</string>
 

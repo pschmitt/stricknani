@@ -1,5 +1,6 @@
 <script lang="ts">
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
+  import CategorySelect from "../categories/CategorySelect.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
@@ -1729,18 +1730,13 @@
                 <label for="project-category"
                   ><LabelIcon name="folder" />{t("Category", locale)}</label
                 >
-                <input
+                <CategorySelect
                   id="project-category"
                   bind:value={draft.category}
-                  list="project-category-options"
-                  maxlength="128"
-                  autocomplete="off"
+                  {categories}
+                  loading={categoryLoading}
+                  {locale}
                 />
-                <datalist id="project-category-options">
-                  {#each categories as category (category.id)}
-                    <option value={category.name}></option>
-                  {/each}
-                </datalist>
                 {#if categoryLoading}<span class="field-hint"
                     >{t("Loading categories…", locale)}</span
                   >{/if}

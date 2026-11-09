@@ -67,6 +67,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ImageDto
+import blue.anika.wolle.ui.common.CategorySelectField
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DiscardChangesDialog
@@ -90,7 +91,6 @@ import blue.anika.wolle.ui.common.PhotoEditorDialog
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
-import blue.anika.wolle.ui.common.SuggestionTextField
 import blue.anika.wolle.ui.common.UrlTextField
 import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
@@ -510,14 +510,14 @@ fun ProjectEditorScreen(
                         icon = PhosphorIcons.Info,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            SuggestionTextField(
+                            CategorySelectField(
                                 value = form.category,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(category = value) }
                                 },
                                 label = stringResource(R.string.common_field_category),
                                 labelIcon = PhosphorIcons.FolderSimple,
-                                suggestions = categories.map { it.name },
+                                categories = categories.map { it.name },
                                 modifier = Modifier.focusRequester(detailsFocus),
                             )
                             OutlinedTextField(

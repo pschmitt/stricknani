@@ -151,7 +151,17 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     .getByLabel("Project name", { exact: true })
     .fill("Soft winter throw");
   markStage("filling the project category");
-  await page.getByLabel("Category", { exact: true }).fill("Blankets");
+  await page
+    .getByLabel("Category", { exact: true })
+    .selectOption({ label: "New category…" });
+  const newCategory = page.getByLabel("New category", { exact: true });
+  await newCategory.fill("Blankets");
+  await newCategory.press("Enter");
+  await page
+    .getByLabel("Category", { exact: true })
+    .evaluate((el: HTMLSelectElement) => {
+      if (el.value !== "Blankets") throw new Error("category not selected");
+    });
   markStage("filling the project needles");
   await page
     .getByLabel("Needles", { exact: true })

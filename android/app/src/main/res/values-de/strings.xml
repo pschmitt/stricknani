@@ -233,6 +233,8 @@
     <string name="projects_list_more_actions_description">Weitere Optionen</string>
     <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>
     <string name="projects_list_empty_subtitle">Zum Nachschauen nach unten ziehen oder Filter lockern.</string>
+    <string name="editor_category_none">Keine Kategorie</string>
+    <string name="editor_category_new">Neue Kategorie…</string>
     <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
     <string name="projects_list_add_category_name_placeholder">z. B. Pullover</string>
 
