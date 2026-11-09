@@ -37,27 +37,27 @@ msgstr ""
 msgid "Import a pattern"
 msgstr ""
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:293
-#: web/src/routes/+layout.svelte:390
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:296
+#: web/src/routes/+layout.svelte:393
 msgid "Main navigation"
 msgstr ""
 
-#: src/import_service.rs:704
+#: src/import_service.rs:704 web/src/lib/components/CommandPalette.svelte:108
 #: web/src/lib/features/account/BackupsSection.svelte:426
 #: web/src/lib/features/account/BackupsSection.svelte:442
 #: web/src/lib/features/projects/ProjectLibrary.svelte:216
 #: web/src/lib/features/projects/ProjectLibrary.svelte:227
-#: web/src/routes/+layout.svelte:93
+#: web/src/lib/nav-items.ts:19
 msgid "Projects"
 msgstr ""
 
-#: src/import_service.rs:705
+#: src/import_service.rs:705 web/src/lib/components/CommandPalette.svelte:110
 #: web/src/lib/features/account/BackupsSection.svelte:428
 #: web/src/lib/features/account/BackupsSection.svelte:448
 #: web/src/lib/features/yarns/YarnDetail.svelte:340
 #: web/src/lib/features/yarns/YarnLibrary.svelte:162
 #: web/src/lib/features/yarns/YarnLibrary.svelte:173
-#: web/src/routes/+layout.svelte:94
+#: web/src/lib/nav-items.ts:20
 msgid "Yarns"
 msgstr ""
 
@@ -293,7 +293,7 @@ msgstr ""
 msgid "A place for your projects and yarn."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:210
+#: web/src/routes/+layout.svelte:201
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr ""
 
@@ -335,8 +335,8 @@ msgstr ""
 msgid "API token revoked."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:364 web/src/routes/about/+page.svelte:201
-#: web/src/routes/more/+page.svelte:76
+#: web/src/lib/palette/entries.ts:203 web/src/routes/+layout.svelte:367
+#: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:76
 msgid "About"
 msgstr ""
 
@@ -346,12 +346,13 @@ msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:832
 #: web/src/lib/features/account/AccountSettings.svelte:840
-#: web/src/routes/+layout.svelte:327 web/src/routes/+layout.svelte:330
-#: web/src/routes/+layout.svelte:338 web/src/routes/more/+page.svelte:48
+#: web/src/lib/palette/entries.ts:185 web/src/lib/palette/entries.ts:214
+#: web/src/routes/+layout.svelte:330 web/src/routes/+layout.svelte:333
+#: web/src/routes/+layout.svelte:341 web/src/routes/more/+page.svelte:48
 msgid "Account"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:374
+#: web/src/routes/+layout.svelte:377
 msgid "Account access"
 msgstr ""
 
@@ -382,6 +383,7 @@ msgstr ""
 msgid "Action"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:106
 #: web/src/lib/features/admin/AdminUsers.svelte:614
 msgid "Actions"
 msgstr ""
@@ -508,8 +510,8 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:318
 #: web/src/lib/features/admin/AdminUsers.svelte:564
 #: web/src/lib/features/admin/AdminUsers.svelte:571
-#: web/src/routes/+layout.svelte:354 web/src/routes/more/+page.svelte:63
-#: web/src/routes/more/+page.svelte:67
+#: web/src/lib/palette/entries.ts:194 web/src/routes/+layout.svelte:357
+#: web/src/routes/more/+page.svelte:63 web/src/routes/more/+page.svelte:67
 msgid "Admin"
 msgstr ""
 
@@ -631,10 +633,12 @@ msgid "App version"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1048
+#: web/src/lib/palette/entries.ts:45
 msgid "Appearance"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1326
+#: web/src/lib/palette/entries.ts:81
 msgid "Apps and devices"
 msgstr ""
 
@@ -675,7 +679,7 @@ msgstr ""
 msgid "Ask AI to improve extraction"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:378
+#: web/src/routes/+layout.svelte:381
 msgid "Ask an administrator if you need access."
 msgstr ""
 
@@ -741,7 +745,7 @@ msgid ""
 "verification."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:287
+#: web/src/routes/+layout.svelte:278
 msgid "Back"
 msgstr ""
 
@@ -766,7 +770,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectReader.svelte:765
 #: web/src/lib/features/projects/ProjectReader.svelte:776
 #: web/src/lib/features/projects/ProjectReader.svelte:782
-#: web/src/routes/+layout.svelte:380
+#: web/src/routes/+layout.svelte:383
 msgid "Back to projects"
 msgstr ""
 
@@ -885,9 +889,10 @@ msgstr ""
 msgid "Cannot get in?"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:112
 #: web/src/lib/features/categories/CategoryManager.svelte:203
 #: web/src/lib/features/categories/CategoryManager.svelte:214
-#: web/src/routes/+layout.svelte:107 web/src/routes/more/+page.svelte:30
+#: web/src/lib/nav-items.ts:25 web/src/routes/more/+page.svelte:30
 msgid "Categories"
 msgstr ""
 
@@ -1217,7 +1222,7 @@ msgid "Cover picture"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:263
-#: web/src/routes/+layout.svelte:95 web/src/routes/create/+page.svelte:41
+#: web/src/lib/nav-items.ts:21 web/src/routes/create/+page.svelte:41
 #: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:88
 msgid "Create"
 msgstr ""
@@ -1306,6 +1311,7 @@ msgid "Delete"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1483
+#: web/src/lib/palette/entries.ts:93
 msgid "Delete account"
 msgstr ""
 
@@ -1838,7 +1844,7 @@ msgstr ""
 #: web/src/lib/components/AuthFooter.svelte:20
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/routes/+layout.svelte:108 web/src/routes/more/+page.svelte:39
+#: web/src/lib/nav-items.ts:26 web/src/routes/more/+page.svelte:39
 msgid "Gauge calculator"
 msgstr ""
 
@@ -1954,7 +1960,7 @@ msgid ""
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:128
-#: web/src/routes/+layout.svelte:92
+#: web/src/lib/nav-items.ts:18
 msgid "Home"
 msgstr ""
 
@@ -2041,6 +2047,10 @@ msgstr ""
 msgid "Import a link"
 msgstr ""
 
+#: web/src/lib/palette/entries.ts:139
+msgid "Import as yarn"
+msgstr ""
+
 #: web/src/lib/api.ts:323
 msgid "Import preview is unavailable right now. Try again later."
 msgstr ""
@@ -2059,6 +2069,10 @@ msgstr ""
 
 #: web/src/routes/share/+page.svelte:62
 msgid "Import this link as a project or as a yarn?"
+msgstr ""
+
+#: web/src/lib/palette/entries.ts:130
+msgid "Import this pattern"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2110
@@ -2171,6 +2185,7 @@ msgstr ""
 #: web/src/lib/components/LocaleSwitcher.svelte:25
 #: web/src/lib/features/account/AccountSettings.svelte:1035
 #: web/src/lib/features/account/AccountSettings.svelte:1041
+#: web/src/lib/palette/entries.ts:39
 msgid "Language"
 msgstr ""
 
@@ -2481,7 +2496,7 @@ msgid "Mooorning!"
 msgstr ""
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:311 web/src/routes/+layout.svelte:420
+#: web/src/routes/+layout.svelte:314 web/src/routes/+layout.svelte:423
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr ""
@@ -2499,7 +2514,7 @@ msgstr ""
 msgid "More changes could not be loaded."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:312 web/src/routes/more/+page.svelte:72
+#: web/src/routes/+layout.svelte:315 web/src/routes/more/+page.svelte:72
 msgid "More navigation"
 msgstr ""
 
@@ -2574,7 +2589,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:233
 #: web/src/lib/features/projects/ProjectLibrary.svelte:378
 #: web/src/lib/features/yarns/YarnForm.svelte:782
-#: web/src/routes/create/+page.svelte:22
+#: web/src/lib/palette/entries.ts:149 web/src/routes/create/+page.svelte:22
 msgid "New project"
 msgstr ""
 
@@ -2597,7 +2612,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1418
 #: web/src/lib/features/yarns/YarnForm.svelte:690
 #: web/src/lib/features/yarns/YarnLibrary.svelte:297
-#: web/src/routes/create/+page.svelte:32
+#: web/src/lib/palette/entries.ts:157 web/src/routes/create/+page.svelte:32
 msgid "New yarn"
 msgstr ""
 
@@ -2805,6 +2820,10 @@ msgstr ""
 msgid "Notes moved up"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:361
+msgid "Nothing matches"
+msgstr ""
+
 #: web/src/lib/features/home/HomeDashboard.svelte:238
 #: web/src/lib/features/projects/ProjectLibrary.svelte:324
 msgid "Nothing on the needles yet"
@@ -2815,6 +2834,7 @@ msgid "Nothing yet - your changes will show up here."
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1110
+#: web/src/lib/palette/entries.ts:63
 msgid "Notifications"
 msgstr ""
 
@@ -2928,7 +2948,7 @@ msgstr ""
 msgid "Opening your pattern…"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:246
+#: web/src/routes/+layout.svelte:237
 msgid "Opening your workspace…"
 msgstr ""
 
@@ -3006,6 +3026,10 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectLibrary.svelte:363
 #: web/src/lib/features/yarns/YarnLibrary.svelte:282
 msgid "Page"
+msgstr ""
+
+#: web/src/lib/components/CommandPalette.svelte:114
+msgid "Pages"
 msgstr ""
 
 #: web/src/lib/features/account/BackupsSection.svelte:271
@@ -3261,6 +3285,7 @@ msgid "Privacy Policy"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:870
+#: web/src/lib/palette/entries.ts:33
 msgid "Profile"
 msgstr ""
 
@@ -3356,6 +3381,7 @@ msgid "Project timer is still running"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1081
+#: web/src/lib/palette/entries.ts:57
 msgid "Project timers"
 msgstr ""
 
@@ -3433,9 +3459,14 @@ msgstr ""
 msgid "Recent changes could not be loaded."
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:108
 #: web/src/lib/features/home/HomeDashboard.svelte:347
 #: web/src/lib/features/home/HomeDashboard.svelte:353
 msgid "Recent projects"
+msgstr ""
+
+#: web/src/lib/components/CommandPalette.svelte:110
+msgid "Recent yarns"
 msgstr ""
 
 #: web/src/lib/features/home/HomeDashboard.svelte:194
@@ -3689,6 +3720,10 @@ msgstr ""
 msgid "Restoring…"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:311
+msgid "Results"
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:882
 msgid "Review the project steps."
 msgstr ""
@@ -3851,6 +3886,16 @@ msgstr ""
 msgid "Search by name"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:277
+#: web/src/lib/components/CommandPalette.svelte:296
+#: web/src/routes/+layout.svelte:284
+msgid "Search everything"
+msgstr ""
+
+#: web/src/lib/components/CommandPalette.svelte:297
+msgid "Search projects, yarns, pages, settings…"
+msgstr ""
+
 #: web/src/lib/features/projects/YarnPicker.svelte:39
 msgid "Search yarn"
 msgstr ""
@@ -3895,6 +3940,7 @@ msgid "Selected yarn is unavailable."
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1155
+#: web/src/lib/palette/entries.ts:69
 msgid "Send error reports"
 msgstr ""
 
@@ -3918,6 +3964,10 @@ msgstr ""
 
 #: web/src/lib/components/SelfHostCard.svelte:49
 msgid "Set it up with an AI coding agent"
+msgstr ""
+
+#: web/src/lib/components/CommandPalette.svelte:116
+msgid "Settings"
 msgstr ""
 
 #: web/src/lib/components/ShareMenuItem.svelte:54
@@ -3965,6 +4015,7 @@ msgstr ""
 msgid "Show fewer"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:323
 #: web/src/lib/features/home/ActivityFeed.svelte:234
 #: web/src/lib/features/sharing/PeoplePicker.svelte:146
 msgid "Show more"
@@ -3994,7 +4045,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:163
 #: web/src/lib/features/projects/ProjectEditor.svelte:1322
-#: web/src/routes/+layout.svelte:230 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:221 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr ""
 
@@ -4054,6 +4105,7 @@ msgid "Sign in with {name}"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1191
+#: web/src/lib/palette/entries.ts:75
 msgid "Sign-in and security"
 msgstr ""
 
@@ -4097,7 +4149,7 @@ msgstr ""
 msgid "Skein weight in grams"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:218
+#: web/src/routes/+layout.svelte:209
 msgid "Skip to content"
 msgstr ""
 
@@ -4394,6 +4446,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:1072
 #: web/src/lib/features/projects/ProjectReader.svelte:878
 #: web/src/lib/features/yarns/YarnDetail.svelte:421
+#: web/src/lib/palette/entries.ts:51
 msgid "Text size"
 msgstr ""
 
@@ -4780,7 +4833,7 @@ msgstr ""
 msgid "The server returned an unexpected response."
 msgstr ""
 
-#: web/src/lib/session.svelte.ts:176 web/src/routes/+layout.svelte:259
+#: web/src/lib/session.svelte.ts:176 web/src/routes/+layout.svelte:250
 msgid "The session could not be loaded."
 msgstr ""
 
@@ -5156,6 +5209,10 @@ msgstr ""
 msgid "Today"
 msgstr ""
 
+#: web/src/lib/palette/entries.ts:165
+msgid "Toggle dark mode"
+msgstr ""
+
 #: web/src/lib/features/account/AccountSettings.svelte:757
 msgid "Token copied. Keep it somewhere safe."
 msgstr ""
@@ -5253,12 +5310,16 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:372
 #: web/src/lib/features/yarns/YarnForm.svelte:719
 #: web/src/lib/features/yarns/YarnLibrary.svelte:219
-#: web/src/routes/+layout.svelte:267
+#: web/src/routes/+layout.svelte:258
 msgid "Try again"
 msgstr ""
 
 #: web/src/lib/features/yarns/YarnLibrary.svelte:237
 msgid "Try another search or show all yarn."
+msgstr ""
+
+#: web/src/lib/components/CommandPalette.svelte:362
+msgid "Try fewer words, or a part of a name."
 msgstr ""
 
 #: web/src/routes/more/+page.svelte:40
@@ -5725,7 +5786,7 @@ msgstr ""
 msgid "You deleted {name}"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:376
+#: web/src/routes/+layout.svelte:379
 msgid "You do not have access to this page."
 msgstr ""
 
@@ -5820,6 +5881,7 @@ msgid "Your choices and contact"
 msgstr ""
 
 #: web/src/lib/features/account/BackupsSection.svelte:246
+#: web/src/lib/palette/entries.ts:87
 msgid "Your data"
 msgstr ""
 
@@ -5857,7 +5919,7 @@ msgstr ""
 msgid "Your knitting timer has been running for a while."
 msgstr ""
 
-#: web/src/routes/+layout.svelte:294
+#: web/src/routes/+layout.svelte:297
 msgid "Your library"
 msgstr ""
 
@@ -5917,7 +5979,7 @@ msgstr ""
 msgid "Your stash is empty"
 msgstr ""
 
-#: web/src/routes/+layout.svelte:255
+#: web/src/routes/+layout.svelte:246
 msgid "Your workspace is taking a moment."
 msgstr ""
 
@@ -5998,6 +6060,10 @@ msgstr ""
 msgid "main photo"
 msgstr ""
 
+#: web/src/lib/components/CommandPalette.svelte:367
+msgid "move"
+msgstr ""
+
 #: web/src/lib/features/history/history-summary.ts:41
 #: web/src/lib/features/history/history-summary.ts:59
 #: web/src/lib/features/history/history-summary.ts:72
@@ -6015,6 +6081,10 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1282
 msgid "of"
+msgstr ""
+
+#: web/src/lib/components/CommandPalette.svelte:368
+msgid "open"
 msgstr ""
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:385
