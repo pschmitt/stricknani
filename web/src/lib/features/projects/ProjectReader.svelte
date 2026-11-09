@@ -12,6 +12,7 @@
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import Disclosure from "#lib/components/Disclosure.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
+  import LabelIcon from "#lib/components/LabelIcon.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
@@ -1070,13 +1071,13 @@
           <!-- The yarns are listed under Materials only. -->
           {#if needlesText}
             <div>
-              <dt>{t("Needles", locale)}</dt>
+              <dt><LabelIcon name="needle" />{t("Needles", locale)}</dt>
               <dd>{needlesText}</dd>
             </div>
           {/if}
           {#if gaugeHtml || gaugeText}
             <div>
-              <dt>{t("Gauge", locale)}</dt>
+              <dt><LabelIcon name="gauge" />{t("Gauge", locale)}</dt>
               <dd>
                 {#if gaugeHtml}<div class="rich-text">
                     {@html gaugeHtml}
@@ -1119,7 +1120,7 @@
         {#if yarns.length}
           {#each yarns as yarn (yarn.id)}
             <div>
-              <dt>{t("Yarn", locale)}</dt>
+              <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
               <dd>
                 <ResourceCard
                   kind="yarn"
@@ -1152,19 +1153,19 @@
           {/each}
         {:else if yarnText}
           <div>
-            <dt>{t("Yarn", locale)}</dt>
+            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
             <dd>{yarnText}</dd>
           </div>
         {:else}
           <div>
-            <dt>{t("Yarn", locale)}</dt>
+            <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
             <dd>{t("Not recorded", locale)}</dd>
           </div>
         {/if}
         {#if adminData && yarnWarning}
           {#each project.yarn_ids.filter((yarnId) => !yarns.some((yarn) => yarn.id === yarnId)) as yarnId (yarnId)}
             <div>
-              <dt>{t("Yarn", locale)}</dt>
+              <dt><LabelIcon name="yarns" />{t("Yarn", locale)}</dt>
               <dd>
                 <ResourceCard
                   kind="yarn"
@@ -1185,7 +1186,7 @@
         {/if}
         {#if project.other_materials_html}
           <div>
-            <dt>{t("Other materials", locale)}</dt>
+            <dt><LabelIcon name="scissors" />{t("Other materials", locale)}</dt>
             <dd>
               <div class="rich-text">{@html project.other_materials_html}</div>
             </dd>

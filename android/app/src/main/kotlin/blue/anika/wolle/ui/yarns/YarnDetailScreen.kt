@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -48,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -563,30 +565,45 @@ private fun YarnDetailContent(
                             onMove = moveCard,
                         ) {
                             detail.brand?.let {
-                                DetailRow(stringResource(R.string.yarn_detail_field_brand), it)
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_brand),
+                                    it,
+                                    icon = PhosphorIcons.Storefront,
+                                )
                             }
                             detail.colorway?.let {
-                                DetailRow(stringResource(R.string.yarn_detail_field_colorway), it)
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_colorway),
+                                    it,
+                                    icon = PhosphorIcons.Palette,
+                                )
                             }
                             detail.dyeLot?.let {
-                                DetailRow(stringResource(R.string.yarn_detail_field_dye_lot), it)
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_dye_lot),
+                                    it,
+                                    icon = PhosphorIcons.Palette,
+                                )
                             }
                             detail.fiberContent?.let {
                                 DetailRow(
                                     stringResource(R.string.yarn_detail_field_fiber_content),
                                     it,
+                                    icon = PhosphorIcons.Leaf,
                                 )
                             }
                             detail.weightCategory?.let {
                                 DetailRow(
                                     stringResource(R.string.yarn_detail_field_weight_category),
                                     it,
+                                    icon = PhosphorIcons.Scales,
                                 )
                             }
                             detail.recommendedNeedles?.let {
                                 DetailRow(
                                     stringResource(R.string.yarn_detail_field_recommended_needles),
                                     it,
+                                    icon = PhosphorIcons.Needle,
                                 )
                             }
                             if (detail.weightGrams != null || detail.lengthMeters != null) {
@@ -596,7 +613,11 @@ private fun YarnDetailContent(
                                             detail.lengthMeters?.let { "${it}m" },
                                         )
                                         .joinToString(" / ")
-                                DetailRow(stringResource(R.string.yarn_detail_field_amount), amount)
+                                DetailRow(
+                                    stringResource(R.string.yarn_detail_field_amount),
+                                    amount,
+                                    icon = PhosphorIcons.Scales,
+                                )
                             }
                             SourceRows(
                                 entity = ArchiveEntity.YARN,
@@ -799,14 +820,27 @@ private fun yarnViewerImages(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, icon: ImageVector? = null) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(end = 8.dp),
-        )
+        ) {
+            if (icon != null) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }

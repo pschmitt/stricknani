@@ -10,6 +10,7 @@
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
+  import LabelIcon from "#lib/components/LabelIcon.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
@@ -564,35 +565,37 @@
       >
       <dl class={textSizeClass}>
         {#if yarn.brand}<div>
-            <dt>{t("Brand", locale)}</dt>
+            <dt><LabelIcon name="storefront" />{t("Brand", locale)}</dt>
             <dd>{yarn.brand}</dd>
           </div>{/if}
         {#if yarn.colorway}<div>
-            <dt>{t("Colorway", locale)}</dt>
+            <dt><LabelIcon name="palette" />{t("Colorway", locale)}</dt>
             <dd>{yarn.colorway}</dd>
           </div>{/if}
         {#if yarn.dye_lot}<div>
-            <dt>{t("Dye lot", locale)}</dt>
+            <dt><LabelIcon name="palette" />{t("Dye lot", locale)}</dt>
             <dd>{yarn.dye_lot}</dd>
           </div>{/if}
         {#if yarn.fiber_content}<div>
-            <dt>{t("Fiber content", locale)}</dt>
+            <dt><LabelIcon name="leaf" />{t("Fiber content", locale)}</dt>
             <dd>{yarn.fiber_content}</dd>
           </div>{/if}
         {#if yarn.weight_category}<div>
-            <dt>{t("Yarn weight", locale)}</dt>
+            <dt><LabelIcon name="scales" />{t("Yarn weight", locale)}</dt>
             <dd>{yarn.weight_category}</dd>
           </div>{/if}
         {#if yarn.recommended_needles}<div>
-            <dt>{t("Recommended needles", locale)}</dt>
+            <dt>
+              <LabelIcon name="needle" />{t("Recommended needles", locale)}
+            </dt>
             <dd>{yarn.recommended_needles}</dd>
           </div>{/if}
         {#if yarn.weight_grams !== null}<div>
-            <dt>{t("Skein weight", locale)}</dt>
+            <dt><LabelIcon name="scales" />{t("Skein weight", locale)}</dt>
             <dd>{displayNumber(yarn.weight_grams, t("g", locale))}</dd>
           </div>{/if}
         {#if yarn.length_meters !== null}<div>
-            <dt>{t("Skein length", locale)}</dt>
+            <dt><LabelIcon name="gauge" />{t("Skein length", locale)}</dt>
             <dd>{displayNumber(yarn.length_meters, t("m", locale))}</dd>
           </div>{/if}
         <div>

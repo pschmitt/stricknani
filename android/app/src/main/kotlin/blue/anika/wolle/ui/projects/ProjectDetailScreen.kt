@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -682,15 +684,30 @@ private fun ProjectDetailContent(
                         ) {
                             // The yarn is listed under Materials only.
                             detail.needles?.let {
-                                DetailRow(stringResource(R.string.common_field_needles), it)
+                                DetailRow(
+                                    stringResource(R.string.common_field_needles),
+                                    it,
+                                    icon = PhosphorIcons.Needle,
+                                )
                             }
                             if (detail.stitchSample != null) {
-                                Text(
-                                    stringResource(R.string.project_detail_field_gauge),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(top = 4.dp),
-                                )
+                                ) {
+                                    Icon(
+                                        PhosphorIcons.Ruler,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        stringResource(R.string.project_detail_field_gauge),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                                 ProjectMarkdown(
                                     value = detail.stitchSample.orEmpty(),
                                     resolveMediaUrl = resolveMediaUrl,
@@ -783,6 +800,7 @@ private fun ProjectDetailContent(
                                         DetailRow(
                                             stringResource(R.string.project_detail_field_yarn),
                                             it,
+                                            icon = PhosphorIcons.Yarn,
                                         )
                                     }
                                 }
@@ -793,6 +811,7 @@ private fun ProjectDetailContent(
                                     DetailRow(
                                         stringResource(R.string.common_field_other_materials),
                                         it,
+                                        icon = PhosphorIcons.Scissors,
                                     )
                                 }
                             }
@@ -1330,14 +1349,27 @@ internal fun LinkedEntityRow(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, icon: ImageVector? = null) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(end = 8.dp),
-        )
+        ) {
+            if (icon != null) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
