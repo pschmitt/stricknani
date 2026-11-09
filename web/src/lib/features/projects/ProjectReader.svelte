@@ -52,12 +52,7 @@
     type ProjectImage,
     type ProjectYarn,
   } from "./project-api";
-  import {
-    rememberReadingStep,
-    resolveReadingStep,
-    stepHash,
-    stepIdFromHash,
-  } from "./reader-progress";
+  import { stepIdFromHash } from "./reader-progress";
   import {
     mergeArchiveDetailPreservingFavorite,
     mergeFavoriteMutationIntoCurrent,
@@ -168,9 +163,6 @@
   );
   const selectedImage = $derived(
     project?.images.find((image) => image.id === selectedImageId) ?? null,
-  );
-  const currentStepIndex = $derived(
-    orderedSteps.findIndex((step) => step.id === currentStepId),
   );
 
   async function leaveForLostAccess() {
@@ -286,17 +278,9 @@
       const stepIds = [...currentAdminData.project.steps]
         .sort((left, right) => left.step_number - right.step_number)
         .map((step) => step.id);
-      const initialStepId =
-        stepIdFromHash(page.url.hash, stepIds) ?? stepIds[0] ?? null;
-      currentStepId = initialStepId;
-      if (initialStepId !== null) {
-        const hash = stepHash(initialStepId);
-        if (page.url.hash !== hash) {
-          void goto(`${page.url.pathname}${page.url.search}${hash}`, {
-            replaceState: true,
-          });
-        }
-      }
+      // A step is only marked when the link names one (#step-N); opening a
+      // project starts at the top.
+      currentStepId = stepIdFromHash(page.url.hash, stepIds);
       loadState = "ready";
       return () => {
         if (resourceGeneration === generation) resourceGeneration += 1;
@@ -327,22 +311,7 @@
         const stepIds = [...result.steps]
           .sort((left, right) => left.step_number - right.step_number)
           .map((step) => step.id);
-        const restoredStepId = resolveReadingStep(
-          currentUserId,
-          result.id,
-          page.url.hash,
-          stepIds,
-        );
-        currentStepId = restoredStepId;
-        if (restoredStepId !== null) {
-          rememberReadingStep(currentUserId, result.id, restoredStepId);
-          const hash = stepHash(restoredStepId);
-          if (page.url.hash !== hash) {
-            void goto(`${page.url.pathname}${page.url.search}${hash}`, {
-              replaceState: true,
-            });
-          }
-        }
+        currentStepId = stepIdFromHash(page.url.hash, stepIds);
         loadState = "ready";
         const linkedYarns = await Promise.allSettled(
           result.yarn_ids.map((yarnId) => getYarn(yarnId, controller.signal)),
@@ -384,9 +353,6 @@
     );
     if (stepId === null) return;
     currentStepId = stepId;
-    if (!adminData) {
-      rememberReadingStep(currentUserId, currentProject.id, stepId);
-    }
   });
 
   async function toggleFavorite() {
@@ -740,10 +706,7 @@
       currentStepId !== null &&
       !refreshed.steps.some((step) => step.id === currentStepId)
     ) {
-      const firstStep = [...refreshed.steps].sort(
-        (left, right) => left.step_number - right.step_number,
-      )[0];
-      currentStepId = firstStep?.id ?? null;
+      currentStepId = null;
     }
     archiveRefreshController = null;
   }
@@ -1256,46 +1219,6 @@
             <span>{orderedSteps.length}</span>
           </div>
           {#if orderedSteps.length}
-            <nav
-              class="step-navigation"
-              aria-label={t("Pattern step navigation", locale)}
-            >
-              {#if currentStepIndex > 0}
-                {@const previousStep = orderedSteps[currentStepIndex - 1]}
-                <a
-                  class="step-navigation-link ui-button ui-button--ghost ui-button--md"
-                  href={stepHash(previousStep.id)}
-                >
-                  <span
-                    ><NavIcon name="previous" />{t(
-                      "Previous step",
-                      locale,
-                    )}</span
-                  >
-                  <strong>{previousStep.title}</strong>
-                </a>
-              {:else}
-                <span class="step-navigation-spacer"></span>
-              {/if}
-              <p class="step-progress" aria-live="polite" aria-atomic="true">
-                {t("Step", locale)}
-                {currentStepIndex + 1}
-                {t("of", locale)}
-                {orderedSteps.length}
-              </p>
-              {#if currentStepIndex >= 0 && currentStepIndex < orderedSteps.length - 1}
-                {@const nextStep = orderedSteps[currentStepIndex + 1]}
-                <a
-                  class="step-navigation-link next-step-link ui-button ui-button--ghost ui-button--md"
-                  href={stepHash(nextStep.id)}
-                >
-                  <span>{t("Next step", locale)}<NavIcon name="next" /></span>
-                  <strong>{nextStep.title}</strong>
-                </a>
-              {:else}
-                <span class="step-navigation-spacer"></span>
-              {/if}
-            </nav>
             <ol class="steps-list">
               {#each orderedSteps as step (step.id)}
                 <li
@@ -1670,76 +1593,6 @@
     font-size: 0.83rem;
   }
 
-  .step-navigation {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.8rem;
-  }
-
-  .step-navigation-link {
-    display: grid;
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    min-height: 44px;
-    grid-template-columns: minmax(0, 1fr);
-    justify-content: stretch;
-    justify-items: start;
-    align-content: center;
-    gap: 0.1rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0.4rem 0.75rem;
-    color: var(--accent-strong);
-    background: var(--surface-raised);
-    text-decoration: none;
-    white-space: normal;
-  }
-
-  .step-navigation-link > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-
-  .step-navigation-link :global(svg) {
-    flex: none;
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .step-navigation-link strong {
-    max-width: 100%;
-    overflow: hidden;
-    color: var(--ink);
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .next-step-link {
-    justify-items: end;
-    text-align: right;
-  }
-
-  .step-navigation-spacer {
-    min-height: 44px;
-  }
-
-  .step-progress {
-    margin: 0;
-    text-align: center;
-    color: var(--ink-muted);
-    font-size: 0.82rem;
-    font-weight: 650;
-    white-space: nowrap;
-  }
-
   :global(.gallery-image),
   :global(.step-image) {
     position: relative;
@@ -2055,16 +1908,6 @@
 
     .reader {
       --stack-gap: 1rem;
-    }
-
-    .step-navigation {
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      gap: 0.35rem;
-    }
-
-    .step-navigation-link {
-      padding: 0.25rem 0.4rem;
-      font-size: 0.82rem;
     }
 
     .reader-footer {

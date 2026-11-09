@@ -98,7 +98,7 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
       stepIds.every((stepId) => typeof stepId === "number"),
     "the reader fixture did not return two numeric step IDs",
   );
-  const [firstStepId, secondStepId] = stepIds as [number, number];
+  const secondStepId = (stepIds as [number, number])[1];
   const readerTags = await page.locator(".reader-tags li").allInnerTexts();
   check(
     sameStrings(readerTags, ["heirloom", "textured", "textured"]),
@@ -180,45 +180,24 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
   await page
     .getByRole("heading", { name: "Heirloom Baby Blanket", exact: true })
     .waitFor({ state: "visible" });
-  markStage("checking step progress, hash links, and previous/next navigation");
-  const stepProgress = page.locator(".step-progress");
-  await stepProgress.waitFor({ state: "visible" });
+  markStage("opening a project starts at the top, without a step bar");
   check(
-    (await stepProgress.innerText()) === "Step 1 of 2",
-    "reader progress did not start at the first ordered step",
-  );
-  const nextStep = page.locator(".next-step-link");
-  check(
-    (await nextStep.getAttribute("href")) === `#step-${secondStepId}`,
-    "next-step control did not expose the expected addressable hash",
-  );
-  await nextStep.click();
-  await page.waitForFunction(
-    (stepId) => location.hash === `#step-${stepId}`,
-    secondStepId,
+    (await page.locator(".step-navigation").count()) === 0,
+    "the reader still shows the previous/next step bar",
   );
   check(
-    (await stepProgress.innerText()) === "Step 2 of 2" &&
-      (await page
-        .locator(`#step-${secondStepId}`)
-        .getAttribute("aria-current")) === "step",
-    "next-step navigation did not update the current-step indicator",
+    new URL(page.url()).hash === "",
+    "opening a project jumped to a step on its own",
   );
-  await page.getByRole("link", { name: /Previous step/ }).click();
-  await page.waitForFunction(
-    (stepId) => location.hash === `#step-${stepId}`,
-    firstStepId,
-  );
-  check(
-    (await stepProgress.innerText()) === "Step 1 of 2",
-    "previous-step navigation did not restore the first step",
-  );
-  await page.locator(".next-step-link").click();
-  await page.waitForFunction(
-    (stepId) => location.hash === `#step-${stepId}`,
-    secondStepId,
-  );
-  markStage("restoring step position after returning to the library");
+  markStage("opening a direct reader step link");
+  await page.goto(`${origin}/app/projects/${projectId}#step-${secondStepId}`, {
+    waitUntil: "networkidle",
+  });
+  await page
+    .locator(`#step-${secondStepId}[aria-current="step"]`)
+    .waitFor({ state: "visible" });
+  await assertStepInUsableViewport(page, secondStepId);
+  markStage("returning from the library does not resume the last step");
   await (
     await assertHeaderParentLink(page, "/app/projects", "project reader")
   ).click();
@@ -229,28 +208,15 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
         `[href='/app/projects/${projectId}']`,
     )
     .click();
-  await page.waitForURL(`**/app/projects/${projectId}**`);
-  await page.waitForFunction(
-    (stepId) => location.hash === `#step-${stepId}`,
-    secondStepId,
-  );
-  await page.locator(".step-progress").waitFor({ state: "visible" });
+  await page.waitForURL(`**/app/projects/${projectId}`);
+  await page
+    .getByRole("heading", { name: "Heirloom Baby Blanket", exact: true })
+    .waitFor({ state: "visible" });
   check(
-    (await page.locator(".step-progress").innerText()) === "Step 2 of 2",
-    "the reader did not restore the last step after " +
-      "returning from the library",
+    new URL(page.url()).hash === "" &&
+      (await page.locator('.steps-list [aria-current="step"]').count()) === 0,
+    "the reader resumed the last step after returning from the library",
   );
-  await assertStepInUsableViewport(page, secondStepId);
-  markStage("opening a direct reader step link");
-  await page.goto(`${origin}/app/projects/${projectId}#step-${firstStepId}`, {
-    waitUntil: "networkidle",
-  });
-  await page.locator(".step-progress").waitFor({ state: "visible" });
-  check(
-    (await page.locator(".step-progress").innerText()) === "Step 1 of 2",
-    "direct hash navigation did not open the requested step",
-  );
-  await assertStepInUsableViewport(page, firstStepId);
   markStage("checking the seeded project-step reference photo");
   const stepPhoto = page.locator(
     ".steps-list .step-image .screen-reference-image",

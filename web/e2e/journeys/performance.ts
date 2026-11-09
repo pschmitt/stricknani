@@ -605,19 +605,6 @@ async function oneSample(
     readerMetrics.events,
   );
 
-  markStage(`sample ${sampleNumber}: reader step navigation`);
-  await page.locator(".next-step-link").click();
-  await page
-    .getByText("Step 2 of 2", { exact: true })
-    .waitFor({ state: "visible", timeout: 10_000 });
-  await page
-    .locator(".step-navigation-link")
-    .filter({ hasText: "Previous step" })
-    .click();
-  await page
-    .getByText("Step 1 of 2", { exact: true })
-    .waitFor({ state: "visible", timeout: 10_000 });
-
   markStage(`sample ${sampleNumber}: reader text-size controls`);
   const readingCopy = page.locator(".pattern-section .reading-copy").first();
   const initialTextSize = await readingCopy.getAttribute("class");
