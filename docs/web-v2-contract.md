@@ -413,11 +413,20 @@ same-origin and CSRF checks:
 | --------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------ |
 | `GET /projects?page=1&category=...&tag=...&favorite=true&q=...` | Session or PAT          | `{data: ProjectSummary[], meta: {page, per_page, has_more}}` |
 | `POST /projects`                                                | Session or PAT | `201 {data: Project}`                                        |
+| `GET /projects/tags`                                             | Session or PAT          | `{data: [{tag, count}]}`, see below                          |
+| `GET /projects/tags`                                             | Session or PAT          | `{data: [{tag, count}]}`, see below                          |
 | `GET /projects/{id}`                                            | Session or PAT          | `{data: Project}`                                            |
 | `PUT /projects/{id}`                                            | Session or PAT | `{data: Project}`                                            |
 | `DELETE /projects/{id}`                                         | Session or PAT | `204`                                                        |
 | `PUT /projects/{id}/favorite`                                   | Session or PAT | `{data: Project}`                                            |
 | `DELETE /projects/{id}/favorite`                                | Session or PAT | `{data: Project}`                                            |
+
+`GET /projects/tags` feeds the tag suggestions of the project editor. It returns
+the distinct tags of the projects the caller owns or that are shared with them
+(the "Mine" library set, never other users' private projects) as
+`{data: [{tag, count}]}`, most used first, then by name. A tag counts once per
+project; tags that differ only in case are one entry shown in its most common
+spelling. `tags` is a literal path segment, not a project id.
 
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,

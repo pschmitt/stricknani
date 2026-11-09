@@ -506,6 +506,127 @@ async fn create_project_json(
     (status, json(response).await)
 }
 
+#[tokio::test]
+async fn project_tag_suggestions_are_scoped_counted_and_ordered() {
+    let (app, pool) = fixture().await;
+    let anonymous = app
+        .clone()
+        .oneshot(Request::get("/projects/tags").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+
+    let ana = db::create_user(
+        &pool,
+        "ana-tags@example.test",
+        "ana-tags-password-long".to_owned(),
+    )
+    .await
+    .unwrap();
+    db::create_user(
+        &pool,
+        "bo-tags@example.test",
+        "bo-tags-password-long".to_owned(),
+    )
+    .await
+    .unwrap();
+    let (ana_session, ana_csrf) =
+        signed_in(&app, "ana-tags@example.test", "ana-tags-password-long").await;
+    let (bo_session, bo_csrf) =
+        signed_in(&app, "bo-tags@example.test", "bo-tags-password-long").await;
+    for (name, tags) in [
+        ("One", serde_json::json!(["winter", "socks", "Gift"])),
+        ("Two", serde_json::json!(["winter", "gift", "gift"])),
+        (
+            "Three",
+            serde_json::json!(["winter", "baby blanket", "gift"]),
+        ),
+        ("Four", serde_json::json!(["socks"])),
+    ] {
+        let (status, _) = create_project_json(
+            &app,
+            &ana_session,
+            &ana_csrf,
+            serde_json::json!({ "name": name, "tags": tags }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CREATED);
+    }
+    let (status, shared) = create_project_json(
+        &app,
+        &bo_session,
+        &bo_csrf,
+        serde_json::json!({ "name": "Bo shared", "tags": ["lace", "winter"] }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let (status, _) = create_project_json(
+        &app,
+        &bo_session,
+        &bo_csrf,
+        serde_json::json!({ "name": "Bo private", "tags": ["secret"] }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+
+    async fn fetch(app: &axum::Router, session: &str) -> serde_json::Value {
+        let response = app
+            .clone()
+            .oneshot(browser_request(
+                "GET",
+                "/projects/tags",
+                session,
+                None,
+                None,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        json(response).await["data"].clone()
+    }
+    // Own projects only; most used first, then by name. Tags that differ in case are one entry
+    // in their most common spelling ("gift" in two projects, "Gift" in one) and count once per
+    // project.
+    assert_eq!(
+        fetch(&app, &ana_session).await,
+        serde_json::json!([
+            {"tag": "gift", "count": 3},
+            {"tag": "winter", "count": 3},
+            {"tag": "socks", "count": 2},
+            {"tag": "baby blanket", "count": 1},
+        ])
+    );
+    assert_eq!(
+        fetch(&app, &bo_session).await,
+        serde_json::json!([
+            {"tag": "lace", "count": 1},
+            {"tag": "secret", "count": 1},
+            {"tag": "winter", "count": 1},
+        ])
+    );
+
+    // A project shared with Ana contributes its tags too (the "Mine" library semantics).
+    sqlx::query(
+        "INSERT INTO resource_shares (kind, resource_id, user_id, role, created_at, updated_at) \
+         VALUES ('project', ?, ?, 'viewer', 'x', 'x')",
+    )
+    .bind(shared["data"]["id"].as_i64().unwrap())
+    .bind(ana)
+    .execute(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        fetch(&app, &ana_session).await,
+        serde_json::json!([
+            {"tag": "winter", "count": 4},
+            {"tag": "gift", "count": 3},
+            {"tag": "socks", "count": 2},
+            {"tag": "baby blanket", "count": 1},
+            {"tag": "lace", "count": 1},
+        ])
+    );
+}
+
 async fn yarn_count(pool: &SqlitePool, owner_id: i64) -> i64 {
     sqlx::query_scalar("SELECT COUNT(*) FROM yarns WHERE owner_id = ?")
         .bind(owner_id)

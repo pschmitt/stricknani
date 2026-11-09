@@ -126,6 +126,7 @@ fun ProjectEditorScreen(
     val form by viewModel.form.collectAsStateWithLifecycle()
     val reorderAvailable by viewModel.reorderAvailable.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val knownTags by viewModel.knownTags.collectAsStateWithLifecycle()
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
     val banner by viewModel.ownerBanner.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -565,6 +566,13 @@ fun ProjectEditorScreen(
                             TagChipField(
                                 tags = form.tags,
                                 text = form.tagInput,
+                                suggestions =
+                                    remember(knownTags, form.tagInput, form.tags) {
+                                        suggestTags(knownTags, form.tagInput, form.tags)
+                                    },
+                                onPickSuggestion = { tag ->
+                                    viewModel.updateForm { it.withPickedTag(tag) }
+                                },
                                 onTextChange = { value, commitAll ->
                                     viewModel.updateForm { it.withTagText(value, commitAll) }
                                 },

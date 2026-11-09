@@ -1675,6 +1675,63 @@ fn encode_tags(tags: &[String], tag_policy: TagPolicy) -> String {
     serde_json::to_string(&normalized).unwrap_or_else(|_| "[]".to_owned())
 }
 
+/// One distinct project tag with the number of projects that carry it.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub(crate) struct TagCount {
+    pub(crate) tag: String,
+    pub(crate) count: i64,
+}
+
+/// The distinct tags of the projects the user owns or that are shared with them (the same set the
+/// v2 "Mine" library shows), with usage counts: most used first, then by name. Tags are grouped
+/// case-insensitively (the editor deduplicates that way); the most common spelling is shown. A tag
+/// counts once per project.
+pub(crate) async fn tag_counts_for_user(
+    state: &AppState,
+    user_id: i64,
+) -> Result<Vec<TagCount>, ProjectError> {
+    let rows: Vec<String> = sqlx::query_scalar(
+        "SELECT p.tags FROM projects p WHERE p.owner_id = ? OR EXISTS( \
+             SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
+             AND s.resource_id = p.id AND s.user_id = ?)",
+    )
+    .bind(user_id)
+    .bind(user_id)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|_| ProjectError::Database)?;
+    // lowercase key -> (spelling -> projects using it)
+    let mut groups: std::collections::HashMap<String, std::collections::HashMap<String, i64>> =
+        std::collections::HashMap::new();
+    for row in rows {
+        let mut seen = std::collections::HashSet::new();
+        for tag in decode_tags(&row, TagPolicy::Legacy) {
+            let key = tag.to_lowercase();
+            if seen.insert(key.clone()) {
+                *groups.entry(key).or_default().entry(tag).or_default() += 1;
+            }
+        }
+    }
+    let mut counts: Vec<TagCount> = groups
+        .into_values()
+        .filter_map(|spellings| {
+            let count = spellings.values().sum();
+            let tag = spellings
+                .into_iter()
+                .max_by(|a, b| a.1.cmp(&b.1).then_with(|| b.0.cmp(&a.0)))?
+                .0;
+            Some(TagCount { tag, count })
+        })
+        .collect();
+    counts.sort_by(|a, b| {
+        b.count
+            .cmp(&a.count)
+            .then_with(|| a.tag.to_lowercase().cmp(&b.tag.to_lowercase()))
+            .then_with(|| a.tag.cmp(&b.tag))
+    });
+    Ok(counts)
+}
+
 fn decode_tags(tags: &str, tag_policy: TagPolicy) -> Vec<String> {
     match serde_json::from_str::<Vec<String>>(tags) {
         Ok(tags) if matches!(tag_policy, TagPolicy::PreserveLabels) => tags,

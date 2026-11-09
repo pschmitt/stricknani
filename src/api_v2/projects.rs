@@ -25,6 +25,7 @@ use super::{
 pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
         .route("/projects", get(list_projects).post(create_project))
+        .route("/projects/tags", get(list_project_tags))
         .route(
             "/projects/{project_id}",
             get(get_project).put(update_project).delete(delete_project),
@@ -327,6 +328,18 @@ async fn list_projects(
         },
     })
     .into_response()
+}
+
+/// The signed-in user's distinct project tags with usage counts, for the editor's suggestions.
+async fn list_project_tags(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
+    let user_id = match resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(response) => return *response,
+    };
+    match project_service::tag_counts_for_user(&state.app, user_id).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => project_error(error),
+    }
 }
 
 async fn get_project(

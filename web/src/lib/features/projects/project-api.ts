@@ -237,6 +237,26 @@ export async function listCategories(
   });
 }
 
+/** The tags the signed-in user already uses, with usage counts (editor suggestions). */
+export async function listProjectTags(
+  signal?: AbortSignal,
+): Promise<{ tag: string; count: number }[]> {
+  const payload: unknown = await apiRequest("/api/v2/projects/tags", {
+    signal,
+  });
+  if (!isRecord(payload) || !Array.isArray(payload.data))
+    throw invalidResponse();
+  return payload.data.map((value: unknown) => {
+    if (
+      !isRecord(value) ||
+      typeof value.tag !== "string" ||
+      typeof value.count !== "number"
+    )
+      throw invalidResponse();
+    return { tag: value.tag, count: value.count };
+  });
+}
+
 export async function getProject(
   id: number,
   signal: AbortSignal,

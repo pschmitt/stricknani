@@ -2,17 +2,20 @@ package blue.anika.wolle.ui.projects
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -23,6 +26,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -45,6 +49,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -66,6 +71,8 @@ import blue.anika.wolle.ui.common.PhosphorIcons
 internal fun TagChipField(
     tags: List<String>,
     text: String,
+    suggestions: List<TagCount>,
+    onPickSuggestion: (tag: String) -> Unit,
     onTextChange: (value: String, commitAll: Boolean) -> Unit,
     onRemove: (index: Int) -> Unit,
     onBackspaceInEmptyField: () -> Unit,
@@ -182,6 +189,38 @@ internal fun TagChipField(
                         }
                         .semantics { contentDescription = label },
             )
+        }
+        if (focused && suggestions.isNotEmpty()) {
+            val suggestionsLabel = stringResource(R.string.project_editor_tags_suggestions)
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).semantics {
+                        contentDescription = suggestionsLabel
+                    },
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                suggestions.forEach { suggestion ->
+                    key(suggestion.tag) {
+                        SuggestionChip(
+                            onClick = { onPickSuggestion(suggestion.tag) },
+                            label = {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(suggestion.tag)
+                                    Text(
+                                        suggestion.count.toString(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.clearAndSetSemantics {},
+                                    )
+                                }
+                            },
+                        )
+                    }
+                }
+            }
         }
     }
 }

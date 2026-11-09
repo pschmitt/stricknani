@@ -46,7 +46,7 @@
     prefillUrlFromSearch,
   } from "../imports/shared-link";
   import YarnPicker from "./YarnPicker.svelte";
-  import { mergeTags, splitTagInput } from "./tag-input";
+  import TagChipInput from "./TagChipInput.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
   import {
@@ -149,7 +149,7 @@
   let editorForm = $state<HTMLFormElement | undefined>(undefined);
   let optionalDetailsOpen = $state(false);
   let tagInput = $state("");
-  let tagField = $state<HTMLInputElement | null>(null);
+  let tagChips = $state<ReturnType<typeof TagChipInput> | null>(null);
   let stepKey = 0;
   let routeGeneration = 0;
   let categoryGeneration = 0;
@@ -628,15 +628,9 @@
     selectedYarnNames[yarn.id] = yarn;
   }
 
-  /** Chips the typed text at spaces and commas; `commitAll` also takes the last piece. */
-  function addTag(commitAll = true): void {
-    const { tags, rest } = splitTagInput(tagInput, commitAll);
-    if (tags.length) draft.tags = mergeTags(draft.tags, tags);
-    tagInput = rest;
-  }
-
-  function removeTag(index: number): void {
-    draft.tags = draft.tags.filter((_, tagIndex) => tagIndex !== index);
+  /** Takes the tag text still being typed as tags. */
+  function addTag(): void {
+    tagChips?.commit();
   }
 
   function removeYarn(id: number): void {
@@ -1763,62 +1757,13 @@
                 <label for="project-tag-entry"
                   ><LabelIcon name="categories" />{t("Tags", locale)}</label
                 >
-                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-                <div
-                  class="tag-box"
-                  onclick={(event) => {
-                    if (event.target === event.currentTarget) tagField?.focus();
-                  }}
-                >
-                  {#each draft.tags as tag, index (`${index}:${tag}`)}
-                    <span class="tag-chip">
-                      <span class="tag-chip-text">{tag}</span>
-                      <button
-                        type="button"
-                        class="tag-chip-remove"
-                        aria-label={t("Remove tag {name}", locale).replace(
-                          "{name}",
-                          tag,
-                        )}
-                        onclick={() => {
-                          removeTag(index);
-                          tagField?.focus();
-                        }}
-                      >
-                        <NavIcon name="close" />
-                      </button>
-                    </span>
-                  {/each}
-                  <input
-                    id="project-tag-entry"
-                    class="tag-box-input"
-                    bind:this={tagField}
-                    bind:value={tagInput}
-                    autocomplete="off"
-                    autocapitalize="none"
-                    enterkeyhint="done"
-                    placeholder={draft.tags.length
-                      ? ""
-                      : t("Add tags…", locale)}
-                    oninput={(event) => {
-                      const { inputType } = event as unknown as InputEvent;
-                      addTag(inputType === "insertFromPaste");
-                    }}
-                    onblur={() => addTag()}
-                    onkeydown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        addTag();
-                      } else if (
-                        event.key === "Backspace" &&
-                        tagInput === "" &&
-                        draft.tags.length
-                      ) {
-                        removeTag(draft.tags.length - 1);
-                      }
-                    }}
-                  />
-                </div>
+                <TagChipInput
+                  bind:this={tagChips}
+                  id="project-tag-entry"
+                  bind:tags={draft.tags}
+                  bind:input={tagInput}
+                  {locale}
+                />
               </div>
               <div class="field field-wide">
                 <label for="project-link"
@@ -2422,82 +2367,6 @@
 
   .field-wide {
     grid-column: 1 / -1;
-  }
-
-  /* The tag box looks like the other inputs and holds the tag chips in front of the cursor. */
-  .tag-box {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    box-sizing: border-box;
-    min-height: var(--ui-input-height);
-    border: 1px solid var(--control-border);
-    border-radius: var(--ui-input-radius);
-    padding: 0.3rem 0.5rem;
-    background: var(--surface-raised);
-    cursor: text;
-  }
-
-  .tag-box:focus-within {
-    outline: 3px solid var(--focus);
-    outline-offset: 3px;
-  }
-
-  .tag-chip {
-    display: inline-flex;
-    align-items: center;
-    min-width: 0;
-    max-width: 100%;
-    border-radius: 999px;
-    padding: 0.1rem 0.15rem 0.1rem 0.65rem;
-    background: var(--accent-wash);
-    color: var(--accent-strong);
-    font-size: 0.9rem;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .tag-chip-text {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .tag-chip-remove {
-    display: inline-grid;
-    flex: none;
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-inline-start: 0.15rem;
-    place-items: center;
-    border: 0;
-    border-radius: 999px;
-    padding: 0;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  .tag-chip-remove:hover {
-    background: color-mix(in srgb, currentcolor 16%, transparent);
-  }
-
-  .tag-chip-remove :global(svg) {
-    width: 0.85rem;
-    height: 0.85rem;
-  }
-
-  .tag-box .tag-box-input {
-    flex: 1 1 6rem;
-    min-width: 6rem;
-    min-height: 2rem;
-    border: 0;
-    padding: 0.2rem 0.25rem;
-    background: transparent;
-  }
-
-  .tag-box .tag-box-input:focus-visible {
-    outline: none;
   }
 
   .yarn-other-materials {

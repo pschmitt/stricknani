@@ -326,6 +326,27 @@ constructor(
                 capabilities.current.generation == ApiGeneration.V2,
             )
 
+    /**
+     * The tags the user already uses, counted from the locally cached projects (their own and the
+     * ones shared with them, like the web's `GET /api/v2/projects/tags`), so the suggestions also
+     * work offline.
+     */
+    val knownTags: StateFlow<List<TagCount>> =
+        projectRepository
+            .observeAll()
+            .map { rows ->
+                tagCounts(
+                    rows.map { row ->
+                        runCatching { projectRepository.decodeTags(row) }.getOrDefault(emptyList())
+                    }
+                )
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
+
     val categories: StateFlow<List<CategoryEntity>> =
         categoryRepository
             .observeAll()

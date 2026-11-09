@@ -80,6 +80,7 @@ Pinned by `meta_probe_reports_the_pat_owner_and_rejects_bad_bearers_without_cook
 | Method and path | Android request | Server request | Response | Status |
 | --- | --- | --- | --- | --- |
 | `GET /api/v2/projects` | `page`, `category`, `tag`, `favorite`, `q` | same query keys | `{data:[ProjectListItem], meta}` | **match** |
+| `GET /api/v2/projects/tags` | not used: the editor suggests from the cached projects (offline) | none | `{data:[{tag,count}]}` | **web only** |
 | `GET /api/v2/projects/{id}` | none | none | `{data: ProjectDto}` | **match** |
 | `POST /api/v2/projects` | `ProjectWriteRequest` (default-valued keys omitted by Kotlin) | `ProjectWriteRequest`, unknown keys ignored | `201 {data: ProjectDto}` | **match** |
 | `PUT /api/v2/projects/{id}` | same plus `expected_updated_at`, step `id` | same | `200 {data}`; 409 with `error.current`; non-empty `image_urls` (or step `image_urls`) is 422 `fields.image_urls` | **match** (the app never sends `image_urls` on update) |
