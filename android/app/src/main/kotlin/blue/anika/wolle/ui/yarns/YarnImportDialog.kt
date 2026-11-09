@@ -31,6 +31,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ImportAvailability
 import blue.anika.wolle.ui.common.ImportAvailabilityNotes
 import blue.anika.wolle.ui.common.ImportImagePicker
+import blue.anika.wolle.ui.common.ImportProgressPanel
 import blue.anika.wolle.ui.projects.ProjectImportFailure
 import blue.anika.wolle.ui.projects.importWarningRes
 
@@ -96,11 +97,16 @@ fun YarnImportDialog(
                         ImportAvailabilityNotes(availability)
                     }
                     is YarnImportState.Importing ->
-                        ImportProgress(
-                            text = stringResource(R.string.yarn_import_progress_description),
-                            backgroundHint = true,
+                        ImportProgressPanel(
+                            ai = availability.ai,
                             modifier = Modifier.testTag("yarn-import-progress"),
-                        )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.import_background_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     YarnImportState.Saving ->
                         ImportProgress(
                             text = stringResource(R.string.yarn_import_saving_description),
@@ -256,11 +262,7 @@ fun YarnImportDialog(
 }
 
 @Composable
-private fun ImportProgress(
-    text: String,
-    modifier: Modifier = Modifier,
-    backgroundHint: Boolean = false,
-) {
+private fun ImportProgress(text: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -274,13 +276,6 @@ private fun ImportProgress(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (backgroundHint) {
-                Text(
-                    text = stringResource(R.string.import_background_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }

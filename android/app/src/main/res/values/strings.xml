@@ -314,6 +314,11 @@
     <string name="import_warning_yarn_enrichment">Some yarn details could not be loaded from their product pages. Check the yarns below.</string>
     <string name="import_continue_in_background">Continue in the background</string>
     <string name="import_background_hint">You can leave this screen: Stricknani lets you know when the import is done.</string>
+    <string name="import_step_fetch">Fetching the page</string>
+    <string name="import_step_pictures">Looking at the pictures</string>
+    <string name="import_step_read">Reading the pattern</string>
+    <string name="import_step_read_ai">The AI reads the pattern</string>
+    <string name="import_step_review">Preparing your review</string>
     <string name="import_progress_slow_hint">Some pages take a minute when the AI opens them in a browser.</string>
     <string name="import_error_blocked">That website refused Stricknani’s request. Try another link, or add it by hand.</string>
     <string name="import_error_not_found">That page wasn’t found. Check the link.</string>

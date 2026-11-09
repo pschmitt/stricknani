@@ -38,6 +38,7 @@ import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.repository.ImportDetailKind
 import blue.anika.wolle.ui.common.ImportAvailabilityNotes
 import blue.anika.wolle.ui.common.ImportImagePicker
+import blue.anika.wolle.ui.common.ImportProgressPanel
 import blue.anika.wolle.ui.common.StickyNoteField
 
 @Composable
@@ -134,11 +135,16 @@ fun ProjectImportDialog(
                         ImportAvailabilityNotes(availability)
                     }
                     is ProjectImportState.Importing ->
-                        ImportProgressContent(
-                            text = stringResource(R.string.project_import_progress_description),
-                            backgroundHint = true,
+                        ImportProgressPanel(
+                            ai = availability.ai,
                             modifier = Modifier.testTag("project-import-progress"),
-                        )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.import_background_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     ProjectImportState.Saving ->
                         ImportProgressContent(
                             text = stringResource(R.string.project_import_saving_description),
@@ -176,20 +182,7 @@ fun ProjectImportDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        review?.let { current ->
-                            ProjectImportYarns(
-                                review = current,
-                                onReview = { review = it },
-                                stash = stashYarns,
-                                previewUrl = stashYarnPreviewUrl,
-                            )
-                            StickyNoteField(
-                                value = current.notes,
-                                onValueChange = { review = current.withNotes(it) },
-                                label = stringResource(R.string.project_detail_notes_title),
-                                modifier = Modifier.testTag("project-import-notes"),
-                            )
-                        }
+                        // The project editor's order: pictures and files, materials, notes.
                         if (state.preview.imageUrls.isNotEmpty()) {
                             Text(
                                 text = stringResource(R.string.import_pick_photos),
@@ -224,6 +217,20 @@ fun ProjectImportDialog(
                                     },
                                 )
                             }
+                        }
+                        review?.let { current ->
+                            ProjectImportYarns(
+                                review = current,
+                                onReview = { review = it },
+                                stash = stashYarns,
+                                previewUrl = stashYarnPreviewUrl,
+                            )
+                            StickyNoteField(
+                                value = current.notes,
+                                onValueChange = { review = current.withNotes(it) },
+                                label = stringResource(R.string.project_detail_notes_title),
+                                modifier = Modifier.testTag("project-import-notes"),
+                            )
                         }
                         if (state.preview.aiFallback) {
                             Text(
@@ -356,11 +363,7 @@ private fun ImportAssetRow(asset: ImportAssetDto, selected: Boolean, onToggle: (
 }
 
 @Composable
-private fun ImportProgressContent(
-    text: String,
-    modifier: Modifier = Modifier,
-    backgroundHint: Boolean = false,
-) {
+private fun ImportProgressContent(text: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -374,13 +377,6 @@ private fun ImportProgressContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (backgroundHint) {
-                Text(
-                    text = stringResource(R.string.import_background_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }

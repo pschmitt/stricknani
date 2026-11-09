@@ -313,6 +313,11 @@
     <string name="import_warning_yarn_enrichment">Einige Garnangaben konnten nicht von den Produktseiten geladen werden. Prüfe die Garne unten.</string>
     <string name="import_continue_in_background">Im Hintergrund weiter</string>
     <string name="import_background_hint">Du kannst den Bildschirm verlassen: Stricknani sagt dir Bescheid, wenn der Import fertig ist.</string>
+    <string name="import_step_fetch">Die Seite wird geladen</string>
+    <string name="import_step_pictures">Die Bilder werden angesehen</string>
+    <string name="import_step_read">Die Anleitung wird gelesen</string>
+    <string name="import_step_read_ai">Die KI liest die Anleitung</string>
+    <string name="import_step_review">Deine Prüfung wird vorbereitet</string>
     <string name="import_progress_slow_hint">Manche Seiten brauchen eine Minute, wenn die KI sie in einem Browser öffnet.</string>
     <string name="import_error_blocked">Die Website hat die Anfrage von Stricknani abgelehnt. Versuche einen anderen Link oder lege es von Hand an.</string>
     <string name="import_error_not_found">Die Seite wurde nicht gefunden. Prüfe den Link.</string>
