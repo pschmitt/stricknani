@@ -78,7 +78,7 @@
       ? [
           {
             key: "favorite",
-            label: t("Favorites", locale),
+            label: t("Favorites only", locale),
             remove: () => applyFilters({ ...filters, favorite: false }),
           },
         ]
@@ -289,7 +289,7 @@
           onchange={(event) =>
             applyFilters({ ...filters, favorite: event.currentTarget.checked })}
         />
-        <span>{t("Favorites", locale)}</span>
+        <span>{t("Favorites only", locale)}</span>
       </label>
     {/snippet}
   </LibraryFilters>

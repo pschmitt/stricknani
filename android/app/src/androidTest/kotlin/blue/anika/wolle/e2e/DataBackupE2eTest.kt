@@ -251,7 +251,7 @@ class DataBackupE2eTest : StricknaniE2eTest() {
 
                 // The Projects screen lists the original and the copy.
                 composeRule.onNodeWithText("Projects").performClick()
-                waitForText("Search projects")
+                waitForText("Search your projects")
                 composeRule.onNode(hasSetTextAction()).performTextInput(nonce)
                 composeRule.waitUntil(60_000) {
                     composeRule.onAllNodesWithText(projectName).fetchSemanticsNodes().size >= 2

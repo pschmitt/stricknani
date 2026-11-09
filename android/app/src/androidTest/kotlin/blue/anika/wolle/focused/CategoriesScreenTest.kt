@@ -30,7 +30,7 @@ class CategoriesScreenTest {
             StricknaniTheme { CategoriesContent(CategoriesContentState.Empty, onRetry = {}) }
         }
         composeRule.onNodeWithTag("categories-empty").assertIsDisplayed()
-        composeRule.onNodeWithText("No categories yet").assertIsDisplayed()
+        composeRule.onNodeWithText("No categories yet.").assertIsDisplayed()
     }
 
     @Test

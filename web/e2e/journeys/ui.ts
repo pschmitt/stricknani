@@ -1097,7 +1097,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
         urlPath(candidate.url()) === "/api/v2/projects" &&
         queryIs(candidate.url(), "favorite", "true"),
     ),
-    filterDialog.getByLabel("Favorites", { exact: true }).check(),
+    filterDialog.getByLabel("Favorites only", { exact: true }).check(),
   ]);
   check(
     favoriteFilterResponse.status() === 200,

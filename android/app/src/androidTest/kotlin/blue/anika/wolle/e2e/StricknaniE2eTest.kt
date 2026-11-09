@@ -186,7 +186,7 @@ abstract class StricknaniE2eTest {
 
     protected fun openProjects() {
         composeRule.onNodeWithText("Projects").performClick()
-        waitForText("Search projects")
+        waitForText("Search your projects")
         composeRule
             .onNodeWithTag("e2e-projects-list")
             .performScrollToNode(hasTextMatcher("Heirloom Baby Blanket"))
@@ -488,7 +488,7 @@ class StricknaniLiveWriteE2eTest : StricknaniE2eTest() {
 
     private fun openYarns() {
         composeRule.onNodeWithText("Yarns").performClick()
-        waitForText("Search yarns")
+        waitForText("Search your yarn")
         // A freshly (re)created Yarns screen kicks off its own server sync; a fresh CI run showed
         // the list transiently rendering as few as 2 (non-scrollable) rows while that sync
         // replaces local data, even after the create/edit under test was already confirmed

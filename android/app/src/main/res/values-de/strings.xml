@@ -69,7 +69,7 @@
     <string name="share_local_unavailable">Link-Importe sind nicht verfügbar, solange die App nur auf diesem Handy läuft.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>
     <string name="home_favorite_yarns_title">Lieblingswolle</string>
-    <string name="home_recent_projects_title">Weitere Projekte</string>
+    <string name="home_recent_projects_title">Zuletzt bearbeitet</string>
     <string name="home_greeting_morning_1">Guten Morgen!</string>
     <string name="home_greeting_morning_2">Moooin!</string>
     <string name="home_greeting_morning_3">Morgähn!</string>
@@ -188,17 +188,17 @@
     <string name="project_editor_name_label">Projektname</string>
     <string name="yarn_editor_name_label">Garnname</string>
     <string name="editor_section_project_details">Projektdetails</string>
-    <string name="editor_section_materials">Materialien und Garn</string>
+    <string name="editor_section_materials">Materialien</string>
     <string name="editor_section_content">Beschreibung und Notizen</string>
-    <string name="editor_section_steps">Anleitung</string>
+    <string name="editor_section_steps">Anleitungsschritte</string>
     <string name="editor_section_media">Bilder und Anhänge</string>
     <string name="new_banner_project_title">Fang etwas Gemütliches an</string>
     <string name="new_banner_project_subtitle">Gib ihm einen Namen und schlag die ersten Maschen an.</string>
     <string name="new_banner_yarn_title">Neues Garn für deinen Vorrat</string>
     <string name="new_banner_yarn_subtitle">Erzähl uns, was im Knäuel steckt, und es ist bereit für dein nächstes Projekt.</string>
-    <string name="editor_section_yarn_details">Garndetails</string>
-    <string name="editor_section_yarn_specs">Garn-Eigenschaften</string>
-    <string name="editor_section_gallery">Galerie</string>
+    <string name="editor_section_yarn_details">Garninformationen</string>
+    <string name="editor_section_yarn_specs">Weitere Garndetails</string>
+    <string name="editor_section_gallery">Fotos</string>
     <string name="editor_section_photos">Fotos</string>
     <string name="project_editor_tags_label">Tags</string>
     <string name="project_editor_import_offer_title">Diese Anleitung importieren?</string>
@@ -211,7 +211,7 @@
     <string name="editor_link_clear">Link löschen</string>
     <string name="editor_link_invalid">Gib eine vollständige Webadresse ein, zum Beispiel https://example.com</string>
     <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>
-    <string name="project_editor_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="project_editor_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
     <string name="project_editor_steps_label">Schritte</string>
     <string name="project_editor_step_title_label">Schritt-Titel</string>
     <string name="project_editor_step_description_label">Schrittbeschreibung</string>
@@ -226,13 +226,13 @@
     <string name="project_editor_add_attachment">Projektanhänge hinzufügen</string>
     <string name="project_editor_remove_attachment">Ausgewählten Anhang entfernen</string>
     <string name="project_attachment_delete_dialog_title">Anhang „%1$s“ löschen?</string>
-    <string name="project_attachment_delete_dialog_text">Dies kann nicht rückgängig gemacht werden.</string>
-    <string name="projects_list_search_placeholder">Projekte durchsuchen</string>
+    <string name="project_attachment_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
+    <string name="projects_list_search_placeholder">Deine Projekte durchsuchen</string>
     <string name="projects_list_category_all">Alle</string>
     <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
     <string name="projects_list_more_actions_description">Weitere Optionen</string>
     <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>
-    <string name="projects_list_empty_subtitle">Zum Nachschauen nach unten ziehen oder Filter lockern.</string>
+    <string name="projects_list_empty_subtitle">Beginne mit einem Projekt und bewahre Anleitung und Fortschritt zusammen auf.</string>
     <string name="editor_category_none">Keine Kategorie</string>
     <string name="editor_category_new">Neue Kategorie…</string>
     <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
@@ -240,14 +240,14 @@
 
     <!-- Kategorien -->
     <string name="categories_title">Kategorien</string>
-    <string name="categories_empty_title">Noch keine Kategorien</string>
+    <string name="categories_empty_title">Noch keine Kategorien.</string>
     <string name="categories_empty_subtitle">Deine Kategorien erscheinen hier.</string>
     <string name="categories_name_label">Kategoriename</string>
     <string name="categories_rename_description">Kategorie umbenennen</string>
     <string name="categories_delete_description">Kategorie löschen</string>
     <string name="categories_rename_dialog_title">Kategorie umbenennen</string>
     <string name="categories_delete_dialog_title">Kategorie „%1$s“ löschen?</string>
-    <string name="categories_delete_dialog_text">Projekte mit dieser Kategorie werden unkategorisiert. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="categories_delete_dialog_text">Projekte, die diese Kategorie verwenden, zeigen sie danach nicht mehr an.</string>
 
     <!-- Project import -->
     <string name="project_import_url_label">URL der Anleitungsseite</string>
@@ -269,7 +269,7 @@
     <string name="import_card_title_project">Hast du eine Anleitung? Füge einen Link ein, lade eine Datei hoch oder füge Text ein</string>
     <string name="import_card_title_yarn">Hast du einen Link zum Garn? Füge ihn hier ein</string>
     <string name="import_error_too_many_imports">Stricknani liest noch andere Links. Versuch es in einer Minute noch einmal.</string>
-    <string name="import_error_too_many_drafts">Zu viele Importe warten auf deine Prüfung. Speichere oder verwirf erst einen.</string>
+    <string name="import_error_too_many_drafts">Zu viele Importe warten auf die Prüfung. Entferne zuerst ein paar.</string>
     <string name="import_waiting_title">Wartet auf Prüfung</string>
     <string name="import_waiting_running">Wird importiert…</string>
     <string name="import_waiting_ready">Bereit zum Prüfen</string>
@@ -301,8 +301,8 @@
     <string name="import_asset_kind_diagram">Diagramm</string>
     <string name="import_asset_kind_pdf">PDF</string>
     <string name="import_ai_filled_hint">Die KI hat einige Angaben ergänzt. Prüfe sie, bevor du dich darauf verlässt.</string>
-    <string name="import_warning_looks_like_yarn">Das sieht nach einer Garnseite aus. Leg sie lieber als Garn an.</string>
-    <string name="import_warning_looks_like_pattern">Das sieht nach einer Anleitung aus, nicht nach einem Garn. Prüfe die Angaben.</string>
+    <string name="import_warning_looks_like_yarn">Das sieht nach einer Garnseite aus. Stattdessen als Garn importieren?</string>
+    <string name="import_warning_looks_like_pattern">Das sieht nach einer Anleitung aus, nicht nach einem Garn. Prüfe die Felder unten.</string>
     <string name="import_warning_little_text">Diese Seite enthält kaum lesbaren Text, daher können Angaben fehlen.</string>
     <string name="import_warning_ai_browsed">Die KI hat diese Seite in einem Browser gelesen. Prüfe die als KI markierten Angaben vor dem Speichern.</string>
     <string name="import_yarns_title">Garn für dieses Projekt</string>
@@ -348,15 +348,15 @@
     <string name="yarn_detail_field_colorway">Farbe</string>
     <string name="yarn_detail_field_dye_lot">Charge (Dye Lot)</string>
     <string name="yarn_detail_field_fiber_content">Materialzusammensetzung</string>
-    <string name="yarn_detail_field_weight_category">Lauflängenklasse</string>
+    <string name="yarn_detail_field_weight_category">Garnstärke</string>
     <string name="yarn_detail_field_recommended_needles">Empfohlene Nadeln</string>
     <string name="yarn_detail_field_amount">Menge</string>
     <string name="yarn_detail_used_in_title">Verwendet in</string>
     <string name="yarn_detail_details_title">Garndetails</string>
     <string name="yarn_editor_title_edit">Garn bearbeiten</string>
     <string name="yarn_editor_delete_description">Garn löschen</string>
-    <string name="yarn_editor_weight_grams_label">Gewicht (g)</string>
-    <string name="yarn_editor_length_meters_label">Lauflänge (m)</string>
+    <string name="yarn_editor_weight_grams_label">Knäuelgewicht in Gramm</string>
+    <string name="yarn_editor_length_meters_label">Lauflänge in Metern</string>
     <string name="yarn_editor_delete_dialog_title">Garn „%1$s“ löschen?</string>
     <string name="yarn_editor_add_photo">Wollfotos hinzufügen</string>
     <string name="yarn_editor_remove_photo">Ausgewähltes Foto entfernen</string>
@@ -508,11 +508,11 @@
     <string name="account_password_done_body">Zu deiner Sicherheit wurdest du auf allen Geräten abgemeldet, auch auf diesem. Melde dich mit deinem neuen Passwort wieder an.</string>
     <string name="account_signed_out_continue">Erneut anmelden</string>
     <string name="account_tokens_title">Apps und Geräte</string>
-    <string name="account_tokens_empty">Noch keine Tokens. Erstelle eines, wenn eine App Zugriff braucht.</string>
-    <string name="account_tokens_load_failed">Deine Tokens konnten nicht geladen werden.</string>
+    <string name="account_tokens_empty">Noch keine API-Tokens. Erstelle eines, wenn eine App Zugriff benötigt.</string>
+    <string name="account_tokens_load_failed">Deine API-Tokens konnten nicht geladen werden.</string>
     <string name="account_tokens_retry">Erneut versuchen</string>
     <string name="account_token_new">Neues Token</string>
-    <string name="account_token_new_help">Verwende ein Token für eine vertrauenswürdige App oder ein Gerät. Ein neues Token siehst du nur einmal.</string>
+    <string name="account_token_new_help">Verwende ein Token für eine vertrauenswürdige App oder ein Gerät. Ein neues Token wird nur einmal angezeigt.</string>
     <string name="account_token_name">Name des Tokens</string>
     <string name="account_token_name_hint">Zum Beispiel mein Tablet</string>
     <string name="account_token_create">Token erstellen</string>
@@ -522,7 +522,7 @@
     <string name="account_token_err_reauth">Bestätige mit deinem Passwort, um ein Token zu erstellen.</string>
     <string name="account_token_err_name">Tokennamen dürfen höchstens 255 Bytes lang sein.</string>
     <string name="account_token_err_session">Deine Sitzung ist abgelaufen. Melde dich erneut an.</string>
-    <string name="account_token_err_create">Das Token konnte nicht erstellt werden.</string>
+    <string name="account_token_err_create">Das API-Token konnte nicht erstellt werden.</string>
     <string name="account_token_created_on">Erstellt am %1$s</string>
     <string name="account_token_expires_on">Läuft ab am %1$s</string>
     <string name="account_token_last_used">Zuletzt genutzt am %1$s</string>
@@ -533,13 +533,13 @@
     <string name="account_token_revoke_body">%1$s verliert den Zugriff auf dein Konto.</string>
     <string name="account_token_revoke_this_device_body">Das ist das Token, das dieses Telefon verwendet. Wenn du es widerrufst, wirst du hier abgemeldet.</string>
     <string name="account_token_revoke_confirm">Widerrufen</string>
-    <string name="account_token_revoked">Token widerrufen.</string>
+    <string name="account_token_revoked">API-Token widerrufen.</string>
     <string name="error_token_revoke_failed">Das Token konnte nicht widerrufen werden - versuche es erneut.</string>
-    <string name="account_token_reveal_title">Dein neues Token</string>
+    <string name="account_token_reveal_title">Dein neues API-Token</string>
     <string name="account_token_reveal_body">Kopiere das Token für \"%1$s\" jetzt und füge es in die App oder das Gerät ein.</string>
     <string name="account_token_reveal_warning">Nach dem Schließen dieser Meldung siehst du das Token nicht mehr.</string>
     <string name="account_token_copy">Kopieren</string>
-    <string name="account_token_copied">Kopiert</string>
+    <string name="account_token_copied">Kopiert.</string>
     <string name="account_token_done">Fertig</string>
     <string name="account_token_self_done_title">Abgemeldet</string>
     <string name="account_token_self_done_body">Du hast das Token widerrufen, das dieses Telefon verwendet hat, daher wurdest du abgemeldet.</string>
@@ -621,8 +621,8 @@
     <string name="data_export_offline">Braucht eine Verbindung zum Server</string>
     <string name="data_export_retry">Erneut versuchen</string>
     <string name="data_export_saved">Deine Daten sind gespeichert</string>
-    <string name="data_export_error_already_running">Ein Download läuft bereits</string>
-    <string name="data_export_error_failed">Download fehlgeschlagen</string>
+    <string name="data_export_error_already_running">Ein Download läuft bereits.</string>
+    <string name="data_export_error_failed">Download fehlgeschlagen.</string>
     <string name="data_transfer_results_channel_name">Ergebnisse von Download und Wiederherstellung</string>
     <string name="data_transfer_results_channel_description">Ein abgeschlossener oder fehlgeschlagener Download oder eine Wiederherstellung deiner Daten</string>
     <string name="data_export_notification_channel_name">Datendownload</string>
@@ -698,18 +698,18 @@
 
     <!-- Gauge calculator -->
     <string name="gauge_calculator_title">Maschenprobenrechner</string>
-    <string name="gauge_calculator_description">Strickst du fester oder lockerer als die Anleitung? Verrate mir beide Maschenproben, und ich rechne deine Zahlen aus.</string>
-    <string name="gauge_calculator_pattern_gauge_title">Maschenprobe der Anleitung</string>
-    <string name="gauge_calculator_your_gauge_title">Deine Maschenprobe</string>
-    <string name="gauge_calculator_pattern_counts_title">Was die Anleitung sagt</string>
+    <string name="gauge_calculator_description">Berechne basierend auf deiner Maschenprobe und der Maschenprobe der Anleitung, wie viele Maschen angeschlagen und wie viele Reihen gestrickt werden müssen.</string>
+    <string name="gauge_calculator_pattern_gauge_title">Anleitung Maschenprobe (pro 10cm)</string>
+    <string name="gauge_calculator_your_gauge_title">Deine Maschenprobe (pro 10cm)</string>
+    <string name="gauge_calculator_pattern_counts_title">Anleitungsangaben</string>
     <string name="gauge_calculator_cast_on_label">Anzuschlagende Maschen</string>
     <string name="gauge_calculator_rows_to_knit_label">Zu strickende Reihen (optional)</string>
     <string name="gauge_calculator_stitches_label">Maschen</string>
     <string name="gauge_calculator_rows_label">Reihen</string>
-    <string name="gauge_calculator_results_title">Deine Zahlen</string>
-    <string name="gauge_calculator_adjusted_stitches_label">Anschlagen</string>
-    <string name="gauge_calculator_adjusted_rows_label">Reihen stricken</string>
-    <string name="gauge_calculator_not_available">–</string>
+    <string name="gauge_calculator_results_title">Berechnungsergebnisse</string>
+    <string name="gauge_calculator_adjusted_stitches_label">Anzahl Maschen</string>
+    <string name="gauge_calculator_adjusted_rows_label">Anzahl Reihen</string>
+    <string name="gauge_calculator_not_available">n. v.</string>
     <string name="gauge_calculator_summary_with_rows">Basierend auf %1$d angeschlagenen Maschen und %2$d Reihen der Anleitung.</string>
     <string name="gauge_calculator_summary_without_rows">Basierend auf %1$d angeschlagenen Maschen der Anleitung.</string>
     <string name="gauge_calculator_hint">Fülle beide Maschenproben und den Anschlag aus, dann erscheinen hier deine Zahlen.</string>
@@ -833,7 +833,7 @@
     <string name="backup_success_exported">Backup exportiert</string>
     <string name="backup_error_export_failed">Export fehlgeschlagen</string>
     <string name="backup_success_restored">Backup wiederhergestellt - deine neuesten Projekte werden geholt</string>
-    <string name="backup_error_restore_failed">Wiederherstellung fehlgeschlagen</string>
+    <string name="backup_error_restore_failed">Wiederherstellen fehlgeschlagen.</string>
 
     <!-- Settings: Appearance language picker -->
     <string name="appearance_settings_language_title">Sprache</string>
@@ -865,32 +865,30 @@
     <string name="editor_photo_move_later">Weiter nach hinten</string>
     <string name="editor_photo_position">Foto %1$d von %2$d</string>
     <string name="project_editor_step_removed">Schritt entfernt</string>
-    <string name="editor_photo_removed">Foto entfernt</string>
+    <string name="editor_photo_removed">Foto entfernt.</string>
     <string name="project_editor_tags_placeholder">Schlagwörter hinzufügen…</string>
     <string name="project_editor_tags_suggestions">Tag-Vorschläge</string>
     <string name="project_editor_tag_remove">Schlagwort %1$s entfernen</string>
     <string name="project_editor_needles_hint">z. B. 4 mm Rundnadel, 80 cm</string>
     <string name="project_editor_stitch_sample_hint">z. B. 22 Maschen und 30 Reihen = 10 cm</string>
-    <string name="project_editor_unlink_yarn">Garn entfernen</string>
-    <string name="project_editor_no_yarns_yet">Lege Garne in deinem Vorrat an, um sie hier zu verknüpfen.</string>
-    <string name="project_editor_link_yarns">Garne verknüpfen</string>
-    <string name="project_editor_change_yarns">Garne hinzufügen oder entfernen</string>
-    <string name="project_editor_pick_yarns_title">Welche Garne verwendest du?</string>
-    <string name="project_editor_pick_yarns_search">Durchsuche deinen Vorrat</string>
-    <string name="project_editor_pick_yarns_none">Kein Garn passt dazu.</string>
+    <string name="project_editor_unlink_yarn">%1$s entfernen</string>
+    <string name="project_editor_no_yarns_yet">Mit diesem Projekt ist noch kein Garn verknüpft.</string>
+    <string name="project_editor_pick_yarns_title">Garn hinzufügen</string>
+    <string name="project_editor_pick_yarns_search">Garn suchen</string>
+    <string name="project_editor_pick_yarns_none">Kein Garn passt zu dieser Suche.</string>
     <string name="project_editor_step_number">Schritt %1$d</string>
     <string name="project_editor_step_actions">Mehr zu Schritt %1$d</string>
     <string name="yarn_editor_fiber_content_hint" formatted="false">z. B. 80 % Merino, 20 % Polyamid</string>
     <!-- Admin: Aktivitätsprotokoll und Konten (SNA-86) -->
     <string name="settings_category_admin_title">Admin</string>
-    <string name="settings_category_admin_subtitle">Konten und Aktivitäten</string>
+    <string name="settings_category_admin_subtitle">Konten verwalten und das Änderungsprotokoll ansehen.</string>
     <string name="admin_try_again">Nochmal versuchen</string>
-    <string name="admin_activity_title">Aktivität</string>
+    <string name="admin_activity_title">Prüfprotokoll</string>
     <string name="admin_activity_subtitle">Sieh, wer wann was geändert hat</string>
     <string name="admin_activity_empty_title">Hier ist noch nichts</string>
     <string name="admin_activity_empty_subtitle">Änderungen an Projekten, Garnen und Kategorien erscheinen hier.</string>
-    <string name="admin_activity_empty_filtered">Dazu passt nichts. Probier einen anderen Filter.</string>
-    <string name="admin_filter_all">Alle</string>
+    <string name="admin_activity_empty_filtered">Keine Audit-Ereignisse entsprechen diesen Filtern.</string>
+    <string name="admin_filter_all">Alle Objekttypen</string>
     <string name="admin_filter_action">Aktion</string>
     <string name="admin_filter_any_action">Jede Aktion</string>
     <string name="admin_entity_project">Projekt</string>
@@ -933,10 +931,10 @@
     <string name="admin_detail_what">Was</string>
     <string name="admin_detail_when">Wann</string>
     <string name="admin_detail_gone">Diesen Eintrag gibt es nicht mehr.</string>
-    <string name="admin_changes_title">Was sich geändert hat</string>
+    <string name="admin_changes_title">Aufgezeichnete Änderungen</string>
     <string name="admin_changes_before">Vorher</string>
     <string name="admin_changes_after">Nachher</string>
-    <string name="admin_changes_none">Für diesen Eintrag wurden keine Änderungen aufgezeichnet.</string>
+    <string name="admin_changes_none">Für dieses Ereignis sind keine Änderungen verfügbar.</string>
     <string name="admin_changes_not_recorded">Die Details dieser Änderung wurden nicht gespeichert.</string>
     <string name="admin_changes_malformed">Die gespeicherten Details dieser Änderung lassen sich nicht anzeigen.</string>
     <string name="admin_changes_too_large">Die gespeicherten Details dieser Änderung sind zu groß für die Anzeige.</string>
@@ -994,39 +992,39 @@
     <string name="admin_field_length">Länge</string>
     <string name="admin_field_photo_count">Anzahl Fotos</string>
     <string name="admin_field_category_name">Kategoriename</string>
-    <string name="admin_accounts_title">Konten</string>
+    <string name="admin_accounts_title">Benutzer</string>
     <string name="admin_accounts_subtitle">Personen hinzufügen, Konten sperren, Passwörter zurücksetzen</string>
     <string name="admin_accounts_empty_title">Noch keine Konten</string>
     <string name="admin_accounts_empty_subtitle">Tippe auf „Konto hinzufügen“, um jemanden einzuladen.</string>
-    <string name="admin_accounts_badge_admin">Admin</string>
+    <string name="admin_accounts_badge_admin">Administrator</string>
     <string name="admin_accounts_badge_you">Du</string>
     <string name="admin_accounts_badge_disabled">Gesperrt</string>
     <string name="admin_accounts_menu">Mehr für %1$s</string>
-    <string name="admin_accounts_disable">Sperren</string>
-    <string name="admin_accounts_enable">Entsperren</string>
+    <string name="admin_accounts_disable">Konto deaktivieren</string>
+    <string name="admin_accounts_enable">Konto aktivieren</string>
     <string name="admin_accounts_disable_title">%1$s sperren?</string>
-    <string name="admin_accounts_disable_text">Die Person kann sich nicht mehr anmelden, bis du das Konto wieder entsperrst. Ihre Daten bleiben erhalten.</string>
+    <string name="admin_accounts_disable_text">Die Person wird abgemeldet und kann sich nicht mehr anmelden.</string>
     <string name="admin_accounts_enable_title">%1$s entsperren?</string>
-    <string name="admin_accounts_enable_text">Die Person kann sich dann wieder anmelden.</string>
+    <string name="admin_accounts_enable_text">Die Person kann sich danach wieder anmelden.</string>
     <string name="admin_accounts_disabled">%1$s ist gesperrt</string>
     <string name="admin_accounts_enabled">%1$s ist entsperrt</string>
     <string name="admin_accounts_reset_password">Passwort zurücksetzen</string>
     <string name="admin_accounts_reset_title">Passwort für %1$s zurücksetzen?</string>
-    <string name="admin_accounts_reset_text">Wähle ein neues Passwort. Die Person wird überall abgemeldet und braucht es zum erneuten Anmelden.</string>
-    <string name="admin_accounts_reset_confirm">Zurücksetzen</string>
+    <string name="admin_accounts_reset_text">Die Person muss sich mit dem neuen Passwort anmelden.</string>
+    <string name="admin_accounts_reset_confirm">Passwort zurücksetzen</string>
     <string name="admin_accounts_password_reset">Passwort für %1$s geändert</string>
     <string name="admin_accounts_result_title">Neues Passwort</string>
     <string name="admin_accounts_result_text">Gib dieses Passwort an %1$s weiter. Es wird nur jetzt angezeigt.</string>
-    <string name="admin_accounts_copied">Kopiert</string>
-    <string name="admin_accounts_add">Konto hinzufügen</string>
-    <string name="admin_accounts_add_title">Konto hinzufügen</string>
-    <string name="admin_accounts_email">E-Mail</string>
-    <string name="admin_accounts_make_admin">Zum Admin machen</string>
-    <string name="admin_accounts_make_admin_hint">Admins können Konten verwalten und das Aktivitätsprotokoll sehen.</string>
-    <string name="admin_accounts_create">Konto erstellen</string>
+    <string name="admin_accounts_copied">Kopiert.</string>
+    <string name="admin_accounts_add">Benutzer erstellen</string>
+    <string name="admin_accounts_add_title">Benutzerkonto erstellen</string>
+    <string name="admin_accounts_email">E-Mail-Adresse</string>
+    <string name="admin_accounts_make_admin">Administratorzugriff</string>
+    <string name="admin_accounts_make_admin_hint">Neue Konten sind Mitglieder, sofern du ihnen keine Administratorrechte gibst.</string>
+    <string name="admin_accounts_create">Benutzer erstellen</string>
     <string name="admin_accounts_created">Konto %1$s hinzugefügt</string>
-    <string name="admin_password_label">Passwort</string>
-    <string name="admin_password_new">Neues Passwort</string>
+    <string name="admin_password_label">Temporäres Passwort</string>
+    <string name="admin_password_new">Neues temporäres Passwort</string>
     <string name="admin_password_hint">Mindestens %1$d Zeichen</string>
     <string name="admin_password_show">Passwort anzeigen</string>
     <string name="admin_password_hide">Passwort verbergen</string>
@@ -1038,9 +1036,9 @@
     <string name="admin_error_last_admin">Dann gäbe es keinen aktiven Admin mehr. Mindestens einer muss bleiben.</string>
     <string name="admin_error_email_in_use">Mit dieser E-Mail gibt es schon ein Konto.</string>
     <string name="admin_error_invalid_email">Das sieht nicht wie eine E-Mail-Adresse aus.</string>
-    <string name="admin_error_password_short">Das Passwort braucht mindestens 12 Zeichen.</string>
+    <string name="admin_error_password_short">Verwende ein Passwort mit mindestens 12 Zeichen.</string>
     <string name="admin_error_password_common">Dieses Passwort ist zu verbreitet. Nimm ein anderes.</string>
-    <string name="admin_error_password_long">Dieses Passwort ist zu lang.</string>
+    <string name="admin_error_password_long">Das Passwort ist zu lang.</string>
     <string name="admin_error_not_found">Dieses Konto gibt es nicht mehr.</string>
     <string name="admin_error_other">Etwas ist schiefgelaufen. Bitte versuch es nochmal.</string>
 
@@ -1133,7 +1131,7 @@
     <string name="error_oidc_already_linked">Dieser %1$s-Login ist bereits mit einem anderen Konto verknüpft.</string>
     <string name="error_oidc_last_login_method">Das ist deine einzige Anmeldemöglichkeit und kann deshalb nicht getrennt werden. Lege zuerst ein Passwort fest.</string>
     <string name="error_oidc_reauth_required">Bitte bestätige kurz, dass du es bist, und versuche es noch einmal.</string>
-    <string name="error_oidc_invalid_password">Das Passwort stimmt nicht.</string>
+    <string name="error_oidc_invalid_password">Das Passwort ist nicht richtig.</string>
     <string name="error_oidc_session_expired">Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.</string>
     <string name="error_oidc_not_found">Dieser Login wurde nicht gefunden.</string>
     <string name="error_oidc_provider">Die Anmeldung mit %1$s wurde nicht abgeschlossen. Bitte versuche es noch einmal.</string>
@@ -1165,15 +1163,15 @@
     <string name="delete_account_button">Mein Konto löschen</string>
     <string name="delete_account_dialog_title">Dein Konto löschen?</string>
     <string name="delete_account_dialog_text">Deine Projekte, Garne, Fotos, Anhänge, Favoriten, dein Bild und jede verbundene App oder jedes Gerät werden endgültig gelöscht, auf dem Server und auf diesem Telefon. Vorher bestätigst du bitte, dass du es bist.</string>
-    <string name="delete_account_confirmation_label">DELETE oder deine E-Mail-Adresse eingeben</string>
+    <string name="delete_account_confirmation_label">Zur Bestätigung DELETE oder deine E-Mail-Adresse eingeben</string>
     <string name="delete_account_confirm">Konto löschen</string>
     <string name="delete_account_keep">Mein Konto behalten</string>
-    <string name="delete_account_reauth_text">Zu deiner Sicherheit bestätigst du bitte, dass du es bist, bevor dein Konto gelöscht wird.</string>
+    <string name="delete_account_reauth_text">Bestätige zu deiner Sicherheit, dass du es bist, bevor dein Konto gelöscht wird.</string>
     <string name="delete_account_error_reauth">Die Bestätigung ist abgelaufen. Bestätige bitte erneut, dass du es bist, und versuche es noch einmal.</string>
     <string name="delete_account_error_confirmation">Gib zur Bestätigung DELETE oder deine E-Mail-Adresse ein.</string>
     <string name="delete_account_error_last_admin">Du bist der letzte Administrator. Mache zuerst jemand anderen zum Administrator, bevor du dein Konto löschst.</string>
     <string name="delete_account_error_rate_limited">Zu viele Versuche. Warte einen Moment und versuche es erneut.</string>
-    <string name="delete_account_error_session">Deine Anmeldung ist abgelaufen. Melde dich erneut an, um fortzufahren.</string>
+    <string name="delete_account_error_session">Deine Sitzung ist abgelaufen. Melde dich erneut an, um fortzufahren.</string>
     <string name="delete_account_error_unsupported">Dieser Server unterstützt das Löschen eines Kontos aus der App nicht. Bitte den Betreiber, es zu löschen.</string>
     <string name="delete_account_error_offline">Du bist offline. Verbinde dich mit deinem Server und versuche es erneut.</string>
     <string name="delete_account_error_generic">Das Konto konnte nicht gelöscht werden. Es wurde nichts geändert. Versuche es erneut.</string>
@@ -1181,7 +1179,7 @@
     <string name="oidc_admin_title">Verknüpfte Logins von %1$s</string>
     <string name="oidc_admin_unlink_text">%2$s kann sich dann nicht mehr mit %1$s anmelden. Konto und Daten bleiben unverändert.</string>
     <string name="oidc_admin_empty">Dieses Konto hat keine verknüpften Logins.</string>
-    <string name="error_oidc_admin_last_login_method">Das ist die einzige Anmeldemöglichkeit dieses Kontos und kann deshalb nicht getrennt werden.</string>
+    <string name="error_oidc_admin_last_login_method">Das ist deine einzige Möglichkeit, dich anzumelden, daher kann sie nicht getrennt werden.</string>
 
     <!-- Abgemeldet (der Server akzeptiert den Token dieses Geräts nicht mehr) -->
     <string name="signed_out_title">Du wurdest abgemeldet</string>
@@ -1223,7 +1221,7 @@
     <string name="activity_see_all">Alle anzeigen</string>
     <string name="activity_page_title">Aktivität</string>
     <string name="activity_unavailable">Aktivität braucht eine Verbindung</string>
-    <string name="activity_empty">Noch nichts los. Änderungen an deinen Projekten und Garnen erscheinen hier.</string>
+    <string name="activity_empty">Noch nichts – deine Änderungen erscheinen hier.</string>
     <string name="activity_more_failed">Weitere Aktivität konnte nicht geladen werden.</string>
 
     <!-- In-App-Update (nur GitHub-APK-Builds) -->
@@ -1292,19 +1290,19 @@
 
     <string name="account_admin_card_title">Suchst du die Admin-Seite?</string>
     <string name="account_admin_card_subtitle">Benutzer und Audit-Log verwalten</string>
-    <string name="onboarding_register_prompt">Noch kein Konto? Jetzt erstellen</string>
-    <string name="onboarding_register_back">Ich habe schon ein Konto</string>
+    <string name="onboarding_register_prompt">Neu bei Stricknani? Konto erstellen</string>
+    <string name="onboarding_register_back">Hast du bereits ein Konto?</string>
     <string name="onboarding_register_button">Konto erstellen</string>
     <string name="onboarding_register_confirm_label">Passwort bestätigen</string>
     <string name="onboarding_register_hint">Mindestens 12 Zeichen, nichts Häufiges.</string>
-    <string name="onboarding_register_error_mismatch">Die Passwörter stimmen nicht überein</string>
+    <string name="onboarding_register_error_mismatch">Die Passwörter stimmen nicht überein.</string>
     <string name="onboarding_register_error_closed">Dieser Server hat die Registrierung geschlossen</string>
     <string name="onboarding_register_error_invalid">Prüfe die E-Mail-Adresse und nimm ein Passwort mit mindestens 12 Zeichen, das nicht häufig verwendet wird</string>
     <string name="onboarding_register_error_not_created">Das Konto konnte nicht erstellt werden. Falls du schon eins hast, melde dich stattdessen an.</string>
     <string name="selfhost_card_title">Hier sind Registrierungen geschlossen, aber du kannst dein eigenes privates Stricknani aufsetzen!</string>
     <string name="selfhost_card_github">Stricknani auf GitHub</string>
     <string name="selfhost_card_agent_title">Mit einem KI-Coding-Agenten einrichten</string>
-    <string name="selfhost_card_agent_hint">Kopiere diesen Prompt in Claude Code, Codex oder opencode. Der Prompt ist auf Englisch.</string>
+    <string name="selfhost_card_agent_hint">Füge das in Claude Code, Codex oder opencode ein. Der Prompt ist auf Englisch.</string>
     <string name="selfhost_card_copy">Einrichtungs-Prompt kopieren</string>
     <string name="selfhost_card_copied">Einrichtungs-Prompt kopiert</string>
     <string name="selfhost_card_show_prompt">Prompt anzeigen</string>
@@ -1385,14 +1383,14 @@
     <string name="sharing_derived_banner">Sichtbar über ein geteiltes Projekt</string>
     <string name="sharing_avatars_description">Geteilt mit %1$s</string>
     <string name="sharing_share_with">Teilen mit</string>
-    <string name="sharing_people_search">Personen suchen</string>
-    <string name="sharing_people_none">Keine Personen gefunden</string>
+    <string name="sharing_people_search">Nach Namen suchen</string>
+    <string name="sharing_people_none">Niemand passt zu dieser Suche.</string>
     <string name="sharing_nobody_yet">Noch mit niemandem geteilt</string>
     <string name="sharing_role_label">Rolle für neue Personen</string>
     <string name="sharing_role_of">Rolle von %1$s</string>
     <string name="sharing_remove_description">%1$s entfernen</string>
     <string name="sharing_offline">Teilen braucht eine Verbindung. Verbinde dich mit dem Internet, um Zugriff zu teilen, zu ändern oder zu entfernen.</string>
-    <string name="sharing_load_failed">Die Personen konnten nicht geladen werden.</string>
+    <string name="sharing_load_failed">Personen konnten nicht geladen werden.</string>
     <string name="sharing_error_forbidden">Das darfst du nicht.</string>
     <string name="sharing_error_not_found">Das ist für dich nicht mehr verfügbar.</string>
     <string name="sharing_error_conflict">Es ist bereits geteilt oder hat inzwischen den Besitzer gewechselt. Neu laden und erneut versuchen.</string>
@@ -1405,7 +1403,7 @@
     <string name="sharing_linked_yarns_note_none">Personen, mit denen du das teilst, sehen auch die verknüpften Garne, nur lesend.</string>
     <string name="sharing_transfer_title">Besitz übertragen</string>
     <string name="sharing_transfer_pick">Neuen Besitzer wählen</string>
-    <string name="sharing_transfer_text">Die Übertragung gilt sofort. Du bleibst Bearbeiter und kannst später verlassen.</string>
+    <string name="sharing_transfer_text">Der Besitz geht sofort an die gewählte Person. Du bleibst Bearbeiter und kannst später austreten.</string>
     <plurals name="sharing_transfer_move_yarns">
         <item quantity="one">Auch %1$d verknüpftes Garn verschieben</item>
         <item quantity="other">Auch %1$d verknüpfte Garne verschieben</item>
@@ -1471,4 +1469,13 @@
     <string name="markdown_editor_raw">Roh</string>
     <string name="markdown_editor_preview">Vorschau</string>
     <string name="markdown_editor_preview_empty">Noch nichts zur Vorschau.</string>
+    <string name="editor_section_pattern">Anleitung</string>
+    <string name="project_editor_add_yarn">Garn hinzufügen</string>
+    <string name="yarns_list_empty_subtitle">Füge ein Knäuel hinzu, um seine Angaben und Projektverknüpfungen zusammenzuhalten.</string>
+    <string name="projects_list_empty_filtered_title">Keine Projekte passen zu diesen Filtern.</string>
+    <string name="projects_list_empty_filtered_subtitle">Versuche einen anderen Namen, eine andere Kategorie oder ein anderes Schlagwort.</string>
+    <string name="yarns_list_empty_filtered_title">Kein Garn passt zu diesen Filtern.</string>
+    <string name="yarns_list_empty_filtered_subtitle">Versuche eine andere Suche oder zeige alle Garne.</string>
+    <string name="yarn_detail_field_skein_weight">Knäuelgewicht</string>
+    <string name="yarn_detail_field_skein_length">Lauflänge</string>
 </resources>
