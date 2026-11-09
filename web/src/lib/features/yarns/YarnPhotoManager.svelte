@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import PhotoEditor from "#lib/features/media/PhotoEditor.svelte";
   import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
-  import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
+  import AddMediaControl from "#lib/components/AddMediaControl.svelte";
+  import { uploadSequentially } from "../media/upload-queue";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
@@ -121,22 +121,9 @@
     return yarnId === resourceId && session.data?.user?.id === ownerId;
   }
 
-  async function upload(event: Event) {
-    const input = event.currentTarget;
-    if (!(input instanceof HTMLInputElement)) return;
-    if (!mediaUploadAvailable) {
-      input.value = "";
-      return;
-    }
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-    await uploadFile(file);
-  }
-
-  /** Shared by the pickers and by files dropped on the photo section. */
-  async function uploadFile(file: File) {
-    if (!mediaUploadAvailable) return;
+  /** Shared by the picker and by files dropped on the photo section; one request per file. */
+  async function uploadFiles(files: File[]) {
+    if (!mediaUploadAvailable || files.length === 0) return;
     if (!canEdit) {
       errorMessage = t("Save your yarn changes before editing photos.", locale);
       return;
@@ -152,17 +139,30 @@
     uploading = true;
     notifyMediaBusy?.(true, resourceId, ownerId);
     try {
-      await uploadYarnPhoto(resourceId, file, currentSession);
-      await updateResource(resourceId, ownerId);
-      if (isCurrentOperation(resourceId, ownerId))
-        uploadMessage = t("Photo uploaded.", locale);
-    } catch (error) {
+      const result = await uploadSequentially(
+        files,
+        (file) => uploadYarnPhoto(resourceId, file, currentSession),
+        (progress) => {
+          if (
+            progress.done < progress.total &&
+            isCurrentOperation(resourceId, ownerId)
+          )
+            uploadMessage = `${t("Uploading photo", locale)} ${progress.current}/${progress.total}…`;
+        },
+        () => !isCurrentOperation(resourceId, ownerId),
+      );
+      if (result.uploaded > 0) await updateResource(resourceId, ownerId);
       if (isCurrentOperation(resourceId, ownerId)) {
-        uploadMessage = "";
-        errorMessage =
-          error instanceof Error
-            ? error.message
-            : t("The photo could not be uploaded.", locale);
+        if (result.failures.length > 0) {
+          const first = result.failures[0]?.error;
+          const names = result.failures
+            .map((entry) => entry.file.name)
+            .join(", ");
+          uploadMessage = "";
+          errorMessage = `${t("Not uploaded:", locale)} ${names}${
+            first instanceof Error ? `. ${first.message}` : ""
+          }`;
+        } else uploadMessage = t("Photo uploaded.", locale);
       }
     } finally {
       if (isCurrentOperation(resourceId, ownerId)) {
@@ -389,7 +389,8 @@
     enabled: mediaUploadAvailable && !uploading,
     accept: "image/*",
     label: t("Drop to add photos", locale),
-    onFiles: (files) => void uploadFile(files[0]),
+    multiple: true,
+    onFiles: (files) => void uploadFiles(files),
     onRejected: () => {
       uploadMessage = "";
       errorMessage = t("Choose a supported image file.", locale);
@@ -404,33 +405,20 @@
   </header>
 
   {#if !readOnly}
-    <div class="field upload-field">
-      <label for={`yarn-photo-file-${yarnId}`}>
-        <ActionLabel icon="upload">{t("Add photo", locale)}</ActionLabel>
-      </label>
-      <input
-        id={`yarn-photo-file-${yarnId}`}
-        class="shared-file-input"
-        type="file"
-        accept="image/*"
-        aria-label={t("Choose a yarn photo", locale)}
-        disabled={!mediaUploadAvailable || uploading}
-        onchange={(event) => void upload(event)}
-      />
-      <TakePhotoInput
-        {locale}
-        disabled={!mediaUploadAvailable || uploading}
-        onchange={(event) => void upload(event)}
-      />
-    </div>
-  {/if}
-
-  {#if !readOnly}
-    {#if !canEdit}
-      <p class="upload-hint">
-        {t("Save your yarn changes before editing photos.", locale)}
-      </p>
-    {:else if !mediaUploadAvailable || !mediaDeleteAvailable}
+    <AddMediaControl
+      id={`yarn-photo-file-${yarnId}`}
+      {locale}
+      camera
+      empty={photos.length === 0}
+      variant={photos.length === 0 ? "primary" : "secondary"}
+      label={t("Add photos", locale)}
+      inputLabel={t("Choose a yarn photo", locale)}
+      dropHint={t("or drop images here", locale)}
+      disabled={!mediaUploadAvailable || uploading}
+      hint={canEdit ? "" : t("Save your changes first to add photos.", locale)}
+      onFiles={(files) => void uploadFiles(files)}
+    />
+    {#if canEdit && (!mediaUploadAvailable || !mediaDeleteAvailable)}
       <p class="upload-hint">
         {t("Media storage is unavailable. Try again later.", locale)}
       </p>
@@ -477,10 +465,8 @@
         />
       {/snippet}
     </ReorderableMedia>
-  {:else}
-    <p class="no-photos">
-      {t("No photos yet. Add one to recognize this yarn.", locale)}
-    </p>
+  {:else if readOnly}
+    <p class="no-photos">{t("No photos yet.", locale)}</p>
   {/if}
 
   <dialog
@@ -593,15 +579,6 @@
   .upload-hint {
     color: var(--ink-muted);
     font-size: 0.9rem;
-  }
-
-  .upload-field {
-    display: grid;
-    max-width: 32rem;
-    gap: 0.35rem;
-    color: var(--ink-muted);
-    font-size: 0.86rem;
-    font-weight: 620;
   }
 
   .upload-state {

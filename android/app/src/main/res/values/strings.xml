@@ -847,7 +847,7 @@
     <string name="editor_discard_text">You’ve changed things that aren’t saved yet.</string>
     <string name="editor_discard_keep">Keep editing</string>
     <string name="editor_discard_confirm">Discard</string>
-    <string name="editor_add_photo_short">Add photo</string>
+    <string name="editor_add_photo_short">Add photos</string>
     <string name="photo_edit_title">Edit photo</string>
     <string name="photo_edit_rotate_left">Rotate left</string>
     <string name="photo_edit_rotate_right">Rotate right</string>

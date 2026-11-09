@@ -9,7 +9,6 @@
   import { page } from "$app/state";
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import { fileDrop } from "#lib/components/file-drop.ts";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
@@ -59,6 +58,13 @@
   import PhotoEditor from "../media/PhotoEditor.svelte";
   import { projectImageEditPath } from "../media/photo-editor";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
+  import { groupProjectImages } from "./project-images";
+  import AddMediaControl from "#lib/components/AddMediaControl.svelte";
+  import {
+    uploadSequentially,
+    type UploadProgress,
+    type UploadQueueResult,
+  } from "../media/upload-queue";
   import {
     applyOptimisticReorder,
     projectStepOrderPath,
@@ -119,8 +125,8 @@
   let mediaBusy = $state(false);
   let categoryLoading = $state(false);
   let yarnLoading = $state(false);
-  let mediaAltText = $state("");
-  let mediaStepId = $state("");
+  let uploadProgress = $state<UploadProgress | null>(null);
+  let uploadKind = $state<"photo" | "file">("photo");
   let photoEditImage = $state<ProjectImage | null>(null);
   let photoEditOpen = $state(false);
   let confirmationDialog = $state<ConfirmDialog | undefined>(undefined);
@@ -180,11 +186,13 @@
   const mediaDeleteAvailable = $derived(
     mediaAvailable && session.data?.capabilities.media_delete === true,
   );
-  const titleImages = $derived(
-    project?.images.filter(
-      (image) => image.step_id === null && image.is_title_image,
-    ) ?? [],
+  const imageGroups = $derived(
+    groupProjectImages(
+      project?.images ?? [],
+      project?.steps.map((step) => step.id) ?? [],
+    ),
   );
+  const titleImages = $derived(imageGroups.gallery);
   const stepImageGroups = $derived(
     (project?.steps ?? [])
       .map((step) => ({
@@ -194,16 +202,11 @@
       }))
       .filter((group) => group.images.length > 0),
   );
-  const otherImages = $derived(
-    project?.images.filter(
-      (image) =>
-        !(image.step_id === null && image.is_title_image) &&
-        !(
-          image.step_id !== null &&
-          project?.steps.some((step) => step.id === image.step_id)
-        ),
-    ) ?? [],
-  );
+  function imagesOfStep(stepId: number | undefined): ProjectImage[] {
+    if (stepId === undefined) return [];
+    return project?.images.filter((image) => image.step_id === stepId) ?? [];
+  }
+  const otherImages = $derived(imageGroups.orphans);
   const saveDisabled = $derived(
     saving || deleting || (!isCreating && !isDirty) || conflictProject !== null,
   );
@@ -1109,59 +1112,65 @@
     publishFeedback({ ownerId, kind: "success", message: statusMessage });
   }
 
-  async function uploadImage(event: Event): Promise<void> {
-    const input = event.currentTarget;
-    if (!(input instanceof HTMLInputElement)) return;
-    if (!mediaUploadAvailable) {
-      input.value = "";
-      return;
-    }
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-    await addImage(file);
-  }
-
-  /** Shared by the pickers and by files dropped on the photo area. */
-  async function addImage(file: File): Promise<void> {
-    if (!mediaUploadAvailable) return;
-    const stepId = mediaStepId ? Number(mediaStepId) : undefined;
-    await performMediaMutation(
-      (id, currentSession, signal) =>
-        uploadProjectImage(
-          id,
-          file,
-          mediaAltText,
-          currentSession,
-          stepId,
-          signal,
-        ),
-      "media_upload",
+  /**
+   * Photos go to the project (title images) or, with `stepId`, to that step. Shared by the pickers
+   * and by files dropped on the gallery or on a step.
+   */
+  async function addImages(files: File[], stepId?: number): Promise<void> {
+    await addFiles(
+      files,
+      (id, file, currentSession, signal) =>
+        uploadProjectImage(id, file, "", currentSession, stepId, signal),
+      "photo",
     );
-    mediaAltText = "";
   }
 
-  async function uploadAttachment(event: Event): Promise<void> {
-    const input = event.currentTarget;
-    if (!(input instanceof HTMLInputElement)) return;
-    if (!mediaUploadAvailable) {
-      input.value = "";
-      return;
-    }
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-    await addAttachment(file);
-  }
-
-  /** Shared by the picker and by files dropped on the attachments area. */
-  async function addAttachment(file: File): Promise<void> {
-    if (!mediaUploadAvailable) return;
-    await performMediaMutation(
-      (id, currentSession, signal) =>
+  async function addAttachments(files: File[]): Promise<void> {
+    await addFiles(
+      files,
+      (id, file, currentSession, signal) =>
         uploadProjectAttachment(id, file, currentSession, signal),
+      "file",
+    );
+  }
+
+  /** Upload one file after the other (one per request), then reload the project once. */
+  async function addFiles(
+    files: File[],
+    uploadOne: (
+      id: number,
+      file: File,
+      currentSession: NonNullable<typeof session.data>,
+      signal: AbortSignal,
+    ) => Promise<unknown>,
+    kind: "photo" | "file",
+  ): Promise<void> {
+    if (!mediaUploadAvailable || files.length === 0) return;
+    let result: UploadQueueResult = { uploaded: 0, failures: [] };
+    const ok = await performMediaMutation(
+      async (id, currentSession, signal) => {
+        result = await uploadSequentially(
+          files,
+          (file) => uploadOne(id, file, currentSession, signal),
+          (progress) => {
+            uploadProgress = progress.done < progress.total ? progress : null;
+            uploadKind = kind;
+          },
+          () => signal.aborted,
+        );
+        if (result.uploaded === 0 && result.failures.length > 0)
+          throw result.failures[0]?.error;
+      },
       "media_upload",
     );
+    uploadProgress = null;
+    if (ok && result.failures.length > 0) {
+      const names = result.failures.map((entry) => entry.file.name).join(", ");
+      const first = result.failures[0]?.error;
+      mediaError = `${t("Not uploaded:", locale)} ${names}${
+        first instanceof Error ? `. ${first.message}` : ""
+      }`;
+    }
   }
 
   async function removeImage(imageId: number): Promise<void> {
@@ -1546,20 +1555,60 @@
               >
                 {mediaError}
               </p>{/if}
+            {#if uploadProgress}
+              <div class="upload-state" role="status" aria-live="polite">
+                <progress
+                  aria-label={t("Uploading photo", locale)}
+                  max={uploadProgress.total}
+                  value={uploadProgress.done}
+                ></progress>
+                <span
+                  >{uploadKind === "photo"
+                    ? t("Uploading photo", locale)
+                    : t("Uploading file", locale)}
+                  {uploadProgress.current}/{uploadProgress.total}…</span
+                >
+              </div>
+            {/if}
             <div
               class="media-drop"
               use:fileDrop={{
                 enabled: mediaUploadAvailable,
                 accept: "image/*",
+                multiple: true,
                 label: t("Drop to add photos", locale),
-                onFiles: (files) => void addImage(files[0]),
+                onFiles: (files) => void addImages(files),
                 onRejected: () =>
                   (mediaError = t("Choose a supported image file.", locale)),
               }}
             >
-              {#if project.images.length}
+              <h3>{t("Photos", locale)}</h3>
+              {#if !titleImages.length && !otherImages.length}
+                <AddMediaControl
+                  id="project-image-file"
+                  {locale}
+                  empty
+                  camera
+                  variant="primary"
+                  label={t("Add photos", locale)}
+                  inputLabel={t("Choose project photos", locale)}
+                  dropHint={t("or drop images here", locale)}
+                  disabled={!mediaUploadAvailable}
+                  hint={t("Save your changes first to add photos.", locale)}
+                  onFiles={(files) => void addImages(files)}
+                />
+              {:else}
+                <AddMediaControl
+                  id="project-image-file"
+                  {locale}
+                  camera
+                  label={t("Add photos", locale)}
+                  inputLabel={t("Choose project photos", locale)}
+                  disabled={!mediaUploadAvailable}
+                  hint={t("Save your changes first to add photos.", locale)}
+                  onFiles={(files) => void addImages(files)}
+                />
                 {#if titleImages.length}
-                  <h3>{t("Project cover", locale)}</h3>
                   <ReorderableMedia
                     items={titleImages}
                     {locale}
@@ -1572,25 +1621,15 @@
                     deleteDisabled={!mediaDeleteAvailable}
                     onEdit={openPhotoEditor}
                     editDisabled={!mediaUploadAvailable}
-                  />
+                  >
+                    {#snippet badge(image)}
+                      {#if image.is_stitch_sample}{t(
+                          "Stitch sample",
+                          locale,
+                        )}{/if}
+                    {/snippet}
+                  </ReorderableMedia>
                 {/if}
-                {#each stepImageGroups as group (group.step.id)}
-                  {@const stepLabel = `${t("Step", locale)} ${group.step.step_number}: ${group.step.title}`}
-                  <h3>{stepLabel}</h3>
-                  <ReorderableMedia
-                    items={group.images}
-                    {locale}
-                    label={stepLabel}
-                    fallbackAlt={t("Step photo", locale)}
-                    disabled={!mediaAvailable}
-                    onMove={(from, to) =>
-                      reorderImages(group.step.id, from, to)}
-                    onDelete={(image) => void removeImage(image.id)}
-                    deleteDisabled={!mediaDeleteAvailable}
-                    onEdit={openPhotoEditor}
-                    editDisabled={!mediaUploadAvailable}
-                  />
-                {/each}
                 {#if otherImages.length}
                   <h3>{t("Project photo", locale)}</h3>
                   <ReorderableMedia
@@ -1613,67 +1652,23 @@
                     {/snippet}
                   </ReorderableMedia>
                 {/if}
-              {:else}
-                <p class="field-hint">{t("No project photos yet.", locale)}</p>
               {/if}
-              <div class="media-upload-grid">
-                <div class="field">
-                  <label for="project-image-step"
-                    >{t("Attach photo to", locale)}</label
-                  >
-                  <select
-                    id="project-image-step"
-                    bind:value={mediaStepId}
-                    disabled={!mediaUploadAvailable}
-                  >
-                    <option value="">{t("Project cover", locale)}</option>
-                    {#each project.steps as step (step.id)}
-                      <option value={String(step.id)}
-                        >{t("Step", locale)}
-                        {step.step_number}: {step.title}</option
-                      >
-                    {/each}
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="project-image-alt"
-                    >{t("Photo description", locale)}</label
-                  >
-                  <input
-                    id="project-image-alt"
-                    bind:value={mediaAltText}
-                    disabled={!mediaUploadAvailable}
-                  />
-                </div>
-                <div class="field">
-                  <label for="project-image-file"
-                    ><ActionLabel icon="upload" size="sm"
-                      >{t("Add project photo", locale)}</ActionLabel
-                    ></label
-                  >
-                  <input
-                    id="project-image-file"
-                    type="file"
-                    class="shared-file-input"
-                    accept="image/*"
-                    disabled={!mediaUploadAvailable}
-                    onchange={uploadImage}
-                  />
-                  <TakePhotoInput
-                    {locale}
-                    size="sm"
-                    disabled={!mediaUploadAvailable}
-                    onchange={uploadImage}
-                  />
-                </div>
-              </div>
+              {#if project.steps.length}
+                <p class="field-hint">
+                  {t(
+                    "Photos of a step are added in that step further down.",
+                    locale,
+                  )}
+                </p>
+              {/if}
             </div>
             <div
               class="media-drop"
               use:fileDrop={{
                 enabled: mediaUploadAvailable,
+                multiple: true,
                 label: t("Drop to attach a file", locale),
-                onFiles: (files) => void addAttachment(files[0]),
+                onFiles: (files) => void addAttachments(files),
               }}
             >
               {#if project.attachments.length}
@@ -1706,23 +1701,19 @@
                     </li>
                   {/each}
                 </ul>
-              {:else}
-                <p class="field-hint">{t("No attachments yet.", locale)}</p>
               {/if}
-              <div class="field">
-                <label for="project-attachment-file"
-                  ><ActionLabel icon="upload" size="sm"
-                    >{t("Add attachment", locale)}</ActionLabel
-                  ></label
-                >
-                <input
-                  id="project-attachment-file"
-                  type="file"
-                  class="shared-file-input"
-                  disabled={!mediaUploadAvailable}
-                  onchange={uploadAttachment}
-                />
-              </div>
+              <AddMediaControl
+                id="project-attachment-file"
+                {locale}
+                accept=""
+                empty={!project.attachments.length}
+                label={t("Add attachment", locale)}
+                inputLabel={t("Choose attachments", locale)}
+                dropHint={t("or drop files here", locale)}
+                disabled={!mediaUploadAvailable}
+                hint={t("Save your changes first to add attachments.", locale)}
+                onFiles={(files) => void addAttachments(files)}
+              />
             </div>
           </section>
         {/if}
@@ -1999,6 +1990,8 @@
                 {#if draft.steps.length}
                   <ol class="step-editor-list">
                     {#each draft.steps as step, index (step.key)}
+                      {@const stepPhotos = imagesOfStep(step.id)}
+                      {@const stepLabel = `${t("Step", locale)} ${index + 1}: ${step.title}`}
                       <li class="step-editor-card">
                         <div class="step-editor-heading">
                           <h3>{t("Step", locale)} {index + 1}</h3>
@@ -2079,6 +2072,57 @@
                             rows={4}
                           />
                         </div>
+                        {#if project}
+                          <div
+                            class="step-photos"
+                            use:fileDrop={{
+                              enabled:
+                                mediaUploadAvailable && step.id !== undefined,
+                              accept: "image/*",
+                              multiple: true,
+                              label: t("Drop to add photos", locale),
+                              onFiles: (files) =>
+                                void addImages(files, step.id),
+                              onRejected: () =>
+                                (mediaError = t(
+                                  "Choose a supported image file.",
+                                  locale,
+                                )),
+                            }}
+                          >
+                            <h4>{t("Step photos", locale)}</h4>
+                            <AddMediaControl
+                              id={`step-photo-file-${step.key}`}
+                              {locale}
+                              camera
+                              label={t("Add photos", locale)}
+                              inputLabel={`${t("Choose step photos", locale)} ${index + 1}`}
+                              disabled={!mediaUploadAvailable ||
+                                step.id === undefined}
+                              hint={t(
+                                "Save your changes first to add photos.",
+                                locale,
+                              )}
+                              onFiles={(files) =>
+                                void addImages(files, step.id)}
+                            />
+                            {#if stepPhotos.length}
+                              <ReorderableMedia
+                                items={stepPhotos}
+                                {locale}
+                                label={stepLabel}
+                                fallbackAlt={t("Step photo", locale)}
+                                disabled={!mediaAvailable}
+                                onMove={(from, to) =>
+                                  reorderImages(step.id ?? null, from, to)}
+                                onDelete={(image) => void removeImage(image.id)}
+                                deleteDisabled={!mediaDeleteAvailable}
+                                onEdit={openPhotoEditor}
+                                editDisabled={!mediaUploadAvailable}
+                              />
+                            {/if}
+                          </div>
+                        {/if}
                         {#if importState?.stepImages[step.key]?.length}
                           <ImageChoices
                             title={t("Suggested step images", locale)}
@@ -2479,17 +2523,11 @@
     font-weight: var(--ui-label-font-weight);
   }
 
-  input,
-  select {
+  input {
     width: 100%;
   }
 
-  input[type="file"] {
-    padding: 0.4rem;
-  }
-
   input:focus-visible,
-  select:focus-visible,
   a:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
@@ -2515,8 +2553,7 @@
     margin: -0.35rem 0 0.8rem;
   }
 
-  input:disabled,
-  select:disabled {
+  input:disabled {
     opacity: 0.62;
     cursor: not-allowed;
   }
@@ -2616,14 +2653,22 @@
     gap: 0.8rem;
   }
 
-  .media-upload-grid {
+  .step-photos {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
 
-  .media-upload-grid .field:first-child {
-    grid-column: 1 / -1;
+  .step-photos h4 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .upload-state {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
   }
 
   .optional-details {
@@ -2667,12 +2712,10 @@
   }
 
   @media (max-width: 560px) {
-    .field-grid,
-    .media-upload-grid {
+    .field-grid {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .media-upload-grid .field:first-child,
     .field-wide {
       grid-column: auto;
     }

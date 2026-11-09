@@ -536,7 +536,7 @@ export async function runMediaTilesJourney(
       await page
         .getByRole("heading", { name: "Edit project", exact: true })
         .waitFor({ state: "visible" });
-      if ((await page.locator("#project-image-step option").count()) < 2) {
+      if ((await page.locator('[id^="step-photo-file-"]').count()) < 1) {
         // The seeded project has no steps; add one to hold photos.
         await page
           .getByRole("button", { name: "Add step", exact: true })
@@ -572,9 +572,9 @@ export async function runMediaTilesJourney(
           (await tilesOf(stepList.first()).count()) < 3) &&
         guard < 3
       ) {
-        await page.locator("#project-image-step").selectOption({ index: 1 });
         await page
-          .locator("#project-image-file")
+          .locator('[id^="step-photo-file-"]')
+          .first()
           .setInputFiles(photos[guard % photos.length] as string);
         await page
           .locator("#main-content .action-status")

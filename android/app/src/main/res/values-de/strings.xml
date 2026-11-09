@@ -846,7 +846,7 @@
     <string name="editor_discard_text">Du hast etwas geändert, das noch nicht gespeichert ist.</string>
     <string name="editor_discard_keep">Weiter bearbeiten</string>
     <string name="editor_discard_confirm">Verwerfen</string>
-    <string name="editor_add_photo_short">Foto hinzufügen</string>
+    <string name="editor_add_photo_short">Fotos hinzufügen</string>
     <string name="photo_edit_title">Foto bearbeiten</string>
     <string name="photo_edit_rotate_left">Nach links drehen</string>
     <string name="photo_edit_rotate_right">Nach rechts drehen</string>

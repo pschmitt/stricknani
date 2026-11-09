@@ -294,7 +294,11 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
       (await projectOptionalDetails.getAttribute("open")) !== null,
     "More project details should be expanded while editing",
   );
-  await page.locator("#project-image-file").waitFor({ state: "visible" });
+  await page.locator("#project-image-file").waitFor({ state: "attached" });
+  await page
+    .getByRole("button", { name: "Add photos", exact: true })
+    .first()
+    .waitFor({ state: "visible" });
   check(
     await page.locator("#project-image-file").isEnabled(),
     "clean saved projects did not enable media management",
@@ -710,7 +714,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await page.locator(".reorder-item img").waitFor({ state: "detached" });
   check(
     (await page
-      .getByText("No project photos yet.", { exact: true })
+      .getByText("or drop images here", { exact: true })
       .isVisible()) &&
       st.projectResponses.some(
         ([path, status]) =>
