@@ -825,7 +825,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 844 });
   markStage("checking profile avatar propagation in app shell");
   await openAccountFromProfile(page);
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
     name: "synthetic-avatar.png",
     mimeType: "image/png",
     buffer: tinyPngFixture(),
