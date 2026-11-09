@@ -901,6 +901,11 @@
     <string name="admin_action_image_deleted">Bild gelöscht</string>
     <string name="admin_action_photo_uploaded">Foto hochgeladen</string>
     <string name="admin_action_photo_deleted">Foto gelöscht</string>
+    <string name="admin_action_shared">Geteilt</string>
+    <string name="admin_action_share_role_changed">Freigaberolle geändert</string>
+    <string name="admin_action_share_revoked">Teilen beendet</string>
+    <string name="admin_action_share_left">Geteiltes verlassen</string>
+    <string name="admin_action_ownership_transferred">Besitz übertragen</string>
     <string name="admin_action_photo_promoted">Titelfoto geändert</string>
     <string name="admin_action_title_image_promoted">Titelbild geändert</string>
     <string name="admin_detail_who">Wer</string>

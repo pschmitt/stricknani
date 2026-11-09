@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChangeSetV1 } from "#lib/features/admin/admin-api.ts";
 import {
+  actionLabel,
   actionTone,
   eventHeadline,
   relativeTime,
@@ -119,5 +120,40 @@ describe("relativeTime", () => {
   });
   it("passes through unparsable dates", () => {
     expect(relativeTime("nope", now, "en")).toBe("nope");
+  });
+});
+
+describe("sharing events", () => {
+  it("names the person and the role, as Android does", () => {
+    const anika = { id: 7, name: "Anika", role: "editor" };
+    expect(eventHeadline("ownership_transferred", null, "en", anika)).toBe(
+      "Transferred to Anika",
+    );
+    expect(eventHeadline("shared", null, "en", anika)).toBe(
+      "Shared with Anika · Can edit",
+    );
+    expect(
+      eventHeadline("share_role_changed", null, "en", {
+        ...anika,
+        role: "viewer",
+      }),
+    ).toBe("Role of Anika changed to Can view");
+    expect(eventHeadline("share_revoked", null, "en", anika)).toBe(
+      "Stopped sharing with Anika",
+    );
+    expect(eventHeadline("share_left", null, "en", anika)).toBe("Anika left");
+  });
+
+  it("says when the account is gone and never shows the raw action", () => {
+    expect(
+      eventHeadline("ownership_transferred", null, "en", {
+        id: null,
+        name: null,
+        role: null,
+      }),
+    ).toBe("Transferred to a deleted account");
+    expect(actionLabel("ownership_transferred", "en")).toBe(
+      "Ownership transferred",
+    );
   });
 });

@@ -76,6 +76,13 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "photo_promoted" to (AuditActionKind.Update to R.string.admin_action_photo_promoted),
         "title_image_promoted" to
             (AuditActionKind.Update to R.string.admin_action_title_image_promoted),
+        "shared" to (AuditActionKind.Create to R.string.admin_action_shared),
+        "share_role_changed" to
+            (AuditActionKind.Update to R.string.admin_action_share_role_changed),
+        "share_revoked" to (AuditActionKind.Remove to R.string.admin_action_share_revoked),
+        "share_left" to (AuditActionKind.Remove to R.string.admin_action_share_left),
+        "ownership_transferred" to
+            (AuditActionKind.Update to R.string.admin_action_ownership_transferred),
     )
 
 /** Action names the filter offers as suggestions (the server filters on the exact name). */

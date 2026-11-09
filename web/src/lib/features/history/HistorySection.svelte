@@ -203,6 +203,7 @@
       event.action,
       entry?.state === "ready" ? entry.detail.changes : null,
       locale,
+      event.subject,
     );
   }
 

@@ -25,6 +25,18 @@ export interface HistoryEvent {
   media: AuditMedia | null;
   /** Thumbnails of the pictures named by this event's picture changes, keyed by label. */
   media_thumbnails: ChangeMedia | null;
+  /**
+   * The person of a sharing event (shared, share_role_changed, share_revoked, share_left,
+   * ownership_transferred): `id`/`name` are null once that account was deleted; `role` is the
+   * share role, absent for transfers.
+   */
+  subject?: HistorySubject | null;
+}
+
+export interface HistorySubject {
+  id: number | null;
+  name: string | null;
+  role: string | null;
 }
 
 export interface HistoryPage {

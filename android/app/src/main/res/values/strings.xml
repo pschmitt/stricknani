@@ -902,6 +902,11 @@
     <string name="admin_action_image_deleted">Image deleted</string>
     <string name="admin_action_photo_uploaded">Photo uploaded</string>
     <string name="admin_action_photo_deleted">Photo deleted</string>
+    <string name="admin_action_shared">Shared</string>
+    <string name="admin_action_share_role_changed">Sharing role changed</string>
+    <string name="admin_action_share_revoked">Sharing stopped</string>
+    <string name="admin_action_share_left">Left the shared item</string>
+    <string name="admin_action_ownership_transferred">Ownership transferred</string>
     <string name="admin_action_photo_promoted">Cover photo changed</string>
     <string name="admin_action_title_image_promoted">Title image changed</string>
     <string name="admin_detail_who">Who</string>

@@ -1,3 +1,4 @@
+import type { HistorySubject } from "./history-api";
 import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
 import type {
   ChangeItemV1,
@@ -181,13 +182,53 @@ export function summarizeChanges(
   return phrases.length ? phrases.join(" · ") : null;
 }
 
-/** The headline of a history row: the change summary if known, else the action name. */
+/**
+ * The sentence for a sharing event with its person ("Transferred to Anika"), or null for any
+ * other action. Android words it the same (`sharingEventLine`).
+ */
+export function sharingHeadline(
+  action: string,
+  subject: HistorySubject | null | undefined,
+  locale: Locale,
+): string | null {
+  const name = subject?.name?.trim() || t("a deleted account", locale);
+  const role =
+    subject?.role === "editor" ? t("Can edit", locale) : t("Can view", locale);
+  let text: string;
+  switch (action) {
+    case "shared":
+      text = t("Shared with {name} · {role}", locale);
+      break;
+    case "share_role_changed":
+      text = t("Role of {name} changed to {role}", locale);
+      break;
+    case "share_revoked":
+      text = t("Stopped sharing with {name}", locale);
+      break;
+    case "share_left":
+      text = t("{name} left", locale);
+      break;
+    case "ownership_transferred":
+      text = t("Transferred to {name}", locale);
+      break;
+    default:
+      return null;
+  }
+  return text.replace("{name}", name).replace("{role}", role);
+}
+
+/** The headline of a history row: a sharing sentence, the change summary, else the action name. */
 export function eventHeadline(
   action: string,
   changes: ChangeSetV1 | null,
   locale: Locale,
+  subject?: HistorySubject | null,
 ): string {
-  return summarizeChanges(changes, locale) ?? actionLabel(action, locale);
+  return (
+    sharingHeadline(action, subject, locale) ??
+    summarizeChanges(changes, locale) ??
+    actionLabel(action, locale)
+  );
 }
 
 const units: [Intl.RelativeTimeFormatUnit, number][] = [

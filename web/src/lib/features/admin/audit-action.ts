@@ -54,6 +54,20 @@ const knownActions: Record<
   image_deleted: { icon: "action-delete", messageKey: msg("Image deleted") },
   photo_uploaded: { icon: "action-upload", messageKey: msg("Photo uploaded") },
   photo_deleted: { icon: "action-delete", messageKey: msg("Photo deleted") },
+  shared: { icon: "action-create", messageKey: msg("Shared") },
+  share_role_changed: {
+    icon: "action-update",
+    messageKey: msg("Sharing role changed"),
+  },
+  share_revoked: { icon: "action-remove", messageKey: msg("Sharing stopped") },
+  share_left: {
+    icon: "action-remove",
+    messageKey: msg("Left the shared item"),
+  },
+  ownership_transferred: {
+    icon: "action-update",
+    messageKey: msg("Ownership transferred"),
+  },
   photo_promoted: {
     icon: "action-update",
     messageKey: msg("Cover photo changed"),
