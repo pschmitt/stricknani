@@ -124,8 +124,10 @@
     position: relative;
     display: grid;
     gap: 0.4rem;
-    /* Room on the right and at the bottom for the folded corner. */
-    padding: 1.1rem 1.6rem 1.8rem 1.1rem;
+    /* Room on the right and at the bottom for the folded corner (its square is the fold
+       times the square root of 2): the ruled lines stop before it. */
+    padding: 1.1rem calc(var(--fold) * 1.4142 + 0.6rem)
+      calc(var(--fold) * 1.4142 + 0.5rem) 1.1rem;
   }
 
   label {
