@@ -717,12 +717,13 @@
               variant="ghost"
               size="sm"
               type="button"
+              class="icon-action"
               disabled={operation !== null}
               onclick={(event) => askReset(user, event.currentTarget)}
               icon="key"
-            >
-              {t("Reset password", locale)}
-            </SharedButton>
+              aria-label={t("Reset password", locale)}
+              title={t("Reset password", locale)}
+            />
             {#if oidcProviders.length > 0 && (user.linked_identities === undefined || user.linked_identities > 0)}
               <AdminUserIdentities
                 {user}
@@ -734,17 +735,18 @@
               ></span>
             {/if}
             {#if canImpersonate(user)}
-              <span class="action-slot action-slot--wide">
+              <span class="action-slot">
                 <SharedButton
                   variant="ghost"
                   size="sm"
                   type="button"
+                  class="icon-action"
                   disabled={operation !== null}
                   onclick={(event) => askImpersonate(user, event.currentTarget)}
                   icon="user-impersonate"
-                >
-                  {t("Impersonate", locale)}
-                </SharedButton>
+                  aria-label={t("Impersonate", locale)}
+                  title={t("Impersonate", locale)}
+                />
               </span>
             {:else}
               <span class="action-slot action-slot--empty" aria-hidden="true"
@@ -1146,13 +1148,20 @@
      Reset password and the identities link stay in the same columns. */
   .row-actions {
     display: grid;
-    grid-template-columns: 7.25rem max-content max-content max-content;
+    /* Disable/Enable with its label, then three icon slots: password, identities, impersonate. */
+    grid-template-columns: 7.25rem 44px 44px 44px;
     align-items: center;
     justify-content: start;
     gap: 0.35rem;
   }
   .action-slot {
     display: flex;
+  }
+  .row-actions :global(.icon-action) {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
   }
   .visually-hidden {
     position: absolute;
