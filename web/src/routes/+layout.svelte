@@ -16,6 +16,8 @@
   } from "#lib/error-reporting.ts";
   import { appVersion } from "#lib/app-version.ts";
   import { clearFeedback, feedback } from "#lib/feedback.ts";
+  import CommandPalette from "#lib/components/CommandPalette.svelte";
+  import { openPalette, shortcutLabel } from "#lib/palette/palette.svelte.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import { headerSlot } from "#lib/header-slot.svelte.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -27,6 +29,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { loadCatalog, msg, setLocale, t } from "#lib/i18n.svelte.ts";
   import { isMoreActive, isPathActive } from "#lib/more-nav.ts";
+  import { mainNavigation, secondaryNavigation } from "#lib/nav-items.ts";
   import { refreshSession, session } from "#lib/session.svelte.ts";
   import { initTheme } from "#lib/theme.svelte.ts";
   import {
@@ -88,13 +91,6 @@
   );
   const routeIsAdminOnly = $derived(adminRoute && !canManageAdmin);
 
-  const mainNavigation = [
-    { href: "/", label: msg("Home"), icon: "home" },
-    { href: "/projects", label: msg("Projects"), icon: "projects" },
-    { href: "/yarns", label: msg("Yarns"), icon: "yarns" },
-    { href: "/create", label: msg("Create"), icon: "create" },
-  ] as const;
-
   /** Phones: Create lives under More, so the bar has four tabs. */
   const phoneNavigation = mainNavigation.filter(
     (item) => item.href !== "/create",
@@ -102,11 +98,6 @@
   const moreActive = $derived(
     isMoreActive(pathname, (path) => resolve(path as "/more")),
   );
-
-  const secondaryNavigation = [
-    { href: "/categories", label: msg("Categories"), icon: "categories" },
-    { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
-  ] as const;
 
   const avatarUrl = $derived(user?.avatar_url ?? null);
 
@@ -287,8 +278,20 @@
         parentLabel={t("Back", locale)}
         reserveParentSlot={true}
       />
+      <button
+        type="button"
+        class="palette-trigger"
+        aria-label={t("Search everything", locale)}
+        aria-keyshortcuts="Control+K Meta+K"
+        title={`${t("Search everything", locale)} (${shortcutLabel()})`}
+        onclick={openPalette}
+      >
+        <NavIcon name="search" />
+        <kbd class="palette-trigger__key">{shortcutLabel()}</kbd>
+      </button>
       <div class="app-header__actions" bind:this={headerActionsEl}></div>
     </header>
+    <CommandPalette />
 
     <aside class="desktop-rail" aria-label={t("Main navigation", locale)}>
       <nav class="primary-nav" aria-label={t("Your library", locale)}>
@@ -425,6 +428,59 @@
 {/if}
 
 <style>
+  .palette-trigger {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-left: auto;
+    padding: 0 0.7rem;
+    border: 0;
+    border-radius: var(--radius-xs);
+    color: var(--ink);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .palette-trigger + :global(.app-header__actions) {
+    margin-left: 0;
+  }
+
+  .palette-trigger:hover {
+    background: var(--accent-wash);
+  }
+
+  .palette-trigger:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .palette-trigger :global(svg) {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .palette-trigger__key {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 0.4rem;
+    color: var(--ink-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  @media (hover: none), (max-width: 760px) {
+    .palette-trigger__key {
+      display: none;
+    }
+  }
+
   .rail-account {
     display: flex;
     box-sizing: border-box;
