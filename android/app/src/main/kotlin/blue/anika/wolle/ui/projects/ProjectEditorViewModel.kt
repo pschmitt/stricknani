@@ -771,13 +771,12 @@ constructor(
 }
 
 /**
- * The editor's comma-separated tag field as a tag list. Splits on commas only: the v2 API stores
- * every list item as one verbatim label (so "winter gift" stays one tag), whereas v1 re-split each
- * item on spaces and `#` on the server. Blank items and case-insensitive duplicates are dropped, as
- * the server did.
+ * The editor's tag field as a tag list. A space or a comma ends a tag, so "test, test2" and "a, b
+ * c" give two and three tags. Blank pieces and case-insensitive duplicates are dropped, as the
+ * server did.
  */
 internal fun parseTagInput(input: String): List<String> =
-    input.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+    input.split(Regex("[\\s,]+")).filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
 
 private fun <T> List<T>.inserted(index: Int, item: T): List<T> =
     toMutableList().apply { add(index.coerceIn(0, size), item) }

@@ -42,6 +42,7 @@
     prefillUrlFromSearch,
   } from "../imports/shared-link";
   import YarnPicker from "./YarnPicker.svelte";
+  import { mergeTags, splitTagInput } from "./tag-input";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
   import {
@@ -611,11 +612,11 @@
     selectedYarnNames[yarn.id] = yarn.name;
   }
 
-  function addTag(): void {
-    const tag = tagInput.trim();
-    if (!tag) return;
-    if (!draft.tags.includes(tag)) draft.tags = [...draft.tags, tag];
-    tagInput = "";
+  /** Chips the typed text at spaces and commas; `commitAll` also takes the last piece. */
+  function addTag(commitAll = true): void {
+    const { tags, rest } = splitTagInput(tagInput, commitAll);
+    if (tags.length) draft.tags = mergeTags(draft.tags, tags);
+    tagInput = rest;
   }
 
   function removeTag(index: number): void {
@@ -1722,10 +1723,20 @@
                     id="project-tag-entry"
                     bind:value={tagInput}
                     autocomplete="off"
+                    oninput={(event) => {
+                      const { inputType } = event as unknown as InputEvent;
+                      addTag(inputType === "insertFromPaste");
+                    }}
                     onkeydown={(event) => {
                       if (event.key === "Enter") {
                         event.preventDefault();
                         addTag();
+                      } else if (
+                        event.key === "Backspace" &&
+                        tagInput === "" &&
+                        draft.tags.length
+                      ) {
+                        removeTag(draft.tags.length - 1);
                       }
                     }}
                   />
@@ -1735,16 +1746,13 @@
                     class="secondary-button"
                     variant="secondary"
                     icon="add"
-                    onclick={addTag}
+                    onclick={() => addTag()}
                   >
                     {t("Add tag", locale)}
                   </Button>
                 </div>
                 <span class="field-hint">
-                  {t(
-                    "Add each tag separately; commas stay inside a tag.",
-                    locale,
-                  )}
+                  {t("A space or comma ends a tag.", locale)}
                 </span>
                 {#if draft.tags.length}
                   <ul class="tag-list" aria-label={t("Tags", locale)}>
