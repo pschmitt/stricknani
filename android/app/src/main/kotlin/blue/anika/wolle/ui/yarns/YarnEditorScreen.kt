@@ -55,6 +55,7 @@ import blue.anika.wolle.ui.common.EditorSaveBar
 import blue.anika.wolle.ui.common.EditorSectionCard
 import blue.anika.wolle.ui.common.FieldLabel
 import blue.anika.wolle.ui.common.ImportImagePicker
+import blue.anika.wolle.ui.common.MarkdownTextField
 import blue.anika.wolle.ui.common.NewBanner
 import blue.anika.wolle.ui.common.NewBannerKind
 import blue.anika.wolle.ui.common.OwnerBanner
@@ -528,23 +529,15 @@ fun YarnEditorScreen(
                         icon = PhosphorIcons.NotePencil,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
+                            MarkdownTextField(
                                 value = form.description,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(description = value) }
                                 },
-                                label = {
-                                    FieldLabel(
-                                        stringResource(R.string.project_detail_description_title),
-                                        PhosphorIcons.TextAlignLeft,
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth().focusRequester(descriptionFocus),
+                                label = stringResource(R.string.project_detail_description_title),
+                                labelIcon = PhosphorIcons.TextAlignLeft,
+                                fieldModifier = Modifier.focusRequester(descriptionFocus),
                                 minLines = 3,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences
-                                    ),
                             )
                             StickyNoteField(
                                 value = form.notes,

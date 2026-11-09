@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -233,11 +232,12 @@ internal fun StickyNoteField(
 ) {
     StickyNoteSurface(modifier) {
         val ink = LocalContentColor.current
-        OutlinedTextField(
+        MarkdownTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { FieldLabel(label, labelIcon) },
-            modifier = fieldModifier.fillMaxWidth().testTag("sticky-note-field"),
+            label = label,
+            labelIcon = labelIcon,
+            fieldModifier = fieldModifier.testTag("sticky-note-field"),
             minLines = minLines,
             keyboardOptions = keyboardOptions,
             colors =

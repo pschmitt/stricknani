@@ -1460,4 +1460,15 @@
     <string name="palette_action_toggle_dark">Toggle dark mode</string>
     <string name="palette_action_import_pattern">Import this pattern</string>
     <string name="palette_action_import_yarn">Import as yarn</string>
+    <string name="markdown_editor_formatting">Formatting</string>
+    <string name="markdown_editor_bold">Bold</string>
+    <string name="markdown_editor_italic">Italic</string>
+    <string name="markdown_editor_heading">Heading</string>
+    <string name="markdown_editor_bullet_list">Bulleted list</string>
+    <string name="markdown_editor_numbered_list">Numbered list</string>
+    <string name="markdown_editor_link">Link</string>
+    <string name="markdown_editor_mode">Editor mode</string>
+    <string name="markdown_editor_raw">Raw</string>
+    <string name="markdown_editor_preview">Preview</string>
+    <string name="markdown_editor_preview_empty">Nothing to preview yet.</string>
 </resources>

@@ -1457,4 +1457,15 @@
     <string name="palette_action_toggle_dark">Dunklen Modus umschalten</string>
     <string name="palette_action_import_pattern">Diese Anleitung importieren</string>
     <string name="palette_action_import_yarn">Als Garn importieren</string>
+    <string name="markdown_editor_formatting">Formatierung</string>
+    <string name="markdown_editor_bold">Fett</string>
+    <string name="markdown_editor_italic">Kursiv</string>
+    <string name="markdown_editor_heading">Überschrift</string>
+    <string name="markdown_editor_bullet_list">Aufzählung</string>
+    <string name="markdown_editor_numbered_list">Nummerierte Liste</string>
+    <string name="markdown_editor_link">Link</string>
+    <string name="markdown_editor_mode">Editor-Modus</string>
+    <string name="markdown_editor_raw">Roh</string>
+    <string name="markdown_editor_preview">Vorschau</string>
+    <string name="markdown_editor_preview_empty">Noch nichts zur Vorschau.</string>
 </resources>

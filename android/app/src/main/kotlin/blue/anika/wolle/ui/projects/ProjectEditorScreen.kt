@@ -79,6 +79,7 @@ import blue.anika.wolle.ui.common.FeedbackKind
 import blue.anika.wolle.ui.common.FieldLabel
 import blue.anika.wolle.ui.common.ImportAssetRow
 import blue.anika.wolle.ui.common.ImportImagePicker
+import blue.anika.wolle.ui.common.MarkdownTextField
 import blue.anika.wolle.ui.common.NewBanner
 import blue.anika.wolle.ui.common.NewBannerKind
 import blue.anika.wolle.ui.common.OwnerBanner
@@ -648,23 +649,16 @@ fun ProjectEditorScreen(
                                 )
                             }
                             // Other materials go under the linked yarns, as on the project page.
-                            OutlinedTextField(
+                            MarkdownTextField(
                                 value = form.otherMaterials,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(otherMaterials = value) }
                                 },
-                                label = {
-                                    FieldLabel(
-                                        stringResource(R.string.common_field_other_materials),
-                                        PhosphorIcons.Scissors,
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                label = stringResource(R.string.common_field_other_materials),
+                                labelIcon = PhosphorIcons.Scissors,
+                                modifier = Modifier.padding(top = 4.dp),
                                 minLines = 2,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences
-                                    ),
+                                keepLineBreaks = true,
                             )
                         }
                     }
@@ -676,26 +670,17 @@ fun ProjectEditorScreen(
                         icon = PhosphorIcons.NotePencil,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
+                            MarkdownTextField(
                                 value = form.description,
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(description = value) }
                                 },
-                                label = {
-                                    FieldLabel(
-                                        stringResource(R.string.project_detail_description_title),
-                                        PhosphorIcons.TextAlignLeft,
-                                    )
-                                },
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .focusRequester(descriptionFocus)
+                                label = stringResource(R.string.project_detail_description_title),
+                                labelIcon = PhosphorIcons.TextAlignLeft,
+                                fieldModifier =
+                                    Modifier.focusRequester(descriptionFocus)
                                         .testTag("e2e-project-editor-description"),
                                 minLines = 4,
-                                keyboardOptions =
-                                    KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences
-                                    ),
                             )
                             StickyNoteField(
                                 value = form.notes,
@@ -1015,19 +1000,12 @@ private fun StepEditorCard(
                             imeAction = ImeAction.Next,
                         ),
                 )
-                OutlinedTextField(
+                MarkdownTextField(
                     value = step.description,
                     onValueChange = onDescriptionChange,
-                    label = {
-                        FieldLabel(
-                            stringResource(R.string.project_editor_step_description_label),
-                            PhosphorIcons.TextAlignLeft,
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
+                    label = stringResource(R.string.project_editor_step_description_label),
+                    labelIcon = PhosphorIcons.TextAlignLeft,
                     minLines = 3,
-                    keyboardOptions =
-                        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 )
                 EditorPhotoStrip(
                     photos =
