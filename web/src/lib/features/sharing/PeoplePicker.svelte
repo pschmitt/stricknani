@@ -168,7 +168,7 @@
 
   .people-picker label,
   .people-picker__label {
-    font-weight: 600;
+    font-weight: var(--ui-label-font-weight);
   }
 
   .people-picker__selected {

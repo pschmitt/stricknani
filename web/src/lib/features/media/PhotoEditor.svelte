@@ -268,6 +268,7 @@
         type="button"
         class="editor-close"
         aria-label={t("Cancel", locale)}
+        title={t("Cancel", locale)}
         disabled={saving}
         onclick={close}
       >

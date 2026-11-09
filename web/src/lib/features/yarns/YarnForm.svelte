@@ -1010,6 +1010,7 @@
               >
               <textarea
                 id={fieldId("description")}
+                class="reading-input"
                 rows="4"
                 maxlength="20000"
                 value={draft.description}
@@ -1284,8 +1285,8 @@
 
   legend {
     padding: 0 0.45rem;
-    color: var(--accent-strong);
-    font-size: 1.05rem;
+    color: var(--ink);
+    font-size: 1.16rem;
     font-weight: 650;
   }
 
@@ -1299,9 +1300,8 @@
     display: grid;
     min-width: 0;
     gap: 0.35rem;
-    color: var(--ink-muted);
-    font-size: 0.86rem;
-    font-weight: 620;
+    font-size: var(--ui-label-font-size);
+    font-weight: var(--ui-label-font-weight);
   }
 
   .field b {

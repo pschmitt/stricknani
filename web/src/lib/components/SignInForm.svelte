@@ -255,8 +255,8 @@
 
   label {
     margin-top: 0.7rem;
-    font-size: 0.92rem;
-    font-weight: 800;
+    font-size: var(--ui-label-font-size);
+    font-weight: var(--ui-label-font-weight);
   }
 
   input {

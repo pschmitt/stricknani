@@ -273,7 +273,7 @@
 
   <form class="gauge-form" onsubmit={submit}>
     <fieldset class="swatch-fieldset swatch-fieldset--pattern">
-      <legend>{t("Pattern Gauge (per 10cm)", locale)}</legend>
+      <legend>{t("Pattern gauge (per 10cm)", locale)}</legend>
       <div class="swatch-row">
         <KnittedSwatch
           stitches={values.pattern_gauge_stitches ?? undefined}
@@ -347,7 +347,7 @@
     </fieldset>
 
     <fieldset class="swatch-fieldset swatch-fieldset--pattern counts-fieldset">
-      <legend>{t("Pattern Counts", locale)}</legend>
+      <legend>{t("Pattern counts", locale)}</legend>
       <div class="field-grid">
         <label for="pattern-cast-on-stitches">
           <span class="field-caption">{t("Stitches to cast on", locale)}</span>
@@ -412,7 +412,7 @@
     </fieldset>
 
     <fieldset class="swatch-fieldset swatch-fieldset--yours">
-      <legend>{t("Your Gauge (per 10cm)", locale)}</legend>
+      <legend>{t("Your gauge (per 10cm)", locale)}</legend>
       <div class="swatch-row">
         <KnittedSwatch
           stitches={values.user_gauge_stitches ?? undefined}
@@ -526,14 +526,14 @@
       aria-live="polite"
       aria-busy={calculating}
     >
-      <h2 id="results-title">{t("Calculation Results", locale)}</h2>
+      <h2 id="results-title">{t("Calculation results", locale)}</h2>
       <div class="result-grid">
         <div>
-          <p>{t("Adjusted Stitches", locale)}</p>
+          <p>{t("Adjusted stitches", locale)}</p>
           <strong>{result.adjusted_stitches}</strong>
         </div>
         <div>
-          <p>{t("Adjusted Rows", locale)}</p>
+          <p>{t("Adjusted rows", locale)}</p>
           <strong>{result.adjusted_rows ?? t("N/A", locale)}</strong>
         </div>
       </div>
@@ -652,7 +652,7 @@
     grid-template-rows: subgrid;
     min-width: 0;
     color: var(--ink);
-    font-weight: 620;
+    font-weight: var(--ui-label-font-weight);
   }
 
   .field-caption {

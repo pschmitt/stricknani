@@ -1773,9 +1773,9 @@ export async function exerciseGaugeCalculator(
   const legends = await page.locator(".gauge-form legend").allInnerTexts();
   check(
     sameJson(legends, [
-      "Pattern Gauge (per 10cm)",
-      "Pattern Counts",
-      "Your Gauge (per 10cm)",
+      "Pattern gauge (per 10cm)",
+      "Pattern counts",
+      "Your gauge (per 10cm)",
     ]),
     "the gauge fieldsets are not ordered pattern gauge, pattern counts, your gauge",
   );

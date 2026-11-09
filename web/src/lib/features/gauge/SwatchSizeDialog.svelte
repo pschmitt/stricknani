@@ -131,7 +131,7 @@
   label {
     display: grid;
     gap: 0.3rem;
-    font-weight: 620;
+    font-weight: var(--ui-label-font-weight);
   }
   .field-error {
     color: var(--danger);

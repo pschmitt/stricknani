@@ -260,7 +260,7 @@
   .ocr-panel label {
     display: grid;
     gap: 0.35rem;
-    font-weight: 600;
+    font-weight: var(--ui-label-font-weight);
   }
 
   select,
