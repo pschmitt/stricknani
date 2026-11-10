@@ -11,12 +11,10 @@ use axum::{
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
-use rand::{TryRng, rngs::SysRng};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
 use url::Url;
-use zeroize::{Zeroize, Zeroizing};
 
 use crate::{
     auth,
@@ -24,11 +22,15 @@ use crate::{
     oidc_http_state::{FlowTransport, OidcEndpoint, OidcFlowContext, OidcRuntimeError},
 };
 
+use super::oidc_common::{
+    FLOW_COOKIE, client_ip, flow_cookie, internal_error, invalid_flow, oidc_disabled,
+    random_secret, redirect_response, valid_app_return_path, valid_app_state, valid_s256_challenge,
+    validation_error,
+};
 use super::{
     ApiV2State, SESSION_SECONDS, api_error, append_set_cookie, clear_cookie, session_cookie,
 };
 
-const FLOW_COOKIE: &str = "__Host-stricknani_v2_oidc_flow";
 const MAX_TOKEN_NAME_BYTES: usize = 128;
 const DEFAULT_TOKEN_NAME: &str = "Android (Authelia)";
 
@@ -614,37 +616,6 @@ async fn exchange(
     .into_response()
 }
 
-fn valid_app_return_path(value: &str) -> bool {
-    value.len() <= 2048
-        && value.starts_with("/app/")
-        && !value.starts_with("//")
-        && !value.contains('\\')
-        && !value.contains('#')
-        && !value.bytes().any(|byte| byte.is_ascii_control())
-        && Url::parse(&format!("https://local.invalid{value}")).is_ok_and(|url| {
-            url.host_str() == Some("local.invalid")
-                && url.path().starts_with("/app/")
-                && !url.path_segments().is_some_and(|segments| {
-                    segments.into_iter().any(|part| part == "." || part == "..")
-                })
-        })
-}
-
-fn valid_app_state(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 256
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || b"-._~".contains(&byte))
-}
-
-fn valid_s256_challenge(value: &str) -> bool {
-    value.len() == 43
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
-}
-
 fn valid_verifier(value: &str) -> bool {
     (43..=128).contains(&value.len())
         && value
@@ -658,35 +629,6 @@ fn valid_app_proof(verifier: &str, expected: Option<&str>) -> bool {
     };
     let actual = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
     bool::from(actual.as_bytes().ct_eq(expected.as_bytes()))
-}
-
-fn random_secret() -> Result<Zeroizing<String>, ()> {
-    let mut bytes = [0_u8; 32];
-    SysRng.try_fill_bytes(&mut bytes).map_err(|_| ())?;
-    let encoded = URL_SAFE_NO_PAD.encode(bytes);
-    bytes.zeroize();
-    Ok(Zeroizing::new(encoded))
-}
-
-fn flow_cookie(value: &str) -> String {
-    format!("{FLOW_COOKIE}={value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600")
-}
-
-fn redirect_response(target: &str) -> Response {
-    let mut response = StatusCode::SEE_OTHER.into_response();
-    if let Ok(value) = HeaderValue::from_str(target) {
-        response.headers_mut().insert(header::LOCATION, value);
-    }
-    response.headers_mut().insert(
-        header::REFERRER_POLICY,
-        HeaderValue::from_static("no-referrer"),
-    );
-    response
-}
-
-fn client_ip(peer: Option<Extension<ConnectInfo<SocketAddr>>>) -> String {
-    peer.map(|Extension(ConnectInfo(address))| address.ip().to_string())
-        .unwrap_or_else(|| "unknown".to_owned())
 }
 
 fn runtime_error(error: OidcRuntimeError) -> Response {
@@ -715,37 +657,4 @@ fn runtime_error(error: OidcRuntimeError) -> Response {
             "Identity provider is unavailable",
         ),
     }
-}
-
-fn oidc_disabled() -> Response {
-    api_error(
-        StatusCode::NOT_FOUND,
-        "oidc_disabled",
-        "Identity provider is unavailable",
-    )
-}
-
-fn invalid_flow() -> Response {
-    api_error(
-        StatusCode::BAD_REQUEST,
-        "invalid_oidc_flow",
-        "OIDC flow is invalid or expired",
-    )
-}
-
-fn internal_error() -> Response {
-    api_error(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "internal_error",
-        "Request failed",
-    )
-}
-
-fn validation_error(field: &'static str, message: &'static str) -> Response {
-    super::api_error_fields(
-        StatusCode::UNPROCESSABLE_ENTITY,
-        "validation_error",
-        "Check the submitted fields",
-        std::collections::BTreeMap::from([(field, message)]),
-    )
 }

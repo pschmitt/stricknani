@@ -41,6 +41,7 @@ mod meta;
 mod native_auth;
 mod ocr;
 mod oidc_account;
+mod oidc_common;
 mod oidc_login;
 mod project_preview;
 mod project_timer;

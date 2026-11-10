@@ -102,24 +102,9 @@ pub(crate) async fn issue_native_proof(
     let (provider_id, identity_id, target_token_id) = action.fields();
 
     let mut tx = crate::db::begin_write(pool).await?;
-    if action.is_admin_operation() {
-        require_active_admin_tx(&mut tx, actor_user_id).await?;
-        require_active_user_tx(&mut tx, target_user_id).await?;
-    } else {
-        require_active_user_tx(&mut tx, actor_user_id).await?;
-    }
+    require_actors_tx(&mut tx, action, actor_user_id, target_user_id).await?;
     validate_action_target_tx(&mut tx, actor_user_id, target_user_id, action, now).await?;
-    let token_valid: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM api_tokens WHERE id = ? AND user_id = ? \
-         AND purpose = 'api' AND revoked_at IS NULL \
-         AND (expires_at IS NULL OR expires_at > ?))",
-    )
-    .bind(api_token_id)
-    .bind(actor_user_id)
-    .bind(now)
-    .fetch_one(&mut *tx)
-    .await?;
-    if !token_valid {
+    if !api_token_active_tx(&mut tx, api_token_id, actor_user_id, now).await? {
         return Err(OidcIdentityError::Forbidden);
     }
     sqlx::query("DELETE FROM auth_reauth_proofs WHERE consumed_at IS NOT NULL OR expires_at <= ?")
@@ -239,12 +224,7 @@ pub(crate) async fn validate_recent_auth(
 ) -> Result<(), OidcIdentityError> {
     action.ensure_target(actor_user_id, target_user_id)?;
     let mut tx = crate::db::begin_write(pool).await?;
-    if action.is_admin_operation() {
-        require_active_admin_tx(&mut tx, actor_user_id).await?;
-        require_active_user_tx(&mut tx, target_user_id).await?;
-    } else {
-        require_active_user_tx(&mut tx, actor_user_id).await?;
-    }
+    require_actors_tx(&mut tx, action, actor_user_id, target_user_id).await?;
     require_recent_auth_tx(
         &mut tx,
         reauth,
@@ -270,12 +250,7 @@ pub(crate) async fn consume_recent_auth_tx(
     now: i64,
 ) -> Result<(), OidcIdentityError> {
     action.ensure_target(actor_user_id, target_user_id)?;
-    if action.is_admin_operation() {
-        require_active_admin_tx(tx, actor_user_id).await?;
-        require_active_user_tx(tx, target_user_id).await?;
-    } else {
-        require_active_user_tx(tx, actor_user_id).await?;
-    }
+    require_actors_tx(tx, action, actor_user_id, target_user_id).await?;
     require_recent_auth_tx(tx, reauth, actor_user_id, target_user_id, action, now, true).await
 }
 
@@ -331,16 +306,7 @@ pub(crate) async fn list_identities(
 ) -> Result<Vec<IdentitySummary>, OidcIdentityError> {
     let mut tx = crate::db::begin_write(pool).await?;
     require_active_user_tx(&mut tx, user_id).await?;
-    let rows = sqlx::query(
-        "SELECT id, provider_id, issuer, subject, verified_email, linked_at \
-         FROM oidc_identities WHERE user_id = ? ORDER BY linked_at, id",
-    )
-    .bind(user_id)
-    .fetch_all(&mut *tx)
-    .await?;
-    let result = rows.into_iter().map(decode_summary).collect();
-    tx.commit().await?;
-    result
+    list_identities_tx(tx, user_id).await
 }
 
 /// List identities for an active target account after checking the active
@@ -353,11 +319,18 @@ pub(crate) async fn admin_list_identities(
     let mut tx = crate::db::begin_write(pool).await?;
     require_active_admin_tx(&mut tx, actor_user_id).await?;
     require_active_user_tx(&mut tx, target_user_id).await?;
+    list_identities_tx(tx, target_user_id).await
+}
+
+async fn list_identities_tx(
+    mut tx: Transaction<'_, Sqlite>,
+    user_id: i64,
+) -> Result<Vec<IdentitySummary>, OidcIdentityError> {
     let rows = sqlx::query(
         "SELECT id, provider_id, issuer, subject, verified_email, linked_at \
          FROM oidc_identities WHERE user_id = ? ORDER BY linked_at, id",
     )
-    .bind(target_user_id)
+    .bind(user_id)
     .fetch_all(&mut *tx)
     .await?;
     let result = rows.into_iter().map(decode_summary).collect();
@@ -465,26 +438,16 @@ pub(crate) async fn unlink_identity(
         true,
     )
     .await?;
-    let identity = get_identity_tx(&mut tx, identity_id, user_id).await?;
-    ensure_login_method_remains_tx(&mut tx, user_id, identity_id, enabled_provider_ids).await?;
-    revoke_identity_tokens_tx(&mut tx, identity_id, now).await?;
-    sqlx::query("DELETE FROM oidc_identities WHERE id = ? AND user_id = ?")
-        .bind(identity_id)
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
-    insert_auth_audit(
-        &mut tx,
-        AuthAuditAction::IdentityUnlinked,
-        Some(user_id),
+    delete_identity_tx(
+        tx,
         user_id,
         identity_id,
-        &identity.provider_id,
+        enabled_provider_ids,
+        AuthAuditAction::IdentityUnlinked,
+        user_id,
         now,
     )
-    .await?;
-    tx.commit().await?;
-    Ok(())
+    .await
 }
 
 /// Remove an identity from a target account after rechecking active
@@ -514,22 +477,43 @@ pub(crate) async fn admin_unlink_identity(
         true,
     )
     .await?;
-    let identity = get_identity_tx(&mut tx, identity_id, target_user_id).await?;
-    ensure_login_method_remains_tx(&mut tx, target_user_id, identity_id, enabled_provider_ids)
+    delete_identity_tx(
+        tx,
+        target_user_id,
+        identity_id,
+        enabled_provider_ids,
+        AuthAuditAction::IdentityAdminUnlinked,
+        actor_user_id,
+        now,
+    )
+    .await
+}
+
+async fn delete_identity_tx(
+    mut tx: Transaction<'_, Sqlite>,
+    owner_user_id: i64,
+    identity_id: i64,
+    enabled_provider_ids: &[String],
+    audit: AuthAuditAction,
+    actor_user_id: i64,
+    now: i64,
+) -> Result<(), OidcIdentityError> {
+    let provider_id = get_identity_tx(&mut tx, identity_id, owner_user_id).await?;
+    ensure_login_method_remains_tx(&mut tx, owner_user_id, identity_id, enabled_provider_ids)
         .await?;
     revoke_identity_tokens_tx(&mut tx, identity_id, now).await?;
     sqlx::query("DELETE FROM oidc_identities WHERE id = ? AND user_id = ?")
         .bind(identity_id)
-        .bind(target_user_id)
+        .bind(owner_user_id)
         .execute(&mut *tx)
         .await?;
     insert_auth_audit(
         &mut tx,
-        AuthAuditAction::IdentityAdminUnlinked,
+        audit,
         Some(actor_user_id),
-        target_user_id,
+        owner_user_id,
         identity_id,
-        &identity.provider_id,
+        &provider_id,
         now,
     )
     .await?;
@@ -748,10 +732,28 @@ async fn require_active_user_tx(
     tx: &mut Transaction<'_, Sqlite>,
     user_id: i64,
 ) -> Result<(), OidcIdentityError> {
-    let result = sqlx::query("UPDATE users SET id = id WHERE id = ? AND active = 1")
-        .bind(user_id)
-        .execute(&mut **tx)
-        .await?;
+    require_active_tx(tx, user_id, false).await
+}
+
+async fn require_active_admin_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    user_id: i64,
+) -> Result<(), OidcIdentityError> {
+    require_active_tx(tx, user_id, true).await
+}
+
+async fn require_active_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    user_id: i64,
+    admin: bool,
+) -> Result<(), OidcIdentityError> {
+    let result = sqlx::query(
+        "UPDATE users SET id = id WHERE id = ? AND active = 1 AND (is_admin = 1 OR ? = 0)",
+    )
+    .bind(user_id)
+    .bind(admin)
+    .execute(&mut **tx)
+    .await?;
     if result.rows_affected() == 1 {
         Ok(())
     } else {
@@ -759,20 +761,39 @@ async fn require_active_user_tx(
     }
 }
 
-async fn require_active_admin_tx(
+/// Lock the acting account (an administrator for admin operations) and, for
+/// admin operations, the target account.
+async fn require_actors_tx(
     tx: &mut Transaction<'_, Sqlite>,
-    user_id: i64,
+    action: RecentAction<'_>,
+    actor_user_id: i64,
+    target_user_id: i64,
 ) -> Result<(), OidcIdentityError> {
-    let result =
-        sqlx::query("UPDATE users SET id = id WHERE id = ? AND active = 1 AND is_admin = 1")
-            .bind(user_id)
-            .execute(&mut **tx)
-            .await?;
-    if result.rows_affected() == 1 {
-        Ok(())
+    if action.is_admin_operation() {
+        require_active_admin_tx(tx, actor_user_id).await?;
+        require_active_user_tx(tx, target_user_id).await?;
     } else {
-        Err(OidcIdentityError::Forbidden)
+        require_active_user_tx(tx, actor_user_id).await?;
     }
+    Ok(())
+}
+
+async fn api_token_active_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    token_id: i64,
+    user_id: i64,
+    now: i64,
+) -> Result<bool, OidcIdentityError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM api_tokens WHERE id = ? AND user_id = ? \
+         AND purpose = 'api' AND revoked_at IS NULL \
+         AND (expires_at IS NULL OR expires_at > ?))",
+    )
+    .bind(token_id)
+    .bind(user_id)
+    .bind(now)
+    .fetch_one(&mut **tx)
+    .await?)
 }
 
 async fn require_recent_auth_tx(
@@ -809,17 +830,7 @@ async fn require_recent_auth_tx(
             token_id,
             proof_hash,
         } => {
-            let token_valid: bool = sqlx::query_scalar(
-                "SELECT EXISTS(SELECT 1 FROM api_tokens WHERE id = ? AND user_id = ? \
-                 AND purpose = 'api' AND revoked_at IS NULL \
-                 AND (expires_at IS NULL OR expires_at > ?))",
-            )
-            .bind(token_id)
-            .bind(actor_user_id)
-            .bind(now)
-            .fetch_one(&mut **tx)
-            .await?;
-            if !token_valid {
+            if !api_token_active_tx(tx, token_id, actor_user_id, now).await? {
                 return Err(OidcIdentityError::RecentAuthenticationRequired);
             }
             let (provider_id, identity_id, target_token_id) = action.fields();
@@ -892,16 +903,7 @@ async fn validate_action_target_tx(
             .await?
         }
         RecentAction::RevokeApiToken { token_id } => {
-            sqlx::query_scalar(
-                "SELECT EXISTS(SELECT 1 FROM api_tokens WHERE id = ? AND user_id = ? \
-                 AND purpose = 'api' AND revoked_at IS NULL \
-                 AND (expires_at IS NULL OR expires_at > ?))",
-            )
-            .bind(token_id)
-            .bind(actor_user_id)
-            .bind(now)
-            .fetch_one(&mut **tx)
-            .await?
+            api_token_active_tx(tx, token_id, actor_user_id, now).await?
         }
         RecentAction::LinkIdentity { .. }
         | RecentAction::ChangePassword
@@ -954,15 +956,13 @@ async fn get_identity_tx(
     tx: &mut Transaction<'_, Sqlite>,
     identity_id: i64,
     user_id: i64,
-) -> Result<StoredIdentity, OidcIdentityError> {
+) -> Result<String, OidcIdentityError> {
     sqlx::query("SELECT provider_id FROM oidc_identities WHERE id = ? AND user_id = ?")
         .bind(identity_id)
         .bind(user_id)
         .fetch_optional(&mut **tx)
         .await?
-        .map(|row| StoredIdentity {
-            provider_id: row.get("provider_id"),
-        })
+        .map(|row| row.get("provider_id"))
         .ok_or(OidcIdentityError::NotFound)
 }
 
@@ -1063,11 +1063,6 @@ fn subject_hint(issuer: &str, subject: &str) -> String {
 
 fn is_unique_violation(error: &sqlx::Error) -> bool {
     matches!(error, sqlx::Error::Database(db_error) if db_error.is_unique_violation())
-}
-
-#[derive(Debug)]
-struct StoredIdentity {
-    provider_id: String,
 }
 
 #[cfg(test)]
