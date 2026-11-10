@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -33,7 +34,7 @@ fun SourceLinkRow(
     icon: ImageVector,
     label: String,
     url: String,
-    trailing: (@Composable () -> Unit)? = null,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     Row(
@@ -61,9 +62,16 @@ fun SourceLinkRow(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
             textDecoration = TextDecoration.Underline,
-            modifier = if (trailing != null) Modifier.weight(1f) else Modifier,
         )
-        trailing?.invoke()
+        if (trailing != null) {
+            // The rest of the line: status and action, after the label.
+            Row(
+                Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                content = trailing,
+            )
+        }
     }
 }
 

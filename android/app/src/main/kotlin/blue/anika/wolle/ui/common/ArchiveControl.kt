@@ -3,12 +3,17 @@ package blue.anika.wolle.ui.common
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,8 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -245,61 +252,65 @@ fun ArchiveControl(
         modifier = modifier.fillMaxWidth().padding(top = 4.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        if (archivedUrl != null) {
-            // The archived copy and its action on one line; the status below the link.
-            SourceLinkRow(
-                PhosphorIcons.ClockCounterClockwise,
-                archiveLabel,
-                archivedUrl,
-                trailing =
-                    action?.let { current ->
-                        {
-                            val label = stringResource(current.label)
-                            IconButton(onClick = current.run) {
-                                Icon(Icons.Filled.Refresh, contentDescription = label)
-                            }
-                        }
-                    },
-            )
-            if (state.loaded && state.state != null && state.state != "archived") {
+        val showStatus = archivedUrl == null || (state.loaded && state.state != "archived")
+        val statusLabel = stringResource(statusText(state.state))
+        val progressLabel = progress?.let { stringResource(it) }
+        // One line: the archived copy, the status (cut short when tight) and the action, or a
+        // small spinner while the status is checked.
+        val rest: @Composable RowScope.() -> Unit = {
+            if (showStatus) {
                 Text(
-                    stringResource(statusText(state.state)),
+                    statusLabel,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier =
-                        Modifier.padding(start = 48.dp).semantics {
+                        Modifier.weight(1f).semantics {
                             liveRegion = LiveRegionMode.Polite
+                            contentDescription = statusLabel
                         },
                 )
+            } else {
+                Spacer(Modifier.weight(1f))
             }
-        } else {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(statusText(state.state)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                )
-                action?.let {
-                    OutlinedButton(
-                        onClick = it.run,
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                    ) {
-                        Text(stringResource(it.label))
+            when {
+                progressLabel != null ->
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier =
+                            Modifier.size(18.dp).semantics { contentDescription = progressLabel },
+                    )
+                action != null -> {
+                    val label = stringResource(action.label)
+                    if (archivedUrl != null) {
+                        IconButton(onClick = action.run) {
+                            Icon(Icons.Filled.Refresh, contentDescription = label)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = action.run,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        ) {
+                            Text(label)
+                        }
                     }
                 }
             }
         }
-        progress?.let {
-            Text(
-                stringResource(it),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        if (archivedUrl != null) {
+            SourceLinkRow(
+                PhosphorIcons.ClockCounterClockwise,
+                archiveLabel,
+                archivedUrl,
+                trailing = rest,
+            )
+        } else {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                content = rest,
             )
         }
         state.error?.let {

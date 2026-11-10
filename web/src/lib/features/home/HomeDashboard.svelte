@@ -146,6 +146,11 @@
       <h1 id="home-title" class="home-greeting__title">{greeting}</h1>
       <p>{t("What are we knitting today?", locale)}</p>
     </div>
+    {#if userId !== null}
+      <div class="home-greeting__menu">
+        <ScopeFilter {locale} variant="menu" />
+      </div>
+    {/if}
   </header>
 
   {#if session.status === "loading"}
@@ -164,8 +169,6 @@
       </a>
     </div>
   {:else}
-    <ScopeFilter {locale} />
-
     <ImportDraftCards target="all" />
 
     <!-- 1. Pick up the project worked on last. -->
@@ -423,6 +426,11 @@
     align-items: center;
     gap: 0.9rem;
   }
+  .home-greeting__menu {
+    align-self: flex-start;
+    margin-inline-start: auto;
+  }
+
   .home-greeting__mascot {
     display: inline-flex;
     flex: none;

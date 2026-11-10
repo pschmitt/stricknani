@@ -84,6 +84,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.update.canInstallInApp
+import blue.anika.wolle.ui.common.EveryoneMenu
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.MdiIcons
@@ -270,6 +271,7 @@ fun HomeScreen(
                         Greeting(
                             padStatusBar = !signedOut,
                             status = subtitle,
+                            signedOut = signedOut,
                         )
                     }
                     availableUpdate?.let { update ->
@@ -489,6 +491,7 @@ private val BAR_MASCOT_GAP = 8.dp
 private fun Greeting(
     padStatusBar: Boolean = true,
     status: GreetingStatus = GreetingStatus.Question,
+    signedOut: Boolean = false,
 ) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     // One pick per screen entry: it survives recomposition, theme switches and rotation.
@@ -544,6 +547,8 @@ private fun Greeting(
                 )
             }
         }
+        // Administrators: Mine / All for the home lists, like the web's header menu.
+        if (!signedOut) EveryoneMenu(Modifier.align(Alignment.Top))
     }
 }
 

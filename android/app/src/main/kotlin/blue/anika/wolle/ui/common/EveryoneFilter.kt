@@ -1,12 +1,30 @@
 package blue.anika.wolle.ui.common
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -86,4 +104,48 @@ fun MineFilterChip(
         label = { Text(stringResource(R.string.owner_filter_mine)) },
         modifier = modifier.testTag("everyone-filter-mine"),
     )
+}
+
+/**
+ * The administrator's Mine / All choice as a ⋮ menu (the home page's greeting, like the web's
+ * header). Not shown for anybody else.
+ */
+@Composable
+fun EveryoneMenu(modifier: Modifier = Modifier) {
+    val (state, select) = rememberEveryoneFilter()
+    if (!state.available) return
+    var open by remember { mutableStateOf(false) }
+    Box(modifier) {
+        IconButton(onClick = { open = true }, modifier = Modifier.testTag("everyone-menu")) {
+            Icon(
+                Icons.Filled.MoreVert,
+                contentDescription = stringResource(R.string.owner_filter_menu),
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            listOf(
+                    false to stringResource(R.string.owner_filter_mine),
+                    true to stringResource(R.string.list_filter_all),
+                )
+                .forEach { (everyone, label) ->
+                    val checked = state.enabled == everyone
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        leadingIcon = {
+                            if (checked) Icon(Icons.Filled.Check, contentDescription = null)
+                            else Spacer(Modifier.size(24.dp))
+                        },
+                        onClick = {
+                            open = false
+                            select(everyone)
+                        },
+                        modifier =
+                            Modifier.semantics {
+                                role = Role.RadioButton
+                                selected = checked
+                            },
+                    )
+                }
+        }
+    }
 }

@@ -417,6 +417,13 @@
     );
   }
 
+  // The full status for the tooltip, with the note that checks pause in the background.
+  const statusTitle = $derived(
+    archiveActive && !canManuallyCheckArchive(status, pollingExhausted)
+      ? `${statusText(status)} ${t("Status checks pause in the background.", locale)}`
+      : statusText(status),
+  );
+
   function statusText(value: ArchiveStatus | null): string {
     switch (value?.state) {
       case "pending":
@@ -460,14 +467,28 @@
     class:archive-control--linked={archiveHref !== null}
     aria-busy={busy}
   >
-    <!-- One line: the archived copy (or the status) and what can be done about it. -->
+    <!-- One line: the archived copy, the status (cut short when tight; full text on hover and for
+         screen readers) and the action, or a small spinner while the status is checked. -->
     <div class="archive-row">
       {#if archiveHref}
         <SourceLink href={archiveHref} icon="history" label={archiveLabel} />
-      {:else}
-        <p class="archive-status" aria-live="polite">{statusText(status)}</p>
       {/if}
-      {#if errorMessage && !busy}
+      {#if !archiveHref || (status !== null && status.state !== "archived")}
+        <p class="archive-status" aria-live="polite" title={statusTitle}>
+          {statusText(status)}
+        </p>
+      {:else}
+        <span class="archive-fill"></span>
+      {/if}
+      {#if busy || (!loaded && readStateEnabled)}
+        <span
+          class="spinner archive-spinner"
+          role="status"
+          aria-label={busy
+            ? t("Checking archive status…", locale)
+            : t("Loading archive status…", locale)}
+        ></span>
+      {:else if errorMessage}
         {@render action(
           loaded
             ? t("Try again", locale)
@@ -475,8 +496,6 @@
           "refresh",
           () => void retryAfterError(),
         )}
-      {:else if busy || (!loaded && readStateEnabled)}
-        <!-- progress is shown below -->
       {:else if readStateEnabled && canManuallyCheckArchive(status, pollingExhausted)}
         {@render action(
           t("Check archive status again", locale),
@@ -493,20 +512,6 @@
         )}
       {/if}
     </div>
-    {#if archiveHref && status !== null && status.state !== "archived"}
-      <p class="archive-status archive-caption" aria-live="polite">
-        {statusText(status)}
-      </p>
-    {/if}
-    {#if busy}
-      <p class="archive-progress">{t("Checking archive status…", locale)}</p>
-    {:else if !loaded && readStateEnabled}
-      <p class="archive-progress">{t("Loading archive status…", locale)}</p>
-    {:else if archiveActive && !canManuallyCheckArchive(status, pollingExhausted)}
-      <p class="archive-progress">
-        {t("Status checks pause in the background.", locale)}
-      </p>
-    {/if}
     {#if errorMessage}<p class="archive-error" role="alert">
         {errorMessage}
       </p>{/if}
@@ -524,36 +529,38 @@
 
   .archive-row {
     display: flex;
-    flex-wrap: wrap;
+    min-width: 0;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.4rem 0.75rem;
+    gap: 0.6rem;
   }
 
-  .archive-control--linked .archive-row {
-    flex-wrap: nowrap;
+  .archive-row > :global(.source-link) {
+    flex: none;
   }
 
-  /* Under the link text, past its icon. */
-  .archive-caption {
-    margin-top: -0.4rem;
-    padding-inline-start: 2.35rem;
-    font-size: 0.78rem;
+  .archive-fill {
+    flex: 1 1 auto;
+  }
+
+  .archive-spinner {
+    width: 1.25rem;
+    flex: none;
   }
 
   .archive-status,
-  .archive-progress,
   .archive-error {
     margin: 0;
     font-size: 0.84rem;
   }
 
   .archive-status {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
     color: var(--ink-muted);
-  }
-
-  .archive-progress {
-    color: var(--ink-muted);
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .archive-error {
