@@ -628,7 +628,7 @@ msgstr ""
 msgid "An admin updated {name}"
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:434
+#: web/src/lib/features/media/ArchiveControl.svelte:448
 msgid "An archived copy is ready."
 msgstr ""
 
@@ -673,7 +673,7 @@ msgstr ""
 msgid "Archive status returned an unreadable response."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:509
+#: web/src/lib/features/media/ArchiveControl.svelte:528
 msgid "Archive this source"
 msgstr ""
 
@@ -982,8 +982,8 @@ msgstr ""
 msgid "Changing your password signs out this browser and other sessions."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:495
-#: web/src/lib/features/media/ArchiveControl.svelte:501
+#: web/src/lib/features/media/ArchiveControl.svelte:514
+#: web/src/lib/features/media/ArchiveControl.svelte:520
 msgid "Check archive status again"
 msgstr ""
 
@@ -1003,7 +1003,7 @@ msgstr ""
 msgid "Check the pockets of your other cardigan."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:488
+#: web/src/lib/features/media/ArchiveControl.svelte:507
 msgid "Checking archive status…"
 msgstr ""
 
@@ -1800,6 +1800,10 @@ msgid ""
 "attached."
 msgstr ""
 
+#: web/src/lib/features/media/ArchiveControl.svelte:437
+msgid "Failed"
+msgstr ""
+
 #: web/src/lib/features/home/HomeDashboard.svelte:283
 msgid "Favorite projects"
 msgstr ""
@@ -2224,6 +2228,10 @@ msgstr ""
 msgid "Imports are turned off on this server."
 msgstr ""
 
+#: web/src/lib/features/media/ArchiveControl.svelte:433
+msgid "In progress"
+msgstr ""
+
 #: web/src/lib/error-copy.ts:32
 msgid "In the great ball of yarn that is the internet, this is a loose end."
 msgstr ""
@@ -2416,6 +2424,10 @@ msgstr ""
 msgid "Link address"
 msgstr ""
 
+#: web/src/lib/features/media/ArchiveControl.svelte:435
+msgid "Link changed"
+msgstr ""
+
 #: web/src/lib/components/ShareMenuItem.svelte:35
 #: web/src/lib/features/sharing/ShareDialog.svelte:191
 msgid "Link copied."
@@ -2506,7 +2518,7 @@ msgstr ""
 msgid "Loading account details…"
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:489
+#: web/src/lib/features/media/ArchiveControl.svelte:508
 msgid "Loading archive status…"
 msgstr ""
 
@@ -3599,6 +3611,10 @@ msgstr ""
 msgid "Questions about the software itself are welcome on the"
 msgstr ""
 
+#: web/src/lib/features/media/ArchiveControl.svelte:431
+msgid "Queued"
+msgstr ""
+
 #: web/src/lib/features/media/PhotoEditor.svelte:434
 msgid "Read aloud by screen readers and shown when the photo cannot load."
 msgstr ""
@@ -3837,7 +3853,7 @@ msgid ""
 "error tracker directly."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:508
+#: web/src/lib/features/media/ArchiveControl.svelte:527
 msgid "Request a new archive"
 msgstr ""
 
@@ -4001,7 +4017,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:440
+#: web/src/lib/features/media/ArchiveControl.svelte:454
 msgid "Save a copy of the source in the web archive."
 msgstr ""
 
@@ -4807,15 +4823,15 @@ msgstr ""
 msgid "The archive completed, but the updated details could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:436
+#: web/src/lib/features/media/ArchiveControl.svelte:450
 msgid "The archive could not be completed."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:430
+#: web/src/lib/features/media/ArchiveControl.svelte:444
 msgid "The archive request is waiting to start."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:432
+#: web/src/lib/features/media/ArchiveControl.svelte:446
 msgid "The archive service is working on this source."
 msgstr ""
 
@@ -5101,7 +5117,7 @@ msgstr ""
 msgid "The source could not be downloaded. Check the link and try again."
 msgstr ""
 
-#: web/src/lib/features/media/ArchiveControl.svelte:438
+#: web/src/lib/features/media/ArchiveControl.svelte:452
 msgid "The source link changed; request a new archive."
 msgstr ""
 
@@ -5578,7 +5594,7 @@ msgstr ""
 #: web/src/lib/features/home/ActivityFeed.svelte:228
 #: web/src/lib/features/home/HomeDashboard.svelte:199
 #: web/src/lib/features/home/HomeDashboard.svelte:288
-#: web/src/lib/features/media/ArchiveControl.svelte:494
+#: web/src/lib/features/media/ArchiveControl.svelte:513
 #: web/src/lib/features/projects/ProjectLibrary.svelte:323
 #: web/src/lib/features/projects/ProjectReader.svelte:778
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119

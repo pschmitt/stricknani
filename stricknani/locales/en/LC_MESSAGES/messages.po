@@ -652,7 +652,7 @@ msgstr "An admin removed files from {name}"
 msgid "An admin updated {name}"
 msgstr "An admin updated {name}"
 
-#: web/src/lib/features/media/ArchiveControl.svelte:434
+#: web/src/lib/features/media/ArchiveControl.svelte:448
 msgid "An archived copy is ready."
 msgstr "An archived copy is ready."
 
@@ -697,7 +697,7 @@ msgstr "Archive status could not be reached. Check your connection and try again
 msgid "Archive status returned an unreadable response."
 msgstr "Archive status returned an unreadable response."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:509
+#: web/src/lib/features/media/ArchiveControl.svelte:528
 msgid "Archive this source"
 msgstr "Archive this source"
 
@@ -1017,8 +1017,8 @@ msgstr "Changing password…"
 msgid "Changing your password signs out this browser and other sessions."
 msgstr "Changing your password signs out this browser and other sessions."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:495
-#: web/src/lib/features/media/ArchiveControl.svelte:501
+#: web/src/lib/features/media/ArchiveControl.svelte:514
+#: web/src/lib/features/media/ArchiveControl.svelte:520
 msgid "Check archive status again"
 msgstr "Check archive status again"
 
@@ -1038,7 +1038,7 @@ msgstr "Check the highlighted fields and try again."
 msgid "Check the pockets of your other cardigan."
 msgstr "Check the pockets of your other cardigan."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:488
+#: web/src/lib/features/media/ArchiveControl.svelte:507
 msgid "Checking archive status…"
 msgstr "Checking archive status…"
 
@@ -1855,6 +1855,10 @@ msgstr ""
 "External images are disabled. Links will be kept in notes and never "
 "attached."
 
+#: web/src/lib/features/media/ArchiveControl.svelte:437
+msgid "Failed"
+msgstr "Failed"
+
 #: web/src/lib/features/home/HomeDashboard.svelte:283
 msgid "Favorite projects"
 msgstr "Favorite projects"
@@ -2300,6 +2304,10 @@ msgstr "Importing…"
 msgid "Imports are turned off on this server."
 msgstr "Imports are turned off on this server."
 
+#: web/src/lib/features/media/ArchiveControl.svelte:433
+msgid "In progress"
+msgstr "In progress"
+
 #: web/src/lib/error-copy.ts:32
 msgid "In the great ball of yarn that is the internet, this is a loose end."
 msgstr "In the great ball of yarn that is the internet, this is a loose end."
@@ -2499,6 +2507,10 @@ msgstr "Like Stricknani? Support its development."
 msgid "Link address"
 msgstr "Link address"
 
+#: web/src/lib/features/media/ArchiveControl.svelte:435
+msgid "Link changed"
+msgstr "Link changed"
+
 #: web/src/lib/components/ShareMenuItem.svelte:35
 #: web/src/lib/features/sharing/ShareDialog.svelte:191
 msgid "Link copied."
@@ -2596,7 +2608,7 @@ msgstr "Loading API tokens…"
 msgid "Loading account details…"
 msgstr "Loading account details…"
 
-#: web/src/lib/features/media/ArchiveControl.svelte:489
+#: web/src/lib/features/media/ArchiveControl.svelte:508
 msgid "Loading archive status…"
 msgstr "Loading archive status…"
 
@@ -3734,6 +3746,10 @@ msgstr "QR code to connect the Stricknani app"
 msgid "Questions about the software itself are welcome on the"
 msgstr "Questions about the software itself are welcome on the"
 
+#: web/src/lib/features/media/ArchiveControl.svelte:431
+msgid "Queued"
+msgstr "Queued"
+
 #: web/src/lib/features/media/PhotoEditor.svelte:434
 msgid "Read aloud by screen readers and shown when the photo cannot load."
 msgstr "Read aloud by screen readers and shown when the photo cannot load."
@@ -3977,7 +3993,7 @@ msgstr ""
 "Stricknani server. Your browser and the Android app never contact the "
 "error tracker directly."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:508
+#: web/src/lib/features/media/ArchiveControl.svelte:527
 msgid "Request a new archive"
 msgstr "Request a new archive"
 
@@ -4141,7 +4157,7 @@ msgstr "Running reminder"
 msgid "Save"
 msgstr "Save"
 
-#: web/src/lib/features/media/ArchiveControl.svelte:440
+#: web/src/lib/features/media/ArchiveControl.svelte:454
 msgid "Save a copy of the source in the web archive."
 msgstr "Save a copy of the source in the web archive."
 
@@ -4999,15 +5015,15 @@ msgstr ""
 msgid "The archive completed, but the updated details could not be loaded."
 msgstr "The archive completed, but the updated details could not be loaded."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:436
+#: web/src/lib/features/media/ArchiveControl.svelte:450
 msgid "The archive could not be completed."
 msgstr "The archive could not be completed."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:430
+#: web/src/lib/features/media/ArchiveControl.svelte:444
 msgid "The archive request is waiting to start."
 msgstr "The archive request is waiting to start."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:432
+#: web/src/lib/features/media/ArchiveControl.svelte:446
 msgid "The archive service is working on this source."
 msgstr "The archive service is working on this source."
 
@@ -5304,7 +5320,7 @@ msgstr "The share could not be removed."
 msgid "The source could not be downloaded. Check the link and try again."
 msgstr "The source could not be downloaded. Check the link and try again."
 
-#: web/src/lib/features/media/ArchiveControl.svelte:438
+#: web/src/lib/features/media/ArchiveControl.svelte:452
 msgid "The source link changed; request a new archive."
 msgstr "The source link changed; request a new archive."
 
@@ -5814,7 +5830,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/home/ActivityFeed.svelte:228
 #: web/src/lib/features/home/HomeDashboard.svelte:199
 #: web/src/lib/features/home/HomeDashboard.svelte:288
-#: web/src/lib/features/media/ArchiveControl.svelte:494
+#: web/src/lib/features/media/ArchiveControl.svelte:513
 #: web/src/lib/features/projects/ProjectLibrary.svelte:323
 #: web/src/lib/features/projects/ProjectReader.svelte:778
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119

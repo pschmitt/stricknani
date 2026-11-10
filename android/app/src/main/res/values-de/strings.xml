@@ -181,6 +181,10 @@
     <string name="archive_status_failed">Die Archivierung konnte nicht abgeschlossen werden.</string>
     <string name="archive_status_superseded">Der Quelllink wurde geändert. Fordere eine neue Archivierung an.</string>
     <string name="archive_status_none">Eine Kopie der Quelle im Webarchiv speichern.</string>
+    <string name="archive_short_pending">Wartet</string>
+    <string name="archive_short_running">Läuft</string>
+    <string name="archive_short_failed">Fehlgeschlagen</string>
+    <string name="archive_short_superseded">Link geändert</string>
     <string name="archive_rate_limited">Zu viele Archivierungsanfragen. Versuche es später erneut.</string>
     <string name="archive_unreachable">Der Archivstatus ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="archive_try_again">Erneut versuchen</string>
@@ -243,14 +247,11 @@
     <string name="project_attachment_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
     <string name="projects_list_search_placeholder">Deine Projekte durchsuchen</string>
     <string name="list_filter_all">Alle</string>
-    <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
-    <string name="projects_list_more_actions_description">Weitere Optionen</string>
     <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>
     <string name="projects_list_empty_subtitle">Beginne mit einem Projekt und bewahre Anleitung und Fortschritt zusammen auf.</string>
     <string name="editor_category_none">Keine Kategorie</string>
     <string name="editor_category_new">Neue Kategorie…</string>
     <string name="projects_list_add_category_dialog_title">Neue Kategorie</string>
-    <string name="projects_list_add_category_name_placeholder">z. B. Pullover</string>
 
     <!-- Kategorien -->
     <string name="categories_title">Kategorien</string>
@@ -793,7 +794,6 @@
     <string name="error_delete_failed">Löschen fehlgeschlagen - versuche es erneut.</string>
     <string name="error_attachment_delete_failed">Der Anhang konnte nicht gelöscht werden - versuche es erneut.</string>
     <string name="error_name_required">Name ist erforderlich</string>
-    <string name="error_create_category_failed">Kategorie \'%1$s\' konnte nicht erstellt werden.</string>
     <string name="error_update_category_failed">Kategorie \'%1$s\' konnte nicht umbenannt werden.</string>
     <string name="error_delete_category_failed">Kategorie \'%1$s\' konnte nicht gelöscht werden.</string>
 
@@ -801,7 +801,6 @@
     <string name="mutation_favorite_added">Zu Favoriten hinzugefügt.</string>
     <string name="mutation_favorite_removed">Aus Favoriten entfernt.</string>
     <string name="mutation_favorite_offline">Du bist offline - versuch es gleich nochmal.</string>
-    <string name="mutation_category_created">Kategorie „%1$s“ erstellt.</string>
     <string name="mutation_category_renamed">Kategorie „%1$s“ in „%2$s“ umbenannt.</string>
     <string name="mutation_category_deleted">Kategorie „%1$s“ gelöscht.</string>
     <string name="mutation_project_created_queued">Projekt erstellt.</string>

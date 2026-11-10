@@ -182,6 +182,10 @@
     <string name="archive_status_failed">The archive could not be completed.</string>
     <string name="archive_status_superseded">The source link changed; request a new archive.</string>
     <string name="archive_status_none">Save a copy of the source in the web archive.</string>
+    <string name="archive_short_pending">Queued</string>
+    <string name="archive_short_running">In progress</string>
+    <string name="archive_short_failed">Failed</string>
+    <string name="archive_short_superseded">Link changed</string>
     <string name="archive_rate_limited">Too many archive requests. Try again later.</string>
     <string name="archive_unreachable">Archive status could not be reached. Check your connection and try again.</string>
     <string name="archive_try_again">Try again</string>
@@ -244,14 +248,11 @@
     <string name="project_attachment_delete_dialog_text">This cannot be undone.</string>
     <string name="projects_list_search_placeholder">Search your projects</string>
     <string name="list_filter_all">All</string>
-    <string name="projects_list_add_category_description">Add category</string>
-    <string name="projects_list_more_actions_description">More options</string>
     <string name="projects_list_empty_title">Nothing on the needles yet</string>
     <string name="projects_list_empty_subtitle">Start with one project to keep its pattern and progress together.</string>
     <string name="editor_category_none">No category</string>
     <string name="editor_category_new">New category…</string>
     <string name="projects_list_add_category_dialog_title">New category</string>
-    <string name="projects_list_add_category_name_placeholder">e.g. Sweaters</string>
 
     <!-- Categories -->
     <string name="categories_title">Categories</string>
@@ -794,7 +795,6 @@
     <string name="error_delete_failed">Couldn\'t delete - try again.</string>
     <string name="error_attachment_delete_failed">Couldn\'t delete the attachment - try again.</string>
     <string name="error_name_required">Name is required</string>
-    <string name="error_create_category_failed">Couldn\'t create category \'%1$s\'.</string>
     <string name="error_update_category_failed">Couldn\'t rename category \'%1$s\'.</string>
     <string name="error_delete_category_failed">Couldn\'t delete category \'%1$s\'.</string>
 
@@ -802,7 +802,6 @@
     <string name="mutation_favorite_added">Added to favorites.</string>
     <string name="mutation_favorite_removed">Removed from favorites.</string>
     <string name="mutation_favorite_offline">You’re offline - try favouriting again in a moment.</string>
-    <string name="mutation_category_created">Category “%1$s” created.</string>
     <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
     <string name="mutation_category_deleted">Category “%1$s” deleted.</string>
     <string name="mutation_project_created_queued">Project created.</string>

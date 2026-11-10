@@ -254,13 +254,16 @@ fun ArchiveControl(
     ) {
         val showStatus = archivedUrl == null || (state.loaded && state.state != "archived")
         val statusLabel = stringResource(statusText(state.state))
+        // Beside the archived copy there is room for a word, not a sentence.
+        val shownStatus =
+            if (archivedUrl != null) stringResource(shortStatusText(state.state)) else statusLabel
         val progressLabel = progress?.let { stringResource(it) }
         // One line: the archived copy, the status (cut short when tight) and the action, or a
         // small spinner while the status is checked.
         val rest: @Composable RowScope.() -> Unit = {
             if (showStatus) {
                 Text(
-                    statusLabel,
+                    shownStatus,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -322,6 +325,15 @@ fun ArchiveControl(
         }
     }
 }
+
+@StringRes
+private fun shortStatusText(state: String?): Int =
+    when (state) {
+        "pending" -> R.string.archive_short_pending
+        "running" -> R.string.archive_short_running
+        "superseded" -> R.string.archive_short_superseded
+        else -> R.string.archive_short_failed
+    }
 
 @StringRes
 private fun statusText(state: String?): Int =

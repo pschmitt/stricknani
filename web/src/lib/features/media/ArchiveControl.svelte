@@ -424,6 +424,20 @@
       : statusText(status),
   );
 
+  // Beside the archived copy there is room for a word, not a sentence.
+  function shortStatusText(value: ArchiveStatus | null): string {
+    switch (value?.state) {
+      case "pending":
+        return t("Queued", locale);
+      case "running":
+        return t("In progress", locale);
+      case "superseded":
+        return t("Link changed", locale);
+      default:
+        return t("Failed", locale);
+    }
+  }
+
   function statusText(value: ArchiveStatus | null): string {
     switch (value?.state) {
       case "pending":
@@ -474,8 +488,13 @@
         <SourceLink href={archiveHref} icon="history" label={archiveLabel} />
       {/if}
       {#if !archiveHref || (status !== null && status.state !== "archived")}
-        <p class="archive-status" aria-live="polite" title={statusTitle}>
-          {statusText(status)}
+        <p
+          class="archive-status"
+          aria-live="polite"
+          title={statusTitle}
+          aria-label={archiveHref ? statusText(status) : undefined}
+        >
+          {archiveHref ? shortStatusText(status) : statusText(status)}
         </p>
       {:else}
         <span class="archive-fill"></span>

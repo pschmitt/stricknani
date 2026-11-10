@@ -216,19 +216,6 @@ constructor(
         }
     }
 
-    fun addCategory(name: String) {
-        if (name.isBlank()) return
-        viewModelScope.launch {
-            try {
-                categoryRepository.create(name.trim())
-                categoryRepository.sync()
-                mutationFeedback.show(R.string.mutation_category_created, name.trim())
-            } catch (e: Exception) {
-                mutationFeedback.show(R.string.error_create_category_failed, name)
-            }
-        }
-    }
-
     fun dismissRefreshFeedback() = refreshController.clearFeedback()
 
     private companion object {
