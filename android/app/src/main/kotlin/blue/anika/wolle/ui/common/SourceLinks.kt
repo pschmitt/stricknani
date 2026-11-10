@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -62,12 +61,9 @@ fun SourceLinkRow(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
             textDecoration = TextDecoration.Underline,
-            modifier = Modifier.weight(1f, fill = false),
+            modifier = if (trailing != null) Modifier.weight(1f) else Modifier,
         )
-        if (trailing != null) {
-            Spacer(Modifier.weight(1f))
-            trailing()
-        }
+        trailing?.invoke()
     }
 }
 
