@@ -93,9 +93,19 @@ class LocalModeJourneyE2eTest : StricknaniE2eTest() {
         }
     }
 
+    /**
+     * "Projects" is the tab label and, once the tab is open, also the list's title, so it is not
+     * unique (after the recreate the app may come back on the list): click the node that has a
+     * click action instead of asserting a single match.
+     */
     private fun projectRowShown(name: String): Boolean =
         runCatching {
-                composeRule.onNodeWithText("Projects").performClick()
+                val tabs = composeRule.onAllNodesWithText("Projects")
+                val index =
+                    tabs.fetchSemanticsNodes().indexOfFirst {
+                        it.config.contains(SemanticsActions.OnClick)
+                    }
+                if (index >= 0) tabs[index].performClick()
                 composeRule.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
             }
             .getOrDefault(false)
