@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -33,6 +34,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -98,8 +99,6 @@ internal fun MarkdownTextField(
         KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
 ) {
-    val context = LocalContext.current
-    val wantVisual = MarkdownEditorModeStore.current(context) == MarkdownEditorMode.VISUAL
     val currentValue by rememberUpdatedState(value)
     val currentOnChange by rememberUpdatedState(onValueChange)
 
@@ -136,17 +135,10 @@ internal fun MarkdownTextField(
 
     // The first frame already shows the right editor.
     remember {
-        if (wantVisual) visual = enterVisual()
+        // Every field starts in Visual (Raw only for text it cannot show) and switches on its own.
+        visual = enterVisual()
         true
     }
-    LaunchedEffect(wantVisual) {
-        if (wantVisual) {
-            if (!visual) visual = enterVisual()
-        } else {
-            visual = false
-        }
-    }
-
     // Outside changes of the text (a restored draft, a reload).
     LaunchedEffect(value) {
         if (value == known) {
@@ -192,37 +184,6 @@ internal fun MarkdownTextField(
     var linkRange by remember { mutableStateOf(TextRange.Zero) }
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            SegmentedControl(
-                options =
-                    listOf(
-                        SegmentedOption(
-                            MarkdownEditorMode.VISUAL,
-                            stringResource(R.string.markdown_editor_visual),
-                        ),
-                        SegmentedOption(
-                            MarkdownEditorMode.RAW,
-                            stringResource(R.string.markdown_editor_raw),
-                        ),
-                    ),
-                selected = if (visual) MarkdownEditorMode.VISUAL else MarkdownEditorMode.RAW,
-                onSelect = { mode ->
-                    if (mode == MarkdownEditorMode.VISUAL) {
-                        if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
-                            MarkdownEditorModeStore.set(context, MarkdownEditorMode.VISUAL)
-                            if (!visual) visual = enterVisual()
-                        } else {
-                            unsupported = true
-                        }
-                    } else {
-                        visual = false
-                        MarkdownEditorModeStore.set(context, MarkdownEditorMode.RAW)
-                    }
-                },
-                label = stringResource(R.string.markdown_editor_mode),
-                compact = true,
-            )
-        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             val formattingDescription = stringResource(R.string.markdown_editor_formatting)
             Row(
@@ -333,6 +294,24 @@ internal fun MarkdownTextField(
                             field = it
                         }
                     }
+                }
+            }
+            VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp))
+            ToolbarButton(
+                MdiIcons.Markdown,
+                R.string.markdown_editor_edit_as_markdown,
+                tint,
+                active = !visual,
+                enabled = !unsupported,
+            ) {
+                if (!visual) {
+                    if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
+                        visual = enterVisual()
+                    } else {
+                        unsupported = true
+                    }
+                } else {
+                    visual = false
                 }
             }
         }
@@ -545,11 +524,13 @@ private fun ToolbarButton(
     description: Int,
     tint: Color,
     active: Boolean = false,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     IconToggleButton(
         checked = active,
         onCheckedChange = { onClick() },
+        enabled = enabled,
         modifier = Modifier.size(44.dp),
         colors =
             IconButtonDefaults.iconToggleButtonColors(

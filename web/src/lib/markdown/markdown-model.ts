@@ -85,7 +85,14 @@ export function markdownToDoc(source: string, lines = false): PmNode {
 }
 
 export function docToMarkdown(doc: PmNode, lines = false): string {
-  return serializerFor(lines).serialize(doc).replace(/\s+$/, "");
+  // Only ASCII whitespace: `\s` would also eat a trailing non-breaking-space paragraph.
+  return (
+    serializerFor(lines)
+      .serialize(doc)
+      .replace(/[ \t\r\n]+$/, "")
+      // A paragraph of only non-breaking spaces is written back as `&nbsp;`, as typed.
+      .replace(/^\u00a0+$/gm, (spaces) => "&nbsp;".repeat(spaces.length))
+  );
 }
 
 /** Block tokens the visual model cannot represent. */

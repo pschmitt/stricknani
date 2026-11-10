@@ -7,9 +7,8 @@
   import { onMount, untrack } from "svelte";
   import { focusOnHash } from "./focus-on-hash.ts";
   import NavIcon, { type NavIconName } from "./NavIcon.svelte";
-  import SegmentedControl from "./SegmentedControl.svelte";
   import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
-  import { editorMode } from "#lib/markdown/editor-mode.svelte.ts";
+  import { applyRawFormat, type RawFormat } from "#lib/markdown/raw-format.ts";
   import type {
     ActiveFormats,
     EditorCommand,
@@ -69,16 +68,15 @@
   let linkInput = $state<HTMLInputElement | null>(null);
   let rawArea = $state<HTMLTextAreaElement | null>(null);
   let lastEmitted = "";
+  // Every field starts in Visual (Raw only for text it cannot show) and switches on its own.
+  let mode = $state<"visual" | "raw">("visual");
 
   const shown = $derived(
-    editorMode.value === "visual" && core && model && !unsupported
-      ? "visual"
-      : "raw",
+    mode === "visual" && core && model && !unsupported ? "visual" : "raw",
   );
   const editLabel = $derived(label || undefined);
 
   onMount(() => {
-    editorMode.load();
     let cancelled = false;
     void Promise.all([
       import("#lib/markdown/editor-core.ts"),
@@ -152,7 +150,7 @@
       unsupported = !model.canEditVisually(value, lines);
       if (unsupported) return;
     }
-    editorMode.set(next);
+    mode = next;
     queueMicrotask(() => {
       if (next === "visual") handle?.focus();
       else rawArea?.focus();
@@ -161,6 +159,23 @@
 
   function run(command: EditorCommand) {
     handle?.run(command);
+  }
+
+  /** The toolbar in Raw mode writes the Markdown syntax around the selection, as on Android. */
+  function runRaw(format: RawFormat) {
+    const area = rawArea;
+    if (!area) return;
+    const next = applyRawFormat(
+      { text: value, start: area.selectionStart, end: area.selectionEnd },
+      format,
+    );
+    lastEmitted = next.text;
+    value = next.text;
+    onInput?.(next.text);
+    queueMicrotask(() => {
+      area.focus();
+      area.setSelectionRange(next.start, next.end);
+    });
   }
 
   function openLink() {
@@ -250,52 +265,52 @@
   style:--md-rows={rows}
 >
   <div class="md-editor__bar">
-    {#if shown === "visual"}
-      <div
-        class="md-editor__tools"
-        role="toolbar"
-        aria-label={t("Formatting", locale)}
+    <div
+      class="md-editor__tools"
+      role="toolbar"
+      aria-label={t("Formatting", locale)}
+    >
+      {#each tools as tool (tool.command)}
+        <button
+          type="button"
+          class="md-editor__tool"
+          class:md-editor__tool--on={shown === "visual" && formats?.[tool.key]}
+          aria-label={t(tool.name, locale)}
+          title={t(tool.name, locale)}
+          aria-pressed={shown === "visual"
+            ? (formats?.[tool.key] ?? false)
+            : false}
+          {disabled}
+          onmousedown={(event) => event.preventDefault()}
+          onclick={() =>
+            shown === "raw"
+              ? runRaw(tool.command)
+              : tool.command === "link"
+                ? openLink()
+                : run(tool.command)}
+        >
+          <NavIcon name={tool.icon} />
+        </button>
+      {/each}
+      <span class="md-editor__sep" aria-hidden="true"></span>
+      <button
+        type="button"
+        class="md-editor__tool"
+        class:md-editor__tool--on={shown === "raw"}
+        aria-label={t("Edit as Markdown", locale)}
+        title={unsupported
+          ? t(
+              "This text uses formatting the visual editor cannot show.",
+              locale,
+            )
+          : t("Edit as Markdown", locale)}
+        aria-pressed={shown === "raw"}
+        disabled={disabled || unsupported || !core}
+        onmousedown={(event) => event.preventDefault()}
+        onclick={() => setMode(shown === "raw" ? "visual" : "raw")}
       >
-        {#each tools as tool (tool.command)}
-          <button
-            type="button"
-            class="md-editor__tool"
-            class:md-editor__tool--on={formats?.[tool.key]}
-            aria-label={t(tool.name, locale)}
-            title={t(tool.name, locale)}
-            aria-pressed={formats?.[tool.key] ?? false}
-            {disabled}
-            onmousedown={(event) => event.preventDefault()}
-            onclick={() =>
-              tool.command === "link" ? openLink() : run(tool.command)}
-          >
-            <NavIcon name={tool.icon} />
-          </button>
-        {/each}
-      </div>
-    {/if}
-    <div class="md-editor__mode">
-      <SegmentedControl
-        size="compact"
-        label={t("Editor mode", locale)}
-        value={shown}
-        {disabled}
-        options={[
-          {
-            value: "visual",
-            label: t("Visual", locale),
-            disabled: unsupported || !core,
-            title: unsupported
-              ? t(
-                  "This text uses formatting the visual editor cannot show.",
-                  locale,
-                )
-              : undefined,
-          },
-          { value: "raw", label: t("Raw", locale) },
-        ]}
-        onchange={setMode}
-      />
+        <NavIcon name="markdown" />
+      </button>
     </div>
   </div>
 
@@ -423,10 +438,12 @@
     box-shadow: inset 0 0 0 1px var(--accent-strong);
   }
 
-  .md-editor__mode {
-    display: inline-flex;
-    flex: none;
-    margin-inline-start: auto;
+  .md-editor__sep {
+    width: 1px;
+    align-self: stretch;
+    margin-block: 0.45rem;
+    margin-inline: 0.15rem;
+    background: var(--line);
   }
 
   .md-editor__tool:focus-visible,

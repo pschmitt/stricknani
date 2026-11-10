@@ -185,12 +185,4 @@ class MarkdownRichTest {
         assertEquals("/media/x", normalizeLinkTarget("/media/x"))
         assertEquals("", normalizeLinkTarget("   "))
     }
-
-    @Test
-    fun editorModeDefaultsToVisual() {
-        assertEquals(MarkdownEditorMode.VISUAL, MarkdownEditorMode.fromStored(null))
-        assertEquals(MarkdownEditorMode.VISUAL, MarkdownEditorMode.fromStored("garbage"))
-        assertEquals(MarkdownEditorMode.RAW, MarkdownEditorMode.fromStored("raw"))
-        assertEquals(MarkdownEditorMode.VISUAL, MarkdownEditorMode.fromStored("visual"))
-    }
 }

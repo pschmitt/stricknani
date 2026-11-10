@@ -51,6 +51,35 @@ object MdiIcons {
             .build()
     }
 
+    /** Material Design Icons 7.4.47 `mdi:language-markdown-outline` icon. */
+    val Markdown: ImageVector by lazy {
+        ImageVector.Builder(
+                name = "MdiMarkdown",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            )
+            .apply {
+                addPath(
+                    pathData =
+                        PathParser()
+                            .parsePathString(
+                                "M20.56 18H3.44C2.65 18 2 17.37 2 16.59V7.41C2 6.63 2.65 6 3.44 6H20.56" +
+                                    "C21.35 6 22 6.63 22 7.41V16.59C22 17.37 21.35 18 20.56 18M3.44 6.94C3." +
+                                    "18 6.94 2.96 7.15 2.96 7.41V16.6C2.96 16.85 3.18 17.06 3.44 17.06H20.5" +
+                                    "6C20.82 17.06 21.04 16.85 21.04 16.6V7.41C21.04 7.15 20.82 6.94 20.56 " +
+                                    "6.94H3.44M4.89 15.19V8.81H6.81L8.73 11.16L10.65 8.81H12.57V15.19H10.65" +
+                                    "V11.53L8.73 13.88L6.81 11.53V15.19H4.89M16.88 15.19L14 12.09H15.92V8.8" +
+                                    "1H17.84V12.09H19.76L16.88 15.19Z"
+                            )
+                            .toNodes(),
+                    fill = SolidColor(Color.Black),
+                )
+            }
+            .build()
+    }
+
     /** Ball of yarn: Phosphor Icons "yarn", kept under this name for its many callers. */
     val YarnBall: ImageVector
         get() = PhosphorIcons.Yarn

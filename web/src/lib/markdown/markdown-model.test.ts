@@ -21,6 +21,7 @@ describe("markdown model round trip", () => {
     paragraphs: "First paragraph.\n\nSecond paragraph.",
     quote: "> Remember the yarn over.",
     code: "Use `k2tog` here.",
+    spacer: "Gauge\n\n&nbsp;\n\n![Swatch](/media/a.jpg){.sn-size-lg}\n\n&nbsp;",
   };
 
   for (const [name, source] of Object.entries(samples)) {

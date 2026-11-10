@@ -88,7 +88,8 @@
     | "list-numbers"
     | "format-bold"
     | "format-italic"
-    | "format-heading";
+    | "format-heading"
+    | "markdown";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -345,6 +346,13 @@
     <path d="M10 5h7M7 19h7M14.5 5l-5 14" />
   {:else if name === "format-heading"}
     <path d="M6 5v14M18 5v14M6 12h12" />
+  {:else if name === "markdown"}
+    <!-- Material Design Icons 7.4.47 language-markdown-outline, Apache-2.0, as on Android. -->
+    <path
+      fill="currentColor"
+      stroke="none"
+      d="M20.56 18H3.44C2.65 18 2 17.37 2 16.59V7.41C2 6.63 2.65 6 3.44 6H20.56C21.35 6 22 6.63 22 7.41V16.59C22 17.37 21.35 18 20.56 18M3.44 6.94C3.18 6.94 2.96 7.15 2.96 7.41V16.6C2.96 16.85 3.18 17.06 3.44 17.06H20.56C20.82 17.06 21.04 16.85 21.04 16.6V7.41C21.04 7.15 20.82 6.94 20.56 6.94H3.44M4.89 15.19V8.81H6.81L8.73 11.16L10.65 8.81H12.57V15.19H10.65V11.53L8.73 13.88L6.81 11.53V15.19H4.89M16.88 15.19L14 12.09H15.92V8.81H17.84V12.09H19.76L16.88 15.19Z"
+    />
   {:else if name === "link"}
     <path
       d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1 0l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"
