@@ -15,7 +15,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-private class FakeSession(
+internal class FakeSession(
     override var hasSession: Boolean = false,
     override var sessionServerUrl: String = "",
     override var savedAccountEmail: String? = null,
@@ -39,7 +39,7 @@ private class FakeSession(
     }
 }
 
-private class FakeLoginApi : OidcLoginApi {
+internal class FakeLoginApi : OidcLoginApi {
     var providers: List<OidcProvider> = listOf(OidcProvider("authelia", "Authelia"))
     var startError: Exception? = null
     var exchangeError: Exception? = null
@@ -67,7 +67,7 @@ private class FakeLoginApi : OidcLoginApi {
     override suspend fun currentUserEmail(serverUrl: String, token: String) = email
 }
 
-private class FakeAccountApi : OidcAccountApi {
+internal class FakeAccountApi : OidcAccountApi {
     var error: Exception? = null
     val calls = mutableListOf<String>()
     val linkStarts = mutableListOf<Pair<String, OidcStartRequest>>()

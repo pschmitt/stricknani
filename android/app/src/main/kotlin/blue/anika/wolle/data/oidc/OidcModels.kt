@@ -130,6 +130,7 @@ enum class ReauthAction(val wire: String) {
     UNLINK_IDENTITY("unlink_identity"),
     ADMIN_UNLINK_IDENTITY("admin_unlink_identity"),
     DELETE_ACCOUNT("delete_account"),
+    CREATE_API_TOKEN("create_api_token"),
 }
 
 /** What a reauthentication proof is bound to; the server rejects any other combination. */

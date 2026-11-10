@@ -526,6 +526,7 @@
     <string name="account_token_create">Token erstellen</string>
     <string name="account_token_creating">Wird erstellt…</string>
     <string name="account_token_password_login_only">Zum Erstellen eines Tokens in der App brauchst du dein Passwort. Nutze die Website, wenn du dich nur über einen Anbieter anmeldest.</string>
+    <string name="account_token_reauth_text">Zur Sicherheit bestätige, dass du es bist, bevor ein neues Token erstellt wird.</string>
     <string name="account_token_err_password_required">Gib dein aktuelles Passwort ein, um ein Token zu erstellen.</string>
     <string name="account_token_err_reauth">Bestätige mit deinem Passwort, um ein Token zu erstellen.</string>
     <string name="account_token_err_name">Tokennamen dürfen höchstens 255 Bytes lang sein.</string>

@@ -3,6 +3,8 @@ package blue.anika.wolle.data.account
 import android.content.Context
 import android.net.Uri
 import blue.anika.wolle.data.api.dto.ApiErrorEnvelopeDto
+import blue.anika.wolle.data.oidc.ReauthAction
+import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.deleteCapturedPhoto
 import blue.anika.wolle.ui.common.isOfflineFailure
@@ -110,6 +112,9 @@ interface AccountGateway {
 
     suspend fun createToken(name: String, currentPassword: String): CreateTokenResult
 
+    /** For accounts without a password: [proof] must be a `create_api_token` proof; sent once. */
+    suspend fun createTokenWithProof(name: String, proof: ReauthProof): CreateTokenResult
+
     suspend fun revokeToken(id: Long): RevokeResult
 
     suspend fun changePassword(currentPassword: String, newPassword: String): PasswordChangeResult
@@ -203,10 +208,20 @@ internal constructor(
         }
 
     override suspend fun createToken(name: String, currentPassword: String): CreateTokenResult =
+        createWith {
+            api.createToken(CreateTokenRequest(name.trim(), currentPassword)).data
+        }
+
+    override suspend fun createTokenWithProof(name: String, proof: ReauthProof): CreateTokenResult {
+        if (proof.action != ReauthAction.CREATE_API_TOKEN) return CreateTokenResult.ReauthRequired
+        return createWith {
+            api.createTokenWithProof(proof.token, CreateTokenNameRequest(name.trim())).data
+        }
+    }
+
+    private suspend fun createWith(call: suspend () -> CreatedTokenDto): CreateTokenResult =
         try {
-            CreateTokenResult.Created(
-                api.createToken(CreateTokenRequest(name.trim(), currentPassword)).data
-            )
+            CreateTokenResult.Created(call())
         } catch (failure: Exception) {
             if (failure is CancellationException) throw failure
             val http = failure.httpFailure()

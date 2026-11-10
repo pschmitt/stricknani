@@ -8,6 +8,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -33,6 +34,16 @@ interface AccountV2Api {
     /** A bearer caller must send `current_password` (step-up), otherwise 403 `reauth_required`. */
     @POST("api/v2/account/api-tokens")
     suspend fun createToken(@Body request: CreateTokenRequest): V2Envelope<CreatedTokenDto>
+
+    /**
+     * The step-up for accounts without a password: a one-use `create_api_token` proof in
+     * `X-Reauth-Token` replaces `current_password` (403 `reauth_required` when it is refused).
+     */
+    @POST("api/v2/account/api-tokens")
+    suspend fun createTokenWithProof(
+        @Header("X-Reauth-Token") reauthToken: String,
+        @Body request: CreateTokenNameRequest,
+    ): V2Envelope<CreatedTokenDto>
 
     /** 200 `{id, revoked, current_token}` for a bearer caller; 204 for a browser. */
     @DELETE("api/v2/account/api-tokens/{id}")
@@ -86,6 +97,9 @@ data class RevokedTokenDto(
     /** True when the caller revoked the very token it is using: it must sign out locally. */
     @SerialName("current_token") val currentToken: Boolean = false,
 )
+
+/** Body of a token creation that carries its step-up in `X-Reauth-Token`: only the name. */
+@Serializable data class CreateTokenNameRequest(val name: String)
 
 @Serializable
 data class CreateTokenRequest(

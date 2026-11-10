@@ -33,6 +33,11 @@ class DeviceTokenRenamerTest {
 
         override suspend fun createToken(request: CreateTokenRequest) = error("unused")
 
+        override suspend fun createTokenWithProof(
+            reauthToken: String,
+            request: CreateTokenNameRequest,
+        ) = error("unused")
+
         override suspend fun revokeToken(id: Long): Response<V2Envelope<RevokedTokenDto>> =
             error("unused")
 

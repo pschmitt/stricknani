@@ -527,6 +527,7 @@
     <string name="account_token_create">Create token</string>
     <string name="account_token_creating">Creating…</string>
     <string name="account_token_password_login_only">Creating a token in the app needs your password. Use the website for accounts that only sign in with a provider.</string>
+    <string name="account_token_reauth_text">For your security, confirm it is you before a new token is created.</string>
     <string name="account_token_err_password_required">Enter your current password to create a token.</string>
     <string name="account_token_err_reauth">Confirm with your password to create a token.</string>
     <string name="account_token_err_name">Token names must be 255 bytes or fewer.</string>

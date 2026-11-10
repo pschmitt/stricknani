@@ -16,7 +16,17 @@ import blue.anika.wolle.data.account.PasswordChangeResult
 import blue.anika.wolle.data.account.RevokeResult
 import blue.anika.wolle.data.account.TokenListResult
 import blue.anika.wolle.data.api.ApiCapabilities
+import blue.anika.wolle.data.oidc.OidcCoordinator
+import blue.anika.wolle.data.oidc.OidcProvider
+import blue.anika.wolle.data.oidc.ReauthAction
+import blue.anika.wolle.data.oidc.ReauthProof
+import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
+import blue.anika.wolle.ui.oidc.ReauthRequest
+import blue.anika.wolle.ui.oidc.ReauthUiState
+import blue.anika.wolle.ui.oidc.StepUp
+import blue.anika.wolle.ui.oidc.showOidcFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -129,12 +139,29 @@ constructor(
     private val gateway: AccountGateway,
     private val capabilities: ApiCapabilities,
     private val feedback: MutationFeedback,
+    private val oidc: OidcCoordinator,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AccountSecurityState())
     val state: StateFlow<AccountSecurityState> = _state.asStateFlow()
 
+    /** The name typed for a token whose step-up runs through the login provider. */
+    private var pendingTokenName = ""
+    private var pendingProviderName = DEFAULT_PROVIDER_NAME
+
+    private val stepUp =
+        StepUp(
+            oidc,
+            viewModelScope,
+            onProof = ::createWithProof,
+            onFailure = { failure -> feedback.showOidcFailure(failure, pendingProviderName) },
+        )
+
+    /** The "confirm it is you" sheet of a provider step-up, or null. */
+    val sheet: StateFlow<ReauthUiState?> = stepUp.sheet
+
     init {
         load()
+        viewModelScope.launch { oidc.events.collect { event -> event?.let { stepUp.handle(it) } } }
     }
 
     fun load() {
@@ -315,6 +342,41 @@ constructor(
         it.copy(createOpen = open, createErrors = TokenFormErrors())
     }
 
+    /**
+     * Accounts without a password (and anyone who prefers it): confirm with the login [provider]
+     * instead of the current password. Opens the confirm sheet; the token is created, with the
+     * `create_api_token` proof, once the provider answered.
+     */
+    fun createTokenWithProvider(name: String, provider: OidcProvider) {
+        if (_state.value.createBusy) return
+        pendingTokenName = name
+        pendingProviderName = provider.name
+        _state.update { it.copy(createErrors = TokenFormErrors()) }
+        stepUp.begin(
+            ReauthRequest(
+                action = ReauthAction.CREATE_API_TOKEN,
+                target = ReauthTarget.None,
+                canUsePassword = false,
+                oidcProvider = provider,
+            )
+        )
+    }
+
+    fun dismissSheet() = stepUp.dismiss()
+
+    fun submitPassword(password: String) = stepUp.submitPassword(password)
+
+    fun confirmWithProvider() = stepUp.useProvider()
+
+    private suspend fun createWithProof(proof: ReauthProof) {
+        if (_state.value.createBusy) return
+        _state.update { it.copy(createBusy = true, createErrors = TokenFormErrors()) }
+        applyCreateResult(
+            gateway.createTokenWithProof(pendingTokenName, proof),
+            viaProvider = true,
+        )
+    }
+
     fun createToken(name: String, currentPassword: String) {
         if (_state.value.createBusy) return
         if (currentPassword.isEmpty()) {
@@ -327,57 +389,61 @@ constructor(
             return
         }
         _state.update { it.copy(createBusy = true, createErrors = TokenFormErrors()) }
-        viewModelScope.launch {
-            val result = gateway.createToken(name, currentPassword)
-            _state.update { state ->
-                when (result) {
-                    is CreateTokenResult.Created ->
-                        state.copy(
-                            createBusy = false,
-                            createOpen = false,
-                            revealed = result.token,
-                            tokens = listOf(result.token.summary()) + state.tokens,
-                        )
-                    CreateTokenResult.WrongPassword ->
-                        state.copy(
-                            createBusy = false,
-                            createErrors =
-                                TokenFormErrors(password = R.string.account_password_err_current),
-                        )
-                    CreateTokenResult.ReauthRequired ->
-                        state.copy(
-                            createBusy = false,
-                            createErrors =
-                                TokenFormErrors(general = R.string.account_token_err_reauth),
-                        )
-                    CreateTokenResult.NameTooLong ->
-                        state.copy(
-                            createBusy = false,
-                            createErrors = TokenFormErrors(name = R.string.account_token_err_name),
-                        )
-                    CreateTokenResult.RateLimited ->
-                        state.copy(
-                            createBusy = false,
-                            createErrors =
-                                TokenFormErrors(general = R.string.error_account_rate_limited),
-                        )
-                    CreateTokenResult.SessionExpired ->
-                        state.copy(
-                            createBusy = false,
-                            createErrors =
-                                TokenFormErrors(general = R.string.account_token_err_session),
-                        )
-                    is CreateTokenResult.Failed ->
-                        state.copy(
-                            createBusy = false,
-                            createErrors =
-                                TokenFormErrors(
-                                    general =
-                                        if (result.offline) R.string.error_account_offline
-                                        else R.string.account_token_err_create
-                                ),
-                        )
-                }
+        viewModelScope.launch { applyCreateResult(gateway.createToken(name, currentPassword)) }
+    }
+
+    private fun applyCreateResult(result: CreateTokenResult, viaProvider: Boolean = false) {
+        _state.update { state ->
+            when (result) {
+                is CreateTokenResult.Created ->
+                    state.copy(
+                        createBusy = false,
+                        createOpen = false,
+                        revealed = result.token,
+                        tokens = listOf(result.token.summary()) + state.tokens,
+                    )
+                CreateTokenResult.WrongPassword ->
+                    state.copy(
+                        createBusy = false,
+                        createErrors =
+                            TokenFormErrors(password = R.string.account_password_err_current),
+                    )
+                CreateTokenResult.ReauthRequired ->
+                    state.copy(
+                        createBusy = false,
+                        createErrors =
+                            TokenFormErrors(
+                                general =
+                                    if (viaProvider) R.string.error_oidc_reauth_required
+                                    else R.string.account_token_err_reauth
+                            ),
+                    )
+                CreateTokenResult.NameTooLong ->
+                    state.copy(
+                        createBusy = false,
+                        createErrors = TokenFormErrors(name = R.string.account_token_err_name),
+                    )
+                CreateTokenResult.RateLimited ->
+                    state.copy(
+                        createBusy = false,
+                        createErrors =
+                            TokenFormErrors(general = R.string.error_account_rate_limited),
+                    )
+                CreateTokenResult.SessionExpired ->
+                    state.copy(
+                        createBusy = false,
+                        createErrors = TokenFormErrors(general = R.string.account_token_err_session),
+                    )
+                is CreateTokenResult.Failed ->
+                    state.copy(
+                        createBusy = false,
+                        createErrors =
+                            TokenFormErrors(
+                                general =
+                                    if (result.offline) R.string.error_account_offline
+                                    else R.string.account_token_err_create
+                            ),
+                    )
             }
         }
     }

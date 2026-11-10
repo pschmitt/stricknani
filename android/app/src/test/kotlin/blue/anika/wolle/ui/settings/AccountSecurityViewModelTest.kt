@@ -17,7 +17,17 @@ import blue.anika.wolle.data.api.v2.MetaV2Api
 import blue.anika.wolle.data.api.v2.MetaV2Dto
 import blue.anika.wolle.data.api.v2.MetaV2UserDto
 import blue.anika.wolle.data.api.v2.V2Envelope
+import blue.anika.wolle.data.oidc.FakeAccountApi
+import blue.anika.wolle.data.oidc.FakeLoginApi
+import blue.anika.wolle.data.oidc.FakeSession
+import blue.anika.wolle.data.oidc.OidcCoordinator
+import blue.anika.wolle.data.oidc.OidcProvider
+import blue.anika.wolle.data.oidc.PendingOidcFlow
+import blue.anika.wolle.data.oidc.ReauthAction
+import blue.anika.wolle.data.oidc.ReauthProof
+import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.ui.common.MutationFeedback
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -63,6 +73,21 @@ class AccountSecurityViewModelTest {
             return create
         }
 
+        var createWithProof: CreateTokenResult = CreateTokenResult.Failed(false)
+        var proofCalls = 0
+        var proofName: String? = null
+        var proof: ReauthProof? = null
+
+        override suspend fun createTokenWithProof(
+            name: String,
+            proof: ReauthProof,
+        ): CreateTokenResult {
+            proofCalls++
+            proofName = name
+            this.proof = proof
+            return createWithProof
+        }
+
         override suspend fun revokeToken(id: Long) = revoke
 
         override suspend fun changePassword(
@@ -106,7 +131,82 @@ class AccountSecurityViewModelTest {
                         )
                     )
             }
-        return AccountSecurityViewModel(gateway, ApiCapabilities(meta) { "https://s\nt" }, feedback)
+        return AccountSecurityViewModel(
+            gateway,
+            ApiCapabilities(meta) { "https://s\nt" },
+            feedback,
+            coordinator,
+        )
+    }
+
+    private val session = FakeSession(hasSession = true, sessionServerUrl = "https://s")
+    private val coordinator =
+        OidcCoordinator(
+            FakeLoginApi(),
+            FakeAccountApi(),
+            PendingOidcFlow(),
+            session,
+            CoroutineScope(UnconfinedTestDispatcher()),
+            afterSignIn = {},
+            tokenName = { "Android test" },
+            newState = { "state-1" },
+            newVerifier = { "v".repeat(64) },
+        )
+    private val authelia = OidcProvider("authelia", "Authelia")
+
+    @Test
+    fun `an account without a password confirms the token through its provider`() {
+        val created = CreatedTokenDto(21, "tablet", "2026-11-03T11:00:00Z", null, "sk_oidc")
+        gateway.create = CreateTokenResult.Failed(false)
+        gateway.createWithProof = CreateTokenResult.Created(created)
+        val vm = viewModel()
+        vm.setCreateOpen(true)
+
+        vm.createTokenWithProvider("tablet", authelia)
+
+        val request = vm.sheet.value!!.request
+        assertEquals(ReauthAction.CREATE_API_TOKEN, request.action)
+        assertEquals(ReauthTarget.None, request.target)
+        assertFalse(request.canUsePassword)
+        assertEquals(authelia, request.oidcProvider)
+        // Nothing is sent before the provider answered, and never with a password.
+        assertEquals(0, gateway.createCalls)
+        assertEquals(0, gateway.proofCalls)
+
+        vm.confirmWithProvider()
+        assertNull(vm.sheet.value)
+        assertEquals(0, gateway.proofCalls)
+
+        assertEquals(
+            OidcCoordinator.CallbackResult.Accepted,
+            coordinator.onCallback("stricknani://oidc-callback?code=c&state=state-1&flow=reauth"),
+        )
+
+        assertEquals(1, gateway.proofCalls)
+        assertEquals("tablet", gateway.proofName)
+        assertEquals(ReauthAction.CREATE_API_TOKEN, gateway.proof?.action)
+        assertEquals("reauth-oidc", gateway.proof?.token)
+        assertEquals(0, gateway.createCalls)
+        val state = vm.state.value
+        assertEquals("sk_oidc", state.revealed?.token)
+        assertFalse(state.createOpen)
+        assertFalse(state.createBusy)
+    }
+
+    @Test
+    fun `a refused provider proof shows the confirm again message`() {
+        gateway.createWithProof = CreateTokenResult.ReauthRequired
+        val vm = viewModel()
+        vm.setCreateOpen(true)
+        vm.createTokenWithProvider("tablet", authelia)
+        vm.confirmWithProvider()
+        coordinator.onCallback("stricknani://oidc-callback?code=c&state=state-1&flow=reauth")
+
+        val state = vm.state.value
+        assertEquals(R.string.error_oidc_reauth_required, state.createErrors.general)
+        assertTrue(state.createOpen)
+        assertFalse(state.createBusy)
+        assertNull(state.revealed)
     }
 
     @Test

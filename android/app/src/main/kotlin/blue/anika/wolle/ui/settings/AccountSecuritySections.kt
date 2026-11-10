@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.account.ApiTokenDto
 import blue.anika.wolle.data.account.formatTokenDate
+import blue.anika.wolle.data.oidc.OidcProvider
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.rememberPhotoCapture
@@ -418,9 +419,12 @@ internal fun NewTokenForm(
     open: Boolean,
     busy: Boolean,
     passwordLogin: Boolean,
+    /** A login provider the account has linked: confirms the token without a password. */
+    provider: OidcProvider?,
     errors: TokenFormErrors,
     onCancel: () -> Unit,
     onCreate: (name: String, password: String) -> Unit,
+    onCreateWithProvider: (name: String) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -433,7 +437,7 @@ internal fun NewTokenForm(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (!passwordLogin) {
+            if (!passwordLogin && provider == null) {
                 Text(
                     stringResource(R.string.account_token_password_login_only),
                     style = MaterialTheme.typography.bodyMedium,
@@ -456,18 +460,26 @@ internal fun NewTokenForm(
                     supportingText = errors.name?.let { { Text(stringResource(it)) } },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                SecretField(
-                    password,
-                    { password = it },
-                    stringResource(R.string.account_password_current),
-                    errors.password,
-                    enabled = !busy,
-                    last = true,
-                    onDone = { onCreate(name, password) },
-                )
+                if (passwordLogin) {
+                    SecretField(
+                        password,
+                        { password = it },
+                        stringResource(R.string.account_password_current),
+                        errors.password,
+                        enabled = !busy,
+                        last = true,
+                        onDone = { onCreate(name, password) },
+                    )
+                }
                 errors.general?.let { FormError(it) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onCreate(name, password) }, enabled = !busy) {
+                    Button(
+                        onClick = {
+                            if (passwordLogin) onCreate(name, password)
+                            else onCreateWithProvider(name)
+                        },
+                        enabled = !busy,
+                    ) {
                         Text(
                             stringResource(
                                 if (busy) R.string.account_token_creating
@@ -477,6 +489,11 @@ internal fun NewTokenForm(
                     }
                     TextButton(onClick = onCancel, enabled = !busy) {
                         Text(stringResource(R.string.common_cancel))
+                    }
+                }
+                if (passwordLogin && provider != null) {
+                    TextButton(onClick = { onCreateWithProvider(name) }, enabled = !busy) {
+                        Text(stringResource(R.string.oidc_reauth_with_provider, provider.name))
                     }
                 }
             }

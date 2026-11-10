@@ -1,6 +1,9 @@
 package blue.anika.wolle.data.account
 
 import blue.anika.wolle.data.api.v2.V2Envelope
+import blue.anika.wolle.data.oidc.ReauthAction
+import blue.anika.wolle.data.oidc.ReauthProof
+import blue.anika.wolle.data.oidc.ReauthTarget
 import java.io.IOException
 import java.time.ZoneOffset
 import java.util.Locale
@@ -30,6 +33,9 @@ class AccountRepositoryTest {
         var password: (ChangePasswordRequest) -> Unit = {}
         var avatar: () -> V2Envelope<AvatarDto> = { error("unused") }
         var lastCreate: CreateTokenRequest? = null
+        var createWithProof: () -> V2Envelope<CreatedTokenDto> = { error("unused") }
+        var lastProofToken: String? = null
+        var lastProofRequest: CreateTokenNameRequest? = null
         var rename: (RenameTokenRequest) -> V2Envelope<ApiTokenDto> = { error("unused") }
         var account: () -> V2Envelope<AccountDto> = { error("unused") }
         var update: (UpdateAccountRequest) -> V2Envelope<AccountDto> = { error("unused") }
@@ -47,6 +53,15 @@ class AccountRepositoryTest {
         override suspend fun createToken(request: CreateTokenRequest): V2Envelope<CreatedTokenDto> {
             lastCreate = request
             return create(request)
+        }
+
+        override suspend fun createTokenWithProof(
+            reauthToken: String,
+            request: CreateTokenNameRequest,
+        ): V2Envelope<CreatedTokenDto> {
+            lastProofToken = reauthToken
+            lastProofRequest = request
+            return createWithProof()
         }
 
         override suspend fun revokeToken(id: Long) = revoke(id)
@@ -176,6 +191,45 @@ class AccountRepositoryTest {
 
         api.create = { throw http(422, error("validation_error")) }
         assertEquals(CreateTokenResult.NameTooLong, repository.createToken("t", "pw"))
+    }
+
+    @Test
+    fun `create with a proof sends it as X-Reauth-Token with only the name in the body`() =
+        runTest {
+            val created = CreatedTokenDto(9, "tablet", "2026-11-03T10:00:00Z", null, "sk_secret")
+            api.createWithProof = { V2Envelope(created) }
+            val proof = ReauthProof(ReauthAction.CREATE_API_TOKEN, ReauthTarget.None, "proof-1")
+
+            assertEquals(
+                CreateTokenResult.Created(created),
+                repository.createTokenWithProof(" tablet ", proof),
+            )
+            assertEquals("proof-1", api.lastProofToken)
+            assertEquals(CreateTokenNameRequest("tablet"), api.lastProofRequest)
+            // No password field at all: the proof replaces it.
+            assertEquals("""{"name":"tablet"}""", json.encodeToString(api.lastProofRequest!!))
+
+            val method =
+                AccountV2Api::class.java.methods.single { it.name == "createTokenWithProof" }
+            val headers = method.parameterAnnotations.flatMap { it.toList() }
+            assertTrue(headers.any { it is retrofit2.http.Header && it.value == "X-Reauth-Token" })
+        }
+
+    @Test
+    fun `create with a proof refuses a proof for another action and maps errors`() = runTest {
+        val other = ReauthProof(ReauthAction.DELETE_ACCOUNT, ReauthTarget.None, "p")
+        assertEquals(CreateTokenResult.ReauthRequired, repository.createTokenWithProof("t", other))
+        assertNull(api.lastProofToken)
+
+        val proof = ReauthProof(ReauthAction.CREATE_API_TOKEN, ReauthTarget.None, "p")
+        api.createWithProof = { throw http(403, error("reauth_required")) }
+        assertEquals(CreateTokenResult.ReauthRequired, repository.createTokenWithProof("t", proof))
+
+        api.createWithProof = { throw http(401, error("session_expired")) }
+        assertEquals(CreateTokenResult.SessionExpired, repository.createTokenWithProof("t", proof))
+
+        api.createWithProof = { throw http(429, error("rate_limited")) }
+        assertEquals(CreateTokenResult.RateLimited, repository.createTokenWithProof("t", proof))
     }
 
     @Test

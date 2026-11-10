@@ -8,6 +8,7 @@ import blue.anika.wolle.data.account.AccountDto
 import blue.anika.wolle.data.account.AccountV2Api
 import blue.anika.wolle.data.account.ApiTokenDto
 import blue.anika.wolle.data.account.ChangePasswordRequest
+import blue.anika.wolle.data.account.CreateTokenNameRequest
 import blue.anika.wolle.data.account.CreateTokenRequest
 import blue.anika.wolle.data.account.DetailCardOrderDto
 import blue.anika.wolle.data.account.RenameTokenRequest
@@ -144,6 +145,11 @@ class DetailCardOrderSyncTest {
         override suspend fun tokens() = error("unused")
 
         override suspend fun createToken(request: CreateTokenRequest) = error("unused")
+
+        override suspend fun createTokenWithProof(
+            reauthToken: String,
+            request: CreateTokenNameRequest,
+        ) = error("unused")
 
         override suspend fun revokeToken(id: Long): Response<V2Envelope<RevokedTokenDto>> =
             error("unused")

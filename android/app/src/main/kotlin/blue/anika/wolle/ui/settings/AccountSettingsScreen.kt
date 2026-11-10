@@ -66,6 +66,7 @@ import blue.anika.wolle.ui.common.SegmentedOption
 import blue.anika.wolle.ui.oidc.LinkedLoginsCard
 import blue.anika.wolle.ui.oidc.LinkedLoginsPhase
 import blue.anika.wolle.ui.oidc.LinkedLoginsViewModel
+import blue.anika.wolle.ui.oidc.ReauthSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,6 +91,12 @@ internal fun AccountSettingsScreen(
     val activity = LocalActivity.current
     val securityModel: AccountSecurityViewModel = hiltViewModel()
     val security by securityModel.state.collectAsStateWithLifecycle()
+    val tokenSheet by securityModel.sheet.collectAsStateWithLifecycle()
+    // A token is confirmed through a login provider the account already has.
+    val tokenProvider =
+        linkedLoginsState.identities.firstNotNullOfOrNull { id ->
+            linkedLoginsState.providers.firstOrNull { it.id == id.provider }
+        }
     val errorReportingModel: ErrorReportingViewModel = hiltViewModel()
     val errorReporting by errorReportingModel.state.collectAsStateWithLifecycle()
     val errorReportingBusy by errorReportingModel.busy.collectAsStateWithLifecycle()
@@ -267,9 +274,13 @@ internal fun AccountSettingsScreen(
                             open = security.createOpen,
                             busy = security.createBusy,
                             passwordLogin = linkedLoginsState.passwordEnabled,
+                            provider = tokenProvider,
                             errors = security.createErrors,
                             onCancel = { securityModel.setCreateOpen(false) },
                             onCreate = securityModel::createToken,
+                            onCreateWithProvider = { name ->
+                                tokenProvider?.let { securityModel.createTokenWithProvider(name, it) }
+                            },
                         )
                         when {
                             security.tokenLoad == TokenLoad.Failed -> {
@@ -393,6 +404,15 @@ internal fun AccountSettingsScreen(
             name = created.name,
             token = created.token,
             onDone = securityModel::dismissRevealed,
+        )
+    }
+    tokenSheet?.let {
+        ReauthSheet(
+            state = it,
+            onSubmitPassword = securityModel::submitPassword,
+            onUseProvider = securityModel::confirmWithProvider,
+            onDismiss = securityModel::dismissSheet,
+            message = R.string.account_token_reauth_text,
         )
     }
     security.signOutNotice?.let { notice ->
