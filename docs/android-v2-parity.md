@@ -1,193 +1,274 @@
 # Android and Rust server API v2 parity inventory
 
-Task T121.4 (contracts). Status as of the `rust` branch at `b9ffdbb`. This file compares
-what the Android app calls (or is prepared to call) with what `src/api_v2/*.rs`
-serves. It is an inventory, not a design: it changes no server or client code.
+Tasks T121.4 (contracts) and T121.5 (offline/account isolation, v1 retirement blockers).
+Status as of `main` at `84ac5267` (Version 1.6.9 plus the T121 closure commits). This file
+compares what the Android app calls with what `src/api_v2/*.rs` serves. It is an inventory, not a
+design: it changes no route. The previous revision was written at `b9ffdbb`; every row below was
+re-checked against the current Kotlin interfaces and Rust routers.
 
 - Android side: `android/app/src/main/kotlin/blue/anika/wolle/data/api/` (`v2/*`,
-  `ApiCapabilities.kt`, `AdminApi.kt`, `HistoryApi.kt`, `SyncApi.kt`,
-  `ProjectImportApi.kt`), `sync/WriteReplayWorker.kt`, and the onboarding classes.
+  `ApiCapabilities.kt`, `AdminApi.kt`, `HistoryApi.kt`, v1 `*Api.kt`), `data/account/`,
+  `data/oidc/`, `data/export/`, `data/imports/`, `data/onboarding/`, `data/timer/`,
+  `sync/WriteReplayWorker.kt`.
 - Server side: `src/api_v2/*.rs`.
-- Executable contract: `tests/api_v2_client_contract.rs`. It drives the composed
-  application with a Bearer PAT the way OkHttp does (no cookie, no `Origin`, no CSRF
-  header) and decodes every response with a Rust copy of the Kotlin DTO rules
-  (required keys, nullable keys, non-null lists with defaults).
-- Related, owned elsewhere (read-only here): `docs/web-v2-contract.md`,
-  `android/docs/v2-migration.md`.
+- Executable contract: `tests/api_v2_client_contract.rs`. It drives the composed application with
+  a Bearer PAT the way OkHttp does (no cookie, no `Origin`, no CSRF header) and decodes every
+  response with a Rust copy of the Kotlin DTO rules (required keys, nullable keys, non-null lists
+  with defaults). 15 tests; the six added for T121.4 are marked "(T121.4)" below.
+- Related: `docs/web-v2-contract.md`, `android/docs/v2-migration.md`,
+  `android/docs/rust-api-transition.md`.
 
-Legend for the "Status" column: **match** = both sides agree (the contract test pins
-it), **client-only** = the Android code calls it but the server has no such route,
-**server-only** = the server serves it but Android has no client, **mismatch** = both
-exist but differ in a way the client must handle.
+Legend for "Status": **match** = both sides agree and a test pins it, **match, pinned elsewhere**
+= pinned by another `tests/api_v2_*.rs` suite rather than the client contract, **server-only** =
+served, no Android client, **v1 fallback** = Android still has a v1 code path for it, **gap** =
+something to decide.
 
 ## Relevant commits
 
 | Commit | Side | What it settles |
 | --- | --- | --- |
-| `3e1b8b2` api v2: support native PATs and current-user metadata | server | Bearer PAT (purpose `api`) accepted on the resource, media, sync, import, OCR, archive and admin v2 routes without `Origin` or CSRF; `GET /api/v2/meta` with `user` |
-| `2d06142` api v2: add native password token login | server | `POST /api/v2/auth/token` returns `{data:{token}}`; 401 `invalid_credentials`, 422 `validation_error`, 429 `rate_limited` |
-| `b30bb29` api v2: add bounded project and yarn delta sync | server | `GET /api/v2/sync/projects` and `/sync/yarns`, cursor paging, tombstones; categories pending |
-| `72bfd10` android: route resource calls to /api/v2 when the server supports it (SNA-87 phase a) | client | `ApiCapabilities` probe, v2 for projects, yarns, categories, favourites and media, v1 kept for sync, token login, onboarding and URL import |
-| `ebf19b7` android: only a server without v2 falls back to v1 (SNA-87) | client | Fallback policy, see below |
+| `3e1b8b2` | server | Bearer PAT (purpose `api`) accepted on resource, media, sync, import, OCR, archive and admin v2 routes without `Origin` or CSRF; `GET /api/v2/meta` with `user` |
+| `2d06142` | server | `POST /api/v2/auth/token` returns `{data:{token}}` (401 `invalid_credentials`, 422, 429) |
+| `b30bb29` and the T121.2 category commits | server | `GET /api/v2/sync/{projects,yarns,categories}`, cursor paging, tombstones |
+| `72bfd10`, `ebf19b7` | client | `ApiCapabilities` probe; v2 for resources, favourites, media; v1 only for a server without v2 |
+| T121.6 | server | media positions and the three exact-set reorder routes |
+| T121.7, T121.8 | client, server | v2 sync, token login, categories sync; Bearer access to the account routes |
 
-### `ApiCapabilities` fallback policy (`72bfd10`, `ebf19b7`)
+### `ApiCapabilities` fallback policy
 
-One probe of `GET /api/v2/meta` with the Bearer token, cached per server URL and
-token:
+One probe of `GET /api/v2/meta` with the Bearer token, cached per server URL and token:
 
-| Probe result | Client decision | Server behaviour that supports it |
-| --- | --- | --- |
-| 200 with `data.user` | v2, user known | PAT owner returned |
-| 200 with `user: null` | v1 (cached) | anonymous request, or a request without a Bearer |
-| 404 or 405 | v1 (cached) | a server that has no v2 |
-| 401 `session_expired`, 403, 5xx, offline | the probe's own failure is thrown, nothing cached, next call re-probes | invalid, expired, revoked, inactive-owner or wrong-purpose Bearer is always 401 `session_expired`, even next to a valid session cookie |
+| Probe result | Client decision |
+| --- | --- |
+| 200 with `data.user` | v2, user known |
+| 200 with `user: null`, 404, 405, or a 401/403 without a v2 error body | v1 (cached) |
+| 401 `session_expired`, 403 with a v2 body, 5xx, offline | the failure is thrown, nothing cached, next call re-probes |
 
-Pinned by `meta_probe_reports_the_pat_owner_and_rejects_bad_bearers_without_cookie_fallback`.
+Pinned by `meta_probe_reports_the_pat_owner_and_rejects_bad_bearers_without_cookie_fallback` and
+`ApiCapabilitiesTest`.
 
 ## Cross-cutting contract
 
 | Topic | Contract | Pinned by |
 | --- | --- | --- |
-| Auth | Strict `Authorization: Bearer <PAT>` of purpose `api`. Expired, revoked, unknown, browser-purpose and inactive-owner tokens, a non-Bearer scheme and a repeated `Authorization` header are 401 `session_expired`. An invalid Bearer never falls back to a session cookie. A valid PAT needs no `Origin` or `X-CSRF-Token`. | `every_android_route_requires_a_valid_bearer_and_never_falls_back_to_the_cookie`, `meta_probe_...` |
-| Anonymous request | `GET` is 401 `session_expired`. A write with neither Bearer nor cookie is 403 `csrf_failed` (the browser origin check runs first). The app only omits the header when its token is blank (`AuthInterceptor`). | same |
+| Auth | Strict `Authorization: Bearer <PAT>` of purpose `api`. Expired, revoked, unknown, browser-purpose, inactive-owner tokens, a non-Bearer scheme and a repeated header are 401 `session_expired`. An invalid Bearer never falls back to a cookie. A valid PAT needs no `Origin` or `X-CSRF-Token`. | `every_android_route_requires_a_valid_bearer_...`, `meta_probe_...` |
+| Anonymous request | `GET` is 401 `session_expired`; a write with neither Bearer nor cookie is 403 `csrf_failed` (origin check first). The app only omits the header when its token is blank. | same |
 | Success envelope | `{ "data": ... }` | all tests |
-| List envelope | `{ "data": [...], "meta": { "page", "per_page", "has_more" } }`, page size 50, 1-based, omitted `page` is 1, a page past the end is an empty list with `has_more:false` | `list_pages_are_fifty_wide_...` |
-| Error envelope | `{ "error": { "code", "message", "fields"?, "current"? } }`. `fields` values are strings. Never a v1 `detail`. | `assert_error` in every test |
-| 409 conflict | `{ "error": { "code": "conflict", "message", "current": <full entity> } }` on project and yarn update when `expected_updated_at` is stale. `current` carries the same keys as the detail DTO (`_html` included). Category rename conflict has `fields.name` and no `current`. | `stale_writes_return_409_...` |
-| Timestamps | `updated_at` is echoed verbatim as `expected_updated_at`; a malformed value is 422 `validation_error` with `fields.expected_updated_at` | same |
-| 404 | Missing and foreign entities are both 404 `not_found` (no `current`) | `project_writes_decode_...` |
-| Delete | `204` with an empty body; a repeat is 404 `not_found` (the app treats a 404 delete as success: `replayDelete`, `replayAttachmentDelete`, `replayImageDelete`, `replayPhotoDelete`) | `project_writes_...`, `media_upload_...`, `yarn_photos_...` |
-| Media URLs | `url` and `thumbnail_url` are protected server-relative `/media/...` paths. The app uses them as returned with the same Bearer. Anonymous or invalid Bearer is a bare 401, another owner's file is a bare 403, a deleted file is a bare 404 (no v2 envelope: the app only reads the status). | `media_upload_delete_and_protected_urls_work_with_a_pat` |
+| List envelope | `{ "data": [...], "meta": { "page", "per_page", "has_more" } }`, 50 per page, 1-based; a page past the end is empty with `has_more:false` | `list_pages_are_fifty_wide_...` |
+| Error envelope | `{ "error": { "code", "message", "fields"?, "current"? } }`; `fields` values are strings; never a v1 `detail` | `assert_error` everywhere |
+| 409 conflict | `{ error: { code:"conflict", current: <full entity> } }` on stale `expected_updated_at`; a category rename collision is 409 with `fields.name` and no `current` | `stale_writes_return_409_...` |
+| 404 | missing and foreign entities are the same 404 `not_found` | all |
+| 422 | `validation_error` with `fields`; media order, alt text and timer bodies are `deny_unknown_fields` | `media_order_...`, `photo_descriptions_...`, `project_timer_...` (T121.4) |
+| Delete | `204` empty; a repeat is 404 (the app treats a 404 delete as success) | `project_writes_...`, `media_upload_...`, `yarn_photos_...` |
+| Media URLs | protected server-relative `/media/...` paths used with the same Bearer; failures are bare 401/403/404 (no envelope) | `media_upload_delete_and_protected_urls_...` |
 | Caching | `Cache-Control` contains `no-store` | `meta_probe_...` |
-| Tags | v2 keeps each array item as one label (`"winter gift"` stays one tag); v1 tokenised it. The app's editor splits on commas only. | `project_writes_decode_...` |
+| Tags | v2 keeps each array item as one label; v1 tokenised it | `project_writes_...` |
 
 ## Route inventory
 
-"Android" names the Retrofit method or class. "Server" is the handler module in
-`src/api_v2/`.
+"Android" names the Retrofit method or class.
 
-### Capability probe, authentication
+### Capability probe, authentication, onboarding
 
-| Route | Android | Server | Status | Notes |
-| --- | --- | --- | --- | --- |
-| `GET /api/v2/meta` | `MetaV2Api.getMeta` -> `MetaV2Dto` | `meta.rs` | **match**, one optional gap | `{data:{version, build_id, is_admin, user:{id,email,is_admin}\|null}}`. Android also reads `user.avatar_url` (optional); the server does not emit it here (see gap 3). |
-| `POST /api/v2/auth/token` | none; `PasswordTokenMinter` still calls `POST /api/v1/auth/token` and reads `{token}` | `native_auth.rs` | **server-only** | v2 body is `{email, password, token_name?}` and the answer is wrapped: `{data:{token}}`. 401 `invalid_credentials`, 422 `validation_error` (`fields`), 429 `rate_limited` + `Retry-After`. The app maps 401 and 403 to "invalid credentials" and everything else to `ServerError`. Pinned by `native_token_login_mints_a_pat_...`. |
-| `POST /api/v2/auth/register` | none; `RegistrationClient` | `signup.rs` | **match** | Only offered when `GET /api/v2/meta` says `registration_enabled`. Body `{email, password, device_name?}`, answer `{data:{token}}` (201); 404 `signup_disabled`, 409 `registration_failed` (generic), 422 `validation_error`, 429 `rate_limited`. Pinned by `native_register_*` and `RegistrationClientTest`. |
-| `GET /api/v1/meta` (onboarding), `GET /api/v1/categories` (token check) | `OnboardingValidator` | v1 router | client on v1 | The v2 equivalent is the `meta` probe above (200 for anyone, 401 for a bad Bearer). |
-
-### Projects (`ProjectsV2Api`, `projects.rs`, `media.rs`)
-
-| Method and path | Android request | Server request | Response | Status |
-| --- | --- | --- | --- | --- |
-| `GET /api/v2/projects` | `page`, `category`, `tag`, `favorite`, `q` | same query keys | `{data:[ProjectListItem], meta}` | **match** |
-| `GET /api/v2/projects/tags` | not used: the editor suggests from the cached projects (offline) | none | `{data:[{tag,count}]}` | **web only** |
-| `GET /api/v2/projects/{id}` | none | none | `{data: ProjectDto}` | **match** |
-| `POST /api/v2/projects` | `ProjectWriteRequest` (default-valued keys omitted by Kotlin) | `ProjectWriteRequest`, unknown keys ignored | `201 {data: ProjectDto}` | **match** |
-| `PUT /api/v2/projects/{id}` | same plus `expected_updated_at`, step `id` | same | `200 {data}`; 409 with `error.current`; non-empty `image_urls` (or step `image_urls`) is 422 `fields.image_urls` | **match** (the app never sends `image_urls` on update) |
-| `DELETE /api/v2/projects/{id}` | none | none | `204`; repeat `404` | **match** |
-| `PUT /api/v2/projects/{id}/favorite` | none | none | `200 {data: ProjectDto}`, idempotent | **match** |
-| `DELETE /api/v2/projects/{id}/favorite` | none | none | `200 {data: ProjectDto}`, idempotent | **match** |
-| `POST /api/v2/projects/{id}/favorite` | not used (v1 verb) | no route | `405` | **match** (the v1 verb is deliberately gone) |
-| `POST /api/v2/projects/{id}/images/title` | multipart `file`, optional `alt_text` | same parts | `201 {data: Image}` | **match** |
-| `POST /api/v2/projects/{id}/steps/{stepId}/images` | multipart `file`, optional `alt_text` | same | `201 {data: Image}` with `step_id` | **match** |
-| `POST /api/v2/projects/{id}/attachments` | multipart `file` | same | `201 {data: Attachment}` | **match** |
-| `DELETE /api/v2/projects/{id}/images/{imageId}` | none | none | `204`; repeat `404` | **match** |
-| `DELETE /api/v2/projects/{id}/attachments/{attachmentId}` | none | none | `204`; repeat `404` | **match** |
-
-`ProjectDto` (server) is `ProjectV2Dto` (client): the v1 fields plus `description_html`,
-`notes_html`, `other_materials_html` and `steps[].description_html`. The client drops the
-`_html` fields (`toV1()`). `images[]`, `attachments[]` and the yarn `photos[]` are raw JSON
-on the server, so their shape is only guaranteed by tests: `ImageDto` needs `id`, `url`,
-`thumbnail_url`, `alt_text`, `image_type`, `is_title_image`, `is_stitch_sample` as non-null.
-
-### Yarns (`YarnsV2Api`, `yarns.rs`, `media.rs`)
-
-| Method and path | Notes | Status |
+| Route | Android | Status |
 | --- | --- | --- |
-| `GET /api/v2/yarns` | query `page`, `favorite`, `q` (no `category` or `tag`); `{data:[YarnListItem], meta}` | **match** |
-| `GET`, `POST`, `PUT`, `DELETE /api/v2/yarns[/{id}]` | same rules as projects; 409 `error.current` is a `YarnV2Dto`; negative `weight_grams` or `length_meters` is 422 | **match** |
-| `PUT`, `DELETE /api/v2/yarns/{id}/favorite` | idempotent, `200 {data: YarnDto}`; `POST` is `405` | **match** |
-| `POST /api/v2/yarns/{id}/photos` | multipart `file`; `201 {data: Photo}`; the first photo is `is_primary` | **match** |
-| `DELETE /api/v2/yarns/{id}/photos/{photoId}` | `204`; deleting the primary promotes the next photo; repeat `404` | **match** |
+| `GET /api/v2/meta` | `MetaV2Api` (`ApiCapabilities`, settings, error reporting); `OnboardingValidator`, `RegistrationClient`, `OidcLoginApi`, `ServerApiProbe` call it directly | **match**; `user.avatar_url` optional (T121.1 avatar follow-up) |
+| `POST /api/v2/auth/token` | `PasswordTokenMinter`: v2 when the probe says so (reads `{data:{token}}`), else `POST /api/v1/auth/token` | **match**, **v1 fallback** |
+| `POST /api/v2/auth/register` | `RegistrationClient` | **match, pinned elsewhere** (`api_v2_signup.rs`, `RegistrationClientTest`) |
+| `POST /api/v2/auth/oidc/start`, `/exchange` | `OidcLoginApi` | **match, pinned elsewhere** (`api_v2_oidc_login.rs`) |
+| `GET /api/v1/meta`, `GET /api/v1/categories` | `OnboardingValidator.checkIsStricknaniServer` / `checkTokenAuthorizes`, only when the v2 probe says "unsupported" | **v1 fallback** |
 
-### Categories (`CategoriesV2Api`, `categories.rs`)
+### Projects, yarns, categories
 
-| Method and path | Notes | Status |
+| Method and path | Android | Status |
 | --- | --- | --- |
-| `GET /api/v2/categories` | `{data:[{id,name}]}` (not paged) | **match** |
-| `POST /api/v2/categories` | `201 {data}`; creating an existing name is idempotent | **match** |
-| `PUT /api/v2/categories/{id}` | rename collision is 409 `conflict` with `fields.name`, no `current` | **match** |
-| `DELETE /api/v2/categories/{id}` | `204` | **match** |
+| `GET /api/v2/projects`, `GET /projects/{id}`, `POST`, `PUT`, `DELETE` | `ProjectsV2Api` | **match**; **v1 fallback** (`ProjectsApi`) |
+| `PUT`/`DELETE /api/v2/projects/{id}/favorite` | `ProjectsV2Api`; v1 used `POST` | **match**, **v1 fallback**; `POST` is 405 on v2 |
+| `GET /api/v2/projects/tags` | not used (editor suggests from the cache) | server-only |
+| `POST .../images/title`, `.../steps/{id}/images`, `.../attachments`; `DELETE .../images/{id}`, `.../attachments/{id}` | `ProjectsV2Api` | **match**, **v1 fallback** |
+| `PUT /api/v2/projects/{id}/images/order`, `.../steps/{stepId}/images/order` | `reorderTitleImages`, `reorderStepImages`; body `{ids}`, answer `{ids, updated_at}`; 422 for a partial/unknown/foreign-group list, 404 for a foreign step | **match** (T121.4: `media_order_routes_...`); v2 only, queued as `PROJECT_*_IMAGE_ORDER` |
+| `PATCH /api/v2/projects/{id}/images/{imageId}` | `PhotoEditV2Api.updateProjectImageAlt`, body `{alt_text}`, answer full image; empty falls back to the file name | **match** (T121.4: `photo_descriptions_...`); v2 only, online only |
+| `POST /api/v2/projects/{id}/images/{imageId}/edit` | `PhotoEditV2Api.editProjectImage` (rotate, crop) | **match, pinned elsewhere** (`api_v2_media.rs`) |
+| `GET`/`PUT /api/v2/projects/{id}/timer` | `getProjectTimer`, `updateProjectTimer`; body `{action: start\|stop\|set_total, total_seconds?}`, answer `ProjectTimerDto` incl. `started_by` | **match** (T121.4: `project_timer_...`); v2 only |
+| `PUT`/`DELETE /api/v2/projects/{id}/timer/reminder`, `GET /push/key`, `PUT`/`DELETE /push/subscription` | none (web push) | server-only |
+| `GET`, `POST`, `PUT`, `DELETE /api/v2/yarns[/{id}]`, favourite `PUT`/`DELETE`, `POST .../photos`, `DELETE .../photos/{id}` | `YarnsV2Api` | **match**, **v1 fallback** (`YarnsApi`) |
+| `PUT /api/v2/yarns/{id}/photos/order` | `YarnsV2Api.reorderPhotos` | **match** (T121.4); v2 only |
+| `PATCH /api/v2/yarns/{id}/photos/{photoId}`, `POST .../photos/{id}/edit` | `PhotoEditV2Api` | **match** (T121.4 for `PATCH`); v2 only |
+| `GET`, `POST`, `PUT`, `DELETE /api/v2/categories[/{id}]` | `CategoriesV2Api` | **match**, **v1 fallback** (`CategoriesApi`) |
+
+`ProjectDto` is `ProjectV2Dto` plus `*_html` fields the client drops (`toV1()`); `images[]`,
+`attachments[]` and `photos[]` are raw JSON on the server, so their shape is guaranteed only by
+the tests.
 
 ### Sync
 
-| Route | Android | Server | Status |
-| --- | --- | --- | --- |
-| `GET /api/v2/sync/projects`, `GET /api/v2/sync/yarns` | none; `SyncApi` calls `/api/v1/sync/*` and decodes the bare v1 body | `sync.rs`: `{data:{updated:[full DTO], deleted_ids, server_time, full_resync_required (always false), has_more, next_cursor}}`; query `since` or `cursor` (not both), `limit` 1..50 | **server-only** (phase b) |
-| `GET /api/v2/sync/categories` | none; `SyncApi.syncCategories` on v1 | no route | gap 2 |
-
-The server's `updated[]` entries are byte-identical to the detail DTO, so `toV1()` applies
-unchanged. `server_time` is passed back verbatim as `since`. Pinned by
-`sync_reports_native_writes_with_the_detail_shape_and_tombstones_deletes`.
-
-### Administrator (`AdminApi`, `admin.rs`, `audit.rs`)
-
-| Method and path | Status | Notes |
+| Route | Android | Status |
 | --- | --- | --- |
-| `GET /api/v2/admin/audit?page&entity&action` and `GET /api/v2/admin/audit/{id}` | **match** | `AuditPageDto` and `AuditDetailEnvelopeDto`; a PAT of a non-admin is 403 `admin_required` |
-| `GET /api/v2/admin/users?page`, `POST /api/v2/admin/users`, `PATCH /api/v2/admin/users/{id}/active`, `POST /api/v2/admin/users/{id}/reset-password` | **match** | covered in depth by `api_v2_admin_pat.rs` and `api_v2_admin.rs` |
+| `GET /api/v2/sync/projects`, `/yarns` | `SyncV2Api`, `runScopedV2Sync` (`scope` query for administrators, 409 `scope_mismatch` restarts as a full resync); `{data:{updated, deleted_ids, server_time, full_resync_required, has_more, next_cursor, scope?}}` | **match**, **v1 fallback** (`SyncApi`, bare v1 body) |
+| `GET /api/v2/sync/categories` | `SyncV2Api.syncCategories`, `CategoryRepository.syncV2` | **match** (T121.4: `category_sync_pages_...`; deep suite `api_v2_category_sync.rs`), **v1 fallback** |
 
-### History
+### Account, security, export
 
-| Route | Android | Server | Status |
-| --- | --- | --- | --- |
-| `GET /api/v2/projects/{id}/history[?page]`, `GET /api/v2/projects/{id}/history/{eventId}`, same for `/yarns/{id}/...` | `HistoryApi`, `HistoryRepository` | `resource_history.rs` (`a85e4b5`): PAT or cookie read, owner-scoped, 20 events per page, `page` of 0 or above 10000 is 400 `invalid_query`, foreign or mismatched event is 404 `not_found` | **match** (served since `a85e4b5`; its contract is in `api_v2_resource_history.rs`, the Bearer requirement is pinned here) |
-| `GET /api/v2/activity[?limit&before]` | done (Home "Recent activity": `ActivityV2Api`, `ActivityRepository`, `ActivitySection`; online-only, hidden on 404) | `activity.rs`: PAT or cookie read, owner-scoped feed of project and yarn events, coalesced server side; `limit` 1-50 (default 10), `before` is an event id, bad query is 400 `invalid_query`; contract in `api_v2_activity.rs` and `web-v2-contract.md` | **done** |
-
-### Server routes Android does not use
-
-| Route | Auth | Notes |
+| Route | Android | Status |
 | --- | --- | --- |
-| `GET /api/v2/session`, `POST /api/v2/auth/login`, `POST /api/v2/auth/logout`, `POST /api/v2/auth/signup` | cookie and CSRF | browser only |
-| `GET`, `POST`, `PUT`, `DELETE /api/v2/account...` (profile, API tokens, password, avatar) | cookie and CSRF only (`browser_user`, `mutation_user`), a PAT is refused | the app cannot manage its own tokens, password or avatar over v2 |
-| `POST /api/v2/projects/preview`, `POST /api/v2/tools/gauge`, `POST /api/v2/utils/ocr` | PAT accepted (`resource_mutation_user`) | no Android client |
-| `GET`, `POST /api/v2/projects/{id}/archive`, `/yarns/{id}/archive` | PAT accepted | `ArchiveV2Api` / `ArchiveControl`, offered when `GET /api/v2/meta` reports `archive` |
-| `POST /api/v2/imports/preview`, `POST /api/v2/imports/preview-file` | PAT accepted | Android imports through `POST /projects/import` instead (gap 5) |
-| `GET /api/v2/admin/resources/...`, `GET /api/v2/admin/users/{id}/avatar/{filename}` | admin | web admin identity views |
+| `GET`, `PATCH /api/v2/account` | `AccountV2Api` (`use_gravatar`, `detail_card_order`) | **match** (T121.4: `account_token_routes_...`) |
+| `GET`, `POST /api/v2/account/api-tokens`, `DELETE .../{id}`, `PATCH .../current` | `AccountV2Api`; create needs `current_password` (step-up) from a PAT, revoke answers 200 `{id, revoked, current_token}` | **match** (T121.4); details in `api_v2_account_bearer.rs` |
+| `PUT /api/v2/account/password`, `POST`/`DELETE /account/avatar` | `AccountV2Api` | **match, pinned elsewhere** (`api_v2_account_bearer.rs`) |
+| `POST /api/v2/account/delete` | `AccountDeletion` | **match, pinned elsewhere** (`api_v2_account_delete.rs`) |
+| `GET`/`POST /api/v2/account/export`, ticket download, `POST /account/import` | `DataExportApi`, `DataRestoreApi` | **match, pinned elsewhere** (`api_v2_export.rs`, `api_v2_restore.rs`) |
+| `/api/v2/account/identities*`, `/account/reauth*` | `OidcAccountApi` | **match, pinned elsewhere** (`api_v2_oidc_account.rs`) |
+| `POST /api/v2/auth/login`, `/auth/logout`, `/auth/signup`, `GET /session` | none | server-only (browser, cookie and CSRF) |
 
-## Gaps
+### Imports, archive, sharing, history, admin
 
-1. **Owner history: resolved.** `HistoryApi` was client-only when this inventory started; the
-   server gained the routes in `a85e4b5` with the 20-per-page shape the client expects. Old
-   servers still answer 404 or 405 and the app hides the section.
-2. **No `GET /api/v2/sync/categories`.** The client's `SyncApi.syncCategories` expects (on v1)
-   `{updated:[{id,name}], deleted_ids, server_time}`; the server documents it as pending a
-   storage migration. The app keeps all sync on v1 until this and a `SyncV2Api` exist.
-3. **`GET /api/v2/meta` omits `user.avatar_url`.** `MetaV2UserDto.avatarUrl` is optional and
-   tolerated, but the app wants the `/media/thumbnails/users/{id}/thumb_<hash>.jpg` path that
-   `GET /api/v2/session` already returns. (Concord `T121.1.avatar` is working on it; the
-   contract test accepts either absent or a string.)
-4. **Sync envelope is new for the client.** v2 wraps the body in `{data:{...}}` and adds
-   `has_more` and `next_cursor`. `ProjectSyncResponseDto` and `YarnSyncResponseDto` decode the
-   bare v1 body, so a `SyncV2Api` and `{data}` DTO are required, not just a path change.
-5. **URL import mismatch.** Android posts form-encoded `type`, `url`, `use_ai` to the web route
-   `POST /projects/import` and decodes `ProjectImportResponseDto`. The v2 equivalent is
-   `POST /api/v2/imports/preview` with JSON `{type:"url", url, use_ai}` returning
-   `{data:{draft:{...}}}` (different shape, `import_unavailable` and `rate_limited` errors).
-   The server accepts a PAT there; the client has no mapper.
-6. **Token login and onboarding still on v1.** `PasswordTokenMinter` reads `{token}` from
-   `/api/v1/auth/token`; v2 answers `{data:{token}}` and uses 422 and 429 where v1 used other
-   statuses. The `OnboardingValidator` calls v1 `meta` and `categories`. Switching them needs
-   the unwrapping and the extra status mapping.
-7. **Anonymous write is 403, not 401.** A write with no `Authorization` header and no cookie is
-   403 `csrf_failed` (the origin check precedes the session check). The app omits the header
-   only when its token is blank, and `ApiCapabilities` treats 403 as "undecided", so this is
-   harmless, but it differs from the 401 `session_expired` the app expects for bad tokens.
-8. **`/media/...` errors are not v2 envelopes.** Anonymous, invalid-Bearer and foreign-owner
-   requests are bare 401 or 403 (a foreign API entity is 404). The app reads only the status.
-9. **Behavioural, not structural.** v2 keeps tags verbatim (v1 tokenised them), update rejects
-   `image_urls`, and a PAT's bad-token code is `session_expired` (not "token invalid"), so the
-   UI must not say "session expired" for a PAT.
+| Route | Android | Status |
+| --- | --- | --- |
+| `GET`, `POST /api/v2/imports/drafts`, `GET`, `DELETE .../{id}` | `ImportsV2Api` (`ImportDrafts`; skipped when the probe is not v2) | **match, pinned elsewhere** (`api_v2_imports.rs`) |
+| `POST /api/v2/imports/preview-file`, `GET /imports/image` | `ImportsV2Api`, `ImportImagePicker` | **match, pinned elsewhere** |
+| `POST /api/v2/imports/preview` | none (Android uses drafts) | server-only |
+| `POST /api/v2/projects/preview`, `/tools/gauge`, `/utils/ocr` | none | server-only |
+| `GET`, `POST /api/v2/{projects,yarns}/{id}/archive` | `ArchiveV2Api` | **match, pinned elsewhere** (`api_v2_archive.rs`) |
+| shares, leave, transfer, `yarn-candidates`, `/people` | `SharingV2Api` | **match, pinned elsewhere** (`api_v2_sharing.rs`) |
+| `GET /api/v2/{projects,yarns}/{id}/history[/{eventId}]`, `GET /activity` | `HistoryApi`, `ActivityV2Api` | **match, pinned elsewhere** (`api_v2_resource_history.rs`, `api_v2_activity.rs`) |
+| `/api/v2/admin/audit`, `/admin/users*`, identities of other users | `AdminApi`, `OidcAccountApi` | **match, pinned elsewhere** (`api_v2_admin*.rs`, `api_v2_audit.rs`) |
+| `/api/v2/admin/resources/...`, impersonation, `POST /telemetry/sentry` | none | server-only |
 
-Not verified and not covered by a test: `page=0`, negative or non-numeric `page` handling,
-and v2 behaviour under rate limits for the import and OCR routes.
+## Differences the client has to know (v1 to v2)
+
+| Area | v1 | v2 |
+| --- | --- | --- |
+| Envelope | bare body | `{data}`; lists add `meta` |
+| Errors | FastAPI `{detail}` | `{error:{code,message,fields?,current?}}` |
+| Favourite | `POST` toggles | `PUT` sets, `DELETE` clears, both idempotent |
+| Pagination | `page` plus `size` style | fixed 50 per page, 1-based, `has_more` |
+| Sync | bare body, `since` only | enveloped, `since` or `cursor`, `limit` 1..50, `has_more`, `scope` |
+| Tags | tokenised | verbatim items |
+| Update with images | `image_urls` accepted | non-empty `image_urls` is 422 `fields.image_urls` |
+| Token login | `{token}`, 401/403 | `{data:{token}}`, 401 `invalid_credentials`, 422, 429 `rate_limited` |
+| Bad Bearer | 401 `{detail}` | 401 `session_expired` (never cookie fallback) |
+| Media order, alt text, timer, shares, history, archive, drafts, account | absent | v2 only |
+
+## Open parity items
+
+1. **v1 fallbacks still compiled in** for projects, yarns, categories, sync, token login and
+   onboarding; see T121.5 below. Every v2 route Android calls has a pinned contract test now.
+2. **Anonymous write is 403 `csrf_failed`, not 401** (origin check first). Harmless:
+   `ApiCapabilities` treats 403 as undecided and the app only omits the header with a blank token.
+3. **`/media/...` errors are not v2 envelopes** (bare 401/403/404); the app reads only the status.
+4. **`GET /api/v2/meta` omits `user.avatar_url`**; the field is optional on the client.
+5. **Behavioural**: a PAT's bad-token code is `session_expired`; the UI must not claim a browser
+   session expired.
+
+Not verified: `page=0`, negative or non-numeric `page`, and rate limits on the import and OCR
+routes.
+
+## T121.5: offline queue, account isolation and v1 retirement blockers
+
+v1 stays available. Nothing here removes or changes a v1 route.
+
+### Offline queue and account isolation: how it works and the evidence
+
+The Android app is single-account per install. There is one Room database; queued writes live in
+the `pending_mutations` table with no account column, and the media-upload bytes sit in
+`filesDir/pending-uploads`. Isolation therefore rests on four mechanisms:
+
+1. **Sign-out and account deletion wipe everything**: `SettingsViewModel.signOut` clears the
+   credentials, the timers, `database.clearAllTables()` (cache, cursors, queue) and, since T121.5,
+   `pending-uploads`. `accountDeleted` additionally clears the image cache.
+2. **Re-sign-in keeps the queue only for the same account**: the OIDC path compares the new
+   token's email with the saved one (`OidcFailure.AccountMismatch`); the password "sign in again"
+   path now does the same (`isSameAccountForSignInAgain`, T121.5).
+3. **Credentials key the capability cache** (`serverUrl` + token), so one account's probe, identity
+   and admin flag never carry over.
+4. **An expired session pauses replay** (`WriteReplayWorker.doWork` returns early while
+   `sessionExpired`); a stale 401 cannot flag a new token (`markSessionExpired(tokenUsed)`).
+
+Existing tests (JVM unless marked):
+
+| Concern | Test |
+| --- | --- |
+| Queued writes: coalescing, temp-id rebasing, timestamp carried | `data/repository/QueuedUpdateRequestTest`, `ProjectMediaOrderRebaseTest`, `MediaOrderingTest`, `data/uploads/ProjectAttachmentMutationTest` |
+| Queued writes survive sync and tombstones until replayed | `data/repository/SharedSyncTest` (`queued local writes win over a delta ...`, `a queued local write keeps its row out of the changed ids`), `EveryoneScopeTest` (`a demoted administrator's foreign rows are purged except queued writes`) |
+| Retry versus conflict classification, 409 `current` | `sync/WriteReplayWorkerTest` (`WriteReplayWorkerV2ConflictTest`), `ui/common/SyncIssuePresentationTest`, `SyncFailureReasonTest`, `data/errorreporting/ErrorReportingTest` |
+| Interrupted sync repeats from the old cursor, same delta twice is idempotent | `SharedSyncTest` (`an interrupted run is simply repeated ...`, `replaying the same delta twice ...`), `data/api/v2/SyncV2Test`, `ScopedSyncTest` |
+| Per-scope cursors, fresh database after sign-out | `EveryoneScopeTest` (`each scope has its own cursor`, `a fresh database after sign-out starts from the defaults`) |
+| Capability cache per account, sign-out drops identity | `data/api/ApiCapabilitiesTest` (`the answer is kept per server url and token`, `a failure after a good probe for other credentials does not leak the old answer`, `signing out drops the cached v2 identity`) |
+| Stale 401 of an old token, expiry detection | `data/api/SessionExpiryTest`, `data/settings/AuthInfoTest` |
+| OIDC re-sign-in refuses another account | `data/oidc/OidcCoordinatorTest` (`AccountMismatch`) |
+| Timers and reminders per account key | `data/timer/RunningTimerControllerTest` (`the stop action does nothing for another account ...`), `ProjectTimerReminderPolicyTest` |
+| Account deletion wipes local data | `data/account/AccountDeletionRepositoryTest` |
+| `clearAllTables` removes shared rows, cursors, queue, filter (instrumented) | `androidTest/.../data/db/AppDatabaseMigrationTest` |
+| Replay against a real Rust backend (instrumented) | `androidTest/.../sync/RustBackendReplayIntegrationTest`, `RustBackendContractTest` (JVM) |
+
+Gaps found and closed in this task:
+
+- **Password "sign in again" accepted any account.** `SignInAgainViewModel` kept the cache and the
+  queue and replayed them under whatever email was typed, so account A's queued creates and
+  edits could land under account B (the OIDC path already refused). Fixed with
+  `isSameAccountForSignInAgain`; new JVM test `ui/signin/SignInAgainAccountTest` (same account
+  case-insensitively, another account refused, unknown saved email from a QR setup accepted).
+  Residual: a QR-configured session has no saved email, so a different account cannot be
+  detected there until the saved email is learned from `GET /api/v2/meta` (`user.email`).
+- **Plain sign-out left `pending-uploads` on disk** (only account deletion removed it). The rows
+  were gone, so nothing replayed, but the previous account's picked photos and PDFs stayed in app
+  storage. `signOut` now deletes the directory.
+
+Remaining, not changed: `clearAllTables` and the file wipe are not unit-testable on the JVM (Room
+and `Context`); the instrumented `AppDatabaseMigrationTest` is the evidence and was not run in
+this task (no device).
+
+### Every remaining v1 caller and what blocks retirement
+
+**Android (`android/app/src/main/kotlin/blue/anika/wolle/`)**
+
+| File | v1 routes | Used when | Blocker |
+| --- | --- | --- | --- |
+| `data/api/ProjectsApi.kt`, `YarnsApi.kt`, `CategoriesApi.kt` | `/api/v1/projects[...]` (CRUD, favourite `POST`, media), `/yarns[...]`, `/categories[...]` | `ApiCapabilities` says v1: a server without v2, or a 200 meta without `user` | Retiring v1 requires a minimum-server-version decision: an installed app talking to an older server needs these. Repositories (`ProjectRepository`, `YarnRepository`, `CategoryRepository`) branch on `capabilities.useV2()`. |
+| `data/api/SyncApi.kt` | `/api/v1/sync/{projects,yarns,categories}` | v1 fallback of the three repositories' `syncDetailed` | same; v1 and v2 share the stored `since` cursor (`server_time`, verbatim), so switching generation needs no resync |
+| `data/api/MetaApi.kt` | `/api/v1/meta` | provided in `NetworkModule` but no remaining caller (dead code, safe to delete) | none |
+| `data/onboarding/OnboardingValidator.kt` | `/api/v1/meta`, `/api/v1/categories` | the v2 probe says "unsupported" | old-server support |
+| `data/onboarding/PasswordTokenMinter.kt` | `/api/v1/auth/token` | probe says v1 | old-server support |
+| `data/api/SessionExpiryInterceptor.kt` | recognises a `/api/v1/` 401 as a rejected token | v1 fallback | goes with the fallback |
+| `androidTest/.../e2e/StricknaniE2eTest.kt` | reads fixture state through `/api/v1/yarns/{id}`, `/projects/{id}` | the instrumented journey | switch the verifier to v2 reads |
+| `docs`, `android/docs/*` | mention v1 | history | docs only |
+
+No Android code path calls v1 for: media order, alt text, timer, account, history, activity,
+sharing, archive, drafts, admin, OIDC. Those exist on v2 only.
+
+**Web (`web/`)**
+
+| Caller | Routes | Blocker |
+| --- | --- | --- |
+| `web/src` | none (the SvelteKit app uses v2 only) | none |
+| `web/e2e/lib/seed.ts` and `seed.test.ts`, `summarize-e2e.test.ts` | `POST /api/v1/auth/token`, `/categories`, `/yarns`, `/projects`, `.../photos`, `.../images/title`, `GET /yarns/{id}`, `/projects/{id}`, lists | the Playwright fixture seeds and verifies through v1; port to v2 (token via `/api/v2/auth/token`, v2 writes and reads) |
+
+**Server-internal and legacy**
+
+| Where | v1 use | Blocker |
+| --- | --- | --- |
+| `src/lib.rs` | nests `/api/v1` = `auth`, `categories`, `yarns`, `projects`, `sync`, `/meta` | the routers themselves; removal deletes `src/{auth,categories,yarns,projects,sync}.rs` v1 handlers and their `tests/{categories,yarns,projects,sync,relations,security,pwa,...}.rs` suites |
+| `src/media.rs` | `/api/v1/projects/.../images/title`, `/steps/.../images`, `/attachments`, `/yarns/.../photos`, deletes | v1 media routes; shared helpers with v2 `media.rs` |
+| `src/archive_service.rs` | `POST /api/v1/projects/{id}/archive`, `/yarns/{id}/archive` | v2 `archive.rs` exists; v1 routes have no known caller besides tests (`tests/archive_service.rs`) |
+| `src/import_service.rs` | `POST /projects/import` (`android_import`, legacy Android URL import) and the form routes `/imports/preview`, `/imports/preview-file`, `/imports/create-project`, `/imports/create-yarn`; the last two call the router in-process at `/api/v1/projects` and `/api/v1/yarns` (`api_call`) | the in-process calls depend on v1 create handlers; `/projects/import` is no longer called by the current app (it uses drafts), but older installed APKs still use it. Inventory installed clients first |
+| `src/ocr_service.rs` | legacy `POST /utils/ocr` (not under `/api/v1`) built on the `core` router | v2 `POST /api/v2/utils/ocr` exists; confirm no installed client uses the legacy route |
+| `src/legacy_redirects.rs` | no v1; `GET`-only redirects of old page paths to `/app/` | independent of v1 retirement |
+| `tests/*` | `image_import`, `ai`, `audit`, `importer`, `import_service`, `media`, `media_ids`, `security`, `pwa`, `api_v2.rs`, `api_v2_token.rs`, `api_v2_sync.rs`, `api_v2_sharing.rs`, `api_v2_admin_*`, `api_v2_category_sync.rs` mention `/api/v1` | several v2 suites use v1 only as the oracle for an old behaviour or to seed data; each needs a v2 equivalent before the v1 handlers go |
+| `src/ai.rs` | `openrouter.ai/api/v1` | unrelated (external provider) |
+
+### Blockers, in order
+
+1. **Installed-client inventory.** Android builds that probe v2 never fall back, but any build
+   before the capability probe (`72bfd10`) and any app talking to a server that has not been
+   upgraded uses v1 for everything. Decide a minimum app version and server version, and watch the
+   `/api/v1` request count on the server (no such metric exists today; add one before retiring).
+2. **Android fallback code** in the three repositories, `SyncApi`, `OnboardingValidator`,
+   `PasswordTokenMinter` and `SessionExpiryInterceptor` is the only thing that keeps an old
+   server working; remove it in one app release together with the minimum-server requirement.
+3. **Legacy `POST /projects/import`** for already-installed APKs (and its in-process v1 calls).
+4. **Web e2e seed** (`web/e2e/lib/seed.ts`) and the Android instrumented e2e verifier read and
+   write through v1.
+5. **Rust test suites** that exercise the v1 handlers (the list in the table above) must be
+   ported or deleted with them; shared helpers in `src/media.rs` and `src/archive_service.rs`
+   must be split from the v1 routes first.
+6. **Behavioural differences to communicate** (the v1 to v2 table above), notably tag handling
+   and the favourite verb, for any third-party v1 consumer (PAT scripts).

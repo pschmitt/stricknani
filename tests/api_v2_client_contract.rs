@@ -1737,3 +1737,621 @@ async fn sync_reports_native_writes_with_the_detail_shape_and_tombstones_deletes
 fn url_encode(value: &str) -> String {
     url::form_urlencoded::byte_serialize(value.as_bytes()).collect()
 }
+
+// --- 6. Routes added after the first inventory (T121.4 refresh) ----------------------------------
+
+/// `MediaOrderDto`: `{ids, updated_at}`.
+const MEDIA_ORDER: Spec = &[("ids", Req, Arr), ("updated_at", Req, Str)];
+
+/// `ProjectTimerDto`.
+const TIMER: Spec = &[
+    ("total_seconds", Req, Int),
+    ("started_at", Nullable, Str),
+    ("server_time", Req, Str),
+    ("started_by", Nullable, Int),
+];
+
+async fn upload_png(app: &Router, path: &str, name: &str) -> Value {
+    let reply = send(
+        app,
+        multipart(
+            path,
+            OWNER_PAT,
+            &[("file", Some((name, "image/png")), &png_bytes())],
+        ),
+    )
+    .await;
+    assert_eq!(
+        reply.status,
+        StatusCode::CREATED,
+        "{path}: {}",
+        String::from_utf8_lossy(&reply.raw)
+    );
+    reply.data()
+}
+
+#[tokio::test]
+async fn media_order_routes_take_the_complete_id_list_and_answer_ids_and_updated_at() {
+    let fixture = fixture().await;
+    let app = &fixture.app;
+    let project = call_ok(
+        app,
+        "POST",
+        "/api/v2/projects",
+        OWNER_PAT,
+        Some(json!({"name": "Ordered", "steps": [{"title": "Step", "step_number": 1}]})),
+        StatusCode::CREATED,
+    )
+    .await;
+    let project_id = project["id"].as_i64().unwrap();
+    let step_id = project["steps"][0]["id"].as_i64().unwrap();
+    let mut titles = Vec::new();
+    let mut step_images = Vec::new();
+    for name in ["t1.png", "t2.png"] {
+        let image = upload_png(
+            app,
+            &format!("/api/v2/projects/{project_id}/images/title"),
+            name,
+        )
+        .await;
+        titles.push(image["id"].as_i64().unwrap());
+    }
+    for name in ["s1.png", "s2.png"] {
+        let image = upload_png(
+            app,
+            &format!("/api/v2/projects/{project_id}/steps/{step_id}/images"),
+            name,
+        )
+        .await;
+        step_images.push(image["id"].as_i64().unwrap());
+    }
+
+    // `PUT /projects/{id}/images/order`: title images only, the complete desired order.
+    let reversed: Vec<i64> = titles.iter().rev().copied().collect();
+    let path = format!("/api/v2/projects/{project_id}/images/order");
+    let ordered = call_ok(
+        app,
+        "PUT",
+        &path,
+        OWNER_PAT,
+        Some(json!({"ids": reversed})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&ordered, MEDIA_ORDER, "title order");
+    assert_eq!(ordered["ids"], json!(reversed));
+    // The parent's new stamp is what the app stores as `updated_at`.
+    let detail = call_ok(
+        app,
+        "GET",
+        &format!("/api/v2/projects/{project_id}"),
+        OWNER_PAT,
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(detail["updated_at"], ordered["updated_at"]);
+
+    // A partial list, an unknown id, a step image id and an unknown key are all 422 (the app
+    // treats 422 as "rebase the queued order on the refreshed detail", never as a retry).
+    for body in [
+        json!({"ids": [titles[0]]}),
+        json!({"ids": [titles[0], titles[1], 999_999]}),
+        json!({"ids": [titles[0], step_images[0]]}),
+        json!({"ids": titles, "version": 1}),
+        json!({}),
+    ] {
+        assert_error(
+            &call(app, "PUT", &path, OWNER_PAT, Some(body)).await,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+        );
+    }
+
+    // `PUT /projects/{id}/steps/{stepId}/images/order`.
+    let step_path = format!("/api/v2/projects/{project_id}/steps/{step_id}/images/order");
+    let reversed_steps: Vec<i64> = step_images.iter().rev().copied().collect();
+    let ordered = call_ok(
+        app,
+        "PUT",
+        &step_path,
+        OWNER_PAT,
+        Some(json!({"ids": reversed_steps})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&ordered, MEDIA_ORDER, "step order");
+    assert_eq!(ordered["ids"], json!(reversed_steps));
+    assert_error(
+        &call(
+            app,
+            "PUT",
+            &format!("/api/v2/projects/{project_id}/steps/999999/images/order"),
+            OWNER_PAT,
+            Some(json!({"ids": []})),
+        )
+        .await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+
+    // Another account cannot reorder, and sees no difference between missing and foreign.
+    assert_error(
+        &call(app, "PUT", &path, OTHER_PAT, Some(json!({"ids": titles}))).await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+
+    // `PUT /yarns/{id}/photos/order`.
+    let yarn = call_ok(
+        app,
+        "POST",
+        "/api/v2/yarns",
+        OWNER_PAT,
+        Some(json!({"name": "Ordered yarn"})),
+        StatusCode::CREATED,
+    )
+    .await;
+    let yarn_id = yarn["id"].as_i64().unwrap();
+    let mut photos = Vec::new();
+    for name in ["p1.png", "p2.png"] {
+        let photo = upload_png(app, &format!("/api/v2/yarns/{yarn_id}/photos"), name).await;
+        photos.push(photo["id"].as_i64().unwrap());
+    }
+    let reversed_photos: Vec<i64> = photos.iter().rev().copied().collect();
+    let ordered = call_ok(
+        app,
+        "PUT",
+        &format!("/api/v2/yarns/{yarn_id}/photos/order"),
+        OWNER_PAT,
+        Some(json!({"ids": reversed_photos})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&ordered, MEDIA_ORDER, "photo order");
+    assert_eq!(ordered["ids"], json!(reversed_photos));
+    let detail = call_ok(
+        app,
+        "GET",
+        &format!("/api/v2/yarns/{yarn_id}"),
+        OWNER_PAT,
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    assert_yarn(&detail, "yarn after reorder");
+    assert_eq!(detail["updated_at"], ordered["updated_at"]);
+    assert_eq!(detail["photos"][0]["id"], reversed_photos[0]);
+    assert_error(
+        &call(
+            app,
+            "PUT",
+            &format!("/api/v2/yarns/{yarn_id}/photos/order"),
+            OWNER_PAT,
+            Some(json!({"ids": [photos[0]]})),
+        )
+        .await,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "validation_error",
+    );
+}
+
+#[tokio::test]
+async fn photo_descriptions_patch_with_alt_text_and_answer_the_full_image_dto() {
+    let fixture = fixture().await;
+    let app = &fixture.app;
+    let project = call_ok(
+        app,
+        "POST",
+        "/api/v2/projects",
+        OWNER_PAT,
+        Some(json!({"name": "Alt text"})),
+        StatusCode::CREATED,
+    )
+    .await;
+    let project_id = project["id"].as_i64().unwrap();
+    let image = upload_png(
+        app,
+        &format!("/api/v2/projects/{project_id}/images/title"),
+        "orig.png",
+    )
+    .await;
+    let path = format!("/api/v2/projects/{project_id}/images/{}", image["id"]);
+    let patched = call_ok(
+        app,
+        "PATCH",
+        &path,
+        OWNER_PAT,
+        Some(json!({"alt_text": "A cable"})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&patched, IMAGE, "patched image");
+    assert_eq!(patched["alt_text"], "A cable");
+    assert_eq!(patched["id"], image["id"]);
+    // Empty falls back to the file name, as an upload does (the dialog relies on this).
+    let emptied = call_ok(
+        app,
+        "PATCH",
+        &path,
+        OWNER_PAT,
+        Some(json!({"alt_text": ""})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(emptied["alt_text"], "orig.png");
+    for body in [
+        json!({}),
+        json!({"alt_text": 3}),
+        json!({"alt_text": "x", "extra": 1}),
+    ] {
+        assert_error(
+            &call(app, "PATCH", &path, OWNER_PAT, Some(body)).await,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+        );
+    }
+    assert_error(
+        &call(
+            app,
+            "PATCH",
+            &path,
+            OTHER_PAT,
+            Some(json!({"alt_text": "mine now"})),
+        )
+        .await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+
+    let yarn = call_ok(
+        app,
+        "POST",
+        "/api/v2/yarns",
+        OWNER_PAT,
+        Some(json!({"name": "Alt yarn"})),
+        StatusCode::CREATED,
+    )
+    .await;
+    let yarn_id = yarn["id"].as_i64().unwrap();
+    let photo = upload_png(app, &format!("/api/v2/yarns/{yarn_id}/photos"), "skein.png").await;
+    let patched = call_ok(
+        app,
+        "PATCH",
+        &format!("/api/v2/yarns/{yarn_id}/photos/{}", photo["id"]),
+        OWNER_PAT,
+        Some(json!({"alt_text": "A skein"})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&patched, PHOTO, "patched photo");
+    assert_eq!(patched["alt_text"], "A skein");
+    assert_eq!(patched["is_primary"], true);
+}
+
+#[tokio::test]
+async fn project_timer_start_stop_and_set_total_decode_as_the_android_timer_dto() {
+    let fixture = fixture().await;
+    let app = &fixture.app;
+    let project = call_ok(
+        app,
+        "POST",
+        "/api/v2/projects",
+        OWNER_PAT,
+        Some(json!({"name": "Timed"})),
+        StatusCode::CREATED,
+    )
+    .await;
+    let path = format!("/api/v2/projects/{}/timer", project["id"]);
+
+    let idle = call_ok(app, "GET", &path, OWNER_PAT, None, StatusCode::OK).await;
+    assert_decodes(&idle, TIMER, "idle timer");
+    assert_eq!(idle["total_seconds"], 0);
+    assert!(idle["started_at"].is_null());
+    assert!(idle["started_by"].is_null());
+
+    let running = call_ok(
+        app,
+        "PUT",
+        &path,
+        OWNER_PAT,
+        Some(json!({"action": "start"})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&running, TIMER, "running timer");
+    assert!(running["started_at"].is_string());
+    assert_eq!(running["started_by"], fixture.owner_id);
+    // `start` on a running timer is idempotent.
+    let again = call_ok(
+        app,
+        "PUT",
+        &path,
+        OWNER_PAT,
+        Some(json!({"action": "start"})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(again["started_at"], running["started_at"]);
+
+    let stopped = call_ok(
+        app,
+        "PUT",
+        &path,
+        OWNER_PAT,
+        Some(json!({"action": "stop"})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&stopped, TIMER, "stopped timer");
+    assert!(stopped["started_at"].is_null());
+    assert!(stopped["started_by"].is_null());
+
+    let total = call_ok(
+        app,
+        "PUT",
+        &path,
+        OWNER_PAT,
+        Some(json!({"action": "set_total", "total_seconds": 90})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(total["total_seconds"], 90);
+
+    // `total_seconds` only with `set_total`, in range; unknown actions and keys are 422.
+    for body in [
+        json!({"action": "start", "total_seconds": 5}),
+        json!({"action": "set_total"}),
+        json!({"action": "set_total", "total_seconds": -1}),
+        json!({"action": "pause"}),
+        json!({"action": "stop", "extra": true}),
+    ] {
+        assert_error(
+            &call(app, "PUT", &path, OWNER_PAT, Some(body)).await,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+        );
+    }
+    // Missing and foreign projects are the same 404.
+    assert_error(
+        &call(app, "GET", &path, OTHER_PAT, None).await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+    assert_error(
+        &call(
+            app,
+            "PUT",
+            "/api/v2/projects/999999/timer",
+            OWNER_PAT,
+            Some(json!({"action": "start"})),
+        )
+        .await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+}
+
+#[tokio::test]
+async fn account_token_routes_work_with_a_pat_in_the_shapes_the_account_screen_decodes() {
+    let fixture = fixture().await;
+    let app = &fixture.app;
+
+    // `AccountDto`: `id` and `email` are required, everything else is optional or defaulted.
+    let account = call_ok(
+        app,
+        "GET",
+        "/api/v2/account",
+        OWNER_PAT,
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(
+        &account,
+        &[
+            ("id", Req, Int),
+            ("email", Req, Str),
+            ("is_admin", Defaulted, Bool),
+            ("avatar_url", Nullable, Str),
+            ("avatar_source", Nullable, Str),
+            ("use_gravatar", Defaulted, Bool),
+            ("gravatar_enabled", Defaulted, Bool),
+        ],
+        "account",
+    );
+    assert_eq!(account["email"], OWNER_EMAIL);
+
+    const TOKEN_ROW: Spec = &[
+        ("id", Req, Int),
+        ("name", Req, Str),
+        ("created_at", Req, Str),
+        ("expires_at", Nullable, Str),
+        ("last_used_at", Nullable, Str),
+    ];
+    let tokens = call_ok(
+        app,
+        "GET",
+        "/api/v2/account/api-tokens",
+        OWNER_PAT,
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    assert_all_decode(&tokens, TOKEN_ROW, "token list");
+    assert!(
+        tokens
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|row| row.get("token").is_none()),
+        "a list row never carries the secret: {tokens}"
+    );
+
+    // Creating a token from a PAT needs the step-up password (`CreateTokenRequest`).
+    assert_error(
+        &call(
+            app,
+            "POST",
+            "/api/v2/account/api-tokens",
+            OWNER_PAT,
+            Some(json!({"name": "phone"})),
+        )
+        .await,
+        StatusCode::FORBIDDEN,
+        "reauth_required",
+    );
+    let created = call_ok(
+        app,
+        "POST",
+        "/api/v2/account/api-tokens",
+        OWNER_PAT,
+        Some(json!({"name": "second phone", "current_password": OWNER_PASSWORD})),
+        StatusCode::CREATED,
+    )
+    .await;
+    assert_decodes(
+        &created,
+        &[
+            ("id", Req, Int),
+            ("name", Req, Str),
+            ("created_at", Req, Str),
+            ("expires_at", Nullable, Str),
+            ("token", Req, Str),
+        ],
+        "created token",
+    );
+    let secret = created["token"].as_str().unwrap().to_owned();
+    // The new secret is a working API PAT.
+    assert_eq!(
+        call(app, "GET", "/api/v2/meta", &secret, None).await.status,
+        StatusCode::OK
+    );
+
+    // `PATCH /account/api-tokens/current` renames the token the request is sent with.
+    let renamed = call_ok(
+        app,
+        "PATCH",
+        "/api/v2/account/api-tokens/current",
+        &secret,
+        Some(json!({"name": "renamed phone"})),
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(&renamed, TOKEN_ROW, "renamed token");
+    assert_eq!(renamed["name"], "renamed phone");
+    assert_eq!(renamed["id"], created["id"]);
+
+    // A bearer revoke answers 200 `{id, revoked, current_token}`; revoking the caller's own token
+    // reports `current_token: true` and the secret stops working.
+    let revoked = call_ok(
+        app,
+        "DELETE",
+        &format!("/api/v2/account/api-tokens/{}", created["id"]),
+        &secret,
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    assert_decodes(
+        &revoked,
+        &[
+            ("id", Req, Int),
+            ("revoked", Defaulted, Bool),
+            ("current_token", Defaulted, Bool),
+        ],
+        "revoked token",
+    );
+    assert_eq!(revoked["current_token"], true);
+    assert_error(
+        &call(app, "GET", "/api/v2/meta", &secret, None).await,
+        StatusCode::UNAUTHORIZED,
+        "session_expired",
+    );
+}
+
+#[tokio::test]
+async fn category_sync_pages_carry_id_and_name_and_tombstone_deletes() {
+    let fixture = fixture().await;
+    let app = &fixture.app;
+    let created = call_ok(
+        app,
+        "POST",
+        "/api/v2/categories",
+        OWNER_PAT,
+        Some(json!({"name": "Sweaters"})),
+        StatusCode::CREATED,
+    )
+    .await;
+    let first = call(app, "GET", "/api/v2/sync/categories", OWNER_PAT, None).await;
+    assert_eq!(first.status, StatusCode::OK);
+    let data = first.data();
+    // `V2SyncPageDto<CategoryDto>`.
+    assert_decodes(
+        &data,
+        &[
+            ("updated", Defaulted, Arr),
+            ("deleted_ids", Defaulted, Arr),
+            ("server_time", Req, Str),
+            ("full_resync_required", Defaulted, Bool),
+            ("has_more", Defaulted, Bool),
+        ],
+        "category sync envelope",
+    );
+    assert_all_decode(&data["updated"], CATEGORY, "category sync entry");
+    assert_eq!(data["updated"], json!([created.clone()]));
+    assert_eq!(data["has_more"], false);
+
+    let since = url_encode(data["server_time"].as_str().unwrap());
+    let quiet = call(
+        app,
+        "GET",
+        &format!("/api/v2/sync/categories?since={since}"),
+        OWNER_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(quiet.status, StatusCode::OK);
+    assert!(quiet.data()["updated"].as_array().unwrap().is_empty());
+
+    let category_id = created["id"].as_i64().unwrap();
+    let deleted = call(
+        app,
+        "DELETE",
+        &format!("/api/v2/categories/{category_id}"),
+        OWNER_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(deleted.status, StatusCode::NO_CONTENT);
+    let after = call(
+        app,
+        "GET",
+        &format!("/api/v2/sync/categories?since={since}"),
+        OWNER_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(after.data()["deleted_ids"], json!([category_id]));
+
+    // `since` and `cursor` together, and another account's PAT, behave like the project sync.
+    assert_error(
+        &call(
+            app,
+            "GET",
+            "/api/v2/sync/categories?since=x&cursor=y",
+            OWNER_PAT,
+            None,
+        )
+        .await,
+        StatusCode::BAD_REQUEST,
+        "invalid_query",
+    );
+    let other = call(app, "GET", "/api/v2/sync/categories", OTHER_PAT, None).await;
+    assert!(other.data()["updated"].as_array().unwrap().is_empty());
+    assert_error(
+        &call(app, "GET", "/api/v2/sync/categories", EXPIRED_PAT, None).await,
+        StatusCode::UNAUTHORIZED,
+        "session_expired",
+    );
+}
