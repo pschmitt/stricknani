@@ -240,8 +240,10 @@ export async function listCategories(
 /** The tags the signed-in user already uses, with usage counts (editor suggestions). */
 export async function listProjectTags(
   signal?: AbortSignal,
+  scope?: LibraryScope,
 ): Promise<{ tag: string; count: number }[]> {
-  const payload: unknown = await apiRequest("/api/v2/projects/tags", {
+  const suffix = scope === "all" ? "?scope=all" : "";
+  const payload: unknown = await apiRequest(`/api/v2/projects/tags${suffix}`, {
     signal,
   });
   if (!isRecord(payload) || !Array.isArray(payload.data))

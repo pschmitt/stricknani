@@ -137,7 +137,7 @@
       .catch(() => {
         if (!controller.signal.aborted) categoryNames = [];
       });
-    void listProjectTags(controller.signal)
+    void listProjectTags(controller.signal, currentScope)
       .then((result) => {
         if (controller.signal.aborted) return;
         tagNames = result.map(({ tag }) => tag);

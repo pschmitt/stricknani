@@ -24,6 +24,7 @@ struct Fixture {
     pool: SqlitePool,
     admin_id: i64,
     anika_id: i64,
+    ben_id: i64,
 }
 
 async fn seed_user(pool: &SqlitePool, email: &str, token: &str, admin: bool) -> i64 {
@@ -52,7 +53,7 @@ async fn fixture() -> Fixture {
     let pool = db::connect("sqlite::memory:").await.unwrap();
     let admin_id = seed_user(&pool, "admin@example.test", ADMIN_PAT, true).await;
     let anika_id = seed_user(&pool, "anika@example.test", ANIKA_PAT, false).await;
-    seed_user(&pool, "ben@example.test", BEN_PAT, false).await;
+    let ben_id = seed_user(&pool, "ben@example.test", BEN_PAT, false).await;
     let root = tempfile::tempdir().unwrap();
     let state = db::AppState::new(pool.clone())
         .with_secure_cookies(true)
@@ -63,6 +64,7 @@ async fn fixture() -> Fixture {
         pool,
         admin_id,
         anika_id,
+        ben_id,
     }
 }
 
@@ -86,6 +88,15 @@ async fn project(pool: &SqlitePool, owner: i64, name: &str, at: &str) -> i64 {
     .fetch_one(pool)
     .await
     .unwrap()
+}
+
+async fn set_project_tags(pool: &SqlitePool, project_id: i64, tags: &[&str]) {
+    sqlx::query("UPDATE projects SET tags = ? WHERE id = ?")
+        .bind(serde_json::to_string(tags).unwrap())
+        .bind(project_id)
+        .execute(pool)
+        .await
+        .unwrap();
 }
 
 async fn yarn(pool: &SqlitePool, owner: i64, name: &str, at: &str) -> i64 {
@@ -214,6 +225,62 @@ async fn lists_default_to_everything_for_admins_and_to_mine_for_everyone_else() 
     assert_eq!(v1["items"].as_array().unwrap().len(), 2);
     let (_, v1_ben) = call(&f.app, "GET", "/api/v1/projects?scope=all", BEN_PAT, None).await;
     assert!(v1_ben["items"].as_array().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn project_tag_inventory_expands_only_for_admin_all_scope() {
+    let f = fixture().await;
+    let admin_project = project(&f.pool, f.admin_id, "admin hat", "2026-01-01T00:00:00Z").await;
+    set_project_tags(&f.pool, admin_project, &["admin-tag"]).await;
+    let foreign_project = project(&f.pool, f.anika_id, "anika shawl", "2026-01-02T00:00:00Z").await;
+    set_project_tags(&f.pool, foreign_project, &["foreign-tag"]).await;
+    let ben_project = project(&f.pool, f.ben_id, "ben blanket", "2026-01-03T00:00:00Z").await;
+    set_project_tags(&f.pool, ben_project, &["ben-private-tag"]).await;
+
+    let (status, default_admin_tags) =
+        call(&f.app, "GET", "/api/v2/projects/tags", ADMIN_PAT, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(default_admin_tags["data"].as_array().unwrap().len(), 1);
+    assert_eq!(default_admin_tags["data"][0]["tag"], "admin-tag");
+
+    let (status, all_admin_tags) = call(
+        &f.app,
+        "GET",
+        "/api/v2/projects/tags?scope=all",
+        ADMIN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let admin_tag_names: Vec<_> = all_admin_tags["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["tag"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        admin_tag_names,
+        ["admin-tag", "ben-private-tag", "foreign-tag"]
+    );
+
+    let (status, ignored_all_tags) = call(
+        &f.app,
+        "GET",
+        "/api/v2/projects/tags?scope=all",
+        ANIKA_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(ignored_all_tags["data"].as_array().unwrap().len(), 1);
+    assert_eq!(ignored_all_tags["data"][0]["tag"], "foreign-tag");
+    assert!(
+        !ignored_all_tags["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|item| item["tag"] == "ben-private-tag")
+    );
 }
 
 #[tokio::test]

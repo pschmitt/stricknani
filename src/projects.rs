@@ -1682,23 +1682,42 @@ pub(crate) struct TagCount {
     pub(crate) count: i64,
 }
 
-/// The distinct tags of the projects the user owns or that are shared with them (the same set the
-/// v2 "Mine" library shows), with usage counts: most used first, then by name. Tags are grouped
-/// case-insensitively (the editor deduplicates that way); the most common spelling is shown. A tag
-/// counts once per project.
-pub(crate) async fn tag_counts_for_user(
+/// The distinct project tags visible in the requested library scope. An omitted scope keeps the
+/// historical owned/shared inventory; only administrators can widen it to every project.
+pub(crate) async fn tag_counts_for_scope(
     state: &AppState,
     user_id: i64,
+    requested_scope: Option<&str>,
 ) -> Result<Vec<TagCount>, ProjectError> {
-    let rows: Vec<String> = sqlx::query_scalar(
-        "SELECT p.tags FROM projects p WHERE p.owner_id = ? OR EXISTS( \
-             SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
-             AND s.resource_id = p.id AND s.user_id = ?)",
-    )
-    .bind(user_id)
-    .bind(user_id)
-    .fetch_all(&state.pool)
-    .await
+    let requested_scope = requested_scope
+        .map(|value| {
+            crate::resource_access::Scope::parse(value)
+                .ok_or(ProjectError::Invalid("Invalid scope"))
+        })
+        .transpose()?
+        .unwrap_or(crate::resource_access::Scope::Mine);
+    let scope =
+        crate::resource_access::effective_scope(&state.pool, user_id, Some(requested_scope))
+            .await
+            .map_err(|_| ProjectError::Database)?;
+    let rows: Vec<String> = match scope {
+        crate::resource_access::Scope::All => {
+            sqlx::query_scalar("SELECT p.tags FROM projects p")
+                .fetch_all(&state.pool)
+                .await
+        }
+        crate::resource_access::Scope::Mine => {
+            sqlx::query_scalar(
+                "SELECT p.tags FROM projects p WHERE p.owner_id = ? OR EXISTS( \
+                 SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
+                 AND s.resource_id = p.id AND s.user_id = ?)",
+            )
+            .bind(user_id)
+            .bind(user_id)
+            .fetch_all(&state.pool)
+            .await
+        }
+    }
     .map_err(|_| ProjectError::Database)?;
     // lowercase key -> (spelling -> projects using it)
     let mut groups: std::collections::HashMap<String, std::collections::HashMap<String, i64>> =

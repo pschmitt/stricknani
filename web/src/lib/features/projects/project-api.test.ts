@@ -7,6 +7,7 @@ import {
   getProject,
   getYarn,
   listProjects,
+  listProjectTags,
   parseProjectDetail,
   searchFromFilters,
   setProjectFavorite,
@@ -163,6 +164,22 @@ describe("project URL state and API DTOs", () => {
     );
     expect(page.meta).toEqual({ page: 2, per_page: 50, has_more: false });
     expect(page.data[0]).toMatchObject({ id: 42, name: "River path socks" });
+  });
+
+  it("requests tag suggestions in the selected library scope", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async () =>
+        Response.json({ data: [{ tag: "wool", count: 1 }] }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await listProjectTags(undefined, "all");
+    await listProjectTags(undefined, "mine");
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "/api/v2/projects/tags?scope=all",
+      "/api/v2/projects/tags",
+    ]);
   });
 
   it("derives a linked yarn preview from its owner-scoped photo DTO", async () => {

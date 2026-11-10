@@ -48,6 +48,11 @@ struct ProjectPageQuery {
     owner_id: Option<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+struct ProjectTagQuery {
+    scope: Option<String>,
+}
+
 #[derive(Serialize)]
 struct ListEnvelope<T> {
     data: Vec<T>,
@@ -330,13 +335,21 @@ async fn list_projects(
     .into_response()
 }
 
-/// The signed-in user's distinct project tags with usage counts, for the editor's suggestions.
-async fn list_project_tags(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
+/// Distinct project tags visible in the requested library scope, with usage counts.
+async fn list_project_tags(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    query: Result<Query<ProjectTagQuery>, QueryRejection>,
+) -> Response {
     let user_id = match resource_user(&state.app, &headers).await {
         Ok(user_id) => user_id,
         Err(response) => return *response,
     };
-    match project_service::tag_counts_for_user(&state.app, user_id).await {
+    let Query(query) = match query {
+        Ok(query) => query,
+        Err(_) => return validation_error("Invalid query", None),
+    };
+    match project_service::tag_counts_for_scope(&state.app, user_id, query.scope.as_deref()).await {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => project_error(error),
     }
