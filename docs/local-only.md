@@ -55,6 +55,36 @@ is; it talks to `http://127.0.0.1:<port>` instead of a remote server.
   `local-server-libs` job) and packages it into the APKs and the Play bundle. Locally:
   `cargo ndk -t arm64-v8a --platform 26 rustc --release --lib --crate-type cdylib`, then pass the
   jniLibs-style directory as `-PlocalServerLibs=<dir>` or put it at `android/local-server-libs`.
-- Open: an emulator E2E journey for local mode (the E2E workflow does not build the library
-  yet), a path to move local data to a server other than export and restore, and the APK size
-  (about +11 MB per ABI).
+- Done: emulator E2E for the local mode in the E2E workflow's `backups` lane (it builds the x86_64
+  library): `LocalModeBackupE2eTest` (export and restore round trip with a photo) and
+  `LocalModeJourneyE2eTest` (onboarding "Only on this phone", a project created in the editor, still
+  there after an activity recreate and on the in-app server, Account says "Only on this phone" and
+  shows no server-only cards). The lane skips them when the library is missing.
+- Open: moving local data to a server in one flow (design below), and the APK size (about +11 MB
+  per ABI).
+
+## Moving local data to a server (design, not built)
+
+No new server API is needed: `POST /api/v2/account/import` (`docs/data-export.md`, "Restore") takes
+the archive the local server exports, and the app already uploads archives to it
+(`DataRestoreScheduler`, and the Backups screen's restore). Today the user does it by hand: Backups,
+download, sign in, Backups, restore. The flow to build ("Use a server instead"):
+
+1. The dialog offers "Bring my data along" (default on). Confirming runs the existing export
+   (`DataExportWorker`, tar.gz, no passphrase) against the in-app server into
+   `filesDir/local-move/local.tar.gz` (app-private, so no picker) and waits for it. A failed export
+   keeps the user in local mode and says so; nothing is signed out.
+2. Only then sign out of the local mode (`SettingsViewModel.signOut`, which clears Room and the
+   queued uploads, not the file or `filesDir/local-server`). A `pending_local_move` preference holds
+   the file's path.
+3. After the next sign-in, Home shows a card "Upload your phone data to <server>?" with Upload and
+   Not now. Upload calls `DataRestoreScheduler.start(Uri.fromFile(file))` (the path the Backups
+   restore takes, incl. the user-initiated job on Android 14+); on success the card and the file go
+   away and the Room cache syncs the restored items. Not now keeps the file; Backups can restore it
+   later.
+4. Restoring adds copies, so running it twice doubles everything: clear `pending_local_move` before
+   the upload starts and only offer it once per file. Cleanup: delete `filesDir/local-move` after a
+   successful restore or when the user discards the card.
+
+It touches the dialog, the view model, Home and two string catalogs, and needs a device check of the
+Android 14 job path and of a real server round trip, so it is tracked as T130.2 in `TODO.md`.
