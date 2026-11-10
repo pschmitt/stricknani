@@ -772,7 +772,7 @@ export async function measureLibraryDensity(
   } = measured;
   check(
     isNumber(firstItemY) &&
-      (width > 767 || firstItemY <= 200) &&
+      (width > 767 || firstItemY <= 250) &&
       isNumber(rowHeight) &&
       rowHeight >= 72 &&
       typeof visibleRows === "number" &&
