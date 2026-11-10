@@ -11,6 +11,7 @@ import com.mohamedrejeb.richeditor.model.HeadingStyle
 import com.mohamedrejeb.richeditor.model.RichTextState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MarkdownRichTest {
@@ -81,11 +82,15 @@ class MarkdownRichTest {
                 "> quoted",
                 "```\ncode\n```",
                 "<b>html</b>",
-                "line one  \nline two",
                 "[x] done",
                 "---",
             )
             .forEach { assertNull(it, roundTrip(it)) }
+    }
+
+    @Test
+    fun aHardBreakInProseBecomesANewParagraph() {
+        assertEquals("line one\n\nline two", roundTrip("line one  \nline two"))
     }
 
     @Test
@@ -184,5 +189,27 @@ class MarkdownRichTest {
         assertEquals("mailto:a@b.c", normalizeLinkTarget("mailto:a@b.c"))
         assertEquals("/media/x", normalizeLinkTarget("/media/x"))
         assertEquals("", normalizeLinkTarget("   "))
+    }
+
+    @Test
+    fun softWrappedProseIsOneParagraphAndStaysVisual() {
+        val source = "106 M anschlagen\n1 Reihe rechts\n3 cm Rippenmuster"
+        assertTrue(MarkdownRich.canEditVisually(source, keepLineBreaks = false))
+        assertEquals(
+            "106 M anschlagen 1 Reihe rechts 3 cm Rippenmuster",
+            MarkdownRich.toMarkdown(MarkdownRich.toRich(source), keepLineBreaks = false),
+        )
+    }
+
+    @Test
+    fun nonBreakingSpaceLinesStayVisualAndAreWrittenBack() {
+        val source = "Gauge\n\n&nbsp;\n\n![Swatch](/media/a.jpg)\n\n&nbsp;"
+        assertTrue(MarkdownRich.canEditVisually(source, keepLineBreaks = true))
+        assertTrue(MarkdownRich.canEditVisually(source, keepLineBreaks = false))
+    }
+
+    @Test
+    fun trailingSpacesBeforeAParagraphEndDoNotBlockVisual() {
+        assertTrue(MarkdownRich.canEditVisually("9 Maschen aufgenommen \n\n(7 neu)", false))
     }
 }

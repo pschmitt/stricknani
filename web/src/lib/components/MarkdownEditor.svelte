@@ -305,7 +305,7 @@
             )
           : t("Edit as Markdown", locale)}
         aria-pressed={shown === "raw"}
-        disabled={disabled || unsupported || !core}
+        disabled={disabled || !core}
         onmousedown={(event) => event.preventDefault()}
         onclick={() => setMode(shown === "raw" ? "visual" : "raw")}
       >

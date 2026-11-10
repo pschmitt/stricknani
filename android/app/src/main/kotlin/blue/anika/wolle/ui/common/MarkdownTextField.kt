@@ -2,6 +2,7 @@
 
 package blue.anika.wolle.ui.common
 
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -52,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -126,7 +128,7 @@ internal fun MarkdownTextField(
     fun enterVisual(): Boolean {
         val ok = MarkdownRich.canEditVisually(currentValue, keepLineBreaks)
         if (ok) {
-            MarkdownRich.load(rich, currentValue, currentThumbLineHeight)
+            MarkdownRich.load(rich, currentValue, currentThumbLineHeight, keepLineBreaks)
             written = MarkdownRich.toMarkdown(rich, keepLineBreaks)
         }
         unsupported = !ok
@@ -149,7 +151,7 @@ internal fun MarkdownTextField(
         known = value
         if (visual) {
             if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
-                MarkdownRich.load(rich, value, currentThumbLineHeight)
+                MarkdownRich.load(rich, value, currentThumbLineHeight, keepLineBreaks)
                 written = MarkdownRich.toMarkdown(rich, keepLineBreaks)
             } else {
                 unsupported = true
@@ -178,6 +180,8 @@ internal fun MarkdownTextField(
     }
 
     val tint = LocalContentColor.current
+    val context = LocalContext.current
+    val unsupportedMessage = stringResource(R.string.markdown_editor_unsupported)
     var linkOpen by remember { mutableStateOf(false) }
     var linkValue by remember { mutableStateOf("") }
     var linkHadHref by remember { mutableStateOf(false) }
@@ -302,13 +306,14 @@ internal fun MarkdownTextField(
                 R.string.markdown_editor_edit_as_markdown,
                 tint,
                 active = !visual,
-                enabled = !unsupported,
             ) {
                 if (!visual) {
                     if (MarkdownRich.canEditVisually(value, keepLineBreaks)) {
                         visual = enterVisual()
                     } else {
+                        // Never a silent no-op: say why the text stays in Markdown.
                         unsupported = true
+                        Toast.makeText(context, unsupportedMessage, Toast.LENGTH_LONG).show()
                     }
                 } else {
                     visual = false

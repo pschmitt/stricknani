@@ -36,6 +36,10 @@ import org.intellij.markdown.parser.MarkdownParser
 internal object MarkdownRich {
     private val flavour = GFMFlavourDescriptor()
     private val whitespace = Regex("\\s+")
+    private val hardBreak = Regex("<br\\s*/?>")
+    private val blockEdgeOpen = Regex("(<(?:p|li|h[1-6])>) ")
+    private val blockEdgeClose = Regex("[ \u00A0]+(</(?:p|li|h[1-6])>)")
+    internal const val NBSP = '\u00A0'
 
     /** Blocks and inlines the visual editor cannot show without changing them. */
     private val UNSUPPORTED: Set<IElementType> =
@@ -84,20 +88,32 @@ internal object MarkdownRich {
     /** What the server and the reader render for [markdown], whitespace-insensitive. */
     internal fun renderedHtml(markdown: String, keepLineBreaks: Boolean): String {
         val source = markdownPreviewSource(markdown.replace("\r\n", "\n"), keepLineBreaks)
-        val html = HtmlGenerator(source, parse(source), flavour).generateHtml()
-        return html.replace(whitespace, " ").replace("> <", "><").trim()
+        val generated = HtmlGenerator(source, parse(source), flavour).generateHtml()
+        // The editor has no line break inside a paragraph: a hard break becomes a new paragraph,
+        // which still shows as a new line.
+        val html = if (keepLineBreaks) generated else generated.replace(hardBreak, "</p><p>")
+        return html
+            .replace("&nbsp;", NBSP.toString())
+            .replace(whitespace, " ")
+            .replace("> <", "><")
+            // Spaces at the edges of a block do not show.
+            .replace(blockEdgeOpen, "$1")
+            .replace(blockEdgeClose, "$1")
+            .trim()
     }
 
     // --- Loading -----------------------------------------------------------------------------
 
     /** Backslash-escaped ASCII punctuation becomes one private-use character (same length). */
     private const val PLACEHOLDER_BASE = 0xE000
-    private val codeSpanOrEscape = Regex("(`+)[\\s\\S]*?\\1|\\\\([!-/:-@\\[-`{-~])|(=)")
+    private val codeSpanOrEscape =
+        Regex("(`+)[\\s\\S]*?\\1|\\\\([!-/:-@\\[-`{-~])|(=)|(&nbsp;|&#160;|&#[xX][aA]0;)")
 
     private fun placeholder(c: Char) = (PLACEHOLDER_BASE + c.code).toChar()
 
     private fun isPlaceholder(c: Char) =
-        c.code in (PLACEHOLDER_BASE + 0x21)..(PLACEHOLDER_BASE + 0x7e)
+        c.code in (PLACEHOLDER_BASE + 0x21)..(PLACEHOLDER_BASE + 0x7e) ||
+            c.code == PLACEHOLDER_BASE + NBSP.code
 
     private fun restore(text: String): String =
         if (text.none(::isPlaceholder)) text
@@ -214,16 +230,57 @@ internal object MarkdownRich {
         return Extracted(out.toString(), images)
     }
 
-    private fun prepare(markdown: String): Extracted {
+    private fun prepare(markdown: String, keepLineBreaks: Boolean): Extracted {
         val extracted = extractImages(markdown.replace("\r\n", "\n"))
-        val escaped = escapeStrayDelimiters(extracted.source)
+        val joined = if (keepLineBreaks) extracted.source else joinSoftBreaks(extracted.source)
+        val escaped = escapeStrayDelimiters(joined)
         val source =
             codeSpanOrEscape.replace(escaped) { match ->
+                // A non-breaking space entity is the character itself (written back as `&nbsp;`).
+                // (Carried as a placeholder: the library drops a paragraph of only whitespace.)
+                if (match.groups[4] != null) return@replace placeholder(NBSP).toString()
                 // The library drops a bare `=` (a setext token) from text, so it is carried too.
                 val literal = match.groups[2] ?: match.groups[3]
                 if (literal == null) match.value else placeholder(literal.value[0]).toString()
             }
         return Extracted(source, extracted.images)
+    }
+
+    /** Two trailing spaces or a backslash before a line end make it a hard line break. */
+    private fun isHardBreak(source: String, eol: Int): Boolean =
+        (eol >= 1 && source[eol - 1] == '\\') ||
+            (eol >= 2 && source[eol - 1] == ' ' && source[eol - 2] == ' ')
+
+    /**
+     * A prose paragraph renders soft-wrapped lines as one paragraph, but the editor would make each
+     * line a paragraph of its own. Join them with a space, as the web editor does.
+     */
+    private fun joinSoftBreaks(source: String): String {
+        val breaks = mutableListOf<Int>()
+
+        fun walk(node: ASTNode, inParagraph: Boolean) {
+            if (node.type == MarkdownElementTypes.CODE_SPAN) return
+            val paragraph = inParagraph || node.type == MarkdownElementTypes.PARAGRAPH
+            if (
+                paragraph &&
+                    node.type == MarkdownTokenTypes.EOL &&
+                    !isHardBreak(source, node.startOffset)
+            ) {
+                breaks.add(node.startOffset)
+            }
+            node.children.forEach { walk(it, paragraph) }
+        }
+        walk(parse(source), false)
+        if (breaks.isEmpty()) return source
+        val out = StringBuilder(source)
+        for (at in breaks.asReversed()) {
+            var start = at
+            while (start > 0 && (out[start - 1] == ' ' || out[start - 1] == '\t')) start--
+            var end = at + 1
+            while (end < out.length && (out[end] == ' ' || out[end] == '\t')) end++
+            out.replace(start, end, " ")
+        }
+        return out.toString()
     }
 
     /** The line height of a paragraph that holds only a picture: room for its thumbnail. */
@@ -308,14 +365,16 @@ internal object MarkdownRich {
         state: RichTextState,
         markdown: String,
         thumbLineHeight: TextUnit = DEFAULT_THUMB_LINE_HEIGHT,
+        keepLineBreaks: Boolean = false,
     ) {
-        val prepared = prepare(markdown)
+        val prepared = prepare(markdown, keepLineBreaks)
         state.setMarkdown(prepared.source)
         restoreLiterals(state, prepared.images, thumbLineHeight)
     }
 
     /** A rich text state holding [markdown]. */
-    fun toRich(markdown: String): RichTextState = RichTextState().also { load(it, markdown) }
+    fun toRich(markdown: String, keepLineBreaks: Boolean = false): RichTextState =
+        RichTextState().also { load(it, markdown, keepLineBreaks = keepLineBreaks) }
 
     /**
      * Pictures are one unit: the library lets Backspace eat a chip character by character, so a
@@ -555,7 +614,7 @@ internal object MarkdownRich {
         return try {
             val tree = parse(markdown)
             if (hasUnsupported(tree) || countImages(tree) > MAX_IMAGES) return null
-            val again = toMarkdown(toRich(markdown), keepLineBreaks)
+            val again = toMarkdown(toRich(markdown, keepLineBreaks), keepLineBreaks)
             if (again.isBlank() || hasUnsupported(parse(again))) return null
             again.takeIf {
                 renderedHtml(markdown, keepLineBreaks) == renderedHtml(it, keepLineBreaks)
@@ -623,7 +682,7 @@ internal object MarkdownWriter {
             if (prev != null && lines.isNotEmpty()) {
                 val prevList = prev.type is RichTextBlockType.ListItem
                 val thisList = type is RichTextBlockType.ListItem
-                val prevBlank = prev.text.isBlank()
+                val prevBlank = prev.text.all { it.isTrimmable() }
                 val needsBlank =
                     !prevBlank &&
                         !isEmpty &&
@@ -642,12 +701,15 @@ internal object MarkdownWriter {
         return lines.joinToString("\n").trimEnd()
     }
 
+    /** Whitespace the writer drops; a non-breaking space is content (`&nbsp;`). */
+    private fun Char.isTrimmable() = isWhitespace() && this != MarkdownRich.NBSP
+
     private fun inline(rawText: String, spans: List<RichTextSpanMark>): String {
         val text = rawText.replace('\n', ' ')
         var start = 0
         var end = text.length
-        while (start < end && text[start].isWhitespace()) start++
-        while (end > start && text[end - 1].isWhitespace()) end--
+        while (start < end && text[start].isTrimmable()) start++
+        while (end > start && text[end - 1].isTrimmable()) end--
         if (start >= end) return ""
 
         val bold = BooleanArray(text.length)
@@ -782,6 +844,7 @@ internal object MarkdownWriter {
                     index + 1 < text.length &&
                     (text[index + 1].isLetter() || text[index + 1] in "/!?") -> sb.append("\\<")
                 c == '&' && entityAhead.containsMatchIn(text.substring(index)) -> sb.append("\\&")
+                c == MarkdownRich.NBSP -> sb.append("&nbsp;")
                 else -> sb.append(c)
             }
         }
