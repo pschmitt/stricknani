@@ -3,6 +3,8 @@ package blue.anika.wolle.ui.common
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -198,60 +201,75 @@ fun ArchiveControl(
     val archived by viewModel.archivedEvents.collectAsStateWithLifecycle()
     LaunchedEffect(archived) { if (archived > 0) onArchived() }
     if (!state.available) return
+    val compactPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
     Column(
-        modifier = modifier.fillMaxWidth().padding(top = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            stringResource(statusText(state.state)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        )
+        // One row: what the archive is doing, and what can be done about it.
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(statusText(state.state)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            when {
+                state.busy ->
+                    Text(
+                        stringResource(R.string.archive_checking),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                state.error != null ->
+                    OutlinedButton(
+                        onClick = viewModel::checkAgain,
+                        contentPadding = compactPadding,
+                    ) {
+                        Text(
+                            stringResource(
+                                if (state.loaded) R.string.archive_try_again
+                                else R.string.archive_check_again
+                            )
+                        )
+                    }
+                !state.loaded ->
+                    Text(
+                        stringResource(R.string.archive_loading),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                state.active && state.pollingExhausted ->
+                    OutlinedButton(
+                        onClick = viewModel::checkAgain,
+                        contentPadding = compactPadding,
+                    ) {
+                        Text(stringResource(R.string.archive_check_again))
+                    }
+                state.active -> Unit
+                state.state != "archived" ->
+                    OutlinedButton(onClick = viewModel::request, contentPadding = compactPadding) {
+                        Text(
+                            stringResource(
+                                if (state.state == "failed" || state.state == "superseded")
+                                    R.string.archive_request_new
+                                else R.string.archive_request
+                            )
+                        )
+                    }
+            }
+        }
         state.error?.let {
             Text(
                 stringResource(it),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
-        }
-        when {
-            state.busy ->
-                Text(
-                    stringResource(R.string.archive_checking),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            state.error != null ->
-                OutlinedButton(onClick = viewModel::checkAgain) {
-                    Text(
-                        stringResource(
-                            if (state.loaded) R.string.archive_try_again
-                            else R.string.archive_check_again
-                        )
-                    )
-                }
-            !state.loaded ->
-                Text(
-                    stringResource(R.string.archive_loading),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            state.active && state.pollingExhausted ->
-                OutlinedButton(onClick = viewModel::checkAgain) {
-                    Text(stringResource(R.string.archive_check_again))
-                }
-            state.active -> Unit
-            state.state != "archived" ->
-                OutlinedButton(onClick = viewModel::request) {
-                    Text(
-                        stringResource(
-                            if (state.state == "failed" || state.state == "superseded")
-                                R.string.archive_request_new
-                            else R.string.archive_request
-                        )
-                    )
-                }
         }
     }
 }

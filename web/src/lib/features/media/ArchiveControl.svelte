@@ -430,61 +430,73 @@
 
 {#if (enabled || readStateEnabled) && ownerId !== null && sourceLink.length > 0}
   <section class="archive-control" aria-busy={busy}>
-    <p class="archive-status" aria-live="polite">{statusText(status)}</p>
+    <!-- One row: what the archive is doing, and what can be done about it. -->
+    <div class="archive-row">
+      <p class="archive-status" aria-live="polite">{statusText(status)}</p>
+      {#if errorMessage && !busy}
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="refresh"
+          type="button"
+          onclick={() => void retryAfterError()}
+        >
+          {loaded
+            ? t("Try again", locale)
+            : t("Check archive status again", locale)}
+        </Button>
+      {/if}
+      {#if busy}
+        <p class="archive-progress">{t("Checking archive status…", locale)}</p>
+      {:else if !loaded && readStateEnabled}
+        <p class="archive-progress">{t("Loading archive status…", locale)}</p>
+      {:else if readStateEnabled && canManuallyCheckArchive(status, pollingExhausted)}
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="refresh"
+          type="button"
+          onclick={() => void checkAgain()}
+        >
+          {t("Check archive status again", locale)}
+        </Button>
+      {:else if archiveActive}
+        <p class="archive-progress">
+          {t("Status checks pause in the background.", locale)}
+        </p>
+      {:else if enabled && status?.state !== "archived"}
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="link"
+          type="button"
+          onclick={() => void enqueue()}
+        >
+          {status?.state === "failed" || status?.state === "superseded"
+            ? t("Request a new archive", locale)
+            : t("Archive this source", locale)}
+        </Button>
+      {/if}
+    </div>
     {#if errorMessage}<p class="archive-error" role="alert">
         {errorMessage}
       </p>{/if}
-    {#if errorMessage && !busy}
-      <Button
-        variant="secondary"
-        icon="refresh"
-        type="button"
-        onclick={() => void retryAfterError()}
-      >
-        {loaded
-          ? t("Try again", locale)
-          : t("Check archive status again", locale)}
-      </Button>
-    {/if}
-    {#if busy}
-      <p class="archive-progress">{t("Checking archive status…", locale)}</p>
-    {:else if !loaded && readStateEnabled}
-      <p class="archive-progress">{t("Loading archive status…", locale)}</p>
-    {:else if readStateEnabled && canManuallyCheckArchive(status, pollingExhausted)}
-      <Button
-        variant="secondary"
-        icon="refresh"
-        type="button"
-        onclick={() => void checkAgain()}
-      >
-        {t("Check archive status again", locale)}
-      </Button>
-    {:else if archiveActive}
-      <p class="archive-progress">
-        {t("Status checks pause in the background.", locale)}
-      </p>
-    {:else if enabled && status?.state !== "archived"}
-      <Button
-        variant="secondary"
-        icon="link"
-        type="button"
-        onclick={() => void enqueue()}
-      >
-        {status?.state === "failed" || status?.state === "superseded"
-          ? t("Request a new archive", locale)
-          : t("Archive this source", locale)}
-      </Button>
-    {/if}
   </section>
 {/if}
 
 <style>
   .archive-control {
     display: grid;
-    gap: 0.45rem;
-    margin-top: 0.75rem;
-    border-top: 1px solid var(--line);
-    padding-top: 0.7rem;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+  }
+
+  .archive-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem 0.75rem;
   }
 
   .archive-status,
@@ -495,8 +507,7 @@
   }
 
   .archive-status {
-    color: var(--ink);
-    font-weight: 600;
+    color: var(--ink-muted);
   }
 
   .archive-progress {
@@ -507,8 +518,8 @@
     color: var(--danger-strong);
   }
 
-  :global(.ui-button) {
-    width: fit-content;
+  .archive-row :global(.ui-button) {
+    flex: none;
     max-width: 100%;
   }
 
