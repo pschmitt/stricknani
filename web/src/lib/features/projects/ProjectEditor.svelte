@@ -898,7 +898,12 @@
 
   function applyLoadedProject(value: ProjectDetail): void {
     project = value;
-    draft = projectDraftFromDetail(value, () => ++stepKey);
+    const previousSteps = draft.steps;
+    draft = projectDraftFromDetail(
+      value,
+      () => ++stepKey,
+      (stepId) => previousSteps.find((step) => step.id === stepId)?.key,
+    );
     savedSnapshot = JSON.stringify(draft);
     conflictProject = null;
     fieldErrors = {};

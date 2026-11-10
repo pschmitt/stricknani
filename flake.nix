@@ -37,6 +37,14 @@
             STRICKNANI_DEVSHELL = "1";
             PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
             PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+          }
+          // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+            # Playwright's WebKit needs an EGL display even when headless, and a
+            # Nix shell has no /run/opengl-driver on a build worker or CI runner
+            # ("Could not create EGL display"); the e2e harness hands these Mesa
+            # software-rendering paths to the WebKit process only.
+            STRICKNANI_WEBKIT_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
+            STRICKNANI_WEBKIT_LIBRARY_PATH = "${pkgs.mesa}/lib:${pkgs.libglvnd}/lib";
           };
 
           # @playwright/test in web/package.json must equal nixpkgs' playwright-driver,

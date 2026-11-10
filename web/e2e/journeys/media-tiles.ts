@@ -49,6 +49,7 @@ type Geometry = {
   media: Rect | null;
   badge: Rect | null;
   trash: Rect | null;
+  firstAction: Rect | null;
   trashOpacity: number | null;
   dir: string;
   badgeText: string | null;
@@ -93,7 +94,7 @@ async function signIn(
   password: string,
 ): Promise<void> {
   await page.goto(`${origin}/app/login`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /^(English|Englisch)$/ }).click();
+  await page.getByRole("radio", { name: /^(English|Englisch)$/ }).click();
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -142,6 +143,7 @@ async function geometry(tile: Locator): Promise<Geometry> {
       media: rect(tile.querySelector('.tile-media')),
       badge: rect(tile.querySelector('.cover-badge')),
       trash: rect(del),
+      firstAction: rect(tile.querySelector('.tile-actions .tile-button')),
       trashOpacity: del ? Number(style(del).opacity) : null,
       dir: getComputedStyle(tile).direction,
       badgeText: tile.querySelector('.cover-badge')?.textContent?.trim() ?? null,
@@ -183,6 +185,24 @@ async function tabToTile(page: Page, tile: Locator): Promise<boolean> {
         "document.activeElement.blur(); window.scrollTo(0, 0); " +
         "document.getSelection()?.collapse(document.body, 0); }",
     ),
+  );
+  // A long editor page has dozens of tab stops before the tile (every
+  // Markdown toolbar button), and WebKit does not tab into the optional
+  // details at all from the top. Start one stop before the tile instead, so
+  // the Tab presses below still prove the tile is a real tab stop.
+  await tile.evaluate(
+    fn(`element => {
+      const stops = [...document.querySelectorAll(
+        'a[href], button, input, select, textarea, [tabindex]',
+      )].filter(
+        (candidate) =>
+          candidate.tabIndex >= 0 &&
+          !candidate.hasAttribute('disabled') &&
+          candidate.getClientRects().length > 0,
+      );
+      const before = stops[stops.indexOf(element) - 1];
+      if (before instanceof HTMLElement) before.focus({ preventScroll: true });
+    }`),
   );
   const trail: string[] = [];
   for (let attempt = 0; attempt < 120; attempt++) {
@@ -278,18 +298,18 @@ async function checkTile(
     );
   }
 
-  const { media, badge, trash } = revealed;
+  const { media, badge, trash, firstAction } = revealed;
   report.check(
     media !== null && trash !== null,
     `${tag}: first tile has a remove button`,
   );
-  if (media !== null && trash !== null) {
+  if (media !== null && trash !== null && firstAction !== null) {
     const rtl = revealed.dir === "rtl";
     const endGap = rtl ? trash.left - media.left : media.right - trash.right;
     report.check(
-      near(trash.top - media.top, INSET_PX) && near(endGap, INSET_PX),
+      near(firstAction.top - media.top, INSET_PX) && near(endGap, INSET_PX),
       `${tag}: actions sit top-end`,
-      `(top gap ${(trash.top - media.top).toFixed(1)}px, ` +
+      `(top gap ${(firstAction.top - media.top).toFixed(1)}px, ` +
         `end gap ${endGap.toFixed(1)}px)`,
     );
     report.check(

@@ -857,7 +857,19 @@ export async function visibleHeights(
   const values: unknown = await locator.evaluateAll((elements) =>
     elements
       .filter((el) => el.getClientRects().length)
-      .map((el) => el.getBoundingClientRect().height),
+      .map((el) => {
+        // A compact control (the language toggle) reaches 44px through an
+        // absolutely positioned ::after hit area; count it as the target.
+        const after = getComputedStyle(el, "::after");
+        const reach =
+          after.content !== "none" && after.position === "absolute"
+            ? parseFloat(after.height)
+            : 0;
+        return Math.max(
+          el.getBoundingClientRect().height,
+          Number.isFinite(reach) ? reach : 0,
+        );
+      }),
   );
   if (!Array.isArray(values) || values.some((value) => !isNumber(value))) {
     throw new AcceptanceFailure(
@@ -2409,7 +2421,7 @@ export async function checkMobileLanguageAndScreenshots(
       await assertAccountLanguageControl(page);
       const controlHeights = await visibleHeights(
         page,
-        languageGroup.getByRole("button"),
+        languageGroup.getByRole("radio"),
       );
       check(
         controlHeights.length === 2 && Math.min(...controlHeights) >= 44,
@@ -2419,7 +2431,7 @@ export async function checkMobileLanguageAndScreenshots(
         [1, "de"],
         [0, "en"],
       ] as const) {
-        await languageGroup.getByRole("button").nth(localeIndex).click();
+        await languageGroup.getByRole("radio").nth(localeIndex).click();
         await page.waitForFunction(
           (locale: string) => document.documentElement.lang === locale,
           localeCode,

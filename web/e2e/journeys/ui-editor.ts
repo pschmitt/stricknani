@@ -168,7 +168,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     .fill("4 mm circular needles");
   markStage("filling the project stitch sample");
   await fillMarkdownField(
-    page.getByLabel("Stitch sample", { exact: true }),
+    page.getByRole("textbox", { name: "Stitch sample", exact: true }),
     "18 stitches over 10 cm",
   );
   markStage("filling the project tags");
@@ -186,17 +186,17 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     "More project details did not open when needed",
   );
   await fillMarkdownField(
-    page.getByLabel("Pattern", { exact: true }),
+    page.getByRole("textbox", { name: "Pattern", exact: true }),
     "Work an even textured panel.",
   );
   markStage("filling the project notes");
   await fillMarkdownField(
-    page.getByLabel("Notes", { exact: true }),
+    page.getByRole("textbox", { name: "Notes", exact: true }),
     "Check the width after each repeat.",
   );
   markStage("filling the project materials");
   await fillMarkdownField(
-    page.getByLabel("Other materials", { exact: true }),
+    page.getByRole("textbox", { name: "Other materials", exact: true }),
     "Two stitch markers.",
   );
   markStage("adding the first project step");
@@ -260,10 +260,11 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
       "project creation returned an invalid resource",
     );
   }
-  const expectedTags = ["color, texture", "winter"];
+  // Typing splits at commas and spaces: "color, texture" becomes two tags.
+  const expectedTags = ["color", "texture", "winter"];
   check(
     JSON.stringify(createdProject.tags) === JSON.stringify(expectedTags),
-    "project creation changed a tag containing a comma",
+    "project creation did not split typed tags at the comma",
   );
   const createdId = createdProject.id;
   if (typeof createdId !== "number" || !Number.isInteger(createdId)) {
@@ -334,7 +335,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await detailHeading.waitFor({ state: "visible" });
   await openSavedEditor();
 
-  markStage("preserving comma-containing tags during an unrelated edit");
+  markStage("preserving tags during an unrelated edit");
   await page
     .getByLabel("Needles", { exact: true })
     .fill("5 mm circular needles");
@@ -954,7 +955,10 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
       "; details=" +
       sortedJson(st.cspEventSummaries.slice(0, 10)),
   );
-  check(st.pageErrors.length === 0, "the browser reported a page error");
+  check(
+    st.pageErrors.length === 0,
+    `the browser reported a page error: ${st.pageErrorTypes.slice(0, 3).join(" | ")}`,
+  );
   const expectedConsoleErrors = new Set([
     "expected_unknown_route_404",
     "expected_project_conflict_409",

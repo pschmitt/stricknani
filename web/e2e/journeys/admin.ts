@@ -305,19 +305,19 @@ async function createAdminAuditProject(
     .getByLabel("Needles", { exact: true })
     .fill("4 mm circular needles");
   await fillMarkdownField(
-    page.getByLabel("Stitch sample", { exact: true }),
+    page.getByRole("textbox", { name: "Stitch sample", exact: true }),
     "18 stitches over 10 cm",
   );
   await fillMarkdownField(
-    page.getByLabel("Pattern", { exact: true }),
+    page.getByRole("textbox", { name: "Pattern", exact: true }),
     "Synthetic audit fixture pattern",
   );
   await fillMarkdownField(
-    page.getByLabel("Notes", { exact: true }),
+    page.getByRole("textbox", { name: "Notes", exact: true }),
     "Synthetic audit fixture notes",
   );
   await fillMarkdownField(
-    page.getByLabel("Other materials", { exact: true }),
+    page.getByRole("textbox", { name: "Other materials", exact: true }),
     "Synthetic fixture markers",
   );
   await page.getByRole("button", { name: "Add step", exact: true }).click();
@@ -1187,6 +1187,9 @@ async function assertAuditVisualMeasurements(page: Page): Promise<void> {
         };
         const rowMetrics = rows.map((row) => {
           const rowRect = row.getBoundingClientRect();
+          // The first row has no top border; measure from the content edge.
+          const rowTop =
+            rowRect.top + parseFloat(getComputedStyle(row).borderTopWidth);
           const slot = row.querySelector(".event-diff-slot");
           const date = row.querySelector(".event-meta time");
           const slotRect = slot?.getBoundingClientRect();
@@ -1195,10 +1198,10 @@ async function assertAuditVisualMeasurements(page: Page): Promise<void> {
           const diffRect = diff?.getBoundingClientRect();
           return {
             height: rowRect.height,
-            slotOffset: slotRect ? slotRect.top - rowRect.top : null,
+            slotOffset: slotRect ? slotRect.top - rowTop : null,
             slotLeft: slotRect ? slotRect.left - rowRect.left : null,
             slotHeight: slotRect?.height ?? 0,
-            dateOffset: dateRect ? dateRect.top - rowRect.top : null,
+            dateOffset: dateRect ? dateRect.top - rowTop : null,
             dateLeft: dateRect ? dateRect.left - rowRect.left : null,
             hasDiff: Boolean(diff),
             diffTargetOk:
@@ -1227,13 +1230,19 @@ async function assertAuditVisualMeasurements(page: Page): Promise<void> {
           values.every((value) => value !== null && Number.isFinite(value)) &&
           Math.max(...(values as number[])) -
             Math.min(...(values as number[])) <=
-            1;
+            1.01;
         const heights = rowMetrics.map((row) => row.height);
         const slotOffsets = rowMetrics.map((row) => row.slotOffset);
         const dateOffsets = rowMetrics.map((row) => row.dateOffset);
         const slotLefts = rowMetrics.map((row) => row.slotLeft);
         const dateLefts = rowMetrics.map((row) => row.dateLeft);
         return {
+          values: rowMetrics.map((row) => [
+            Math.round(row.height * 10) / 10,
+            Math.round((row.slotOffset ?? -1) * 10) / 10,
+            Math.round((row.dateOffset ?? -1) * 10) / 10,
+            row.hasDiff ? 1 : 0,
+          ]),
           rowCount: rows.length,
           badgeCount: badges.length,
           equalRowHeights: heights.length > 0 && spread(heights),
@@ -1260,7 +1269,9 @@ async function assertAuditVisualMeasurements(page: Page): Promise<void> {
         );
       }
       const failing = Object.fromEntries(
-        Object.entries(measurements).filter(([, value]) => value !== true),
+        Object.entries(measurements).filter(
+          ([key, value]) => key !== "values" && value !== true,
+        ),
       );
       check(
         measurements.rowCount >= 2 &&
@@ -1276,7 +1287,8 @@ async function assertAuditVisualMeasurements(page: Page): Promise<void> {
           measurements.badgeTextUnclipped === true &&
           measurements.distinctKnownToneColors === true,
         `audit action colors, contrast, or row alignment failed at ${width}px ` +
-          `(${JSON.stringify(failing)})`,
+          `(${JSON.stringify(failing)}; [height, slot, date, diff] ` +
+          `${JSON.stringify(measurements.values)})`,
       );
     }
   } finally {

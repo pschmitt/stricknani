@@ -15,6 +15,9 @@ import {
   assertStickySaveCancelGeometry,
   check,
   clickAndHandleDialog,
+  delayApiRequests,
+  isCancelledFetch,
+  omitWebkitScreenshots,
   waitTwoAnimationFrames,
 } from "../lib/common";
 import { REPO_ROOT } from "../lib/fixture";
@@ -234,19 +237,8 @@ function lastStatus(
   return undefined;
 }
 
-const SLOW_3G = {
-  offline: false,
-  latency: 900,
-  downloadThroughput: 1_000_000,
-  uploadThroughput: 1_000_000,
-  connectionType: "cellular3g",
-} as const;
-const NO_THROTTLE = {
-  offline: false,
-  latency: 0,
-  downloadThroughput: -1,
-  uploadThroughput: -1,
-} as const;
+/** Latency added to API requests while a save is observed in flight. */
+const API_DELAY_MS = 900;
 
 export async function runYarnJourney(
   f: LiveFixture,
@@ -262,6 +254,7 @@ export async function runYarnJourney(
   const observed: ObservedResponse[] = [];
   const observedMutationRequests: ObservedMutation[] = [];
   const cspErrors: boolean[] = [];
+  const cspSamples: string[] = [];
   const consoleErrors: string[] = [];
   const pageErrors: boolean[] = [];
   const resourceFailures: string[] = [];
@@ -320,6 +313,7 @@ export async function runYarnJourney(
         (text.includes("script-src") || text.includes("style-src")))
     ) {
       cspErrors.push(true);
+      cspSamples.push(message.text().slice(0, 200));
     } else {
       const category = text.includes("409")
         ? "http-conflict"
@@ -344,13 +338,15 @@ export async function runYarnJourney(
       reducedMotion: "reduce",
       colorScheme: "light",
       locale: "en-US",
+      serviceWorkers: "block",
     });
     const page = await context.newPage();
+    omitWebkitScreenshots(page, cfg.browser);
     page.on("response", observeResponse);
     page.on("request", observeRequest);
     page.on("console", observeConsole);
-    page.on("pageerror", () => {
-      pageErrors.push(true);
+    page.on("pageerror", (error) => {
+      if (!isCancelledFetch(error)) pageErrors.push(true);
     });
 
     markStage("checking strict CSP and sign-in page");
@@ -361,7 +357,7 @@ export async function runYarnJourney(
       throw new AcceptanceFailure("login route failed");
     }
     markStage("choosing English for the yarn journey");
-    await page.getByRole("button", { name: /^(English|Englisch)$/ }).click();
+    await page.getByRole("radio", { name: /^(English|Englisch)$/ }).click();
     await page.getByRole("heading", { name: "Sign in" }).waitFor({
       state: "visible",
     });
@@ -1084,9 +1080,7 @@ export async function runYarnJourney(
     await page
       .getByText(CATEGORY_NAME, { exact: true })
       .waitFor({ state: "visible" });
-    let categoryCdp = await context.newCDPSession(page);
-    await categoryCdp.send("Network.enable");
-    await categoryCdp.send("Network.emulateNetworkConditions", SLOW_3G);
+    let removeApiDelay = await delayApiRequests(page, API_DELAY_MS);
     const newCategory = page.getByLabel("New category");
     await newCategory.fill("Browser category");
     markStage("creating category");
@@ -1102,8 +1096,7 @@ export async function runYarnJourney(
       (await newCategory.inputValue()) === "",
       "successful category create did not clear the submitted name",
     );
-    await categoryCdp.send("Network.emulateNetworkConditions", NO_THROTTLE);
-    await categoryCdp.detach();
+    await removeApiDelay();
     let categoryRow = page
       .locator(".category-row")
       .filter({ hasText: "Browser category" });
@@ -1188,9 +1181,7 @@ export async function runYarnJourney(
     );
     await editCategory.fill("Fresh browser category");
     markStage("saving category rename");
-    categoryCdp = await context.newCDPSession(page);
-    await categoryCdp.send("Network.enable");
-    await categoryCdp.send("Network.emulateNetworkConditions", SLOW_3G);
+    removeApiDelay = await delayApiRequests(page, API_DELAY_MS);
     await categoryForm
       .getByRole("button", { name: "Save", exact: true })
       .click();
@@ -1201,8 +1192,7 @@ export async function runYarnJourney(
     await page
       .getByText("Fresh browser category", { exact: true })
       .waitFor({ state: "visible" });
-    await categoryCdp.send("Network.emulateNetworkConditions", NO_THROTTLE);
-    await categoryCdp.detach();
+    await removeApiDelay();
     categoryRow = page
       .locator(".category-row")
       .filter({ hasText: "Fresh browser category" });
@@ -1271,7 +1261,10 @@ export async function runYarnJourney(
     });
 
     await settle();
-    check(cspErrors.length === 0, "browser reported a CSP violation");
+    check(
+      cspErrors.length === 0,
+      `browser reported a CSP violation: ${cspSamples.slice(0, 2).join(" | ")}`,
+    );
     check(pageErrors.length === 0, "browser reported a page error");
     const sortedConsole = [...consoleErrors].sort();
     const status503 = observedApiErrors.filter((e) => e[1] === 503);

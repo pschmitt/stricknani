@@ -19,6 +19,7 @@ import type {
   Locator,
   Page,
   Response,
+  Route,
 } from "@playwright/test";
 import { outsideRepository } from "./fixture";
 import { splitUrl } from "./url";
@@ -370,4 +371,48 @@ export async function fillMarkdownField(
   await field.click();
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.type(text);
+}
+
+/**
+ * WebKit reports an in-flight fetch to the app (an API call, the app version
+ * poll) that a navigation or an abort cancelled as a page error as well
+ * (Playwright splits its message at the first colon into a name and a
+ * message). The app catches every such rejection, and no other browser raises
+ * one.
+ */
+export function isCancelledFetch(error: Error): boolean {
+  const text = `${error?.name ?? ""}: ${error?.message ?? ""}`;
+  return /^Fetch API cannot load .*\/(api\/v2|app\/_app)\/.* due to access control checks\.?$/.test(
+    text,
+  );
+}
+
+/**
+ * Playwright's WebKit screenshot path injects an inline <style>, which the
+ * strict CSP reports as a violation. Keep the real CSP check enabled and omit
+ * the captures in WebKit.
+ */
+export function omitWebkitScreenshots(page: Page, browser: string): void {
+  if (browser === "webkit") {
+    Object.assign(page, { screenshot: async () => Buffer.alloc(0) });
+  }
+}
+
+/**
+ * Delay every API request by `latencyMs`, in any browser (a CDP network
+ * throttle only exists in Chromium). Returns a function that removes the delay.
+ */
+export async function delayApiRequests(
+  page: Page,
+  latencyMs: number,
+): Promise<() => Promise<void>> {
+  const pattern = "**/api/v2/**";
+  const handler = async (route: Route): Promise<void> => {
+    await new Promise<void>((resolve) => setTimeout(resolve, latencyMs));
+    await route.fallback();
+  };
+  await page.route(pattern, handler);
+  return async () => {
+    await page.unroute(pattern, handler);
+  };
 }

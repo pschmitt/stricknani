@@ -3,7 +3,7 @@ import { closeBrowser } from "../lib/common";
 // Port of ci/stricknani/web_account_browser.py.
 import type { Dialog, Page, Response, Route } from "@playwright/test";
 
-import { check, tinyPngFixture } from "../lib/common";
+import { check, tinyPngFixture, waitTwoAnimationFrames } from "../lib/common";
 import {
   launchBrowser,
   stageMarker,
@@ -166,6 +166,7 @@ export async function runAccountJourney(
       for (const width of [390, 320]) {
         await page.setViewportSize({ width, height: 844 });
         await page.getByLabel("Token name").waitFor({ state: "visible" });
+        await waitTwoAnimationFrames(page);
         const mobileMetrics = await page.evaluate(() => {
           const field = document.querySelector("#token-name");
           const button = document.querySelector(".token-create-row button");
@@ -180,7 +181,9 @@ export async function runAccountJourney(
           mobileMetrics.content <= mobileMetrics.viewport &&
             mobileMetrics.fieldFont >= 16 &&
             mobileMetrics.buttonHeight >= 44,
-          "account settings overflow or have undersized mobile controls",
+          `account settings overflow or have undersized mobile controls at ${width}px ` +
+            `(viewport ${mobileMetrics.viewport}, content ${mobileMetrics.content}, ` +
+            `font ${mobileMetrics.fieldFont}, button ${mobileMetrics.buttonHeight})`,
         );
       }
       await page.setViewportSize({ width: 1280, height: 900 });

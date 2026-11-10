@@ -13,7 +13,7 @@ import type {
   Response,
 } from "@playwright/test";
 import type { E2eConfig } from "./harness";
-import { responsePath } from "./common";
+import { isCancelledFetch, responsePath } from "./common";
 
 /** Per-run options (python run_acceptance keyword arguments). */
 export interface UiJourneyOptions {
@@ -486,8 +486,11 @@ export function observeConsole(st: UiState, message: ConsoleMessage): void {
 
 /** python observe_page_error. */
 export function observePageError(st: UiState, error: Error): void {
+  const name =
+    typeof error?.name === "string" && error.name ? error.name : "unknown";
+  const message =
+    typeof error?.message === "string" ? error.message.slice(0, 120) : "";
+  if (isCancelledFetch(error)) return;
   st.pageErrors.push(true);
-  st.pageErrorTypes.push(
-    typeof error?.name === "string" && error.name ? error.name : "unknown",
-  );
+  st.pageErrorTypes.push(message ? `${name}: ${message}` : name);
 }

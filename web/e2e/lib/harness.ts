@@ -7,6 +7,9 @@
  *   STRICKNANI_FIXTURE_BINARY    optional fixture companion server binary
  *   STRICKNANI_BROWSER           chromium (default), firefox or webkit
  *   STRICKNANI_BROWSER_EXECUTABLE optional browser executable path
+ *   STRICKNANI_WEBKIT_EGL_VENDOR / STRICKNANI_WEBKIT_LIBRARY_PATH
+ *                                Mesa EGL vendor file and library path for
+ *                                WebKit (set by the Nix dev shells on Linux)
  *   STRICKNANI_E2E_DIR           parent of the private run directories
  *   STRICKNANI_E2E_KEEP=1        keep the private run directory afterwards
  */
@@ -176,12 +179,37 @@ export async function launchBrowser(cfg: E2eConfig): Promise<Browser> {
   }
   const types = { chromium, firefox, webkit };
   try {
-    return await types[cfg.browser].launch({ headless: true, executablePath });
+    return await types[cfg.browser].launch({
+      headless: true,
+      executablePath,
+      env: cfg.browser === "webkit" ? webkitEnv() : undefined,
+    });
   } catch {
     throw new AcceptanceFailure(
       `configured ${cfg.browser} could not start in headless mode`,
     );
   }
+}
+
+/**
+ * WebKit aborts at startup without an EGL display ("Could not create EGL
+ * display"). The Nix dev shells name a Mesa vendor file and library path;
+ * give them to the WebKit process, rendering in software.
+ */
+function webkitEnv(): Record<string, string> | undefined {
+  const vendor = optionalEnv("STRICKNANI_WEBKIT_EGL_VENDOR");
+  const libraries = optionalEnv("STRICKNANI_WEBKIT_LIBRARY_PATH");
+  if (vendor === undefined || libraries === undefined) return undefined;
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) env[key] = value;
+  }
+  env.__EGL_VENDOR_LIBRARY_FILENAMES = vendor;
+  env.LD_LIBRARY_PATH = [libraries, env.LD_LIBRARY_PATH]
+    .filter((part) => part !== undefined && part !== "")
+    .join(":");
+  env.LIBGL_ALWAYS_SOFTWARE = "1";
+  return env;
 }
 
 /** Failure-location marker (browser-stage.txt next to the screenshot dir). */

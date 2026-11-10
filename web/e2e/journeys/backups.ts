@@ -898,7 +898,7 @@ export async function runBackupsJourney(
       .getByRole("heading", { name: "Deine Daten" })
       .waitFor({ timeout: WAIT });
     await dePage
-      .getByRole("group", { name: "Archivtyp" })
+      .getByRole("radiogroup", { name: "Archivtyp" })
       .waitFor({ timeout: WAIT });
     await dePage
       .getByRole("link", { name: "Herunterladen", exact: true })

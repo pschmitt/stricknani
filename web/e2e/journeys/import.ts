@@ -17,8 +17,11 @@ import { errors } from "@playwright/test";
 import {
   AcceptanceFailure,
   check,
+  delayApiRequests,
   fillMarkdownField,
+  isCancelledFetch,
   maskFixtureIdentity,
+  omitWebkitScreenshots,
 } from "../lib/common";
 import {
   launchBrowser,
@@ -94,6 +97,7 @@ export async function runImportJourney(
 
   let cspErrors = 0;
   let pageErrors = 0;
+  const pageErrorSamples: string[] = [];
   const importResponses: Array<[string, number]> = [];
   const resourceFailures: string[] = [];
   const filePreviewYarnCounts: number[] = [];
@@ -164,14 +168,18 @@ export async function runImportJourney(
       reducedMotion: "reduce",
       colorScheme: "light",
       locale: "en-US",
+      serviceWorkers: "block",
     });
     const page = await context.newPage();
     page.on("response", (response) => {
       void observeResponse(response);
     });
+    omitWebkitScreenshots(page, cfg.browser);
     page.on("console", observeConsole);
-    page.on("pageerror", () => {
+    page.on("pageerror", (error) => {
+      if (isCancelledFetch(error)) return;
       pageErrors += 1;
+      pageErrorSamples.push(`${error.name}: ${error.message}`.slice(0, 160));
     });
 
     markStage("loading disposable login route");
@@ -193,7 +201,7 @@ export async function runImportJourney(
       "strict frontend CSP is missing",
     );
     markStage("choosing English for the import journey");
-    await page.getByRole("button", { name: /^(English|Englisch)$/ }).click();
+    await page.getByRole("radio", { name: /^(English|Englisch)$/ }).click();
     await page
       .getByRole("heading", { name: "Sign in", exact: true })
       .waitFor({ state: "visible" });
@@ -294,15 +302,34 @@ export async function runImportJourney(
     );
     // The fixture server has link imports off: report them on for this check
     // and refuse the import itself, which is all this check needs to see.
-    await page.route("**/api/v2/session", async (route) => {
-      const upstream = await route.fetch();
-      const body = (await upstream.json()) as {
-        data?: { capabilities?: Record<string, boolean> };
-      };
-      if (body.data?.capabilities) {
-        body.data.capabilities.external_imports = true;
-      }
-      await route.fulfill({ response: upstream, json: body });
+    // Patch the session response in the page: route.fetch() in WebKit does not
+    // send the language cookie, so the patched session came back in German.
+    await page.addInitScript({
+      content: `(() => {
+        const original = window.fetch.bind(window);
+        window.fetch = async (input, init) => {
+          const response = await original(input, init);
+          const target = input instanceof Request ? input.url : String(input);
+          if (
+            sessionStorage.getItem("e2e-external-imports") !== "1" ||
+            !response.ok ||
+            new URL(target, location.href).pathname !== "/api/v2/session"
+          ) {
+            return response;
+          }
+          const body = await response.clone().json();
+          if (body?.data?.capabilities) {
+            body.data.capabilities.external_imports = true;
+          }
+          return new Response(JSON.stringify(body), {
+            status: response.status,
+            headers: response.headers,
+          });
+        };
+      })();`,
+    });
+    await page.evaluate(() => {
+      sessionStorage.setItem("e2e-external-imports", "1");
     });
     const startedImports: Array<{ url?: string; target?: string }> = [];
     await page.route("**/api/v2/imports/drafts", async (route) => {
@@ -372,7 +399,9 @@ export async function runImportJourney(
       (await yarnPrefilled.inputValue()) === sharedLink,
       "the shared link did not prefill the yarn import",
     );
-    await page.unroute("**/api/v2/session");
+    await page.evaluate(() => {
+      sessionStorage.removeItem("e2e-external-imports");
+    });
     await page.unroute("**/api/v2/imports/drafts");
 
     markStage("previewing text and checking the filled editor");
@@ -535,28 +564,14 @@ export async function runImportJourney(
     // Delay the real API response to cover the in-flight mutation path.
     // Fields should be locked while saving, and a navigation attempt
     // must still preserve the draft until the request settles.
-    const cdp = await context.newCDPSession(page);
-    await cdp.send("Network.enable");
-    await cdp.send("Network.emulateNetworkConditions", {
-      offline: false,
-      latency: 900,
-      downloadThroughput: 1_000_000,
-      uploadThroughput: 1_000_000,
-      connectionType: "cellular3g",
-    });
+    const removeDelay = await delayApiRequests(page, 900);
     await page.getByRole("button", { name: "Create project" }).click();
     check(
       await projectName.isDisabled(),
       "editor fields remained editable during project creation",
     );
     await page.waitForURL(/\/app\/projects\/\d+$/);
-    await cdp.send("Network.emulateNetworkConditions", {
-      offline: false,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1,
-    });
-    await cdp.detach();
+    await removeDelay();
     check(
       importResponses.some(
         ([p, status]) => p === "/api/v2/projects" && status === 201,
@@ -655,7 +670,10 @@ export async function runImportJourney(
     );
 
     check(cspErrors === 0, "browser reported a CSP violation");
-    check(pageErrors === 0, "browser reported an uncaught page exception");
+    check(
+      pageErrors === 0,
+      `browser reported an uncaught page exception: ${pageErrorSamples.slice(0, 2).join(" | ")}`,
+    );
     check(
       resourceFailures.length === 0,
       `an API resource returned an unexpected error (${resourceFailures.join(", ")})`,

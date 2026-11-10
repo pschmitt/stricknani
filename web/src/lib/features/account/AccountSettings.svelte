@@ -1970,6 +1970,7 @@
   .profile__copy {
     display: grid;
     min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.4rem;
   }
 
@@ -1977,7 +1978,7 @@
      reads quieter, like the Android profile. */
   .profile__email {
     margin: 0;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
     font-size: 1.1rem;
     font-weight: 650;
   }
@@ -2150,7 +2151,8 @@
     min-width: 0;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
   }
 
   .row--top {
@@ -2160,6 +2162,7 @@
   .row__text {
     display: grid;
     min-width: 0;
+    flex: 1 1 9rem;
     gap: 0.2rem;
   }
 
@@ -2174,6 +2177,8 @@
 
   .row__control {
     flex: none;
+    max-width: 100%;
+    margin-inline-start: auto;
   }
 
   /* Smooth disclosure: the grid row animates between 0fr and 1fr. */
@@ -2446,8 +2451,13 @@
       gap: 0.6rem;
     }
 
+    .row__text {
+      flex: initial;
+    }
+
     .row__control {
       flex: initial;
+      margin-inline-start: 0;
     }
 
     .row__control :global(.segmented),

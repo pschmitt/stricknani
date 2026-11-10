@@ -7,7 +7,7 @@ test("project timer edits, runs, persists, and reminds", async () => {
   const cfg = e2eConfig();
   await withLiveFixture("project-timer", {}, async (fixture) => {
     const browser = await launchBrowser(cfg);
-    const context = await browser.newContext();
+    const context = await browser.newContext({ serviceWorkers: "block" });
     const page = await context.newPage();
     try {
       await page.goto(`${fixture.origin}/app/`, { waitUntil: "networkidle" });

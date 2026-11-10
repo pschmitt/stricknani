@@ -70,6 +70,20 @@ describe("project editor draft conversion", () => {
     expect(new Set(draft.steps.map((step) => step.key)).size).toBe(2);
   });
 
+  it("keeps the list key of a saved step across a reload", () => {
+    let key = 100;
+    const draft = projectDraftFromDetail(
+      project,
+      () => ++key,
+      (stepId) => (stepId === 81 ? 7 : undefined),
+    );
+
+    expect(draft.steps.map((step) => [step.id, step.key])).toEqual([
+      [80, 101],
+      [81, 7],
+    ]);
+  });
+
   it("serializes edited fields, exact tags, selected yarns, and ordered steps", () => {
     const draft = blankProjectDraft();
     draft.name = "  River socks  ";

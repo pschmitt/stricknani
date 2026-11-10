@@ -46,6 +46,8 @@ export function blankProjectDraft(): ProjectDraft {
 export function projectDraftFromDetail(
   project: ProjectDetail,
   nextKey: () => number,
+  /** Keeps a saved step's list key across a reload, so its photos do not remount. */
+  existingKey: (stepId: number) => number | undefined = () => undefined,
 ): ProjectDraft {
   return {
     name: project.name,
@@ -61,7 +63,7 @@ export function projectDraftFromDetail(
     steps: [...project.steps]
       .sort((left, right) => left.step_number - right.step_number)
       .map((step) => ({
-        key: nextKey(),
+        key: existingKey(step.id) ?? nextKey(),
         id: step.id,
         title: step.title,
         description: step.description ?? "",
