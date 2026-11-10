@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -187,6 +191,9 @@ constructor(private val api: ArchiveV2Api, private val capabilities: ApiCapabili
  * job's status in words and "Archive this source" / "Request a new archive" (or "Check archive
  * status again" once polling gave up while the job still runs). [onArchived] reloads the item.
  */
+/** What the archive control offers right now: a labelled action, or nothing. */
+private data class ArchiveAction(@StringRes val label: Int, val run: () -> Unit)
+
 @Composable
 fun ArchiveControl(
     entity: ArchiveEntity,
@@ -194,75 +201,106 @@ fun ArchiveControl(
     sourceLink: String,
     onArchived: () -> Unit,
     modifier: Modifier = Modifier,
+    archivedUrl: String? = null,
+    archiveLabel: String = "",
 ) {
     val viewModel: ArchiveViewModel = hiltViewModel(key = "archive-${entity.path}-$id")
     LaunchedEffect(entity, id, sourceLink) { viewModel.bind(entity, id, sourceLink) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val archived by viewModel.archivedEvents.collectAsStateWithLifecycle()
     LaunchedEffect(archived) { if (archived > 0) onArchived() }
-    if (!state.available) return
-    val compactPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
+    if (!state.available) {
+        archivedUrl?.let { SourceLinkRow(PhosphorIcons.ClockCounterClockwise, archiveLabel, it) }
+        return
+    }
+    val action: ArchiveAction? =
+        when {
+            state.busy -> null
+            state.error != null ->
+                ArchiveAction(
+                    if (state.loaded) R.string.archive_try_again else R.string.archive_check_again,
+                    viewModel::checkAgain,
+                )
+            !state.loaded -> null
+            state.active && state.pollingExhausted ->
+                ArchiveAction(R.string.archive_check_again, viewModel::checkAgain)
+            state.active -> null
+            state.state != "archived" ->
+                ArchiveAction(
+                    if (state.state == "failed" || state.state == "superseded")
+                        R.string.archive_request_new
+                    else R.string.archive_request,
+                    viewModel::request,
+                )
+            else -> null
+        }
+    @StringRes
+    val progress: Int? =
+        when {
+            state.busy -> R.string.archive_checking
+            !state.loaded -> R.string.archive_loading
+            else -> null
+        }
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        // One row: what the archive is doing, and what can be done about it.
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                stringResource(statusText(state.state)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        if (archivedUrl != null) {
+            // The archived copy and its action on one line; the status below the link.
+            SourceLinkRow(
+                PhosphorIcons.ClockCounterClockwise,
+                archiveLabel,
+                archivedUrl,
+                trailing =
+                    action?.let { current ->
+                        {
+                            val label = stringResource(current.label)
+                            IconButton(onClick = current.run) {
+                                Icon(Icons.Filled.Refresh, contentDescription = label)
+                            }
+                        }
+                    },
             )
-            when {
-                state.busy ->
-                    Text(
-                        stringResource(R.string.archive_checking),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                state.error != null ->
-                    OutlinedButton(
-                        onClick = viewModel::checkAgain,
-                        contentPadding = compactPadding,
-                    ) {
-                        Text(
-                            stringResource(
-                                if (state.loaded) R.string.archive_try_again
-                                else R.string.archive_check_again
-                            )
-                        )
-                    }
-                !state.loaded ->
-                    Text(
-                        stringResource(R.string.archive_loading),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                state.active && state.pollingExhausted ->
-                    OutlinedButton(
-                        onClick = viewModel::checkAgain,
-                        contentPadding = compactPadding,
-                    ) {
-                        Text(stringResource(R.string.archive_check_again))
-                    }
-                state.active -> Unit
-                state.state != "archived" ->
-                    OutlinedButton(onClick = viewModel::request, contentPadding = compactPadding) {
-                        Text(
-                            stringResource(
-                                if (state.state == "failed" || state.state == "superseded")
-                                    R.string.archive_request_new
-                                else R.string.archive_request
-                            )
-                        )
-                    }
+            if (state.loaded && state.state != null && state.state != "archived") {
+                Text(
+                    stringResource(statusText(state.state)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier.padding(start = 48.dp).semantics {
+                            liveRegion = LiveRegionMode.Polite
+                        },
+                )
             }
+        } else {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(statusText(state.state)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+                action?.let {
+                    OutlinedButton(
+                        onClick = it.run,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    ) {
+                        Text(stringResource(it.label))
+                    }
+                }
+            }
+        }
+        progress?.let {
+            Text(
+                stringResource(it),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         state.error?.let {
             Text(

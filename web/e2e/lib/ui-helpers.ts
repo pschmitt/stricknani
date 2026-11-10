@@ -1387,9 +1387,10 @@ export async function exerciseProjectServiceTools(
       "a failed archive was shown as an available copy",
     );
   } else {
-    const ready = archive.getByText("An archived copy is ready.", {
-      exact: true,
-    });
+    // Once the copy is linked, the control shows the link instead of the ready status.
+    const ready = archive
+      .getByText("An archived copy is ready.", { exact: true })
+      .or(archive.getByRole("link", { name: /^Open archived copy/ }));
     try {
       markStage("waiting for the project archive to complete");
       await ready.waitFor({ state: "visible", timeout: 10_000 });
@@ -1572,9 +1573,10 @@ export async function exerciseYarnServiceTools(
       "a failed yarn archive was shown as an available copy",
     );
   } else {
-    const ready = archive.getByText("An archived copy is ready.", {
-      exact: true,
-    });
+    // Once the copy is linked, the control shows the link instead of the ready status.
+    const ready = archive
+      .getByText("An archived copy is ready.", { exact: true })
+      .or(archive.getByRole("link", { name: /^Open archived copy/ }));
     try {
       markStage("waiting for the yarn archive to complete");
       await ready.waitFor({ state: "visible", timeout: 10_000 });

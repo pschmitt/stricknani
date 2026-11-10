@@ -133,6 +133,15 @@
   );
   // OCR and link archiving are owner-scoped on the server: nobody else gets them.
   const ownsIt = $derived(!project?.access || project.access.role === "owner");
+  // The archive control shows the archived copy itself, with its action on the same line.
+  const projectArchiveControl = $derived(
+    Boolean(
+      !adminData &&
+      ownsIt &&
+      safeExternalUrl(project?.link ?? null) &&
+      (canArchive || canReadArchiveState),
+    ),
+  );
   // Linked yarns the project's owner owns: the ones a transfer can move along.
   const movableYarnCount = $derived(
     project?.owner
@@ -799,15 +808,19 @@
       <SourceRows
         label={t("Pattern source", locale)}
         href={safeExternalUrl(currentProject.link)}
-        archiveHref={safeExternalUrl(currentProject.link_archive)}
+        archiveHref={projectArchiveControl
+          ? null
+          : safeExternalUrl(currentProject.link_archive)}
         openLabel={t("Open original pattern", locale)}
         archiveLabel={t("Open archived copy", locale)}
       >
-        {#if !adminData && ownsIt && safeExternalUrl(currentProject.link) && (canArchive || canReadArchiveState)}
+        {#if projectArchiveControl}
           <ArchiveControl
             entity="projects"
             id={currentProject.id}
             sourceLink={currentProject.link ?? ""}
+            archiveHref={safeExternalUrl(currentProject.link_archive)}
+            archiveLabel={t("Open archived copy", locale)}
             detailHasArchive={currentProject.link_archive !== null}
             ownerId={userId}
             {locale}

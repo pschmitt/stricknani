@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -29,7 +30,12 @@ import androidx.compose.ui.unit.dp
  * links are shown; anything else is not a link we open.
  */
 @Composable
-fun SourceLinkRow(icon: ImageVector, label: String, url: String) {
+fun SourceLinkRow(
+    icon: ImageVector,
+    label: String,
+    url: String,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     val uriHandler = LocalUriHandler.current
     Row(
         modifier =
@@ -56,7 +62,12 @@ fun SourceLinkRow(icon: ImageVector, label: String, url: String) {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.primary,
             textDecoration = TextDecoration.Underline,
+            modifier = Modifier.weight(1f, fill = false),
         )
+        if (trailing != null) {
+            Spacer(Modifier.weight(1f))
+            trailing()
+        }
     }
 }
 
@@ -79,11 +90,19 @@ fun ColumnScope.SourceRows(
     if (original != null) {
         SourceLinkRow(PhosphorIcons.Notebook, openLabel, original)
     }
-    safeExternalUrl(linkArchive)?.let { archived ->
-        SourceLinkRow(PhosphorIcons.ClockCounterClockwise, archiveLabel, archived)
-    }
+    val archived = safeExternalUrl(linkArchive)
     if (canArchive && original != null) {
-        ArchiveControl(entity, id, original, onArchived)
+        // The control shows the archived copy itself, with its action on the same line.
+        ArchiveControl(
+            entity,
+            id,
+            original,
+            onArchived,
+            archivedUrl = archived,
+            archiveLabel = archiveLabel,
+        )
+    } else if (archived != null) {
+        SourceLinkRow(PhosphorIcons.ClockCounterClockwise, archiveLabel, archived)
     }
 }
 

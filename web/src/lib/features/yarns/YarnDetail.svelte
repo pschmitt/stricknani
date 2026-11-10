@@ -104,6 +104,14 @@
   const canManage = $derived(mayManage(yarn?.access));
   // OCR and link archiving are owner-scoped on the server: nobody else gets them.
   const ownsIt = $derived(!yarn?.access || yarn.access.role === "owner");
+  // The archive control shows the archived copy itself, with its action on the same line.
+  const yarnArchiveControl = $derived(
+    Boolean(
+      ownsIt &&
+      safeExternalHref(yarn?.link ?? null) &&
+      (canArchive || canReadArchiveState),
+    ),
+  );
 
   $effect(() => {
     const id = yarnId;
@@ -438,15 +446,19 @@
         tone="yarns"
         label={t("Yarn source", locale)}
         href={safeExternalHref(currentYarn.link)}
-        archiveHref={safeExternalHref(currentYarn.link_archive)}
+        archiveHref={yarnArchiveControl
+          ? null
+          : safeExternalHref(currentYarn.link_archive)}
         openLabel={t("Open yarn source", locale)}
         archiveLabel={t("Open archived copy", locale)}
       >
-        {#if ownsIt && safeExternalHref(currentYarn.link) && (canArchive || canReadArchiveState)}
+        {#if yarnArchiveControl}
           <ArchiveControl
             entity="yarns"
             id={currentYarn.id}
             sourceLink={currentYarn.link ?? ""}
+            archiveHref={safeExternalHref(currentYarn.link_archive)}
+            archiveLabel={t("Open archived copy", locale)}
             detailHasArchive={currentYarn.link_archive !== null}
             ownerId={userId}
             {locale}

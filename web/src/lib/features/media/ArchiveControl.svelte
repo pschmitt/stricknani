@@ -1,6 +1,8 @@
 <script lang="ts">
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
+  import SourceLink from "#lib/components/SourceLink.svelte";
+  import type { NavIconName } from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -23,6 +25,8 @@
     enabled,
     readStateEnabled,
     onArchived,
+    archiveHref = null,
+    archiveLabel = "",
   }: {
     entity: ArchiveEntity;
     id: number;
@@ -33,6 +37,9 @@
     enabled: boolean;
     readStateEnabled: boolean;
     onArchived: (marker: string) => void | Promise<void>;
+    /** The archived copy: shown as the row's link, with the status below and the action beside. */
+    archiveHref?: string | null;
+    archiveLabel?: string;
   } = $props();
 
   let status = $state<ArchiveStatus | null>(null);
@@ -428,67 +435,91 @@
   }
 </script>
 
+<!-- With an archived copy on the line the action is a small icon button; else a labelled one. -->
+{#snippet action(label: string, icon: NavIconName, run: () => void)}
+  {#if archiveHref}
+    <Button
+      variant="ghost"
+      size="sm"
+      {icon}
+      type="button"
+      aria-label={label}
+      title={label}
+      onclick={run}
+    />
+  {:else}
+    <Button variant="secondary" size="sm" {icon} type="button" onclick={run}>
+      {label}
+    </Button>
+  {/if}
+{/snippet}
+
 {#if (enabled || readStateEnabled) && ownerId !== null && sourceLink.length > 0}
-  <section class="archive-control" aria-busy={busy}>
-    <!-- One row: what the archive is doing, and what can be done about it. -->
+  <section
+    class="archive-control"
+    class:archive-control--linked={archiveHref !== null}
+    aria-busy={busy}
+  >
+    <!-- One line: the archived copy (or the status) and what can be done about it. -->
     <div class="archive-row">
-      <p class="archive-status" aria-live="polite">{statusText(status)}</p>
-      {#if errorMessage && !busy}
-        <Button
-          variant="secondary"
-          size="sm"
-          icon="refresh"
-          type="button"
-          onclick={() => void retryAfterError()}
-        >
-          {loaded
-            ? t("Try again", locale)
-            : t("Check archive status again", locale)}
-        </Button>
+      {#if archiveHref}
+        <SourceLink href={archiveHref} icon="history" label={archiveLabel} />
+      {:else}
+        <p class="archive-status" aria-live="polite">{statusText(status)}</p>
       {/if}
-      {#if busy}
-        <p class="archive-progress">{t("Checking archive status…", locale)}</p>
-      {:else if !loaded && readStateEnabled}
-        <p class="archive-progress">{t("Loading archive status…", locale)}</p>
+      {#if errorMessage && !busy}
+        {@render action(
+          loaded
+            ? t("Try again", locale)
+            : t("Check archive status again", locale),
+          "refresh",
+          () => void retryAfterError(),
+        )}
+      {:else if busy || (!loaded && readStateEnabled)}
+        <!-- progress is shown below -->
       {:else if readStateEnabled && canManuallyCheckArchive(status, pollingExhausted)}
-        <Button
-          variant="secondary"
-          size="sm"
-          icon="refresh"
-          type="button"
-          onclick={() => void checkAgain()}
-        >
-          {t("Check archive status again", locale)}
-        </Button>
-      {:else if archiveActive}
-        <p class="archive-progress">
-          {t("Status checks pause in the background.", locale)}
-        </p>
-      {:else if enabled && status?.state !== "archived"}
-        <Button
-          variant="secondary"
-          size="sm"
-          icon="link"
-          type="button"
-          onclick={() => void enqueue()}
-        >
-          {status?.state === "failed" || status?.state === "superseded"
+        {@render action(
+          t("Check archive status again", locale),
+          "refresh",
+          () => void checkAgain(),
+        )}
+      {:else if !archiveActive && enabled && status?.state !== "archived"}
+        {@render action(
+          status?.state === "failed" || status?.state === "superseded"
             ? t("Request a new archive", locale)
-            : t("Archive this source", locale)}
-        </Button>
+            : t("Archive this source", locale),
+          archiveHref ? "refresh" : "link",
+          () => void enqueue(),
+        )}
       {/if}
     </div>
+    {#if archiveHref && status !== null && status.state !== "archived"}
+      <p class="archive-status archive-caption" aria-live="polite">
+        {statusText(status)}
+      </p>
+    {/if}
+    {#if busy}
+      <p class="archive-progress">{t("Checking archive status…", locale)}</p>
+    {:else if !loaded && readStateEnabled}
+      <p class="archive-progress">{t("Loading archive status…", locale)}</p>
+    {:else if archiveActive && !canManuallyCheckArchive(status, pollingExhausted)}
+      <p class="archive-progress">
+        {t("Status checks pause in the background.", locale)}
+      </p>
+    {/if}
     {#if errorMessage}<p class="archive-error" role="alert">
         {errorMessage}
       </p>{/if}
   </section>
+{:else if archiveHref}
+  <SourceLink href={archiveHref} icon="history" label={archiveLabel} />
 {/if}
 
 <style>
   .archive-control {
     display: grid;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
+    gap: 0.2rem;
+    margin-top: 0.25rem;
   }
 
   .archive-row {
@@ -497,6 +528,17 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.4rem 0.75rem;
+  }
+
+  .archive-control--linked .archive-row {
+    flex-wrap: nowrap;
+  }
+
+  /* Under the link text, past its icon. */
+  .archive-caption {
+    margin-top: -0.4rem;
+    padding-inline-start: 2.35rem;
+    font-size: 0.78rem;
   }
 
   .archive-status,
