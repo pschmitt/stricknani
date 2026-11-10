@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.imports.ImportTarget
+import blue.anika.wolle.ui.common.AllFilterChip
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
@@ -124,6 +125,13 @@ fun YarnsListScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
+                    AllFilterChip(
+                        selected = !favoritesOnly && !everyoneFilter.mineSelected,
+                        onClick = {
+                            viewModel.clearFilters()
+                            if (everyoneFilter.mineSelected) selectEveryone(true)
+                        },
+                    )
                     FilterChip(
                         selected = favoritesOnly,
                         onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },

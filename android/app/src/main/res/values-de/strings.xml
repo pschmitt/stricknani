@@ -242,7 +242,7 @@
     <string name="project_attachment_delete_dialog_title">Anhang „%1$s“ löschen?</string>
     <string name="project_attachment_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
     <string name="projects_list_search_placeholder">Deine Projekte durchsuchen</string>
-    <string name="projects_list_category_all">Alle</string>
+    <string name="list_filter_all">Alle</string>
     <string name="projects_list_add_category_description">Kategorie hinzufügen</string>
     <string name="projects_list_more_actions_description">Weitere Optionen</string>
     <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>

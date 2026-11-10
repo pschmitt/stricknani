@@ -57,6 +57,17 @@ fun rememberEveryoneFilter(
     return state to viewModel::select
 }
 
+/** "All" in a list's filter row: selected while no filter is on; a tap turns every filter off. */
+@Composable
+fun AllFilterChip(selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(stringResource(R.string.list_filter_all)) },
+        modifier = modifier.testTag("list-filter-all"),
+    )
+}
+
 /**
  * The administrator's "Mine" filter for the project and yarn lists, one chip in the filter row next
  * to the other filters (the website offers it in the filter panel). Selected means only the

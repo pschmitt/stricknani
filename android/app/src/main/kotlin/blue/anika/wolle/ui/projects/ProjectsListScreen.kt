@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.imports.ImportTarget
+import blue.anika.wolle.ui.common.AllFilterChip
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
@@ -157,10 +158,16 @@ fun ProjectsListScreen(
                     modifier = Modifier.testTag("projects-list-category-filters"),
                 ) {
                     item {
-                        FilterChip(
-                            selected = selectedCategory == null,
-                            onClick = { viewModel.onCategorySelected(null) },
-                            label = { Text(stringResource(R.string.projects_list_category_all)) },
+                        AllFilterChip(
+                            selected =
+                                selectedCategory == null &&
+                                    selectedTag == null &&
+                                    !favoritesOnly &&
+                                    !everyoneFilter.mineSelected,
+                            onClick = {
+                                viewModel.clearFilters()
+                                if (everyoneFilter.mineSelected) selectEveryone(true)
+                            },
                         )
                     }
                     item(key = "favorites-only") {

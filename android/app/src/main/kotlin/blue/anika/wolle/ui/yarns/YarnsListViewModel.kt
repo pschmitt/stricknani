@@ -97,6 +97,11 @@ constructor(
         _searchQuery.value = query
     }
 
+    /** "All": every filter off. The Mine chip is reset by the screen. */
+    fun clearFilters() {
+        _favoritesOnly.value = false
+    }
+
     fun onFavoritesOnlyChange(favoritesOnly: Boolean) {
         _favoritesOnly.value = favoritesOnly
     }

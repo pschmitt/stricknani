@@ -58,7 +58,11 @@ fun <T> List<T>.visibleTo(
     else filter { ownerOf(it).let { o -> o == null || o == hiddenFor } || sharedWithMe(it) }
 
 /** What the Mine/Everyone chip shows: [available] only for administrators. */
-data class EveryoneFilterState(val available: Boolean = false, val enabled: Boolean = false)
+data class EveryoneFilterState(val available: Boolean = false, val enabled: Boolean = false) {
+    /** An administrator chose Mine: only their own items are listed. */
+    val mineSelected: Boolean
+        get() = available && !enabled
+}
 
 /**
  * The administrator's Mine/Everyone choice.

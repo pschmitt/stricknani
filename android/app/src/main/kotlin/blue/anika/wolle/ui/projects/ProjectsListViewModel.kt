@@ -178,6 +178,15 @@ constructor(
         _favoritesOnly.value = favoritesOnly
     }
 
+    /**
+     * "All": every filter off (category, tag, favourites). The Mine chip is reset by the screen.
+     */
+    fun clearFilters() {
+        _selectedCategory.value = null
+        _selectedTag.value = null
+        _favoritesOnly.value = false
+    }
+
     fun onTagSelected(tag: String?) {
         _selectedTag.value = if (_selectedTag.value == tag) null else tag
     }
