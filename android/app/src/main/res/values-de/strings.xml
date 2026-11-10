@@ -1218,6 +1218,7 @@
     <string name="sign_in_again_button">Anmelden</string>
     <string name="sign_in_again_not_now">Jetzt nicht</string>
     <string name="sign_in_again_missing_fields">Gib deine E-Mail und dein Passwort ein</string>
+    <string name="sign_in_again_account_mismatch">Diese E-Mail gehört zu einem anderen Konto als dem auf diesem Handy. Melde dich zuerst ab, um ein anderes Konto zu verwenden; es wurde nichts geändert.</string>
     <string name="library_card_updated">Aktualisiert %1$s</string>
     <string name="library_card_details_to_add">Details ergänzen</string>
     <string name="mascot_say_hi">Dem Wollknäuel Hallo sagen</string>

@@ -1219,6 +1219,7 @@
     <string name="sign_in_again_button">Sign in</string>
     <string name="sign_in_again_not_now">Not now</string>
     <string name="sign_in_again_missing_fields">Enter your email and your password</string>
+    <string name="sign_in_again_account_mismatch">That email belongs to a different account than the one on this phone. Sign out first to use another account; nothing was changed.</string>
     <string name="library_card_updated">Updated %1$s</string>
     <string name="library_card_details_to_add">Details to add</string>
     <string name="mascot_say_hi">Say hi to the yarn ball</string>

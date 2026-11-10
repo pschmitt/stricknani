@@ -30,6 +30,15 @@ sealed interface SignInAgainState {
 }
 
 /**
+ * True when signing in again as [typedEmail] may keep the cache and the queued writes: the email
+ * remembered from the original sign-in is unknown (a QR setup) or the same account. A different
+ * account must go through sign-out, which wipes the queue, so that account A's queued writes are
+ * never replayed under account B's token (the OIDC path has the same guard, `AccountMismatch`).
+ */
+internal fun isSameAccountForSignInAgain(savedEmail: String?, typedEmail: String): Boolean =
+    savedEmail.isNullOrBlank() || savedEmail.trim().equals(typedEmail.trim(), ignoreCase = true)
+
+/**
  * Signs in again with email and password against the saved server, for sessions that did not come
  * from the identity provider (password login, QR setup). Only the token is replaced: the local
  * cache and the queued writes stay, and the queue is replayed right after.
@@ -61,6 +70,11 @@ constructor(
             return
         }
         if (_state.value is SignInAgainState.Working) return
+        if (!isSameAccountForSignInAgain(settings.accountEmail.value, email)) {
+            _state.value =
+                SignInAgainState.Error(context.getString(R.string.sign_in_again_account_mismatch))
+            return
+        }
         _state.value = SignInAgainState.Working
         viewModelScope.launch {
             minter

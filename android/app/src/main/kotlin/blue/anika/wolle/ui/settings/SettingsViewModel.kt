@@ -470,7 +470,14 @@ constructor(
             runningTimers.clearAll()
         }
         settingsRepository.signOut()
-        viewModelScope.launch { withContext(Dispatchers.IO) { database.clearAllTables() } }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                database.clearAllTables()
+                // The queued upload files belong to the account that picked them; their rows are
+                // gone now, so the files must not outlive the sign-out either.
+                runCatching { File(context.filesDir, "pending-uploads").deleteRecursively() }
+            }
+        }
     }
 
     /**
