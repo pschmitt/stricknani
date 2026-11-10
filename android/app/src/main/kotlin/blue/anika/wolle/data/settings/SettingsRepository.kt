@@ -3,6 +3,7 @@ package blue.anika.wolle.data.settings
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import blue.anika.wolle.data.export.LocalMoveStore
 import blue.anika.wolle.data.oidc.AUTH_ORIGIN_OIDC
 import blue.anika.wolle.data.oidc.OidcSessionStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -40,7 +41,7 @@ data class AuthInfo(val expiresAt: String?, val origin: String?) {
 @Suppress("DEPRECATION")
 @Singleton
 class SettingsRepository @Inject constructor(@ApplicationContext context: Context) :
-    OidcSessionStore {
+    OidcSessionStore, LocalMoveStore {
 
     private val prefs =
         EncryptedSharedPreferences.create(
@@ -227,6 +228,22 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         get() = prefs.getBoolean(KEY_PENDING_TOKEN_RENAME, false)
         set(value) = prefs.edit().putBoolean(KEY_PENDING_TOKEN_RENAME, value).apply()
 
+    /**
+     * T130.2: the exported local data that waits for an upload offer. Survives [signOut] on purpose
+     * (the file is how the data reaches the server).
+     */
+    override var pendingLocalMove: String?
+        get() = prefs.getString(KEY_PENDING_LOCAL_MOVE, null)
+        set(value) = putOrRemove(KEY_PENDING_LOCAL_MOVE, value)
+
+    override var uploadingLocalMove: String?
+        get() = prefs.getString(KEY_UPLOADING_LOCAL_MOVE, null)
+        set(value) = putOrRemove(KEY_UPLOADING_LOCAL_MOVE, value)
+
+    private fun putOrRemove(key: String, value: String?) {
+        prefs.edit().apply { if (value == null) remove(key) else putString(key, value) }.apply()
+    }
+
     /** Wipes credentials. The Room cache (SNA-7) is wiped by the caller alongside this. */
     fun signOut() {
         prefs
@@ -267,6 +284,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         const val KEY_TOKEN_EXPIRES_AT = "token_expires_at"
         const val KEY_AUTH_ORIGIN = "auth_origin"
         const val KEY_PENDING_TOKEN_RENAME = "pending_token_rename"
+        const val KEY_PENDING_LOCAL_MOVE = "pending_local_move"
+        const val KEY_UPLOADING_LOCAL_MOVE = "uploading_local_move"
         const val KEY_SERVER_URL = "server_url"
         const val KEY_LOCAL_MODE = "local_mode"
         const val KEY_API_TOKEN = "api_token"

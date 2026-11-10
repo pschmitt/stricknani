@@ -7,6 +7,8 @@ import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.db.entity.YarnEntity
+import blue.anika.wolle.data.export.LocalMoveCoordinator
+import blue.anika.wolle.data.export.LocalMoveOffer
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ActivityRepository
 import blue.anika.wolle.data.repository.CategoryRepository
@@ -57,7 +59,19 @@ constructor(
     private val appPreferences: AppPreferencesRepository,
     private val settingsRepository: SettingsRepository,
     activityRepository: ActivityRepository,
+    private val localMove: LocalMoveCoordinator,
 ) : ViewModel() {
+
+    /** T130.2: the local data that waits to be uploaded to the server just signed in to. */
+    val localMoveOffer: StateFlow<LocalMoveOffer?> = localMove.offer
+
+    fun uploadLocalData(offer: LocalMoveOffer.Ask) {
+        localMove.upload(offer.credentials)
+    }
+
+    fun localDataNotNow(offer: LocalMoveOffer.Ask) = localMove.notNow(offer.credentials)
+
+    fun discardLocalData() = localMove.discard()
 
     /** Local-only mode: nothing to pull from a server, so the empty state says what to do. */
     val isLocalMode: Boolean

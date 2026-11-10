@@ -139,6 +139,7 @@ fun HomeScreen(
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
     val failedMutations by viewModel.failedMutations.collectAsStateWithLifecycle()
     val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
+    val localMoveOffer by viewModel.localMoveOffer.collectAsStateWithLifecycle()
     val activity by viewModel.activity.collectAsStateWithLifecycle()
     val installViewModel: UpdateInstallViewModel = hiltViewModel()
     val installState by installViewModel.state.collectAsStateWithLifecycle()
@@ -300,6 +301,17 @@ fun HomeScreen(
                                     onDismiss = requestDismiss,
                                 )
                             }
+                        }
+                    }
+                    localMoveOffer?.let { offer ->
+                        spacedItem {
+                            LocalMoveCard(
+                                offer = offer,
+                                onUpload = viewModel::uploadLocalData,
+                                onNotNow = viewModel::localDataNotNow,
+                                onDiscard = viewModel::discardLocalData,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
                         }
                     }
                     problem?.let { shown ->

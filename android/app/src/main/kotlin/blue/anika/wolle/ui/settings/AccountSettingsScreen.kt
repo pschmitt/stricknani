@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -81,6 +84,7 @@ internal fun AccountSettingsScreen(
     val textStep by viewModel.readingTextStep.collectAsStateWithLifecycle()
     var showSignOutDialog by remember { mutableStateOf(false) }
     var showUseServerDialog by remember { mutableStateOf(false) }
+    val moveExport by viewModel.moveExport.collectAsStateWithLifecycle()
     val localMode = viewModel.isLocalMode
     val linkedLogins: LinkedLoginsViewModel = hiltViewModel()
     val linkedLoginsState by linkedLogins.state.collectAsStateWithLifecycle()
@@ -279,7 +283,9 @@ internal fun AccountSettingsScreen(
                             onCancel = { securityModel.setCreateOpen(false) },
                             onCreate = securityModel::createToken,
                             onCreateWithProvider = { name ->
-                                tokenProvider?.let { securityModel.createTokenWithProvider(name, it) }
+                                tokenProvider?.let {
+                                    securityModel.createTokenWithProvider(name, it)
+                                }
                             },
                         )
                         when {
@@ -419,15 +425,44 @@ internal fun AccountSettingsScreen(
         SignedOutDialog(notice) { securityModel.confirmSignOut(viewModel::signOut) }
     }
 
-    if (showUseServerDialog) {
+    if (showUseServerDialog && moveExport == LocalMoveExport.Idle) {
         UseServerDialog(
-            onConfirm = {
+            onConfirm = { bringData ->
                 showUseServerDialog = false
-                // The same sign-out as on a server account: it clears the app's cache and returns
+                // Exports first when asked to (the data comes along after the next sign-in), then
+                // the same sign-out as on a server account: it clears the app's cache and returns
                 // to onboarding, and leaves the local server's data directory alone.
-                viewModel.signOut()
+                viewModel.useServer(bringData)
             },
             onDismiss = { showUseServerDialog = false },
+        )
+    }
+    if (moveExport == LocalMoveExport.Exporting) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.local_only_use_server)) },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Text(stringResource(R.string.local_move_exporting))
+                }
+            },
+            confirmButton = {},
+            modifier = Modifier.testTag("local-move-exporting"),
+        )
+    }
+    if (moveExport == LocalMoveExport.Failed) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissMoveFailure,
+            title = { Text(stringResource(R.string.local_only_use_server)) },
+            text = { Text(stringResource(R.string.local_move_failed)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissMoveFailure) {
+                    Text(stringResource(R.string.local_move_ok))
+                }
+            },
+            modifier = Modifier.testTag("local-move-failed"),
         )
     }
 
@@ -467,13 +502,35 @@ private fun LocalOnlyCard(onUseServer: () -> Unit) {
 }
 
 @Composable
-private fun UseServerDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun UseServerDialog(onConfirm: (bringData: Boolean) -> Unit, onDismiss: () -> Unit) {
+    var bringData by remember { mutableStateOf(true) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.local_only_use_server)) },
-        text = { Text(stringResource(R.string.local_only_use_server_confirm)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.local_only_use_server_confirm))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Checkbox(
+                        checked = bringData,
+                        onCheckedChange = { bringData = it },
+                        modifier = Modifier.testTag("local-move-bring"),
+                    )
+                    Text(
+                        stringResource(R.string.local_move_bring_data),
+                        modifier = Modifier.clickable { bringData = !bringData },
+                    )
+                }
+            }
+        },
         confirmButton = {
-            TextButton(onClick = onConfirm, modifier = Modifier.testTag("local-only-confirm")) {
+            TextButton(
+                onClick = { onConfirm(bringData) },
+                modifier = Modifier.testTag("local-only-confirm"),
+            ) {
                 Text(stringResource(R.string.local_only_use_server))
             }
         },

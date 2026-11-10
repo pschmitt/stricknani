@@ -60,10 +60,11 @@ is; it talks to `http://127.0.0.1:<port>` instead of a remote server.
   `LocalModeJourneyE2eTest` (onboarding "Only on this phone", a project created in the editor, still
   there after an activity recreate and on the in-app server, Account says "Only on this phone" and
   shows no server-only cards). The lane skips them when the library is missing.
-- Open: moving local data to a server in one flow (design below), and the APK size (about +11 MB
-  per ABI).
+- Done: moving local data to a server in one flow (T130.2, below). Needs a device check of the
+  Android 14 job path and of a real server round trip.
+- Open: the APK size (about +11 MB per ABI).
 
-## Moving local data to a server (design, not built)
+## Moving local data to a server
 
 No new server API is needed: `POST /api/v2/account/import` (`docs/data-export.md`, "Restore") takes
 the archive the local server exports, and the app already uploads archives to it
@@ -86,5 +87,22 @@ download, sign in, Backups, restore. The flow to build ("Use a server instead"):
    the upload starts and only offer it once per file. Cleanup: delete `filesDir/local-move` after a
    successful restore or when the user discards the card.
 
-It touches the dialog, the view model, Home and two string catalogs, and needs a device check of the
-Android 14 job path and of a real server round trip, so it is tracked as T130.2 in `TODO.md`.
+Built (T130.2): `LocalDataMove` holds the rules (unit-tested in `LocalDataMoveTest`),
+`LocalMoveCoordinator` wires them to the export, the restore and the preferences
+(`pending_local_move`, `uploading_local_move` in `SettingsRepository`), `SettingsViewModel.useServer`
+runs steps 1 and 2, `LocalMoveCard` on Home is step 3. Details the design left open:
+
+- The export runs in the view model, not as a job, with a blocking "Saving your data..." dialog; it
+  writes `local.tar.gz.part` and renames it, so a half-written file is never offered. Choosing
+  "Bring my data along" off deletes an older export.
+- The card offers Upload, Not now and Discard. Not now hides the card for that sign-in only; the
+  marker and the file stay, so it comes back after the next sign-in or app start. Discard deletes
+  the file. While the upload runs the card says so; the restore job's own notifications (all
+  clickable) report the outcome.
+- Upload is bound to the credentials the card was shown for and refused for any other session, so a
+  sign-in as another account in between never receives the data. It is also refused while another
+  restore runs.
+- The marker moves to `uploading_local_move` when the upload starts. Success deletes the file; a
+  failed job puts the marker back, so the card offers it again (a retry is the user's choice, the
+  server may have kept a partial import). A process that dies mid-upload leaves the file and offers
+  it again at the next start.

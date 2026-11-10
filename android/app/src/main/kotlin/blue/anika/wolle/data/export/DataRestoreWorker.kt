@@ -145,6 +145,13 @@ constructor(
         )
     }
 
+    /** [start] without the silent no-op: false when another restore is running. */
+    fun startIfIdle(source: Uri): Boolean {
+        if (transfer.isRunning) return false
+        start(source)
+        return true
+    }
+
     private fun enqueueWorker(request: DataRestoreRequest) {
         val work =
             OneTimeWorkRequestBuilder<DataRestoreWorker>()

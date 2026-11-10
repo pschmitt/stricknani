@@ -25,6 +25,7 @@ import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
+import blue.anika.wolle.data.export.LocalMoveCoordinator
 import blue.anika.wolle.data.repository.EVERYONE_FILTER_KEY
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -66,6 +67,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** State of the export that "Use a server instead" runs before it signs out. */
+enum class LocalMoveExport {
+    Idle,
+    Exporting,
+    Failed,
+}
+
 @HiltViewModel
 class SettingsViewModel
 @Inject
@@ -83,8 +91,40 @@ constructor(
     private val updateChecker: UpdateChecker,
     private val timerReminderScheduler: ProjectTimerReminderScheduler,
     private val runningTimers: RunningTimers,
+    private val localMove: LocalMoveCoordinator,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    private val _moveExport = MutableStateFlow(LocalMoveExport.Idle)
+
+    /** The "bring my data along" export of "Use a server instead" (T130.2). */
+    val moveExport: StateFlow<LocalMoveExport> = _moveExport.asStateFlow()
+
+    /**
+     * "Use a server instead". With [bringData] the local data is exported into a private file first
+     * and the sign-out only follows a successful export; a failed one keeps the user in local mode.
+     */
+    fun useServer(bringData: Boolean) {
+        if (_moveExport.value == LocalMoveExport.Exporting) return
+        if (!bringData) {
+            localMove.discard()
+            signOut()
+            return
+        }
+        _moveExport.value = LocalMoveExport.Exporting
+        viewModelScope.launch {
+            if (localMove.prepare()) {
+                _moveExport.value = LocalMoveExport.Idle
+                signOut()
+            } else {
+                _moveExport.value = LocalMoveExport.Failed
+            }
+        }
+    }
+
+    fun dismissMoveFailure() {
+        _moveExport.value = LocalMoveExport.Idle
+    }
 
     /** Local-only mode (T130): the server runs inside the app and there is one local account. */
     val isLocalMode: Boolean

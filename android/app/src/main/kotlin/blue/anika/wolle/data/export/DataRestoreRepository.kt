@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,14 +22,16 @@ constructor(private val api: DataRestoreApi, @ApplicationContext private val con
 
     /** The size in bytes the provider reports, or 0 when it does not say. */
     fun sizeOf(source: Uri): Long =
-        runCatching {
-                context.contentResolver
-                    .query(source, arrayOf(OpenableColumns.SIZE), null, null, null)
-                    ?.use { cursor ->
-                        if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else 0L
-                    }
-            }
-            .getOrNull() ?: 0L
+        if (source.scheme == "file") source.path?.let { File(it).length() } ?: 0L
+        else
+            runCatching {
+                    context.contentResolver
+                        .query(source, arrayOf(OpenableColumns.SIZE), null, null, null)
+                        ?.use { cursor ->
+                            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else 0L
+                        }
+                }
+                .getOrNull() ?: 0L
 
     suspend fun restore(
         source: Uri,
