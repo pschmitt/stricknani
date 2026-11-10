@@ -89,7 +89,8 @@
     | "format-bold"
     | "format-italic"
     | "format-heading"
-    | "markdown";
+    | "markdown"
+    | "stopwatch";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -346,6 +347,9 @@
     <path d="M10 5h7M7 19h7M14.5 5l-5 14" />
   {:else if name === "format-heading"}
     <path d="M6 5v14M18 5v14M6 12h12" />
+  {:else if name === "stopwatch"}
+    <circle cx="12" cy="13.5" r="7" />
+    <path d="M12 13.5V10M10 3h4M12 3v3.5M18.2 7.3l1.3-1.3" />
   {:else if name === "markdown"}
     <!-- Material Design Icons 7.4.47 language-markdown-outline, Apache-2.0, as on Android. -->
     <path

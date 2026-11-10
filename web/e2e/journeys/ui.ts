@@ -53,6 +53,7 @@ import {
 } from "../lib/ui-state";
 import { uiPartB } from "./ui-reader";
 import { uiPartC } from "./ui-editor";
+import { detailMenuItem } from "../lib/detail-menu";
 
 export type { UiJourneyOptions } from "../lib/ui-state";
 
@@ -1054,14 +1055,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   check(projectDetailHref !== null, "project detail link is missing");
   await projectCard.locator("a.resource-card__link").click();
   await page.waitForURL(`**${projectDetailHref}`);
-  let favoriteButton = page.getByRole("button", {
-    name: "Add to favorites",
-    exact: true,
-  });
-  check(
-    (await favoriteButton.getAttribute("aria-pressed")) === "false",
-    "the project favorite control did not start unpressed",
-  );
+  const favoriteButton = await detailMenuItem(page, "Add to favorites");
   const [favoriteResponse] = await Promise.all([
     page.waitForResponse(
       (candidate) =>
@@ -1074,15 +1068,8 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     favoriteResponse.status() === 200,
     "saving the project favorite failed against the Rust API",
   );
-  favoriteButton = page.getByRole("button", {
-    name: "Remove from favorites",
-    exact: true,
-  });
-  await favoriteButton.waitFor({ state: "visible" });
-  check(
-    (await favoriteButton.getAttribute("aria-pressed")) === "true",
-    "the project favorite control did not enter its pressed state",
-  );
+  await detailMenuItem(page, "Remove from favorites");
+  await page.keyboard.press("Escape");
   await page.goBack({ waitUntil: "domcontentloaded" });
   await page.waitForURL("**/app/projects");
   projectCard = projectCardOf();

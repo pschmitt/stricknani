@@ -12,7 +12,6 @@
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import Disclosure from "#lib/components/Disclosure.svelte";
-  import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
@@ -132,6 +131,10 @@
     projectTimerPreference.isEnabled(userId),
   );
   // OCR and link archiving are owner-scoped on the server: nobody else gets them.
+  // Only a running timer sits in the header; otherwise it is in the ⋮ menu.
+  let timerControl = $state<ReturnType<typeof ProjectTimer> | null>(null);
+  let timerRunning = $state(false);
+  let timerAvailable = $state(false);
   const ownsIt = $derived(!project?.access || project.access.role === "owner");
   // The archive control shows the archived copy itself, with its action on the same line.
   const projectArchiveControl = $derived(
@@ -1096,20 +1099,16 @@
         <div class="reader-heading-actions">
           {#if !adminData && userId !== null}
             <ProjectTimer
+              bind:this={timerControl}
+              bind:running={timerRunning}
+              bind:available={timerAvailable}
+              showChip={timerRunning}
               projectId={currentProject.id}
               {locale}
               {canEdit}
               enabled={projectTimersEnabled}
               projectName={currentProject.name}
               thumbnailUrl={coverImage?.thumbnail_url ?? null}
-            />
-          {/if}
-          {#if !adminData}
-            <FavoriteButton
-              favorite={currentProject.is_favorite}
-              busy={favoriteBusy}
-              {locale}
-              onclick={() => void toggleFavorite()}
             />
           {/if}
           {#if !adminData && canEdit}
@@ -1169,6 +1168,39 @@
                 role="menu"
                 aria-label={t("Project actions", locale)}
               >
+                {#if !adminData}
+                  <button
+                    class="action-overflow__item"
+                    role="menuitem"
+                    type="button"
+                    disabled={favoriteBusy}
+                    onclick={() => {
+                      close();
+                      void toggleFavorite();
+                    }}
+                  >
+                    <NavIcon name="heart" />
+                    <span
+                      >{currentProject.is_favorite
+                        ? t("Remove from favorites", locale)
+                        : t("Add to favorites", locale)}</span
+                    >
+                  </button>
+                {/if}
+                {#if timerAvailable && !timerRunning}
+                  <button
+                    class="action-overflow__item"
+                    role="menuitem"
+                    type="button"
+                    onclick={() => {
+                      close();
+                      timerControl?.open();
+                    }}
+                  >
+                    <NavIcon name="stopwatch" />
+                    <span>{t("Knitting time", locale)}</span>
+                  </button>
+                {/if}
                 {#if !adminData}
                   <ShareMenuItem
                     title={currentProject.name}

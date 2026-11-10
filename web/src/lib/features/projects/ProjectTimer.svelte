@@ -30,6 +30,12 @@
     projectName?: string;
     /** App path of the title image thumbnail, shown in the notification. */
     thumbnailUrl?: string | null;
+    /** True while the timer runs (for the page: only a running timer sits in the header). */
+    running?: boolean;
+    /** False hides the header chip; the page opens the dialog with [open] instead. */
+    showChip?: boolean;
+    /** True when the timer can be used here (enabled and supported by the server). */
+    available?: boolean;
   }
 
   let {
@@ -39,6 +45,9 @@
     enabled,
     projectName = "",
     thumbnailUrl = null,
+    running: runningOut = $bindable(false),
+    showChip = true,
+    available = $bindable(false),
   }: Props = $props();
   let timer = $state<TimerValue | null>(null);
   let loading = $state(true);
@@ -108,6 +117,12 @@
     });
   });
   const running = $derived(Boolean(timer?.started_at));
+  $effect(() => {
+    runningOut = running;
+  });
+  $effect(() => {
+    available = enabled && !unsupported;
+  });
   const ticks = Array.from({ length: 60 }, (_, index) => index);
   // The chip in the action row shows a short "12:34" / "1:02:03"; nothing for an
   // untouched timer, so a fresh project only shows the little stopwatch.
@@ -122,6 +137,11 @@
 
   function openDialog() {
     if (!dialog?.open) dialog?.showModal();
+  }
+
+  /** Opens the timer (from the page's ⋮ menu while the timer is not running). */
+  export function open() {
+    openDialog();
   }
 
   function closeDialog() {
@@ -563,6 +583,7 @@
     <button
       type="button"
       class="timer-chip"
+      hidden={!showChip}
       class:timer-chip--due={reminderDue}
       aria-haspopup="dialog"
       aria-label={shortTime
@@ -778,6 +799,10 @@
     outline: 3px solid var(--focus);
     outline-offset: 3px;
   }
+  .timer-chip[hidden] {
+    display: none;
+  }
+
   .running .timer-chip {
     border-color: var(--accent);
     background: var(--accent-wash);

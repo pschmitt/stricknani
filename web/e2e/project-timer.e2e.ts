@@ -2,6 +2,7 @@ import { test } from "@playwright/test";
 
 import { check, fn } from "./lib/common";
 import { e2eConfig, launchBrowser, withLiveFixture } from "./lib/harness";
+import { detailMenuItem } from "./lib/detail-menu";
 
 test("project timer edits, runs, persists, and reminds", async () => {
   const cfg = e2eConfig();
@@ -72,7 +73,12 @@ test("project timer edits, runs, persists, and reminds", async () => {
         timerGetCount > 0,
         "enabling project timers did not load the timer",
       );
-      await page.locator(".timer-chip").click();
+      // A timer that is not running sits in the ⋮ menu, not in the header.
+      check(
+        !(await page.locator(".timer-chip").isVisible()),
+        "an idle timer was shown in the header",
+      );
+      await (await detailMenuItem(page, "Knitting time")).click();
       await page
         .getByRole("heading", { name: "Knitting time" })
         .waitFor({ state: "visible" });
@@ -129,12 +135,8 @@ test("project timer edits, runs, persists, and reminds", async () => {
         .getByRole("button", { name: "Start", exact: true })
         .waitFor({ state: "visible" });
       await page.reload({ waitUntil: "networkidle" });
-      // The chip in the action row carries the short time; the dialog the full one.
-      await page
-        .locator(".timer-chip")
-        .getByText(/^1:02:0[3-9]$/)
-        .waitFor({ state: "visible" });
-      await page.locator(".timer-chip").click();
+      // Stopped: the timer is in the ⋮ menu; its dialog carries the full time.
+      await (await detailMenuItem(page, "Knitting time")).click();
       await page
         .getByRole("heading", { name: "Knitting time" })
         .waitFor({ state: "visible" });
@@ -157,10 +159,7 @@ test("project timer edits, runs, persists, and reminds", async () => {
       );
       await page.unroute(`**/api/v2/projects/${projectId}/timer`);
       await page.reload({ waitUntil: "networkidle" });
-      await page
-        .locator(".timer-chip")
-        .getByText(/^1:02:\d{2}$/)
-        .waitFor({ state: "visible" });
+      await detailMenuItem(page, "Knitting time");
     } finally {
       await context.close();
       await browser.close();

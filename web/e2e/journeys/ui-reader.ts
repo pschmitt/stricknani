@@ -25,6 +25,7 @@ import {
   svgShapeSignature,
 } from "../lib/ui-helpers";
 import { settleObservers, urlPath, type UiCtx } from "../lib/ui-state";
+import { detailMenuItem } from "../lib/detail-menu";
 
 interface PrintImageState {
   complete: boolean;
@@ -648,10 +649,7 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
     "afterprint did not restore the previously closed Materials disclosure",
   );
   await page.emulateMedia({ media: "screen" });
-  let favoriteButton = page.getByRole("button", {
-    name: "Remove from favorites",
-    exact: true,
-  });
+  const favoriteButton = await detailMenuItem(page, "Remove from favorites");
   const unfavoritePromise = page.waitForResponse(
     (response) =>
       urlPath(response.url()) === `/api/v2/projects/${projectId}/favorite` &&
@@ -663,15 +661,8 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
     unfavoriteResponse.status() === 200,
     "removing the project favorite failed against the Rust API",
   );
-  favoriteButton = page.getByRole("button", {
-    name: "Add to favorites",
-    exact: true,
-  });
-  await favoriteButton.waitFor({ state: "visible" });
-  check(
-    (await favoriteButton.getAttribute("aria-pressed")) === "false",
-    "the project favorite control did not return to its unpressed state",
-  );
+  await detailMenuItem(page, "Add to favorites");
+  await page.keyboard.press("Escape");
   await maskFixtureIdentity(page);
   await prepareScreenshot(page);
   await page.screenshot({

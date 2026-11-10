@@ -41,8 +41,8 @@ msgstr "Revoke"
 msgid "Import a pattern"
 msgstr ""
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:300
-#: web/src/routes/+layout.svelte:397
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:289
+#: web/src/routes/+layout.svelte:386
 msgid "Main navigation"
 msgstr "Main navigation"
 
@@ -58,7 +58,7 @@ msgstr "Projects"
 #: src/import_service.rs:705 web/src/lib/components/CommandPalette.svelte:110
 #: web/src/lib/features/account/BackupsSection.svelte:447
 #: web/src/lib/features/account/BackupsSection.svelte:467
-#: web/src/lib/features/yarns/YarnDetail.svelte:354
+#: web/src/lib/features/yarns/YarnDetail.svelte:353
 #: web/src/lib/features/yarns/YarnLibrary.svelte:184
 #: web/src/lib/features/yarns/YarnLibrary.svelte:195
 #: web/src/lib/nav-items.ts:14
@@ -125,7 +125,7 @@ msgstr "Category"
 #: web/src/lib/features/admin/AdminResource.svelte:441
 #: web/src/lib/features/history/change-format.ts:125
 #: web/src/lib/features/projects/ProjectEditor.svelte:1748
-#: web/src/lib/features/projects/ProjectReader.svelte:793
+#: web/src/lib/features/projects/ProjectReader.svelte:796
 msgid "Needles"
 msgstr "Needles"
 
@@ -135,7 +135,7 @@ msgstr "Needles"
 #: web/src/lib/features/projects/ProjectEditor.svelte:1626
 #: web/src/lib/features/projects/ProjectEditor.svelte:1648
 #: web/src/lib/features/projects/ProjectEditor.svelte:1756
-#: web/src/lib/features/projects/ProjectReader.svelte:799
+#: web/src/lib/features/projects/ProjectReader.svelte:802
 msgid "Stitch sample"
 msgstr "Stitch sample"
 
@@ -143,7 +143,7 @@ msgstr "Stitch sample"
 #: web/src/lib/features/admin/AdminResource.svelte:496
 #: web/src/lib/features/history/change-format.ts:129
 #: web/src/lib/features/projects/ProjectEditor.svelte:1862
-#: web/src/lib/features/projects/ProjectReader.svelte:913
+#: web/src/lib/features/projects/ProjectReader.svelte:916
 msgid "Other materials"
 msgstr "Other materials"
 
@@ -153,10 +153,10 @@ msgstr "Other materials"
 #: web/src/lib/features/admin/AdminResource.svelte:437
 #: web/src/lib/features/admin/DiffPanel.svelte:91
 #: web/src/lib/features/history/change-format.ts:123
-#: web/src/lib/features/projects/ProjectReader.svelte:846
-#: web/src/lib/features/projects/ProjectReader.svelte:880
-#: web/src/lib/features/projects/ProjectReader.svelte:885
-#: web/src/lib/features/projects/ProjectReader.svelte:892
+#: web/src/lib/features/projects/ProjectReader.svelte:849
+#: web/src/lib/features/projects/ProjectReader.svelte:883
+#: web/src/lib/features/projects/ProjectReader.svelte:888
+#: web/src/lib/features/projects/ProjectReader.svelte:895
 #: web/src/routes/share/+page.svelte:82
 msgid "Yarn"
 msgstr "Yarn"
@@ -168,7 +168,7 @@ msgstr "Yarn"
 #: web/src/lib/features/history/change-format.ts:127
 #: web/src/lib/features/history/change-format.ts:144
 #: web/src/lib/features/media/PhotoEditor.svelte:423
-#: web/src/lib/features/yarns/YarnDetail.svelte:478
+#: web/src/lib/features/yarns/YarnDetail.svelte:477
 #: web/src/lib/features/yarns/YarnForm.svelte:1031
 msgid "Description"
 msgstr "Description"
@@ -185,7 +185,7 @@ msgstr "Link"
 #: web/src/lib/features/admin/AdminResource.svelte:608
 #: web/src/lib/features/history/change-format.ts:145
 #: web/src/lib/features/imports/ImportedYarns.svelte:196
-#: web/src/lib/features/yarns/YarnDetail.svelte:403
+#: web/src/lib/features/yarns/YarnDetail.svelte:402
 #: web/src/lib/features/yarns/YarnForm.svelte:867
 msgid "Brand"
 msgstr "Brand"
@@ -194,7 +194,7 @@ msgstr "Brand"
 #: web/src/lib/features/admin/AdminResource.svelte:612
 #: web/src/lib/features/history/change-format.ts:146
 #: web/src/lib/features/imports/ImportedYarns.svelte:202
-#: web/src/lib/features/yarns/YarnDetail.svelte:407
+#: web/src/lib/features/yarns/YarnDetail.svelte:406
 #: web/src/lib/features/yarns/YarnForm.svelte:876
 msgid "Colorway"
 msgstr "Colorway"
@@ -222,17 +222,17 @@ msgstr "Weight category"
 #: web/src/lib/features/admin/AdminResource.svelte:620
 #: web/src/lib/features/history/change-format.ts:148
 #: web/src/lib/features/imports/ImportedYarns.svelte:208
-#: web/src/lib/features/yarns/YarnDetail.svelte:415
+#: web/src/lib/features/yarns/YarnDetail.svelte:414
 #: web/src/lib/features/yarns/YarnForm.svelte:938
 msgid "Fiber content"
 msgstr "Fiber content"
 
-#: src/web_push.rs:323 web/src/lib/features/projects/ProjectTimer.svelte:326
+#: src/web_push.rs:323 web/src/lib/features/projects/ProjectTimer.svelte:346
 #, python-brace-format
 msgid "{name}: timer still running"
 msgstr "{name}: timer still running"
 
-#: src/web_push.rs:350 web/src/lib/features/projects/ProjectTimer.svelte:337
+#: src/web_push.rs:350 web/src/lib/features/projects/ProjectTimer.svelte:357
 msgid "Open project"
 msgstr "Open project"
 
@@ -241,7 +241,7 @@ msgstr "Open project"
 msgid "(opens in a new tab)"
 msgstr "(opens in a new tab)"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:734
+#: web/src/lib/features/projects/ProjectTimer.svelte:755
 msgid "1 hour"
 msgstr "1 hour"
 
@@ -249,11 +249,11 @@ msgstr "1 hour"
 msgid "1 linked yarn"
 msgstr "1 linked yarn"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:735
+#: web/src/lib/features/projects/ProjectTimer.svelte:756
 msgid "2 hours"
 msgstr "2 hours"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:733
+#: web/src/lib/features/projects/ProjectTimer.svelte:754
 msgid "30 minutes"
 msgstr "30 minutes"
 
@@ -309,13 +309,13 @@ msgstr "A newer version was saved"
 msgid "A place for your projects and yarn."
 msgstr "A place for your projects and yarn."
 
-#: web/src/routes/+layout.svelte:205
+#: web/src/routes/+layout.svelte:204
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "A quiet place to keep your knitting projects and yarn close."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:566
-#: web/src/lib/features/projects/ProjectReader.svelte:593
-#: web/src/lib/features/projects/ProjectReader.svelte:658
+#: web/src/lib/features/projects/ProjectReader.svelte:569
+#: web/src/lib/features/projects/ProjectReader.svelte:596
+#: web/src/lib/features/projects/ProjectReader.svelte:661
 msgid "A reference photo could not be prepared for printing. Try again."
 msgstr "A reference photo could not be prepared for printing. Try again."
 
@@ -353,7 +353,7 @@ msgstr "API access"
 msgid "API token revoked."
 msgstr "API token revoked."
 
-#: web/src/lib/palette/entries.ts:203 web/src/routes/+layout.svelte:371
+#: web/src/lib/palette/entries.ts:203 web/src/routes/+layout.svelte:360
 #: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:76
 msgid "About"
 msgstr "About"
@@ -365,12 +365,12 @@ msgstr "About this policy"
 #: web/src/lib/features/account/AccountSettings.svelte:834
 #: web/src/lib/features/account/AccountSettings.svelte:842
 #: web/src/lib/palette/entries.ts:185 web/src/lib/palette/entries.ts:214
-#: web/src/routes/+layout.svelte:334 web/src/routes/+layout.svelte:337
-#: web/src/routes/+layout.svelte:345 web/src/routes/more/+page.svelte:48
+#: web/src/routes/+layout.svelte:323 web/src/routes/+layout.svelte:326
+#: web/src/routes/+layout.svelte:334 web/src/routes/more/+page.svelte:48
 msgid "Account"
 msgstr "Account"
 
-#: web/src/routes/+layout.svelte:381
+#: web/src/routes/+layout.svelte:370
 msgid "Account access"
 msgstr "Account access"
 
@@ -430,8 +430,8 @@ msgstr "Activity"
 msgid "Add a category above to make your project library easier to browse."
 msgstr "Add a category above to make your project library easier to browse."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:965
-#: web/src/lib/features/yarns/YarnDetail.svelte:509
+#: web/src/lib/features/projects/ProjectReader.svelte:968
+#: web/src/lib/features/yarns/YarnDetail.svelte:508
 msgid "Add a note"
 msgstr "Add a note"
 
@@ -471,6 +471,8 @@ msgid "Add tags…"
 msgstr "Add tags…"
 
 #: web/src/lib/components/FavoriteButton.svelte:21
+#: web/src/lib/features/projects/ProjectReader.svelte:1186
+#: web/src/lib/features/yarns/YarnDetail.svelte:644
 msgid "Add to favorites"
 msgstr "Add to favorites"
 
@@ -520,7 +522,7 @@ msgstr ""
 "Adds the projects, yarns and photos from a Stricknani download as new "
 "items. Nothing you already have is changed."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:646
+#: web/src/lib/features/projects/ProjectTimer.svelte:667
 msgid "Adjust total time"
 msgstr "Adjust total time"
 
@@ -536,7 +538,7 @@ msgstr "Adjusted stitches"
 #: web/src/lib/features/admin/AdminAudit.svelte:332
 #: web/src/lib/features/admin/AdminUsers.svelte:650
 #: web/src/lib/features/admin/AdminUsers.svelte:657
-#: web/src/lib/palette/entries.ts:194 web/src/routes/+layout.svelte:361
+#: web/src/lib/palette/entries.ts:194 web/src/routes/+layout.svelte:350
 #: web/src/routes/more/+page.svelte:63 web/src/routes/more/+page.svelte:67
 msgid "Admin"
 msgstr "Admin"
@@ -564,7 +566,7 @@ msgstr "Administrator access"
 #: web/src/lib/features/admin/AdminUsers.svelte:261
 #: web/src/lib/features/admin/DiffPanel.svelte:46
 #: web/src/lib/features/admin/DiffPanel.svelte:74
-#: web/src/lib/features/projects/ProjectReader.svelte:277
+#: web/src/lib/features/projects/ProjectReader.svelte:280
 msgid "Administrator access is required."
 msgstr "Administrator access is required."
 
@@ -719,7 +721,7 @@ msgstr "Archiving is unavailable right now."
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
-#: web/src/routes/+layout.svelte:385
+#: web/src/routes/+layout.svelte:374
 msgid "Ask an administrator if you need access."
 msgstr "Ask an administrator if you need access."
 
@@ -753,7 +755,7 @@ msgstr "Attachment uploaded"
 
 #: web/src/lib/features/admin/AdminResource.svelte:577
 #: web/src/lib/features/projects/ProjectEditor.svelte:1675
-#: web/src/lib/features/projects/ProjectReader.svelte:1291
+#: web/src/lib/features/projects/ProjectReader.svelte:1323
 msgid "Attachments"
 msgstr "Attachments"
 
@@ -787,7 +789,7 @@ msgstr ""
 "only when they are created; the server stores a hash for later "
 "verification."
 
-#: web/src/routes/+layout.svelte:283
+#: web/src/routes/+layout.svelte:282
 msgid "Back"
 msgstr "Back"
 
@@ -809,10 +811,10 @@ msgstr "Back to More"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1368
 #: web/src/lib/features/projects/ProjectEditor.svelte:1373
-#: web/src/lib/features/projects/ProjectReader.svelte:746
-#: web/src/lib/features/projects/ProjectReader.svelte:757
-#: web/src/lib/features/projects/ProjectReader.svelte:763
-#: web/src/routes/+layout.svelte:387
+#: web/src/lib/features/projects/ProjectReader.svelte:749
+#: web/src/lib/features/projects/ProjectReader.svelte:760
+#: web/src/lib/features/projects/ProjectReader.svelte:766
+#: web/src/routes/+layout.svelte:376
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -831,8 +833,8 @@ msgstr "Back to the project"
 msgid "Back to the yarn"
 msgstr "Back to the yarn"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:369
-#: web/src/lib/features/yarns/YarnDetail.svelte:390
+#: web/src/lib/features/yarns/YarnDetail.svelte:368
+#: web/src/lib/features/yarns/YarnDetail.svelte:389
 #: web/src/lib/features/yarns/YarnForm.svelte:685
 #: web/src/lib/features/yarns/YarnForm.svelte:703
 msgid "Back to yarns"
@@ -936,8 +938,8 @@ msgstr "Can view"
 #: web/src/lib/features/projects/ProjectEditor.svelte:2140
 #: web/src/lib/features/projects/ProjectEditor.svelte:2198
 #: web/src/lib/features/projects/ProjectEditor.svelte:2280
-#: web/src/lib/features/projects/ProjectReader.svelte:1389
-#: web/src/lib/features/projects/ProjectTimer.svelte:682
+#: web/src/lib/features/projects/ProjectReader.svelte:1421
+#: web/src/lib/features/projects/ProjectTimer.svelte:703
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
 #: web/src/lib/features/yarns/YarnForm.svelte:1101
@@ -1141,7 +1143,7 @@ msgstr "Clipboard access is unavailable. Select and copy the text manually."
 #: web/src/lib/features/account/ConnectAppDialog.svelte:114
 #: web/src/lib/features/admin/AuditMediaPreview.svelte:100
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:195
-#: web/src/lib/features/projects/ProjectTimer.svelte:586
+#: web/src/lib/features/projects/ProjectTimer.svelte:607
 msgid "Close"
 msgstr "Close"
 
@@ -1154,8 +1156,8 @@ msgstr "Close filters"
 msgid "Close image viewer"
 msgstr "Close image viewer"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:947
-#: web/src/lib/features/yarns/YarnDetail.svelte:492
+#: web/src/lib/features/projects/ProjectReader.svelte:950
+#: web/src/lib/features/yarns/YarnDetail.svelte:491
 msgid "Close notes"
 msgstr "Close notes"
 
@@ -1374,8 +1376,8 @@ msgstr "Danger zone"
 msgid "Dark"
 msgstr "Dark"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1141
-#: web/src/lib/features/yarns/YarnDetail.svelte:606
+#: web/src/lib/features/projects/ProjectReader.svelte:1140
+#: web/src/lib/features/yarns/YarnDetail.svelte:599
 msgid "Decrease text size"
 msgstr "Decrease text size"
 
@@ -1385,7 +1387,7 @@ msgstr "Default"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:359
 #: web/src/lib/features/categories/CategoryManager.svelte:377
-#: web/src/lib/features/yarns/YarnDetail.svelte:779
+#: web/src/lib/features/yarns/YarnDetail.svelte:789
 #: web/src/lib/features/yarns/YarnForm.svelte:1187
 msgid "Delete"
 msgstr "Delete"
@@ -1410,25 +1412,25 @@ msgstr "Delete my account"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2113
 #: web/src/lib/features/projects/ProjectEditor.svelte:2208
-#: web/src/lib/features/projects/ProjectReader.svelte:1213
-#: web/src/lib/features/projects/ProjectReader.svelte:1398
+#: web/src/lib/features/projects/ProjectReader.svelte:1245
+#: web/src/lib/features/projects/ProjectReader.svelte:1430
 msgid "Delete project"
 msgstr "Delete project"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:229
-#: web/src/lib/features/projects/ProjectReader.svelte:1369
+#: web/src/lib/features/projects/ProjectReader.svelte:1401
 msgid "Delete this project? This cannot be undone."
 msgstr "Delete this project? This cannot be undone."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:670
-#: web/src/lib/features/yarns/YarnDetail.svelte:808
+#: web/src/lib/features/yarns/YarnDetail.svelte:680
+#: web/src/lib/features/yarns/YarnDetail.svelte:818
 #: web/src/lib/features/yarns/YarnForm.svelte:1123
 #: web/src/lib/features/yarns/YarnForm.svelte:1134
 #: web/src/lib/features/yarns/YarnForm.svelte:1218
 msgid "Delete yarn"
 msgstr "Delete yarn"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:774
+#: web/src/lib/features/yarns/YarnDetail.svelte:784
 #: web/src/lib/features/yarns/YarnForm.svelte:1182
 msgid "Delete yarn?"
 msgstr "Delete yarn?"
@@ -1450,7 +1452,7 @@ msgstr "Deleted"
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:193
 #: web/src/lib/features/categories/CategoryManager.svelte:403
 #: web/src/lib/features/projects/ProjectEditor.svelte:2113
-#: web/src/lib/features/yarns/YarnDetail.svelte:808
+#: web/src/lib/features/yarns/YarnDetail.svelte:818
 #: web/src/lib/features/yarns/YarnForm.svelte:1218
 msgid "Deleting…"
 msgstr "Deleting…"
@@ -1606,7 +1608,7 @@ msgstr "Drop to use as profile picture"
 
 #: web/src/lib/features/admin/AdminResource.svelte:616
 #: web/src/lib/features/history/change-format.ts:147
-#: web/src/lib/features/yarns/YarnDetail.svelte:411
+#: web/src/lib/features/yarns/YarnDetail.svelte:410
 #: web/src/lib/features/yarns/YarnForm.svelte:886
 msgid "Dye lot"
 msgstr "Dye lot"
@@ -1616,8 +1618,8 @@ msgid "Each step needs a title of 256 characters or fewer."
 msgstr "Each step needs a title of 256 characters or fewer."
 
 #: web/src/lib/features/media/ProjectLightbox.svelte:254
-#: web/src/lib/features/projects/ProjectReader.svelte:1123
-#: web/src/lib/features/yarns/YarnDetail.svelte:588
+#: web/src/lib/features/projects/ProjectReader.svelte:1122
+#: web/src/lib/features/yarns/YarnDetail.svelte:581
 msgid "Edit"
 msgstr "Edit"
 
@@ -1635,15 +1637,15 @@ msgstr "Edit photo"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1337
 #: web/src/lib/features/projects/ProjectEditor.svelte:1346
-#: web/src/lib/features/projects/ProjectReader.svelte:1118
+#: web/src/lib/features/projects/ProjectReader.svelte:1117
 msgid "Edit project"
 msgstr "Edit project"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:701
+#: web/src/lib/features/projects/ProjectTimer.svelte:722
 msgid "Edit time"
 msgstr "Edit time"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:585
+#: web/src/lib/features/yarns/YarnDetail.svelte:578
 #: web/src/lib/features/yarns/YarnForm.svelte:671
 #: web/src/lib/features/yarns/YarnForm.svelte:726
 msgid "Edit yarn"
@@ -2124,8 +2126,8 @@ msgstr ""
 msgid "Home"
 msgstr "Home"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:648
-#: web/src/lib/features/projects/ProjectTimer.svelte:649
+#: web/src/lib/features/projects/ProjectTimer.svelte:669
+#: web/src/lib/features/projects/ProjectTimer.svelte:670
 msgid "Hours"
 msgstr "Hours"
 
@@ -2312,8 +2314,8 @@ msgstr "In progress"
 msgid "In the great ball of yarn that is the internet, this is a loose end."
 msgstr "In the great ball of yarn that is the internet, this is a loose end."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1151
-#: web/src/lib/features/yarns/YarnDetail.svelte:616
+#: web/src/lib/features/projects/ProjectReader.svelte:1150
+#: web/src/lib/features/yarns/YarnDetail.svelte:609
 msgid "Increase text size"
 msgstr "Increase text size"
 
@@ -2365,7 +2367,7 @@ msgstr "Keep my account"
 msgid "Keep photo"
 msgstr "Keep photo"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:631
+#: web/src/lib/features/projects/ProjectTimer.svelte:652
 msgid "Keep timing"
 msgstr "Keep timing"
 
@@ -2373,7 +2375,7 @@ msgstr "Keep timing"
 msgid "Keep token"
 msgstr "Keep token"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:799
+#: web/src/lib/features/yarns/YarnDetail.svelte:809
 #: web/src/lib/features/yarns/YarnForm.svelte:1208
 msgid "Keep yarn"
 msgstr "Keep yarn"
@@ -2400,13 +2402,14 @@ msgstr ""
 "categories, steps, attachments, profile images, and other information you"
 " choose to store."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1063
+#: web/src/lib/features/projects/ProjectReader.svelte:1066
 msgid "Knitting project"
 msgstr "Knitting project"
 
 #: web/src/lib/features/history/change-format.ts:140
-#: web/src/lib/features/projects/ProjectTimer.svelte:570
+#: web/src/lib/features/projects/ProjectReader.svelte:1201
 #: web/src/lib/features/projects/ProjectTimer.svelte:591
+#: web/src/lib/features/projects/ProjectTimer.svelte:612
 msgid "Knitting time"
 msgstr "Knitting time"
 
@@ -2431,7 +2434,7 @@ msgstr "Language"
 msgid "Large"
 msgstr "Large"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1350
+#: web/src/lib/features/projects/ProjectReader.svelte:1382
 msgid "Last updated"
 msgstr "Last updated"
 
@@ -2576,7 +2579,7 @@ msgstr "Linked on {date}"
 msgid "Linked projects"
 msgstr "Linked projects"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:542
+#: web/src/lib/features/yarns/YarnDetail.svelte:541
 msgid "Linked projects could not be loaded."
 msgstr "Linked projects could not be loaded."
 
@@ -2625,7 +2628,7 @@ msgstr "Loading categories…"
 msgid "Loading linked logins…"
 msgstr "Loading linked logins…"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:523
+#: web/src/lib/features/yarns/YarnDetail.svelte:522
 msgid "Loading linked projects…"
 msgstr "Loading linked projects…"
 
@@ -2654,7 +2657,7 @@ msgstr "Loading recorded changes…"
 msgid "Loading resource details…"
 msgstr "Loading resource details…"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:609
+#: web/src/lib/features/projects/ProjectTimer.svelte:630
 msgid "Loading timer…"
 msgstr "Loading timer…"
 
@@ -2662,7 +2665,7 @@ msgstr "Loading timer…"
 msgid "Loading user accounts…"
 msgstr "Loading user accounts…"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:361
+#: web/src/lib/features/yarns/YarnDetail.svelte:360
 #: web/src/lib/features/yarns/YarnForm.svelte:677
 msgid "Loading yarn details…"
 msgstr "Loading yarn details…"
@@ -2682,8 +2685,8 @@ msgstr "Loading your home…"
 msgid "Loading…"
 msgstr "Loading…"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:948
-#: web/src/lib/features/yarns/YarnDetail.svelte:493
+#: web/src/lib/features/projects/ProjectReader.svelte:951
+#: web/src/lib/features/yarns/YarnDetail.svelte:492
 msgid "Long-press and drag to move"
 msgstr "Long-press and drag to move"
 
@@ -2726,7 +2729,7 @@ msgstr "Manage your profile and sign-in security."
 
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:41
 #: web/src/lib/features/projects/ProjectEditor.svelte:1830
-#: web/src/lib/features/projects/ProjectReader.svelte:840
+#: web/src/lib/features/projects/ProjectReader.svelte:843
 msgid "Materials"
 msgstr "Materials"
 
@@ -2748,8 +2751,8 @@ msgstr "Member"
 msgid "Mine"
 msgstr "Mine"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:658
-#: web/src/lib/features/projects/ProjectTimer.svelte:659
+#: web/src/lib/features/projects/ProjectTimer.svelte:679
+#: web/src/lib/features/projects/ProjectTimer.svelte:680
 msgid "Minutes"
 msgstr "Minutes"
 
@@ -2762,7 +2765,7 @@ msgid "Mooorning!"
 msgstr "Mooorning!"
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:318 web/src/routes/+layout.svelte:427
+#: web/src/routes/+layout.svelte:307 web/src/routes/+layout.svelte:416
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "More"
@@ -2771,8 +2774,8 @@ msgstr "More"
 msgid "More about your data is in the"
 msgstr "More about your data is in the"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1127
-#: web/src/lib/features/yarns/YarnDetail.svelte:592
+#: web/src/lib/features/projects/ProjectReader.svelte:1126
+#: web/src/lib/features/yarns/YarnDetail.svelte:585
 msgid "More actions"
 msgstr "More actions"
 
@@ -2786,7 +2789,7 @@ msgstr "More changes could not be loaded."
 msgid "More for {email}"
 msgstr "More for {email}"
 
-#: web/src/routes/+layout.svelte:319 web/src/routes/more/+page.svelte:72
+#: web/src/routes/+layout.svelte:308 web/src/routes/more/+page.svelte:72
 msgid "More navigation"
 msgstr "More navigation"
 
@@ -2983,7 +2986,7 @@ msgstr "No need, you are already a developer."
 msgid "No one matches that search."
 msgstr "No one matches that search."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:938
+#: web/src/lib/features/projects/ProjectReader.svelte:941
 msgid "No pattern description yet."
 msgstr "No pattern description yet."
 
@@ -2995,8 +2998,8 @@ msgstr "No photos yet."
 msgid "No projects match those filters."
 msgstr "No projects match those filters."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:543
-#: web/src/lib/features/yarns/YarnDetail.svelte:552
+#: web/src/lib/features/yarns/YarnDetail.svelte:542
+#: web/src/lib/features/yarns/YarnDetail.svelte:551
 msgid "No projects use this yarn yet."
 msgstr "No projects use this yarn yet."
 
@@ -3017,7 +3020,7 @@ msgstr ""
 " access it."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2092
-#: web/src/lib/features/projects/ProjectReader.svelte:1050
+#: web/src/lib/features/projects/ProjectReader.svelte:1053
 msgid "No steps have been added yet."
 msgstr "No steps have been added yet."
 
@@ -3062,7 +3065,7 @@ msgstr "Not now"
 msgid "Not provided"
 msgstr "Not provided"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:886
+#: web/src/lib/features/projects/ProjectReader.svelte:889
 msgid "Not recorded"
 msgstr "Not recorded"
 
@@ -3072,31 +3075,31 @@ msgstr "Not recorded"
 #: web/src/lib/features/history/change-format.ts:128
 #: web/src/lib/features/history/change-format.ts:153
 #: web/src/lib/features/projects/ProjectEditor.svelte:1907
-#: web/src/lib/features/projects/ProjectReader.svelte:944
-#: web/src/lib/features/projects/ProjectReader.svelte:962
-#: web/src/lib/features/yarns/YarnDetail.svelte:490
-#: web/src/lib/features/yarns/YarnDetail.svelte:507
+#: web/src/lib/features/projects/ProjectReader.svelte:947
+#: web/src/lib/features/projects/ProjectReader.svelte:965
+#: web/src/lib/features/yarns/YarnDetail.svelte:489
+#: web/src/lib/features/yarns/YarnDetail.svelte:506
 #: web/src/lib/features/yarns/YarnForm.svelte:1046
 msgid "Notes"
 msgstr "Notes"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:953
-#: web/src/lib/features/yarns/YarnDetail.svelte:498
+#: web/src/lib/features/projects/ProjectReader.svelte:956
+#: web/src/lib/features/yarns/YarnDetail.svelte:497
 msgid "Notes moved down"
 msgstr "Notes moved down"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:950
-#: web/src/lib/features/yarns/YarnDetail.svelte:495
+#: web/src/lib/features/projects/ProjectReader.svelte:953
+#: web/src/lib/features/yarns/YarnDetail.svelte:494
 msgid "Notes moved to the left"
 msgstr "Notes moved to the left"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:951
-#: web/src/lib/features/yarns/YarnDetail.svelte:496
+#: web/src/lib/features/projects/ProjectReader.svelte:954
+#: web/src/lib/features/yarns/YarnDetail.svelte:495
 msgid "Notes moved to the right"
 msgstr "Notes moved to the right"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:952
-#: web/src/lib/features/yarns/YarnDetail.svelte:497
+#: web/src/lib/features/projects/ProjectReader.svelte:955
+#: web/src/lib/features/yarns/YarnDetail.svelte:496
 msgid "Notes moved up"
 msgstr "Notes moved up"
 
@@ -3130,7 +3133,7 @@ msgstr ""
 msgid "Numbered list"
 msgstr "Numbered list"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:732
+#: web/src/lib/features/projects/ProjectTimer.svelte:753
 msgid "Off"
 msgstr "Off"
 
@@ -3174,10 +3177,10 @@ msgstr "One-time display"
 msgid "Open Account in the web app, or the Account screen in the Android app."
 msgstr "Open Account in the web app, or the Account screen in the Android app."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:815
-#: web/src/lib/features/projects/ProjectReader.svelte:823
-#: web/src/lib/features/yarns/YarnDetail.svelte:453
-#: web/src/lib/features/yarns/YarnDetail.svelte:461
+#: web/src/lib/features/projects/ProjectReader.svelte:818
+#: web/src/lib/features/projects/ProjectReader.svelte:826
+#: web/src/lib/features/yarns/YarnDetail.svelte:452
+#: web/src/lib/features/yarns/YarnDetail.svelte:460
 msgid "Open archived copy"
 msgstr "Open archived copy"
 
@@ -3207,11 +3210,11 @@ msgstr "Open link"
 msgid "Open on this phone"
 msgstr "Open on this phone"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:814
+#: web/src/lib/features/projects/ProjectReader.svelte:817
 msgid "Open original pattern"
 msgstr "Open original pattern"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1266
+#: web/src/lib/features/projects/ProjectReader.svelte:1298
 msgid "Open project photo"
 msgstr "Open project photo"
 
@@ -3224,15 +3227,15 @@ msgstr "Open projects"
 msgid "Open server commit on GitHub"
 msgstr "Open server commit on GitHub"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1013
+#: web/src/lib/features/projects/ProjectReader.svelte:1016
 msgid "Open step photo"
 msgstr "Open step photo"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:342
+#: web/src/lib/features/projects/ProjectTimer.svelte:362
 msgid "Open the project to stop the timer or keep timing."
 msgstr "Open the project to stop the timer or keep timing."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:452
+#: web/src/lib/features/yarns/YarnDetail.svelte:451
 msgid "Open yarn source"
 msgstr "Open yarn source"
 
@@ -3241,11 +3244,11 @@ msgstr "Open yarn source"
 msgid "Open your project library to continue."
 msgstr "Open your project library to continue."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:749
+#: web/src/lib/features/projects/ProjectReader.svelte:752
 msgid "Opening your pattern…"
 msgstr "Opening your pattern…"
 
-#: web/src/routes/+layout.svelte:242
+#: web/src/routes/+layout.svelte:241
 msgid "Opening your workspace…"
 msgstr "Opening your workspace…"
 
@@ -3394,7 +3397,7 @@ msgstr "Pasted text"
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:42
 #: web/src/lib/features/projects/ProjectEditor.svelte:1879
 #: web/src/lib/features/projects/ProjectEditor.svelte:1891
-#: web/src/lib/features/projects/ProjectReader.svelte:929
+#: web/src/lib/features/projects/ProjectReader.svelte:932
 msgid "Pattern"
 msgstr "Pattern"
 
@@ -3410,7 +3413,7 @@ msgstr "Pattern gauge (per 10cm)"
 msgid "Pattern page URL"
 msgstr "Pattern page URL"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:809
+#: web/src/lib/features/projects/ProjectReader.svelte:812
 msgid "Pattern source"
 msgstr "Pattern source"
 
@@ -3490,8 +3493,8 @@ msgstr "Photo {position} of {total}"
 
 #: web/src/lib/features/admin/AdminResource.svelte:712
 #: web/src/lib/features/projects/ProjectEditor.svelte:1585
-#: web/src/lib/features/projects/ProjectReader.svelte:1265
-#: web/src/lib/features/yarns/YarnDetail.svelte:716
+#: web/src/lib/features/projects/ProjectReader.svelte:1297
+#: web/src/lib/features/yarns/YarnDetail.svelte:726
 #: web/src/lib/features/yarns/YarnForm.svelte:913
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:402
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:443
@@ -3547,8 +3550,8 @@ msgstr ""
 msgid "Preferences"
 msgstr "Preferences"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1197
-#: web/src/lib/features/projects/ProjectReader.svelte:1221
+#: web/src/lib/features/projects/ProjectReader.svelte:1229
+#: web/src/lib/features/projects/ProjectReader.svelte:1253
 msgid "Preparing full-resolution photos…"
 msgstr "Preparing full-resolution photos…"
 
@@ -3575,11 +3578,11 @@ msgstr "Previous page"
 msgid "Previous yarn note"
 msgstr "Previous yarn note"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1198
+#: web/src/lib/features/projects/ProjectReader.svelte:1230
 msgid "Print pattern"
 msgstr "Print pattern"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:656
+#: web/src/lib/features/yarns/YarnDetail.svelte:666
 msgid "Print yarn"
 msgstr "Print yarn"
 
@@ -3637,7 +3640,7 @@ msgstr ""
 msgid "Project"
 msgstr "Project"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1170
+#: web/src/lib/features/projects/ProjectReader.svelte:1169
 msgid "Project actions"
 msgstr "Project actions"
 
@@ -3660,7 +3663,7 @@ msgstr "Project detail cards"
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:40
 #: web/src/lib/features/admin/AdminResource.svelte:430
 #: web/src/lib/features/projects/ProjectEditor.svelte:1726
-#: web/src/lib/features/projects/ProjectReader.svelte:787
+#: web/src/lib/features/projects/ProjectReader.svelte:790
 msgid "Project details"
 msgstr "Project details"
 
@@ -3695,11 +3698,11 @@ msgstr "Project photo"
 msgid "Project photos and files"
 msgstr "Project photos and files"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1070
+#: web/src/lib/features/projects/ProjectReader.svelte:1073
 msgid "Project tags"
 msgstr "Project tags"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:341
+#: web/src/lib/features/projects/ProjectTimer.svelte:361
 msgid "Project timer is still running"
 msgstr "Project timer is still running"
 
@@ -3759,7 +3762,7 @@ msgid "Read the code, follow along or contribute."
 msgstr "Read the code, follow along or contribute."
 
 #: web/src/lib/features/admin/AdminResource.svelte:363
-#: web/src/lib/features/projects/ProjectReader.svelte:1078
+#: web/src/lib/features/projects/ProjectReader.svelte:1081
 msgid "Read-only view"
 msgstr "Read-only view"
 
@@ -3779,7 +3782,7 @@ msgstr "Reading the text"
 msgid "Ready to review"
 msgstr "Ready to review"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:603
+#: web/src/lib/features/projects/ProjectTimer.svelte:624
 msgid "Ready when you are"
 msgstr "Ready when you are"
 
@@ -3827,15 +3830,15 @@ msgstr "Recognize text from this photo"
 msgid "Recognized text"
 msgstr "Recognized text"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1276
+#: web/src/lib/features/projects/ProjectReader.svelte:1308
 msgid "Recognized text from project photo"
 msgstr "Recognized text from project photo"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1034
+#: web/src/lib/features/projects/ProjectReader.svelte:1037
 msgid "Recognized text from step photo"
 msgstr "Recognized text from step photo"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:725
+#: web/src/lib/features/yarns/YarnDetail.svelte:735
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:461
 msgid "Recognized text from yarn photo"
 msgstr "Recognized text from yarn photo"
@@ -3846,7 +3849,7 @@ msgstr "Recognizing…"
 
 #: web/src/lib/features/admin/AdminResource.svelte:628
 #: web/src/lib/features/history/change-format.ts:150
-#: web/src/lib/features/yarns/YarnDetail.svelte:424
+#: web/src/lib/features/yarns/YarnDetail.svelte:423
 #: web/src/lib/features/yarns/YarnForm.svelte:959
 msgid "Recommended needles"
 msgstr "Recommended needles"
@@ -3889,6 +3892,8 @@ msgid "Remove filter"
 msgstr "Remove filter"
 
 #: web/src/lib/components/FavoriteButton.svelte:20
+#: web/src/lib/features/projects/ProjectReader.svelte:1185
+#: web/src/lib/features/yarns/YarnDetail.svelte:643
 msgid "Remove from favorites"
 msgstr "Remove from favorites"
 
@@ -4006,8 +4011,8 @@ msgstr "Reset"
 msgid "Reset password"
 msgstr "Reset password"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1162
-#: web/src/lib/features/yarns/YarnDetail.svelte:627
+#: web/src/lib/features/projects/ProjectReader.svelte:1161
+#: web/src/lib/features/yarns/YarnDetail.svelte:620
 msgid "Reset text size"
 msgstr "Reset text size"
 
@@ -4147,8 +4152,8 @@ msgstr "Rows to knit"
 msgid "Rumour has it a cat was involved."
 msgstr "Rumour has it a cat was involved."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:725
-#: web/src/lib/features/projects/ProjectTimer.svelte:727
+#: web/src/lib/features/projects/ProjectTimer.svelte:746
+#: web/src/lib/features/projects/ProjectTimer.svelte:748
 msgid "Running reminder"
 msgstr "Running reminder"
 
@@ -4179,7 +4184,7 @@ msgstr "Save new password"
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr "Save this yarn first. You can add photos as soon as it has been created."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:691
+#: web/src/lib/features/projects/ProjectTimer.svelte:712
 msgid "Save time"
 msgstr "Save time"
 
@@ -4260,7 +4265,6 @@ msgstr "Search by name"
 
 #: web/src/lib/components/CommandPalette.svelte:277
 #: web/src/lib/components/CommandPalette.svelte:296
-#: web/src/routes/+layout.svelte:289
 msgid "Search everything"
 msgstr "Search everything"
 
@@ -4280,8 +4284,8 @@ msgstr "Search your yarn"
 msgid "Search your yarns"
 msgstr "Search your yarns"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:668
-#: web/src/lib/features/projects/ProjectTimer.svelte:669
+#: web/src/lib/features/projects/ProjectTimer.svelte:689
+#: web/src/lib/features/projects/ProjectTimer.svelte:690
 msgid "Seconds"
 msgstr "Seconds"
 
@@ -4438,7 +4442,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:168
 #: web/src/lib/features/projects/ProjectEditor.svelte:1357
-#: web/src/routes/+layout.svelte:226 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:225 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -4463,7 +4467,7 @@ msgstr "Sign in to manage your account."
 msgid "Sign in to manage your projects."
 msgstr "Sign in to manage your projects."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:311
+#: web/src/lib/features/projects/ProjectReader.svelte:314
 msgid "Sign in to open this project."
 msgstr "Sign in to open this project."
 
@@ -4471,11 +4475,11 @@ msgstr "Sign in to open this project."
 msgid "Sign in to see your favorite projects and yarns."
 msgstr "Sign in to see your favorite projects and yarns."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:207
+#: web/src/lib/features/projects/ProjectTimer.svelte:227
 msgid "Sign in to use the project timer."
 msgstr "Sign in to use the project timer."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:136
+#: web/src/lib/features/yarns/YarnDetail.svelte:135
 msgid "Sign in to view this yarn."
 msgstr "Sign in to view this yarn."
 
@@ -4532,7 +4536,7 @@ msgstr ""
 msgid "Sizes"
 msgstr "Sizes"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:433
+#: web/src/lib/features/yarns/YarnDetail.svelte:432
 msgid "Skein length"
 msgstr "Skein length"
 
@@ -4540,7 +4544,7 @@ msgstr "Skein length"
 msgid "Skein length in meters"
 msgstr "Skein length in meters"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:429
+#: web/src/lib/features/yarns/YarnDetail.svelte:428
 msgid "Skein weight"
 msgstr "Skein weight"
 
@@ -4548,7 +4552,7 @@ msgstr "Skein weight"
 msgid "Skein weight in grams"
 msgstr "Skein weight in grams"
 
-#: web/src/routes/+layout.svelte:213
+#: web/src/routes/+layout.svelte:212
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -4568,7 +4572,7 @@ msgstr ""
 "Some yarn details could not be loaded from their product pages. Check the"
 " yarns below."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:908
+#: web/src/lib/features/projects/ProjectReader.svelte:911
 msgid "Some yarn details could not be loaded."
 msgstr "Some yarn details could not be loaded."
 
@@ -4596,7 +4600,7 @@ msgstr "Source code on GitHub"
 msgid "Sponsor on GitHub"
 msgstr "Sponsor on GitHub"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:717
+#: web/src/lib/features/projects/ProjectTimer.svelte:738
 msgid "Start"
 msgstr "Start"
 
@@ -4660,7 +4664,7 @@ msgid "Step photo"
 msgstr "Step photo"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2045
-#: web/src/lib/features/projects/ProjectReader.svelte:1005
+#: web/src/lib/features/projects/ProjectReader.svelte:1008
 msgid "Step photos"
 msgstr "Step photos"
 
@@ -4684,7 +4688,7 @@ msgstr "Step {number}"
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:43
 #: web/src/lib/features/admin/AdminResource.svelte:524
 #: web/src/lib/features/history/change-format.ts:131
-#: web/src/lib/features/projects/ProjectReader.svelte:978
+#: web/src/lib/features/projects/ProjectReader.svelte:981
 msgid "Steps"
 msgstr "Steps"
 
@@ -4713,7 +4717,7 @@ msgstr "Stitches"
 msgid "Stitches to cast on"
 msgstr "Stitches to cast on"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:709
+#: web/src/lib/features/projects/ProjectTimer.svelte:730
 msgid "Stop"
 msgstr "Stop"
 
@@ -4721,7 +4725,7 @@ msgstr "Stop"
 msgid "Stop impersonating"
 msgstr "Stop impersonating"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:626
+#: web/src/lib/features/projects/ProjectTimer.svelte:647
 msgid "Stop timer"
 msgstr "Stop timer"
 
@@ -4882,8 +4886,8 @@ msgstr "Text recognition took too long. Try again or enter the text manually."
 
 #: web/src/lib/features/account/AccountSettings.svelte:1077
 #: web/src/lib/features/account/AccountSettings.svelte:1087
-#: web/src/lib/features/projects/ProjectReader.svelte:1131
-#: web/src/lib/features/yarns/YarnDetail.svelte:596
+#: web/src/lib/features/projects/ProjectReader.svelte:1130
+#: web/src/lib/features/yarns/YarnDetail.svelte:589
 #: web/src/lib/palette/entries.ts:51
 msgid "Text size"
 msgstr "Text size"
@@ -5068,8 +5072,8 @@ msgid "The error report setting could not be saved."
 msgstr "The error report setting could not be saved."
 
 #: web/src/lib/features/projects/ProjectLibrary.svelte:223
-#: web/src/lib/features/projects/ProjectReader.svelte:404
-#: web/src/lib/features/yarns/YarnDetail.svelte:321
+#: web/src/lib/features/projects/ProjectReader.svelte:407
+#: web/src/lib/features/yarns/YarnDetail.svelte:320
 #: web/src/lib/features/yarns/YarnLibrary.svelte:168
 msgid "The favorite could not be updated."
 msgstr "The favorite could not be updated."
@@ -5164,7 +5168,7 @@ msgstr "The password is too long."
 msgid "The passwords do not match."
 msgstr "The passwords do not match."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:768
+#: web/src/lib/features/projects/ProjectReader.svelte:771
 msgid "The pattern could not be opened."
 msgstr "The pattern could not be opened."
 
@@ -5203,7 +5207,7 @@ msgid "The profile picture could not be uploaded."
 msgstr "The profile picture could not be uploaded."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1074
-#: web/src/lib/features/projects/ProjectReader.svelte:242
+#: web/src/lib/features/projects/ProjectReader.svelte:245
 msgid "The project could not be deleted."
 msgstr "The project could not be deleted."
 
@@ -5224,11 +5228,11 @@ msgstr "The project list could not be loaded."
 msgid "The project media could not be updated."
 msgstr "The project media could not be updated."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:241
+#: web/src/lib/features/projects/ProjectTimer.svelte:261
 msgid "The project timer could not be loaded."
 msgstr "The project timer could not be loaded."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:490
+#: web/src/lib/features/projects/ProjectTimer.svelte:510
 msgid "The project timer could not be updated."
 msgstr "The project timer could not be updated."
 
@@ -5300,7 +5304,7 @@ msgstr "The server returned an unexpected import response."
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
-#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:255
+#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:254
 msgid "The session could not be loaded."
 msgstr "The session could not be loaded."
 
@@ -5374,12 +5378,12 @@ msgstr ""
 "an analytics or advertising network. It loads nothing from third-party "
 "servers."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:290
+#: web/src/lib/features/yarns/YarnDetail.svelte:289
 #: web/src/lib/features/yarns/YarnForm.svelte:563
 msgid "The yarn could not be deleted."
 msgstr "The yarn could not be deleted."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:183
+#: web/src/lib/features/yarns/YarnDetail.svelte:182
 #: web/src/lib/features/yarns/YarnForm.svelte:244
 #: web/src/lib/features/yarns/YarnForm.svelte:602
 #: web/src/lib/features/yarns/YarnForm.svelte:614
@@ -5448,8 +5452,8 @@ msgid "This browser cannot show notifications."
 msgstr "This browser cannot show notifications."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2181
-#: web/src/lib/features/projects/ProjectReader.svelte:1373
-#: web/src/lib/features/yarns/YarnDetail.svelte:779
+#: web/src/lib/features/projects/ProjectReader.svelte:1405
+#: web/src/lib/features/yarns/YarnDetail.svelte:789
 #: web/src/lib/features/yarns/YarnForm.svelte:1124
 #: web/src/lib/features/yarns/YarnForm.svelte:1187
 msgid "This cannot be undone."
@@ -5618,7 +5622,7 @@ msgid "This project changed in another window."
 msgstr "This project changed in another window."
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1417
-#: web/src/lib/features/projects/ProjectReader.svelte:351
+#: web/src/lib/features/projects/ProjectReader.svelte:354
 msgid "This project could not be loaded."
 msgstr "This project could not be loaded."
 
@@ -5630,7 +5634,7 @@ msgstr "This project has unravelled"
 msgid "This project includes AI-assisted details."
 msgstr "This project includes AI-assisted details."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:401
+#: web/src/lib/features/projects/ProjectReader.svelte:404
 msgid "This project is no longer available."
 msgstr "This project is no longer available."
 
@@ -5682,7 +5686,7 @@ msgstr "This yarn will not be added to the project."
 msgid "Three imports are already running. Wait until one is done."
 msgstr "Three imports are already running. Wait until one is done."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:602
+#: web/src/lib/features/projects/ProjectTimer.svelte:623
 msgid "Time spent on this project"
 msgstr "Time spent on this project"
 
@@ -5709,9 +5713,9 @@ msgstr "Timer stopped"
 msgid "Timer stopped · {time}"
 msgstr "Timer stopped · {time}"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:236
-#: web/src/lib/features/projects/ProjectTimer.svelte:283
-#: web/src/lib/features/projects/ProjectTimer.svelte:485
+#: web/src/lib/features/projects/ProjectTimer.svelte:256
+#: web/src/lib/features/projects/ProjectTimer.svelte:303
+#: web/src/lib/features/projects/ProjectTimer.svelte:505
 msgid "Timers are not available on this server yet."
 msgstr "Timers are not available on this server yet."
 
@@ -5832,13 +5836,13 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/home/HomeDashboard.svelte:288
 #: web/src/lib/features/media/ArchiveControl.svelte:513
 #: web/src/lib/features/projects/ProjectLibrary.svelte:323
-#: web/src/lib/features/projects/ProjectReader.svelte:778
+#: web/src/lib/features/projects/ProjectReader.svelte:781
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119
 #: web/src/lib/features/sharing/ShareDialog.svelte:247
-#: web/src/lib/features/yarns/YarnDetail.svelte:386
+#: web/src/lib/features/yarns/YarnDetail.svelte:385
 #: web/src/lib/features/yarns/YarnForm.svelte:699
 #: web/src/lib/features/yarns/YarnLibrary.svelte:240
-#: web/src/routes/+layout.svelte:263
+#: web/src/routes/+layout.svelte:262
 msgid "Try again"
 msgstr "Try again"
 
@@ -5907,8 +5911,8 @@ msgstr "Up already?"
 #: web/src/lib/features/admin/AdminResource.svelte:654
 #: web/src/lib/features/admin/audit-action.ts:28
 #: web/src/lib/features/home/HomeDashboard.svelte:228
-#: web/src/lib/features/projects/ProjectReader.svelte:1066
-#: web/src/lib/features/yarns/YarnDetail.svelte:437
+#: web/src/lib/features/projects/ProjectReader.svelte:1069
+#: web/src/lib/features/yarns/YarnDetail.svelte:436
 msgid "Updated"
 msgstr "Updated"
 
@@ -5992,8 +5996,8 @@ msgstr ""
 msgid "Used in"
 msgstr "Used in"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:519
-#: web/src/lib/features/yarns/YarnDetail.svelte:550
+#: web/src/lib/features/yarns/YarnDetail.svelte:518
+#: web/src/lib/features/yarns/YarnDetail.svelte:549
 msgid "Used in projects"
 msgstr "Used in projects"
 
@@ -6167,7 +6171,7 @@ msgstr "Winky lost the thread"
 msgid "Working…"
 msgstr "Working…"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:635
+#: web/src/lib/features/yarns/YarnDetail.svelte:628
 msgid "Yarn actions"
 msgstr "Yarn actions"
 
@@ -6179,7 +6183,7 @@ msgstr "Yarn changes saved."
 msgid "Yarn created."
 msgstr "Yarn created."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:281
+#: web/src/lib/features/yarns/YarnDetail.svelte:280
 #: web/src/lib/features/yarns/YarnForm.svelte:554
 msgid "Yarn deleted."
 msgstr "Yarn deleted."
@@ -6190,8 +6194,8 @@ msgstr "Yarn detail cards"
 
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:45
 #: web/src/lib/features/admin/AdminResource.svelte:605
-#: web/src/lib/features/yarns/YarnDetail.svelte:355
-#: web/src/lib/features/yarns/YarnDetail.svelte:399
+#: web/src/lib/features/yarns/YarnDetail.svelte:354
+#: web/src/lib/features/yarns/YarnDetail.svelte:398
 msgid "Yarn details"
 msgstr "Yarn details"
 
@@ -6217,7 +6221,7 @@ msgstr "Yarn page URL"
 msgid "Yarn pages"
 msgstr "Yarn pages"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:717
+#: web/src/lib/features/yarns/YarnDetail.svelte:727
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:444
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:484
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:500
@@ -6225,7 +6229,7 @@ msgstr "Yarn pages"
 msgid "Yarn photo"
 msgstr "Yarn photo"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:447
+#: web/src/lib/features/yarns/YarnDetail.svelte:446
 msgid "Yarn source"
 msgstr "Yarn source"
 
@@ -6233,11 +6237,11 @@ msgstr "Yarn source"
 msgid "Yarn source URL"
 msgstr "Yarn source URL"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:397
+#: web/src/lib/features/yarns/YarnDetail.svelte:396
 msgid "Yarn specifications"
 msgstr "Yarn specifications"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:419
+#: web/src/lib/features/yarns/YarnDetail.svelte:418
 #: web/src/lib/features/yarns/YarnForm.svelte:948
 msgid "Yarn weight"
 msgstr "Yarn weight"
@@ -6382,7 +6386,7 @@ msgstr "You created {name}"
 msgid "You deleted {name}"
 msgstr "You deleted {name}"
 
-#: web/src/routes/+layout.svelte:383
+#: web/src/routes/+layout.svelte:372
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
@@ -6390,11 +6394,11 @@ msgstr "You do not have access to this page."
 msgid "You do not have permission to do that."
 msgstr "You do not have permission to do that."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:200
+#: web/src/lib/features/projects/ProjectReader.svelte:203
 msgid "You left the project."
 msgstr "You left the project."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:242
+#: web/src/lib/features/yarns/YarnDetail.svelte:241
 msgid "You left the yarn."
 msgstr "You left the yarn."
 
@@ -6418,7 +6422,7 @@ msgstr ""
 "You need to be signed in to delete your account, so that nobody else can "
 "do it for you."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:190
+#: web/src/lib/features/projects/ProjectReader.svelte:193
 msgid "You no longer have access to this project."
 msgstr "You no longer have access to this project."
 
@@ -6426,7 +6430,7 @@ msgstr "You no longer have access to this project."
 msgid "You no longer have access to this project. Your changes are still here."
 msgstr "You no longer have access to this project. Your changes are still here."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:232
+#: web/src/lib/features/yarns/YarnDetail.svelte:231
 msgid "You no longer have access to this yarn."
 msgstr "You no longer have access to this yarn."
 
@@ -6539,11 +6543,11 @@ msgstr "Your favourites and your profile picture."
 msgid "Your gauge (per 10cm)"
 msgstr "Your gauge (per 10cm)"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:618
+#: web/src/lib/features/projects/ProjectTimer.svelte:639
 msgid "Your knitting timer has been running for a while."
 msgstr "Your knitting timer has been running for a while."
 
-#: web/src/routes/+layout.svelte:301
+#: web/src/routes/+layout.svelte:290
 msgid "Your library"
 msgstr "Your library"
 
@@ -6571,7 +6575,7 @@ msgstr "Your projects and yarn stay with you, even without a connection."
 msgid "Your projects, yarns, steps, notes, and categories."
 msgstr "Your projects, yarns, steps, notes, and categories."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:931
+#: web/src/lib/features/projects/ProjectReader.svelte:934
 msgid "Your reference"
 msgstr "Your reference"
 
@@ -6605,7 +6609,7 @@ msgstr "Your sign-up session expired. Refresh and try again."
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 
-#: web/src/routes/+layout.svelte:251
+#: web/src/routes/+layout.svelte:250
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
 
@@ -6679,7 +6683,7 @@ msgstr "dye lot"
 msgid "fiber content"
 msgstr "fiber content"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:430
+#: web/src/lib/features/yarns/YarnDetail.svelte:429
 msgid "g"
 msgstr "g"
 
@@ -6687,7 +6691,7 @@ msgstr "g"
 msgid "linked yarns"
 msgstr "linked yarns"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:434
+#: web/src/lib/features/yarns/YarnDetail.svelte:433
 msgid "m"
 msgstr "m"
 
@@ -6818,12 +6822,12 @@ msgstr "{name} left"
 msgid "{name} no longer has access."
 msgstr "{name} no longer has access."
 
-#: web/src/lib/features/projects/ProjectReader.svelte:210
+#: web/src/lib/features/projects/ProjectReader.svelte:213
 #, python-brace-format
 msgid "{name} now owns this project. You are an editor."
 msgstr "{name} now owns this project. You are an editor."
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:252
+#: web/src/lib/features/yarns/YarnDetail.svelte:251
 #, python-brace-format
 msgid "{name} now owns this yarn. You are an editor."
 msgstr "{name} now owns this yarn. You are an editor."
@@ -6854,7 +6858,7 @@ msgstr "{n} changes"
 msgid "{n} more"
 msgstr "{n} more"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:330
+#: web/src/lib/features/projects/ProjectTimer.svelte:350
 #, python-brace-format
 msgid "{time} spent so far. Open the project to stop the timer or keep timing."
 msgstr "{time} spent so far. Open the project to stop the timer or keep timing."

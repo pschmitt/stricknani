@@ -9,7 +9,6 @@
   import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
-  import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
@@ -573,12 +572,6 @@
       {/snippet}
       {#snippet actions()}
         <div class="heading-actions">
-          <FavoriteButton
-            favorite={currentYarn.is_favorite}
-            busy={busyFavorite}
-            {locale}
-            onclick={() => void toggleFavorite()}
-          />
           {#if canEdit}
             <a
               class="primary-action ui-button ui-button--primary ui-button--md"
@@ -634,6 +627,23 @@
                 role="menu"
                 aria-label={t("Yarn actions", locale)}
               >
+                <button
+                  class="action-overflow__item"
+                  role="menuitem"
+                  type="button"
+                  disabled={busyFavorite}
+                  onclick={() => {
+                    close();
+                    void toggleFavorite();
+                  }}
+                >
+                  <NavIcon name="heart" />
+                  <span
+                    >{currentYarn.is_favorite
+                      ? t("Remove from favorites", locale)
+                      : t("Add to favorites", locale)}</span
+                  >
+                </button>
                 <ShareMenuItem
                   title={currentYarn.name}
                   ownerId={userId}

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -273,9 +274,10 @@ fun ProjectDetailScreen(
                         if (state is ProjectDetailUiState.Loaded) {
                             val context = LocalContext.current
                             var menuExpanded by remember { mutableStateOf(false) }
-                            // The bar keeps only the timer and More; Edit, Favorite, Share and
-                            // Delete sit in the menu.
-                            if (projectTimersEnabled && !timer.unavailable) {
+                            // The bar keeps only a running timer and More; Edit, Favorite, an idle
+                            // timer, Share and Delete sit in the menu.
+                            val timerAvailable = projectTimersEnabled && !timer.unavailable
+                            if (timerAvailable && timer.running) {
                                 ProjectTimerChip(
                                     totalSeconds = timerSeconds,
                                     running = timer.running,
@@ -334,6 +336,20 @@ fun ProjectDetailScreen(
                                         viewModel.toggleFavorite()
                                     },
                                 )
+                                if (timerAvailable && !timer.running) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(stringResource(R.string.project_timer_title))
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Timer, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            showTimerDialog = true
+                                        },
+                                    )
+                                }
                                 HorizontalDivider()
                                 TextSizeMenuSection(
                                     step = textStep,

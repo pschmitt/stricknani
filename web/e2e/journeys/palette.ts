@@ -74,15 +74,16 @@ export async function runPaletteJourney(
       await page.waitForURL(/\/app\/yarns\/new\?url=/);
 
       stage.mark("escape closes and restores focus");
-      const trigger = page.getByRole("button", { name: "Search everything" });
+      // The header has no search button: the palette opens with the shortcut.
+      const trigger = page.getByRole("link", { name: "Projects" }).first();
       await trigger.focus();
-      await trigger.click();
+      await page.keyboard.press("Control+k");
       await dialog.waitFor({ state: "visible" });
       await page.keyboard.press("Escape");
       await dialog.waitFor({ state: "hidden" });
       check(
         await trigger.evaluate((el) => el === document.activeElement),
-        "focus did not return to the search button",
+        "focus did not return to the element that opened the palette",
       );
     } finally {
       await context.close();

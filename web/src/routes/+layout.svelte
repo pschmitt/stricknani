@@ -18,7 +18,6 @@
   import { appVersion } from "#lib/app-version.ts";
   import { clearFeedback, feedback } from "#lib/feedback.ts";
   import CommandPalette from "#lib/components/CommandPalette.svelte";
-  import { openPalette, shortcutLabel } from "#lib/palette/palette.svelte.ts";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import ImpersonationBanner from "#lib/components/ImpersonationBanner.svelte";
   import { headerSlot } from "#lib/header-slot.svelte.ts";
@@ -283,16 +282,6 @@
         parentLabel={t("Back", locale)}
         reserveParentSlot={true}
       />
-      <button
-        type="button"
-        class="palette-trigger"
-        aria-label={t("Search everything", locale)}
-        aria-keyshortcuts="Control+K Meta+K"
-        title={`${t("Search everything", locale)} (${shortcutLabel()})`}
-        onclick={openPalette}
-      >
-        <NavIcon name="search" />
-      </button>
       <div class="app-header__actions" bind:this={headerActionsEl}></div>
     </header>
     <CommandPalette />
@@ -432,43 +421,6 @@
 {/if}
 
 <style>
-  .palette-trigger {
-    display: inline-flex;
-    min-width: 44px;
-    min-height: 44px;
-    box-sizing: border-box;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    margin-left: auto;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-xs);
-    color: var(--ink);
-    background: transparent;
-    font: inherit;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .palette-trigger + :global(.app-header__actions) {
-    margin-left: 0;
-  }
-
-  .palette-trigger:hover {
-    background: var(--accent-wash);
-  }
-
-  .palette-trigger:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .palette-trigger :global(svg) {
-    width: 1.35rem;
-    height: 1.35rem;
-  }
-
   .rail-account {
     display: flex;
     box-sizing: border-box;

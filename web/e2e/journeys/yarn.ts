@@ -24,6 +24,7 @@ import { REPO_ROOT } from "../lib/fixture";
 import type { E2eConfig, LiveFixture } from "../lib/harness";
 import { launchBrowser, stageMarker } from "../lib/harness";
 import { CATEGORY_NAME, PROJECT_NAME, YARN_NAME } from "../lib/seed";
+import { detailMenuItem } from "../lib/detail-menu";
 
 type ObservedResponse = [method: string, status: number, path: string];
 type ObservedApiError = [
@@ -415,14 +416,7 @@ export async function runYarnJourney(
     markStage("opening seeded yarn details");
     await yarnCard.locator("a.resource-card__link").click();
     await page.waitForURL(`**${yarnDetailHref}`);
-    const favoriteButton = page.getByRole("button", {
-      name: "Add to favorites",
-      exact: true,
-    });
-    check(
-      (await favoriteButton.getAttribute("aria-pressed")) === "false",
-      "the yarn favorite control did not start unpressed",
-    );
+    const favoriteButton = await detailMenuItem(page, "Add to favorites");
     markStage("saving yarn favorite");
     const [favoriteResponse] = await Promise.all([
       page.waitForResponse(
@@ -436,15 +430,8 @@ export async function runYarnJourney(
       favoriteResponse.status() === 200,
       "saving the yarn favorite failed against API v2",
     );
-    const favoritedButton = page.getByRole("button", {
-      name: "Remove from favorites",
-      exact: true,
-    });
-    await favoritedButton.waitFor({ state: "visible" });
-    check(
-      (await favoritedButton.getAttribute("aria-pressed")) === "true",
-      "the yarn detail favorite control did not enter its pressed state",
-    );
+    await detailMenuItem(page, "Remove from favorites");
+    await page.keyboard.press("Escape");
     markStage("returning to searched yarn library");
     await page.goBack({ waitUntil: "domcontentloaded" });
     await page.waitForURL("**/app/yarns?q=Riverbend");
