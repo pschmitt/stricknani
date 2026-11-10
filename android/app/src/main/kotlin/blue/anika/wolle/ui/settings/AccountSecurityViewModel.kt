@@ -432,7 +432,8 @@ constructor(
                 CreateTokenResult.SessionExpired ->
                     state.copy(
                         createBusy = false,
-                        createErrors = TokenFormErrors(general = R.string.account_token_err_session),
+                        createErrors =
+                            TokenFormErrors(general = R.string.account_token_err_session),
                     )
                 is CreateTokenResult.Failed ->
                     state.copy(

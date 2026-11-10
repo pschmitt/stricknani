@@ -27,9 +27,9 @@ import org.junit.runner.RunWith
 
 /**
  * Local-only mode (T130, `docs/local-only.md`) as a user journey: onboarding "Only on this phone",
- * a project created in the editor, the project still there after the activity is recreated (and
- * on the in-app server itself), and an Account page that says "Only on this phone" and shows none
- * of the server-only cards. Needs a build with the server library (`android/local-server-libs`);
+ * a project created in the editor, the project still there after the activity is recreated (and on
+ * the in-app server itself), and an Account page that says "Only on this phone" and shows none of
+ * the server-only cards. Needs a build with the server library (`android/local-server-libs`);
  * skipped without one. Runs in the E2E workflow's `backups` lane, which builds that library.
  */
 @RunWith(AndroidJUnit4::class)
@@ -68,10 +68,9 @@ class LocalModeJourneyE2eTest : StricknaniE2eTest() {
         // from the local database and the in-app server.
         composeRule.activityRule.scenario.recreate()
         composeRule.waitUntil(120_000) { projectRowShown(name) }
-        val onServer =
-            runBlocking {
-                graph.projectsApi().listProjects(page = 1).items.count { it.name == name }
-            }
+        val onServer = runBlocking {
+            graph.projectsApi().listProjects(page = 1).items.count { it.name == name }
+        }
         assertEquals("the in-app server lost the project", 1, onServer)
 
         // Account: reached through More, says where the data lives, hides server-only cards.

@@ -6,10 +6,13 @@ import type { Locator, Page } from "@playwright/test";
  */
 export async function detailMenuItem(
   page: Page,
-  name: string,
+  name: string | RegExp,
 ): Promise<Locator> {
   const trigger = page.locator('summary[aria-label="More actions"]').first();
-  const item = page.getByRole("menuitem", { name, exact: true });
+  const item = page.getByRole("menuitem", {
+    name,
+    exact: typeof name === "string",
+  });
   if (!(await item.isVisible())) await trigger.click();
   await item.waitFor({ state: "visible" });
   return item;

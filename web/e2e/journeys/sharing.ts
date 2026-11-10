@@ -27,6 +27,7 @@ import {
   type LiveFixture,
 } from "../lib/harness";
 import { createFixtureAdmin } from "./admin";
+import { detailMenuItem } from "../lib/detail-menu";
 
 const PHONE = { width: 390, height: 844 };
 
@@ -555,10 +556,8 @@ export async function runSharingJourney(
     await dialog.getByRole("button", { name: /Remove bea/i }).click();
     await dialog.getByText(/bea no longer has access\./i).waitFor();
     await dialog.getByRole("button", { name: "Done" }).click();
-    await beaPage
-      .getByRole("button", { name: /favorites$/ })
-      .first()
-      .click();
+    // Favorite is in the ⋮ menu of the project page.
+    await (await detailMenuItem(beaPage, /favorites$/)).click();
     await beaPage.waitForURL(/\/app\/projects\/?$/);
     await beaPage
       .getByText("You no longer have access to this project.")
