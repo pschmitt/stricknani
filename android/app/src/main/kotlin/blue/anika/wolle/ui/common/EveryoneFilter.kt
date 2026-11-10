@@ -1,5 +1,7 @@
 package blue.anika.wolle.ui.common
 
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -46,46 +48,31 @@ constructor(private val everyoneScope: EveryoneScope, private val syncScheduler:
     }
 }
 
-/**
- * The administrator's "Mine | Everyone" choice for the project and yarn lists. Not shown for
- * anybody else; Everyone is the default for administrators.
- */
+/** The administrator's Mine choice for the project and yarn lists, as the list screen uses it. */
 @Composable
-fun EveryoneFilterChips(
-    modifier: Modifier = Modifier,
-    viewModel: EveryoneFilterViewModel = hiltViewModel(),
-) {
+fun rememberEveryoneFilter(
+    viewModel: EveryoneFilterViewModel = hiltViewModel()
+): Pair<EveryoneFilterState, (everyone: Boolean) -> Unit> {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    EveryoneFilterChips(state = state, onSelect = viewModel::select, modifier = modifier)
+    return state to viewModel::select
 }
 
+/**
+ * The administrator's "Mine" filter for the project and yarn lists, one chip in the filter row next
+ * to the other filters (the website offers it in the filter panel). Selected means only the
+ * administrator's own items; Everyone is the default and needs no chip. Not shown for anybody else.
+ */
 @Composable
-fun EveryoneFilterChips(
+fun MineFilterChip(
     state: EveryoneFilterState,
     onSelect: (everyone: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (!state.available) return
-    val label = stringResource(R.string.owner_filter_label)
-    // A segmented control on its own line, like the website's ScopeFilter: it chooses whose
-    // items the list shows and must not read as one more category chip.
-    SegmentedControl(
-        options =
-            listOf(
-                SegmentedOption(
-                    false,
-                    stringResource(R.string.owner_filter_mine),
-                    testTag = "everyone-filter-mine",
-                ),
-                SegmentedOption(
-                    true,
-                    stringResource(R.string.owner_filter_everyone),
-                    testTag = "everyone-filter-everyone",
-                ),
-            ),
-        selected = state.enabled,
-        onSelect = onSelect,
-        label = label,
-        modifier = modifier.testTag("everyone-filter"),
+    FilterChip(
+        selected = !state.enabled,
+        onClick = { onSelect(!state.enabled) },
+        label = { Text(stringResource(R.string.owner_filter_mine)) },
+        modifier = modifier.testTag("everyone-filter-mine"),
     )
 }

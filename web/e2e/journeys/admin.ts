@@ -688,6 +688,11 @@ async function assertAdminEditsForeignProject(
   await page
     .getByRole("heading", { name: "Projects", exact: true })
     .waitFor({ state: "visible" });
+  check(
+    !(await page.getByTestId("scope-filter").isVisible()),
+    "the Mine / All filter is not inside the closed filter panel",
+  );
+  await page.getByRole("button", { name: "Filter", exact: true }).click();
   const filter = page.getByTestId("scope-filter");
   await filter.waitFor({ state: "visible" });
   await expect(
@@ -702,8 +707,14 @@ async function assertAdminEditsForeignProject(
   mark("administrator narrows the library to Mine and back");
   await filter.getByRole("radio", { name: "Mine", exact: true }).click();
   await expect(card).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Filter (1)", exact: true })
+    .waitFor({ state: "visible" });
   await filter.getByRole("radio", { name: "All", exact: true }).click();
   await card.waitFor({ state: "visible" });
+  await page
+    .getByRole("button", { name: "Filter", exact: true })
+    .waitFor({ state: "visible" });
 
   mark("administrator opens the foreign project and sees the banner");
   await page.goto(`${origin}/app/projects/${project.projectId}`, {

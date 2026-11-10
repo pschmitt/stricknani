@@ -49,11 +49,11 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.ui.common.EmptyState
-import blue.anika.wolle.ui.common.EveryoneFilterChips
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.LocalOwnerContext
+import blue.anika.wolle.ui.common.MineFilterChip
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
@@ -61,6 +61,7 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.libraryChips
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.rememberEveryoneFilter
 import blue.anika.wolle.ui.imports.WaitingForReview
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -149,9 +150,7 @@ fun ProjectsListScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
 
-                EveryoneFilterChips(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                )
+                val (everyoneFilter, selectEveryone) = rememberEveryoneFilter()
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
@@ -170,6 +169,9 @@ fun ProjectsListScreen(
                             onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
                             label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
                         )
+                    }
+                    if (everyoneFilter.available) {
+                        item(key = "mine-only") { MineFilterChip(everyoneFilter, selectEveryone) }
                     }
                     items(categories, key = { it.id }) { category ->
                         FilterChip(
@@ -212,7 +214,8 @@ fun ProjectsListScreen(
                     searchQuery.isNotBlank() ||
                         selectedCategory != null ||
                         selectedTag != null ||
-                        favoritesOnly
+                        favoritesOnly ||
+                        (everyoneFilter.available && !everyoneFilter.enabled)
                 if (projects.isEmpty()) {
                     LazyColumn(
                         state = listState,

@@ -39,17 +39,18 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.ui.common.EmptyState
-import blue.anika.wolle.ui.common.EveryoneFilterChips
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.MineFilterChip
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.rememberEveryoneFilter
 import blue.anika.wolle.ui.common.yarnChips
 import blue.anika.wolle.ui.common.yarnMetaLine
 import blue.anika.wolle.ui.imports.WaitingForReview
@@ -118,9 +119,7 @@ fun YarnsListScreen(
                     placeholder = stringResource(R.string.yarns_list_search_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
-                EveryoneFilterChips(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                )
+                val (everyoneFilter, selectEveryone) = rememberEveryoneFilter()
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -130,6 +129,7 @@ fun YarnsListScreen(
                         onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
                         label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
                     )
+                    MineFilterChip(everyoneFilter, selectEveryone)
                 }
                 Spacer(Modifier.height(8.dp))
 
@@ -140,7 +140,10 @@ fun YarnsListScreen(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                     )
                 }
-                val filtered = searchQuery.isNotBlank() || favoritesOnly
+                val filtered =
+                    searchQuery.isNotBlank() ||
+                        favoritesOnly ||
+                        (everyoneFilter.available && !everyoneFilter.enabled)
                 if (yarns.isEmpty()) {
                     LazyColumn(
                         state = listState,

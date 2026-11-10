@@ -14,7 +14,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { scopeFor } from "#lib/library-scope.svelte.ts";
+  import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
   import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
@@ -40,10 +40,22 @@
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
   const scope = $derived(scopeFor(session.data?.user));
-  const hasFilters = $derived(Boolean(filters.query || filters.favorite));
-  const activeFilterCount = $derived(Number(filters.favorite));
-  const activeFilterChips = $derived.by<ActiveFilterChip[]>(() =>
-    filters.favorite
+  const scopeUser = $derived(session.data?.user ?? null);
+  const scopeIsMine = $derived(
+    Boolean(scopeUser?.is_admin) && scope === "mine",
+  );
+
+  function resetScope() {
+    if (scopeUser) setScope(scopeUser, "all");
+  }
+  const hasFilters = $derived(
+    Boolean(filters.query || filters.favorite || scopeIsMine),
+  );
+  const activeFilterCount = $derived(
+    Number(filters.favorite) + Number(scopeIsMine),
+  );
+  const activeFilterChips = $derived.by<ActiveFilterChip[]>(() => [
+    ...(filters.favorite
       ? [
           {
             key: "favorite",
@@ -51,8 +63,17 @@
             remove: () => applyFilters({ ...filters, favorite: false }),
           },
         ]
-      : [],
-  );
+      : []),
+    ...(scopeIsMine
+      ? [
+          {
+            key: "scope",
+            label: t("Mine", locale),
+            remove: resetScope,
+          },
+        ]
+      : []),
+  ]);
 
   $effect(() => {
     const nextFilters = yarnFiltersFromSearch(page.url.search);
@@ -112,6 +133,7 @@
 
   function clearFilters() {
     searchText = "";
+    resetScope();
     applyFilters({ query: "", favorite: false, page: 1 });
   }
 
@@ -181,8 +203,6 @@
     {/snippet}
   </PageHeader>
 
-  <ScopeFilter {locale} />
-
   <ImportDraftCards target="yarn" />
 
   <LibraryFilters
@@ -209,6 +229,7 @@
         />
         <span>{t("Favorites only", locale)}</span>
       </label>
+      <ScopeFilter {locale} />
     {/snippet}
   </LibraryFilters>
 

@@ -45,8 +45,8 @@ msgstr "Hauptnavigation"
 #: src/import_service.rs:704 web/src/lib/components/CommandPalette.svelte:108
 #: web/src/lib/features/account/BackupsSection.svelte:445
 #: web/src/lib/features/account/BackupsSection.svelte:461
-#: web/src/lib/features/projects/ProjectLibrary.svelte:216
-#: web/src/lib/features/projects/ProjectLibrary.svelte:227
+#: web/src/lib/features/projects/ProjectLibrary.svelte:239
+#: web/src/lib/features/projects/ProjectLibrary.svelte:250
 #: web/src/lib/nav-items.ts:13
 msgid "Projects"
 msgstr "Projekte"
@@ -55,8 +55,8 @@ msgstr "Projekte"
 #: web/src/lib/features/account/BackupsSection.svelte:447
 #: web/src/lib/features/account/BackupsSection.svelte:467
 #: web/src/lib/features/yarns/YarnDetail.svelte:346
-#: web/src/lib/features/yarns/YarnLibrary.svelte:162
-#: web/src/lib/features/yarns/YarnLibrary.svelte:173
+#: web/src/lib/features/yarns/YarnLibrary.svelte:184
+#: web/src/lib/features/yarns/YarnLibrary.svelte:195
 #: web/src/lib/nav-items.ts:14
 msgid "Yarns"
 msgstr "Garne"
@@ -111,7 +111,7 @@ msgstr "Inhaltsfingerabdruck"
 #: web/src/lib/features/admin/DiffPanel.svelte:93
 #: web/src/lib/features/history/change-format.ts:122
 #: web/src/lib/features/projects/ProjectEditor.svelte:1730
-#: web/src/lib/features/projects/ProjectLibrary.svelte:258
+#: web/src/lib/features/projects/ProjectLibrary.svelte:279
 msgid "Category"
 msgstr "Kategorie"
 
@@ -171,7 +171,7 @@ msgstr "Beschreibung"
 msgid "Name"
 msgstr "Name"
 
-#: src/import_service.rs:723 web/src/lib/components/MarkdownEditor.svelte:260
+#: src/import_service.rs:723 web/src/lib/components/MarkdownEditor.svelte:256
 msgid "Link"
 msgstr "Link"
 
@@ -437,7 +437,7 @@ msgstr "Füge oben eine Kategorie hinzu, damit du deine Projekte leichter findes
 msgid "Add a note"
 msgstr "Notiz hinzufügen"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:244
+#: web/src/lib/features/yarns/YarnLibrary.svelte:265
 msgid "Add a skein to keep its details and project links together."
 msgstr ""
 "Füge ein Knäuel hinzu, um seine Angaben und Projektverknüpfungen "
@@ -480,7 +480,7 @@ msgstr "Zu Favoriten hinzufügen"
 
 #: web/src/lib/features/projects/YarnPicker.svelte:126
 #: web/src/lib/features/yarns/YarnForm.svelte:726
-#: web/src/lib/features/yarns/YarnLibrary.svelte:179
+#: web/src/lib/features/yarns/YarnLibrary.svelte:201
 msgid "Add yarn"
 msgstr "Garn hinzufügen"
 
@@ -597,7 +597,7 @@ msgstr ""
 msgid "All"
 msgstr "Alle"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:265
+#: web/src/lib/features/projects/ProjectLibrary.svelte:286
 msgid "All categories"
 msgstr "Alle Kategorien"
 
@@ -678,7 +678,7 @@ msgstr "App-Version"
 msgid "Appearance"
 msgstr "Erscheinungsbild"
 
-#: web/src/lib/components/MarkdownEditor.svelte:334
+#: web/src/lib/components/MarkdownEditor.svelte:330
 msgid "Apply"
 msgstr "Übernehmen"
 
@@ -853,7 +853,7 @@ msgstr "Basierend auf einem Anschlag laut Anleitung von"
 msgid "Before"
 msgstr "Zuvor"
 
-#: web/src/lib/components/MarkdownEditor.svelte:235
+#: web/src/lib/components/MarkdownEditor.svelte:231
 msgid "Bold"
 msgstr "Fett"
 
@@ -865,11 +865,11 @@ msgstr "Ecke unten links"
 msgid "Bottom right corner"
 msgstr "Ecke unten rechts"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:219
+#: web/src/lib/features/projects/ProjectLibrary.svelte:242
 msgid "Browse and find your knitting projects."
 msgstr "Durchsuche deine Strickprojekte."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:165
+#: web/src/lib/features/yarns/YarnLibrary.svelte:187
 msgid "Browse the yarns connected to your projects."
 msgstr "Sieh dir die Garne an, die mit deinen Projekten verknüpft sind."
 
@@ -884,7 +884,7 @@ msgstr ""
 "dein Zugriffstoken nicht und unterliegt der Datenschutzerklärung von "
 "GitHub."
 
-#: web/src/lib/components/MarkdownEditor.svelte:251
+#: web/src/lib/components/MarkdownEditor.svelte:247
 msgid "Bulleted list"
 msgstr "Aufzählung"
 
@@ -926,7 +926,7 @@ msgstr "Kann bearbeiten"
 msgid "Can view"
 msgstr "Kann ansehen"
 
-#: web/src/lib/components/MarkdownEditor.svelte:341
+#: web/src/lib/components/MarkdownEditor.svelte:337
 #: web/src/lib/features/account/AccountSettings.svelte:1029
 #: web/src/lib/features/account/AccountSettings.svelte:1330
 #: web/src/lib/features/account/AccountSettings.svelte:1418
@@ -1136,10 +1136,10 @@ msgstr ""
 msgid "Clear"
 msgstr "Leeren"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:248
-#: web/src/lib/features/projects/ProjectLibrary.svelte:321
-#: web/src/lib/features/yarns/YarnLibrary.svelte:194
-#: web/src/lib/features/yarns/YarnLibrary.svelte:239
+#: web/src/lib/features/projects/ProjectLibrary.svelte:269
+#: web/src/lib/features/projects/ProjectLibrary.svelte:343
+#: web/src/lib/features/yarns/YarnLibrary.svelte:214
+#: web/src/lib/features/yarns/YarnLibrary.svelte:260
 msgid "Clear filters"
 msgstr "Filter löschen"
 
@@ -1160,8 +1160,8 @@ msgstr ""
 msgid "Close"
 msgstr "Schließen"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:247
-#: web/src/lib/features/yarns/YarnLibrary.svelte:193
+#: web/src/lib/features/projects/ProjectLibrary.svelte:268
+#: web/src/lib/features/yarns/YarnLibrary.svelte:213
 msgid "Close filters"
 msgstr "Filter schließen"
 
@@ -1488,7 +1488,7 @@ msgstr "Reihenfolge der Detailkarten gespeichert."
 msgid "Detail cards"
 msgstr "Detailkarten"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:261
+#: web/src/lib/features/yarns/YarnLibrary.svelte:282
 msgid "Details to add"
 msgstr "Angaben zum Ergänzen"
 
@@ -1638,8 +1638,8 @@ msgstr "Jeder Schritt braucht einen Titel mit höchstens 256 Zeichen."
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: web/src/lib/components/MarkdownEditor.svelte:304
-#: web/src/lib/components/MarkdownEditor.svelte:310
+#: web/src/lib/components/MarkdownEditor.svelte:300
+#: web/src/lib/components/MarkdownEditor.svelte:306
 msgid "Edit as Markdown"
 msgstr "Als Markdown bearbeiten"
 
@@ -1897,10 +1897,10 @@ msgstr "Favorisierte Garne"
 msgid "Favorite yarns could not be loaded."
 msgstr "Favorisierte Garne konnten nicht geladen werden."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:81
-#: web/src/lib/features/projects/ProjectLibrary.svelte:292
-#: web/src/lib/features/yarns/YarnLibrary.svelte:50
-#: web/src/lib/features/yarns/YarnLibrary.svelte:210
+#: web/src/lib/features/projects/ProjectLibrary.svelte:94
+#: web/src/lib/features/projects/ProjectLibrary.svelte:313
+#: web/src/lib/features/yarns/YarnLibrary.svelte:62
+#: web/src/lib/features/yarns/YarnLibrary.svelte:230
 msgid "Favorites only"
 msgstr "Nur Favoriten"
 
@@ -1917,8 +1917,8 @@ msgid "File deleted"
 msgstr "Datei gelöscht"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:366
-#: web/src/lib/features/projects/ProjectLibrary.svelte:246
-#: web/src/lib/features/yarns/YarnLibrary.svelte:192
+#: web/src/lib/features/projects/ProjectLibrary.svelte:267
+#: web/src/lib/features/yarns/YarnLibrary.svelte:212
 msgid "Filter"
 msgstr "Filtern"
 
@@ -1998,7 +1998,7 @@ msgstr ""
 msgid "Format version 1"
 msgstr "Formatversion 1"
 
-#: web/src/lib/components/MarkdownEditor.svelte:275
+#: web/src/lib/components/MarkdownEditor.svelte:271
 msgid "Formatting"
 msgstr "Formatierung"
 
@@ -2104,7 +2104,7 @@ msgstr ""
 msgid "Have you tried turning the yarn off and on again?"
 msgstr "Schon mal versucht, das Garn aus- und wieder einzuschalten?"
 
-#: web/src/lib/components/MarkdownEditor.svelte:245
+#: web/src/lib/components/MarkdownEditor.svelte:241
 msgid "Heading"
 msgstr "Überschrift"
 
@@ -2369,7 +2369,7 @@ msgstr ""
 "Vermutlich ist es unters Sofa gerollt. Katzen sind verdächtig. Vielleicht"
 " ist es auch aufgebraucht oder war nie in deinem Vorrat."
 
-#: web/src/lib/components/MarkdownEditor.svelte:239
+#: web/src/lib/components/MarkdownEditor.svelte:235
 msgid "Italic"
 msgstr "Kursiv"
 
@@ -2537,7 +2537,7 @@ msgstr "Hell"
 msgid "Like Stricknani? Support its development."
 msgstr "Gefällt dir Stricknani? Unterstütze die Entwicklung."
 
-#: web/src/lib/components/MarkdownEditor.svelte:329
+#: web/src/lib/components/MarkdownEditor.svelte:325
 msgid "Link address"
 msgstr "Link-Adresse"
 
@@ -2775,6 +2775,8 @@ msgid "Member"
 msgstr "Mitglied"
 
 #: web/src/lib/components/ScopeFilter.svelte:16
+#: web/src/lib/features/projects/ProjectLibrary.svelte:103
+#: web/src/lib/features/yarns/YarnLibrary.svelte:71
 msgid "Mine"
 msgstr "Meine"
 
@@ -2858,11 +2860,11 @@ msgstr "Verschoben"
 msgid "N/A"
 msgstr "n. v."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:191
+#: web/src/lib/features/yarns/YarnLibrary.svelte:211
 msgid "Name, brand, colorway, or fiber"
 msgstr "Name, Marke, Farbe oder Faser"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:245
+#: web/src/lib/features/projects/ProjectLibrary.svelte:266
 msgid "Name, notes, yarn, or tag"
 msgstr "Name, Notizen, Garn oder Schlagwort"
 
@@ -2896,8 +2898,8 @@ msgstr "Neues Passwort"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1336
 #: web/src/lib/features/projects/ProjectEditor.svelte:1346
-#: web/src/lib/features/projects/ProjectLibrary.svelte:233
-#: web/src/lib/features/projects/ProjectLibrary.svelte:378
+#: web/src/lib/features/projects/ProjectLibrary.svelte:256
+#: web/src/lib/features/projects/ProjectLibrary.svelte:400
 #: web/src/lib/features/yarns/YarnForm.svelte:770
 #: web/src/lib/palette/entries.ts:149 web/src/routes/create/+page.svelte:22
 msgid "New project"
@@ -2921,14 +2923,14 @@ msgstr "Neue Version bereit"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1461
 #: web/src/lib/features/yarns/YarnForm.svelte:670
-#: web/src/lib/features/yarns/YarnLibrary.svelte:297
+#: web/src/lib/features/yarns/YarnLibrary.svelte:318
 #: web/src/lib/palette/entries.ts:157 web/src/routes/create/+page.svelte:32
 msgid "New yarn"
 msgstr "Neues Garn"
 
 #: web/src/lib/components/PhotoStrip.svelte:146
-#: web/src/lib/features/projects/ProjectLibrary.svelte:370
-#: web/src/lib/features/yarns/YarnLibrary.svelte:289
+#: web/src/lib/features/projects/ProjectLibrary.svelte:392
+#: web/src/lib/features/yarns/YarnLibrary.svelte:310
 msgid "Next"
 msgstr "Weiter"
 
@@ -3025,7 +3027,7 @@ msgstr "Noch keine Beschreibung der Anleitung."
 msgid "No photos yet."
 msgstr "Noch keine Fotos."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:318
+#: web/src/lib/features/projects/ProjectLibrary.svelte:340
 msgid "No projects match those filters."
 msgstr "Keine Projekte passen zu diesen Filtern."
 
@@ -3072,7 +3074,7 @@ msgstr "Mit diesem Projekt ist noch kein Garn verknüpft."
 msgid "No yarn matches that search."
 msgstr "Kein Garn passt zu dieser Suche."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:236
+#: web/src/lib/features/yarns/YarnLibrary.svelte:257
 msgid "No yarn matches those filters."
 msgstr "Kein Garn passt zu diesen Filtern."
 
@@ -3139,7 +3141,7 @@ msgid "Nothing matches"
 msgstr "Nichts gefunden"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:238
-#: web/src/lib/features/projects/ProjectLibrary.svelte:324
+#: web/src/lib/features/projects/ProjectLibrary.svelte:346
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
 
@@ -3160,7 +3162,7 @@ msgstr ""
 "Benachrichtigungen sind für diese Seite blockiert. Erlaube sie in den "
 "Website-Einstellungen des Browsers."
 
-#: web/src/lib/components/MarkdownEditor.svelte:257
+#: web/src/lib/components/MarkdownEditor.svelte:253
 msgid "Numbered list"
 msgstr "Nummerierte Liste"
 
@@ -3369,8 +3371,8 @@ msgstr "PDF-Link nicht angehängt"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:514
 #: web/src/lib/features/admin/AdminUsers.svelte:851
-#: web/src/lib/features/projects/ProjectLibrary.svelte:363
-#: web/src/lib/features/yarns/YarnLibrary.svelte:282
+#: web/src/lib/features/projects/ProjectLibrary.svelte:385
+#: web/src/lib/features/yarns/YarnLibrary.svelte:303
 msgid "Page"
 msgstr "Seite"
 
@@ -3598,8 +3600,8 @@ msgid "Preparing your review"
 msgstr "Deine Prüfung wird vorbereitet"
 
 #: web/src/lib/components/PhotoStrip.svelte:137
-#: web/src/lib/features/projects/ProjectLibrary.svelte:361
-#: web/src/lib/features/yarns/YarnLibrary.svelte:280
+#: web/src/lib/features/projects/ProjectLibrary.svelte:383
+#: web/src/lib/features/yarns/YarnLibrary.svelte:301
 msgid "Previous"
 msgstr "Zurück"
 
@@ -3720,7 +3722,7 @@ msgstr "Projektmedien aktualisiert."
 msgid "Project name"
 msgstr "Projektname"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:354
+#: web/src/lib/features/projects/ProjectLibrary.svelte:376
 msgid "Project pages"
 msgstr "Projektseiten"
 
@@ -3924,8 +3926,8 @@ msgstr "Entfernen"
 msgid "Remove attachment"
 msgstr "Anhang entfernen"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:249
-#: web/src/lib/features/yarns/YarnLibrary.svelte:195
+#: web/src/lib/features/projects/ProjectLibrary.svelte:270
+#: web/src/lib/features/yarns/YarnLibrary.svelte:215
 msgid "Remove filter"
 msgstr "Filter entfernen"
 
@@ -3933,7 +3935,7 @@ msgstr "Filter entfernen"
 msgid "Remove from favorites"
 msgstr "Aus Favoriten entfernen"
 
-#: web/src/lib/components/MarkdownEditor.svelte:338
+#: web/src/lib/components/MarkdownEditor.svelte:334
 msgid "Remove link"
 msgstr "Link entfernen"
 
@@ -4311,11 +4313,11 @@ msgstr "Alles durchsuchen"
 msgid "Search yarn"
 msgstr "Garn suchen"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:244
+#: web/src/lib/features/projects/ProjectLibrary.svelte:265
 msgid "Search your projects"
 msgstr "Deine Projekte durchsuchen"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:190
+#: web/src/lib/features/yarns/YarnLibrary.svelte:210
 msgid "Search your yarn"
 msgstr "Garne durchsuchen"
 
@@ -4520,12 +4522,12 @@ msgstr "Melde dich an, um den Projekttimer zu verwenden."
 msgid "Sign in to view this yarn."
 msgstr "Melde dich an, um dieses Garn anzusehen."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:111
+#: web/src/lib/features/projects/ProjectLibrary.svelte:133
 msgid "Sign in to view your projects."
 msgstr "Melde dich an, um deine Projekte anzusehen."
 
 #: web/src/lib/features/yarns/YarnForm.svelte:218
-#: web/src/lib/features/yarns/YarnLibrary.svelte:71
+#: web/src/lib/features/yarns/YarnLibrary.svelte:92
 msgid "Sign in to view your yarn."
 msgstr "Melde dich an, um deine Garne anzusehen."
 
@@ -4658,7 +4660,7 @@ msgstr "Fang etwas Gemütliches an"
 msgid "Start something new, or bring in a pattern you already have."
 msgstr "Fang etwas Neues an oder hol dir eine Anleitung, die du schon hast."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:326
+#: web/src/lib/features/projects/ProjectLibrary.svelte:348
 msgid "Start with one project to keep its pattern and progress together."
 msgstr ""
 "Beginne mit einem Projekt und bewahre Anleitung und Fortschritt zusammen "
@@ -4860,7 +4862,7 @@ msgstr "Größe der Maschenprobe"
 msgid "System"
 msgstr "System"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:275
+#: web/src/lib/features/projects/ProjectLibrary.svelte:296
 msgid "Tag"
 msgstr "Schlagwort"
 
@@ -4896,7 +4898,7 @@ msgstr ""
 msgid "Temporary password"
 msgstr "Temporäres Passwort"
 
-#: web/src/lib/components/MarkdownEditor.svelte:112
+#: web/src/lib/components/MarkdownEditor.svelte:109
 msgid "Text"
 msgstr "Text"
 
@@ -5135,10 +5137,10 @@ msgstr "E-Mail-Adresse oder Passwort ist falsch."
 msgid "The error report setting could not be saved."
 msgstr "Die Einstellung für Fehlerberichte konnte nicht gespeichert werden."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:200
+#: web/src/lib/features/projects/ProjectLibrary.svelte:223
 #: web/src/lib/features/projects/ProjectReader.svelte:395
 #: web/src/lib/features/yarns/YarnDetail.svelte:313
-#: web/src/lib/features/yarns/YarnLibrary.svelte:146
+#: web/src/lib/features/yarns/YarnLibrary.svelte:168
 msgid "The favorite could not be updated."
 msgstr "Der Favoritenstatus konnte nicht aktualisiert werden."
 
@@ -5288,7 +5290,7 @@ msgstr "Das Projekt konnte nicht geladen werden."
 msgid "The project could not be saved."
 msgstr "Das Projekt konnte nicht gespeichert werden."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:131
+#: web/src/lib/features/projects/ProjectLibrary.svelte:153
 msgid "The project list could not be loaded."
 msgstr "Die Projektliste konnte nicht geladen werden."
 
@@ -5472,7 +5474,7 @@ msgstr "Das Garn konnte nicht geladen werden."
 msgid "The yarn could not be saved."
 msgstr "Das Garn konnte nicht gespeichert werden."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:91
+#: web/src/lib/features/yarns/YarnLibrary.svelte:112
 msgid "The yarn list could not be loaded."
 msgstr "Die Garnliste konnte nicht geladen werden."
 
@@ -5738,7 +5740,7 @@ msgstr "Dieses Projekt ist nicht mehr verfügbar."
 msgid "This sign-in method is not available."
 msgstr "Diese Anmeldemethode ist nicht verfügbar."
 
-#: web/src/lib/components/MarkdownEditor.svelte:365
+#: web/src/lib/components/MarkdownEditor.svelte:361
 msgid ""
 "This text uses formatting the visual editor cannot show, so it is edited "
 "as Markdown."
@@ -5746,7 +5748,7 @@ msgstr ""
 "Dieser Text enthält Formatierungen, die der visuelle Editor nicht "
 "darstellen kann. Er wird daher als Markdown bearbeitet."
 
-#: web/src/lib/components/MarkdownEditor.svelte:306
+#: web/src/lib/components/MarkdownEditor.svelte:302
 msgid "This text uses formatting the visual editor cannot show."
 msgstr ""
 "Dieser Text enthält Formatierungen, die der visuelle Editor nicht "
@@ -5915,7 +5917,7 @@ msgstr "An {name} übertragen"
 msgid "Transferred to {name}"
 msgstr "An {name} übertragen"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:319
+#: web/src/lib/features/projects/ProjectLibrary.svelte:341
 msgid "Try a different name, category, or tag."
 msgstr ""
 "Versuche einen anderen Namen, eine andere Kategorie oder ein anderes "
@@ -5939,18 +5941,18 @@ msgstr ""
 #: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/home/HomeDashboard.svelte:285
 #: web/src/lib/features/media/ArchiveControl.svelte:445
-#: web/src/lib/features/projects/ProjectLibrary.svelte:301
+#: web/src/lib/features/projects/ProjectLibrary.svelte:323
 #: web/src/lib/features/projects/ProjectReader.svelte:769
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119
 #: web/src/lib/features/sharing/ShareDialog.svelte:247
 #: web/src/lib/features/yarns/YarnDetail.svelte:378
 #: web/src/lib/features/yarns/YarnForm.svelte:699
-#: web/src/lib/features/yarns/YarnLibrary.svelte:219
+#: web/src/lib/features/yarns/YarnLibrary.svelte:240
 #: web/src/routes/+layout.svelte:263
 msgid "Try again"
 msgstr "Erneut versuchen"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:237
+#: web/src/lib/features/yarns/YarnLibrary.svelte:258
 msgid "Try another search or show all yarn."
 msgstr "Versuche eine andere Suche oder zeige alle Garne."
 
@@ -6325,7 +6327,7 @@ msgstr "Garnoptionen konnten nicht geladen werden."
 msgid "Yarn page URL"
 msgstr "URL der Garnseite"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:273
+#: web/src/lib/features/yarns/YarnLibrary.svelte:294
 msgid "Yarn pages"
 msgstr "Garnseiten"
 
@@ -6739,7 +6741,7 @@ msgstr ""
 "Deine Registrierungssitzung ist abgelaufen. Lade die Seite neu und "
 "versuche es erneut."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:242
+#: web/src/lib/features/yarns/YarnLibrary.svelte:263
 msgid "Your stash is empty"
 msgstr "Dein Garnvorrat ist leer"
 

@@ -1395,9 +1395,7 @@
     <string name="owner_banner_project_detail">Deine Änderungen werden in dessen Projekt gespeichert und im Prüfprotokoll festgehalten.</string>
     <string name="owner_banner_yarn_title">Garn von %1$s</string>
     <string name="owner_banner_yarn_detail">Deine Änderungen werden in dessen Garn gespeichert und im Prüfprotokoll festgehalten.</string>
-    <string name="owner_filter_label">Anzeigen</string>
     <string name="owner_filter_mine">Meine</string>
-    <string name="owner_filter_everyone">Alle</string>
     <string name="share_import_title">Diesen Link als Projekt oder als Garn importieren?</string>
     <string name="share_import_project">Projekt</string>
     <string name="share_import_yarn">Garn</string>

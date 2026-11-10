@@ -14,7 +14,7 @@
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
   import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { scopeFor } from "#lib/library-scope.svelte.ts";
+  import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
   import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
@@ -45,15 +45,28 @@
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
   const scope = $derived(scopeFor(session.data?.user));
+  const scopeUser = $derived(session.data?.user ?? null);
+  const scopeIsMine = $derived(
+    Boolean(scopeUser?.is_admin) && scope === "mine",
+  );
+
+  function resetScope() {
+    if (scopeUser) setScope(scopeUser, "all");
+  }
   const hasFilters = $derived(
     Boolean(
-      filters.query || filters.category || filters.tag || filters.favorite,
+      filters.query ||
+      filters.category ||
+      filters.tag ||
+      filters.favorite ||
+      scopeIsMine,
     ),
   );
   const activeFilterCount = $derived(
     Number(Boolean(filters.category)) +
       Number(Boolean(filters.tag)) +
-      Number(filters.favorite),
+      Number(filters.favorite) +
+      Number(scopeIsMine),
   );
   const activeFilterChips = $derived.by<ActiveFilterChip[]>(() => [
     ...(filters.category
@@ -80,6 +93,15 @@
             key: "favorite",
             label: t("Favorites only", locale),
             remove: () => applyFilters({ ...filters, favorite: false }),
+          },
+        ]
+      : []),
+    ...(scopeIsMine
+      ? [
+          {
+            key: "scope",
+            label: t("Mine", locale),
+            remove: resetScope,
           },
         ]
       : []),
@@ -160,6 +182,7 @@
 
   function clearFilters() {
     searchText = "";
+    resetScope();
     applyFilters({
       query: "",
       category: "",
@@ -235,8 +258,6 @@
     {/snippet}
   </PageHeader>
 
-  <ScopeFilter {locale} />
-
   <ImportDraftCards target="project" />
 
   <LibraryFilters
@@ -291,6 +312,7 @@
         />
         <span>{t("Favorites only", locale)}</span>
       </label>
+      <ScopeFilter {locale} />
     {/snippet}
   </LibraryFilters>
 
