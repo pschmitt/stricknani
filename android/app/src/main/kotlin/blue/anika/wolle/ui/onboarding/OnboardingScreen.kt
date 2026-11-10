@@ -184,6 +184,7 @@ fun OnboardingScreen(
                             enabled = !isValidating,
                             validating = isValidating,
                             onContinue = {
+                                serverUrl = withDefaultScheme(serverUrl)
                                 if (viewModel.checkServerUrl(serverUrl)) {
                                     step = OnboardingStep.SIGN_IN
                                 }
@@ -561,6 +562,12 @@ private fun SignInPage(
                 )
             }
     }
+}
+
+/** `wolle.example.com` -> `https://wolle.example.com`; an address with a scheme stays as typed. */
+internal fun withDefaultScheme(serverUrl: String): String {
+    val trimmed = serverUrl.trim()
+    return if (trimmed.isEmpty() || "://" in trimmed) trimmed else "https://$trimmed"
 }
 
 /** `https://wolle.example.com/` -> `wolle.example.com`, for the sign-in page's header. */
