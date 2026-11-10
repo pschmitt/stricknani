@@ -5,14 +5,11 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import { page } from "$app/state";
   import Button from "#lib/components/Button.svelte";
-  import LibraryFilters, {
-    type ActiveFilterChip,
-  } from "#lib/components/LibraryFilters.svelte";
+  import LibrarySearch from "#lib/components/LibrarySearch.svelte";
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
   import CreateFab from "#lib/components/CreateFab.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
-  import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
@@ -51,29 +48,6 @@
   const hasFilters = $derived(
     Boolean(filters.query || filters.favorite || scopeIsMine),
   );
-  const activeFilterCount = $derived(
-    Number(filters.favorite) + Number(scopeIsMine),
-  );
-  const activeFilterChips = $derived.by<ActiveFilterChip[]>(() => [
-    ...(filters.favorite
-      ? [
-          {
-            key: "favorite",
-            label: t("Favorites only", locale),
-            remove: () => applyFilters({ ...filters, favorite: false }),
-          },
-        ]
-      : []),
-    ...(scopeIsMine
-      ? [
-          {
-            key: "scope",
-            label: t("Mine", locale),
-            remove: resetScope,
-          },
-        ]
-      : []),
-  ]);
 
   $effect(() => {
     const nextFilters = yarnFiltersFromSearch(page.url.search);
@@ -205,33 +179,58 @@
 
   <ImportDraftCards target="yarn" />
 
-  <LibraryFilters
+  <LibrarySearch
     query={filters.query}
     queryLabel={t("Search your yarn", locale)}
     placeholder={t("Name, brand, colorway, or fiber", locale)}
-    filterLabel={t("Filter", locale)}
-    closeLabel={t("Close filters", locale)}
-    clearLabel={t("Clear filters", locale)}
     removeFilterLabel={t("Remove filter", locale)}
-    {activeFilterCount}
-    chips={activeFilterChips}
     onquerydraft={(query) => (searchText = query)}
     onquerycommit={applyQuery}
-    onclear={clearFilters}
+  />
+
+  <div
+    class="filter-pills"
+    role="group"
+    aria-label={t("Filter", locale)}
+    data-testid="yarn-filter-pills"
   >
-    {#snippet filterControls()}
-      <label class="favorite-filter">
-        <input
-          type="checkbox"
-          checked={filters.favorite}
-          onchange={(event) =>
-            applyFilters({ ...filters, favorite: event.currentTarget.checked })}
-        />
-        <span>{t("Favorites only", locale)}</span>
-      </label>
-      <ScopeFilter {locale} />
-    {/snippet}
-  </LibraryFilters>
+    <button
+      class="filter-pill"
+      class:filter-pill--selected={!filters.favorite && !scopeIsMine}
+      type="button"
+      aria-pressed={!filters.favorite && !scopeIsMine}
+      data-testid="yarn-filter-all"
+      onclick={() => {
+        applyFilters({ ...filters, favorite: false });
+        resetScope();
+      }}
+    >
+      {t("All", locale)}
+    </button>
+    <button
+      class="filter-pill"
+      class:filter-pill--selected={filters.favorite}
+      type="button"
+      aria-pressed={filters.favorite}
+      data-testid="yarn-filter-favorites"
+      onclick={() => applyFilters({ ...filters, favorite: !filters.favorite })}
+    >
+      {t("Favorites only", locale)}
+    </button>
+    {#if scopeUser?.is_admin}
+      <button
+        class="filter-pill"
+        class:filter-pill--selected={scopeIsMine}
+        type="button"
+        aria-pressed={scopeIsMine}
+        data-testid="yarn-filter-mine"
+        onclick={() =>
+          scopeUser && setScope(scopeUser, scopeIsMine ? "all" : "mine")}
+      >
+        {t("Mine", locale)}
+      </button>
+    {/if}
+  </div>
 
   {#if errorMessage}
     <div class="notice-error" role="alert">
@@ -332,19 +331,47 @@
     min-height: 44px;
   }
 
-  .favorite-filter {
+  .filter-pills {
     display: flex;
+    min-width: 0;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.15rem 0 0.35rem;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+
+  .filter-pill {
+    display: inline-flex;
     min-height: 44px;
+    flex: 0 0 auto;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
     color: var(--ink);
+    background: var(--surface);
+    font: inherit;
+    font-size: 0.9rem;
     cursor: pointer;
   }
 
-  .favorite-filter input {
-    width: 1.2rem;
-    height: 1.2rem;
-    accent-color: var(--accent-strong);
+  .filter-pill:hover {
+    border-color: var(--accent-strong);
+  }
+
+  .filter-pill:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent-strong) 45%, transparent);
+    outline-offset: 2px;
+  }
+
+  .filter-pill--selected {
+    border-color: var(--primary-container);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
+    font-weight: 650;
   }
 
   .notice-error {

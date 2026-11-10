@@ -730,7 +730,9 @@ export async function measureLibraryDensity(
     const rect = row?.getBoundingClientRect();
     const titleRect = title?.getBoundingClientRect();
     const targets = [
-      ...document.querySelectorAll(".search-field input, .filter-trigger"),
+      ...document.querySelectorAll(
+        '.search-field input, [data-testid="project-filter-pills"] button, [data-testid="yarn-filter-pills"] button',
+      ),
     ].filter((el) => el.getClientRects().length);
     return {
       firstItemY: rect?.top ?? null,
@@ -789,43 +791,6 @@ export async function measureLibraryDensity(
       `or targets failed; numeric_metrics=${sortedJson(measured)}`,
   );
   return { ...measured, width };
-}
-
-export async function openLibraryFilters(page: Page): Promise<Locator> {
-  const trigger = page.locator(".filter-trigger");
-  const dialog = page.locator("dialog.filter-panel");
-  check(
-    (await trigger.count()) === 1 && (await dialog.count()) === 1,
-    "library filter controls are ambiguous",
-  );
-  if (
-    !(await dialog.evaluate((element) => (element as HTMLDialogElement).open))
-  ) {
-    await trigger.click();
-  }
-  await page.getByRole("dialog").waitFor({ state: "visible" });
-  check(
-    await dialog.evaluate((element) => (element as HTMLDialogElement).open),
-    "the native filter dialog did not open",
-  );
-  return dialog;
-}
-
-export async function waitForLibraryFiltersClosed(
-  dialog: Locator,
-): Promise<void> {
-  await dialog.waitFor({ state: "hidden" });
-  check(
-    !(await dialog.evaluate((element) => (element as HTMLDialogElement).open)),
-    "the native filter dialog did not close",
-  );
-}
-
-export async function closeLibraryFilters(dialog: Locator): Promise<void> {
-  await dialog
-    .getByRole("button", { name: "Close filters", exact: true })
-    .click();
-  await waitForLibraryFiltersClosed(dialog);
 }
 
 export async function assertHeaderParentLink(

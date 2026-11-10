@@ -665,7 +665,7 @@ async function assertNoScopeFilter(page: Page, origin: string): Promise<void> {
     .getByRole("heading", { name: "Projects", exact: true })
     .waitFor({ state: "visible" });
   check(
-    (await page.getByTestId("scope-filter").count()) === 0,
+    (await page.getByTestId("project-filter-mine").count()) === 0,
     "a regular user was offered the Mine / All filter",
   );
 }
@@ -688,16 +688,9 @@ async function assertAdminEditsForeignProject(
   await page
     .getByRole("heading", { name: "Projects", exact: true })
     .waitFor({ state: "visible" });
-  check(
-    !(await page.getByTestId("scope-filter").isVisible()),
-    "the Mine / All filter is not inside the closed filter panel",
-  );
-  await page.getByRole("button", { name: "Filter", exact: true }).click();
-  const filter = page.getByTestId("scope-filter");
-  await filter.waitFor({ state: "visible" });
-  await expect(
-    filter.getByRole("radio", { name: "All", exact: true }),
-  ).toHaveAttribute("aria-checked", "true");
+  const all = page.getByTestId("project-filter-all");
+  const mine = page.getByTestId("project-filter-mine");
+  await expect(all).toHaveAttribute("aria-pressed", "true");
   const card = page.locator(".library-card").filter({ hasText: project.name });
   await card.waitFor({ state: "visible" });
   check(
@@ -705,16 +698,12 @@ async function assertAdminEditsForeignProject(
     "the foreign project card has no owner badge",
   );
   mark("administrator narrows the library to Mine and back");
-  await filter.getByRole("radio", { name: "Mine", exact: true }).click();
+  await mine.click();
   await expect(card).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Filter (1)", exact: true })
-    .waitFor({ state: "visible" });
-  await filter.getByRole("radio", { name: "All", exact: true }).click();
+  await expect(mine).toHaveAttribute("aria-pressed", "true");
+  await all.click();
   await card.waitFor({ state: "visible" });
-  await page
-    .getByRole("button", { name: "Filter", exact: true })
-    .waitFor({ state: "visible" });
+  await expect(all).toHaveAttribute("aria-pressed", "true");
 
   mark("administrator opens the foreign project and sees the banner");
   await page.goto(`${origin}/app/projects/${project.projectId}`, {

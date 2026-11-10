@@ -5,14 +5,12 @@
   import { page } from "$app/state";
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import Button from "#lib/components/Button.svelte";
-  import LibraryFilters, {
-    type ActiveFilterChip,
-  } from "#lib/components/LibraryFilters.svelte";
   import CreateFab from "#lib/components/CreateFab.svelte";
+  import LibrarySearch from "#lib/components/LibrarySearch.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
-  import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
@@ -22,6 +20,7 @@
     filtersFromSearch,
     listCategories,
     listProjects,
+    listProjectTags,
     setProjectFavorite,
     searchFromFilters,
     type ProjectFilters,
@@ -31,11 +30,10 @@
   type LoadState = "loading" | "ready" | "error";
 
   const idPrefix = $props.id();
-  const categorySelectId = `${idPrefix}-category`;
-
   let loadState = $state<LoadState>("loading");
   let items = $state<ProjectSummary[]>([]);
   let categoryNames = $state<string[]>([]);
+  let tagNames = $state<string[]>([]);
   let meta = $state({ page: 1, per_page: 50, has_more: false });
   let filters = $state<ProjectFilters>(filtersFromSearch(""));
   let searchText = $state("");
@@ -62,50 +60,6 @@
       scopeIsMine,
     ),
   );
-  const activeFilterCount = $derived(
-    Number(Boolean(filters.category)) +
-      Number(Boolean(filters.tag)) +
-      Number(filters.favorite) +
-      Number(scopeIsMine),
-  );
-  const activeFilterChips = $derived.by<ActiveFilterChip[]>(() => [
-    ...(filters.category
-      ? [
-          {
-            key: "category",
-            label: `${t("Category", locale)}: ${filters.category}`,
-            remove: () => applyFilters({ ...filters, category: "" }),
-          },
-        ]
-      : []),
-    ...(filters.tag
-      ? [
-          {
-            key: "tag",
-            label: `${t("Tag", locale)}: ${filters.tag}`,
-            remove: () => applyFilters({ ...filters, tag: "" }),
-          },
-        ]
-      : []),
-    ...(filters.favorite
-      ? [
-          {
-            key: "favorite",
-            label: t("Favorites only", locale),
-            remove: () => applyFilters({ ...filters, favorite: false }),
-          },
-        ]
-      : []),
-    ...(scopeIsMine
-      ? [
-          {
-            key: "scope",
-            label: t("Mine", locale),
-            remove: resetScope,
-          },
-        ]
-      : []),
-  ]);
   const categories = $derived(
     [
       ...new Set([
@@ -114,6 +68,28 @@
       ]),
     ].sort((left, right) => left.localeCompare(right, locale)),
   );
+  const allFilterSelected = $derived(
+    !filters.category && !filters.tag && !filters.favorite && !scopeIsMine,
+  );
+  const availableCategories = $derived(
+    filters.category && !categories.includes(filters.category)
+      ? [filters.category, ...categories]
+      : categories,
+  );
+  const availableTags = $derived.by(() => {
+    const unique = new Map<string, string>();
+    for (const tag of [
+      filters.tag,
+      ...tagNames,
+      ...items.flatMap((item) => item.tags),
+    ]) {
+      const normalized = tag.trim().toLocaleLowerCase(locale);
+      if (normalized && !unique.has(normalized)) unique.set(normalized, tag);
+    }
+    return [...unique.values()].sort((left, right) =>
+      left.localeCompare(right, locale),
+    );
+  });
 
   $effect(() => {
     const nextFilters = filtersFromSearch(page.url.search);
@@ -128,6 +104,7 @@
     const controller = new AbortController();
     items = [];
     categoryNames = [];
+    tagNames = [];
     if (currentUserId === null) {
       loadState = "error";
       errorMessage = t("Sign in to view your projects.", locale);
@@ -160,6 +137,14 @@
       .catch(() => {
         if (!controller.signal.aborted) categoryNames = [];
       });
+    void listProjectTags(controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        tagNames = result.map(({ tag }) => tag);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) tagNames = [];
+      });
     return () => controller.abort();
   });
 
@@ -190,6 +175,11 @@
       favorite: false,
       page: 1,
     });
+  }
+
+  function clearBrowseFilters() {
+    resetScope();
+    applyFilters({ ...filters, category: "", tag: "", favorite: false });
   }
 
   function changePage(nextPage: number) {
@@ -260,61 +250,94 @@
 
   <ImportDraftCards target="project" />
 
-  <LibraryFilters
+  <LibrarySearch
     query={filters.query}
     queryLabel={t("Search your projects", locale)}
     placeholder={t("Name, notes, yarn, or tag", locale)}
-    filterLabel={t("Filter", locale)}
-    closeLabel={t("Close filters", locale)}
-    clearLabel={t("Clear filters", locale)}
     removeFilterLabel={t("Remove filter", locale)}
-    {activeFilterCount}
-    chips={activeFilterChips}
     onquerydraft={(query) => (searchText = query)}
     onquerycommit={applyQuery}
-    onclear={clearFilters}
+  />
+
+  <div
+    class="filter-pills"
+    role="group"
+    aria-label={t("Filter", locale)}
+    data-testid="project-filter-pills"
   >
-    {#snippet filterControls()}
-      <div class="panel-field">
-        <label for={categorySelectId}>{t("Category", locale)}</label>
-        <select
-          id={categorySelectId}
-          value={filters.category}
-          onchange={(event) =>
-            applyFilters({ ...filters, category: event.currentTarget.value })}
-        >
-          <option value="">{t("All categories", locale)}</option>
-          {#if filters.category && !categories.includes(filters.category)}
-            <option value={filters.category}>{filters.category}</option>
-          {/if}
-          {#each categories as category (category)}
-            <option value={category}>{category}</option>
-          {/each}
-        </select>
-      </div>
-      <div class="panel-field">
-        <label for={`${idPrefix}-tag`}>{t("Tag", locale)}</label>
-        <input
-          id={`${idPrefix}-tag`}
-          type="search"
-          value={filters.tag}
-          autocomplete="off"
-          onchange={(event) =>
-            applyFilters({ ...filters, tag: event.currentTarget.value.trim() })}
-        />
-      </div>
-      <label class="favorite-filter">
-        <input
-          type="checkbox"
-          checked={filters.favorite}
-          onchange={(event) =>
-            applyFilters({ ...filters, favorite: event.currentTarget.checked })}
-        />
-        <span>{t("Favorites only", locale)}</span>
-      </label>
-      <ScopeFilter {locale} />
-    {/snippet}
-  </LibraryFilters>
+    <button
+      class="filter-pill"
+      class:filter-pill--selected={allFilterSelected}
+      type="button"
+      aria-pressed={allFilterSelected}
+      data-testid="project-filter-all"
+      onclick={clearBrowseFilters}
+    >
+      {t("All", locale)}
+    </button>
+    <button
+      class="filter-pill"
+      class:filter-pill--selected={filters.favorite}
+      type="button"
+      aria-pressed={filters.favorite}
+      data-testid="project-filter-favorites"
+      onclick={() => applyFilters({ ...filters, favorite: !filters.favorite })}
+    >
+      {t("Favorites only", locale)}
+    </button>
+    {#if scopeUser?.is_admin}
+      <button
+        class="filter-pill"
+        class:filter-pill--selected={scopeIsMine}
+        type="button"
+        aria-pressed={scopeIsMine}
+        data-testid="project-filter-mine"
+        onclick={() =>
+          scopeUser && setScope(scopeUser, scopeIsMine ? "all" : "mine")}
+      >
+        {t("Mine", locale)}
+      </button>
+    {/if}
+    {#each availableCategories as category (category)}
+      <button
+        class="filter-pill"
+        class:filter-pill--selected={filters.category === category}
+        type="button"
+        aria-pressed={filters.category === category}
+        data-testid="project-filter-category"
+        onclick={() =>
+          applyFilters({
+            ...filters,
+            category: filters.category === category ? "" : category,
+          })}
+      >
+        {category}
+      </button>
+    {/each}
+    {#each availableTags as tag (tag)}
+      <button
+        class="filter-pill"
+        class:filter-pill--selected={filters.tag.toLocaleLowerCase(locale) ===
+          tag.toLocaleLowerCase(locale)}
+        type="button"
+        aria-pressed={filters.tag.toLocaleLowerCase(locale) ===
+          tag.toLocaleLowerCase(locale)}
+        data-testid="project-filter-tag"
+        onclick={() =>
+          applyFilters({
+            ...filters,
+            tag:
+              filters.tag.toLocaleLowerCase(locale) ===
+              tag.toLocaleLowerCase(locale)
+                ? ""
+                : tag,
+          })}
+      >
+        <NavIcon name="categories" />
+        {tag}
+      </button>
+    {/each}
+  </div>
 
   {#if errorMessage}
     <div class="notice-error" role="alert">
@@ -414,34 +437,53 @@
     min-height: 44px;
   }
 
-  .panel-field {
-    display: grid;
-    min-width: 0;
-    gap: 0.35rem;
-    color: var(--ink-muted);
-    font-size: 0.88rem;
-    font-weight: 620;
-  }
-
-  .panel-field input,
-  .panel-field select {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .favorite-filter {
+  .filter-pills {
     display: flex;
+    min-width: 0;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.15rem 0 0.35rem;
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+  }
+
+  .filter-pill {
+    display: inline-flex;
     min-height: 44px;
+    flex: 0 0 auto;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
     color: var(--ink);
+    background: var(--surface);
+    font: inherit;
+    font-size: 0.9rem;
     cursor: pointer;
   }
 
-  .favorite-filter input {
-    width: 1.2rem;
-    height: 1.2rem;
-    accent-color: var(--accent-strong);
+  .filter-pill :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+  }
+
+  .filter-pill:hover {
+    border-color: var(--accent-strong);
+  }
+
+  .filter-pill:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent-strong) 45%, transparent);
+    outline-offset: 2px;
+  }
+
+  .filter-pill--selected {
+    border-color: var(--primary-container);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
+    font-weight: 650;
   }
 
   .notice-error {

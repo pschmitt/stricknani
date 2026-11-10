@@ -10,7 +10,7 @@ import { closeBrowser } from "../lib/common";
 // editor stage through the end of the run.
 import { chmodSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { errors } from "@playwright/test";
+import { errors, expect } from "@playwright/test";
 import type { Locator, Response } from "@playwright/test";
 import {
   AcceptanceFailure,
@@ -31,13 +31,10 @@ import {
   accountSignOutButton,
   assertMobileAppHeader,
   checkMobileLanguageAndScreenshots,
-  closeLibraryFilters,
   openAccountFromProfile,
-  openLibraryFilters,
   prepareProjectReaderFixture,
   prepareScreenshot,
   visibleHeights,
-  waitForLibraryFiltersClosed,
 } from "../lib/ui-helpers";
 import {
   createUiState,
@@ -896,85 +893,22 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     "project search did not return the matching card",
   );
   markStage("filtering project library by category");
-  let selectedCategory: string[] = [];
-  let filterDialog = await openLibraryFilters(page);
-  const categorySelect = filterDialog.getByLabel("Category", { exact: true });
-  try {
-    await categorySelect.waitFor({ state: "visible", timeout: 5_000 });
-  } catch (error) {
-    if (!(error instanceof errors.TimeoutError)) {
-      throw error;
-    }
-    await maskFixtureIdentity(page);
-    await prepareScreenshot(page);
-    const categoryDebug = await page.evaluate<unknown>(
-      fn(`() => ({
-        selectCount: document.querySelectorAll('select').length,
-        libraryCount: document.querySelectorAll('.library').length,
-        visible: document.visibilityState === 'visible',
-        hasBody: Boolean(document.body),
-      })`),
-    );
-    const categoryDebugScreenshot = join(
-      screenshots,
-      "category-stage-debug.png",
-    );
-    await page.screenshot({ path: categoryDebugScreenshot, caret: "initial" });
-    throw new AcceptanceFailure(
-      "project category control did not become visible " +
-        `(diagnostics=${sortedJson(categoryDebug)}; ` +
-        `native select count=${await page.locator("select").count()}; ` +
-        `exact Category label count=${await categorySelect.count()})`,
-    );
-  }
-  check((await categorySelect.count()) === 1, "category filter is ambiguous");
-  check(
-    await categorySelect.evaluate(fn("select => select.labels.length > 0")),
-    "the project category filter is not programmatically labeled",
-  );
-  let categoryFilterResponse: Response;
-  try {
-    [categoryFilterResponse] = await Promise.all([
-      page.waitForResponse(
-        (candidate) =>
-          urlPath(candidate.url()) === "/api/v2/projects" &&
-          queryIs(candidate.url(), "category", "Schal"),
-        { timeout: 10_000 },
-      ),
-      (async () => {
-        selectedCategory = await categorySelect.selectOption(
-          { label: "Schal" },
-          { timeout: 5_000 },
-        );
-      })(),
-    ]);
-  } catch (error) {
-    if (!(error instanceof errors.TimeoutError)) {
-      throw error;
-    }
-    const categoryInUrl = queryIs(page.url(), "category", "Schal");
-    const categoryRequestSeen = st.projectListQueries.some(
-      (query) =>
-        query.category !== undefined &&
-        query.category.length === 1 &&
-        query.category[0] === "Schal",
-    );
-    const categoryValueSelected =
-      (await categorySelect.inputValue({ timeout: 1_000 })) === "Schal";
-    throw new AcceptanceFailure(
-      "category filter did not reach the project API " +
-        `(URL updated=${categoryInUrl}; ` +
-        `request observed=${categoryRequestSeen}; ` +
-        `select returned value=${
-          selectedCategory.length === 1 && selectedCategory[0] === "Schal"
-        }; selected in DOM=${categoryValueSelected})`,
-    );
-  }
+  const categoryPill = page
+    .getByTestId("project-filter-category")
+    .filter({ hasText: "Schal" });
+  const [categoryFilterResponse] = await Promise.all([
+    page.waitForResponse(
+      (candidate) =>
+        urlPath(candidate.url()) === "/api/v2/projects" &&
+        queryIs(candidate.url(), "category", "Schal"),
+    ),
+    categoryPill.click(),
+  ]);
   check(
     categoryFilterResponse.status() === 200,
     "category filtering did not succeed against the Rust API",
   );
-  await closeLibraryFilters(filterDialog);
+  await expect(categoryPill).toHaveAttribute("aria-pressed", "true");
   await page.locator(".project-card").waitFor({ state: "visible" });
   check(
     st.categoryResponses.some(
@@ -983,24 +917,22 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     "project categories did not load from the Rust API",
   );
   markStage("filtering project library by tag");
-  filterDialog = await openLibraryFilters(page);
-  const tagFilter = filterDialog.getByLabel("Tag", { exact: true });
+  const tagPill = page
+    .getByTestId("project-filter-tag")
+    .filter({ hasText: "heirloom" });
   const [tagFilterResponse] = await Promise.all([
     page.waitForResponse(
       (candidate) =>
         urlPath(candidate.url()) === "/api/v2/projects" &&
         queryIs(candidate.url(), "tag", "heirloom"),
     ),
-    (async () => {
-      await tagFilter.fill("heirloom");
-      await tagFilter.press("Tab");
-    })(),
+    tagPill.click(),
   ]);
   check(
     tagFilterResponse.status() === 200,
     "tag filtering did not succeed against the Rust API",
   );
-  await closeLibraryFilters(filterDialog);
+  await expect(tagPill).toHaveAttribute("aria-pressed", "true");
   await page.locator(".project-card").waitFor({ state: "visible" });
   searchBox = page.getByRole("searchbox", { name: "Search your projects" });
   markStage("checking the project no-match state");
@@ -1033,14 +965,11 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
           (key) => key === "scope",
         ),
     ),
-    (async () => {
-      filterDialog = await openLibraryFilters(page);
-      await filterDialog
-        .getByRole("button", { name: "Clear filters", exact: true })
-        .click();
-    })(),
+    page
+      .locator(".empty-state")
+      .getByRole("button", { name: "Clear filters", exact: true })
+      .click(),
   ]);
-  await waitForLibraryFiltersClosed(filterDialog);
   check(
     clearFiltersResponse.status() === 200,
     "clearing filters did not reload the project list",
@@ -1077,20 +1006,18 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     .getByRole("button", { name: "Remove from favorites", exact: true })
     .waitFor({ state: "visible" });
   markStage("filtering project library by favorites");
-  filterDialog = await openLibraryFilters(page);
   const [favoriteFilterResponse] = await Promise.all([
     page.waitForResponse(
       (candidate) =>
         urlPath(candidate.url()) === "/api/v2/projects" &&
         queryIs(candidate.url(), "favorite", "true"),
     ),
-    filterDialog.getByLabel("Favorites only", { exact: true }).check(),
+    page.getByTestId("project-filter-favorites").click(),
   ]);
   check(
     favoriteFilterResponse.status() === 200,
     "favorite filtering did not succeed against the Rust API",
   );
-  await closeLibraryFilters(filterDialog);
   await page.locator(".project-card").waitFor({ state: "visible" });
   check(
     (await page.locator(".project-card").count()) === 1,

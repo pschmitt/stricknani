@@ -442,24 +442,14 @@ export async function runYarnJourney(
     await yarnCard
       .getByRole("button", { name: "Remove from favorites", exact: true })
       .waitFor({ state: "visible" });
-    const filterTrigger = page.locator(".filter-trigger");
-    markStage("opening yarn filters");
-    await filterTrigger.click();
-    const filterDialog = page.getByRole("dialog");
-    await filterDialog.waitFor({ state: "visible" });
-    const favoriteFilter = filterDialog.getByRole("checkbox", {
-      name: "Favorites only",
-    });
     markStage("selecting favorites only");
-    await favoriteFilter.check();
+    await page.getByTestId("yarn-filter-favorites").click();
     markStage("waiting for favorite query");
     await page.waitForURL(
       (url) =>
         url.pathname === "/app/yarns" &&
         queryEquals(url, { q: ["Riverbend"], favorite: ["true"] }),
     );
-    markStage("closing yarn filters");
-    await filterDialog.getByRole("button", { name: "Close filters" }).click();
     markStage("checking favorite-filtered result");
     await yarnCard.waitFor({ state: "visible" });
     check(
@@ -472,7 +462,7 @@ export async function runYarnJourney(
       const heights = await visibleHeights(
         page,
         ".mobile-navigation a, .secondary-nav a, " +
-          ".desktop-create, .filter-trigger",
+          ".desktop-create, [data-testid=yarn-filter-pills] button",
       );
       check(
         heights.length === 0 || Math.min(...heights) >= 44,
