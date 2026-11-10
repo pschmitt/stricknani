@@ -1,4 +1,7 @@
-@file:OptIn(ExperimentalRichTextApi::class)
+@file:OptIn(
+    ExperimentalRichTextApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
 
 package blue.anika.wolle.ui.common
 
@@ -10,13 +13,19 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.contextmenu.builder.item
+import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.FormatBold
@@ -50,6 +59,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -72,6 +82,9 @@ import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.model.HeadingStyle
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /**
@@ -186,6 +199,51 @@ internal fun MarkdownTextField(
     var linkValue by remember { mutableStateOf("") }
     var linkHadHref by remember { mutableStateOf(false) }
     var linkRange by remember { mutableStateOf(TextRange.Zero) }
+
+    // The same formatting as the toolbar, for the selection's context menu.
+    fun applyFormat(format: MarkdownFormat) {
+        if (!visual) {
+            applyRaw(field, format, ::emit, { known = it }) { field = it }
+            return
+        }
+        when (format) {
+            MarkdownFormat.BOLD -> rich.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+            MarkdownFormat.ITALIC -> rich.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+            MarkdownFormat.HEADING ->
+                rich.setHeadingStyle(
+                    if (rich.currentHeadingStyle != HeadingStyle.Normal) HeadingStyle.Normal
+                    else HeadingStyle.H3
+                )
+            MarkdownFormat.BULLET_LIST -> rich.toggleUnorderedList()
+            MarkdownFormat.NUMBERED_LIST -> rich.toggleOrderedList()
+            MarkdownFormat.LINK -> {
+                linkHadHref = rich.isLink
+                linkValue = rich.selectedLinkUrl.orEmpty()
+                linkRange = rich.selection
+                linkOpen = true
+            }
+        }
+    }
+    val menuLabels =
+        listOf(
+            MarkdownFormat.BOLD to stringResource(R.string.markdown_editor_bold),
+            MarkdownFormat.ITALIC to stringResource(R.string.markdown_editor_italic),
+            MarkdownFormat.HEADING to stringResource(R.string.markdown_editor_heading),
+            MarkdownFormat.BULLET_LIST to stringResource(R.string.markdown_editor_bullet_list),
+            MarkdownFormat.NUMBERED_LIST to stringResource(R.string.markdown_editor_numbered_list),
+            MarkdownFormat.LINK to stringResource(R.string.markdown_editor_link),
+        )
+    // Bold and Italic first, right after the system's Cut / Copy / Paste.
+    val formatMenu = Modifier.appendTextContextMenuComponents {
+        separator()
+        for ((format, menuLabel) in menuLabels) {
+            item(key = "markdown-${format.name}", label = menuLabel) {
+                close()
+                applyFormat(format)
+            }
+        }
+        separator()
+    }
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -351,7 +409,7 @@ internal fun MarkdownTextField(
                 label = label,
                 labelIcon = labelIcon,
                 minLines = minLines,
-                modifier = fieldModifier,
+                modifier = fieldModifier.then(formatMenu),
                 keyboardOptions = keyboardOptions,
                 colors = colors,
             )
@@ -365,7 +423,7 @@ internal fun MarkdownTextField(
                     }
                 },
                 label = { FieldLabel(label, labelIcon) },
-                modifier = fieldModifier.fillMaxWidth(),
+                modifier = fieldModifier.then(formatMenu).fillMaxWidth(),
                 minLines = minLines,
                 keyboardOptions = keyboardOptions,
                 colors = colors,
@@ -433,6 +491,31 @@ private fun VisualEditor(
     val measurer = rememberTextMeasurer()
     val scope = rememberCoroutineScope()
     SideEffect { host.focused = focused }
+    // Opening the keyboard can scroll the form so far that the selection ends up off screen
+    // (long texts, long-press to select). Once the keyboard has settled, show the selection again.
+    val selectionRequester = remember { BringIntoViewRequester() }
+    val imeInsets = WindowInsets.ime
+    val density = LocalDensity.current
+    LaunchedEffect(focused) {
+        if (!focused) return@LaunchedEffect
+        snapshotFlow { imeInsets.getBottom(density) }
+            .distinctUntilChanged()
+            .collectLatest { bottom ->
+                if (bottom == 0) return@collectLatest
+                delay(KEYBOARD_SETTLE_MS)
+                val layout = host.layout ?: return@collectLatest
+                val length = layout.layoutInput.text.length
+                val selection = state.selection
+                val first = layout.getCursorRect(selection.min.coerceIn(0, length))
+                val last = layout.getCursorRect(selection.max.coerceIn(0, length))
+                val margin = with(density) { 48.dp.toPx() }
+                // A selection taller than the screen: its start is what matters.
+                val bottomEdge = minOf(last.bottom, first.top + with(density) { 240.dp.toPx() })
+                selectionRequester.bringIntoView(
+                    Rect(0f, first.top - margin, layout.size.width.toFloat(), bottomEdge + margin)
+                )
+            }
+    }
     host.paddingPx = with(LocalDensity.current) { 4.dp.toPx() }
     LaunchedEffect(state) {
         snapshotFlow { state.annotatedString }
@@ -462,6 +545,7 @@ private fun VisualEditor(
             modifier =
                 modifier
                     .fillMaxWidth()
+                    .bringIntoViewRequester(selectionRequester)
                     .pictureThumbnails(
                         host = host,
                         measurer = measurer,
@@ -568,3 +652,6 @@ internal class EmitEchoes(private val limit: Int = 64) {
 
     fun clear() = recent.clear()
 }
+
+/** How long the keyboard needs to stop moving before the selection is scrolled back into view. */
+private const val KEYBOARD_SETTLE_MS = 150L

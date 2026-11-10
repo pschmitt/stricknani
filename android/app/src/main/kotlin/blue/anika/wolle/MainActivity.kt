@@ -13,6 +13,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -96,7 +98,11 @@ class MainActivity : ComponentActivity() {
     // (onSaveInstanceState). The chooser asks before anything is imported.
     private var pendingSharedUrl by mutableStateOf<String?>(null)
 
+    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The Markdown editors add Bold, Italic, ... to the text selection menu, which needs
+        // Compose's new context menu (before any composition).
+        ComposeFoundationFlags.isNewContextMenuEnabled = true
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
