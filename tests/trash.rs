@@ -2195,6 +2195,8 @@ async fn trashed_only_honours_the_owner_filter_and_trashed_items_leave_status_an
         .await;
         assert!(body["data"].as_array().unwrap().is_empty(), "{kind}");
     }
+}
+
 async fn get_media(f: &Fx, path: &str, who: &str) -> (StatusCode, Vec<u8>) {
     let response = f
         .app
