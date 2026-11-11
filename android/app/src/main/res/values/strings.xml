@@ -1534,4 +1534,16 @@
     <string name="markdown_editor_link_address">Link address</string>
     <string name="markdown_editor_link_apply">Apply</string>
     <string name="markdown_editor_link_remove">Remove link</string>
+
+    <!-- Typeahead filter suggestions below the search fields of the project and yarn lists -->
+    <string name="filter_suggestions_group_tags">Tags</string>
+    <string name="filter_suggestions_group_categories">Categories</string>
+    <string name="filter_suggestions_group_status">Status</string>
+    <string name="filter_suggestions_group_owners">Owner</string>
+    <string name="filter_suggestions_group_other">More filters</string>
+    <string name="filter_suggestion_apply">Apply filter</string>
+    <plurals name="filter_suggestions_count">
+        <item quantity="one">%d filter suggestion</item>
+        <item quantity="other">%d filter suggestions</item>
+    </plurals>
 </resources>

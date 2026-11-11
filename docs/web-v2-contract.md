@@ -466,6 +466,21 @@ name. Share recipients get an empty `email`; administrators in the `all` scope
 see every other owner with their email. The web lists preselect the filter from
 `/app/projects?owner=` and `/app/yarns?owner=` (`me`, `shared` or a user id).
 
+### Filter suggestions
+
+`GET /search/suggestions?q=&kind=projects|yarns` (`kind` defaults to
+`projects`) feeds the typeahead under the search bars of the project and yarn
+lists. It answers `{data: {tags: [{tag, count}], categories: [{name}], owners:
+[{id, name, avatar_url}]}}`, at most five entries per group, for values that
+start (or whose words start) with the typed text, ignoring case and
+diacritics (`mu` and `mü` both find `Mütze`). Tags and categories come from the
+projects the caller sees (everybody's for administrators); yarns have neither.
+`owners` is filled for administrators only and is always empty for everyone
+else, and never carries an email address. A blank `q` answers three empty
+lists. The clients add the fixed filters (status, Mine and Shared with me,
+Favorites only, Trash) themselves from the same rules, and picking a suggestion
+sets the same filter and URL as the filter pills.
+
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,
 `notes`, `other_materials`, `tags`, `link`, `link_archive`,

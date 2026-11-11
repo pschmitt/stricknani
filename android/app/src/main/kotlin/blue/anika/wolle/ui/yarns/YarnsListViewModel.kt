@@ -13,7 +13,11 @@ import blue.anika.wolle.ui.common.OwnerChoice
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.SuggestedFilters
+import blue.anika.wolle.ui.common.SuggestionAction
+import blue.anika.wolle.ui.common.SuggestionKind
 import blue.anika.wolle.ui.common.TRASHED_ONLY
+import blue.anika.wolle.ui.common.applying
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge
@@ -180,6 +184,24 @@ constructor(
     /** The owner chips; selecting the active one again clears it. */
     fun onOwnerSelected(choice: OwnerChoice?) {
         _ownerChoice.value = choice
+    }
+
+    /**
+     * Picking a filter suggestion in the search field: that filter is set and the typed text, which
+     * only served to find it, is dropped.
+     */
+    fun onSuggestionPicked(action: SuggestionAction) {
+        val next =
+            SuggestedFilters(
+                    favoritesOnly = _favoritesOnly.value,
+                    owner = _ownerChoice.value,
+                    trashedOnly = _trashedOnly.value,
+                )
+                .applying(action, SuggestionKind.Yarns)
+        _searchQuery.value = ""
+        _favoritesOnly.value = next.favoritesOnly
+        _ownerChoice.value = next.owner
+        _trashedOnly.value = next.trashedOnly
     }
 
     /** Preselects an owner from the screen's navigation argument (`me`, `shared` or a user id). */
