@@ -51,6 +51,14 @@ account and everything it owns is destroyed at once, trashed items included.
 
 Owner or administrator only; anyone else gets `404`.
 
+* `GET /api/v2/projects?trashed=only` and `GET /api/v2/yarns?trashed=only` list
+  the trashed projects and yarns (with `trashed_at` and `purge_at`; live items
+  carry neither field). They take the same `owner=me|shared|<id>` filter as the
+  live lists (`owner_id` stays an alias for administrators); a recipient of a
+  share never sees the trash through it. The web Trash pill and the Android Trash
+  chip use them (Android fetches them online: trashed items are not synced into
+  Room) and open the read-only trashed page of the item.
+
 * `GET /api/v2/trash?scope=mine|all` lists the caller's trash
   (`all`: administrators only, others always get `mine`):
   `{"data": [{kind, id, name, owner, deleted_at, purge_at, days_remaining,

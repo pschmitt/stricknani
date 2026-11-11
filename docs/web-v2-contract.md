@@ -465,6 +465,12 @@ caller of the visible items as `{data: [{id, name, email, avatar_url}]}`, by
 name. Share recipients get an empty `email`; administrators in the `all` scope
 see every other owner with their email. The web lists preselect the filter from
 `/app/projects?owner=` and `/app/yarns?owner=` (`me`, `shared` or a user id).
+Items in the trash are never owner options and never count towards them.
+
+`owner` is the one owner parameter of every list: `?trashed=only` (the trash,
+see `trash-api.md`) honours it too. Non-administrators only ever list their own
+trashed items, so `owner=shared` (or another user's id) with `trashed=only` is
+empty for them. Administrators' `owner_id` stays as an alias of `owner=<id>`.
 
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,
