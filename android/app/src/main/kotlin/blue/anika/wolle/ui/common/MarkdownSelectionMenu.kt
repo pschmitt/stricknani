@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.common
 
 import android.content.Context
 import android.content.res.Resources
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -80,6 +81,7 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
 
     @Composable
     fun Menu(anchorCoordinates: () -> LayoutCoordinates?) {
+        BackHandler(enabled = active != null) { active?.close() }
         val menu = active ?: return
         val coordinates = anchorCoordinates() ?: return
         if (!coordinates.isAttached) return
@@ -88,7 +90,7 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
             onDismissRequest = menu::close,
             // Keep text-field focus so opening the menu does not hide the keyboard or clear
             // selection. The provider still closes it when the selection session ends.
-            properties = PopupProperties(focusable = false),
+            properties = PopupProperties(focusable = false, dismissOnClickOutside = true),
         ) {
             Column(
                 Modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
