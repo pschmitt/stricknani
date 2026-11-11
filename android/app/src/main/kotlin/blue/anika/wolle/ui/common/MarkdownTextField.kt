@@ -432,30 +432,34 @@ internal fun MarkdownTextField(
             )
         }
         if (visual) {
-            VisualEditor(
-                state = rich,
-                label = label,
-                labelIcon = labelIcon,
-                minLines = minLines,
-                modifier = fieldModifier.then(formatMenu),
-                keyboardOptions = keyboardOptions,
-                colors = colors,
-            )
+            MarkdownSelectionMenu {
+                VisualEditor(
+                    state = rich,
+                    label = label,
+                    labelIcon = labelIcon,
+                    minLines = minLines,
+                    modifier = fieldModifier.then(formatMenu),
+                    keyboardOptions = keyboardOptions,
+                    colors = colors,
+                )
+            }
         } else {
-            OutlinedTextField(
-                value = field,
-                onValueChange = {
-                    field = it
-                    if (it.text != currentValue) {
-                        emit(it.text)
-                    }
-                },
-                label = { FieldLabel(label, labelIcon) },
-                modifier = fieldModifier.then(formatMenu).fillMaxWidth(),
-                minLines = minLines,
-                keyboardOptions = keyboardOptions,
-                colors = colors,
-            )
+            MarkdownSelectionMenu {
+                OutlinedTextField(
+                    value = field,
+                    onValueChange = {
+                        field = it
+                        if (it.text != currentValue) {
+                            emit(it.text)
+                        }
+                    },
+                    label = { FieldLabel(label, labelIcon) },
+                    modifier = fieldModifier.then(formatMenu).fillMaxWidth(),
+                    minLines = minLines,
+                    keyboardOptions = keyboardOptions,
+                    colors = colors,
+                )
+            }
             if (unsupported) {
                 Text(
                     stringResource(R.string.markdown_editor_unsupported),
