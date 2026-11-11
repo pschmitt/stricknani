@@ -2863,14 +2863,6 @@ msgstr "Verschoben"
 msgid "N/A"
 msgstr "n. v."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:185
-msgid "Name, brand, colorway, or fiber"
-msgstr "Name, Marke, Farbe oder Faser"
-
-#: web/src/lib/features/projects/ProjectLibrary.svelte:256
-msgid "Name, notes, yarn, or tag"
-msgstr "Name, Notizen, Garn oder Schlagwort"
-
 #: web/src/lib/features/account/AccountSettings.svelte:1469
 msgid "Never used"
 msgstr "Nie verwendet"
@@ -4306,7 +4298,9 @@ msgid "Scroll down to Delete account and choose Delete my account."
 msgstr "Scrolle nach unten zu Konto löschen und wähle Mein Konto löschen."
 
 #: web/src/lib/components/CommandPalette.svelte:297
+#: web/src/lib/features/projects/ProjectLibrary.svelte:256
 #: web/src/lib/features/projects/YarnPicker.svelte:76
+#: web/src/lib/features/yarns/YarnLibrary.svelte:185
 msgid "Search"
 msgstr "Suchen"
 
@@ -5377,7 +5371,7 @@ msgstr "Der Server lieferte eine unerwartete Importantwort."
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
-#: web/src/lib/features/projects/project-api.ts:690
+#: web/src/lib/features/projects/project-api.ts:692
 #: web/src/lib/features/sharing/sharing-api.ts:71
 #: web/src/lib/features/yarns/yarn-api.ts:422
 msgid "The server returned an unexpected response."
@@ -5758,7 +5752,7 @@ msgstr ""
 "Dieser Text enthält Formatierungen, die der visuelle Editor nicht "
 "darstellen kann."
 
-#: web/src/lib/features/projects/project-api.ts:398
+#: web/src/lib/features/projects/project-api.ts:400
 msgid "This upload is larger than the 25 MiB limit."
 msgstr "Diese Datei ist größer als das Limit von 25 MiB."
 
@@ -7538,3 +7532,9 @@ msgstr ""
 
 #~ msgid "Tag"
 #~ msgstr "Schlagwort"
+
+#~ msgid "Name, brand, colorway, or fiber"
+#~ msgstr "Name, Marke, Farbe oder Faser"
+
+#~ msgid "Name, notes, yarn, or tag"
+#~ msgstr "Name, Notizen, Garn oder Schlagwort"

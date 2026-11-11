@@ -253,7 +253,7 @@
   <LibrarySearch
     query={filters.query}
     queryLabel={t("Search your projects", locale)}
-    placeholder={t("Name, notes, yarn, or tag", locale)}
+    placeholder={t("Search", locale)}
     removeFilterLabel={t("Remove filter", locale)}
     onquerydraft={(query) => (searchText = query)}
     onquerycommit={applyQuery}

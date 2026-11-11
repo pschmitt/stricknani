@@ -115,7 +115,6 @@
   }}
 >
   <label class="search-field">
-    <span class="visually-hidden">{queryLabel}</span>
     <NavIcon name="search" />
     <input
       type="search"
@@ -142,11 +141,13 @@
 
 <style>
   .library-search {
+    width: 100%;
     margin: 0;
   }
 
   .search-field {
     display: flex;
+    width: 100%;
     min-width: 0;
     min-height: 48px;
     align-items: center;

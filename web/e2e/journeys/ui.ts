@@ -874,6 +874,11 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     "the project card did not use the seeded same-origin photo",
   );
   let searchBox = page.getByRole("searchbox", { name: "Search your projects" });
+  check(
+    (await searchBox.getAttribute("placeholder")) === "Search" &&
+      (await searchBox.locator("xpath=..").innerText()).trim() === "",
+    "project search should show only the Search placeholder",
+  );
   markStage("searching project library by name");
   const [searchResponse] = await Promise.all([
     page.waitForResponse(

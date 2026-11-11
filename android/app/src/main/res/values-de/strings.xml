@@ -245,7 +245,7 @@
     <string name="project_editor_remove_attachment">Ausgewählten Anhang entfernen</string>
     <string name="project_attachment_delete_dialog_title">Anhang „%1$s“ löschen?</string>
     <string name="project_attachment_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
-    <string name="projects_list_search_placeholder">Deine Projekte durchsuchen</string>
+    <string name="projects_list_search_placeholder">Suchen</string>
     <string name="list_filter_all">Alle</string>
     <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>
     <string name="projects_list_empty_subtitle">Beginne mit einem Projekt und bewahre Anleitung und Fortschritt zusammen auf.</string>
@@ -356,7 +356,7 @@
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">Neues Garn</string>
-    <string name="yarns_list_search_placeholder">Garne durchsuchen</string>
+    <string name="yarns_list_search_placeholder">Suchen</string>
     <string name="yarns_list_favorites_only">Nur Favoriten</string>
     <string name="yarns_list_empty_title">Dein Garnvorrat ist leer</string>
     <string name="yarn_detail_not_found">Garn nicht gefunden</string>

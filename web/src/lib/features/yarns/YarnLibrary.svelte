@@ -182,7 +182,7 @@
   <LibrarySearch
     query={filters.query}
     queryLabel={t("Search your yarn", locale)}
-    placeholder={t("Name, brand, colorway, or fiber", locale)}
+    placeholder={t("Search", locale)}
     removeFilterLabel={t("Remove filter", locale)}
     onquerydraft={(query) => (searchText = query)}
     onquerycommit={applyQuery}

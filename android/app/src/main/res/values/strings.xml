@@ -246,7 +246,7 @@
     <string name="project_editor_remove_attachment">Remove selected attachment</string>
     <string name="project_attachment_delete_dialog_title">Delete attachment “%1$s”?</string>
     <string name="project_attachment_delete_dialog_text">This cannot be undone.</string>
-    <string name="projects_list_search_placeholder">Search your projects</string>
+    <string name="projects_list_search_placeholder">Search</string>
     <string name="list_filter_all">All</string>
     <string name="projects_list_empty_title">Nothing on the needles yet</string>
     <string name="projects_list_empty_subtitle">Start with one project to keep its pattern and progress together.</string>
@@ -357,7 +357,7 @@
 
     <!-- Yarns -->
     <string name="yarns_list_new_yarn_fab">New yarn</string>
-    <string name="yarns_list_search_placeholder">Search your yarn</string>
+    <string name="yarns_list_search_placeholder">Search</string>
     <string name="yarns_list_favorites_only">Favorites only</string>
     <string name="yarns_list_empty_title">Your stash is empty</string>
     <string name="yarn_detail_not_found">Yarn not found</string>

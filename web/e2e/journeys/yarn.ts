@@ -395,6 +395,14 @@ export async function runYarnJourney(
     });
     await yarnCard.waitFor({ state: "visible" });
     markStage("typing yarn search");
+    const yarnSearch = page.getByRole("searchbox", {
+      name: "Search your yarn",
+    });
+    check(
+      (await yarnSearch.getAttribute("placeholder")) === "Search" &&
+        (await yarnSearch.locator("xpath=..").innerText()).trim() === "",
+      "yarn search should show only the Search placeholder",
+    );
     await page
       .getByRole("searchbox", { name: "Search your yarn" })
       .fill("Riverbend");
