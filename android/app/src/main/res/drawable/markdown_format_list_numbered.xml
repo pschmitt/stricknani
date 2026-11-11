@@ -1,0 +1,10 @@
+<!-- Copyright 2025 The Android Open Source Project. Licensed under Apache-2.0. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M2,17h2v0.5L3,17.5v1h1v0.5L2,19v1h3v-4H2v1zM3,8h1L4,4H2v1h1v3zM2,11h1.8L2,13.1v0.9h3v-1l-1.8,0 1.8,-2.1V10H2v1zM7,5v2h14V5H7zM7,19h14v-2H7v2zM7,13h14v-2H7v2z" />
+</vector>

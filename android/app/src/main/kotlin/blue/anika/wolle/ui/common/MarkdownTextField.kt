@@ -224,20 +224,48 @@ internal fun MarkdownTextField(
             }
         }
     }
-    val menuLabels =
+    val menuItems =
         listOf(
-            MarkdownFormat.BOLD to stringResource(R.string.markdown_editor_bold),
-            MarkdownFormat.ITALIC to stringResource(R.string.markdown_editor_italic),
-            MarkdownFormat.HEADING to stringResource(R.string.markdown_editor_heading),
-            MarkdownFormat.BULLET_LIST to stringResource(R.string.markdown_editor_bullet_list),
-            MarkdownFormat.NUMBERED_LIST to stringResource(R.string.markdown_editor_numbered_list),
-            MarkdownFormat.LINK to stringResource(R.string.markdown_editor_link),
+            Triple(
+                MarkdownFormat.BOLD,
+                stringResource(R.string.markdown_editor_bold),
+                R.drawable.markdown_format_bold,
+            ),
+            Triple(
+                MarkdownFormat.ITALIC,
+                stringResource(R.string.markdown_editor_italic),
+                R.drawable.markdown_format_italic,
+            ),
+            Triple(
+                MarkdownFormat.HEADING,
+                stringResource(R.string.markdown_editor_heading),
+                R.drawable.markdown_title,
+            ),
+            Triple(
+                MarkdownFormat.BULLET_LIST,
+                stringResource(R.string.markdown_editor_bullet_list),
+                R.drawable.markdown_format_list_bulleted,
+            ),
+            Triple(
+                MarkdownFormat.NUMBERED_LIST,
+                stringResource(R.string.markdown_editor_numbered_list),
+                R.drawable.markdown_format_list_numbered,
+            ),
+            Triple(
+                MarkdownFormat.LINK,
+                stringResource(R.string.markdown_editor_link),
+                R.drawable.markdown_link,
+            ),
         )
     // Bold and Italic first, right after the system's Cut / Copy / Paste.
     val formatMenu = Modifier.appendTextContextMenuComponents {
         separator()
-        for ((format, menuLabel) in menuLabels) {
-            item(key = "markdown-${format.name}", label = menuLabel) {
+        for ((format, menuLabel, icon) in menuItems) {
+            item(
+                key = "markdown-${format.name}",
+                label = menuLabel,
+                leadingIcon = icon,
+            ) {
                 close()
                 applyFormat(format)
             }
