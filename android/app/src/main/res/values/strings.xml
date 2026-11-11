@@ -1598,4 +1598,16 @@
         <item quantity="other">It will be deleted permanently in %1$d days.</item>
     </plurals>
     <string name="trash_banner_delete">Delete permanently</string>
+
+    <!-- Typeahead filter suggestions below the search fields of the project and yarn lists -->
+    <string name="filter_suggestions_group_tags">Tags</string>
+    <string name="filter_suggestions_group_categories">Categories</string>
+    <string name="filter_suggestions_group_status">Status</string>
+    <string name="filter_suggestions_group_owners">Owner</string>
+    <string name="filter_suggestions_group_other">More filters</string>
+    <string name="filter_suggestion_apply">Apply filter</string>
+    <plurals name="filter_suggestions_count">
+        <item quantity="one">%d filter suggestion</item>
+        <item quantity="other">%d filter suggestions</item>
+    </plurals>
 </resources>

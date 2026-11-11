@@ -20,9 +20,13 @@ import blue.anika.wolle.ui.common.OwnerChoice
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.SuggestedFilters
+import blue.anika.wolle.ui.common.SuggestionAction
+import blue.anika.wolle.ui.common.SuggestionKind
 import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.TrashedList
 import blue.anika.wolle.ui.common.filterTrashedProjects
+import blue.anika.wolle.ui.common.applying
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge
@@ -386,6 +390,30 @@ constructor(
         _statusFilter.value = null
         _ownerChoice.value = null
         _trashedOnly.value = false
+    }
+
+    /**
+     * Picking a filter suggestion in the search field: that filter is set and the typed text, which
+     * only served to find it, is dropped.
+     */
+    fun onSuggestionPicked(action: SuggestionAction) {
+        val next =
+            SuggestedFilters(
+                    category = _selectedCategory.value,
+                    tag = _selectedTag.value,
+                    favoritesOnly = _favoritesOnly.value,
+                    status = _statusFilter.value,
+                    owner = _ownerChoice.value,
+                    trashedOnly = _trashedOnly.value,
+                )
+                .applying(action, SuggestionKind.Projects)
+        _searchQuery.value = ""
+        _selectedCategory.value = next.category
+        _selectedTag.value = next.tag
+        _favoritesOnly.value = next.favoritesOnly
+        _statusFilter.value = next.status
+        _ownerChoice.value = next.owner
+        _trashedOnly.value = next.trashedOnly
     }
 
     fun onTagSelected(tag: String?) {

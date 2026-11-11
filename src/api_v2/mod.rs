@@ -48,6 +48,7 @@ mod project_timer;
 mod projects;
 mod push;
 mod resource_history;
+mod search;
 mod sharing;
 mod signup;
 mod sync;
@@ -182,6 +183,7 @@ fn router_with_context(
         .merge(oidc_login::router())
         .merge(projects::router())
         .merge(resource_history::router())
+        .merge(search::router())
         .merge(sharing::router())
         .merge(activity::router())
         .merge(sync::router())

@@ -47,6 +47,7 @@ pub mod projects;
 pub mod pwa;
 pub(crate) mod resource_access;
 mod restore;
+pub(crate) mod search_suggestions;
 pub mod security;
 pub(crate) mod sharing;
 pub mod sync;

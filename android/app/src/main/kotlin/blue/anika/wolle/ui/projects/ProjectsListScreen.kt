@@ -42,6 +42,7 @@ import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.ui.common.AllFilterChip
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.FilterSearchField
 import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
@@ -49,8 +50,9 @@ import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.PROJECT_STATUSES
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
-import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
+import blue.anika.wolle.ui.common.SuggestionKind
+import blue.anika.wolle.ui.common.buildFilterSuggestions
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.libraryChips
 import blue.anika.wolle.ui.common.ownerBadge
@@ -60,6 +62,8 @@ import blue.anika.wolle.ui.common.projectStatusLabel
 import blue.anika.wolle.ui.common.rememberEveryoneFilter
 import blue.anika.wolle.ui.common.trashDaysLeft
 import blue.anika.wolle.ui.common.trashedUpdatedAt
+import blue.anika.wolle.ui.common.rememberFixedFilterLabels
+import blue.anika.wolle.ui.common.rememberIsAdmin
 import blue.anika.wolle.ui.imports.WaitingForReview
 import blue.anika.wolle.ui.trash.TrashedListBody
 
@@ -132,11 +136,27 @@ fun ProjectsListScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             Column(Modifier.fillMaxSize()) {
-                SearchField(
+                val isAdmin = rememberIsAdmin()
+                val fixedLabels = rememberFixedFilterLabels()
+                val suggestions =
+                    remember(searchQuery, tags, categories, owners, isAdmin, fixedLabels) {
+                        buildFilterSuggestions(
+                            query = searchQuery,
+                            kind = SuggestionKind.Projects,
+                            tags = tags,
+                            categories = categories.map { it.name },
+                            owners = owners,
+                            isAdmin = isAdmin,
+                            labels = fixedLabels,
+                        )
+                    }
+                FilterSearchField(
                     value = searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
                     placeholder = stringResource(R.string.projects_list_search_placeholder),
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    suggestions = suggestions,
+                    onSuggestion = { viewModel.onSuggestionPicked(it.action) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 val (everyoneFilter, selectEveryone) = rememberEveryoneFilter()

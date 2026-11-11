@@ -14,6 +14,11 @@
   import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
   import { listOwners } from "#lib/owner-filter.ts";
   import { trashDaysLeft } from "#lib/trash-filter.ts";
+  import {
+    applyYarnSuggestion,
+    loadFilterSuggestions,
+    type FilterSuggestion,
+  } from "#lib/search-suggestions.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -114,6 +119,32 @@
     });
   }
 
+  // Typing offers matching filters (tags, categories, status, owners for administrators,
+  // Trash): picking one applies it, as the filter pills do, and drops the typed text.
+  const suggestionConfig = $derived({
+    load: (query: string, signal: AbortSignal) =>
+      loadFilterSuggestions("yarns", query, locale, signal),
+    select: (suggestion: FilterSuggestion) => {
+      searchText = "";
+      applyFilters(applyYarnSuggestion(filters, suggestion.action));
+    },
+    groupLabels: {
+      tags: t("Tags", locale),
+      categories: t("Categories", locale),
+      status: t("Status", locale),
+      owners: t("Owner", locale),
+      other: t("More filters", locale),
+    },
+    listLabel: t("Filter suggestions", locale),
+    announce: (count: number) =>
+      count === 1
+        ? t("1 filter suggestion", locale)
+        : t("{count} filter suggestions", locale).replace(
+            "{count}",
+            String(count),
+          ),
+  });
+
   function applyQuery(query: string) {
     searchText = query;
     applyFilters({ ...filters, query }, true);
@@ -205,6 +236,7 @@
     removeFilterLabel={t("Remove filter", locale)}
     onquerydraft={(query) => (searchText = query)}
     onquerycommit={applyQuery}
+    suggestions={suggestionConfig}
   />
 
   <div
