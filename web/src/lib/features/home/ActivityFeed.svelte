@@ -248,7 +248,7 @@
                 {:else}
                   <div class="tl__row">{@render row()}</div>
                 {/if}
-                {#if item.action === "trashed" && item.state === "in_trash"}
+                {#if item.action === "trashed" && item.state === "in_trash" && item.trash !== null}
                   <p class="tl__actions">
                     <a
                       href={resolve("/trash")}

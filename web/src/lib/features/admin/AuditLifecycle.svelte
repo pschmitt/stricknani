@@ -32,8 +32,10 @@
   const owner = $derived(lifecycleSubjectText(event.subject, locale));
   // The resource state of a file or step event describes its project or yarn, not the item:
   // those only link to the Trash page, where they are restored.
+  // The server sends `trash` only for events about the item itself.
   const itemEvent = $derived(
-    event.media !== null || event.action.startsWith("step_"),
+    event.resource.trash === null &&
+      (event.media !== null || event.action.startsWith("step_")),
   );
   const lifecycleAction = $derived(itemEvent ? "" : event.action);
   const stateText = $derived(

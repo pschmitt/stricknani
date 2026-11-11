@@ -334,6 +334,7 @@ export function parseYarnSummary(value: unknown): YarnSummary {
     preview_url: value.preview_url,
     ...ownerField(value.owner),
     ...accessField(value.access),
+    ...trashedFields(value),
   };
 }
 

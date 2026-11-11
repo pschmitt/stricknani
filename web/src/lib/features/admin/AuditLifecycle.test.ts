@@ -99,11 +99,14 @@ describe("AuditLifecycle", () => {
         thumbnail_url: null,
       },
     });
+    file.resource = { ...file.resource, trash: null };
     const body = html(file);
     expect(body).toContain("audit-open-trash");
     expect(body).not.toContain("audit-restore");
     expect(body).not.toContain("In the trash");
-    const step = html(event({ action: "step_trashed" }));
+    const stepEvent = event({ action: "step_trashed" });
+    stepEvent.resource = { ...stepEvent.resource, trash: null };
+    const step = html(stepEvent);
     expect(step).toContain("audit-open-trash");
     expect(step).not.toContain("audit-restore");
   });
