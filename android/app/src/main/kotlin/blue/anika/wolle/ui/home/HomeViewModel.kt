@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.BuildConfig
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
@@ -25,6 +26,8 @@ import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
+import blue.anika.wolle.ui.common.OwnerChoice
+import blue.anika.wolle.ui.common.ownerChoiceMatches
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -39,6 +42,23 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val SECTION_LIMIT = 10
+
+/** The Home shelf "Ongoing projects" shows this many tiles, like the website's six. */
+internal const val ONGOING_SHELF_LIMIT = 6
+
+/**
+ * The user's own projects in progress for Home's "Ongoing projects" shelf: [projects] are in
+ * most-recently-updated-first order and every status; items shared with the user, or other users'
+ * projects an administrator sees, are not "their" ongoing projects.
+ */
+internal fun ongoingOwnProjects(
+    projects: List<ProjectEntity>,
+    currentUserId: Long?,
+): List<ProjectEntity> =
+    projects
+        .filter { it.status == ProjectStatus.IN_PROGRESS }
+        .filter { ownerChoiceMatches(OwnerChoice.Mine, it.ownerId, currentUserId) }
+        .take(ONGOING_SHELF_LIMIT)
 
 /**
  * No "recently viewed" tracking exists yet (would need a view-log table) - "recent" here is the
@@ -146,6 +166,20 @@ constructor(
         yarnRepository
             .observeAll()
             .map { it.filter { yarn -> yarn.isFavorite }.take(SECTION_LIMIT) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
+
+    /**
+     * Every project in progress, most recently updated first. The screen keeps the user's own and
+     * the first [SECTION_LIMIT] (it knows who the user is).
+     */
+    val ongoingProjects: StateFlow<List<ProjectEntity>> =
+        projectRepository
+            .observeAll()
+            .map { it.filter { project -> project.status == ProjectStatus.IN_PROGRESS } }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),

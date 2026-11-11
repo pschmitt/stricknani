@@ -43,7 +43,7 @@ fun createOptions(offers: ImportOffers = ImportOffers()): List<CreateOption> =
         ),
     )
 
-/** The subtitle of the Create card on Home and in More. */
+/** The subtitle of the Create row in More. */
 @StringRes
 fun moreCreateSubtitleRes(offers: ImportOffers, localMode: Boolean): Int =
     when {

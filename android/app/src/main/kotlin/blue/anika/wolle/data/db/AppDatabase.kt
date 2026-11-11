@@ -24,7 +24,7 @@ import blue.anika.wolle.data.db.entity.YarnEntity
             SyncStateEntity::class,
             PendingMutationEntity::class,
         ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -82,3 +82,19 @@ internal val MIGRATION_4_5_STATEMENTS: List<String> =
             "ALTER TABLE `$table` ADD COLUMN `canManage` INTEGER",
         )
     }
+
+/**
+ * 5 -> 6 (project status): projects remember their status for the list filter and the card badge.
+ * Existing rows read as `in_progress`, exactly what every project was before the feature, so no
+ * cached item, cursor or queued write changes. The next sync of an edited project brings the real
+ * value.
+ */
+val MIGRATION_5_6: Migration =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_5_6_STATEMENTS.forEach(db::execSQL)
+        }
+    }
+
+internal val MIGRATION_5_6_STATEMENTS: List<String> =
+    listOf("ALTER TABLE `projects` ADD COLUMN `status` TEXT NOT NULL DEFAULT 'in_progress'")

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -68,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.ui.common.CategorySelectField
+import blue.anika.wolle.ui.common.ProjectStatusSelectField
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.DestructiveDeleteIcon
 import blue.anika.wolle.ui.common.DiscardChangesDialog
@@ -518,6 +520,14 @@ fun ProjectEditorScreen(
                         icon = PhosphorIcons.Info,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ProjectStatusSelectField(
+                                value = form.status,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(status = value) }
+                                },
+                                label = stringResource(R.string.project_editor_status_label),
+                                labelIcon = Icons.Outlined.Flag,
+                            )
                             CategorySelectField(
                                 value = form.category,
                                 onValueChange = { value ->

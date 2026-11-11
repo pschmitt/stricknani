@@ -36,6 +36,10 @@ data class LibraryCardData(
     val imageUrl: String?,
     val isFavorite: Boolean,
     val chips: List<String>,
+    /** A project's status; only a done project shows a badge (`in_progress` shows none). */
+    val status: String? = null,
+    /** Whole days left in the trash for a trashed item (Trash filter); null otherwise. */
+    val trashDaysLeft: Int? = null,
     /** Set for items owned by someone else (administrators): the owner's avatar badge. */
     val owner: OwnerBadgeData? = null,
 )

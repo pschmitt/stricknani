@@ -4,6 +4,7 @@ import blue.anika.wolle.data.api.dto.AccessDto
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.OwnerDto
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -47,6 +48,7 @@ data class ProjectV2Dto(
     @SerialName("link_archive") val linkArchive: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean,
     @SerialName("is_favorite") val isFavorite: Boolean,
+    val status: String = ProjectStatus.IN_PROGRESS,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("yarn_ids") val yarnIds: List<Int> = emptyList(),

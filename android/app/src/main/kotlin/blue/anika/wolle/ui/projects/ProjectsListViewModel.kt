@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.projects
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
@@ -10,11 +11,19 @@ import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.OwnerBadgeData
+import blue.anika.wolle.ui.common.OwnerChoice
+import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
+import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerChoiceFromArg
+import blue.anika.wolle.ui.common.ownerChoiceMatches
+import blue.anika.wolle.ui.common.ownerOptions
+import blue.anika.wolle.ui.common.trashDaysLeft
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
@@ -49,10 +58,19 @@ internal fun filterProjects(
     tag: String?,
     decodeTags: (ProjectEntity) -> List<String>,
     favoritesOnly: Boolean = false,
+    status: String? = null,
+    owner: OwnerChoice? = null,
+    currentUserId: Long? = null,
+    /** With the Trash filter on, whether a project is in the trash; unused (and free) otherwise. */
+    trashedOnly: Boolean = false,
+    isTrashed: (ProjectEntity) -> Boolean = { false },
 ): List<ProjectEntity> =
     entities
         .asSequence()
+        .filter { !trashedOnly || isTrashed(it) }
         .filter { !favoritesOnly || it.isFavorite }
+        .filter { status == null || it.status == status }
+        .filter { ownerChoiceMatches(owner, it.ownerId, currentUserId) }
         .filter { category == null || it.category == category }
         .filter {
             tag == null ||
@@ -96,6 +114,21 @@ constructor(
     private val _favoritesOnly = MutableStateFlow(false)
     val favoritesOnly: StateFlow<Boolean> = _favoritesOnly.asStateFlow()
 
+    /** `in_progress`, `done` or null for every status; same filter as the web list's pills. */
+    private val _statusFilter = MutableStateFlow<String?>(null)
+    val statusFilter: StateFlow<String?> = _statusFilter.asStateFlow()
+
+    /** Whose projects (Mine, Shared with me, one owner); null shows everybody's. */
+    private val _ownerChoice = MutableStateFlow<OwnerChoice?>(null)
+    val ownerChoice: StateFlow<OwnerChoice?> = _ownerChoice.asStateFlow()
+
+    /** The Trash filter: only projects in the trash (`?trashed=only` of the web page). */
+    private val _trashedOnly = MutableStateFlow(false)
+    val trashedOnly: StateFlow<Boolean> = _trashedOnly.asStateFlow()
+
+    /** The signed-in user, set by the screen from the composition's owner context. */
+    private val _currentUserId = MutableStateFlow<Long?>(null)
+
     private val refreshController =
         RefreshController(
             viewModelScope,
@@ -134,21 +167,60 @@ constructor(
                 emptyList(),
             )
 
+    /** The switch-like filters travel together so the five-flow `combine` overload fits. */
+    private data class FlagFilters(
+        val favoritesOnly: Boolean = false,
+        val status: String? = null,
+        val owner: OwnerChoice? = null,
+        val currentUserId: Long? = null,
+        val trashedOnly: Boolean = false,
+    )
+
+    private val flagFilters: StateFlow<FlagFilters> =
+        combine(favoritesOnly, statusFilter, ownerChoice, _currentUserId, trashedOnly) {
+                favorites,
+                status,
+                owner,
+                me,
+                trashed ->
+                FlagFilters(favorites, status, owner, me, trashed)
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                FlagFilters(),
+            )
+
+    /** The other owners of the projects this device holds: the owner chips. */
+    val owners: StateFlow<List<OwnerBadgeData>> =
+        combine(allProjects, _currentUserId) { entities, me ->
+                ownerOptions(entities.asSequence().map { it.ownerBadge(me) })
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
+            )
+
     val projects: StateFlow<List<ProjectEntity>> =
-        combine(
-                allProjects,
-                debouncedSearchQuery,
-                selectedCategory,
-                selectedTag,
-                favoritesOnly,
-            ) { entities, query, category, tag, favoritesOnly ->
+        combine(allProjects, debouncedSearchQuery, selectedCategory, selectedTag, flagFilters) {
+                entities,
+                query,
+                category,
+                tag,
+                flags ->
                 filterProjects(
                     entities,
                     query,
                     category,
                     tag,
                     projectRepository::decodeTags,
-                    favoritesOnly,
+                    flags.favoritesOnly,
+                    flags.status,
+                    flags.owner,
+                    flags.currentUserId,
+                    flags.trashedOnly,
+                    ::isTrashed,
                 )
             }
             .stateIn(
@@ -178,6 +250,55 @@ constructor(
         _favoritesOnly.value = favoritesOnly
     }
 
+    /** Whether a cached project is in the trash (its detail carries `trashed_at`). */
+    private fun isTrashed(entity: ProjectEntity): Boolean =
+        runCatching { projectRepository.decodeDetail(entity).trashedAt != null }.getOrDefault(false)
+
+    /** Days left in the trash for the card badge; null outside the Trash filter. */
+    fun trashDaysLeft(entity: ProjectEntity): Int? =
+        if (!_trashedOnly.value) null
+        else
+            runCatching {
+                    val detail = projectRepository.decodeDetail(entity)
+                    trashDaysLeft(detail.trashedAt, detail.purgeAt, System.currentTimeMillis())
+                }
+                .getOrNull()
+
+    fun onTrashedOnlyChange(trashedOnly: Boolean) {
+        _trashedOnly.value = trashedOnly
+    }
+
+    fun setCurrentUserId(id: Long?) {
+        _currentUserId.value = id
+    }
+
+    /** The owner chips; selecting the active one again clears it. */
+    fun onOwnerSelected(choice: OwnerChoice?) {
+        _ownerChoice.value = choice
+    }
+
+    /**
+     * Preselects the filters from the screen's navigation arguments: [owner] is `me`, `shared` or
+     * a user id, [status] `in_progress` or `done`. Once per screen instance, so a rotation does not
+     * bring back a filter the user cleared.
+     */
+    fun applyInitialFilters(owner: String?, status: String?, trashed: String? = null) {
+        if (initialFiltersApplied) return
+        initialFiltersApplied = true
+        if (trashed == TRASHED_ONLY) _trashedOnly.value = true
+        ownerChoiceFromArg(owner)?.let { _ownerChoice.value = it }
+        status?.takeIf { it == ProjectStatus.IN_PROGRESS || it == ProjectStatus.DONE }?.let {
+            _statusFilter.value = it
+        }
+    }
+
+    private var initialFiltersApplied = false
+
+    /** Selecting the active status pill again clears it, like the category and tag pills. */
+    fun onStatusSelected(status: String?) {
+        _statusFilter.value = if (_statusFilter.value == status) null else status
+    }
+
     /**
      * "All": every filter off (category, tag, favourites). The Mine chip is reset by the screen.
      */
@@ -185,6 +306,9 @@ constructor(
         _selectedCategory.value = null
         _selectedTag.value = null
         _favoritesOnly.value = false
+        _statusFilter.value = null
+        _ownerChoice.value = null
+        _trashedOnly.value = false
     }
 
     fun onTagSelected(tag: String?) {

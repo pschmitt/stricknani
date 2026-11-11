@@ -27,6 +27,24 @@ sealed interface Route {
 
     @Serializable data object Yarns : Route
 
+    /**
+     * The project list with filters preselected: [owner] is `me`, `shared` or a user id and
+     * [status] `in_progress` or `done`, like `?owner=` and `?status=` of the website's
+     * `/app/projects`. Same screen as [Projects]; Home's "Ongoing projects" opens it with
+     * `owner = "me", status = "in_progress"`.
+     */
+    @Serializable
+    data class ProjectsFiltered(
+        val owner: String? = null,
+        val status: String? = null,
+        /** `only` lists the trash, like `?trashed=only`. */
+        val trashed: String? = null,
+    ) : Route
+
+    /** The yarn list with the owner filter preselected; see [ProjectsFiltered]. */
+    @Serializable
+    data class YarnsByOwner(val owner: String? = null, val trashed: String? = null) : Route
+
     @Serializable data object Search : Route
 
     @Serializable data object Settings : Route
@@ -109,7 +127,12 @@ enum class TopLevelDestination(
         Route.Projects,
         R.string.destination_label_projects,
         PhosphorIcons.Hoodie,
-        setOf(Route.Projects::class, Route.ProjectDetail::class, Route.ProjectEditor::class),
+        setOf(
+            Route.Projects::class,
+            Route.ProjectsFiltered::class,
+            Route.ProjectDetail::class,
+            Route.ProjectEditor::class,
+        ),
     ),
     CATEGORIES(
         Route.Categories,
@@ -122,7 +145,12 @@ enum class TopLevelDestination(
         Route.Yarns,
         R.string.destination_label_yarns,
         MdiIcons.YarnBall,
-        setOf(Route.Yarns::class, Route.YarnDetail::class, Route.YarnEditor::class),
+        setOf(
+            Route.Yarns::class,
+            Route.YarnsByOwner::class,
+            Route.YarnDetail::class,
+            Route.YarnEditor::class,
+        ),
     ),
     SEARCH(
         Route.Search,

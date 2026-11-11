@@ -31,6 +31,7 @@ interface ProjectsV2Api {
         @Query("category") category: String? = null,
         @Query("tag") tag: String? = null,
         @Query("favorite") favorite: Boolean? = null,
+        @Query("status") status: String? = null,
         @Query("q") query: String? = null,
     ): V2ListEnvelope<ProjectListItemDto>
 
@@ -64,6 +65,13 @@ interface ProjectsV2Api {
 
     @DELETE("api/v2/projects/{projectId}/favorite")
     suspend fun unfavoriteProject(@Path("projectId") projectId: Int): V2Envelope<ProjectV2Dto>
+
+    /** The quick "Mark as done" toggle; `status` is `in_progress` or `done`. */
+    @PUT("api/v2/projects/{projectId}/status")
+    suspend fun setProjectStatus(
+        @Path("projectId") projectId: Int,
+        @Body body: ProjectStatusRequest,
+    ): V2Envelope<ProjectV2Dto>
 
     @Multipart
     @POST("api/v2/projects/{projectId}/images/title")
@@ -128,3 +136,6 @@ data class ProjectTimerRequest(
     val action: String,
     @SerialName("total_seconds") val totalSeconds: Long? = null,
 )
+
+/** Body of `PUT /api/v2/projects/{id}/status`. */
+@Serializable data class ProjectStatusRequest(val status: String)

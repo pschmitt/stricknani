@@ -2,13 +2,14 @@ package blue.anika.wolle.ui.yarns
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,12 +47,12 @@ import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MdiIcons
-import blue.anika.wolle.ui.common.MineFilterChip
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerFilterItems
 import blue.anika.wolle.ui.common.rememberEveryoneFilter
 import blue.anika.wolle.ui.common.yarnChips
 import blue.anika.wolle.ui.common.yarnMetaLine
@@ -65,11 +67,23 @@ fun YarnsListScreen(
     onOpenDraft: (ImportJobDto) -> Unit = {},
     /** Shown as a back arrow when Yarns is not a visible tab (opened from Home's stash card). */
     onBack: (() -> Unit)? = null,
+    /** Preselects the owner filter: `me`, `shared` or a user id (the `?owner=` of the web page). */
+    initialOwner: String? = null,
+    /** Preselects the Trash filter: `only` (the `?trashed=only` of the web page). */
+    initialTrashed: String? = null,
     viewModel: YarnsListViewModel = hiltViewModel(),
 ) {
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
+    val ownerChoice by viewModel.ownerChoice.collectAsStateWithLifecycle()
+    val trashedOnly by viewModel.trashedOnly.collectAsStateWithLifecycle()
+    val owners by viewModel.owners.collectAsStateWithLifecycle()
+    val currentUserId = LocalOwnerContext.current.currentUserId
+    LaunchedEffect(currentUserId) { viewModel.setCurrentUserId(currentUserId) }
+    LaunchedEffect(initialOwner, initialTrashed) {
+        viewModel.applyInitialOwner(initialOwner, initialTrashed)
+    }
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -121,23 +135,39 @@ fun YarnsListScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
                 val (everyoneFilter, selectEveryone) = rememberEveryoneFilter()
-                Row(
+                LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    modifier = Modifier.testTag("yarns-list-filters"),
                 ) {
-                    AllFilterChip(
-                        selected = !favoritesOnly && !everyoneFilter.mineSelected,
-                        onClick = {
-                            viewModel.clearFilters()
-                            if (everyoneFilter.mineSelected) selectEveryone(true)
-                        },
+                    item {
+                        AllFilterChip(
+                            selected =
+                                !favoritesOnly &&
+                                    ownerChoice == null &&
+                                    !trashedOnly &&
+                                    !everyoneFilter.mineSelected,
+                            onClick = {
+                                viewModel.clearFilters()
+                                if (everyoneFilter.mineSelected) selectEveryone(true)
+                            },
+                        )
+                    }
+                    item(key = "favorites-only") {
+                        FilterChip(
+                            selected = favoritesOnly,
+                            onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
+                            label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
+                        )
+                    }
+                    ownerFilterItems(
+                        choice = ownerChoice,
+                        owners = owners,
+                        onSelect = viewModel::onOwnerSelected,
+                        testTagPrefix = "yarns-list",
+                        trashedOnly = trashedOnly,
+                        onTrashToggle = { viewModel.onTrashedOnlyChange(!trashedOnly) },
                     )
-                    FilterChip(
-                        selected = favoritesOnly,
-                        onClick = { viewModel.onFavoritesOnlyChange(!favoritesOnly) },
-                        label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
-                    )
-                    MineFilterChip(everyoneFilter, selectEveryone)
                 }
                 Spacer(Modifier.height(8.dp))
 
@@ -151,6 +181,8 @@ fun YarnsListScreen(
                 val filtered =
                     searchQuery.isNotBlank() ||
                         favoritesOnly ||
+                        ownerChoice != null ||
+                        trashedOnly ||
                         (everyoneFilter.available && !everyoneFilter.enabled)
                 if (yarns.isEmpty()) {
                     LazyColumn(
@@ -190,6 +222,7 @@ fun YarnsListScreen(
                                     imageUrl = viewModel.previewUrl(yarn),
                                     isFavorite = yarn.isFavorite,
                                     chips = yarnChips(yarn.weightCategory),
+                                    trashDaysLeft = viewModel.trashDaysLeft(yarn),
                                     owner = yarn.ownerBadge(me),
                                 )
                             }

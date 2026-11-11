@@ -3,6 +3,15 @@ package blue.anika.wolle.data.api.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** The two project statuses of the wire (`projects.status`); shown as "In progress" and "Done". */
+object ProjectStatus {
+    const val IN_PROGRESS = "in_progress"
+    const val DONE = "done"
+
+    /** Anything that is not [DONE] counts as in progress, so an unknown value never hides a project. */
+    fun normalize(value: String?): String = if (value == DONE) DONE else IN_PROGRESS
+}
+
 /** `stricknani/routes/api/schemas.py`'s `StepResponse`. */
 @Serializable
 data class StepDto(
@@ -71,6 +80,8 @@ data class ProjectDto(
     @SerialName("link_archive") val linkArchive: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean,
     @SerialName("is_favorite") val isFavorite: Boolean,
+    /** `in_progress` or `done` (v2 only); servers that predate project status mean in progress. */
+    val status: String = ProjectStatus.IN_PROGRESS,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("yarn_ids") val yarnIds: List<Int> = emptyList(),
@@ -81,6 +92,10 @@ data class ProjectDto(
     val owner: OwnerDto? = null,
     /** What the caller may do with it; null = the user's own (placeholders, older servers). */
     val access: AccessDto? = null,
+    /** Set while the item is in the trash (API v2, `trashed=only` lists); null otherwise. */
+    @SerialName("trashed_at") val trashedAt: String? = null,
+    /** When the trash is emptied for this item. */
+    @SerialName("purge_at") val purgeAt: String? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `ProjectListItemResponse`. */
@@ -91,6 +106,7 @@ data class ProjectListItemDto(
     val category: String? = null,
     val tags: List<String> = emptyList(),
     @SerialName("is_favorite") val isFavorite: Boolean,
+    val status: String = ProjectStatus.IN_PROGRESS,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("preview_url") val previewUrl: String? = null,
 )
@@ -108,6 +124,8 @@ data class ProjectWriteRequest(
     val tags: List<String> = emptyList(),
     val link: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
+    /** `in_progress` or `done`; null leaves a project's status as it is (a create starts open). */
+    val status: String? = null,
     @SerialName("yarn_ids") val yarnIds: List<Int> = emptyList(),
     /**
      * Yarns the server creates together with a new project and links to it (imports). Create only;

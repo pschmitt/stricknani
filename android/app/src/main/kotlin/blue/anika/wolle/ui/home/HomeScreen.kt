@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -101,9 +101,6 @@ import blue.anika.wolle.ui.common.mascot.MascotCue
 import blue.anika.wolle.ui.common.mascot.MascotCueKind
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.stitchedBorder
-import blue.anika.wolle.ui.create.ImportOfferViewModel
-import blue.anika.wolle.ui.create.ImportOffers
-import blue.anika.wolle.ui.create.moreCreateSubtitleRes
 import blue.anika.wolle.ui.imports.WaitingForReview
 import blue.anika.wolle.ui.signin.SignedOutPanel
 import blue.anika.wolle.ui.update.UpdateInstallEffects
@@ -122,19 +119,22 @@ fun HomeScreen(
     onSignIn: () -> Unit,
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
-    onCreateClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
     onSeeAllActivity: () -> Unit = {},
+    /** Opens the project list filtered to the user's projects in progress. */
+    onSeeAllOngoing: () -> Unit = {},
     /** Opens the editor on an import draft that waits for review. */
     onOpenDraft: (ImportJobDto) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
-    importOfferViewModel: ImportOfferViewModel = hiltViewModel(),
 ) {
     val currentUserId = LocalOwnerContext.current.currentUserId
-    val importOffers by importOfferViewModel.offers.collectAsStateWithLifecycle()
     val favoriteProjects by viewModel.favoriteProjects.collectAsStateWithLifecycle()
     val favoriteYarns by viewModel.favoriteYarns.collectAsStateWithLifecycle()
     val recentProjects by viewModel.recentProjects.collectAsStateWithLifecycle()
+    val allOngoing by viewModel.ongoingProjects.collectAsStateWithLifecycle()
+    // The user's own projects in progress, most recently updated first.
+    val ongoingProjects =
+        remember(allOngoing, currentUserId) { ongoingOwnProjects(allOngoing, currentUserId) }
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
@@ -361,13 +361,28 @@ fun HomeScreen(
                             )
                         }
                     }
-                    spacedItem {
-                        CreateCard(
-                            onClick = onCreateClick,
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            localMode = viewModel.isLocalMode,
-                            offers = importOffers,
-                        )
+                    if (ongoingProjects.isNotEmpty()) {
+                        spacedItem {
+                            HomeShelf(
+                                title = stringResource(R.string.home_ongoing_projects_title),
+                                icon = PhosphorIcons.Hoodie,
+                                accent = MaterialTheme.colorScheme.primary,
+                                onSeeAll = onSeeAllOngoing,
+                            ) {
+                                itemsIndexed(ongoingProjects, key = { _, it -> "op-${it.id}" }) {
+                                    index,
+                                    project ->
+                                    ShelfTile(
+                                        title = project.name,
+                                        previewUrl = viewModel.previewUrl(project.previewUrl),
+                                        fallbackIcon = PhosphorIcons.Hoodie,
+                                        tint = tileTint(index),
+                                        owner = project.ownerBadge(currentUserId),
+                                        onClick = { onProjectClick(project.id) },
+                                    )
+                                }
+                            }
+                        }
                     }
                     if (favoriteProjects.isNotEmpty()) {
                         spacedItem {
@@ -736,53 +751,6 @@ private fun relativeDay(millis: Long): String =
         )
         .toString()
 
-/** The way into the Create screen: a lagoon card right under "Continue knitting". */
-@Composable
-private fun CreateCard(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    localMode: Boolean = false,
-    offers: ImportOffers = ImportOffers(),
-) {
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        modifier = modifier.fillMaxWidth().testTag("home-create-card"),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-        ) {
-            Box(
-                Modifier.size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    PhosphorIcons.Sparkle,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.more_create_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    stringResource(moreCreateSubtitleRes(offers, localMode)),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-        }
-    }
-}
-
 @Composable
 internal fun SectionTitle(
     title: String,
@@ -810,15 +778,26 @@ private fun HomeShelf(
     title: String,
     icon: ImageVector,
     accent: Color,
+    onSeeAll: (() -> Unit)? = null,
     content: LazyListScope.() -> Unit,
 ) {
     Column {
-        SectionTitle(
-            title = title,
-            icon = icon,
-            accent = accent,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
-        )
+        ) {
+            SectionTitle(
+                title = title,
+                icon = icon,
+                accent = accent,
+                modifier = Modifier.weight(1f),
+            )
+            if (onSeeAll != null) {
+                TextButton(onClick = onSeeAll, modifier = Modifier.testTag("home-see-all")) {
+                    Text(stringResource(R.string.home_see_all))
+                }
+            }
+        }
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),

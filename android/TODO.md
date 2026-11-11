@@ -327,6 +327,9 @@ Verification: ktfmt, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:app:assem
       `home_stash_*` strings are gone; the card reuses `more_create_*`.
 - [x] E2E and screenshot journeys open Yarns through the tab; a focused test taps the card.
 - [x] Web: same swap on the Home dashboard (card links to `/create`).
+- [x] Superseded: the Home Create card is gone again, on Android and the web (Create stays under
+      More and in the command palette; Projects and Yarns have their own New buttons). The focused
+      test now taps the Create row in More.
 
 Verification: see the commit message.
 

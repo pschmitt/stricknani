@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * Whether imports are offered, for the Create screen, the Create card on Home and the one in More:
+ * Whether imports are offered, for the Create screen and the Create row in More:
  * their texts mention importing only when it works (server mode with imports available).
  */
 @HiltViewModel

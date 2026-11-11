@@ -5,9 +5,11 @@ import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepDto
 import blue.anika.wolle.data.api.v2.MediaOrderRequest
+import blue.anika.wolle.data.api.v2.ProjectStatusRequest
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.runScopedV2Sync
@@ -125,6 +127,24 @@ constructor(
             projectDao.upsertAll(listOf(updated.toEntity(json)))
         } catch (e: Exception) {
             projectDao.upsertAll(listOf(entity.copy(isFavorite = wasFavorite)))
+            throw e
+        }
+    }
+
+    /**
+     * The quick "Mark as done" toggle: flips the status immediately in Room (optimistic), then
+     * calls the server; on failure the row is reverted. Direct online call like favorites (the
+     * write queue carries whole projects, a status flip is one field). Needs API v2.
+     */
+    suspend fun setStatus(entity: ProjectEntity, status: String) {
+        val previous = entity.status
+        projectDao.upsertAll(listOf(entity.copy(status = status)))
+        try {
+            check(capabilities.useV2()) { "Project status needs API v2" }
+            val updated = projectsV2Api.setProjectStatus(entity.id, ProjectStatusRequest(status))
+            projectDao.upsertAll(listOf(updated.data.toV1().toEntity(json)))
+        } catch (e: Exception) {
+            projectDao.upsertAll(listOf(entity.copy(status = previous)))
             throw e
         }
     }
@@ -711,6 +731,7 @@ internal fun ProjectDto.toEntity(json: Json): ProjectEntity =
         category = category,
         tagsJson = json.encodeToString(tags),
         isFavorite = isFavorite,
+        status = ProjectStatus.normalize(status),
         updatedAt = DateTimeUtils.parseToEpochMillis(updatedAt),
         previewUrl = (images.firstOrNull { it.isCover() } ?: images.firstOrNull())?.thumbnailUrl,
         detailJson = json.encodeToString(this),
@@ -749,6 +770,7 @@ private fun ProjectWriteRequest.toPlaceholderEntity(tempId: Int, json: Json): Pr
             linkArchive = null,
             isAiEnhanced = isAiEnhanced,
             isFavorite = false,
+            status = ProjectStatus.normalize(status),
             createdAt = now,
             updatedAt = now,
             yarnIds = yarnIds,
@@ -778,6 +800,7 @@ private fun ProjectWriteRequest.applyTo(existing: ProjectEntity, json: Json): Pr
             tags = tags,
             link = link,
             isAiEnhanced = isAiEnhanced,
+            status = status?.let(ProjectStatus::normalize) ?: current.status,
             yarnIds = yarnIds,
             steps = stepsFromRequest(existingSteps, steps),
             updatedAt = nowIso(),

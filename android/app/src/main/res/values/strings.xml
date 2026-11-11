@@ -79,6 +79,8 @@
     <string name="local_move_uploading">Uploading your phone data to %1$s…</string>
     <string name="share_local_unavailable">Link imports are not available while the app only runs on this phone.</string>
     <string name="home_favorite_projects_title">Favorite projects</string>
+    <string name="home_ongoing_projects_title">Ongoing projects</string>
+    <string name="home_see_all">See all</string>
     <string name="home_favorite_yarns_title">Favorite yarns</string>
     <string name="home_recent_projects_title">Recent projects</string>
     <string name="home_greeting_morning_1">Good morning!</string>
@@ -359,6 +361,12 @@
     <string name="yarns_list_new_yarn_fab">New yarn</string>
     <string name="yarns_list_search_placeholder">Search</string>
     <string name="yarns_list_favorites_only">Favorites only</string>
+    <string name="project_status_in_progress">In progress</string>
+    <string name="project_status_done">Done</string>
+    <string name="project_editor_status_label">Status</string>
+    <string name="project_mark_done">Mark as done</string>
+    <string name="project_mark_in_progress">Mark as in progress</string>
+    <string name="error_status_failed">The status could not be updated.</string>
     <string name="yarns_list_empty_title">Your stash is empty</string>
     <string name="yarn_detail_not_found">Yarn not found</string>
     <string name="yarn_detail_field_brand">Brand</string>
@@ -1399,6 +1407,12 @@
     <string name="owner_banner_yarn_detail">Your changes are saved to their yarn and recorded in the audit log.</string>
     <string name="owner_filter_menu">Show</string>
     <string name="owner_filter_mine">Mine</string>
+    <string name="owner_filter_shared">Shared with me</string>
+    <string name="list_filter_trash">Trash</string>
+    <plurals name="library_card_in_trash">
+        <item quantity="one">In trash · %1$d day left</item>
+        <item quantity="other">In trash · %1$d days left</item>
+    </plurals>
     <string name="share_import_title">Import this link as a project or as a yarn?</string>
     <string name="share_import_project">Project</string>
     <string name="share_import_yarn">Yarn</string>

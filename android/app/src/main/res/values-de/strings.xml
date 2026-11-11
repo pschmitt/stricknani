@@ -78,6 +78,8 @@
     <string name="local_move_uploading">Deine Handy-Daten werden auf %1$s hochgeladen…</string>
     <string name="share_local_unavailable">Link-Importe sind nicht verfügbar, solange die App nur auf diesem Handy läuft.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>
+    <string name="home_ongoing_projects_title">Laufende Projekte</string>
+    <string name="home_see_all">Alle anzeigen</string>
     <string name="home_favorite_yarns_title">Lieblingswolle</string>
     <string name="home_recent_projects_title">Zuletzt bearbeitet</string>
     <string name="home_greeting_morning_1">Guten Morgen!</string>
@@ -358,6 +360,12 @@
     <string name="yarns_list_new_yarn_fab">Neues Garn</string>
     <string name="yarns_list_search_placeholder">Suchen</string>
     <string name="yarns_list_favorites_only">Nur Favoriten</string>
+    <string name="project_status_in_progress">In Arbeit</string>
+    <string name="project_status_done">Fertig</string>
+    <string name="project_editor_status_label">Status</string>
+    <string name="project_mark_done">Als fertig markieren</string>
+    <string name="project_mark_in_progress">Als in Arbeit markieren</string>
+    <string name="error_status_failed">Der Status konnte nicht aktualisiert werden.</string>
     <string name="yarns_list_empty_title">Dein Garnvorrat ist leer</string>
     <string name="yarn_detail_not_found">Garn nicht gefunden</string>
     <string name="yarn_detail_field_brand">Marke</string>
@@ -1396,6 +1404,12 @@
     <string name="owner_banner_yarn_detail">Deine Änderungen werden in dessen Garn gespeichert und im Prüfprotokoll festgehalten.</string>
     <string name="owner_filter_menu">Anzeigen</string>
     <string name="owner_filter_mine">Meine</string>
+    <string name="owner_filter_shared">Mit mir geteilt</string>
+    <string name="list_filter_trash">Papierkorb</string>
+    <plurals name="library_card_in_trash">
+        <item quantity="one">Im Papierkorb · noch %1$d Tag</item>
+        <item quantity="other">Im Papierkorb · noch %1$d Tage</item>
+    </plurals>
     <string name="share_import_title">Diesen Link als Projekt oder als Garn importieren?</string>
     <string name="share_import_project">Projekt</string>
     <string name="share_import_yarn">Garn</string>
