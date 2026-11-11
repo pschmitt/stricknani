@@ -425,7 +425,7 @@ async fn suggestions_leave_out_the_trash_unless_the_trash_filter_is_on() {
         None,
     )
     .await;
-    assert_eq!(body["data"]["owners"][0]["name"], "ben", "{body}");
+    assert_eq!(body["data"]["owners"][0]["name"], "Ben", "{body}");
 
     // Owners of the trash are their own: Ben sees his trash, Anika none of it.
     let (_, body) = call(
